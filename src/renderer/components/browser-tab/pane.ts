@@ -29,11 +29,37 @@ import {
   sendToNewSession,
 } from './session-integration.js';
 
+function browserWorkspaceLabel(): string {
+  const project = appState.activeProject;
+  if (!project) return 'Workspace';
+  return project.name;
+}
+
 export function createBrowserTabPane(sessionId: string, url?: string): void {
   if (instances.has(sessionId)) return;
 
   const el = document.createElement('div');
   el.className = 'browser-tab-pane hidden';
+
+  const chrome = document.createElement('div');
+  chrome.className = 'browser-pane-chrome';
+
+  const chromeLabel = document.createElement('div');
+  chromeLabel.className = 'browser-pane-label';
+  chromeLabel.textContent = 'Browser surface';
+
+  const chromeWorkspace = document.createElement('div');
+  chromeWorkspace.className = 'browser-pane-workspace';
+  chromeWorkspace.textContent = browserWorkspaceLabel();
+
+  const chromeHint = document.createElement('div');
+  chromeHint.className = 'browser-pane-hint';
+  chromeHint.textContent = 'Inspect, record, annotate';
+
+  chrome.appendChild(chromeLabel);
+  chrome.appendChild(chromeWorkspace);
+  chrome.appendChild(chromeHint);
+  el.appendChild(chrome);
 
   const toolbar = document.createElement('div');
   toolbar.className = 'browser-tab-toolbar';
