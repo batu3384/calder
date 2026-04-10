@@ -1,5 +1,10 @@
 import type { ProviderId, CliProviderMeta, CliProviderCapabilities } from '../shared/types.js';
 
+export interface ProviderAvailabilitySnapshot {
+  providers: CliProviderMeta[];
+  availability: Map<ProviderId, boolean>;
+}
+
 let cachedProviders: CliProviderMeta[] | null = null;
 let cachedAvailability: Map<ProviderId, boolean> | null = null;
 
@@ -27,15 +32,32 @@ export function hasMultipleAvailableProviders(): boolean {
   return false;
 }
 
-export function getProviderAvailabilitySnapshot(): {
-  providers: CliProviderMeta[];
-  availability: Map<ProviderId, boolean>;
-} | null {
+export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot | null {
   if (!cachedProviders || !cachedAvailability) return null;
   return {
     providers: cachedProviders,
     availability: cachedAvailability,
   };
+}
+
+export function shouldRenderInlineProviderSelector(snapshot: ProviderAvailabilitySnapshot | null): boolean {
+  return !!snapshot && snapshot.providers.length > 1;
+}
+
+export function resolvePreferredProviderForLaunch(
+  preferredProvider: ProviderId | undefined,
+  snapshot: ProviderAvailabilitySnapshot | null,
+): ProviderId {
+  if (!snapshot) return preferredProvider ?? 'claude';
+
+  if (preferredProvider && snapshot.availability.get(preferredProvider)) {
+    return preferredProvider;
+  }
+
+  return snapshot.providers.find(provider => snapshot.availability.get(provider.id))?.id
+    ?? preferredProvider
+    ?? snapshot.providers[0]?.id
+    ?? 'claude';
 }
 
 export function getCachedProviderMetas(): CliProviderMeta[] {

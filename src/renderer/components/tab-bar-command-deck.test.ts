@@ -11,4 +11,10 @@ describe('tab bar command deck contract', () => {
     expect(source).toContain('toggleProjectTerminal');
     expect(source).toContain('promptNewMcpInspector');
   });
+
+  it('renders an inline provider selector beside new session', () => {
+    expect(source).toContain('session-provider-slot');
+    expect(source).toContain('renderSessionProviderSelector');
+    expect(source).toContain('resolvePreferredProviderForLaunch');
+  });
 });

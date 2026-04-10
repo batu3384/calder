@@ -317,6 +317,51 @@
   justify-content: flex-end;
 }
 
+#session-launcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#session-provider-slot {
+  display: flex;
+  align-items: center;
+}
+
+#session-provider-slot[hidden] {
+  display: none;
+}
+
+.command-deck-provider-select {
+  min-width: 148px;
+}
+
+.command-deck-provider-select .custom-select-trigger {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border-radius: var(--radius-sm);
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.command-deck-provider-select .custom-select-trigger:hover,
+.command-deck-provider-select .custom-select-trigger:focus {
+  border-color: var(--border);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+}
+
+.command-deck-provider-select .custom-select-dropdown {
+  min-width: 100%;
+}
+
 .icon-btn {
   background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   border: 1px solid var(--border-subtle);

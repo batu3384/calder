@@ -372,6 +372,20 @@ describe('addSession()', () => {
     const session = appState.addSession(project.id, 'S1')!;
     expect(session.args).toBeUndefined();
   });
+
+  it('uses the persisted default provider when no explicit provider is passed', () => {
+    const project = addProject();
+    appState.setPreference('defaultProvider', 'gemini');
+    const session = appState.addSession(project.id, 'S1')!;
+    expect(session.providerId).toBe('gemini');
+  });
+
+  it('keeps an explicit provider instead of the persisted default provider', () => {
+    const project = addProject();
+    appState.setPreference('defaultProvider', 'gemini');
+    const session = appState.addSession(project.id, 'S1', undefined, 'codex')!;
+    expect(session.providerId).toBe('codex');
+  });
 });
 
 describe('addDiffViewerSession()', () => {

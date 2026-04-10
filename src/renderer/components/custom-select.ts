@@ -65,10 +65,15 @@ export function createCustomSelect(
   function selectOption(index: number): void {
     const opt = options[index];
     if (!opt || opt.disabled) return;
+    const prevValue = hidden.value;
     hidden.value = opt.value;
     trigger.textContent = opt.label;
     items.forEach(el => el.classList.remove('selected'));
     items[index].classList.add('selected');
+    if (prevValue !== opt.value) {
+      hidden.dispatchEvent(new Event('input', { bubbles: true }));
+      hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     closeDropdown();
   }
 

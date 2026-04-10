@@ -1,6 +1,7 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
 import type { ProviderId } from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
+import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshGitStatus } from '../git-status.js';
 import { onChange as onCostChange, getAggregateCost } from '../session-cost.js';
@@ -12,7 +13,14 @@ import { showJoinDialog } from './join-dialog.js';
 import { isSharing } from '../sharing/peer-host.js';
 import { endShare, onShareChange } from '../sharing/share-manager.js';
 import { openInspector, isInspectorOpen, getInspectedSessionId, closeInspector } from './session-inspector.js';
-import { loadProviderAvailability, hasMultipleAvailableProviders, getProviderAvailabilitySnapshot, getProviderCapabilities } from '../provider-availability.js';
+import {
+  loadProviderAvailability,
+  hasMultipleAvailableProviders,
+  getProviderAvailabilitySnapshot,
+  getProviderCapabilities,
+  resolvePreferredProviderForLaunch,
+  shouldRenderInlineProviderSelector,
+} from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { showUsageModal } from './usage-modal.js';
 import { toggleProjectTerminal } from './project-terminal.js';
@@ -23,11 +31,13 @@ const gitStatusEl = document.getElementById('git-status')!;
 const workspaceSpendEl = document.getElementById('workspace-spend')!;
 const workspaceIdentityEl = document.getElementById('workspace-identity')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
+const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
 const btnCommandDeckMore = document.getElementById('btn-command-deck-more')!;
 const btnToggleContextInspector = document.getElementById('btn-toggle-context-inspector')!;
 const btnToggleSwarm = document.getElementById('btn-toggle-swarm')!;
 
 let activeContextMenu: HTMLElement | null = null;
+let sessionProviderSelect: CustomSelectInstance | null = null;
 const prevStatus = new Map<string, SessionStatus>();
 
 function buildTooltip(status: SessionStatus, cliSessionId?: string): string {
@@ -60,6 +70,7 @@ export function initTabBar(): void {
 
   // Icons only distinguish providers when multiple are installed
   loadProviderAvailability().then(() => {
+    renderSessionProviderSelector();
     if (hasMultipleAvailableProviders()) render();
   }).catch(() => {});
 
@@ -76,6 +87,7 @@ export function initTabBar(): void {
   appState.on('session-changed', render);
   appState.on('layout-changed', render);
   appState.on('history-changed', renderWorkspaceIdentity);
+  appState.on('preferences-changed', renderSessionProviderSelector);
   onShareChange(render);
 
   onStatusChange((sessionId, status) => {
@@ -114,6 +126,47 @@ export function initTabBar(): void {
   renderGitStatus();
   renderWorkspaceSpend();
   renderWorkspaceIdentity();
+  renderSessionProviderSelector();
+}
+
+function destroySessionProviderSelector(): void {
+  if (sessionProviderSelect) {
+    sessionProviderSelect.destroy();
+    sessionProviderSelect = null;
+  }
+  sessionProviderSlotEl.innerHTML = '';
+  sessionProviderSlotEl.hidden = true;
+}
+
+function renderSessionProviderSelector(): void {
+  const snapshot = getProviderAvailabilitySnapshot();
+  destroySessionProviderSelector();
+
+  if (!shouldRenderInlineProviderSelector(snapshot)) return;
+
+  const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
+  const select = createCustomSelect(
+    'command-deck-provider',
+    snapshot.providers.map(provider => {
+      const available = snapshot.availability.get(provider.id);
+      return {
+        value: provider.id,
+        label: available ? provider.displayName : `${provider.displayName} (not installed)`,
+        disabled: !available,
+      };
+    }),
+    selectedProvider,
+  );
+  select.element.classList.add('command-deck-provider-select');
+
+  const hiddenInput = select.element.querySelector('#command-deck-provider') as HTMLInputElement | null;
+  hiddenInput?.addEventListener('change', () => {
+    appState.setPreference('defaultProvider', hiddenInput.value as ProviderId);
+  });
+
+  sessionProviderSlotEl.hidden = false;
+  sessionProviderSlotEl.appendChild(select.element);
+  sessionProviderSelect = select;
 }
 
 function renderWorkspaceSpend(): void {
@@ -857,7 +910,11 @@ export function quickNewSession(): void {
   if (!project) return;
   (document.activeElement as HTMLElement)?.blur?.();
   const sessionNum = project.sessions.length + 1;
-  appState.addSession(project.id, `Session ${sessionNum}`);
+  const providerId = resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
+  appState.addSession(project.id, `Session ${sessionNum}`, undefined, providerId);
 }
 
 function showAddSessionContextMenu(x: number, y: number): void {
@@ -947,13 +1004,12 @@ export async function promptNewSession(onCreated?: (session: SessionRecord) => v
   ];
 
   if (providers.length > 1) {
-    const preferred = appState.preferences.defaultProvider ?? 'claude';
-    const firstAvailable = (availabilityMap.get(preferred) ? preferred : providers.find(p => availabilityMap.get(p.id))?.id) ?? 'claude';
+    const preferred = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, providerSnapshot);
     fields.unshift({
       label: 'Provider',
       id: 'provider',
       type: 'select',
-      defaultValue: firstAvailable,
+      defaultValue: preferred,
       options: providers.map(p => {
         const available = availabilityMap.get(p.id);
         return { value: p.id, label: available ? p.displayName : `${p.displayName} (not installed)`, disabled: !available };
