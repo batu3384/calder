@@ -5,7 +5,6 @@ import { SearchAddon } from '@xterm/addon-search';
 import { appState } from '../state.js';
 import { fitAllVisible } from './terminal-pane.js';
 import { destroySearchBar, hideSearchBar } from './search-bar.js';
-import { shortcutManager, displayKeys } from '../shortcuts.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 interface ShellTerminalInstance {
@@ -238,17 +237,11 @@ export function initProjectTerminal(): void {
   containerEl = document.getElementById('project-terminal-container')!;
   resizeHandleEl = document.getElementById('project-terminal-resize-handle')!;
   const closeBtn = document.getElementById('btn-close-terminal')!;
-  const toggleBtn = document.getElementById('btn-toggle-terminal')!;
 
   closeBtn.addEventListener('click', () => {
     hidePanel();
     appState.setTerminalPanelOpen(false);
   });
-
-  const primaryKey = displayKeys(shortcutManager.getKeys('project-terminal-alt'));
-  toggleBtn.title = `Toggle Terminal (${primaryKey})`;
-
-  toggleBtn.addEventListener('click', () => toggleProjectTerminal());
 
   // Resize handle drag
   let dragging = false;

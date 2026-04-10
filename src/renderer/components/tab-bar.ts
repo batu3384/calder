@@ -3,6 +3,7 @@ import type { ProviderId } from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshGitStatus } from '../git-status.js';
+import { onChange as onCostChange, getAggregateCost } from '../session-cost.js';
 
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
 import { showHelpDialog } from './help-dialog.js';
@@ -13,13 +14,17 @@ import { endShare, onShareChange } from '../sharing/share-manager.js';
 import { openInspector, isInspectorOpen, getInspectedSessionId, closeInspector } from './session-inspector.js';
 import { loadProviderAvailability, hasMultipleAvailableProviders, getProviderAvailabilitySnapshot, getProviderCapabilities } from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
+import { showUsageModal } from './usage-modal.js';
+import { toggleProjectTerminal } from './project-terminal.js';
+import { toggleContextInspector } from './context-inspector.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
+const workspaceSpendEl = document.getElementById('workspace-spend')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
-const btnAddMcpInspector = document.getElementById('btn-add-mcp-inspector')!;
+const btnCommandDeckMore = document.getElementById('btn-command-deck-more')!;
+const btnToggleContextInspector = document.getElementById('btn-toggle-context-inspector')!;
 const btnToggleSwarm = document.getElementById('btn-toggle-swarm')!;
-const btnHelp = document.getElementById('btn-help')!;
 
 let activeContextMenu: HTMLElement | null = null;
 const prevStatus = new Map<string, SessionStatus>();
@@ -32,15 +37,24 @@ function buildTooltip(status: SessionStatus, cliSessionId?: string): string {
 export function initTabBar(): void {
   btnAddSession.classList.add('tab-action-primary');
   btnToggleSwarm.classList.add('tab-action-toggle');
-  btnAddMcpInspector.classList.add('tab-action-mcp');
+  btnToggleContextInspector.classList.add('tab-action-secondary');
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     showAddSessionContextMenu(e.clientX, e.clientY);
   });
-  btnAddMcpInspector.addEventListener('click', promptNewMcpInspector);
+  btnCommandDeckMore.addEventListener('click', (e) => {
+    e.preventDefault();
+    showCommandDeckOverflowMenu(e);
+  });
+  btnToggleContextInspector.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideTabContextMenu();
+    toggleContextInspector();
+  });
   btnToggleSwarm.addEventListener('click', () => appState.toggleSwarm());
-  btnHelp.addEventListener('click', () => showHelpDialog());
   gitStatusEl.addEventListener('click', (e) => showBranchContextMenu(e));
 
   // Icons only distinguish providers when multiple are installed
@@ -79,16 +93,81 @@ export function initTabBar(): void {
   });
 
   onUnreadChange(render);
+  onCostChange(renderWorkspaceSpend);
 
   onGitStatusChange((projectId) => {
     if (projectId === appState.activeProjectId) renderGitStatus();
   });
   appState.on('project-changed', renderGitStatus);
+  appState.on('project-changed', renderWorkspaceSpend);
 
   document.addEventListener('click', hideTabContextMenu);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTabContextMenu(); });
 
   render();
+  renderGitStatus();
+  renderWorkspaceSpend();
+}
+
+function renderWorkspaceSpend(): void {
+  const visible = appState.preferences.sidebarViews?.costFooter ?? true;
+  const agg = getAggregateCost();
+  if (!visible || agg.totalCostUsd <= 0) {
+    workspaceSpendEl.hidden = true;
+    workspaceSpendEl.innerHTML = '';
+    return;
+  }
+
+  workspaceSpendEl.hidden = false;
+  workspaceSpendEl.innerHTML = `
+    <span class="workspace-spend-label">Spend</span>
+    <span class="workspace-spend-value">$${agg.totalCostUsd.toFixed(4)}</span>
+  `;
+}
+
+function showCommandDeckOverflowMenu(event: MouseEvent): void {
+  event.stopPropagation();
+  hideTabContextMenu();
+
+  const menu = document.createElement('div');
+  menu.className = 'tab-context-menu';
+  menu.addEventListener('click', (ev) => ev.stopPropagation());
+
+  const anchor = event.currentTarget as HTMLElement | null;
+  if (anchor) {
+    const rect = anchor.getBoundingClientRect();
+    menu.style.left = `${rect.right - 180}px`;
+    menu.style.top = `${rect.bottom + 4}px`;
+  } else {
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+  }
+
+  const items: Array<[string, () => void]> = [
+    ['Project Scratch Shell', () => toggleProjectTerminal()],
+    ['Usage Stats', () => showUsageModal()],
+    ['Session Indicators Help', () => showHelpDialog()],
+    ['Open MCP Inspector', () => promptNewMcpInspector()],
+  ];
+
+  for (const [label, action] of items) {
+    const item = document.createElement('div');
+    item.className = 'tab-context-menu-item';
+    item.textContent = label;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideTabContextMenu();
+      action();
+    });
+    menu.appendChild(item);
+  }
+
+  document.body.appendChild(menu);
+  activeContextMenu = menu;
+
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
+  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
 }
 
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {

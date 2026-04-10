@@ -175,7 +175,6 @@ async function main(): Promise<void> {
   startGitPolling();
 
   window.calder.menu.onUsageStats(() => showUsageModal());
-  document.getElementById('btn-usage-stats')!.addEventListener('click', () => showUsageModal());
 
   function isMcpSession(sessionId: string): boolean {
     for (const project of appState.projects) {

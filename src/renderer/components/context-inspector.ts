@@ -20,7 +20,6 @@ export function toggleContextInspector(): void {
 }
 
 export function initContextInspector(): void {
-  toggleBtn.addEventListener('click', () => toggleContextInspector());
   closeBtn.addEventListener('click', () => setContextInspectorOpen(false));
 
   appState.on('project-changed', () => {

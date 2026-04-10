@@ -1,7 +1,6 @@
 import { appState, ProjectRecord } from '../state.js';
 import { showModal, setModalError, closeModal } from './modal.js';
 import { showPreferencesModal } from './preferences-modal.js';
-import { onChange as onCostChange, getAggregateCost } from '../session-cost.js';
 import { hasUnreadInProject, onChange as onUnreadChange } from '../session-unread.js';
 
 const projectListEl = document.getElementById('project-list')!;
@@ -45,11 +44,6 @@ export function initSidebar(): void {
   appState.on('project-changed', render);
   appState.on('session-added', render);
   appState.on('session-removed', render);
-
-
-  onCostChange(() => {
-    renderCostFooter();
-  });
 
   onUnreadChange(render);
   appState.on('preferences-changed', () => applyCostFooterVisibility());
@@ -263,21 +257,8 @@ function applyCostFooterVisibility(): void {
 }
 
 function renderCostFooter(): void {
-  const costVisible = appState.preferences.sidebarViews?.costFooter ?? true;
-  if (!costVisible) {
-    sidebarFooterEl.classList.add('hidden');
-    return;
-  }
-  const agg = getAggregateCost();
-  if (agg.totalCostUsd > 0) {
-    sidebarFooterEl.innerHTML = `
-      <div class="sidebar-footer-kicker shell-kicker">Workspace Spend</div>
-      <div class="sidebar-footer-value">$${agg.totalCostUsd.toFixed(4)}</div>
-    `;
-    sidebarFooterEl.classList.remove('hidden');
-  } else {
-    sidebarFooterEl.classList.add('hidden');
-  }
+  sidebarFooterEl.innerHTML = '';
+  sidebarFooterEl.classList.add('hidden');
 }
 
 function confirmRemoveProject(project: ProjectRecord): void {
