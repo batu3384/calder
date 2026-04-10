@@ -1,6 +1,7 @@
 import { onLargeFileAlert, type LargeFileAlert } from '../tools/large-file-detector.js';
 import { dismissInsight } from '../session-insights.js';
 import { appState } from '../state.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { setPendingPrompt } from './terminal-pane.js';
 
@@ -21,8 +22,12 @@ function handleSplitAction(alert: LargeFileAlert): void {
 
   const filename = getFilename(alert.filePath);
   const prompt = `The file ${alert.filePath} is too large and exceeds the AI context read limit. Please analyze it and split it into smaller, focused modules. Preserve all existing functionality.`;
+  const providerId = resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
 
-  const session = appState.addPlanSession(project.id, `Split ${filename}`);
+  const session = appState.addPlanSession(project.id, `Split ${filename}`, providerId);
   if (!session) return;
 
   removeAlertBanner();

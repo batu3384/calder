@@ -221,6 +221,10 @@ export function setPendingPrompt(sessionId: string, prompt: string): void {
   }
 }
 
+function buildBracketedPastePayload(prompt: string): string {
+  return `\u001b[200~${prompt}\u001b[201~\r`;
+}
+
 function clearPendingPromptTimer(instance: TerminalInstance): void {
   if (instance.pendingPromptTimer) {
     clearTimeout(instance.pendingPromptTimer);
@@ -251,6 +255,20 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
   }
   await window.calder.pty.create(sessionId, instance.projectPath, instance.cliSessionId, instance.isResume, instance.args, instance.providerId, initialPrompt);
   instance.isResume = true; // subsequent spawns (e.g. Restart Session) should resume
+}
+
+export async function deliverPromptToTerminalSession(sessionId: string, prompt: string): Promise<boolean> {
+  const instance = instances.get(sessionId);
+  if (!instance) return false;
+
+  if (!instance.spawned) {
+    setPendingPrompt(sessionId, prompt);
+    await spawnTerminal(sessionId);
+    return true;
+  }
+
+  window.calder.pty.write(sessionId, buildBracketedPastePayload(prompt));
+  return true;
 }
 
 export function attachToContainer(sessionId: string, container: HTMLElement): void {

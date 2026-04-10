@@ -1,5 +1,6 @@
 import { onAlert, dismissInsight } from '../session-insights.js';
 import { appState } from '../state.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
 import type { InsightResult } from '../insights/types.js';
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { setPendingPrompt } from './terminal-pane.js';
@@ -17,8 +18,12 @@ function handleInsightAction(result: InsightResult): void {
 
   const project = appState.activeProject;
   if (!project) return;
+  const providerId = resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
 
-  const session = appState.addPlanSession(project.id, 'Fix Pre-Context');
+  const session = appState.addPlanSession(project.id, 'Fix Pre-Context', providerId);
   if (!session) return;
 
   removeAlertBanner();

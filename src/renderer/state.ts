@@ -53,6 +53,10 @@ class AppState {
   private navIndex = -1;
   private navSuppressPush = false;
 
+  private isCliSession(session: SessionRecord): boolean {
+    return !session.type || session.type === 'claude';
+  }
+
   private pushNav(sessionId: string | null | undefined): void {
     if (!sessionId || this.navSuppressPush) return;
     if (this.navHistory[this.navIndex] === sessionId) return;
@@ -79,6 +83,52 @@ class AppState {
 
   private findProjectBySession(sessionId: string): ProjectRecord | undefined {
     return this.state.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
+  }
+
+  private findSessionInProject(project: ProjectRecord, sessionId: string): SessionRecord | undefined {
+    return project.sessions.find((session) => session.id === sessionId);
+  }
+
+  private findActiveCliSession(project: ProjectRecord, excludingSessionId?: string): SessionRecord | undefined {
+    const activeSession = project.activeSessionId
+      ? this.findSessionInProject(project, project.activeSessionId)
+      : undefined;
+    if (activeSession && activeSession.id !== excludingSessionId && this.isCliSession(activeSession)) {
+      return activeSession;
+    }
+    return undefined;
+  }
+
+  private resolveBrowserTargetFromProject(project: ProjectRecord, browserSessionId: string): SessionRecord | undefined {
+    const browserSession = this.findSessionInProject(project, browserSessionId);
+    if (!browserSession || browserSession.type !== 'browser-tab') return undefined;
+
+    const storedTargetId = browserSession.browserTargetSessionId;
+    if (storedTargetId) {
+      const storedTarget = this.findSessionInProject(project, storedTargetId);
+      if (storedTarget && storedTarget.id !== browserSessionId && this.isCliSession(storedTarget)) {
+        return storedTarget;
+      }
+    }
+
+    return this.findActiveCliSession(project, browserSessionId);
+  }
+
+  private repairBrowserTargets(project: ProjectRecord): boolean {
+    let changed = false;
+    for (const session of project.sessions) {
+      if (session.type !== 'browser-tab') continue;
+      const resolvedTarget = this.resolveBrowserTargetFromProject(project, session.id);
+      if (resolvedTarget?.id !== session.browserTargetSessionId) {
+        if (resolvedTarget) {
+          session.browserTargetSessionId = resolvedTarget.id;
+        } else {
+          delete session.browserTargetSessionId;
+        }
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   navigateBack(): void {
@@ -302,11 +352,11 @@ class AppState {
     this.emit('project-changed');
   }
 
-  addPlanSession(projectId: string, name: string): SessionRecord | undefined {
+  addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
     const activeSession = project.sessions.find((s) => s.id === project.activeSessionId);
-    const providerId = activeSession?.providerId ?? this.state.preferences.defaultProvider ?? 'claude';
+    const providerId = providerOverride ?? this.state.preferences.defaultProvider ?? activeSession?.providerId ?? 'claude';
     const caps = getProviderCapabilities(providerId);
     const planArg = caps?.planModeArg ?? '';
     const base = project.defaultArgs ?? '';
@@ -401,6 +451,7 @@ class AppState {
   addBrowserTabSession(projectId: string, url?: string): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
+    const initialTargetSession = this.findActiveCliSession(project);
 
     // If a browser-tab with the same URL already exists, switch to it
     if (url) {
@@ -425,6 +476,7 @@ class AppState {
       name,
       type: 'browser-tab',
       browserTabUrl: url,
+      ...(initialTargetSession ? { browserTargetSessionId: initialTargetSession.id } : {}),
       cliSessionId: null,
       createdAt: new Date().toISOString(),
     };
@@ -514,6 +566,7 @@ class AppState {
       project.activeSessionId = project.sessions[newIndex]?.id ?? null;
       if (project.activeSessionId) this.pushNav(project.activeSessionId);
     }
+    this.repairBrowserTargets(project);
     // Also remove from split/swarm panes
     project.layout.splitPanes = project.layout.splitPanes.filter((id) => id !== sessionId);
     this.persist();
@@ -713,6 +766,42 @@ class AppState {
     if (!project) return;
     project.activeSessionId = sessionId;
     this.pushNav(sessionId);
+    this.persist();
+    this.emit('session-changed');
+  }
+
+  listBrowserTargetSessions(browserSessionId: string): SessionRecord[] {
+    const project = this.findProjectBySession(browserSessionId);
+    if (!project) return [];
+    return project.sessions.filter(
+      (session) => session.id !== browserSessionId && this.isCliSession(session),
+    );
+  }
+
+  resolveBrowserTargetSession(browserSessionId: string): SessionRecord | undefined {
+    const project = this.findProjectBySession(browserSessionId);
+    if (!project) return undefined;
+    return this.resolveBrowserTargetFromProject(project, browserSessionId);
+  }
+
+  setBrowserTargetSession(browserSessionId: string, targetSessionId: string | null): void {
+    const project = this.findProjectBySession(browserSessionId);
+    if (!project) return;
+    const browserSession = this.findSessionInProject(project, browserSessionId);
+    if (!browserSession || browserSession.type !== 'browser-tab') return;
+
+    if (targetSessionId === null) {
+      if (browserSession.browserTargetSessionId === undefined) return;
+      delete browserSession.browserTargetSessionId;
+      this.persist();
+      this.emit('session-changed');
+      return;
+    }
+
+    const targetSession = this.findSessionInProject(project, targetSessionId);
+    if (!targetSession || targetSession.id === browserSessionId || !this.isCliSession(targetSession)) return;
+    if (browserSession.browserTargetSessionId === targetSessionId) return;
+    browserSession.browserTargetSessionId = targetSessionId;
     this.persist();
     this.emit('session-changed');
   }

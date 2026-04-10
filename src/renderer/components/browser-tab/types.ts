@@ -67,14 +67,19 @@ export interface BrowserTabInstance {
   sessionId: string;
   element: HTMLDivElement;
   webview: WebviewElement;
+  contentShell: HTMLDivElement;
   viewportContainer: HTMLDivElement;
   newTabPage: HTMLDivElement;
   urlInput: HTMLInputElement;
   inspectBtn: HTMLButtonElement;
   viewportBtn: HTMLButtonElement;
   viewportDropdown: HTMLDivElement;
+  targetRail: HTMLDivElement;
+  targetSummaryEl: HTMLDivElement;
+  targetListEl: HTMLDivElement;
   inspectPanel: HTMLDivElement;
   instructionInput: HTMLTextAreaElement;
+  submitBtn: HTMLButtonElement;
   inspectAttachDimsCheckbox: HTMLInputElement;
   elementInfoEl: HTMLDivElement;
   inspectMode: boolean;
@@ -87,6 +92,7 @@ export interface BrowserTabInstance {
   flowStepsList: HTMLDivElement;
   flowInputRow: HTMLDivElement;
   flowInstructionInput: HTMLTextAreaElement;
+  flowSubmitBtn: HTMLButtonElement;
   flowMode: boolean;
   flowSteps: FlowStep[];
   flowPickerOverlay: HTMLDivElement;
@@ -95,7 +101,9 @@ export interface BrowserTabInstance {
   drawBtn: HTMLButtonElement;
   drawPanel: HTMLDivElement;
   drawInstructionInput: HTMLTextAreaElement;
+  drawSubmitBtn: HTMLButtonElement;
   drawAttachDimsCheckbox: HTMLInputElement;
   drawErrorEl: HTMLDivElement;
   drawMode: boolean;
+  cleanupFns: Array<() => void>;
 }

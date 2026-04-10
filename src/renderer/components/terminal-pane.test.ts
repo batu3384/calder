@@ -227,6 +227,19 @@ describe('terminal pending prompt injection', () => {
     await vi.runAllTimersAsync();
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
+
+  it('delivers a prompt into an already spawned terminal session', async () => {
+    const { createTerminalPane, spawnTerminal, deliverPromptToTerminalSession } = await import('./terminal-pane.js');
+
+    createTerminalPane('codex-live', '/project', null, false, '', 'codex');
+    await spawnTerminal('codex-live');
+    mockPtyWrite.mockClear();
+
+    const delivered = await (deliverPromptToTerminalSession as any)('codex-live', 'Fix the auth modal');
+
+    expect(delivered).toBe(true);
+    expect(mockPtyWrite).toHaveBeenCalledWith('codex-live', '\u001b[200~Fix the auth modal\u001b[201~\r');
+  });
 });
 
 describe('terminal Ctrl+Shift+C clipboard copy', () => {

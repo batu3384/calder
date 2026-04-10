@@ -1,6 +1,7 @@
 import { appState } from '../../state.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
 import { promptNewSession } from '../tab-bar.js';
-import { setPendingPrompt } from '../terminal-pane.js';
+import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
 import type { BrowserTabInstance } from './types.js';
 import { positionPopover } from './popover.js';
 import { getViewportContext } from './viewport.js';
@@ -69,6 +70,43 @@ function buildDrawPrompt(instance: BrowserTabInstance, imagePath: string): strin
   );
 }
 
+function getPreferredLaunchProvider() {
+  return resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
+}
+
+export async function sendDrawToSelectedSession(instance: BrowserTabInstance): Promise<void> {
+  const instruction = instance.drawInstructionInput.value.trim();
+  if (!instruction) return;
+  const project = appState.activeProject;
+  if (!project) return;
+
+  hideDrawError(instance);
+  const imagePath = await captureScreenshotPath(instance);
+  if (!imagePath) {
+    showDrawError(instance, 'Failed to capture screenshot. Try again.');
+    return;
+  }
+
+  const targetSession = appState.resolveBrowserTargetSession(instance.sessionId);
+  if (!targetSession) {
+    showDrawError(instance, 'Select an open session target first.');
+    return;
+  }
+
+  const prompt = buildDrawPrompt(instance, imagePath);
+  const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
+  if (!delivered) {
+    showDrawError(instance, 'Failed to deliver prompt to the selected session.');
+    return;
+  }
+
+  dismissDraw(instance);
+  appState.setActiveSession(project.id, targetSession.id);
+}
+
 export async function sendDrawToNewSession(instance: BrowserTabInstance): Promise<void> {
   const instruction = instance.drawInstructionInput.value.trim();
   if (!instruction) return;
@@ -83,7 +121,11 @@ export async function sendDrawToNewSession(instance: BrowserTabInstance): Promis
   }
 
   const prompt = buildDrawPrompt(instance, imagePath);
-  const newSession = appState.addPlanSession(project.id, `Draw: ${instruction.slice(0, 30)}`);
+  const newSession = appState.addPlanSession(
+    project.id,
+    `Draw: ${instruction.slice(0, 30)}`,
+    getPreferredLaunchProvider(),
+  );
   if (newSession) {
     setPendingPrompt(newSession.id, prompt);
   }

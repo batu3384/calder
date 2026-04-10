@@ -386,6 +386,16 @@ describe('addSession()', () => {
     const session = appState.addSession(project.id, 'S1', undefined, 'codex')!;
     expect(session.providerId).toBe('codex');
   });
+
+  it('lets plan sessions use an explicit provider override instead of the active session provider', () => {
+    const project = addProject();
+    appState.setPreference('defaultProvider', 'gemini');
+    appState.addSession(project.id, 'Existing', undefined, 'codex');
+
+    const session = (appState as any).addPlanSession(project.id, 'Fix auth modal', 'claude')!;
+
+    expect(session.providerId).toBe('claude');
+  });
 });
 
 describe('addDiffViewerSession()', () => {
@@ -450,6 +460,33 @@ describe('addMcpInspectorSession()', () => {
 
   it('returns undefined for nonexistent project', () => {
     expect(appState.addMcpInspectorSession('nope', 'I')).toBeUndefined();
+  });
+});
+
+describe('browser target sessions', () => {
+  it('seeds a new browser tab with the previously active cli session as its target', () => {
+    const project = addProject();
+    const cli = appState.addSession(project.id, 'Coder', undefined, 'codex')!;
+
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    expect(browser.browserTargetSessionId).toBe(cli.id);
+    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(cli.id);
+  });
+
+  it('retargets a browser tab when its chosen cli session is removed', () => {
+    const project = addProject();
+    const primary = appState.addSession(project.id, 'Primary', undefined, 'claude')!;
+    const secondary = appState.addSession(project.id, 'Secondary', undefined, 'codex')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    (appState as any).setBrowserTargetSession(browser.id, secondary.id);
+    appState.setActiveSession(project.id, primary.id);
+    appState.removeSession(project.id, secondary.id);
+
+    const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
+    expect(browserSession.browserTargetSessionId).toBe(primary.id);
+    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(primary.id);
   });
 });
 

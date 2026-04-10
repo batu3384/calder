@@ -1,5 +1,6 @@
 import { appState } from '../../state.js';
 import { shortcutManager } from '../../shortcuts.js';
+import { getProviderDisplayName } from '../../provider-availability.js';
 import {
   VIEWPORT_PRESETS,
   type BrowserTabInstance,
@@ -16,6 +17,7 @@ import {
   toggleDrawMode,
   clearDrawing,
   dismissDraw,
+  sendDrawToSelectedSession,
   sendDrawToNewSession,
   sendDrawToCustomSession,
   positionDrawPopover,
@@ -24,8 +26,10 @@ import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
 import {
   sendFlowToCustomSession,
+  sendFlowToSelectedSession,
   sendFlowToNewSession,
   sendToCustomSession,
+  sendToSelectedSession,
   sendToNewSession,
 } from './session-integration.js';
 
@@ -33,6 +37,58 @@ function browserWorkspaceLabel(): string {
   const project = appState.activeProject;
   if (!project) return 'Workspace';
   return project.name;
+}
+
+function syncBrowserTargetRail(instance: BrowserTabInstance): void {
+  const targetSessions = appState.listBrowserTargetSessions(instance.sessionId);
+  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+
+  instance.targetSummaryEl.textContent = selectedTarget
+    ? `Sending to: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
+    : 'No target session selected';
+
+  instance.targetListEl.innerHTML = '';
+
+  if (targetSessions.length === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'browser-target-empty';
+    emptyState.textContent = 'Open a CLI session to route browser prompts here.';
+    instance.targetListEl.appendChild(emptyState);
+  } else {
+    for (const session of targetSessions) {
+      const button = document.createElement('button');
+      button.className = 'browser-target-session';
+      if (selectedTarget?.id === session.id) {
+        button.classList.add('active');
+      }
+
+      const label = document.createElement('span');
+      label.className = 'browser-target-session-name';
+      label.textContent = session.name;
+
+      const meta = document.createElement('span');
+      meta.className = 'browser-target-session-meta';
+      const parts = [getProviderDisplayName(session.providerId ?? 'claude')];
+      if (appState.activeProject?.activeSessionId === session.id) {
+        parts.unshift('Active');
+      }
+      meta.textContent = parts.join(' · ');
+
+      button.appendChild(label);
+      button.appendChild(meta);
+      button.addEventListener('click', () => appState.setBrowserTargetSession(instance.sessionId, session.id));
+      instance.targetListEl.appendChild(button);
+    }
+  }
+
+  const hasTarget = !!selectedTarget;
+  const primaryButtons = [instance.submitBtn, instance.drawSubmitBtn, instance.flowSubmitBtn];
+  for (const button of primaryButtons) {
+    button.disabled = !hasTarget;
+    button.title = hasTarget
+      ? `Send to ${selectedTarget.name}`
+      : 'Select an open session target first';
+  }
 }
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
@@ -313,7 +369,34 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   webview.className = 'browser-webview';
   webview.setAttribute('allowpopups', '');
   viewportContainer.appendChild(webview);
-  el.appendChild(viewportContainer);
+
+  const targetRail = document.createElement('aside');
+  targetRail.className = 'browser-target-rail';
+
+  const targetRailHeader = document.createElement('div');
+  targetRailHeader.className = 'browser-target-header';
+
+  const targetRailTitle = document.createElement('div');
+  targetRailTitle.className = 'browser-target-title shell-kicker';
+  targetRailTitle.textContent = 'Open Sessions';
+
+  const targetSummaryEl = document.createElement('div');
+  targetSummaryEl.className = 'browser-target-summary';
+  targetSummaryEl.textContent = 'No target session selected';
+
+  targetRailHeader.appendChild(targetRailTitle);
+  targetRailHeader.appendChild(targetSummaryEl);
+  targetRail.appendChild(targetRailHeader);
+
+  const targetListEl = document.createElement('div');
+  targetListEl.className = 'browser-target-list';
+  targetRail.appendChild(targetListEl);
+
+  const contentShell = document.createElement('div');
+  contentShell.className = 'browser-content-shell';
+  contentShell.appendChild(viewportContainer);
+  contentShell.appendChild(targetRail);
+  el.appendChild(contentShell);
 
   const inspectPanel = document.createElement('div');
   inspectPanel.className = 'browser-inspect-panel';
@@ -512,14 +595,19 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     sessionId,
     element: el,
     webview,
+    contentShell,
     viewportContainer,
     newTabPage,
     urlInput,
     inspectBtn,
     viewportBtn,
     viewportDropdown,
+    targetRail,
+    targetSummaryEl,
+    targetListEl,
     inspectPanel,
     instructionInput,
+    submitBtn,
     inspectAttachDimsCheckbox,
     elementInfoEl,
     inspectMode: false,
@@ -532,6 +620,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     flowStepsList,
     flowInputRow,
     flowInstructionInput,
+    flowSubmitBtn,
     flowMode: false,
     flowSteps: [],
     flowPickerOverlay,
@@ -540,11 +629,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     drawBtn,
     drawPanel,
     drawInstructionInput,
+    drawSubmitBtn,
     drawAttachDimsCheckbox,
     drawErrorEl,
     drawMode: false,
+    cleanupFns: [],
   };
   instances.set(sessionId, instance);
+
+  const syncTargetingUi = () => syncBrowserTargetRail(instance);
+  instance.cleanupFns.push(appState.on('session-added', syncTargetingUi));
+  instance.cleanupFns.push(appState.on('session-removed', syncTargetingUi));
+  instance.cleanupFns.push(appState.on('session-changed', syncTargetingUi));
+  instance.cleanupFns.push(appState.on('project-changed', syncTargetingUi));
+  syncTargetingUi();
 
   webview.addEventListener('before-input-event', ((e: CustomEvent & { preventDefault(): void; input: { type: string; key: string; shift: boolean; control: boolean; alt: boolean; meta: boolean } }) => {
     if (e.input.type !== 'keyDown') return;
@@ -613,16 +711,16 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   recordBtn.addEventListener('click', () => toggleFlowMode(instance));
   drawBtn.addEventListener('click', () => toggleDrawMode(instance));
   drawClearBtn.addEventListener('click', () => clearDrawing(instance));
-  drawSubmitBtn.addEventListener('click', () => { void sendDrawToNewSession(instance); });
+  drawSubmitBtn.addEventListener('click', () => { void sendDrawToSelectedSession(instance); });
   drawCustomBtn.addEventListener('click', () => { void sendDrawToCustomSession(instance); });
   drawInstructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      void sendDrawToNewSession(instance);
+      void sendDrawToSelectedSession(instance);
     } else if (e.key === 'Escape') { dismissDraw(instance); }
   });
   flowClearBtn.addEventListener('click', () => clearFlow(instance));
-  flowSubmitBtn.addEventListener('click', () => sendFlowToNewSession(instance));
+  flowSubmitBtn.addEventListener('click', () => { void sendFlowToSelectedSession(instance); });
   flowCustomBtn.addEventListener('click', () => sendFlowToCustomSession(instance));
 
   flowPickerMenu.addEventListener('click', (e: MouseEvent) => {
@@ -650,12 +748,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     if (e.target === flowPickerOverlay) dismissFlowPicker(instance);
   });
 
-  submitBtn.addEventListener('click', () => sendToNewSession(instance));
+  submitBtn.addEventListener('click', () => { void sendToSelectedSession(instance); });
   customBtn.addEventListener('click', () => sendToCustomSession(instance));
   instructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendToNewSession(instance);
+      void sendToSelectedSession(instance);
     } else if (e.key === 'Escape') dismissInspect(instance);
   });
 
@@ -720,6 +818,7 @@ export function destroyBrowserTabPane(sessionId: string): void {
   instances.delete(sessionId);
 
   document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);
+  for (const cleanup of instance.cleanupFns) cleanup();
 
   // <webview> calls throw if it isn't attached + dom-ready yet. Guard each
   // one individually so a failure can't skip instance.element.remove() below.

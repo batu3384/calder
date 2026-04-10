@@ -15,4 +15,9 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-ntp-title');
     expect(source).toContain('browser-ntp-grid');
   });
+
+  it('renders an open-session targeting rail for browser handoff', () => {
+    expect(source).toContain('Open Sessions');
+    expect(source).toContain('No target session selected');
+  });
 });

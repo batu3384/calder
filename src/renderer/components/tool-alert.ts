@@ -1,6 +1,7 @@
 import { onToolAlert, type ToolAlert, type FailureReason } from '../tools/missing-tool-detector.js';
 import { dismissInsight } from '../session-insights.js';
 import { appState } from '../state.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { setPendingPrompt } from './terminal-pane.js';
 
@@ -43,8 +44,12 @@ function handleFixAction(alert: ToolAlert): void {
 
   const config = bannerConfig[alert.reason as AlertableReason];
   const prompt = config.prompt(alert.tool.name, alert.tool.command, alert.tool.description);
+  const providerId = resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
 
-  const session = appState.addPlanSession(project.id, `Fix ${alert.tool.name}`);
+  const session = appState.addPlanSession(project.id, `Fix ${alert.tool.name}`, providerId);
   if (!session) return;
 
   removeAlertBanner();

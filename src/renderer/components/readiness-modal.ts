@@ -3,7 +3,7 @@ import { closeModal } from './modal.js';
 import { esc, scoreColor } from '../dom-utils.js';
 import { setPendingPrompt } from './terminal-pane.js';
 import { promptNewSession } from './tab-bar.js';
-import { loadProviderMetas, getCachedProviderMetas, getProviderDisplayName } from '../provider-availability.js';
+import { loadProviderMetas, getCachedProviderMetas, getProviderAvailabilitySnapshot, getProviderDisplayName, resolvePreferredProviderForLaunch } from '../provider-availability.js';
 import type { ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus } from '../../shared/types.js';
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -29,8 +29,12 @@ function handleFix(check: ReadinessCheck): void {
   if (!check.fixPrompt) return;
   const project = appState.activeProject;
   if (!project) return;
+  const providerId = resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
 
-  const session = appState.addPlanSession(project.id, `Fix: ${check.name}`);
+  const session = appState.addPlanSession(project.id, `Fix: ${check.name}`, providerId);
   if (!session) return;
 
   closeReadinessModal();
