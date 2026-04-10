@@ -8,10 +8,11 @@
 
 /* Tab bar */
 #tab-bar {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  padding: 7px 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     linear-gradient(180deg, color-mix(in srgb, var(--tab-inactive) 82%, black), var(--surface-muted));
@@ -36,6 +37,38 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.command-deck-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#workspace-spend {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.workspace-spend-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.workspace-spend-value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 #tab-list {
@@ -235,6 +268,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  justify-content: flex-end;
 }
 
 .icon-btn {

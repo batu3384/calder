@@ -1,8 +1,8 @@
 /* Sidebar */
 #sidebar {
-  width: 236px;
-  min-width: 176px;
-  max-width: 540px;
+  width: 218px;
+  min-width: 168px;
+  max-width: 320px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 92%, black), var(--surface-muted));
@@ -90,10 +90,8 @@
 #sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 12px 10px 14px;
+  display: block;
 }
 
 #sidebar-footer {
@@ -126,33 +124,18 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .sidebar-cluster {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: none;
 }
 
 .sidebar-cluster-title {
-  padding: 0 4px;
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  display: none;
 }
 
 .sidebar-cluster-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar-cluster-controls:not(:has(#config-sections:not(.hidden):not(:empty))),
-.sidebar-cluster-signals:not(:has(#readiness-section:not(.hidden):not(:empty), #git-panel:not(.hidden):not(:empty), #session-history:not(.hidden):not(:empty))) {
   display: none;
 }
 
