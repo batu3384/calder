@@ -382,7 +382,12 @@ export function registerIpcHandlers(): void {
       }
       let files: string[];
       try {
-        const output = execSync('git ls-files --cached --others --exclude-standard', { cwd: resolvedCwd, encoding: 'utf-8', timeout: 5000 });
+        const output = execSync('git ls-files --cached --others --exclude-standard', {
+          cwd: resolvedCwd,
+          encoding: 'utf-8',
+          timeout: 5000,
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
         files = output.split('\n').filter(Boolean);
       } catch {
         // Not a git repo — fallback to recursive readdir with depth limit

@@ -12,6 +12,27 @@ const EXPECTED_HOOK_EVENTS = [
   'PostToolUseFailure', 'Stop', 'StopFailure', 'PermissionRequest',
 ];
 
+function warnSettingsInstallFailure(step: 'hooks' | 'statusLine', error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  console.warn(`Failed to install Claude ${step} settings: ${message}`);
+}
+
+function tryInstallHooksOnly(): void {
+  try {
+    installHooksOnly();
+  } catch (error) {
+    warnSettingsInstallFailure('hooks', error);
+  }
+}
+
+function tryInstallStatusLine(): void {
+  try {
+    installStatusLine();
+  } catch (error) {
+    warnSettingsInstallFailure('statusLine', error);
+  }
+}
+
 function readClaudeSettings(): Record<string, unknown> {
   return readJsonSafe(path.join(homedir(), '.claude', 'settings.json')) ?? {};
 }
@@ -67,10 +88,10 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
   const validation = validateSettings();
 
   // Always install hooks (additive, non-destructive)
-  installHooksOnly();
+  tryInstallHooksOnly();
 
   if (validation.statusLine === 'calder' || validation.statusLine === 'missing') {
-    installStatusLine();
+    tryInstallStatusLine();
     return;
   }
 
@@ -79,7 +100,7 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
   const consent = state.preferences.statusLineConsent;
 
   if (consent === 'granted') {
-    installStatusLine();
+    tryInstallStatusLine();
     return;
   }
 
@@ -115,7 +136,7 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
   saveState(state);
 
   if (choice === 'replace') {
-    installStatusLine();
+    tryInstallStatusLine();
   }
 }
 
@@ -124,8 +145,8 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
  * Resets consent to granted since this is an explicit user action.
  */
 export function reinstallSettings(): void {
-  installHooksOnly();
-  installStatusLine();
+  tryInstallHooksOnly();
+  tryInstallStatusLine();
 
   const state = loadState();
   state.preferences.statusLineConsent = 'granted';

@@ -6,7 +6,12 @@ export { readFileSafe, fileExists, dirExists, readDirSafe } from '../fs-utils';
 
 export function getTrackedFiles(projectPath: string): string[] {
   try {
-    const output = execSync('git ls-files', { cwd: projectPath, encoding: 'utf-8', timeout: 5000 });
+    const output = execSync('git ls-files', {
+      cwd: projectPath,
+      encoding: 'utf-8',
+      timeout: 5000,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
     return output.split('\n').filter(Boolean);
   } catch {
     return [];
@@ -42,4 +47,3 @@ export function computeCategoryScore(checks: ReadinessCheck[]): number {
   const totalScore = checks.reduce((sum, c) => sum + c.score, 0);
   return totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
 }
-
