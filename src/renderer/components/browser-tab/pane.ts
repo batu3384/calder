@@ -38,6 +38,15 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const toolbar = document.createElement('div');
   toolbar.className = 'browser-tab-toolbar';
 
+  const toolbarNav = document.createElement('div');
+  toolbarNav.className = 'browser-toolbar-nav';
+
+  const toolbarAddress = document.createElement('div');
+  toolbarAddress.className = 'browser-toolbar-address';
+
+  const toolbarTools = document.createElement('div');
+  toolbarTools.className = 'browser-toolbar-tools';
+
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';
   backBtn.textContent = '\u25C0';
@@ -139,15 +148,21 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawBtn.textContent = 'Draw';
   drawBtn.title = 'Draw on page and send annotated screenshot to AI';
 
-  toolbar.appendChild(backBtn);
-  toolbar.appendChild(fwdBtn);
-  toolbar.appendChild(reloadBtn);
-  toolbar.appendChild(urlInput);
-  toolbar.appendChild(goBtn);
-  toolbar.appendChild(viewportWrapper);
-  toolbar.appendChild(inspectBtn);
-  toolbar.appendChild(recordBtn);
-  toolbar.appendChild(drawBtn);
+  toolbarNav.appendChild(backBtn);
+  toolbarNav.appendChild(fwdBtn);
+  toolbarNav.appendChild(reloadBtn);
+
+  toolbarAddress.appendChild(urlInput);
+  toolbarAddress.appendChild(goBtn);
+
+  toolbarTools.appendChild(viewportWrapper);
+  toolbarTools.appendChild(inspectBtn);
+  toolbarTools.appendChild(recordBtn);
+  toolbarTools.appendChild(drawBtn);
+
+  toolbar.appendChild(toolbarNav);
+  toolbar.appendChild(toolbarAddress);
+  toolbar.appendChild(toolbarTools);
   el.appendChild(toolbar);
 
   const viewportContainer = document.createElement('div');
@@ -161,26 +176,40 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   newTabPage.className = 'browser-new-tab-page';
   newTabPage.style.display = url ? 'none' : 'flex';
 
-  const ntpLogo = document.createElement('div');
-  ntpLogo.className = 'browser-ntp-logo';
-  ntpLogo.textContent = 'Calder';
-  newTabPage.appendChild(ntpLogo);
+  const ntpEyebrow = document.createElement('div');
+  ntpEyebrow.className = 'browser-ntp-eyebrow shell-kicker';
+  ntpEyebrow.textContent = 'Calder Workspace';
+  newTabPage.appendChild(ntpEyebrow);
+
+  const ntpTitle = document.createElement('div');
+  ntpTitle.className = 'browser-ntp-title';
+  ntpTitle.textContent = 'Inspect, annotate, and hand off live pages without leaving the session.';
+  newTabPage.appendChild(ntpTitle);
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Enter a URL above to start browsing';
+  ntpSubtitle.textContent = 'Open a local app, capture DOM context, or record a reproducible flow for a new Calder session.';
   newTabPage.appendChild(ntpSubtitle);
 
-  const ntpLinks = document.createElement('div');
-  ntpLinks.className = 'browser-ntp-links';
-  for (const port of ['localhost:3000', 'localhost:5173', 'localhost:8080', 'localhost:4200']) {
+  const ntpGrid = document.createElement('div');
+  ntpGrid.className = 'browser-ntp-grid';
+  const quickLinks = [
+    { port: 'localhost:3000', meta: 'Primary app' },
+    { port: 'localhost:5173', meta: 'Vite dev server' },
+    { port: 'localhost:8080', meta: 'API or legacy app' },
+    { port: 'localhost:4200', meta: 'Angular workspace' },
+  ];
+  for (const { port, meta } of quickLinks) {
     const btn = document.createElement('button');
     btn.className = 'browser-ntp-link';
-    btn.textContent = port;
+    btn.innerHTML = `
+      <span class="browser-ntp-link-label">${port}</span>
+      <span class="browser-ntp-link-meta">${meta}</span>
+    `;
     btn.addEventListener('click', () => navigateTo(instance, port));
-    ntpLinks.appendChild(btn);
+    ntpGrid.appendChild(btn);
   }
-  newTabPage.appendChild(ntpLinks);
+  newTabPage.appendChild(ntpGrid);
 
   viewportContainer.appendChild(newTabPage);
 
