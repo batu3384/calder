@@ -10,6 +10,7 @@ describe('layout stylesheet contract', () => {
     expect(imports).toContain("./styles/context-inspector.css");
     expect(tabsCss).toContain('.command-deck-status');
     expect(tabsCss).toContain('.workspace-spend-value');
+    expect(tabsCss).toContain('.session-launcher-group');
     expect(railCss).toContain('#sidebar-content');
   });
 });

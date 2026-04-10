@@ -16,5 +16,6 @@ describe('tab bar command deck contract', () => {
     expect(source).toContain('session-provider-slot');
     expect(source).toContain('renderSessionProviderSelector');
     expect(source).toContain('resolvePreferredProviderForLaunch');
+    expect(source).toContain('syncQuickSessionButtonMeta');
   });
 });

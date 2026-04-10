@@ -138,13 +138,22 @@ function destroySessionProviderSelector(): void {
   sessionProviderSlotEl.hidden = true;
 }
 
+function syncQuickSessionButtonMeta(providerId: ProviderId): void {
+  const snapshot = getProviderAvailabilitySnapshot();
+  const providerLabel = snapshot?.providers.find(provider => provider.id === providerId)?.displayName ?? providerId;
+  btnAddSession.title = `New ${providerLabel} Session (Ctrl+Shift+N)`;
+  btnAddSession.setAttribute('aria-label', `Create new ${providerLabel} session`);
+}
+
 function renderSessionProviderSelector(): void {
   const snapshot = getProviderAvailabilitySnapshot();
   destroySessionProviderSelector();
 
+  const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
+  syncQuickSessionButtonMeta(selectedProvider);
+
   if (!shouldRenderInlineProviderSelector(snapshot)) return;
 
-  const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
   const select = createCustomSelect(
     'command-deck-provider',
     snapshot.providers.map(provider => {
@@ -161,7 +170,9 @@ function renderSessionProviderSelector(): void {
 
   const hiddenInput = select.element.querySelector('#command-deck-provider') as HTMLInputElement | null;
   hiddenInput?.addEventListener('change', () => {
-    appState.setPreference('defaultProvider', hiddenInput.value as ProviderId);
+    const providerId = hiddenInput.value as ProviderId;
+    syncQuickSessionButtonMeta(providerId);
+    appState.setPreference('defaultProvider', providerId);
   });
 
   sessionProviderSlotEl.hidden = false;
