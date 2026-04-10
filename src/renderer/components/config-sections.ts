@@ -3,6 +3,13 @@ import { showMcpAddModal } from './mcp-add-modal.js';
 import type { ProviderConfig, ProviderId, McpServer, Agent, Skill, Command } from '../types.js';
 
 const collapsed: Record<string, boolean> = {};
+type ToolchainSection = {
+  id: string;
+  title: string;
+  items: HTMLElement[];
+  count: number;
+  onAdd?: () => void;
+};
 
 export function scopeBadge(scope: 'user' | 'project'): string {
   return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
@@ -130,6 +137,54 @@ function esc(s: string): string {
   return d.innerHTML;
 }
 
+function providerLabel(providerId: ProviderId): string {
+  switch (providerId) {
+    case 'codex': return 'Codex CLI';
+    case 'claude': return 'Claude Code';
+    case 'copilot': return 'GitHub Copilot';
+    case 'gemini': return 'Gemini CLI';
+    default: return providerId;
+  }
+}
+
+function renderToolchainSummary(providerId: ProviderId, sections: ToolchainSection[]): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'toolchain-summary';
+
+  const provider = document.createElement('div');
+  provider.className = 'toolchain-provider';
+  provider.innerHTML = `
+    <span class="toolchain-provider-kicker">Active provider</span>
+    <span class="toolchain-provider-value">${esc(providerLabel(providerId))}</span>
+  `;
+  wrap.appendChild(provider);
+
+  const chips = document.createElement('div');
+  chips.className = 'toolchain-summary-chips';
+
+  const visibleCounts = sections.filter((section) => section.count > 0);
+  if (visibleCounts.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'toolchain-summary-empty';
+    empty.textContent = 'No active toolchain items yet';
+    wrap.appendChild(empty);
+    return wrap;
+  }
+
+  for (const section of visibleCounts) {
+    const chip = document.createElement('div');
+    chip.className = 'toolchain-summary-chip control-chip';
+    chip.innerHTML = `
+      <span class="toolchain-summary-chip-label">${esc(section.title)}</span>
+      <span class="toolchain-summary-chip-value">${section.count}</span>
+    `;
+    chips.appendChild(chip);
+  }
+
+  wrap.appendChild(chips);
+  return wrap;
+}
+
 function applyVisibility(): void {
   const container = document.getElementById('config-sections');
   if (!container) return;
@@ -178,35 +233,47 @@ async function refresh(): Promise<void> {
   }
 
   container.innerHTML = '';
-
-  container.appendChild(renderSection(
-    'mcp',
-    'Integrations',
-    config.mcpServers.map(mcpItem),
-    config.mcpServers.length,
-    providerId === 'claude' ? () => showMcpAddModal(() => refresh()) : undefined,
-  ));
-
-  container.appendChild(renderSection(
-    'agents',
-    'Agents',
-    config.agents.map(agentItem),
-    config.agents.length,
-  ));
-
-  container.appendChild(renderSection(
-    'skills',
-    'Skills Library',
-    config.skills.map(skillItem),
-    config.skills.length,
-  ));
+  const sections: ToolchainSection[] = [
+    {
+      id: 'mcp',
+      title: 'Integrations',
+      items: config.mcpServers.map(mcpItem),
+      count: config.mcpServers.length,
+      onAdd: providerId === 'claude' ? () => showMcpAddModal(() => refresh()) : undefined,
+    },
+    {
+      id: 'agents',
+      title: 'Agents',
+      items: config.agents.map(agentItem),
+      count: config.agents.length,
+    },
+    {
+      id: 'skills',
+      title: 'Skills Library',
+      items: config.skills.map(skillItem),
+      count: config.skills.length,
+    },
+  ];
 
   if (providerId !== 'codex') {
+    sections.push({
+      id: 'commands',
+      title: 'Custom Commands',
+      items: config.commands.map(commandItem),
+      count: config.commands.length,
+    });
+  }
+
+  container.appendChild(renderToolchainSummary(providerId, sections));
+
+  const visibleSections = sections.filter((section) => section.count > 0 || !!section.onAdd);
+  for (const section of visibleSections) {
     container.appendChild(renderSection(
-      'commands',
-      'Custom Commands',
-      config.commands.map(commandItem),
-      config.commands.length,
+      section.id,
+      section.title,
+      section.items,
+      section.count,
+      section.onAdd,
     ));
   }
 }

@@ -79,6 +79,68 @@
   gap: 8px;
 }
 
+#context-inspector .toolchain-summary {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: calc(var(--radius-md) + 2px);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+#context-inspector .toolchain-provider {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+#context-inspector .toolchain-provider-kicker {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+#context-inspector .toolchain-provider-value {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+#context-inspector .toolchain-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#context-inspector .toolchain-summary-chip {
+  padding-right: 8px;
+}
+
+#context-inspector .toolchain-summary-chip-label {
+  color: var(--text-secondary);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+#context-inspector .toolchain-summary-chip-value {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#context-inspector .toolchain-summary-empty {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 #context-inspector .config-section,
 #context-inspector .history-body {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
