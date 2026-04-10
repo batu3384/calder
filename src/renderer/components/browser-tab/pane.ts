@@ -46,31 +46,37 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
+  toolbarTools.setAttribute('aria-label', 'Browser workspace tools');
 
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';
   backBtn.textContent = '\u25C0';
   backBtn.title = 'Back';
+  backBtn.ariaLabel = 'Go back';
 
   const fwdBtn = document.createElement('button');
   fwdBtn.className = 'browser-nav-btn';
   fwdBtn.textContent = '\u25B6';
   fwdBtn.title = 'Forward';
+  fwdBtn.ariaLabel = 'Go forward';
 
   const reloadBtn = document.createElement('button');
   reloadBtn.className = 'browser-nav-btn browser-reload-btn';
   reloadBtn.textContent = '\u21BB';
   reloadBtn.title = 'Reload';
+  reloadBtn.ariaLabel = 'Reload page';
 
   const urlInput = document.createElement('input');
   urlInput.className = 'browser-url-input';
   urlInput.type = 'text';
   urlInput.placeholder = 'Enter URL (e.g. localhost:3000)';
   urlInput.value = url || '';
+  urlInput.ariaLabel = 'Browser address';
 
   const goBtn = document.createElement('button');
   goBtn.className = 'browser-go-btn';
   goBtn.textContent = 'Go';
+  goBtn.ariaLabel = 'Open address';
 
   // Viewport picker button + dropdown
   const viewportWrapper = document.createElement('div');
@@ -80,6 +86,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportBtn.className = 'browser-viewport-btn';
   viewportBtn.textContent = 'Responsive';
   viewportBtn.title = 'Change viewport size';
+  viewportBtn.ariaLabel = 'Change viewport size';
 
   const viewportDropdown = document.createElement('div');
   viewportDropdown.className = 'browser-viewport-dropdown';
@@ -137,16 +144,19 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const inspectBtn = document.createElement('button');
   inspectBtn.className = 'browser-inspect-btn';
   inspectBtn.textContent = 'Inspect Element';
+  inspectBtn.ariaLabel = 'Inspect element';
 
   const recordBtn = document.createElement('button');
   recordBtn.className = 'browser-record-btn';
   recordBtn.textContent = '\u25CF Record';
   recordBtn.title = 'Record browser flow';
+  recordBtn.ariaLabel = 'Record browser flow';
 
   const drawBtn = document.createElement('button');
   drawBtn.className = 'browser-draw-btn';
   drawBtn.textContent = 'Draw';
   drawBtn.title = 'Draw on page and send annotated screenshot to AI';
+  drawBtn.ariaLabel = 'Draw on page';
 
   toolbarNav.appendChild(backBtn);
   toolbarNav.appendChild(fwdBtn);
@@ -188,8 +198,34 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Open a local app, capture DOM context, or record a reproducible flow for a new Calder session.';
+  ntpSubtitle.textContent = 'Open a local target, capture interface context, then hand the page off to a focused Calder session.';
   newTabPage.appendChild(ntpSubtitle);
+
+  const ntpCapabilities = document.createElement('div');
+  ntpCapabilities.className = 'browser-ntp-capabilities';
+  for (const label of ['Inspect DOM', 'Annotate visually', 'Record flow']) {
+    const chip = document.createElement('span');
+    chip.className = 'browser-ntp-capability control-chip';
+    chip.textContent = label;
+    ntpCapabilities.appendChild(chip);
+  }
+  newTabPage.appendChild(ntpCapabilities);
+
+  const ntpLayout = document.createElement('div');
+  ntpLayout.className = 'browser-ntp-layout';
+
+  const ntpTargets = document.createElement('section');
+  ntpTargets.className = 'browser-ntp-panel browser-ntp-targets';
+
+  const ntpTargetsTitle = document.createElement('div');
+  ntpTargetsTitle.className = 'browser-ntp-section-title shell-kicker';
+  ntpTargetsTitle.textContent = 'Common local targets';
+  ntpTargets.appendChild(ntpTargetsTitle);
+
+  const ntpTargetsText = document.createElement('div');
+  ntpTargetsText.className = 'browser-ntp-section-copy';
+  ntpTargetsText.textContent = 'Use these shortcuts for the most common dev servers, or type any custom address in the bar above.';
+  ntpTargets.appendChild(ntpTargetsText);
 
   const ntpGrid = document.createElement('div');
   ntpGrid.className = 'browser-ntp-grid';
@@ -209,7 +245,41 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     btn.addEventListener('click', () => navigateTo(instance, port));
     ntpGrid.appendChild(btn);
   }
-  newTabPage.appendChild(ntpGrid);
+  ntpTargets.appendChild(ntpGrid);
+
+  const ntpWorkflow = document.createElement('section');
+  ntpWorkflow.className = 'browser-ntp-panel browser-ntp-workflow';
+
+  const ntpWorkflowTitle = document.createElement('div');
+  ntpWorkflowTitle.className = 'browser-ntp-section-title shell-kicker';
+  ntpWorkflowTitle.textContent = 'Calder flow';
+  ntpWorkflow.appendChild(ntpWorkflowTitle);
+
+  const ntpWorkflowList = document.createElement('div');
+  ntpWorkflowList.className = 'browser-ntp-flow';
+  const flowSteps = [
+    ['01', 'Open a local surface', 'Start with a running app, localhost target, or any manual URL.'],
+    ['02', 'Capture what matters', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
+    ['03', 'Hand off to AI', 'Send the page context into a new or custom session without leaving the workspace.'],
+  ] as const;
+
+  for (const [index, title, copy] of flowSteps) {
+    const step = document.createElement('div');
+    step.className = 'browser-ntp-flow-step';
+    step.innerHTML = `
+      <span class="browser-ntp-flow-index">${index}</span>
+      <div class="browser-ntp-flow-copy">
+        <div class="browser-ntp-flow-title">${title}</div>
+        <div class="browser-ntp-flow-text">${copy}</div>
+      </div>
+    `;
+    ntpWorkflowList.appendChild(step);
+  }
+  ntpWorkflow.appendChild(ntpWorkflowList);
+
+  ntpLayout.appendChild(ntpTargets);
+  ntpLayout.appendChild(ntpWorkflow);
+  newTabPage.appendChild(ntpLayout);
 
   viewportContainer.appendChild(newTabPage);
 

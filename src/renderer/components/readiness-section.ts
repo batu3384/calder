@@ -81,11 +81,21 @@ function render(): void {
   const header = document.createElement('div');
   header.className = 'config-section-header';
 
-  const toggleSpan = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>`;
-  const scoreBadge = result
-    ? `<span class="readiness-badge control-chip" style="background:${scoreColor(result.overallScore)}">${result.overallScore}%</span>`
-    : '';
-  header.innerHTML = `${toggleSpan}<span class="config-section-title">AI Readiness</span>${scoreBadge}`;
+  const heading = document.createElement('div');
+  heading.className = 'config-section-heading readiness-header-main';
+  heading.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">AI Readiness</span>`;
+  header.appendChild(heading);
+
+  const actions = document.createElement('div');
+  actions.className = 'config-section-meta readiness-header-actions';
+
+  if (result) {
+    const badge = document.createElement('span');
+    badge.className = 'readiness-badge control-chip';
+    badge.textContent = `${result.overallScore}%`;
+    badge.style.background = scoreColor(result.overallScore);
+    actions.appendChild(badge);
+  }
 
   // Scan/Rescan button
   const scanBtn = document.createElement('button');
@@ -96,7 +106,8 @@ function render(): void {
     e.stopPropagation();
     runScan();
   });
-  header.appendChild(scanBtn);
+  actions.appendChild(scanBtn);
+  header.appendChild(actions);
 
   const body = document.createElement('div');
   body.className = `config-section-body${collapsed ? ' hidden' : ''}`;

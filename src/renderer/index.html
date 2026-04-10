@@ -14,23 +14,33 @@
     <div id="sidebar">
       <div id="sidebar-header">
         <div class="sidebar-title-group">
-          <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" style="font-size:13px;">&#x25E7;</button>
+          <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar" style="font-size:13px;">&#x25E7;</button>
           <div class="sidebar-brand-block">
             <span class="sidebar-eyebrow">Calder</span>
             <span class="sidebar-title">Projects</span>
           </div>
         </div>
         <div class="sidebar-header-actions">
-          <button id="btn-preferences" class="icon-btn" title="Preferences">&#x2699;</button>
-          <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)">+</button>
+          <button id="btn-preferences" class="icon-btn" title="Preferences" aria-label="Open preferences">&#x2699;</button>
+          <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)" aria-label="Create new project">+</button>
         </div>
       </div>
       <div id="sidebar-content">
         <div id="project-list"></div>
-        <div id="config-sections"></div>
-        <div id="readiness-section"></div>
-        <div id="git-panel"></div>
-        <div id="session-history"></div>
+        <section class="sidebar-cluster sidebar-cluster-controls">
+          <div class="sidebar-cluster-title">Workspace Controls</div>
+          <div class="sidebar-cluster-body">
+            <div id="config-sections"></div>
+          </div>
+        </section>
+        <section class="sidebar-cluster sidebar-cluster-signals">
+          <div class="sidebar-cluster-title">Project Signals</div>
+          <div class="sidebar-cluster-body">
+            <div id="readiness-section"></div>
+            <div id="git-panel"></div>
+            <div id="session-history"></div>
+          </div>
+        </section>
       </div>
       <div id="sidebar-footer"></div>
     </div>
@@ -43,12 +53,12 @@
         <div class="tab-bar-meta">
           <div id="git-status"></div>
           <div id="tab-actions">
-            <button id="btn-help" class="icon-btn" title="Session Indicators Help (F1)" style="font-size:13px;">?</button>
-            <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)" style="font-size:12px;">&#x2261;</button>
-            <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+`)" style="font-size:13px;">&#x2588;</button>
-            <button id="btn-add-mcp-inspector" class="icon-btn" title="MCP Inspector" style="font-size:11px;font-weight:600;">MCP</button>
-            <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\)">&#x229E;</button>
-            <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)">+</button>
+            <button id="btn-help" class="icon-btn" title="Session Indicators Help (F1)" aria-label="Open session indicators help" style="font-size:13px;">?</button>
+            <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)" aria-label="Open usage stats" style="font-size:12px;">&#x2261;</button>
+            <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+`)" aria-label="Toggle terminal" style="font-size:13px;">&#x2588;</button>
+            <button id="btn-add-mcp-inspector" class="icon-btn" title="MCP Inspector" aria-label="Open MCP inspector" style="font-size:11px;font-weight:600;">MCP</button>
+            <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\)" aria-label="Toggle swarm mode">&#x229E;</button>
+            <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
           </div>
         </div>
       </div>

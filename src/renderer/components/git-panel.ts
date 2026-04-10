@@ -129,6 +129,26 @@ function shortPath(fullPath: string): string {
   return parts.length > 2 ? '.../' + parts.slice(-2).join('/') : fullPath;
 }
 
+function updateGitHeader(header: HTMLElement, total: number, headerSuffix: string): void {
+  header.innerHTML = '';
+
+  const heading = document.createElement('div');
+  heading.className = 'config-section-heading';
+  heading.innerHTML = `
+    <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
+    <span class="config-section-title">Git Changes${headerSuffix}</span>
+  `;
+  header.appendChild(heading);
+
+  const meta = document.createElement('div');
+  meta.className = 'config-section-meta';
+  const count = document.createElement('span');
+  count.className = 'config-section-count control-chip';
+  count.textContent = String(total);
+  meta.appendChild(count);
+  header.appendChild(meta);
+}
+
 function renderWorktreeSelector(container: HTMLElement, project: { id: string; path: string }): void {
   const worktrees = getWorktrees(project.id);
   // Remove existing selector
@@ -222,15 +242,13 @@ async function refresh(): Promise<void> {
     }
   }
 
-  const headerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>Git Changes${headerSuffix}<span class="config-section-count">${total}</span>`;
-
   // Try to update existing section in-place instead of rebuilding
   const existingSection = container.querySelector('.config-section');
   if (existingSection) {
     // Update header in-place
     const existingHeader = existingSection.querySelector('.config-section-header');
     if (existingHeader) {
-      existingHeader.innerHTML = headerHTML;
+      updateGitHeader(existingHeader as HTMLElement, total, headerSuffix);
     }
 
     // Update worktree selector
@@ -255,7 +273,7 @@ async function refresh(): Promise<void> {
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
-  header.innerHTML = headerHTML;
+  updateGitHeader(header, total, headerSuffix);
 
   const body = document.createElement('div');
   body.className = `config-section-body${collapsed ? ' hidden' : ''}`;

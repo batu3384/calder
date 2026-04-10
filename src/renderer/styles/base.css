@@ -28,6 +28,10 @@
   --warning: #d7a65b;
   --info: #6ca5ea;
   --danger: #ef6879;
+  --git-added: #61b88b;
+  --git-modified: #d7a65b;
+  --git-renamed: #6ca5ea;
+  --git-conflicted: #e88c52;
   --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.26);
   --shadow-elevated: 0 26px 72px rgba(0, 0, 0, 0.4);
   --radius-xs: 5px;

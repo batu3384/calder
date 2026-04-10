@@ -1,11 +1,11 @@
-import { app, Menu, BrowserWindow } from 'electron';
+import { Menu, BrowserWindow } from 'electron';
 import { isMac } from './platform';
 
 export function createAppMenu(debugMode = false): void {
 
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac ? [{
-      label: app.name,
+      label: 'Calder',
       submenu: [
         { role: 'about' as const },
         { type: 'separator' as const },

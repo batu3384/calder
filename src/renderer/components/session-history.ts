@@ -96,12 +96,12 @@ function onHistoryChanged(): void {
     if (countEl) {
       countEl.textContent = String(history.length);
     } else if (history.length > 0) {
-      const header = container.querySelector('.config-section-header');
-      if (header) {
+      const headerMeta = container.querySelector('.config-section-meta');
+      if (headerMeta) {
         const span = document.createElement('span');
-        span.className = 'config-section-count';
+        span.className = 'config-section-count control-chip';
         span.textContent = String(history.length);
-        header.appendChild(span);
+        headerMeta.appendChild(span);
       }
     }
     renderList(history);
@@ -127,11 +127,25 @@ function render(): void {
   // Header
   const header = document.createElement('div');
   header.className = 'config-section-header';
-  header.innerHTML = `
+
+  const heading = document.createElement('div');
+  heading.className = 'config-section-heading';
+  heading.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span>History</span>
-    ${history.length > 0 ? `<span class="config-section-count">${history.length}</span>` : ''}
+    <span class="config-section-title">History</span>
   `;
+  header.appendChild(heading);
+
+  const meta = document.createElement('div');
+  meta.className = 'config-section-meta';
+  if (history.length > 0) {
+    const count = document.createElement('span');
+    count.className = 'config-section-count control-chip';
+    count.textContent = String(history.length);
+    meta.appendChild(count);
+  }
+  header.appendChild(meta);
+
   header.addEventListener('click', () => {
     collapsed = !collapsed;
     render();
@@ -157,6 +171,7 @@ function render(): void {
   searchInput.className = 'history-search';
   searchInput.type = 'text';
   searchInput.placeholder = 'Filter history...';
+  searchInput.ariaLabel = 'Filter session history';
   searchInput.addEventListener('input', () => renderList(history));
   body.appendChild(searchInput);
 
@@ -176,6 +191,7 @@ function render(): void {
   const clearBtn = document.createElement('button');
   clearBtn.className = 'history-clear-btn';
   clearBtn.textContent = 'Clear History';
+  clearBtn.ariaLabel = 'Clear session history';
   clearBtn.addEventListener('click', () => {
     if (!project) return;
     appState.clearSessionHistory(project.id);
@@ -257,6 +273,7 @@ function renderList(history: ArchivedSession[]): void {
     bookmarkBtn.className = `history-bookmark-btn${archived.bookmarked ? ' bookmarked' : ''}`;
     bookmarkBtn.innerHTML = archived.bookmarked ? '&#9733;' : '&#9734;';
     bookmarkBtn.title = archived.bookmarked ? 'Remove bookmark' : 'Bookmark session';
+    bookmarkBtn.ariaLabel = archived.bookmarked ? 'Remove bookmark' : 'Bookmark session';
     bookmarkBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const project = appState.activeProject;
@@ -270,6 +287,7 @@ function renderList(history: ArchivedSession[]): void {
     removeBtn.className = 'history-remove-btn';
     removeBtn.innerHTML = '&times;';
     removeBtn.title = 'Remove from history';
+    removeBtn.ariaLabel = 'Remove from history';
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const project = appState.activeProject;

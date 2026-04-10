@@ -16,11 +16,22 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
-  header.innerHTML = `
+
+  const heading = document.createElement('div');
+  heading.className = 'config-section-heading';
+  heading.innerHTML = `
     <span class="config-section-toggle ${isCollapsed ? 'collapsed' : ''}">&#x25BC;</span>
     <span class="config-section-title">${title}</span>
-    <span class="config-section-count control-chip">${count}</span>
   `;
+  header.appendChild(heading);
+
+  const meta = document.createElement('div');
+  meta.className = 'config-section-meta';
+
+  const countBadge = document.createElement('span');
+  countBadge.className = 'config-section-count control-chip';
+  countBadge.textContent = String(count);
+  meta.appendChild(countBadge);
 
   if (onAdd) {
     const addBtn = document.createElement('button');
@@ -28,8 +39,9 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
     addBtn.textContent = '+';
     addBtn.title = `Add ${title.replace(/s$/, '')}`;
     addBtn.addEventListener('click', (e) => { e.stopPropagation(); onAdd(); });
-    header.appendChild(addBtn);
+    meta.appendChild(addBtn);
   }
+  header.appendChild(meta);
 
   const body = document.createElement('div');
   body.className = `config-section-body${isCollapsed ? ' hidden' : ''}`;

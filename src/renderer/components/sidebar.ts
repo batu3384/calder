@@ -14,8 +14,9 @@ const resizeHandle = document.getElementById('sidebar-resize-handle')!;
 const sidebarFooterEl = document.getElementById('sidebar-footer')!;
 const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
 
-const SIDEBAR_MIN = 150;
-const SIDEBAR_MAX = 500;
+const SIDEBAR_DEFAULT = 236;
+const SIDEBAR_MIN = 176;
+const SIDEBAR_MAX = 540;
 
 export function toggleSidebar(): void {
   appState.toggleSidebar();
@@ -33,9 +34,8 @@ export function initSidebar(): void {
   btnToggleSidebar.addEventListener('click', toggleSidebar);
   initResizeHandle();
   appState.on('state-loaded', () => {
-    if (appState.sidebarWidth) {
-      sidebarEl.style.width = appState.sidebarWidth + 'px';
-    }
+    const preferredWidth = appState.sidebarWidth || SIDEBAR_DEFAULT;
+    sidebarEl.style.width = Math.max(SIDEBAR_DEFAULT, preferredWidth) + 'px';
     applySidebarCollapsed();
     render();
   });

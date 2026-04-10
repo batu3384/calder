@@ -92,14 +92,15 @@
   color: #fff;
   padding: 0 10px;
   border-radius: 999px;
-  margin-left: 6px;
   line-height: 24px;
   vertical-align: middle;
 }
 
+.readiness-header-actions {
+  gap: 6px;
+}
 
 .readiness-scan-btn {
-  margin-left: auto;
   min-height: var(--control-height-sm);
   background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   border: 1px solid var(--border-strong);
@@ -132,7 +133,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   font-size: 12px;
   border-radius: var(--radius-sm);
 }
@@ -142,8 +143,8 @@
 }
 
 .readiness-category-name {
-  flex-shrink: 0;
-  min-width: 90px;
+  flex: 0 1 96px;
+  min-width: 72px;
   color: var(--text-secondary);
 }
 

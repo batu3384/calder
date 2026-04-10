@@ -13,6 +13,8 @@ import { isMac } from './platform';
 
 let mainWindow: BrowserWindow | null = null;
 
+app.setName('Calder');
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1400,
