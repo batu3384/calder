@@ -286,7 +286,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const flowSteps = [
     ['01', 'Open a local surface', 'Start with a running app, localhost target, or any manual URL.'],
     ['02', 'Capture what matters', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
-    ['03', 'Hand off to AI', 'Send the page context into a new or custom session without leaving the workspace.'],
+    ['03', 'Hand off to session', 'Send the page context into a new or custom session without leaving the workspace.'],
   ] as const;
 
   for (const [index, title, copy] of flowSteps) {
@@ -336,7 +336,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to AI';
+  submitBtn.textContent = 'Send to Session';
 
   const customBtn = document.createElement('button');
   customBtn.className = 'inspect-dropdown-btn';
@@ -390,7 +390,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const drawSubmitBtn = document.createElement('button');
   drawSubmitBtn.className = 'inspect-submit-btn';
-  drawSubmitBtn.textContent = 'Send to AI';
+  drawSubmitBtn.textContent = 'Send to Session';
 
   const drawCustomBtn = document.createElement('button');
   drawCustomBtn.className = 'inspect-dropdown-btn';
@@ -464,7 +464,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const flowSubmitBtn = document.createElement('button');
   flowSubmitBtn.className = 'inspect-submit-btn';
-  flowSubmitBtn.textContent = 'Send to AI';
+  flowSubmitBtn.textContent = 'Send to Session';
 
   const flowCustomBtn = document.createElement('button');
   flowCustomBtn.className = 'inspect-dropdown-btn';

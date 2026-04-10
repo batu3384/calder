@@ -22,13 +22,13 @@ export function initSettingsGuard(): void {
 
     let message: string;
     if (hasStatusLineIssue && hasHooksIssue) {
-      message = 'Calder settings are missing from Claude Code. Cost tracking and session activity may not work.';
+      message = 'Calder integration is incomplete for the active coding tool. Cost tracking and session activity may not work.';
     } else if (hasStatusLineIssue) {
       message = data.statusLine === 'foreign'
-        ? 'Another tool has overwritten Calder\'s statusLine setting. Cost tracking is unavailable.'
-        : 'Cost tracking is unavailable \u2014 Calder\'s statusLine setting is not configured in Claude Code.';
+        ? 'Another tool has overwritten Calder\'s status line integration. Cost tracking is unavailable.'
+        : 'Cost tracking is unavailable \u2014 Calder\'s status line integration is not configured for the active coding tool.';
     } else {
-      message = 'Some session tracking hooks are missing from Claude Code settings. Activity tracking may not work.';
+      message = 'Some session tracking hooks are missing from the active coding tool settings. Activity tracking may not work.';
     }
 
     showAlertBanner({

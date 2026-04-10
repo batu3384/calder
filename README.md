@@ -15,7 +15,7 @@
 
 <p align="center">
   <strong>The IDE built for AI coding agents.</strong><br/>
-  Manage multiple agent sessions, run them in parallel, track costs, and never lose context — with Claude Code, Codex CLI, and Gemini CLI.
+  Manage multiple agent sessions, run them in parallel, track costs, and never lose context — across modern AI coding CLIs.
 </p>
 
 ---

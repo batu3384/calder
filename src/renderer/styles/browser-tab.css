@@ -729,7 +729,7 @@ body.sidebar-resizing .browser-webview {
   border-color: var(--accent);
 }
 
-/* Split button: Send to AI + dropdown arrow */
+/* Split button: Send to Session + dropdown arrow */
 .inspect-submit-group {
   display: flex;
   position: relative;

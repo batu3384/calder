@@ -232,10 +232,10 @@ export function showPreferencesModal(): void {
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
       const toggles: { key: keyof typeof views; label: string }[] = [
-        { key: 'configSections', label: 'Context inspector: Capabilities' },
-        { key: 'readinessSection', label: 'Context inspector: AI Readiness' },
-        { key: 'gitPanel', label: 'Context inspector: Git' },
-        { key: 'sessionHistory', label: 'Context inspector: Session History' },
+        { key: 'configSections', label: 'Context inspector: Toolchain' },
+        { key: 'readinessSection', label: 'Context inspector: Readiness' },
+        { key: 'gitPanel', label: 'Context inspector: Workspace Changes' },
+        { key: 'sessionHistory', label: 'Context inspector: Session Archive' },
         { key: 'costFooter', label: 'Command deck: Workspace Spend chip' },
       ];
 

@@ -38,14 +38,14 @@ export function showStatusLineConflictModal(foreignCommand: string): Promise<'re
 
   body.innerHTML = `
     <p class="statusline-conflict-text">
-      Claude Code already has a <strong>statusLine</strong> setting configured by another tool.
+      The active coding tool already has a <strong>status line</strong> setting configured by another tool.
     </p>
     <div class="statusline-conflict-command">
-      <div class="statusline-conflict-command-label">Current statusLine</div>
+      <div class="statusline-conflict-command-label">Current status line</div>
       <code>${escapeHtml(foreignCommand)}</code>
     </div>
     <p class="statusline-conflict-text statusline-conflict-warning">
-      Calder needs its own statusLine for cost tracking and context window monitoring.
+      Calder needs its own status line integration for cost tracking and context window monitoring.
       If you keep the existing setting, these features will be unavailable.
     </p>`;
 

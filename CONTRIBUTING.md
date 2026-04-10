@@ -48,6 +48,6 @@ When filing a bug report, please include:
 
 - **OS version** (e.g., macOS 15.3)
 - **Calder version** (from the app's title bar or `package.json`)
-- **Claude Code CLI version** (`claude --version`)
+- **Installed CLI provider version(s)** (for example `claude --version`, `codex --version`, or `gemini --version`)
 - **Steps to reproduce**
 - **Expected vs actual behavior**

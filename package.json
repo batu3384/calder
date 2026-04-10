@@ -21,10 +21,11 @@
     "electron",
     "ide",
     "terminal",
-    "claude",
-    "claude-code",
     "ai",
-    "developer-tools"
+    "developer-tools",
+    "coding-agents",
+    "terminal-ide",
+    "multi-session"
   ],
   "files": [
     "bin/",
