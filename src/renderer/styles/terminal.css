@@ -92,6 +92,7 @@
   display: flex;
   flex-direction: column;
   background:
+    radial-gradient(circle at top left, rgba(233, 69, 96, 0.08), transparent 26%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 92%, black);
   box-shadow:
@@ -110,6 +111,61 @@
     0 20px 46px rgba(0, 0, 0, 0.2);
 }
 
+.terminal-pane-chrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+  user-select: none;
+}
+
+.terminal-pane-provider {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-soft) 48%, transparent);
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.terminal-pane-workspace {
+  min-width: 0;
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-pane-session {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.terminal-pane.focused .terminal-pane-chrome {
+  border-bottom-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 26%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+}
+
 .terminal-pane.swarm-unread {
   border-color: var(--accent);
 }
@@ -118,11 +174,12 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
 }
 
 .terminal-pane .xterm {
   height: 100%;
-  padding: 8px;
+  padding: 10px 10px 8px;
 }
 
 .terminal-pane.hidden {
@@ -135,7 +192,7 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 92%, black);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   color: var(--text-secondary);
   font-size: 11px;
   line-height: 26px;

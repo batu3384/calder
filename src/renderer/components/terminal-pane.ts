@@ -33,6 +33,22 @@ interface TerminalInstance {
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
 
+function providerDisplayName(providerId: ProviderId): string {
+  switch (providerId) {
+    case 'codex': return 'Codex CLI';
+    case 'claude': return 'Claude Code';
+    case 'copilot': return 'GitHub Copilot';
+    case 'gemini': return 'Gemini CLI';
+    default: return providerId;
+  }
+}
+
+function workspaceLabel(projectPath: string): string {
+  const normalized = projectPath.replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  return parts[parts.length - 1] || projectPath;
+}
+
 export function createTerminalPane(
   sessionId: string,
   projectPath: string,
@@ -49,6 +65,26 @@ export function createTerminalPane(
   const element = document.createElement('div');
   element.className = 'terminal-pane hidden';
   element.dataset.sessionId = sessionId;
+
+  const chrome = document.createElement('div');
+  chrome.className = 'terminal-pane-chrome';
+
+  const providerBadge = document.createElement('div');
+  providerBadge.className = 'terminal-pane-provider';
+  providerBadge.textContent = providerDisplayName(providerId);
+
+  const workspace = document.createElement('div');
+  workspace.className = 'terminal-pane-workspace';
+  workspace.textContent = workspaceLabel(projectPath);
+
+  const sessionState = document.createElement('div');
+  sessionState.className = 'terminal-pane-session';
+  sessionState.textContent = isResume ? 'Resumed session' : 'Live session';
+
+  chrome.appendChild(providerBadge);
+  chrome.appendChild(workspace);
+  chrome.appendChild(sessionState);
+  element.appendChild(chrome);
 
   const xtermWrap = document.createElement('div');
   xtermWrap.className = 'xterm-wrap';
