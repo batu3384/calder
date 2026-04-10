@@ -1,0 +1,327 @@
+/* Main area */
+#main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Tab bar */
+#tab-bar {
+  display: flex;
+  align-items: center;
+  background: var(--tab-inactive);
+  border-bottom: 1px solid var(--border);
+  height: 38px;
+  min-height: 38px;
+  user-select: none;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+}
+
+#tab-list {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
+}
+
+#tab-list::-webkit-scrollbar {
+  height: 2px;
+}
+
+#tab-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+  position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tab-item:hover {
+  background: var(--bg-hover);
+}
+
+.tab-item.active {
+  background: var(--tab-active);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.tab-item.unread .tab-name {
+  color: var(--accent);
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* Session status indicator */
+.tab-status {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.tab-status.working {
+  background: var(--accent);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.tab-status.waiting {
+  background: var(--warning);
+}
+
+.tab-status.completed {
+  background: var(--success);
+}
+
+.tab-status.input {
+  background: var(--warning);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.tab-status.idle {
+  background: var(--text-muted);
+}
+
+.tab-name input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font: inherit;
+  padding: 2px 6px;
+  outline: none;
+  width: 100%;
+  min-width: 40px;
+}
+
+.tab-cost {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.tab-cost:empty {
+  display: none;
+}
+
+.tab-close {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.tab-item:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  color: var(--accent);
+}
+
+/* Git status indicator */
+#git-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 11px;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+  cursor: pointer;
+  height: 100%;
+  border-left: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+#git-status:empty {
+  display: none;
+}
+
+#git-status .git-branch {
+  color: var(--text-secondary);
+}
+
+#git-status .git-ahead-behind {
+  color: var(--text-muted);
+}
+
+#git-status .git-staged {
+  color: var(--success);
+}
+
+#git-status .git-modified {
+  color: var(--warning);
+}
+
+#git-status .git-untracked {
+  color: var(--text-muted);
+}
+
+#git-status .git-conflicted {
+  color: var(--accent);
+}
+
+#tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+/* Tab context menu */
+.tab-context-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 160px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 6px 0;
+  box-shadow: var(--shadow-soft);
+}
+
+.tab-context-menu-item {
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.tab-context-menu-item:hover:not(.disabled):not(.active) {
+  background: var(--bg-hover);
+}
+
+.tab-context-menu-item.disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.tab-context-menu-item.active {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.tab-context-menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Branch search input */
+.branch-search-input {
+  -webkit-appearance: none;
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 7px 9px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.branch-search-input:focus {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.branch-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Scrollable branch list */
+.branch-list-container {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.branch-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.branch-list-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* Keyboard navigation highlight */
+.tab-context-menu-item.keyboard-active {
+  background: var(--bg-hover);
+}
+
+/* Tab drag reorder */
+.tab-item.dragging {
+  opacity: 0.4;
+}
+
+.tab-item.drag-over-left {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tab-item.drag-over-right {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
+/* Provider icon in tab */
+.tab-provider-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  border-radius: 3px;
+  margin-right: 2px;
+  position: relative;
+  top: -1px;
+}

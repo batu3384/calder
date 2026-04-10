@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.DS_Store
+
+*.tsbuildinfo
+coverage/
+
+# Environment files
+.env
+.env.*
+
+# IDE metadata
+.idea/
+.vscode/
+
+# Electron-builder output
+out/
+
+# Built distributables
+*.dmg
+*.AppImage
+*.deb
+*.snap
+
+# Log files
+*.log
+
+# Local brainstorming and UI inspection artifacts
+.superpowers/
+.tmp-home-ui/
+.tmp-ui/
