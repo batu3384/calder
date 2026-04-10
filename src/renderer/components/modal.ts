@@ -36,6 +36,7 @@ export function setModalError(fieldId: string, message: string): void {
 
 export function closeModal(): void {
   overlay.classList.add('hidden');
+  delete overlay.dataset.modalView;
   cleanup();
 }
 
@@ -46,6 +47,7 @@ export function showModal(
 ): void {
   titleEl.textContent = title;
   bodyEl.innerHTML = '';
+  overlay.dataset.modalView = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   for (const field of fields) {
     const div = document.createElement('div');
@@ -79,6 +81,7 @@ export function showModal(
       div.appendChild(label);
 
       if (field.buttonLabel && field.onButtonClick) {
+        div.classList.add('modal-field-has-action');
         const row = document.createElement('div');
         row.className = 'modal-field-row';
         row.appendChild(input);
@@ -160,4 +163,3 @@ function cleanup(): void {
     (overlay as any)._selectCleanups = null;
   }
 }
-

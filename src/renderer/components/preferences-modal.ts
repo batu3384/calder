@@ -28,6 +28,15 @@ export function showPreferencesModal(): void {
   const menu = document.createElement('div');
   menu.className = 'preferences-menu';
 
+  const menuHeader = document.createElement('div');
+  menuHeader.className = 'preferences-menu-header';
+  menuHeader.innerHTML = `
+    <div class="preferences-menu-kicker shell-kicker">Calder</div>
+    <div class="preferences-menu-title">Control Surface</div>
+    <div class="preferences-menu-caption">Workspace defaults, shell behavior, and ownership settings.</div>
+  `;
+  menu.appendChild(menuHeader);
+
   const sections: { id: Section; label: string }[] = [
     { id: 'general', label: 'General' },
     { id: 'sidebar', label: 'Sidebar' },
@@ -66,6 +75,17 @@ export function showPreferencesModal(): void {
   let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement; readinessSection: HTMLInputElement } | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
 
+  function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string) {
+    const intro = document.createElement('div');
+    intro.className = 'preferences-section-intro';
+    intro.innerHTML = `
+      <div class="preferences-section-eyebrow shell-kicker">${eyebrow}</div>
+      <div class="preferences-section-title">${title}</div>
+      <div class="preferences-section-description">${description}</div>
+    `;
+    container.appendChild(intro);
+  }
+
   function cleanupRecorder() {
     if (activeRecorder) {
       activeRecorder.cleanup();
@@ -84,6 +104,12 @@ export function showPreferencesModal(): void {
     }
 
     if (section === 'general') {
+      appendSectionIntro(
+        content,
+        'Defaults',
+        'General Workspace Behavior',
+        'Choose how Calder starts sessions, names work, and notifies you when a task needs attention.',
+      );
       // Default provider dropdown
       const providerRow = document.createElement('div');
       providerRow.className = 'modal-toggle-field';
@@ -198,6 +224,12 @@ export function showPreferencesModal(): void {
       content.appendChild(autoTitleRow);
 
     } else if (section === 'sidebar') {
+      appendSectionIntro(
+        content,
+        'Chrome',
+        'Sidebar Density And Surfaces',
+        'Decide which operational blocks stay visible in the left rail while preserving the existing workspace model.',
+      );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
       const toggles: { key: keyof typeof views; label: string }[] = [
         { key: 'configSections', label: 'Config Sections (MCP Servers, Agents, Skills, Commands)' },
@@ -229,12 +261,30 @@ export function showPreferencesModal(): void {
       sidebarCheckboxes = checkboxes as typeof sidebarCheckboxes;
 
     } else if (section === 'shortcuts') {
+      appendSectionIntro(
+        content,
+        'Input',
+        'Keyboard Routing',
+        'Tune the bindings that drive Calder’s fast session, terminal, and shell workflows.',
+      );
       renderShortcutsSection(content);
 
     } else if (section === 'setup') {
+      appendSectionIntro(
+        content,
+        'Runtime',
+        'Provider Setup And Health',
+        'Check binaries, hooks, and status-line integration without leaving the preferences surface.',
+      );
       renderSetupSection(content);
 
     } else if (section === 'about') {
+      appendSectionIntro(
+        content,
+        'Identity',
+        'About Calder',
+        'Version details, update checks, and ownership links for the Calder project.',
+      );
       const aboutDiv = document.createElement('div');
       aboutDiv.className = 'about-section';
 

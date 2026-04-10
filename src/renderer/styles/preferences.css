@@ -23,60 +23,114 @@
 
 /* Preferences layout */
 #modal.modal-wide {
-  width: 760px;
-  max-width: 760px;
+  width: 880px;
+  max-width: 880px;
 }
 
 .preferences-layout {
   display: flex;
   gap: 0;
-  height: 360px;
+  height: 520px;
 }
 
 .preferences-menu {
-  width: 154px;
+  width: 240px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  padding: 8px 0 6px;
-  background: rgba(255, 255, 255, 0.015);
+  border-right: 1px solid var(--border-subtle);
+  padding: 12px 12px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+}
+
+.preferences-menu-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.preferences-menu-title {
+  font-size: 18px;
+  font-weight: 670;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.preferences-menu-caption {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-muted);
 }
 
 .preferences-menu-item {
-  padding: 9px 14px;
+  padding: 10px 12px;
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  margin-left: 8px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .preferences-menu-item:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
 }
 
 .preferences-menu-item.active {
-  background: var(--accent-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 54%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-elevated) 90%, black);
   color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
 }
 
 .preferences-content {
   flex: 1;
-  padding: 8px 18px;
+  padding: 16px 24px 20px;
   min-width: 0;
   overflow-y: auto;
+}
+
+.preferences-section-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.preferences-section-title {
+  font-size: 20px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.preferences-section-description {
+  max-width: 640px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
 
 .about-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 10px;
+  padding: 4px 0;
 }
 
 .about-app-name {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 680;
   color: var(--text-primary);
 }
 
@@ -93,10 +147,11 @@
 }
 
 .about-update-btn {
-  background: var(--bg-tertiary);
+  min-height: var(--control-height-md);
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
-  padding: 6px 14px;
+  padding: 0 14px;
   border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
@@ -145,7 +200,7 @@
 .setup-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding: 4px 0;
 }
 
@@ -159,8 +214,8 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .setup-check-row:last-child {
@@ -210,17 +265,18 @@
   color: var(--text-secondary);
   margin-top: 4px;
   font-family: var(--font-mono);
-  background: var(--bg-primary);
+  background: color-mix(in srgb, var(--surface-muted) 84%, black);
   padding: 5px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
 }
 
 .setup-fix-btn {
   font-size: 11px;
-  padding: 4px 10px;
+  min-height: var(--control-height-sm);
+  padding: 0 12px;
   border: 1px solid var(--border-strong);
-  background: var(--bg-secondary);
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -254,7 +310,7 @@
   flex-wrap: wrap;
   gap: 6px 12px;
   padding: 8px 0 12px 30px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .setup-hook-item {
@@ -293,7 +349,7 @@
   letter-spacing: 0.5px;
   color: var(--text-secondary);
   padding: 10px 0 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
 }
 
