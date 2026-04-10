@@ -76,16 +76,16 @@ function render(): void {
   const result = project.readiness;
 
   const section = document.createElement('div');
-  section.className = 'config-section';
+  section.className = 'config-section readiness-section-card';
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
 
   const toggleSpan = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>`;
   const scoreBadge = result
-    ? `<span class="readiness-badge" style="background:${scoreColor(result.overallScore)}">${result.overallScore}%</span>`
+    ? `<span class="readiness-badge control-chip" style="background:${scoreColor(result.overallScore)}">${result.overallScore}%</span>`
     : '';
-  header.innerHTML = `${toggleSpan} AI Readiness ${scoreBadge}`;
+  header.innerHTML = `${toggleSpan}<span class="config-section-title">AI Readiness</span>${scoreBadge}`;
 
   // Scan/Rescan button
   const scanBtn = document.createElement('button');
@@ -140,4 +140,3 @@ function render(): void {
   section.appendChild(body);
   container.appendChild(section);
 }
-

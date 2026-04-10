@@ -68,8 +68,11 @@ function render(): void {
     const el = document.createElement('div');
     el.className = 'project-item' + (project.id === appState.activeProjectId ? ' active' : '');
     el.innerHTML = `
-      <div style="flex:1;min-width:0">
-        <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}${project.sessions.length ? ` <span class="project-session-count">(${project.sessions.length})</span>` : ''}</div>
+      <div class="project-item-main">
+        <div class="project-item-row">
+          <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}</div>
+          ${project.sessions.length ? `<span class="project-session-count control-chip">${project.sessions.length}</span>` : ''}
+        </div>
         <div class="project-path">${esc(project.path)}</div>
       </div>
       <span class="project-delete" title="Remove project">&times;</span>
@@ -267,7 +270,10 @@ function renderCostFooter(): void {
   }
   const agg = getAggregateCost();
   if (agg.totalCostUsd > 0) {
-    sidebarFooterEl.textContent = `Total: $${agg.totalCostUsd.toFixed(4)}`;
+    sidebarFooterEl.innerHTML = `
+      <div class="sidebar-footer-kicker shell-kicker">Workspace Spend</div>
+      <div class="sidebar-footer-value">$${agg.totalCostUsd.toFixed(4)}</div>
+    `;
     sidebarFooterEl.classList.remove('hidden');
   } else {
     sidebarFooterEl.classList.add('hidden');

@@ -4,8 +4,8 @@ import type { ProviderConfig, ProviderId, McpServer, Agent, Skill, Command } fro
 
 const collapsed: Record<string, boolean> = {};
 
-function scopeBadge(scope: 'user' | 'project'): string {
-  return `<span class="scope-badge ${scope}">${scope}</span>`;
+export function scopeBadge(scope: 'user' | 'project'): string {
+  return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
 }
 
 function renderSection(id: string, title: string, items: HTMLElement[], count: number, onAdd?: () => void): HTMLElement {
@@ -16,7 +16,11 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
-  header.innerHTML = `<span class="config-section-toggle ${isCollapsed ? 'collapsed' : ''}">&#x25BC;</span>${title}<span class="config-section-count">${count}</span>`;
+  header.innerHTML = `
+    <span class="config-section-toggle ${isCollapsed ? 'collapsed' : ''}">&#x25BC;</span>
+    <span class="config-section-title">${title}</span>
+    <span class="config-section-count control-chip">${count}</span>
+  `;
 
   if (onAdd) {
     const addBtn = document.createElement('button');

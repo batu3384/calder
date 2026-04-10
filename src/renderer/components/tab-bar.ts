@@ -30,6 +30,9 @@ function buildTooltip(status: SessionStatus, cliSessionId?: string): string {
 }
 
 export function initTabBar(): void {
+  btnAddSession.classList.add('tab-action-primary');
+  btnToggleSwarm.classList.add('tab-action-toggle');
+  btnAddMcpInspector.classList.add('tab-action-mcp');
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -475,7 +478,9 @@ function render(): void {
   }
 
   // Update swarm toggle button visual
-  btnToggleSwarm.style.color = project.layout.mode === 'swarm' ? 'var(--accent)' : '';
+  const swarmActive = project.layout.mode === 'swarm';
+  btnToggleSwarm.dataset.state = swarmActive ? 'active' : 'idle';
+  btnToggleSwarm.setAttribute('aria-pressed', swarmActive ? 'true' : 'false');
 }
 
 function renderGitStatus(): void {
@@ -488,6 +493,7 @@ function renderGitStatus(): void {
   const status = getGitStatus(project.id);
   if (!status || !status.isGitRepo) {
     gitStatusEl.innerHTML = '';
+    gitStatusEl.dataset.state = 'hidden';
     return;
   }
 
@@ -510,6 +516,8 @@ function renderGitStatus(): void {
   if (status.conflicted > 0) parts.push(`<span class="git-conflicted">!${status.conflicted}</span>`);
 
   gitStatusEl.innerHTML = parts.join(' ');
+  const dirtyCount = status.staged + status.modified + status.untracked + status.conflicted;
+  gitStatusEl.dataset.state = dirtyCount > 0 ? 'dirty' : 'clean';
 }
 
 async function showBranchContextMenu(e: MouseEvent): Promise<void> {

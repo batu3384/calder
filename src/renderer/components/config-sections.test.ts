@@ -53,4 +53,11 @@ describe('getConfigProviderId', () => {
     const { getConfigProviderId } = await import('./config-sections.js');
     expect(getConfigProviderId()).toBe('claude');
   });
+
+  it('renders scope badges as cockpit control chips', async () => {
+    const mod = await import('./config-sections.js');
+    expect(typeof mod.scopeBadge).toBe('function');
+    expect(mod.scopeBadge('project')).toContain('control-chip');
+    expect(mod.scopeBadge('user')).toContain('scope-badge');
+  });
 });
