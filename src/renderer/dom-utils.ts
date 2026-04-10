@@ -14,9 +14,9 @@ export function areaLabel(area: string): string {
 
 /** Return a CSS color for a 0-100 readiness score. */
 export function scoreColor(score: number): string {
-  if (score >= 70) return '#57b483';
-  if (score >= 40) return '#d8a44c';
-  return '#ef5c72';
+  if (score >= 70) return 'var(--success)';
+  if (score >= 40) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 /** Create a numeric PIN input field (4–8 digits). */
