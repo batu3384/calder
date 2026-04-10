@@ -8,4 +8,10 @@ describe('preferences modal contract', () => {
     expect(source).toContain('preferences-menu-header');
     expect(source).toContain('preferences-section-intro');
   });
+
+  it('uses shell language for layout controls', () => {
+    expect(source).toContain('Shell Layout');
+    expect(source).toContain('Project rail');
+    expect(source).toContain('Context inspector');
+  });
 });

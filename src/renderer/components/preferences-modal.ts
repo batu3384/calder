@@ -39,7 +39,7 @@ export function showPreferencesModal(): void {
 
   const sections: { id: Section; label: string }[] = [
     { id: 'general', label: 'General' },
-    { id: 'sidebar', label: 'Sidebar' },
+    { id: 'sidebar', label: 'Shell' },
     { id: 'shortcuts', label: 'Shortcuts' },
     { id: 'setup', label: 'Setup' },
     { id: 'about', label: 'About' },
@@ -227,16 +227,16 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Chrome',
-        'Sidebar Density And Surfaces',
-        'Decide which operational blocks stay visible in the left rail while preserving the existing workspace model.',
+        'Shell Layout',
+        'Control which project signals stay visible in the Project rail versus the right-side Context inspector.',
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
       const toggles: { key: keyof typeof views; label: string }[] = [
-        { key: 'configSections', label: 'Config Sections (MCP Servers, Agents, Skills, Commands)' },
-        { key: 'readinessSection', label: 'AI Readiness' },
-        { key: 'gitPanel', label: 'Git Panel' },
-        { key: 'sessionHistory', label: 'Session History' },
-        { key: 'costFooter', label: 'Cost Footer' },
+        { key: 'configSections', label: 'Context inspector: Capabilities' },
+        { key: 'readinessSection', label: 'Context inspector: AI Readiness' },
+        { key: 'gitPanel', label: 'Context inspector: Git' },
+        { key: 'sessionHistory', label: 'Context inspector: Session History' },
+        { key: 'costFooter', label: 'Command deck: Workspace Spend chip' },
       ];
 
       const checkboxes: Record<string, HTMLInputElement> = {};
