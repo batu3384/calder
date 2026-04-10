@@ -37,6 +37,7 @@ import type { InspectorEvent } from '../shared/types.js';
 import { getContext } from './session-context.js';
 import { initSessionInspector } from './components/session-inspector.js';
 import { loadProviderMetas } from './provider-availability.js';
+import { initContextInspector } from './components/context-inspector.js';
 
 let isQuitting = false;
 window.calder.app.onQuitting(() => {
@@ -150,6 +151,7 @@ async function main(): Promise<void> {
   // Initialize components
   initSessionUnread();
   initSidebar();
+  initContextInspector();
   initTabBar();
   initSplitLayout();
   initKeybindings();
