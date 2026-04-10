@@ -311,13 +311,3 @@ select.mcp-form-input {
 .tab-status.mcp {
   background: #4a90d9;
 }
-
-.tab-mcp-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(74, 144, 217, 0.2);
-  color: #4a90d9;
-  vertical-align: middle;
-}

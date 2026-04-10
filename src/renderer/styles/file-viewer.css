@@ -198,17 +198,6 @@
   color: var(--text-secondary);
 }
 
-/* Diff tab badge */
-.tab-diff-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(244, 180, 0, 0.2);
-  color: #f4b400;
-  vertical-align: middle;
-}
-
 /* Clickable config items in git panel */
 .config-item-clickable {
   cursor: pointer;
@@ -529,15 +518,4 @@
 
 .file-reader-line-highlight .file-reader-line-num {
   color: var(--accent);
-}
-
-/* File reader tab badge */
-.tab-file-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(74, 144, 217, 0.2);
-  color: #4a90d9;
-  vertical-align: middle;
 }

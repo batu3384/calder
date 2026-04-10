@@ -193,16 +193,6 @@
   50% { opacity: 0.4; }
 }
 
-/* Remote session tab badge */
-.tab-remote-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(15, 155, 88, 0.2);
-  color: #0f9b58;
-}
-
 .tab-remote {
   border-left: 2px solid #0f9b58;
 }
