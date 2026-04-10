@@ -181,7 +181,7 @@ async function refresh(): Promise<void> {
 
   container.appendChild(renderSection(
     'mcp',
-    'MCP Servers',
+    'Integrations',
     config.mcpServers.map(mcpItem),
     config.mcpServers.length,
     providerId === 'claude' ? () => showMcpAddModal(() => refresh()) : undefined,
@@ -196,7 +196,7 @@ async function refresh(): Promise<void> {
 
   container.appendChild(renderSection(
     'skills',
-    'Skills',
+    'Skills Library',
     config.skills.map(skillItem),
     config.skills.length,
   ));
@@ -204,7 +204,7 @@ async function refresh(): Promise<void> {
   if (providerId !== 'codex') {
     container.appendChild(renderSection(
       'commands',
-      'Commands',
+      'Custom Commands',
       config.commands.map(commandItem),
       config.commands.length,
     ));

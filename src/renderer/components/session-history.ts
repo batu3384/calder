@@ -132,7 +132,7 @@ function render(): void {
   heading.className = 'config-section-heading';
   heading.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">History</span>
+    <span class="config-section-title">Session Archive</span>
   `;
   header.appendChild(heading);
 

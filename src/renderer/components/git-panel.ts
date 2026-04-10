@@ -136,7 +136,7 @@ function updateGitHeader(header: HTMLElement, total: number, headerSuffix: strin
   heading.className = 'config-section-heading';
   heading.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Git Changes${headerSuffix}</span>
+    <span class="config-section-title">Workspace Changes${headerSuffix}</span>
   `;
   header.appendChild(heading);
 

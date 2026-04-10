@@ -78,3 +78,36 @@
   flex-direction: column;
   gap: 8px;
 }
+
+#context-inspector .config-section,
+#context-inspector .history-body {
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: calc(var(--radius-md) + 2px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+#context-inspector .config-section-header {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+#context-inspector .config-section-body {
+  padding: 0 8px 8px;
+}
+
+#context-inspector .config-item {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-canvas) 60%, var(--surface-panel));
+}
+
+#context-inspector .config-item + .config-item {
+  margin-top: 6px;
+}
+
+#context-inspector .config-empty,
+#context-inspector .config-loading {
+  padding: 12px;
+}
