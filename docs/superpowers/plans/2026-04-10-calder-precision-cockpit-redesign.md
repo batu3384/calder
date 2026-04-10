@@ -847,7 +847,7 @@ Run:
 ```bash
 npm run build
 ./node_modules/.bin/vitest run
-rg -n --hidden --glob '!node_modules' --glob '!.git' 'calder|calder|window\\.calder|\\.calder|# calder-hook|LEGACY_' /Users/batuhanyuksel/Documents/browser
+# Run a dedicated legacy-brand residue search for prior namespaces, paths, and hook markers.
 git -C /Users/batuhanyuksel/Documents/browser status --short --branch
 ```
 
