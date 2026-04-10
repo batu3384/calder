@@ -55,6 +55,7 @@ import {
   getBrowserTabInstance,
 } from './browser-tab-pane.js';
 import { quickNewSession } from './tab-bar.js';
+import { promptNewProject } from './sidebar.js';
 
 const container = document.getElementById('terminal-container')!;
 
@@ -395,17 +396,52 @@ function showEmptyState(project: ProjectRecord | undefined): void {
   removeEmptyState();
   const el = document.createElement('div');
   el.className = 'empty-state';
+
+  const card = document.createElement('div');
+  card.className = 'empty-state-card';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'empty-state-eyebrow';
+
+  const title = document.createElement('div');
+  title.className = 'empty-state-title';
+
+  const copy = document.createElement('div');
+  copy.className = 'empty-state-copy';
+
+  const detail = document.createElement('div');
+  detail.className = 'empty-state-detail';
+
+  const actions = document.createElement('div');
+  actions.className = 'empty-state-actions';
+
+  const primary = document.createElement('button');
+  primary.id = 'empty-state-primary-action';
+  primary.className = 'empty-state-primary-action';
+
   if (!project) {
-    el.innerHTML = `
-      <div>No project selected</div>
-      <div class="hint">Create a project with the + button in the sidebar</div>
-    `;
+    eyebrow.textContent = 'Workspace';
+    title.textContent = 'Choose A Project';
+    copy.textContent = 'Start by adding a local codebase to the project rail. Calder will keep sessions, project signals, and tool context grouped around that workspace.';
+    detail.textContent = 'Project rail: switch workspaces on the left. Command deck: launch work in the center. Context inspector: monitor health and git on the right.';
+    primary.textContent = 'Create Project';
+    primary.addEventListener('click', () => promptNewProject());
   } else {
-    el.innerHTML = `
-      <div>No sessions in "${project.name}"</div>
-      <div class="hint">Create a session with the + button in the tab bar</div>
-    `;
+    eyebrow.textContent = 'Workspace Ready';
+    title.textContent = `Ready For ${project.name}`;
+    copy.textContent = 'This workspace is connected and waiting for a live session. Launch one from here to start coding, resume context, and keep follow-up tools attached to the same project.';
+    detail.textContent = `${project.path} · Sessions stay grouped under this workspace shell.`;
+    primary.textContent = 'Start First Session';
+    primary.addEventListener('click', () => quickNewSession());
   }
+
+  actions.appendChild(primary);
+  card.appendChild(eyebrow);
+  card.appendChild(title);
+  card.appendChild(copy);
+  card.appendChild(detail);
+  card.appendChild(actions);
+  el.appendChild(card);
   container.appendChild(el);
 }
 

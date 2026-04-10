@@ -30,6 +30,43 @@
   min-width: 0;
   display: flex;
   align-items: stretch;
+  gap: 12px;
+}
+
+#workspace-identity {
+  min-width: 176px;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+#workspace-identity[hidden] {
+  display: none;
+}
+
+.workspace-project-name {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-project-meta {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tab-bar-meta {
@@ -76,6 +113,7 @@
   align-items: stretch;
   gap: 6px;
   flex: 1;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   height: auto;

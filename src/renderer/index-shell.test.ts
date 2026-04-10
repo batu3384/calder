@@ -16,6 +16,7 @@ describe('index shell contract', () => {
   it('exposes project rail, workspace shell, and context inspector anchors', () => {
     expect(html).toContain('id="workspace-shell"');
     expect(html).toContain('id="workspace-stack"');
+    expect(html).toContain('id="workspace-identity"');
     expect(html).toContain('id="context-inspector"');
     expect(html).toContain('id="btn-toggle-context-inspector"');
     expect(html).toContain('id="context-inspector-sections"');

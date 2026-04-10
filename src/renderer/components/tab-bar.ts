@@ -21,6 +21,7 @@ import { toggleContextInspector } from './context-inspector.js';
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const workspaceSpendEl = document.getElementById('workspace-spend')!;
+const workspaceIdentityEl = document.getElementById('workspace-identity')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const btnCommandDeckMore = document.getElementById('btn-command-deck-more')!;
 const btnToggleContextInspector = document.getElementById('btn-toggle-context-inspector')!;
@@ -74,6 +75,7 @@ export function initTabBar(): void {
   });
   appState.on('session-changed', render);
   appState.on('layout-changed', render);
+  appState.on('history-changed', renderWorkspaceIdentity);
   onShareChange(render);
 
   onStatusChange((sessionId, status) => {
@@ -96,10 +98,14 @@ export function initTabBar(): void {
   onCostChange(renderWorkspaceSpend);
 
   onGitStatusChange((projectId) => {
-    if (projectId === appState.activeProjectId) renderGitStatus();
+    if (projectId === appState.activeProjectId) {
+      renderGitStatus();
+      renderWorkspaceIdentity();
+    }
   });
   appState.on('project-changed', renderGitStatus);
   appState.on('project-changed', renderWorkspaceSpend);
+  appState.on('project-changed', renderWorkspaceIdentity);
 
   document.addEventListener('click', hideTabContextMenu);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTabContextMenu(); });
@@ -107,6 +113,7 @@ export function initTabBar(): void {
   render();
   renderGitStatus();
   renderWorkspaceSpend();
+  renderWorkspaceIdentity();
 }
 
 function renderWorkspaceSpend(): void {
@@ -168,6 +175,39 @@ function showCommandDeckOverflowMenu(event: MouseEvent): void {
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+}
+
+function shortProjectPath(fullPath: string): string {
+  const normalized = fullPath.replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  if (parts.length <= 2) return fullPath;
+  return `.../${parts.slice(-2).join('/')}`;
+}
+
+function renderWorkspaceIdentity(): void {
+  const project = appState.activeProject;
+  if (!project) {
+    workspaceIdentityEl.hidden = true;
+    workspaceIdentityEl.innerHTML = '';
+    workspaceIdentityEl.removeAttribute('title');
+    return;
+  }
+
+  const git = getGitStatus(project.id);
+  const branchOrPath = git?.isGitRepo && git.branch
+    ? `branch ${git.branch}`
+    : shortProjectPath(project.path);
+  const liveCount = project.sessions.length;
+  const archivedCount = project.sessionHistory?.length ?? 0;
+  const liveLabel = `${liveCount} live`;
+  const archiveLabel = `${archivedCount} archived`;
+
+  workspaceIdentityEl.hidden = false;
+  workspaceIdentityEl.title = project.path;
+  workspaceIdentityEl.innerHTML = `
+    <div class="workspace-project-name">${esc(project.name)}</div>
+    <div class="workspace-project-meta">${esc(branchOrPath)} · ${liveLabel} · ${archiveLabel}</div>
+  `;
 }
 
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {
@@ -443,6 +483,7 @@ function render(): void {
   if (tabListEl.querySelector('.tab-name input')) return;
   tabListEl.innerHTML = '';
   const project = appState.activeProject;
+  renderWorkspaceIdentity();
   if (!project) return;
 
   for (const session of project.sessions) {
