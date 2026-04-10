@@ -13,8 +13,13 @@
   <div id="app">
     <div id="sidebar">
       <div id="sidebar-header">
-        <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" style="font-size:13px;">&#x25E7;</button>
-        <span class="sidebar-title">Projects</span>
+        <div class="sidebar-title-group">
+          <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" style="font-size:13px;">&#x25E7;</button>
+          <div class="sidebar-brand-block">
+            <span class="sidebar-eyebrow">Calder</span>
+            <span class="sidebar-title">Projects</span>
+          </div>
+        </div>
         <div class="sidebar-header-actions">
           <button id="btn-preferences" class="icon-btn" title="Preferences">&#x2699;</button>
           <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)">+</button>
@@ -32,15 +37,19 @@
     <div id="sidebar-resize-handle"></div>
     <div id="main-area">
       <div id="tab-bar">
-        <div id="tab-list"></div>
-        <div id="git-status"></div>
-        <div id="tab-actions">
-          <button id="btn-help" class="icon-btn" title="Session Indicators Help (F1)" style="font-size:13px;">?</button>
-          <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)" style="font-size:12px;">&#x2261;</button>
-          <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+`)" style="font-size:13px;">&#x2588;</button>
-          <button id="btn-add-mcp-inspector" class="icon-btn" title="MCP Inspector" style="font-size:11px;font-weight:600;">MCP</button>
-          <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\)">&#x229E;</button>
-          <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)">+</button>
+        <div class="tab-bar-main">
+          <div id="tab-list"></div>
+        </div>
+        <div class="tab-bar-meta">
+          <div id="git-status"></div>
+          <div id="tab-actions">
+            <button id="btn-help" class="icon-btn" title="Session Indicators Help (F1)" style="font-size:13px;">?</button>
+            <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)" style="font-size:12px;">&#x2261;</button>
+            <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+`)" style="font-size:13px;">&#x2588;</button>
+            <button id="btn-add-mcp-inspector" class="icon-btn" title="MCP Inspector" style="font-size:11px;font-weight:600;">MCP</button>
+            <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\)">&#x229E;</button>
+            <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)">+</button>
+          </div>
         </div>
       </div>
       <div id="terminal-container"></div>
