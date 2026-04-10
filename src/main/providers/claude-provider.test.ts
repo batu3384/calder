@@ -72,10 +72,17 @@ describe('resolveBinaryPath', () => {
   const firstCandidate = isWin
     ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'claude.cmd')
     : '/usr/local/bin/claude';
+  const aliasPath = '/mock/home/.litellm/claude-gateway.sh';
 
   it('returns candidate path when existsSync returns true', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
     expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+  });
+
+  it('prefers an interactive-shell alias launcher when it resolves to an executable path', () => {
+    mockExistsSync.mockImplementation((p) => p === aliasPath);
+    mockExecSync.mockReturnValue(`alias claude='~/.litellm/claude-gateway.sh'\n` as any);
+    expect(provider.resolveBinaryPath()).toBe(aliasPath);
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} claude when no candidate exists`, () => {
@@ -103,9 +110,16 @@ describe('validatePrerequisites', () => {
   const validateCandidate = isWin
     ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'claude.cmd')
     : '/opt/homebrew/bin/claude';
+  const aliasPath = '/mock/home/.litellm/claude-gateway.sh';
 
   it('returns ok when binary found via existsSync', () => {
     mockExistsSync.mockImplementation((p) => p === validateCandidate);
+    expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
+  });
+
+  it('returns ok when an interactive-shell alias resolves to an executable path', () => {
+    mockExistsSync.mockImplementation((p) => p === aliasPath);
+    mockExecSync.mockReturnValue(`alias claude='~/.litellm/claude-gateway.sh'\n` as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });
 

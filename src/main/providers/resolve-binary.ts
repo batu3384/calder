@@ -21,6 +21,37 @@ const COMMON_BIN_DIRS = isWin
 // On Windows, CLI tools installed via npm are .cmd shims
 const WIN_EXTENSIONS = ['.cmd', '.exe', '.ps1', ''];
 
+function expandHomePath(input: string): string {
+  if (input === '~') return os.homedir();
+  if (input.startsWith('~/')) return path.join(os.homedir(), input.slice(2));
+  return input;
+}
+
+function findAliasLauncher(binaryName: string): string | null {
+  if (isWin) return null;
+
+  const shell = process.env.SHELL || '/bin/zsh';
+
+  try {
+    const resolved = execSync(`${shell} -ilc 'command -v "${binaryName}"'`, {
+      env: { ...process.env, HOME: os.homedir() },
+      encoding: 'utf-8',
+      timeout: 3000,
+    }).trim();
+
+    const aliasMatch = resolved.match(/^alias\s+\S+=(['"])(.+)\1$/s);
+    if (!aliasMatch) return null;
+
+    const aliasValue = aliasMatch[2].trim();
+    const executable = expandHomePath(aliasValue.split(/\s+/)[0] || '');
+    if (!executable) return null;
+
+    return fs.existsSync(executable) ? executable : null;
+  } catch {
+    return null;
+  }
+}
+
 function findBinaryInDir(dir: string, binaryName: string): string | null {
   if (isWin) {
     for (const ext of WIN_EXTENSIONS) {
@@ -52,6 +83,12 @@ function whichBinary(binaryName: string, envPath: string): string | null {
 export function resolveBinary(binaryName: string, cache: { path: string | null }): string {
   if (cache.path) return cache.path;
 
+  const aliasLauncher = findAliasLauncher(binaryName);
+  if (aliasLauncher) {
+    cache.path = aliasLauncher;
+    return aliasLauncher;
+  }
+
   const fullPath = getFullPath();
 
   for (const dir of COMMON_BIN_DIRS) {
@@ -77,6 +114,8 @@ export function validateBinaryExists(
   displayName: string,
   installCommand: string,
 ): { ok: boolean; message: string } {
+  if (findAliasLauncher(binaryName)) return { ok: true, message: '' };
+
   for (const dir of COMMON_BIN_DIRS) {
     if (findBinaryInDir(dir, binaryName)) return { ok: true, message: '' };
   }
