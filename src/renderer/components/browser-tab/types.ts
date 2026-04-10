@@ -74,12 +74,10 @@ export interface BrowserTabInstance {
   inspectBtn: HTMLButtonElement;
   viewportBtn: HTMLButtonElement;
   viewportDropdown: HTMLDivElement;
-  targetRail: HTMLDivElement;
-  targetSummaryEl: HTMLDivElement;
-  targetListEl: HTMLDivElement;
   inspectPanel: HTMLDivElement;
   instructionInput: HTMLTextAreaElement;
   submitBtn: HTMLButtonElement;
+  inspectTargetBtn: HTMLButtonElement;
   inspectAttachDimsCheckbox: HTMLInputElement;
   elementInfoEl: HTMLDivElement;
   inspectMode: boolean;
@@ -93,6 +91,7 @@ export interface BrowserTabInstance {
   flowInputRow: HTMLDivElement;
   flowInstructionInput: HTMLTextAreaElement;
   flowSubmitBtn: HTMLButtonElement;
+  flowTargetBtn: HTMLButtonElement;
   flowMode: boolean;
   flowSteps: FlowStep[];
   flowPickerOverlay: HTMLDivElement;
@@ -102,8 +101,14 @@ export interface BrowserTabInstance {
   drawPanel: HTMLDivElement;
   drawInstructionInput: HTMLTextAreaElement;
   drawSubmitBtn: HTMLButtonElement;
+  drawTargetBtn: HTMLButtonElement;
   drawAttachDimsCheckbox: HTMLInputElement;
   drawErrorEl: HTMLDivElement;
   drawMode: boolean;
+  targetMenu: HTMLDivElement;
+  targetMenuList: HTMLDivElement;
+  targetMenuOutsideClickHandler: (e: MouseEvent) => void;
+  activeTargetTrigger: HTMLButtonElement | null;
+  activeTargetMode: 'inspect' | 'draw' | 'flow' | null;
   cleanupFns: Array<() => void>;
 }

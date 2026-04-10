@@ -254,94 +254,6 @@ body.sidebar-resizing .browser-webview {
   align-items: stretch;
 }
 
-.browser-target-rail {
-  width: 244px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px 14px;
-  border-left: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 94%, black);
-}
-
-.browser-target-header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.browser-target-title {
-  color: var(--text-primary);
-}
-
-.browser-target-summary {
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.browser-target-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  overflow: auto;
-}
-
-.browser-target-session {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  width: 100%;
-  padding: 10px 11px;
-  background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.browser-target-session:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
-  border-color: var(--border);
-  transform: translateY(-1px);
-}
-
-.browser-target-session.active {
-  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-subtle));
-}
-
-.browser-target-session-name {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.browser-target-session-meta {
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.browser-target-empty {
-  padding: 12px;
-  border: 1px dashed color-mix(in srgb, var(--border-subtle) 92%, transparent);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
 /* New Tab Page */
 .browser-new-tab-page {
   position: absolute;
@@ -867,6 +779,101 @@ body.sidebar-resizing .browser-webview {
 
 .inspect-dropdown-btn:hover {
   opacity: 0.9;
+}
+
+.browser-target-trigger {
+  min-width: 138px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-target-menu {
+  position: absolute;
+  z-index: 110;
+  min-width: 240px;
+  max-width: 280px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--bg-secondary) 96%, black);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(14px);
+}
+
+.browser-target-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.browser-target-menu-header {
+  padding: 4px 8px 6px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.browser-target-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.browser-target-menu-item:hover {
+  background: color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--border-subtle) 90%, transparent);
+}
+
+.browser-target-menu-item.active {
+  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+}
+
+.browser-target-session-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.browser-target-session-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.browser-target-menu-action {
+  gap: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.browser-target-menu-empty {
+  padding: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.browser-target-menu-separator {
+  height: 1px;
+  margin: 4px 2px;
+  background: color-mix(in srgb, var(--border-subtle) 90%, transparent);
 }
 
 .inspect-draw-actions {

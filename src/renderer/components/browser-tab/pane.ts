@@ -39,25 +39,64 @@ function browserWorkspaceLabel(): string {
   return project.name;
 }
 
-function syncBrowserTargetRail(instance: BrowserTabInstance): void {
+function browserTargetButtonLabel(instance: BrowserTabInstance): string {
+  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+  const label = selectedTarget?.name ?? 'Select Session';
+  return label.length > 22 ? `${label.slice(0, 21)}…` : label;
+}
+
+function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
+  instance.targetMenu.style.display = 'none';
+  instance.activeTargetTrigger = null;
+  instance.activeTargetMode = null;
+}
+
+function runTargetMenuAction(instance: BrowserTabInstance, action: 'new' | 'custom'): void {
+  const mode = instance.activeTargetMode;
+  closeBrowserTargetMenu(instance);
+  if (!mode) return;
+
+  if (mode === 'inspect') {
+    if (action === 'new') sendToNewSession(instance);
+    else sendToCustomSession(instance);
+    return;
+  }
+
+  if (mode === 'draw') {
+    if (action === 'new') {
+      void sendDrawToNewSession(instance);
+    } else {
+      void sendDrawToCustomSession(instance);
+    }
+    return;
+  }
+
+  if (action === 'new') {
+    sendFlowToNewSession(instance);
+  } else {
+    sendFlowToCustomSession(instance);
+  }
+}
+
+function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
   const targetSessions = appState.listBrowserTargetSessions(instance.sessionId);
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+  instance.targetMenuList.innerHTML = '';
 
-  instance.targetSummaryEl.textContent = selectedTarget
-    ? `Sending to: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
-    : 'No target session selected';
-
-  instance.targetListEl.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'browser-target-menu-header';
+  header.textContent = 'Open Sessions';
+  instance.targetMenuList.appendChild(header);
 
   if (targetSessions.length === 0) {
     const emptyState = document.createElement('div');
-    emptyState.className = 'browser-target-empty';
+    emptyState.className = 'browser-target-menu-empty';
     emptyState.textContent = 'Open a CLI session to route browser prompts here.';
-    instance.targetListEl.appendChild(emptyState);
+    instance.targetMenuList.appendChild(emptyState);
   } else {
     for (const session of targetSessions) {
       const button = document.createElement('button');
-      button.className = 'browser-target-session';
+      button.className = 'browser-target-menu-item';
       if (selectedTarget?.id === session.id) {
         button.classList.add('active');
       }
@@ -76,11 +115,33 @@ function syncBrowserTargetRail(instance: BrowserTabInstance): void {
 
       button.appendChild(label);
       button.appendChild(meta);
-      button.addEventListener('click', () => appState.setBrowserTargetSession(instance.sessionId, session.id));
-      instance.targetListEl.appendChild(button);
+      button.addEventListener('click', () => {
+        appState.setBrowserTargetSession(instance.sessionId, session.id);
+        closeBrowserTargetMenu(instance);
+      });
+      instance.targetMenuList.appendChild(button);
     }
   }
 
+  const separator = document.createElement('div');
+  separator.className = 'browser-target-menu-separator';
+  instance.targetMenuList.appendChild(separator);
+
+  const newSessionBtn = document.createElement('button');
+  newSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
+  newSessionBtn.textContent = 'Send to New Session';
+  newSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'new'));
+  instance.targetMenuList.appendChild(newSessionBtn);
+
+  const customSessionBtn = document.createElement('button');
+  customSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
+  customSessionBtn.textContent = 'Send to Custom Session…';
+  customSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'custom'));
+  instance.targetMenuList.appendChild(customSessionBtn);
+}
+
+function syncBrowserTargetControls(instance: BrowserTabInstance): void {
+  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
   const hasTarget = !!selectedTarget;
   const primaryButtons = [instance.submitBtn, instance.drawSubmitBtn, instance.flowSubmitBtn];
   for (const button of primaryButtons) {
@@ -89,6 +150,50 @@ function syncBrowserTargetRail(instance: BrowserTabInstance): void {
       ? `Send to ${selectedTarget.name}`
       : 'Select an open session target first';
   }
+
+  const targetButtons = [instance.inspectTargetBtn, instance.drawTargetBtn, instance.flowTargetBtn];
+  const label = `${browserTargetButtonLabel(instance)} ▾`;
+  for (const button of targetButtons) {
+    button.textContent = label;
+    button.title = selectedTarget
+      ? `Current target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
+      : 'Choose which open session receives the browser prompt';
+  }
+
+  if (instance.targetMenu.style.display !== 'none') {
+    renderBrowserTargetMenu(instance);
+  }
+}
+
+function openBrowserTargetMenu(
+  instance: BrowserTabInstance,
+  trigger: HTMLButtonElement,
+  mode: 'inspect' | 'draw' | 'flow',
+): void {
+  if (instance.activeTargetTrigger === trigger && instance.targetMenu.style.display !== 'none') {
+    closeBrowserTargetMenu(instance);
+    return;
+  }
+
+  instance.activeTargetTrigger = trigger;
+  instance.activeTargetMode = mode;
+  renderBrowserTargetMenu(instance);
+  instance.targetMenu.style.display = 'flex';
+
+  const paneRect = instance.element.getBoundingClientRect();
+  const triggerRect = trigger.getBoundingClientRect();
+  const menuRect = instance.targetMenu.getBoundingClientRect();
+  const left = Math.min(
+    Math.max(12, triggerRect.right - paneRect.left - menuRect.width),
+    Math.max(12, paneRect.width - menuRect.width - 12),
+  );
+  const top = Math.min(
+    Math.max(12, triggerRect.bottom - paneRect.top + 6),
+    Math.max(12, paneRect.height - menuRect.height - 12),
+  );
+
+  instance.targetMenu.style.left = `${left}px`;
+  instance.targetMenu.style.top = `${top}px`;
 }
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
@@ -370,32 +475,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   webview.setAttribute('allowpopups', '');
   viewportContainer.appendChild(webview);
 
-  const targetRail = document.createElement('aside');
-  targetRail.className = 'browser-target-rail';
-
-  const targetRailHeader = document.createElement('div');
-  targetRailHeader.className = 'browser-target-header';
-
-  const targetRailTitle = document.createElement('div');
-  targetRailTitle.className = 'browser-target-title shell-kicker';
-  targetRailTitle.textContent = 'Open Sessions';
-
-  const targetSummaryEl = document.createElement('div');
-  targetSummaryEl.className = 'browser-target-summary';
-  targetSummaryEl.textContent = 'No target session selected';
-
-  targetRailHeader.appendChild(targetRailTitle);
-  targetRailHeader.appendChild(targetSummaryEl);
-  targetRail.appendChild(targetRailHeader);
-
-  const targetListEl = document.createElement('div');
-  targetListEl.className = 'browser-target-list';
-  targetRail.appendChild(targetListEl);
-
   const contentShell = document.createElement('div');
   contentShell.className = 'browser-content-shell';
   contentShell.appendChild(viewportContainer);
-  contentShell.appendChild(targetRail);
   el.appendChild(contentShell);
 
   const inspectPanel = document.createElement('div');
@@ -422,9 +504,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   submitBtn.textContent = 'Send to Session';
 
   const customBtn = document.createElement('button');
-  customBtn.className = 'inspect-dropdown-btn';
-  customBtn.textContent = '\u25BC';
-  customBtn.title = 'Send to custom session';
+  customBtn.className = 'inspect-dropdown-btn browser-target-trigger';
+  customBtn.textContent = 'Select Session \u25BE';
+  customBtn.title = 'Choose target session';
 
   submitGroup.appendChild(submitBtn);
   submitGroup.appendChild(customBtn);
@@ -476,9 +558,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawSubmitBtn.textContent = 'Send to Session';
 
   const drawCustomBtn = document.createElement('button');
-  drawCustomBtn.className = 'inspect-dropdown-btn';
-  drawCustomBtn.textContent = '\u25BC';
-  drawCustomBtn.title = 'Send to custom session';
+  drawCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
+  drawCustomBtn.textContent = 'Select Session \u25BE';
+  drawCustomBtn.title = 'Choose target session';
 
   drawSubmitGroup.appendChild(drawSubmitBtn);
   drawSubmitGroup.appendChild(drawCustomBtn);
@@ -550,9 +632,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   flowSubmitBtn.textContent = 'Send to Session';
 
   const flowCustomBtn = document.createElement('button');
-  flowCustomBtn.className = 'inspect-dropdown-btn';
-  flowCustomBtn.textContent = '\u25BC';
-  flowCustomBtn.title = 'Send to custom session';
+  flowCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
+  flowCustomBtn.textContent = 'Select Session \u25BE';
+  flowCustomBtn.title = 'Choose target session';
 
   flowSubmitGroup.appendChild(flowSubmitBtn);
   flowSubmitGroup.appendChild(flowCustomBtn);
@@ -591,6 +673,15 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   flowPickerOverlay.appendChild(flowPickerMenu);
   el.appendChild(flowPickerOverlay);
 
+  const targetMenu = document.createElement('div');
+  targetMenu.className = 'browser-target-menu';
+  targetMenu.style.display = 'none';
+
+  const targetMenuList = document.createElement('div');
+  targetMenuList.className = 'browser-target-menu-list';
+  targetMenu.appendChild(targetMenuList);
+  el.appendChild(targetMenu);
+
   const instance: BrowserTabInstance = {
     sessionId,
     element: el,
@@ -602,12 +693,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     inspectBtn,
     viewportBtn,
     viewportDropdown,
-    targetRail,
-    targetSummaryEl,
-    targetListEl,
     inspectPanel,
     instructionInput,
     submitBtn,
+    inspectTargetBtn: customBtn,
     inspectAttachDimsCheckbox,
     elementInfoEl,
     inspectMode: false,
@@ -621,6 +710,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     flowInputRow,
     flowInstructionInput,
     flowSubmitBtn,
+    flowTargetBtn: flowCustomBtn,
     flowMode: false,
     flowSteps: [],
     flowPickerOverlay,
@@ -630,14 +720,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     drawPanel,
     drawInstructionInput,
     drawSubmitBtn,
+    drawTargetBtn: drawCustomBtn,
     drawAttachDimsCheckbox,
     drawErrorEl,
     drawMode: false,
+    targetMenu,
+    targetMenuList,
+    targetMenuOutsideClickHandler: () => {},
+    activeTargetTrigger: null,
+    activeTargetMode: null,
     cleanupFns: [],
   };
   instances.set(sessionId, instance);
 
-  const syncTargetingUi = () => syncBrowserTargetRail(instance);
+  const syncTargetingUi = () => syncBrowserTargetControls(instance);
   instance.cleanupFns.push(appState.on('session-added', syncTargetingUi));
   instance.cleanupFns.push(appState.on('session-removed', syncTargetingUi));
   instance.cleanupFns.push(appState.on('session-changed', syncTargetingUi));
@@ -689,6 +785,14 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   };
   document.addEventListener('mousedown', instance.viewportOutsideClickHandler);
 
+  instance.targetMenuOutsideClickHandler = (e: MouseEvent) => {
+    const target = e.target as Node;
+    if (!instance.targetMenu.contains(target) && !instance.inspectTargetBtn.contains(target) && !instance.drawTargetBtn.contains(target) && !instance.flowTargetBtn.contains(target)) {
+      closeBrowserTargetMenu(instance);
+    }
+  };
+  document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+
   customItem.addEventListener('click', () => {
     customForm.style.display = 'flex';
     customWInput.focus();
@@ -712,7 +816,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawBtn.addEventListener('click', () => toggleDrawMode(instance));
   drawClearBtn.addEventListener('click', () => clearDrawing(instance));
   drawSubmitBtn.addEventListener('click', () => { void sendDrawToSelectedSession(instance); });
-  drawCustomBtn.addEventListener('click', () => { void sendDrawToCustomSession(instance); });
+  drawCustomBtn.addEventListener('click', () => openBrowserTargetMenu(instance, drawCustomBtn, 'draw'));
   drawInstructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -721,7 +825,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   });
   flowClearBtn.addEventListener('click', () => clearFlow(instance));
   flowSubmitBtn.addEventListener('click', () => { void sendFlowToSelectedSession(instance); });
-  flowCustomBtn.addEventListener('click', () => sendFlowToCustomSession(instance));
+  flowCustomBtn.addEventListener('click', () => openBrowserTargetMenu(instance, flowCustomBtn, 'flow'));
 
   flowPickerMenu.addEventListener('click', (e: MouseEvent) => {
     const item = (e.target as HTMLElement).closest<HTMLButtonElement>('.flow-picker-item');
@@ -749,7 +853,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   });
 
   submitBtn.addEventListener('click', () => { void sendToSelectedSession(instance); });
-  customBtn.addEventListener('click', () => sendToCustomSession(instance));
+  customBtn.addEventListener('click', () => openBrowserTargetMenu(instance, customBtn, 'inspect'));
   instructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -818,6 +922,7 @@ export function destroyBrowserTabPane(sessionId: string): void {
   instances.delete(sessionId);
 
   document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);
+  document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
   for (const cleanup of instance.cleanupFns) cleanup();
 
   // <webview> calls throw if it isn't attached + dom-ready yet. Guard each

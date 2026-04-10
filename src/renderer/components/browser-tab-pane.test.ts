@@ -16,8 +16,9 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-ntp-grid');
   });
 
-  it('renders an open-session targeting rail for browser handoff', () => {
-    expect(source).toContain('Open Sessions');
-    expect(source).toContain('No target session selected');
+  it('renders a compact session picker beside browser send actions', () => {
+    expect(source).toContain('browser-target-trigger');
+    expect(source).toContain('browser-target-menu');
+    expect(source).not.toContain('browser-target-rail');
   });
 });
