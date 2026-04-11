@@ -11,22 +11,24 @@ const pkg = readFileSync(new URL('../../../package.json', import.meta.url), 'utf
 
 describe('provider-neutral copy contract', () => {
   it('aligns inspector toggles with the current workspace language', () => {
-    expect(preferencesSource).toContain('Context inspector: Toolchain');
-    expect(preferencesSource).toContain('Context inspector: Readiness');
-    expect(preferencesSource).toContain('Context inspector: Workspace Changes');
-    expect(preferencesSource).toContain('Context inspector: Session Archive');
+    expect(preferencesSource).toContain('Ops Rail modules');
+    expect(preferencesSource).toContain('Live View behavior');
+    expect(preferencesSource).toContain('Session Deck defaults');
+    expect(preferencesSource).toContain('Providers');
+    expect(preferencesSource).not.toContain('Context inspector: Toolchain');
+    expect(preferencesSource).not.toContain('Context inspector: AI Setup');
   });
 
   it('uses provider-neutral language in settings warnings and conflict prompts', () => {
-    expect(settingsGuardSource).toContain('active coding tool');
-    expect(conflictModalSource).toContain('active coding tool');
+    expect(settingsGuardSource).toContain('Tracking is off for this coding tool');
+    expect(conflictModalSource).toContain('Use Calder status line?');
     expect(settingsGuardSource).not.toContain('Claude Code');
     expect(conflictModalSource).not.toContain('Claude Code');
   });
 
   it('uses session-oriented language in the browser workspace', () => {
     expect(browserStageSource).toContain('Hand off to session');
-    expect(browserStageSource).toContain('Send to Session');
+    expect(browserStageSource).toContain('Send to selected');
   });
 
   it('keeps contributor guidance and package metadata provider-agnostic', () => {

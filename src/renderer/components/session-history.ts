@@ -130,13 +130,15 @@ function render(): void {
   const header = document.createElement('div');
   header.className = 'config-section-header';
 
-  const heading = document.createElement('div');
-  heading.className = 'config-section-heading';
-  heading.innerHTML = `
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'config-section-heading config-section-toggle-button';
+  button.setAttribute('aria-expanded', String(!collapsed));
+  button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Session Archive</span>
+    <span class="config-section-title">Activity</span>
   `;
-  header.appendChild(heading);
+  header.appendChild(button);
 
   const meta = document.createElement('div');
   meta.className = 'config-section-meta';
@@ -148,7 +150,7 @@ function render(): void {
   }
   header.appendChild(meta);
 
-  header.addEventListener('click', () => {
+  button.addEventListener('click', () => {
     collapsed = !collapsed;
     render();
   });
@@ -172,7 +174,7 @@ function render(): void {
   searchInput = document.createElement('input');
   searchInput.className = 'history-search';
   searchInput.type = 'text';
-  searchInput.placeholder = 'Filter history...';
+  searchInput.placeholder = 'Filter history…';
   searchInput.ariaLabel = 'Filter session history';
   searchInput.addEventListener('input', () => renderList(history));
   body.appendChild(searchInput);
@@ -191,11 +193,13 @@ function render(): void {
   });
   // Clear button
   const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
   clearBtn.className = 'history-clear-btn';
   clearBtn.textContent = 'Clear History';
   clearBtn.ariaLabel = 'Clear session history';
   clearBtn.addEventListener('click', () => {
     if (!project) return;
+    if (!confirm('Clear all session history for this project? This cannot be undone.')) return;
     appState.clearSessionHistory(project.id);
   });
 
@@ -226,7 +230,7 @@ function renderList(history: ArchivedSession[]): void {
   const visible = filtered.slice(0, MAX_VISIBLE);
   for (const archived of visible) {
     const item = document.createElement('div');
-    item.className = 'history-item';
+    item.className = 'history-item calder-list-row';
 
     if (archived.cliSessionId) {
       item.style.cursor = 'pointer';
@@ -260,7 +264,10 @@ function renderList(history: ArchivedSession[]): void {
     const parts: string[] = [];
     parts.push(formatDate(archived.closedAt));
     if (archived.cost) {
-      parts.push(`$${archived.cost.totalCostUsd.toFixed(2)}`);
+      const costLabel = archived.cost.source === 'fallback'
+        ? `Estimated $${archived.cost.totalCostUsd.toFixed(2)}`
+        : `$${archived.cost.totalCostUsd.toFixed(2)}`;
+      parts.push(costLabel);
     }
     parts.push(getProviderLabel(archived.providerId));
     details.textContent = parts.join(' · ');
@@ -272,6 +279,7 @@ function renderList(history: ArchivedSession[]): void {
     actions.className = 'history-item-actions';
 
     const bookmarkBtn = document.createElement('button');
+    bookmarkBtn.type = 'button';
     bookmarkBtn.className = `history-bookmark-btn${archived.bookmarked ? ' bookmarked' : ''}`;
     bookmarkBtn.innerHTML = archived.bookmarked ? '&#9733;' : '&#9734;';
     bookmarkBtn.title = archived.bookmarked ? 'Remove bookmark' : 'Bookmark session';
@@ -286,6 +294,7 @@ function renderList(history: ArchivedSession[]): void {
     actions.appendChild(bookmarkBtn);
 
     const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
     removeBtn.className = 'history-remove-btn';
     removeBtn.innerHTML = '&times;';
     removeBtn.title = 'Remove from history';
@@ -293,6 +302,7 @@ function renderList(history: ArchivedSession[]): void {
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const project = appState.activeProject;
+      if (!confirm(`Remove "${archived.name}" from session history?`)) return;
       if (project) {
         appState.removeHistoryEntry(project.id, archived.id);
       }
@@ -308,7 +318,7 @@ function renderList(history: ArchivedSession[]): void {
     const more = document.createElement('div');
     more.className = 'history-item-details';
     more.style.padding = '4px 12px';
-    more.textContent = `${filtered.length - MAX_VISIBLE} more items...`;
+    more.textContent = `${filtered.length - MAX_VISIBLE} more items…`;
     listEl.appendChild(more);
   }
 }

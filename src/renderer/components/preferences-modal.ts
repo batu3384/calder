@@ -1,9 +1,10 @@
 import { appState } from '../state.js';
-import { closeModal } from './modal.js';
+import { closeModal, prepareModalSurface } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { shortcutManager, displayKeys, eventToAccelerator } from '../shortcuts.js';
 import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../provider-availability.js';
 import type { CliProviderMeta, ProviderId, SettingsValidationResult } from '../../shared/types.js';
+import { isTrackingHealthy } from '../../shared/tracking-health.js';
 
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -16,13 +17,14 @@ const btnConfirm = document.getElementById('modal-confirm')!;
 type Section = 'general' | 'sidebar' | 'shortcuts' | 'setup' | 'about';
 
 export function showPreferencesModal(): void {
+  prepareModalSurface();
   titleEl.textContent = 'Preferences';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
 
   // Build two-pane layout
   const layout = document.createElement('div');
-  layout.className = 'preferences-layout';
+  layout.className = 'preferences-layout preferences-shell';
 
   // Side menu
   const menu = document.createElement('div');
@@ -32,16 +34,16 @@ export function showPreferencesModal(): void {
   menuHeader.className = 'preferences-menu-header';
   menuHeader.innerHTML = `
     <div class="preferences-menu-kicker shell-kicker">Calder</div>
-    <div class="preferences-menu-title">Control Surface</div>
-    <div class="preferences-menu-caption">Workspace defaults, shell behavior, and ownership settings.</div>
+    <div class="preferences-menu-title">Control Center</div>
+    <div class="preferences-menu-caption">Live layout, provider health, session defaults, and app behavior.</div>
   `;
   menu.appendChild(menuHeader);
 
   const sections: { id: Section; label: string }[] = [
     { id: 'general', label: 'General' },
-    { id: 'sidebar', label: 'Shell' },
+    { id: 'sidebar', label: 'Layout' },
     { id: 'shortcuts', label: 'Shortcuts' },
-    { id: 'setup', label: 'Setup' },
+    { id: 'setup', label: 'Providers' },
     { id: 'about', label: 'About' },
   ];
 
@@ -57,7 +59,7 @@ export function showPreferencesModal(): void {
 
   // Content area
   const content = document.createElement('div');
-  content.className = 'preferences-content';
+  content.className = 'preferences-content preferences-section';
 
   layout.appendChild(menu);
   layout.appendChild(content);
@@ -226,17 +228,17 @@ export function showPreferencesModal(): void {
     } else if (section === 'sidebar') {
       appendSectionIntro(
         content,
-        'Chrome',
-        'Shell Layout',
-        'Control which project signals stay visible in the Project rail versus the right-side Context inspector.',
+        'Layout',
+        'Layout',
+        'Control which support surfaces stay visible around Live View and the Session Deck.',
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
       const toggles: { key: keyof typeof views; label: string }[] = [
-        { key: 'configSections', label: 'Context inspector: Toolchain' },
-        { key: 'readinessSection', label: 'Context inspector: Readiness' },
-        { key: 'gitPanel', label: 'Context inspector: Workspace Changes' },
-        { key: 'sessionHistory', label: 'Context inspector: Session Archive' },
-        { key: 'costFooter', label: 'Command deck: Workspace Spend chip' },
+        { key: 'configSections', label: 'Ops Rail modules' },
+        { key: 'readinessSection', label: 'Providers' },
+        { key: 'gitPanel', label: 'Live View behavior' },
+        { key: 'sessionHistory', label: 'Session Deck defaults' },
+        { key: 'costFooter', label: 'Spend chip' },
       ];
 
       const checkboxes: Record<string, HTMLInputElement> = {};
@@ -272,9 +274,9 @@ export function showPreferencesModal(): void {
     } else if (section === 'setup') {
       appendSectionIntro(
         content,
-        'Runtime',
-        'Provider Setup And Health',
-        'Check binaries, hooks, and status-line integration without leaving the preferences surface.',
+        'Providers',
+        'Provider Health',
+        'Check binaries, hooks, and status-line integration without leaving the control center.',
       );
       renderSetupSection(content);
 
@@ -574,9 +576,7 @@ export function showPreferencesModal(): void {
 
   function hasProviderIssue({ meta, validation, binary }: ProviderStatus): boolean {
     if (!binary.ok) return true;
-    if ((meta.capabilities.costTracking || meta.capabilities.contextWindow) && validation.statusLine !== 'calder') return true;
-    if (meta.capabilities.hookStatus && validation.hooks !== 'complete') return true;
-    return false;
+    return !isTrackingHealthy(meta, validation);
   }
 
   async function renderSetupSection(container: HTMLElement) {

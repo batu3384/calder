@@ -6,6 +6,13 @@ let collapsed = true;
 let scanning = false;
 let lastExcludedKey = '';
 
+function updateCollapse(button: HTMLButtonElement, body: HTMLElement): void {
+  button.setAttribute('aria-expanded', String(!collapsed));
+  const toggle = button.querySelector('.config-section-toggle')!;
+  toggle.classList.toggle('collapsed', collapsed);
+  body.classList.toggle('hidden', collapsed);
+}
+
 export function initReadinessSection(): void {
   appState.on('state-loaded', () => {
     render();
@@ -79,10 +86,12 @@ function render(): void {
   const header = document.createElement('div');
   header.className = 'config-section-header';
 
-  const heading = document.createElement('div');
-  heading.className = 'config-section-heading readiness-header-main';
-  heading.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">AI Readiness</span>`;
-  header.appendChild(heading);
+  const headingButton = document.createElement('button');
+  headingButton.type = 'button';
+  headingButton.className = 'config-section-heading config-section-toggle-button readiness-header-main';
+  headingButton.setAttribute('aria-expanded', String(!collapsed));
+  headingButton.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">Providers</span>`;
+  header.appendChild(headingButton);
 
   const actions = document.createElement('div');
   actions.className = 'config-section-meta readiness-header-actions';
@@ -97,8 +106,9 @@ function render(): void {
 
   // Scan/Rescan button
   const scanBtn = document.createElement('button');
+  scanBtn.type = 'button';
   scanBtn.className = 'readiness-scan-btn';
-  scanBtn.textContent = scanning ? 'Scanning...' : (result ? 'Rescan' : 'Scan');
+  scanBtn.textContent = scanning ? 'Scanning…' : (result ? 'Rescan' : 'Scan');
   scanBtn.disabled = scanning;
   scanBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -113,12 +123,12 @@ function render(): void {
   if (scanning && !result) {
     const loading = document.createElement('div');
     loading.className = 'readiness-loading';
-    loading.textContent = 'Analyzing project...';
+    loading.textContent = 'Analyzing project…';
     body.appendChild(loading);
   } else if (result) {
     for (const category of result.categories) {
       const row = document.createElement('div');
-      row.className = 'readiness-category-row config-item-clickable';
+      row.className = 'readiness-category-row config-item-clickable calder-list-row';
 
       const color = scoreColor(category.score);
       row.innerHTML = `
@@ -137,12 +147,9 @@ function render(): void {
     }
   }
 
-  header.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('.readiness-scan-btn')) return;
+  headingButton.addEventListener('click', () => {
     collapsed = !collapsed;
-    const toggle = header.querySelector('.config-section-toggle')!;
-    toggle.classList.toggle('collapsed');
-    body.classList.toggle('hidden');
+    updateCollapse(headingButton, body);
   });
 
   section.appendChild(header);

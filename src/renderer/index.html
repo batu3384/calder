@@ -11,7 +11,7 @@
 </head>
 <body>
   <div id="app">
-    <div id="sidebar">
+    <div id="sidebar" class="sidebar-surface">
       <div id="sidebar-header">
         <div class="sidebar-title-group">
           <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar" style="font-size:13px;">&#x25E7;</button>
@@ -32,9 +32,9 @@
     </div>
     <div id="sidebar-resize-handle"></div>
     <div id="main-area">
-      <div id="workspace-shell">
+      <div id="workspace-shell" class="workspace-shell-surface">
         <div id="workspace-stack">
-          <div id="tab-bar">
+          <div id="tab-bar" class="tab-bar-surface">
             <div class="tab-bar-main">
               <div id="workspace-identity"></div>
               <div id="tab-list"></div>
@@ -46,8 +46,6 @@
               </div>
             </div>
             <div id="tab-actions">
-              <button id="btn-toggle-context-inspector" class="icon-btn" title="Toggle Context Inspector" aria-label="Toggle context inspector">&#9776;</button>
-              <button id="btn-command-deck-more" class="icon-btn" title="More Tools" aria-label="Open command deck overflow">&#x22ef;</button>
               <div id="session-launcher" class="session-launcher-group">
                 <div id="session-provider-slot" hidden></div>
                 <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
@@ -58,35 +56,35 @@
           <div id="project-terminal-resize-handle" class="hidden"></div>
           <div id="project-terminal-panel" class="hidden">
             <div id="project-terminal-header">
-              <span class="project-terminal-title">Scratch Shell</span>
+              <span class="project-terminal-title">Quick Terminal</span>
               <button id="btn-close-terminal" class="icon-btn" title="Close Terminal">&times;</button>
             </div>
             <div id="project-terminal-container"></div>
           </div>
         </div>
-        <aside id="context-inspector" class="context-inspector-open">
+        <aside id="context-inspector" class="context-inspector-open control-panel-surface">
           <div id="context-inspector-header">
             <div class="context-inspector-title-group">
-              <span class="context-inspector-eyebrow">Project Context</span>
-              <span class="context-inspector-title">Signals</span>
+              <span class="context-inspector-eyebrow">Support</span>
+              <span class="context-inspector-title">Ops Rail</span>
             </div>
             <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
           </div>
           <div id="context-inspector-sections">
             <section class="context-inspector-section" data-section="health">
-              <div class="context-inspector-section-label">Readiness</div>
+              <div class="context-inspector-section-label">Providers</div>
               <div id="readiness-section"></div>
             </section>
             <section class="context-inspector-section" data-section="git">
-              <div class="context-inspector-section-label">Git</div>
+              <div class="context-inspector-section-label">Changes</div>
               <div id="git-panel"></div>
             </section>
             <section class="context-inspector-section" data-section="activity">
-              <div class="context-inspector-section-label">Continuity</div>
+              <div class="context-inspector-section-label">Activity</div>
               <div id="session-history"></div>
             </section>
             <section class="context-inspector-section" data-section="capabilities">
-              <div class="context-inspector-section-label">Toolchain</div>
+              <div class="context-inspector-section-label">Tools</div>
               <div id="config-sections"></div>
             </section>
           </div>
