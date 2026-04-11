@@ -25,6 +25,18 @@
     0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
+.tab-bar-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    var(--surface-shell);
+}
+
+.session-deck-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    var(--surface-deck);
+}
+
 .tab-bar-main {
   flex: 1;
   min-width: 0;
@@ -549,6 +561,37 @@
   position: relative;
   top: -1px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+}
+
+.tab-provider-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  vertical-align: middle;
+  border-radius: 5px;
+  margin-right: 3px;
+  position: relative;
+  top: -1px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #f7f2ea;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.92), rgba(51, 65, 85, 0.92));
+}
+
+.tab-provider-fallback-qwen {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.96), rgba(15, 118, 110, 0.96));
+}
+
+.tab-provider-fallback-blackbox {
+  background: linear-gradient(135deg, rgba(55, 65, 81, 0.98), rgba(17, 24, 39, 0.98));
+}
+
+.tab-provider-fallback-copilot {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.96), rgba(37, 99, 235, 0.96));
 }
 
 .tab-diff-badge,

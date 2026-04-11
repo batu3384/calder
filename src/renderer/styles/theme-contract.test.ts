@@ -10,8 +10,18 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--surface-canvas');
     expect(baseCss).toContain('--surface-panel');
     expect(baseCss).toContain('--surface-elevated');
+    expect(baseCss).toContain('--surface-live');
+    expect(baseCss).toContain('--surface-deck');
+    expect(baseCss).toContain('--surface-ops');
     expect(baseCss).toContain('--control-height-md');
     expect(baseCss).toContain('--accent-soft');
+    expect(baseCss).toContain('--accent-warm');
+    expect(baseCss).toContain('--surface-shell');
+    expect(baseCss).toContain('--border-hairline');
+    expect(baseCss).toContain('--accent-line');
+    expect(baseCss).toContain('--motion-fast');
+    expect(baseCss).toContain('--motion-panel');
+    expect(baseCss).not.toContain('--accent: #ef6879;');
   });
 
   it('defines shared cockpit control classes', () => {
