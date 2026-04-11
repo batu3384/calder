@@ -302,7 +302,7 @@ describe('split-layout swarm behavior', () => {
 
     const container = document.getElementById('terminal-container') as FakeElement;
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, container);
-    expect(container.style.gridTemplateColumns).toBe('1fr 1fr');
+    expect(container.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
   });
 
   it('does not focus a terminal pane when the active swarm surface is a browser tab', async () => {
@@ -359,6 +359,33 @@ describe('split-layout swarm behavior', () => {
     renderLayout();
 
     expect(browserPane.classList.contains('swarm-dimmed')).toBe(false);
+  });
+
+  it('reorders a visible browser companion with cli panes', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setActiveSession(project.id, cli.id);
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const cliPane = terminalPanes.get(cli.id)!;
+    const browserPane = browserPanes.get(browser.id)!;
+    const browserHeader = browserPane.querySelector('.browser-pane-chrome')!;
+    const transfer = new FakeDataTransfer();
+
+    container.dispatch('dragstart', { target: browserHeader, dataTransfer: transfer });
+    container.dispatch('dragover', { target: cliPane, dataTransfer: transfer, preventDefault: vi.fn() });
+    container.dispatch('drop', { target: cliPane, dataTransfer: transfer, preventDefault: vi.fn() });
+
+    expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([browser.id, cli.id]);
+    expect(appState.activeProject!.layout.splitPanes).toEqual([cli.id]);
   });
 
   it('reorders swarm panes when a pane header is dragged onto another pane', async () => {

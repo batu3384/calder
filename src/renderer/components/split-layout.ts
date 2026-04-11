@@ -81,6 +81,21 @@ function findSwarmReorderHandle(pane: ParentNode): HTMLElement | null {
   return null;
 }
 
+function getSwarmCompanionSession(project: ProjectRecord) {
+  const activeSession = project.sessions.find(s => s.id === project.activeSessionId);
+  if (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab') {
+    return activeSession;
+  }
+  return [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+}
+
+function getVisibleSwarmSessions(project: ProjectRecord) {
+  const visibleIds = new Set(project.layout.splitPanes);
+  const companion = getSwarmCompanionSession(project);
+  if (companion) visibleIds.add(companion.id);
+  return project.sessions.filter((session) => visibleIds.has(session.id));
+}
+
 function clearSwarmReorderIndicators(): void {
   draggingSwarmSessionId = null;
   getPaneCandidates().forEach((pane) => {
@@ -103,8 +118,8 @@ function clearSwarmReorderDecorations(): void {
 
 function decorateSwarmReorderHandles(project: ProjectRecord, root: ParentNode = container): void {
   clearSwarmReorderDecorations();
-  for (const paneId of project.layout.splitPanes) {
-    const pane = findPaneBySessionId(paneId, root);
+  for (const session of getVisibleSwarmSessions(project)) {
+    const pane = findPaneBySessionId(session.id, root);
     if (!pane) continue;
     const handle = findSwarmReorderHandle(pane);
     if (!handle) continue;
@@ -167,7 +182,7 @@ export function initSplitLayout(): void {
 
     const paneEl = handle.closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const sessionId = paneEl?.dataset.sessionId;
-    if (!sessionId || !project.layout.splitPanes.includes(sessionId) || !e.dataTransfer) return;
+    if (!sessionId || !getVisibleSwarmSessions(project).some((session) => session.id === sessionId) || !e.dataTransfer) return;
 
     draggingSwarmSessionId = sessionId;
     e.dataTransfer.effectAllowed = 'move';
@@ -181,7 +196,8 @@ export function initSplitLayout(): void {
 
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const targetSessionId = paneEl?.dataset.sessionId;
-    if (!paneEl || !targetSessionId || targetSessionId === draggingSwarmSessionId || !project.layout.splitPanes.includes(targetSessionId)) {
+    const visibleSessions = getVisibleSwarmSessions(project);
+    if (!paneEl || !targetSessionId || targetSessionId === draggingSwarmSessionId || !visibleSessions.some((session) => session.id === targetSessionId)) {
       return;
     }
 
@@ -207,7 +223,8 @@ export function initSplitLayout(): void {
       clearSwarmReorderIndicators();
       return;
     }
-    if (!project.layout.splitPanes.includes(targetSessionId) || !project.layout.splitPanes.includes(draggedSessionId)) {
+    const visibleSessions = getVisibleSwarmSessions(project);
+    if (!visibleSessions.some((session) => session.id === targetSessionId) || !visibleSessions.some((session) => session.id === draggedSessionId)) {
       clearSwarmReorderIndicators();
       return;
     }
@@ -400,8 +417,8 @@ function renderTabMode(project: ProjectRecord): void {
 }
 
 /** Attach, show, and ensure-spawn for each pane in the list. */
-function showPanes(project: ProjectRecord, target: HTMLElement = container): void {
-  for (const paneId of project.layout.splitPanes) {
+function showPanes(project: ProjectRecord, target: HTMLElement = container, paneIds: string[] = project.layout.splitPanes): void {
+  for (const paneId of paneIds) {
     const session = project.sessions.find(s => s.id === paneId);
     if (session?.type && session.type !== 'claude') {
       attachNonCliPane(session, target, true);
@@ -449,25 +466,20 @@ function renderSplitMode(project: ProjectRecord): void {
 }
 
 function renderSwarmMode(project: ProjectRecord): void {
-  const count = project.layout.splitPanes.length;
+  const visibleSessions = getVisibleSwarmSessions(project);
+  const visiblePaneIds = visibleSessions.map((session) => session.id);
+  const count = visiblePaneIds.length;
   const cols = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / cols);
-
-  const activeSession = project.sessions.find(s => s.id === project.activeSessionId);
-  const browserCompanionSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
-  const nonCliSession = (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab')
-    ? activeSession
-    : browserCompanionSession;
 
   const hasInspector = isInspectorOpen();
 
   setContainerClass('swarm-mode');
 
-  const needsWrapper = nonCliSession || hasInspector;
+  const needsWrapper = hasInspector;
 
   if (needsWrapper) {
     const colParts: string[] = ['1fr'];
-    if (nonCliSession) colParts.push('1fr');
     if (hasInspector) colParts.push('var(--inspector-width, 350px)');
 
     container.style.gridTemplateColumns = colParts.join(' ');
@@ -479,13 +491,9 @@ function renderSwarmMode(project: ProjectRecord): void {
     gridWrapper.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     container.appendChild(gridWrapper);
 
-    showPanes(project, gridWrapper);
+    showPanes(project, gridWrapper, visiblePaneIds);
     appendEmptyCells(cols * rows - count, gridWrapper);
     decorateSwarmReorderHandles(project, gridWrapper);
-
-    if (nonCliSession) {
-      attachNonCliPane(nonCliSession, container, true);
-    }
 
     if (hasInspector) {
       const inspectorEl = container.querySelector('#session-inspector');
@@ -496,7 +504,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   } else {
     container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    showPanes(project);
+    showPanes(project, container, visiblePaneIds);
     appendEmptyCells(cols * rows - count, container);
     decorateSwarmReorderHandles(project);
   }
