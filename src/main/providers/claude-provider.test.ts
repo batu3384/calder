@@ -29,12 +29,20 @@ vi.mock('../claude-cli', () => ({
   getClaudeConfig: vi.fn(),
 }));
 
+vi.mock('../settings-guard', () => ({
+  guardedInstall: vi.fn(),
+  validateSettings: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
+  reinstallSettings: vi.fn(),
+}));
+
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { ClaudeProvider, _resetCachedPath } from './claude-provider';
+import { installStatusLineScript } from '../hook-status';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockInstallStatusLineScript = vi.mocked(installStatusLineScript);
 
 let provider: ClaudeProvider;
 
@@ -233,5 +241,17 @@ describe('parseCostFromOutput', () => {
   it('handles multiple cost values and picks last one', () => {
     const result = provider.parseCostFromOutput('Cost: $0.50 then $1.75 then $3.20');
     expect(result).toEqual({ totalCostUsd: 3.20 });
+  });
+});
+
+describe('statusline installation hooks', () => {
+  it('installStatusScripts delegates to the managed runtime installer', () => {
+    provider.installStatusScripts();
+    expect(mockInstallStatusLineScript).toHaveBeenCalled();
+  });
+
+  it('reinstallSettings refreshes the managed runtime assets', () => {
+    provider.reinstallSettings();
+    expect(mockInstallStatusLineScript).toHaveBeenCalled();
   });
 });

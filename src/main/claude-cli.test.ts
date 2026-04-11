@@ -377,6 +377,7 @@ describe('installHooks', () => {
     const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[1][1]));
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
+    expect(withStatusLine.statusLine.command).toBe('/tmp/calder/statusline.sh');
   });
 
   it('preserves existing non-calder hooks', () => {
