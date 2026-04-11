@@ -187,6 +187,34 @@
   border-radius: 999px;
 }
 
+.tab-reorder-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10px;
+  color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+  font-size: 11px;
+  letter-spacing: -1px;
+  opacity: 0.45;
+  cursor: grab;
+  flex-shrink: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.tab-item:hover .tab-reorder-handle,
+.tab-item.active .tab-reorder-handle {
+  opacity: 0.82;
+  color: var(--text-muted);
+}
+
+.tab-item.dragging .tab-reorder-handle {
+  opacity: 1;
+  cursor: grabbing;
+}
+
 /* Session status indicator */
 .tab-status {
   width: 7px;
