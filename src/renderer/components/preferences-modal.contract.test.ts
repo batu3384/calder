@@ -20,6 +20,15 @@ describe('preferences modal contract', () => {
     expect(source).not.toContain('Shell Layout');
   });
 
+  it('uses control-center sections and layout groups', () => {
+    expect(source).toContain("type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about'");
+    expect(source).toContain("{ id: 'layout', label: 'Layout' }");
+    expect(source).toContain("{ id: 'providers', label: 'Providers' }");
+    expect(source).toContain('Ops Rail modules');
+    expect(source).toContain('Live View behavior');
+    expect(source).toContain('Session Deck defaults');
+  });
+
   it('uses native modal and preferences shell hooks', () => {
     expect(source).toContain('Preferences');
     expect(source).toContain('Provider');

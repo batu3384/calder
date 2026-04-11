@@ -29,27 +29,43 @@
 
 .preferences-layout {
   display: flex;
-  gap: 0;
-  height: 520px;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 520px;
+}
+
+.preferences-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.preferences-section {
+  border: none;
+  background: transparent;
 }
 
 .preferences-menu {
-  width: 240px;
+  width: auto;
   flex-shrink: 0;
-  border-right: 1px solid var(--border-subtle);
-  padding: 12px 12px 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-right: none;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 0 14px;
+  background: transparent;
 }
 
 .preferences-menu-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 10px 14px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--border-subtle);
+  gap: 6px;
+  flex: 1 0 100%;
+  padding: 0 0 6px;
+  margin-bottom: 2px;
+  border-bottom: none;
 }
 
 .preferences-menu-title {
@@ -66,13 +82,16 @@
 }
 
 .preferences-menu-item {
-  padding: 10px 12px;
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  margin-bottom: 4px;
+  border-radius: 999px;
+  margin-bottom: 0;
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
@@ -93,7 +112,7 @@
 
 .preferences-content {
   flex: 1;
-  padding: 16px 24px 20px;
+  padding: 0;
   min-width: 0;
   overflow-y: auto;
 }
@@ -119,6 +138,35 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-muted);
+}
+
+.preferences-section-card {
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-panel) 78%, transparent);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.preferences-card-heading {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.preferences-card-copy {
+  margin-top: 6px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.preferences-card-note {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
 }
 
 .about-section {

@@ -14,7 +14,7 @@ const bodyEl = document.getElementById('modal-body')!;
 const btnCancel = document.getElementById('modal-cancel')!;
 const btnConfirm = document.getElementById('modal-confirm')!;
 
-type Section = 'general' | 'sidebar' | 'shortcuts' | 'setup' | 'about';
+type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
 
 export function showPreferencesModal(): void {
   prepareModalSurface();
@@ -41,9 +41,9 @@ export function showPreferencesModal(): void {
 
   const sections: { id: Section; label: string }[] = [
     { id: 'general', label: 'General' },
-    { id: 'sidebar', label: 'Layout' },
+    { id: 'layout', label: 'Layout' },
     { id: 'shortcuts', label: 'Shortcuts' },
-    { id: 'setup', label: 'Providers' },
+    { id: 'providers', label: 'Providers' },
     { id: 'about', label: 'About' },
   ];
 
@@ -86,6 +86,26 @@ export function showPreferencesModal(): void {
       <div class="preferences-section-description">${description}</div>
     `;
     container.appendChild(intro);
+  }
+
+  function appendSectionCard(container: HTMLElement, title: string, description?: string): HTMLElement {
+    const card = document.createElement('div');
+    card.className = 'preferences-section-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'preferences-card-heading';
+    heading.textContent = title;
+    card.appendChild(heading);
+
+    if (description) {
+      const copy = document.createElement('div');
+      copy.className = 'preferences-card-copy';
+      copy.textContent = description;
+      card.appendChild(copy);
+    }
+
+    container.appendChild(card);
+    return card;
   }
 
   function cleanupRecorder() {
@@ -225,7 +245,7 @@ export function showPreferencesModal(): void {
       autoTitleRow.appendChild(autoTitleCheckbox);
       content.appendChild(autoTitleRow);
 
-    } else if (section === 'sidebar') {
+    } else if (section === 'layout') {
       appendSectionIntro(
         content,
         'Layout',
@@ -233,13 +253,29 @@ export function showPreferencesModal(): void {
         'Control which support surfaces stay visible around Live View and the Session Deck.',
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
-      const toggles: { key: keyof typeof views; label: string }[] = [
-        { key: 'configSections', label: 'Ops Rail modules' },
-        { key: 'readinessSection', label: 'Providers' },
-        { key: 'gitPanel', label: 'Live View behavior' },
-        { key: 'sessionHistory', label: 'Session Deck defaults' },
-        { key: 'costFooter', label: 'Spend chip' },
+      const toggles: Array<{ key: keyof typeof views; label: string; group: 'ops' | 'session' }> = [
+        { key: 'configSections', label: 'Tools', group: 'ops' },
+        { key: 'readinessSection', label: 'Providers', group: 'ops' },
+        { key: 'gitPanel', label: 'Changes', group: 'ops' },
+        { key: 'sessionHistory', label: 'Activity', group: 'ops' },
+        { key: 'costFooter', label: 'Spend chip', group: 'session' },
       ];
+
+      const opsCard = appendSectionCard(
+        content,
+        'Ops Rail modules',
+        'Choose which support modules stay visible in the right-side operations rail.',
+      );
+      const liveViewCard = appendSectionCard(
+        content,
+        'Live View behavior',
+        'Live View stays anchored on the left when a browser session is open so page context never disappears.',
+      );
+      const sessionDeckCard = appendSectionCard(
+        content,
+        'Session Deck defaults',
+        'Tune the shared AI work area and the strip above active sessions.',
+      );
 
       const checkboxes: Record<string, HTMLInputElement> = {};
       for (const toggle of toggles) {
@@ -257,9 +293,19 @@ export function showPreferencesModal(): void {
 
         row.appendChild(label);
         row.appendChild(cb);
-        content.appendChild(row);
+        if (toggle.group === 'ops') {
+          opsCard.appendChild(row);
+        } else {
+          sessionDeckCard.appendChild(row);
+        }
         checkboxes[toggle.key] = cb;
       }
+
+      const pinnedNote = document.createElement('div');
+      pinnedNote.className = 'preferences-card-note';
+      pinnedNote.textContent = 'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
+      liveViewCard.appendChild(pinnedNote);
+
       sidebarCheckboxes = checkboxes as typeof sidebarCheckboxes;
 
     } else if (section === 'shortcuts') {
@@ -271,7 +317,7 @@ export function showPreferencesModal(): void {
       );
       renderShortcutsSection(content);
 
-    } else if (section === 'setup') {
+    } else if (section === 'providers') {
       appendSectionIntro(
         content,
         'Providers',
@@ -546,7 +592,7 @@ export function showPreferencesModal(): void {
 
   async function fixAndRerender(providerId?: string) {
     await window.calder.settings.reinstall(providerId);
-    renderSection('setup');
+    renderSection('providers');
   }
 
   function renderProviderHeader(parent: HTMLElement, displayName: string) {
@@ -591,7 +637,7 @@ export function showPreferencesModal(): void {
 
     const results = await fetchProviderStatuses();
 
-    if (currentSection !== 'setup') return;
+    if (currentSection !== 'providers') return;
 
     applySetupBadge(results.some(hasProviderIssue));
 
@@ -684,7 +730,7 @@ export function showPreferencesModal(): void {
   }
 
   function applySetupBadge(hasIssue: boolean) {
-    const setupItem = menuItems.get('setup');
+    const setupItem = menuItems.get('providers');
     if (setupItem) {
       setupItem.classList.toggle('has-badge', hasIssue);
     }
