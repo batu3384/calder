@@ -96,6 +96,18 @@ export interface SessionRecord {
   pendingInitialPrompt?: string;
 }
 
+export type ProjectLayoutMode = 'tabs' | 'split' | 'swarm' | 'mosaic';
+export type MosaicPreset = 'single' | 'columns-2' | 'rows-2' | 'focus-left' | 'focus-top' | 'grid-2x2';
+
+export interface ProjectLayoutState {
+  mode: ProjectLayoutMode;
+  splitPanes: string[];
+  splitDirection: 'horizontal' | 'vertical';
+  browserWidthRatio?: number;
+  mosaicPreset?: MosaicPreset;
+  mosaicRatios?: Record<string, number>;
+}
+
 export interface ArchivedSession {
   id: string;
   name: string;
@@ -131,11 +143,7 @@ export interface ProjectRecord {
   path: string;
   sessions: SessionRecord[];
   activeSessionId: string | null;
-  layout: {
-    mode: 'tabs' | 'split' | 'swarm';
-    splitPanes: string[];
-    splitDirection: 'horizontal' | 'vertical';
-  };
+  layout: ProjectLayoutState;
   sessionHistory?: ArchivedSession[];
   insights?: ProjectInsightsData;
   defaultArgs?: string;

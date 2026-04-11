@@ -1,5 +1,5 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -45,6 +45,20 @@ const defaultPreferences: Preferences = {
 };
 
 const NAV_HISTORY_MAX = 50;
+const DEFAULT_BROWSER_WIDTH_RATIO = 0.38;
+
+function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): ProjectLayoutState {
+  const rawMode = layout?.mode;
+  const mode = rawMode === 'tabs' || rawMode === 'split' ? rawMode : 'mosaic';
+  return {
+    mode,
+    splitPanes: Array.isArray(layout?.splitPanes) ? [...layout.splitPanes] : [],
+    splitDirection: layout?.splitDirection === 'vertical' ? 'vertical' : 'horizontal',
+    browserWidthRatio: typeof layout?.browserWidthRatio === 'number' ? layout.browserWidthRatio : DEFAULT_BROWSER_WIDTH_RATIO,
+    mosaicPreset: layout?.mosaicPreset,
+    mosaicRatios: layout?.mosaicRatios ? { ...layout.mosaicRatios } : {},
+  };
+}
 
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
@@ -185,6 +199,10 @@ class AppState {
       this.state = loaded;
       // Merge defaults for forward compatibility with old state files
       this.state.preferences = { ...defaultPreferences, ...this.state.preferences };
+      this.state.projects = this.state.projects.map((project) => ({
+        ...project,
+        layout: normalizeProjectLayout(project.layout),
+      }));
       // Restore persisted cost data into the in-memory cost tracker
       for (const project of this.state.projects) {
         for (const session of project.sessions) {
@@ -326,7 +344,7 @@ class AppState {
       path,
       sessions: [],
       activeSessionId: null,
-      layout: { mode: 'swarm', splitPanes: [], splitDirection: 'horizontal' },
+      layout: normalizeProjectLayout({ mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' }),
     };
     this.state.projects.push(project);
     this.state.activeProjectId = project.id;
@@ -380,8 +398,8 @@ class AppState {
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
-    // Auto-add to swarm if in swarm mode and under limit
-    if (project.layout.mode === 'swarm') {
+    // Auto-add visible CLI sessions to the mosaic canvas.
+    if (project.layout.mode === 'mosaic') {
       project.layout.splitPanes.push(session.id);
     }
     this.persist();
@@ -678,8 +696,8 @@ class AppState {
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
-    // Auto-add to swarm if in swarm mode
-    if (project.layout.mode === 'swarm') {
+    // Auto-add resumed CLI sessions to the mosaic canvas.
+    if (project.layout.mode === 'mosaic') {
       project.layout.splitPanes.push(session.id);
     }
     this.persist();
@@ -741,7 +759,7 @@ class AppState {
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
-    if (project.layout.mode === 'swarm') {
+    if (project.layout.mode === 'mosaic') {
       project.layout.splitPanes.push(session.id);
     }
     // persist() strips pendingInitialPrompt (transient). split-layout.onSessionAdded
@@ -891,14 +909,14 @@ class AppState {
     const project = this.activeProject;
     if (!project) return;
 
-    if (project.layout.mode === 'swarm') {
+    if (project.layout.mode === 'mosaic') {
       project.layout.mode = 'tabs';
       // Keep splitPanes as-is so order is preserved when switching back
     } else {
       const cliSessions = project.sessions.filter(
         (s) => !s.type || s.type === 'claude'
       );
-      project.layout.mode = 'swarm';
+      project.layout.mode = 'mosaic';
 
       // Remove stale IDs (deleted sessions)
       project.layout.splitPanes = project.layout.splitPanes.filter(
