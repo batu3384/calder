@@ -13,7 +13,7 @@
 }
 
 #context-inspector {
-  width: 336px;
+  width: 312px;
   min-width: 280px;
   border-left: 1px solid var(--border-subtle);
   display: flex;
@@ -22,6 +22,9 @@
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.03),
     -18px 0 34px rgba(0, 0, 0, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    var(--surface-ops);
 }
 
 .control-panel-surface {
@@ -85,7 +88,7 @@
 .context-inspector-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 #context-inspector .toolchain-summary {

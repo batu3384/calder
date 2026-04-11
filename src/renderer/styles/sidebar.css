@@ -1,18 +1,29 @@
 /* Sidebar */
 #sidebar {
-  width: 218px;
+  width: 204px;
   min-width: 168px;
   max-width: 320px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 92%, black), var(--surface-muted));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    var(--surface-rail);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
   user-select: none;
-  box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.03),
-    24px 0 44px rgba(0, 0, 0, 0.16);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+.sidebar-surface {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
+    var(--surface-rail);
+}
+
+.sidebar-project-row.active {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 58%, transparent), transparent 72%),
+    color-mix(in srgb, var(--surface-raised) 72%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
 }
 
 #sidebar-resize-handle {

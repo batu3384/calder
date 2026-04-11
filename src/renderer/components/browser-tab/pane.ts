@@ -11,6 +11,7 @@ import {
 } from './types.js';
 import { instances, getPreloadPath } from './instance.js';
 import { navigateTo } from './navigation.js';
+import { enablePopoverDragging } from './popover.js';
 import { applyViewport, openViewportDropdown, closeViewportDropdown } from './viewport.js';
 import { toggleInspectMode, showElementInfo, dismissInspect } from './inspect-mode.js';
 import {
@@ -32,6 +33,7 @@ import {
   sendToSelectedSession,
   sendToNewSession,
 } from './session-integration.js';
+import { anchorFloatingSurface } from '../floating-surface.js';
 
 function browserWorkspaceLabel(): string {
   const project = appState.activeProject;
@@ -46,6 +48,8 @@ function browserTargetButtonLabel(instance: BrowserTabInstance): string {
 }
 
 function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
+  instance.targetMenuFloatingCleanup?.();
+  instance.targetMenuFloatingCleanup = null;
   instance.targetMenu.style.display = 'none';
   instance.activeTargetTrigger = null;
   instance.activeTargetMode = null;
@@ -179,21 +183,55 @@ function openBrowserTargetMenu(
   instance.activeTargetMode = mode;
   renderBrowserTargetMenu(instance);
   instance.targetMenu.style.display = 'flex';
+  instance.targetMenuFloatingCleanup?.();
+  instance.targetMenuFloatingCleanup = anchorFloatingSurface(trigger, instance.targetMenu, {
+    placement: 'bottom-end',
+    offsetPx: 6,
+    maxWidthPx: 300,
+    maxHeightPx: 360,
+  });
+}
 
-  const paneRect = instance.element.getBoundingClientRect();
-  const triggerRect = trigger.getBoundingClientRect();
-  const menuRect = instance.targetMenu.getBoundingClientRect();
-  const left = Math.min(
-    Math.max(12, triggerRect.right - paneRect.left - menuRect.width),
-    Math.max(12, paneRect.width - menuRect.width - 12),
-  );
-  const top = Math.min(
-    Math.max(12, triggerRect.bottom - paneRect.top + 6),
-    Math.max(12, paneRect.height - menuRect.height - 12),
-  );
+async function populateLocalTargets(
+  instance: BrowserTabInstance,
+  grid: HTMLDivElement,
+  copy: HTMLDivElement,
+): Promise<void> {
+  grid.innerHTML = '';
+  copy.textContent = 'Scanning for active localhost targets…';
 
-  instance.targetMenu.style.left = `${left}px`;
-  instance.targetMenu.style.top = `${top}px`;
+  try {
+    const targets = await window.calder.browser.listLocalTargets();
+    if (!instances.has(instance.sessionId)) return;
+
+    if (targets.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'browser-ntp-empty';
+      empty.textContent = 'No active localhost targets found. Start a dev server, or type any URL in the bar above.';
+      grid.appendChild(empty);
+      copy.textContent = 'Only running local browser surfaces are listed here.';
+      return;
+    }
+
+    copy.textContent = 'Only active localhost surfaces appear here. Choose one to open it instantly.';
+    for (const target of targets) {
+      const btn = document.createElement('button');
+      btn.className = 'browser-ntp-link';
+      btn.innerHTML = `
+        <span class="browser-ntp-link-label">${target.label}</span>
+        <span class="browser-ntp-link-meta">${target.meta}</span>
+      `;
+      btn.addEventListener('click', () => navigateTo(instance, target.url));
+      grid.appendChild(btn);
+    }
+  } catch {
+    if (!instances.has(instance.sessionId)) return;
+    const empty = document.createElement('div');
+    empty.className = 'browser-ntp-empty';
+    empty.textContent = 'Could not detect active localhost targets right now. Type a URL in the bar above.';
+    grid.appendChild(empty);
+    copy.textContent = 'Only running local browser surfaces are listed here.';
+  }
 }
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
@@ -230,7 +268,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   toolbarNav.className = 'browser-toolbar-nav';
 
   const toolbarAddress = document.createElement('div');
-  toolbarAddress.className = 'browser-toolbar-address';
+  toolbarAddress.className = 'browser-toolbar-address browser-toolbar-primary';
 
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
@@ -407,32 +445,16 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpTargetsTitle = document.createElement('div');
   ntpTargetsTitle.className = 'browser-ntp-section-title shell-kicker';
-  ntpTargetsTitle.textContent = 'Common local targets';
+  ntpTargetsTitle.textContent = 'Active localhost targets';
   ntpTargets.appendChild(ntpTargetsTitle);
 
   const ntpTargetsText = document.createElement('div');
   ntpTargetsText.className = 'browser-ntp-section-copy';
-  ntpTargetsText.textContent = 'Use these shortcuts for the most common dev servers, or type any custom address in the bar above.';
+  ntpTargetsText.textContent = 'Scanning for active localhost targets…';
   ntpTargets.appendChild(ntpTargetsText);
 
   const ntpGrid = document.createElement('div');
   ntpGrid.className = 'browser-ntp-grid';
-  const quickLinks = [
-    { port: 'localhost:3000', meta: 'Primary app' },
-    { port: 'localhost:5173', meta: 'Vite dev server' },
-    { port: 'localhost:8080', meta: 'API or legacy app' },
-    { port: 'localhost:4200', meta: 'Angular workspace' },
-  ];
-  for (const { port, meta } of quickLinks) {
-    const btn = document.createElement('button');
-    btn.className = 'browser-ntp-link';
-    btn.innerHTML = `
-      <span class="browser-ntp-link-label">${port}</span>
-      <span class="browser-ntp-link-meta">${meta}</span>
-    `;
-    btn.addEventListener('click', () => navigateTo(instance, port));
-    ntpGrid.appendChild(btn);
-  }
   ntpTargets.appendChild(ntpGrid);
 
   const ntpWorkflow = document.createElement('section');
@@ -477,13 +499,29 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportContainer.appendChild(webview);
 
   const contentShell = document.createElement('div');
-  contentShell.className = 'browser-content-shell';
+  contentShell.className = 'browser-content-shell live-view-surface live-view';
   contentShell.appendChild(viewportContainer);
   el.appendChild(contentShell);
 
   const inspectPanel = document.createElement('div');
   inspectPanel.className = 'browser-inspect-panel';
+  inspectPanel.classList.add('calder-popover');
   inspectPanel.style.display = 'none';
+
+  const inspectHandle = document.createElement('div');
+  inspectHandle.className = 'browser-inspect-panel-handle';
+
+  const inspectHandleLabel = document.createElement('span');
+  inspectHandleLabel.className = 'browser-inspect-panel-handle-label';
+  inspectHandleLabel.textContent = 'Element capture';
+
+  const inspectHandleGrip = document.createElement('span');
+  inspectHandleGrip.className = 'browser-inspect-panel-handle-grip';
+  inspectHandleGrip.textContent = 'Move';
+
+  inspectHandle.appendChild(inspectHandleLabel);
+  inspectHandle.appendChild(inspectHandleGrip);
+  inspectPanel.appendChild(inspectHandle);
 
   const elementInfoEl = document.createElement('div');
   elementInfoEl.className = 'inspect-element-info';
@@ -502,7 +540,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to Session';
+  submitBtn.textContent = 'Send to selected';
 
   const customBtn = document.createElement('button');
   customBtn.className = 'inspect-dropdown-btn browser-target-trigger';
@@ -535,6 +573,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const drawPanel = document.createElement('div');
   drawPanel.className = 'browser-inspect-panel browser-draw-panel';
+  drawPanel.classList.add('calder-popover');
   drawPanel.style.display = 'none';
 
   const drawHeader = document.createElement('div');
@@ -560,7 +599,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const drawSubmitBtn = document.createElement('button');
   drawSubmitBtn.className = 'inspect-submit-btn';
-  drawSubmitBtn.textContent = 'Send to Session';
+  drawSubmitBtn.textContent = 'Send to selected';
 
   const drawCustomBtn = document.createElement('button');
   drawCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
@@ -634,7 +673,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const flowSubmitBtn = document.createElement('button');
   flowSubmitBtn.className = 'inspect-submit-btn';
-  flowSubmitBtn.textContent = 'Send to Session';
+  flowSubmitBtn.textContent = 'Send to selected';
 
   const flowCustomBtn = document.createElement('button');
   flowCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
@@ -685,6 +724,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const targetMenu = document.createElement('div');
   targetMenu.className = 'browser-target-menu';
+  targetMenu.classList.add('calder-popover');
   targetMenu.style.display = 'none';
 
   const targetMenuList = document.createElement('div');
@@ -739,11 +779,14 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     targetMenu,
     targetMenuList,
     targetMenuOutsideClickHandler: () => {},
+    targetMenuFloatingCleanup: null,
     activeTargetTrigger: null,
     activeTargetMode: null,
     cleanupFns: [],
   };
   instances.set(sessionId, instance);
+  instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
+  void populateLocalTargets(instance, ntpGrid, ntpTargetsText);
 
   const syncTargetingUi = () => syncBrowserTargetControls(instance);
   instance.cleanupFns.push(appState.on('session-added', syncTargetingUi));
@@ -916,12 +959,14 @@ export function showBrowserTabPane(sessionId: string, isSplit: boolean): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
   instance.element.classList.remove('hidden');
+  instance.element.classList.remove('swarm-dimmed', 'swarm-unread');
   instance.element.classList.toggle('split', isSplit);
 }
 
 export function hideAllBrowserTabPanes(): void {
   for (const instance of instances.values()) {
     instance.element.classList.add('hidden');
+    instance.element.classList.remove('swarm-dimmed', 'swarm-unread');
   }
 }
 
@@ -933,6 +978,7 @@ export function destroyBrowserTabPane(sessionId: string): void {
 
   document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);
   document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+  instance.targetMenuFloatingCleanup?.();
   for (const cleanup of instance.cleanupFns) cleanup();
 
   // <webview> calls throw if it isn't attached + dom-ready yet. Guard each

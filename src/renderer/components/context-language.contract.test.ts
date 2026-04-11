@@ -13,7 +13,7 @@ describe('context language contract', () => {
     expect(html).toContain('Changes');
     expect(html).toContain('Activity');
     expect(html).toContain('Tools');
-    expect(html).toContain('class="context-inspector-open control-panel-surface"');
+    expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(configSectionsSource).toContain("'MCP Servers'");
     expect(configSectionsSource).toContain('Model Context Protocol');
     expect(configSectionsSource).toContain("'Skills'");
