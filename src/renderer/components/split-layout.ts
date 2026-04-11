@@ -57,11 +57,18 @@ import {
 } from './browser-tab-pane.js';
 import { quickNewSession } from './tab-bar.js';
 import { promptNewProject } from './sidebar.js';
+import { resolveMosaicPreset } from './mosaic-layout-model.js';
 
 const container = document.getElementById('terminal-container')!;
 const SWARM_PANE_SELECTOR = '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane';
-const SWARM_REORDER_HEADER_SELECTOR = '.terminal-pane-chrome, .browser-pane-chrome, .file-viewer-header, .mcp-inspector-header';
+const SWARM_REORDER_HEADER_SELECTOR = '.terminal-pane-chrome, .file-viewer-header, .mcp-inspector-header';
+const SWARM_BROWSER_COLUMNS = ['minmax(280px, 0.92fr)', 'minmax(0, 1.25fr)'] as const;
 let draggingSwarmSessionId: string | null = null;
+const lastSwarmBrowserSessionIds = new Map<string, string>();
+
+function isMosaicLikeMode(project: ProjectRecord | undefined): boolean {
+  return !!project && (project.layout.mode === 'swarm' || project.layout.mode === 'mosaic');
+}
 
 function getPaneCandidates(root: ParentNode = container): HTMLElement[] {
   const selectors = ['.terminal-pane', '.browser-tab-pane', '.file-viewer-pane', '.file-reader-pane', '.mcp-inspector-pane'];
@@ -73,7 +80,7 @@ function findPaneBySessionId(sessionId: string, root: ParentNode = container): H
 }
 
 function findSwarmReorderHandle(pane: ParentNode): HTMLElement | null {
-  const selectors = ['.terminal-pane-chrome', '.browser-pane-chrome', '.file-viewer-header', '.mcp-inspector-header'];
+  const selectors = ['.terminal-pane-chrome', '.file-viewer-header', '.mcp-inspector-header'];
   for (const selector of selectors) {
     const handle = pane.querySelector(selector) as HTMLElement | null;
     if (handle) return handle;
@@ -81,19 +88,33 @@ function findSwarmReorderHandle(pane: ParentNode): HTMLElement | null {
   return null;
 }
 
-function getSwarmCompanionSession(project: ProjectRecord) {
-  const activeSession = project.sessions.find(s => s.id === project.activeSessionId);
-  if (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab') {
+function getSwarmBrowserSession(project: ProjectRecord) {
+  const activeSession = project.activeSessionId
+    ? project.sessions.find((session) => session.id === project.activeSessionId)
+    : undefined;
+  if (activeSession?.type === 'browser-tab') {
+    lastSwarmBrowserSessionIds.set(project.id, activeSession.id);
     return activeSession;
   }
-  return [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+
+  const rememberedId = lastSwarmBrowserSessionIds.get(project.id);
+  if (rememberedId) {
+    const remembered = project.sessions.find((session) => session.id === rememberedId && session.type === 'browser-tab');
+    if (remembered) return remembered;
+  }
+
+  const latest = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  if (latest) {
+    lastSwarmBrowserSessionIds.set(project.id, latest.id);
+  } else {
+    lastSwarmBrowserSessionIds.delete(project.id);
+  }
+  return latest;
 }
 
 function getVisibleSwarmSessions(project: ProjectRecord) {
   const visibleIds = new Set(project.layout.splitPanes);
-  const companion = getSwarmCompanionSession(project);
-  if (companion) visibleIds.add(companion.id);
-  return project.sessions.filter((session) => visibleIds.has(session.id));
+  return project.sessions.filter((session) => visibleIds.has(session.id) && (!session.type || session.type === 'claude'));
 }
 
 function clearSwarmReorderIndicators(): void {
@@ -150,7 +171,7 @@ export function initSplitLayout(): void {
 
   onUnreadChange(() => {
     const project = appState.activeProject;
-    if (project?.layout.mode === 'swarm') updateSwarmPaneStyles(project);
+    if (isMosaicLikeMode(project)) updateSwarmPaneStyles(project);
   });
 
   // Refit on window resize
@@ -161,7 +182,7 @@ export function initSplitLayout(): void {
   // Click delegation for swarm mode: clicking a dimmed pane makes it active
   container.addEventListener('mousedown', (e) => {
     const project = appState.activeProject;
-    if (!project || project.layout.mode !== 'swarm') return;
+    if (!isMosaicLikeMode(project)) return;
     if ((e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR)) return;
 
     const paneEl = (e.target as HTMLElement).closest(
@@ -177,7 +198,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragstart', (e) => {
     const project = appState.activeProject;
-    if (!project || project.layout.mode !== 'swarm') return;
+    if (!isMosaicLikeMode(project)) return;
     const handle = (e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR) as HTMLElement | null;
     if (!handle) return;
 
@@ -193,7 +214,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragover', (e) => {
     const project = appState.activeProject;
-    if (!project || project.layout.mode !== 'swarm' || !draggingSwarmSessionId) return;
+    if (!isMosaicLikeMode(project) || !draggingSwarmSessionId) return;
 
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const targetSessionId = paneEl?.dataset.sessionId;
@@ -213,7 +234,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('drop', (e) => {
     const project = appState.activeProject;
-    if (!project || project.layout.mode !== 'swarm' || !e.dataTransfer) return;
+    if (!isMosaicLikeMode(project) || !e.dataTransfer) return;
 
     e.preventDefault();
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
@@ -315,6 +336,7 @@ export function renderLayout(): void {
 
   removeEmptyState();
   container.querySelectorAll('.swarm-grid-wrapper').forEach(el => el.remove());
+  container.querySelectorAll('.swarm-browser-column').forEach(el => el.remove());
   container.querySelectorAll('.swarm-empty-cell').forEach(el => el.remove());
 
   // Ensure all sessions have their respective instances
@@ -351,8 +373,16 @@ export function renderLayout(): void {
   hideAllRemotePanes();
   hideAllBrowserTabPanes();
 
-  if (project.layout.mode === 'swarm' && project.layout.splitPanes.length >= 1) {
-    renderSwarmMode(project);
+  const activeSession = project.activeSessionId
+    ? project.sessions.find((session) => session.id === project.activeSessionId)
+    : undefined;
+
+  if (isMosaicLikeMode(project) && project.layout.splitPanes.length >= 1) {
+    if (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab') {
+      renderTabMode(project);
+    } else {
+      renderSwarmMode(project);
+    }
   } else if (project.layout.mode === 'split' && project.layout.splitPanes.length > 1) {
     renderSplitMode(project);
   } else {
@@ -396,6 +426,7 @@ function renderTabMode(project: ProjectRecord): void {
 
   const activeSession = project.sessions.find(s => s.id === activeId);
   if (activeSession?.type && activeSession.type !== 'claude') {
+    clearFocused();
     attachNonCliPane(activeSession, container, false);
     return;
   }
@@ -469,22 +500,50 @@ function renderSplitMode(project: ProjectRecord): void {
 function renderSwarmMode(project: ProjectRecord): void {
   const visibleSessions = getVisibleSwarmSessions(project);
   const visiblePaneIds = visibleSessions.map((session) => session.id);
+  const browserSession = getSwarmBrowserSession(project);
+  const hasBrowserColumn = !!browserSession;
   const count = visiblePaneIds.length;
-  const cols = Math.ceil(Math.sqrt(count));
-  const rows = Math.ceil(count / cols);
+  const resolvedPreset = resolveMosaicPreset(count, project.layout.mosaicPreset);
+  let cols = hasBrowserColumn ? 2 : Math.ceil(Math.sqrt(count));
+  let rows = hasBrowserColumn ? Math.max(2, Math.ceil(count / cols)) : Math.ceil(count / cols);
+  if (resolvedPreset === 'single') {
+    cols = 1;
+    rows = 1;
+  } else if (resolvedPreset === 'columns-2') {
+    cols = 2;
+    rows = 1;
+  } else if (resolvedPreset === 'rows-2') {
+    cols = 1;
+    rows = 2;
+  } else {
+    cols = 2;
+    rows = 2;
+  }
+  if (hasBrowserColumn) {
+    rows = Math.max(2, rows);
+  }
 
   const hasInspector = isInspectorOpen();
 
   setContainerClass('swarm-mode');
+  container.dataset.mosaicPreset = resolvedPreset;
 
-  const needsWrapper = hasInspector;
+  const needsWrapper = hasInspector || hasBrowserColumn;
 
   if (needsWrapper) {
-    const colParts: string[] = ['1fr'];
+    const colParts: string[] = hasBrowserColumn ? [...SWARM_BROWSER_COLUMNS] : ['1fr'];
     if (hasInspector) colParts.push('var(--inspector-width, 350px)');
 
     container.style.gridTemplateColumns = colParts.join(' ');
     container.style.gridTemplateRows = '1fr';
+
+    let browserWrapper: HTMLElement | null = null;
+    if (browserSession) {
+      browserWrapper = document.createElement('div');
+      browserWrapper.className = 'swarm-browser-column';
+      container.appendChild(browserWrapper);
+      attachNonCliPane(browserSession, browserWrapper, true);
+    }
 
     const gridWrapper = document.createElement('div');
     gridWrapper.className = 'swarm-grid-wrapper';
@@ -538,14 +597,6 @@ function updateSwarmPaneStyles(project: ProjectRecord): void {
       instance.element.classList.toggle('swarm-dimmed', !isActive);
       instance.element.classList.toggle('swarm-unread', !isActive && isUnread(paneId));
     }
-  }
-
-  for (const session of project.sessions) {
-    if (session.type !== 'browser-tab') continue;
-    const instance = getBrowserTabInstance(session.id);
-    if (!instance) continue;
-    const pane = ('element' in instance ? instance.element : instance) as HTMLElement;
-    pane.classList.toggle('swarm-dimmed', session.id !== project.activeSessionId);
   }
 }
 
