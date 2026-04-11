@@ -577,7 +577,6 @@ function render(): void {
     const sharing = isSharing(session.id);
     tab.className = 'tab-item' + (isActive ? ' active' : '') + (unread ? ' unread' : '') + (sharing ? ' tab-sharing' : '') + (isRemoteTab ? ' tab-remote' : '');
     tab.dataset.sessionId = session.id;
-    tab.draggable = true;
     tab.title = buildTabTitle(session);
     const providerId = session.providerId || 'claude';
     const providerIcon = hasMultipleAvailableProviders() ? `<img class="tab-provider-icon" src="assets/providers/${providerId}.png" alt="${providerId}" onerror="this.style.display='none'"> ` : '';
@@ -624,7 +623,10 @@ function render(): void {
       appState.removeSession(project.id, session.id);
     });
 
-    tab.addEventListener('dragstart', (e) => {
+    const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement;
+    reorderHandleEl.draggable = true;
+
+    reorderHandleEl.addEventListener('dragstart', (e) => {
       e.dataTransfer!.effectAllowed = 'move';
       e.dataTransfer!.setData('text/plain', session.id);
       tab.classList.add('dragging');
@@ -666,7 +668,7 @@ function render(): void {
       appState.reorderSession(project.id, draggedId, targetIndex);
     });
 
-    tab.addEventListener('dragend', () => {
+    reorderHandleEl.addEventListener('dragend', () => {
       tab.classList.remove('dragging');
       // Clean up all drag indicators
       tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach(el => {
