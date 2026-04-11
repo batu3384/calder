@@ -3,6 +3,7 @@ import type { SessionRecord, ProjectRecord, Preferences, PersistedState, Archive
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
+import { clampRatio } from './components/mosaic-layout-model.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 
@@ -930,6 +931,24 @@ class AppState {
         }
       }
     }
+    this.persist();
+    this.emit('layout-changed');
+  }
+
+  setBrowserWidthRatio(projectId: string, ratio: number): void {
+    const project = this.state.projects.find((p) => p.id === projectId);
+    if (!project) return;
+    project.layout.browserWidthRatio = clampRatio(ratio, 0.25, 0.7, DEFAULT_BROWSER_WIDTH_RATIO);
+    this.persist();
+    this.emit('layout-changed');
+  }
+
+  setMosaicRatio(projectId: string, key: string, ratio: number): void {
+    const project = this.state.projects.find((p) => p.id === projectId);
+    if (!project) return;
+    const next = { ...(project.layout.mosaicRatios ?? {}) };
+    next[key] = clampRatio(ratio, 0.2, 0.8, next[key] ?? 0.5);
+    project.layout.mosaicRatios = next;
     this.persist();
     this.emit('layout-changed');
   }

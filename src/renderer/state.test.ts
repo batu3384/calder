@@ -900,6 +900,34 @@ describe('preferences', () => {
   });
 });
 
+describe('mosaic layout ratios', () => {
+  it('persists a clamped browser width ratio and emits layout-changed', () => {
+    const project = addProject();
+    const cb = vi.fn();
+    appState.on('layout-changed', cb);
+    mockSave.mockClear();
+
+    (appState as any).setBrowserWidthRatio(project.id, 0.9);
+
+    expect(appState.activeProject!.layout.browserWidthRatio).toBe(0.7);
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('persists a clamped named mosaic ratio and emits layout-changed', () => {
+    const project = addProject();
+    const cb = vi.fn();
+    appState.on('layout-changed', cb);
+    mockSave.mockClear();
+
+    (appState as any).setMosaicRatio(project.id, 'focus-left-main', 0.1);
+
+    expect(appState.activeProject!.layout.mosaicRatios).toEqual({ 'focus-left-main': 0.2 });
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(mockSave).toHaveBeenCalled();
+  });
+});
+
 describe('setSidebarWidth()', () => {
   it('sets sidebarWidth and persists', () => {
     appState.setSidebarWidth(300);

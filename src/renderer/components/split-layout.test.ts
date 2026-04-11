@@ -68,6 +68,11 @@ class FakeElement {
     this.listeners.set(event, current);
   }
 
+  removeEventListener(event: string, cb: (event?: any) => void): void {
+    const current = this.listeners.get(event) ?? [];
+    this.listeners.set(event, current.filter((listener) => listener !== cb));
+  }
+
   dispatch(event: string, payload: any): void {
     for (const cb of this.listeners.get(event) ?? []) cb(payload);
   }
@@ -302,13 +307,15 @@ describe('split-layout mosaic behavior', () => {
     const container = document.getElementById('terminal-container') as FakeElement;
     const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+    const browserDivider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
     expect(browserColumn).toBeTruthy();
     expect(canvas).toBeTruthy();
+    expect(browserDivider).toBeTruthy();
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(firstCli.id)?.parentElement).toBe(canvas);
-    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.92fr) minmax(0, 1.25fr)');
+    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.38fr) 10px minmax(0, 0.62fr)');
     expect(canvas.className).toContain('mosaic-single');
   });
 
@@ -321,6 +328,7 @@ describe('split-layout mosaic behavior', () => {
     const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
     const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
     const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    project.layout.browserWidthRatio = 0.44;
     appState.setActiveSession(project.id, first.id);
 
     renderLayout();
@@ -328,15 +336,19 @@ describe('split-layout mosaic behavior', () => {
     const container = document.getElementById('terminal-container') as FakeElement;
     const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+    const browserDivider = container.querySelector('.mosaic-divider-browser') as FakeElement;
+    const sessionDivider = container.querySelector('.mosaic-divider-primary') as FakeElement;
 
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
-    expect(terminalPanes.get(first.id)?.parentElement).toBe(canvas);
-    expect(terminalPanes.get(second.id)?.parentElement).toBe(canvas);
-    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.92fr) minmax(0, 1.25fr)');
+    expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
+    expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
+    expect(browserDivider).toBeTruthy();
+    expect(sessionDivider).toBeTruthy();
+    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.44fr) 10px minmax(0, 0.56fr)');
     expect(canvas.className).toContain('mosaic-columns-2');
-    expect(canvas.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
-    expect(canvas.style.gridTemplateRows).toBe('repeat(1, 1fr)');
+    expect(canvas.style.gridTemplateColumns).toBe('minmax(0, 0.5fr) 10px minmax(0, 0.5fr)');
+    expect(canvas.style.gridTemplateRows).toBe('1fr');
   });
 
   it('renders browser-left with a focus-left preset when three cli sessions are visible', async () => {
@@ -349,6 +361,7 @@ describe('split-layout mosaic behavior', () => {
     const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
     const third = appState.addSession(project.id, 'Session 3', undefined, 'gemini')!;
     appState.addBrowserTabSession(project.id, 'http://localhost:3000');
+    project.layout.mosaicRatios = { 'focus-left-main': 0.62, 'focus-left-stack': 0.35 };
 
     appState.setActiveSession(project.id, first.id);
     renderLayout();
@@ -357,13 +370,19 @@ describe('split-layout mosaic behavior', () => {
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
     const main = container.querySelector('.mosaic-focus-left-main') as FakeElement;
     const stack = container.querySelector('.mosaic-focus-left-stack') as FakeElement;
+    const primaryDivider = container.querySelector('.mosaic-divider-primary') as FakeElement;
+    const secondaryDivider = container.querySelector('.mosaic-divider-secondary') as FakeElement;
 
     expect(canvas.className).toContain('mosaic-focus-left');
     expect(main).toBeTruthy();
     expect(stack).toBeTruthy();
+    expect(primaryDivider).toBeTruthy();
+    expect(secondaryDivider).toBeTruthy();
+    expect(canvas.style.gridTemplateColumns).toBe('minmax(0, 0.62fr) 10px minmax(0, 0.38fr)');
+    expect(stack.style.gridTemplateRows).toBe('minmax(0, 0.35fr) 10px minmax(0, 0.65fr)');
     expect(terminalPanes.get(first.id)?.parentElement).toBe(main);
-    expect(terminalPanes.get(second.id)?.parentElement).toBe(stack);
-    expect(terminalPanes.get(third.id)?.parentElement).toBe(stack);
+    expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
+    expect(terminalPanes.get(third.id)?.parentElement?.className).toContain('mosaic-slot');
   });
 
   it('expands the session mosaic to full width when no browser session exists', async () => {
@@ -385,8 +404,8 @@ describe('split-layout mosaic behavior', () => {
     expect(browserColumn).toBeNull();
     expect(canvas).toBeTruthy();
     expect(container.style.gridTemplateColumns).toBe('1fr');
-    expect(terminalPanes.get(first.id)?.parentElement).toBe(canvas);
-    expect(terminalPanes.get(second.id)?.parentElement).toBe(canvas);
+    expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
+    expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
     expect(canvas.className).toContain('mosaic-columns-2');
   });
 
