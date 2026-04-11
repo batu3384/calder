@@ -59,6 +59,64 @@ import { quickNewSession } from './tab-bar.js';
 import { promptNewProject } from './sidebar.js';
 
 const container = document.getElementById('terminal-container')!;
+const SWARM_PANE_SELECTOR = '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane';
+const SWARM_REORDER_HEADER_SELECTOR = '.terminal-pane-chrome, .browser-pane-chrome, .file-viewer-header, .mcp-inspector-header';
+let draggingSwarmSessionId: string | null = null;
+
+function getPaneCandidates(root: ParentNode = container): HTMLElement[] {
+  const selectors = ['.terminal-pane', '.browser-tab-pane', '.file-viewer-pane', '.file-reader-pane', '.mcp-inspector-pane'];
+  return selectors.flatMap((selector) => Array.from(root.querySelectorAll(selector)) as HTMLElement[]);
+}
+
+function findPaneBySessionId(sessionId: string, root: ParentNode = container): HTMLElement | null {
+  return getPaneCandidates(root).find((pane) => pane.dataset.sessionId === sessionId) ?? null;
+}
+
+function findSwarmReorderHandle(pane: ParentNode): HTMLElement | null {
+  const selectors = ['.terminal-pane-chrome', '.browser-pane-chrome', '.file-viewer-header', '.mcp-inspector-header'];
+  for (const selector of selectors) {
+    const handle = pane.querySelector(selector) as HTMLElement | null;
+    if (handle) return handle;
+  }
+  return null;
+}
+
+function clearSwarmReorderIndicators(): void {
+  draggingSwarmSessionId = null;
+  getPaneCandidates().forEach((pane) => {
+    pane.classList.remove('swarm-reorder-target', 'swarm-reorder-dragging');
+  });
+}
+
+function clearSwarmReorderDecorations(): void {
+  container.querySelectorAll('.swarm-reorder-header').forEach((header) => {
+    const element = header as HTMLElement;
+    element.classList.remove('swarm-reorder-header');
+    element.draggable = false;
+    if (element.dataset.swarmReorderTitle === 'true') {
+      element.removeAttribute?.('title');
+      delete element.dataset.swarmReorderTitle;
+    }
+  });
+  clearSwarmReorderIndicators();
+}
+
+function decorateSwarmReorderHandles(project: ProjectRecord, root: ParentNode = container): void {
+  clearSwarmReorderDecorations();
+  for (const paneId of project.layout.splitPanes) {
+    const pane = findPaneBySessionId(paneId, root);
+    if (!pane) continue;
+    const handle = findSwarmReorderHandle(pane);
+    if (!handle) continue;
+    handle.classList.add('swarm-reorder-header');
+    handle.draggable = true;
+    const existingTitle = handle.getAttribute?.('title') ?? handle.title;
+    if (!existingTitle) {
+      handle.title = 'Drag to reorder pane';
+      handle.dataset.swarmReorderTitle = 'true';
+    }
+  }
+}
 
 /** Set the container's layout class while preserving the inspector-open class if active. */
 function setContainerClass(cls: string): void {
@@ -99,6 +157,70 @@ export function initSplitLayout(): void {
     if (sessionId && sessionId !== project.activeSessionId) {
       appState.setActiveSession(project.id, sessionId);
     }
+  });
+
+  container.addEventListener('dragstart', (e) => {
+    const project = appState.activeProject;
+    if (!project || project.layout.mode !== 'swarm') return;
+    const handle = (e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR) as HTMLElement | null;
+    if (!handle) return;
+
+    const paneEl = handle.closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
+    const sessionId = paneEl?.dataset.sessionId;
+    if (!sessionId || !project.layout.splitPanes.includes(sessionId) || !e.dataTransfer) return;
+
+    draggingSwarmSessionId = sessionId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', sessionId);
+    paneEl.classList.add('swarm-reorder-dragging');
+  });
+
+  container.addEventListener('dragover', (e) => {
+    const project = appState.activeProject;
+    if (!project || project.layout.mode !== 'swarm' || !draggingSwarmSessionId) return;
+
+    const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
+    const targetSessionId = paneEl?.dataset.sessionId;
+    if (!paneEl || !targetSessionId || targetSessionId === draggingSwarmSessionId || !project.layout.splitPanes.includes(targetSessionId)) {
+      return;
+    }
+
+    e.preventDefault();
+    getPaneCandidates().forEach((pane) => pane.classList.toggle('swarm-reorder-target', pane === paneEl));
+  });
+
+  container.addEventListener('dragleave', (e) => {
+    const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
+    paneEl?.classList.remove('swarm-reorder-target');
+  });
+
+  container.addEventListener('drop', (e) => {
+    const project = appState.activeProject;
+    if (!project || project.layout.mode !== 'swarm' || !e.dataTransfer) return;
+
+    e.preventDefault();
+    const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
+    const targetSessionId = paneEl?.dataset.sessionId;
+    const draggedSessionId = e.dataTransfer.getData('text/plain');
+
+    if (!paneEl || !targetSessionId || !draggedSessionId || targetSessionId === draggedSessionId) {
+      clearSwarmReorderIndicators();
+      return;
+    }
+    if (!project.layout.splitPanes.includes(targetSessionId) || !project.layout.splitPanes.includes(draggedSessionId)) {
+      clearSwarmReorderIndicators();
+      return;
+    }
+
+    const targetIndex = project.sessions.findIndex((session) => session.id === targetSessionId);
+    if (targetIndex !== -1) {
+      appState.reorderSession(project.id, draggedSessionId, targetIndex);
+    }
+    clearSwarmReorderIndicators();
+  });
+
+  container.addEventListener('dragend', () => {
+    clearSwarmReorderIndicators();
   });
 }
 
@@ -246,6 +368,7 @@ function attachNonCliPane(session: { id: string; type?: string; fileReaderLine?:
 }
 
 function renderTabMode(project: ProjectRecord): void {
+  clearSwarmReorderDecorations();
   setContainerClass('');
   container.style.gridTemplateColumns = '';
   container.style.gridTemplateRows = '';
@@ -317,6 +440,7 @@ function focusActivePane(project: ProjectRecord): void {
 }
 
 function renderSplitMode(project: ProjectRecord): void {
+  clearSwarmReorderDecorations();
   setContainerClass(`split-${project.layout.splitDirection}`);
   container.style.gridTemplateColumns = '';
   container.style.gridTemplateRows = '';
@@ -357,6 +481,7 @@ function renderSwarmMode(project: ProjectRecord): void {
 
     showPanes(project, gridWrapper);
     appendEmptyCells(cols * rows - count, gridWrapper);
+    decorateSwarmReorderHandles(project, gridWrapper);
 
     if (nonCliSession) {
       attachNonCliPane(nonCliSession, container, true);
@@ -373,6 +498,7 @@ function renderSwarmMode(project: ProjectRecord): void {
     container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
     showPanes(project);
     appendEmptyCells(cols * rows - count, container);
+    decorateSwarmReorderHandles(project);
   }
 
   updateSwarmPaneStyles(project);

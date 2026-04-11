@@ -166,6 +166,32 @@
     color-mix(in srgb, var(--surface-panel) 94%, black);
 }
 
+.swarm-reorder-header {
+  cursor: grab;
+}
+
+.swarm-reorder-header:active {
+  cursor: grabbing;
+}
+
+.terminal-pane.swarm-reorder-target,
+.browser-tab-pane.swarm-reorder-target,
+.file-viewer-pane.swarm-reorder-target,
+.file-reader-pane.swarm-reorder-target,
+.mcp-inspector-pane.swarm-reorder-target {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent) 38%, transparent),
+    0 20px 46px rgba(0, 0, 0, 0.22);
+}
+
+.terminal-pane.swarm-reorder-dragging,
+.browser-tab-pane.swarm-reorder-dragging,
+.file-viewer-pane.swarm-reorder-dragging,
+.file-reader-pane.swarm-reorder-dragging,
+.mcp-inspector-pane.swarm-reorder-dragging {
+  opacity: 0.72;
+}
+
 .terminal-pane.swarm-unread {
   border-color: var(--accent);
 }

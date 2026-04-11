@@ -118,6 +118,20 @@ class FakeElement {
   }
 }
 
+class FakeDataTransfer {
+  effectAllowed = '';
+  dropEffect = '';
+  private store = new Map<string, string>();
+
+  setData(type: string, value: string): void {
+    this.store.set(type, value);
+  }
+
+  getData(type: string): string {
+    return this.store.get(type) ?? '';
+  }
+}
+
 class FakeDocument {
   body = new FakeElement('body');
   activeElement: FakeElement | null = null;
@@ -161,6 +175,16 @@ function makePane(className: string, sessionId: string): FakeElement {
   const el = new FakeElement('div');
   el.className = className;
   el.dataset.sessionId = sessionId;
+  const headerClass = className === 'terminal-pane'
+    ? 'terminal-pane-chrome'
+    : className === 'browser-tab-pane'
+      ? 'browser-pane-chrome'
+      : null;
+  if (headerClass) {
+    const header = new FakeElement('div');
+    header.className = headerClass;
+    el.appendChild(header);
+  }
   return el;
 }
 
@@ -314,5 +338,32 @@ describe('split-layout swarm behavior', () => {
     container.dispatch('mousedown', { target: browserPane });
 
     expect(appState.activeProject!.activeSessionId).toBe(browser.id);
+  });
+
+  it('reorders swarm panes when a pane header is dragged onto another pane', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+
+    appState.setActiveSession(project.id, second.id);
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const firstPane = terminalPanes.get(first.id)!;
+    const secondPane = terminalPanes.get(second.id)!;
+    const firstHeader = firstPane.querySelector('.terminal-pane-chrome')!;
+    const transfer = new FakeDataTransfer();
+
+    container.dispatch('dragstart', { target: firstHeader, dataTransfer: transfer });
+    container.dispatch('dragover', { target: secondPane, dataTransfer: transfer, preventDefault: vi.fn() });
+    container.dispatch('drop', { target: secondPane, dataTransfer: transfer, preventDefault: vi.fn() });
+
+    expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([second.id, first.id]);
+    expect(appState.activeProject!.layout.splitPanes).toEqual([second.id, first.id]);
   });
 });
