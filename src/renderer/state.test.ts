@@ -718,42 +718,7 @@ describe('renameSession()', () => {
   });
 });
 
-describe('toggleSplit() / toggleSwarm()', () => {
-  it('switches from mosaic to tabs and preserves splitPanes', () => {
-    addProjectWithSessions(3);
-    // default mode is mosaic with sessions auto-populated
-    expect(appState.activeProject!.layout.mode).toBe('mosaic');
-    expect(appState.activeProject!.layout.splitPanes.length).toBe(3);
-    const panesBefore = [...appState.activeProject!.layout.splitPanes];
-    appState.toggleSwarm(); // mosaic -> tabs
-    const layout = appState.activeProject!.layout;
-    expect(layout.mode).toBe('tabs');
-    expect(layout.splitPanes).toEqual(panesBefore);
-  });
-
-  it('switches from tabs back to mosaic and populates splitPanes', () => {
-    addProjectWithSessions(2);
-    appState.toggleSwarm(); // mosaic -> tabs
-    appState.toggleSwarm(); // tabs -> mosaic
-    const layout = appState.activeProject!.layout;
-    expect(layout.mode).toBe('mosaic');
-    expect(layout.splitPanes.length).toBe(2);
-  });
-
-  it('toggleSplit delegates to toggleSwarm', () => {
-    addProjectWithSessions(2);
-    appState.toggleSplit(); // mosaic -> tabs
-    expect(appState.activeProject!.layout.mode).toBe('tabs');
-  });
-
-  it('emits layout-changed', () => {
-    addProjectWithSessions(2);
-    const cb = vi.fn();
-    appState.on('layout-changed', cb);
-    appState.toggleSwarm();
-    expect(cb).toHaveBeenCalledTimes(1);
-  });
-
+describe('mosaic layout defaults', () => {
   it('includes all CLI sessions in splitPanes by default', () => {
     addProjectWithSessions(8);
     const layout = appState.activeProject!.layout;
@@ -775,14 +740,6 @@ describe('toggleSplit() / toggleSwarm()', () => {
     const layout = appState.activeProject!.layout;
     expect(layout.mode).toBe('mosaic');
     expect(layout.splitPanes.length).toBe(1);
-  });
-
-  it('places activeSessionId first in splitPanes when toggling back to mosaic', () => {
-    const { project, sessions } = addProjectWithSessions(3);
-    appState.toggleSwarm(); // mosaic -> tabs
-    appState.setActiveSession(project.id, sessions[0].id);
-    appState.toggleSwarm(); // tabs -> mosaic
-    expect(appState.activeProject!.layout.splitPanes[0]).toBe(sessions[0].id);
   });
 });
 

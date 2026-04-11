@@ -86,7 +86,6 @@ export interface CalderApi {
   menu: {
     onNewProject(callback: () => void): () => void;
     onNewSession(callback: () => void): () => void;
-    onToggleSplit(callback: () => void): () => void;
     onNextSession(callback: () => void): () => void;
     onPrevSession(callback: () => void): () => void;
     onGotoSession(callback: (index: number) => void): () => void;

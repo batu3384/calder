@@ -56,12 +56,6 @@ export function createAppMenu(debugMode = false): void {
       label: 'View',
       submenu: [
         {
-          label: 'Toggle Split Mode',
-          accelerator: 'CmdOrCtrl+\\',
-          click: () => sendToRenderer('menu:toggle-split'),
-        },
-        { type: 'separator' },
-        {
           label: 'Usage Stats',
           accelerator: 'CmdOrCtrl+Shift+U',
           click: () => sendToRenderer('menu:usage-stats'),

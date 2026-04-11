@@ -25,12 +25,6 @@ import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { showUsageModal } from './usage-modal.js';
 import { toggleProjectTerminal } from './project-terminal.js';
 import { toggleContextInspector } from './context-inspector.js';
-import {
-  compactMosaicPresetLabel,
-  formatMosaicPresetLabel,
-  resolveCurrentMosaicPreset,
-  resolveNextMosaicPreset,
-} from './mosaic-control-model.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -40,7 +34,6 @@ const btnAddSession = document.getElementById('btn-add-session')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
 const btnCommandDeckMore = document.getElementById('btn-command-deck-more')!;
 const btnToggleContextInspector = document.getElementById('btn-toggle-context-inspector')!;
-const btnToggleSwarm = document.getElementById('btn-toggle-swarm')!;
 
 let activeContextMenu: HTMLElement | null = null;
 let sessionProviderSelect: CustomSelectInstance | null = null;
@@ -69,7 +62,6 @@ function buildTabTitle(session: SessionRecord): string {
 
 export function initTabBar(): void {
   btnAddSession.classList.add('tab-action-primary');
-  btnToggleSwarm.classList.add('tab-action-toggle');
   btnToggleContextInspector.classList.add('tab-action-secondary');
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
@@ -86,21 +78,6 @@ export function initTabBar(): void {
     e.stopPropagation();
     hideTabContextMenu();
     toggleContextInspector();
-  });
-  btnToggleSwarm.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    hideTabContextMenu();
-
-    const project = appState.activeProject;
-    if (!project) return;
-
-    if (project.layout.mode !== 'mosaic') {
-      appState.toggleSwarm();
-      return;
-    }
-
-    appState.setMosaicPreset(project.id, resolveNextMosaicPreset(project));
   });
   gitStatusEl.addEventListener('click', (e) => showBranchContextMenu(e));
 
@@ -710,16 +687,6 @@ function render(): void {
     tabListEl.appendChild(tab);
   }
 
-  const mosaicActive = project.layout.mode === 'mosaic';
-  const currentMosaicPreset = resolveCurrentMosaicPreset(project);
-  btnToggleSwarm.dataset.state = mosaicActive ? 'active' : 'idle';
-  btnToggleSwarm.dataset.preset = currentMosaicPreset;
-  btnToggleSwarm.dataset.layoutLabel = compactMosaicPresetLabel(currentMosaicPreset);
-  btnToggleSwarm.title = mosaicActive
-    ? `Session Layout: ${formatMosaicPresetLabel(currentMosaicPreset)}`
-    : 'Choose session layout';
-  btnToggleSwarm.setAttribute('aria-label', 'Choose session layout');
-  btnToggleSwarm.setAttribute('aria-pressed', mosaicActive ? 'true' : 'false');
   ensureActiveTabVisible(`${appState.activeProjectId}:${project.activeSessionId}:${project.sessions.length}`);
 }
 

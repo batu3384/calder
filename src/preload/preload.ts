@@ -113,7 +113,6 @@ export interface CalderApi {
   menu: {
     onNewProject(callback: () => void): () => void;
     onNewSession(callback: () => void): () => void;
-    onToggleSplit(callback: () => void): () => void;
     onNextSession(callback: () => void): () => void;
     onPrevSession(callback: () => void): () => void;
     onGotoSession(callback: (index: number) => void): () => void;
@@ -262,7 +261,6 @@ const api: CalderApi = {
   menu: {
     onNewProject: (cb) => onChannel('menu:new-project', cb),
     onNewSession: (cb) => onChannel('menu:new-session', cb),
-    onToggleSplit: (cb) => onChannel('menu:toggle-split', cb),
     onNextSession: (cb) => onChannel('menu:next-session', cb),
     onPrevSession: (cb) => onChannel('menu:prev-session', cb),
     onGotoSession: (cb) => onChannel('menu:goto-session', (index) => cb(index as number)),

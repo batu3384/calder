@@ -20,7 +20,6 @@ export function initKeybindings(): void {
   // These handlers receive events forwarded from the main process menu
   window.calder.menu.onNewProject(() => promptNewProject());
   window.calder.menu.onNewSession(() => quickNewSession());
-  window.calder.menu.onToggleSplit(() => appState.toggleSwarm());
   window.calder.menu.onNextSession(() => appState.cycleSession(1));
   window.calder.menu.onPrevSession(() => appState.cycleSession(-1));
   window.calder.menu.onGotoSession((index) => appState.gotoSession(index));
@@ -44,7 +43,6 @@ export function initKeybindings(): void {
   shortcutManager.registerHandler('tab-back', () => appState.navigateBack());
   shortcutManager.registerHandler('tab-forward', () => appState.navigateForward());
   shortcutManager.registerHandler('toggle-sidebar', () => toggleSidebar());
-  shortcutManager.registerHandler('toggle-split', () => appState.toggleSwarm());
   shortcutManager.registerHandler('project-terminal', () => toggleProjectTerminal());
   shortcutManager.registerHandler('project-terminal-alt', () => toggleProjectTerminal());
   shortcutManager.registerHandler('debug-panel', () => toggleDebugPanel());

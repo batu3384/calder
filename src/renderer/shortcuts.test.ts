@@ -294,12 +294,12 @@ describe('ShortcutManager', () => {
   });
 
   it('setOverride preserves existing overrides', async () => {
-    mockAppState.preferences.keybindings = { 'toggle-split': 'CmdOrCtrl+T' };
+    mockAppState.preferences.keybindings = { 'project-terminal': 'CmdOrCtrl+T' };
     const { ShortcutManager } = await import('./shortcuts');
     const mgr = new ShortcutManager();
     mgr.setOverride('new-session', 'CmdOrCtrl+K');
     expect(mockAppState.setPreference).toHaveBeenCalledWith('keybindings', {
-      'toggle-split': 'CmdOrCtrl+T',
+      'project-terminal': 'CmdOrCtrl+T',
       'new-session': 'CmdOrCtrl+K',
     });
   });
@@ -322,7 +322,7 @@ describe('ShortcutManager', () => {
   it('hasOverride returns false when no override', async () => {
     const { ShortcutManager } = await import('./shortcuts');
     const mgr = new ShortcutManager();
-    expect(mgr.hasOverride('toggle-split')).toBe(false);
+    expect(mgr.hasOverride('project-terminal')).toBe(false);
   });
 
   it('matchEvent uses override keys', async () => {
