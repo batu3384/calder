@@ -3,7 +3,7 @@ import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, getWorkt
 import { onChange as onStatusChange } from '../session-activity.js';
 import { showFileViewer } from './file-viewer.js';
 import { areaLabel } from '../dom-utils.js';
-import type { GitFileEntry, GitWorktree } from '../types.js';
+import type { GitFileEntry } from '../types.js';
 
 const MAX_FILES = 100;
 

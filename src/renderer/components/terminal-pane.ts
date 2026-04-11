@@ -178,7 +178,7 @@ export function createTerminalPane(
 
   // Register file path link provider for Cmd+Click
   if (projectId) {
-    terminal.registerLinkProvider(new FilePathLinkProvider(projectId, projectPath, terminal));
+    terminal.registerLinkProvider(new FilePathLinkProvider(projectId, terminal));
   }
 
   // Register GitHub #123 link provider
@@ -208,10 +208,6 @@ export function createTerminalPane(
 
 export function getTerminalInstance(sessionId: string): TerminalInstance | undefined {
   return instances.get(sessionId);
-}
-
-export function getAllInstances(): Map<string, TerminalInstance> {
-  return instances;
 }
 
 export function setPendingPrompt(sessionId: string, prompt: string): void {
@@ -302,12 +298,6 @@ export function showPane(sessionId: string, split: boolean): void {
   } else {
     instance.element.classList.remove('split');
   }
-}
-
-export function hidePane(sessionId: string): void {
-  const instance = instances.get(sessionId);
-  if (!instance) return;
-  instance.element.classList.add('hidden');
 }
 
 export function hideAllPanes(): void {

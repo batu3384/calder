@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import { onChange as onStatusChange, getStatus, type SessionStatus } from './session-activity.js';
+import { onChange as onStatusChange, type SessionStatus } from './session-activity.js';
 
 type UnreadChangeCallback = () => void;
 

@@ -106,7 +106,6 @@ export function initTabBar(): void {
   onShareChange(render);
 
   onStatusChange((sessionId, status) => {
-    const prev = prevStatus.get(sessionId);
     prevStatus.set(sessionId, status);
 
     const dot = tabListEl.querySelector(`.tab-item[data-session-id="${sessionId}"] .tab-status`) as HTMLElement | null;

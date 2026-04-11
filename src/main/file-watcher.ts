@@ -57,12 +57,3 @@ export function unwatchFile(filePath: string): void {
     watched.delete(filePath);
   }
 }
-
-export function stopAllFileWatchers(): void {
-  for (const entry of watched.values()) {
-    if (entry.timer) clearTimeout(entry.timer);
-    entry.watcher.close();
-  }
-  watched.clear();
-  currentWin = null;
-}

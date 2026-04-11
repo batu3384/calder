@@ -1,8 +1,6 @@
 import { appState } from '../state.js';
 import { showReadinessModal } from './readiness-modal.js';
 import { esc, scoreColor } from '../dom-utils.js';
-import type { ReadinessResult } from '../../shared/types.js';
-
 const container = document.getElementById('readiness-section')!;
 let collapsed = true;
 let scanning = false;

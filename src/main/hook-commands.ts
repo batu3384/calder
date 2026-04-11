@@ -147,23 +147,3 @@ export function wrapPythonHookCmd(
   const pyCmd = path.join(STATUS_DIR, scriptName).replace(/\\/g, '/');
   return `${PY} "${pyCmd}" "${hookMarker}"`;
 }
-
-/**
- * Clean up hook scripts from STATUS_DIR.
- */
-export function cleanupHookScripts(): void {
-  const scripts = ['status_writer.py', 'session_id_capture.py', 'tool_failure_capture.py'];
-  for (const name of scripts) {
-    try { fs.unlinkSync(path.join(STATUS_DIR, name)); } catch {}
-  }
-  // Also clean up any event capture scripts
-  try {
-    const files = fs.readdirSync(STATUS_DIR);
-    for (const f of files) {
-      if (f.endsWith('.py')) {
-        try { fs.unlinkSync(path.join(STATUS_DIR, f)); } catch {}
-      }
-    }
-  } catch {}
-  scriptsInstalled = false;
-}

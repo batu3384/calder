@@ -45,7 +45,6 @@ const FILE_PATH_RE = /(?:^|[\s'"(\[{])(\.\/)?((?:[a-zA-Z0-9_@.-]+\/)+[a-zA-Z0-9_
 export class FilePathLinkProvider implements ILinkProvider {
   constructor(
     private projectId: string,
-    private projectPath: string,
     private terminal: Terminal
   ) {}
 

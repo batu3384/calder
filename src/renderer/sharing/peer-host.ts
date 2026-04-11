@@ -5,7 +5,7 @@ import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
 import { getTerminalInstance } from '../components/terminal-pane.js';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { ICE_CONFIG, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
-import { generateChallenge, computeChallengeResponse, bytesToHex, hexToBytes } from './share-crypto.js';
+import { generateChallenge, computeChallengeResponse, bytesToHex } from './share-crypto.js';
 
 interface HostPeer {
   sessionId: string;
@@ -238,10 +238,6 @@ export function isSharing(sessionId: string): boolean {
 
 export function isConnected(sessionId: string): boolean {
   return hostPeers.get(sessionId)?.connected ?? false;
-}
-
-export function getShareMode(sessionId: string): ShareMode | null {
-  return hostPeers.get(sessionId)?.mode ?? null;
 }
 
 function cleanup(sessionId: string): void {

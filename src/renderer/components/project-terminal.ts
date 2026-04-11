@@ -29,7 +29,7 @@ function shellSessionId(projectId: string): string {
   return `shell-${projectId}`;
 }
 
-function ensureShell(projectId: string, projectPath: string): ShellTerminalInstance {
+function ensureShell(projectId: string, _projectPath: string): ShellTerminalInstance {
   if (shells.has(projectId)) {
     return shells.get(projectId)!;
   }

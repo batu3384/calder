@@ -15,7 +15,6 @@ import {
   createAgentDetailEl,
   parseMcpToolName,
   isMcpToolEvent,
-  escapeHtml,
 } from './session-inspector-utils.js';
 
 export interface AgentSpan {
