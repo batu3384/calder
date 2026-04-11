@@ -909,9 +909,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 export function attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
-  if (instance.element.parentElement !== container) {
-    container.appendChild(instance.element);
-  }
+  container.appendChild(instance.element);
 }
 
 export function showBrowserTabPane(sessionId: string, isSplit: boolean): void {

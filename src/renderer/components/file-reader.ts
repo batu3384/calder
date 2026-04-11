@@ -264,9 +264,7 @@ export function hideAllFileReaderPanes(): void {
 export function attachFileReaderToContainer(sessionId: string, container: HTMLElement): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
-  if (instance.element.parentElement !== container) {
-    container.appendChild(instance.element);
-  }
+  container.appendChild(instance.element);
 }
 
 export function getFileReaderInstance(sessionId: string): FileReaderInstance | undefined {

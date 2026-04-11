@@ -162,6 +162,7 @@ export function initSplitLayout(): void {
   container.addEventListener('mousedown', (e) => {
     const project = appState.activeProject;
     if (!project || project.layout.mode !== 'swarm') return;
+    if ((e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR)) return;
 
     const paneEl = (e.target as HTMLElement).closest(
       '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane',

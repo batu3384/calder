@@ -388,6 +388,27 @@ describe('split-layout swarm behavior', () => {
     expect(appState.activeProject!.layout.splitPanes).toEqual([cli.id]);
   });
 
+  it('does not activate a pane on reorder-header mousedown before drag can start', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+
+    appState.setActiveSession(project.id, second.id);
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const firstHeader = terminalPanes.get(first.id)!.querySelector('.terminal-pane-chrome')!;
+
+    container.dispatch('mousedown', { target: firstHeader });
+
+    expect(appState.activeProject!.activeSessionId).toBe(second.id);
+  });
+
   it('reorders swarm panes when a pane header is dragged onto another pane', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
