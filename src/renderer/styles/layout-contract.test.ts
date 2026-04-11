@@ -8,6 +8,7 @@ const railCss = readFileSync(new URL('./sidebar.css', import.meta.url), 'utf-8')
 const contextCss = readFileSync(new URL('./context-inspector.css', import.meta.url), 'utf-8');
 const browserCss = readFileSync(new URL('./browser-tab.css', import.meta.url), 'utf-8');
 const browserPaneSource = readFileSync(new URL('../components/browser-tab/pane.ts', import.meta.url), 'utf-8');
+const splitLayoutSource = readFileSync(new URL('../components/split-layout.ts', import.meta.url), 'utf-8');
 
 describe('layout stylesheet contract', () => {
   it('imports the context inspector stylesheet and command deck selectors', () => {
@@ -26,5 +27,8 @@ describe('layout stylesheet contract', () => {
     expect(html).toContain('class="workspace-shell-surface"');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(browserPaneSource).toContain("contentShell.className = 'browser-content-shell live-view-surface live-view'");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Ready'");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Live'");
+    expect(splitLayoutSource).not.toContain("eyebrow.textContent = 'Workspace'");
   });
 });

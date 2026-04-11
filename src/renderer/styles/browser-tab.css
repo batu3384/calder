@@ -328,7 +328,7 @@ body.sidebar-resizing .browser-webview {
 .browser-ntp-layout {
   align-self: flex-start;
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.85fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
   gap: 16px;
   width: min(980px, 100%);
   margin-top: 6px;
@@ -342,9 +342,7 @@ body.sidebar-resizing .browser-webview {
   padding: 18px 20px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, black);
+  background: color-mix(in srgb, var(--surface-panel) 68%, transparent);
   box-shadow: var(--shadow-soft);
 }
 

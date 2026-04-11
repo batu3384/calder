@@ -414,17 +414,17 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpEyebrow = document.createElement('div');
   ntpEyebrow.className = 'browser-ntp-eyebrow shell-kicker';
-  ntpEyebrow.textContent = 'Calder Workspace';
+  ntpEyebrow.textContent = 'Live View';
   newTabPage.appendChild(ntpEyebrow);
 
   const ntpTitle = document.createElement('div');
   ntpTitle.className = 'browser-ntp-title';
-  ntpTitle.textContent = 'Inspect, annotate, and hand off live pages without leaving the session.';
+  ntpTitle.textContent = 'Open a live target';
   newTabPage.appendChild(ntpTitle);
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Open a local target, capture interface context, then hand the page off to a focused Calder session.';
+  ntpSubtitle.textContent = 'Jump into a local app, inspect a page, and send context to the active session without leaving Calder.';
   newTabPage.appendChild(ntpSubtitle);
 
   const ntpCapabilities = document.createElement('div');
@@ -445,7 +445,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpTargetsTitle = document.createElement('div');
   ntpTargetsTitle.className = 'browser-ntp-section-title shell-kicker';
-  ntpTargetsTitle.textContent = 'Active localhost targets';
+  ntpTargetsTitle.textContent = 'Local targets';
   ntpTargets.appendChild(ntpTargetsTitle);
 
   const ntpTargetsText = document.createElement('div');
@@ -462,7 +462,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpWorkflowTitle = document.createElement('div');
   ntpWorkflowTitle.className = 'browser-ntp-section-title shell-kicker';
-  ntpWorkflowTitle.textContent = 'Calder flow';
+  ntpWorkflowTitle.textContent = 'Working loop';
   ntpWorkflow.appendChild(ntpWorkflowTitle);
 
   const ntpWorkflowList = document.createElement('div');
@@ -470,7 +470,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const flowSteps = [
     ['01', 'Open a local surface', 'Start with a running app, localhost target, or any manual URL.'],
     ['02', 'Capture what matters', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
-    ['03', 'Hand off to session', 'Send the page context into a new or custom session without leaving the workspace.'],
+    ['03', 'Hand off to session', 'Send the page context into a new or custom session without leaving Calder.'],
   ] as const;
 
   for (const [index, title, copy] of flowSteps) {

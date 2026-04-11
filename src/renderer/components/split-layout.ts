@@ -69,8 +69,8 @@ let draggingSwarmSessionId: string | null = null;
 const lastSwarmBrowserSessionIds = new Map<string, string>();
 let mosaicResizeCleanups: Array<() => void> = [];
 
-function isMosaicLikeMode(project: ProjectRecord | undefined): boolean {
-  return !!project && (project.layout.mode === 'swarm' || project.layout.mode === 'mosaic');
+function isMosaicMode(project: ProjectRecord | undefined): boolean {
+  return !!project && project.layout.mode === 'mosaic';
 }
 
 function getPaneCandidates(root: ParentNode = container): HTMLElement[] {
@@ -229,7 +229,7 @@ export function initSplitLayout(): void {
 
   onUnreadChange(() => {
     const project = appState.activeProject;
-    if (isMosaicLikeMode(project)) updateSwarmPaneStyles(project);
+    if (isMosaicMode(project)) updateSwarmPaneStyles(project);
   });
 
   // Refit on window resize
@@ -237,10 +237,10 @@ export function initSplitLayout(): void {
     requestAnimationFrame(fitAllVisible);
   });
 
-  // Click delegation for swarm mode: clicking a dimmed pane makes it active
+  // Click delegation for the mosaic canvas: clicking a dimmed pane makes it active
   container.addEventListener('mousedown', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicLikeMode(project)) return;
+    if (!isMosaicMode(project)) return;
     if ((e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR)) return;
 
     const paneEl = (e.target as HTMLElement).closest(
@@ -256,7 +256,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragstart', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicLikeMode(project)) return;
+    if (!isMosaicMode(project)) return;
     const handle = (e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR) as HTMLElement | null;
     if (!handle) return;
 
@@ -272,7 +272,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragover', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicLikeMode(project) || !draggingSwarmSessionId) return;
+    if (!isMosaicMode(project) || !draggingSwarmSessionId) return;
 
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const targetSessionId = paneEl?.dataset.sessionId;
@@ -292,7 +292,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('drop', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicLikeMode(project) || !e.dataTransfer) return;
+    if (!isMosaicMode(project) || !e.dataTransfer) return;
 
     e.preventDefault();
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
@@ -438,14 +438,12 @@ export function renderLayout(): void {
     ? project.sessions.find((session) => session.id === project.activeSessionId)
     : undefined;
 
-  if (isMosaicLikeMode(project) && project.layout.splitPanes.length >= 1) {
+  if (isMosaicMode(project) && project.layout.splitPanes.length >= 1) {
     if (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab') {
       renderTabMode(project);
     } else {
       renderSwarmMode(project);
     }
-  } else if (project.layout.mode === 'split' && project.layout.splitPanes.length > 1) {
-    renderSplitMode(project);
   } else {
     renderTabMode(project);
   }
@@ -548,16 +546,6 @@ function focusActivePane(project: ProjectRecord): void {
   } else {
     clearFocused();
   }
-}
-
-function renderSplitMode(project: ProjectRecord): void {
-  clearSwarmReorderDecorations();
-  setContainerClass(`split-${project.layout.splitDirection}`);
-  delete container.dataset.mosaicPreset;
-  container.style.gridTemplateColumns = '';
-  container.style.gridTemplateRows = '';
-  showPanes(project);
-  focusActivePane(project);
 }
 
 function renderSwarmMode(project: ProjectRecord): void {
@@ -811,17 +799,17 @@ function showEmptyState(project: ProjectRecord | undefined): void {
   primary.className = 'empty-state-primary-action';
 
   if (!project) {
-    eyebrow.textContent = 'Workspace';
-    title.textContent = 'Choose A Project';
-    copy.textContent = 'Start by adding a local codebase to the project rail. Calder will keep sessions, project signals, and tool context grouped around that workspace.';
-    detail.textContent = 'Project rail: switch workspaces on the left. Command deck: launch work in the center. Context inspector: monitor health and git on the right.';
+    eyebrow.textContent = 'Ready';
+    title.textContent = 'Start a session or open Live View';
+    copy.textContent = 'Choose a coding tool, open a browser target, or continue recent work from the current project.';
+    detail.textContent = 'This area keeps your live product surface and AI work side by side.';
     primary.textContent = 'Create Project';
     primary.addEventListener('click', () => promptNewProject());
   } else {
-    eyebrow.textContent = 'Workspace Ready';
-    title.textContent = `Ready For ${project.name}`;
-    copy.textContent = 'This workspace is connected and waiting for a live session. Launch one from here to start coding, resume context, and keep follow-up tools attached to the same project.';
-    detail.textContent = `${project.path} · Sessions stay grouped under this workspace shell.`;
+    eyebrow.textContent = 'Live';
+    title.textContent = 'Project surface is ready';
+    copy.textContent = 'Launch a coding session, open Live View, or continue recent work from this project.';
+    detail.textContent = `${project.path} · Browser context and active sessions stay connected here.`;
     primary.textContent = 'Start First Session';
     primary.addEventListener('click', () => quickNewSession());
   }
