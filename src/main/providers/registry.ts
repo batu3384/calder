@@ -3,6 +3,8 @@ import type { CliProvider } from './provider';
 import { ClaudeProvider } from './claude-provider';
 import { CodexProvider } from './codex-provider';
 import { GeminiProvider } from './gemini-provider';
+import { QwenProvider } from './qwen-provider';
+import { BlackboxProvider } from './blackbox-provider';
 
 const providers = new Map<ProviderId, CliProvider>();
 
@@ -10,6 +12,8 @@ export function initProviders(): void {
   registerProvider(new ClaudeProvider());
   registerProvider(new CodexProvider());
   registerProvider(new GeminiProvider());
+  registerProvider(new QwenProvider());
+  registerProvider(new BlackboxProvider());
 }
 
 export function registerProvider(provider: CliProvider): void {

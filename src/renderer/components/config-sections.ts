@@ -143,6 +143,8 @@ function providerLabel(providerId: ProviderId): string {
     case 'claude': return 'Claude Code';
     case 'copilot': return 'GitHub Copilot';
     case 'gemini': return 'Gemini CLI';
+    case 'qwen': return 'Qwen Code';
+    case 'blackbox': return 'Blackbox CLI';
     default: return providerId;
   }
 }

@@ -4,6 +4,8 @@ const providerCaps = new Map([
   ['claude', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['gemini', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['codex', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
+  ['qwen', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
+  ['blackbox', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
 ]);
 
 const mockPtyWrite = vi.fn();
@@ -203,6 +205,30 @@ describe('terminal pending prompt injection', () => {
     await spawnTerminal('codex-1');
 
     expect(mockPtyCreate).toHaveBeenCalledWith('codex-1', '/project', null, false, '', 'codex', 'fix the bug');
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+  });
+
+  it('passes pending prompt as initialPrompt to pty.create for qwen', async () => {
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    createTerminalPane('qwen-1', '/project', null, false, '', 'qwen');
+    setPendingPrompt('qwen-1', 'fix the bug');
+    await spawnTerminal('qwen-1');
+
+    expect(mockPtyCreate).toHaveBeenCalledWith('qwen-1', '/project', null, false, '', 'qwen', 'fix the bug');
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+  });
+
+  it('passes pending prompt as initialPrompt to pty.create for blackbox', async () => {
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    createTerminalPane('blackbox-1', '/project', null, false, '', 'blackbox');
+    setPendingPrompt('blackbox-1', 'fix the bug');
+    await spawnTerminal('blackbox-1');
+
+    expect(mockPtyCreate).toHaveBeenCalledWith('blackbox-1', '/project', null, false, '', 'blackbox', 'fix the bug');
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 

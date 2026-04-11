@@ -62,6 +62,18 @@ describe('getProvider', () => {
     expect(provider.meta.id).toBe('gemini');
   });
 
+  it('registers the Qwen provider', () => {
+    const provider = getProvider('qwen');
+    expect(provider).toBeDefined();
+    expect(provider.meta.id).toBe('qwen');
+  });
+
+  it('registers the Blackbox provider', () => {
+    const provider = getProvider('blackbox');
+    expect(provider).toBeDefined();
+    expect(provider.meta.id).toBe('blackbox');
+  });
+
   it('throws for unknown provider ID', () => {
     expect(() => getProvider('copilot')).toThrow('Unknown CLI provider: copilot');
   });
@@ -79,11 +91,13 @@ describe('getAllProviders', () => {
   it('returns all registered providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const all = getAllProviders();
-    expect(all.length).toBe(4);
+    expect(all.length).toBe(6);
     const ids = all.map(p => p.meta.id);
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
     expect(ids).toContain('gemini');
+    expect(ids).toContain('qwen');
+    expect(ids).toContain('blackbox');
     expect(ids).toContain('copilot');
   });
 });
@@ -100,9 +114,11 @@ describe('getAllProviderMetas', () => {
   it('returns meta array for all providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const metas = getAllProviderMetas();
-    expect(metas.length).toBe(4);
+    expect(metas.length).toBe(6);
     expect(metas.map(m => m.id)).toContain('codex');
     expect(metas.map(m => m.id)).toContain('gemini');
+    expect(metas.map(m => m.id)).toContain('qwen');
+    expect(metas.map(m => m.id)).toContain('blackbox');
     expect(metas.map(m => m.id)).toContain('copilot');
   });
 });

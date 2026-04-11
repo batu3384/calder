@@ -2,7 +2,7 @@
 
 // --- Provider ---
 
-export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini';
+export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen' | 'blackbox';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 
 export interface CliProviderCapabilities {

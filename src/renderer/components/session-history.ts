@@ -56,6 +56,8 @@ const PROVIDER_LABELS: Record<string, string> = {
   codex: 'Codex CLI',
   copilot: 'GitHub Copilot',
   gemini: 'Gemini CLI',
+  qwen: 'Qwen Code',
+  blackbox: 'Blackbox CLI',
 };
 
 let container: HTMLElement;
