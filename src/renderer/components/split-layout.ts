@@ -64,7 +64,7 @@ const container = document.getElementById('terminal-container')!;
 const SWARM_PANE_SELECTOR = '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane';
 const SWARM_REORDER_HEADER_SELECTOR = '.terminal-pane-chrome, .file-viewer-header, .mcp-inspector-header';
 const MOSAIC_DIVIDER_TRACK = '10px';
-const DEFAULT_BROWSER_RATIO = 0.38;
+const PINNED_BROWSER_COLUMNS = ['minmax(320px, 0.92fr)', 'minmax(0, 1.28fr)'] as const;
 let draggingSwarmSessionId: string | null = null;
 const lastSwarmBrowserSessionIds = new Map<string, string>();
 let mosaicResizeCleanups: Array<() => void> = [];
@@ -153,10 +153,6 @@ function formatRatio(value: number): string {
 
 function formatInverseRatio(value: number): string {
   return formatRatio(1 - value);
-}
-
-function readBrowserWidthRatio(project: ProjectRecord): number {
-  return clampRatio(project.layout.browserWidthRatio, 0.25, 0.7, DEFAULT_BROWSER_RATIO);
 }
 
 function readMosaicRatio(project: ProjectRecord, key: string, fallback = 0.5): number {
@@ -576,25 +572,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   setContainerClass('swarm-mode mosaic-mode');
   container.dataset.mosaicPreset = resolvedPreset;
 
-  const browserWidthRatio = readBrowserWidthRatio(project);
-  const applyContainerColumns = (ratio: number) => {
-    const nextColParts: string[] = hasBrowserColumn
-      ? [
-          `minmax(280px, ${formatRatio(ratio)}fr)`,
-          MOSAIC_DIVIDER_TRACK,
-          `minmax(0, ${formatInverseRatio(ratio)}fr)`,
-        ]
-      : ['1fr'];
-    if (hasInspector) nextColParts.push('var(--inspector-width, 350px)');
-    container.style.gridTemplateColumns = nextColParts.join(' ');
-  };
-  const colParts: string[] = hasBrowserColumn
-    ? [
-        `minmax(280px, ${formatRatio(browserWidthRatio)}fr)`,
-        MOSAIC_DIVIDER_TRACK,
-        `minmax(0, ${formatInverseRatio(browserWidthRatio)}fr)`,
-      ]
-    : ['1fr'];
+  const colParts: string[] = hasBrowserColumn ? [...PINNED_BROWSER_COLUMNS] : ['1fr'];
   if (hasInspector) colParts.push('var(--inspector-width, 350px)');
   container.style.gridTemplateColumns = colParts.join(' ');
   container.style.gridTemplateRows = '1fr';
@@ -604,18 +582,6 @@ function renderSwarmMode(project: ProjectRecord): void {
     browserWrapper.className = 'swarm-browser-column mosaic-browser-column';
     container.appendChild(browserWrapper);
     attachNonCliPane(browserSession, browserWrapper, true);
-
-    const browserDivider = createMosaicDivider('x', 'mosaic-divider-browser');
-    container.appendChild(browserDivider);
-    bindMosaicDivider(browserDivider, container, {
-      onPreview: (ratio) => applyContainerColumns(ratio),
-      onCommit: (ratio) => appState.setBrowserWidthRatio(project.id, ratio),
-    }, {
-      axis: 'x',
-      min: 0.25,
-      max: 0.7,
-      fallback: DEFAULT_BROWSER_RATIO,
-    });
   }
 
   const canvas = document.createElement('div');

@@ -338,11 +338,11 @@ describe('split-layout mosaic behavior', () => {
 
     expect(browserColumn).toBeTruthy();
     expect(canvas).toBeTruthy();
-    expect(browserDivider).toBeTruthy();
+    expect(browserDivider).toBeNull();
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(firstCli.id)?.parentElement).toBe(canvas);
-    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.38fr) 10px minmax(0, 0.62fr)');
+    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
     expect(canvas.className).toContain('mosaic-single');
   });
 
@@ -370,9 +370,9 @@ describe('split-layout mosaic behavior', () => {
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
     expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
-    expect(browserDivider).toBeTruthy();
+    expect(browserDivider).toBeNull();
     expect(sessionDivider).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.44fr) 10px minmax(0, 0.56fr)');
+    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
     expect(canvas.className).toContain('mosaic-columns-2');
     expect(canvas.style.gridTemplateColumns).toBe('minmax(0, 0.5fr) 10px minmax(0, 0.5fr)');
     expect(canvas.style.gridTemplateRows).toBe('1fr');
@@ -484,7 +484,7 @@ describe('split-layout mosaic behavior', () => {
     expect(appState.activeProject!.layout.splitPanes).toEqual([second.id, first.id]);
   });
 
-  it('keeps browser divider dragging alive until pointerup and persists the latest ratio', async () => {
+  it('does not render a draggable browser divider even if a browser width ratio exists', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { initSplitLayout, renderLayout } = await import('./split-layout.js');
@@ -493,21 +493,15 @@ describe('split-layout mosaic behavior', () => {
     appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
     appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
     appState.addBrowserTabSession(project.id, 'http://localhost:3000');
+    project.layout.browserWidthRatio = 0.61;
 
     initSplitLayout();
     renderLayout();
 
     const container = document.getElementById('terminal-container') as FakeElement;
-    container.rect = { left: 0, top: 0, width: 1000, height: 700 };
     const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
-    const preventDefault = vi.fn();
 
-    divider.dispatch('pointerdown', { clientX: 380, clientY: 50, preventDefault });
-    emitWindow('pointermove', { clientX: 420, clientY: 50 });
-    emitWindow('pointermove', { clientX: 560, clientY: 50 });
-    emitWindow('pointerup', { clientX: 560, clientY: 50 });
-
-    expect(preventDefault).toHaveBeenCalledTimes(1);
-    expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.56, 2);
+    expect(divider).toBeNull();
+    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
   });
 });
