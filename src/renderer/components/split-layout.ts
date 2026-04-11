@@ -338,6 +338,8 @@ export function renderLayout(): void {
   container.querySelectorAll('.swarm-grid-wrapper').forEach(el => el.remove());
   container.querySelectorAll('.swarm-browser-column').forEach(el => el.remove());
   container.querySelectorAll('.swarm-empty-cell').forEach(el => el.remove());
+  container.querySelectorAll('.mosaic-session-canvas').forEach(el => el.remove());
+  container.querySelectorAll('.mosaic-browser-column').forEach(el => el.remove());
 
   // Ensure all sessions have their respective instances
   for (const session of project.sessions) {
@@ -504,69 +506,85 @@ function renderSwarmMode(project: ProjectRecord): void {
   const hasBrowserColumn = !!browserSession;
   const count = visiblePaneIds.length;
   const resolvedPreset = resolveMosaicPreset(count, project.layout.mosaicPreset);
-  let cols = hasBrowserColumn ? 2 : Math.ceil(Math.sqrt(count));
-  let rows = hasBrowserColumn ? Math.max(2, Math.ceil(count / cols)) : Math.ceil(count / cols);
-  if (resolvedPreset === 'single') {
-    cols = 1;
-    rows = 1;
-  } else if (resolvedPreset === 'columns-2') {
-    cols = 2;
-    rows = 1;
-  } else if (resolvedPreset === 'rows-2') {
-    cols = 1;
-    rows = 2;
-  } else {
-    cols = 2;
-    rows = 2;
-  }
-  if (hasBrowserColumn) {
-    rows = Math.max(2, rows);
-  }
-
   const hasInspector = isInspectorOpen();
 
-  setContainerClass('swarm-mode');
+  setContainerClass('swarm-mode mosaic-mode');
   container.dataset.mosaicPreset = resolvedPreset;
 
-  const needsWrapper = hasInspector || hasBrowserColumn;
+  const colParts: string[] = hasBrowserColumn ? [...SWARM_BROWSER_COLUMNS] : ['1fr'];
+  if (hasInspector) colParts.push('var(--inspector-width, 350px)');
+  container.style.gridTemplateColumns = colParts.join(' ');
+  container.style.gridTemplateRows = '1fr';
 
-  if (needsWrapper) {
-    const colParts: string[] = hasBrowserColumn ? [...SWARM_BROWSER_COLUMNS] : ['1fr'];
-    if (hasInspector) colParts.push('var(--inspector-width, 350px)');
+  if (browserSession) {
+    const browserWrapper = document.createElement('div');
+    browserWrapper.className = 'swarm-browser-column mosaic-browser-column';
+    container.appendChild(browserWrapper);
+    attachNonCliPane(browserSession, browserWrapper, true);
+  }
 
-    container.style.gridTemplateColumns = colParts.join(' ');
-    container.style.gridTemplateRows = '1fr';
+  const canvas = document.createElement('div');
+  canvas.className = `swarm-grid-wrapper mosaic-session-canvas mosaic-${resolvedPreset}`;
+  container.appendChild(canvas);
 
-    let browserWrapper: HTMLElement | null = null;
-    if (browserSession) {
-      browserWrapper = document.createElement('div');
-      browserWrapper.className = 'swarm-browser-column';
-      container.appendChild(browserWrapper);
-      attachNonCliPane(browserSession, browserWrapper, true);
-    }
+  if (resolvedPreset === 'single') {
+    canvas.style.gridTemplateColumns = '1fr';
+    canvas.style.gridTemplateRows = '1fr';
+    showPanes(project, canvas, visiblePaneIds);
+  } else if (resolvedPreset === 'columns-2') {
+    canvas.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    canvas.style.gridTemplateRows = 'repeat(1, 1fr)';
+    showPanes(project, canvas, visiblePaneIds);
+  } else if (resolvedPreset === 'rows-2') {
+    canvas.style.gridTemplateColumns = 'repeat(1, 1fr)';
+    canvas.style.gridTemplateRows = 'repeat(2, 1fr)';
+    showPanes(project, canvas, visiblePaneIds);
+  } else if (resolvedPreset === 'focus-left' && count >= 3) {
+    canvas.classList.add('mosaic-focus-left');
+    canvas.style.gridTemplateColumns = 'minmax(0, 1.2fr) minmax(0, 0.8fr)';
+    canvas.style.gridTemplateRows = '1fr';
 
-    const gridWrapper = document.createElement('div');
-    gridWrapper.className = 'swarm-grid-wrapper';
-    gridWrapper.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    gridWrapper.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    container.appendChild(gridWrapper);
+    const main = document.createElement('div');
+    main.className = 'mosaic-focus-left-main';
+    const stack = document.createElement('div');
+    stack.className = 'mosaic-focus-left-stack';
+    stack.style.gridTemplateColumns = '1fr';
+    stack.style.gridTemplateRows = `repeat(${Math.max(2, count - 1)}, 1fr)`;
 
-    showPanes(project, gridWrapper, visiblePaneIds);
-    appendEmptyCells(cols * rows - count, gridWrapper);
-    decorateSwarmReorderHandles(project, gridWrapper);
+    canvas.appendChild(main);
+    canvas.appendChild(stack);
+    showPanes(project, main, [visiblePaneIds[0]]);
+    showPanes(project, stack, visiblePaneIds.slice(1));
+  } else if (resolvedPreset === 'focus-top' && count >= 3) {
+    canvas.classList.add('mosaic-focus-top');
+    canvas.style.gridTemplateColumns = '1fr';
+    canvas.style.gridTemplateRows = 'minmax(0, 1.2fr) minmax(0, 0.8fr)';
 
-    if (hasInspector) {
-      const inspectorEl = container.querySelector('#session-inspector');
-      if (inspectorEl) {
-        container.appendChild(inspectorEl);
-      }
-    }
+    const main = document.createElement('div');
+    main.className = 'mosaic-focus-top-main';
+    const row = document.createElement('div');
+    row.className = 'mosaic-focus-top-row';
+    row.style.gridTemplateColumns = `repeat(${Math.max(2, count - 1)}, 1fr)`;
+    row.style.gridTemplateRows = '1fr';
+
+    canvas.appendChild(main);
+    canvas.appendChild(row);
+    showPanes(project, main, [visiblePaneIds[0]]);
+    showPanes(project, row, visiblePaneIds.slice(1));
   } else {
-    container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
-    showPanes(project, container, visiblePaneIds);
-    appendEmptyCells(cols * rows - count, container);
-    decorateSwarmReorderHandles(project);
+    canvas.classList.add('mosaic-grid-2x2');
+    canvas.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    canvas.style.gridTemplateRows = `repeat(${Math.max(2, Math.ceil(count / 2))}, 1fr)`;
+    showPanes(project, canvas, visiblePaneIds);
+  }
+
+  decorateSwarmReorderHandles(project, canvas);
+
+  if (hasInspector) {
+    const inspectorEl = container.querySelector('#session-inspector');
+    if (inspectorEl) {
+      container.appendChild(inspectorEl);
+    }
   }
 
   updateSwarmPaneStyles(project);

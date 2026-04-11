@@ -269,7 +269,7 @@ vi.mock('./session-inspector.js', () => ({
   isInspectorOpen: vi.fn(() => false),
 }));
 
-describe('split-layout swarm behavior', () => {
+describe('split-layout mosaic behavior', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -287,105 +287,107 @@ describe('split-layout swarm behavior', () => {
     });
   });
 
-  it('keeps a browser companion pane visible while a cli session is active in swarm', async () => {
+  it('renders browser-left with a single large session canvas when one cli session is visible', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { renderLayout } = await import('./split-layout.js');
 
     const project = appState.addProject('Audit', '/audit');
     const firstCli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
-    appState.addSession(project.id, 'Session 2', undefined, 'codex');
     const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
 
     appState.setActiveSession(project.id, firstCli.id);
     renderLayout();
 
     const container = document.getElementById('terminal-container') as FakeElement;
-    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, container);
-    expect(container.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
+    const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+
+    expect(browserColumn).toBeTruthy();
+    expect(canvas).toBeTruthy();
+    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
+    expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
+    expect(terminalPanes.get(firstCli.id)?.parentElement).toBe(canvas);
+    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.92fr) minmax(0, 1.25fr)');
+    expect(canvas.className).toContain('mosaic-single');
   });
 
-  it('does not focus a terminal pane when the active swarm surface is a browser tab', async () => {
+  it('renders browser-left with a two-column session canvas when two cli sessions are visible', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { renderLayout } = await import('./split-layout.js');
 
     const project = appState.addProject('Audit', '/audit');
-    appState.addSession(project.id, 'Session 1', undefined, 'claude');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
     const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    appState.setActiveSession(project.id, first.id);
 
-    appState.setActiveSession(project.id, browser.id);
-    renderLayout();
-
-    expect(mockSetFocused).not.toHaveBeenCalled();
-  });
-
-  it('activates the browser session when the companion pane is clicked in swarm', async () => {
-    const { appState, _resetForTesting } = await import('../state.js');
-    _resetForTesting();
-    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
-
-    const project = appState.addProject('Audit', '/audit');
-    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
-    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-
-    appState.setActiveSession(project.id, cli.id);
-    initSplitLayout();
     renderLayout();
 
     const container = document.getElementById('terminal-container') as FakeElement;
-    const browserPane = browserPanes.get(browser.id)!;
-    container.dispatch('mousedown', { target: browserPane });
+    const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
 
-    expect(appState.activeProject!.activeSessionId).toBe(browser.id);
+    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
+    expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
+    expect(terminalPanes.get(first.id)?.parentElement).toBe(canvas);
+    expect(terminalPanes.get(second.id)?.parentElement).toBe(canvas);
+    expect(container.style.gridTemplateColumns).toBe('minmax(280px, 0.92fr) minmax(0, 1.25fr)');
+    expect(canvas.className).toContain('mosaic-columns-2');
+    expect(canvas.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
+    expect(canvas.style.gridTemplateRows).toBe('repeat(1, 1fr)');
   });
 
-  it('dims the persistent browser companion when a cli session is active', async () => {
+  it('renders browser-left with a focus-left preset when three cli sessions are visible', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { renderLayout } = await import('./split-layout.js');
 
     const project = appState.addProject('Audit', '/audit');
-    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
-    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    const third = appState.addSession(project.id, 'Session 3', undefined, 'gemini')!;
+    appState.addBrowserTabSession(project.id, 'http://localhost:3000');
 
-    appState.setActiveSession(project.id, cli.id);
-    renderLayout();
-
-    const browserPane = browserPanes.get(browser.id)!;
-    expect(browserPane.classList.contains('swarm-dimmed')).toBe(true);
-
-    appState.setActiveSession(project.id, browser.id);
-    renderLayout();
-
-    expect(browserPane.classList.contains('swarm-dimmed')).toBe(false);
-  });
-
-  it('reorders a visible browser companion with cli panes', async () => {
-    const { appState, _resetForTesting } = await import('../state.js');
-    _resetForTesting();
-    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
-
-    const project = appState.addProject('Audit', '/audit');
-    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
-    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-
-    appState.setActiveSession(project.id, cli.id);
-    initSplitLayout();
+    appState.setActiveSession(project.id, first.id);
     renderLayout();
 
     const container = document.getElementById('terminal-container') as FakeElement;
-    const cliPane = terminalPanes.get(cli.id)!;
-    const browserPane = browserPanes.get(browser.id)!;
-    const browserHeader = browserPane.querySelector('.browser-pane-chrome')!;
-    const transfer = new FakeDataTransfer();
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+    const main = container.querySelector('.mosaic-focus-left-main') as FakeElement;
+    const stack = container.querySelector('.mosaic-focus-left-stack') as FakeElement;
 
-    container.dispatch('dragstart', { target: browserHeader, dataTransfer: transfer });
-    container.dispatch('dragover', { target: cliPane, dataTransfer: transfer, preventDefault: vi.fn() });
-    container.dispatch('drop', { target: cliPane, dataTransfer: transfer, preventDefault: vi.fn() });
+    expect(canvas.className).toContain('mosaic-focus-left');
+    expect(main).toBeTruthy();
+    expect(stack).toBeTruthy();
+    expect(terminalPanes.get(first.id)?.parentElement).toBe(main);
+    expect(terminalPanes.get(second.id)?.parentElement).toBe(stack);
+    expect(terminalPanes.get(third.id)?.parentElement).toBe(stack);
+  });
 
-    expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([browser.id, cli.id]);
-    expect(appState.activeProject!.layout.splitPanes).toEqual([cli.id]);
+  it('expands the session mosaic to full width when no browser session exists', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+
+    appState.setActiveSession(project.id, first.id);
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement | null;
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+
+    expect(browserColumn).toBeNull();
+    expect(canvas).toBeTruthy();
+    expect(container.style.gridTemplateColumns).toBe('1fr');
+    expect(terminalPanes.get(first.id)?.parentElement).toBe(canvas);
+    expect(terminalPanes.get(second.id)?.parentElement).toBe(canvas);
+    expect(canvas.className).toContain('mosaic-columns-2');
   });
 
   it('does not activate a pane on reorder-header mousedown before drag can start', async () => {
