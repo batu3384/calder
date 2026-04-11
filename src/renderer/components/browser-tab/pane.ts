@@ -525,6 +525,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   inspectAttachDimsRow.appendChild(inspectAttachDimsText);
   inspectPanel.appendChild(inspectAttachDimsRow);
 
+  const inspectErrorEl = document.createElement('div');
+  inspectErrorEl.className = 'inspect-error-text';
+  inspectPanel.appendChild(inspectErrorEl);
+
   inspectPanel.appendChild(submitGroup);
   el.appendChild(inspectPanel);
 
@@ -641,6 +645,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   flowInputRow.appendChild(flowInstructionInput);
   flowInputRow.appendChild(flowSubmitGroup);
   flowPanel.appendChild(flowInputRow);
+
+  const flowErrorEl = document.createElement('div');
+  flowErrorEl.className = 'inspect-error-text';
+  flowPanel.appendChild(flowErrorEl);
+
   el.appendChild(flowPanel);
 
   // Flow action picker popup
@@ -698,6 +707,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     submitBtn,
     inspectTargetBtn: customBtn,
     inspectAttachDimsCheckbox,
+    inspectErrorEl,
     elementInfoEl,
     inspectMode: false,
     selectedElement: null,
@@ -711,6 +721,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     flowInstructionInput,
     flowSubmitBtn,
     flowTargetBtn: flowCustomBtn,
+    flowErrorEl,
     flowMode: false,
     flowSteps: [],
     flowPickerOverlay,

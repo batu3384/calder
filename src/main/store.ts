@@ -78,13 +78,23 @@ export function saveStateSync(state: PersistedState): void {
 }
 
 function writeStateAtomically(state: PersistedState): void {
+  const serialized = JSON.stringify(state, null, 2);
   try {
     if (!fs.existsSync(STATE_DIR)) {
       fs.mkdirSync(STATE_DIR, { recursive: true });
     }
     const tmpFile = STATE_FILE + '.tmp';
-    fs.writeFileSync(tmpFile, JSON.stringify(state, null, 2), 'utf-8');
-    fs.renameSync(tmpFile, STATE_FILE);
+    fs.writeFileSync(tmpFile, serialized, 'utf-8');
+    try {
+      fs.renameSync(tmpFile, STATE_FILE);
+    } catch (err) {
+      const errno = err as NodeJS.ErrnoException;
+      if (errno.code === 'ENOENT') {
+        fs.writeFileSync(STATE_FILE, serialized, 'utf-8');
+        return;
+      }
+      throw err;
+    }
   } catch (err) {
     console.error('Failed to save state:', err);
   }

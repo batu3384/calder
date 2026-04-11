@@ -18,4 +18,11 @@ describe('browser stage contract', () => {
     expect(css).toContain('.browser-pane-workspace');
     expect(css).toContain('.browser-tab-toolbar');
   });
+
+  it('keeps the split browser toolbar compact instead of wasting horizontal room', () => {
+    expect(css).toContain('.browser-tab-pane.split .browser-toolbar-address');
+    expect(css).toContain('min-width: min(220px, 100%);');
+    expect(css).toContain('.browser-tab-pane.split .browser-toolbar-tools');
+    expect(css).toContain('padding-left: 0;');
+  });
 });

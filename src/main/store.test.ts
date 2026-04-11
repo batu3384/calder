@@ -4,6 +4,7 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
   writeFileSync: vi.fn(),
+  renameSync: vi.fn(),
   mkdirSync: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ import type { PersistedState } from './store';
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+const mockRenameSync = vi.mocked(fs.renameSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
 
 const DEFAULT_STATE: PersistedState = {
@@ -30,6 +32,7 @@ const DEFAULT_STATE: PersistedState = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
+  mockRenameSync.mockReset();
 });
 
 afterEach(() => {
@@ -118,6 +121,21 @@ describe('saveStateSync', () => {
   it('writes immediately without debounce', () => {
     saveStateSync(DEFAULT_STATE);
     expect(mockWriteFileSync).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to writing the final state file when tmp rename hits ENOENT', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockRenameSync.mockImplementation(() => {
+      const err = new Error('missing tmp file') as NodeJS.ErrnoException;
+      err.code = 'ENOENT';
+      throw err;
+    });
+
+    saveStateSync(DEFAULT_STATE);
+
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
+    expect(mockWriteFileSync.mock.calls[0]?.[0]).toBe('/mock/home/.calder/state.json.tmp');
+    expect(mockWriteFileSync.mock.calls[1]?.[0]).toBe('/mock/home/.calder/state.json');
   });
 });
 

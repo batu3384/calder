@@ -346,6 +346,13 @@ export function getFocusedSessionId(): string | null {
   return focusedSessionId;
 }
 
+export function clearFocused(): void {
+  focusedSessionId = null;
+  for (const [, instance] of instances) {
+    instance.element.classList.remove('focused');
+  }
+}
+
 export function setFocused(sessionId: string): void {
   focusedSessionId = sessionId;
 

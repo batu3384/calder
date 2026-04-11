@@ -7,6 +7,7 @@ import {
   hideAllPanes,
   fitAllVisible,
   setFocused,
+  clearFocused,
   spawnTerminal,
   setPendingPrompt,
   destroyTerminal,
@@ -296,10 +297,20 @@ function focusActivePane(project: ProjectRecord): void {
   // Don't steal focus from an active tab rename input
   if (document.querySelector('#tab-list .tab-name input')) return;
 
+  const activeSession = project.activeSessionId
+    ? project.sessions.find((session) => session.id === project.activeSessionId)
+    : undefined;
+  if (activeSession?.type && activeSession.type !== 'claude') {
+    clearFocused();
+    return;
+  }
+
   if (project.activeSessionId && project.layout.splitPanes.includes(project.activeSessionId)) {
     setFocused(project.activeSessionId);
   } else if (project.layout.splitPanes.length > 0) {
     setFocused(project.layout.splitPanes[0]);
+  } else {
+    clearFocused();
   }
 }
 
@@ -319,7 +330,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   const activeSession = project.sessions.find(s => s.id === project.activeSessionId);
   const nonCliSession = (activeSession?.type && activeSession.type !== 'claude')
     ? activeSession
-    : [...project.sessions].reverse().find(s => s.type && s.type !== 'claude');
+    : undefined;
 
   const hasInspector = isInspectorOpen();
 

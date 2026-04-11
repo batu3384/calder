@@ -13,28 +13,48 @@ function getPreferredLaunchProvider() {
   );
 }
 
+function hideSendError(errorEl: { textContent: string; style: { display: string } }): void {
+  errorEl.textContent = '';
+  errorEl.style.display = 'none';
+}
+
+function showSendError(errorEl: { textContent: string; style: { display: string } }, message: string): void {
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+}
+
 async function sendPromptToSelectedSession(
   instance: BrowserTabInstance,
   prompt: string,
   onDelivered: () => void,
-): Promise<void> {
+  errorEl: { textContent: string; style: { display: string } },
+): Promise<boolean> {
   const project = appState.activeProject;
-  if (!project) return;
+  if (!project) return false;
 
   const targetSession = appState.resolveBrowserTargetSession(instance.sessionId);
-  if (!targetSession) return;
+  if (!targetSession) {
+    showSendError(errorEl, 'Select an open session target first.');
+    return false;
+  }
 
   const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
-  if (!delivered) return;
+  if (!delivered) {
+    showSendError(errorEl, 'Failed to deliver prompt to the selected session.');
+    return false;
+  }
 
+  hideSendError(errorEl);
   onDelivered();
   appState.setActiveSession(project.id, targetSession.id);
+  return true;
 }
 
 export async function sendFlowToSelectedSession(instance: BrowserTabInstance): Promise<void> {
   const prompt = buildFlowPrompt(instance);
   if (!prompt) return;
-  await sendPromptToSelectedSession(instance, prompt, () => dismissFlow(instance));
+  hideSendError(instance.flowErrorEl);
+  await sendPromptToSelectedSession(instance, prompt, () => dismissFlow(instance), instance.flowErrorEl);
 }
 
 export function sendFlowToNewSession(instance: BrowserTabInstance): void {
@@ -70,7 +90,8 @@ export async function sendToSelectedSession(instance: BrowserTabInstance): Promi
   const prompt = buildPrompt(instance);
   if (!info || !prompt) return;
 
-  await sendPromptToSelectedSession(instance, prompt, () => dismissInspect(instance));
+  hideSendError(instance.inspectErrorEl);
+  await sendPromptToSelectedSession(instance, prompt, () => dismissInspect(instance), instance.inspectErrorEl);
 }
 
 export function sendToNewSession(instance: BrowserTabInstance): void {

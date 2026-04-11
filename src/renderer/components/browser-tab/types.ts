@@ -79,6 +79,7 @@ export interface BrowserTabInstance {
   submitBtn: HTMLButtonElement;
   inspectTargetBtn: HTMLButtonElement;
   inspectAttachDimsCheckbox: HTMLInputElement;
+  inspectErrorEl: HTMLDivElement;
   elementInfoEl: HTMLDivElement;
   inspectMode: boolean;
   selectedElement: ElementInfo | null;
@@ -92,6 +93,7 @@ export interface BrowserTabInstance {
   flowInstructionInput: HTMLTextAreaElement;
   flowSubmitBtn: HTMLButtonElement;
   flowTargetBtn: HTMLButtonElement;
+  flowErrorEl: HTMLDivElement;
   flowMode: boolean;
   flowSteps: FlowStep[];
   flowPickerOverlay: HTMLDivElement;
