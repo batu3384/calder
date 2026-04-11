@@ -395,6 +395,20 @@ describe('hook-status', () => {
   });
 
   describe('cleanupAll', () => {
+    it('removes provider quota cache artifacts', () => {
+      vi.mocked(fs.readdirSync).mockReturnValue([
+        'anthropic.quota.json',
+        'zai.quota.json',
+        'statusline.refresh.lock',
+      ] as any);
+
+      cleanupAll();
+
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'anthropic.quota.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'zai.quota.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.lock'));
+    });
+
     it('closes watcher, removes matching files, script, and dir', () => {
       const win = createMockWin();
       startWatching(win);

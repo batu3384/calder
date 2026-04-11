@@ -40,6 +40,10 @@ export function fallbackQuotaStatus(provider: StatuslineProvider): ProviderQuota
   return provider === 'anthropic' ? 'unsupported' : 'syncing';
 }
 
+export function getProviderQuotaCacheFile(provider: StatuslineProvider): string {
+  return `${provider}.quota.json`;
+}
+
 export function deriveQuotaFreshness(
   snapshot: ProviderQuotaSnapshot | null,
   nowMs = Date.now(),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deriveQuotaFreshness,
   formatHybridStatusLine,
+  getProviderQuotaCacheFile,
   inferStatuslineProvider,
   type ProviderQuotaSnapshot,
 } from './statusline-format';
@@ -71,5 +72,12 @@ describe('formatHybridStatusLine', () => {
       'Claude Sonnet 4.6  Anthropic  High  browser',
       'Ctx 38%  Cost --  5h unknown  Week unknown  Live',
     ].join('\n'));
+  });
+});
+
+describe('getProviderQuotaCacheFile', () => {
+  it('uses provider-specific cache file names', () => {
+    expect(getProviderQuotaCacheFile('anthropic')).toBe('anthropic.quota.json');
+    expect(getProviderQuotaCacheFile('zai')).toBe('zai.quota.json');
   });
 });

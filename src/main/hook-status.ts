@@ -29,6 +29,12 @@ function isKnownExtension(filename: string): boolean {
   return KNOWN_EXTENSIONS.some(ext => filename.endsWith(ext));
 }
 
+function isStatuslineArtifact(filename: string): boolean {
+  return filename.endsWith('.quota.json')
+    || filename === 'statusline.refresh.lock'
+    || filename === 'statusline.log';
+}
+
 export function getStatusLineScriptPath(): string {
   return STATUSLINE_SCRIPT;
 }
@@ -261,7 +267,7 @@ export function cleanupAll(): void {
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
-      if (isKnownExtension(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
+      if (isKnownExtension(file) || isStatuslineArtifact(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
         try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch { /* already gone */ }
       }
     }

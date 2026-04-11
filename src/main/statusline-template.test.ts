@@ -23,3 +23,12 @@ describe('buildStatusLineWrapper', () => {
     expect(wrapper).toContain('statusline.log');
   });
 });
+
+describe('quota cache refresh scaffolding', () => {
+  it('seeds honest fallback snapshots for unsupported or syncing providers', () => {
+    const py = buildStatusLinePython('/tmp/calder');
+    expect(py).toContain('calder:no-supported-anthropic-quota-api');
+    expect(py).toContain('zai:quota-surface-pending');
+    expect(py).toContain('subprocess.Popen');
+  });
+});
