@@ -90,7 +90,9 @@ export function initSplitLayout(): void {
     const project = appState.activeProject;
     if (!project || project.layout.mode !== 'swarm') return;
 
-    const paneEl = (e.target as HTMLElement).closest('.terminal-pane') as HTMLElement | null;
+    const paneEl = (e.target as HTMLElement).closest(
+      '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane',
+    ) as HTMLElement | null;
     if (!paneEl) return;
 
     const sessionId = paneEl.dataset.sessionId;
@@ -328,9 +330,10 @@ function renderSwarmMode(project: ProjectRecord): void {
   const rows = Math.ceil(count / cols);
 
   const activeSession = project.sessions.find(s => s.id === project.activeSessionId);
-  const nonCliSession = (activeSession?.type && activeSession.type !== 'claude')
+  const browserCompanionSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  const nonCliSession = (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab')
     ? activeSession
-    : undefined;
+    : browserCompanionSession;
 
   const hasInspector = isInspectorOpen();
 

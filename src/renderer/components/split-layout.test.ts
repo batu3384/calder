@@ -7,6 +7,7 @@ vi.stubGlobal('window', {
   calder: {
     store: { load: mockLoad, save: mockSave },
   },
+  addEventListener: vi.fn(),
 });
 
 let uuidCounter = 0;
@@ -100,12 +101,15 @@ class FakeElement {
   }
 
   closest(selector: string): FakeElement | null {
+    const selectors = selector.split(',').map((part) => part.trim()).filter(Boolean);
     let current: FakeElement | null = this;
     while (current) {
-      if (selector.startsWith('.')) {
-        const token = selector.slice(1);
-        if (current.className.split(/\s+/).includes(token) || current.classList.contains(token)) {
-          return current;
+      for (const item of selectors) {
+        if (item.startsWith('.')) {
+          const token = item.slice(1);
+          if (current.className.split(/\s+/).includes(token) || current.classList.contains(token)) {
+            return current;
+          }
         }
       }
       current = current.parentElement;
@@ -259,7 +263,7 @@ describe('split-layout swarm behavior', () => {
     });
   });
 
-  it('does not reserve a second swarm column for an inactive browser pane', async () => {
+  it('keeps a browser companion pane visible while a cli session is active in swarm', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { renderLayout } = await import('./split-layout.js');
@@ -273,8 +277,8 @@ describe('split-layout swarm behavior', () => {
     renderLayout();
 
     const container = document.getElementById('terminal-container') as FakeElement;
-    expect(mockAttachBrowserTabToContainer).not.toHaveBeenCalledWith(browser.id, expect.anything());
-    expect(container.style.gridTemplateColumns).toBe('repeat(2, 1fr)');
+    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, container);
+    expect(container.style.gridTemplateColumns).toBe('1fr 1fr');
   });
 
   it('does not focus a terminal pane when the active swarm surface is a browser tab', async () => {
@@ -290,5 +294,25 @@ describe('split-layout swarm behavior', () => {
     renderLayout();
 
     expect(mockSetFocused).not.toHaveBeenCalled();
+  });
+
+  it('activates the browser session when the companion pane is clicked in swarm', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setActiveSession(project.id, cli.id);
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const browserPane = browserPanes.get(browser.id)!;
+    container.dispatch('mousedown', { target: browserPane });
+
+    expect(appState.activeProject!.activeSessionId).toBe(browser.id);
   });
 });

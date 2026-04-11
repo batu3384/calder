@@ -201,6 +201,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const el = document.createElement('div');
   el.className = 'browser-tab-pane hidden';
+  el.dataset.sessionId = sessionId;
 
   const chrome = document.createElement('div');
   chrome.className = 'browser-pane-chrome';

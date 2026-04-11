@@ -21,4 +21,8 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-target-menu');
     expect(source).not.toContain('browser-target-rail');
   });
+
+  it('tags the browser pane with its session id for layout routing', () => {
+    expect(source).toContain('el.dataset.sessionId = sessionId');
+  });
 });
