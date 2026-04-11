@@ -67,6 +67,7 @@
 }
 
 .terminal-pane.swarm-dimmed::after,
+.browser-tab-pane.swarm-dimmed::after,
 .swarm-empty-cell::after {
   content: '';
   position: absolute;
@@ -78,6 +79,10 @@
   pointer-events: none;
   z-index: 10;
   transition: opacity 0.15s ease;
+}
+
+.browser-tab-pane.swarm-dimmed {
+  border-color: var(--pane-unfocus);
 }
 
 .terminal-pane {

@@ -530,6 +530,14 @@ function updateSwarmPaneStyles(project: ProjectRecord): void {
       instance.element.classList.toggle('swarm-unread', !isActive && isUnread(paneId));
     }
   }
+
+  for (const session of project.sessions) {
+    if (session.type !== 'browser-tab') continue;
+    const instance = getBrowserTabInstance(session.id);
+    if (!instance) continue;
+    const pane = ('element' in instance ? instance.element : instance) as HTMLElement;
+    pane.classList.toggle('swarm-dimmed', session.id !== project.activeSessionId);
+  }
 }
 
 function showEmptyState(project: ProjectRecord | undefined): void {

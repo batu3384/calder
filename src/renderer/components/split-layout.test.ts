@@ -340,6 +340,27 @@ describe('split-layout swarm behavior', () => {
     expect(appState.activeProject!.activeSessionId).toBe(browser.id);
   });
 
+  it('dims the persistent browser companion when a cli session is active', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const cli = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setActiveSession(project.id, cli.id);
+    renderLayout();
+
+    const browserPane = browserPanes.get(browser.id)!;
+    expect(browserPane.classList.contains('swarm-dimmed')).toBe(true);
+
+    appState.setActiveSession(project.id, browser.id);
+    renderLayout();
+
+    expect(browserPane.classList.contains('swarm-dimmed')).toBe(false);
+  });
+
   it('reorders swarm panes when a pane header is dragged onto another pane', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
