@@ -73,6 +73,33 @@ describe('formatHybridStatusLine', () => {
       'Ctx 38%  Cost --  5h unknown  Week unknown  Live',
     ].join('\n'));
   });
+
+  it('allows provider snapshots to rename the second quota window', () => {
+    const out = formatHybridStatusLine({
+      modelDisplayName: 'glm-5.1',
+      provider: 'zai',
+      effortLabel: null,
+      cwdLabel: 'aa',
+      contextPercent: 25,
+      costLabel: '$0.22',
+      quota: {
+        provider: 'zai',
+        model: 'glm-5.1',
+        fiveHour: '60% left',
+        weekly: '90% left',
+        weeklyLabel: 'MCP 1mo',
+        status: 'unknown',
+        updatedAt: 1_000,
+        source: 'zai:quota-limit',
+      },
+      nowMs: 1_500,
+    });
+
+    expect(out).toBe([
+      'glm-5.1  Z.ai  --  aa',
+      'Ctx 25%  Cost $0.22  5h 60% left  MCP 1mo 90% left  Live',
+    ].join('\n'));
+  });
 });
 
 describe('getProviderQuotaCacheFile', () => {

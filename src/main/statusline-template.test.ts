@@ -1,9 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { chmodSync, mkdtempSync, writeFileSync } from 'fs';
+import { chmodSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { execFileSync } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
+import { createServer } from 'http';
+import { promisify } from 'util';
 import { buildStatusLinePython, buildStatusLineWrapper } from './statusline-template';
+import { getProviderQuotaCacheFile } from './statusline-format';
+
+const execFileAsync = promisify(execFile);
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function waitForSnapshotSource(statusDir: string, source: string) {
+  const path = join(statusDir, getProviderQuotaCacheFile('zai'));
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const snapshot = JSON.parse(readFileSync(path, 'utf8'));
+    if (snapshot.source === source) return snapshot;
+    await sleep(50);
+  }
+  return JSON.parse(readFileSync(path, 'utf8'));
+}
 
 describe('buildStatusLinePython', () => {
   it('preserves .cost and .sessionid capture', () => {
@@ -69,5 +86,154 @@ describe('generated renderer payload parsing', () => {
 
     expect(output).toContain('Sonnet 4.6  Anthropic  --  aa');
     expect(output).toContain('Ctx 12%  Cost $0.12');
+  });
+
+  it('uses Claude Code OAuth rate_limits for visible remaining quota', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    const payload = JSON.stringify({
+      model: { display_name: 'Haiku 4.5' },
+      cost: { total_cost_usd: 0.223 },
+      context_window: { used_percentage: 25 },
+      rate_limits: {
+        five_hour: { used_percentage: 73, resets_at: '2026-04-11T14:00:00Z' },
+        seven_day: { used_percentage: 12, resets_at: '2026-04-15T09:00:00Z' },
+      },
+      cwd: '/Users/batuhanyuksel/Documents/aa',
+    });
+
+    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+      input: payload,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-claude-limits' },
+    }).trim();
+
+    expect(output).toContain('Haiku 4.5  Anthropic  --  aa');
+    expect(output).toContain('Ctx 25%  Cost $0.22  5h 27% left  Week 88% left  Live');
+  });
+
+  it('refreshes Z.ai quota labels from the official quota limit endpoint', async () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    const server = createServer((_req, res) => {
+      res.setHeader('content-type', 'application/json');
+      res.end(
+        JSON.stringify({
+          data: {
+            limits: [
+              { type: 'TOKENS_LIMIT', percentage: 40 },
+              { type: 'TIME_LIMIT', percentage: 10 },
+            ],
+          },
+        }),
+      );
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
+
+      await execFileAsync('/usr/bin/python3', [scriptPath, 'refresh', 'zai', 'glm-5.1'], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          ANTHROPIC_BASE_URL: 'https://api.z.ai/api/anthropic',
+          ANTHROPIC_AUTH_TOKEN: 'test-token',
+          CALDER_ZAI_QUOTA_LIMIT_URL: `http://127.0.0.1:${address.port}/api/monitor/usage/quota/limit`,
+        },
+      });
+
+      const snapshot = JSON.parse(
+        readFileSync(join(statusDir, getProviderQuotaCacheFile('zai')), 'utf8'),
+      );
+
+      expect(snapshot).toMatchObject({
+        provider: 'zai',
+        model: 'glm-5.1',
+        fiveHour: '60% left',
+        weekly: '90% left',
+        weeklyLabel: 'MCP 1mo',
+        status: 'unknown',
+        source: 'zai:quota-limit',
+      });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('retries an existing syncing Z.ai cache during render', async () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+    writeFileSync(
+      join(statusDir, getProviderQuotaCacheFile('zai')),
+      JSON.stringify({
+        provider: 'zai',
+        model: 'glm-5.1',
+        fiveHour: null,
+        weekly: null,
+        weeklyLabel: 'MCP 1mo',
+        status: 'syncing',
+        updatedAt: Date.now(),
+        source: 'zai:quota-surface-pending',
+      }),
+    );
+    const lockPath = join(statusDir, 'statusline.refresh.lock');
+    writeFileSync(lockPath, 'old-refresh');
+    const staleLockTime = new Date(Date.now() - 10 * 60_000);
+    utimesSync(lockPath, staleLockTime, staleLockTime);
+
+    const server = createServer((_req, res) => {
+      res.setHeader('content-type', 'application/json');
+      res.end(
+        JSON.stringify({
+          data: {
+            limits: [{ type: 'TOKENS_LIMIT', percentage: 25 }],
+          },
+        }),
+      );
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
+
+      const payload = JSON.stringify({
+        model: { display_name: 'glm-5.1' },
+        cost: { total_cost_usd: 0.22 },
+        context_window: { used_percentage: 25 },
+        cwd: '/Users/batuhanyuksel/Documents/aa',
+      });
+
+      execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+        input: payload,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CLAUDE_IDE_SESSION_ID: 'sess-zai-retry',
+          ANTHROPIC_BASE_URL: 'https://api.z.ai/api/anthropic',
+          ANTHROPIC_AUTH_TOKEN: 'test-token',
+          CALDER_ZAI_QUOTA_LIMIT_URL: `http://127.0.0.1:${address.port}/api/monitor/usage/quota/limit`,
+        },
+      });
+
+      const snapshot = await waitForSnapshotSource(statusDir, 'zai:quota-limit');
+      expect(snapshot).toMatchObject({
+        fiveHour: '75% left',
+        status: 'unknown',
+        source: 'zai:quota-limit',
+      });
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

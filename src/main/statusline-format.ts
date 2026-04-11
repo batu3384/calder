@@ -7,6 +7,7 @@ export interface ProviderQuotaSnapshot {
   model: string;
   fiveHour: string | null;
   weekly: string | null;
+  weeklyLabel?: string;
   status: ProviderQuotaStatus;
   updatedAt: number;
   source: string;
@@ -63,6 +64,7 @@ export function formatHybridStatusLine(view: HybridStatuslineView): string {
   const freshness = titleCase(deriveQuotaFreshness(view.quota, view.nowMs));
   const contextLabel = view.contextPercent == null ? '--' : String(view.contextPercent);
   const costLabel = view.costLabel?.trim() || '--';
+  const weeklyLabel = view.quota?.weeklyLabel?.trim() || 'Week';
   const line1 = [
     view.modelDisplayName || 'Unknown Model',
     PROVIDER_LABELS[view.provider],
@@ -73,7 +75,7 @@ export function formatHybridStatusLine(view: HybridStatuslineView): string {
     `Ctx ${contextLabel}%`,
     `Cost ${costLabel}`,
     `5h ${view.quota?.fiveHour ?? quotaStatus}`,
-    `Week ${view.quota?.weekly ?? quotaStatus}`,
+    `${weeklyLabel} ${view.quota?.weekly ?? quotaStatus}`,
     freshness,
   ].join('  ');
   return `${line1}\n${line2}`;

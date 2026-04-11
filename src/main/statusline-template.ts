@@ -14,7 +14,7 @@ export function buildStatusLinePython(statusDir: string): string {
     zaiFallback: fallbackQuotaStatus('zai'),
   });
 
-  return `import json, os, subprocess, sys, time
+  return `import json, os, subprocess, sys, time, urllib.parse, urllib.request
 CONFIG = json.loads(r'''${config}''')
 STATUS_DIR = r'''${statusDir}'''
 REFRESH_LOCK = os.path.join(STATUS_DIR, 'statusline.refresh.lock')
@@ -32,16 +32,18 @@ def fallback_snapshot(provider, model_name):
             'model': model_name,
             'fiveHour': None,
             'weekly': None,
+            'weeklyLabel': 'Week',
             'status': CONFIG['anthropicFallback'],
             'updatedAt': int(time.time() * 1000),
             'source': 'calder:no-supported-anthropic-quota-api',
-            'message': 'Claude Code does not expose remaining Pro quota',
+            'message': 'Claude Code did not provide OAuth rate limits in this payload',
         }
     return {
         'provider': provider,
         'model': model_name,
         'fiveHour': None,
         'weekly': None,
+        'weeklyLabel': 'MCP 1mo',
         'status': CONFIG['zaiFallback'],
         'updatedAt': int(time.time() * 1000),
         'source': 'zai:quota-surface-pending',
@@ -62,8 +64,22 @@ def write_snapshot(provider, snapshot):
     with open(quota_cache_path(provider), 'w') as f:
         json.dump(snapshot, f)
 
-def spawn_refresh(provider, model_name):
+def refresh_lock_is_active():
     if os.path.exists(REFRESH_LOCK):
+        try:
+            age_ms = int(time.time() * 1000) - int(os.path.getmtime(REFRESH_LOCK) * 1000)
+            if age_ms > CONFIG['staleAfterMs']:
+                os.unlink(REFRESH_LOCK)
+                return False
+        except OSError:
+            return False
+        except Exception:
+            pass
+        return True
+    return False
+
+def spawn_refresh(provider, model_name):
+    if refresh_lock_is_active():
         return
     with open(REFRESH_LOCK, 'w') as f:
         f.write(str(int(time.time() * 1000)))
@@ -135,6 +151,128 @@ def cost_label(cost):
         return '$' + format(value, '.2f')
     return '--'
 
+def numeric_value(value):
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.rstrip('%').strip())
+        except Exception:
+            return None
+    return None
+
+def quota_remaining_label(used_percentage):
+    used = numeric_value(used_percentage)
+    if used is None:
+        return None
+    remaining = int(round(max(0, min(100, 100 - used))))
+    return str(remaining) + '% left'
+
+def snapshot_is_stale(snapshot):
+    if not isinstance(snapshot, dict):
+        return True
+    updated_at = numeric_value(snapshot.get('updatedAt'))
+    if updated_at is None:
+        return True
+    return int(time.time() * 1000) - updated_at > CONFIG['staleAfterMs']
+
+def anthropic_rate_limit_snapshot(payload, model_name):
+    rate_limits = payload.get('rate_limits')
+    if not isinstance(rate_limits, dict):
+        return None
+    five_hour = rate_limits.get('five_hour') or {}
+    seven_day = rate_limits.get('seven_day') or {}
+    five_hour_label = quota_remaining_label(five_hour.get('used_percentage')) if isinstance(five_hour, dict) else None
+    weekly_label = quota_remaining_label(seven_day.get('used_percentage')) if isinstance(seven_day, dict) else None
+    if not five_hour_label and not weekly_label:
+        return None
+    return {
+        'provider': 'anthropic',
+        'model': model_name,
+        'fiveHour': five_hour_label,
+        'weekly': weekly_label,
+        'weeklyLabel': 'Week',
+        'status': 'unknown',
+        'updatedAt': int(time.time() * 1000),
+        'source': 'claude-code:rate_limits',
+    }
+
+def zai_quota_url():
+    override = os.environ.get('CALDER_ZAI_QUOTA_LIMIT_URL', '').strip()
+    if override:
+        return override
+    base_url = os.environ.get('ANTHROPIC_BASE_URL', '').strip()
+    if not base_url:
+        return None
+    if 'api.z.ai' not in base_url and 'open.bigmodel.cn' not in base_url and 'dev.bigmodel.cn' not in base_url:
+        return None
+    parsed = urllib.parse.urlparse(base_url)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return parsed.scheme + '://' + parsed.netloc + '/api/monitor/usage/quota/limit'
+
+def fetch_json(url, auth_token):
+    request = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': auth_token,
+            'Accept-Language': 'en-US,en',
+            'Content-Type': 'application/json',
+        },
+    )
+    with urllib.request.urlopen(request, timeout=5) as response:
+        return json.loads(response.read().decode('utf-8'))
+
+def zai_quota_snapshot(model_name):
+    auth_token = os.environ.get('ANTHROPIC_AUTH_TOKEN', '').strip()
+    quota_url = zai_quota_url()
+    if not auth_token or not quota_url:
+        return fallback_snapshot('zai', model_name)
+    try:
+        response = fetch_json(quota_url, auth_token)
+        data = response.get('data') if isinstance(response, dict) else None
+        if not isinstance(data, dict):
+            data = response if isinstance(response, dict) else {}
+        limits = data.get('limits')
+        five_hour = None
+        monthly = None
+        if isinstance(limits, list):
+            for item in limits:
+                if not isinstance(item, dict):
+                    continue
+                limit_type = str(item.get('type') or '').upper()
+                label = quota_remaining_label(item.get('percentage'))
+                if not label:
+                    continue
+                if limit_type == 'TOKENS_LIMIT' or ('TOKEN' in limit_type and '5' in limit_type):
+                    five_hour = label
+                elif limit_type == 'TIME_LIMIT' or 'MCP' in limit_type:
+                    monthly = label
+        if not five_hour and not monthly:
+            return {
+                **fallback_snapshot('zai', model_name),
+                'status': 'unknown',
+                'source': 'zai:quota-limit-empty',
+                'message': 'Z.ai quota endpoint returned no recognizable limits',
+            }
+        return {
+            'provider': 'zai',
+            'model': model_name,
+            'fiveHour': five_hour,
+            'weekly': monthly,
+            'weeklyLabel': 'MCP 1mo',
+            'status': 'unknown',
+            'updatedAt': int(time.time() * 1000),
+            'source': 'zai:quota-limit',
+        }
+    except Exception:
+        return {
+            **fallback_snapshot('zai', model_name),
+            'status': 'syncing',
+            'source': 'zai:quota-limit-error',
+            'message': 'Z.ai quota refresh failed',
+        }
+
 def render_statusline(payload):
     sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '')
     model_name = ((payload.get('model') or {}).get('display_name') or '').strip()
@@ -148,20 +286,27 @@ def render_statusline(payload):
     if sid and claude_sid:
         with open(os.path.join(STATUS_DIR, sid+'.sessionid'), 'w') as f:
             f.write(claude_sid)
-    snapshot = read_snapshot(provider)
+    snapshot = anthropic_rate_limit_snapshot(payload, model_name) if provider == 'anthropic' else None
+    if snapshot is None:
+        snapshot = read_snapshot(provider)
     if snapshot is None:
         spawn_refresh(provider, model_name)
         snapshot = fallback_snapshot(provider, model_name)
+    elif provider == 'zai' and (snapshot.get('status') == 'syncing' or snapshot_is_stale(snapshot)):
+        spawn_refresh(provider, model_name)
     ctx_percent = context_percent(ctx)
     freshness = 'Syncing' if snapshot.get('status') == 'syncing' else 'Live'
     cwd_label = latest_cwd_label(sid, payload)
+    five_hour_label = snapshot.get('fiveHour') or snapshot['status']
+    weekly_name = snapshot.get('weeklyLabel') or 'Week'
+    weekly_value = snapshot.get('weekly') or snapshot['status']
     return '\\n'.join([
         f"{model_name or 'Unknown Model'}  {'Z.ai' if provider == 'zai' else 'Anthropic'}  --  {cwd_label}",
-        f"Ctx {ctx_percent}%  Cost {cost_label(cost)}  5h {snapshot['status']}  Week {snapshot['status']}  {freshness}",
+        f"Ctx {ctx_percent}%  Cost {cost_label(cost)}  5h {five_hour_label}  {weekly_name} {weekly_value}  {freshness}",
     ])
 
 def refresh_provider_cache(provider, model_name):
-    snapshot = fallback_snapshot(provider, model_name)
+    snapshot = zai_quota_snapshot(model_name) if provider == 'zai' else fallback_snapshot(provider, model_name)
     write_snapshot(provider, snapshot)
     try:
         os.unlink(REFRESH_LOCK)
