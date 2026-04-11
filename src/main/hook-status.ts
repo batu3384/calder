@@ -3,9 +3,11 @@ import * as path from 'path';
 import * as os from 'os';
 import { BrowserWindow } from 'electron';
 import { isWin } from './platform';
+import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from './statusline-template';
 
 export const STATUS_DIR = path.join(os.tmpdir(), 'calder');
 const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');
+const STATUSLINE_PYTHON_PATH = path.join(STATUS_DIR, STATUSLINE_PYTHON_HELPER);
 
 const KNOWN_EXTENSIONS = ['.status', '.sessionid', '.cost', '.toolfailure', '.events'];
 
@@ -27,77 +29,28 @@ function isKnownExtension(filename: string): boolean {
   return KNOWN_EXTENSIONS.some(ext => filename.endsWith(ext));
 }
 
+function isStatuslineArtifact(filename: string): boolean {
+  return filename.endsWith('.quota.json')
+    || filename === 'statusline.refresh.lock'
+    || filename === 'statusline.log';
+}
+
 export function getStatusLineScriptPath(): string {
   return STATUSLINE_SCRIPT;
 }
 
 export function installStatusLineScript(): void {
   fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
-
-  // Script that extracts cost, context_window, and session_id from hook JSON stdin.
-  // Used by hook commands to write .cost and .sessionid files to STATUS_DIR.
-  // Use forward slashes — backslashes inside double-quoted .cmd strings can
-  // interfere with cmd.exe's >> redirection parsing on some Windows versions.
-  const statusDir = STATUS_DIR.replace(/\\/g, '/');
-
-  let script: string;
-  if (isWin) {
-    // On Windows, write a Python helper script and a .cmd wrapper
-    const pyScript = `import sys,json,os
-try:
-    d=json.load(sys.stdin)
-except:
-    sys.exit(0)
-sid=os.environ.get('CLAUDE_IDE_SESSION_ID','')
-if not sid:
-    sys.exit(0)
-status_dir=r'${STATUS_DIR}'
-cost=d.get('cost',{})
-ctx=d.get('context_window',{})
-model=d.get('model',{}).get('display_name','')
-if cost or ctx or model:
-    payload={'cost':cost,'context_window':ctx}
-    if model:
-        payload['model']=model
-    with open(os.path.join(status_dir,sid+'.cost'),'w') as f:
-        json.dump(payload,f)
-claude_sid=d.get('session_id','')
-if claude_sid:
-    with open(os.path.join(status_dir,sid+'.sessionid'),'w') as f:
-        f.write(claude_sid)
-`;
-    const pyPath = path.join(STATUS_DIR, 'statusline.py');
-    fs.writeFileSync(pyPath, pyScript, { mode: 0o755 });
-    script = `@echo off\r\npython "${pyPath}" 2>>"${statusDir}/statusline.log"\r\n`;
-  } else {
-    script = `#!/bin/sh
-/usr/bin/python3 -c "
-import sys,json,os
-try:
-    d=json.load(sys.stdin)
-except:
-    sys.exit(0)
-sid=os.environ.get('CLAUDE_IDE_SESSION_ID','')
-if not sid:
-    sys.exit(0)
-cost=d.get('cost',{})
-ctx=d.get('context_window',{})
-model=d.get('model',{}).get('display_name','')
-if cost or ctx or model:
-    payload={'cost':cost,'context_window':ctx}
-    if model:
-        payload['model']=model
-    with open(f'${STATUS_DIR}/{sid}.cost','w') as f:
-        json.dump(payload,f)
-claude_sid=d.get('session_id','')
-if claude_sid:
-    with open(f'${STATUS_DIR}/{sid}.sessionid','w') as f:
-        f.write(claude_sid)
-" 2>>${STATUS_DIR}/statusline.log
-`;
-  }
-
-  fs.writeFileSync(STATUSLINE_SCRIPT, script, { mode: 0o755 });
+  fs.writeFileSync(
+    STATUSLINE_PYTHON_PATH,
+    buildStatusLinePython(STATUS_DIR),
+    { mode: 0o755 },
+  );
+  fs.writeFileSync(
+    STATUSLINE_SCRIPT,
+    buildStatusLineWrapper(STATUSLINE_PYTHON_PATH, path.join(STATUS_DIR, 'statusline.log')),
+    { mode: 0o755 },
+  );
 }
 
 function extractSessionId(filename: string): string {
@@ -314,7 +267,7 @@ export function cleanupAll(): void {
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
-      if (isKnownExtension(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
+      if (isKnownExtension(file) || isStatuslineArtifact(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
         try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch { /* already gone */ }
       }
     }

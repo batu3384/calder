@@ -40,6 +40,10 @@ describe('isCalderStatusLine', () => {
     expect(isCalderStatusLine({ command: '/tmp/calder/statusline.sh' })).toBe(true);
   });
 
+  it('rejects the managed helper path directly', () => {
+    expect(isCalderStatusLine({ command: '/tmp/calder/statusline.py' })).toBe(false);
+  });
+
   it('rejects an unknown status line command', () => {
     expect(isCalderStatusLine({ command: '/tmp/oldapp/statusline.sh' })).toBe(false);
   });

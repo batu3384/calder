@@ -84,13 +84,18 @@ afterEach(() => {
 
 describe('hook-status', () => {
   describe('installStatusLineScript', () => {
-    it('creates dir and writes script with mode 0o755', () => {
+    it('writes the python helper and then the stable wrapper script', () => {
       installStatusLineScript();
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(STATUS_DIR, { recursive: true, mode: 0o700 });
       expect(fs.writeFileSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'statusline.py'),
+        expect.stringContaining('def render_statusline'),
+        { mode: 0o755 },
+      );
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
         STATUSLINE_SCRIPT,
-        isWin ? expect.stringContaining('@echo off') : expect.stringContaining('#!/bin/sh'),
+        expect.stringContaining('statusline.py'),
         { mode: 0o755 },
       );
     });
@@ -390,6 +395,20 @@ describe('hook-status', () => {
   });
 
   describe('cleanupAll', () => {
+    it('removes provider quota cache artifacts', () => {
+      vi.mocked(fs.readdirSync).mockReturnValue([
+        'anthropic.quota.json',
+        'zai.quota.json',
+        'statusline.refresh.lock',
+      ] as any);
+
+      cleanupAll();
+
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'anthropic.quota.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'zai.quota.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.lock'));
+    });
+
     it('closes watcher, removes matching files, script, and dir', () => {
       const win = createMockWin();
       startWatching(win);
