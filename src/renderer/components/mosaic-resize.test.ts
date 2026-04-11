@@ -114,13 +114,14 @@ describe('mosaic-resize', () => {
 
   it('binds pointer dragging, emits ratios, and tears listeners down on pointerup', () => {
     const handle = new FakeHandle();
-    const onRatio = vi.fn();
+    const onPreview = vi.fn();
+    const onCommit = vi.fn();
     const preventDefault = vi.fn();
 
     const cleanup = attachRatioHandle(
       handle as unknown as HTMLElement,
       () => ({ left: 100, top: 20, width: 400, height: 300 } as DOMRect),
-      onRatio,
+      { onPreview, onCommit },
       { axis: 'x', min: 0.25, max: 0.7, fallback: 0.38 },
     );
 
@@ -130,12 +131,13 @@ describe('mosaic-resize', () => {
 
     expect(preventDefault).toHaveBeenCalledTimes(1);
     expect(handle.classList.contains('active')).toBe(true);
-    expect(onRatio).toHaveBeenNthCalledWith(1, 0.5);
-    expect(onRatio).toHaveBeenNthCalledWith(2, 0.7);
+    expect(onPreview).toHaveBeenNthCalledWith(1, 0.5);
+    expect(onPreview).toHaveBeenNthCalledWith(2, 0.7);
 
-    emitWindow('pointerup', {});
+    emitWindow('pointerup', { clientX: 1000, clientY: 20 });
 
     expect(handle.classList.contains('active')).toBe(false);
+    expect(onCommit).toHaveBeenCalledWith(0.7);
     expect(windowListeners.get('pointermove')?.size ?? 0).toBe(0);
 
     cleanup();

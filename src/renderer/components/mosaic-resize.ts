@@ -9,6 +9,11 @@ interface RatioHandleOptions {
   fallback?: number;
 }
 
+interface RatioHandleCallbacks {
+  onPreview?: (ratio: number) => void;
+  onCommit?: (ratio: number) => void;
+}
+
 export function resolvePointerRatio(
   bounds: Pick<DOMRect, 'left' | 'top' | 'width' | 'height'>,
   event: Pick<PointerEvent, 'clientX' | 'clientY'>,
@@ -27,7 +32,7 @@ export function resolvePointerRatio(
 export function attachRatioHandle(
   handle: HTMLElement,
   getBounds: () => DOMRect,
-  onRatio: (ratio: number) => void,
+  callbacks: RatioHandleCallbacks,
   options: RatioHandleOptions = {},
 ): () => void {
   const axis = options.axis ?? 'x';
@@ -52,12 +57,18 @@ export function attachRatioHandle(
 
   const onPointerDown = (event: PointerEvent) => {
     const bounds = getBounds();
+    let lastRatio = resolvePointerRatio(bounds, event, axis, min, max, fallback);
     handle.classList.add('active');
 
     onPointerMove = (moveEvent: PointerEvent) => {
-      onRatio(resolvePointerRatio(bounds, moveEvent, axis, min, max, fallback));
+      lastRatio = resolvePointerRatio(bounds, moveEvent, axis, min, max, fallback);
+      callbacks.onPreview?.(lastRatio);
     };
-    onPointerUp = () => {
+
+    onPointerUp = (upEvent: PointerEvent) => {
+      lastRatio = resolvePointerRatio(bounds, upEvent, axis, min, max, fallback);
+      callbacks.onPreview?.(lastRatio);
+      callbacks.onCommit?.(lastRatio);
       stopDragging();
     };
 

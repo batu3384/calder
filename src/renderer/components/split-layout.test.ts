@@ -2,12 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
+const windowListeners = new Map<string, Set<(event?: any) => void>>();
 
 vi.stubGlobal('window', {
   calder: {
     store: { load: mockLoad, save: mockSave },
   },
-  addEventListener: vi.fn(),
+  addEventListener: vi.fn((type: string, listener: (event?: any) => void) => {
+    const bucket = windowListeners.get(type) ?? new Set<(event?: any) => void>();
+    bucket.add(listener);
+    windowListeners.set(type, bucket);
+  }),
+  removeEventListener: vi.fn((type: string, listener: (event?: any) => void) => {
+    windowListeners.get(type)?.delete(listener);
+  }),
 });
 
 let uuidCounter = 0;
@@ -47,6 +55,7 @@ class FakeElement {
   style: Record<string, string> = {};
   id = '';
   listeners = new Map<string, Array<(event?: any) => void>>();
+  rect = { left: 0, top: 0, width: 1000, height: 800 };
 
   constructor(public tagName: string) {}
 
@@ -121,6 +130,17 @@ class FakeElement {
     }
     return null;
   }
+
+  getBoundingClientRect(): DOMRect {
+    return {
+      ...this.rect,
+      right: this.rect.left + this.rect.width,
+      bottom: this.rect.top + this.rect.height,
+      x: this.rect.left,
+      y: this.rect.top,
+      toJSON: () => ({}),
+    } as DOMRect;
+  }
 }
 
 class FakeDataTransfer {
@@ -158,6 +178,12 @@ class FakeDocument {
   querySelector(selector: string): FakeElement | null {
     if (selector.startsWith('#')) return this.getElementById(selector.slice(1));
     return this.body.querySelector(selector);
+  }
+}
+
+function emitWindow(type: string, event: any): void {
+  for (const listener of windowListeners.get(type) ?? []) {
+    listener(event);
   }
 }
 
@@ -281,6 +307,7 @@ describe('split-layout mosaic behavior', () => {
     uuidCounter = 0;
     terminalPanes.clear();
     browserPanes.clear();
+    windowListeners.clear();
 
     const document = new FakeDocument();
     const container = new FakeElement('div');
@@ -455,5 +482,32 @@ describe('split-layout mosaic behavior', () => {
 
     expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([second.id, first.id]);
     expect(appState.activeProject!.layout.splitPanes).toEqual([second.id, first.id]);
+  });
+
+  it('keeps browser divider dragging alive until pointerup and persists the latest ratio', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    appState.addBrowserTabSession(project.id, 'http://localhost:3000');
+
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    container.rect = { left: 0, top: 0, width: 1000, height: 700 };
+    const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
+    const preventDefault = vi.fn();
+
+    divider.dispatch('pointerdown', { clientX: 380, clientY: 50, preventDefault });
+    emitWindow('pointermove', { clientX: 420, clientY: 50 });
+    emitWindow('pointermove', { clientX: 560, clientY: 50 });
+    emitWindow('pointerup', { clientX: 560, clientY: 50 });
+
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.56, 2);
   });
 });
