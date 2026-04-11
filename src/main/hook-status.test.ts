@@ -84,13 +84,18 @@ afterEach(() => {
 
 describe('hook-status', () => {
   describe('installStatusLineScript', () => {
-    it('creates dir and writes script with mode 0o755', () => {
+    it('writes the python helper and then the stable wrapper script', () => {
       installStatusLineScript();
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(STATUS_DIR, { recursive: true, mode: 0o700 });
       expect(fs.writeFileSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'statusline.py'),
+        expect.stringContaining('def render_statusline'),
+        { mode: 0o755 },
+      );
+      expect(fs.writeFileSync).toHaveBeenCalledWith(
         STATUSLINE_SCRIPT,
-        isWin ? expect.stringContaining('@echo off') : expect.stringContaining('#!/bin/sh'),
+        expect.stringContaining('statusline.py'),
         { mode: 0o755 },
       );
     });
