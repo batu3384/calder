@@ -3,7 +3,7 @@ import type { SessionRecord, ProjectRecord, Preferences, PersistedState, Archive
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
-import { clampRatio } from './components/mosaic-layout-model.js';
+import { clampRatio, resolveMosaicPreset } from './components/mosaic-layout-model.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 
@@ -939,6 +939,26 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
     project.layout.browserWidthRatio = clampRatio(ratio, 0.25, 0.7, DEFAULT_BROWSER_WIDTH_RATIO);
+    this.persist();
+    this.emit('layout-changed');
+  }
+
+  setMosaicPreset(projectId: string, preset: ProjectLayoutState['mosaicPreset']): void {
+    const project = this.state.projects.find((p) => p.id === projectId);
+    if (!project) return;
+
+    const cliSessions = project.sessions.filter((session) => this.isCliSession(session));
+    if (project.layout.mode !== 'mosaic') {
+      project.layout.mode = 'mosaic';
+    }
+    project.layout.splitPanes = project.layout.splitPanes.filter((id) => cliSessions.some((session) => session.id === id));
+    for (const session of cliSessions) {
+      if (!project.layout.splitPanes.includes(session.id)) {
+        project.layout.splitPanes.push(session.id);
+      }
+    }
+
+    project.layout.mosaicPreset = resolveMosaicPreset(project.layout.splitPanes.length, preset);
     this.persist();
     this.emit('layout-changed');
   }

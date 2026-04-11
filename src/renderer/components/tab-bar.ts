@@ -25,6 +25,12 @@ import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { showUsageModal } from './usage-modal.js';
 import { toggleProjectTerminal } from './project-terminal.js';
 import { toggleContextInspector } from './context-inspector.js';
+import {
+  compactMosaicPresetLabel,
+  formatMosaicPresetLabel,
+  resolveCurrentMosaicPreset,
+  resolveNextMosaicPreset,
+} from './mosaic-control-model.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -39,6 +45,7 @@ const btnToggleSwarm = document.getElementById('btn-toggle-swarm')!;
 let activeContextMenu: HTMLElement | null = null;
 let sessionProviderSelect: CustomSelectInstance | null = null;
 const prevStatus = new Map<string, SessionStatus>();
+let lastActiveTabRailKey = '';
 
 function buildTooltip(status: SessionStatus, cliSessionId?: string): string {
   const statusLine = `Status: ${status}`;
@@ -80,7 +87,21 @@ export function initTabBar(): void {
     hideTabContextMenu();
     toggleContextInspector();
   });
-  btnToggleSwarm.addEventListener('click', () => appState.toggleSwarm());
+  btnToggleSwarm.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    hideTabContextMenu();
+
+    const project = appState.activeProject;
+    if (!project) return;
+
+    if (project.layout.mode !== 'mosaic') {
+      appState.toggleSwarm();
+      return;
+    }
+
+    appState.setMosaicPreset(project.id, resolveNextMosaicPreset(project));
+  });
   gitStatusEl.addEventListener('click', (e) => showBranchContextMenu(e));
 
   // Icons only distinguish providers when multiple are installed
@@ -557,6 +578,16 @@ function hideTabContextMenu(): void {
   }
 }
 
+function ensureActiveTabVisible(key: string): void {
+  if (key === lastActiveTabRailKey) return;
+  lastActiveTabRailKey = key;
+  const activeTab = tabListEl.querySelector('.tab-item.active') as HTMLElement | null;
+  if (!activeTab) return;
+  requestAnimationFrame(() => {
+    activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+}
+
 function render(): void {
   if (tabListEl.querySelector('.tab-name input')) return;
   tabListEl.innerHTML = '';
@@ -679,10 +710,17 @@ function render(): void {
     tabListEl.appendChild(tab);
   }
 
-  // Update swarm toggle button visual
-  const swarmActive = project.layout.mode === 'swarm';
-  btnToggleSwarm.dataset.state = swarmActive ? 'active' : 'idle';
-  btnToggleSwarm.setAttribute('aria-pressed', swarmActive ? 'true' : 'false');
+  const mosaicActive = project.layout.mode === 'mosaic';
+  const currentMosaicPreset = resolveCurrentMosaicPreset(project);
+  btnToggleSwarm.dataset.state = mosaicActive ? 'active' : 'idle';
+  btnToggleSwarm.dataset.preset = currentMosaicPreset;
+  btnToggleSwarm.dataset.layoutLabel = compactMosaicPresetLabel(currentMosaicPreset);
+  btnToggleSwarm.title = mosaicActive
+    ? `Session Layout: ${formatMosaicPresetLabel(currentMosaicPreset)}`
+    : 'Choose session layout';
+  btnToggleSwarm.setAttribute('aria-label', 'Choose session layout');
+  btnToggleSwarm.setAttribute('aria-pressed', mosaicActive ? 'true' : 'false');
+  ensureActiveTabVisible(`${appState.activeProjectId}:${project.activeSessionId}:${project.sessions.length}`);
 }
 
 function renderGitStatus(): void {
