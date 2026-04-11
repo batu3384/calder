@@ -19,7 +19,9 @@ describe('workspace polish contract', () => {
   it('upgrades the empty state into an action-oriented launch surface', () => {
     expect(splitLayoutSource).toContain('empty-state-primary-action');
     expect(splitLayoutSource).toContain('Start First Session');
-    expect(splitLayoutSource).toContain('Choose A Project');
+    expect(splitLayoutSource).toContain('Create Project');
+    expect(splitLayoutSource).toContain('Start a session or open Live View');
+    expect(splitLayoutSource).toContain('Project surface is ready');
     expect(splitLayoutSource).toContain('promptNewProject');
     expect(baseCss).toContain('.empty-state-card');
     expect(baseCss).toContain('.empty-state-primary-action');
