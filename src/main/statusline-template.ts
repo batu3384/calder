@@ -79,6 +79,62 @@ def spawn_refresh(provider, model_name):
         except OSError:
             pass
 
+def basename_label(value):
+    if not value:
+        return ''
+    label = os.path.basename(str(value).rstrip(os.sep))
+    return label or str(value)
+
+def latest_cwd_label(sid, payload):
+    cwd = payload.get('cwd') or (payload.get('workspace') or {}).get('current_dir')
+    if cwd:
+        return basename_label(cwd)
+    if sid:
+        try:
+            with open(os.path.join(STATUS_DIR, sid+'.events'), 'r') as f:
+                lines = [line.strip() for line in f.readlines() if line.strip()]
+            for line in reversed(lines):
+                try:
+                    event = json.loads(line)
+                except Exception:
+                    continue
+                cwd = event.get('cwd') or event.get('worktree_path')
+                if cwd:
+                    return basename_label(cwd)
+        except Exception:
+            pass
+    return basename_label(os.getcwd()) or 'project'
+
+def context_percent(ctx):
+    if not isinstance(ctx, dict):
+        return 0
+    used_percentage = ctx.get('used_percentage')
+    if isinstance(used_percentage, (int, float)):
+        return int(round(used_percentage))
+    current_usage = ctx.get('current_usage')
+    if isinstance(current_usage, (int, float)):
+        return int(round(current_usage * 100 if current_usage <= 1 else current_usage))
+    used = ctx.get('used')
+    total = ctx.get('max') or ctx.get('context_window_size')
+    if used is None:
+        input_tokens = ctx.get('total_input_tokens')
+        output_tokens = ctx.get('total_output_tokens')
+        if isinstance(input_tokens, (int, float)) or isinstance(output_tokens, (int, float)):
+            used = (input_tokens or 0) + (output_tokens or 0)
+    if isinstance(used, (int, float)) and isinstance(total, (int, float)) and total:
+        return int(round((used / total) * 100))
+    return 0
+
+def cost_label(cost):
+    if not isinstance(cost, dict):
+        return '--'
+    value = cost.get('total_cost_usd')
+    if value is None:
+        value = cost.get('total')
+    if isinstance(value, (int, float)):
+        return '$' + format(value, '.2f')
+    return '--'
+
 def render_statusline(payload):
     sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '')
     model_name = ((payload.get('model') or {}).get('display_name') or '').strip()
@@ -96,13 +152,12 @@ def render_statusline(payload):
     if snapshot is None:
         spawn_refresh(provider, model_name)
         snapshot = fallback_snapshot(provider, model_name)
-    ctx_used = (ctx.get('used') if isinstance(ctx, dict) else None)
-    ctx_total = (ctx.get('max') if isinstance(ctx, dict) else None) or 0
-    ctx_percent = int((ctx_used / ctx_total) * 100) if ctx_used is not None and ctx_total else 0
+    ctx_percent = context_percent(ctx)
     freshness = 'Syncing' if snapshot.get('status') == 'syncing' else 'Live'
+    cwd_label = latest_cwd_label(sid, payload)
     return '\\n'.join([
-        f"{model_name or 'Unknown Model'}  {'Z.ai' if provider == 'zai' else 'Anthropic'}  --  project",
-        f"Ctx {ctx_percent}%  Cost --  5h {snapshot['status']}  Week {snapshot['status']}  {freshness}",
+        f"{model_name or 'Unknown Model'}  {'Z.ai' if provider == 'zai' else 'Anthropic'}  --  {cwd_label}",
+        f"Ctx {ctx_percent}%  Cost {cost_label(cost)}  5h {snapshot['status']}  Week {snapshot['status']}  {freshness}",
     ])
 
 def refresh_provider_cache(provider, model_name):
