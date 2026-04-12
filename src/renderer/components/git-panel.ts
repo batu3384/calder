@@ -6,8 +6,10 @@ import { areaLabel } from '../dom-utils.js';
 import type { GitFileEntry } from '../types.js';
 
 const MAX_FILES = 100;
+type SectionPresentation = 'compact' | 'expanded' | 'promoted';
 
 let collapsed = false;
+let compactExpanded = false;
 let lastCountKey = '';
 let lastFilesKey = '';
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -131,24 +133,45 @@ function shortPath(fullPath: string): string {
   return parts.length > 2 ? '.../' + parts.slice(-2).join('/') : fullPath;
 }
 
-function updateGitHeader(header: HTMLElement, total: number, headerSuffix: string, body: HTMLElement, activeGitPath: string): void {
+function getSectionPresentation(container: HTMLElement): SectionPresentation {
+  const wrapper = container.parentNode as { dataset?: Record<string, string> } | null;
+  const value = wrapper?.dataset?.presentation;
+  return value === 'compact' || value === 'promoted' || value === 'expanded' ? value : 'expanded';
+}
+
+function isDetailExpanded(presentation: SectionPresentation): boolean {
+  if (presentation === 'promoted') return true;
+  if (presentation === 'compact') return compactExpanded;
+  return !collapsed;
+}
+
+function getCompactSummary(total: number, conflicted: number): string {
+  if (total === 0) return 'Git is clean';
+  if (conflicted > 0) {
+    return conflicted === 1 ? '1 conflicted file needs review' : `${conflicted} conflicted files need review`;
+  }
+  return total === 1 ? '1 file changed' : `${total} files changed`;
+}
+
+function updateGitHeader(header: HTMLElement, total: number, headerSuffix: string, container: HTMLElement): void {
   header.innerHTML = '';
+  const presentation = getSectionPresentation(container);
+  const detailExpanded = isDetailExpanded(presentation);
 
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'config-section-heading config-section-toggle-button';
-  button.setAttribute('aria-expanded', String(!collapsed));
+  button.setAttribute('aria-expanded', String(detailExpanded));
   button.innerHTML = `
-    <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Repo${headerSuffix}</span>
+    <span class="config-section-toggle ${detailExpanded ? '' : 'collapsed'}">&#x25BC;</span>
+    <span class="config-section-title">Git${headerSuffix}</span>
   `;
   button.addEventListener('click', () => {
-    collapsed = !collapsed;
-    const toggle = button.querySelector('.config-section-toggle')!;
-    button.setAttribute('aria-expanded', String(!collapsed));
-    toggle.classList.toggle('collapsed', collapsed);
-    body.classList.toggle('hidden', collapsed);
-    if (!collapsed) loadFiles(body, activeGitPath);
+    if (presentation === 'promoted') return;
+    if (presentation === 'compact') compactExpanded = !compactExpanded;
+    else collapsed = !collapsed;
+    lastFilesKey = '';
+    void refresh();
   });
   header.appendChild(button);
 
@@ -159,6 +182,51 @@ function updateGitHeader(header: HTMLElement, total: number, headerSuffix: strin
   count.textContent = String(total);
   meta.appendChild(count);
   header.appendChild(meta);
+}
+
+function renderGitBodyState(body: HTMLElement, message: string): void {
+  body.innerHTML = '';
+  const empty = document.createElement('div');
+  empty.className = 'config-empty';
+  empty.textContent = message;
+  body.appendChild(empty);
+}
+
+function ensureGitSection(
+  container: HTMLElement,
+  total: number,
+  headerSuffix: string,
+): HTMLElement {
+  const presentation = getSectionPresentation(container);
+  const detailExpanded = isDetailExpanded(presentation);
+  const showCompactSummary = presentation === 'compact' && !detailExpanded;
+  const existingSection = container.querySelector('.config-section');
+  if (existingSection) {
+    const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
+    const existingHeader = existingSection.querySelector('.config-section-header');
+    if (existingHeader && body) {
+      body.className = `config-section-body${detailExpanded || showCompactSummary ? '' : ' hidden'}`;
+      updateGitHeader(existingHeader as HTMLElement, total, headerSuffix, container);
+      return body;
+    }
+  }
+
+  const section = document.createElement('div');
+  section.className = 'config-section';
+
+  const header = document.createElement('div');
+  header.className = 'config-section-header';
+
+  const body = document.createElement('div');
+  body.className = `config-section-body${detailExpanded || showCompactSummary ? '' : ' hidden'}`;
+  updateGitHeader(header, total, headerSuffix, container);
+
+  section.appendChild(header);
+  section.appendChild(body);
+
+  container.innerHTML = '';
+  container.appendChild(section);
+  return body;
 }
 
 function renderWorktreeSelector(container: HTMLElement, project: { id: string; path: string }): void {
@@ -230,20 +298,15 @@ async function refresh(): Promise<void> {
   }
 
   const status = getGitStatus(project.id);
-  if (!status || !status.isGitRepo) {
-    container.innerHTML = '';
-    return;
-  }
-
-  const total = status.staged + status.modified + status.untracked + status.conflicted;
-  if (total === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
   const activeGitPath = getActiveGitPath(project.id);
   const worktrees = getWorktrees(project.id);
   const hasMultipleWorktrees = worktrees && worktrees.length > 1;
+  const total = status?.isGitRepo
+    ? status.staged + status.modified + status.untracked + status.conflicted
+    : 0;
+  const presentation = getSectionPresentation(container);
+  const detailExpanded = isDetailExpanded(presentation);
+  const showCompactSummary = presentation === 'compact' && !detailExpanded;
 
   // Find active worktree branch for header
   let headerSuffix = '';
@@ -254,52 +317,32 @@ async function refresh(): Promise<void> {
     }
   }
 
-  // Try to update existing section in-place instead of rebuilding
-  const existingSection = container.querySelector('.config-section');
-  if (existingSection) {
-    // Update header in-place
-    const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
-    const existingHeader = existingSection.querySelector('.config-section-header');
-    if (existingHeader && body) {
-      updateGitHeader(existingHeader as HTMLElement, total, headerSuffix, body, activeGitPath);
-    }
-
-    // Update worktree selector
-    if (hasMultipleWorktrees) {
-      renderWorktreeSelector(container, project);
-    } else {
-      const selector = container.querySelector('.git-worktree-selector');
-      if (selector) selector.remove();
-    }
-
-    // Reload files if expanded
-    if (!collapsed && body) loadFiles(body, activeGitPath);
-    return;
-  }
-
-  // First render — build from scratch
-  const section = document.createElement('div');
-  section.className = 'config-section';
-
-  const header = document.createElement('div');
-  header.className = 'config-section-header';
-
-  const body = document.createElement('div');
-  body.className = `config-section-body${collapsed ? ' hidden' : ''}`;
-  updateGitHeader(header, total, headerSuffix, body, activeGitPath);
-
-  section.appendChild(header);
-  section.appendChild(body);
-
-  container.innerHTML = '';
-  container.appendChild(section);
+  const body = ensureGitSection(container, total, headerSuffix);
 
   // Add worktree selector if multiple worktrees
   if (hasMultipleWorktrees) {
     renderWorktreeSelector(container, project);
+  } else {
+    const selector = container.querySelector('.git-worktree-selector');
+    if (selector) selector.remove();
   }
 
-  if (!collapsed) {
+  if (!status || !status.isGitRepo) {
+    renderGitBodyState(body, 'This folder is not a Git repo yet.');
+    return;
+  }
+
+  if (total === 0) {
+    renderGitBodyState(body, showCompactSummary ? 'Git is clean' : 'Working tree clean.');
+    return;
+  }
+
+  if (showCompactSummary) {
+    renderGitBodyState(body, getCompactSummary(total, status.conflicted));
+    return;
+  }
+
+  if (detailExpanded) {
     loadFiles(body, activeGitPath);
   }
 }
@@ -404,44 +447,17 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
   body.appendChild(fragment);
 }
 
-export function scrollToGitPanel(): void {
-  const container = document.getElementById('git-panel');
-  if (!container || !container.firstElementChild) return;
-  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  // Expand if collapsed
-  if (collapsed) {
-    collapsed = false;
-    const toggle = container.querySelector('.config-section-toggle');
-    const button = container.querySelector('.config-section-toggle-button') as HTMLButtonElement | null;
-    const body = container.querySelector('.config-section-body');
-    if (toggle) toggle.classList.remove('collapsed');
-    if (button) button.setAttribute('aria-expanded', 'true');
-    if (body) {
-      body.classList.remove('hidden');
-      const project = appState.activeProject;
-      if (project) loadFiles(body as HTMLElement, getActiveGitPath(project.id));
-    }
-  }
-}
-
 export function toggleGitPanel(): void {
   const container = document.getElementById('git-panel');
   if (!container || !container.firstElementChild) return;
+  const presentation = getSectionPresentation(container);
 
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  collapsed = !collapsed;
-  const toggle = container.querySelector('.config-section-toggle');
-  const button = container.querySelector('.config-section-toggle-button') as HTMLButtonElement | null;
-  const body = container.querySelector('.config-section-body');
-  if (toggle) toggle.classList.toggle('collapsed', collapsed);
-  if (button) button.setAttribute('aria-expanded', String(!collapsed));
-  if (body) {
-    body.classList.toggle('hidden', collapsed);
-    if (!collapsed) {
-      const project = appState.activeProject;
-      if (project) loadFiles(body as HTMLElement, getActiveGitPath(project.id));
-    }
-  }
+  if (presentation === 'promoted') return;
+  if (presentation === 'compact') compactExpanded = !compactExpanded;
+  else collapsed = !collapsed;
+  lastFilesKey = '';
+  void refresh();
 }
 
 export function initGitPanel(): void {

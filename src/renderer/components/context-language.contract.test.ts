@@ -21,8 +21,11 @@ describe('context language contract', () => {
     expect(configSectionsSource).not.toContain("'Integrations'");
     expect(configSectionsSource).toContain('Tools Focus');
     expect(readinessSource).toContain('Readiness');
+    expect(readinessSource).toContain('All good');
     expect(gitPanelSource).toContain('Git');
+    expect(gitPanelSource).toContain('Git is clean');
     expect(historySource).toContain('Run Log');
+    expect(historySource).toContain('recent run');
     expect(inspectorSource).toContain('Project Snapshot');
     expect(inspectorSource).toContain('Open sessions');
     expect(inspectorSource).toContain('Changes');

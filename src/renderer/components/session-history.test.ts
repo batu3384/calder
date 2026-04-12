@@ -1,23 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ArchivedSession } from '../../shared/types.js';
+
+function createArchivedSession(overrides: Partial<ArchivedSession> = {}): ArchivedSession {
+  return {
+    id: 'h1',
+    name: 'Codex session',
+    providerId: 'codex',
+    cliSessionId: 'cli-1',
+    createdAt: '2026-03-31T08:00:00.000Z',
+    closedAt: '2026-03-31T09:00:00.000Z',
+    cost: {
+      totalCostUsd: 0.42,
+      totalInputTokens: 1000,
+      totalOutputTokens: 500,
+      totalDurationMs: 5000,
+      source: 'structured',
+    },
+    ...overrides,
+  };
+}
 
 const mockAppState = vi.hoisted(() => {
   const listeners = new Map<string, Set<() => void>>();
+  const initialHistory: ArchivedSession[] = [createArchivedSession()];
   const state = {
     preferences: { sessionHistoryEnabled: true, sidebarViews: { sessionHistory: true } },
     activeProject: {
       id: 'p1',
-      sessionHistory: [
-        {
-          id: 'h1',
-          name: 'Codex session',
-          providerId: 'codex',
-          cliSessionId: 'cli-1',
-          createdAt: '2026-03-31T08:00:00.000Z',
-          closedAt: '2026-03-31T09:00:00.000Z',
-          cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000, source: 'structured' },
-        },
-      ],
-    },
+      sessionHistory: initialHistory,
+    } as { id: string; sessionHistory: ArchivedSession[] },
     on: vi.fn((event: string, cb: () => void) => {
       if (!listeners.has(event)) listeners.set(event, new Set());
       listeners.get(event)!.add(cb);
@@ -37,17 +48,7 @@ const mockAppState = vi.hoisted(() => {
       state.preferences.sidebarViews.sessionHistory = true;
       state.activeProject = {
         id: 'p1',
-        sessionHistory: [
-          {
-            id: 'h1',
-            name: 'Codex session',
-            providerId: 'codex',
-            cliSessionId: 'cli-1',
-            createdAt: '2026-03-31T08:00:00.000Z',
-            closedAt: '2026-03-31T09:00:00.000Z',
-            cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000, source: 'structured' },
-          },
-        ],
+        sessionHistory: [createArchivedSession()],
       };
       state.getSessionHistory.mockImplementation(() => state.activeProject.sessionHistory);
       state.clearSessionHistory.mockClear();
@@ -109,7 +110,7 @@ class FakeElement {
   attributes: Record<string, string> = {};
   onerror: (() => unknown) | null = null;
   parentNode: FakeElement | null = null;
-  listeners = new Map<string, Array<() => void>>();
+  listeners = new Map<string, Array<(event?: unknown) => void>>();
   classList = new FakeClassList(this);
 
   constructor(public tagName: string, public ownerDocument: FakeDocument) {}
@@ -133,7 +134,7 @@ class FakeElement {
     this.attributes[name] = value;
   }
 
-  addEventListener(event: string, cb: () => void): void {
+  addEventListener(event: string, cb: (event?: unknown) => void): void {
     const existing = this.listeners.get(event) ?? [];
     existing.push(cb);
     this.listeners.set(event, existing);
@@ -151,6 +152,17 @@ class FakeElement {
       if (child.classList.contains(className)) return child;
       const nested = child.querySelector(selector);
       if (nested) return nested;
+    }
+    return null;
+  }
+
+  closest(selector: string): FakeElement | null {
+    if (!selector.startsWith('.')) return null;
+    const className = selector.slice(1);
+    let current: FakeElement | null = this;
+    while (current) {
+      if (current.classList.contains(className)) return current;
+      current = current.parentNode;
     }
     return null;
   }
@@ -175,7 +187,10 @@ class FakeDocument {
 async function renderHistory(): Promise<FakeElement> {
   vi.resetModules();
   const document = new FakeDocument();
+  const wrapper = document.createElement('section');
+  wrapper.className = 'context-inspector-section';
   const container = document.createElement('div');
+  wrapper.appendChild(container);
   document.registerElement('session-history', container);
   vi.stubGlobal('document', document);
 
@@ -246,5 +261,15 @@ describe('initSessionHistory', () => {
 
     expect(confirmMock).toHaveBeenCalledWith('Remove "Codex session" from session history?');
     expect(mockAppState.removeHistoryEntry).not.toHaveBeenCalled();
+  });
+
+  it('renders a compact run log summary before the full list', async () => {
+    const container = await renderHistory();
+    (container.parentNode as FakeElement).dataset.presentation = 'compact';
+    mockAppState.emit('history-changed');
+
+    const compactSummary = container.querySelector('.history-compact-summary');
+    expect(compactSummary).not.toBeNull();
+    expect(compactSummary?.textContent).toContain('recent run');
   });
 });

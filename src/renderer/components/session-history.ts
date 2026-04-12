@@ -2,6 +2,7 @@ import { appState, ArchivedSession } from '../state.js';
 import { loadProviderAvailability } from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import type { ProviderId } from '../../shared/types.js';
+type SectionPresentation = 'compact' | 'expanded' | 'promoted';
 
 let historyContextMenu: HTMLElement | null = null;
 function hideHistoryContextMenu(): void {
@@ -57,6 +58,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   copilot: 'GitHub Copilot',
   gemini: 'Gemini CLI',
   qwen: 'Qwen Code',
+  minimax: 'MiniMax CLI',
   blackbox: 'Blackbox CLI',
 };
 
@@ -64,7 +66,20 @@ let container: HTMLElement;
 let searchInput: HTMLInputElement;
 let listEl: HTMLElement;
 let collapsed = true;
+let compactExpanded = false;
 let bookmarkFilterActive = false;
+
+function getSectionPresentation(): SectionPresentation {
+  const wrapper = container?.parentNode as { dataset?: Record<string, string> } | null;
+  const value = wrapper?.dataset?.presentation;
+  return value === 'compact' || value === 'promoted' || value === 'expanded' ? value : 'expanded';
+}
+
+function isDetailExpanded(presentation: SectionPresentation): boolean {
+  if (presentation === 'promoted') return true;
+  if (presentation === 'compact') return compactExpanded;
+  return !collapsed;
+}
 
 function applyHistoryVisibility(): void {
   if (!container) return;
@@ -91,7 +106,9 @@ function onHistoryChanged(): void {
   applyHistoryVisibility();
 
   const project = appState.activeProject;
-  if (!collapsed && listEl && project) {
+  const presentation = getSectionPresentation();
+  const detailExpanded = isDetailExpanded(presentation);
+  if (detailExpanded && listEl && project) {
     const history = appState.getSessionHistory(project.id);
     // Update the count badge in the header
     const countEl = container.querySelector('.config-section-count');
@@ -118,6 +135,9 @@ function render(): void {
 
   const project = appState.activeProject;
   const history = project ? appState.getSessionHistory(project.id) : [];
+  const presentation = getSectionPresentation();
+  const detailExpanded = isDetailExpanded(presentation);
+  const showCompactSummary = presentation === 'compact' && !detailExpanded;
 
   if (!project) {
     container.innerHTML = '';
@@ -136,7 +156,7 @@ function render(): void {
   button.setAttribute('aria-expanded', String(!collapsed));
   button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Runs</span>
+    <span class="config-section-title">Run Log</span>
   `;
   header.appendChild(button);
 
@@ -151,15 +171,30 @@ function render(): void {
   header.appendChild(meta);
 
   button.addEventListener('click', () => {
-    collapsed = !collapsed;
+    if (presentation === 'promoted') return;
+    if (presentation === 'compact') compactExpanded = !compactExpanded;
+    else collapsed = !collapsed;
     render();
   });
   container.appendChild(header);
 
-  if (collapsed) return;
+  if (!detailExpanded && !showCompactSummary) return;
 
   const body = document.createElement('div');
-  body.className = 'history-body';
+  body.className = `history-body${showCompactSummary ? ' history-body-compact' : ''}`;
+
+  if (showCompactSummary) {
+    const summary = document.createElement('div');
+    summary.className = 'history-compact-summary';
+    summary.textContent = history.length === 0
+      ? 'No run history yet'
+      : history.length === 1
+        ? '1 recent run'
+        : `${history.length} recent runs`;
+    body.appendChild(summary);
+    container.appendChild(body);
+    return;
+  }
 
   if (history.length === 0) {
     const empty = document.createElement('div');
@@ -195,7 +230,7 @@ function render(): void {
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button';
   clearBtn.className = 'history-clear-btn';
-  clearBtn.textContent = 'Clear Runs';
+  clearBtn.textContent = 'Clear Log';
   clearBtn.ariaLabel = 'Clear run history';
   clearBtn.addEventListener('click', () => {
     if (!project) return;

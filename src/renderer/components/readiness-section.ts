@@ -2,15 +2,22 @@ import { appState } from '../state.js';
 import { showReadinessModal } from './readiness-modal.js';
 import { esc, scoreColor } from '../dom-utils.js';
 const container = document.getElementById('readiness-section')!;
+type SectionPresentation = 'compact' | 'expanded' | 'promoted';
 let collapsed = true;
+let compactExpanded = false;
 let scanning = false;
 let lastExcludedKey = '';
 
-function updateCollapse(button: HTMLButtonElement, body: HTMLElement): void {
-  button.setAttribute('aria-expanded', String(!collapsed));
-  const toggle = button.querySelector('.config-section-toggle')!;
-  toggle.classList.toggle('collapsed', collapsed);
-  body.classList.toggle('hidden', collapsed);
+function getSectionPresentation(): SectionPresentation {
+  const wrapper = container.parentNode as { dataset?: Record<string, string> } | null;
+  const value = wrapper?.dataset?.presentation;
+  return value === 'compact' || value === 'promoted' || value === 'expanded' ? value : 'expanded';
+}
+
+function isDetailExpanded(presentation: SectionPresentation): boolean {
+  if (presentation === 'promoted') return true;
+  if (presentation === 'compact') return compactExpanded;
+  return !collapsed;
 }
 
 export function initReadinessSection(): void {
@@ -79,6 +86,9 @@ function render(): void {
 
   container.innerHTML = '';
   const result = project.readiness;
+  const presentation = getSectionPresentation();
+  const detailExpanded = isDetailExpanded(presentation);
+  const showCompactSummary = presentation === 'compact' && !detailExpanded;
 
   const section = document.createElement('div');
   section.className = 'config-section readiness-section-card';
@@ -89,8 +99,8 @@ function render(): void {
   const headingButton = document.createElement('button');
   headingButton.type = 'button';
   headingButton.className = 'config-section-heading config-section-toggle-button readiness-header-main';
-  headingButton.setAttribute('aria-expanded', String(!collapsed));
-  headingButton.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">Tool Status</span>`;
+  headingButton.setAttribute('aria-expanded', String(detailExpanded));
+  headingButton.innerHTML = `<span class="config-section-toggle ${detailExpanded ? '' : 'collapsed'}">&#x25BC;</span><span class="config-section-title">Readiness</span>`;
   header.appendChild(headingButton);
 
   const actions = document.createElement('div');
@@ -118,13 +128,23 @@ function render(): void {
   header.appendChild(actions);
 
   const body = document.createElement('div');
-  body.className = `config-section-body${collapsed ? ' hidden' : ''}`;
+  body.className = `config-section-body${detailExpanded || showCompactSummary ? '' : ' hidden'}`;
 
   if (scanning && !result) {
     const loading = document.createElement('div');
     loading.className = 'readiness-loading';
     loading.textContent = 'Analyzing project…';
     body.appendChild(loading);
+  } else if (showCompactSummary && result) {
+    const compact = document.createElement('div');
+    compact.className = 'readiness-compact-summary';
+    compact.textContent = result.overallScore >= 70 ? 'All good' : `${result.categories.length} health checks`;
+    body.appendChild(compact);
+  } else if (showCompactSummary) {
+    const compact = document.createElement('div');
+    compact.className = 'readiness-compact-summary';
+    compact.textContent = 'Scan to check tool health';
+    body.appendChild(compact);
   } else if (result) {
     for (const category of result.categories) {
       const row = document.createElement('div');
@@ -148,8 +168,10 @@ function render(): void {
   }
 
   headingButton.addEventListener('click', () => {
-    collapsed = !collapsed;
-    updateCollapse(headingButton, body);
+    if (presentation === 'promoted') return;
+    if (presentation === 'compact') compactExpanded = !compactExpanded;
+    else collapsed = !collapsed;
+    render();
   });
 
   section.appendChild(header);

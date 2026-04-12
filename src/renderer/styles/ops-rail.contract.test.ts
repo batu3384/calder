@@ -17,5 +17,8 @@ describe('ops rail stylesheet contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-section-count');
     expect(inspectorCss).toContain('#context-inspector .readiness-badge');
     expect(inspectorCss).toContain('min-height: 18px;');
+    expect(inspectorCss).toContain('.toolchain-summary-status');
+    expect(inspectorCss).toContain('.history-compact-summary');
+    expect(inspectorCss).toContain('.readiness-compact-summary');
   });
 });

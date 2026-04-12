@@ -13,11 +13,15 @@ const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
 const overviewEl = document.getElementById('context-inspector-overview')!;
-const sectionEls = Array.from(
-  inspectorEl.querySelectorAll<HTMLElement>('.context-inspector-section'),
-);
 
 let inspectorOpen = true;
+
+function getSectionEls(): HTMLElement[] {
+  if (typeof (inspectorEl as Element).querySelectorAll !== 'function') {
+    return [];
+  }
+  return Array.from(inspectorEl.querySelectorAll<HTMLElement>('.context-inspector-section'));
+}
 
 function getInspectorProviderId(): ProviderId {
   const project = appState.activeProject;
@@ -87,7 +91,7 @@ function applyRailMode(): void {
   const project = appState.activeProject;
   if (!project) {
     inspectorEl.dataset.railMode = 'normal';
-    for (const sectionEl of sectionEls) {
+    for (const sectionEl of getSectionEls()) {
       sectionEl.dataset.presentation = 'compact';
     }
     return;
@@ -112,7 +116,7 @@ function applyRailMode(): void {
   const presentation = deriveRightRailPresentation(mode, { hasDirtyGit, hasGitConflicts });
 
   inspectorEl.dataset.railMode = mode;
-  for (const sectionEl of sectionEls) {
+  for (const sectionEl of getSectionEls()) {
     const sectionId = sectionEl.dataset.section as RightRailSectionId | undefined;
     sectionEl.dataset.presentation = sectionId ? presentation[sectionId] : 'compact';
   }
