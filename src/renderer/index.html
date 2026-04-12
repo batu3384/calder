@@ -67,27 +67,24 @@
         <aside id="context-inspector" class="context-inspector-open control-panel-surface ops-rail ops-rail-surface">
           <div id="context-inspector-header">
             <div class="context-inspector-title-group">
-              <span class="context-inspector-eyebrow">Project</span>
-              <span class="context-inspector-title">Signals</span>
+              <span class="context-inspector-eyebrow">Workspace</span>
+              <span class="context-inspector-title">Overview</span>
             </div>
             <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
           </div>
+          <div id="context-inspector-overview"></div>
           <div id="context-inspector-sections">
-            <section class="context-inspector-section" data-section="health">
-              <div class="context-inspector-section-label">Tool Status</div>
-              <div id="readiness-section"></div>
+            <section class="context-inspector-section" data-section="capabilities">
+              <div id="config-sections"></div>
             </section>
             <section class="context-inspector-section" data-section="git">
-              <div class="context-inspector-section-label">Repo</div>
               <div id="git-panel"></div>
             </section>
-            <section class="context-inspector-section" data-section="activity">
-              <div class="context-inspector-section-label">Runs</div>
-              <div id="session-history"></div>
+            <section class="context-inspector-section" data-section="health">
+              <div id="readiness-section"></div>
             </section>
-            <section class="context-inspector-section" data-section="capabilities">
-              <div class="context-inspector-section-label">Config</div>
-              <div id="config-sections"></div>
+            <section class="context-inspector-section" data-section="activity">
+              <div id="session-history"></div>
             </section>
           </div>
         </aside>
