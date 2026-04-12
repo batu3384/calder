@@ -19,7 +19,7 @@ describe('context language contract', () => {
     expect(configSectionsSource).toContain("'Skills'");
     expect(configSectionsSource).toContain("'Commands'");
     expect(configSectionsSource).not.toContain("'Integrations'");
-    expect(configSectionsSource).toContain('Configured for');
+    expect(configSectionsSource).toContain('Tools Focus');
     expect(readinessSource).toContain('Readiness');
     expect(gitPanelSource).toContain('Git');
     expect(historySource).toContain('Run Log');

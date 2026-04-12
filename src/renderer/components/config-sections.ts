@@ -1,6 +1,16 @@
 import { appState } from '../state.js';
 import { showMcpAddModal } from './mcp-add-modal.js';
-import type { ProviderConfig, ProviderId, McpServer, Agent, Skill, Command } from '../types.js';
+import { isTrackingHealthy } from '../../shared/tracking-health.js';
+import type {
+  ProviderConfig,
+  ProviderId,
+  McpServer,
+  Agent,
+  Skill,
+  Command,
+  CliProviderMeta,
+  SettingsValidationResult,
+} from '../types.js';
 
 const collapsed: Record<string, boolean> = {};
 type ToolchainSection = {
@@ -152,42 +162,80 @@ function providerLabel(providerId: ProviderId): string {
     case 'copilot': return 'GitHub Copilot';
     case 'gemini': return 'Gemini CLI';
     case 'qwen': return 'Qwen Code';
+    case 'minimax': return 'MiniMax CLI';
     case 'blackbox': return 'Blackbox CLI';
     default: return providerId;
   }
 }
 
-function renderToolchainSummary(providerId: ProviderId, sections: ToolchainSection[]): HTMLElement {
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return count === 1 ? singular : plural;
+}
+
+function sectionSummaryText(section: ToolchainSection): string {
+  switch (section.id) {
+    case 'mcp':
+      return section.count === 1
+        ? '1 MCP server connected'
+        : `${section.count} MCP servers connected`;
+    case 'agents':
+      return `${section.count} ${pluralize(section.count, 'agent')} available`;
+    case 'skills':
+      return `${section.count} ${pluralize(section.count, 'skill')} ready`;
+    case 'commands':
+      return section.count === 1
+        ? '1 custom command available'
+        : `${section.count} custom commands available`;
+    default:
+      return `${section.count} configured`;
+  }
+}
+
+function renderToolchainSummary(
+  providerId: ProviderId,
+  sections: ToolchainSection[],
+  trackingHealthy: boolean,
+): HTMLElement {
   const wrap = document.createElement('div');
-  wrap.className = 'toolchain-summary';
+  wrap.className = 'toolchain-summary toolchain-summary-tools-focus';
 
   const provider = document.createElement('div');
   provider.className = 'toolchain-provider';
   provider.innerHTML = `
-    <span class="toolchain-provider-kicker">Config for</span>
-    <span class="toolchain-provider-value">${esc(providerLabel(providerId))}</span>
+    <span class="toolchain-provider-kicker">Tools Focus</span>
+    <span class="toolchain-provider-value">${esc(providerLabel(providerId))} is active</span>
   `;
   wrap.appendChild(provider);
+
+  const status = document.createElement('div');
+  status.className = `toolchain-summary-status ${trackingHealthy ? 'is-healthy' : 'is-warning'}`;
+  status.textContent = trackingHealthy ? 'Tracking is on' : 'Tracking is off';
+  wrap.appendChild(status);
 
   const chips = document.createElement('div');
   chips.className = 'toolchain-summary-chips';
 
-  const visibleCounts = sections.filter((section) => section.count > 0);
+  const visibleCounts = sections.filter((section) => section.count > 0 || !!section.onAdd);
   if (visibleCounts.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'toolchain-summary-empty';
-    empty.textContent = 'No active config items yet';
+    empty.textContent = 'No workspace extras configured yet';
     wrap.appendChild(empty);
     return wrap;
   }
 
   for (const section of visibleCounts) {
-    const chip = document.createElement('div');
+    const chip = document.createElement('button');
+    chip.type = 'button';
     chip.className = 'toolchain-summary-chip control-chip';
     chip.innerHTML = `
       <span class="toolchain-summary-chip-label">${esc(section.title)}</span>
-      <span class="toolchain-summary-chip-value">${section.count}</span>
+      <span class="toolchain-summary-chip-value">${esc(sectionSummaryText(section))}</span>
     `;
+    chip.addEventListener('click', () => {
+      collapsed[section.id] = false;
+      void refresh();
+    });
     chips.appendChild(chip);
   }
 
@@ -235,12 +283,20 @@ async function refresh(): Promise<void> {
 
   const providerId = getConfigProviderId();
   let config: ProviderConfig;
+  let meta: CliProviderMeta | null = null;
+  let validation: SettingsValidationResult | null = null;
   try {
-    config = await window.calder.provider.getConfig(providerId, project.path);
+    [config, meta, validation] = await Promise.all([
+      window.calder.provider.getConfig(providerId, project.path),
+      window.calder.provider.getMeta(providerId).catch(() => null),
+      window.calder.settings.validate(providerId).catch(() => null),
+    ]);
   } catch {
     container.innerHTML = '';
     return;
   }
+
+  const trackingHealthy = Boolean(meta && validation && isTrackingHealthy(meta, validation));
 
   container.innerHTML = '';
   const sections: ToolchainSection[] = [
@@ -269,13 +325,13 @@ async function refresh(): Promise<void> {
   if (providerId !== 'codex') {
     sections.push({
       id: 'commands',
-      title: 'Custom Commands',
+      title: 'Commands',
       items: config.commands.map(commandItem),
       count: config.commands.length,
     });
   }
 
-  container.appendChild(renderToolchainSummary(providerId, sections));
+  container.appendChild(renderToolchainSummary(providerId, sections, trackingHealthy));
 
   const visibleSections = sections.filter((section) => section.count > 0 || !!section.onAdd);
   for (const section of visibleSections) {

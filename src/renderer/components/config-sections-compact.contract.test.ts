@@ -9,8 +9,17 @@ describe('config sections compact contract', () => {
     expect(source).toContain('renderToolchainSummary');
     expect(source).toContain('toolchain-summary');
     expect(source).toContain('toolchain-summary-chip');
-    expect(source).toContain('No active config items yet');
-    expect(source).toContain('Config for');
+    expect(source).toContain('No workspace extras configured yet');
+    expect(source).toContain('Tools Focus');
+  });
+
+  it('renders tools focus summary copy for tracking and integrations', () => {
+    expect(source).toContain('window.calder.settings.validate');
+    expect(source).toContain('isTrackingHealthy');
+    expect(source).toContain('Tracking is on');
+    expect(source).toContain('Tracking is off');
+    expect(source).toContain('MCP servers connected');
+    expect(source).toContain('custom commands available');
   });
 
   it('styles the compact toolchain summary in the context inspector', () => {
