@@ -4,7 +4,8 @@
   min-width: 168px;
   max-width: 320px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 26%, transparent), transparent 42%),
     var(--surface-rail);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -15,15 +16,15 @@
 
 .sidebar-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     var(--surface-rail);
 }
 
 .sidebar-project-row.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 58%, transparent), transparent 72%),
-    color-mix(in srgb, var(--surface-raised) 72%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 24%, transparent), transparent 70%),
+    color-mix(in srgb, var(--surface-raised) 70%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
 }
 
 #sidebar-resize-handle {
@@ -40,26 +41,27 @@
 
 #sidebar-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 15px 14px 13px;
+  padding: 14px 14px 12px;
   border-bottom: 1px solid var(--border-subtle);
-  gap: 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0));
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0));
 }
 
 .sidebar-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   min-width: 0;
   flex: 1;
 }
 
 .sidebar-title {
-  font-weight: 650;
-  font-size: 14px;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display);
+  font-weight: 620;
+  font-size: 15px;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
   min-width: 0;
   text-transform: none;
@@ -68,15 +70,15 @@
 .sidebar-brand-block {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
 }
 
 .sidebar-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 2px;
+  gap: 4px;
+  padding-top: 0;
 }
 
 #sidebar.collapsed {
@@ -101,20 +103,20 @@
 #sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 10px 14px;
+  padding: 8px 8px 12px;
   display: block;
 }
 
 #sidebar-footer {
   border-top: 1px solid var(--border-subtle);
-  padding: 12px 14px 14px;
+  padding: 11px 12px 12px;
   color: var(--text-muted);
   user-select: none;
   flex-shrink: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.025));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.018));
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 #sidebar-footer.hidden {
@@ -135,7 +137,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .sidebar-cluster {
@@ -151,38 +153,68 @@
 }
 
 .project-item {
-  padding: 11px 12px 11px 13px;
+  position: relative;
+  min-height: 56px;
+  padding: 11px 10px 11px 16px;
   cursor: pointer;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-secondary);
   font-size: 13px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  background: transparent;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.project-item::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .project-item:hover {
-  background: color-mix(in srgb, var(--surface-hover) 82%, var(--surface-panel));
-  border-color: var(--border-subtle);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  background: color-mix(in srgb, var(--surface-hover) 70%, transparent);
+  border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  box-shadow: none;
+}
+
+.project-item:hover::before {
+  opacity: 0.42;
+  background: color-mix(in srgb, var(--accent) 54%, transparent);
 }
 
 .project-item.active {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 68%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0.015)),
-    var(--surface-elevated);
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 30%, transparent), transparent 68%),
+    color-mix(in srgb, var(--surface-elevated) 78%, transparent);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 28px rgba(0, 0, 0, 0.18);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.project-item.active::before {
+  opacity: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 90%, white),
+    color-mix(in srgb, var(--accent) 48%, transparent)
+  );
 }
 
 .project-item-main {
@@ -193,16 +225,18 @@
 .project-item-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
 .project-item .project-name {
+  font-family: var(--font-display);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 620;
+  letter-spacing: -0.01em;
   color: inherit;
 }
 
@@ -211,19 +245,34 @@
 }
 
 .project-item .project-path {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-dim) 92%, var(--text-secondary));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 4px;
+  letter-spacing: 0;
+}
+
+.project-item.active .project-path {
+  color: color-mix(in srgb, var(--text-secondary) 84%, var(--accent));
 }
 
 .project-session-count {
-  min-height: 20px;
-  padding: 0 8px;
+  min-height: 18px;
+  padding: 0 6px;
   font-size: 10px;
-  color: var(--text-secondary);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--surface-hover) 78%, transparent);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.project-item.active .project-session-count {
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+  color: var(--text-primary);
 }
 
 .project-item .project-delete {
@@ -232,11 +281,16 @@
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1;
-  margin-top: 2px;
+  align-self: center;
+  margin-top: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
 }
 
-.project-item:hover .project-delete {
-  opacity: 1;
+.project-item:hover .project-delete,
+.project-item.active .project-delete {
+  opacity: 0.86;
 }
 
 .project-item .project-delete:hover {

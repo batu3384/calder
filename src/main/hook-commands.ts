@@ -16,18 +16,27 @@ import * as path from 'path';
 import { STATUS_DIR } from './hook-status';
 import { isWin, pythonBin as PY } from './platform';
 
-// Python helper scripts are written to STATUS_DIR via installEventScript()
-// and cleaned up on app exit. Shared scripts are installed once via
-// installHookScripts(); provider-specific event scripts are installed per
-// session.
+// Python helper scripts live in Calder's persistent runtime directory.
+// Shared scripts are installed once per process, but we also verify the files
+// still exist so the app can self-heal if they were deleted externally.
 
 let scriptsInstalled = false;
+
+const SHARED_SCRIPT_NAMES = [
+  'status_writer.py',
+  'session_id_capture.py',
+  'tool_failure_capture.py',
+];
+
+function hasInstalledHookScripts(): boolean {
+  return SHARED_SCRIPT_NAMES.every((scriptName) => fs.existsSync(path.join(STATUS_DIR, scriptName)));
+}
 
 /**
  * Ensure the shared Python helper scripts exist in STATUS_DIR.
  */
 export function installHookScripts(): void {
-  if (scriptsInstalled) return;
+  if (scriptsInstalled && hasInstalledHookScripts()) return;
 
   // status_writer.py — writes event:status to .status file
   installEventScript('status_writer.py', `import sys,os

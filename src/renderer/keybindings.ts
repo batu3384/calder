@@ -14,17 +14,25 @@ import { getFileReaderInstance, getFileReaderTextSelector, showGoToLineBar } fro
 import { getFileViewerInstance } from './components/file-viewer.js';
 import { DomSearchBackend } from './components/dom-search-backend.js';
 import { toggleInspector } from './components/session-inspector.js';
+import { toggleContextInspector } from './components/context-inspector.js';
+import { showPreferencesModal } from './components/preferences-modal.js';
+import { closeModal, showModal } from './components/modal.js';
 
 export function initKeybindings(): void {
   // Menu-based shortcuts (registered via Electron menu accelerators)
   // These handlers receive events forwarded from the main process menu
+  window.calder.menu.onPreferences(() => showPreferencesModal());
   window.calder.menu.onNewProject(() => promptNewProject());
   window.calder.menu.onNewSession(() => quickNewSession());
   window.calder.menu.onNextSession(() => appState.cycleSession(1));
   window.calder.menu.onPrevSession(() => appState.cycleSession(-1));
   window.calder.menu.onGotoSession((index) => appState.gotoSession(index));
   window.calder.menu.onToggleDebug(() => toggleDebugPanel());
+  window.calder.menu.onProjectTerminal(() => toggleProjectTerminal());
+  window.calder.menu.onNewMcpInspector(() => promptNewMcpInspector());
+  window.calder.menu.onSessionIndicatorsHelp(() => showHelpDialog());
   window.calder.menu.onToggleInspector(() => toggleInspector());
+  window.calder.menu.onToggleContextPanel(() => toggleContextInspector());
   window.calder.menu.onCloseSession(() => {
     const project = appState.activeProject;
     const session = appState.activeSession;
@@ -89,5 +97,21 @@ export function initKeybindings(): void {
 
   document.addEventListener('keydown', (e) => {
     shortcutManager.matchEvent(e);
+  });
+}
+
+function promptNewMcpInspector(): void {
+  const project = appState.activeProject;
+  if (!project) return;
+
+  const inspectorNum = project.sessions.filter(s => s.type === 'mcp-inspector').length + 1;
+  showModal('New MCP Inspector', [
+    { label: 'Name', id: 'inspector-name', placeholder: `Inspector ${inspectorNum}`, defaultValue: `Inspector ${inspectorNum}` },
+  ], (values) => {
+    const name = values['inspector-name']?.trim();
+    if (!name) return;
+
+    closeModal();
+    appState.addMcpInspectorSession(project.id, name);
   });
 }

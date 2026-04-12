@@ -14,7 +14,7 @@ const mockAppState = vi.hoisted(() => {
           cliSessionId: 'cli-1',
           createdAt: '2026-03-31T08:00:00.000Z',
           closedAt: '2026-03-31T09:00:00.000Z',
-          cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000 },
+          cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000, source: 'structured' },
         },
       ],
     },
@@ -45,7 +45,7 @@ const mockAppState = vi.hoisted(() => {
             cliSessionId: 'cli-1',
             createdAt: '2026-03-31T08:00:00.000Z',
             closedAt: '2026-03-31T09:00:00.000Z',
-            cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000 },
+            cost: { totalCostUsd: 0.42, totalInputTokens: 1000, totalOutputTokens: 500, totalDurationMs: 5000, source: 'structured' },
           },
         ],
       };
@@ -105,6 +105,8 @@ class FakeElement {
   placeholder = '';
   src = '';
   alt = '';
+  dataset: Record<string, string> = {};
+  attributes: Record<string, string> = {};
   onerror: (() => unknown) | null = null;
   parentNode: FakeElement | null = null;
   listeners = new Map<string, Array<() => void>>();
@@ -127,6 +129,10 @@ class FakeElement {
     return child;
   }
 
+  setAttribute(name: string, value: string): void {
+    this.attributes[name] = value;
+  }
+
   addEventListener(event: string, cb: () => void): void {
     const existing = this.listeners.get(event) ?? [];
     existing.push(cb);
@@ -134,7 +140,8 @@ class FakeElement {
   }
 
   dispatch(event: string): void {
-    for (const cb of this.listeners.get(event) ?? []) cb();
+    const eventObject = { stopPropagation: vi.fn(), preventDefault: vi.fn() };
+    for (const cb of this.listeners.get(event) ?? []) cb(eventObject as never);
   }
 
   querySelector(selector: string): FakeElement | null {
@@ -175,7 +182,7 @@ async function renderHistory(): Promise<FakeElement> {
   const { initSessionHistory } = await import('./session-history.js');
   initSessionHistory();
 
-  container.children[0]?.dispatch('click');
+  container.querySelector('.config-section-toggle-button')?.dispatch('click');
   return container;
 }
 
@@ -201,5 +208,43 @@ describe('initSessionHistory', () => {
     const details = container.querySelector('.history-item-details');
 
     expect(details?.textContent).toContain('Codex CLI');
+  });
+
+  it('labels fallback cost as estimated in history details', async () => {
+    mockAppState.activeProject.sessionHistory[0].cost = {
+      totalCostUsd: 0.42,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalDurationMs: 0,
+      source: 'fallback',
+    };
+    const container = await renderHistory();
+    const details = container.querySelector('.history-item-details');
+
+    expect(details?.textContent).toContain('Estimated $0.42');
+  });
+
+  it('asks for confirmation before clearing all history', async () => {
+    const confirmMock = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirmMock);
+
+    const container = await renderHistory();
+    const clearBtn = container.querySelector('.history-clear-btn');
+    clearBtn?.dispatch('click');
+
+    expect(confirmMock).toHaveBeenCalledWith('Clear all session history for this project? This cannot be undone.');
+    expect(mockAppState.clearSessionHistory).not.toHaveBeenCalled();
+  });
+
+  it('asks for confirmation before removing one history entry', async () => {
+    const confirmMock = vi.fn(() => false);
+    vi.stubGlobal('confirm', confirmMock);
+
+    const container = await renderHistory();
+    const removeBtn = container.querySelector('.history-remove-btn');
+    removeBtn?.dispatch('click');
+
+    expect(confirmMock).toHaveBeenCalledWith('Remove "Codex session" from session history?');
+    expect(mockAppState.removeHistoryEntry).not.toHaveBeenCalled();
   });
 });

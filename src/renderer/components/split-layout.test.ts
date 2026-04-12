@@ -189,11 +189,17 @@ function emitWindow(type: string, event: any): void {
 
 const terminalPanes = new Map<string, FakeElement>();
 const browserPanes = new Map<string, FakeElement>();
+const cliSurfacePanes = new Map<string, FakeElement>();
 const mockSetFocused = vi.fn();
 const mockClearFocused = vi.fn();
 const mockAttachBrowserTabToContainer = vi.fn((sessionId: string, container: FakeElement) => {
   const pane = browserPanes.get(sessionId) ?? makePane('browser-tab-pane', sessionId);
   browserPanes.set(sessionId, pane);
+  if (pane.parentElement !== container) container.appendChild(pane);
+});
+const mockAttachCliSurfacePane = vi.fn((projectId: string, container: FakeElement) => {
+  const pane = cliSurfacePanes.get(projectId) ?? makePane('cli-surface-pane', projectId);
+  cliSurfacePanes.set(projectId, pane);
   if (pane.parentElement !== container) container.appendChild(pane);
 });
 const mockAttachTerminalToContainer = vi.fn((sessionId: string, container: FakeElement) => {
@@ -288,6 +294,13 @@ vi.mock('./browser-tab-pane.js', () => ({
   getBrowserTabInstance: vi.fn((sessionId: string) => browserPanes.get(sessionId)),
 }));
 
+vi.mock('./cli-surface/pane.js', () => ({
+  attachCliSurfacePane: mockAttachCliSurfacePane,
+  showCliSurfacePane: vi.fn(),
+  hideAllCliSurfacePanes: vi.fn(),
+  getCliSurfacePaneInstance: vi.fn((projectId: string) => cliSurfacePanes.get(projectId)),
+}));
+
 vi.mock('./tab-bar.js', () => ({
   quickNewSession: vi.fn(),
 }));
@@ -307,6 +320,7 @@ describe('split-layout mosaic behavior', () => {
     uuidCounter = 0;
     terminalPanes.clear();
     browserPanes.clear();
+    cliSurfacePanes.clear();
     windowListeners.clear();
 
     const document = new FakeDocument();
@@ -503,5 +517,38 @@ describe('split-layout mosaic behavior', () => {
 
     expect(divider).toBeNull();
     expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
+  });
+
+  it('renders a cli surface in the pinned left column when the project surface is cli', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'textual',
+        profiles: [{ id: 'textual', name: 'Textual', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, first.id);
+
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as FakeElement;
+    const surfaceColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+
+    expect(surfaceColumn).toBeTruthy();
+    expect(canvas).toBeTruthy();
+    expect(mockAttachCliSurfacePane).toHaveBeenCalledWith(project.id, surfaceColumn);
+    expect(cliSurfacePanes.get(project.id)?.parentElement).toBe(surfaceColumn);
+    expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
+    expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
   });
 });

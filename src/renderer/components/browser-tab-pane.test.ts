@@ -8,14 +8,18 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-toolbar-nav');
     expect(source).toContain('browser-toolbar-address');
     expect(source).toContain('browser-toolbar-tools');
+    expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
   });
 
   it('renders the Calder new tab composition', () => {
     expect(source).toContain('browser-ntp-eyebrow');
     expect(source).toContain('browser-ntp-title');
     expect(source).toContain('browser-ntp-grid');
+    expect(source).toContain("chromeLabel.textContent = 'Live View'");
+    expect(source).toContain("chromeHint.textContent = 'Inspect, capture, annotate'");
     expect(source).toContain("ntpEyebrow.textContent = 'Live View'");
     expect(source).toContain("ntpTitle.textContent = 'Open a live target'");
+    expect(source).not.toContain("chromeLabel.textContent = 'Browser surface'");
     expect(source).not.toContain("ntpEyebrow.textContent = 'Calder Workspace'");
   });
 

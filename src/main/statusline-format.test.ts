@@ -17,6 +17,11 @@ describe('inferStatuslineProvider', () => {
     expect(inferStatuslineProvider('Claude Sonnet 4.6')).toBe('anthropic');
     expect(inferStatuslineProvider('haiku')).toBe('anthropic');
   });
+
+  it('maps qwen models to qwen', () => {
+    expect(inferStatuslineProvider('qwen3-coder')).toBe('qwen');
+    expect(inferStatuslineProvider('QWEN-MAX')).toBe('qwen');
+  });
 });
 
 describe('deriveQuotaFreshness', () => {
@@ -87,7 +92,7 @@ describe('formatHybridStatusLine', () => {
         model: 'glm-5.1',
         fiveHour: '60% left',
         weekly: '90% left',
-        weeklyLabel: 'MCP 1mo',
+        weeklyLabel: 'Cycle',
         status: 'unknown',
         updatedAt: 1_000,
         source: 'zai:quota-limit',
@@ -97,7 +102,7 @@ describe('formatHybridStatusLine', () => {
 
     expect(out).toBe([
       'glm-5.1  Z.ai  --  aa',
-      'Ctx 25%  Cost $0.22  5h 60% left  MCP 1mo 90% left  Live',
+      'Ctx 25%  Cost $0.22  5h 60% left  Cycle 90% left  Live',
     ].join('\n'));
   });
 });
@@ -106,5 +111,6 @@ describe('getProviderQuotaCacheFile', () => {
   it('uses provider-specific cache file names', () => {
     expect(getProviderQuotaCacheFile('anthropic')).toBe('anthropic.quota.json');
     expect(getProviderQuotaCacheFile('zai')).toBe('zai.quota.json');
+    expect(getProviderQuotaCacheFile('qwen')).toBe('qwen.quota.json');
   });
 });

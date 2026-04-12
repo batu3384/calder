@@ -106,6 +106,35 @@ describe('load()', () => {
     });
   });
 
+  it('normalizes legacy split layouts into mosaic layouts on load', async () => {
+    const persisted = {
+      version: 1,
+      projects: [
+        {
+          id: 'p1',
+          name: 'Proj',
+          path: '/proj',
+          sessions: [],
+          activeSessionId: null,
+          layout: { mode: 'split' as const, splitPanes: ['s1', 's2'], splitDirection: 'vertical' as const },
+        },
+      ],
+      activeProjectId: 'p1',
+      preferences: { soundOnSessionWaiting: true, debugMode: false },
+    };
+    mockLoad.mockResolvedValue(persisted);
+
+    await appState.load();
+
+    expect(appState.activeProject!.layout).toMatchObject({
+      mode: 'mosaic',
+      splitPanes: ['s1', 's2'],
+      splitDirection: 'vertical',
+      browserWidthRatio: 0.38,
+      mosaicRatios: {},
+    });
+  });
+
   it('handles null return from store (keeps defaults)', async () => {
     mockLoad.mockResolvedValue(null);
     await appState.load();
@@ -240,6 +269,57 @@ describe('load()', () => {
     await appState.load();
     expect(mockRestoreCost).not.toHaveBeenCalled();
   });
+
+  it('hydrates a web surface from an existing browser session record', async () => {
+    mockLoad.mockResolvedValue({
+      version: 1,
+      activeProjectId: 'project-1',
+      preferences: {},
+      projects: [
+        {
+          id: 'project-1',
+          name: 'Demo',
+          path: '/tmp/demo',
+          activeSessionId: 'browser-1',
+          layout: { mode: 'mosaic' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+          sessions: [
+            {
+              id: 'claude-1',
+              name: 'Claude',
+              type: 'claude' as const,
+              providerId: 'claude' as const,
+              cliSessionId: 'cli-1',
+              createdAt: '2026-04-12T09:00:00.000Z',
+            },
+            {
+              id: 'browser-1',
+              name: 'Live View',
+              type: 'browser-tab' as const,
+              cliSessionId: null,
+              browserTabUrl: 'http://localhost:3000',
+              browserTargetSessionId: 'claude-1',
+              createdAt: '2026-04-12T09:01:00.000Z',
+            },
+          ],
+        },
+      ],
+    });
+
+    await appState.load();
+    const project = appState.activeProject!;
+
+    expect(project.surface).toEqual(
+      expect.objectContaining({
+        kind: 'web',
+        active: true,
+        targetSessionId: 'claude-1',
+        web: expect.objectContaining({
+          sessionId: 'browser-1',
+          url: 'http://localhost:3000',
+        }),
+      }),
+    );
+  });
 });
 
 describe('persist()', () => {
@@ -255,6 +335,28 @@ describe('persist()', () => {
     mockSave.mockClear();
     appState.addSession(project.id, 'S1');
     expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('does not persist transient cli runtime process data', () => {
+    const project = addProject();
+
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'tui',
+        profiles: [{ id: 'tui', name: 'TUI', command: 'npm', args: ['run', 'dev:tui'] }],
+        runtime: {
+          status: 'running',
+          runtimeId: 'cli-surface:project-1',
+          command: 'npm',
+          args: ['run', 'dev:tui'],
+        },
+      },
+    });
+
+    const persisted = mockSave.mock.calls.at(-1)?.[0];
+    expect(persisted.projects[0].surface.cli.runtime.runtimeId).toBeUndefined();
   });
 });
 
@@ -537,6 +639,33 @@ describe('browser target sessions', () => {
     const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
     expect(browserSession.browserTargetSessionId).toBe(primary.id);
     expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(primary.id);
+  });
+
+  it('lists and resolves targetable surface sessions without using browser-tab state', () => {
+    const project = appState.addProject('CLI Demo', '/tmp/cli-demo');
+    const first = appState.addSession(project.id, 'First')!;
+    const second = appState.addSession(project.id, 'Second')!;
+
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      targetSessionId: second.id,
+      cli: { profiles: [], runtime: { status: 'idle' } },
+    });
+
+    expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([first.id, second.id]);
+    expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(second.id);
+  });
+
+  it('keeps browser wrapper helpers working through surface state', () => {
+    const project = addProject();
+    const target = appState.addSession(project.id, 'Claude')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:4173')!;
+
+    appState.setSurfaceTargetSession(project.id, target.id);
+
+    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
+    expect((appState as any).listBrowserTargetSessions(browser.id).map((session: { id: string }) => session.id)).toContain(target.id);
   });
 });
 

@@ -12,6 +12,7 @@ export function buildStatusLinePython(statusDir: string): string {
     staleAfterMs: DEFAULT_STATUSLINE_STALE_MS,
     anthropicFallback: fallbackQuotaStatus('anthropic'),
     zaiFallback: fallbackQuotaStatus('zai'),
+    qwenFallback: fallbackQuotaStatus('qwen'),
   });
 
   return `import json, os, subprocess, sys, time, urllib.parse, urllib.request
@@ -38,12 +39,24 @@ def fallback_snapshot(provider, model_name):
             'source': 'calder:no-supported-anthropic-quota-api',
             'message': 'Claude Code did not provide OAuth rate limits in this payload',
         }
+    if provider == 'qwen':
+        return {
+            'provider': provider,
+            'model': model_name,
+            'fiveHour': None,
+            'weekly': None,
+            'weeklyLabel': 'Week',
+            'status': CONFIG['qwenFallback'],
+            'updatedAt': int(time.time() * 1000),
+            'source': 'qwen:no-supported-quota-api',
+            'message': 'Qwen Code did not provide quota details in this payload',
+        }
     return {
         'provider': provider,
         'model': model_name,
         'fiveHour': None,
         'weekly': None,
-        'weeklyLabel': 'MCP 1mo',
+        'weeklyLabel': 'Cycle',
         'status': CONFIG['zaiFallback'],
         'updatedAt': int(time.time() * 1000),
         'source': 'zai:quota-surface-pending',
@@ -168,6 +181,15 @@ def quota_remaining_label(used_percentage):
     remaining = int(round(max(0, min(100, 100 - used))))
     return str(remaining) + '% left'
 
+def zai_secondary_window_label(next_reset_time):
+    reset_ms = numeric_value(next_reset_time)
+    if reset_ms is None:
+        return 'Cycle'
+    remaining_ms = reset_ms - int(time.time() * 1000)
+    if remaining_ms <= 8 * 24 * 60 * 60 * 1000:
+        return 'Week'
+    return 'Cycle'
+
 def snapshot_is_stale(snapshot):
     if not isinstance(snapshot, dict):
         return True
@@ -197,19 +219,34 @@ def anthropic_rate_limit_snapshot(payload, model_name):
         'source': 'claude-code:rate_limits',
     }
 
+def zai_base_url():
+    for env_key in ('CALDER_ZAI_BASE_URL', 'ZAI_BASE_URL', 'ANTHROPIC_BASE_URL'):
+        value = os.environ.get(env_key, '').strip()
+        if not value:
+            continue
+        if env_key == 'ANTHROPIC_BASE_URL' and (
+            'api.z.ai' not in value and 'open.bigmodel.cn' not in value and 'dev.bigmodel.cn' not in value
+        ):
+            continue
+        return value
+    return 'https://open.bigmodel.cn/api/anthropic'
+
 def zai_quota_url():
     override = os.environ.get('CALDER_ZAI_QUOTA_LIMIT_URL', '').strip()
     if override:
         return override
-    base_url = os.environ.get('ANTHROPIC_BASE_URL', '').strip()
-    if not base_url:
-        return None
-    if 'api.z.ai' not in base_url and 'open.bigmodel.cn' not in base_url and 'dev.bigmodel.cn' not in base_url:
-        return None
-    parsed = urllib.parse.urlparse(base_url)
+    parsed = urllib.parse.urlparse(zai_base_url())
     if not parsed.scheme or not parsed.netloc:
         return None
     return parsed.scheme + '://' + parsed.netloc + '/api/monitor/usage/quota/limit'
+
+def zai_auth_token():
+    for env_key in ('CALDER_ZAI_AUTH_TOKEN', 'ZAI_API_KEY', 'ANTHROPIC_AUTH_TOKEN'):
+        value = os.environ.get(env_key, '').strip()
+        if not value:
+            continue
+        return value if value.lower().startswith('bearer ') else 'Bearer ' + value
+    return ''
 
 def fetch_json(url, auth_token):
     request = urllib.request.Request(
@@ -224,7 +261,7 @@ def fetch_json(url, auth_token):
         return json.loads(response.read().decode('utf-8'))
 
 def zai_quota_snapshot(model_name):
-    auth_token = os.environ.get('ANTHROPIC_AUTH_TOKEN', '').strip()
+    auth_token = zai_auth_token()
     quota_url = zai_quota_url()
     if not auth_token or not quota_url:
         return fallback_snapshot('zai', model_name)
@@ -236,6 +273,7 @@ def zai_quota_snapshot(model_name):
         limits = data.get('limits')
         five_hour = None
         monthly = None
+        secondary_label = 'Cycle'
         if isinstance(limits, list):
             for item in limits:
                 if not isinstance(item, dict):
@@ -248,6 +286,7 @@ def zai_quota_snapshot(model_name):
                     five_hour = label
                 elif limit_type == 'TIME_LIMIT' or 'MCP' in limit_type:
                     monthly = label
+                    secondary_label = zai_secondary_window_label(item.get('nextResetTime'))
         if not five_hour and not monthly:
             return {
                 **fallback_snapshot('zai', model_name),
@@ -260,7 +299,7 @@ def zai_quota_snapshot(model_name):
             'model': model_name,
             'fiveHour': five_hour,
             'weekly': monthly,
-            'weeklyLabel': 'MCP 1mo',
+            'weeklyLabel': secondary_label,
             'status': 'unknown',
             'updatedAt': int(time.time() * 1000),
             'source': 'zai:quota-limit',
@@ -274,9 +313,18 @@ def zai_quota_snapshot(model_name):
         }
 
 def render_statusline(payload):
-    sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '')
+    sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '') or os.environ.get('CALDER_SESSION_ID', '')
     model_name = ((payload.get('model') or {}).get('display_name') or '').strip()
-    provider = 'zai' if model_name.lower().startswith('glm-') else 'anthropic'
+    lower_model_name = model_name.lower()
+    if lower_model_name.startswith('glm-'):
+        provider = 'zai'
+        provider_label = 'Z.ai'
+    elif lower_model_name.startswith('qwen'):
+        provider = 'qwen'
+        provider_label = 'Qwen'
+    else:
+        provider = 'anthropic'
+        provider_label = 'Anthropic'
     cost = payload.get('cost', {})
     ctx = payload.get('context_window', {})
     if sid and (cost or ctx or model_name):
@@ -287,10 +335,11 @@ def render_statusline(payload):
         with open(os.path.join(STATUS_DIR, sid+'.sessionid'), 'w') as f:
             f.write(claude_sid)
     snapshot = anthropic_rate_limit_snapshot(payload, model_name) if provider == 'anthropic' else None
-    if snapshot is None:
+    if snapshot is None and provider != 'qwen':
         snapshot = read_snapshot(provider)
     if snapshot is None:
-        spawn_refresh(provider, model_name)
+        if provider == 'zai':
+            spawn_refresh(provider, model_name)
         snapshot = fallback_snapshot(provider, model_name)
     elif provider == 'zai' and (snapshot.get('status') == 'syncing' or snapshot_is_stale(snapshot)):
         spawn_refresh(provider, model_name)
@@ -301,7 +350,7 @@ def render_statusline(payload):
     weekly_name = snapshot.get('weeklyLabel') or 'Week'
     weekly_value = snapshot.get('weekly') or snapshot['status']
     return '\\n'.join([
-        f"{model_name or 'Unknown Model'}  {'Z.ai' if provider == 'zai' else 'Anthropic'}  --  {cwd_label}",
+        f"{model_name or 'Unknown Model'}  {provider_label}  --  {cwd_label}",
         f"Ctx {ctx_percent}%  Cost {cost_label(cost)}  5h {five_hour_label}  {weekly_name} {weekly_value}  {freshness}",
     ])
 

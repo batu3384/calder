@@ -24,6 +24,7 @@ export function setCostData(sessionId: string, rawData: CostData): void {
     totalDurationMs: cost.total_duration_ms ?? 0,
     totalApiDurationMs: cost.total_api_duration_ms ?? 0,
     model: model ?? existing?.model,
+    source: 'structured',
   };
 
   if (existing && existing.totalCostUsd === info.totalCostUsd
@@ -38,8 +39,9 @@ export function setCostData(sessionId: string, rawData: CostData): void {
 
 /** Fallback: parse $X.XX from raw terminal output (older CLI without statusline) */
 export function parseCost(sessionId: string, rawData: string): void {
-  // Don't overwrite structured data with regex fallback
-  if (costs.has(sessionId) && costs.get(sessionId)!.totalInputTokens > 0) return;
+  // Never let the regex fallback overwrite verified structured cost data.
+  const existing = costs.get(sessionId);
+  if (existing?.source === 'structured') return;
 
   const clean = stripAnsi(rawData);
   let match: RegExpExecArray | null;
@@ -51,7 +53,6 @@ export function parseCost(sessionId: string, rawData: string): void {
 
   if (lastCost) {
     const usd = parseFloat(lastCost.replace('$', ''));
-    const existing = costs.get(sessionId);
     if (!existing || existing.totalCostUsd !== usd) {
       const info: CostInfo = {
         totalCostUsd: usd,
@@ -61,6 +62,7 @@ export function parseCost(sessionId: string, rawData: string): void {
         cacheCreationTokens: 0,
         totalDurationMs: 0,
         totalApiDurationMs: 0,
+        source: 'fallback',
       };
       costs.set(sessionId, info);
       for (const cb of listeners) cb(sessionId, info);
@@ -68,11 +70,16 @@ export function parseCost(sessionId: string, rawData: string): void {
   }
 }
 
+export function isEstimatedCost(cost: CostInfo | null | undefined): boolean {
+  return cost?.source === 'fallback';
+}
+
 export function getCost(sessionId: string): CostInfo | null {
   return costs.get(sessionId) ?? null;
 }
 
-export function getAggregateCost(): CostInfo {
+export function getAggregateCost(options?: { includeEstimated?: boolean }): CostInfo {
+  const includeEstimated = options?.includeEstimated ?? false;
   const aggregate: CostInfo = {
     totalCostUsd: 0,
     totalInputTokens: 0,
@@ -81,8 +88,10 @@ export function getAggregateCost(): CostInfo {
     cacheCreationTokens: 0,
     totalDurationMs: 0,
     totalApiDurationMs: 0,
+    source: 'structured',
   };
   for (const info of costs.values()) {
+    if (!includeEstimated && info.source === 'fallback') continue;
     aggregate.totalCostUsd += info.totalCostUsd;
     aggregate.totalInputTokens += info.totalInputTokens;
     aggregate.totalOutputTokens += info.totalOutputTokens;
@@ -104,7 +113,7 @@ export function onChange(callback: CostChangeCallback): () => void {
 
 /** Restore cost from persisted session data (used on startup, silent — no listeners notified) */
 export function restoreCost(sessionId: string, cost: CostInfo): void {
-  costs.set(sessionId, cost);
+  costs.set(sessionId, { ...cost, source: cost.source ?? 'structured' });
 }
 
 export function removeSession(sessionId: string): void {

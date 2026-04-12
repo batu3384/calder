@@ -19,7 +19,7 @@ vi.mock('../pty-manager', () => ({
 }));
 
 vi.mock('../hook-status', () => ({
-  getStatusLineScriptPath: vi.fn(() => '/tmp/calder/statusline.sh'),
+  getStatusLineScriptPath: vi.fn(() => '/mock/home/.calder/runtime/statusline.sh'),
   installStatusLineScript: vi.fn(),
   cleanupAll: vi.fn(),
 }));

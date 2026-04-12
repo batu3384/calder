@@ -17,7 +17,7 @@
           <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar" style="font-size:13px;">&#x25E7;</button>
           <div class="sidebar-brand-block">
             <span class="sidebar-eyebrow">Calder</span>
-            <span class="sidebar-title">Projects</span>
+            <span class="sidebar-title">Project Index</span>
           </div>
         </div>
         <div class="sidebar-header-actions">
@@ -47,6 +47,8 @@
             </div>
             <div id="tab-actions">
               <div id="session-launcher" class="session-launcher-group">
+                <div id="surface-mode-slot" hidden></div>
+                <div id="surface-profile-slot" hidden></div>
                 <div id="session-provider-slot" hidden></div>
                 <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
               </div>
@@ -65,26 +67,26 @@
         <aside id="context-inspector" class="context-inspector-open control-panel-surface ops-rail ops-rail-surface">
           <div id="context-inspector-header">
             <div class="context-inspector-title-group">
-              <span class="context-inspector-eyebrow">Support</span>
-              <span class="context-inspector-title">Ops Rail</span>
+              <span class="context-inspector-eyebrow">Project</span>
+              <span class="context-inspector-title">Signals</span>
             </div>
             <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
           </div>
           <div id="context-inspector-sections">
             <section class="context-inspector-section" data-section="health">
-              <div class="context-inspector-section-label">Providers</div>
+              <div class="context-inspector-section-label">Tool Status</div>
               <div id="readiness-section"></div>
             </section>
             <section class="context-inspector-section" data-section="git">
-              <div class="context-inspector-section-label">Changes</div>
+              <div class="context-inspector-section-label">Repo</div>
               <div id="git-panel"></div>
             </section>
             <section class="context-inspector-section" data-section="activity">
-              <div class="context-inspector-section-label">Activity</div>
+              <div class="context-inspector-section-label">Runs</div>
               <div id="session-history"></div>
             </section>
             <section class="context-inspector-section" data-section="capabilities">
-              <div class="context-inspector-section-label">Tools</div>
+              <div class="context-inspector-section-label">Config</div>
               <div id="config-sections"></div>
             </section>
           </div>

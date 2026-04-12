@@ -1,5 +1,5 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState, ProjectSurfaceRecord } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -50,7 +50,7 @@ const DEFAULT_BROWSER_WIDTH_RATIO = 0.38;
 
 function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): ProjectLayoutState {
   const rawMode = layout?.mode;
-  const mode = rawMode === 'tabs' || rawMode === 'split' ? rawMode : 'mosaic';
+  const mode = rawMode === 'tabs' ? rawMode : 'mosaic';
   return {
     mode,
     splitPanes: Array.isArray(layout?.splitPanes) ? [...layout.splitPanes] : [],
@@ -58,6 +58,31 @@ function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): ProjectLa
     browserWidthRatio: typeof layout?.browserWidthRatio === 'number' ? layout.browserWidthRatio : DEFAULT_BROWSER_WIDTH_RATIO,
     mosaicPreset: layout?.mosaicPreset,
     mosaicRatios: layout?.mosaicRatios ? { ...layout.mosaicRatios } : {},
+  };
+}
+
+function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
+  const browserSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  const existing = project.surface;
+  const history = existing?.web?.history
+    ?? (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []);
+
+  return {
+    kind: existing?.kind ?? (browserSession ? 'web' : 'cli'),
+    active: existing?.active ?? Boolean(browserSession),
+    targetSessionId: existing?.targetSessionId ?? browserSession?.browserTargetSessionId,
+    web: {
+      sessionId: existing?.web?.sessionId ?? browserSession?.id,
+      url: existing?.web?.url ?? browserSession?.browserTabUrl,
+      history: [...history],
+    },
+    cli: {
+      selectedProfileId: existing?.cli?.selectedProfileId,
+      profiles: existing?.cli?.profiles ? [...existing.cli.profiles] : [],
+      runtime: existing?.cli?.runtime
+        ? { ...existing.cli.runtime, runtimeId: undefined }
+        : { status: 'idle' },
+    },
   };
 }
 
@@ -114,35 +139,48 @@ class AppState {
     return undefined;
   }
 
-  private resolveBrowserTargetFromProject(project: ProjectRecord, browserSessionId: string): SessionRecord | undefined {
-    const browserSession = this.findSessionInProject(project, browserSessionId);
-    if (!browserSession || browserSession.type !== 'browser-tab') return undefined;
-
-    const storedTargetId = browserSession.browserTargetSessionId;
+  private resolveSurfaceTargetFromProject(project: ProjectRecord): SessionRecord | undefined {
+    const storedTargetId = project.surface?.targetSessionId;
     if (storedTargetId) {
       const storedTarget = this.findSessionInProject(project, storedTargetId);
-      if (storedTarget && storedTarget.id !== browserSessionId && this.isCliSession(storedTarget)) {
+      if (storedTarget && this.isCliSession(storedTarget)) {
         return storedTarget;
       }
     }
 
-    return this.findActiveCliSession(project, browserSessionId);
+    return this.findActiveCliSession(project);
   }
 
-  private repairBrowserTargets(project: ProjectRecord): boolean {
-    let changed = false;
+  private repairProjectSurface(project: ProjectRecord): boolean {
+    const nextSurface = normalizeProjectSurface(project);
+    const resolvedTarget = this.resolveSurfaceTargetFromProject({ ...project, surface: nextSurface });
+
+    if (resolvedTarget) {
+      nextSurface.targetSessionId = resolvedTarget.id;
+    } else {
+      delete nextSurface.targetSessionId;
+    }
+
     for (const session of project.sessions) {
       if (session.type !== 'browser-tab') continue;
-      const resolvedTarget = this.resolveBrowserTargetFromProject(project, session.id);
       if (resolvedTarget?.id !== session.browserTargetSessionId) {
         if (resolvedTarget) {
           session.browserTargetSessionId = resolvedTarget.id;
         } else {
           delete session.browserTargetSessionId;
         }
-        changed = true;
+      }
+      if (session.id === nextSurface.web?.sessionId) {
+        nextSurface.web = {
+          sessionId: session.id,
+          url: session.browserTabUrl,
+          history: nextSurface.web?.history ?? [],
+        };
       }
     }
+
+    const changed = JSON.stringify(project.surface ?? null) !== JSON.stringify(nextSurface);
+    project.surface = nextSurface;
     return changed;
   }
 
@@ -203,9 +241,11 @@ class AppState {
       this.state.projects = this.state.projects.map((project) => ({
         ...project,
         layout: normalizeProjectLayout(project.layout),
+        surface: normalizeProjectSurface(project),
       }));
       // Restore persisted cost data into the in-memory cost tracker
       for (const project of this.state.projects) {
+        this.repairProjectSurface(project);
         for (const session of project.sessions) {
           if (session.cost) {
             restoreCost(session.id, session.cost);
@@ -240,6 +280,26 @@ class AppState {
       ...this.state,
       projects: this.state.projects.map((p) => ({
         ...p,
+        surface: p.surface
+          ? {
+              ...p.surface,
+              web: p.surface.web
+                ? {
+                    ...p.surface.web,
+                    history: p.surface.web.history ? [...p.surface.web.history] : [],
+                  }
+                : p.surface.web,
+              cli: p.surface.cli
+                ? {
+                    ...p.surface.cli,
+                    profiles: [...p.surface.cli.profiles],
+                    runtime: p.surface.cli.runtime
+                      ? { ...p.surface.cli.runtime, runtimeId: undefined }
+                      : undefined,
+                  }
+                : p.surface.cli,
+            }
+          : undefined,
         sessions: p.sessions.map(({ pendingInitialPrompt, ...rest }) => rest),
       })),
     };
@@ -345,6 +405,12 @@ class AppState {
       path,
       sessions: [],
       activeSessionId: null,
+      surface: {
+        kind: 'web',
+        active: false,
+        web: { history: [] },
+        cli: { profiles: [], runtime: { status: 'idle' } },
+      },
       layout: normalizeProjectLayout({ mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' }),
     };
     this.state.projects.push(project);
@@ -501,6 +567,19 @@ class AppState {
     };
     project.sessions.push(session);
     project.activeSessionId = session.id;
+    project.surface = normalizeProjectSurface(project);
+    project.surface.kind = 'web';
+    project.surface.active = true;
+    project.surface.web = {
+      sessionId: session.id,
+      url,
+      history: url
+        ? Array.from(new Set([...(project.surface.web?.history ?? []), url]))
+        : (project.surface.web?.history ?? []),
+    };
+    if (initialTargetSession) {
+      project.surface.targetSessionId = initialTargetSession.id;
+    }
     this.pushNav(session.id);
     this.persist();
     this.emit('session-added', { projectId, session });
@@ -585,8 +664,8 @@ class AppState {
       project.activeSessionId = project.sessions[newIndex]?.id ?? null;
       if (project.activeSessionId) this.pushNav(project.activeSessionId);
     }
-    this.repairBrowserTargets(project);
-    // Also remove from split/swarm panes
+    this.repairProjectSurface(project);
+    // Keep the mosaic pane list in sync with removed sessions.
     project.layout.splitPanes = project.layout.splitPanes.filter((id) => id !== sessionId);
     this.persist();
     this.emit('session-removed', { projectId, sessionId });
@@ -607,6 +686,7 @@ class AppState {
         totalInputTokens: costInfo.totalInputTokens,
         totalOutputTokens: costInfo.totalOutputTokens,
         totalDurationMs: costInfo.totalDurationMs,
+        source: costInfo.source,
       } : null,
     };
 
@@ -791,36 +871,78 @@ class AppState {
 
   listBrowserTargetSessions(browserSessionId: string): SessionRecord[] {
     const project = this.findProjectBySession(browserSessionId);
-    if (!project) return [];
-    return project.sessions.filter(
-      (session) => session.id !== browserSessionId && this.isCliSession(session),
-    );
+    return project ? this.listSurfaceTargetSessions(project.id) : [];
   }
 
   resolveBrowserTargetSession(browserSessionId: string): SessionRecord | undefined {
     const project = this.findProjectBySession(browserSessionId);
-    if (!project) return undefined;
-    return this.resolveBrowserTargetFromProject(project, browserSessionId);
+    return project ? this.resolveSurfaceTargetSession(project.id) : undefined;
   }
 
   setBrowserTargetSession(browserSessionId: string, targetSessionId: string | null): void {
     const project = this.findProjectBySession(browserSessionId);
     if (!project) return;
-    const browserSession = this.findSessionInProject(project, browserSessionId);
-    if (!browserSession || browserSession.type !== 'browser-tab') return;
+    this.setSurfaceTargetSession(project.id, targetSessionId);
+  }
+
+  setProjectSurface(projectId: string, surface: ProjectSurfaceRecord): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = {
+      ...surface,
+      web: surface.web
+        ? {
+            ...surface.web,
+            history: surface.web.history ? [...surface.web.history] : [],
+          }
+        : { history: [] },
+      cli: surface.cli
+        ? {
+            ...surface.cli,
+            profiles: [...surface.cli.profiles],
+            runtime: surface.cli.runtime ? { ...surface.cli.runtime, runtimeId: undefined } : undefined,
+          }
+        : { profiles: [], runtime: { status: 'idle' } },
+    };
+    this.repairProjectSurface(project);
+    this.persist();
+    this.emit('project-changed');
+  }
+
+  listSurfaceTargetSessions(projectId: string): SessionRecord[] {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return [];
+    return project.sessions.filter((session) => this.isCliSession(session));
+  }
+
+  resolveSurfaceTargetSession(projectId: string): SessionRecord | undefined {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return undefined;
+    return this.resolveSurfaceTargetFromProject(project);
+  }
+
+  setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = normalizeProjectSurface(project);
 
     if (targetSessionId === null) {
-      if (browserSession.browserTargetSessionId === undefined) return;
-      delete browserSession.browserTargetSessionId;
+      delete project.surface.targetSessionId;
+      for (const session of project.sessions) {
+        if (session.type === 'browser-tab') delete session.browserTargetSessionId;
+      }
       this.persist();
       this.emit('session-changed');
       return;
     }
 
     const targetSession = this.findSessionInProject(project, targetSessionId);
-    if (!targetSession || targetSession.id === browserSessionId || !this.isCliSession(targetSession)) return;
-    if (browserSession.browserTargetSessionId === targetSessionId) return;
-    browserSession.browserTargetSessionId = targetSessionId;
+    if (!targetSession || !this.isCliSession(targetSession)) return;
+    if (project.surface.targetSessionId === targetSessionId) return;
+    project.surface.targetSessionId = targetSessionId;
+    for (const session of project.sessions) {
+      if (session.type === 'browser-tab') session.browserTargetSessionId = targetSessionId;
+    }
     this.persist();
     this.emit('session-changed');
   }
@@ -877,9 +999,14 @@ class AppState {
   }
 
   updateSessionBrowserTabUrl(sessionId: string, url: string): void {
+    const project = this.findProjectBySession(sessionId);
     const session = this.findSessionById(sessionId);
     if (!session || session.browserTabUrl === url) return;
     session.browserTabUrl = url;
+    if (project?.surface?.web?.sessionId === sessionId) {
+      project.surface.web.url = url;
+      project.surface.web.history = Array.from(new Set([...(project.surface.web.history ?? []), url]));
+    }
     this.persist();
   }
 

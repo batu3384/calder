@@ -246,7 +246,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const chromeLabel = document.createElement('div');
   chromeLabel.className = 'browser-pane-label';
-  chromeLabel.textContent = 'Browser surface';
+  chromeLabel.textContent = 'Live View';
 
   const chromeWorkspace = document.createElement('div');
   chromeWorkspace.className = 'browser-pane-workspace';
@@ -254,7 +254,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const chromeHint = document.createElement('div');
   chromeHint.className = 'browser-pane-hint';
-  chromeHint.textContent = 'Inspect, record, annotate';
+  chromeHint.textContent = 'Inspect, capture, annotate';
 
   chrome.appendChild(chromeLabel);
   chrome.appendChild(chromeWorkspace);
@@ -272,7 +272,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
-  toolbarTools.setAttribute('aria-label', 'Browser workspace tools');
+  toolbarTools.setAttribute('aria-label', 'Live View tools');
 
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';

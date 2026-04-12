@@ -136,7 +136,7 @@ function render(): void {
   button.setAttribute('aria-expanded', String(!collapsed));
   button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Activity</span>
+    <span class="config-section-title">Runs</span>
   `;
   header.appendChild(button);
 
@@ -164,7 +164,7 @@ function render(): void {
   if (history.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'history-empty';
-    empty.textContent = 'No session history yet';
+    empty.textContent = 'No run history yet';
     body.appendChild(empty);
     container.appendChild(body);
     return;
@@ -174,8 +174,8 @@ function render(): void {
   searchInput = document.createElement('input');
   searchInput.className = 'history-search';
   searchInput.type = 'text';
-  searchInput.placeholder = 'Filter history…';
-  searchInput.ariaLabel = 'Filter session history';
+  searchInput.placeholder = 'Filter runs…';
+  searchInput.ariaLabel = 'Filter run history';
   searchInput.addEventListener('input', () => renderList(history));
   body.appendChild(searchInput);
 
@@ -195,8 +195,8 @@ function render(): void {
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button';
   clearBtn.className = 'history-clear-btn';
-  clearBtn.textContent = 'Clear History';
-  clearBtn.ariaLabel = 'Clear session history';
+  clearBtn.textContent = 'Clear Runs';
+  clearBtn.ariaLabel = 'Clear run history';
   clearBtn.addEventListener('click', () => {
     if (!project) return;
     if (!confirm('Clear all session history for this project? This cannot be undone.')) return;

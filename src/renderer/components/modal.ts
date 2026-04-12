@@ -13,10 +13,20 @@ export interface FieldDef {
 }
 
 const overlay = document.getElementById('modal-overlay')!;
+const modal = document.getElementById('modal')!;
 const titleEl = document.getElementById('modal-title')!;
 const bodyEl = document.getElementById('modal-body')!;
 const btnCancel = document.getElementById('modal-cancel')!;
 const btnConfirm = document.getElementById('modal-confirm')!;
+let restoreFocusAfterClose: HTMLElement | null = null;
+
+export function prepareModalSurface(): void {
+  restoreFocusAfterClose = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  modal.classList.add('modal-surface');
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modal-title');
+}
 
 export function setModalError(fieldId: string, message: string): void {
   const existing = bodyEl.querySelector(`#modal-error-${fieldId}`);
@@ -38,6 +48,9 @@ export function closeModal(): void {
   overlay.classList.add('hidden');
   delete overlay.dataset.modalView;
   cleanup();
+  modal.classList.remove('modal-surface');
+  restoreFocusAfterClose?.focus?.();
+  restoreFocusAfterClose = null;
 }
 
 export function showModal(
@@ -45,6 +58,7 @@ export function showModal(
   fields: FieldDef[],
   onConfirm: (values: Record<string, string>) => void | Promise<void>
 ): void {
+  prepareModalSurface();
   titleEl.textContent = title;
   bodyEl.innerHTML = '';
   overlay.dataset.modalView = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');

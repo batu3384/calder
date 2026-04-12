@@ -5,6 +5,7 @@ import * as path from 'path';
 import type { ProviderId } from '../shared/types';
 import { getProvider } from './providers/registry';
 import { registerSession } from './hook-status';
+import { buildProviderBaseEnv } from './provider-env';
 import { isWin, pathSep } from './platform';
 
 interface PtyInstance {
@@ -98,7 +99,8 @@ export function spawnPty(
   registerSession(sessionId);
 
   const provider = getProvider(providerId);
-  const env = provider.buildEnv(sessionId, { ...process.env } as Record<string, string>);
+  const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
+  const env = provider.buildEnv(sessionId, baseEnv);
   const args = provider.buildArgs({ cliSessionId, isResume, extraArgs, initialPrompt });
   const shell = provider.resolveBinaryPath();
 
@@ -113,6 +115,45 @@ export function spawnPty(
   ptyProcess.onData((data) => onData(data));
   ptyProcess.onExit(({ exitCode, signal }) => {
     // Only remove from map if this PTY is still the active one for this session
+    const current = ptys.get(sessionId);
+    if (current?.process === ptyProcess) {
+      ptys.delete(sessionId);
+    }
+    onExit(exitCode, signal);
+  });
+
+  ptys.set(sessionId, { process: ptyProcess, sessionId });
+}
+
+export function spawnCommandPty(
+  sessionId: string,
+  launch: {
+    command: string;
+    args?: string[];
+    cwd: string;
+    envPatch?: Record<string, string>;
+    cols?: number;
+    rows?: number;
+  },
+  onData: (data: string) => void,
+  onExit: (exitCode: number, signal?: number) => void,
+): void {
+  if (ptys.has(sessionId)) {
+    silencedExits.add(sessionId);
+    killPty(sessionId);
+  }
+
+  const env = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
+  const ptyProcess = pty.spawn(launch.command, launch.args ?? [], {
+    name: 'xterm-256color',
+    cols: launch.cols ?? 120,
+    rows: launch.rows ?? 30,
+    cwd: launch.cwd,
+    env,
+  });
+
+  ptyProcess.onData((data) => onData(data));
+  ptyProcess.onExit(({ exitCode, signal }) => {
     const current = ptys.get(sessionId);
     if (current?.process === ptyProcess) {
       ptys.delete(sessionId);

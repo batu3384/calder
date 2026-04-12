@@ -1,11 +1,14 @@
+import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
 import { getFullPath } from '../pty-manager';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
+import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
+import { installQwenHooks, validateQwenHooks, cleanupQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';
+import { installStatusLineScript } from '../hook-status';
+import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 
 const binaryCache = { path: null as string | null };
-const EMPTY_CONFIG: ProviderConfig = { mcpServers: [], agents: [], skills: [], commands: [] };
-const INERT_SETTINGS: SettingsValidationResult = { statusLine: 'missing', hooks: 'missing', hookDetails: {} };
 
 export class QwenProvider implements CliProvider {
   readonly meta: CliProviderMeta = {
@@ -16,8 +19,8 @@ export class QwenProvider implements CliProvider {
       sessionResume: true,
       costTracking: false,
       contextWindow: false,
-      hookStatus: false,
-      configReading: false,
+      hookStatus: true,
+      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
       planModeArg: '--approval-mode=plan',
@@ -34,7 +37,12 @@ export class QwenProvider implements CliProvider {
   }
 
   buildEnv(_sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    return { ...baseEnv, PATH: getFullPath() };
+    return {
+      ...baseEnv,
+      [SESSION_ID_VAR]: _sessionId,
+      CLAUDE_IDE_SESSION_ID: _sessionId,
+      PATH: getFullPath(),
+    };
   }
 
   buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
@@ -51,14 +59,29 @@ export class QwenProvider implements CliProvider {
     return args;
   }
 
-  async installHooks(): Promise<void> {}
+  async installHooks(): Promise<void> {
+    installQwenHooks();
+  }
 
-  installStatusScripts(): void {}
+  installStatusScripts(): void {
+    installStatusLineScript();
+  }
 
-  cleanup(): void {}
+  cleanup(): void {
+    stopConfigWatch();
+    cleanupQwenHooks();
+  }
 
-  async getConfig(_projectPath: string): Promise<ProviderConfig> {
-    return EMPTY_CONFIG;
+  startConfigWatcher(win: BrowserWindow, projectPath: string): void {
+    startConfigWatch(win, projectPath, 'qwen');
+  }
+
+  stopConfigWatcher(): void {
+    stopConfigWatch();
+  }
+
+  async getConfig(projectPath: string): Promise<ProviderConfig> {
+    return getQwenConfig(projectPath);
   }
 
   getShiftEnterSequence(): string | null {
@@ -66,14 +89,20 @@ export class QwenProvider implements CliProvider {
   }
 
   validateSettings(): SettingsValidationResult {
-    return INERT_SETTINGS;
+    return validateQwenHooks();
   }
 
-  reinstallSettings(): void {}
+  reinstallSettings(): void {
+    installQwenHooks();
+    installStatusLineScript();
+  }
+
+  getTranscriptPath(cliSessionId: string, projectPath: string): string | null {
+    return findQwenTranscriptPath(cliSessionId, projectPath);
+  }
 }
 
 /** @internal Test-only: reset cached binary path */
 export function _resetCachedPath(): void {
   binaryCache.path = null;
 }
-

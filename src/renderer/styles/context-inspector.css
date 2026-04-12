@@ -13,7 +13,7 @@
 }
 
 #context-inspector {
-  width: 312px;
+  width: 304px;
   min-width: 280px;
   border-left: 1px solid var(--border-subtle);
   display: flex;
@@ -21,7 +21,7 @@
   min-height: 0;
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.03),
-    -18px 0 34px rgba(0, 0, 0, 0.14);
+    -14px 0 28px rgba(0, 0, 0, 0.12);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
     var(--surface-ops);
@@ -45,44 +45,46 @@
 
 #context-inspector-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 14px 14px 12px;
+  padding: 14px 14px 10px;
   border-bottom: 1px solid var(--border-subtle);
-  gap: 12px;
+  gap: 10px;
 }
 
 .context-inspector-title-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
 }
 
 .context-inspector-eyebrow,
 .context-inspector-section-label {
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 9px;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
 
 .context-inspector-title {
+  font-family: var(--font-display);
   color: var(--text-primary);
-  font-size: 14px;
-  font-weight: 650;
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
 }
 
 #context-inspector-sections {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  padding: 8px 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 .context-inspector-section {
@@ -91,59 +93,71 @@
   gap: 6px;
 }
 
+.context-inspector-section + .context-inspector-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+}
+
 #context-inspector .toolchain-summary {
-  padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
-  border-radius: calc(var(--radius-md) + 2px);
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 96%, black);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  padding: 0 0 10px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  box-shadow: none;
 }
 
 #context-inspector .toolchain-provider {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 3px;
+  margin-bottom: 7px;
 }
 
 #context-inspector .toolchain-provider-kicker {
-  font-size: 10px;
-  font-weight: 650;
+  font-size: 9px;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-dim);
 }
 
 #context-inspector .toolchain-provider-value {
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 620;
 }
 
 #context-inspector .toolchain-summary-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 8px 10px;
 }
 
 #context-inspector .toolchain-summary-chip {
-  padding-right: 8px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 #context-inspector .toolchain-summary-chip-label {
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
 }
 
 #context-inspector .toolchain-summary-chip-value {
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -156,31 +170,134 @@
 #context-inspector .config-section,
 #context-inspector .history-body,
 #context-inspector .readiness-section-card {
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  border: none;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 #context-inspector .config-section-header {
-  min-height: 42px;
-  padding: 0 12px;
+  min-height: 28px;
+  padding: 0 0 6px;
+}
+
+#context-inspector .config-section-header:hover {
+  background: transparent;
+}
+
+#context-inspector .config-section-heading,
+#context-inspector .config-section-meta {
+  gap: 6px;
+}
+
+#context-inspector .config-section-title {
+  font-size: 12px;
+  font-weight: 620;
 }
 
 #context-inspector .config-section-body {
-  padding: 0 8px 8px;
+  padding: 0;
+}
+
+#context-inspector .config-section-count,
+#context-inspector .readiness-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+  padding: 0 7px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  box-shadow: none;
+}
+
+#context-inspector .config-section-count {
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-panel) 68%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+#context-inspector .config-section-add-btn,
+#context-inspector .readiness-scan-btn {
+  min-height: 20px;
+  border-radius: 10px;
+}
+
+#context-inspector .readiness-scan-btn,
+#context-inspector .history-clear-btn,
+#context-inspector .history-bookmark-filter {
+  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+}
+
+#context-inspector .history-search,
+#context-inspector .git-worktree-select {
+  min-height: 30px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-muted) 72%, black);
 }
 
 #context-inspector .config-item {
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-canvas) 46%, var(--surface-panel));
+  padding: 8px 0 8px 2px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  box-shadow: none;
 }
 
 #context-inspector .config-item + .config-item {
-  margin-top: 6px;
+  margin-top: 0;
+}
+
+#context-inspector .history-item,
+#context-inspector .readiness-category-row {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+}
+
+#context-inspector .history-list {
+  gap: 0;
+  padding: 0;
+}
+
+#context-inspector .history-body {
+  padding: 0;
+}
+
+#context-inspector .history-search {
+  width: 100%;
+  margin: 0 0 8px;
+}
+
+#context-inspector .history-actions {
+  padding: 0 0 8px;
+}
+
+#context-inspector .history-item {
+  padding: 8px 2px;
+}
+
+#context-inspector .history-item:hover,
+#context-inspector .readiness-category-row:hover {
+  background: color-mix(in srgb, var(--surface-hover) 48%, transparent);
+}
+
+#context-inspector .readiness-category-row {
+  padding: 8px 2px;
+}
+
+#context-inspector .config-item-remove-btn,
+#context-inspector .history-remove-btn,
+#context-inspector .history-bookmark-btn,
+#context-inspector .git-action-btn {
+  border-radius: 6px;
 }
 
 #context-inspector .config-empty,
 #context-inspector .config-loading {
-  padding: 12px;
+  padding: 10px 0 2px;
 }

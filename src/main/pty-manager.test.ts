@@ -2,12 +2,13 @@ import { vi } from 'vitest';
 import * as path from 'path';
 import { isWin } from './platform';
 
-const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile } = vi.hoisted(() => ({
+const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync } = vi.hoisted(() => ({
   mockSpawn: vi.fn(),
   mockWrite: vi.fn(),
   mockResize: vi.fn(),
   mockKill: vi.fn(),
   mockExecFile: vi.fn(),
+  mockExecFileSync: vi.fn(),
 }));
 
 vi.mock('node-pty', () => ({
@@ -18,6 +19,7 @@ vi.mock('node-pty', () => ({
 vi.mock('child_process', () => ({
   execSync: vi.fn(() => { throw new Error('not found'); }),
   execFile: mockExecFile,
+  execFileSync: mockExecFileSync,
 }));
 
 vi.mock('os', () => ({
@@ -34,8 +36,9 @@ vi.mock('fs', () => ({
 }));
 
 import * as fs from 'fs';
-import { spawnPty, writePty, resizePty, killPty, getPtyCwd } from './pty-manager';
+import { spawnPty, spawnCommandPty, writePty, resizePty, killPty, getPtyCwd } from './pty-manager';
 import { initProviders } from './providers/registry';
+import { _resetLoginShellEnvCache } from './provider-env';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 
@@ -57,6 +60,7 @@ function createMockPtyProcess() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockExistsSync.mockReturnValue(false);
+  _resetLoginShellEnvCache();
   initProviders();
 });
 
@@ -173,6 +177,23 @@ describe('spawnPty', () => {
     expect(env.CLAUDE_CODE).toBeUndefined();
   });
 
+  it('hydrates missing Claude auth env from the login shell', () => {
+    mockExecFileSync.mockReturnValue(
+      [
+        'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',
+        'ANTHROPIC_AUTH_TOKEN=test-token',
+      ].join('\n')
+    );
+    const proc = createMockPtyProcess();
+    mockSpawn.mockReturnValue(proc);
+
+    spawnPty('s1', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    const env = mockSpawn.mock.calls[0][2].env;
+    expect(env.ANTHROPIC_BASE_URL).toBe('https://api.z.ai/api/anthropic');
+    expect(env.ANTHROPIC_AUTH_TOKEN).toBe('test-token');
+  });
+
   it('augments PATH with extra directories', () => {
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
@@ -187,6 +208,40 @@ describe('spawnPty', () => {
       expect(envPath).toContain('/opt/homebrew/bin');
       expect(envPath).toContain('/mock/home/.local/bin');
     }
+  });
+});
+
+describe('spawnCommandPty', () => {
+  it('spawns a generic command PTY with explicit launch settings', () => {
+    const proc = createMockPtyProcess();
+    mockSpawn.mockReturnValue(proc);
+
+    spawnCommandPty(
+      'cli-surface:project-1',
+      {
+        command: 'python',
+        args: ['-m', 'textual', 'run', 'app.py'],
+        cwd: '/project',
+        cols: 132,
+        rows: 40,
+        envPatch: { NODE_ENV: 'development' },
+      },
+      vi.fn(),
+      vi.fn(),
+    );
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      'python',
+      ['-m', 'textual', 'run', 'app.py'],
+      expect.objectContaining({
+        cwd: '/project',
+        cols: 132,
+        rows: 40,
+        env: expect.objectContaining({
+          NODE_ENV: 'development',
+        }),
+      }),
+    );
   });
 });
 

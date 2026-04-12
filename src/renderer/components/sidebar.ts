@@ -59,15 +59,16 @@ function render(): void {
   projectListEl.innerHTML = '';
 
   for (const project of appState.projects) {
+    const locationLabel = shortProjectPath(project.path);
     const el = document.createElement('div');
-    el.className = 'project-item' + (project.id === appState.activeProjectId ? ' active' : '');
+    el.className = 'project-item sidebar-project-row' + (project.id === appState.activeProjectId ? ' active' : '');
     el.innerHTML = `
       <div class="project-item-main">
         <div class="project-item-row">
           <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}</div>
           ${project.sessions.length ? `<span class="project-session-count control-chip">${project.sessions.length}</span>` : ''}
         </div>
-        <div class="project-path">${esc(project.path)}</div>
+        <div class="project-path" title="${esc(project.path)}">${esc(locationLabel)}</div>
       </div>
       <span class="project-delete" title="Remove project">&times;</span>
     `;
@@ -92,6 +93,13 @@ function render(): void {
 
     projectListEl.appendChild(el);
   }
+}
+
+function shortProjectPath(fullPath: string): string {
+  const normalized = fullPath.replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  if (parts.length <= 2) return fullPath;
+  return `.../${parts.slice(-2).join('/')}`;
 }
 
 export function promptNewProject(): void {

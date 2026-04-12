@@ -113,8 +113,10 @@ function statusBadge(entry: GitFileEntry): string {
 
 function createActionButton(title: string, icon: string, onClick: (e: Event) => void): HTMLButtonElement {
   const btn = document.createElement('button');
+  btn.type = 'button';
   btn.className = 'git-action-btn';
   btn.title = title;
+  btn.ariaLabel = title;
   btn.textContent = icon;
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -129,16 +131,26 @@ function shortPath(fullPath: string): string {
   return parts.length > 2 ? '.../' + parts.slice(-2).join('/') : fullPath;
 }
 
-function updateGitHeader(header: HTMLElement, total: number, headerSuffix: string): void {
+function updateGitHeader(header: HTMLElement, total: number, headerSuffix: string, body: HTMLElement, activeGitPath: string): void {
   header.innerHTML = '';
 
-  const heading = document.createElement('div');
-  heading.className = 'config-section-heading';
-  heading.innerHTML = `
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'config-section-heading config-section-toggle-button';
+  button.setAttribute('aria-expanded', String(!collapsed));
+  button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Workspace Changes${headerSuffix}</span>
+    <span class="config-section-title">Repo${headerSuffix}</span>
   `;
-  header.appendChild(heading);
+  button.addEventListener('click', () => {
+    collapsed = !collapsed;
+    const toggle = button.querySelector('.config-section-toggle')!;
+    button.setAttribute('aria-expanded', String(!collapsed));
+    toggle.classList.toggle('collapsed', collapsed);
+    body.classList.toggle('hidden', collapsed);
+    if (!collapsed) loadFiles(body, activeGitPath);
+  });
+  header.appendChild(button);
 
   const meta = document.createElement('div');
   meta.className = 'config-section-meta';
@@ -246,9 +258,10 @@ async function refresh(): Promise<void> {
   const existingSection = container.querySelector('.config-section');
   if (existingSection) {
     // Update header in-place
+    const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
     const existingHeader = existingSection.querySelector('.config-section-header');
-    if (existingHeader) {
-      updateGitHeader(existingHeader as HTMLElement, total, headerSuffix);
+    if (existingHeader && body) {
+      updateGitHeader(existingHeader as HTMLElement, total, headerSuffix, body, activeGitPath);
     }
 
     // Update worktree selector
@@ -260,10 +273,7 @@ async function refresh(): Promise<void> {
     }
 
     // Reload files if expanded
-    if (!collapsed) {
-      const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
-      if (body) loadFiles(body, activeGitPath);
-    }
+    if (!collapsed && body) loadFiles(body, activeGitPath);
     return;
   }
 
@@ -273,19 +283,10 @@ async function refresh(): Promise<void> {
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
-  updateGitHeader(header, total, headerSuffix);
 
   const body = document.createElement('div');
   body.className = `config-section-body${collapsed ? ' hidden' : ''}`;
-
-  header.addEventListener('click', () => {
-    collapsed = !collapsed;
-    const toggle = header.querySelector('.config-section-toggle')!;
-    toggle.classList.toggle('collapsed');
-    body.classList.toggle('hidden');
-    // Fetch files on expand
-    if (!collapsed) loadFiles(body, activeGitPath);
-  });
+  updateGitHeader(header, total, headerSuffix, body, activeGitPath);
 
   section.appendChild(header);
   section.appendChild(body);
@@ -306,7 +307,7 @@ async function refresh(): Promise<void> {
 async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
   // Show loading only on first load (when body is empty)
   if (!body.hasChildNodes()) {
-    body.innerHTML = '<div class="config-loading">Loading...</div>';
+    body.innerHTML = '<div class="config-loading">Loading…</div>';
   }
 
   let files: GitFileEntry[];
@@ -347,7 +348,7 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
     for (const entry of group) {
       if (rendered >= MAX_FILES) break;
       const item = document.createElement('div');
-      item.className = 'config-item config-item-clickable';
+      item.className = 'config-item config-item-clickable calder-list-row';
       item.innerHTML = `${statusBadge(entry)}<span class="config-item-detail" title="${esc(entry.path)}">${esc(entry.path)}</span>`;
 
       // Hover action buttons
@@ -395,7 +396,7 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
   if (remaining > 0) {
     const overflow = document.createElement('div');
     overflow.className = 'config-empty';
-    overflow.textContent = `and ${remaining} more...`;
+    overflow.textContent = `and ${remaining} more…`;
     fragment.appendChild(overflow);
   }
 
@@ -411,8 +412,10 @@ export function scrollToGitPanel(): void {
   if (collapsed) {
     collapsed = false;
     const toggle = container.querySelector('.config-section-toggle');
+    const button = container.querySelector('.config-section-toggle-button') as HTMLButtonElement | null;
     const body = container.querySelector('.config-section-body');
     if (toggle) toggle.classList.remove('collapsed');
+    if (button) button.setAttribute('aria-expanded', 'true');
     if (body) {
       body.classList.remove('hidden');
       const project = appState.activeProject;
@@ -428,10 +431,12 @@ export function toggleGitPanel(): void {
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });
   collapsed = !collapsed;
   const toggle = container.querySelector('.config-section-toggle');
+  const button = container.querySelector('.config-section-toggle-button') as HTMLButtonElement | null;
   const body = container.querySelector('.config-section-body');
-  if (toggle) toggle.classList.toggle('collapsed');
+  if (toggle) toggle.classList.toggle('collapsed', collapsed);
+  if (button) button.setAttribute('aria-expanded', String(!collapsed));
   if (body) {
-    body.classList.toggle('hidden');
+    body.classList.toggle('hidden', collapsed);
     if (!collapsed) {
       const project = appState.activeProject;
       if (project) loadFiles(body as HTMLElement, getActiveGitPath(project.id));

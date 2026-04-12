@@ -6,10 +6,10 @@
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at top left, rgba(239, 104, 121, 0.1), transparent 20%),
-    radial-gradient(circle at bottom right, rgba(108, 165, 234, 0.08), transparent 24%),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 14%, transparent), transparent 24%),
+    radial-gradient(circle at top right, rgba(108, 165, 234, 0.08), transparent 26%),
     var(--bg-overlay);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -23,29 +23,39 @@
 
 #modal, .modal-box {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-elevated) 92%, black);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 20px;
   min-width: 420px;
-  max-width: 560px;
-  box-shadow: var(--shadow-elevated);
+  max-width: 620px;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
   max-height: min(86vh, 900px);
   overflow: hidden;
 }
 
+.modal-surface {
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-glass) 94%, black);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.34);
+}
+
 #modal-title, .modal-title {
-  font-size: 17px;
+  font-family: var(--font-display);
+  font-size: 16px;
   font-weight: 680;
   letter-spacing: -0.01em;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 #modal-body, .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   max-height: calc(86vh - 160px);
   overflow-y: auto;
   padding-right: 2px;
@@ -74,7 +84,7 @@
   padding: 0 14px;
   background: color-mix(in srgb, var(--surface-muted) 86%, black);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: var(--text-primary);
   font-size: 13px;
   outline: none;
@@ -100,7 +110,7 @@
   padding: 0 14px;
   background: color-mix(in srgb, var(--surface-muted) 86%, black);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: var(--text-primary);
   font-size: 13px;
   font-family: inherit;
@@ -145,7 +155,7 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-soft);
-  z-index: 200;
+  z-index: 10000;
   margin-top: 4px;
 }
 
@@ -202,7 +212,7 @@
   padding: 0 14px;
   background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: var(--text-primary);
   font-size: 13px;
   cursor: pointer;
@@ -295,9 +305,9 @@
 #modal-actions, .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-  padding-top: 14px;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -305,8 +315,8 @@
   min-height: var(--control-height-lg);
   padding: 0 16px;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-panel) 76%, black);
   color: var(--text-primary);
   cursor: pointer;
   font-size: 13px;
@@ -318,13 +328,17 @@
 }
 
 .modal-btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 44%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, black);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border-strong));
+  color: var(--text-primary);
 }
 
 .modal-btn.primary:hover {
-  background: var(--accent-dim);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 84%, black);
 }
 
 /* Config sections */
@@ -356,7 +370,6 @@
   justify-content: space-between;
   gap: 10px;
   padding: 11px 12px;
-  cursor: pointer;
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
@@ -378,6 +391,23 @@
 
 .config-section-heading {
   flex: 1;
+}
+
+.config-section-toggle-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.config-section-toggle-button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .config-section-meta {

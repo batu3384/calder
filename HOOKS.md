@@ -40,8 +40,8 @@ waiting
 
 ## How It Works End-to-End
 
-1. **Hook installation** (`claude-cli.ts`) — Each hook is a shell command that writes a `.status` file to `/tmp/calder/{sessionId}.status`
-2. **File watching** (`hook-status.ts`) — Main process watches `/tmp/calder/` via `fs.watch()` + 2s polling fallback
+1. **Hook installation** (`claude-cli.ts`) — Each hook is a shell command that writes a `.status` file to `~/.calder/runtime/{sessionId}.status`
+2. **File watching** (`hook-status.ts`) — Main process watches `~/.calder/runtime/` via `fs.watch()` + 2s polling fallback
 3. **IPC broadcast** — Main sends `session:hookStatus` to renderer
 4. **State update** (`session-activity.ts`) — Renderer applies the transition rules above
 

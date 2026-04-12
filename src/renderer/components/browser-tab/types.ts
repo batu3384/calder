@@ -110,6 +110,7 @@ export interface BrowserTabInstance {
   targetMenu: HTMLDivElement;
   targetMenuList: HTMLDivElement;
   targetMenuOutsideClickHandler: (e: MouseEvent) => void;
+  targetMenuFloatingCleanup: (() => void) | null;
   activeTargetTrigger: HTMLButtonElement | null;
   activeTargetMode: 'inspect' | 'draw' | 'flow' | null;
   cleanupFns: Array<() => void>;

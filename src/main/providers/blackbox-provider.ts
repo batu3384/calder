@@ -1,10 +1,13 @@
+import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
 import { getFullPath } from '../pty-manager';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
+import { getBlackboxConfig, findBlackboxTranscriptPath } from '../blackbox-config';
+import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { stopBlackboxSessionWatcher } from '../blackbox-session-watcher';
 
 const binaryCache = { path: null as string | null };
-const EMPTY_CONFIG: ProviderConfig = { mcpServers: [], agents: [], skills: [], commands: [] };
 const INERT_SETTINGS: SettingsValidationResult = { statusLine: 'missing', hooks: 'missing', hookDetails: {} };
 
 export class BlackboxProvider implements CliProvider {
@@ -13,11 +16,11 @@ export class BlackboxProvider implements CliProvider {
     displayName: 'Blackbox CLI',
     binaryName: 'blackbox',
     capabilities: {
-      sessionResume: false,
+      sessionResume: true,
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: false,
+      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
       planModeArg: '--approval-mode=plan',
@@ -39,10 +42,13 @@ export class BlackboxProvider implements CliProvider {
 
   buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
     const args: string[] = [];
+    if (opts.isResume && opts.cliSessionId) {
+      args.push('--resume-checkpoint', `session-${opts.cliSessionId}`);
+    }
     if (opts.extraArgs) {
       args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
     }
-    if (opts.initialPrompt) {
+    if (!opts.isResume && opts.initialPrompt) {
       args.push('-i', opts.initialPrompt);
     }
     return args;
@@ -52,10 +58,21 @@ export class BlackboxProvider implements CliProvider {
 
   installStatusScripts(): void {}
 
-  cleanup(): void {}
+  cleanup(): void {
+    stopConfigWatch();
+    stopBlackboxSessionWatcher();
+  }
 
-  async getConfig(_projectPath: string): Promise<ProviderConfig> {
-    return EMPTY_CONFIG;
+  startConfigWatcher(win: BrowserWindow, projectPath: string): void {
+    startConfigWatch(win, projectPath, 'blackbox');
+  }
+
+  stopConfigWatcher(): void {
+    stopConfigWatch();
+  }
+
+  async getConfig(projectPath: string): Promise<ProviderConfig> {
+    return getBlackboxConfig(projectPath);
   }
 
   getShiftEnterSequence(): string | null {
@@ -67,10 +84,13 @@ export class BlackboxProvider implements CliProvider {
   }
 
   reinstallSettings(): void {}
+
+  getTranscriptPath(cliSessionId: string, projectPath: string): string | null {
+    return findBlackboxTranscriptPath(cliSessionId, projectPath);
+  }
 }
 
 /** @internal Test-only: reset cached binary path */
 export function _resetCachedPath(): void {
   binaryCache.path = null;
 }
-

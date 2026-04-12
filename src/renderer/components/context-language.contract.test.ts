@@ -9,20 +9,22 @@ const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', imp
 
 describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
-    expect(html).toContain('Providers');
-    expect(html).toContain('Changes');
-    expect(html).toContain('Activity');
-    expect(html).toContain('Tools');
+    expect(html).toContain('Tool Status');
+    expect(html).toContain('Repo');
+    expect(html).toContain('Runs');
+    expect(html).toContain('Config');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(configSectionsSource).toContain("'MCP Servers'");
     expect(configSectionsSource).toContain('Model Context Protocol');
     expect(configSectionsSource).toContain("'Skills'");
     expect(configSectionsSource).toContain("'Custom Commands'");
     expect(configSectionsSource).not.toContain("'Integrations'");
-    expect(configSectionsSource).toContain('Showing config for');
-    expect(gitPanelSource).toContain('Changes');
-    expect(historySource).toContain('Activity');
-    expect(html).toContain('Ops Rail');
+    expect(configSectionsSource).toContain('Config for');
+    expect(gitPanelSource).toContain('Repo');
+    expect(historySource).toContain('Runs');
+    expect(html).toContain('Signals');
+    expect(html).not.toContain('Ops Rail');
+    expect(html).not.toContain('Support');
     expect(html).not.toContain('AI Setup');
     expect(html).not.toContain('Recent Sessions');
     expect(html).not.toContain('Toolchain');
@@ -44,5 +46,14 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-section-header');
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
+  });
+
+  it('keeps the ops rail flatter than a stacked dashboard card column', () => {
+    expect(inspectorCss).toContain('#context-inspector .toolchain-summary');
+    expect(inspectorCss).toContain('background: transparent;');
+    expect(inspectorCss).toContain('border-bottom: 1px solid');
+    expect(inspectorCss).toContain('#context-inspector .config-item');
+    expect(inspectorCss).toContain('background: transparent;');
+    expect(inspectorCss).toContain('border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);');
   });
 });

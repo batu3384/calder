@@ -9,14 +9,24 @@ describe('browser stage contract', () => {
     expect(source).toContain('browser-pane-chrome');
     expect(source).toContain('browser-pane-label');
     expect(source).toContain('browser-pane-workspace');
-    expect(source).toContain('Browser surface');
+    expect(source).toContain("chromeLabel.textContent = 'Live View'");
+    expect(source).toContain("chromeHint.textContent = 'Inspect, capture, annotate'");
+    expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
   });
 
   it('styles the browser chrome header and elevated toolbar', () => {
     expect(css).toContain('.browser-pane-chrome');
     expect(css).toContain('.browser-pane-label');
+    expect(css).toContain('background: transparent;');
+    expect(css).toContain('border: none;');
     expect(css).toContain('.browser-pane-workspace');
     expect(css).toContain('.browser-tab-toolbar');
+    expect(css).toContain('padding: 9px 12px 9px;');
+    expect(css).toContain('border-radius: 10px;');
+    expect(css).toContain('.browser-url-input');
+    expect(css).toContain('border-radius: 10px;');
+    expect(css).toContain('.browser-go-btn');
+    expect(css).toContain('min-width: 40px;');
   });
 
   it('keeps the split browser toolbar compact instead of wasting horizontal room', () => {

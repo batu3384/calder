@@ -60,6 +60,32 @@ export function resolvePreferredProviderForLaunch(
     ?? 'claude';
 }
 
+export function resolveProviderForCheck(
+  preferredProvider: ProviderId | undefined,
+  candidateProviderIds: ProviderId[] | undefined,
+  snapshot: ProviderAvailabilitySnapshot | null,
+): ProviderId {
+  if (!candidateProviderIds || candidateProviderIds.length === 0) {
+    return resolvePreferredProviderForLaunch(preferredProvider, snapshot);
+  }
+
+  if (!snapshot) {
+    return candidateProviderIds[0];
+  }
+
+  if (preferredProvider && candidateProviderIds.includes(preferredProvider) && snapshot.availability.get(preferredProvider)) {
+    return preferredProvider;
+  }
+
+  for (const providerId of candidateProviderIds) {
+    if (snapshot.availability.get(providerId)) {
+      return providerId;
+    }
+  }
+
+  return candidateProviderIds[0];
+}
+
 export function getCachedProviderMetas(): CliProviderMeta[] {
   return cachedProviders ?? [];
 }

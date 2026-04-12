@@ -5,7 +5,7 @@ import { BrowserWindow } from 'electron';
 import { isWin } from './platform';
 import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from './statusline-template';
 
-export const STATUS_DIR = path.join(os.tmpdir(), 'calder');
+export const STATUS_DIR = path.join(os.homedir(), '.calder', 'runtime');
 const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');
 const STATUSLINE_PYTHON_PATH = path.join(STATUS_DIR, STATUSLINE_PYTHON_HELPER);
 
@@ -267,13 +267,10 @@ export function cleanupAll(): void {
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
-      if (isKnownExtension(file) || isStatuslineArtifact(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
+      if (isKnownExtension(file) || isStatuslineArtifact(file)) {
         try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch { /* already gone */ }
       }
     }
-    // Remove the statusline script
-    try { fs.unlinkSync(STATUSLINE_SCRIPT); } catch { /* already gone */ }
-    try { fs.rmSync(STATUS_DIR, { recursive: true }); } catch { /* may not be empty */ }
   } catch {
     // Directory may not exist
   }

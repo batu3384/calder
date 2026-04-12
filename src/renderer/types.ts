@@ -1,5 +1,5 @@
-export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus } from '../shared/types.js';
-import type { CostData, ProviderConfig, GitWorktree, McpResult, ProviderId, CliProviderMeta, StatsCache, ReadinessResult } from '../shared/types.js';
+export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types.js';
+import type { CostData, ProviderConfig, GitWorktree, McpResult, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types.js';
 
 export interface CalderApi {
   pty: {
@@ -67,6 +67,22 @@ export interface CalderApi {
     openExternal(url: string): Promise<void>;
     onQuitting(callback: () => void): () => void;
   };
+  browser: {
+    saveScreenshot(sessionId: string, dataUrl: string): Promise<string>;
+    listLocalTargets(): Promise<Array<{ url: string; label: string; meta: string }>>;
+  };
+  cliSurface: {
+    discover(projectPath: string): Promise<CliSurfaceDiscoveryResult>;
+    start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
+    stop(projectId: string): Promise<void>;
+    restart(projectId: string): Promise<void>;
+    write(projectId: string, data: string): void;
+    resize(projectId: string, cols: number, rows: number): void;
+    onData(callback: (projectId: string, data: string) => void): () => void;
+    onExit(callback: (projectId: string, exitCode: number, signal?: number) => void): () => void;
+    onStatus(callback: (projectId: string, state: CliSurfaceRuntimeState) => void): () => void;
+    onError(callback: (projectId: string, message: string) => void): () => void;
+  };
   mcp: {
     connect(id: string, url: string): Promise<McpResult>;
     disconnect(id: string): Promise<McpResult>;
@@ -84,6 +100,7 @@ export interface CalderApi {
     getCache(): Promise<StatsCache | null>;
   };
   menu: {
+    onPreferences(callback: () => void): () => void;
     onNewProject(callback: () => void): () => void;
     onNewSession(callback: () => void): () => void;
     onNextSession(callback: () => void): () => void;
@@ -91,7 +108,11 @@ export interface CalderApi {
     onGotoSession(callback: (index: number) => void): () => void;
     onToggleDebug(callback: () => void): () => void;
     onUsageStats(callback: () => void): () => void;
+    onProjectTerminal(callback: () => void): () => void;
+    onNewMcpInspector(callback: () => void): () => void;
+    onSessionIndicatorsHelp(callback: () => void): () => void;
     onToggleInspector(callback: () => void): () => void;
+    onToggleContextPanel(callback: () => void): () => void;
     onCloseSession(callback: () => void): () => void;
   };
 }

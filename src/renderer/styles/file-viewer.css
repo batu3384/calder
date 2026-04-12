@@ -334,6 +334,135 @@
   color: var(--text-primary);
 }
 
+.file-reader-doc-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.agent-doc-shell {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.agent-doc-body {
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-16);
+  background: color-mix(in srgb, var(--surface-panel) 70%, transparent);
+}
+
+.agent-doc-header {
+  border-color: var(--border-hairline);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface-panel) 76%, transparent);
+}
+
+.agent-doc-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.agent-doc-body h1,
+.agent-doc-body h2,
+.agent-doc-body h3 {
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.file-reader-agent-card {
+  margin: 4px 0 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(79, 70, 229, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.2));
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+}
+
+.file-reader-agent-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.file-reader-agent-description {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.file-reader-agent-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-reader-agent-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.14);
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.file-reader-agent-chip.secondary {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.16);
+  color: var(--text-secondary);
+}
+
+.file-reader-doc-outline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.file-reader-doc-outline-btn {
+  border: 1px solid var(--border);
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.file-reader-doc-outline-btn:hover {
+  background: rgba(79, 70, 229, 0.12);
+  border-color: rgba(79, 70, 229, 0.22);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.file-reader-doc-outline-btn.level-2 {
+  opacity: 0.94;
+}
+
+.file-reader-doc-outline-btn.level-3 {
+  opacity: 0.88;
+}
+
+.file-reader-markdown-body {
+  min-width: 0;
+}
+
 .file-reader-markdown h1,
 .file-reader-markdown h2,
 .file-reader-markdown h3,

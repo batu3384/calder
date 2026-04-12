@@ -1,5 +1,5 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
-import type { ProviderId } from '../../shared/types.js';
+import type { CliSurfaceProfile, ProjectSurfaceRecord, ProviderId } from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
@@ -7,7 +7,6 @@ import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshG
 import { onChange as onCostChange, getAggregateCost } from '../session-cost.js';
 
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
-import { showHelpDialog } from './help-dialog.js';
 import { showShareDialog } from './share-dialog.js';
 import { showJoinDialog } from './join-dialog.js';
 import { isSharing } from '../sharing/peer-host.js';
@@ -22,21 +21,23 @@ import {
   shouldRenderInlineProviderSelector,
 } from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
-import { showUsageModal } from './usage-modal.js';
-import { toggleProjectTerminal } from './project-terminal.js';
-import { toggleContextInspector } from './context-inspector.js';
+import { buildProviderIconMarkup } from './tab-provider-icon.js';
+import { openCliSurfaceWithSetup } from './cli-surface/setup.js';
+import { showCliSurfaceQuickSetup } from './cli-surface/quick-setup.js';
+import { createDiscoveredCliSurfaceProfile, getCliSurfaceProfileLabel } from './cli-surface/profile.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const workspaceSpendEl = document.getElementById('workspace-spend')!;
 const workspaceIdentityEl = document.getElementById('workspace-identity')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
+const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
+const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
-const btnCommandDeckMore = document.getElementById('btn-command-deck-more')!;
-const btnToggleContextInspector = document.getElementById('btn-toggle-context-inspector')!;
 
 let activeContextMenu: HTMLElement | null = null;
 let sessionProviderSelect: CustomSelectInstance | null = null;
+let surfaceProfileSelect: CustomSelectInstance | null = null;
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
 
@@ -62,22 +63,11 @@ function buildTabTitle(session: SessionRecord): string {
 
 export function initTabBar(): void {
   btnAddSession.classList.add('tab-action-primary');
-  btnToggleContextInspector.classList.add('tab-action-secondary');
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
     showAddSessionContextMenu(e.clientX, e.clientY);
-  });
-  btnCommandDeckMore.addEventListener('click', (e) => {
-    e.preventDefault();
-    showCommandDeckOverflowMenu(e);
-  });
-  btnToggleContextInspector.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    hideTabContextMenu();
-    toggleContextInspector();
   });
   gitStatusEl.addEventListener('click', (e) => showBranchContextMenu(e));
 
@@ -150,6 +140,339 @@ function destroySessionProviderSelector(): void {
   sessionProviderSlotEl.hidden = true;
 }
 
+function destroySurfaceProfileSelector(): void {
+  if (surfaceProfileSelect) {
+    surfaceProfileSelect.destroy();
+    surfaceProfileSelect = null;
+  }
+  surfaceModeSlotEl.innerHTML = '';
+  surfaceModeSlotEl.hidden = true;
+  surfaceProfileSlotEl.innerHTML = '';
+  surfaceProfileSlotEl.hidden = true;
+}
+
+function createDefaultProjectSurface(): ProjectSurfaceRecord {
+  return {
+    kind: 'web',
+    active: false,
+    web: { history: [] },
+    cli: { profiles: [], runtime: { status: 'idle' } },
+  };
+}
+
+function getProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
+  return project.surface ?? createDefaultProjectSurface();
+}
+
+function parseCliSurfaceArgs(raw: string): string[] | undefined {
+  const matches = raw.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
+  const args = matches
+    .map((token) => token.replace(/^['"]|['"]$/g, ''))
+    .filter(Boolean);
+  return args.length > 0 ? args : undefined;
+}
+
+function updateProjectSurface(project: ProjectRecord, next: ProjectSurfaceRecord): void {
+  appState.setProjectSurface(project.id, next);
+}
+
+function upsertCliSurfaceProfile(project: ProjectRecord, profile: CliSurfaceProfile): CliSurfaceProfile[] {
+  const surface = getProjectSurface(project);
+  const profiles = [...(surface.cli?.profiles ?? [])];
+  const existingIndex = profiles.findIndex((entry) => entry.id === profile.id);
+  if (existingIndex >= 0) {
+    profiles[existingIndex] = profile;
+  } else {
+    profiles.push(profile);
+  }
+  return profiles;
+}
+
+function promptCliSurfaceProfile(
+  project: ProjectRecord,
+  existing?: CliSurfaceProfile,
+  onReady?: (profile: CliSurfaceProfile) => void,
+): void {
+  showModal(
+    existing ? 'Edit CLI Surface Profile' : 'CLI Surface Profile',
+    [
+      {
+        label: 'Name',
+        id: 'cli-profile-name',
+        placeholder: 'Textual Dev',
+        defaultValue: existing?.name ?? 'CLI Preview',
+      },
+      {
+        label: 'Command',
+        id: 'cli-profile-command',
+        placeholder: 'python',
+        defaultValue: existing?.command ?? '',
+      },
+      {
+        label: 'Arguments',
+        id: 'cli-profile-args',
+        placeholder: "-m textual run app.py",
+        defaultValue: existing?.args?.join(' ') ?? '',
+      },
+      {
+        label: 'Working directory',
+        id: 'cli-profile-cwd',
+        placeholder: project.path,
+        defaultValue: existing?.cwd ?? project.path,
+      },
+    ],
+    (values) => {
+      const name = values['cli-profile-name']?.trim();
+      const command = values['cli-profile-command']?.trim();
+      const cwd = values['cli-profile-cwd']?.trim() || project.path;
+      if (!name) {
+        setModalError('cli-profile-name', 'Profile name is required');
+        return;
+      }
+      if (!command) {
+        setModalError('cli-profile-command', 'Command is required');
+        return;
+      }
+
+      const profile: CliSurfaceProfile = {
+        id: existing?.id ?? crypto.randomUUID(),
+        name,
+        command,
+        args: parseCliSurfaceArgs(values['cli-profile-args'] ?? ''),
+        cwd,
+      };
+
+      const surface = getProjectSurface(project);
+      const profiles = [...(surface.cli?.profiles ?? [])];
+      const existingIndex = profiles.findIndex((entry) => entry.id === profile.id);
+      if (existingIndex >= 0) {
+        profiles[existingIndex] = profile;
+      } else {
+        profiles.push(profile);
+      }
+
+      updateProjectSurface(project, {
+        ...surface,
+        kind: 'cli',
+        active: true,
+        cli: {
+          profiles,
+          selectedProfileId: profile.id,
+          runtime: surface.cli?.runtime
+            ? {
+                ...surface.cli.runtime,
+                selectedProfileId: profile.id,
+              }
+            : {
+                status: 'idle',
+                selectedProfileId: profile.id,
+              },
+        },
+      });
+      closeModal();
+      onReady?.(profile);
+    },
+  );
+}
+
+function activateLiveViewSurface(project: ProjectRecord): void {
+  const existingBrowser = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  if (!existingBrowser) {
+    appState.addBrowserTabSession(project.id);
+    return;
+  }
+
+  const surface = getProjectSurface(project);
+  updateProjectSurface(project, {
+    ...surface,
+    kind: 'web',
+    active: true,
+    web: {
+      sessionId: existingBrowser.id,
+      url: existingBrowser.browserTabUrl,
+      history: surface.web?.history ?? (existingBrowser.browserTabUrl ? [existingBrowser.browserTabUrl] : []),
+    },
+  });
+}
+
+async function activateCliSurface(project: ProjectRecord): Promise<void> {
+  const cliApi = window.calder?.cliSurface;
+  if (!cliApi) {
+    promptCliSurfaceProfile(project);
+    return;
+  }
+
+  await openCliSurfaceWithSetup(project, {
+    discover: (projectPath) => cliApi.discover(projectPath),
+    start: async (profile) => {
+      const surface = getProjectSurface(project);
+      const profiles = upsertCliSurfaceProfile(project, profile);
+      updateProjectSurface(project, {
+        ...surface,
+        kind: 'cli',
+        active: true,
+        cli: {
+          profiles,
+          selectedProfileId: profile.id,
+          runtime: surface.cli?.runtime
+            ? {
+                ...surface.cli.runtime,
+                selectedProfileId: profile.id,
+              }
+            : {
+                status: 'idle',
+                selectedProfileId: profile.id,
+              },
+        },
+      });
+      await cliApi.start(project.id, profile);
+    },
+    persist: (profile) => {
+      const surface = getProjectSurface(project);
+      const profiles = upsertCliSurfaceProfile(project, profile);
+      updateProjectSurface(project, {
+        ...surface,
+        kind: 'cli',
+        active: true,
+        cli: {
+          profiles,
+          selectedProfileId: profile.id,
+          runtime: surface.cli?.runtime
+            ? {
+                ...surface.cli.runtime,
+                selectedProfileId: profile.id,
+              }
+            : {
+                status: 'idle',
+                selectedProfileId: profile.id,
+              },
+        },
+      });
+    },
+    showQuickSetup: (_activeProject, candidates) => {
+      showCliSurfaceQuickSetup(candidates, {
+        onRun: (candidate) => {
+          const profile = createDiscoveredCliSurfaceProfile(candidate);
+          const surface = getProjectSurface(project);
+          const profiles = upsertCliSurfaceProfile(project, profile);
+          updateProjectSurface(project, {
+            ...surface,
+            kind: 'cli',
+            active: true,
+            cli: {
+              profiles,
+              selectedProfileId: profile.id,
+              runtime: surface.cli?.runtime
+                ? {
+                    ...surface.cli.runtime,
+                    selectedProfileId: profile.id,
+                  }
+                : {
+                    status: 'idle',
+                    selectedProfileId: profile.id,
+                  },
+            },
+          });
+          void window.calder?.cliSurface?.start(project.id, profile);
+        },
+        onEdit: (candidate) => {
+          promptCliSurfaceProfile(project, createDiscoveredCliSurfaceProfile(candidate));
+        },
+        onManual: () => promptCliSurfaceProfile(project),
+      });
+    },
+    showManualSetup: (activeProject) => promptCliSurfaceProfile(activeProject),
+  });
+}
+
+function renderSurfaceControls(): void {
+  destroySurfaceProfileSelector();
+
+  const project = appState.activeProject;
+  if (!project) return;
+
+  const surface = getProjectSurface(project);
+  const switcher = document.createElement('div');
+  switcher.className = 'surface-mode-switcher';
+
+  ([
+    { kind: 'web' as const, label: 'Live View' },
+    { kind: 'cli' as const, label: 'CLI Surface' },
+  ]).forEach(({ kind, label }) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'surface-mode-button';
+    button.textContent = label;
+    button.classList.toggle('active', surface.kind === kind && surface.active);
+    button.addEventListener('click', () => {
+      if (kind === 'web') activateLiveViewSurface(project);
+      else void activateCliSurface(project);
+    });
+    switcher.appendChild(button);
+  });
+
+  surfaceModeSlotEl.hidden = false;
+  surfaceModeSlotEl.appendChild(switcher);
+
+  if (surface.kind !== 'cli') return;
+
+  const group = document.createElement('div');
+  group.className = 'surface-profile-group';
+  const profiles = surface.cli?.profiles ?? [];
+  const selectedProfile = profiles.find((profile) => profile.id === surface.cli?.selectedProfileId) ?? profiles[0];
+
+  if (profiles.length > 0) {
+    const select = createCustomSelect(
+      'command-deck-cli-profile',
+      [
+        ...profiles.map((profile) => ({ value: profile.id, label: getCliSurfaceProfileLabel(profile) })),
+        { value: '__new__', label: '+ New profile…' },
+      ],
+      selectedProfile?.id,
+    );
+    select.element.classList.add('command-deck-cli-profile-select');
+    const hiddenInput = select.element.querySelector('#command-deck-cli-profile') as HTMLInputElement | null;
+    hiddenInput?.addEventListener('change', () => {
+      const value = hiddenInput.value;
+      if (value === '__new__') {
+        promptCliSurfaceProfile(project);
+        return;
+      }
+      const currentSurface = getProjectSurface(project);
+      updateProjectSurface(project, {
+        ...currentSurface,
+        cli: {
+          profiles,
+          selectedProfileId: value,
+          runtime: currentSurface.cli?.runtime
+            ? {
+                ...currentSurface.cli.runtime,
+                selectedProfileId: value,
+              }
+            : {
+                status: 'idle',
+                selectedProfileId: value,
+              },
+        },
+      });
+    });
+    group.appendChild(select.element);
+    surfaceProfileSelect = select;
+  }
+
+  const configureButton = document.createElement('button');
+  configureButton.type = 'button';
+  configureButton.className = 'surface-profile-config';
+  configureButton.textContent = profiles.length > 0 ? 'Edit' : 'Set up';
+  configureButton.addEventListener('click', () => {
+    promptCliSurfaceProfile(project, selectedProfile);
+  });
+  group.appendChild(configureButton);
+
+  surfaceProfileSlotEl.hidden = false;
+  surfaceProfileSlotEl.appendChild(group);
+}
+
 function syncQuickSessionButtonMeta(providerId: ProviderId): void {
   const snapshot = getProviderAvailabilitySnapshot();
   const providerLabel = snapshot?.providers.find(provider => provider.id === providerId)?.displayName ?? providerId;
@@ -203,54 +526,9 @@ function renderWorkspaceSpend(): void {
 
   workspaceSpendEl.hidden = false;
   workspaceSpendEl.innerHTML = `
-    <span class="workspace-spend-label">Spend</span>
+    <span class="workspace-spend-label">Cost</span>
     <span class="workspace-spend-value">$${agg.totalCostUsd.toFixed(4)}</span>
   `;
-}
-
-function showCommandDeckOverflowMenu(event: MouseEvent): void {
-  event.stopPropagation();
-  hideTabContextMenu();
-
-  const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
-  menu.addEventListener('click', (ev) => ev.stopPropagation());
-
-  const anchor = event.currentTarget as HTMLElement | null;
-  if (anchor) {
-    const rect = anchor.getBoundingClientRect();
-    menu.style.left = `${rect.right - 180}px`;
-    menu.style.top = `${rect.bottom + 4}px`;
-  } else {
-    menu.style.left = `${event.clientX}px`;
-    menu.style.top = `${event.clientY}px`;
-  }
-
-  const items: Array<[string, () => void]> = [
-    ['Project Scratch Shell', () => toggleProjectTerminal()],
-    ['Usage Stats', () => showUsageModal()],
-    ['Session Indicators Help', () => showHelpDialog()],
-    ['Open MCP Inspector', () => promptNewMcpInspector()],
-  ];
-
-  for (const [label, action] of items) {
-    const item = document.createElement('div');
-    item.className = 'tab-context-menu-item';
-    item.textContent = label;
-    item.addEventListener('click', (e) => {
-      e.stopPropagation();
-      hideTabContextMenu();
-      action();
-    });
-    menu.appendChild(item);
-  }
-
-  document.body.appendChild(menu);
-  activeContextMenu = menu;
-
-  const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
 }
 
 function shortProjectPath(fullPath: string): string {
@@ -271,12 +549,12 @@ function renderWorkspaceIdentity(): void {
 
   const git = getGitStatus(project.id);
   const branchOrPath = git?.isGitRepo && git.branch
-    ? `branch ${git.branch}`
+    ? `git ${git.branch}`
     : shortProjectPath(project.path);
   const liveCount = project.sessions.length;
-  const archivedCount = project.sessionHistory?.length ?? 0;
-  const liveLabel = `${liveCount} live`;
-  const archiveLabel = `${archivedCount} archived`;
+  const loggedCount = project.sessionHistory?.length ?? 0;
+  const liveLabel = `${liveCount} open`;
+  const archiveLabel = `${loggedCount} logged`;
 
   workspaceIdentityEl.hidden = false;
   workspaceIdentityEl.title = project.path;
@@ -568,6 +846,7 @@ function ensureActiveTabVisible(key: string): void {
 function render(): void {
   if (tabListEl.querySelector('.tab-name input')) return;
   tabListEl.innerHTML = '';
+  renderSurfaceControls();
   const project = appState.activeProject;
   renderWorkspaceIdentity();
   if (!project) return;
@@ -587,7 +866,7 @@ function render(): void {
     tab.dataset.sessionId = session.id;
     tab.title = buildTabTitle(session);
     const providerId = session.providerId || 'claude';
-    const providerIcon = hasMultipleAvailableProviders() ? `<img class="tab-provider-icon" src="assets/providers/${providerId}.png" alt="${providerId}" onerror="this.style.display='none'"> ` : '';
+    const providerIcon = buildProviderIconMarkup(providerId, hasMultipleAvailableProviders());
     const namePrefix = isDiff ? '<span class="tab-diff-badge">DIFF</span> ' : isMcp ? '<span class="tab-mcp-badge">MCP</span> ' : isFileReader ? '<span class="tab-file-badge">FILE</span> ' : isRemoteTab ? '<span class="tab-remote-badge">P2P</span> ' : isBrowserTab ? '<span class="tab-browser-badge">WEB</span> ' : !isSpecial ? providerIcon : '';
     const shareIndicator = sharing ? '<span class="tab-share-indicator" title="Sharing"></span>' : '';
     const statusDot = isSpecial ? '' : `<span class="tab-status ${getStatus(session.id)}"></span>`;
@@ -1061,22 +1340,6 @@ export async function promptNewSession(onCreated?: (session: SessionRecord) => v
       const providerId = (values['provider'] || 'claude') as ProviderId;
       const session = appState.addSession(project.id, name, args, providerId);
       if (session && onCreated) onCreated(session);
-    }
-  });
-}
-
-function promptNewMcpInspector(): void {
-  const project = appState.activeProject;
-  if (!project) return;
-
-  const inspectorNum = project.sessions.filter(s => s.type === 'mcp-inspector').length + 1;
-  showModal('New MCP Inspector', [
-    { label: 'Name', id: 'inspector-name', placeholder: `Inspector ${inspectorNum}`, defaultValue: `Inspector ${inspectorNum}` },
-  ], (values) => {
-    const name = values['inspector-name']?.trim();
-    if (name) {
-      closeModal();
-      appState.addMcpInspectorSession(project.id, name);
     }
   });
 }

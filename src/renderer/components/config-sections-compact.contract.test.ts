@@ -9,7 +9,8 @@ describe('config sections compact contract', () => {
     expect(source).toContain('renderToolchainSummary');
     expect(source).toContain('toolchain-summary');
     expect(source).toContain('toolchain-summary-chip');
-    expect(source).toContain('No active toolchain items yet');
+    expect(source).toContain('No active config items yet');
+    expect(source).toContain('Config for');
   });
 
   it('styles the compact toolchain summary in the context inspector', () => {

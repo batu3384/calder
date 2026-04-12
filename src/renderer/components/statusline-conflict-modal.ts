@@ -13,11 +13,11 @@ function getOverlay(): HTMLElement {
   overlay.style.display = 'none';
   overlay.innerHTML = `
     <div class="modal-box statusline-conflict-box">
-      <div class="modal-title">Settings Conflict</div>
+      <div class="modal-title">Use Calder status line?</div>
       <div class="modal-body statusline-conflict-body"></div>
       <div class="modal-actions">
-        <button id="statusline-conflict-keep" class="modal-btn">Keep Existing</button>
-        <button id="statusline-conflict-replace" class="modal-btn primary">Replace</button>
+        <button id="statusline-conflict-keep" class="modal-btn">Keep current</button>
+        <button id="statusline-conflict-replace" class="modal-btn primary">Use Calder</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -38,15 +38,14 @@ export function showStatusLineConflictModal(foreignCommand: string): Promise<'re
 
   body.innerHTML = `
     <p class="statusline-conflict-text">
-      The active coding tool already has a <strong>status line</strong> setting configured by another tool.
+      Calder uses a small <strong>status line</strong> command to show session cost and context usage in the app.
     </p>
     <div class="statusline-conflict-command">
-      <div class="statusline-conflict-command-label">Current status line</div>
+      <div class="statusline-conflict-command-label">Current command</div>
       <code>${escapeHtml(foreignCommand)}</code>
     </div>
     <p class="statusline-conflict-text statusline-conflict-warning">
-      Calder needs its own status line integration for cost tracking and context window monitoring.
-      If you keep the existing setting, these features will be unavailable.
+      This tool already has a different status line configured. Keep the current command, or switch to Calder to turn tracking on.
     </p>`;
 
   overlay.style.display = '';

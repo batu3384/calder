@@ -90,7 +90,7 @@ function render(): void {
   headingButton.type = 'button';
   headingButton.className = 'config-section-heading config-section-toggle-button readiness-header-main';
   headingButton.setAttribute('aria-expanded', String(!collapsed));
-  headingButton.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">Providers</span>`;
+  headingButton.innerHTML = `<span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span><span class="config-section-title">Tool Status</span>`;
   header.appendChild(headingButton);
 
   const actions = document.createElement('div');
@@ -108,7 +108,7 @@ function render(): void {
   const scanBtn = document.createElement('button');
   scanBtn.type = 'button';
   scanBtn.className = 'readiness-scan-btn';
-  scanBtn.textContent = scanning ? 'Scanning…' : (result ? 'Rescan' : 'Scan');
+  scanBtn.textContent = scanning ? 'Scanning…' : (result ? 'Refresh' : 'Scan');
   scanBtn.disabled = scanning;
   scanBtn.addEventListener('click', (e) => {
     e.stopPropagation();

@@ -4,6 +4,7 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { getStatusLineScriptPath } from './hook-status';
 import { HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
 import { readJsonSafe } from './fs-utils';
+import { isManagedStatusLineCommand } from './statusline-command';
 import { loadState, saveState } from './store';
 import type { SettingsValidationResult } from '../shared/types';
 
@@ -41,7 +42,7 @@ export function isCalderStatusLine(statusLine: unknown): boolean {
   if (!statusLine || typeof statusLine !== 'object') return false;
   const sl = statusLine as Record<string, unknown>;
   const command = String(sl.command ?? '');
-  return command === getStatusLineScriptPath();
+  return isManagedStatusLineCommand(command, getStatusLineScriptPath());
 }
 
 export function validateSettings(): SettingsValidationResult {

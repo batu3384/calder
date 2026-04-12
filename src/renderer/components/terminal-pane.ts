@@ -5,7 +5,7 @@ import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { initSession, removeSession } from '../session-activity.js';
 import { markFreshSession } from '../session-insights.js';
-import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
+import { isEstimatedCost, removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
 import { getProviderCapabilities } from '../provider-availability.js';
@@ -81,7 +81,7 @@ export function createTerminalPane(
 
   const sessionState = document.createElement('div');
   sessionState.className = 'terminal-pane-session';
-  sessionState.textContent = isResume ? 'Resumed session' : 'Live session';
+  sessionState.textContent = isResume ? 'linked run' : 'active run';
 
   chrome.appendChild(providerBadge);
   chrome.appendChild(workspace);
@@ -406,16 +406,18 @@ export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
   const el = instance.element.querySelector('.cost-display');
   if (!el) return;
 
+  const estimatedPrefix = isEstimatedCost(cost) ? 'Estimated · ' : '';
   const costStr = `$${cost.totalCostUsd.toFixed(4)}`;
   const modelPrefix = cost.model ? `${cost.model}  \u00b7  ` : '';
   if (cost.totalInputTokens > 0 || cost.totalOutputTokens > 0) {
-    el.textContent = `${modelPrefix}${costStr}  \u00b7  ${formatTokens(cost.totalInputTokens)} in / ${formatTokens(cost.totalOutputTokens)} out`;
+    el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}  \u00b7  ${formatTokens(cost.totalInputTokens)} in / ${formatTokens(cost.totalOutputTokens)} out`;
     const durationSec = (cost.totalDurationMs / 1000).toFixed(1);
     const apiDurationSec = (cost.totalApiDurationMs / 1000).toFixed(1);
-    (el as HTMLElement).title = `Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
+    const estimateNote = isEstimatedCost(cost) ? 'Estimated from terminal output · ' : '';
+    (el as HTMLElement).title = `${estimateNote}Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
   } else {
-    el.textContent = `${modelPrefix}${costStr}`;
-    (el as HTMLElement).title = '';
+    el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}`;
+    (el as HTMLElement).title = isEstimatedCost(cost) ? 'Estimated from terminal output' : '';
   }
   showStatusBar(instance);
 }

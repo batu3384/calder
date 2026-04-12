@@ -108,6 +108,7 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.7.6",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-search": "^0.16.0",

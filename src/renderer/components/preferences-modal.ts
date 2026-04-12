@@ -18,7 +18,7 @@ type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
 
 export function showPreferencesModal(): void {
   prepareModalSurface();
-  titleEl.textContent = 'Preferences';
+  titleEl.textContent = 'Control Center';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
 
@@ -34,8 +34,8 @@ export function showPreferencesModal(): void {
   menuHeader.className = 'preferences-menu-header';
   menuHeader.innerHTML = `
     <div class="preferences-menu-kicker shell-kicker">Calder</div>
-    <div class="preferences-menu-title">Control Center</div>
-    <div class="preferences-menu-caption">Live layout, provider health, session defaults, and app behavior.</div>
+    <div class="preferences-menu-title">System controls</div>
+    <div class="preferences-menu-caption">Layout state, tool health, shortcuts, and session defaults.</div>
   `;
   menu.appendChild(menuHeader);
 
@@ -129,8 +129,8 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Defaults',
-        'General Workspace Behavior',
-        'Choose how Calder starts sessions, names work, and notifies you when a task needs attention.',
+        'Session defaults',
+        'Set how Calder starts tools, titles work, stores history, and alerts you when a run needs attention.',
       );
       // Default provider dropdown
       const providerRow = document.createElement('div');
@@ -249,16 +249,16 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Layout',
-        'Layout',
-        'Control which support surfaces stay visible around Live View and the Session Deck.',
+        'Panel layout',
+        'Decide which support rails stay visible around Live View and the Session Deck.',
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
       const toggles: Array<{ key: keyof typeof views; label: string; group: 'ops' | 'session' }> = [
-        { key: 'configSections', label: 'Tools', group: 'ops' },
-        { key: 'readinessSection', label: 'Providers', group: 'ops' },
-        { key: 'gitPanel', label: 'Changes', group: 'ops' },
-        { key: 'sessionHistory', label: 'Activity', group: 'ops' },
-        { key: 'costFooter', label: 'Spend chip', group: 'session' },
+        { key: 'configSections', label: 'Config', group: 'ops' },
+        { key: 'readinessSection', label: 'Tool status', group: 'ops' },
+        { key: 'gitPanel', label: 'Repo', group: 'ops' },
+        { key: 'sessionHistory', label: 'Runs', group: 'ops' },
+        { key: 'costFooter', label: 'Cost chip', group: 'session' },
       ];
 
       const opsCard = appendSectionCard(
@@ -312,7 +312,7 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Input',
-        'Keyboard Routing',
+        'Command keys',
         'Tune the bindings that drive Calder’s fast session, terminal, and shell workflows.',
       );
       renderShortcutsSection(content);
@@ -321,8 +321,8 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Providers',
-        'Provider Health',
-        'Check binaries, hooks, and status-line integration without leaving the control center.',
+        'Tool status',
+        'Check binaries, hooks, and status tracking without leaving the control center.',
       );
       renderSetupSection(content);
 
@@ -330,7 +330,7 @@ export function showPreferencesModal(): void {
       appendSectionIntro(
         content,
         'Identity',
-        'About Calder',
+        'Build info',
         'Version details, update checks, and ownership links for the Calder project.',
       );
       const aboutDiv = document.createElement('div');

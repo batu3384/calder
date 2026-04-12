@@ -1,3 +1,5 @@
+import { anchorFloatingSurface } from './floating-surface.js';
+
 export interface SelectOption {
   value: string;
   label: string;
@@ -30,12 +32,15 @@ export function createCustomSelect(
   trigger.type = 'button';
   trigger.className = 'custom-select-trigger';
   trigger.textContent = defaultOpt?.label ?? '';
+  trigger.setAttribute('aria-haspopup', 'listbox');
   trigger.setAttribute('aria-expanded', 'false');
 
   const dropdown = document.createElement('div');
   dropdown.className = 'custom-select-dropdown';
+  dropdown.setAttribute('role', 'listbox');
 
   let activeIndex = -1;
+  let floatingCleanup: (() => void) | null = null;
   const items: HTMLElement[] = [];
 
   for (let i = 0; i < options.length; i++) {
@@ -44,6 +49,8 @@ export function createCustomSelect(
     item.className = 'custom-select-item';
     item.textContent = opt.label;
     item.dataset.value = opt.value;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', String(opt.value === hidden.value));
     if (opt.disabled) item.classList.add('disabled');
     if (opt.value === hidden.value) item.classList.add('selected');
 
@@ -68,8 +75,10 @@ export function createCustomSelect(
     const prevValue = hidden.value;
     hidden.value = opt.value;
     trigger.textContent = opt.label;
-    items.forEach(el => el.classList.remove('selected'));
-    items[index].classList.add('selected');
+    items.forEach((el, itemIndex) => {
+      el.classList.toggle('selected', itemIndex === index);
+      el.setAttribute('aria-selected', String(itemIndex === index));
+    });
     if (prevValue !== opt.value) {
       hidden.dispatchEvent(new Event('input', { bubbles: true }));
       hidden.dispatchEvent(new Event('change', { bubbles: true }));
@@ -88,10 +97,19 @@ export function createCustomSelect(
     trigger.setAttribute('aria-expanded', 'true');
     wrapper.dataset.state = 'open';
     activeIndex = options.findIndex(o => o.value === hidden.value);
+    floatingCleanup?.();
+    floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
+      placement: 'bottom-start',
+      offsetPx: 6,
+      maxWidthPx: 360,
+      maxHeightPx: 320,
+    });
     updateActive();
   }
 
   function closeDropdown(): void {
+    floatingCleanup?.();
+    floatingCleanup = null;
     dropdown.classList.remove('visible');
     trigger.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
@@ -153,6 +171,9 @@ export function createCustomSelect(
   return {
     element: wrapper,
     getValue() { return hidden.value; },
-    destroy() { document.removeEventListener('mousedown', onOutsideClick); },
+    destroy() {
+      floatingCleanup?.();
+      document.removeEventListener('mousedown', onOutsideClick);
+    },
   };
 }

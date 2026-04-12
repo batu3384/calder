@@ -59,6 +59,7 @@ export interface CostInfo {
   totalDurationMs: number;
   totalApiDurationMs: number;
   model?: string;
+  source?: 'structured' | 'fallback';
 }
 
 export interface ContextWindowInfo {
@@ -96,7 +97,7 @@ export interface SessionRecord {
   pendingInitialPrompt?: string;
 }
 
-export type ProjectLayoutMode = 'tabs' | 'split' | 'swarm' | 'mosaic';
+export type ProjectLayoutMode = 'tabs' | 'mosaic';
 export type MosaicPreset = 'single' | 'columns-2' | 'rows-2' | 'focus-left' | 'focus-top' | 'grid-2x2';
 
 export interface ProjectLayoutState {
@@ -121,6 +122,7 @@ export interface ArchivedSession {
     totalInputTokens: number;
     totalOutputTokens: number;
     totalDurationMs: number;
+    source?: 'structured' | 'fallback';
   } | null;
 }
 
@@ -137,12 +139,106 @@ export interface ProjectInsightsData {
   dismissed: string[];
 }
 
+export type SurfaceKind = 'web' | 'cli';
+export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
+
+export interface WebSurfaceState {
+  sessionId?: string;
+  url?: string;
+  history?: string[];
+}
+
+export interface CliSurfaceProfile {
+  id: string;
+  name: string;
+  command: string;
+  args?: string[];
+  cwd?: string;
+  envPatch?: Record<string, string>;
+  cols?: number;
+  rows?: number;
+  startupReadyPattern?: string;
+  restartPolicy?: 'manual' | 'on-exit';
+}
+
+export interface CliSurfaceRuntimeState {
+  status: 'idle' | 'starting' | 'running' | 'stopped' | 'error';
+  runtimeId?: string;
+  selectedProfileId?: string;
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  cols?: number;
+  rows?: number;
+  lastExitCode?: number | null;
+  lastError?: string | null;
+}
+
+export type CliSurfaceDiscoveryConfidence = 'high' | 'medium' | 'low';
+
+export interface CliSurfaceDiscoveryCandidate {
+  id: string;
+  command: string;
+  args?: string[];
+  cwd?: string;
+  source: string;
+  reason: string;
+  confidence: CliSurfaceDiscoveryConfidence;
+}
+
+export interface CliSurfaceDiscoveryResult {
+  confidence: CliSurfaceDiscoveryConfidence;
+  candidates: CliSurfaceDiscoveryCandidate[];
+}
+
+export interface CliSurfaceState {
+  selectedProfileId?: string;
+  profiles: CliSurfaceProfile[];
+  runtime?: CliSurfaceRuntimeState;
+}
+
+export interface ProjectSurfaceRecord {
+  kind: SurfaceKind;
+  active: boolean;
+  targetSessionId?: string;
+  web?: WebSurfaceState;
+  cli?: CliSurfaceState;
+}
+
+export interface SurfaceSelectionRange {
+  mode: SurfaceSelectionMode;
+  startRow: number;
+  endRow: number;
+  startCol: number;
+  endCol: number;
+}
+
+export interface SurfacePromptPayload {
+  projectId: string;
+  projectPath: string;
+  surfaceKind: SurfaceKind;
+  selection: SurfaceSelectionRange;
+  selectedText: string;
+  nearbyText: string;
+  viewportText: string;
+  ansiSnapshot?: string;
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  cols?: number;
+  rows?: number;
+  title?: string;
+  inferredLabel?: string;
+  adapterMeta?: Record<string, unknown>;
+}
+
 export interface ProjectRecord {
   id: string;
   name: string;
   path: string;
   sessions: SessionRecord[];
   activeSessionId: string | null;
+  surface?: ProjectSurfaceRecord;
   layout: ProjectLayoutState;
   sessionHistory?: ArchivedSession[];
   insights?: ProjectInsightsData;
@@ -183,6 +279,7 @@ export interface SettingsValidationResult {
 
 export interface SettingsWarningData {
   sessionId: string;
+  providerId: ProviderId;
   statusLine: SettingsValidationResult['statusLine'];
   hooks: SettingsValidationResult['hooks'];
 }

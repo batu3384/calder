@@ -2,7 +2,6 @@ import { appState } from '../state.js';
 
 const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
-const toggleBtn = document.getElementById('btn-toggle-context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
 
 let inspectorOpen = true;
@@ -12,7 +11,6 @@ export function setContextInspectorOpen(next: boolean): void {
   mainAreaEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
-  toggleBtn.setAttribute('aria-pressed', next ? 'true' : 'false');
 }
 
 export function toggleContextInspector(): void {

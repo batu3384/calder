@@ -9,13 +9,14 @@ type ToolchainSection = {
   items: HTMLElement[];
   count: number;
   onAdd?: () => void;
+  emptyText?: string;
 };
 
 export function scopeBadge(scope: 'user' | 'project'): string {
   return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
 }
 
-function renderSection(id: string, title: string, items: HTMLElement[], count: number, onAdd?: () => void): HTMLElement {
+function renderSection(id: string, title: string, items: HTMLElement[], count: number, onAdd?: () => void, emptyText = 'None configured'): HTMLElement {
   const section = document.createElement('div');
   section.className = 'config-section';
 
@@ -24,13 +25,15 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
   const header = document.createElement('div');
   header.className = 'config-section-header';
 
-  const heading = document.createElement('div');
-  heading.className = 'config-section-heading';
-  heading.innerHTML = `
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'config-section-heading config-section-toggle-button';
+  button.setAttribute('aria-expanded', String(!isCollapsed));
+  button.innerHTML = `
     <span class="config-section-toggle ${isCollapsed ? 'collapsed' : ''}">&#x25BC;</span>
     <span class="config-section-title">${title}</span>
   `;
-  header.appendChild(heading);
+  header.appendChild(button);
 
   const meta = document.createElement('div');
   meta.className = 'config-section-meta';
@@ -42,9 +45,11 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
 
   if (onAdd) {
     const addBtn = document.createElement('button');
+    addBtn.type = 'button';
     addBtn.className = 'config-section-add-btn';
     addBtn.textContent = '+';
     addBtn.title = `Add ${title.replace(/s$/, '')}`;
+    addBtn.ariaLabel = `Add ${title.replace(/s$/, '')}`;
     addBtn.addEventListener('click', (e) => { e.stopPropagation(); onAdd(); });
     meta.appendChild(addBtn);
   }
@@ -56,16 +61,16 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
   if (items.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'config-empty';
-    empty.textContent = 'None configured';
+    empty.textContent = emptyText;
     body.appendChild(empty);
   } else {
     items.forEach(el => body.appendChild(el));
   }
 
-  header.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('.config-section-add-btn')) return;
+  button.addEventListener('click', () => {
     collapsed[id] = !collapsed[id];
-    const toggle = header.querySelector('.config-section-toggle')!;
+    button.setAttribute('aria-expanded', String(!collapsed[id]));
+    const toggle = button.querySelector('.config-section-toggle')!;
     toggle.classList.toggle('collapsed');
     body.classList.toggle('hidden');
   });
@@ -84,8 +89,11 @@ function openConfigFile(filePath: string): void {
 
 function mcpItem(server: McpServer): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable';
-  el.innerHTML = `<span class="config-item-name">${esc(server.name)}</span><span class="config-item-detail">${esc(server.status)}</span>${scopeBadge(server.scope)}`;
+  el.className = 'config-item config-item-clickable calder-list-row';
+  const detail = server.url
+    ? `${server.status} · ${server.url}`
+    : server.status;
+  el.innerHTML = `<span class="config-item-name">${esc(server.name)}</span><span class="config-item-detail" title="${esc(detail)}">${esc(detail)}</span>${scopeBadge(server.scope)}`;
 
   const removeBtn = document.createElement('button');
   removeBtn.className = 'config-item-remove-btn';
@@ -109,7 +117,7 @@ function mcpItem(server: McpServer): HTMLElement {
 
 function agentItem(agent: Agent): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable';
+  el.className = 'config-item config-item-clickable calder-list-row';
   el.innerHTML = `<span class="config-item-name">${esc(agent.name)}</span><span class="config-item-detail">${esc(agent.model)}</span>${scopeBadge(agent.scope)}`;
   el.addEventListener('click', () => openConfigFile(agent.filePath));
   return el;
@@ -117,7 +125,7 @@ function agentItem(agent: Agent): HTMLElement {
 
 function skillItem(skill: Skill): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable';
+  el.className = 'config-item config-item-clickable calder-list-row';
   el.innerHTML = `<span class="config-item-name">${esc(skill.name)}</span><span class="config-item-detail">${esc(skill.description)}</span>${scopeBadge(skill.scope)}`;
   el.addEventListener('click', () => openConfigFile(skill.filePath));
   return el;
@@ -125,7 +133,7 @@ function skillItem(skill: Skill): HTMLElement {
 
 function commandItem(cmd: Command): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable';
+  el.className = 'config-item config-item-clickable calder-list-row';
   el.innerHTML = `<span class="config-item-name">/${esc(cmd.name)}</span><span class="config-item-detail">${esc(cmd.description)}</span>${scopeBadge(cmd.scope)}`;
   el.addEventListener('click', () => openConfigFile(cmd.filePath));
   return el;
@@ -156,7 +164,7 @@ function renderToolchainSummary(providerId: ProviderId, sections: ToolchainSecti
   const provider = document.createElement('div');
   provider.className = 'toolchain-provider';
   provider.innerHTML = `
-    <span class="toolchain-provider-kicker">Active provider</span>
+    <span class="toolchain-provider-kicker">Config for</span>
     <span class="toolchain-provider-value">${esc(providerLabel(providerId))}</span>
   `;
   wrap.appendChild(provider);
@@ -168,7 +176,7 @@ function renderToolchainSummary(providerId: ProviderId, sections: ToolchainSecti
   if (visibleCounts.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'toolchain-summary-empty';
-    empty.textContent = 'No active toolchain items yet';
+    empty.textContent = 'No active config items yet';
     wrap.appendChild(empty);
     return wrap;
   }
@@ -222,7 +230,7 @@ async function refresh(): Promise<void> {
   // Only show loading indicator on first render (when container is empty)
   const isFirstLoad = container.children.length === 0;
   if (isFirstLoad) {
-    container.innerHTML = '<div class="config-loading">Loading...</div>';
+    container.innerHTML = '<div class="config-loading">Loading…</div>';
   }
 
   const providerId = getConfigProviderId();
@@ -238,10 +246,11 @@ async function refresh(): Promise<void> {
   const sections: ToolchainSection[] = [
     {
       id: 'mcp',
-      title: 'Integrations',
+      title: 'MCP Servers',
       items: config.mcpServers.map(mcpItem),
       count: config.mcpServers.length,
       onAdd: providerId === 'claude' ? () => showMcpAddModal(() => refresh()) : undefined,
+      emptyText: 'No MCP servers configured. Model Context Protocol servers connect coding tools to external data and actions.',
     },
     {
       id: 'agents',
@@ -251,7 +260,7 @@ async function refresh(): Promise<void> {
     },
     {
       id: 'skills',
-      title: 'Skills Library',
+      title: 'Skills',
       items: config.skills.map(skillItem),
       count: config.skills.length,
     },
@@ -276,6 +285,7 @@ async function refresh(): Promise<void> {
       section.items,
       section.count,
       section.onAdd,
+      section.emptyText,
     ));
   }
 }

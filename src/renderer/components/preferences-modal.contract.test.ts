@@ -14,6 +14,7 @@ describe('preferences modal contract', () => {
 
   it('uses shell language for layout controls', () => {
     expect(source).toContain('Control Center');
+    expect(source).toContain('System controls');
     expect(source).toContain('Layout');
     expect(source).toContain('Providers');
     expect(source).not.toContain('Control Surface');
@@ -30,12 +31,23 @@ describe('preferences modal contract', () => {
   });
 
   it('uses native modal and preferences shell hooks', () => {
-    expect(source).toContain('Preferences');
+    expect(source).toContain("titleEl.textContent = 'Control Center'");
     expect(source).toContain('Provider');
     expect(source).toContain('Tracking');
+    expect(source).not.toContain("titleEl.textContent = 'Preferences'");
     expect(styles).toContain('.preferences-shell');
     expect(styles).toContain('.preferences-section');
     expect(modalStyles).toContain('.modal-surface');
     expect(modalSource).toContain('restoreFocusAfterClose');
+  });
+
+  it('styles the control center like a control sheet instead of a pill-heavy settings page', () => {
+    expect(styles).toContain('.preferences-menu-item');
+    expect(styles).toContain('border-radius: 0;');
+    expect(styles).toContain('border-bottom: 1px solid transparent;');
+    expect(styles).toContain('.preferences-section-card');
+    expect(styles).toContain('border-top: 1px solid var(--border-subtle);');
+    expect(modalStyles).toContain('#modal, .modal-box');
+    expect(modalStyles).toContain('border-radius: 16px;');
   });
 });

@@ -9,6 +9,7 @@ import type { McpServerConfig } from './claude-cli';
 import { loadState, saveState, PersistedState } from './store';
 import { startWatching, cleanupSessionStatus } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession } from './codex-session-watcher';
+import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession } from './blackbox-session-watcher';
 import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, gitUnstageFile, gitDiscardFile, getGitRemoteUrl, listGitBranches, checkoutGitBranch, createGitBranch } from './git-status';
 import { startGitWatcher, notifyGitChanged } from './git-watcher';
 import { watchFile as watchFileForChanges, unwatchFile as unwatchFileForChanges, setFileWatcherWindow } from './file-watcher';
@@ -21,6 +22,10 @@ import type { ProviderId, GitFileEntry, SettingsValidationResult } from '../shar
 import { analyzeReadiness } from './readiness/analyzer';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
+import { discoverLocalBrowserTargets } from './local-dev-targets';
+import { isTrackingHealthy } from '../shared/tracking-health';
+import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
+import { discoverCliSurface } from './cli-surface-discovery';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -47,6 +52,8 @@ function isAllowedReadPath(resolvedPath: string): boolean {
     path.join(home, '.mcp.json'),
     path.join(home, '.claude') + path.sep,
     path.join(home, '.codex') + path.sep,
+    path.join(home, '.qwen') + path.sep,
+    path.join(home, '.blackboxcli') + path.sep,
   ];
 
   if (isMac) {
@@ -61,6 +68,12 @@ function isAllowedReadPath(resolvedPath: string): boolean {
 }
 
 let hookWatcherStarted = false;
+const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
+  data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
+  exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
+  status: (projectId, state) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
+  error: (projectId, message) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
+});
 
 export function resetHookWatcher(): void {
   hookWatcherStarted = false;
@@ -81,9 +94,10 @@ export function registerIpcHandlers(): void {
     const provider = getProvider(providerId);
     if (provider.meta.capabilities.hookStatus) {
       const validation = provider.validateSettings();
-      if (validation.statusLine !== 'calder' || validation.hooks !== 'complete') {
+      if (!isTrackingHealthy(provider.meta, validation)) {
         win.webContents.send('settings:warning', {
           sessionId,
+          providerId,
           statusLine: validation.statusLine,
           hooks: validation.hooks,
         });
@@ -94,6 +108,11 @@ export function registerIpcHandlers(): void {
     if (providerId === 'codex' && !cliSessionId) {
       startCodexSessionWatcher(win);
       registerPendingCodexSession(sessionId);
+    }
+
+    if (providerId === 'blackbox' && !cliSessionId) {
+      startBlackboxSessionWatcher(win);
+      registerPendingBlackboxSession(sessionId);
     }
 
     spawnPty(
@@ -113,6 +132,7 @@ export function registerIpcHandlers(): void {
       (exitCode, signal) => {
         cleanupSessionStatus(sessionId);
         unregisterCodexSession(sessionId);
+        unregisterBlackboxSession(sessionId);
         if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
@@ -154,6 +174,30 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('pty:kill', (_event, sessionId: string) => {
     killPty(sessionId);
+  });
+
+  ipcMain.handle('cli-surface:start', (_event, projectId: string, profile) => {
+    cliSurfaceRuntime.start(projectId, profile);
+  });
+
+  ipcMain.handle('cli-surface:discover', (_event, projectPath: string) => {
+    return discoverCliSurface(projectPath);
+  });
+
+  ipcMain.handle('cli-surface:stop', (_event, projectId: string) => {
+    cliSurfaceRuntime.stop(projectId);
+  });
+
+  ipcMain.handle('cli-surface:restart', (_event, projectId: string) => {
+    cliSurfaceRuntime.restart(projectId);
+  });
+
+  ipcMain.on('cli-surface:write', (_event, projectId: string, data: string) => {
+    cliSurfaceRuntime.write(projectId, data);
+  });
+
+  ipcMain.on('cli-surface:resize', (_event, projectId: string, cols: number, rows: number) => {
+    cliSurfaceRuntime.resize(projectId, cols, rows);
   });
 
   ipcMain.handle('fs:isDirectory', (_event, filePath: string) => {
@@ -316,6 +360,7 @@ export function registerIpcHandlers(): void {
     await fs.promises.writeFile(filePath, buffer);
     return filePath;
   });
+  ipcMain.handle('browser:listLocalTargets', async () => discoverLocalBrowserTargets());
   ipcMain.handle('app:openExternal', (_event, url: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
@@ -482,7 +527,8 @@ export function registerIpcHandlers(): void {
     try {
       const provider = getProvider(providerId);
       provider.reinstallSettings();
-      return { success: true };
+      const validation = provider.validateSettings();
+      return { success: isTrackingHealthy(provider.meta, validation) };
     } catch (err) {
       console.error('settings:reinstall failed:', err);
       return { success: false };

@@ -3,6 +3,12 @@ import DOMPurify from 'dompurify';
 import { appState } from '../state.js';
 import { destroySearchBar } from './search-bar.js';
 import { escapeHtml } from './dom-search-backend.js';
+import {
+  buildConfigDocModel,
+  getConfigDocumentKind,
+  isConfigDocumentPath,
+  type AgentDocModel,
+} from './file-reader-agent-doc.js';
 
 interface FileReaderInstance {
   element: HTMLElement;
@@ -12,6 +18,7 @@ interface FileReaderInstance {
   targetLine?: number;
   viewMode: 'raw' | 'rendered';
   rawContent?: string;
+  configDoc: AgentDocModel | null;
 }
 
 function isMarkdownFile(filePath: string): boolean {
@@ -46,11 +53,113 @@ function renderFileContent(content: string): HTMLElement {
   return wrapper;
 }
 
-function renderMarkdownContent(content: string): HTMLElement {
+function renderConfigDocSummary(configDoc: AgentDocModel): HTMLElement | null {
+  if (!configDoc.summary.name && !configDoc.summary.description && !configDoc.summary.model && configDoc.summary.tools.length === 0) {
+    return null;
+  }
+
+  const card = document.createElement('section');
+  card.className = 'file-reader-agent-card agent-doc-header';
+
+  if (configDoc.summary.name) {
+    const title = document.createElement('h1');
+    title.className = 'file-reader-agent-title';
+    title.textContent = configDoc.summary.name;
+    card.appendChild(title);
+  }
+
+  if (configDoc.summary.description) {
+    const description = document.createElement('p');
+    description.className = 'file-reader-agent-description';
+    description.textContent = configDoc.summary.description;
+    card.appendChild(description);
+  }
+
+  const meta = document.createElement('div');
+  meta.className = 'file-reader-agent-meta agent-doc-meta';
+
+  if (configDoc.summary.model) {
+    const model = document.createElement('span');
+    model.className = 'file-reader-agent-chip';
+    model.textContent = `Model: ${configDoc.summary.model}`;
+    meta.appendChild(model);
+  }
+
+  for (const tool of configDoc.summary.tools) {
+    const toolChip = document.createElement('span');
+    toolChip.className = 'file-reader-agent-chip secondary';
+    toolChip.textContent = tool;
+    meta.appendChild(toolChip);
+  }
+
+  if (meta.childElementCount > 0) {
+    card.appendChild(meta);
+  }
+
+  return card;
+}
+
+function applyConfigDocAnchors(container: HTMLElement, outline: AgentDocModel['outline']): void {
+  const headings = Array.from(container.querySelectorAll('h1, h2, h3'));
+  outline.forEach((item, index) => {
+    const heading = headings[index] as HTMLElement | undefined;
+    if (!heading) return;
+    heading.id = item.slug;
+    heading.dataset.level = String(item.level);
+  });
+}
+
+function renderConfigDocOutline(configDoc: AgentDocModel, markdownBody: HTMLElement): HTMLElement | null {
+  if (configDoc.outline.length === 0) return null;
+
+  const nav = document.createElement('nav');
+  nav.className = 'file-reader-doc-outline';
+  nav.setAttribute('aria-label', 'Document sections');
+
+  for (const item of configDoc.outline) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `file-reader-doc-outline-btn level-${item.level}`;
+    button.textContent = item.text;
+    button.addEventListener('click', () => {
+      const target = markdownBody.querySelector(`#${item.slug}`) as HTMLElement | null;
+      if (!target) return;
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+    nav.appendChild(button);
+  }
+
+  return nav;
+}
+
+function renderMarkdownContent(content: string, instance: FileReaderInstance): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'file-reader-content file-reader-markdown';
-  const rawHtml = marked.parse(content, { async: false }) as string;
-  wrapper.innerHTML = DOMPurify.sanitize(rawHtml);
+
+  const markdown = instance.configDoc?.content ?? content;
+  const rawHtml = marked.parse(markdown, { async: false }) as string;
+  const markdownBody = document.createElement('div');
+  markdownBody.className = 'file-reader-markdown-body agent-doc-body';
+  markdownBody.innerHTML = DOMPurify.sanitize(rawHtml);
+
+  if (!instance.configDoc) {
+    wrapper.appendChild(markdownBody);
+    return wrapper;
+  }
+
+  applyConfigDocAnchors(markdownBody, instance.configDoc.outline);
+
+  const shell = document.createElement('div');
+  shell.className = 'file-reader-doc-shell agent-doc-shell';
+
+  const summary = renderConfigDocSummary(instance.configDoc);
+  if (summary) shell.appendChild(summary);
+
+  const outline = renderConfigDocOutline(instance.configDoc, markdownBody);
+  if (outline) shell.appendChild(outline);
+
+  shell.appendChild(markdownBody);
+  wrapper.appendChild(shell);
   return wrapper;
 }
 
@@ -63,7 +172,7 @@ function renderBody(instance: FileReaderInstance): void {
   }
   body.innerHTML = '';
   if (instance.viewMode === 'rendered') {
-    body.appendChild(renderMarkdownContent(instance.rawContent!));
+    body.appendChild(renderMarkdownContent(instance.rawContent!, instance));
   } else {
     body.appendChild(renderFileContent(instance.rawContent!));
   }
@@ -92,6 +201,7 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
     const fullPath = resolveFilePath(instance);
     const content = await window.calder.fs.readFile(fullPath);
     instance.rawContent = content;
+    instance.configDoc = buildConfigDocModel(instance.filePath, content);
     body.innerHTML = '';
     renderBody(instance);
     instance.loaded = true;
@@ -139,7 +249,9 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
 
   const badge = document.createElement('span');
   badge.className = 'file-reader-badge';
-  badge.textContent = 'READ-ONLY';
+  const configDocKind = getConfigDocumentKind(filePath);
+  const isConfigDoc = isConfigDocumentPath(filePath);
+  badge.textContent = configDocKind ? `${configDocKind.toUpperCase()} DOC` : 'READ-ONLY';
 
   header.appendChild(pathSpan);
   header.appendChild(badge);
@@ -148,6 +260,7 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
   const instance: FileReaderInstance = {
     element: el, filePath, resolvedPath: null, loaded: false, targetLine,
     viewMode: isMd ? 'rendered' : 'raw',
+    configDoc: null,
   };
 
   if (isMd) {
@@ -156,8 +269,8 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
 
     const renderedBtn = document.createElement('button');
     renderedBtn.className = 'search-toggle-btn active';
-    renderedBtn.textContent = 'Rendered';
-    renderedBtn.title = 'Rendered Markdown';
+    renderedBtn.textContent = isConfigDoc ? 'Document' : 'Rendered';
+    renderedBtn.title = isConfigDoc ? 'Document View' : 'Rendered Markdown';
 
     const rawBtn = document.createElement('button');
     rawBtn.className = 'search-toggle-btn';

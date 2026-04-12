@@ -9,12 +9,23 @@ export function createAppMenu(debugMode = false): void {
       submenu: [
         { role: 'about' as const },
         { type: 'separator' as const },
+        {
+          label: 'Preferences…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => sendToRenderer('menu:preferences'),
+        },
+        { type: 'separator' as const },
         { role: 'quit' as const },
       ],
     }] : []),
     {
       label: 'File',
       submenu: [
+        ...(!isMac ? [{
+          label: 'Preferences…',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => sendToRenderer('menu:preferences'),
+        }, { type: 'separator' as const }] : []),
         {
           label: 'New Project',
           accelerator: 'CmdOrCtrl+Shift+P',
@@ -56,9 +67,22 @@ export function createAppMenu(debugMode = false): void {
       label: 'View',
       submenu: [
         {
+          label: 'Project Scratch Shell',
+          click: () => sendToRenderer('menu:project-terminal'),
+        },
+        {
           label: 'Usage Stats',
           accelerator: 'CmdOrCtrl+Shift+U',
           click: () => sendToRenderer('menu:usage-stats'),
+        },
+        {
+          label: 'New MCP Inspector',
+          click: () => sendToRenderer('menu:new-mcp-inspector'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Toggle Control Panel',
+          click: () => sendToRenderer('menu:toggle-context-panel'),
         },
         {
           label: 'Toggle Session Inspector',
@@ -94,6 +118,15 @@ export function createAppMenu(debugMode = false): void {
           visible: false,
           click: () => sendToRenderer('menu:goto-session', i),
         })),
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Session Indicators Help',
+          click: () => sendToRenderer('menu:session-indicators-help'),
+        },
       ],
     },
   ];

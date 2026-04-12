@@ -1,6 +1,7 @@
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { showStatusLineConflictModal } from './statusline-conflict-modal.js';
 import type { SettingsWarningData } from '../../shared/types';
+import { isTrackingHealthy } from '../../shared/tracking-health.js';
 
 let initialized = false;
 
@@ -22,30 +23,41 @@ export function initSettingsGuard(): void {
 
     let message: string;
     if (hasStatusLineIssue && hasHooksIssue) {
-      message = 'Calder integration is incomplete for the active coding tool. Cost tracking and session activity may not work.';
+      message = 'Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.';
     } else if (hasStatusLineIssue) {
       message = data.statusLine === 'foreign'
-        ? 'Another tool has overwritten Calder\'s status line integration. Cost tracking is unavailable.'
-        : 'Cost tracking is unavailable \u2014 Calder\'s status line integration is not configured for the active coding tool.';
+        ? 'Tracking is off for this coding tool because another status line command is installed. Calder cannot show cost or context usage.'
+        : 'Tracking is off for this coding tool. Calder cannot show cost or context usage until its status line is enabled.';
     } else {
-      message = 'Some session tracking hooks are missing from the active coding tool settings. Activity tracking may not work.';
+      message = 'Activity tracking is off for this coding tool because Calder\'s hooks are missing.';
     }
 
     showAlertBanner({
       icon: '\u26A0',
       message,
+      sessionId: data.sessionId,
       cta: {
-        label: 'Fix Settings',
+        label: 'Enable tracking',
         onClick: async (btn) => {
           btn.disabled = true;
-          btn.textContent = 'Fixing\u2026';
-          const result = await window.calder.settings.reinstall();
-          if (result.success) {
-            removeAlertBanner();
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'Fix Settings';
+          btn.textContent = 'Enabling\u2026';
+          try {
+            const providerId = data.providerId;
+            const metaPromise = window.calder.provider.getMeta(providerId);
+            const result = await window.calder.settings.reinstall(providerId);
+            const [meta, validation] = await Promise.all([
+              metaPromise,
+              window.calder.settings.validate(providerId),
+            ]);
+            if (result.success && isTrackingHealthy(meta, validation)) {
+              removeAlertBanner();
+              return;
+            }
+          } catch {
+            // Keep the banner visible and restore the CTA below.
           }
+          btn.disabled = false;
+          btn.textContent = 'Enable tracking';
         },
       },
     });

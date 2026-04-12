@@ -103,6 +103,38 @@ function setupGeminiWatchers(projectPath: string): void {
   for (const f of files) watchFile(f);
 }
 
+function setupQwenWatchers(projectPath: string): void {
+  const home = os.homedir();
+  const qwenDir = path.join(home, '.qwen');
+
+  const files = [
+    path.join(qwenDir, 'settings.json'),
+    path.join(projectPath, '.qwen', 'settings.json'),
+  ];
+  for (const f of files) watchFile(f);
+
+  const dirs = [
+    path.join(qwenDir, 'agents'),
+    path.join(qwenDir, 'skills'),
+    path.join(qwenDir, 'commands'),
+    path.join(projectPath, '.qwen', 'agents'),
+    path.join(projectPath, '.qwen', 'skills'),
+    path.join(projectPath, '.qwen', 'commands'),
+  ];
+  for (const d of dirs) watchDir(d);
+}
+
+function setupBlackboxWatchers(projectPath: string): void {
+  const home = os.homedir();
+  const blackboxDir = path.join(home, '.blackboxcli');
+
+  const files = [
+    path.join(blackboxDir, 'settings.json'),
+    path.join(projectPath, '.blackboxcli', 'settings.json'),
+  ];
+  for (const f of files) watchFile(f);
+}
+
 export function startConfigWatcher(win: BrowserWindow, projectPath: string, providerId: ProviderId = 'claude'): void {
   if (projectPath === currentProjectPath && providerId === currentProviderId) return;
   stopAll();
@@ -113,6 +145,10 @@ export function startConfigWatcher(win: BrowserWindow, projectPath: string, prov
     setupCodexWatchers(projectPath);
   } else if (providerId === 'gemini') {
     setupGeminiWatchers(projectPath);
+  } else if (providerId === 'qwen') {
+    setupQwenWatchers(projectPath);
+  } else if (providerId === 'blackbox') {
+    setupBlackboxWatchers(projectPath);
   } else {
     setupClaudeWatchers(projectPath);
   }

@@ -60,4 +60,20 @@ describe('getConfigProviderId', () => {
     expect(mod.scopeBadge('project')).toContain('control-chip');
     expect(mod.scopeBadge('user')).toContain('scope-badge');
   });
+
+  it('describes integrations as MCP servers instead of a vague integrations bucket', async () => {
+    const source = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+
+    expect(source).toContain("'MCP Servers'");
+    expect(source).toContain('Model Context Protocol');
+    expect(source).not.toContain("'Integrations'");
+  });
+
+  it('renders toolchain rows with the shared Calder list-row primitive', async () => {
+    const source = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+
+    expect(source).toContain("el.className = 'config-item config-item-clickable calder-list-row'");
+  });
 });

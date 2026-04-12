@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CliProviderMeta, ProviderId } from '../../shared/types.js';
 import {
+  resolveProviderForCheck,
   resolvePreferredProviderForLaunch,
   shouldRenderInlineProviderSelector,
 } from '../provider-availability.js';
@@ -43,6 +44,14 @@ describe('command deck provider selector helpers', () => {
 
   it('keeps the preferred provider when it is available', () => {
     expect(resolvePreferredProviderForLaunch('gemini', snapshot)).toBe('gemini');
+  });
+
+  it('prefers a failing check provider over unrelated available defaults', () => {
+    expect(resolveProviderForCheck('claude', ['gemini'], snapshot)).toBe('gemini');
+  });
+
+  it('keeps the preferred provider when it is one of the failing check providers', () => {
+    expect(resolveProviderForCheck('gemini', ['codex', 'gemini'], snapshot)).toBe('gemini');
   });
 
   it('shows the inline selector when multiple provider metas exist', () => {

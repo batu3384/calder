@@ -16,4 +16,4 @@ Calder is a **local desktop application**. It runs on the user's machine and doe
 
 - **Unsigned builds** — macOS builds are not code-signed or notarized. Users must bypass Gatekeeper with `xattr -cr` on first launch.
 - **Sandbox disabled** — Electron's sandbox is disabled (`sandbox: false`) because `node-pty` requires direct Node.js access from the main process. Context isolation is enabled.
-- **Temp directory usage** — Inter-process hook data is written to `/tmp/calder/`. This is planned to move to a user-scoped directory in a future release.
+- **User-scoped runtime usage** — Inter-process hook data is written to `~/.calder/runtime/`, which avoids temp-directory cleanup races and keeps Calder-managed helper scripts stable across app restarts.

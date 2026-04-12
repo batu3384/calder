@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR, getStatusLineScriptPath } from './hook-status';
+import { STATUS_DIR, getStatusLineScriptPath, installStatusLineScript } from './hook-status';
 import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hook-commands';
 import { readJsonSafe, readDirSafe } from './fs-utils';
 import type { McpServer, Agent, Skill, Command, ClaudeConfig, InspectorEventType } from '../shared/types';
@@ -366,6 +366,8 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
  * Install only the statusLine setting (exclusive — overwrites any existing value).
  */
 export function installStatusLine(): void {
+  installStatusLineScript();
+
   const settingsPath = path.join(homedir(), '.claude', 'settings.json');
   let settings: Record<string, unknown> = {};
   try {

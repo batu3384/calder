@@ -11,14 +11,14 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 10px 14px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     var(--surface-deck);
   border-bottom: 1px solid var(--border-subtle);
-  height: 50px;
-  min-height: 50px;
+  height: 54px;
+  min-height: 54px;
   user-select: none;
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.02),
@@ -61,6 +61,7 @@
 }
 
 .workspace-project-name {
+  font-family: var(--font-display);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 650;
@@ -74,8 +75,7 @@
   color: var(--text-muted);
   font-size: 10px;
   line-height: 1.2;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -84,7 +84,7 @@
 .tab-bar-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
   justify-content: flex-end;
 }
@@ -92,26 +92,27 @@
 .command-deck-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 #workspace-spend {
-  min-height: 36px;
-  padding: 0 11px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-muted) 64%, black);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .workspace-spend-label {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
 }
 
 .workspace-spend-value {
@@ -129,10 +130,10 @@
   overflow-x: auto;
   overflow-y: hidden;
   height: auto;
-  padding: 4px;
+  padding: 3px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   border-radius: calc(var(--radius-md) + 4px);
-  background: color-mix(in srgb, var(--surface-panel) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 74%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
@@ -157,7 +158,7 @@
   white-space: nowrap;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  background: transparent;
   position: relative;
   transition:
     background-color 0.15s ease,
@@ -167,7 +168,7 @@
 }
 
 .tab-item:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
   border-color: var(--border-subtle);
 }
 
@@ -177,7 +178,9 @@
     var(--tab-active);
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .tab-item.active .tab-name {
@@ -305,16 +308,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 10px;
+  padding: 0 9px;
   font-size: 11px;
   white-space: nowrap;
   user-select: none;
   flex-shrink: 0;
   cursor: pointer;
-  min-height: 36px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  min-height: 32px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-muted) 64%, black);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 #git-status:empty {
@@ -322,8 +326,8 @@
 }
 
 #git-status[data-state='dirty'] {
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-panel));
 }
 
 #git-status .git-branch {
@@ -353,7 +357,7 @@
 #tab-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   justify-content: flex-end;
 }
 
@@ -361,21 +365,121 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 36px;
-  padding: 2px;
-  border: 1px solid var(--border-subtle);
-  border-radius: calc(var(--radius-sm) + 2px);
-  background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  min-height: 32px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-muted) 64%, black);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
+#surface-mode-slot,
+#surface-profile-slot,
 #session-provider-slot {
   display: flex;
   align-items: center;
 }
 
+#surface-mode-slot[hidden],
+#surface-profile-slot[hidden],
 #session-provider-slot[hidden] {
   display: none;
+}
+
+.surface-mode-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 30px;
+  padding: 2px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
+}
+
+.surface-mode-button {
+  appearance: none;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.surface-mode-button:hover,
+.surface-mode-button:focus {
+  background: color-mix(in srgb, var(--surface-hover) 68%, transparent);
+  color: var(--text-primary);
+}
+
+.surface-mode-button.active {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 38%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    var(--tab-active);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.surface-profile-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-deck-cli-profile-select {
+  min-width: 156px;
+}
+
+.command-deck-cli-profile-select .custom-select-trigger {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 28px 0 10px;
+  border-radius: 10px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.command-deck-cli-profile-select .custom-select-trigger:hover,
+.command-deck-cli-profile-select .custom-select-trigger:focus {
+  border-color: transparent;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 64%, transparent);
+}
+
+.command-deck-cli-profile-select .custom-select-dropdown {
+  min-width: 100%;
+}
+
+.surface-profile-config {
+  appearance: none;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.surface-profile-config:hover,
+.surface-profile-config:focus {
+  background: color-mix(in srgb, var(--surface-hover) 64%, transparent);
+  color: var(--text-primary);
 }
 
 .command-deck-provider-select {
@@ -383,10 +487,10 @@
 }
 
 .command-deck-provider-select .custom-select-trigger {
-  min-height: 32px;
-  height: 32px;
-  padding: 0 28px 0 10px;
-  border-radius: var(--radius-sm);
+  min-height: 30px;
+  height: 30px;
+  padding: 0 26px 0 10px;
+  border-radius: 10px;
   border-color: transparent;
   background: transparent;
   color: var(--text-secondary);
@@ -438,8 +542,8 @@
 }
 
 .tab-action-primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 64%, rgba(255, 255, 255, 0.02)), var(--surface-panel));
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 42%, rgba(255, 255, 255, 0.02)), var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   color: var(--text-primary);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }

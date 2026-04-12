@@ -3,7 +3,7 @@ import { closeModal } from './modal.js';
 import { esc, scoreColor } from '../dom-utils.js';
 import { setPendingPrompt } from './terminal-pane.js';
 import { promptNewSession } from './tab-bar.js';
-import { loadProviderMetas, getCachedProviderMetas, getProviderAvailabilitySnapshot, getProviderDisplayName, resolvePreferredProviderForLaunch } from '../provider-availability.js';
+import { loadProviderMetas, getCachedProviderMetas, getProviderAvailabilitySnapshot, getProviderDisplayName, resolveProviderForCheck } from '../provider-availability.js';
 import type { ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus } from '../../shared/types.js';
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -29,8 +29,9 @@ function handleFix(check: ReadinessCheck): void {
   if (!check.fixPrompt) return;
   const project = appState.activeProject;
   if (!project) return;
-  const providerId = resolvePreferredProviderForLaunch(
+  const providerId = resolveProviderForCheck(
     appState.preferences.defaultProvider,
+    check.providerIds,
     getProviderAvailabilitySnapshot(),
   );
 
@@ -145,7 +146,7 @@ function renderCategory(category: ReadinessCategory): HTMLElement {
 }
 
 export async function showReadinessModal(result: ReadinessResult): Promise<void> {
-  titleEl.textContent = 'AI Readiness';
+  titleEl.textContent = 'AI Setup';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
 
@@ -160,7 +161,7 @@ export async function showReadinessModal(result: ReadinessResult): Promise<void>
     <div class="readiness-score-circle" style="border-color:${color}">
       <span class="readiness-score-value" style="color:${color}">${result.overallScore}%</span>
     </div>
-    <div class="readiness-score-label">Overall Score</div>
+    <div class="readiness-score-label">Setup Score</div>
     <div class="readiness-score-date">Scanned ${new Date(result.scannedAt).toLocaleString()}</div>
   `;
   container.appendChild(scoreSection);

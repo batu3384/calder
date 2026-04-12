@@ -4,6 +4,7 @@ export interface AlertBannerConfig {
   className?: string;
   icon: string;
   message: string;
+  sessionId?: string;
   cta?: { label: string; onClick: (btn: HTMLButtonElement) => void };
   onDismiss?: () => void;
 }
@@ -26,12 +27,12 @@ export function showAlertBanner(config: AlertBannerConfig): void {
   removeAlertBanner();
   attachSessionChangeCleanup();
 
-  const activeSession = appState.activeSession;
-  if (!activeSession) return;
+  const targetSessionId = config.sessionId ?? appState.activeSession?.id;
+  if (!targetSessionId) return;
 
-  const pane = document.querySelector(`.terminal-pane[data-session-id="${activeSession.id}"]`);
+  const pane = document.querySelector(`.terminal-pane[data-session-id="${targetSessionId}"]`);
   if (!pane) return;
-  bannerSessionId = activeSession.id;
+  bannerSessionId = targetSessionId;
 
   const banner = document.createElement('div');
   banner.className = `insight-alert${config.className ? ` ${config.className}` : ''}`;

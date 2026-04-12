@@ -16,13 +16,14 @@
 .control-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: var(--control-height-sm);
-  padding: 0 10px;
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 8px;
   border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-raised) 72%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-raised) 58%, transparent);
   color: var(--text-secondary);
+  box-shadow: none;
 }
 
 .control-chip:hover {
@@ -31,30 +32,31 @@
 }
 
 .control-chip[data-state='active'] {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--border-strong));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 56%, var(--surface-elevated)), var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border-strong));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 38%, var(--surface-elevated)), var(--surface-panel));
   color: var(--text-primary);
 }
 
 .sidebar-eyebrow {
   display: inline-flex;
   align-items: center;
-  min-height: 18px;
-  padding: 0 7px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
-  color: var(--accent);
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) 74%, var(--text-muted));
   font-size: 10px;
   line-height: 1;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .sidebar-brand-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 

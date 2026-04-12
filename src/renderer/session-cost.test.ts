@@ -33,6 +33,7 @@ describe('setCostData', () => {
       cacheCreationTokens: 50,
       totalDurationMs: 1000,
       totalApiDurationMs: 800,
+      source: 'structured',
     });
   });
 
@@ -48,6 +49,7 @@ describe('setCostData', () => {
       cacheCreationTokens: 0,
       totalDurationMs: 0,
       totalApiDurationMs: 0,
+      source: 'structured',
     });
   });
 
@@ -119,6 +121,7 @@ describe('parseCost', () => {
   it('extracts last dollar amount from text', () => {
     parseCost('s1', 'Total: $0.50 then $1.23');
     expect(getCost('s1')!.totalCostUsd).toBe(1.23);
+    expect(getCost('s1')!.source).toBe('fallback');
   });
 
   it('strips ANSI before parsing', () => {
@@ -133,6 +136,16 @@ describe('parseCost', () => {
     });
     parseCost('s1', '$0.01');
     expect(getCost('s1')!.totalCostUsd).toBe(5.0);
+  });
+
+  it('does not overwrite structured data even when token counts are missing', () => {
+    setCostData('s1', {
+      cost: { total_cost_usd: 5.0 },
+      context_window: {},
+    });
+    parseCost('s1', '$0.01');
+    expect(getCost('s1')!.totalCostUsd).toBe(5.0);
+    expect(getCost('s1')!.source).toBe('structured');
   });
 
   it('does nothing when no dollar amount found', () => {
@@ -172,6 +185,14 @@ describe('getAggregateCost', () => {
     expect(agg.totalInputTokens).toBe(300);
   });
 
+  it('excludes estimated fallback costs from the default aggregate', () => {
+    setCostData('s1', { cost: { total_cost_usd: 1.0 }, context_window: { total_input_tokens: 100 } });
+    parseCost('s2', '$2.00');
+
+    expect(getAggregateCost().totalCostUsd).toBe(1.0);
+    expect(getAggregateCost({ includeEstimated: true }).totalCostUsd).toBe(3.0);
+  });
+
   it('reflects removal', () => {
     setCostData('s1', { cost: { total_cost_usd: 1.0 }, context_window: {} });
     setCostData('s2', { cost: { total_cost_usd: 2.0 }, context_window: {} });
@@ -197,6 +218,7 @@ describe('restoreCost', () => {
       cacheCreationTokens: 20,
       totalDurationMs: 2000,
       totalApiDurationMs: 1500,
+      source: 'structured' as const,
     };
     restoreCost('s1', cost);
     expect(getCost('s1')).toEqual(cost);
@@ -207,7 +229,7 @@ describe('restoreCost', () => {
     onChange(cb);
     restoreCost('s1', {
       totalCostUsd: 1.0, totalInputTokens: 0, totalOutputTokens: 0,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0,
+      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
     });
     expect(cb).not.toHaveBeenCalled();
   });
@@ -215,11 +237,11 @@ describe('restoreCost', () => {
   it('contributes to aggregate cost', () => {
     restoreCost('s1', {
       totalCostUsd: 1.0, totalInputTokens: 100, totalOutputTokens: 50,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0,
+      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
     });
     restoreCost('s2', {
       totalCostUsd: 2.0, totalInputTokens: 200, totalOutputTokens: 100,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0,
+      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
     });
     const agg = getAggregateCost();
     expect(agg.totalCostUsd).toBe(3.0);

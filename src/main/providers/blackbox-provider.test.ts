@@ -18,12 +18,34 @@ vi.mock('../pty-manager', () => ({
   getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
 }));
 
+vi.mock('../blackbox-config', () => ({
+  getBlackboxConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
+  findBlackboxTranscriptPath: vi.fn(() => null),
+}));
+
+vi.mock('../config-watcher', () => ({
+  startConfigWatcher: vi.fn(),
+  stopConfigWatcher: vi.fn(),
+}));
+
+vi.mock('../blackbox-session-watcher', () => ({
+  stopBlackboxSessionWatcher: vi.fn(),
+}));
+
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { BlackboxProvider, _resetCachedPath } from './blackbox-provider';
+import { getBlackboxConfig, findBlackboxTranscriptPath } from '../blackbox-config';
+import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { stopBlackboxSessionWatcher } from '../blackbox-session-watcher';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockGetBlackboxConfig = vi.mocked(getBlackboxConfig);
+const mockFindBlackboxTranscriptPath = vi.mocked(findBlackboxTranscriptPath);
+const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
+const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
+const mockStopBlackboxSessionWatcher = vi.mocked(stopBlackboxSessionWatcher);
 
 let provider: BlackboxProvider;
 
@@ -40,13 +62,13 @@ describe('meta', () => {
     expect(provider.meta.binaryName).toBe('blackbox');
   });
 
-  it('uses startup prompts without claiming per-session resume or hook/status support', () => {
+  it('enables resume and config reading for session parity', () => {
     expect(provider.meta.capabilities).toEqual({
-      sessionResume: false,
+      sessionResume: true,
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: false,
+      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
       planModeArg: '--approval-mode=plan',
@@ -84,6 +106,8 @@ describe('validatePrerequisites', () => {
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Blackbox CLI not found');
+    expect(result.message).toContain('Calder can launch sessions with Blackbox CLI');
+    expect(result.message).not.toContain('Calder requires the Blackbox CLI');
     expect(result.message).toContain('https://blackbox.ai/install.sh');
   });
 });
@@ -98,9 +122,9 @@ describe('buildEnv', () => {
 });
 
 describe('buildArgs', () => {
-  it('does not attempt Calder per-session resume for Blackbox', () => {
+  it('resumes a known checkpoint-backed session', () => {
     const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '' });
-    expect(args).toEqual([]);
+    expect(args).toEqual(['--resume-checkpoint', 'session-sid-1']);
   });
 
   it('starts interactively with the initial prompt via -i', () => {
@@ -115,12 +139,43 @@ describe('buildArgs', () => {
 });
 
 describe('settings and config', () => {
-  it('returns inert settings validation because hooks are not installed by Calder', () => {
+  it('still reports no hook/status integration surface', () => {
     expect(provider.validateSettings()).toEqual({ statusLine: 'missing', hooks: 'missing', hookDetails: {} });
   });
 
-  it('returns an empty provider config', async () => {
-    await expect(provider.getConfig('/some/path')).resolves.toEqual({ mcpServers: [], agents: [], skills: [], commands: [] });
+  it('returns parsed provider config', async () => {
+    const config = {
+      mcpServers: [{ name: 'github', url: 'docker', status: 'configured', scope: 'user' as const, filePath: '/tmp/settings.json' }],
+      agents: [],
+      skills: [],
+      commands: [],
+    };
+    mockGetBlackboxConfig.mockResolvedValueOnce(config);
+    await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
+    expect(mockGetBlackboxConfig).toHaveBeenCalledWith('/some/path');
+  });
+
+  it('returns the best transcript path for archived handoff', () => {
+    mockFindBlackboxTranscriptPath.mockReturnValueOnce('/mock/home/.blackboxcli/tmp/project/checkpoint-session-sid-1.json');
+    expect(provider.getTranscriptPath('sid-1', '/project')).toBe('/mock/home/.blackboxcli/tmp/project/checkpoint-session-sid-1.json');
+    expect(mockFindBlackboxTranscriptPath).toHaveBeenCalledWith('sid-1', '/project');
   });
 });
 
+describe('watchers and cleanup', () => {
+  it('starts a blackbox config watcher', () => {
+    const win = { id: 1 } as any;
+    provider.startConfigWatcher(win, '/project');
+    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'blackbox');
+  });
+
+  it('cleanup stops config watching and the session watcher', () => {
+    provider.cleanup();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+    expect(mockStopBlackboxSessionWatcher).toHaveBeenCalled();
+  });
+
+  it('reinstallSettings remains a safe no-op', () => {
+    expect(() => provider.reinstallSettings()).not.toThrow();
+  });
+});

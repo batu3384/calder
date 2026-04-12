@@ -20,10 +20,16 @@ describe('workspace polish contract', () => {
     expect(splitLayoutSource).toContain('empty-state-primary-action');
     expect(splitLayoutSource).toContain('Start First Session');
     expect(splitLayoutSource).toContain('Create Project');
-    expect(splitLayoutSource).toContain('Start a session or open Live View');
-    expect(splitLayoutSource).toContain('Project surface is ready');
+    expect(splitLayoutSource).toContain('Open a project or start a live run');
+    expect(splitLayoutSource).toContain('Start a run or open Live View');
+    expect(splitLayoutSource).toContain('Browser context stays on the left.');
     expect(splitLayoutSource).toContain('promptNewProject');
     expect(baseCss).toContain('.empty-state-card');
     expect(baseCss).toContain('.empty-state-primary-action');
+    expect(baseCss).toContain('align-items: flex-start;');
+    expect(baseCss).toContain('justify-content: flex-start;');
+    expect(baseCss).toContain('border-top: 1px solid var(--border-subtle);');
+    expect(baseCss).toContain('background: transparent;');
+    expect(baseCss).toContain('--font-display:');
   });
 });

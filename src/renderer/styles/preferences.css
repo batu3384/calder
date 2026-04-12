@@ -69,6 +69,7 @@
 }
 
 .preferences-menu-title {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 670;
   color: var(--text-primary);
@@ -82,32 +83,32 @@
 }
 
 .preferences-menu-item {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 30px;
+  padding: 0 2px 8px;
   display: inline-flex;
   align-items: center;
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: 999px;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   margin-bottom: 0;
+  background: transparent;
   transition:
-    background-color 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .preferences-menu-item:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  color: var(--text-primary);
 }
 
 .preferences-menu-item.active {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 54%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-elevated) 90%, black);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+  border-bottom-color: color-mix(in srgb, var(--accent) 38%, var(--border-subtle));
+  transform: translateY(-1px);
 }
 
 .preferences-content {
@@ -127,6 +128,7 @@
 }
 
 .preferences-section-title {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 680;
   letter-spacing: -0.02em;
@@ -141,10 +143,11 @@
 }
 
 .preferences-section-card {
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-panel) 78%, transparent);
-  padding: 16px;
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 0 0;
   margin-bottom: 14px;
 }
 
@@ -177,6 +180,7 @@
 }
 
 .about-app-name {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 680;
   color: var(--text-primary);
@@ -196,11 +200,11 @@
 
 .about-update-btn {
   min-height: var(--control-height-md);
-  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 76%, transparent);
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
   padding: 0 14px;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;

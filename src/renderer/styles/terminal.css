@@ -187,7 +187,7 @@
 }
 
 .terminal-pane.focused {
-  border-color: var(--pane-focus);
+  border-color: color-mix(in srgb, var(--accent-line) 68%, var(--pane-focus));
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--accent-soft) 82%, transparent),
     0 20px 46px rgba(0, 0, 0, 0.2);
@@ -209,36 +209,37 @@
 .terminal-pane-provider {
   display: inline-flex;
   align-items: center;
-  min-height: 18px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 48%, transparent);
-  color: var(--text-primary);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.05em;
+  min-height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .terminal-pane-workspace {
+  font-family: var(--font-display);
   min-width: 0;
   flex: 1;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .terminal-pane-session {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .terminal-pane.focused .terminal-pane-chrome {

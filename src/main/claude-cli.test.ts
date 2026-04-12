@@ -362,8 +362,10 @@ describe('installHooks', () => {
     installHooks();
 
     expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), { recursive: true });
-    // installHooks calls installHooksOnly (write 1) + installStatusLine (write 2)
-    expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.calder', 'runtime'), { recursive: true, mode: 0o700 });
+    // installHooks writes settings once, then creates the statusline helper pair,
+    // then writes settings again with the managed command.
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(4);
 
     // First write contains hooks
     const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]));
@@ -373,11 +375,14 @@ describe('installHooks', () => {
     expect(written.hooks.PermissionRequest).toBeDefined();
     expect(written.hooks.SessionStart).toBeDefined();
 
-    // Second write adds statusLine
-    const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[1][1]));
+    expect(String(mockWriteFileSync.mock.calls[1][0])).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.py'));
+    expect(String(mockWriteFileSync.mock.calls[2][0])).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.sh'));
+
+    // Fourth write adds statusLine to Claude settings
+    const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[3][1]));
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
-    expect(withStatusLine.statusLine.command).toBe('/tmp/calder/statusline.sh');
+    expect(withStatusLine.statusLine.command).toBe('/mock/home/.calder/runtime/statusline.sh');
   });
 
   it('preserves existing non-calder hooks', () => {

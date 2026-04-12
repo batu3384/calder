@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import { isWin } from './platform';
 
-const STATUS_DIR = path.join('/tmp', 'calder');
+const STATUS_DIR = path.join('/mock/home', '.calder', 'runtime');
 const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');
 
 vi.mock('fs', () => ({
@@ -18,6 +18,7 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('os', () => ({
+  homedir: () => '/mock/home',
   tmpdir: () => '/tmp',
 }));
 
@@ -409,7 +410,7 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.lock'));
     });
 
-    it('closes watcher, removes matching files, script, and dir', () => {
+    it('closes watcher and removes transient runtime artifacts only', () => {
       const win = createMockWin();
       startWatching(win);
       vi.clearAllMocks();
@@ -418,6 +419,9 @@ describe('hook-status', () => {
         'a.status',
         'b.sessionid',
         'c.cost',
+        'status_writer.py',
+        'statusline.py',
+        isWin ? 'statusline.cmd' : 'statusline.sh',
         'other.log',
       ] as any);
 
@@ -427,11 +431,11 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'a.status'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'b.sessionid'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'c.cost'));
-      // statusline script removal
-      expect(fs.unlinkSync).toHaveBeenCalledWith(STATUSLINE_SCRIPT);
-      expect(fs.rmSync).toHaveBeenCalledWith(STATUS_DIR, { recursive: true });
-      // 'other.log' should not be unlinked (3 matching + 1 script = 4)
-      expect(fs.unlinkSync).toHaveBeenCalledTimes(4);
+      expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'status_writer.py'));
+      expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.py'));
+      expect(fs.unlinkSync).not.toHaveBeenCalledWith(STATUSLINE_SCRIPT);
+      expect(fs.rmSync).not.toHaveBeenCalled();
+      expect(fs.unlinkSync).toHaveBeenCalledTimes(3);
     });
 
     it('handles missing directory gracefully', () => {

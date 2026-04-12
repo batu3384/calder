@@ -126,7 +126,7 @@ export function validateBinaryExists(
     ok: false,
     message:
       `${displayName} not found.\n\n` +
-      `Calder requires the ${displayName} to be installed.\n\n` +
+      `Calder can launch sessions with ${displayName} after it is installed.\n\n` +
       `Install it with:\n` +
       `  ${installCommand}\n\n` +
       `After installing, restart Calder.`,

@@ -1,4 +1,4 @@
-export type StatuslineProvider = 'anthropic' | 'zai';
+export type StatuslineProvider = 'anthropic' | 'zai' | 'qwen';
 export type ProviderQuotaStatus = 'syncing' | 'unknown' | 'unsupported';
 export type QuotaFreshness = 'live' | 'syncing' | 'stale';
 
@@ -30,15 +30,19 @@ export const DEFAULT_STATUSLINE_STALE_MS = 5 * 60_000;
 const PROVIDER_LABELS: Record<StatuslineProvider, string> = {
   anthropic: 'Anthropic',
   zai: 'Z.ai',
+  qwen: 'Qwen',
 };
 
 export function inferStatuslineProvider(modelDisplayName: string): StatuslineProvider {
   const normalized = modelDisplayName.trim().toLowerCase();
-  return normalized.startsWith('glm-') ? 'zai' : 'anthropic';
+  if (normalized.startsWith('glm-')) return 'zai';
+  if (normalized.startsWith('qwen')) return 'qwen';
+  return 'anthropic';
 }
 
 export function fallbackQuotaStatus(provider: StatuslineProvider): ProviderQuotaStatus {
-  return provider === 'anthropic' ? 'unsupported' : 'syncing';
+  if (provider === 'zai') return 'syncing';
+  return 'unsupported';
 }
 
 export function getProviderQuotaCacheFile(provider: StatuslineProvider): string {

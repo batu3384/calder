@@ -1,5 +1,6 @@
 @import url('./styles/base.css');
 @import url('./styles/cockpit.css');
+@import url('./styles/primitives.css');
 @import url('./styles/sidebar.css');
 @import url('./styles/context-inspector.css');
 @import url('./styles/tabs.css');
@@ -18,3 +19,4 @@
 @import url('./styles/p2p-sharing.css');
 @import url('./styles/session-inspector.css');
 @import url('./styles/browser-tab.css');
+@import url('./styles/cli-surface.css');

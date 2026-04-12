@@ -1,32 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockResolveBrowserTargetSession = vi.fn();
-const mockSetActiveSession = vi.fn();
-const mockDeliverPromptToTerminalSession = vi.fn();
+const mockDeliverSurfacePrompt = vi.fn();
+const mockQueueSurfacePromptInNewSession = vi.fn();
+const mockQueueSurfacePromptInCustomSession = vi.fn();
 const mockDismissInspect = vi.fn();
 const mockDismissFlow = vi.fn();
 
 vi.mock('../../state.js', () => ({
   appState: {
     activeProject: { id: 'project-1' },
-    preferences: {},
     resolveBrowserTargetSession: mockResolveBrowserTargetSession,
-    setActiveSession: mockSetActiveSession,
   },
 }));
 
-vi.mock('../../provider-availability.js', () => ({
-  getProviderAvailabilitySnapshot: vi.fn(() => null),
-  resolvePreferredProviderForLaunch: vi.fn(() => 'claude'),
-}));
-
-vi.mock('../tab-bar.js', () => ({
-  promptNewSession: vi.fn(),
-}));
-
-vi.mock('../terminal-pane.js', () => ({
-  deliverPromptToTerminalSession: mockDeliverPromptToTerminalSession,
-  setPendingPrompt: vi.fn(),
+vi.mock('../surface-routing.js', () => ({
+  deliverSurfacePrompt: mockDeliverSurfacePrompt,
+  queueSurfacePromptInNewSession: mockQueueSurfacePromptInNewSession,
+  queueSurfacePromptInCustomSession: mockQueueSurfacePromptInCustomSession,
 }));
 
 vi.mock('./inspect-mode.js', () => ({
@@ -63,10 +54,23 @@ describe('browser session integration errors', () => {
     vi.clearAllMocks();
   });
 
+  it('delivers inspect prompts to the selected session and focuses that session on success', async () => {
+    const { sendToSelectedSession } = await import('./session-integration.js');
+    const instance = makeInstance();
+    mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-1' });
+
+    await sendToSelectedSession(instance);
+
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', 'inspect prompt');
+    expect(mockDismissInspect).toHaveBeenCalledTimes(1);
+    expect(instance.inspectErrorEl.textContent).toBe('');
+    expect(instance.inspectErrorEl.style.display).toBe('none');
+  });
+
   it('shows an inspect error when no target session is selected', async () => {
     const { sendToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockResolveBrowserTargetSession.mockReturnValue(undefined);
+    mockDeliverSurfacePrompt.mockResolvedValue({ ok: false, error: 'Select an open session target first.' });
 
     await sendToSelectedSession(instance);
 
@@ -78,14 +82,25 @@ describe('browser session integration errors', () => {
   it('shows a flow error when delivery to the selected session fails', async () => {
     const { sendFlowToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-1', name: 'Session 1' });
-    mockDeliverPromptToTerminalSession.mockResolvedValue(false);
+    mockDeliverSurfacePrompt.mockResolvedValue({ ok: false, error: 'Failed to deliver prompt to the selected session.' });
 
     await sendFlowToSelectedSession(instance);
 
     expect(instance.flowErrorEl.textContent).toBe('Failed to deliver prompt to the selected session.');
     expect(instance.flowErrorEl.style.display).toBe('block');
     expect(mockDismissFlow).not.toHaveBeenCalled();
-    expect(mockSetActiveSession).not.toHaveBeenCalled();
+  });
+
+  it('delivers flow prompts to the selected session and focuses that session on success', async () => {
+    const { sendFlowToSelectedSession } = await import('./session-integration.js');
+    const instance = makeInstance();
+    mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-2' });
+
+    await sendFlowToSelectedSession(instance);
+
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', 'flow prompt');
+    expect(mockDismissFlow).toHaveBeenCalledTimes(1);
+    expect(instance.flowErrorEl.textContent).toBe('');
+    expect(instance.flowErrorEl.style.display).toBe('none');
   });
 });

@@ -1,17 +1,8 @@
 import { appState } from '../../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
-import { promptNewSession } from '../tab-bar.js';
-import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
+import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
 import type { BrowserTabInstance } from './types.js';
 import { buildPrompt, dismissInspect } from './inspect-mode.js';
 import { buildFlowPrompt, dismissFlow } from './flow-recording.js';
-
-function getPreferredLaunchProvider() {
-  return resolvePreferredProviderForLaunch(
-    appState.preferences.defaultProvider,
-    getProviderAvailabilitySnapshot(),
-  );
-}
 
 function hideSendError(errorEl: { textContent: string; style: { display: string } }): void {
   errorEl.textContent = '';
@@ -32,21 +23,14 @@ async function sendPromptToSelectedSession(
   const project = appState.activeProject;
   if (!project) return false;
 
-  const targetSession = appState.resolveBrowserTargetSession(instance.sessionId);
-  if (!targetSession) {
-    showSendError(errorEl, 'Select an open session target first.');
-    return false;
-  }
-
-  const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
-  if (!delivered) {
-    showSendError(errorEl, 'Failed to deliver prompt to the selected session.');
+  const result = await deliverSurfacePrompt(project.id, prompt);
+  if (!result.ok) {
+    showSendError(errorEl, result.error ?? 'Failed to deliver prompt.');
     return false;
   }
 
   hideSendError(errorEl);
   onDelivered();
-  appState.setActiveSession(project.id, targetSession.id);
   return true;
 }
 
@@ -64,14 +48,11 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
   const project = appState.activeProject;
   if (!project) return;
 
-  const newSession = appState.addPlanSession(
+  queueSurfacePromptInNewSession(
     project.id,
     `Flow: ${instruction.slice(0, 30)}`,
-    getPreferredLaunchProvider(),
+    prompt,
   );
-  if (newSession) {
-    setPendingPrompt(newSession.id, prompt);
-  }
   dismissFlow(instance);
 }
 
@@ -79,8 +60,7 @@ export function sendFlowToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildFlowPrompt(instance);
   if (!prompt) return;
 
-  promptNewSession((session) => {
-    setPendingPrompt(session.id, prompt);
+  queueSurfacePromptInCustomSession(prompt, () => {
     dismissFlow(instance);
   });
 }
@@ -101,11 +81,11 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
   const project = appState.activeProject;
   if (!project) return;
 
-  const sessionName = `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`;
-  const newSession = appState.addPlanSession(project.id, sessionName, getPreferredLaunchProvider());
-  if (newSession) {
-    setPendingPrompt(newSession.id, prompt);
-  }
+  queueSurfacePromptInNewSession(
+    project.id,
+    `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`,
+    prompt,
+  );
   dismissInspect(instance);
 }
 
@@ -113,8 +93,7 @@ export function sendToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildPrompt(instance);
   if (!prompt) return;
 
-  promptNewSession((session) => {
-    setPendingPrompt(session.id, prompt);
+  queueSurfacePromptInCustomSession(prompt, () => {
     dismissInspect(instance);
   });
 }

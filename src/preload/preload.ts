@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig } from '../shared/types';
+import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -84,6 +84,19 @@ export interface CalderApi {
   };
   browser: {
     saveScreenshot(sessionId: string, dataUrl: string): Promise<string>;
+    listLocalTargets(): Promise<Array<{ url: string; label: string; meta: string }>>;
+  };
+  cliSurface: {
+    discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
+    start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
+    stop(projectId: string): Promise<void>;
+    restart(projectId: string): Promise<void>;
+    write(projectId: string, data: string): void;
+    resize(projectId: string, cols: number, rows: number): void;
+    onData(callback: (projectId: string, data: string) => void): () => void;
+    onExit(callback: (projectId: string, exitCode: number, signal?: number) => void): () => void;
+    onStatus(callback: (projectId: string, state: CliSurfaceRuntimeState) => void): () => void;
+    onError(callback: (projectId: string, message: string) => void): () => void;
   };
   mcp: {
     connect(id: string, url: string): Promise<{ success: boolean; data?: unknown; error?: string }>;
@@ -111,6 +124,7 @@ export interface CalderApi {
     validate(providerId?: ProviderId): Promise<SettingsValidationResult>;
   };
   menu: {
+    onPreferences(callback: () => void): () => void;
     onNewProject(callback: () => void): () => void;
     onNewSession(callback: () => void): () => void;
     onNextSession(callback: () => void): () => void;
@@ -118,7 +132,11 @@ export interface CalderApi {
     onGotoSession(callback: (index: number) => void): () => void;
     onToggleDebug(callback: () => void): () => void;
     onUsageStats(callback: () => void): () => void;
+    onProjectTerminal(callback: () => void): () => void;
+    onNewMcpInspector(callback: () => void): () => void;
+    onSessionIndicatorsHelp(callback: () => void): () => void;
     onToggleInspector(callback: () => void): () => void;
+    onToggleContextPanel(callback: () => void): () => void;
     onCloseSession(callback: () => void): () => void;
     rebuild(debugMode: boolean): Promise<void>;
   };
@@ -232,6 +250,33 @@ const api: CalderApi = {
   browser: {
     saveScreenshot: (sessionId: string, dataUrl: string) =>
       ipcRenderer.invoke('browser:saveScreenshot', sessionId, dataUrl),
+    listLocalTargets: () => ipcRenderer.invoke('browser:listLocalTargets'),
+  },
+  cliSurface: {
+    discover: (projectPath: string) =>
+      ipcRenderer.invoke('cli-surface:discover', projectPath),
+    start: (projectId: string, profile: CliSurfaceProfile) =>
+      ipcRenderer.invoke('cli-surface:start', projectId, profile),
+    stop: (projectId: string) =>
+      ipcRenderer.invoke('cli-surface:stop', projectId),
+    restart: (projectId: string) =>
+      ipcRenderer.invoke('cli-surface:restart', projectId),
+    write: (projectId: string, data: string) =>
+      ipcRenderer.send('cli-surface:write', projectId, data),
+    resize: (projectId: string, cols: number, rows: number) =>
+      ipcRenderer.send('cli-surface:resize', projectId, cols, rows),
+    onData: (callback) =>
+      onChannel('cli-surface:data', (projectId, data) =>
+        callback(projectId as string, data as string)),
+    onExit: (callback) =>
+      onChannel('cli-surface:exit', (projectId, exitCode, signal) =>
+        callback(projectId as string, exitCode as number, signal as number | undefined)),
+    onStatus: (callback) =>
+      onChannel('cli-surface:status', (projectId, state) =>
+        callback(projectId as string, state as CliSurfaceRuntimeState)),
+    onError: (callback) =>
+      onChannel('cli-surface:error', (projectId, message) =>
+        callback(projectId as string, message as string)),
   },
   mcp: {
     connect: (id: string, url: string) => ipcRenderer.invoke('mcp:connect', id, url),
@@ -259,6 +304,7 @@ const api: CalderApi = {
     validate: (providerId) => ipcRenderer.invoke('settings:validate', providerId || 'claude'),
   },
   menu: {
+    onPreferences: (cb) => onChannel('menu:preferences', cb),
     onNewProject: (cb) => onChannel('menu:new-project', cb),
     onNewSession: (cb) => onChannel('menu:new-session', cb),
     onNextSession: (cb) => onChannel('menu:next-session', cb),
@@ -266,7 +312,11 @@ const api: CalderApi = {
     onGotoSession: (cb) => onChannel('menu:goto-session', (index) => cb(index as number)),
     onToggleDebug: (cb) => onChannel('menu:toggle-debug', cb),
     onUsageStats: (cb) => onChannel('menu:usage-stats', cb),
+    onProjectTerminal: (cb) => onChannel('menu:project-terminal', cb),
+    onNewMcpInspector: (cb) => onChannel('menu:new-mcp-inspector', cb),
+    onSessionIndicatorsHelp: (cb) => onChannel('menu:session-indicators-help', cb),
     onToggleInspector: (cb) => onChannel('menu:toggle-inspector', cb),
+    onToggleContextPanel: (cb) => onChannel('menu:toggle-context-panel', cb),
     onCloseSession: (cb) => onChannel('menu:close-session', cb),
     rebuild: (debugMode) => ipcRenderer.invoke('menu:rebuild', debugMode),
   },

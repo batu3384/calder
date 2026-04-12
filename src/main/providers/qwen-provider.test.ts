@@ -18,12 +18,45 @@ vi.mock('../pty-manager', () => ({
   getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
 }));
 
+vi.mock('../qwen-config', () => ({
+  getQwenConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
+  findQwenTranscriptPath: vi.fn(() => null),
+}));
+
+vi.mock('../qwen-hooks', () => ({
+  installQwenHooks: vi.fn(),
+  validateQwenHooks: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
+  cleanupQwenHooks: vi.fn(),
+  SESSION_ID_VAR: 'CALDER_SESSION_ID',
+}));
+
+vi.mock('../config-watcher', () => ({
+  startConfigWatcher: vi.fn(),
+  stopConfigWatcher: vi.fn(),
+}));
+
+vi.mock('../hook-status', () => ({
+  installStatusLineScript: vi.fn(),
+}));
+
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { QwenProvider, _resetCachedPath } from './qwen-provider';
+import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
+import { installQwenHooks, validateQwenHooks, cleanupQwenHooks } from '../qwen-hooks';
+import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { installStatusLineScript } from '../hook-status';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockGetQwenConfig = vi.mocked(getQwenConfig);
+const mockFindQwenTranscriptPath = vi.mocked(findQwenTranscriptPath);
+const mockInstallQwenHooks = vi.mocked(installQwenHooks);
+const mockValidateQwenHooks = vi.mocked(validateQwenHooks);
+const mockCleanupQwenHooks = vi.mocked(cleanupQwenHooks);
+const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
+const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
+const mockInstallStatusLineScript = vi.mocked(installStatusLineScript);
 
 let provider: QwenProvider;
 
@@ -40,13 +73,13 @@ describe('meta', () => {
     expect(provider.meta.binaryName).toBe('qwen');
   });
 
-  it('uses startup prompts without enabling unimplemented hook/status features', () => {
+  it('enables session resume, hooks, and config reading parity', () => {
     expect(provider.meta.capabilities).toEqual({
       sessionResume: true,
       costTracking: false,
       contextWindow: false,
-      hookStatus: false,
-      configReading: false,
+      hookStatus: true,
+      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
       planModeArg: '--approval-mode=plan',
@@ -102,6 +135,7 @@ describe('buildEnv', () => {
   it('sets PATH to the augmented PATH and preserves existing env vars', () => {
     const env = provider.buildEnv('sess-123', { OTHER: 'val' });
     expect(env.PATH).toBe(isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin');
+    expect(env.CALDER_SESSION_ID).toBe('sess-123');
     expect(env.OTHER).toBe('val');
   });
 });
@@ -128,13 +162,65 @@ describe('buildArgs', () => {
   });
 });
 
-describe('settings and config', () => {
-  it('returns inert settings validation because hooks are not installed by Calder yet', () => {
-    expect(provider.validateSettings()).toEqual({ statusLine: 'missing', hooks: 'missing', hookDetails: {} });
+describe('hooks and config integration', () => {
+  it('installs hooks via the Qwen hook manager', async () => {
+    await provider.installHooks();
+    expect(mockInstallQwenHooks).toHaveBeenCalled();
   });
 
-  it('returns an empty provider config', async () => {
-    await expect(provider.getConfig('/some/path')).resolves.toEqual({ mcpServers: [], agents: [], skills: [], commands: [] });
+  it('installs the managed status line runtime assets', () => {
+    provider.installStatusScripts();
+    expect(mockInstallStatusLineScript).toHaveBeenCalled();
+  });
+
+  it('delegates settings validation to the Qwen hook validator', () => {
+    const result = provider.validateSettings();
+    expect(mockValidateQwenHooks).toHaveBeenCalled();
+    expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
+  });
+
+  it('reinstalls hooks and statusline assets together', () => {
+    provider.reinstallSettings();
+    expect(mockInstallQwenHooks).toHaveBeenCalled();
+    expect(mockInstallStatusLineScript).toHaveBeenCalled();
+  });
+
+  it('cleanup stops config watching and removes managed hooks', () => {
+    provider.cleanup();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+    expect(mockCleanupQwenHooks).toHaveBeenCalled();
+  });
+
+  it('starts a qwen config watcher', () => {
+    const win = { id: 1 } as any;
+    provider.startConfigWatcher(win, '/project');
+    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'qwen');
+  });
+});
+
+describe('provider config and transcripts', () => {
+  it('returns parsed provider config', async () => {
+    const config = {
+      mcpServers: [{ name: 'test', url: 'http://localhost:3000', status: 'configured', scope: 'user' as const, filePath: '/tmp/settings.json' }],
+      agents: [],
+      skills: [],
+      commands: [],
+    };
+    mockGetQwenConfig.mockResolvedValueOnce(config);
+    await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
+    expect(mockGetQwenConfig).toHaveBeenCalledWith('/some/path');
+  });
+
+  it('returns the discovered transcript path for archived handoff', () => {
+    mockFindQwenTranscriptPath.mockReturnValueOnce('/mock/home/.qwen/projects/demo/chats/sid-1.jsonl');
+    expect(provider.getTranscriptPath('sid-1', '/project')).toBe('/mock/home/.qwen/projects/demo/chats/sid-1.jsonl');
+    expect(mockFindQwenTranscriptPath).toHaveBeenCalledWith('sid-1', '/project');
+  });
+});
+
+describe('getShiftEnterSequence', () => {
+  it('returns null', () => {
+    expect(provider.getShiftEnterSequence()).toBeNull();
   });
 });
 

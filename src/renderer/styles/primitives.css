@@ -1,0 +1,71 @@
+.calder-button,
+.calder-icon-button {
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  color: var(--text-secondary);
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.calder-button:hover,
+.calder-icon-button:hover {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  color: var(--text-primary);
+}
+
+.calder-button {
+  min-height: var(--control-height-md);
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.calder-icon-button {
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+  border-radius: var(--radius-sm);
+  display: inline-grid;
+  place-items: center;
+}
+
+.calder-list-row {
+  display: grid;
+  gap: var(--space-4);
+  min-height: 34px;
+  padding: var(--space-8) var(--space-10);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+}
+
+.calder-list-row:hover {
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+  color: var(--text-primary);
+}
+
+.calder-section-heading {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.calder-popover {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    var(--surface-glass);
+  box-shadow: var(--shadow-elevated);
+  backdrop-filter: blur(18px);
+}
+
+.calder-focus-ring:focus-visible {
+  outline: 1px solid var(--border-focus);
+  outline-offset: 2px;
+}

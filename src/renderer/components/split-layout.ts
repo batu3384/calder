@@ -55,6 +55,8 @@ import {
   attachBrowserTabToContainer,
   getBrowserTabInstance,
 } from './browser-tab-pane.js';
+import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
+import { renderSurfaceHost } from './surface-host.js';
 import { quickNewSession } from './tab-bar.js';
 import { promptNewProject } from './sidebar.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
@@ -388,6 +390,7 @@ export function renderLayout(): void {
     hideAllFileReaderPanes();
     hideAllRemotePanes();
     hideAllBrowserTabPanes();
+    hideAllCliSurfacePanes();
     setContainerClass('');
     showEmptyState(project);
     return;
@@ -433,6 +436,7 @@ export function renderLayout(): void {
   hideAllFileReaderPanes();
   hideAllRemotePanes();
   hideAllBrowserTabPanes();
+  hideAllCliSurfacePanes();
 
   const activeSession = project.activeSessionId
     ? project.sessions.find((session) => session.id === project.activeSessionId)
@@ -552,7 +556,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   const visibleSessions = getVisibleSwarmSessions(project);
   const visiblePaneIds = visibleSessions.map((session) => session.id);
   const browserSession = getSwarmBrowserSession(project);
-  const hasBrowserColumn = !!browserSession;
+  const hasBrowserColumn = Boolean(project.surface?.active || browserSession);
   const count = visiblePaneIds.length;
   const resolvedPreset = resolveMosaicPreset(count, project.layout.mosaicPreset);
   const hasInspector = isInspectorOpen();
@@ -565,11 +569,11 @@ function renderSwarmMode(project: ProjectRecord): void {
   container.style.gridTemplateColumns = colParts.join(' ');
   container.style.gridTemplateRows = '1fr';
 
-  if (browserSession) {
+  if (hasBrowserColumn) {
     const browserWrapper = document.createElement('div');
     browserWrapper.className = 'swarm-browser-column mosaic-browser-column';
     container.appendChild(browserWrapper);
-    attachNonCliPane(browserSession, browserWrapper, true);
+    renderSurfaceHost(project, browserWrapper);
   }
 
   const canvas = document.createElement('div');
@@ -799,17 +803,17 @@ function showEmptyState(project: ProjectRecord | undefined): void {
   primary.className = 'empty-state-primary-action';
 
   if (!project) {
-    eyebrow.textContent = 'Ready';
-    title.textContent = 'Start a session or open Live View';
-    copy.textContent = 'Choose a coding tool, open a browser target, or continue recent work from the current project.';
-    detail.textContent = 'This area keeps your live product surface and AI work side by side.';
+    eyebrow.textContent = 'Launchpad';
+    title.textContent = 'Open a project or start a live run';
+    copy.textContent = 'Pick a coding tool, open Live View, or resume recent sessions from one desk.';
+    detail.textContent = 'Browser context stays on the left. Sessions and project signals stack on the right.';
     primary.textContent = 'Create Project';
     primary.addEventListener('click', () => promptNewProject());
   } else {
-    eyebrow.textContent = 'Live';
-    title.textContent = 'Project surface is ready';
-    copy.textContent = 'Launch a coding session, open Live View, or continue recent work from this project.';
-    detail.textContent = `${project.path} · Browser context and active sessions stay connected here.`;
+    eyebrow.textContent = 'Project ready';
+    title.textContent = 'Start a run or open Live View';
+    copy.textContent = 'Bring up a coding tool, inspect a page, or continue recent work from this project.';
+    detail.textContent = `${project.path} · Live View stays pinned while sessions share the same project context.`;
     primary.textContent = 'Start First Session';
     primary.addEventListener('click', () => quickNewSession());
   }

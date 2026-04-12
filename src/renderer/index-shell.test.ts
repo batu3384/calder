@@ -18,7 +18,8 @@ describe('index shell contract', () => {
     expect(html).toContain('id="workspace-stack"');
     expect(html).toContain('id="workspace-identity"');
     expect(html).toContain('id="context-inspector"');
-    expect(html).toContain('id="btn-toggle-context-inspector"');
+    expect(html).not.toContain('id="btn-toggle-context-inspector"');
+    expect(html).not.toContain('&#9776;');
     expect(html).toContain('id="context-inspector-sections"');
     expect(html).toContain('class="command-deck-status"');
     expect(html).toContain('id="workspace-spend"');

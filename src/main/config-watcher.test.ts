@@ -202,4 +202,35 @@ describe('config-watcher', () => {
     expect(fs.watch).toHaveBeenCalledTimes(4);
     expect(watchFileCallbacks.has('/home/testuser/.codex/config.toml')).toBe(true);
   });
+
+  it('watches qwen settings and extension directories for a project', () => {
+    const win = createMockWin();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+    startConfigWatcher(win, '/projects/test', 'qwen');
+
+    expect(fs.watchFile).toHaveBeenCalledTimes(2);
+    expect(watchFileCallbacks.has('/home/testuser/.qwen/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.qwen/settings.json')).toBe(true);
+
+    expect(fs.watch).toHaveBeenCalledTimes(6);
+    expect(watchDirCallbacks.has('/home/testuser/.qwen/agents')).toBe(true);
+    expect(watchDirCallbacks.has('/home/testuser/.qwen/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/home/testuser/.qwen/commands')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.qwen/agents')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.qwen/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.qwen/commands')).toBe(true);
+  });
+
+  it('watches blackbox settings for a project', () => {
+    const win = createMockWin();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+    startConfigWatcher(win, '/projects/test', 'blackbox');
+
+    expect(fs.watchFile).toHaveBeenCalledTimes(2);
+    expect(watchFileCallbacks.has('/home/testuser/.blackboxcli/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.blackboxcli/settings.json')).toBe(true);
+    expect(fs.watch).not.toHaveBeenCalled();
+  });
 });

@@ -27,8 +27,8 @@ describe('layout stylesheet contract', () => {
     expect(html).toContain('class="workspace-shell-surface"');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(browserPaneSource).toContain("contentShell.className = 'browser-content-shell live-view-surface live-view'");
-    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Ready'");
-    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Live'");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Launchpad'");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Project ready'");
     expect(splitLayoutSource).not.toContain("eyebrow.textContent = 'Workspace'");
   });
 });
