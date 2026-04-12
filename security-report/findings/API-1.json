@@ -1,0 +1,5 @@
+{
+  "skill": "API-1",
+  "scan_note": "OWASP API Top 10 acisindan HTTP/REST/GraphQL server inventory cikarildi; repo tipik bir network API sunucusu icermiyor.",
+  "findings": []
+}

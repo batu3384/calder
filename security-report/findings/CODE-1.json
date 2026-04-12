@@ -1,0 +1,5 @@
+{
+  "skill": "CODE-1",
+  "scan_note": "eval/new Function/vm ve benzeri kod calistirma primitive'leri tarandi; kullanici kontrollu RCE sink'i dogrulanmadi.",
+  "findings": []
+}

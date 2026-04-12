@@ -1,0 +1,5 @@
+{
+  "skill": "CLIENT-3",
+  "scan_note": "Clickjacking acisindan web response header yuzeyi bulunmadi; bu repo klasik frame-header ureten bir HTTP sunucusu icermiyor.",
+  "findings": []
+}

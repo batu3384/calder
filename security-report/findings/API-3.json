@@ -1,0 +1,5 @@
+{
+  "skill": "API-3",
+  "scan_note": "JWT library, token storage ve verify/sign pattern'lari tarandi; JWT tabanli auth mimarisi bulunmadi.",
+  "findings": []
+}

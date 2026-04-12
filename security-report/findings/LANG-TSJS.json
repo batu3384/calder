@@ -1,0 +1,5 @@
+{
+  "skill": "LANG-TSJS",
+  "scan_note": "Prototype pollution, eval/new Function, DOM sinkleri, ReDoS ve istemciye sizan env desenleri tarandi; final rapora tasinan TS/JS bulgulari INJ-3 ve INFRA-3 altinda toplandi.",
+  "findings": []
+}

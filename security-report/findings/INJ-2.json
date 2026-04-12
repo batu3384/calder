@@ -1,0 +1,5 @@
+{
+  "skill": "INJ-2",
+  "scan_note": "MongoDB/Elasticsearch/Redis ve diger NoSQL query surface'leri arandi; bu repo icinde uygulanabilir NoSQL injection yuzeyi bulunmadi.",
+  "findings": []
+}

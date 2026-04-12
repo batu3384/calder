@@ -1,0 +1,5 @@
+{
+  "skill": "SERVER-2",
+  "scan_note": "Dosya okuma yuzeyi ve path normalizasyonu incelendi; `fs:readFile` tarafinda allowlist + `path.resolve` kontrolu mevcut, path traversal bulgusu dogrulanmadi.",
+  "findings": []
+}

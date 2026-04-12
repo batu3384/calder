@@ -1,0 +1,5 @@
+{
+  "skill": "AUTH-2",
+  "scan_note": "IPC, browser-bridge ve P2P paylasim akislari yetkilendirme/ownership mantigi acisindan gozden gecirildi; IDOR benzeri dogrulanmis bir erisim bulgusu cikmadi.",
+  "findings": []
+}

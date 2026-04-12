@@ -1,0 +1,5 @@
+{
+  "skill": "CLIENT-2",
+  "scan_note": "CORS header veya web API allow-origin konfigurasyonu bulunmadi; masaustu Electron uygulamasinda klasik CORS misconfig yuzeyi tespit edilmedi.",
+  "findings": []
+}

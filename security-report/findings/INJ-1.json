@@ -1,0 +1,5 @@
+{
+  "skill": "INJ-1",
+  "scan_note": "Veritabani, ORM ve raw SQL sinkleri tarandi; repo icinde dogrudan SQL katmani veya raw query kullanan uygulama kodu tespit edilmedi.",
+  "findings": []
+}

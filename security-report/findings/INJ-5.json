@@ -1,0 +1,5 @@
+{
+  "skill": "INJ-5",
+  "scan_note": "Server-side template injection desenleri tarandi; Jinja/EJS/Twig/Pug benzeri kullanici kontrollu template parse yuzeyi bulunmadi.",
+  "findings": []
+}

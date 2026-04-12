@@ -1,0 +1,5 @@
+{
+  "skill": "DATA-3",
+  "scan_note": "Kriptografi yuzeyi gozden gecirildi; AES-GCM/PBKDF2/HMAC kullanimi genel olarak saglam. Dusuk entropili PIN problemi AUTH-1 altinda tekilleştirildi.",
+  "findings": []
+}

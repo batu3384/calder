@@ -1,0 +1,5 @@
+{
+  "skill": "INFRA-2",
+  "scan_note": "Dockerfile/docker-compose manifest'leri arandi; repo icinde taranabilir Docker guvenlik yuzeyi bulunmadi.",
+  "findings": []
+}

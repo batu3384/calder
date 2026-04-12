@@ -1,0 +1,21 @@
+{
+  "skill": "AUTH-1",
+  "scan_note": "Paylasim/P2P kimlik dogrulama yuzeyi ve PIN tabanli baglanti akisi incelendi; 1 zayif kimlik dogrulama bulgusu dogrulama icin ayrildi.",
+  "findings": [
+    {
+      "id": "AUTH-1-001",
+      "title": "P2P session share akisi 4-8 haneli sayisal PIN ile korunuyor",
+      "severity": "medium",
+      "base_confidence": 60,
+      "category": "weak-authentication",
+      "file": "src/renderer/sharing/share-crypto.ts",
+      "line": 24,
+      "code_snippet": "const MIN_PIN_LENGTH = 4;\\nconst MAX_PIN_LENGTH = 8;\\nif (!/^\\\\d+$/.test(pin)) return 'PIN must contain only digits';",
+      "description": "Uzaktan paylasim teklifi yalnizca 4-8 haneli sayisal bir PIN ile korunuyor. Offer/answer kodu ele gecirildiginde bu aralikta offline brute-force denemesi pratik hale geliyor.",
+      "impact": "Saldirgan paylasim kodunu gorur veya kaydederse, PIN'i bruteforce edip read-only veya read-write uzaktan terminal oturumuna yetkisiz baglanabilir.",
+      "remediation": "Sayisal PIN yerine en az 10-12 karakterlik rastgele passphrase veya uygulama tarafinda olusturulan yuksek entropili tek kullanimlik token kullanin. Minimum uzunlugu arttirin ve kullaniciyi zayif PIN secemeyecek sekilde yonlendirin.",
+      "cwe": "CWE-521",
+      "owasp": "A07:2021"
+    }
+  ]
+}

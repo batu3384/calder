@@ -1,0 +1,21 @@
+{
+  "skill": "INFRA-3",
+  "scan_note": "GitHub Actions workflow'lari expression-injection, untrusted input ve secret handling acisindan incelendi; 1 dogrulanabilir CI command-injection adayi bulundu.",
+  "findings": [
+    {
+      "id": "INFRA-3-001",
+      "title": "Release workflow version input'unu shell'e dogrudan interpolate ediyor",
+      "severity": "high",
+      "base_confidence": 75,
+      "category": "ci-command-injection",
+      "file": ".github/workflows/release.yml",
+      "line": 46,
+      "code_snippet": "run: npm version ${{ inputs.version }} --no-git-tag-version",
+      "description": "`workflow_dispatch` ile gelen `inputs.version` degeri shell komutuna quotes/allowlist olmadan gonderiliyor. Bu, `patch && <komut>` benzeri degerlerle runner uzerinde komut birlestirmeye izin verebilir.",
+      "impact": "Workflow'u tetikleyebilen bir aktor, GitHub runner uzerinde keyfi komut calistirip repo yazma yetkili `GITHUB_TOKEN` ve release pipeline baglamini suistimal edebilir.",
+      "remediation": "Input'u regex/allowlist ile `patch|minor|major|X.Y.Z` formatina zorlayin ve komuta quoted argument olarak gecin. Mumkunse version bump islemini shell birlestirmesi yerine kucuk bir Node adiminda yapin.",
+      "cwe": "CWE-78",
+      "owasp": "A03:2021"
+    }
+  ]
+}

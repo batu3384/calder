@@ -1,0 +1,51 @@
+{
+  "skill": "INJ-3",
+  "scan_note": "Renderer tarafindaki innerHTML/html sinkleri, mevcut esc/DOMPurify kullanimlariyla karsilastirilarak incelendi; 3 adaydan 2'si final riskte tutuldu, 1'i FP elemesi icin ayrildi.",
+  "findings": [
+    {
+      "id": "INJ-3-001",
+      "title": "Localhost target metasinin innerHTML ile render edilmesi DOM XSS yuzeyi olusturuyor",
+      "severity": "high",
+      "base_confidence": 75,
+      "category": "xss",
+      "file": "src/renderer/components/browser-tab/pane.ts",
+      "line": 220,
+      "code_snippet": "btn.innerHTML = `\\n  <span class=\"browser-ntp-link-label\">${target.label}</span>\\n  <span class=\"browser-ntp-link-meta\">${target.meta}</span>\\n`;",
+      "description": "Browser target listesi, `target.meta` degerini kacislamadan `innerHTML` icine yaziyor. `target.meta` ise `src/main/local-dev-targets.ts` icinde localhost uygulamasindan cekilen HTML body'sindeki `<title>` etiketinden turetiliyor.",
+      "impact": "Ayni makinede calisan veya kullaniciyi ziyaret etmeye yonlendiren kotu niyetli bir localhost uygulamasi, Calder'in yetkili Electron renderer'ina HTML/DOM payload enjekte edebilir. Bu, renderer UI suistimali ve ileri asamalarda preload API'lerine erisen zincirler icin guclu bir foothold saglar.",
+      "remediation": "`innerHTML` yerine `textContent`/`createElement` kullanin ya da mevcut `esc()` yardimcisiyla metni kacislayin. Localhost probe sonucunu yalnizca plain-text metadata olarak tasiyin.",
+      "cwe": "CWE-79",
+      "owasp": "A03:2021"
+    },
+    {
+      "id": "INJ-3-002",
+      "title": "CLI quick setup kartlari project path ve aday metnini innerHTML ile basiyor",
+      "severity": "high",
+      "base_confidence": 60,
+      "category": "xss",
+      "file": "src/renderer/components/cli-surface/quick-setup.ts",
+      "line": 97,
+      "code_snippet": "card.innerHTML = `\\n  <div class=\"cli-surface-quick-setup-command\">${formatCommand(candidate)}</div>\\n  <div class=\"cli-surface-quick-setup-reason\">${candidate.reason}</div>\\n  <div class=\"cli-surface-quick-setup-cwd\">${candidate.cwd ?? ''}</div>\\n`;",
+      "description": "CLI quick setup modal'i aday command, reason ve ozellikle `candidate.cwd` degerini kacislamadan `innerHTML` ile render ediyor. `candidate.cwd`, kullanicinin sectigi proje yolundan geliyor ve HTML ozel karakterleri icerebilir.",
+      "impact": "Kullanici kotu niyetli sekilde adlandirilmis bir klasoru/repo'yu acarsa, modal icinde DOM injection olusabilir. Electron renderer baglaminda bu risk, salt UI bozulmasinin otesinde, uygulama ici aksiyonlarin suistimal edilmesine zemin hazirlar.",
+      "remediation": "Kart icerigini DOM node'lari ile olusturun ve degisken metinler icin `textContent` kullanin. `data-*` attributelarini `setAttribute`/`dataset` ile ayri set edin.",
+      "cwe": "CWE-79",
+      "owasp": "A03:2021"
+    },
+    {
+      "id": "INJ-3-003",
+      "title": "Usage stats modal'i stats-cache alanlarini innerHTML ile yansitiyor",
+      "severity": "medium",
+      "base_confidence": 45,
+      "category": "xss",
+      "file": "src/renderer/components/usage-modal.ts",
+      "line": 56,
+      "code_snippet": "el.innerHTML = `<div class=\"usage-stat-value\">${card.value}</div><div class=\"usage-stat-label\">${card.label}</div>`;",
+      "description": "`stats:getCache` IPC'i ile kullanicinin home dizinindeki `~/.claude/stats-cache.json` okunuyor ve bazi alanlar `innerHTML` ile dogrudan DOM'a basiliyor.",
+      "impact": "Teorik olarak attacker-controlled stats-cache icerigi DOM injection uretebilir; ancak bu repo icin tehdit modeli disinda kalan yerel dosya manipülasyonu onkosulu oldugu icin Faz 3'te false positive/low-value olarak yeniden degerlendirildi.",
+      "remediation": "Defense-in-depth icin bu gorunumu de `textContent` tabanli kurun ve dis kaynaktan gelen cache alanlarini kacislayin.",
+      "cwe": "CWE-79",
+      "owasp": "A03:2021"
+    }
+  ]
+}

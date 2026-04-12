@@ -1,0 +1,5 @@
+{
+  "skill": "CLIENT-4",
+  "scan_note": "Webview ve WebRTC paylasim yuzeyleri incelendi; tek basina dogrulanmis bir WebSocket/webview auth bypass bulgusu cikmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "INJ-9",
+  "scan_note": "GraphQL sunucu, schema, resolver ve introspection desenleri tarandi; GraphQL API yuzeyi bulunmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "API-2",
+  "scan_note": "Rate limiting/bruteforce yuzeyleri tarandi; harici web API/login endpoint'i bulunmadigi icin uygulanabilir bir rate-limit bulgusu cikmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "SERVER-1",
+  "scan_note": "fetch/SSE/MCP/localhost-probe cikislari incelendi; kullanici girdisinden dogrudan SSRF'e ulasan bir sink dogrulanmadi.",
+  "findings": []
+}

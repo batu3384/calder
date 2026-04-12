@@ -1,0 +1,5 @@
+{
+  "skill": "INFRA-1",
+  "scan_note": "Terraform/Kubernetes/IaC dosyalari arandi; repo icinde taranabilir IaC manifest'i bulunmadi.",
+  "findings": []
+}

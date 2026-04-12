@@ -1,0 +1,5 @@
+{
+  "skill": "SERVER-3",
+  "scan_note": "Dosya upload yuzeyi arandi; repo icinde sunucu tarafli upload endpoint'i bulunmadi.",
+  "findings": []
+}

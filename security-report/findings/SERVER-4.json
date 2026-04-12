@@ -1,0 +1,5 @@
+{
+  "skill": "SERVER-4",
+  "scan_note": "Redirect sinkleri tarandi; web server/redirect endpoint'i bulunmadigi icin open redirect bulgusu cikmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "AUTH-3",
+  "scan_note": "Rol/ayricalik yukselmesi desenleri tarandi; rol tabanli cok-kullanicili bir API katmani bulunmadigi icin dogrulanmis privilege-escalation bulgusu cikmadi.",
+  "findings": []
+}

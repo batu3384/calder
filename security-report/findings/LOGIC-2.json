@@ -1,0 +1,5 @@
+{
+  "skill": "LOGIC-2",
+  "scan_note": "TOCTOU ve race-pattern'lari incelendi; renderer/main yapisinda final risk listesine girecek dogrulanmis yarismaci durum bulunmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "CODE-2",
+  "scan_note": "pickle/unserialize/BinaryFormatter benzeri insecure deserialization primitive'leri tarandi; ilgili yuzey bulunmadi.",
+  "findings": []
+}

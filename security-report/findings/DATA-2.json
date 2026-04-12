@@ -1,0 +1,5 @@
+{
+  "skill": "DATA-2",
+  "scan_note": "PII loglama, verbose error, debug mode ve overly-verbose response desenleri incelendi; final risk skoruna girecek ayri bir hassas veri sizintisi bulgusu cikmadi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "CLIENT-1",
+  "scan_note": "Cookie-auth web formlari ve state-changing HTTP endpoint'leri bulunmadigindan CSRF modeli bu repo icin uygulanabilir gorunmedi.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "skill": "INJ-8",
+  "scan_note": "LDAP kutuphaneleri ve filter-string birlestirme pattern'lari arandi; LDAP surface bulunmadi.",
+  "findings": []
+}

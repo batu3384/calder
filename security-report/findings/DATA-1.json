@@ -1,0 +1,5 @@
+{
+  "skill": "DATA-1",
+  "scan_note": "~388 repo dosyasi ve ana kaynak agaci uzerinde secret regexleri, connection string desenleri ve private-key bloklari tarandi; hardcoded production sirri dogrulanmadi.",
+  "findings": []
+}
