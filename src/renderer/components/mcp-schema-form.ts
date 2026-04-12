@@ -1,11 +1,11 @@
-interface SchemaProperty {
+export interface SchemaProperty {
   type?: string;
   description?: string;
   default?: unknown;
   enum?: unknown[];
 }
 
-interface JsonSchema {
+export interface JsonSchema {
   properties?: Record<string, SchemaProperty>;
   required?: string[];
 }

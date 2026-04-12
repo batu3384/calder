@@ -18,7 +18,7 @@ type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
 
 export function showPreferencesModal(): void {
   prepareModalSurface();
-  titleEl.textContent = 'Control Center';
+  titleEl.textContent = 'Workspace Center';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
 
@@ -34,25 +34,29 @@ export function showPreferencesModal(): void {
   menuHeader.className = 'preferences-menu-header';
   menuHeader.innerHTML = `
     <div class="preferences-menu-kicker shell-kicker">Calder</div>
-    <div class="preferences-menu-title">System controls</div>
-    <div class="preferences-menu-caption">Layout state, tool health, shortcuts, and session defaults.</div>
+    <div class="preferences-menu-title">Calder workspace</div>
+    <div class="preferences-menu-caption">Defaults, layout, integrations, and the rules that shape every session.</div>
   `;
   menu.appendChild(menuHeader);
 
-  const sections: { id: Section; label: string }[] = [
-    { id: 'general', label: 'General' },
-    { id: 'layout', label: 'Layout' },
-    { id: 'shortcuts', label: 'Shortcuts' },
-    { id: 'providers', label: 'Providers' },
-    { id: 'about', label: 'About' },
+  const sections: { id: Section; label: string; caption: string }[] = [
+    { id: 'general', label: 'Session', caption: 'How Calder starts and remembers work' },
+    { id: 'layout', label: 'Layout', caption: 'Surface and rail visibility defaults' },
+    { id: 'shortcuts', label: 'Keys', caption: 'Command bindings and overrides' },
+    { id: 'providers', label: 'Integrations', caption: 'Tool health, binaries, and tracking' },
+    { id: 'about', label: 'About', caption: 'Version, updates, and project links' },
   ];
 
-  const menuItems: Map<Section, HTMLDivElement> = new Map();
+  const menuItems: Map<Section, HTMLButtonElement> = new Map();
   for (const section of sections) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
     item.className = 'preferences-menu-item';
-    item.textContent = section.label;
+    item.type = 'button';
     item.dataset.section = section.id;
+    item.innerHTML = `
+      <span class="preferences-menu-item-label">${section.label}</span>
+      <span class="preferences-menu-item-caption">${section.caption}</span>
+    `;
     menu.appendChild(item);
     menuItems.set(section.id, item);
   }
@@ -108,6 +112,37 @@ export function showPreferencesModal(): void {
     return card;
   }
 
+  function appendOverviewGrid(
+    container: HTMLElement,
+    items: Array<{ label: string; value: string; note?: string }>,
+  ) {
+    const grid = document.createElement('div');
+    grid.className = 'preferences-overview-grid';
+
+    for (const item of items) {
+      const card = document.createElement('div');
+      card.className = 'preferences-overview-card';
+      card.innerHTML = `
+        <div class="preferences-overview-label">${item.label}</div>
+        <div class="preferences-overview-value">${item.value}</div>
+        ${item.note ? `<div class="preferences-overview-note">${item.note}</div>` : ''}
+      `;
+      grid.appendChild(card);
+    }
+
+    container.appendChild(grid);
+  }
+
+  function countCustomizedShortcuts(): number {
+    let count = 0;
+    for (const [, shortcuts] of shortcutManager.getAll()) {
+      for (const shortcut of shortcuts) {
+        if (shortcutManager.hasOverride(shortcut.id)) count += 1;
+      }
+    }
+    return count;
+  }
+
   function cleanupRecorder() {
     if (activeRecorder) {
       activeRecorder.cleanup();
@@ -128,10 +163,27 @@ export function showPreferencesModal(): void {
     if (section === 'general') {
       appendSectionIntro(
         content,
-        'Defaults',
-        'Session defaults',
-        'Set how Calder starts tools, titles work, stores history, and alerts you when a run needs attention.',
+        'Session',
+        'Launch defaults',
+        'Choose how Calder opens new work, how it names sessions, and which signals stay on while you code.',
       );
+      appendOverviewGrid(content, [
+        {
+          label: 'Default tool',
+          value: appState.preferences.defaultProvider ?? 'claude',
+          note: 'Used when a new session has no explicit provider.',
+        },
+        {
+          label: 'History',
+          value: appState.preferences.sessionHistoryEnabled ? 'On' : 'Off',
+          note: 'Closed sessions can stay searchable in the run log.',
+        },
+        {
+          label: 'Alerts',
+          value: appState.preferences.notificationsDesktop ? 'Desktop' : 'In-app only',
+          note: 'Sound and notification behavior stays local to this workspace.',
+        },
+      ]);
       // Default provider dropdown
       const providerRow = document.createElement('div');
       providerRow.className = 'modal-toggle-field';
@@ -141,12 +193,27 @@ export function showPreferencesModal(): void {
 
       const currentDefault = appState.preferences.defaultProvider ?? 'claude';
 
-      const buildProviderOptions = (providers: CliProviderMeta[]) =>
-        providers.map(p => ({ value: p.id, label: p.displayName }));
+      const buildProviderOptions = (snapshot: { providers: CliProviderMeta[]; availability: Map<ProviderId, boolean> }) =>
+        snapshot.providers.map(provider => {
+          const available = snapshot.availability.get(provider.id) ?? true;
+          return {
+            value: provider.id,
+            label: available ? provider.displayName : `${provider.displayName} (not installed)`,
+            disabled: !available,
+          };
+        });
+
+      const buildProviderNote = (snapshot: { availability: Map<ProviderId, boolean> } | null, providerId: ProviderId): string => {
+        if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
+        if (snapshot.availability.get(providerId)) {
+          return 'New sessions use this tool unless a workflow picks a different one.';
+        }
+        return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
+      };
 
       let snapshot = getProviderAvailabilitySnapshot();
       if (snapshot) {
-        defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot.providers), currentDefault);
+        defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
       } else {
         defaultProviderSelect = createCustomSelect('pref-default-provider', [{ value: currentDefault, label: 'Loading…' }], currentDefault);
         loadProviderAvailability().then(() => {
@@ -154,16 +221,22 @@ export function showPreferencesModal(): void {
           snapshot = getProviderAvailabilitySnapshot();
           if (snapshot) {
             if (defaultProviderSelect) defaultProviderSelect.destroy();
-            defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot.providers), currentDefault);
+            defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
             providerRow.querySelector('.custom-select')?.remove();
             providerRow.appendChild(defaultProviderSelect.element);
+            providerNote.textContent = buildProviderNote(snapshot, currentDefault);
           }
         });
       }
 
+      const providerNote = document.createElement('div');
+      providerNote.className = 'preferences-control-note';
+      providerNote.textContent = buildProviderNote(snapshot, currentDefault);
+
       providerRow.appendChild(providerLabel);
       providerRow.appendChild(defaultProviderSelect.element);
       content.appendChild(providerRow);
+      content.appendChild(providerNote);
 
       const row = document.createElement('div');
       row.className = 'modal-toggle-field';
@@ -248,17 +321,34 @@ export function showPreferencesModal(): void {
     } else if (section === 'layout') {
       appendSectionIntro(
         content,
-        'Layout',
-        'Panel layout',
-        'Decide which support rails stay visible around Live View and the Session Deck.',
+        'Workspace',
+        'Stage layout',
+        'Keep the left surface stable while deciding which support modules stay visible around active sessions.',
       );
       const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
+      appendOverviewGrid(content, [
+        {
+          label: 'Ops rail',
+          value: `${Object.values(views).filter(Boolean).length - (views.costFooter ? 1 : 0)} modules`,
+          note: 'The right-side support column stays focused when you trim unused tools.',
+        },
+        {
+          label: 'Surface split',
+          value: 'Pinned left',
+          note: 'Browser and CLI surfaces keep the project visible while sessions change on the right.',
+        },
+        {
+          label: 'Session strip',
+          value: views.costFooter ? 'Cost chip visible' : 'Cost chip hidden',
+          note: 'Session chrome stays compact until you need more context.',
+        },
+      ]);
       const toggles: Array<{ key: keyof typeof views; label: string; group: 'ops' | 'session' }> = [
-        { key: 'configSections', label: 'Config', group: 'ops' },
-        { key: 'readinessSection', label: 'Tool status', group: 'ops' },
-        { key: 'gitPanel', label: 'Repo', group: 'ops' },
-        { key: 'sessionHistory', label: 'Runs', group: 'ops' },
-        { key: 'costFooter', label: 'Cost chip', group: 'session' },
+        { key: 'configSections', label: 'Toolkit', group: 'ops' },
+        { key: 'readinessSection', label: 'Health', group: 'ops' },
+        { key: 'gitPanel', label: 'Git', group: 'ops' },
+        { key: 'sessionHistory', label: 'Run log', group: 'ops' },
+        { key: 'costFooter', label: 'Spend chip', group: 'session' },
       ];
 
       const opsCard = appendSectionCard(
@@ -311,28 +401,79 @@ export function showPreferencesModal(): void {
     } else if (section === 'shortcuts') {
       appendSectionIntro(
         content,
-        'Input',
-        'Command keys',
-        'Tune the bindings that drive Calder’s fast session, terminal, and shell workflows.',
+        'Keyboard',
+        'Working keys',
+        'Keep the shortcuts you use every day close to hand and override only the ones that really help.',
       );
+      appendOverviewGrid(content, [
+        {
+          label: 'Customized',
+          value: `${countCustomizedShortcuts()}`,
+          note: 'Only explicit overrides are tracked here.',
+        },
+        {
+          label: 'Focus',
+          value: 'Session + surface',
+          note: 'Bindings cover sessions, the left stage, and shell navigation.',
+        },
+        {
+          label: 'Style',
+          value: 'Command-first',
+          note: 'Record a new combo directly from the keyboard when you need one.',
+        },
+      ]);
       renderShortcutsSection(content);
 
     } else if (section === 'providers') {
       appendSectionIntro(
         content,
-        'Providers',
-        'Tool status',
-        'Check binaries, hooks, and status tracking without leaving the control center.',
+        'Integrations',
+        'Tool connections',
+        'Check binaries, hooks, and tracking health without leaving the workspace.',
       );
+      appendOverviewGrid(content, [
+        {
+          label: 'Checks',
+          value: 'Live',
+          note: 'Binary status and tracking checks are refreshed from the local setup.',
+        },
+        {
+          label: 'Tracking',
+          value: 'Status line + hooks',
+          note: 'Cost, context, and session activity depend on these staying healthy.',
+        },
+        {
+          label: 'Scope',
+          value: 'All coding tools',
+          note: 'Claude, Codex, Gemini, Qwen, and the rest share one health view.',
+        },
+      ]);
       renderSetupSection(content);
 
     } else if (section === 'about') {
       appendSectionIntro(
         content,
-        'Identity',
-        'Build info',
-        'Version details, update checks, and ownership links for the Calder project.',
+        'Project',
+        'Calder',
+        'Version details, update checks, and source links for the current build.',
       );
+      appendOverviewGrid(content, [
+        {
+          label: 'Channel',
+          value: 'Desktop app',
+          note: 'This workspace is tuned for side-by-side surface and session work.',
+        },
+        {
+          label: 'Source',
+          value: 'Open source',
+          note: 'The repo and issue tracker stay one click away.',
+        },
+        {
+          label: 'Updates',
+          value: 'Manual check',
+          note: 'Run a direct check whenever you want to confirm a newer build.',
+        },
+      ]);
       const aboutDiv = document.createElement('div');
       aboutDiv.className = 'about-section';
 
@@ -590,7 +731,7 @@ export function showPreferencesModal(): void {
     parent.appendChild(row);
   }
 
-  async function fixAndRerender(providerId?: string) {
+  async function fixAndRerender(providerId?: ProviderId) {
     await window.calder.settings.reinstall(providerId);
     renderSection('providers');
   }

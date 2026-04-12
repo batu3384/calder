@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDiscoveredCliSurfaceProfile,
+  createDemoCliSurfaceProfile,
   formatCliSurfaceCommand,
   getCliSurfaceProfileLabel,
 } from './profile.js';
@@ -49,5 +50,16 @@ describe('cli surface profile helpers', () => {
       args: ['run', './cmd/ironsentinel'],
       cwd: '/tmp/security',
     })).toBe('Security TUI');
+  });
+
+  it('creates a built-in demo profile with a stable command marker', () => {
+    expect(createDemoCliSurfaceProfile('/tmp/security')).toEqual(
+      expect.objectContaining({
+        id: 'builtin:cli-surface-demo',
+        name: 'Calder CLI Surface Demo',
+        command: '__calder_cli_surface_demo__',
+        cwd: '/tmp/security',
+      }),
+    );
   });
 });

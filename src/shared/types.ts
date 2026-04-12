@@ -2,7 +2,7 @@
 
 // --- Provider ---
 
-export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen' | 'blackbox';
+export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen' | 'minimax' | 'blackbox';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 
 export interface CliProviderCapabilities {
@@ -141,11 +141,18 @@ export interface ProjectInsightsData {
 
 export type SurfaceKind = 'web' | 'cli';
 export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
+export type CliSurfacePromptContextMode = 'selection-only' | 'selection-nearby' | 'selection-nearby-viewport';
 
 export interface WebSurfaceState {
   sessionId?: string;
   url?: string;
   history?: string[];
+}
+
+export interface EmbeddedBrowserOpenPayload {
+  url: string;
+  cwd?: string;
+  preferEmbedded?: boolean;
 }
 
 export interface CliSurfaceProfile {
@@ -161,6 +168,17 @@ export interface CliSurfaceProfile {
   restartPolicy?: 'manual' | 'on-exit';
 }
 
+export interface CliSurfaceStartupTiming {
+  startedAtMs: number;
+  ptySpawnedAtMs?: number;
+  spawnLatencyMs?: number;
+  firstOutputAtMs?: number;
+  firstOutputLatencyMs?: number;
+  runningAtMs?: number;
+  stoppedAtMs?: number;
+  totalRuntimeMs?: number;
+}
+
 export interface CliSurfaceRuntimeState {
   status: 'idle' | 'starting' | 'running' | 'stopped' | 'error';
   runtimeId?: string;
@@ -172,6 +190,7 @@ export interface CliSurfaceRuntimeState {
   rows?: number;
   lastExitCode?: number | null;
   lastError?: string | null;
+  startupTiming?: CliSurfaceStartupTiming;
 }
 
 export type CliSurfaceDiscoveryConfidence = 'high' | 'medium' | 'low';
@@ -218,6 +237,11 @@ export interface SurfacePromptPayload {
   projectPath: string;
   surfaceKind: SurfaceKind;
   selection: SurfaceSelectionRange;
+  contextMode?: CliSurfacePromptContextMode;
+  selectionSource?: 'exact' | 'inferred' | 'semantic';
+  semanticNodeId?: string;
+  semanticLabel?: string;
+  sourceFile?: string;
   selectedText: string;
   nearbyText: string;
   viewportText: string;
@@ -332,19 +356,19 @@ export interface ReadinessResult {
 // --- Cost / Context ---
 
 export interface CostData {
-  cost: { total_cost_usd: number; total_duration_ms: number; total_api_duration_ms: number };
+  cost: { total_cost_usd?: number; total_duration_ms?: number; total_api_duration_ms?: number };
   model?: string;
   context_window: {
-    total_input_tokens: number;
-    total_output_tokens: number;
+    total_input_tokens?: number;
+    total_output_tokens?: number;
     context_window_tokens?: number;
     context_window_size?: number;
     used_percentage?: number;
-    current_usage: {
-      input_tokens: number;
-      output_tokens: number;
-      cache_creation_input_tokens: number;
-      cache_read_input_tokens: number;
+    current_usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+      cache_creation_input_tokens?: number;
+      cache_read_input_tokens?: number;
     };
   };
 }

@@ -10,7 +10,7 @@ describe('browser stage contract', () => {
     expect(source).toContain('browser-pane-label');
     expect(source).toContain('browser-pane-workspace');
     expect(source).toContain("chromeLabel.textContent = 'Live View'");
-    expect(source).toContain("chromeHint.textContent = 'Inspect, capture, annotate'");
+    expect(source).toContain("chromeHint.textContent = 'Inspect, annotate, hand off'");
     expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
   });
 

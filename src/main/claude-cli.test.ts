@@ -31,6 +31,7 @@ const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
+const mockReaddirSyncAny = mockReaddirSync as unknown as { mockImplementation: (fn: (...args: any[]) => any) => void };
 
 // Normalize paths for cross-platform comparison
 const n = (p: string) => p.replace(/\\/g, '/');
@@ -99,7 +100,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('reads agents from user agents directory', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       if (n(String(dirPath)) === '/mock/home/.claude/agents') {
         return ['my-agent.md'] as unknown as fs.Dirent[];
       }
@@ -119,7 +120,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('deduplicates agents by name', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       const p = n(String(dirPath));
       if (p === '/mock/home/.claude/agents' || p === '/project/.claude/agents') {
         return ['agent.md'] as unknown as fs.Dirent[];
@@ -139,7 +140,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('reads commands from user commands directory', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       if (n(String(dirPath)) === '/mock/home/.claude/commands') {
         return ['commit.md', 'review.md'] as unknown as fs.Dirent[];
       }
@@ -163,7 +164,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('reads commands from project commands directory', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       if (n(String(dirPath)) === '/project/.claude/commands') {
         return ['deploy.md'] as unknown as fs.Dirent[];
       }
@@ -183,7 +184,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('deduplicates commands by name (project overrides user)', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       const p = n(String(dirPath));
       if (p === '/mock/home/.claude/commands') {
         return ['shared.md'] as unknown as fs.Dirent[];
@@ -281,7 +282,7 @@ describe('getClaudeConfig', () => {
       }
       throw new Error('ENOENT');
     });
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       if (n(String(dirPath)) === '/mock/plugins/my-plugin/agents') {
         return ['agent.md'] as unknown as fs.Dirent[];
       }
@@ -335,7 +336,7 @@ describe('getClaudeConfig', () => {
   });
 
   it('reads skills from directories', async () => {
-    mockReaddirSync.mockImplementation((dirPath) => {
+    mockReaddirSyncAny.mockImplementation((dirPath) => {
       if (n(String(dirPath)) === '/mock/home/.claude/skills') {
         return ['my-skill'] as unknown as fs.Dirent[];
       }

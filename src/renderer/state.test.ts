@@ -667,6 +667,42 @@ describe('browser target sessions', () => {
     expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
     expect((appState as any).listBrowserTargetSessions(browser.id).map((session: { id: string }) => session.id)).toContain(target.id);
   });
+
+  it('reuses the current live view session when opening a new embedded browser url', () => {
+    const project = addProject();
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    mockSave.mockClear();
+
+    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:4173');
+
+    expect(reused.id).toBe(browser.id);
+    expect(appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab')).toHaveLength(1);
+    expect(appState.activeProject!.activeSessionId).toBe(browser.id);
+    expect(appState.activeProject!.surface?.kind).toBe('web');
+    expect(appState.activeProject!.surface?.active).toBe(true);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: browser.id,
+      url: 'http://localhost:4173',
+    });
+    expect(appState.activeProject!.surface?.web?.history).toEqual([
+      'http://localhost:3000',
+      'http://localhost:4173',
+    ]);
+    expect(appState.activeProject!.sessions.find((session) => session.id === browser.id)?.browserTabUrl)
+      .toBe('http://localhost:4173');
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('finds the deepest matching project for a cwd when routing browser urls', () => {
+    const root = appState.addProject('Root', '/workspace/root');
+    const nested = appState.addProject('Nested', '/workspace/root/packages/app');
+
+    const matched = (appState as any).findProjectForPath('/workspace/root/packages/app/src/pages');
+
+    expect(matched?.id).toBe(nested.id);
+    expect(matched?.id).not.toBe(root.id);
+  });
 });
 
 describe('removeSession()', () => {
@@ -903,7 +939,7 @@ describe('gotoSession()', () => {
   });
 
   it('no-op for out-of-bounds index', () => {
-    const { sessions } = addProjectWithSessions(2);
+    addProjectWithSessions(2);
     const before = appState.activeProject!.activeSessionId;
     appState.gotoSession(5);
     expect(appState.activeProject!.activeSessionId).toBe(before);

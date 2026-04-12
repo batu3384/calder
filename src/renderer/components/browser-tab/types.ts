@@ -71,6 +71,7 @@ export interface BrowserTabInstance {
   viewportContainer: HTMLDivElement;
   newTabPage: HTMLDivElement;
   urlInput: HTMLInputElement;
+  toolbarRouteEl: HTMLDivElement;
   inspectBtn: HTMLButtonElement;
   viewportBtn: HTMLButtonElement;
   viewportDropdown: HTMLDivElement;

@@ -27,4 +27,28 @@ describe('cli surface heuristics', () => {
 
     expect(regions.some((region) => region.label === 'footer actions')).toBe(true);
   });
+
+  it('detects boxed dialogs separately from generic panels', () => {
+    const regions = inferCliRegions([
+      '╭ Delete project? ───────╮',
+      '│ This action cannot     │',
+      '│ be undone.             │',
+      '╰────────────────────────╯',
+    ]);
+
+    expect(regions.some((region) => region.label === 'dialog')).toBe(true);
+  });
+
+  it('detects task-list style groups as inspectable regions', () => {
+    const regions = inferCliRegions([
+      'Recent actions',
+      '- Run smoke tests',
+      '- Check tracking hooks',
+      '- Reopen workspace center',
+      '',
+      '[r] restart',
+    ]);
+
+    expect(regions.some((region) => region.label === 'task list')).toBe(true);
+  });
 });

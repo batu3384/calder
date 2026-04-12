@@ -119,6 +119,61 @@
   min-width: 0;
   justify-content: flex-end;
   flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.browser-toolbar-cluster {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px 8px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 78%, transparent);
+}
+
+.browser-toolbar-cluster[data-kind='route'] {
+  min-width: min(220px, 100%);
+}
+
+.browser-toolbar-cluster-label {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.browser-toolbar-cluster-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.browser-toolbar-route {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 58%, transparent);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.browser-toolbar-route[data-state='empty'] {
+  color: var(--text-secondary);
 }
 
 .browser-tab-pane.split .browser-tab-toolbar {
@@ -314,6 +369,124 @@ body.sidebar-resizing .browser-webview {
   font-size: 14px;
   line-height: 1.55;
   color: var(--text-muted);
+}
+
+.browser-ntp-actions {
+  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.browser-ntp-action {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 620;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.browser-ntp-action:hover {
+  background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface-hover));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  transform: translateY(-1px);
+}
+
+.browser-ntp-action-secondary {
+  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.browser-ntp-action-secondary:hover {
+  background: color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+  color: var(--text-primary);
+}
+
+@container workspace-stack (max-width: 1120px) {
+  .browser-pane-chrome {
+    min-height: 32px;
+    padding: 0 10px;
+    gap: 10px;
+  }
+
+  .browser-pane-hint {
+    display: none;
+  }
+
+  .browser-tab-toolbar {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .browser-toolbar-address {
+    flex: 1 1 280px;
+    min-width: min(280px, 100%);
+  }
+
+  .browser-toolbar-tools {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .browser-toolbar-cluster {
+    padding: 6px 7px 7px;
+  }
+
+  .browser-toolbar-cluster[data-kind='route'] {
+    min-width: min(190px, 100%);
+  }
+
+  .browser-new-tab-page {
+    padding: 30px 32px;
+  }
+}
+
+@container workspace-stack (max-width: 920px) {
+  .browser-toolbar-primary {
+    min-width: min(260px, 100%);
+    gap: 6px;
+  }
+
+  .browser-toolbar-address {
+    flex: 1 1 220px;
+    min-width: min(220px, 100%);
+  }
+
+  .browser-toolbar-cluster {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .browser-toolbar-cluster-label {
+    display: none;
+  }
+
+  .browser-go-btn,
+  .browser-nav-btn,
+  .browser-draw-btn,
+  .browser-inspect-btn,
+  .browser-record-btn,
+  .browser-viewport-btn {
+    min-height: 30px;
+    padding: 0 10px;
+  }
+
+  .browser-toolbar-route {
+    min-height: 30px;
+    padding: 0 10px;
+  }
 }
 
 .browser-ntp-capabilities {

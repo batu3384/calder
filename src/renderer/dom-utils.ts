@@ -19,17 +19,25 @@ export function scoreColor(score: number): string {
   return 'var(--danger)';
 }
 
-/** Create a numeric PIN input field (4–8 digits). */
-export function createPinInput(): HTMLInputElement {
+interface PassphraseInputOptions {
+  placeholder?: string;
+  value?: string;
+}
+
+/** Create a passphrase input field for session sharing. */
+export function createPassphraseInput(options: PassphraseInputOptions = {}): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'text';
-  input.inputMode = 'numeric';
+  input.inputMode = 'text';
   input.className = 'share-pin-input';
-  input.placeholder = 'PIN';
-  input.maxLength = 8;
+  input.placeholder = options.placeholder ?? 'Passphrase';
+  input.value = options.value ?? '';
+  input.minLength = 12;
+  input.maxLength = 64;
   input.autocomplete = 'off';
+  input.spellcheck = false;
   input.addEventListener('input', () => {
-    input.value = input.value.replace(/\D/g, '');
+    input.value = input.value.replace(/[^A-Za-z0-9\s-]/g, '').toUpperCase();
   });
   return input;
 }

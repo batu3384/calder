@@ -53,7 +53,17 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
   for (const card of cards) {
     const el = document.createElement('div');
     el.className = 'usage-stat-card';
-    el.innerHTML = `<div class="usage-stat-value">${card.value}</div><div class="usage-stat-label">${card.label}</div>`;
+
+    const value = document.createElement('div');
+    value.className = 'usage-stat-value';
+    value.textContent = card.value;
+
+    const label = document.createElement('div');
+    label.className = 'usage-stat-label';
+    label.textContent = card.label;
+
+    el.appendChild(value);
+    el.appendChild(label);
     summary.appendChild(el);
   }
   container.appendChild(summary);
@@ -105,10 +115,16 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
       const totalTokens = usage.inputTokens + usage.outputTokens;
       const cacheTokens = usage.cacheReadInputTokens + usage.cacheCreationInputTokens;
 
-      row.innerHTML = `
-        <span class="usage-model-name">${prettyModelName(model)}</span>
-        <span class="usage-model-tokens">${formatTokens(totalTokens)} tokens · ${formatTokens(cacheTokens)} cache</span>
-      `;
+      const name = document.createElement('span');
+      name.className = 'usage-model-name';
+      name.textContent = prettyModelName(model);
+
+      const tokens = document.createElement('span');
+      tokens.className = 'usage-model-tokens';
+      tokens.textContent = `${formatTokens(totalTokens)} tokens · ${formatTokens(cacheTokens)} cache`;
+
+      row.appendChild(name);
+      row.appendChild(tokens);
       container.appendChild(row);
     }
   }

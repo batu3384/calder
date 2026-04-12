@@ -25,6 +25,16 @@ import {
   _resetForTesting,
 } from './session-unread';
 
+function makeSession(id: string, name: string) {
+  return {
+    id,
+    name,
+    providerId: 'claude' as const,
+    cliSessionId: null,
+    createdAt: '2026-04-12T00:00:00.000Z',
+  };
+}
+
 beforeEach(() => {
   _resetForTesting();
   statusChangeCallbacks.length = 0;
@@ -38,18 +48,20 @@ function setupProjects(): void {
     {
       id: 'p1',
       name: 'Project 1',
-      directory: '/tmp/p1',
-      sessions: [{ id: 's1', name: 'Session 1', providerId: 'claude' }],
+      path: '/tmp/p1',
+      sessions: [makeSession('s1', 'Session 1')],
       activeSessionId: 's1',
+      layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
     },
     {
       id: 'p2',
       name: 'Project 2',
-      directory: '/tmp/p2',
-      sessions: [{ id: 's2', name: 'Session 2', providerId: 'claude' }],
+      path: '/tmp/p2',
+      sessions: [makeSession('s2', 'Session 2')],
       activeSessionId: 's2',
+      layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
     },
-  ];
+  ] as ProjectRecord[];
 }
 
 function simulateStatusChange(sessionId: string, status: string): void {
@@ -86,14 +98,15 @@ describe('session-unread', () => {
       {
         id: 'p1',
         name: 'Project 1',
-        directory: '/tmp/p1',
+        path: '/tmp/p1',
         sessions: [
-          { id: 's1', name: 'Session 1', providerId: 'claude' },
-          { id: 's2', name: 'Session 2', providerId: 'claude' },
+          makeSession('s1', 'Session 1'),
+          makeSession('s2', 'Session 2'),
         ],
         activeSessionId: 's1', // s1 is active, not s2
+        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
       },
-    ];
+    ] as ProjectRecord[];
     mockAppState.activeProjectId = 'p1';
     init();
 

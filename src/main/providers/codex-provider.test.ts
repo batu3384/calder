@@ -40,6 +40,7 @@ import { CodexProvider, _resetCachedPath } from './codex-provider';
 import { getCodexConfig } from '../codex-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../codex-hooks';
+import type { ProviderConfig } from '../../shared/types';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
@@ -224,7 +225,12 @@ describe('hooks integration', () => {
 
 describe('other methods', () => {
   it('getConfig delegates to codex config reader', async () => {
-    const config = { mcpServers: [{ name: 'a', url: 'b', status: 'configured', scope: 'user', filePath: '/x' }], agents: [], skills: [], commands: [] };
+    const config: ProviderConfig = {
+      mcpServers: [{ name: 'a', url: 'b', status: 'configured', scope: 'user', filePath: '/x' }],
+      agents: [],
+      skills: [],
+      commands: [],
+    };
     mockGetCodexConfig.mockResolvedValueOnce(config);
     await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
     expect(mockGetCodexConfig).toHaveBeenCalledWith('/some/path');

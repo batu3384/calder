@@ -1,5 +1,5 @@
-export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types.js';
-import type { CostData, ProviderConfig, GitWorktree, McpResult, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types.js';
+export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload } from '../shared/types.js';
+import type { CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload } from '../shared/types.js';
 
 export interface CalderApi {
   pty: {
@@ -13,11 +13,14 @@ export interface CalderApi {
     onExit(callback: (sessionId: string, exitCode: number, signal?: number) => void): () => void;
   };
   session: {
+    buildResumeWithPrompt(sourceProviderId: ProviderId, sourceCliSessionId: string | null, projectPath: string, sessionName: string): Promise<string>;
     onHookStatus(callback: (sessionId: string, status: 'working' | 'waiting' | 'completed' | 'input', hookName: string) => void): () => void;
     onCliSessionId(callback: (sessionId: string, cliSessionId: string) => void): () => void;
     /** @deprecated Use onCliSessionId */
     onClaudeSessionId(callback: (sessionId: string, claudeSessionId: string) => void): () => void;
     onCostData(callback: (sessionId: string, costData: CostData) => void): () => void;
+    onToolFailure(callback: (sessionId: string, data: ToolFailureData) => void): () => void;
+    onInspectorEvents(callback: (sessionId: string, events: InspectorEvent[]) => void): () => void;
   };
   fs: {
     isDirectory(path: string): Promise<boolean>;
@@ -38,6 +41,7 @@ export interface CalderApi {
     getConfig(providerId: ProviderId, projectPath: string): Promise<ProviderConfig>;
     getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
     listProviders(): Promise<CliProviderMeta[]>;
+    checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
     watchProject(providerId: ProviderId, projectPath: string): void;
     onConfigChanged(callback: () => void): () => void;
   };
@@ -47,9 +51,17 @@ export interface CalderApi {
   };
   git: {
     getStatus(path: string): Promise<unknown>;
-    getFiles(path: string): Promise<unknown>;
+    getFiles(path: string): Promise<GitFileEntry[]>;
     getDiff(path: string, file: string, area: string): Promise<string>;
     getWorktrees(path: string): Promise<GitWorktree[]>;
+    getRemoteUrl(path: string): Promise<string | null>;
+    stageFile(path: string, file: string): Promise<void>;
+    unstageFile(path: string, file: string): Promise<void>;
+    discardFile(path: string, file: string, area: string): Promise<void>;
+    openInEditor(path: string, file: string): Promise<void>;
+    listBranches(path: string): Promise<{ name: string; current: boolean }[]>;
+    checkoutBranch(path: string, branch: string): Promise<void>;
+    createBranch(path: string, branch: string): Promise<void>;
     watchProject(path: string): void;
     onChanged(callback: () => void): () => void;
   };
@@ -65,6 +77,8 @@ export interface CalderApi {
     focus(): void;
     getVersion(): Promise<string>;
     openExternal(url: string): Promise<void>;
+    getBrowserPreloadPath(): Promise<string>;
+    onOpenEmbeddedBrowserUrl(callback: (payload: EmbeddedBrowserOpenPayload) => void): () => void;
     onQuitting(callback: () => void): () => void;
   };
   browser: {
@@ -92,12 +106,21 @@ export interface CalderApi {
     callTool(id: string, name: string, args: Record<string, unknown>): Promise<McpResult>;
     readResource(id: string, uri: string): Promise<McpResult>;
     getPrompt(id: string, name: string, args: Record<string, string>): Promise<McpResult>;
+    addServer(name: string, config: unknown, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
+    removeServer(name: string, filePath: string, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
   };
   readiness: {
     analyze(projectPath: string, excludedProviders?: string[]): Promise<ReadinessResult>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;
+  };
+  settings: {
+    onWarning(callback: (data: SettingsWarningData) => void): () => void;
+    onConflictDialog(callback: (data: StatusLineConflictData) => void): () => void;
+    respondConflictDialog(choice: 'replace' | 'keep'): void;
+    reinstall(providerId?: ProviderId): Promise<{ success: boolean }>;
+    validate(providerId?: ProviderId): Promise<SettingsValidationResult>;
   };
   menu: {
     onPreferences(callback: () => void): () => void;
@@ -114,5 +137,6 @@ export interface CalderApi {
     onToggleInspector(callback: () => void): () => void;
     onToggleContextPanel(callback: () => void): () => void;
     onCloseSession(callback: () => void): () => void;
+    rebuild(debugMode: boolean): Promise<void>;
   };
 }

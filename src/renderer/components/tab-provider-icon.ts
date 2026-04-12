@@ -12,6 +12,7 @@ const PROVIDER_FALLBACK_LABELS: Record<ProviderId, string> = {
   copilot: 'CP',
   gemini: 'GM',
   qwen: 'QW',
+  minimax: 'MM',
   blackbox: 'BB',
 };
 

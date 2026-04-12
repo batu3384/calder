@@ -1,30 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock peer-host before importing share-dialog
-const mockIsSharing = vi.fn(() => false);
-const mockIsConnected = vi.fn(() => false);
+const mockIsSharing = vi.fn<(sessionId: unknown) => boolean>(() => false);
+const mockIsConnected = vi.fn<(sessionId: unknown) => boolean>(() => false);
 vi.mock('../sharing/peer-host.js', () => ({
-  isSharing: (...args: unknown[]) => mockIsSharing(...args),
-  isConnected: (...args: unknown[]) => mockIsConnected(...args),
+  isSharing: (sessionId: unknown) => mockIsSharing(sessionId),
+  isConnected: (sessionId: unknown) => mockIsConnected(sessionId),
 }));
 
 // Mock share-manager before importing share-dialog
-const mockEndShare = vi.fn();
-const mockShareSession = vi.fn();
+const mockEndShare = vi.fn<(sessionId: unknown) => void>();
+const mockShareSession = vi.fn<(sessionId: unknown, mode: unknown, pin: unknown) => Promise<unknown>>();
 vi.mock('../sharing/share-manager.js', () => ({
-  shareSession: (...args: unknown[]) => mockShareSession(...args),
+  shareSession: (sessionId: unknown, mode: unknown, pin: unknown) => mockShareSession(sessionId, mode, pin),
   acceptShareAnswer: vi.fn(),
-  endShare: (...args: unknown[]) => mockEndShare(...args),
+  endShare: (sessionId: unknown) => mockEndShare(sessionId),
 }));
 
 // Mock share-crypto
 vi.mock('../sharing/share-crypto.js', () => ({
-  validatePin: () => null,
+  validateSharePassphrase: () => null,
+  generatePassphrase: () => 'ABCD-EF12-GH34-JK56',
   DecryptionError: class DecryptionError extends Error {},
 }));
 
 // Minimal DOM stubs so share-dialog can create elements without jsdom
-const elementStubs = new Map<string, Record<string, unknown>>();
 function makeElement(): Record<string, unknown> {
   const el: Record<string, unknown> = {
     className: '',
@@ -87,7 +87,7 @@ beforeEach(() => {
 
 function findButton(text: string): Record<string, unknown> | undefined {
   return createdElements.find(
-    (el) => el.textContent === text && (el as HTMLElement).className !== undefined
+    (el) => el.textContent === text && (el as { className?: string }).className !== undefined
   );
 }
 
@@ -106,9 +106,8 @@ describe('share-dialog cleanup on close', () => {
   });
 
   it('calls endShare when dialog closed after starting share but before connection', async () => {
-    let onConnectedCb: (() => void) | undefined;
     const mockHandle = {
-      onConnected: (cb: () => void) => { onConnectedCb = cb; },
+      onConnected: () => {},
       onAuthFailed: () => {},
     };
     mockShareSession.mockResolvedValue({ offer: 'test-offer', handle: mockHandle });

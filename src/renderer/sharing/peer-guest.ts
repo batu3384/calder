@@ -194,11 +194,3 @@ function disconnectGuest(guestId: string): void {
 function cleanupGuest(guestId: string): void {
   guestPeers.delete(guestId);
 }
-
-export function _resetForTesting(): void {
-  for (const [guestId] of guestPeers) {
-    disconnectGuest(guestId);
-  }
-  guestPeers.clear();
-  guestIdCounter = 0;
-}

@@ -15,7 +15,6 @@ vi.mock('electron', () => ({
 }));
 
 import * as fs from 'fs';
-import * as path from 'path';
 import { startConfigWatcher, stopConfigWatcher } from './config-watcher';
 
 const n = (p: string) => p.replace(/\\/g, '/');
@@ -37,15 +36,15 @@ beforeEach(() => {
   mockClose.mockClear();
   mockSend.mockClear();
 
-  vi.mocked(fs.watchFile).mockImplementation((filePath: any, _opts: any, cb: any) => {
+  vi.mocked(fs.watchFile).mockImplementation(((filePath: any, _opts: any, cb: any) => {
     watchFileCallbacks.set(n(String(filePath)), cb);
     return {} as any;
-  });
+  }) as any);
   vi.mocked(fs.unwatchFile).mockImplementation(vi.fn() as any);
-  vi.mocked(fs.watch).mockImplementation((dirPath: any, _opts: any, cb: any) => {
+  vi.mocked(fs.watch).mockImplementation(((dirPath: any, _opts: any, cb: any) => {
     watchDirCallbacks.set(n(String(dirPath)), cb);
     return { close: mockClose, on: vi.fn().mockReturnThis() } as any;
-  });
+  }) as any);
 
   // Clean up any previous watcher state
   stopConfigWatcher();
@@ -163,9 +162,9 @@ describe('config-watcher', () => {
   });
 
   it('handles fs.watch errors gracefully', () => {
-    vi.mocked(fs.watch).mockImplementation(() => {
+    vi.mocked(fs.watch).mockImplementation((() => {
       throw new Error('ENOENT');
-    });
+    }) as any);
 
     const win = createMockWin();
     // Should not throw
@@ -231,6 +230,36 @@ describe('config-watcher', () => {
     expect(fs.watchFile).toHaveBeenCalledTimes(2);
     expect(watchFileCallbacks.has('/home/testuser/.blackboxcli/settings.json')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.blackboxcli/settings.json')).toBe(true);
+    expect(fs.watch).not.toHaveBeenCalled();
+  });
+
+  it('watches copilot config, mcp, and skills for a project', () => {
+    const win = createMockWin();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+    startConfigWatcher(win, '/projects/test', 'copilot');
+
+    expect(fs.watchFile).toHaveBeenCalledTimes(5);
+    expect(watchFileCallbacks.has('/home/testuser/.copilot/config.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.copilot/mcp-config.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.copilot/lsp-config.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.mcp.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.github/lsp.json')).toBe(true);
+
+    expect(fs.watch).toHaveBeenCalledTimes(2);
+    expect(watchDirCallbacks.has('/home/testuser/.copilot/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.github/skills')).toBe(true);
+  });
+
+  it('watches minimax config files for a project', () => {
+    const win = createMockWin();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+    startConfigWatcher(win, '/projects/test', 'minimax' as any);
+
+    expect(fs.watchFile).toHaveBeenCalledTimes(2);
+    expect(watchFileCallbacks.has('/home/testuser/.mmx/config.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.mmx/credentials.json')).toBe(true);
     expect(fs.watch).not.toHaveBeenCalled();
   });
 });

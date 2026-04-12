@@ -2,8 +2,10 @@ import type { ProviderId, CliProviderMeta } from '../../shared/types';
 import type { CliProvider } from './provider';
 import { ClaudeProvider } from './claude-provider';
 import { CodexProvider } from './codex-provider';
+import { CopilotProvider } from './copilot-provider';
 import { GeminiProvider } from './gemini-provider';
 import { QwenProvider } from './qwen-provider';
+import { MiniMaxProvider } from './minimax-provider';
 import { BlackboxProvider } from './blackbox-provider';
 
 const providers = new Map<ProviderId, CliProvider>();
@@ -11,8 +13,10 @@ const providers = new Map<ProviderId, CliProvider>();
 export function initProviders(): void {
   registerProvider(new ClaudeProvider());
   registerProvider(new CodexProvider());
+  registerProvider(new CopilotProvider());
   registerProvider(new GeminiProvider());
   registerProvider(new QwenProvider());
+  registerProvider(new MiniMaxProvider());
   registerProvider(new BlackboxProvider());
 }
 

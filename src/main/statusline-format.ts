@@ -1,4 +1,4 @@
-export type StatuslineProvider = 'anthropic' | 'zai' | 'qwen';
+export type StatuslineProvider = 'anthropic' | 'zai' | 'minimax' | 'qwen';
 export type ProviderQuotaStatus = 'syncing' | 'unknown' | 'unsupported';
 export type QuotaFreshness = 'live' | 'syncing' | 'stale';
 
@@ -6,6 +6,7 @@ export interface ProviderQuotaSnapshot {
   provider: StatuslineProvider;
   model: string;
   fiveHour: string | null;
+  fiveHourReset?: string | null;
   weekly: string | null;
   weeklyLabel?: string;
   status: ProviderQuotaStatus;
@@ -30,18 +31,20 @@ export const DEFAULT_STATUSLINE_STALE_MS = 5 * 60_000;
 const PROVIDER_LABELS: Record<StatuslineProvider, string> = {
   anthropic: 'Anthropic',
   zai: 'Z.ai',
+  minimax: 'MiniMax',
   qwen: 'Qwen',
 };
 
 export function inferStatuslineProvider(modelDisplayName: string): StatuslineProvider {
   const normalized = modelDisplayName.trim().toLowerCase();
   if (normalized.startsWith('glm-')) return 'zai';
+  if (normalized.startsWith('minimax-')) return 'minimax';
   if (normalized.startsWith('qwen')) return 'qwen';
   return 'anthropic';
 }
 
 export function fallbackQuotaStatus(provider: StatuslineProvider): ProviderQuotaStatus {
-  if (provider === 'zai') return 'syncing';
+  if (provider === 'zai' || provider === 'minimax') return 'syncing';
   return 'unsupported';
 }
 
@@ -69,17 +72,23 @@ export function formatHybridStatusLine(view: HybridStatuslineView): string {
   const contextLabel = view.contextPercent == null ? '--' : String(view.contextPercent);
   const costLabel = view.costLabel?.trim() || '--';
   const weeklyLabel = view.quota?.weeklyLabel?.trim() || 'Week';
+  const fiveHourReset = view.quota?.fiveHourReset?.trim();
+  const fiveHourValue = view.quota?.fiveHour ?? quotaStatus;
+  const fiveHourLabel = fiveHourReset ? `${fiveHourValue} · resets ${fiveHourReset}` : fiveHourValue;
   const line1 = [
     view.modelDisplayName || 'Unknown Model',
     PROVIDER_LABELS[view.provider],
     view.effortLabel?.trim() || '--',
     view.cwdLabel || 'project',
   ].join('  ');
+  const quotaParts = [`5h ${fiveHourLabel}`];
+  if (view.provider !== 'zai') {
+    quotaParts.push(`${weeklyLabel} ${view.quota?.weekly ?? quotaStatus}`);
+  }
   const line2 = [
     `Ctx ${contextLabel}%`,
     `Cost ${costLabel}`,
-    `5h ${view.quota?.fiveHour ?? quotaStatus}`,
-    `${weeklyLabel} ${view.quota?.weekly ?? quotaStatus}`,
+    ...quotaParts,
     freshness,
   ].join('  ');
   return `${line1}\n${line2}`;

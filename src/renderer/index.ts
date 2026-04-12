@@ -37,11 +37,27 @@ import { getContext } from './session-context.js';
 import { initSessionInspector } from './components/session-inspector.js';
 import { loadProviderMetas } from './provider-availability.js';
 import { initContextInspector } from './components/context-inspector.js';
+import { getBrowserTabInstance } from './components/browser-tab/instance.js';
+import { navigateTo } from './components/browser-tab/navigation.js';
 
 let isQuitting = false;
 window.calder.app.onQuitting(() => {
   isQuitting = true;
   cleanupAllShares();
+});
+
+window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
+  const project = appState.findProjectForPath(payload.cwd) ?? appState.activeProject;
+  if (!project) return;
+  if (appState.activeProjectId !== project.id) {
+    appState.setActiveProject(project.id);
+  }
+  const session = appState.openUrlInBrowserSurface(project.id, payload.url);
+  if (!session) return;
+  const instance = getBrowserTabInstance(session.id);
+  if (instance) {
+    navigateTo(instance, payload.url);
+  }
 });
 
 async function main(): Promise<void> {

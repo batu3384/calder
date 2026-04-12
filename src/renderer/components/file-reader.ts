@@ -460,7 +460,7 @@ export function hideGoToLineBar(sessionId: string): void {
   entry.bar.classList.add('hidden');
   const instance = instances.get(sessionId);
   if (instance) {
-    instance.element.querySelector('.file-reader-body')?.focus();
+    (instance.element.querySelector('.file-reader-body') as HTMLElement | null)?.focus();
   }
 }
 

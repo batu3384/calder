@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const providerCaps = new Map([
   ['claude', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['copilot', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['gemini', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['codex', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['qwen', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
+  ['minimax', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['blackbox', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
 ]);
 
@@ -208,6 +210,18 @@ describe('terminal pending prompt injection', () => {
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
+  it('passes pending prompt as initialPrompt to pty.create for copilot', async () => {
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    createTerminalPane('copilot-1', '/project', null, false, '', 'copilot');
+    setPendingPrompt('copilot-1', 'fix the bug');
+    await spawnTerminal('copilot-1');
+
+    expect(mockPtyCreate).toHaveBeenCalledWith('copilot-1', '/project', null, false, '', 'copilot', 'fix the bug');
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+  });
+
   it('passes pending prompt as initialPrompt to pty.create for qwen', async () => {
     const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
@@ -229,6 +243,18 @@ describe('terminal pending prompt injection', () => {
     await spawnTerminal('blackbox-1');
 
     expect(mockPtyCreate).toHaveBeenCalledWith('blackbox-1', '/project', null, false, '', 'blackbox', 'fix the bug');
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+  });
+
+  it('passes pending prompt as initialPrompt to pty.create for minimax', async () => {
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    createTerminalPane('minimax-1', '/project', null, false, '', 'minimax' as any);
+    setPendingPrompt('minimax-1', 'fix the bug');
+    await spawnTerminal('minimax-1');
+
+    expect(mockPtyCreate).toHaveBeenCalledWith('minimax-1', '/project', null, false, '', 'minimax', 'fix the bug');
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 

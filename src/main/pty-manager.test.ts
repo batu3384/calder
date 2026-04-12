@@ -11,6 +11,15 @@ const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSy
   mockExecFileSync: vi.fn(),
 }));
 
+const { mockBuildBrowserBridgeEnv } = vi.hoisted(() => ({
+  mockBuildBrowserBridgeEnv: vi.fn((cwd: string, env: Record<string, string>) => ({
+    ...env,
+    PATH: `/mock-bridge:${env.PATH ?? ''}`,
+    BROWSER: '/mock-bridge/calder-open-url',
+    CALDER_BROWSER_BRIDGE_CWD: cwd,
+  })),
+}));
+
 vi.mock('node-pty', () => ({
   default: { spawn: mockSpawn },
   spawn: mockSpawn,
@@ -33,6 +42,10 @@ vi.mock('fs', () => ({
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(() => { throw new Error('ENOENT'); }),
   readdirSync: vi.fn(() => { throw new Error('ENOENT'); }),
+}));
+
+vi.mock('./browser-bridge', () => ({
+  buildBrowserBridgeEnv: mockBuildBrowserBridgeEnv,
 }));
 
 import * as fs from 'fs';
@@ -209,6 +222,24 @@ describe('spawnPty', () => {
       expect(envPath).toContain('/mock/home/.local/bin');
     }
   });
+
+  it('injects the Calder browser bridge env into provider sessions', () => {
+    const proc = createMockPtyProcess();
+    mockSpawn.mockReturnValue(proc);
+
+    spawnPty('s1', '/project/app', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    expect(mockBuildBrowserBridgeEnv).toHaveBeenCalledWith(
+      '/project/app',
+      expect.objectContaining({
+        CLAUDE_IDE_SESSION_ID: 's1',
+      }),
+    );
+    const env = mockSpawn.mock.calls[0][2].env;
+    expect(env.PATH).toContain('/mock-bridge:');
+    expect(env.BROWSER).toBe('/mock-bridge/calder-open-url');
+    expect(env.CALDER_BROWSER_BRIDGE_CWD).toBe('/project/app');
+  });
 });
 
 describe('spawnCommandPty', () => {
@@ -239,6 +270,7 @@ describe('spawnCommandPty', () => {
         rows: 40,
         env: expect.objectContaining({
           NODE_ENV: 'development',
+          BROWSER: '/mock-bridge/calder-open-url',
         }),
       }),
     );

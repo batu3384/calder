@@ -144,18 +144,18 @@ describe('openCliSurfaceWithSetup', () => {
     expect(showQuickSetup).toHaveBeenCalledWith(project, expect.any(Array));
   });
 
-  it('falls back to manual setup for low-confidence discovery', async () => {
+  it('shows quick setup with an empty candidate list for low-confidence discovery', async () => {
     const project = makeProject();
-    const showManualSetup = vi.fn();
+    const showQuickSetup = vi.fn();
 
     await openCliSurfaceWithSetup(project, {
       discover: vi.fn().mockResolvedValue({ confidence: 'low', candidates: [] }),
       start: vi.fn(),
       persist: vi.fn(),
-      showQuickSetup: vi.fn(),
-      showManualSetup,
+      showQuickSetup,
+      showManualSetup: vi.fn(),
     });
 
-    expect(showManualSetup).toHaveBeenCalledWith(project);
+    expect(showQuickSetup).toHaveBeenCalledWith(project, []);
   });
 });

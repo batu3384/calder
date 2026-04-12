@@ -1,5 +1,5 @@
 import { shell } from 'electron';
-import type { BrowserWindow, WebContents } from 'electron';
+import type { WebContents } from 'electron';
 
 type WindowOpenHandler = (details: { url: string }) => { action: 'allow' | 'deny' };
 type EventHandler = (...args: any[]) => void;
@@ -55,4 +55,3 @@ export function attachBrowserWebviewRouting(
     redirectGuestWindowToCurrentView(guestContents, openExternal);
   });
 }
-

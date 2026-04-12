@@ -3,11 +3,36 @@ import type { CliSurfaceDiscoveryCandidate } from '../../../shared/types.js';
 interface QuickSetupHandlers {
   onRun: (candidate: CliSurfaceDiscoveryCandidate) => void;
   onEdit: (candidate: CliSurfaceDiscoveryCandidate) => void;
+  onDemo: () => void;
   onManual: () => void;
 }
 
 function formatCommand(candidate: CliSurfaceDiscoveryCandidate): string {
   return [candidate.command, ...(candidate.args ?? [])].join(' ');
+}
+
+function getWorkspaceLabel(candidates: CliSurfaceDiscoveryCandidate[]): string {
+  const families = new Set(
+    candidates.map((candidate) => candidate.id.split(':')[0]).filter(Boolean),
+  );
+
+  if (families.size !== 1) {
+    return 'Mixed workspace';
+  }
+
+  const [family] = [...families];
+  switch (family) {
+    case 'node':
+      return 'Node workspace';
+    case 'python':
+      return 'Python workspace';
+    case 'cargo':
+      return 'Rust workspace';
+    case 'go':
+      return 'Go workspace';
+    default:
+      return 'CLI workspace';
+  }
 }
 
 function getModalElements() {
@@ -47,19 +72,76 @@ export function showCliSurfaceQuickSetup(
   bodyEl.innerHTML = '';
   actionsEl.innerHTML = '';
 
-  for (const candidate of candidates) {
-    const card = document.createElement('div');
-    card.className = 'cli-surface-quick-setup-card';
-    card.innerHTML = `
-      <div class="cli-surface-quick-setup-command">${formatCommand(candidate)}</div>
-      <div class="cli-surface-quick-setup-reason">${candidate.reason}</div>
-      <div class="cli-surface-quick-setup-cwd">${candidate.cwd ?? ''}</div>
-      <div class="cli-surface-quick-setup-actions">
-        <button type="button" data-action="run" data-candidate-id="${candidate.id}">Run</button>
-        <button type="button" data-action="edit" data-candidate-id="${candidate.id}">Edit</button>
-      </div>
+  if (candidates.length === 0) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'cli-surface-quick-setup-empty';
+    emptyState.innerHTML = `
+      <strong>No launch command detected yet.</strong>
+      <p>Try Calder's built-in demo to preview the workflow, or set up your own CLI command manually.</p>
     `;
-    bodyEl.appendChild(card);
+    bodyEl.appendChild(emptyState);
+  } else {
+    const summary = document.createElement('div');
+    summary.className = 'cli-surface-quick-setup-summary';
+    const summaryKicker = document.createElement('div');
+    summaryKicker.className = 'cli-surface-quick-setup-summary-kicker';
+    summaryKicker.textContent = getWorkspaceLabel(candidates);
+
+    const summaryTitle = document.createElement('strong');
+    summaryTitle.textContent = 'Best match';
+
+    const summaryPreview = document.createElement('div');
+    summaryPreview.className = 'cli-surface-quick-setup-summary-preview';
+    summaryPreview.textContent = formatCommand(candidates[0]);
+
+    const summaryCopy = document.createElement('p');
+    summaryCopy.textContent = `Calder found ${candidates.length} runnable option${candidates.length === 1 ? '' : 's'} for this project.`;
+
+    summary.appendChild(summaryKicker);
+    summary.appendChild(summaryTitle);
+    summary.appendChild(summaryPreview);
+    summary.appendChild(summaryCopy);
+    bodyEl.appendChild(summary);
+
+    for (const candidate of candidates) {
+      const card = document.createElement('div');
+      card.className = 'cli-surface-quick-setup-card';
+
+      const command = document.createElement('div');
+      command.className = 'cli-surface-quick-setup-command';
+      command.textContent = formatCommand(candidate);
+
+      const reason = document.createElement('div');
+      reason.className = 'cli-surface-quick-setup-reason';
+      reason.textContent = candidate.reason;
+
+      const cwd = document.createElement('div');
+      cwd.className = 'cli-surface-quick-setup-cwd';
+      cwd.textContent = candidate.cwd ?? '';
+
+      const cardActions = document.createElement('div');
+      cardActions.className = 'cli-surface-quick-setup-actions';
+
+      const runButton = document.createElement('button');
+      runButton.type = 'button';
+      runButton.dataset.action = 'run';
+      runButton.dataset.candidateId = candidate.id;
+      runButton.textContent = 'Run';
+
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.dataset.action = 'edit';
+      editButton.dataset.candidateId = candidate.id;
+      editButton.textContent = 'Edit';
+
+      cardActions.appendChild(runButton);
+      cardActions.appendChild(editButton);
+      card.appendChild(command);
+      card.appendChild(reason);
+      card.appendChild(cwd);
+      card.appendChild(cardActions);
+      bodyEl.appendChild(card);
+    }
   }
 
   bodyEl.querySelectorAll('[data-action="run"]').forEach((button) => {
@@ -85,6 +167,16 @@ export function showCliSurfaceQuickSetup(
     hideQuickSetupModal();
   });
   actionsEl.appendChild(cancelButton);
+
+  const demoButton = document.createElement('button');
+  demoButton.type = 'button';
+  demoButton.dataset.action = 'demo-setup';
+  demoButton.textContent = 'Try demo';
+  demoButton.addEventListener('click', () => {
+    hideQuickSetupModal();
+    handlers.onDemo();
+  });
+  actionsEl.appendChild(demoButton);
 
   const manualButton = document.createElement('button');
   manualButton.type = 'button';

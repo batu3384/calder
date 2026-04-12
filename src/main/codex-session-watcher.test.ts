@@ -132,8 +132,8 @@ describe('session ID assignment via polling', () => {
     const buf = Buffer.from(newLine);
     mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
     mockOpenSync.mockReturnValue(42);
-    mockReadSync.mockImplementation((_fd, target: Buffer) => {
-      buf.copy(target);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
       return buf.length;
     });
 
@@ -167,8 +167,8 @@ describe('session ID assignment via polling', () => {
     const buf = Buffer.from(newLine);
     mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
     mockOpenSync.mockReturnValue(10);
-    mockReadSync.mockImplementation((_fd, target: Buffer) => {
-      buf.copy(target);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
       return buf.length;
     });
 
@@ -196,8 +196,8 @@ describe('session ID assignment via polling', () => {
     const buf1 = Buffer.from(line1);
     mockStatSync.mockReturnValue({ size: buf1.length } as fs.Stats);
     mockOpenSync.mockReturnValue(10);
-    mockReadSync.mockImplementation((_fd, target: Buffer) => {
-      buf1.copy(target);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf1.copy(target as Uint8Array);
       return buf1.length;
     });
     vi.advanceTimersByTime(2000);
@@ -214,8 +214,8 @@ describe('session ID assignment via polling', () => {
     const totalSize = buf1.length + buf2.length;
     mockStatSync.mockReturnValue({ size: totalSize } as fs.Stats);
     mockOpenSync.mockReturnValue(11);
-    mockReadSync.mockImplementation((_fd, target: Buffer) => {
-      buf2.copy(target);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf2.copy(target as Uint8Array);
       return buf2.length;
     });
     vi.advanceTimersByTime(2000);
@@ -254,8 +254,8 @@ describe('unregisterCodexSession', () => {
     const buf = Buffer.from(newLine);
     mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
     mockOpenSync.mockReturnValue(10);
-    mockReadSync.mockImplementation((_fd, target: Buffer) => {
-      buf.copy(target);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
       return buf.length;
     });
 

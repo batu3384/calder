@@ -41,10 +41,37 @@ function browserWorkspaceLabel(): string {
   return project.name;
 }
 
+function createBrowserToolbarCluster(labelText: string): {
+  element: HTMLDivElement;
+  controls: HTMLDivElement;
+} {
+  const element = document.createElement('div');
+  element.className = 'browser-toolbar-cluster';
+
+  const label = document.createElement('span');
+  label.className = 'browser-toolbar-cluster-label';
+  label.textContent = labelText;
+  element.appendChild(label);
+
+  const controls = document.createElement('div');
+  controls.className = 'browser-toolbar-cluster-controls';
+  element.appendChild(controls);
+
+  return { element, controls };
+}
+
 function browserTargetButtonLabel(instance: BrowserTabInstance): string {
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
   const label = selectedTarget?.name ?? 'Select Session';
   return label.length > 22 ? `${label.slice(0, 21)}…` : label;
+}
+
+function browserToolbarRouteCopy(instance: BrowserTabInstance): string {
+  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+  if (!selectedTarget) return 'Choose in prompt';
+  const provider = getProviderDisplayName(selectedTarget.providerId ?? 'claude');
+  const copy = `${provider} · ${selectedTarget.name}`;
+  return copy.length > 30 ? `${copy.slice(0, 29)}…` : copy;
 }
 
 function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
@@ -164,6 +191,12 @@ function syncBrowserTargetControls(instance: BrowserTabInstance): void {
       : 'Choose which open session receives the browser prompt';
   }
 
+  instance.toolbarRouteEl.textContent = browserToolbarRouteCopy(instance);
+  instance.toolbarRouteEl.dataset.state = hasTarget ? 'ready' : 'empty';
+  instance.toolbarRouteEl.title = selectedTarget
+    ? `Default handoff target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
+    : 'Choose a session inside Inspect, Record, or Draw when you route browser context';
+
   if (instance.targetMenu.style.display !== 'none') {
     renderBrowserTargetMenu(instance);
   }
@@ -207,20 +240,26 @@ async function populateLocalTargets(
     if (targets.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'browser-ntp-empty';
-      empty.textContent = 'No active localhost targets found. Start a dev server, or type any URL in the bar above.';
+      empty.textContent = 'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
       grid.appendChild(empty);
-      copy.textContent = 'Only running local browser surfaces are listed here.';
+      copy.textContent = 'Only running localhost surfaces are listed here.';
       return;
     }
 
-    copy.textContent = 'Only active localhost surfaces appear here. Choose one to open it instantly.';
+    copy.textContent = 'Only running localhost surfaces appear here. Pick one or paste any URL above.';
     for (const target of targets) {
       const btn = document.createElement('button');
       btn.className = 'browser-ntp-link';
-      btn.innerHTML = `
-        <span class="browser-ntp-link-label">${target.label}</span>
-        <span class="browser-ntp-link-meta">${target.meta}</span>
-      `;
+      const label = document.createElement('span');
+      label.className = 'browser-ntp-link-label';
+      label.textContent = target.label;
+
+      const meta = document.createElement('span');
+      meta.className = 'browser-ntp-link-meta';
+      meta.textContent = target.meta;
+
+      btn.appendChild(label);
+      btn.appendChild(meta);
       btn.addEventListener('click', () => navigateTo(instance, target.url));
       grid.appendChild(btn);
     }
@@ -228,9 +267,9 @@ async function populateLocalTargets(
     if (!instances.has(instance.sessionId)) return;
     const empty = document.createElement('div');
     empty.className = 'browser-ntp-empty';
-    empty.textContent = 'Could not detect active localhost targets right now. Type a URL in the bar above.';
+    empty.textContent = 'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
     grid.appendChild(empty);
-    copy.textContent = 'Only running local browser surfaces are listed here.';
+    copy.textContent = 'Only running localhost surfaces are listed here.';
   }
 }
 
@@ -254,7 +293,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const chromeHint = document.createElement('div');
   chromeHint.className = 'browser-pane-hint';
-  chromeHint.textContent = 'Inspect, capture, annotate';
+  chromeHint.textContent = 'Inspect, annotate, hand off';
 
   chrome.appendChild(chromeLabel);
   chrome.appendChild(chromeWorkspace);
@@ -273,6 +312,15 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
   toolbarTools.setAttribute('aria-label', 'Live View tools');
+
+  const routeCluster = createBrowserToolbarCluster('Route');
+  routeCluster.element.dataset.kind = 'route';
+
+  const viewCluster = createBrowserToolbarCluster('View');
+  viewCluster.element.dataset.kind = 'view';
+
+  const captureCluster = createBrowserToolbarCluster('Capture');
+  captureCluster.element.dataset.kind = 'capture';
 
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';
@@ -313,6 +361,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportBtn.textContent = 'Responsive';
   viewportBtn.title = 'Change viewport size';
   viewportBtn.ariaLabel = 'Change viewport size';
+
+  const toolbarRoute = document.createElement('div');
+  toolbarRoute.className = 'browser-toolbar-route';
+  toolbarRoute.textContent = 'Choose in prompt';
 
   const viewportDropdown = document.createElement('div');
   viewportDropdown.className = 'browser-viewport-dropdown';
@@ -391,10 +443,15 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   toolbarAddress.appendChild(urlInput);
   toolbarAddress.appendChild(goBtn);
 
-  toolbarTools.appendChild(viewportWrapper);
-  toolbarTools.appendChild(inspectBtn);
-  toolbarTools.appendChild(recordBtn);
-  toolbarTools.appendChild(drawBtn);
+  routeCluster.controls.appendChild(toolbarRoute);
+  viewCluster.controls.appendChild(viewportWrapper);
+  captureCluster.controls.appendChild(inspectBtn);
+  captureCluster.controls.appendChild(recordBtn);
+  captureCluster.controls.appendChild(drawBtn);
+
+  toolbarTools.appendChild(routeCluster.element);
+  toolbarTools.appendChild(viewCluster.element);
+  toolbarTools.appendChild(captureCluster.element);
 
   toolbar.appendChild(toolbarNav);
   toolbar.appendChild(toolbarAddress);
@@ -410,7 +467,8 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const newTabPage = document.createElement('div');
   newTabPage.className = 'browser-new-tab-page';
-  newTabPage.style.display = url ? 'none' : 'flex';
+  newTabPage.dataset.mode = url === 'about:blank' ? 'default' : 'hidden';
+  newTabPage.style.display = !url || url === 'about:blank' ? 'flex' : 'none';
 
   const ntpEyebrow = document.createElement('div');
   ntpEyebrow.className = 'browser-ntp-eyebrow shell-kicker';
@@ -419,13 +477,28 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpTitle = document.createElement('div');
   ntpTitle.className = 'browser-ntp-title';
-  ntpTitle.textContent = 'Open a live target';
+  ntpTitle.textContent = 'Open a local surface';
   newTabPage.appendChild(ntpTitle);
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Jump into a local app, inspect a page, and send context to the active session without leaving Calder.';
+  ntpSubtitle.textContent = 'Jump into a running app, capture the right page context, and route it into the session you choose without leaving Calder.';
   newTabPage.appendChild(ntpSubtitle);
+
+  const ntpActions = document.createElement('div');
+  ntpActions.className = 'browser-ntp-actions';
+
+  const focusAddressBtn = document.createElement('button');
+  focusAddressBtn.className = 'browser-ntp-action';
+  focusAddressBtn.textContent = 'Focus address bar';
+
+  const refreshTargetsBtn = document.createElement('button');
+  refreshTargetsBtn.className = 'browser-ntp-action browser-ntp-action-secondary';
+  refreshTargetsBtn.textContent = 'Rescan localhost';
+
+  ntpActions.appendChild(focusAddressBtn);
+  ntpActions.appendChild(refreshTargetsBtn);
+  newTabPage.appendChild(ntpActions);
 
   const ntpCapabilities = document.createElement('div');
   ntpCapabilities.className = 'browser-ntp-capabilities';
@@ -445,7 +518,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpTargetsTitle = document.createElement('div');
   ntpTargetsTitle.className = 'browser-ntp-section-title shell-kicker';
-  ntpTargetsTitle.textContent = 'Local targets';
+  ntpTargetsTitle.textContent = 'Local surfaces';
   ntpTargets.appendChild(ntpTargetsTitle);
 
   const ntpTargetsText = document.createElement('div');
@@ -456,6 +529,35 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const ntpGrid = document.createElement('div');
   ntpGrid.className = 'browser-ntp-grid';
   ntpTargets.appendChild(ntpGrid);
+
+  function resetNewTabCopy(): void {
+    newTabPage.dataset.mode = 'default';
+    ntpTitle.textContent = 'Open a local surface';
+    ntpSubtitle.textContent = 'Jump into a running app, capture the right page context, and route it into the session you choose without leaving Calder.';
+    ntpTargetsText.textContent = 'Scanning for active localhost targets…';
+  }
+
+  function showOfflineState(failedUrl: string): void {
+    const isLocalSurface = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([/:]|$)/i.test(failedUrl);
+
+    ntpTitle.textContent = 'Surface offline';
+    ntpSubtitle.textContent = isLocalSurface
+      ? `${failedUrl} is not reachable right now. Start the local app again, then reload or rescan localhost.`
+      : `${failedUrl} could not be opened right now. Try reloading, pasting a different URL, or choosing another local surface.`;
+    ntpTargetsText.textContent = isLocalSurface
+      ? 'Start the local app again, then rescan localhost or paste a different URL above.'
+      : 'Paste a different URL above, or choose another running localhost surface.';
+    ntpGrid.innerHTML = '';
+
+    const offlineCard = document.createElement('div');
+    offlineCard.className = 'browser-ntp-empty';
+    offlineCard.textContent = isLocalSurface
+      ? 'Start the local app again, then choose another running localhost surface or paste a new URL.'
+      : 'This page could not be opened right now. Choose another running surface or paste a different URL.';
+    ntpGrid.appendChild(offlineCard);
+    newTabPage.dataset.mode = 'offline';
+    newTabPage.style.display = 'flex';
+  }
 
   const ntpWorkflow = document.createElement('section');
   ntpWorkflow.className = 'browser-ntp-panel browser-ntp-workflow';
@@ -468,9 +570,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const ntpWorkflowList = document.createElement('div');
   ntpWorkflowList.className = 'browser-ntp-flow';
   const flowSteps = [
-    ['01', 'Open a local surface', 'Start with a running app, localhost target, or any manual URL.'],
-    ['02', 'Capture what matters', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
-    ['03', 'Hand off to session', 'Send the page context into a new or custom session without leaving Calder.'],
+    ['01', 'Open a surface', 'Start with a running app, a localhost surface, or any manual URL.'],
+    ['02', 'Capture the right context', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
+    ['03', 'Hand off to session', 'Route the page context into a new or open session without leaving Calder.'],
   ] as const;
 
   for (const [index, title, copy] of flowSteps) {
@@ -740,6 +842,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     viewportContainer,
     newTabPage,
     urlInput,
+    toolbarRouteEl: toolbarRoute,
     inspectBtn,
     viewportBtn,
     viewportDropdown,
@@ -786,6 +889,14 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   };
   instances.set(sessionId, instance);
   instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
+  focusAddressBtn.addEventListener('click', () => {
+    urlInput.focus();
+    urlInput.select();
+  });
+  refreshTargetsBtn.addEventListener('click', () => {
+    resetNewTabCopy();
+    void populateLocalTargets(instance, ntpGrid, ntpTargetsText);
+  });
   void populateLocalTargets(instance, ntpGrid, ntpTargetsText);
 
   const syncTargetingUi = () => syncBrowserTargetControls(instance);
@@ -922,19 +1033,48 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     addFlowStep(instance, { type: 'navigate', url });
   }
 
-  webview.addEventListener('did-navigate', ((e: CustomEvent) => {
+  webview.addEventListener('did-navigate', ((e: Event & { url: string }) => {
+    if (e.url === 'about:blank') {
+      if (newTabPage.dataset.mode !== 'offline') {
+        resetNewTabCopy();
+      }
+      newTabPage.style.display = 'flex';
+    } else {
+      resetNewTabCopy();
+      newTabPage.style.display = 'none';
+    }
     urlInput.value = e.url;
-    newTabPage.style.display = 'none';
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
-  webview.addEventListener('did-navigate-in-page', ((e: CustomEvent) => {
+  webview.addEventListener('did-navigate-in-page', ((e: Event & { url: string }) => {
+    if (e.url === 'about:blank') {
+      if (newTabPage.dataset.mode !== 'offline') {
+        resetNewTabCopy();
+      }
+      newTabPage.style.display = 'flex';
+    } else {
+      resetNewTabCopy();
+      newTabPage.style.display = 'none';
+    }
     urlInput.value = e.url;
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     if (instance.flowMode) recordNavigationStep(e.url);
+  }) as EventListener);
+  webview.addEventListener('did-fail-load', ((e: Event & { isMainFrame?: boolean; validatedURL?: string }) => {
+    if (e.isMainFrame === false) return;
+    const failedUrl = e.validatedURL || urlInput.value.trim();
+    if (!failedUrl) return;
+    showOfflineState(failedUrl);
+    if (failedUrl !== 'about:blank') {
+      // Keep the failed URL visible in the address bar while stopping the
+      // guest view, instead of bouncing through about:blank and emitting
+      // another noisy Electron load failure.
+      try { webview.stop(); } catch {}
+    }
   }) as EventListener);
 
-  webview.addEventListener('ipc-message', ((e: CustomEvent) => {
+  webview.addEventListener('ipc-message', ((e: Event & { channel: string; args: unknown[] }) => {
     if (e.channel === 'element-selected') {
       const { metadata, x, y } = e.args[0] as { metadata: Omit<ElementInfo, 'activeSelector'>; x: number; y: number };
       const info: ElementInfo = { ...metadata, activeSelector: metadata.selectors[0] };
@@ -987,7 +1127,6 @@ export function destroyBrowserTabPane(sessionId: string): void {
   try { if (instance.flowMode) instance.webview.send('exit-flow-mode'); } catch {}
   try { if (instance.drawMode) instance.webview.send('exit-draw-mode'); } catch {}
   try { instance.webview.stop(); } catch {}
-  try { instance.webview.src = 'about:blank'; } catch {}
 
   instance.element.remove();
 }

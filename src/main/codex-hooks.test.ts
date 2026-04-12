@@ -28,7 +28,6 @@ import { installCodexHooks, validateCodexHooks, cleanupCodexHooks, CODEX_HOOK_MA
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
-const mockMkdirSync = vi.mocked(fs.mkdirSync);
 
 const n = (p: string) => p.replace(/\\/g, '/');
 

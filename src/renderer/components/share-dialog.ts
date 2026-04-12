@@ -3,8 +3,8 @@
 import type { ShareMode } from '../../shared/sharing-types.js';
 import { shareSession, acceptShareAnswer, endShare } from '../sharing/share-manager.js';
 import { isSharing, isConnected } from '../sharing/peer-host.js';
-import { validatePin } from '../sharing/share-crypto.js';
-import { createPinInput } from '../dom-utils.js';
+import { generatePassphrase, validateSharePassphrase } from '../sharing/share-crypto.js';
+import { createPassphraseInput } from '../dom-utils.js';
 
 let activeOverlay: HTMLElement | null = null;
 let pendingShareSessionId: string | null = null;
@@ -67,7 +67,7 @@ export function showShareDialog(sessionId: string): void {
   phase1.appendChild(modeSection);
   dialog.appendChild(phase1);
 
-  // ── Phase 2: PIN + Codes ──
+  // ── Phase 2: Passphrase + Codes ──
 
   const phase2 = document.createElement('div');
   phase2.className = 'share-phase hidden';
@@ -75,13 +75,21 @@ export function showShareDialog(sessionId: string): void {
   const pinSection = document.createElement('div');
   pinSection.className = 'share-section';
 
-  const pinLabel = document.createElement('div');
-  pinLabel.className = 'share-label';
-  pinLabel.textContent = 'Choose a PIN (4–8 digits) to share with your peer';
+  const passphraseLabel = document.createElement('div');
+  passphraseLabel.className = 'share-label';
+  passphraseLabel.textContent = 'Share this one-time passphrase with your peer';
 
-  const pinInput = createPinInput();
-  pinSection.appendChild(pinLabel);
-  pinSection.appendChild(pinInput);
+  const passphraseHint = document.createElement('div');
+  passphraseHint.className = 'share-notice';
+  passphraseHint.textContent = 'Generated passphrases are stronger than short numeric PINs and work best when copied as-is.';
+
+  const passphraseInput = createPassphraseInput({
+    placeholder: 'One-time passphrase',
+    value: generatePassphrase(),
+  });
+  pinSection.appendChild(passphraseLabel);
+  pinSection.appendChild(passphraseHint);
+  pinSection.appendChild(passphraseInput);
   phase2.appendChild(pinSection);
 
   // Offer code (hidden until generated)
@@ -178,7 +186,7 @@ export function showShareDialog(sessionId: string): void {
     nextBtn.classList.add('hidden');
     backBtn.classList.remove('hidden');
     startBtn.classList.remove('hidden');
-    pinInput.focus();
+    passphraseInput.focus();
   });
 
   backBtn.addEventListener('click', () => {
@@ -222,10 +230,10 @@ export function showShareDialog(sessionId: string): void {
   // ── Start sharing flow ──
 
   startBtn.addEventListener('click', async () => {
-    const pin = pinInput.value.trim();
-    const pinError = validatePin(pin);
-    if (pinError) {
-      statusEl.textContent = pinError;
+    const passphrase = passphraseInput.value.trim();
+    const passphraseError = validateSharePassphrase(passphrase);
+    if (passphraseError) {
+      statusEl.textContent = passphraseError;
       return;
     }
 
@@ -236,10 +244,10 @@ export function showShareDialog(sessionId: string): void {
     pendingShareSessionId = sessionId;
 
     try {
-      const { offer, handle } = await shareSession(sessionId, selectedMode, pin);
+      const { offer, handle } = await shareSession(sessionId, selectedMode, passphrase);
 
-      pinInput.readOnly = true;
-      pinLabel.textContent = 'Share this PIN with your peer';
+      passphraseInput.readOnly = true;
+      passphraseLabel.textContent = 'Share this passphrase with your peer';
       offerTextarea.value = offer;
       offerSection.classList.remove('hidden');
       answerSection.classList.remove('hidden');

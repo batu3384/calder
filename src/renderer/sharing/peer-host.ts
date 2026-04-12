@@ -45,9 +45,10 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
 
   const instance = getTerminalInstance(sessionId);
   if (!instance) throw new Error(`No terminal instance for session ${sessionId}`);
+  const terminalInstance = instance;
 
   const serializeAddon = new SerializeAddon();
-  instance.terminal.loadAddon(serializeAddon);
+  terminalInstance.terminal.loadAddon(serializeAddon);
 
   const connectedCbs: EventCallback[] = [];
   const disconnectedCbs: EventCallback[] = [];
@@ -76,8 +77,8 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
 
   function sendInitAndStartKeepalive(): void {
     const scrollback = serializeAddon.serialize();
-    const { cols, rows } = instance.terminal;
-    const sessionName = instance.sessionId;
+    const { cols, rows } = terminalInstance.terminal;
+    const sessionName = terminalInstance.sessionId;
 
     const initMsg: ShareMessage = {
       type: 'init',
@@ -253,11 +254,4 @@ function cleanup(sessionId: string): void {
   }
   hostPeer.serializeAddon.dispose();
   hostPeers.delete(sessionId);
-}
-
-export function _resetForTesting(): void {
-  for (const [sessionId] of hostPeers) {
-    stopShare(sessionId);
-  }
-  hostPeers.clear();
 }

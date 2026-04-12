@@ -53,6 +53,18 @@ describe('initProviders', () => {
     expect(provider).toBeDefined();
     expect(provider.meta.id).toBe('codex');
   });
+
+  it('registers the Copilot provider', () => {
+    const provider = getProvider('copilot');
+    expect(provider).toBeDefined();
+    expect(provider.meta.id).toBe('copilot');
+  });
+
+  it('registers the MiniMax provider', () => {
+    const provider = getProvider('minimax' as any);
+    expect(provider).toBeDefined();
+    expect(provider.meta.id).toBe('minimax');
+  });
 });
 
 describe('getProvider', () => {
@@ -75,7 +87,7 @@ describe('getProvider', () => {
   });
 
   it('throws for unknown provider ID', () => {
-    expect(() => getProvider('copilot')).toThrow('Unknown CLI provider: copilot');
+    expect(() => getProvider('unknown-provider' as any)).toThrow('Unknown CLI provider: unknown-provider');
   });
 });
 
@@ -91,14 +103,15 @@ describe('getAllProviders', () => {
   it('returns all registered providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const all = getAllProviders();
-    expect(all.length).toBe(6);
+    expect(all.length).toBe(7);
     const ids = all.map(p => p.meta.id);
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
+    expect(ids).toContain('copilot');
     expect(ids).toContain('gemini');
     expect(ids).toContain('qwen');
+    expect(ids).toContain('minimax');
     expect(ids).toContain('blackbox');
-    expect(ids).toContain('copilot');
   });
 });
 
@@ -114,11 +127,12 @@ describe('getAllProviderMetas', () => {
   it('returns meta array for all providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const metas = getAllProviderMetas();
-    expect(metas.length).toBe(6);
+    expect(metas.length).toBe(7);
     expect(metas.map(m => m.id)).toContain('codex');
+    expect(metas.map(m => m.id)).toContain('copilot');
     expect(metas.map(m => m.id)).toContain('gemini');
     expect(metas.map(m => m.id)).toContain('qwen');
+    expect(metas.map(m => m.id)).toContain('minimax');
     expect(metas.map(m => m.id)).toContain('blackbox');
-    expect(metas.map(m => m.id)).toContain('copilot');
   });
 });

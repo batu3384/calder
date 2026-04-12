@@ -13,6 +13,11 @@ describe('inferStatuslineProvider', () => {
     expect(inferStatuslineProvider('GLM-4.5-Air')).toBe('zai');
   });
 
+  it('maps MiniMax models to minimax', () => {
+    expect(inferStatuslineProvider('MiniMax-M2.7')).toBe('minimax');
+    expect(inferStatuslineProvider('minimax-m2.7')).toBe('minimax');
+  });
+
   it('maps Claude models to anthropic', () => {
     expect(inferStatuslineProvider('Claude Sonnet 4.6')).toBe('anthropic');
     expect(inferStatuslineProvider('haiku')).toBe('anthropic');
@@ -79,7 +84,7 @@ describe('formatHybridStatusLine', () => {
     ].join('\n'));
   });
 
-  it('allows provider snapshots to rename the second quota window', () => {
+  it('shows Z.ai five-hour quota with reset time and omits the secondary window', () => {
     const out = formatHybridStatusLine({
       modelDisplayName: 'glm-5.1',
       provider: 'zai',
@@ -91,6 +96,7 @@ describe('formatHybridStatusLine', () => {
         provider: 'zai',
         model: 'glm-5.1',
         fiveHour: '60% left',
+        fiveHourReset: '22:10',
         weekly: '90% left',
         weeklyLabel: 'Cycle',
         status: 'unknown',
@@ -102,7 +108,35 @@ describe('formatHybridStatusLine', () => {
 
     expect(out).toBe([
       'glm-5.1  Z.ai  --  aa',
-      'Ctx 25%  Cost $0.22  5h 60% left  Cycle 90% left  Live',
+      'Ctx 25%  Cost $0.22  5h 60% left · resets 22:10  Live',
+    ].join('\n'));
+  });
+
+  it('shows MiniMax request quotas with reset time and weekly allowance', () => {
+    const out = formatHybridStatusLine({
+      modelDisplayName: 'MiniMax-M2.7',
+      provider: 'minimax',
+      effortLabel: null,
+      cwdLabel: 'aa',
+      contextPercent: 25,
+      costLabel: '$0.07',
+      quota: {
+        provider: 'minimax',
+        model: 'MiniMax-M2.7',
+        fiveHour: '5/4500 left',
+        fiveHourReset: '17:00',
+        weekly: '5/45000 left',
+        weeklyLabel: 'Week',
+        status: 'unknown',
+        updatedAt: 1_000,
+        source: 'minimax:remains',
+      },
+      nowMs: 1_500,
+    });
+
+    expect(out).toBe([
+      'MiniMax-M2.7  MiniMax  --  aa',
+      'Ctx 25%  Cost $0.07  5h 5/4500 left · resets 17:00  Week 5/45000 left  Live',
     ].join('\n'));
   });
 });
@@ -111,6 +145,7 @@ describe('getProviderQuotaCacheFile', () => {
   it('uses provider-specific cache file names', () => {
     expect(getProviderQuotaCacheFile('anthropic')).toBe('anthropic.quota.json');
     expect(getProviderQuotaCacheFile('zai')).toBe('zai.quota.json');
+    expect(getProviderQuotaCacheFile('minimax')).toBe('minimax.quota.json');
     expect(getProviderQuotaCacheFile('qwen')).toBe('qwen.quota.json');
   });
 });

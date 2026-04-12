@@ -26,6 +26,7 @@ import { discoverLocalBrowserTargets } from './local-dev-targets';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { discoverCliSurface } from './cli-surface-discovery';
+import { openUrlWithBrowserPolicy } from './browser-open-policy';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -52,7 +53,9 @@ function isAllowedReadPath(resolvedPath: string): boolean {
     path.join(home, '.mcp.json'),
     path.join(home, '.claude') + path.sep,
     path.join(home, '.codex') + path.sep,
+    path.join(home, '.copilot') + path.sep,
     path.join(home, '.qwen') + path.sep,
+    path.join(home, '.mmx') + path.sep,
     path.join(home, '.blackboxcli') + path.sep,
   ];
 
@@ -366,7 +369,8 @@ export function registerIpcHandlers(): void {
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       throw new Error('Only HTTP(S) URLs are allowed');
     }
-    return shell.openExternal(url);
+    const win = BrowserWindow.getAllWindows()[0];
+    return openUrlWithBrowserPolicy(url, win, (target) => shell.openExternal(target));
   });
 
   ipcMain.handle('git:getStatus', (_event, projectPath: string) => getGitStatus(projectPath));

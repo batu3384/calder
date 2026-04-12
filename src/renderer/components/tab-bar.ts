@@ -24,7 +24,11 @@ import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { buildProviderIconMarkup } from './tab-provider-icon.js';
 import { openCliSurfaceWithSetup } from './cli-surface/setup.js';
 import { showCliSurfaceQuickSetup } from './cli-surface/quick-setup.js';
-import { createDiscoveredCliSurfaceProfile, getCliSurfaceProfileLabel } from './cli-surface/profile.js';
+import {
+  createDemoCliSurfaceProfile,
+  createDiscoveredCliSurfaceProfile,
+  getCliSurfaceProfileLabel,
+} from './cli-surface/profile.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -41,7 +45,7 @@ let surfaceProfileSelect: CustomSelectInstance | null = null;
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
 
-function buildTooltip(status: SessionStatus, cliSessionId?: string): string {
+function buildTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
   return cliSessionId ? `${statusLine}\nSession: ${cliSessionId}` : statusLine;
 }
@@ -186,6 +190,30 @@ function upsertCliSurfaceProfile(project: ProjectRecord, profile: CliSurfaceProf
     profiles.push(profile);
   }
   return profiles;
+}
+
+function persistAndLaunchCliSurfaceProfile(project: ProjectRecord, profile: CliSurfaceProfile): void {
+  const surface = getProjectSurface(project);
+  const profiles = upsertCliSurfaceProfile(project, profile);
+  updateProjectSurface(project, {
+    ...surface,
+    kind: 'cli',
+    active: true,
+    cli: {
+      profiles,
+      selectedProfileId: profile.id,
+      runtime: surface.cli?.runtime
+        ? {
+            ...surface.cli.runtime,
+            selectedProfileId: profile.id,
+          }
+        : {
+            status: 'idle',
+            selectedProfileId: profile.id,
+          },
+    },
+  });
+  void window.calder?.cliSurface?.start(project.id, profile);
 }
 
 function promptCliSurfaceProfile(
@@ -353,30 +381,13 @@ async function activateCliSurface(project: ProjectRecord): Promise<void> {
       showCliSurfaceQuickSetup(candidates, {
         onRun: (candidate) => {
           const profile = createDiscoveredCliSurfaceProfile(candidate);
-          const surface = getProjectSurface(project);
-          const profiles = upsertCliSurfaceProfile(project, profile);
-          updateProjectSurface(project, {
-            ...surface,
-            kind: 'cli',
-            active: true,
-            cli: {
-              profiles,
-              selectedProfileId: profile.id,
-              runtime: surface.cli?.runtime
-                ? {
-                    ...surface.cli.runtime,
-                    selectedProfileId: profile.id,
-                  }
-                : {
-                    status: 'idle',
-                    selectedProfileId: profile.id,
-                  },
-            },
-          });
-          void window.calder?.cliSurface?.start(project.id, profile);
+          persistAndLaunchCliSurfaceProfile(project, profile);
         },
         onEdit: (candidate) => {
           promptCliSurfaceProfile(project, createDiscoveredCliSurfaceProfile(candidate));
+        },
+        onDemo: () => {
+          persistAndLaunchCliSurfaceProfile(project, createDemoCliSurfaceProfile(project.path));
         },
         onManual: () => promptCliSurfaceProfile(project),
       });
@@ -487,7 +498,7 @@ function renderSessionProviderSelector(): void {
   const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
   syncQuickSessionButtonMeta(selectedProvider);
 
-  if (!shouldRenderInlineProviderSelector(snapshot)) return;
+  if (!snapshot || !shouldRenderInlineProviderSelector(snapshot)) return;
 
   const select = createCustomSelect(
     'command-deck-provider',

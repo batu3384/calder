@@ -124,6 +124,37 @@ function setupQwenWatchers(projectPath: string): void {
   for (const d of dirs) watchDir(d);
 }
 
+function setupCopilotWatchers(projectPath: string): void {
+  const home = os.homedir();
+  const copilotDir = path.join(home, '.copilot');
+
+  const files = [
+    path.join(copilotDir, 'config.json'),
+    path.join(copilotDir, 'mcp-config.json'),
+    path.join(copilotDir, 'lsp-config.json'),
+    path.join(projectPath, '.mcp.json'),
+    path.join(projectPath, '.github', 'lsp.json'),
+  ];
+  for (const f of files) watchFile(f);
+
+  const dirs = [
+    path.join(copilotDir, 'skills'),
+    path.join(projectPath, '.github', 'skills'),
+  ];
+  for (const d of dirs) watchDir(d);
+}
+
+function setupMiniMaxWatchers(): void {
+  const home = os.homedir();
+  const mmxDir = path.join(home, '.mmx');
+
+  const files = [
+    path.join(mmxDir, 'config.json'),
+    path.join(mmxDir, 'credentials.json'),
+  ];
+  for (const f of files) watchFile(f);
+}
+
 function setupBlackboxWatchers(projectPath: string): void {
   const home = os.homedir();
   const blackboxDir = path.join(home, '.blackboxcli');
@@ -143,10 +174,14 @@ export function startConfigWatcher(win: BrowserWindow, projectPath: string, prov
   currentProviderId = providerId;
   if (providerId === 'codex') {
     setupCodexWatchers(projectPath);
+  } else if (providerId === 'copilot') {
+    setupCopilotWatchers(projectPath);
   } else if (providerId === 'gemini') {
     setupGeminiWatchers(projectPath);
   } else if (providerId === 'qwen') {
     setupQwenWatchers(projectPath);
+  } else if (providerId === 'minimax') {
+    setupMiniMaxWatchers();
   } else if (providerId === 'blackbox') {
     setupBlackboxWatchers(projectPath);
   } else {

@@ -1,4 +1,4 @@
-import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types.js';
+import type { CliSurfacePromptContextMode, SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types.js';
 
 export function buildViewportText(lines: string[]): string {
   return lines.join('\n');
@@ -32,14 +32,25 @@ export function createSelectionPayload(input: {
   title?: string;
   lines: string[];
   selection: SurfaceSelectionRange;
+  contextMode?: CliSurfacePromptContextMode;
+  selectionSource?: 'exact' | 'inferred' | 'semantic';
+  semanticNodeId?: string;
+  semanticLabel?: string;
+  sourceFile?: string;
   ansiSnapshot?: string;
   inferredLabel?: string;
+  adapterMeta?: Record<string, unknown>;
 }): SurfacePromptPayload {
   return {
     projectId: input.projectId,
     projectPath: input.projectPath,
     surfaceKind: 'cli',
     selection: input.selection,
+    contextMode: input.contextMode,
+    selectionSource: input.selectionSource,
+    semanticNodeId: input.semanticNodeId,
+    semanticLabel: input.semanticLabel,
+    sourceFile: input.sourceFile,
     selectedText: buildSelectionText(input.lines, input.selection),
     nearbyText: buildNearbyText(input.lines, input.selection),
     viewportText: buildViewportText(input.lines),
@@ -51,5 +62,6 @@ export function createSelectionPayload(input: {
     rows: input.rows,
     title: input.title,
     inferredLabel: input.inferredLabel,
+    adapterMeta: input.adapterMeta,
   };
 }

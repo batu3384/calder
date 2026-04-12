@@ -2,8 +2,8 @@
 
 import { joinRemoteSession } from '../sharing/share-manager.js';
 import { appState } from '../state.js';
-import { DecryptionError, validatePin } from '../sharing/share-crypto.js';
-import { createPinInput } from '../dom-utils.js';
+import { DecryptionError, validateJoinPassphrase } from '../sharing/share-crypto.js';
+import { createPassphraseInput } from '../dom-utils.js';
 
 let activeOverlay: HTMLElement | null = null;
 
@@ -25,17 +25,22 @@ export function showJoinDialog(): void {
   title.textContent = 'Join Remote Session';
   dialog.appendChild(title);
 
-  // Offer input section (PIN + code paste together)
+  // Offer input section (passphrase + code paste together)
   const offerSection = document.createElement('div');
   offerSection.className = 'share-section';
 
-  const pinLabel = document.createElement('div');
-  pinLabel.className = 'share-label';
-  pinLabel.textContent = 'Enter the PIN from the host';
-  offerSection.appendChild(pinLabel);
+  const passphraseLabel = document.createElement('div');
+  passphraseLabel.className = 'share-label';
+  passphraseLabel.textContent = 'Enter the passphrase from the host';
+  offerSection.appendChild(passphraseLabel);
 
-  const pinInput = createPinInput();
-  offerSection.appendChild(pinInput);
+  const legacyHint = document.createElement('div');
+  legacyHint.className = 'share-notice';
+  legacyHint.textContent = 'Legacy 8-digit PINs are still supported when you connect to an older app version.';
+  offerSection.appendChild(legacyHint);
+
+  const passphraseInput = createPassphraseInput({ placeholder: 'Passphrase or legacy PIN' });
+  offerSection.appendChild(passphraseInput);
 
   const offerLabel = document.createElement('div');
   offerLabel.className = 'share-label share-label-spaced';
@@ -110,10 +115,10 @@ export function showJoinDialog(): void {
 
   // Join flow
   joinBtn.addEventListener('click', async () => {
-    const pin = pinInput.value.trim();
-    const pinError = validatePin(pin);
-    if (pinError) {
-      statusEl.textContent = pinError;
+    const passphrase = passphraseInput.value.trim();
+    const passphraseError = validateJoinPassphrase(passphrase);
+    if (passphraseError) {
+      statusEl.textContent = passphraseError;
       return;
     }
     const offer = offerTextarea.value.trim();
@@ -126,10 +131,10 @@ export function showJoinDialog(): void {
     joinBtn.textContent = 'Connecting...';
     statusEl.textContent = 'Generating response code...';
     offerTextarea.readOnly = true;
-    pinInput.readOnly = true;
+    passphraseInput.readOnly = true;
 
     try {
-      const { answer } = await joinRemoteSession(project.id, offer, pin, closeJoinDialog);
+      const { answer } = await joinRemoteSession(project.id, offer, passphrase, closeJoinDialog);
 
       answerTextarea.value = answer;
       answerSection.classList.remove('hidden');
@@ -138,14 +143,14 @@ export function showJoinDialog(): void {
       closeBtn.textContent = 'Close';
     } catch (err) {
       if (err instanceof DecryptionError) {
-        statusEl.textContent = 'Could not decrypt connection code. Check the PIN and try again.';
+        statusEl.textContent = 'Could not decrypt connection code. Check the passphrase and try again.';
       } else {
         statusEl.textContent = `Error: ${err instanceof Error ? err.message : 'Invalid code'}`;
       }
       joinBtn.disabled = false;
       joinBtn.textContent = 'Join';
       offerTextarea.readOnly = false;
-      pinInput.readOnly = false;
+      passphraseInput.readOnly = false;
     }
   });
 }

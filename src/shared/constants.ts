@@ -32,3 +32,6 @@ export const EXTRA_ALERT_IGNORE = [
   '*.pb',
   '*.bundle.*',
 ];
+
+/** Sentinel command used to launch Calder's built-in CLI Surface demo profile. */
+export const CLI_SURFACE_DEMO_COMMAND = '__calder_cli_surface_demo__';

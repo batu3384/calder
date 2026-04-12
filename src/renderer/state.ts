@@ -1,5 +1,5 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState, ProjectSurfaceRecord } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -61,6 +61,13 @@ function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): ProjectLa
   };
 }
 
+function stripTransientRuntimeFields(runtime: CliSurfaceRuntimeState): CliSurfaceRuntimeState {
+  const next = { ...runtime };
+  delete next.runtimeId;
+  delete next.startupTiming;
+  return next;
+}
+
 function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
   const browserSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
   const existing = project.surface;
@@ -80,7 +87,7 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
       selectedProfileId: existing?.cli?.selectedProfileId,
       profiles: existing?.cli?.profiles ? [...existing.cli.profiles] : [],
       runtime: existing?.cli?.runtime
-        ? { ...existing.cli.runtime, runtimeId: undefined }
+        ? stripTransientRuntimeFields(existing.cli.runtime)
         : { status: 'idle' },
     },
   };
@@ -123,6 +130,27 @@ class AppState {
 
   private findProjectBySession(sessionId: string): ProjectRecord | undefined {
     return this.state.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
+  }
+
+  findProjectForPath(inputPath: string | null | undefined): ProjectRecord | undefined {
+    if (!inputPath) return undefined;
+    const normalize = (value: string) => value.replace(/\\/g, '/').replace(/\/+$/, '') || '/';
+    const target = normalize(inputPath);
+    let bestMatch: ProjectRecord | undefined;
+    let bestLength = -1;
+
+    for (const project of this.state.projects) {
+      const projectPath = normalize(project.path);
+      if (target !== projectPath && !target.startsWith(`${projectPath}/`)) {
+        continue;
+      }
+      if (projectPath.length > bestLength) {
+        bestMatch = project;
+        bestLength = projectPath.length;
+      }
+    }
+
+    return bestMatch;
   }
 
   private findSessionInProject(project: ProjectRecord, sessionId: string): SessionRecord | undefined {
@@ -294,13 +322,13 @@ class AppState {
                     ...p.surface.cli,
                     profiles: [...p.surface.cli.profiles],
                     runtime: p.surface.cli.runtime
-                      ? { ...p.surface.cli.runtime, runtimeId: undefined }
+                      ? stripTransientRuntimeFields(p.surface.cli.runtime)
                       : undefined,
                   }
                 : p.surface.cli,
             }
           : undefined,
-        sessions: p.sessions.map(({ pendingInitialPrompt, ...rest }) => rest),
+        sessions: p.sessions.map(({ pendingInitialPrompt: _pendingInitialPrompt, ...rest }) => rest),
       })),
     };
     window.calder.store.save(toSave);
@@ -585,6 +613,41 @@ class AppState {
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
     return session;
+  }
+
+  openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return undefined;
+
+    const currentSurfaceSessionId = project.surface?.web?.sessionId;
+    const currentSurfaceSession = currentSurfaceSessionId
+      ? project.sessions.find((session) => session.id === currentSurfaceSessionId && session.type === 'browser-tab')
+      : undefined;
+    const fallbackBrowserSession = currentSurfaceSession
+      ?? [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+
+    if (!fallbackBrowserSession) {
+      return this.addBrowserTabSession(project.id, url);
+    }
+
+    project.activeSessionId = fallbackBrowserSession.id;
+    this.pushNav(fallbackBrowserSession.id);
+    fallbackBrowserSession.browserTabUrl = url;
+    project.surface = normalizeProjectSurface(project);
+    project.surface.kind = 'web';
+    project.surface.active = true;
+    project.surface.web = {
+      sessionId: fallbackBrowserSession.id,
+      url,
+      history: Array.from(new Set([...(project.surface.web?.history ?? []), url])),
+    };
+    if (fallbackBrowserSession.browserTargetSessionId) {
+      project.surface.targetSessionId = fallbackBrowserSession.browserTargetSessionId;
+    }
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
+    return fallbackBrowserSession;
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
@@ -900,7 +963,7 @@ class AppState {
         ? {
             ...surface.cli,
             profiles: [...surface.cli.profiles],
-            runtime: surface.cli.runtime ? { ...surface.cli.runtime, runtimeId: undefined } : undefined,
+            runtime: surface.cli.runtime ? stripTransientRuntimeFields(surface.cli.runtime) : undefined,
           }
         : { profiles: [], runtime: { status: 'idle' } },
     };

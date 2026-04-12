@@ -16,8 +16,9 @@ export async function loadProviderMetas(): Promise<void> {
 
 export async function loadProviderAvailability(): Promise<void> {
   await loadProviderMetas();
+  const providers = cachedProviders ?? [];
   const checks = await Promise.all(
-    cachedProviders.map(async p => ({ id: p.id, ok: (await window.calder.provider.checkBinary(p.id)).ok }))
+    providers.map(async p => ({ id: p.id, ok: (await window.calder.provider.checkBinary(p.id)).ok }))
   );
   cachedAvailability = new Map(checks.map(c => [c.id, c.ok]));
 }
@@ -41,7 +42,15 @@ export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot 
 }
 
 export function shouldRenderInlineProviderSelector(snapshot: ProviderAvailabilitySnapshot | null): boolean {
-  return !!snapshot && snapshot.providers.length > 1;
+  if (!snapshot) return false;
+  let count = 0;
+  for (const provider of snapshot.providers) {
+    if (snapshot.availability.get(provider.id)) {
+      count++;
+      if (count > 1) return true;
+    }
+  }
+  return false;
 }
 
 export function resolvePreferredProviderForLaunch(

@@ -26,6 +26,14 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'DASHSCOPE_API_KEY',
     'QWEN_API_KEY',
   ],
+  minimax: [
+    'MINIMAX_API_KEY',
+    'MINIMAX_REGION',
+    'MINIMAX_BASE_URL',
+    'MINIMAX_OUTPUT',
+    'MINIMAX_TIMEOUT',
+    'MINIMAX_VERBOSE',
+  ],
   blackbox: [
     'BLACKBOX_API_KEY',
   ],

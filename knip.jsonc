@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+
+  // Electron and build entrypoints that Knip cannot infer reliably from dist paths.
+  "entry": [
+    "src/main/main.ts",
+    "src/preload/preload.ts",
+    "src/preload/browser-tab-preload.ts",
+    "src/main/fixtures/cli-surface-demo.ts"
+  ],
+
+  // Many renderer helpers intentionally export internal building blocks from the same file.
+  "ignoreExportsUsedInFile": true,
+
+  // These duplicate exports are intentional compatibility aliases.
+  "ignoreIssues": {
+    "src/renderer/components/file-reader-agent-doc.ts": ["duplicates"]
+  }
+}

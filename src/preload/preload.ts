@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types';
+import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -80,6 +80,7 @@ export interface CalderApi {
     getVersion(): Promise<string>;
     openExternal(url: string): Promise<void>;
     getBrowserPreloadPath(): Promise<string>;
+    onOpenEmbeddedBrowserUrl(callback: (payload: EmbeddedBrowserOpenPayload) => void): () => void;
     onQuitting(callback: () => void): () => void;
   };
   browser: {
@@ -245,6 +246,8 @@ const api: CalderApi = {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
     openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
     getBrowserPreloadPath: () => ipcRenderer.invoke('app:getBrowserPreloadPath'),
+    onOpenEmbeddedBrowserUrl: (cb: (payload: EmbeddedBrowserOpenPayload) => void) =>
+      onChannel('app:openEmbeddedBrowserUrl', (payload) => cb(payload as EmbeddedBrowserOpenPayload)),
     onQuitting: (cb: () => void) => onChannel('app:quitting', cb),
   },
   browser: {

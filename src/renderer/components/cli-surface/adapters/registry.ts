@@ -11,6 +11,8 @@ export interface CliAdapterDetectionInput {
 
 export interface CliSurfaceAdapter {
   id: 'textual' | 'ink' | 'blessed';
+  displayName: string;
+  capabilityBadges: string[];
   detect(input: CliAdapterDetectionInput): boolean;
   enrich(meta: Record<string, unknown>): Record<string, unknown>;
 }

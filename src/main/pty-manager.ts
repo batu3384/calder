@@ -7,6 +7,7 @@ import { getProvider } from './providers/registry';
 import { registerSession } from './hook-status';
 import { buildProviderBaseEnv } from './provider-env';
 import { isWin, pathSep } from './platform';
+import { buildBrowserBridgeEnv } from './browser-bridge';
 
 interface PtyInstance {
   process: pty.IPty;
@@ -100,7 +101,7 @@ export function spawnPty(
 
   const provider = getProvider(providerId);
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
-  const env = provider.buildEnv(sessionId, baseEnv);
+  const env = buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv));
   const args = provider.buildArgs({ cliSessionId, isResume, extraArgs, initialPrompt });
   const shell = provider.resolveBinaryPath();
 
@@ -143,7 +144,8 @@ export function spawnCommandPty(
     killPty(sessionId);
   }
 
-  const env = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
+  const baseEnv = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
+  const env = buildBrowserBridgeEnv(launch.cwd, baseEnv);
   const ptyProcess = pty.spawn(launch.command, launch.args ?? [], {
     name: 'xterm-256color',
     cols: launch.cols ?? 120,
@@ -199,7 +201,7 @@ export function spawnShellPty(
   const shell = isWin
     ? (process.env.COMSPEC || 'cmd.exe')
     : (process.env.SHELL || '/bin/zsh');
-  const shellEnv = { ...process.env, PATH: getFullPath() };
+  const shellEnv = buildBrowserBridgeEnv(cwd, { ...process.env, PATH: getFullPath() });
   const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-256color',
     cols: 120,

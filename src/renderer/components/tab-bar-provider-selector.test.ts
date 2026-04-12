@@ -54,7 +54,18 @@ describe('command deck provider selector helpers', () => {
     expect(resolveProviderForCheck('gemini', ['codex', 'gemini'], snapshot)).toBe('gemini');
   });
 
-  it('shows the inline selector when multiple provider metas exist', () => {
+  it('shows the inline selector when multiple providers are actually available', () => {
     expect(shouldRenderInlineProviderSelector(snapshot)).toBe(true);
+  });
+
+  it('hides the inline selector when only one provider is available', () => {
+    expect(shouldRenderInlineProviderSelector({
+      ...snapshot,
+      availability: new Map<ProviderId, boolean>([
+        ['claude', false],
+        ['codex', true],
+        ['gemini', false],
+      ]),
+    })).toBe(false);
   });
 });

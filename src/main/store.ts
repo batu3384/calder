@@ -20,22 +20,26 @@ function defaultState(): PersistedState {
 }
 
 export function loadState(): PersistedState {
+  let sawCandidate = false;
   for (const file of [STATE_FILE, STATE_FILE + '.tmp']) {
     try {
       if (!fs.existsSync(file)) continue;
+      sawCandidate = true;
       const raw = fs.readFileSync(file, 'utf-8');
       const parsed = JSON.parse(raw) as PersistedState;
       if (parsed.version !== 1) continue;
       migrateSessionIds(parsed);
       if (file !== STATE_FILE) {
-        console.warn('Recovered state from temp file');
+        console.info('Recovered state from temp file');
       }
       return parsed;
     } catch {
       continue;
     }
   }
-  console.warn('No valid state file found, using defaults');
+  if (sawCandidate) {
+    console.warn('No valid state file found, using defaults');
+  }
   return defaultState();
 }
 

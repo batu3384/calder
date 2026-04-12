@@ -37,12 +37,15 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('loadState', () => {
   it('returns default state when file does not exist', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockExistsSync.mockReturnValue(false);
     expect(loadState()).toEqual(DEFAULT_STATE);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('ignores unknown legacy state when Calder state is missing', () => {
@@ -60,7 +63,7 @@ describe('loadState', () => {
       version: 1,
       projects: [{ id: 'p1', name: 'Test', path: '/test', sessions: [], activeSessionId: null, layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' } }],
       activeProjectId: 'p1',
-      preferences: { soundOnSessionWaiting: true },
+      preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
     };
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(JSON.stringify(state));
@@ -68,15 +71,28 @@ describe('loadState', () => {
   });
 
   it('returns default state on invalid JSON', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('not json');
     expect(loadState()).toEqual(DEFAULT_STATE);
+    expect(warnSpy).toHaveBeenCalledWith('No valid state file found, using defaults');
   });
 
   it('returns default state on wrong version', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(JSON.stringify({ version: 99 }));
     expect(loadState()).toEqual(DEFAULT_STATE);
+    expect(warnSpy).toHaveBeenCalledWith('No valid state file found, using defaults');
+  });
+
+  it('logs recovery as info when temp state is used', () => {
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    mockExistsSync.mockImplementation((file) => String(file).endsWith('.tmp'));
+    mockReadFileSync.mockReturnValue(JSON.stringify(DEFAULT_STATE));
+
+    expect(loadState()).toEqual(DEFAULT_STATE);
+    expect(infoSpy).toHaveBeenCalledWith('Recovered state from temp file');
   });
 });
 

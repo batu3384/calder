@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockShowAlertBanner = vi.fn();
 const mockRemoveAlertBanner = vi.fn();
-const mockShowStatusLineConflictModal = vi.fn(async () => 'keep' as const);
+const mockShowStatusLineConflictModal = vi.fn<(...args: any[]) => Promise<'keep' | 'replace'>>(async () => 'keep');
 const mockRespondConflictDialog = vi.fn();
-const mockReinstall = vi.fn(async () => ({ success: true }));
-const mockValidate = vi.fn(async () => ({ statusLine: 'calder', hooks: 'complete' }));
-const mockGetMeta = vi.fn(async () => ({
+const mockReinstall = vi.fn<(providerId: unknown) => Promise<{ success: boolean }>>(async () => ({ success: true }));
+const mockValidate = vi.fn<(providerId: unknown) => Promise<{ statusLine: string; hooks: string }>>(async () => ({ statusLine: 'calder', hooks: 'complete' }));
+const mockGetMeta = vi.fn<(providerId: unknown) => Promise<any>>(async () => ({
   id: 'claude',
   displayName: 'Claude Code',
   binaryName: 'claude',
@@ -26,25 +26,25 @@ let warningHandler: ((data: any) => void) | undefined;
 let conflictHandler: ((data: any) => void) | undefined;
 
 vi.mock('./alert-banner.js', () => ({
-  showAlertBanner: (...args: unknown[]) => mockShowAlertBanner(...args),
-  removeAlertBanner: (...args: unknown[]) => mockRemoveAlertBanner(...args),
+  showAlertBanner: (config: unknown) => mockShowAlertBanner(config),
+  removeAlertBanner: (sessionId: unknown) => mockRemoveAlertBanner(sessionId),
 }));
 
 vi.mock('./statusline-conflict-modal.js', () => ({
-  showStatusLineConflictModal: (...args: unknown[]) => mockShowStatusLineConflictModal(...args),
+  showStatusLineConflictModal: (command: unknown) => mockShowStatusLineConflictModal(command),
 }));
 
 vi.stubGlobal('window', {
   calder: {
     provider: {
-      getMeta: (...args: unknown[]) => mockGetMeta(...args),
+      getMeta: (providerId: unknown) => mockGetMeta(providerId),
     },
     settings: {
       onConflictDialog: (cb: (data: any) => void) => { conflictHandler = cb; return () => {}; },
       onWarning: (cb: (data: any) => void) => { warningHandler = cb; return () => {}; },
-      respondConflictDialog: (...args: unknown[]) => mockRespondConflictDialog(...args),
-      reinstall: (...args: unknown[]) => mockReinstall(...args),
-      validate: (...args: unknown[]) => mockValidate(...args),
+      respondConflictDialog: (choice: unknown) => mockRespondConflictDialog(choice),
+      reinstall: (providerId: unknown) => mockReinstall(providerId),
+      validate: (providerId: unknown) => mockValidate(providerId),
     },
   },
 });

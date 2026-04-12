@@ -15,7 +15,7 @@ function showSendError(errorEl: { textContent: string; style: { display: string 
 }
 
 async function sendPromptToSelectedSession(
-  instance: BrowserTabInstance,
+  _instance: BrowserTabInstance,
   prompt: string,
   onDelivered: () => void,
   errorEl: { textContent: string; style: { display: string } },

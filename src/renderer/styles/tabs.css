@@ -10,6 +10,7 @@
 #tab-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "main meta actions";
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -38,6 +39,7 @@
 }
 
 .tab-bar-main {
+  grid-area: main;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -82,6 +84,7 @@
 }
 
 .tab-bar-meta {
+  grid-area: meta;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -355,6 +358,7 @@
 }
 
 #tab-actions {
+  grid-area: actions;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -557,6 +561,73 @@
   letter-spacing: 0.04em;
 }
 
+@container workspace-stack (max-width: 1120px) {
+  #tab-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "main actions"
+      "meta actions";
+    align-items: start;
+    gap: 8px 10px;
+    padding: 9px 10px;
+    height: auto;
+    min-height: 0;
+  }
+
+  .tab-bar-main {
+    gap: 10px;
+  }
+
+  .tab-bar-meta {
+    justify-content: flex-start;
+  }
+
+  #workspace-identity {
+    min-width: 140px;
+    max-width: 184px;
+    padding-right: 10px;
+  }
+
+  .command-deck-status,
+  .session-launcher-group {
+    gap: 5px;
+  }
+
+  #workspace-spend,
+  #git-status,
+  .session-launcher-group {
+    min-height: 30px;
+  }
+
+  .command-deck-provider-select,
+  .command-deck-cli-profile-select {
+    min-width: 132px;
+  }
+}
+
+@container workspace-stack (max-width: 920px) {
+  #workspace-identity {
+    display: none;
+  }
+
+  #tab-bar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "main"
+      "meta"
+      "actions";
+  }
+
+  .tab-bar-meta,
+  #tab-actions {
+    justify-content: flex-start;
+  }
+
+  .workspace-spend-label {
+    display: none;
+  }
+}
+
 /* Tab context menu */
 .tab-context-menu {
   position: fixed;
@@ -696,6 +767,10 @@
 
 .tab-provider-fallback-copilot {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.96), rgba(37, 99, 235, 0.96));
+}
+
+.tab-provider-fallback-minimax {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(234, 88, 12, 0.96));
 }
 
 .tab-diff-badge,

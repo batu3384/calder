@@ -3,7 +3,7 @@
 
 export class DecryptionError extends Error {
   constructor() {
-    super('Invalid PIN or corrupted code');
+    super('Invalid passphrase or corrupted code');
     this.name = 'DecryptionError';
   }
 }
@@ -12,26 +12,79 @@ const PBKDF2_ITERATIONS = 100_000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 const CHALLENGE_SALT = new TextEncoder().encode('calder-challenge-v1');
-const MIN_PIN_LENGTH = 4;
-const MAX_PIN_LENGTH = 8;
+const LEGACY_PIN_LENGTH = 8;
+const MIN_PASSPHRASE_LENGTH = 12;
+const PASSPHRASE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const PASSPHRASE_GROUPS = 4;
+const PASSPHRASE_GROUP_LENGTH = 4;
 
-export function validatePin(pin: string): string | null {
-  if (!/^\d+$/.test(pin)) return 'PIN must contain only digits';
-  if (pin.length < MIN_PIN_LENGTH) return `PIN must be at least ${MIN_PIN_LENGTH} digits`;
-  if (pin.length > MAX_PIN_LENGTH) return `PIN must be at most ${MAX_PIN_LENGTH} digits`;
+function toBufferSource(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy;
+}
+
+export function normalizePassphrase(passphrase: string): string {
+  return passphrase.trim().replace(/[\s-]+/g, '').toUpperCase();
+}
+
+function hasAllowedPassphraseChars(passphrase: string): boolean {
+  return /^[A-Za-z0-9\s-]+$/.test(passphrase.trim());
+}
+
+export function generatePassphrase(): string {
+  const chars: string[] = [];
+  const totalLength = PASSPHRASE_GROUPS * PASSPHRASE_GROUP_LENGTH;
+  for (let i = 0; i < totalLength; i++) {
+    const idx = crypto.getRandomValues(new Uint32Array(1))[0] % PASSPHRASE_ALPHABET.length;
+    chars.push(PASSPHRASE_ALPHABET[idx]);
+  }
+  return chars.join('').match(new RegExp(`.{1,${PASSPHRASE_GROUP_LENGTH}}`, 'g'))!.join('-');
+}
+
+export function validateSharePassphrase(passphrase: string): string | null {
+  if (!passphrase.trim()) return `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters`;
+  if (!hasAllowedPassphraseChars(passphrase)) {
+    return 'Passphrase may contain only letters, numbers, spaces, or hyphens';
+  }
+
+  const normalized = normalizePassphrase(passphrase);
+  if (normalized.length < MIN_PASSPHRASE_LENGTH) {
+    return `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters`;
+  }
+
+  if (!/[A-Z]/.test(normalized) || !/\d/.test(normalized)) {
+    return 'Passphrase must include both letters and numbers';
+  }
+
+  return null;
+}
+
+export function validateJoinPassphrase(passphrase: string): string | null {
+  const trimmed = passphrase.trim();
+  if (!trimmed) {
+    return `Enter the 8-digit PIN or passphrase from the host`;
+  }
+  if (/^\d{8}$/.test(trimmed)) {
+    return null;
+  }
+  const shareError = validateSharePassphrase(trimmed);
+  if (shareError) {
+    return `Enter the 8-digit PIN or passphrase from the host. ${shareError}`;
+  }
   return null;
 }
 
 async function deriveKey(passphrase: string, salt: Uint8Array, usage: KeyUsage[]): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(passphrase),
+    new TextEncoder().encode(normalizePassphrase(passphrase)),
     'PBKDF2',
     false,
     ['deriveKey'],
   );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: toBufferSource(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -105,18 +158,18 @@ export function hexToBytes(hex: string): Uint8Array {
 export async function computeChallengeResponse(challenge: Uint8Array, passphrase: string): Promise<string> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(passphrase),
+    new TextEncoder().encode(normalizePassphrase(passphrase)),
     'PBKDF2',
     false,
     ['deriveKey'],
   );
   const hmacKey = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: CHALLENGE_SALT, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: toBufferSource(CHALLENGE_SALT), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: 'HMAC', hash: 'SHA-256', length: 256 },
     false,
     ['sign'],
   );
-  const sig = await crypto.subtle.sign('HMAC', hmacKey, challenge);
+  const sig = await crypto.subtle.sign('HMAC', hmacKey, toBufferSource(challenge));
   return bytesToHex(new Uint8Array(sig));
 }

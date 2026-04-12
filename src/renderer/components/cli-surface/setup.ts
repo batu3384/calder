@@ -35,5 +35,5 @@ export async function openCliSurfaceWithSetup(project: ProjectRecord, deps: Setu
     return;
   }
 
-  deps.showManualSetup(project);
+  deps.showQuickSetup(project, []);
 }

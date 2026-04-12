@@ -212,7 +212,7 @@ describe('handleToolFailure', () => {
     expect(alerts).toHaveLength(1);
 
     // Simulate session removal
-    appState.emit('session-removed', { sessionId: session.id });
+    (appState as any).emit('session-removed', { sessionId: session.id });
 
     // Same file in re-created session with same id should alert again
     const session2 = appState.addSession(projectId, 'Session 2')!;

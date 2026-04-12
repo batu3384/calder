@@ -66,10 +66,51 @@ const container = document.getElementById('terminal-container')!;
 const SWARM_PANE_SELECTOR = '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane';
 const SWARM_REORDER_HEADER_SELECTOR = '.terminal-pane-chrome, .file-viewer-header, .mcp-inspector-header';
 const MOSAIC_DIVIDER_TRACK = '10px';
-const PINNED_BROWSER_COLUMNS = ['minmax(320px, 0.92fr)', 'minmax(0, 1.28fr)'] as const;
+const INSPECTOR_WIDTH_FALLBACK = 350;
+const SURFACE_COLUMN_MIN = '288px';
+const SURFACE_RATIO_MIN = 0.25;
+const SURFACE_RATIO_MAX = 0.7;
+const SURFACE_RATIO_FALLBACK = 0.38;
 let draggingSwarmSessionId: string | null = null;
 const lastSwarmBrowserSessionIds = new Map<string, string>();
 let mosaicResizeCleanups: Array<() => void> = [];
+let lastLayoutRenderSignature: string | null = null;
+
+function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
+  if (!project) return 'no-project';
+  return JSON.stringify({
+    projectId: project.id,
+    activeSessionId: project.activeSessionId,
+    layout: {
+      mode: project.layout.mode,
+      splitPanes: project.layout.splitPanes,
+      splitDirection: project.layout.splitDirection,
+      browserWidthRatio: project.layout.browserWidthRatio,
+      mosaicPreset: project.layout.mosaicPreset,
+      mosaicRatios: project.layout.mosaicRatios ?? {},
+    },
+    surface: project.surface
+      ? {
+          kind: project.surface.kind,
+          active: project.surface.active,
+          webSessionId: project.surface.web?.sessionId ?? null,
+          cliProfileId: project.surface.cli?.selectedProfileId ?? null,
+        }
+      : null,
+    sessions: project.sessions.map((session) => ({
+      id: session.id,
+      type: session.type ?? 'claude',
+      cliSessionId: session.cliSessionId ?? null,
+      mcpServerUrl: session.mcpServerUrl ?? null,
+      diffFilePath: session.diffFilePath ?? null,
+      diffArea: session.diffArea ?? null,
+      worktreePath: session.worktreePath ?? null,
+      fileReaderPath: session.fileReaderPath ?? null,
+      fileReaderLine: session.fileReaderLine ?? null,
+      remoteHostName: session.remoteHostName ?? null,
+    })),
+  });
+}
 
 function isMosaicMode(project: ProjectRecord | undefined): boolean {
   return !!project && project.layout.mode === 'mosaic';
@@ -188,13 +229,46 @@ function createMosaicDivider(axis: 'x' | 'y', className: string): HTMLElement {
 
 function bindMosaicDivider(
   handle: HTMLElement,
-  boundsTarget: HTMLElement,
+  boundsTarget: HTMLElement | (() => DOMRect),
   callbacks: { onPreview?: (ratio: number) => void; onCommit?: (ratio: number) => void },
   options: { axis: 'x' | 'y'; min: number; max: number; fallback: number },
 ): void {
+  const getBounds = typeof boundsTarget === 'function'
+    ? boundsTarget
+    : () => boundsTarget.getBoundingClientRect();
   mosaicResizeCleanups.push(
-    attachRatioHandle(handle, () => boundsTarget.getBoundingClientRect(), callbacks, options),
+    attachRatioHandle(handle, getBounds, callbacks, options),
   );
+}
+
+function readInspectorWidth(target: HTMLElement): number {
+  const inlineStyle = target.style as CSSStyleDeclaration & Record<string, string | undefined>;
+  const inlineWidthValue = typeof inlineStyle.getPropertyValue === 'function'
+    ? target.style.getPropertyValue('--inspector-width')
+    : inlineStyle.getPropertyValue?.('--inspector-width') ?? inlineStyle['--inspector-width'];
+  const inlineWidth = Number.parseFloat(inlineWidthValue ?? '');
+  if (Number.isFinite(inlineWidth) && inlineWidth > 0) return inlineWidth;
+
+  const inspector = target.querySelector('#session-inspector') as HTMLElement | null;
+  const inspectorWidth = inspector?.getBoundingClientRect().width ?? 0;
+  if (inspectorWidth > 0) return inspectorWidth;
+
+  return INSPECTOR_WIDTH_FALLBACK;
+}
+
+function getSurfaceResizeBounds(target: HTMLElement, hasInspector: boolean): DOMRect {
+  const bounds = target.getBoundingClientRect();
+  if (!hasInspector) return bounds;
+
+  const inspectorWidth = Math.min(readInspectorWidth(target), bounds.width);
+  const width = Math.max(0, bounds.width - inspectorWidth);
+  return {
+    ...bounds,
+    width,
+    right: bounds.left + width,
+    x: bounds.left,
+    y: bounds.top,
+  } as DOMRect;
 }
 
 function decorateSwarmReorderHandles(project: ProjectRecord, root: ParentNode = container): void {
@@ -231,7 +305,7 @@ export function initSplitLayout(): void {
 
   onUnreadChange(() => {
     const project = appState.activeProject;
-    if (isMosaicMode(project)) updateSwarmPaneStyles(project);
+    if (project && isMosaicMode(project)) updateSwarmPaneStyles(project);
   });
 
   // Refit on window resize
@@ -242,7 +316,7 @@ export function initSplitLayout(): void {
   // Click delegation for the mosaic canvas: clicking a dimmed pane makes it active
   container.addEventListener('mousedown', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicMode(project)) return;
+    if (!project || !isMosaicMode(project)) return;
     if ((e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR)) return;
 
     const paneEl = (e.target as HTMLElement).closest(
@@ -258,7 +332,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragstart', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicMode(project)) return;
+    if (!project || !isMosaicMode(project)) return;
     const handle = (e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR) as HTMLElement | null;
     if (!handle) return;
 
@@ -274,7 +348,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('dragover', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicMode(project) || !draggingSwarmSessionId) return;
+    if (!project || !isMosaicMode(project) || !draggingSwarmSessionId) return;
 
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const targetSessionId = paneEl?.dataset.sessionId;
@@ -294,7 +368,7 @@ export function initSplitLayout(): void {
 
   container.addEventListener('drop', (e) => {
     const project = appState.activeProject;
-    if (!isMosaicMode(project) || !e.dataTransfer) return;
+    if (!project || !isMosaicMode(project) || !e.dataTransfer) return;
 
     e.preventDefault();
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
@@ -381,6 +455,11 @@ function onSessionRemoved(data: unknown): void {
 
 export function renderLayout(): void {
   const project = appState.activeProject;
+  const signature = getLayoutRenderSignature(project);
+  if (signature === lastLayoutRenderSignature) {
+    return;
+  }
+  lastLayoutRenderSignature = signature;
   clearMosaicResizeBindings();
 
   if (!project || project.sessions.length === 0) {
@@ -402,6 +481,7 @@ export function renderLayout(): void {
   container.querySelectorAll('.swarm-empty-cell').forEach(el => el.remove());
   container.querySelectorAll('.mosaic-session-canvas').forEach(el => el.remove());
   container.querySelectorAll('.mosaic-browser-column').forEach(el => el.remove());
+  container.querySelectorAll('.mosaic-divider-browser').forEach(el => el.remove());
 
   // Ensure all sessions have their respective instances
   for (const session of project.sessions) {
@@ -564,9 +644,25 @@ function renderSwarmMode(project: ProjectRecord): void {
   setContainerClass('swarm-mode mosaic-mode');
   container.dataset.mosaicPreset = resolvedPreset;
 
-  const colParts: string[] = hasBrowserColumn ? [...PINNED_BROWSER_COLUMNS] : ['1fr'];
-  if (hasInspector) colParts.push('var(--inspector-width, 350px)');
-  container.style.gridTemplateColumns = colParts.join(' ');
+  const surfaceRatio = clampRatio(
+    project.layout.browserWidthRatio,
+    SURFACE_RATIO_MIN,
+    SURFACE_RATIO_MAX,
+    SURFACE_RATIO_FALLBACK,
+  );
+  const applySurfaceColumns = (ratio: number) => {
+    const clamped = clampRatio(ratio, SURFACE_RATIO_MIN, SURFACE_RATIO_MAX, SURFACE_RATIO_FALLBACK);
+    const colParts: string[] = hasBrowserColumn
+      ? [
+          `minmax(${SURFACE_COLUMN_MIN}, ${formatRatio(clamped)}fr)`,
+          MOSAIC_DIVIDER_TRACK,
+          `minmax(0, ${formatInverseRatio(clamped)}fr)`,
+        ]
+      : ['1fr'];
+    if (hasInspector) colParts.push('var(--inspector-width, 350px)');
+    container.style.gridTemplateColumns = colParts.join(' ');
+  };
+  applySurfaceColumns(surfaceRatio);
   container.style.gridTemplateRows = '1fr';
 
   if (hasBrowserColumn) {
@@ -574,6 +670,22 @@ function renderSwarmMode(project: ProjectRecord): void {
     browserWrapper.className = 'swarm-browser-column mosaic-browser-column';
     container.appendChild(browserWrapper);
     renderSurfaceHost(project, browserWrapper);
+
+    const browserDivider = createMosaicDivider('x', 'mosaic-divider-browser');
+    browserDivider.title = 'Drag to resize Live View and sessions';
+    container.appendChild(browserDivider);
+    bindMosaicDivider(browserDivider, () => getSurfaceResizeBounds(container, hasInspector), {
+      onPreview: (ratio) => {
+        applySurfaceColumns(ratio);
+        requestAnimationFrame(() => fitAllVisible());
+      },
+      onCommit: (ratio) => appState.setBrowserWidthRatio(project.id, ratio),
+    }, {
+      axis: 'x',
+      min: SURFACE_RATIO_MIN,
+      max: SURFACE_RATIO_MAX,
+      fallback: surfaceRatio,
+    });
   }
 
   const canvas = document.createElement('div');
@@ -646,7 +758,7 @@ function renderSwarmMode(project: ProjectRecord): void {
     canvas.style.gap = '0';
     applyFocusLeftMain(mainRatio);
 
-    const main = appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-left-main');
+    appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-left-main');
     const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
     canvas.appendChild(primaryDivider);
 
@@ -690,7 +802,7 @@ function renderSwarmMode(project: ProjectRecord): void {
     canvas.style.gap = '0';
     applyFocusTopMain(mainRatio);
 
-    const main = appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-top-main');
+    appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-top-main');
     const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
     canvas.appendChild(primaryDivider);
 
@@ -746,22 +858,6 @@ function renderSwarmMode(project: ProjectRecord): void {
 
   updateSwarmPaneStyles(project);
   focusActivePane(project);
-}
-
-function appendEmptyCells(count: number, target: HTMLElement): void {
-  for (let i = 0; i < count; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'swarm-empty-cell';
-
-    const btn = document.createElement('button');
-    btn.className = 'swarm-empty-add-btn';
-    btn.textContent = '+';
-    btn.title = 'New session';
-    btn.addEventListener('click', () => quickNewSession());
-
-    cell.appendChild(btn);
-    target.appendChild(cell);
-  }
 }
 
 function updateSwarmPaneStyles(project: ProjectRecord): void {

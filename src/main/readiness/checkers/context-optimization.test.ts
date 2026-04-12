@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
-import * as child_process from 'child_process';
 import { genericContextProducer } from './context-optimization';
 import type { AnalysisContext } from '../types';
 
@@ -8,7 +7,6 @@ vi.mock('fs');
 vi.mock('child_process');
 
 const mockFs = vi.mocked(fs);
-const mockCp = vi.mocked(child_process);
 
 beforeEach(() => {
   vi.resetAllMocks();

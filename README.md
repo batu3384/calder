@@ -91,6 +91,24 @@ npm install && npm start
 
 Requires Node v24+ (see `.nvmrc`).
 
+### CLI Surface Demo Fixture
+
+If you want a local terminal UI that already speaks Calder's semantic inspect protocol, run:
+
+```bash
+npm run demo:cli-surface
+```
+
+Inside the demo:
+
+- `j` / `k` or arrow keys move focus
+- `d` toggles dirty state
+- `q` exits
+
+This is useful for testing `CLI Surface` inspect behavior end-to-end without needing a separate external TUI project.
+
+Inside Calder itself, `CLI Surface` now offers the same built-in demo from the suggestion modal whenever Calder cannot confidently detect a project launch command. That gives you a one-click way to preview inspect, routing, and semantic selection before wiring your own CLI profile.
+
 ## Contributing
 
 PRs welcome! See the [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).

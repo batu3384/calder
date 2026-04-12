@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, powerMonitor } from 'electron';
+import { app, BrowserWindow, dialog, powerMonitor, shell } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
 import { killAllPtys } from './pty-manager';
@@ -11,6 +11,9 @@ import { stopGitWatcher } from './git-watcher';
 import { checkPythonAvailable } from './prerequisites';
 import { isMac } from './platform';
 import { attachBrowserWebviewRouting } from './browser-webview-routing';
+import { analyzeProviderStartup, formatMissingProviderDialog, formatProviderStartupWarning } from './provider-startup';
+import { openUrlWithBrowserPolicy } from './browser-open-policy';
+import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -35,7 +38,9 @@ function createWindow(): void {
   });
 
   mainWindow.loadFile(path.join(__dirname, '..', '..', 'renderer', 'index.html'));
-  attachBrowserWebviewRouting(mainWindow);
+  attachBrowserWebviewRouting(mainWindow, (url) => {
+    void openUrlWithBrowserPolicy(url, mainWindow, (target) => shell.openExternal(target));
+  });
 
   mainWindow.on('close', () => {
     flushState();
@@ -49,22 +54,15 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  const state = loadState();
   initProviders();
 
-  // Validate all registered providers; require at least one to be available.
-  const providerResults = getAllProviders().map(provider => ({
-    provider,
-    prereq: provider.validatePrerequisites(),
-  }));
-  for (const { provider, prereq } of providerResults) {
-    if (!prereq.ok) {
-      console.warn(`Provider "${provider.meta.displayName}" not available: ${prereq.message}`);
-    }
+  const providerStartup = analyzeProviderStartup(getAllProviders(), state);
+  for (const result of providerStartup.relevantUnavailable) {
+    console.warn(formatProviderStartupWarning(result));
   }
-  if (!providerResults.some(r => r.prereq.ok)) {
-    const details = providerResults
-      .map(r => `- ${r.provider.meta.displayName}:\n${r.prereq.message}`)
-      .join('\n\n');
+  if (providerStartup.blocking) {
+    const details = formatMissingProviderDialog(providerStartup.unavailable);
     dialog.showErrorBox(
       'Calder — Missing Prerequisite',
       `Calder requires at least one supported CLI provider to be installed.\n\n${details}\n\nAfter installing, restart Calder.`,
@@ -74,9 +72,12 @@ app.whenReady().then(async () => {
   }
 
   registerIpcHandlers();
-  const state = loadState();
   createAppMenu(state.preferences?.debugMode ?? false);
   createWindow();
+  await startBrowserBridge(async (payload) => {
+    const win = BrowserWindow.getAllWindows()[0];
+    await openUrlWithBrowserPolicy(payload, win, (target) => shell.openExternal(target));
+  });
 
   // Warn if Python is missing on Windows (hooks depend on it)
   const pythonWarning = checkPythonAvailable();
@@ -126,6 +127,7 @@ app.on('before-quit', () => {
   }
   killAllPtys();
   stopGitWatcher();
+  void stopBrowserBridge();
   // Cleanup all providers
   for (const provider of getAllProviders()) {
     provider.cleanup();

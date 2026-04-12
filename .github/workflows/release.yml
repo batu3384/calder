@@ -42,8 +42,23 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Validate version input
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          case "$VERSION_INPUT" in
+            patch|minor|major|prepatch|preminor|premajor|prerelease) ;;
+            [0-9]*.[0-9]*.[0-9]*|[0-9]*.[0-9]*.[0-9]*-[0-9A-Za-z.-]*) ;;
+            *)
+              echo "Invalid version input: $VERSION_INPUT"
+              exit 1
+              ;;
+          esac
+
       - name: Bump version
-        run: npm version ${{ inputs.version }} --no-git-tag-version
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
+        run: npm version "$VERSION_INPUT" --no-git-tag-version
 
       - name: Extract version
         id: version

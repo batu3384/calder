@@ -40,6 +40,7 @@ function providerDisplayName(providerId: ProviderId): string {
     case 'copilot': return 'GitHub Copilot';
     case 'gemini': return 'Gemini CLI';
     case 'qwen': return 'Qwen Code';
+    case 'minimax': return 'MiniMax CLI';
     case 'blackbox': return 'Blackbox CLI';
     default: return providerId;
   }

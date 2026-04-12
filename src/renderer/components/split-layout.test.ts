@@ -345,18 +345,18 @@ describe('split-layout mosaic behavior', () => {
     appState.setActiveSession(project.id, firstCli.id);
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
     const browserDivider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
     expect(browserColumn).toBeTruthy();
     expect(canvas).toBeTruthy();
-    expect(browserDivider).toBeNull();
+    expect(browserDivider).toBeTruthy();
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(firstCli.id)?.parentElement).toBe(canvas);
-    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
+    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.38fr) 10px minmax(0, 0.62fr)');
     expect(canvas.className).toContain('mosaic-single');
   });
 
@@ -374,7 +374,7 @@ describe('split-layout mosaic behavior', () => {
 
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
     const browserDivider = container.querySelector('.mosaic-divider-browser') as FakeElement;
@@ -384,9 +384,9 @@ describe('split-layout mosaic behavior', () => {
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
     expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
-    expect(browserDivider).toBeNull();
+    expect(browserDivider).toBeTruthy();
     expect(sessionDivider).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
+    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.44fr) 10px minmax(0, 0.56fr)');
     expect(canvas.className).toContain('mosaic-columns-2');
     expect(canvas.style.gridTemplateColumns).toBe('minmax(0, 0.5fr) 10px minmax(0, 0.5fr)');
     expect(canvas.style.gridTemplateRows).toBe('1fr');
@@ -407,7 +407,7 @@ describe('split-layout mosaic behavior', () => {
     appState.setActiveSession(project.id, first.id);
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
     const main = container.querySelector('.mosaic-focus-left-main') as FakeElement;
     const stack = container.querySelector('.mosaic-focus-left-stack') as FakeElement;
@@ -438,7 +438,7 @@ describe('split-layout mosaic behavior', () => {
     appState.setActiveSession(project.id, first.id);
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement | null;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
 
@@ -463,7 +463,7 @@ describe('split-layout mosaic behavior', () => {
     initSplitLayout();
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const firstHeader = terminalPanes.get(first.id)!.querySelector('.terminal-pane-chrome')!;
 
     container.dispatch('mousedown', { target: firstHeader });
@@ -484,7 +484,7 @@ describe('split-layout mosaic behavior', () => {
     initSplitLayout();
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const firstPane = terminalPanes.get(first.id)!;
     const secondPane = terminalPanes.get(second.id)!;
     const firstHeader = firstPane.querySelector('.terminal-pane-chrome')!;
@@ -498,7 +498,7 @@ describe('split-layout mosaic behavior', () => {
     expect(appState.activeProject!.layout.splitPanes).toEqual([second.id, first.id]);
   });
 
-  it('does not render a draggable browser divider even if a browser width ratio exists', async () => {
+  it('persists the dragged live surface width ratio from the center divider', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
     const { initSplitLayout, renderLayout } = await import('./split-layout.js');
@@ -512,11 +512,52 @@ describe('split-layout mosaic behavior', () => {
     initSplitLayout();
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
-    expect(divider).toBeNull();
-    expect(container.style.gridTemplateColumns).toBe('minmax(320px, 0.92fr) minmax(0, 1.28fr)');
+    expect(divider).toBeTruthy();
+    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.61fr) 10px minmax(0, 0.39fr)');
+
+    const preventDefault = vi.fn();
+    divider.dispatch('pointerdown', { clientX: 610, clientY: 10, preventDefault });
+    emitWindow('pointermove', { clientX: 520, clientY: 10 });
+    emitWindow('pointerup', { clientX: 520, clientY: 10 });
+
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.52, 4);
+  });
+
+  it('uses only the live-surface span when dragging the center divider with the inspector open', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    vi.mocked(isInspectorOpen).mockReturnValue(true);
+
+    const project = appState.addProject('Audit', '/audit');
+    appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    appState.addBrowserTabSession(project.id, 'http://localhost:3000');
+    project.layout.browserWidthRatio = 0.5;
+
+    initSplitLayout();
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
+    const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
+
+    expect(divider).toBeTruthy();
+    expect(container.style.gridTemplateColumns)
+      .toBe('minmax(288px, 0.5fr) 10px minmax(0, 0.5fr) var(--inspector-width, 350px)');
+
+    const preventDefault = vi.fn();
+    divider.dispatch('pointerdown', { clientX: 325, clientY: 10, preventDefault });
+    emitWindow('pointermove', { clientX: 390, clientY: 10 });
+    emitWindow('pointerup', { clientX: 390, clientY: 10 });
+
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.6, 4);
   });
 
   it('renders a cli surface in the pinned left column when the project surface is cli', async () => {
@@ -540,7 +581,7 @@ describe('split-layout mosaic behavior', () => {
 
     renderLayout();
 
-    const container = document.getElementById('terminal-container') as FakeElement;
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
     const surfaceColumn = container.querySelector('.mosaic-browser-column') as FakeElement;
     const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
 
@@ -550,5 +591,41 @@ describe('split-layout mosaic behavior', () => {
     expect(cliSurfacePanes.get(project.id)?.parentElement).toBe(surfaceColumn);
     expect(terminalPanes.get(first.id)?.parentElement?.className).toContain('mosaic-slot');
     expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
+  });
+
+  it('does not rebuild the pinned browser surface when only the browser URL changes', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    initSplitLayout();
+    renderLayout();
+    mockAttachBrowserTabToContainer.mockClear();
+
+    appState.updateSessionBrowserTabUrl(browser.id, 'http://localhost:3001');
+
+    expect(mockAttachBrowserTabToContainer).not.toHaveBeenCalled();
+  });
+
+  it('does not rebuild the pinned browser surface when a sibling session only changes metadata', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { initSplitLayout, renderLayout } = await import('./split-layout.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const cliSession = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    initSplitLayout();
+    renderLayout();
+    mockAttachBrowserTabToContainer.mockClear();
+
+    appState.renameSession(project.id, cliSession.id, 'Renamed Session', true);
+
+    expect(mockAttachBrowserTabToContainer).not.toHaveBeenCalled();
   });
 });

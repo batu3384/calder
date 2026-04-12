@@ -115,9 +115,3 @@ export async function getPrompt(id: string, name: string, args: Record<string, s
     return { success: false, error: (err as Error).message };
   }
 }
-
-export async function disconnectAll(): Promise<void> {
-  for (const id of connections.keys()) {
-    await disconnect(id);
-  }
-}

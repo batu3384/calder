@@ -28,8 +28,9 @@ export function init(): void {
 
   appState.on('session-changed', () => {
     const project = appState.activeProject;
-    if (project && unreadSessions.has(project.activeSessionId)) {
-      unreadSessions.delete(project.activeSessionId);
+    const activeSessionId = project?.activeSessionId;
+    if (activeSessionId && unreadSessions.has(activeSessionId)) {
+      unreadSessions.delete(activeSessionId);
       notify();
     }
   });

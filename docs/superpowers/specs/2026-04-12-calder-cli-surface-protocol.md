@@ -45,3 +45,38 @@
   "meta": { "screen": "settings", "dirty": false }
 }
 ```
+
+## Reference Helper
+
+Calder now keeps a shared helper at:
+
+- `src/shared/cli-surface-protocol.ts`
+
+For Node-based first-party CLI apps, the simplest integration path is:
+
+```ts
+import { createCliSurfaceEmitter } from './cli-surface-protocol.js';
+
+const surface = createCliSurfaceEmitter(process.stdout);
+
+surface.emitNode({
+  nodeId: 'settings.footer',
+  label: 'footer actions',
+  sourceFile: 'src/ui/footer.ts',
+  bounds: { mode: 'line', startRow: 12, endRow: 12, startCol: 0, endCol: 64 },
+  meta: { framework: 'Textual', widgetType: 'footer' },
+});
+
+surface.emitFocus({
+  nodeId: 'settings.footer',
+  label: 'footer actions',
+  meta: { framework: 'Textual', focusPath: ['screen', 'footer'] },
+});
+
+surface.emitState({
+  nodeId: 'settings.root',
+  meta: { framework: 'Textual', stateSummary: 'Ready' },
+});
+```
+
+The helper writes valid OSC 8970 chunks directly to the target writer and keeps Node-side integration small.

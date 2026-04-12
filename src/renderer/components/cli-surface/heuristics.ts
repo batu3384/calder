@@ -14,14 +14,43 @@ export function inferCliRegions(lines: string[]): InferredCliRegion[] {
     : -1;
 
   if (boxedStart >= 0 && boxedEnd >= boxedStart) {
+    const titleLine = lines[boxedStart]?.toLowerCase() ?? '';
+    const boxedLabel = /(delete|remove|warning|error|confirm|\?)/i.test(titleLine)
+      ? 'dialog'
+      : 'settings panel';
     regions.push({
-      label: 'settings panel',
+      label: boxedLabel,
       selection: {
         mode: 'region',
         startRow: boxedStart,
         endRow: boxedEnd,
         startCol: 0,
         endCol: Math.max(...lines.slice(boxedStart, boxedEnd + 1).map((line) => line.length)),
+      },
+    });
+  }
+
+  const taskLinePattern = /^\s*(?:[-*•]|\[\s?[xX ]\]|\d+[.)])\s+/;
+  let taskStart = -1;
+  let taskEnd = -1;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (taskLinePattern.test(lines[index] ?? '')) {
+      if (taskStart === -1) taskStart = index;
+      taskEnd = index;
+      continue;
+    }
+    if (taskStart !== -1) break;
+  }
+
+  if (taskStart >= 0 && taskEnd >= taskStart + 1) {
+    regions.push({
+      label: 'task list',
+      selection: {
+        mode: 'line',
+        startRow: taskStart,
+        endRow: taskEnd,
+        startCol: 0,
+        endCol: Math.max(...lines.slice(taskStart, taskEnd + 1).map((line) => line.length)),
       },
     });
   }

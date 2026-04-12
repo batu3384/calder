@@ -108,10 +108,3 @@ export function clearSession(sessionId: string): void {
   sessionEvents.delete(sessionId);
   costDeltaCache.delete(sessionId);
 }
-
-/** @internal Test-only: reset all module state */
-export function _resetForTesting(): void {
-  sessionEvents.clear();
-  costDeltaCache.clear();
-  listeners.length = 0;
-}
