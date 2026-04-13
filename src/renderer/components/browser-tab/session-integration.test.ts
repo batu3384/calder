@@ -135,10 +135,15 @@ describe('browser session integration errors', () => {
     const { sendFlowToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
     mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-2' });
+    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-2', providerId: 'claude' });
 
     await sendFlowToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', 'flow prompt');
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('flow prompt'));
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Project context:'),
+    );
     expect(mockDismissFlow).toHaveBeenCalledTimes(1);
     expect(instance.flowErrorEl.textContent).toBe('');
     expect(instance.flowErrorEl.style.display).toBe('none');
