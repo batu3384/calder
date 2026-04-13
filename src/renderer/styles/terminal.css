@@ -197,11 +197,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 34px;
+  min-height: 42px;
   padding: 0 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 94%, black);
   user-select: none;
 }
@@ -221,25 +221,48 @@
   text-transform: uppercase;
 }
 
-.terminal-pane-workspace {
-  font-family: var(--font-display);
+.terminal-pane-header-copy {
   min-width: 0;
   flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.terminal-pane-title {
+  font-family: var(--font-display);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 620;
   letter-spacing: -0.01em;
+}
+
+.terminal-pane-meta {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.terminal-pane-workspace {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .terminal-pane-session {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--surface-panel-alt) 84%, black);
   color: var(--text-secondary);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .terminal-pane.focused .terminal-pane-chrome {
@@ -336,7 +359,7 @@
   }
 
   .terminal-pane-chrome {
-    min-height: 32px;
+    min-height: 38px;
     padding: 0 10px;
     gap: 8px;
   }
@@ -391,23 +414,52 @@
 }
 
 .terminal-exit-message {
+  width: min(420px, calc(100% - 32px));
+}
+
+.terminal-exit-shell {
   text-align: center;
+  color: var(--text-secondary);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 14%, transparent), transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 18px 38px rgba(0, 0, 0, 0.2);
+  padding: 18px 18px 16px;
+}
+
+.terminal-exit-title {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.terminal-exit-copy {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--text-secondary);
 }
 
-.terminal-exit-message button {
+.respawn-btn.calder-button {
   margin-top: 10px;
-  padding: 6px 16px;
+  min-height: var(--control-height-md);
+  padding: 0 16px;
   background: var(--accent);
   color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
   font-size: 13px;
+  border-color: color-mix(in srgb, var(--accent) 52%, transparent);
 }
 
-.terminal-exit-message button:hover {
+.respawn-btn.calder-button:hover {
   background: var(--accent-dim);
+  color: white;
 }
 
 /* Project terminal panel */

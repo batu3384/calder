@@ -149,7 +149,7 @@ export function promptNewProject(): void {
     fieldRow.style.flexWrap = 'wrap';
 
     const dropdown = document.createElement('div');
-    dropdown.className = 'path-autocomplete-dropdown';
+    dropdown.className = 'path-autocomplete-dropdown calder-floating-list';
     fieldRow.appendChild(dropdown);
 
     let activeIndex = -1;
@@ -282,7 +282,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
   hideProjectContextMenu();
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 

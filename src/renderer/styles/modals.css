@@ -149,14 +149,13 @@
   top: 100%;
   max-height: 180px;
   overflow-y: auto;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
   z-index: 10000;
   margin-top: 4px;
+}
+
+.custom-select-dropdown.calder-floating-list {
+  border-radius: 16px;
+  padding: 6px 0;
 }
 
 .custom-select-dropdown.visible {
@@ -164,18 +163,22 @@
 }
 
 .custom-select-item {
-  padding: 7px 10px;
+  margin: 0 6px;
+  padding: 9px 10px;
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-radius: 12px;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
 }
 
 .custom-select-item:hover:not(.disabled),
 .custom-select-item.active:not(.disabled) {
   background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  transform: translateY(-1px);
 }
 
 .custom-select-item.selected {
@@ -264,14 +267,13 @@
   top: 100%;
   max-height: 180px;
   overflow-y: auto;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
   z-index: 200;
   margin-top: 4px;
+}
+
+.path-autocomplete-dropdown.calder-floating-list {
+  border-radius: 16px;
+  padding: 6px 0;
 }
 
 .path-autocomplete-dropdown.visible {
@@ -279,18 +281,22 @@
 }
 
 .path-autocomplete-item {
-  padding: 7px 10px;
+  margin: 0 6px;
+  padding: 9px 10px;
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-radius: 12px;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
 }
 
 .path-autocomplete-item:hover,
 .path-autocomplete-item.active {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  transform: translateY(-1px);
 }
 
 .path-autocomplete-dropdown::-webkit-scrollbar {
@@ -304,32 +310,41 @@
 
 #modal-actions, .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
 }
 
 .modal-btn {
   min-height: var(--control-height-lg);
+  min-width: 124px;
   padding: 0 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-panel) 76%, black);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 92%, transparent);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 78%, black);
   color: var(--text-primary);
   cursor: pointer;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .modal-btn:hover {
+  transform: translateY(-1px);
   background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
 }
 
 .modal-btn.primary {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 44%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 52%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 82%, black);
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border-strong));
   color: var(--text-primary);
@@ -347,10 +362,6 @@
 }
 
 #config-sections.hidden {
-  display: none;
-}
-
-#readiness-section.hidden {
   display: none;
 }
 

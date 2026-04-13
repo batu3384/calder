@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { CostData, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload } from '../shared/types';
+import type { CostData, ProviderId, CliProviderMeta, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -46,6 +46,11 @@ export interface CalderApi {
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
     watchProject(providerId: ProviderId, projectPath: string): void;
     onConfigChanged(callback: () => void): () => void;
+  };
+  context: {
+    getProjectState(projectPath: string): Promise<ProjectContextState>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectContextState) => void): () => void;
   };
   /** @deprecated Use provider namespace instead */
   claude: {
@@ -110,9 +115,6 @@ export interface CalderApi {
     getPrompt(id: string, name: string, args: Record<string, string>): Promise<{ success: boolean; data?: unknown; error?: string }>;
     addServer(name: string, config: unknown, scope: 'user' | 'project', projectPath?: string): Promise<{ success: boolean; error?: string }>;
     removeServer(name: string, filePath: string, scope: 'user' | 'project', projectPath?: string): Promise<{ success: boolean; error?: string }>;
-  };
-  readiness: {
-    analyze(projectPath: string, excludedProviders?: string[]): Promise<ReadinessResult>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;
@@ -210,6 +212,12 @@ const api: CalderApi = {
     watchProject: (providerId, projectPath) => ipcRenderer.send('config:watchProject', providerId, projectPath),
     onConfigChanged: (callback) => onChannel('config:changed', callback),
   },
+  context: {
+    getProjectState: (projectPath: string) => ipcRenderer.invoke('context:getProjectState', projectPath),
+    watchProject: (projectPath: string) => ipcRenderer.send('context:watchProject', projectPath),
+    onChanged: (callback) => onChannel('context:changed', (projectPath, state) =>
+      callback(projectPath as string, state as ProjectContextState)),
+  },
   claude: {
     getConfig: (projectPath) => ipcRenderer.invoke('claude:getConfig', projectPath),
   },
@@ -292,9 +300,6 @@ const api: CalderApi = {
     getPrompt: (id: string, name: string, args: Record<string, string>) => ipcRenderer.invoke('mcp:getPrompt', id, name, args),
     addServer: (name: string, config: unknown, scope: 'user' | 'project', projectPath?: string) => ipcRenderer.invoke('mcp:addServer', name, config, scope, projectPath),
     removeServer: (name: string, filePath: string, scope: 'user' | 'project', projectPath?: string) => ipcRenderer.invoke('mcp:removeServer', name, filePath, scope, projectPath),
-  },
-  readiness: {
-    analyze: (projectPath: string, excludedProviders?: string[]) => ipcRenderer.invoke('readiness:analyze', projectPath, excludedProviders),
   },
   stats: {
     getCache: () => ipcRenderer.invoke('stats:getCache'),

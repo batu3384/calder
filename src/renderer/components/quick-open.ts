@@ -25,6 +25,20 @@ function createOverlay(): void {
   const container = document.createElement('div');
   container.className = 'quick-open-container';
 
+  const hero = document.createElement('div');
+  hero.className = 'quick-open-hero';
+
+  const title = document.createElement('div');
+  title.className = 'quick-open-title';
+  title.textContent = 'Quick Open';
+
+  const copy = document.createElement('div');
+  copy.className = 'quick-open-copy';
+  copy.textContent = 'Search files in the current workspace and jump straight into them.';
+
+  hero.appendChild(title);
+  hero.appendChild(copy);
+
   input = document.createElement('input');
   input.className = 'quick-open-input';
   input.type = 'text';
@@ -35,6 +49,7 @@ function createOverlay(): void {
   resultsList = document.createElement('div');
   resultsList.className = 'quick-open-results';
 
+  container.appendChild(hero);
   container.appendChild(input);
   container.appendChild(resultsList);
   overlay.appendChild(container);
@@ -67,7 +82,7 @@ function renderResults(): void {
   if (results.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'quick-open-empty';
-    empty.textContent = input?.value ? 'No files found' : 'Type to search files...';
+    empty.textContent = input?.value ? 'No matching files' : 'Start typing to search files';
     resultsList.appendChild(empty);
     return;
   }

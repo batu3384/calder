@@ -18,6 +18,7 @@ export function toggleDrawMode(instance: BrowserTabInstance): void {
     instance.webview.send('exit-draw-mode');
     instance.drawPanel.style.display = 'none';
   }
+  instance.syncToolbarState();
 }
 
 export function positionDrawPopover(instance: BrowserTabInstance, x: number, y: number): void {
@@ -30,12 +31,17 @@ export function positionDrawPopover(instance: BrowserTabInstance, x: number, y: 
 export function clearDrawing(instance: BrowserTabInstance): void {
   instance.webview.send('draw-clear');
   instance.drawPanel.style.display = 'none';
+  instance.syncToolbarState();
 }
 
 export function dismissDraw(instance: BrowserTabInstance): void {
   instance.drawInstructionInput.value = '';
   hideDrawError(instance);
-  if (instance.drawMode) toggleDrawMode(instance);
+  if (instance.drawMode) {
+    toggleDrawMode(instance);
+    return;
+  }
+  instance.syncToolbarState();
 }
 
 function hideDrawError(instance: BrowserTabInstance): void {

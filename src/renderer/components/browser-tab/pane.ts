@@ -10,7 +10,7 @@ import {
   type WebviewElement,
 } from './types.js';
 import { instances, getPreloadPath } from './instance.js';
-import { navigateTo } from './navigation.js';
+import { navigateTo, normalizeUrl } from './navigation.js';
 import { enablePopoverDragging } from './popover.js';
 import { applyViewport, openViewportDropdown, closeViewportDropdown } from './viewport.js';
 import { toggleInspectMode, showElementInfo, dismissInspect } from './inspect-mode.js';
@@ -25,6 +25,8 @@ import {
 } from './draw-mode.js';
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
+import { BROWSER_SESSION_PARTITION } from '../../../shared/constants.js';
+import type { BrowserGuestOpenPayload } from '../../../shared/types.js';
 import {
   sendFlowToCustomSession,
   sendFlowToSelectedSession,
@@ -34,12 +36,7 @@ import {
   sendToNewSession,
 } from './session-integration.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
-
-function browserWorkspaceLabel(): string {
-  const project = appState.activeProject;
-  if (!project) return 'Workspace';
-  return project.name;
-}
+import { handleBrowserGuestOpenRequest } from './popup-routing.js';
 
 function createBrowserToolbarCluster(labelText: string): {
   element: HTMLDivElement;
@@ -60,18 +57,105 @@ function createBrowserToolbarCluster(labelText: string): {
   return { element, controls };
 }
 
+function createBrowserPresenceBadge(initialText: string): {
+  button: HTMLButtonElement;
+  icon: HTMLSpanElement;
+  text: HTMLSpanElement;
+} {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'browser-toolbar-presence-pill';
+
+  const icon = document.createElement('span');
+  icon.className = 'browser-toolbar-presence-icon';
+
+  const text = document.createElement('span');
+  text.className = 'browser-toolbar-presence-text';
+  text.textContent = initialText;
+
+  button.appendChild(icon);
+  button.appendChild(text);
+
+  return { button, icon, text };
+}
+
+type BrowserPageState = 'ready' | 'loading' | 'local' | 'remote' | 'offline';
+
+function resolveBrowserPageState(url: string, isLoading: boolean, offline: boolean): BrowserPageState {
+  if (offline) return 'offline';
+  if (isLoading) return 'loading';
+
+  try {
+    const parsed = new URL(url);
+    if (['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(parsed.hostname.toLowerCase())) {
+      return 'local';
+    }
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return 'remote';
+    }
+  } catch {}
+
+  return 'ready';
+}
+
+function describeBrowserPageState(state: BrowserPageState): string {
+  switch (state) {
+    case 'loading':
+      return 'Loading';
+    case 'local':
+      return 'Local';
+    case 'remote':
+      return 'Remote';
+    case 'offline':
+      return 'Offline';
+    default:
+      return 'Ready';
+  }
+}
+
 function browserTargetButtonLabel(instance: BrowserTabInstance): string {
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
   const label = selectedTarget?.name ?? 'Select Session';
   return label.length > 22 ? `${label.slice(0, 21)}…` : label;
 }
 
-function browserToolbarRouteCopy(instance: BrowserTabInstance): string {
-  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-  if (!selectedTarget) return 'Choose in prompt';
-  const provider = getProviderDisplayName(selectedTarget.providerId ?? 'claude');
-  const copy = `${provider} · ${selectedTarget.name}`;
-  return copy.length > 30 ? `${copy.slice(0, 29)}…` : copy;
+function resolveCaptureModeState(instance: BrowserTabInstance): 'inspect' | 'draw' | 'flow' | 'idle' {
+  if (instance.inspectMode) return 'inspect';
+  if (instance.drawMode) return 'draw';
+  if (instance.flowMode || instance.flowSteps.length > 0) return 'flow';
+  return 'idle';
+}
+
+function focusActiveCaptureComposer(instance: BrowserTabInstance): void {
+  const mode = resolveCaptureModeState(instance);
+  if (mode === 'inspect') {
+    if (instance.inspectPanel.style.display !== 'none' && instance.selectedElement) {
+      instance.instructionInput.focus();
+      return;
+    }
+    instance.inspectBtn.focus();
+    return;
+  }
+
+  if (mode === 'draw') {
+    if (instance.drawPanel.style.display !== 'none') {
+      instance.drawInstructionInput.focus();
+      return;
+    }
+    instance.drawBtn.focus();
+    return;
+  }
+
+  if (mode === 'flow') {
+    if (instance.flowInputRow.style.display !== 'none') {
+      instance.flowInstructionInput.focus();
+      return;
+    }
+    instance.recordBtn.focus();
+    return;
+  }
+
+  instance.inspectBtn.focus();
 }
 
 function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
@@ -80,6 +164,7 @@ function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
   instance.targetMenu.style.display = 'none';
   instance.activeTargetTrigger = null;
   instance.activeTargetMode = null;
+  instance.targetBadge.setAttribute('aria-expanded', 'false');
 }
 
 function runTargetMenuAction(instance: BrowserTabInstance, action: 'new' | 'custom'): void {
@@ -191,15 +276,11 @@ function syncBrowserTargetControls(instance: BrowserTabInstance): void {
       : 'Choose which open session receives the browser prompt';
   }
 
-  instance.toolbarRouteEl.textContent = browserToolbarRouteCopy(instance);
-  instance.toolbarRouteEl.dataset.state = hasTarget ? 'ready' : 'empty';
-  instance.toolbarRouteEl.title = selectedTarget
-    ? `Default handoff target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
-    : 'Choose a session inside Inspect, Record, or Draw when you route browser context';
-
   if (instance.targetMenu.style.display !== 'none') {
     renderBrowserTargetMenu(instance);
   }
+
+  instance.syncToolbarState();
 }
 
 function openBrowserTargetMenu(
@@ -216,6 +297,9 @@ function openBrowserTargetMenu(
   instance.activeTargetMode = mode;
   renderBrowserTargetMenu(instance);
   instance.targetMenu.style.display = 'flex';
+  if (trigger === instance.targetBadge) {
+    instance.targetBadge.setAttribute('aria-expanded', 'true');
+  }
   instance.targetMenuFloatingCleanup?.();
   instance.targetMenuFloatingCleanup = anchorFloatingSurface(trigger, instance.targetMenu, {
     placement: 'bottom-end',
@@ -229,9 +313,11 @@ async function populateLocalTargets(
   instance: BrowserTabInstance,
   grid: HTMLDivElement,
   copy: HTMLDivElement,
+  meta: HTMLDivElement,
 ): Promise<void> {
   grid.innerHTML = '';
   copy.textContent = 'Scanning for active localhost targets…';
+  meta.textContent = 'Scanning…';
 
   try {
     const targets = await window.calder.browser.listLocalTargets();
@@ -243,10 +329,12 @@ async function populateLocalTargets(
       empty.textContent = 'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
       grid.appendChild(empty);
       copy.textContent = 'Only running localhost surfaces are listed here.';
+      meta.textContent = '0 running';
       return;
     }
 
     copy.textContent = 'Only running localhost surfaces appear here. Pick one or paste any URL above.';
+    meta.textContent = `${targets.length} running`;
     for (const target of targets) {
       const btn = document.createElement('button');
       btn.className = 'browser-ntp-link';
@@ -270,6 +358,7 @@ async function populateLocalTargets(
     empty.textContent = 'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
     grid.appendChild(empty);
     copy.textContent = 'Only running localhost surfaces are listed here.';
+    meta.textContent = 'Unavailable';
   }
 }
 
@@ -287,17 +376,22 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   chromeLabel.className = 'browser-pane-label';
   chromeLabel.textContent = 'Live View';
 
-  const chromeWorkspace = document.createElement('div');
-  chromeWorkspace.className = 'browser-pane-workspace';
-  chromeWorkspace.textContent = browserWorkspaceLabel();
-
   const chromeHint = document.createElement('div');
   chromeHint.className = 'browser-pane-hint';
-  chromeHint.textContent = 'Inspect, annotate, hand off';
+  chromeHint.textContent = 'Capture context';
+
+  const chromeMeta = document.createElement('div');
+  chromeMeta.className = 'browser-pane-meta';
+
+  const statusBadge = document.createElement('span');
+  statusBadge.className = 'browser-pane-status';
+  statusBadge.textContent = 'Ready';
+
+  chromeMeta.appendChild(statusBadge);
+  chromeMeta.appendChild(chromeHint);
 
   chrome.appendChild(chromeLabel);
-  chrome.appendChild(chromeWorkspace);
-  chrome.appendChild(chromeHint);
+  chrome.appendChild(chromeMeta);
   el.appendChild(chrome);
 
   const toolbar = document.createElement('div');
@@ -309,12 +403,24 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const toolbarAddress = document.createElement('div');
   toolbarAddress.className = 'browser-toolbar-address browser-toolbar-primary';
 
+  const toolbarNavShell = document.createElement('div');
+  toolbarNavShell.className = 'browser-toolbar-nav-shell';
+
+  const toolbarAddressShell = document.createElement('div');
+  toolbarAddressShell.className = 'browser-toolbar-address-shell';
+
+  const toolbarPresence = document.createElement('div');
+  toolbarPresence.className = 'browser-toolbar-presence';
+
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
   toolbarTools.setAttribute('aria-label', 'Live View tools');
 
-  const routeCluster = createBrowserToolbarCluster('Route');
-  routeCluster.element.dataset.kind = 'route';
+  const toolbarPresenceShell = document.createElement('div');
+  toolbarPresenceShell.className = 'browser-toolbar-presence-shell';
+
+  const toolbarToolsShell = document.createElement('div');
+  toolbarToolsShell.className = 'browser-toolbar-tools-shell';
 
   const viewCluster = createBrowserToolbarCluster('View');
   viewCluster.element.dataset.kind = 'view';
@@ -352,19 +458,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   goBtn.textContent = 'Go';
   goBtn.ariaLabel = 'Open address';
 
+  const { button: modeBadge, icon: modeBadgeIcon, text: modeBadgeText } = createBrowserPresenceBadge('Idle');
+  const { button: targetBadge, icon: targetBadgeIcon, text: targetBadgeText } = createBrowserPresenceBadge('No target');
+  targetBadge.setAttribute('aria-haspopup', 'menu');
+  targetBadge.setAttribute('aria-expanded', 'false');
+
   // Viewport picker button + dropdown
   const viewportWrapper = document.createElement('div');
   viewportWrapper.className = 'browser-viewport-wrapper';
 
   const viewportBtn = document.createElement('button');
   viewportBtn.className = 'browser-viewport-btn';
-  viewportBtn.textContent = 'Responsive';
+  viewportBtn.textContent = 'Viewport';
   viewportBtn.title = 'Change viewport size';
   viewportBtn.ariaLabel = 'Change viewport size';
-
-  const toolbarRoute = document.createElement('div');
-  toolbarRoute.className = 'browser-toolbar-route';
-  toolbarRoute.textContent = 'Choose in prompt';
 
   const viewportDropdown = document.createElement('div');
   viewportDropdown.className = 'browser-viewport-dropdown';
@@ -421,12 +528,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const inspectBtn = document.createElement('button');
   inspectBtn.className = 'browser-inspect-btn';
-  inspectBtn.textContent = 'Inspect Element';
+  inspectBtn.textContent = 'Inspect';
   inspectBtn.ariaLabel = 'Inspect element';
 
   const recordBtn = document.createElement('button');
   recordBtn.className = 'browser-record-btn';
-  recordBtn.textContent = '\u25CF Record';
+  recordBtn.textContent = 'Record';
   recordBtn.title = 'Record browser flow';
   recordBtn.ariaLabel = 'Record browser flow';
 
@@ -436,25 +543,31 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawBtn.title = 'Draw on page and send annotated screenshot to AI';
   drawBtn.ariaLabel = 'Draw on page';
 
-  toolbarNav.appendChild(backBtn);
-  toolbarNav.appendChild(fwdBtn);
-  toolbarNav.appendChild(reloadBtn);
+  toolbarNavShell.appendChild(backBtn);
+  toolbarNavShell.appendChild(fwdBtn);
+  toolbarNavShell.appendChild(reloadBtn);
+  toolbarNav.appendChild(toolbarNavShell);
 
-  toolbarAddress.appendChild(urlInput);
-  toolbarAddress.appendChild(goBtn);
+  toolbarAddressShell.appendChild(urlInput);
+  toolbarAddressShell.appendChild(goBtn);
+  toolbarAddress.appendChild(toolbarAddressShell);
 
-  routeCluster.controls.appendChild(toolbarRoute);
+  toolbarPresenceShell.appendChild(modeBadge);
+  toolbarPresenceShell.appendChild(targetBadge);
+  toolbarPresence.appendChild(toolbarPresenceShell);
+
   viewCluster.controls.appendChild(viewportWrapper);
   captureCluster.controls.appendChild(inspectBtn);
   captureCluster.controls.appendChild(recordBtn);
   captureCluster.controls.appendChild(drawBtn);
 
-  toolbarTools.appendChild(routeCluster.element);
-  toolbarTools.appendChild(viewCluster.element);
-  toolbarTools.appendChild(captureCluster.element);
+  toolbarToolsShell.appendChild(viewCluster.element);
+  toolbarToolsShell.appendChild(captureCluster.element);
+  toolbarTools.appendChild(toolbarToolsShell);
 
   toolbar.appendChild(toolbarNav);
   toolbar.appendChild(toolbarAddress);
+  toolbar.appendChild(toolbarPresence);
   toolbar.appendChild(toolbarTools);
   el.appendChild(toolbar);
 
@@ -468,22 +581,35 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const newTabPage = document.createElement('div');
   newTabPage.className = 'browser-new-tab-page';
   newTabPage.dataset.mode = url === 'about:blank' ? 'default' : 'hidden';
-  newTabPage.style.display = !url || url === 'about:blank' ? 'flex' : 'none';
+
+  const ntpHero = document.createElement('div');
+  ntpHero.className = 'browser-ntp-hero';
+
+  const ntpHeroTop = document.createElement('div');
+  ntpHeroTop.className = 'browser-ntp-hero-top';
 
   const ntpEyebrow = document.createElement('div');
   ntpEyebrow.className = 'browser-ntp-eyebrow shell-kicker';
   ntpEyebrow.textContent = 'Live View';
-  newTabPage.appendChild(ntpEyebrow);
+
+  const ntpState = document.createElement('div');
+  ntpState.className = 'browser-ntp-state';
+  ntpState.dataset.state = 'default';
+  ntpState.textContent = 'Ready to capture';
+
+  ntpHeroTop.appendChild(ntpEyebrow);
+  ntpHeroTop.appendChild(ntpState);
+  ntpHero.appendChild(ntpHeroTop);
 
   const ntpTitle = document.createElement('div');
   ntpTitle.className = 'browser-ntp-title';
-  ntpTitle.textContent = 'Open a local surface';
-  newTabPage.appendChild(ntpTitle);
+  ntpTitle.textContent = 'Open a running surface';
+  ntpHero.appendChild(ntpTitle);
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Jump into a running app, capture the right page context, and route it into the session you choose without leaving Calder.';
-  newTabPage.appendChild(ntpSubtitle);
+  ntpSubtitle.textContent = 'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
+  ntpHero.appendChild(ntpSubtitle);
 
   const ntpActions = document.createElement('div');
   ntpActions.className = 'browser-ntp-actions';
@@ -498,7 +624,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   ntpActions.appendChild(focusAddressBtn);
   ntpActions.appendChild(refreshTargetsBtn);
-  newTabPage.appendChild(ntpActions);
+  ntpHero.appendChild(ntpActions);
 
   const ntpCapabilities = document.createElement('div');
   ntpCapabilities.className = 'browser-ntp-capabilities';
@@ -508,7 +634,8 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     chip.textContent = label;
     ntpCapabilities.appendChild(chip);
   }
-  newTabPage.appendChild(ntpCapabilities);
+  ntpHero.appendChild(ntpCapabilities);
+  newTabPage.appendChild(ntpHero);
 
   const ntpLayout = document.createElement('div');
   ntpLayout.className = 'browser-ntp-layout';
@@ -516,10 +643,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const ntpTargets = document.createElement('section');
   ntpTargets.className = 'browser-ntp-panel browser-ntp-targets';
 
+  const ntpTargetsHeader = document.createElement('div');
+  ntpTargetsHeader.className = 'browser-ntp-section-header';
+
   const ntpTargetsTitle = document.createElement('div');
   ntpTargetsTitle.className = 'browser-ntp-section-title shell-kicker';
   ntpTargetsTitle.textContent = 'Local surfaces';
-  ntpTargets.appendChild(ntpTargetsTitle);
+  ntpTargetsHeader.appendChild(ntpTargetsTitle);
+
+  const ntpTargetsMeta = document.createElement('div');
+  ntpTargetsMeta.className = 'browser-ntp-section-meta';
+  ntpTargetsMeta.textContent = 'Scanning…';
+  ntpTargetsHeader.appendChild(ntpTargetsMeta);
+
+  ntpTargets.appendChild(ntpTargetsHeader);
 
   const ntpTargetsText = document.createElement('div');
   ntpTargetsText.className = 'browser-ntp-section-copy';
@@ -532,14 +669,36 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   function resetNewTabCopy(): void {
     newTabPage.dataset.mode = 'default';
-    ntpTitle.textContent = 'Open a local surface';
-    ntpSubtitle.textContent = 'Jump into a running app, capture the right page context, and route it into the session you choose without leaving Calder.';
+    ntpState.dataset.state = 'default';
+    ntpState.textContent = 'Ready to capture';
+    ntpTitle.textContent = 'Open a running surface';
+    ntpSubtitle.textContent = 'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
     ntpTargetsText.textContent = 'Scanning for active localhost targets…';
+    ntpTargetsMeta.textContent = 'Scanning…';
+  }
+
+  function syncBrowserStatus(state: BrowserPageState): void {
+    statusBadge.dataset.state = state;
+    statusBadge.textContent = describeBrowserPageState(state);
+    chromeHint.textContent = state === 'loading'
+      ? 'Waiting for page'
+      : state === 'offline'
+        ? 'Surface unavailable'
+        : state === 'local'
+          ? 'Live local surface'
+          : state === 'remote'
+            ? 'External page'
+            : 'Capture context';
+    goBtn.textContent = state === 'loading' ? 'Stop' : 'Go';
+    goBtn.classList.toggle('loading', state === 'loading');
+    goBtn.ariaLabel = state === 'loading' ? 'Stop page load' : 'Open address';
   }
 
   function showOfflineState(failedUrl: string): void {
     const isLocalSurface = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([/:]|$)/i.test(failedUrl);
 
+    ntpState.dataset.state = isLocalSurface ? 'offline' : 'unavailable';
+    ntpState.textContent = 'Offline';
     ntpTitle.textContent = 'Surface offline';
     ntpSubtitle.textContent = isLocalSurface
       ? `${failedUrl} is not reachable right now. Start the local app again, then reload or rescan localhost.`
@@ -547,6 +706,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     ntpTargetsText.textContent = isLocalSurface
       ? 'Start the local app again, then rescan localhost or paste a different URL above.'
       : 'Paste a different URL above, or choose another running localhost surface.';
+    ntpTargetsMeta.textContent = isLocalSurface ? 'Offline' : 'Unavailable';
     ntpGrid.innerHTML = '';
 
     const offlineCard = document.createElement('div');
@@ -556,7 +716,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       : 'This page could not be opened right now. Choose another running surface or paste a different URL.';
     ntpGrid.appendChild(offlineCard);
     newTabPage.dataset.mode = 'offline';
-    newTabPage.style.display = 'flex';
+    syncSurfaceVisibility(true);
   }
 
   const ntpWorkflow = document.createElement('section');
@@ -564,7 +724,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const ntpWorkflowTitle = document.createElement('div');
   ntpWorkflowTitle.className = 'browser-ntp-section-title shell-kicker';
-  ntpWorkflowTitle.textContent = 'Working loop';
+  ntpWorkflowTitle.textContent = 'How it works';
   ntpWorkflow.appendChild(ntpWorkflowTitle);
 
   const ntpWorkflowList = document.createElement('div');
@@ -593,16 +753,25 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   ntpLayout.appendChild(ntpWorkflow);
   newTabPage.appendChild(ntpLayout);
 
-  viewportContainer.appendChild(newTabPage);
-
   const webview = document.createElement('webview') as unknown as WebviewElement;
   webview.className = 'browser-webview';
-  webview.setAttribute('allowpopups', '');
+  webview.setAttribute('partition', BROWSER_SESSION_PARTITION);
   viewportContainer.appendChild(webview);
+
+  function syncSurfaceVisibility(showEmptySurface: boolean): void {
+    newTabPage.style.display = showEmptySurface ? 'flex' : 'none';
+    newTabPage.setAttribute('aria-hidden', showEmptySurface ? 'false' : 'true');
+    webview.dataset.surface = showEmptySurface ? 'hidden' : 'live';
+    webview.hidden = showEmptySurface;
+    webview.setAttribute('aria-hidden', showEmptySurface ? 'true' : 'false');
+  }
+
+  syncSurfaceVisibility(!url || url === 'about:blank');
 
   const contentShell = document.createElement('div');
   contentShell.className = 'browser-content-shell live-view-surface live-view';
   contentShell.appendChild(viewportContainer);
+  contentShell.appendChild(newTabPage);
   el.appendChild(contentShell);
 
   const inspectPanel = document.createElement('div');
@@ -624,6 +793,36 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   inspectHandle.appendChild(inspectHandleLabel);
   inspectHandle.appendChild(inspectHandleGrip);
   inspectPanel.appendChild(inspectHandle);
+
+  const inspectHeader = document.createElement('div');
+  inspectHeader.className = 'browser-capture-header';
+
+  const inspectCopy = document.createElement('div');
+  inspectCopy.className = 'browser-capture-copy';
+
+  const inspectKicker = document.createElement('div');
+  inspectKicker.className = 'browser-capture-kicker';
+  inspectKicker.textContent = 'Inspect target';
+
+  const inspectTitle = document.createElement('div');
+  inspectTitle.className = 'browser-capture-title';
+  inspectTitle.textContent = 'Select an element';
+
+  const inspectSubtitle = document.createElement('div');
+  inspectSubtitle.className = 'browser-capture-subtitle';
+  inspectSubtitle.textContent = 'Click a page element to capture its selector and send a focused prompt.';
+
+  inspectCopy.appendChild(inspectKicker);
+  inspectCopy.appendChild(inspectTitle);
+  inspectCopy.appendChild(inspectSubtitle);
+
+  const inspectChip = document.createElement('span');
+  inspectChip.className = 'browser-capture-chip';
+  inspectChip.textContent = 'Inspect';
+
+  inspectHeader.appendChild(inspectCopy);
+  inspectHeader.appendChild(inspectChip);
+  inspectPanel.appendChild(inspectHeader);
 
   const elementInfoEl = document.createElement('div');
   elementInfoEl.className = 'inspect-element-info';
@@ -679,8 +878,33 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawPanel.style.display = 'none';
 
   const drawHeader = document.createElement('div');
-  drawHeader.className = 'inspect-tag-line';
-  drawHeader.textContent = 'Draw on the page, then describe what you want.';
+  drawHeader.className = 'browser-capture-header';
+
+  const drawCopy = document.createElement('div');
+  drawCopy.className = 'browser-capture-copy';
+
+  const drawKicker = document.createElement('div');
+  drawKicker.className = 'browser-capture-kicker';
+  drawKicker.textContent = 'Annotated capture';
+
+  const drawTitle = document.createElement('div');
+  drawTitle.className = 'browser-capture-title';
+  drawTitle.textContent = 'Mark the page, then hand it off';
+
+  const drawSubtitle = document.createElement('div');
+  drawSubtitle.className = 'browser-capture-subtitle';
+  drawSubtitle.textContent = 'Sketch directly on the surface and send the annotated screenshot with your instructions.';
+
+  drawCopy.appendChild(drawKicker);
+  drawCopy.appendChild(drawTitle);
+  drawCopy.appendChild(drawSubtitle);
+
+  const drawChip = document.createElement('span');
+  drawChip.className = 'browser-capture-chip';
+  drawChip.textContent = 'Draw';
+
+  drawHeader.appendChild(drawCopy);
+  drawHeader.appendChild(drawChip);
   drawPanel.appendChild(drawHeader);
 
   const drawControlsRow = document.createElement('div');
@@ -739,22 +963,46 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   // Flow Panel
   const flowPanel = document.createElement('div');
-  flowPanel.className = 'browser-flow-panel';
+  flowPanel.className = 'browser-capture-panel browser-flow-panel';
   flowPanel.style.display = 'none';
 
   const flowHeader = document.createElement('div');
   flowHeader.className = 'flow-panel-header';
 
+  const flowCopy = document.createElement('div');
+  flowCopy.className = 'browser-capture-copy';
+
+  const flowKicker = document.createElement('div');
+  flowKicker.className = 'browser-capture-kicker';
+  flowKicker.textContent = 'Recorded flow';
+
   const flowLabel = document.createElement('span');
   flowLabel.className = 'flow-panel-label';
   flowLabel.textContent = 'Flow (0 steps)';
+
+  const flowSubtitle = document.createElement('div');
+  flowSubtitle.className = 'browser-capture-subtitle';
+  flowSubtitle.textContent = 'Capture a short browser path and route it into an AI session as a reproducible handoff.';
+
+  flowCopy.appendChild(flowKicker);
+  flowCopy.appendChild(flowLabel);
+  flowCopy.appendChild(flowSubtitle);
+
+  const flowChip = document.createElement('span');
+  flowChip.className = 'browser-capture-chip';
+  flowChip.textContent = 'Flow';
 
   const flowClearBtn = document.createElement('button');
   flowClearBtn.className = 'flow-panel-clear-btn';
   flowClearBtn.textContent = 'Clear';
 
-  flowHeader.appendChild(flowLabel);
-  flowHeader.appendChild(flowClearBtn);
+  const flowHeaderActions = document.createElement('div');
+  flowHeaderActions.className = 'inspect-draw-actions';
+  flowHeaderActions.appendChild(flowChip);
+  flowHeaderActions.appendChild(flowClearBtn);
+
+  flowHeader.appendChild(flowCopy);
+  flowHeader.appendChild(flowHeaderActions);
   flowPanel.appendChild(flowHeader);
 
   const flowStepsList = document.createElement('div');
@@ -838,15 +1086,23 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     sessionId,
     element: el,
     webview,
+    webviewReady: false,
+    statusBadge,
+    toolbarHint: chromeHint,
+    modeBadge,
+    targetBadge,
+    committedUrl: normalizeUrl(url || ''),
     contentShell,
     viewportContainer,
     newTabPage,
     urlInput,
-    toolbarRouteEl: toolbarRoute,
+    goBtn,
     inspectBtn,
     viewportBtn,
     viewportDropdown,
     inspectPanel,
+    inspectTitleEl: inspectTitle,
+    inspectSubtitleEl: inspectSubtitle,
     instructionInput,
     submitBtn,
     inspectTargetBtn: customBtn,
@@ -856,6 +1112,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     inspectMode: false,
     selectedElement: null,
     currentViewport: VIEWPORT_PRESETS[0],
+    isLoading: false,
     viewportOutsideClickHandler: () => {},
     recordBtn,
     flowPanel,
@@ -885,9 +1142,49 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     targetMenuFloatingCleanup: null,
     activeTargetTrigger: null,
     activeTargetMode: null,
+    syncSurfaceVisibility: () => {},
+    syncAddressBarState: () => {},
+    syncToolbarState: () => {},
     cleanupFns: [],
   };
   instances.set(sessionId, instance);
+  instance.syncSurfaceVisibility = syncSurfaceVisibility;
+  instance.syncToolbarState = () => {
+    const mode = resolveCaptureModeState(instance);
+    modeBadge.dataset.state = mode;
+    const modeText =
+      mode === 'inspect' ? 'Inspecting'
+        : mode === 'draw' ? 'Annotating'
+          : mode === 'flow' ? 'Recording flow'
+            : 'Idle';
+    modeBadgeText.textContent = modeText;
+    modeBadgeIcon.textContent =
+      mode === 'inspect' ? '◎'
+        : mode === 'draw' ? '✎'
+          : mode === 'flow' ? '●'
+            : '○';
+    modeBadge.title =
+      mode === 'inspect' ? 'Jump to the inspect composer'
+        : mode === 'draw' ? 'Jump to the draw composer'
+          : mode === 'flow' ? 'Jump to the flow composer'
+            : 'Focus the inspect action';
+    modeBadge.setAttribute('aria-label', modeBadge.title);
+
+    const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+    if (selectedTarget) {
+      targetBadge.dataset.state = 'target';
+      targetBadgeIcon.textContent = '↗';
+      targetBadgeText.textContent = `${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} · ${browserTargetButtonLabel(instance)}`;
+      targetBadge.title = `Current target: ${selectedTarget.name}`;
+      targetBadge.setAttribute('aria-label', `Open target menu. Current target ${selectedTarget.name}`);
+    } else {
+      targetBadge.dataset.state = 'empty-target';
+      targetBadgeIcon.textContent = '⊕';
+      targetBadgeText.textContent = 'No target';
+      targetBadge.title = 'Choose which open session receives browser prompts';
+      targetBadge.setAttribute('aria-label', 'Open target menu. No session selected yet');
+    }
+  };
   instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
   focusAddressBtn.addEventListener('click', () => {
     urlInput.focus();
@@ -895,9 +1192,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   });
   refreshTargetsBtn.addEventListener('click', () => {
     resetNewTabCopy();
-    void populateLocalTargets(instance, ntpGrid, ntpTargetsText);
+    void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
   });
-  void populateLocalTargets(instance, ntpGrid, ntpTargetsText);
+  void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
 
   const syncTargetingUi = () => syncBrowserTargetControls(instance);
   instance.cleanupFns.push(appState.on('session-added', syncTargetingUi));
@@ -905,9 +1202,91 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   instance.cleanupFns.push(appState.on('session-changed', syncTargetingUi));
   instance.cleanupFns.push(appState.on('project-changed', syncTargetingUi));
   syncTargetingUi();
+  instance.syncToolbarState();
+
+  modeBadge.addEventListener('click', () => {
+    focusActiveCaptureComposer(instance);
+  });
+
+  targetBadge.addEventListener('click', () => {
+    const mode = resolveCaptureModeState(instance);
+    openBrowserTargetMenu(instance, targetBadge, mode === 'idle' ? 'inspect' : mode);
+  });
+
+  function syncNavigationControls(instance: BrowserTabInstance): void {
+    if (!instance.webviewReady) {
+      backBtn.disabled = true;
+      fwdBtn.disabled = true;
+      backBtn.title = 'Open a page before navigating back';
+      fwdBtn.title = 'Open a page before navigating forward';
+      return;
+    }
+
+    backBtn.disabled = !instance.webview.canGoBack();
+    fwdBtn.disabled = !instance.webview.canGoForward();
+    backBtn.title = backBtn.disabled ? 'No page behind this one yet' : 'Back';
+    fwdBtn.title = fwdBtn.disabled ? 'No forward page yet' : 'Forward';
+  }
+
+  function syncAddressBarState(instance: BrowserTabInstance): void {
+    const normalizedDraft = normalizeUrl(urlInput.value);
+    const hasUnappliedAddressChange = normalizedDraft !== instance.committedUrl;
+    urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false';
+    toolbarAddressShell.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false';
+
+    if (instance.isLoading) {
+      goBtn.dataset.state = 'stop';
+      goBtn.textContent = 'Stop';
+      goBtn.title = 'Stop the current page load';
+      goBtn.ariaLabel = 'Stop page load';
+    } else if (!hasUnappliedAddressChange && instance.committedUrl && instance.committedUrl !== 'about:blank') {
+      goBtn.dataset.state = 'reload';
+      goBtn.textContent = 'Reload';
+      goBtn.title = 'Reload current page';
+      goBtn.ariaLabel = 'Reload current page';
+    } else {
+      goBtn.dataset.state = 'open';
+      goBtn.textContent = 'Open';
+      goBtn.title = normalizedDraft ? 'Open typed address' : 'Open address';
+      goBtn.ariaLabel = 'Open address';
+    }
+
+    reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange;
+    if (instance.committedUrl === 'about:blank') {
+      reloadBtn.disabled = true;
+    }
+    reloadBtn.title = instance.isLoading
+      ? 'Wait for the current page to finish loading'
+      : hasUnappliedAddressChange
+        ? 'Apply the typed address before reloading'
+        : instance.committedUrl === 'about:blank'
+          ? 'Open a page before reloading'
+          : 'Reload';
+  }
+  instance.syncAddressBarState = () => syncAddressBarState(instance);
+
+  function reloadCurrentPage(): void {
+    if (!instance.webviewReady) return;
+    webview.reload();
+  }
 
   webview.addEventListener('before-input-event', ((e: CustomEvent & { preventDefault(): void; input: { type: string; key: string; shift: boolean; control: boolean; alt: boolean; meta: boolean } }) => {
     if (e.input.type !== 'keyDown') return;
+    if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      urlInput.focus();
+      urlInput.select();
+      return;
+    }
+    if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'r') {
+      e.preventDefault();
+      if (instance.isLoading) {
+        webview.stop();
+      } else {
+        reloadCurrentPage();
+      }
+      return;
+    }
     const synthetic = {
       key: e.input.key,
       ctrlKey: e.input.control,
@@ -927,11 +1306,50 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   backBtn.addEventListener('click', () => webview.goBack());
   fwdBtn.addEventListener('click', () => webview.goForward());
-  reloadBtn.addEventListener('click', () => webview.reload());
+  reloadBtn.addEventListener('click', () => reloadCurrentPage());
 
-  goBtn.addEventListener('click', () => navigateTo(instance, urlInput.value));
+  goBtn.addEventListener('click', () => {
+    if (instance.isLoading) {
+      try { webview.stop(); } catch {}
+      instance.isLoading = false;
+      syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+      syncNavigationControls(instance);
+      syncAddressBarState(instance);
+      return;
+    }
+
+    const normalizedDraft = normalizeUrl(urlInput.value);
+    if (
+      normalizedDraft
+      && normalizedDraft === instance.committedUrl
+      && instance.committedUrl !== 'about:blank'
+    ) {
+      if (!instance.webviewReady) {
+        navigateTo(instance, instance.committedUrl);
+      } else {
+        reloadCurrentPage();
+      }
+      return;
+    }
+    navigateTo(instance, urlInput.value);
+  });
+  urlInput.addEventListener('focus', () => {
+    urlInput.select();
+  });
+  urlInput.addEventListener('input', () => {
+    syncAddressBarState(instance);
+  });
   urlInput.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Enter') navigateTo(instance, urlInput.value);
+    if (e.key === 'Enter') {
+      navigateTo(instance, urlInput.value);
+      webview.focus();
+    }
+    if (e.key === 'Escape') {
+      urlInput.value = instance.committedUrl || webview.src || urlInput.value;
+      urlInput.blur();
+      syncAddressBarState(instance);
+      webview.focus();
+    }
   });
 
   viewportBtn.addEventListener('click', (e: MouseEvent) => {
@@ -1033,17 +1451,41 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     addFlowStep(instance, { type: 'navigate', url });
   }
 
+  webview.addEventListener('did-start-loading', (() => {
+    instance.isLoading = true;
+    syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), true, false));
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
+  }) as EventListener);
+
+  webview.addEventListener('dom-ready', (() => {
+    instance.webviewReady = true;
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
+  }) as EventListener);
+
+  webview.addEventListener('did-stop-loading', (() => {
+    instance.isLoading = false;
+    syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
+  }) as EventListener);
+
   webview.addEventListener('did-navigate', ((e: Event & { url: string }) => {
     if (e.url === 'about:blank') {
       if (newTabPage.dataset.mode !== 'offline') {
         resetNewTabCopy();
       }
-      newTabPage.style.display = 'flex';
+      syncSurfaceVisibility(true);
     } else {
       resetNewTabCopy();
-      newTabPage.style.display = 'none';
+      syncSurfaceVisibility(false);
     }
+    instance.committedUrl = e.url;
     urlInput.value = e.url;
+    syncBrowserStatus(resolveBrowserPageState(e.url, instance.isLoading, false));
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
@@ -1052,12 +1494,16 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       if (newTabPage.dataset.mode !== 'offline') {
         resetNewTabCopy();
       }
-      newTabPage.style.display = 'flex';
+      syncSurfaceVisibility(true);
     } else {
       resetNewTabCopy();
-      newTabPage.style.display = 'none';
+      syncSurfaceVisibility(false);
     }
+    instance.committedUrl = e.url;
     urlInput.value = e.url;
+    syncBrowserStatus(resolveBrowserPageState(e.url, instance.isLoading, false));
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
@@ -1065,6 +1511,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     if (e.isMainFrame === false) return;
     const failedUrl = e.validatedURL || urlInput.value.trim();
     if (!failedUrl) return;
+    instance.isLoading = false;
+    instance.committedUrl = failedUrl;
+    syncBrowserStatus(resolveBrowserPageState(failedUrl, false, true));
+    syncNavigationControls(instance);
+    syncAddressBarState(instance);
     showOfflineState(failedUrl);
     if (failedUrl !== 'about:blank') {
       // Keep the failed URL visible in the address bar while stopping the
@@ -1073,6 +1524,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       try { webview.stop(); } catch {}
     }
   }) as EventListener);
+
+  syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+  syncNavigationControls(instance);
+  syncAddressBarState(instance);
 
   webview.addEventListener('ipc-message', ((e: Event & { channel: string; args: unknown[] }) => {
     if (e.channel === 'element-selected') {
@@ -1085,6 +1540,18 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     } else if (e.channel === 'draw-stroke-end') {
       const { x, y } = e.args[0] as { x: number; y: number };
       positionDrawPopover(instance, x, y);
+    } else if (e.channel === 'browser-open-request') {
+      const payload = e.args[0] as BrowserGuestOpenPayload;
+      void handleBrowserGuestOpenRequest(payload, {
+        openEmbedded: (nextUrl) => {
+          const project = appState.projects.find((entry) =>
+            entry.sessions.some((session) => session.id === instance.sessionId),
+          );
+          if (!project) return;
+          appState.addBrowserTabSession(project.id, nextUrl, { dedupeByUrl: false });
+        },
+        openExternal: (nextUrl) => window.calder.app.openExternal(nextUrl),
+      });
     }
   }) as EventListener);
 }

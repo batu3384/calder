@@ -31,6 +31,13 @@ Observed issue from the live gateway log:
 - MiniMax sessions still generate requests for `claude-haiku-4-5-20251001`
 - this shows that some built-in subagent/helper flows are still using Claude defaults instead of the active session provider
 
+Additional live probe result:
+- an explicit top-level Claude selection such as `/model sonnet` also reaches the gateway as `claude-sonnet-4-6`
+
+This means model string alone is not sufficient to distinguish:
+- a user’s explicit top-level Claude model choice
+- a helper/subagent default emitted by Claude Code
+
 So the current system is:
 - correct for main-session explicit model selection
 - not yet correct for hidden subagent/helper alias resolution
@@ -81,7 +88,7 @@ Examples:
 - `glm-5.1` remains `glm-5.1`
 - `glm-5-turbo` remains `glm-5-turbo`
 - `MiniMax-M2.7` remains `MiniMax-M2.7`
-- `claude-haiku-4-5-20251001` remains explicit Claude only when the active provider is Claude
+- `claude-haiku-4-5-20251001` remains explicit Claude only when it is positively identified as the user’s top-level Claude choice
 
 Aliases and Claude defaults become **session-relative**.
 
@@ -149,16 +156,22 @@ the gateway should resolve it against the session’s `activeProvider`.
 
 MiniMax currently has only one supported text model in this setup, so all three aliases collapse to `MiniMax-M2.7`.
 
-### Rule 3: Claude built-in full model defaults should be rewritten when the active provider is not Claude
+### Rule 3: Claude full-model-family requests need request classification before rewriting
 
 This is the key fix for hidden agent/helper traffic.
 
-When the active provider is Z.ai or MiniMax, requests such as:
+Requests such as:
 - `claude-haiku-4-5-20251001`
 - `claude-sonnet-*`
 - `claude-opus-*`
 
-should not remain hard-pinned to Anthropic.
+cannot be treated as always-explicit Claude selections.
+
+The gateway must first determine whether a Claude full-model-family request is:
+- an explicit top-level user model selection
+- or a helper/subagent default emitted inside an already-established non-Claude session
+
+Only the second category should be rewritten when the active provider is not Claude.
 
 They should be normalized into the corresponding provider-relative alias tier:
 - Claude Haiku-like default -> provider `haiku` tier
@@ -218,17 +231,45 @@ No unsupported MiniMax variants should be surfaced or auto-selected.
 
 ## Request Classification
 
-The gateway does not need a separate “this is a subagent request” classifier to satisfy the approved product requirement.
+The gateway does need a lightweight request classifier, but only for one narrow reason:
+- to identify which requests are allowed to establish or replace the active session provider
+- and which requests should instead inherit the existing active provider
 
-Because the approved behavior is:
-- all subagents follow the active provider
-- all helper agents follow the active provider
+This is necessary because a user’s explicit Claude selection and a helper agent default can both appear as `claude-*` model ids.
 
-the routing decision can be simplified:
-- explicit provider-native models pass through
-- Claude alias/default-family models are rewritten based on session provider
+The implementation should avoid broad “helper vs non-helper” branching. It only needs one reliable distinction:
+- **provider-establishing requests**
+- **provider-inheriting requests**
 
-This is safer than attempting to maintain separate logic for helper vs non-helper flows.
+### Provider-establishing requests
+
+These are requests that are allowed to define or replace the session’s active provider.
+
+They include:
+- explicit `glm-*`
+- explicit `MiniMax-*`
+- explicit top-level Claude model selections, once positively identified via request metadata
+
+### Provider-inheriting requests
+
+These are requests that should follow the session’s existing provider state.
+
+They include:
+- `opus`
+- `sonnet`
+- `haiku`
+- Claude full-model-family requests that are identified as helper/subagent defaults rather than top-level selections
+
+### Classification requirement
+
+Phase 1 instrumentation must capture real request metadata to discover the narrowest stable signal for top-level model selection.
+
+Examples of acceptable classification inputs:
+- a dedicated request header
+- a stable request body field
+- another request-shape marker proven by live traces
+
+If no reliable positive signal exists, the gateway must not rewrite ambiguous `claude-*` requests. It should preserve current behavior and log the ambiguity instead.
 
 ## Failure Handling
 
@@ -324,12 +365,14 @@ Add:
 - session registry
 - alias-tier inference
 - diagnostic logs
+- request metadata capture for ambiguous `claude-*` model-family traffic
 
 But keep rewriting disabled behind a flag.
 
 Goal:
 - confirm session-key quality
 - confirm full-model default patterns
+- confirm how top-level model selections are distinguishable from helper defaults
 - confirm no hidden request shapes were missed
 
 ### Phase 2: Routing activation

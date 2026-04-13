@@ -21,7 +21,6 @@ import { initSessionHistory } from './components/session-history.js';
 import { showUsageModal } from './components/usage-modal.js';
 import { captureInitialContext } from './session-insights.js';
 import { initInsightAlert } from './components/insight-alert.js';
-import { initReadinessSection } from './components/readiness-section.js';
 import { initToolDetector } from './tools/missing-tool-detector.js';
 import { initToolAlert } from './components/tool-alert.js';
 import { initLargeFileDetector } from './tools/large-file-detector.js';
@@ -39,6 +38,7 @@ import { loadProviderMetas } from './provider-availability.js';
 import { initContextInspector } from './components/context-inspector.js';
 import { getBrowserTabInstance } from './components/browser-tab/instance.js';
 import { navigateTo } from './components/browser-tab/navigation.js';
+import { initProjectContextSync } from './project-context-sync.js';
 
 let isQuitting = false;
 window.calder.app.onQuitting(() => {
@@ -184,7 +184,6 @@ async function main(): Promise<void> {
   initLargeFileDetector();
   initLargeFileAlert();
   initSettingsGuard();
-  initReadinessSection();
   initShareManager();
   initSessionInspector();
   startGitPolling();
@@ -213,6 +212,7 @@ async function main(): Promise<void> {
 
   // Load persisted state
   await appState.load();
+  initProjectContextSync();
 
   // Auto-open new project modal when no projects exist
   if (appState.projects.length === 0) {

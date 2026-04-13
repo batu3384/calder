@@ -140,6 +140,10 @@ export function showSearchBar(sessionId: string, backend: SearchBackend): void {
   const bar = document.createElement('div');
   bar.className = 'search-bar';
 
+  const label = document.createElement('span');
+  label.className = 'search-bar-label';
+  label.textContent = 'Search';
+
   const input = document.createElement('input');
   input.type = 'text';
   input.placeholder = 'Search...';
@@ -173,13 +177,18 @@ export function showSearchBar(sessionId: string, backend: SearchBackend): void {
   closeBtn.textContent = '\u2715';
   closeBtn.title = 'Close (Escape)';
 
+  const actions = document.createElement('div');
+  actions.className = 'search-bar-actions';
+  actions.appendChild(matchCaseBtn);
+  actions.appendChild(regexBtn);
+  actions.appendChild(prevBtn);
+  actions.appendChild(nextBtn);
+  actions.appendChild(closeBtn);
+
+  bar.appendChild(label);
   bar.appendChild(input);
   bar.appendChild(resultCount);
-  bar.appendChild(matchCaseBtn);
-  bar.appendChild(regexBtn);
-  bar.appendChild(prevBtn);
-  bar.appendChild(nextBtn);
-  bar.appendChild(closeBtn);
+  bar.appendChild(actions);
 
   backend.getContainer().appendChild(bar);
   let caseSensitive = false;

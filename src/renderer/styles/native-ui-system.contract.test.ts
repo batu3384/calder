@@ -34,6 +34,9 @@ describe('native-first UI system contract', () => {
     expect(primitives).toContain('.calder-icon-button');
     expect(primitives).toContain('.calder-list-row');
     expect(primitives).toContain('.calder-popover');
+    expect(primitives).toContain('.calder-floating-list');
+    expect(primitives).toContain('.calder-inline-notice');
+    expect(primitives).toContain('.calder-status-pill');
     expect(primitives).toContain('.calder-section-heading');
   });
 

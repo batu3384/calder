@@ -15,10 +15,18 @@ describe('ops rail stylesheet contract', () => {
     expect(inspectorCss).toContain('#context-inspector .toolchain-summary');
     expect(inspectorCss).toContain('border-bottom: 1px solid');
     expect(inspectorCss).toContain('#context-inspector .config-section-count');
-    expect(inspectorCss).toContain('#context-inspector .readiness-badge');
     expect(inspectorCss).toContain('min-height: 18px;');
     expect(inspectorCss).toContain('.toolchain-summary-status');
-    expect(inspectorCss).toContain('.history-compact-summary');
-    expect(inspectorCss).toContain('.readiness-compact-summary');
+    expect(inspectorCss).toContain('.ops-rail-note');
+    expect(inspectorCss).toContain('padding: 9px 11px;');
+    expect(inspectorCss).toContain('border-radius: 12px;');
+    expect(inspectorCss).toContain('min-height: 42px;');
+  });
+
+  it('slims the right rail again at narrower shell widths instead of holding a wide fixed column', () => {
+    expect(inspectorCss).toContain('@container workspace-shell (max-width: 980px)');
+    expect(inspectorCss).toContain('width: 268px;');
+    expect(inspectorCss).toContain('min-width: 236px;');
+    expect(inspectorCss).toContain('grid-template-columns: minmax(0, 1fr);');
   });
 });

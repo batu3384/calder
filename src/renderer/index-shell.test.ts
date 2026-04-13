@@ -16,14 +16,14 @@ describe('index shell contract', () => {
   it('exposes project rail, workspace shell, and context inspector anchors', () => {
     expect(html).toContain('id="workspace-shell"');
     expect(html).toContain('id="workspace-stack"');
-    expect(html).toContain('id="workspace-identity"');
+    expect(html).not.toContain('id="workspace-identity"');
     expect(html).toContain('id="context-inspector"');
     expect(html).toContain('id="context-inspector-overview"');
     expect(html).not.toContain('id="btn-toggle-context-inspector"');
     expect(html).not.toContain('&#9776;');
     expect(html).toContain('id="context-inspector-sections"');
     expect(html).toContain('class="command-deck-status"');
-    expect(html).toContain('id="workspace-spend"');
+    expect(html).not.toContain('id="workspace-spend"');
   });
 
   it('styles the cockpit wrappers in the sidebar and tab chrome stylesheets', () => {

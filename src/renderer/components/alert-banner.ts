@@ -35,18 +35,26 @@ export function showAlertBanner(config: AlertBannerConfig): void {
   bannerSessionId = targetSessionId;
 
   const banner = document.createElement('div');
-  banner.className = `insight-alert${config.className ? ` ${config.className}` : ''}`;
+  banner.className = `insight-alert calder-inline-notice${config.className ? ` ${config.className}` : ''}`;
 
   const icon = document.createElement('span');
   icon.className = 'insight-alert-icon';
   icon.textContent = config.icon;
 
+  const copy = document.createElement('div');
+  copy.className = 'insight-alert-copy';
+
   const message = document.createElement('span');
   message.className = 'insight-alert-message';
   message.textContent = config.message;
 
+  copy.appendChild(message);
+
+  const actions = document.createElement('div');
+  actions.className = 'insight-alert-actions';
+
   banner.appendChild(icon);
-  banner.appendChild(message);
+  banner.appendChild(copy);
 
   if (config.cta) {
     const ctaBtn = document.createElement('button');
@@ -54,7 +62,7 @@ export function showAlertBanner(config: AlertBannerConfig): void {
     ctaBtn.textContent = config.cta.label;
     const onClick = config.cta.onClick;
     ctaBtn.addEventListener('click', () => onClick(ctaBtn));
-    banner.appendChild(ctaBtn);
+    actions.appendChild(ctaBtn);
   }
 
   if (config.onDismiss) {
@@ -66,7 +74,7 @@ export function showAlertBanner(config: AlertBannerConfig): void {
       onDismiss();
       removeAlertBanner();
     });
-    banner.appendChild(dismissBtn);
+    actions.appendChild(dismissBtn);
   }
 
   const closeBtn = document.createElement('button');
@@ -74,7 +82,8 @@ export function showAlertBanner(config: AlertBannerConfig): void {
   closeBtn.textContent = '\u00D7';
   closeBtn.addEventListener('click', () => removeAlertBanner());
 
-  banner.appendChild(closeBtn);
+  actions.appendChild(closeBtn);
+  banner.appendChild(actions);
 
   const xtermWrap = pane.querySelector('.xterm-wrap');
   if (xtermWrap) {

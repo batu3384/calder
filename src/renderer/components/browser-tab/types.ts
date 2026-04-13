@@ -52,6 +52,8 @@ export const VIEWPORT_PRESETS: ViewportPreset[] = [
 
 export interface WebviewElement extends HTMLElement {
   src: string;
+  canGoBack(): boolean;
+  canGoForward(): boolean;
   goBack(): void;
   goForward(): void;
   reload(): void;
@@ -67,15 +69,23 @@ export interface BrowserTabInstance {
   sessionId: string;
   element: HTMLDivElement;
   webview: WebviewElement;
+  webviewReady: boolean;
+  statusBadge: HTMLSpanElement;
+  toolbarHint: HTMLDivElement;
+  modeBadge: HTMLButtonElement;
+  targetBadge: HTMLButtonElement;
+  committedUrl: string;
   contentShell: HTMLDivElement;
   viewportContainer: HTMLDivElement;
   newTabPage: HTMLDivElement;
   urlInput: HTMLInputElement;
-  toolbarRouteEl: HTMLDivElement;
+  goBtn: HTMLButtonElement;
   inspectBtn: HTMLButtonElement;
   viewportBtn: HTMLButtonElement;
   viewportDropdown: HTMLDivElement;
   inspectPanel: HTMLDivElement;
+  inspectTitleEl: HTMLDivElement;
+  inspectSubtitleEl: HTMLDivElement;
   instructionInput: HTMLTextAreaElement;
   submitBtn: HTMLButtonElement;
   inspectTargetBtn: HTMLButtonElement;
@@ -85,6 +95,7 @@ export interface BrowserTabInstance {
   inspectMode: boolean;
   selectedElement: ElementInfo | null;
   currentViewport: ViewportPreset;
+  isLoading: boolean;
   viewportOutsideClickHandler: (e: MouseEvent) => void;
   recordBtn: HTMLButtonElement;
   flowPanel: HTMLDivElement;
@@ -114,5 +125,8 @@ export interface BrowserTabInstance {
   targetMenuFloatingCleanup: (() => void) | null;
   activeTargetTrigger: HTMLButtonElement | null;
   activeTargetMode: 'inspect' | 'draw' | 'flow' | null;
+  syncSurfaceVisibility: (showEmptySurface: boolean) => void;
+  syncAddressBarState: () => void;
+  syncToolbarState: () => void;
   cleanupFns: Array<() => void>;
 }

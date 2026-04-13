@@ -169,16 +169,45 @@ function createPanel(): HTMLElement {
   const header = document.createElement('div');
   header.className = 'inspector-header';
 
+  const headerCopy = document.createElement('div');
+  headerCopy.className = 'inspector-header-copy';
+
   const title = document.createElement('div');
   title.className = 'inspector-title';
   title.textContent = 'Session Inspector';
-  header.appendChild(title);
+  headerCopy.appendChild(title);
+
+  const meta = document.createElement('div');
+  meta.className = 'inspector-header-meta';
+  meta.textContent = 'Timeline, tools, and context snapshots';
+  headerCopy.appendChild(meta);
+
+  header.appendChild(headerCopy);
+
+  const actions = document.createElement('div');
+  actions.className = 'inspector-header-actions';
+
+  const scrollToggle = document.createElement('button');
+  scrollToggle.className = 'inspector-autoscroll-toggle active';
+  scrollToggle.textContent = 'Auto-scroll';
+  scrollToggle.title = 'Toggle auto-scroll to bottom';
+  scrollToggle.addEventListener('click', () => {
+    inspectorState.autoScroll = !inspectorState.autoScroll;
+    scrollToggle.classList.toggle('active', inspectorState.autoScroll);
+    if (inspectorState.autoScroll) {
+      const content = panel.querySelector('.inspector-content') as HTMLElement;
+      if (content) content.scrollTop = content.scrollHeight;
+    }
+  });
+  actions.appendChild(scrollToggle);
 
   const closeBtn = document.createElement('button');
   closeBtn.className = 'inspector-close';
   closeBtn.textContent = '\u00d7';
   closeBtn.addEventListener('click', closeInspector);
-  header.appendChild(closeBtn);
+  actions.appendChild(closeBtn);
+
+  header.appendChild(actions);
 
   panel.appendChild(header);
 
@@ -205,20 +234,6 @@ function createPanel(): HTMLElement {
     tabBar.appendChild(btn);
   }
   panel.appendChild(tabBar);
-
-  const scrollToggle = document.createElement('button');
-  scrollToggle.className = 'inspector-autoscroll-toggle active';
-  scrollToggle.textContent = 'Auto-scroll';
-  scrollToggle.title = 'Toggle auto-scroll to bottom';
-  scrollToggle.addEventListener('click', () => {
-    inspectorState.autoScroll = !inspectorState.autoScroll;
-    scrollToggle.classList.toggle('active', inspectorState.autoScroll);
-    if (inspectorState.autoScroll) {
-      const content = panel.querySelector('.inspector-content') as HTMLElement;
-      if (content) content.scrollTop = content.scrollHeight;
-    }
-  });
-  panel.appendChild(scrollToggle);
 
   // Content area
   const content = document.createElement('div');

@@ -8,6 +8,9 @@ describe('terminal stage contract', () => {
   it('adds a terminal chrome header for live session framing', () => {
     expect(source).toContain('terminal-pane-chrome');
     expect(source).toContain('terminal-pane-provider');
+    expect(source).toContain('terminal-pane-header-copy');
+    expect(source).toContain('terminal-pane-title');
+    expect(source).toContain('terminal-pane-meta');
     expect(source).toContain('terminal-pane-workspace');
     expect(source).toContain('active run');
     expect(source).toContain('linked run');
@@ -16,6 +19,9 @@ describe('terminal stage contract', () => {
   it('styles the terminal stage header and elevated frame', () => {
     expect(css).toContain('.terminal-pane-chrome');
     expect(css).toContain('.terminal-pane-provider');
+    expect(css).toContain('.terminal-pane-header-copy');
+    expect(css).toContain('.terminal-pane-title');
+    expect(css).toContain('.terminal-pane-meta');
     expect(css).toContain('.terminal-pane-workspace');
     expect(css).toContain('.terminal-pane-session');
     expect(css).toContain('font-family: var(--font-display);');

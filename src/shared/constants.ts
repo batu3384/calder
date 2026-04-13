@@ -1,4 +1,4 @@
-/** Glob patterns for files to exclude from large-file scanning (readiness checks). */
+/** Glob patterns for files to exclude from large-file scanning. */
 export const DEFAULT_SCAN_IGNORE = [
   'package-lock.json',
   'yarn.lock',
@@ -35,3 +35,6 @@ export const EXTRA_ALERT_IGNORE = [
 
 /** Sentinel command used to launch Calder's built-in CLI Surface demo profile. */
 export const CLI_SURFACE_DEMO_COMMAND = '__calder_cli_surface_demo__';
+
+/** Dedicated persistent Chromium partition for Calder browser surfaces. */
+export const BROWSER_SESSION_PARTITION = 'persist:calder-live-view';

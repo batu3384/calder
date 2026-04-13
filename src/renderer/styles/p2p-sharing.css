@@ -15,29 +15,56 @@
 }
 
 .share-dialog {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px 24px;
   width: 460px;
   max-width: 90vw;
   max-height: 80vh;
   overflow-y: auto;
 }
 
-.share-dialog h3 {
-  margin: 0 0 16px;
-  font-size: 16px;
+.share-dialog-shell {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.share-dialog-hero {
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 16%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 22px rgba(0, 0, 0, 0.08);
+  padding: 14px 16px;
+}
+
+.share-dialog-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
-.share-notice {
-  font-size: 12px;
+.share-dialog-copy {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--text-secondary);
-  background: rgba(255, 180, 0, 0.08);
-  border: 1px solid rgba(255, 180, 0, 0.25);
-  border-radius: 4px;
-  padding: 8px 10px;
+}
+
+.share-notice.calder-inline-notice {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  background:
+    linear-gradient(180deg, rgba(255, 194, 61, 0.08), rgba(255, 194, 61, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+  border-color: rgba(255, 194, 61, 0.24);
+  padding: 10px 12px;
   margin-bottom: 16px;
 }
 
@@ -138,26 +165,33 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
 }
 
-.share-btn {
-  padding: 6px 16px;
-  border: none;
-  border-radius: 4px;
+.share-actions-shell {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
+}
+
+.share-btn.calder-button {
+  padding: 0 16px;
+  border-radius: 10px;
   font-size: 13px;
-  cursor: pointer;
   background: var(--accent);
   color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 52%, transparent);
 }
 
-.share-btn:hover {
-  opacity: 0.9;
+.share-btn.calder-button:hover {
+  background: var(--accent-dim);
+  color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
 }
 
-.share-btn:disabled {
+.share-btn.calder-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .share-btn.hidden {
@@ -165,12 +199,14 @@
 }
 
 .share-btn-secondary {
-  background: var(--bg-tertiary, #333);
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--border-subtle) 92%, transparent);
 }
 
-.share-btn-secondary:hover {
-  background: var(--bg-hover, #444);
+.share-btn-secondary.calder-button:hover {
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  color: var(--text-primary);
 }
 
 /* Tab sharing indicator */
@@ -179,13 +215,21 @@
 }
 
 .tab-share-indicator {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #0f9b58;
-  margin-left: 4px;
+  margin-left: 6px;
   animation: share-pulse 2s ease-in-out infinite;
+}
+
+.tab-share-indicator.calder-status-pill {
+  min-height: 18px;
+  padding: 0 8px;
+  background:
+    linear-gradient(180deg, rgba(15, 155, 88, 0.12), rgba(15, 155, 88, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, transparent);
+  border-color: color-mix(in srgb, #0f9b58 38%, transparent);
+  color: color-mix(in srgb, #0f9b58 88%, white);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 @keyframes share-pulse {
@@ -202,25 +246,34 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 8px;
+  padding: 6px 8px 4px;
+}
+
+.remote-status-shell {
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent);
 }
 
 .remote-mode-label {
-  font-size: 11px;
-  color: #0f9b58;
+  color: color-mix(in srgb, #0f9b58 86%, white);
+  background:
+    linear-gradient(180deg, rgba(15, 155, 88, 0.12), rgba(15, 155, 88, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  border-color: color-mix(in srgb, #0f9b58 32%, transparent);
 }
 
-.remote-disconnect-btn {
+.remote-disconnect-btn.calder-button {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 8px;
   font-size: 11px;
-  padding: 2px 8px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background: transparent;
+  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-secondary);
-  cursor: pointer;
 }
 
-.remote-disconnect-btn:hover {
-  background: var(--bg-tertiary, #333);
+.remote-disconnect-btn.calder-button:hover {
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   color: var(--text-primary);
 }

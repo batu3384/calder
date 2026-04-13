@@ -14,6 +14,7 @@ import { attachBrowserWebviewRouting } from './browser-webview-routing';
 import { analyzeProviderStartup, formatMissingProviderDialog, formatProviderStartupWarning } from './provider-startup';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
+import { prepareBrowserSessionStorage } from './browser-session-storage';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -55,6 +56,10 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
   const state = loadState();
+  const browserStorage = await prepareBrowserSessionStorage(app.getPath('userData'));
+  if (browserStorage.migratedLegacyServiceWorker) {
+    console.info('Moved legacy browser service worker storage into an isolated archive');
+  }
   initProviders();
 
   const providerStartup = analyzeProviderStartup(getAllProviders(), state);

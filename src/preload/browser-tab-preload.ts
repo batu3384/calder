@@ -4,6 +4,8 @@
  * and sends element metadata back to the host renderer via ipcRenderer.sendToHost().
  */
 import { ipcRenderer } from 'electron';
+import { shouldRouteBrowserOpenIntent } from './browser-tab-open-intent.js';
+import { resolveBrowserGuestOpenPayload } from './browser-tab-popup.js';
 
 interface SelectorOption {
   type: 'qa' | 'attr' | 'id' | 'css';
@@ -23,6 +25,19 @@ let drawCanvas: HTMLCanvasElement | null = null;
 let drawCtx: CanvasRenderingContext2D | null = null;
 let drawing = false;
 let strokeCompleted = false;
+
+function sendBrowserOpenRequest(requestedUrl: string, source: 'anchor' | 'window-open'): void {
+  const payload = resolveBrowserGuestOpenPayload(requestedUrl, window.location.href, source);
+  if (!payload) return;
+  ipcRenderer.sendToHost('browser-open-request', payload);
+}
+
+function findPopupAnchor(target: EventTarget | null): HTMLAnchorElement | null {
+  if (!(target instanceof Element)) return null;
+  const anchor = target.closest('a[href]');
+  if (!(anchor instanceof HTMLAnchorElement)) return null;
+  return anchor;
+}
 
 function applyDrawStyles(ctx: CanvasRenderingContext2D): void {
   ctx.lineWidth = 3;
@@ -241,6 +256,26 @@ function onClick(e: MouseEvent): void {
   ipcRenderer.sendToHost('element-selected', { metadata, x: e.clientX, y: e.clientY });
 }
 
+function onPopupAnchorClick(e: MouseEvent): void {
+  if (inspectMode || flowMode || drawMode || e.defaultPrevented) return;
+  const anchor = findPopupAnchor(e.target);
+  if (!anchor) return;
+  if (!shouldRouteBrowserOpenIntent({
+    targetAttr: anchor.getAttribute('target'),
+    button: e.button,
+    metaKey: e.metaKey,
+    ctrlKey: e.ctrlKey,
+    shiftKey: e.shiftKey,
+    altKey: e.altKey,
+  })) {
+    return;
+  }
+  const href = anchor.getAttribute('href') || anchor.href;
+  if (!href) return;
+  e.preventDefault();
+  sendBrowserOpenRequest(href, 'anchor');
+}
+
 function onFlowClick(e: MouseEvent): void {
   if (!flowMode) return;
   if (suppressNextFlowClick) {
@@ -307,3 +342,23 @@ ipcRenderer.on('flow-do-click', (_event, selector: string) => {
     el.click();
   }
 });
+
+document.addEventListener('click', onPopupAnchorClick, true);
+document.addEventListener('auxclick', onPopupAnchorClick, true);
+
+window.open = ((url?: string | URL, target?: string) => {
+  const requestedUrl = typeof url === 'string' ? url : url?.toString() ?? '';
+  if (!requestedUrl) return null;
+
+  const targetValue = (target || '').trim().toLowerCase();
+  const payload = resolveBrowserGuestOpenPayload(requestedUrl, window.location.href, 'window-open');
+  if (!payload) return null;
+
+  if (targetValue === '_self') {
+    window.location.assign(payload.url);
+    return window;
+  }
+
+  ipcRenderer.sendToHost('browser-open-request', payload);
+  return null;
+}) as typeof window.open;

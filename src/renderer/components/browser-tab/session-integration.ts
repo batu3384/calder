@@ -1,6 +1,8 @@
 import { appState } from '../../state.js';
+import { appendAppliedContextToPrompt, buildAppliedContextSummary } from '../../project-context-prompt.js';
 import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
 import type { BrowserTabInstance } from './types.js';
+import type { ProviderId } from '../../types.js';
 import { buildPrompt, dismissInspect } from './inspect-mode.js';
 import { buildFlowPrompt, dismissFlow } from './flow-recording.js';
 
@@ -14,16 +16,24 @@ function showSendError(errorEl: { textContent: string; style: { display: string 
   errorEl.style.display = 'block';
 }
 
+function buildBrowserAppliedContext(providerId?: ProviderId) {
+  const project = appState.activeProject;
+  if (!project) return undefined;
+  return buildAppliedContextSummary(project.id, providerId);
+}
+
 async function sendPromptToSelectedSession(
-  _instance: BrowserTabInstance,
+  instance: BrowserTabInstance,
   prompt: string,
   onDelivered: () => void,
   errorEl: { textContent: string; style: { display: string } },
 ): Promise<boolean> {
   const project = appState.activeProject;
   if (!project) return false;
+  const targetProviderId = appState.resolveBrowserTargetSession(instance.sessionId)?.providerId;
+  const routedPrompt = appendAppliedContextToPrompt(prompt, buildBrowserAppliedContext(targetProviderId));
 
-  const result = await deliverSurfacePrompt(project.id, prompt);
+  const result = await deliverSurfacePrompt(project.id, routedPrompt);
   if (!result.ok) {
     showSendError(errorEl, result.error ?? 'Failed to deliver prompt.');
     return false;
@@ -47,11 +57,15 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
   if (!prompt) return;
   const project = appState.activeProject;
   if (!project) return;
+  const routedPrompt = appendAppliedContextToPrompt(
+    prompt,
+    buildBrowserAppliedContext(appState.preferences.defaultProvider),
+  );
 
   queueSurfacePromptInNewSession(
     project.id,
     `Flow: ${instruction.slice(0, 30)}`,
-    prompt,
+    routedPrompt,
   );
   dismissFlow(instance);
 }
@@ -59,8 +73,9 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
 export function sendFlowToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildFlowPrompt(instance);
   if (!prompt) return;
+  const routedPrompt = appendAppliedContextToPrompt(prompt, buildBrowserAppliedContext());
 
-  queueSurfacePromptInCustomSession(prompt, () => {
+  queueSurfacePromptInCustomSession(routedPrompt, () => {
     dismissFlow(instance);
   });
 }
@@ -80,11 +95,15 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
   if (!info || !prompt) return;
   const project = appState.activeProject;
   if (!project) return;
+  const routedPrompt = appendAppliedContextToPrompt(
+    prompt,
+    buildBrowserAppliedContext(appState.preferences.defaultProvider),
+  );
 
   queueSurfacePromptInNewSession(
     project.id,
     `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`,
-    prompt,
+    routedPrompt,
   );
   dismissInspect(instance);
 }
@@ -92,8 +111,9 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
 export function sendToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildPrompt(instance);
   if (!prompt) return;
+  const routedPrompt = appendAppliedContextToPrompt(prompt, buildBrowserAppliedContext());
 
-  queueSurfacePromptInCustomSession(prompt, () => {
+  queueSurfacePromptInCustomSession(routedPrompt, () => {
     dismissInspect(instance);
   });
 }

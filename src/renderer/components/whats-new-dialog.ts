@@ -66,10 +66,18 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
   const container = document.createElement('div');
   container.className = 'whats-new-container';
 
+  const hero = document.createElement('div');
+  hero.className = 'whats-new-hero';
+  hero.innerHTML = `
+    <div class="whats-new-kicker shell-kicker">Release</div>
+    <div class="whats-new-version">Version ${version}</div>
+  `;
+
   const dateEl = document.createElement('div');
   dateEl.className = 'whats-new-date';
   dateEl.textContent = `Released ${notes.date}`;
-  container.appendChild(dateEl);
+  hero.appendChild(dateEl);
+  container.appendChild(hero);
 
   if (notes.features.length > 0) {
     container.appendChild(buildSection('Features', notes.features));
@@ -121,7 +129,7 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
 
 function buildSection(title: string, items: string[]): HTMLElement {
   const section = document.createElement('div');
-  section.className = 'whats-new-section';
+  section.className = 'whats-new-section whats-new-section-shell';
 
   const header = document.createElement('div');
   header.className = 'whats-new-section-header';

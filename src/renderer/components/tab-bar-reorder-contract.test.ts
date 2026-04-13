@@ -17,7 +17,8 @@ describe('tab bar reorder affordance contract', () => {
 
   it('limits drag reordering to the dedicated handle instead of the whole tab', () => {
     expect(source).not.toContain('tab.draggable = true;');
-    expect(source).toContain("const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement;");
+    expect(source).toContain("const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;");
+    expect(source).toContain('if (reorderHandleEl) {');
     expect(source).toContain('reorderHandleEl.draggable = true;');
     expect(source).toContain("reorderHandleEl.addEventListener('dragstart'");
     expect(source).toContain("reorderHandleEl.addEventListener('dragend'");

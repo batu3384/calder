@@ -1,4 +1,5 @@
 import type { SurfacePromptPayload } from '../../../shared/types.js';
+import { appendAppliedContextToPrompt } from '../../project-context-prompt.js';
 import {
   deliverSurfacePrompt,
   queueSurfacePromptInCustomSession,
@@ -32,7 +33,7 @@ function buildCliInspectPrompt(payload: SurfacePromptPayload): string {
     : contextMode === 'selection-nearby'
       ? 'selection + nearby context'
       : 'selection only';
-  return [
+  const prompt = [
     'Terminal capture from CLI surface:',
     '',
     `Project: ${payload.projectPath}`,
@@ -66,6 +67,7 @@ function buildCliInspectPrompt(payload: SurfacePromptPayload): string {
   ]
     .filter((line): line is string => Boolean(line))
     .join('\n');
+  return appendAppliedContextToPrompt(prompt, payload.appliedContext);
 }
 
 export async function sendCliSelectionToSelectedSession(payload: SurfacePromptPayload) {

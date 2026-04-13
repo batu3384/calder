@@ -7,13 +7,13 @@ const tabsCss = readFileSync(new URL('../styles/tabs.css', import.meta.url), 'ut
 const baseCss = readFileSync(new URL('../styles/base.css', import.meta.url), 'utf-8');
 
 describe('workspace polish contract', () => {
-  it('renders a workspace identity block in the command deck', () => {
-    expect(tabBarSource).toContain('renderWorkspaceIdentity');
-    expect(tabBarSource).toContain('workspace-project-name');
-    expect(tabBarSource).toContain('workspace-project-meta');
-    expect(tabsCss).toContain('#workspace-identity');
-    expect(tabsCss).toContain('.workspace-project-name');
-    expect(tabsCss).toContain('.workspace-project-meta');
+  it('keeps the command deck focused on sessions instead of duplicating workspace identity chrome', () => {
+    expect(tabBarSource).not.toContain('renderWorkspaceIdentity');
+    expect(tabBarSource).not.toContain('workspace-project-name');
+    expect(tabBarSource).not.toContain('workspace-project-meta');
+    expect(tabsCss).not.toContain('#workspace-identity');
+    expect(tabsCss).not.toContain('.workspace-project-name');
+    expect(tabsCss).not.toContain('.workspace-project-meta');
   });
 
   it('upgrades the empty state into an action-oriented launch surface', () => {

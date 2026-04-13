@@ -62,11 +62,15 @@ export function showPreferencesModal(): void {
   }
 
   // Content area
+  const contentShell = document.createElement('div');
+  contentShell.className = 'preferences-content-shell';
+
   const content = document.createElement('div');
   content.className = 'preferences-content preferences-section';
 
   layout.appendChild(menu);
-  layout.appendChild(content);
+  contentShell.appendChild(content);
+  layout.appendChild(contentShell);
   bodyEl.appendChild(layout);
 
   // Build section content
@@ -78,7 +82,7 @@ export function showPreferencesModal(): void {
   let autoTitleCheckbox: HTMLInputElement | null = null;
   let defaultProviderSelect: CustomSelectInstance | null = null;
   let debugModeCheckbox: HTMLInputElement | null = null;
-  let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement; readinessSection: HTMLInputElement } | null = null;
+  let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement } | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
 
   function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string) {
@@ -131,6 +135,79 @@ export function showPreferencesModal(): void {
     }
 
     container.appendChild(grid);
+  }
+
+  function renderProjectContextSection(container: HTMLElement) {
+    const card = appendSectionCard(
+      container,
+      'Project context',
+      'Calder discovers provider-native memory and shared project rules for the active repo without replacing each CLI tool’s own history.',
+    );
+
+    const shell = document.createElement('div');
+    shell.className = 'context-discovery-shell';
+    card.appendChild(shell);
+
+    const project = appState.activeProject;
+    if (!project) {
+      const empty = document.createElement('div');
+      empty.className = 'context-discovery-empty';
+      empty.textContent = 'Open a project to inspect provider-native memory and shared project rules.';
+      shell.appendChild(empty);
+      return;
+    }
+
+    const projectContext = project.projectContext;
+    if (!projectContext || projectContext.sources.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'context-discovery-empty';
+      empty.textContent = 'No provider-native memory or shared project rules have been discovered for this repo yet.';
+      shell.appendChild(empty);
+      return;
+    }
+
+    const providerMemoryCount = projectContext.sources.filter((source) => source.provider !== 'shared').length;
+    const summary = document.createElement('div');
+    summary.className = 'context-discovery-summary';
+    summary.innerHTML = `
+      <div class="context-discovery-stat">
+        <span class="context-discovery-stat-label">Project</span>
+        <span class="context-discovery-stat-value">${project.name}</span>
+      </div>
+      <div class="context-discovery-stat">
+        <span class="context-discovery-stat-label">Provider memory</span>
+        <span class="context-discovery-stat-value">${providerMemoryCount}</span>
+      </div>
+      <div class="context-discovery-stat">
+        <span class="context-discovery-stat-label">Shared rules</span>
+        <span class="context-discovery-stat-value">${projectContext.sharedRuleCount}</span>
+      </div>
+    `;
+    shell.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.className = 'context-discovery-list';
+    for (const source of projectContext.sources.slice(0, 6)) {
+      const item = document.createElement('div');
+      item.className = 'context-discovery-item';
+
+      const title = document.createElement('div');
+      title.className = 'context-discovery-item-title';
+      title.textContent = source.displayName;
+
+      const meta = document.createElement('div');
+      meta.className = 'context-discovery-item-meta';
+      const scopeLabel = source.provider === 'shared' ? 'Shared rule' : `${source.provider} memory`;
+      meta.textContent = source.summary
+        ? `${scopeLabel} · ${source.summary}`
+        : scopeLabel;
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      list.appendChild(item);
+    }
+
+    shell.appendChild(list);
   }
 
   function countCustomizedShortcuts(): number {
@@ -325,7 +402,7 @@ export function showPreferencesModal(): void {
         'Stage layout',
         'Keep the left surface stable while deciding which support modules stay visible around active sessions.',
       );
-      const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true };
+      const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true };
       appendOverviewGrid(content, [
         {
           label: 'Ops rail',
@@ -345,7 +422,6 @@ export function showPreferencesModal(): void {
       ]);
       const toggles: Array<{ key: keyof typeof views; label: string; group: 'ops' | 'session' }> = [
         { key: 'configSections', label: 'Toolkit', group: 'ops' },
-        { key: 'readinessSection', label: 'Health', group: 'ops' },
         { key: 'gitPanel', label: 'Git', group: 'ops' },
         { key: 'sessionHistory', label: 'Run log', group: 'ops' },
         { key: 'costFooter', label: 'Spend chip', group: 'session' },
@@ -448,6 +524,7 @@ export function showPreferencesModal(): void {
           note: 'Claude, Codex, Gemini, Qwen, and the rest share one health view.',
         },
       ]);
+      renderProjectContextSection(content);
       renderSetupSection(content);
 
     } else if (section === 'about') {
@@ -477,6 +554,9 @@ export function showPreferencesModal(): void {
       const aboutDiv = document.createElement('div');
       aboutDiv.className = 'about-section';
 
+      const aboutHero = document.createElement('div');
+      aboutHero.className = 'about-hero';
+
       const appName = document.createElement('div');
       appName.className = 'about-app-name';
       appName.textContent = 'Calder';
@@ -484,6 +564,14 @@ export function showPreferencesModal(): void {
       const versionLine = document.createElement('div');
       versionLine.className = 'about-version';
       versionLine.textContent = 'Version: loading...';
+
+      const aboutLead = document.createElement('div');
+      aboutLead.className = 'about-lead';
+      aboutLead.textContent = 'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.';
+
+      aboutHero.appendChild(appName);
+      aboutHero.appendChild(versionLine);
+      aboutHero.appendChild(aboutLead);
 
       const updateRow = document.createElement('div');
       updateRow.className = 'about-update-row';
@@ -525,7 +613,7 @@ export function showPreferencesModal(): void {
       updateRow.appendChild(updateStatus);
 
       const linksDiv = document.createElement('div');
-      linksDiv.className = 'about-links';
+      linksDiv.className = 'about-links about-link-grid';
 
       const ghLink = document.createElement('a');
       ghLink.className = 'about-link';
@@ -565,8 +653,7 @@ export function showPreferencesModal(): void {
       debugRow.appendChild(debugLabel);
       debugRow.appendChild(debugModeCheckbox);
 
-      aboutDiv.appendChild(appName);
-      aboutDiv.appendChild(versionLine);
+      aboutDiv.appendChild(aboutHero);
       aboutDiv.appendChild(updateRow);
       aboutDiv.appendChild(linksDiv);
       aboutDiv.appendChild(communityDiv);
@@ -583,18 +670,36 @@ export function showPreferencesModal(): void {
     const grouped = shortcutManager.getAll();
 
     for (const [category, shortcuts] of grouped) {
+      const groupShell = document.createElement('div');
+      groupShell.className = 'shortcut-group-shell';
+
+      const groupHeader = document.createElement('div');
+      groupHeader.className = 'shortcut-group-header';
+
       const header = document.createElement('div');
       header.className = 'shortcut-category-header';
       header.textContent = category;
-      container.appendChild(header);
+
+      const count = document.createElement('div');
+      count.className = 'shortcut-group-count';
+      count.textContent = `${shortcuts.length} commands`;
+
+      groupHeader.appendChild(header);
+      groupHeader.appendChild(count);
+      groupShell.appendChild(groupHeader);
 
       for (const shortcut of shortcuts) {
         const row = document.createElement('div');
-        row.className = 'shortcut-row';
+        row.className = 'shortcut-row shortcut-row-shell';
+
+        const copy = document.createElement('div');
+        copy.className = 'shortcut-row-copy';
 
         const label = document.createElement('div');
         label.className = 'shortcut-row-label';
         label.textContent = shortcut.label;
+
+        copy.appendChild(label);
 
         const keyBtn = document.createElement('button');
         keyBtn.className = 'shortcut-key-btn';
@@ -612,6 +717,9 @@ export function showPreferencesModal(): void {
         if (!hasOverride) {
           resetBtn.style.visibility = 'hidden';
         }
+
+        const actions = document.createElement('div');
+        actions.className = 'shortcut-row-actions';
 
         // Click key button to start recording
         keyBtn.addEventListener('click', () => {
@@ -658,11 +766,14 @@ export function showPreferencesModal(): void {
           renderSection('shortcuts');
         });
 
-        row.appendChild(label);
-        row.appendChild(keyBtn);
-        row.appendChild(resetBtn);
-        container.appendChild(row);
+        actions.appendChild(keyBtn);
+        actions.appendChild(resetBtn);
+        row.appendChild(copy);
+        row.appendChild(actions);
+        groupShell.appendChild(row);
       }
+
+      container.appendChild(groupShell);
     }
   }
 
@@ -703,7 +814,7 @@ export function showPreferencesModal(): void {
     }
 
     const status = document.createElement('div');
-    status.className = opts.ok ? 'setup-check-status ok' : 'setup-check-status error';
+    status.className = opts.ok ? 'setup-check-status setup-check-status-pill ok' : 'setup-check-status setup-check-status-pill error';
     status.textContent = opts.statusText;
 
     row.appendChild(icon);
@@ -736,10 +847,24 @@ export function showPreferencesModal(): void {
     renderSection('providers');
   }
 
-  function renderProviderHeader(parent: HTMLElement, displayName: string) {
+  function renderProviderHeader(parent: HTMLElement, displayName: string, hasIssue: boolean) {
     const header = document.createElement('div');
     header.className = 'setup-provider-header';
-    header.textContent = displayName;
+
+    const row = document.createElement('div');
+    row.className = 'setup-provider-header-row';
+
+    const name = document.createElement('div');
+    name.className = 'setup-provider-name';
+    name.textContent = displayName;
+
+    const status = document.createElement('div');
+    status.className = hasIssue ? 'setup-provider-status error' : 'setup-provider-status ok';
+    status.textContent = hasIssue ? 'Needs attention' : 'Ready';
+
+    row.appendChild(name);
+    row.appendChild(status);
+    header.appendChild(row);
     parent.appendChild(header);
   }
 
@@ -785,9 +910,13 @@ export function showPreferencesModal(): void {
     section.innerHTML = '';
 
     for (const { meta, validation, binary } of results) {
-      renderProviderHeader(section, meta.displayName);
+      const providerShell = document.createElement('div');
+      providerShell.className = 'setup-provider-shell';
+      section.appendChild(providerShell);
 
-      renderCheckItem(section, {
+      renderProviderHeader(providerShell, meta.displayName, hasProviderIssue({ meta, validation, binary }));
+
+      renderCheckItem(providerShell, {
         label: meta.displayName,
         description: `The ${meta.binaryName} binary must be installed for sessions to work.`,
         ok: binary.ok,
@@ -805,7 +934,7 @@ export function showPreferencesModal(): void {
         if (validation.statusLine === 'missing') slStatus = 'Not configured';
         else if (validation.statusLine === 'foreign') slStatus = 'Overwritten by another tool';
 
-        renderCheckItem(section, {
+        renderCheckItem(providerShell, {
           label: 'Status Line',
           description: 'Required for cost tracking and context window monitoring.',
           ok: slOk,
@@ -820,7 +949,7 @@ export function showPreferencesModal(): void {
         if (validation.hooks === 'missing') hooksStatus = 'No hooks installed';
         else if (validation.hooks === 'partial') hooksStatus = 'Some hooks missing';
 
-        renderCheckItem(section, {
+        renderCheckItem(providerShell, {
           label: 'Session Hooks',
           description: 'Required for session activity tracking.',
           ok: hooksOk,
@@ -843,7 +972,7 @@ export function showPreferencesModal(): void {
           item.appendChild(name);
           hookList.appendChild(item);
         }
-        section.appendChild(hookList);
+        providerShell.appendChild(hookList);
 
         if (capabilities.costTracking && validation.statusLine !== 'calder' && !hooksOk) {
           const fixAllRow = document.createElement('div');
@@ -864,7 +993,7 @@ export function showPreferencesModal(): void {
           });
 
           fixAllRow.appendChild(fixAllBtn);
-          section.appendChild(fixAllRow);
+          providerShell.appendChild(fixAllRow);
         }
       }
     }
@@ -932,7 +1061,6 @@ export function showPreferencesModal(): void {
         gitPanel: sidebarCheckboxes.gitPanel.checked,
         sessionHistory: sidebarCheckboxes.sessionHistory.checked,
         costFooter: sidebarCheckboxes.costFooter.checked,
-        readinessSection: sidebarCheckboxes.readinessSection.checked,
       });
     }
   };

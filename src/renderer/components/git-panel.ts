@@ -51,7 +51,7 @@ function showGitFileContextMenu(x: number, y: number, entry: GitFileEntry, gitPa
   hideGitContextMenu();
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
@@ -110,7 +110,7 @@ function statusBadge(entry: GitFileEntry): string {
     added: 'A', modified: 'M', deleted: 'D', renamed: 'R', untracked: '?', conflicted: 'U',
   };
   const letter = letterMap[entry.status] || '?';
-  return `<span class="git-file-badge ${entry.status}">${letter}</span>`;
+  return `<span class="git-file-badge calder-status-pill ${entry.status}">${letter}</span>`;
 }
 
 function createActionButton(title: string, icon: string, onClick: (e: Event) => void): HTMLButtonElement {
@@ -184,10 +184,13 @@ function updateGitHeader(header: HTMLElement, total: number, headerSuffix: strin
   header.appendChild(meta);
 }
 
-function renderGitBodyState(body: HTMLElement, message: string): void {
+type GitNoteTone = 'default' | 'healthy' | 'warning' | 'muted';
+
+function renderGitBodyState(body: HTMLElement, message: string, tone: GitNoteTone = 'muted'): void {
   body.innerHTML = '';
   const empty = document.createElement('div');
-  empty.className = 'config-empty';
+  empty.className = 'config-empty ops-rail-note';
+  empty.dataset.tone = tone;
   empty.textContent = message;
   body.appendChild(empty);
 }
@@ -328,17 +331,21 @@ async function refresh(): Promise<void> {
   }
 
   if (!status || !status.isGitRepo) {
-    renderGitBodyState(body, 'This folder is not a Git repo yet.');
+    renderGitBodyState(body, 'This folder is not a Git repo yet.', 'muted');
     return;
   }
 
   if (total === 0) {
-    renderGitBodyState(body, showCompactSummary ? 'Git is clean' : 'Working tree clean.');
+    renderGitBodyState(body, showCompactSummary ? 'Git is clean' : 'Working tree clean.', 'healthy');
     return;
   }
 
   if (showCompactSummary) {
-    renderGitBodyState(body, getCompactSummary(total, status.conflicted));
+    renderGitBodyState(
+      body,
+      getCompactSummary(total, status.conflicted),
+      status.conflicted > 0 ? 'warning' : 'default',
+    );
     return;
   }
 
@@ -438,7 +445,8 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
   const remaining = files.length - rendered;
   if (remaining > 0) {
     const overflow = document.createElement('div');
-    overflow.className = 'config-empty';
+    overflow.className = 'config-empty ops-rail-note git-overflow-note';
+    overflow.dataset.tone = 'muted';
     overflow.textContent = `and ${remaining} more…`;
     fragment.appendChild(overflow);
   }

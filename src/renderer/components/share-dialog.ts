@@ -17,14 +17,29 @@ export function showShareDialog(sessionId: string): void {
   activeOverlay = overlay;
 
   const dialog = document.createElement('div');
-  dialog.className = 'share-dialog';
+  dialog.className = 'share-dialog modal-surface share-dialog-shell';
 
   let selectedMode: ShareMode = 'readonly';
 
-  // Title
+  const hero = document.createElement('div');
+  hero.className = 'share-dialog-hero';
+
+  const kicker = document.createElement('div');
+  kicker.className = 'share-dialog-kicker shell-kicker';
+  kicker.textContent = 'P2P Session';
+
   const title = document.createElement('h3');
+  title.className = 'share-dialog-title';
   title.textContent = 'Share Session';
-  dialog.appendChild(title);
+
+  const copy = document.createElement('div');
+  copy.className = 'share-dialog-copy';
+  copy.textContent = 'Open a secure peer-to-peer handoff, choose the access level, and guide the other person through the connection flow.';
+
+  hero.appendChild(kicker);
+  hero.appendChild(title);
+  hero.appendChild(copy);
+  dialog.appendChild(hero);
 
   // ── Phase 1: Permission + Disclaimers ──
 
@@ -32,12 +47,12 @@ export function showShareDialog(sessionId: string): void {
   phase1.className = 'share-phase';
 
   const notice = document.createElement('div');
-  notice.className = 'share-notice';
+  notice.className = 'share-notice calder-inline-notice';
   notice.textContent = 'Your full terminal scrollback history will be shared with the peer.';
   phase1.appendChild(notice);
 
   const rwWarning = document.createElement('div');
-  rwWarning.className = 'share-notice hidden';
+  rwWarning.className = 'share-notice calder-inline-notice hidden';
   rwWarning.textContent = 'Read-write mode allows the peer to type into your terminal and execute commands. Only share with people you trust.';
   phase1.appendChild(rwWarning);
 
@@ -80,7 +95,7 @@ export function showShareDialog(sessionId: string): void {
   passphraseLabel.textContent = 'Share this one-time passphrase with your peer';
 
   const passphraseHint = document.createElement('div');
-  passphraseHint.className = 'share-notice';
+  passphraseHint.className = 'share-notice calder-inline-notice';
   passphraseHint.textContent = 'Generated passphrases are stronger than short numeric PINs and work best when copied as-is.';
 
   const passphraseInput = createPassphraseInput({
@@ -108,7 +123,7 @@ export function showShareDialog(sessionId: string): void {
   offerSection.appendChild(offerTextarea);
 
   const copyOfferBtn = document.createElement('button');
-  copyOfferBtn.className = 'share-btn share-btn-secondary';
+  copyOfferBtn.className = 'share-btn share-btn-secondary calder-button';
   copyOfferBtn.textContent = 'Copy Code';
   copyOfferBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(offerTextarea.value);
@@ -144,27 +159,27 @@ export function showShareDialog(sessionId: string): void {
   // ── Action buttons (always at bottom) ──
 
   const actions = document.createElement('div');
-  actions.className = 'share-actions';
+  actions.className = 'share-actions share-actions-shell';
 
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'share-btn share-btn-secondary';
+  closeBtn.className = 'share-btn share-btn-secondary calder-button';
   closeBtn.textContent = 'Cancel';
   closeBtn.addEventListener('click', closeShareDialog);
 
   const backBtn = document.createElement('button');
-  backBtn.className = 'share-btn share-btn-secondary hidden';
+  backBtn.className = 'share-btn share-btn-secondary calder-button hidden';
   backBtn.textContent = 'Back';
 
   const nextBtn = document.createElement('button');
-  nextBtn.className = 'share-btn';
+  nextBtn.className = 'share-btn calder-button';
   nextBtn.textContent = 'Next';
 
   const startBtn = document.createElement('button');
-  startBtn.className = 'share-btn hidden';
+  startBtn.className = 'share-btn calder-button hidden';
   startBtn.textContent = 'Start Sharing';
 
   const connectBtn = document.createElement('button');
-  connectBtn.className = 'share-btn hidden';
+  connectBtn.className = 'share-btn calder-button hidden';
   connectBtn.textContent = 'Connect';
   connectBtn.disabled = true;
 

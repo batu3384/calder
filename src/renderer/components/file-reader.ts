@@ -243,18 +243,30 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
   const header = document.createElement('div');
   header.className = 'file-viewer-header';
 
+  const headerCopy = document.createElement('div');
+  headerCopy.className = 'file-viewer-header-copy';
+
   const pathSpan = document.createElement('span');
-  pathSpan.className = 'file-viewer-path';
+  pathSpan.className = 'file-viewer-title file-viewer-path';
   pathSpan.textContent = filePath;
 
+  const meta = document.createElement('span');
+  meta.className = 'file-viewer-meta';
+  meta.textContent = isConfigDocumentPath(filePath) ? 'Document surface' : 'Read-only preview';
+
+  headerCopy.appendChild(pathSpan);
+  headerCopy.appendChild(meta);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'file-viewer-toolbar';
+
   const badge = document.createElement('span');
-  badge.className = 'file-reader-badge';
+  badge.className = 'file-reader-badge calder-status-pill';
   const configDocKind = getConfigDocumentKind(filePath);
   const isConfigDoc = isConfigDocumentPath(filePath);
   badge.textContent = configDocKind ? `${configDocKind.toUpperCase()} DOC` : 'READ-ONLY';
 
-  header.appendChild(pathSpan);
-  header.appendChild(badge);
+  toolbar.appendChild(badge);
 
   const isMd = isMarkdownFile(filePath);
   const instance: FileReaderInstance = {
@@ -291,9 +303,11 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
 
     toggleGroup.appendChild(renderedBtn);
     toggleGroup.appendChild(rawBtn);
-    header.appendChild(toggleGroup);
+    toolbar.appendChild(toggleGroup);
   }
 
+  header.appendChild(headerCopy);
+  header.appendChild(toolbar);
   el.appendChild(header);
 
   // Scrollable body
@@ -414,6 +428,10 @@ export function showGoToLineBar(sessionId: string): void {
   const bar = document.createElement('div');
   bar.className = 'goto-line-bar';
 
+  const label = document.createElement('span');
+  label.className = 'goto-line-label';
+  label.textContent = 'Line';
+
   const input = document.createElement('input');
   input.type = 'number';
   input.min = '1';
@@ -424,6 +442,7 @@ export function showGoToLineBar(sessionId: string): void {
   closeBtn.textContent = '\u2715';
   closeBtn.title = 'Close (Escape)';
 
+  bar.appendChild(label);
   bar.appendChild(input);
   bar.appendChild(closeBtn);
 

@@ -1,5 +1,5 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ReadinessResult, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState, ProjectContextState } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -27,7 +27,6 @@ type EventType =
   | 'terminal-panel-changed'
   | 'history-changed'
   | 'insights-changed'
-  | 'readiness-changed'
   | 'sidebar-toggled'
   | 'cli-session-cleared'
   | 'state-loaded';
@@ -41,8 +40,7 @@ const defaultPreferences: Preferences = {
   sessionHistoryEnabled: true,
   insightsEnabled: true,
   autoTitleEnabled: true,
-  readinessExcludedProviders: [],
-  sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true, readinessSection: true },
+  sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true },
 };
 
 const NAV_HISTORY_MAX = 50;
@@ -266,11 +264,21 @@ class AppState {
       this.state = loaded;
       // Merge defaults for forward compatibility with old state files
       this.state.preferences = { ...defaultPreferences, ...this.state.preferences };
-      this.state.projects = this.state.projects.map((project) => ({
-        ...project,
-        layout: normalizeProjectLayout(project.layout),
-        surface: normalizeProjectSurface(project),
-      }));
+      delete (this.state.preferences as Preferences & { readinessExcludedProviders?: ProviderId[] }).readinessExcludedProviders;
+      if (this.state.preferences.sidebarViews) {
+        delete (
+          this.state.preferences.sidebarViews as Preferences['sidebarViews'] & { readinessSection?: boolean }
+        ).readinessSection;
+      }
+      this.state.projects = this.state.projects.map((project) => {
+        const nextProject = {
+          ...(project as ProjectRecord & { readiness?: unknown }),
+          layout: normalizeProjectLayout(project.layout),
+          surface: normalizeProjectSurface(project),
+        };
+        delete (nextProject as ProjectRecord & { readiness?: unknown }).readiness;
+        return nextProject;
+      });
       // Restore persisted cost data into the in-memory cost tracker
       for (const project of this.state.projects) {
         this.repairProjectSurface(project);
@@ -426,6 +434,21 @@ class AppState {
     this.emit('project-changed');
   }
 
+  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const before = JSON.stringify(project.projectContext ?? null);
+    const after = JSON.stringify(projectContext ?? null);
+    if (before === after) return;
+
+    project.projectContext = projectContext;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
   addProject(name: string, path: string): ProjectRecord {
     const project: ProjectRecord = {
       id: crypto.randomUUID(),
@@ -561,13 +584,18 @@ class AppState {
     return session;
   }
 
-  addBrowserTabSession(projectId: string, url?: string): SessionRecord | undefined {
+  addBrowserTabSession(
+    projectId: string,
+    url?: string,
+    options?: { dedupeByUrl?: boolean },
+  ): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
     const initialTargetSession = this.findActiveCliSession(project);
+    const dedupeByUrl = options?.dedupeByUrl ?? true;
 
     // If a browser-tab with the same URL already exists, switch to it
-    if (url) {
+    if (url && dedupeByUrl) {
       const existing = project.sessions.find(
         (s) => s.type === 'browser-tab' && s.browserTabUrl === url
       );
@@ -1189,14 +1217,6 @@ class AppState {
   isInsightDismissed(projectId: string, insightId: string): boolean {
     const project = this.state.projects.find((p) => p.id === projectId);
     return project?.insights?.dismissed.includes(insightId) ?? false;
-  }
-
-  setProjectReadiness(projectId: string, result: ReadinessResult): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    project.readiness = result;
-    this.persist();
-    this.emit('readiness-changed', projectId);
   }
 
   reorderSession(projectId: string, sessionId: string, toIndex: number): void {

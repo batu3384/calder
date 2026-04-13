@@ -47,11 +47,32 @@ describe('preferences modal contract', () => {
 
   it('styles the control center like a control sheet instead of a pill-heavy settings page', () => {
     expect(styles).toContain('.preferences-menu-item');
+    expect(styles).toContain('.preferences-menu-item::before');
+    expect(styles).toContain('.preferences-menu-item.active::before');
     expect(styles).toContain('grid-template-columns: 228px minmax(0, 1fr);');
     expect(styles).toContain('.preferences-menu-item-label');
     expect(styles).toContain('.preferences-overview-grid');
     expect(styles).toContain('.preferences-section-card');
-    expect(styles).toContain('border-left: 1px solid var(--border-subtle);');
+    expect(source).toContain('preferences-content-shell');
+    expect(source).toContain('setup-provider-shell');
+    expect(source).toContain('shortcut-group-shell');
+    expect(source).toContain('about-hero');
+    expect(source).toContain('about-link-grid');
+    expect(styles).toContain('.preferences-content-shell');
+    expect(styles).toContain('.modal-toggle-field');
+    expect(styles).toContain('.modal-toggle-field .custom-select');
+    expect(styles).toContain('.setup-provider-shell');
+    expect(styles).toContain('.setup-provider-status');
+    expect(styles).toContain('.shortcut-group-shell');
+    expect(styles).toContain('.shortcut-row-actions');
+    expect(styles).toContain('.about-hero');
+    expect(styles).toContain('.about-link-grid');
+    expect(styles).toContain('box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);');
+    expect(modalStyles).toContain('#modal-actions, .modal-actions');
+    expect(modalStyles).toContain('justify-content: space-between;');
+    expect(modalStyles).toContain('.modal-btn.primary');
+    expect(modalStyles).toContain('min-width: 124px;');
+    expect(styles).not.toContain('border-left: 1px solid var(--border-subtle);');
     expect(modalStyles).toContain('#modal, .modal-box');
     expect(modalStyles).toContain('border-radius: 16px;');
   });

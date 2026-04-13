@@ -14,6 +14,45 @@ interface McpInspectorInstance {
 
 const instances = new Map<string, McpInspectorInstance>();
 
+function setMcpStatus(
+  pill: HTMLElement,
+  dot: HTMLElement,
+  label: HTMLElement,
+  status: 'connected' | 'connecting' | 'disconnected',
+  text: string,
+): void {
+  pill.className = `mcp-status-pill ${status}`;
+  dot.className = `mcp-status ${status}`;
+  label.className = 'mcp-status-label';
+  label.textContent = text;
+}
+
+function renderMcpEmptyState(
+  container: HTMLElement,
+  title: string,
+  copy?: string,
+  tone: 'empty' | 'error' = 'empty',
+): void {
+  const shell = document.createElement('div');
+  shell.className = tone === 'error'
+    ? 'mcp-empty-content mcp-empty-state mcp-error-state'
+    : 'mcp-empty-content mcp-empty-state';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'mcp-empty-title';
+  titleEl.textContent = title;
+  shell.appendChild(titleEl);
+
+  if (copy) {
+    const copyEl = document.createElement('div');
+    copyEl.className = 'mcp-empty-copy';
+    copyEl.textContent = copy;
+    shell.appendChild(copyEl);
+  }
+
+  container.replaceChildren(shell);
+}
+
 export function createInspectorPane(sessionId: string): void {
   if (instances.has(sessionId)) return;
 
@@ -25,7 +64,10 @@ export function createInspectorPane(sessionId: string): void {
     <div class="mcp-inspector-header">
       <input class="mcp-url-input" type="text" placeholder="MCP server URL (e.g. http://localhost:3000/mcp)" />
       <button class="mcp-connect-btn">Connect</button>
-      <span class="mcp-status disconnected"></span>
+      <span class="mcp-status-pill disconnected">
+        <span class="mcp-status disconnected"></span>
+        <span class="mcp-status-label">Disconnected</span>
+      </span>
     </div>
     <div class="mcp-inspector-body">
       <div class="mcp-inspector-nav">
@@ -34,7 +76,6 @@ export function createInspectorPane(sessionId: string): void {
         <button class="mcp-nav-tab" data-tab="prompts">Prompts <span class="mcp-nav-count">0</span></button>
       </div>
       <div class="mcp-inspector-content">
-        <div class="mcp-empty-content">Connect to an MCP server to inspect its capabilities</div>
       </div>
     </div>
   `;
@@ -53,17 +94,25 @@ export function createInspectorPane(sessionId: string): void {
   // Wire events
   const urlInput = pane.querySelector('.mcp-url-input') as HTMLInputElement;
   const connectBtn = pane.querySelector('.mcp-connect-btn') as HTMLButtonElement;
+  const statusPill = pane.querySelector('.mcp-status-pill') as HTMLElement;
   const statusDot = pane.querySelector('.mcp-status') as HTMLElement;
+  const statusLabel = pane.querySelector('.mcp-status-label') as HTMLElement;
   const navTabs = pane.querySelectorAll('.mcp-nav-tab');
   const content = pane.querySelector('.mcp-inspector-content') as HTMLElement;
+  setMcpStatus(statusPill, statusDot, statusLabel, 'disconnected', 'Disconnected');
+  renderMcpEmptyState(
+    content,
+    'Connect an MCP server',
+    'Inspect tools, resources, and prompts from one place.',
+  );
 
   connectBtn.addEventListener('click', async () => {
     if (instance.connected) {
-      await doDisconnect(sessionId, instance, connectBtn, statusDot, content);
+      await doDisconnect(sessionId, instance, connectBtn, statusPill, statusDot, statusLabel, content);
     } else {
       const url = urlInput.value.trim();
       if (!url) return;
-      await doConnect(sessionId, url, instance, connectBtn, statusDot, urlInput, content);
+      await doConnect(sessionId, url, instance, connectBtn, statusPill, statusDot, statusLabel, urlInput, content);
     }
   });
 
@@ -88,26 +137,33 @@ async function doConnect(
   url: string,
   instance: McpInspectorInstance,
   btn: HTMLButtonElement,
+  pill: HTMLElement,
   dot: HTMLElement,
+  statusLabel: HTMLElement,
   urlInput: HTMLInputElement,
   content: HTMLElement,
 ): Promise<void> {
   btn.disabled = true;
   btn.textContent = 'Connecting...';
-  dot.className = 'mcp-status connecting';
+  setMcpStatus(pill, dot, statusLabel, 'connecting', 'Connecting');
 
   const result = await window.calder.mcp.connect(sessionId, url);
   if (result.success) {
     instance.connected = true;
     instance.url = url;
     btn.textContent = 'Disconnect';
-    dot.className = 'mcp-status connected';
+    setMcpStatus(pill, dot, statusLabel, 'connected', 'Connected');
     urlInput.disabled = true;
     await refreshLists(sessionId, instance, content);
   } else {
-    dot.className = 'mcp-status disconnected';
     btn.textContent = 'Connect';
-    content.innerHTML = `<div class="mcp-error">Connection failed: ${esc(result.error || 'Unknown error')}</div>`;
+    setMcpStatus(pill, dot, statusLabel, 'disconnected', 'Disconnected');
+    renderMcpEmptyState(
+      content,
+      'Connection failed',
+      result.error || 'Unknown error',
+      'error',
+    );
   }
   btn.disabled = false;
 }
@@ -116,7 +172,9 @@ async function doDisconnect(
   sessionId: string,
   instance: McpInspectorInstance,
   btn: HTMLButtonElement,
+  pill: HTMLElement,
   dot: HTMLElement,
+  statusLabel: HTMLElement,
   content: HTMLElement,
 ): Promise<void> {
   await window.calder.mcp.disconnect(sessionId);
@@ -125,11 +183,15 @@ async function doDisconnect(
   instance.resourcesList = [];
   instance.promptsList = [];
   btn.textContent = 'Connect';
-  dot.className = 'mcp-status disconnected';
+  setMcpStatus(pill, dot, statusLabel, 'disconnected', 'Disconnected');
   const urlInput = instance.element.querySelector('.mcp-url-input') as HTMLInputElement;
   urlInput.disabled = false;
   updateCounts(instance);
-  content.innerHTML = '<div class="mcp-empty-content">Disconnected</div>';
+  renderMcpEmptyState(
+    content,
+    'Disconnected',
+    'Reconnect to inspect MCP capabilities again.',
+  );
 }
 
 async function refreshLists(sessionId: string, instance: McpInspectorInstance, content: HTMLElement): Promise<void> {
@@ -158,7 +220,11 @@ function renderContent(sessionId: string, instance: McpInspectorInstance, conten
   content.innerHTML = '';
 
   if (!instance.connected) {
-    content.innerHTML = '<div class="mcp-empty-content">Connect to an MCP server to inspect its capabilities</div>';
+    renderMcpEmptyState(
+      content,
+      'Connect an MCP server',
+      'Inspect tools, resources, and prompts from one place.',
+    );
     return;
   }
 
@@ -177,7 +243,11 @@ function renderContent(sessionId: string, instance: McpInspectorInstance, conten
 
 function renderToolsList(sessionId: string, tools: unknown[], container: HTMLElement): void {
   if (tools.length === 0) {
-    container.innerHTML = '<div class="mcp-empty-content">No tools available</div>';
+    renderMcpEmptyState(
+      container,
+      'No tools available',
+      'This server did not expose any callable tools.',
+    );
     return;
   }
 
@@ -241,7 +311,11 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
 
 function renderResourcesList(sessionId: string, resources: unknown[], container: HTMLElement): void {
   if (resources.length === 0) {
-    container.innerHTML = '<div class="mcp-empty-content">No resources available</div>';
+    renderMcpEmptyState(
+      container,
+      'No resources available',
+      'This server did not expose any readable resources.',
+    );
     return;
   }
 
@@ -281,7 +355,11 @@ function renderResourcesList(sessionId: string, resources: unknown[], container:
 
 function renderPromptsList(sessionId: string, prompts: unknown[], container: HTMLElement): void {
   if (prompts.length === 0) {
-    container.innerHTML = '<div class="mcp-empty-content">No prompts available</div>';
+    renderMcpEmptyState(
+      container,
+      'No prompts available',
+      'This server did not expose any prompt templates.',
+    );
     return;
   }
 

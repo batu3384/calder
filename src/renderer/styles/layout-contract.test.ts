@@ -15,7 +15,7 @@ describe('layout stylesheet contract', () => {
     expect(imports).toContain("./styles/context-inspector.css");
     expect(imports).toContain("./styles/primitives.css");
     expect(tabsCss).toContain('.command-deck-status');
-    expect(tabsCss).toContain('.workspace-spend-value');
+    expect(tabsCss).not.toContain('.workspace-spend-value');
     expect(tabsCss).toContain('.session-launcher-group');
     expect(tabsCss).toContain('.tab-bar-surface');
     expect(tabsCss).toContain('.session-deck-surface');

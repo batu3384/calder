@@ -22,8 +22,8 @@ describe('workspace density contract', () => {
     expect(tabsCss).toContain('"main meta actions"');
     expect(tabsCss).toContain('"main actions"');
     expect(tabsCss).toContain('"meta actions"');
-    expect(tabsCss).toContain('#workspace-identity');
-    expect(tabsCss).toContain('display: none;');
+    expect(tabsCss).not.toContain('#workspace-identity');
+    expect(tabsCss).toContain('.tab-bar-main');
   });
 
   it('uses a slimmer live surface minimum width so sessions stay readable', () => {

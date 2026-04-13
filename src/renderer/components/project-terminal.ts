@@ -200,9 +200,11 @@ export function handleShellPtyExit(sessionId: string, exitCode: number): void {
       const overlay = document.createElement('div');
       overlay.className = 'terminal-exit-overlay';
       overlay.innerHTML = `
-        <div class="terminal-exit-message">
-          <div>Shell exited (code: ${exitCode})</div>
-          <button class="respawn-btn">Restart</button>
+        <div class="terminal-exit-message terminal-exit-shell">
+          <div class="terminal-exit-kicker shell-kicker">Terminal</div>
+          <div class="terminal-exit-title">Shell exited</div>
+          <div class="terminal-exit-copy">This workspace shell stopped with exit code ${exitCode}. You can restart it and continue from the same project context.</div>
+          <button class="respawn-btn calder-button">Restart</button>
         </div>
       `;
       overlay.querySelector('.respawn-btn')!.addEventListener('click', () => {

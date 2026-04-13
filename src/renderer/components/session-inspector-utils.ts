@@ -30,10 +30,33 @@ export function renderUnsupportedGuard(
   const caps = getProviderCapabilities(providerId);
   if (caps?.[capability] === false) {
     const name = getProviderDisplayName(providerId);
-    container.innerHTML = `<div class="inspector-empty">${label} is not supported for ${name} sessions</div>`;
+    renderInspectorEmpty(
+      container,
+      `${label} unavailable`,
+      `This view is not available for ${name} sessions.`,
+    );
     return true;
   }
   return false;
+}
+
+export function renderInspectorEmpty(container: HTMLElement, title: string, copy?: string): void {
+  const shell = document.createElement('div');
+  shell.className = 'inspector-empty inspector-empty-shell';
+
+  const titleEl = document.createElement('div');
+  titleEl.className = 'inspector-empty-title';
+  titleEl.textContent = title;
+  shell.appendChild(titleEl);
+
+  if (copy) {
+    const copyEl = document.createElement('div');
+    copyEl.className = 'inspector-empty-copy';
+    copyEl.textContent = copy;
+    shell.appendChild(copyEl);
+  }
+
+  container.replaceChildren(shell);
 }
 
 export function emptyMessage(fallback: string): string {

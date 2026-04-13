@@ -36,7 +36,7 @@ export function createCustomSelect(
   trigger.setAttribute('aria-expanded', 'false');
 
   const dropdown = document.createElement('div');
-  dropdown.className = 'custom-select-dropdown';
+  dropdown.className = 'custom-select-dropdown calder-floating-list';
   dropdown.setAttribute('role', 'listbox');
 
   let activeIndex = -1;

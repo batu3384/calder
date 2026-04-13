@@ -5,7 +5,6 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const configSectionsSource = readFileSync(new URL('./config-sections.ts', import.meta.url), 'utf-8');
 const gitPanelSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');
-const readinessSource = readFileSync(new URL('./readiness-section.ts', import.meta.url), 'utf-8');
 const inspectorSource = readFileSync(new URL('./context-inspector.ts', import.meta.url), 'utf-8');
 const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', import.meta.url), 'utf-8');
 
@@ -19,9 +18,7 @@ describe('context language contract', () => {
     expect(configSectionsSource).toContain("'Skills'");
     expect(configSectionsSource).toContain("'Commands'");
     expect(configSectionsSource).not.toContain("'Integrations'");
-    expect(configSectionsSource).toContain('Tools Focus');
-    expect(readinessSource).toContain('Readiness');
-    expect(readinessSource).toContain('All good');
+    expect(configSectionsSource).toContain('Toolkit');
     expect(gitPanelSource).toContain('Git');
     expect(gitPanelSource).toContain('Git is clean');
     expect(historySource).toContain('Run Log');
@@ -30,7 +27,8 @@ describe('context language contract', () => {
     expect(inspectorSource).toContain('Open sessions');
     expect(inspectorSource).toContain('Changes');
     expect(inspectorSource).toContain('Run log');
-    expect(inspectorSource).toContain('Readiness');
+    expect(inspectorSource).toContain('Browser View');
+    expect(inspectorSource).toContain('CLI Surface');
     expect(inspectorSource).toContain('saved');
     expect(html).not.toContain('Ops Rail');
     expect(html).not.toContain('Support');
@@ -50,7 +48,7 @@ describe('context language contract', () => {
     expect(inspectorSource).toContain('Project Snapshot');
     expect(html).toContain('data-section="capabilities"');
     expect(html).toContain('data-section="git"');
-    expect(html).toContain('data-section="health"');
+    expect(html).not.toContain('data-section="health"');
     expect(html).toContain('data-section="activity"');
   });
 
@@ -65,10 +63,10 @@ describe('context language contract', () => {
 
   it('styles config cards inside the context inspector with scoped overrides', () => {
     expect(inspectorCss).toContain('#context-inspector .config-section');
-    expect(inspectorCss).toContain('#context-inspector .readiness-section-card');
     expect(inspectorCss).toContain('#context-inspector .config-section-header');
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
+    expect(inspectorCss).toContain('.inspector-overview-pill');
   });
 
   it('keeps the ops rail flatter than a stacked dashboard card column', () => {

@@ -1,4 +1,4 @@
-import type { CliSurfacePromptContextMode, SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types.js';
+import type { AppliedContextSummary, CliSurfacePromptContextMode, SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types.js';
 
 export function buildViewportText(lines: string[]): string {
   return lines.join('\n');
@@ -40,6 +40,7 @@ export function createSelectionPayload(input: {
   ansiSnapshot?: string;
   inferredLabel?: string;
   adapterMeta?: Record<string, unknown>;
+  appliedContext?: AppliedContextSummary;
 }): SurfacePromptPayload {
   return {
     projectId: input.projectId,
@@ -63,5 +64,6 @@ export function createSelectionPayload(input: {
     title: input.title,
     inferredLabel: input.inferredLabel,
     adapterMeta: input.adapterMeta,
+    appliedContext: input.appliedContext,
   };
 }

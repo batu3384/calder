@@ -18,12 +18,27 @@ export function showJoinDialog(): void {
   activeOverlay = overlay;
 
   const dialog = document.createElement('div');
-  dialog.className = 'share-dialog';
+  dialog.className = 'share-dialog modal-surface share-dialog-shell';
 
-  // Title
+  const hero = document.createElement('div');
+  hero.className = 'share-dialog-hero';
+
+  const kicker = document.createElement('div');
+  kicker.className = 'share-dialog-kicker shell-kicker';
+  kicker.textContent = 'P2P Session';
+
   const title = document.createElement('h3');
+  title.className = 'share-dialog-title';
   title.textContent = 'Join Remote Session';
-  dialog.appendChild(title);
+
+  const copy = document.createElement('div');
+  copy.className = 'share-dialog-copy';
+  copy.textContent = 'Enter the host passphrase, paste the connection code, and Calder will generate the response you send back.';
+
+  hero.appendChild(kicker);
+  hero.appendChild(title);
+  hero.appendChild(copy);
+  dialog.appendChild(hero);
 
   // Offer input section (passphrase + code paste together)
   const offerSection = document.createElement('div');
@@ -35,7 +50,7 @@ export function showJoinDialog(): void {
   offerSection.appendChild(passphraseLabel);
 
   const legacyHint = document.createElement('div');
-  legacyHint.className = 'share-notice';
+  legacyHint.className = 'share-notice calder-inline-notice';
   legacyHint.textContent = 'Legacy 8-digit PINs are still supported when you connect to an older app version.';
   offerSection.appendChild(legacyHint);
 
@@ -75,7 +90,7 @@ export function showJoinDialog(): void {
   answerSection.appendChild(answerTextarea);
 
   const copyAnswerBtn = document.createElement('button');
-  copyAnswerBtn.className = 'share-btn share-btn-secondary';
+  copyAnswerBtn.className = 'share-btn share-btn-secondary calder-button';
   copyAnswerBtn.textContent = 'Copy Response';
   copyAnswerBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(answerTextarea.value);
@@ -87,14 +102,14 @@ export function showJoinDialog(): void {
 
   // Action buttons
   const actions = document.createElement('div');
-  actions.className = 'share-actions';
+  actions.className = 'share-actions share-actions-shell';
 
   const joinBtn = document.createElement('button');
-  joinBtn.className = 'share-btn';
+  joinBtn.className = 'share-btn calder-button';
   joinBtn.textContent = 'Join';
 
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'share-btn share-btn-secondary';
+  closeBtn.className = 'share-btn share-btn-secondary calder-button';
   closeBtn.textContent = 'Cancel';
   closeBtn.addEventListener('click', closeJoinDialog);
 

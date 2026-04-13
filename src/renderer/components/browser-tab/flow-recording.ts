@@ -67,6 +67,7 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
   instance.flowPanel.style.display = (instance.flowMode || hasSteps) ? 'flex' : 'none';
   instance.flowInputRow.style.display = hasSteps ? 'flex' : 'none';
   instance.flowPanelLabel.textContent = `Flow (${instance.flowSteps.length} steps)`;
+  instance.syncToolbarState();
 }
 
 export function addFlowStep(instance: BrowserTabInstance, step: FlowStep): void {
@@ -90,6 +91,7 @@ export function toggleFlowMode(instance: BrowserTabInstance): void {
       instance.flowPanel.style.display = 'none';
     }
   }
+  instance.syncToolbarState();
 }
 
 export function clearFlow(instance: BrowserTabInstance): void {

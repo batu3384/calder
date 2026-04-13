@@ -694,6 +694,26 @@ describe('browser target sessions', () => {
     expect(mockSave).toHaveBeenCalled();
   });
 
+  it('can open a distinct browser tab session even when the same url is already open', () => {
+    const project = addProject();
+    const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    mockSave.mockClear();
+
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3000', {
+      dedupeByUrl: false,
+    })!;
+
+    expect(second.id).not.toBe(first.id);
+    expect(appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab')).toHaveLength(2);
+    expect(appState.activeProject!.activeSessionId).toBe(second.id);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: second.id,
+      url: 'http://localhost:3000',
+    });
+    expect(mockSave).toHaveBeenCalled();
+  });
+
   it('finds the deepest matching project for a cwd when routing browser urls', () => {
     const root = appState.addProject('Root', '/workspace/root');
     const nested = appState.addProject('Nested', '/workspace/root/packages/app');

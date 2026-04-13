@@ -155,16 +155,31 @@ export function createFileViewerPane(sessionId: string, filePath: string, area: 
   const header = document.createElement('div');
   header.className = 'file-viewer-header';
 
+  const headerCopy = document.createElement('div');
+  headerCopy.className = 'file-viewer-header-copy';
+
   const pathSpan = document.createElement('span');
-  pathSpan.className = 'file-viewer-path';
+  pathSpan.className = 'file-viewer-title file-viewer-path';
   pathSpan.textContent = filePath;
 
+  const meta = document.createElement('span');
+  meta.className = 'file-viewer-meta';
+  meta.textContent = 'Git diff preview';
+
+  headerCopy.appendChild(pathSpan);
+  headerCopy.appendChild(meta);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'file-viewer-toolbar';
+
   const areaBadge = document.createElement('span');
-  areaBadge.className = `file-viewer-area-badge ${area}`;
+  areaBadge.className = `file-viewer-area-badge calder-status-pill ${area}`;
   areaBadge.textContent = areaLabel(area);
 
-  header.appendChild(pathSpan);
-  header.appendChild(areaBadge);
+  toolbar.appendChild(areaBadge);
+
+  header.appendChild(headerCopy);
+  header.appendChild(toolbar);
   el.appendChild(header);
 
   // Scrollable body

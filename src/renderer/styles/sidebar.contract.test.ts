@@ -24,4 +24,15 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('.project-item .project-path');
     expect(sidebarCss).toContain('font-family: var(--font-mono);');
   });
+
+  it('treats sidebar actions and project rows like a refined navigation rail', () => {
+    expect(sidebarCss).toContain('.sidebar-header-actions');
+    expect(sidebarCss).toContain('border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
+    expect(sidebarCss).toContain('.project-item:hover');
+    expect(sidebarCss).toContain('transform: translateY(-1px);');
+    expect(sidebarCss).toContain('.project-item-main');
+    expect(sidebarCss).toContain('gap: 4px;');
+    expect(sidebarCss).toContain('min-height: 52px;');
+    expect(sidebarCss).toContain('font-size: 9px;');
+  });
 });

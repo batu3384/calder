@@ -18,7 +18,7 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   if (!project) return;
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
@@ -185,7 +185,8 @@ function render(): void {
 
   if (showCompactSummary) {
     const summary = document.createElement('div');
-    summary.className = 'history-compact-summary';
+    summary.className = 'history-compact-summary ops-rail-note';
+    summary.dataset.tone = history.length === 0 ? 'muted' : 'default';
     summary.textContent = history.length === 0
       ? 'No run history yet'
       : history.length === 1
@@ -198,7 +199,8 @@ function render(): void {
 
   if (history.length === 0) {
     const empty = document.createElement('div');
-    empty.className = 'history-empty';
+    empty.className = 'history-empty ops-rail-note';
+    empty.dataset.tone = 'muted';
     empty.textContent = 'No run history yet';
     body.appendChild(empty);
     container.appendChild(body);
@@ -206,13 +208,20 @@ function render(): void {
   }
 
   // Search
+  const toolbar = document.createElement('div');
+  toolbar.className = 'history-toolbar';
+
+  const searchShell = document.createElement('div');
+  searchShell.className = 'history-search-shell';
+
   searchInput = document.createElement('input');
   searchInput.className = 'history-search';
   searchInput.type = 'text';
   searchInput.placeholder = 'Filter runs…';
   searchInput.ariaLabel = 'Filter run history';
   searchInput.addEventListener('input', () => renderList(history));
-  body.appendChild(searchInput);
+  searchShell.appendChild(searchInput);
+  toolbar.appendChild(searchShell);
 
   // Bookmark filter
   const bookmarkFilter = document.createElement('button');
@@ -242,7 +251,8 @@ function render(): void {
   actions.className = 'history-actions';
   actions.appendChild(bookmarkFilter);
   actions.appendChild(clearBtn);
-  body.appendChild(actions);
+  toolbar.appendChild(actions);
+  body.appendChild(toolbar);
 
   // List
   listEl = document.createElement('div');
@@ -306,7 +316,17 @@ function renderList(history: ArchivedSession[]): void {
     }
     parts.push(getProviderLabel(archived.providerId));
     details.textContent = parts.join(' · ');
-    info.appendChild(details);
+
+    const meta = document.createElement('div');
+    meta.className = 'history-item-meta';
+    meta.appendChild(details);
+
+    const provider = document.createElement('span');
+    provider.className = 'history-item-provider';
+    provider.textContent = getProviderLabel(archived.providerId);
+    meta.appendChild(provider);
+
+    info.appendChild(meta);
 
     item.appendChild(info);
 
@@ -351,8 +371,8 @@ function renderList(history: ArchivedSession[]): void {
 
   if (filtered.length > MAX_VISIBLE) {
     const more = document.createElement('div');
-    more.className = 'history-item-details';
-    more.style.padding = '4px 12px';
+    more.className = 'history-item-details ops-rail-note';
+    more.dataset.tone = 'muted';
     more.textContent = `${filtered.length - MAX_VISIBLE} more items…`;
     listEl.appendChild(more);
   }

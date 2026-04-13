@@ -76,16 +76,26 @@ export function createTerminalPane(
   providerBadge.className = 'terminal-pane-provider';
   providerBadge.textContent = providerDisplayName(providerId);
 
+  const headerCopy = document.createElement('div');
+  headerCopy.className = 'terminal-pane-header-copy';
+
   const workspace = document.createElement('div');
-  workspace.className = 'terminal-pane-workspace';
+  workspace.className = 'terminal-pane-title terminal-pane-workspace';
   workspace.textContent = workspaceLabel(projectPath);
+
+  const meta = document.createElement('div');
+  meta.className = 'terminal-pane-meta';
+  meta.textContent = isResume ? 'Restored terminal surface' : 'Live terminal surface';
+
+  headerCopy.appendChild(workspace);
+  headerCopy.appendChild(meta);
 
   const sessionState = document.createElement('div');
   sessionState.className = 'terminal-pane-session';
   sessionState.textContent = isResume ? 'linked run' : 'active run';
 
   chrome.appendChild(providerBadge);
-  chrome.appendChild(workspace);
+  chrome.appendChild(headerCopy);
   chrome.appendChild(sessionState);
   element.appendChild(chrome);
 

@@ -14,30 +14,60 @@
 .file-viewer-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+  flex-shrink: 0;
+}
+
+.file-viewer-header-copy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.file-viewer-title {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.file-viewer-meta {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.file-viewer-toolbar {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
   flex-shrink: 0;
 }
 
 .file-viewer-path {
-  flex: 1;
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
-  font-size: 13px;
-  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.file-viewer-area-badge {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 3px;
+.file-viewer-area-badge.calder-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--border-subtle) 92%, transparent);
   text-transform: uppercase;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.05em;
   flex-shrink: 0;
 }
 
@@ -129,27 +159,27 @@
 .file-viewer-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .file-viewer-path {
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
-  font-size: 12px;
-  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.file-viewer-area-badge {
+.file-viewer-area-badge.calder-status-pill {
   font-size: 10px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 3px;
+  padding: 0 10px;
   text-transform: uppercase;
   flex-shrink: 0;
 }
@@ -214,7 +244,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(6, 10, 14, 0.62);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   padding-top: 15vh;
@@ -222,24 +253,45 @@
 }
 
 .quick-open-container {
-  width: 600px;
+  width: min(640px, calc(100vw - 40px));
   max-height: 60vh;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 20px;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.38);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   align-self: flex-start;
 }
 
+.quick-open-hero {
+  display: grid;
+  gap: 4px;
+  padding: 18px 18px 10px;
+}
+
+.quick-open-title {
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.quick-open-copy {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .quick-open-input {
-  width: 100%;
-  padding: 12px 16px;
-  background: var(--bg-primary);
-  border: none;
-  border-bottom: 1px solid var(--border);
+  width: calc(100% - 36px);
+  margin: 0 18px 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--surface-canvas) 92%, black);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-radius: 14px;
   color: var(--text-primary);
   font-size: 14px;
   outline: none;
@@ -253,6 +305,7 @@
 .quick-open-results {
   overflow-y: auto;
   max-height: calc(60vh - 50px);
+  padding: 0 10px 12px;
 }
 
 .quick-open-results::-webkit-scrollbar {
@@ -267,20 +320,27 @@
 .quick-open-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 10px;
+  margin: 0 8px 4px;
+  padding: 10px 12px;
   cursor: pointer;
   color: var(--text-primary);
   font-size: 13px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
 }
 
 .quick-open-item:hover,
 .quick-open-item.active {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  transform: translateY(-1px);
 }
 
 .quick-open-item.active {
-  background: var(--bg-tertiary);
+  background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
 }
 
 .quick-open-filename {
@@ -297,10 +357,14 @@
 }
 
 .quick-open-empty {
-  padding: 16px;
-  text-align: center;
-  color: var(--text-muted);
+  margin: 0 8px 8px;
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--text-secondary);
   font-size: 13px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
 }
 
 /* Markdown view toggle */
@@ -584,15 +648,18 @@
   border-radius: 4px;
 }
 
-.file-reader-badge {
+.file-reader-badge.calder-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
   font-size: 9px;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 3px;
   background: rgba(74, 144, 217, 0.15);
   color: #4a90d9;
+  border-color: rgba(74, 144, 217, 0.22);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.05em;
   flex-shrink: 0;
 }
 

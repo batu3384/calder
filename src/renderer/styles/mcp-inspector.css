@@ -25,9 +25,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -78,6 +79,25 @@
   flex-shrink: 0;
 }
 
+.mcp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel-alt) 84%, black);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.mcp-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
 .mcp-status.connected {
   background: #34a853;
 }
@@ -89,6 +109,20 @@
 
 .mcp-status.disconnected {
   background: var(--text-muted);
+}
+
+.mcp-status-pill.connected {
+  border-color: color-mix(in srgb, #34a853 30%, var(--border-subtle));
+  color: #8ad79b;
+}
+
+.mcp-status-pill.connecting {
+  border-color: color-mix(in srgb, #f4b400 30%, var(--border-subtle));
+  color: #f4d46a;
+}
+
+.mcp-status-pill.disconnected {
+  color: var(--text-secondary);
 }
 
 .mcp-inspector-body {
@@ -158,10 +192,33 @@
 }
 
 .mcp-empty-content {
-  color: var(--text-muted);
-  font-size: 13px;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  align-content: start;
+  max-width: 440px;
   padding: 20px;
-  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.mcp-empty-state {
+  color: var(--text-secondary);
+}
+
+.mcp-empty-title {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mcp-empty-copy {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .mcp-error {
@@ -169,6 +226,16 @@
   font-size: 13px;
   padding: 20px;
   text-align: center;
+}
+
+.mcp-error-state {
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 22%, var(--surface-panel)), color-mix(in srgb, var(--surface-panel) 94%, transparent));
+}
+
+.mcp-error-state .mcp-empty-title {
+  color: var(--accent);
 }
 
 .mcp-card {

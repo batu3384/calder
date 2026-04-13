@@ -19,7 +19,6 @@ import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import type { ProviderId, GitFileEntry, SettingsValidationResult } from '../shared/types';
-import { analyzeReadiness } from './readiness/analyzer';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
@@ -27,6 +26,8 @@ import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { discoverCliSurface } from './cli-surface-discovery';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
+import { discoverProjectContext } from './calder-context/discovery';
+import { startProjectContextWatcher } from './calder-context/watcher';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -71,6 +72,8 @@ function isAllowedReadPath(resolvedPath: string): boolean {
 }
 
 let hookWatcherStarted = false;
+let currentProjectContextPath: string | null = null;
+let currentProjectContextWindow: BrowserWindow | null = null;
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
   data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
   exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
@@ -258,6 +261,23 @@ export function registerIpcHandlers(): void {
     if (!win) return;
     const provider = getProvider(providerId);
     provider.startConfigWatcher?.(win, projectPath);
+  });
+
+  ipcMain.handle('context:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectContext(projectPath);
+  });
+
+  ipcMain.on('context:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectContextPath && win === currentProjectContextWindow) return;
+    currentProjectContextPath = projectPath;
+    currentProjectContextWindow = win;
+    startProjectContextWatcher(projectPath, (state) => {
+      if (currentProjectContextWindow && !currentProjectContextWindow.isDestroyed()) {
+        currentProjectContextWindow.webContents.send('context:changed', projectPath, state);
+      }
+    });
   });
 
   ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {
@@ -521,8 +541,6 @@ export function registerIpcHandlers(): void {
       return null;
     }
   });
-
-  ipcMain.handle('readiness:analyze', (_event, projectPath: string, excludedProviders?: ProviderId[]) => analyzeReadiness(projectPath, excludedProviders));
 
   ipcMain.handle('update:checkNow', () => checkForUpdates());
   ipcMain.handle('update:install', () => quitAndInstall());

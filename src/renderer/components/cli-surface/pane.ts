@@ -8,6 +8,7 @@ import type {
   SurfaceSelectionRange,
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
+import { buildAppliedContextSummary } from '../../project-context-prompt.js';
 import { getProviderDisplayName } from '../../provider-availability.js';
 import { getStatus } from '../../session-activity.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
@@ -908,6 +909,8 @@ function buildInspectPayload(
       ? 'inferred'
       : 'exact';
   const contextMode = getContextModeForSelection(instance, selectionSource);
+  const targetProviderId = appState.resolveSurfaceTargetSession(instance.projectId)?.providerId
+    ?? appState.preferences.defaultProvider;
   return createSelectionPayload({
     projectId: instance.projectId,
     projectPath: project?.path ?? '',
@@ -927,6 +930,7 @@ function buildInspectPayload(
     ansiSnapshot: options?.includeAnsiSnapshot ? instance.serializeAddon.serialize() : undefined,
     inferredLabel: selectionHint?.label,
     adapterMeta,
+    appliedContext: buildAppliedContextSummary(instance.projectId, targetProviderId),
   });
 }
 

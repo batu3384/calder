@@ -13,6 +13,8 @@ import type {
 } from '../types.js';
 
 const collapsed: Record<string, boolean> = {};
+let refreshGeneration = 0;
+
 type ToolchainSection = {
   id: string;
   title: string;
@@ -70,7 +72,8 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
 
   if (items.length === 0) {
     const empty = document.createElement('div');
-    empty.className = 'config-empty';
+    empty.className = 'config-empty ops-rail-note';
+    empty.dataset.tone = 'muted';
     empty.textContent = emptyText;
     body.appendChild(empty);
   } else {
@@ -191,6 +194,10 @@ function sectionSummaryText(section: ToolchainSection): string {
   }
 }
 
+function getVisibleToolchainSections(sections: ToolchainSection[]): ToolchainSection[] {
+  return sections.filter((section) => section.count > 0 || !!section.onAdd);
+}
+
 function renderToolchainSummary(
   providerId: ProviderId,
   sections: ToolchainSection[],
@@ -202,29 +209,28 @@ function renderToolchainSummary(
   const provider = document.createElement('div');
   provider.className = 'toolchain-provider';
   provider.innerHTML = `
-    <span class="toolchain-provider-kicker">Tools Focus</span>
-    <span class="toolchain-provider-value">${esc(providerLabel(providerId))} is active</span>
+    <span class="toolchain-provider-kicker">Toolkit</span>
+    <span class="toolchain-provider-value">Configured for ${esc(providerLabel(providerId))}</span>
   `;
   wrap.appendChild(provider);
 
   const status = document.createElement('div');
   status.className = `toolchain-summary-status ${trackingHealthy ? 'is-healthy' : 'is-warning'}`;
-  status.textContent = trackingHealthy ? 'Tracking is on' : 'Tracking is off';
+  status.textContent = trackingHealthy ? 'Tracking on' : 'Tracking limited';
   wrap.appendChild(status);
 
   const chips = document.createElement('div');
   chips.className = 'toolchain-summary-chips';
 
-  const visibleCounts = sections.filter((section) => section.count > 0 || !!section.onAdd);
-  if (visibleCounts.length === 0) {
+  if (sections.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'toolchain-summary-empty';
-    empty.textContent = 'No workspace extras configured yet';
+    empty.textContent = 'No project MCP, skills, or commands connected yet.';
     wrap.appendChild(empty);
     return wrap;
   }
 
-  for (const section of visibleCounts) {
+  for (const section of sections) {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'toolchain-summary-chip control-chip';
@@ -266,6 +272,7 @@ export function getConfigProviderId(): ProviderId {
 async function refresh(): Promise<void> {
   const container = document.getElementById('config-sections');
   if (!container) return;
+  const generation = ++refreshGeneration;
 
   applyVisibility();
 
@@ -292,9 +299,12 @@ async function refresh(): Promise<void> {
       window.calder.settings.validate(providerId).catch(() => null),
     ]);
   } catch {
+    if (generation !== refreshGeneration) return;
     container.innerHTML = '';
     return;
   }
+
+  if (generation !== refreshGeneration) return;
 
   const trackingHealthy = Boolean(meta && validation && isTrackingHealthy(meta, validation));
 
@@ -331,9 +341,8 @@ async function refresh(): Promise<void> {
     });
   }
 
-  container.appendChild(renderToolchainSummary(providerId, sections, trackingHealthy));
-
-  const visibleSections = sections.filter((section) => section.count > 0 || !!section.onAdd);
+  const visibleSections = getVisibleToolchainSections(sections);
+  container.appendChild(renderToolchainSummary(providerId, visibleSections, trackingHealthy));
   for (const section of visibleSections) {
     container.appendChild(renderSection(
       section.id,

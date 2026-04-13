@@ -7,6 +7,7 @@ import {
   badgeLabel,
   escapeHtml,
   renderUnsupportedGuard,
+  renderInspectorEmpty,
   getInspectedProviderId,
 } from './session-inspector-utils.js';
 
@@ -19,7 +20,7 @@ export function renderCosts(container: HTMLElement): void {
   const costDeltas = getCostDeltas(inspectorState.inspectedSessionId!);
 
   if (events.length === 0) {
-    container.innerHTML = `<div class="inspector-empty">${emptyMessage('No events yet')}</div>`;
+    renderInspectorEmpty(container, emptyMessage('No events yet'));
     return;
   }
 
@@ -93,7 +94,7 @@ export function renderTools(container: HTMLElement): void {
   const stats = getToolStats(inspectorState.inspectedSessionId!);
 
   if (stats.length === 0) {
-    container.innerHTML = `<div class="inspector-empty">${emptyMessage('No tool calls yet')}</div>`;
+    renderInspectorEmpty(container, emptyMessage('No tool calls yet'));
     return;
   }
 
@@ -151,7 +152,7 @@ export function renderContext(container: HTMLElement): void {
   const history = getContextHistory(inspectorState.inspectedSessionId!);
 
   if (history.length === 0) {
-    container.innerHTML = `<div class="inspector-empty">${emptyMessage('No context data yet')}</div>`;
+    renderInspectorEmpty(container, emptyMessage('No context data yet'));
     return;
   }
 

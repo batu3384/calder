@@ -26,6 +26,15 @@ describe('cli surface session integration', () => {
     selectedText: 'Theme: midnight',
     nearbyText: 'Settings',
     viewportText: 'Settings',
+    appliedContext: {
+      sources: [
+        { id: 'claude:memory:/tmp/demo/CLAUDE.md', provider: 'claude', displayName: 'CLAUDE.md', kind: 'memory' },
+        { id: 'shared:rules:/tmp/demo/.calder/rules/testing.hard.md', provider: 'shared', displayName: 'testing.hard.md', kind: 'rules' },
+      ],
+      sharedRuleCount: 1,
+      providerContextSummary: 'CLAUDE.md',
+      sharedRulesSummary: 'testing.hard.md',
+    },
   } as any;
 
   beforeEach(() => {
@@ -134,6 +143,23 @@ describe('cli surface session integration', () => {
     expect(deliverSurfacePrompt).toHaveBeenCalledWith(
       'project-1',
       expect.stringContaining('Visible terminal viewport:'),
+    );
+  });
+
+  it('adds a compact project context block when applied context is available', async () => {
+    await sendCliSelectionToSelectedSession(payload);
+
+    expect(deliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Project context:'),
+    );
+    expect(deliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Provider memory: CLAUDE.md'),
+    );
+    expect(deliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Shared rules: testing.hard.md'),
     );
   });
 

@@ -24,7 +24,7 @@ function dot(color: string, animate?: boolean): HTMLElement {
 
 function badge(text: string, color: string, bgColor?: string): HTMLElement {
   const el = document.createElement('span');
-  el.className = 'help-badge';
+  el.className = 'help-badge calder-status-pill';
   el.textContent = text;
   el.style.color = color;
   if (bgColor) el.style.background = bgColor;
@@ -41,7 +41,7 @@ function mono(text: string, color?: string): HTMLElement {
 
 function buildSection(title: string, rows: IndicatorRow[]): HTMLElement {
   const section = document.createElement('div');
-  section.className = 'help-section';
+  section.className = 'help-section help-section-shell';
 
   const header = document.createElement('div');
   header.className = 'help-section-header';
@@ -118,6 +118,15 @@ export function showHelpDialog(): void {
 
   const container = document.createElement('div');
   container.className = 'help-container';
+
+  const hero = document.createElement('div');
+  hero.className = 'help-hero';
+  hero.innerHTML = `
+    <div class="help-hero-kicker shell-kicker">Guide</div>
+    <div class="help-hero-title">Workspace signals and shortcuts</div>
+    <div class="help-hero-copy">A quick reference for session status, tab indicators, git marks, and the keys you use most often.</div>
+  `;
+  container.appendChild(hero);
 
   container.appendChild(buildSection('Tab Status Dot', [
     { visual: () => dot('#e94560', true), label: 'Working', description: 'Active session is generating output' },

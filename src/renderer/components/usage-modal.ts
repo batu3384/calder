@@ -39,7 +39,19 @@ function shortDay(dateStr: string): string {
 }
 
 function renderStats(container: HTMLElement, stats: StatsCache): void {
+  const hero = document.createElement('div');
+  hero.className = 'usage-hero';
+  hero.innerHTML = `
+    <div class="usage-hero-kicker shell-kicker">Usage</div>
+    <div class="usage-hero-title">Workspace activity snapshot</div>
+    <div class="usage-hero-copy">A compact view of sessions, message volume, model mix, and hourly activity across this workspace.</div>
+  `;
+  container.appendChild(hero);
+
   // Summary cards
+  const summaryShell = document.createElement('div');
+  summaryShell.className = 'usage-section-shell';
+
   const summary = document.createElement('div');
   summary.className = 'usage-summary';
 
@@ -66,15 +78,19 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
     el.appendChild(label);
     summary.appendChild(el);
   }
-  container.appendChild(summary);
+  summaryShell.appendChild(summary);
+  container.appendChild(summaryShell);
 
   // Last 7 days activity
   const recent = stats.dailyActivity.slice(-7);
   if (recent.length > 0) {
+    const sectionShell = document.createElement('div');
+    sectionShell.className = 'usage-section-shell';
+
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
     sectionTitle.textContent = 'Last 7 Days';
-    container.appendChild(sectionTitle);
+    sectionShell.appendChild(sectionTitle);
 
     const maxMsg = Math.max(...recent.map(d => d.messageCount), 1);
 
@@ -88,7 +104,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
       bar.title = `${day.date}: ${formatNumber(day.messageCount)} messages, ${formatNumber(day.sessionCount)} sessions`;
       chart.appendChild(bar);
     }
-    container.appendChild(chart);
+    sectionShell.appendChild(chart);
 
     const labels = document.createElement('div');
     labels.className = 'usage-activity-labels';
@@ -97,16 +113,23 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
       span.textContent = shortDay(day.date);
       labels.appendChild(span);
     }
-    container.appendChild(labels);
+    sectionShell.appendChild(labels);
+    container.appendChild(sectionShell);
   }
 
   // Model usage breakdown
   const modelEntries = Object.entries(stats.modelUsage);
   if (modelEntries.length > 0) {
+    const sectionShell = document.createElement('div');
+    sectionShell.className = 'usage-section-shell';
+
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
     sectionTitle.textContent = 'Model Usage';
-    container.appendChild(sectionTitle);
+    sectionShell.appendChild(sectionTitle);
+
+    const list = document.createElement('div');
+    list.className = 'usage-model-list';
 
     for (const [model, usage] of modelEntries) {
       const row = document.createElement('div');
@@ -125,17 +148,22 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 
       row.appendChild(name);
       row.appendChild(tokens);
-      container.appendChild(row);
+      list.appendChild(row);
     }
+    sectionShell.appendChild(list);
+    container.appendChild(sectionShell);
   }
 
   // Hourly activity heatmap
   const hourEntries = Object.entries(stats.hourCounts);
   if (hourEntries.length > 0) {
+    const sectionShell = document.createElement('div');
+    sectionShell.className = 'usage-section-shell';
+
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
     sectionTitle.textContent = 'Activity by Hour';
-    container.appendChild(sectionTitle);
+    sectionShell.appendChild(sectionTitle);
 
     const maxCount = Math.max(...Object.values(stats.hourCounts), 1);
 
@@ -150,12 +178,13 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
       cell.title = `${h}:00 — ${formatNumber(count)} sessions`;
       heatmap.appendChild(cell);
     }
-    container.appendChild(heatmap);
+    sectionShell.appendChild(heatmap);
 
     const hourLabels = document.createElement('div');
     hourLabels.className = 'usage-hour-labels';
     hourLabels.innerHTML = '<span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>';
-    container.appendChild(hourLabels);
+    sectionShell.appendChild(hourLabels);
+    container.appendChild(sectionShell);
   }
 
   // Refresh button

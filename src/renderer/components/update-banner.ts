@@ -4,16 +4,24 @@ export function initUpdateBanner(): void {
 
   const banner = document.createElement('div');
   banner.id = 'update-banner';
-  banner.className = 'hidden';
+  banner.className = 'calder-inline-notice hidden';
   mainArea.prepend(banner);
+
+  const copy = document.createElement('div');
+  copy.className = 'update-banner-copy';
+  banner.appendChild(copy);
 
   const messageSpan = document.createElement('span');
   messageSpan.className = 'update-banner-message';
-  banner.appendChild(messageSpan);
+  copy.appendChild(messageSpan);
+
+  const actions = document.createElement('div');
+  actions.className = 'update-banner-actions hidden';
+  banner.appendChild(actions);
 
   const actionBtn = document.createElement('button');
   actionBtn.className = 'update-banner-btn hidden';
-  banner.appendChild(actionBtn);
+  actions.appendChild(actionBtn);
 
   function show(msg: string, btn?: { label: string; action: () => void }, autoHideMs?: number): void {
     messageSpan.textContent = msg;
@@ -23,8 +31,11 @@ export function initUpdateBanner(): void {
       actionBtn.textContent = btn.label;
       actionBtn.onclick = btn.action;
       actionBtn.classList.remove('hidden');
+      actions.classList.remove('hidden');
     } else {
       actionBtn.classList.add('hidden');
+      actionBtn.onclick = null;
+      actions.classList.add('hidden');
     }
 
     if (autoHideMs) {

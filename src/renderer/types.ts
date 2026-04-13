@@ -1,5 +1,5 @@
-export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, ReadinessResult, ReadinessCategory, ReadinessCheck, ReadinessCheckStatus, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload } from '../shared/types.js';
-import type { CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, StatsCache, ReadinessResult, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload } from '../shared/types.js';
+export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState } from '../shared/types.js';
+import type { CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState } from '../shared/types.js';
 
 export interface CalderApi {
   pty: {
@@ -44,6 +44,11 @@ export interface CalderApi {
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
     watchProject(providerId: ProviderId, projectPath: string): void;
     onConfigChanged(callback: () => void): () => void;
+  };
+  context: {
+    getProjectState(projectPath: string): Promise<ProjectContextState>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectContextState) => void): () => void;
   };
   /** @deprecated Use provider namespace */
   claude: {
@@ -108,9 +113,6 @@ export interface CalderApi {
     getPrompt(id: string, name: string, args: Record<string, string>): Promise<McpResult>;
     addServer(name: string, config: unknown, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
     removeServer(name: string, filePath: string, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
-  };
-  readiness: {
-    analyze(projectPath: string, excludedProviders?: string[]): Promise<ReadinessResult>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;

@@ -15,6 +15,7 @@ import {
   createAgentDetailEl,
   parseMcpToolName,
   isMcpToolEvent,
+  renderInspectorEmpty,
 } from './session-inspector-utils.js';
 
 export interface AgentSpan {
@@ -91,7 +92,7 @@ export function buildAgentModel(events: InspectorEvent[], startIdx: number): Age
 export function renderTimeline(container: HTMLElement): void {
   const events = getEvents(inspectorState.inspectedSessionId!);
   if (events.length === 0) {
-    container.innerHTML = `<div class="inspector-empty">${emptyMessage('No events yet')}</div>`;
+    renderInspectorEmpty(container, emptyMessage('No events yet'));
     return;
   }
 

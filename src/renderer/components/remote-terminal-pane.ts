@@ -37,12 +37,12 @@ export function createRemoteTerminalPane(
 
   // Status bar showing remote session info
   const statusBar = document.createElement('div');
-  statusBar.className = 'session-status-bar remote-status-bar';
+  statusBar.className = 'session-status-bar remote-status-bar remote-status-shell';
   const modeLabel = document.createElement('div');
-  modeLabel.className = 'remote-mode-label';
+  modeLabel.className = 'remote-mode-label calder-status-pill';
   modeLabel.textContent = `Remote \u00b7 ${mode === 'readonly' ? 'Read-only' : 'Read-write'}`;
   const disconnectBtn = document.createElement('button');
-  disconnectBtn.className = 'remote-disconnect-btn';
+  disconnectBtn.className = 'remote-disconnect-btn calder-button';
   disconnectBtn.textContent = 'Disconnect';
   disconnectBtn.addEventListener('click', () => {
     // Import dynamically to avoid circular dependency
@@ -159,8 +159,10 @@ export function showRemoteEndOverlay(sessionId: string): void {
   const overlay = document.createElement('div');
   overlay.className = 'terminal-exit-overlay';
   overlay.innerHTML = `
-    <div class="exit-message">
-      <span>Remote session ended</span>
+    <div class="terminal-exit-message terminal-exit-shell">
+      <div class="terminal-exit-kicker shell-kicker">Remote Session</div>
+      <div class="terminal-exit-title">Remote session ended</div>
+      <div class="terminal-exit-copy">The peer disconnected or the shared terminal was closed. You can return to the local workspace or reconnect from the session tools.</div>
     </div>
   `;
   instance.element.appendChild(overlay);

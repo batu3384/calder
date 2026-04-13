@@ -155,6 +155,45 @@ export interface EmbeddedBrowserOpenPayload {
   preferEmbedded?: boolean;
 }
 
+export interface BrowserGuestOpenPayload {
+  url: string;
+  source: 'anchor' | 'window-open';
+}
+
+export interface ProjectContextSource {
+  id: string;
+  provider: ProviderId | 'shared';
+  scope: 'project' | 'user';
+  kind: 'memory' | 'rules' | 'instructions' | 'mcp';
+  path: string;
+  displayName: string;
+  summary: string;
+  lastUpdated: string;
+  enabled?: boolean;
+  priority?: 'hard' | 'soft';
+}
+
+export interface AppliedContextSourceRef {
+  id: string;
+  provider: ProviderId | 'shared';
+  displayName: string;
+  kind: ProjectContextSource['kind'];
+}
+
+export interface AppliedContextSummary {
+  sources: AppliedContextSourceRef[];
+  sharedRuleCount: number;
+  providerContextSummary?: string;
+  sharedRulesSummary?: string;
+}
+
+export interface ProjectContextState {
+  sources: ProjectContextSource[];
+  sharedRuleCount: number;
+  providerSourceCount: number;
+  lastUpdated?: string;
+}
+
 export interface CliSurfaceProfile {
   id: string;
   name: string;
@@ -237,6 +276,7 @@ export interface SurfacePromptPayload {
   projectPath: string;
   surfaceKind: SurfaceKind;
   selection: SurfaceSelectionRange;
+  appliedContext?: AppliedContextSummary;
   contextMode?: CliSurfacePromptContextMode;
   selectionSource?: 'exact' | 'inferred' | 'semantic';
   semanticNodeId?: string;
@@ -263,13 +303,13 @@ export interface ProjectRecord {
   sessions: SessionRecord[];
   activeSessionId: string | null;
   surface?: ProjectSurfaceRecord;
+  projectContext?: ProjectContextState;
   layout: ProjectLayoutState;
   sessionHistory?: ArchivedSession[];
   insights?: ProjectInsightsData;
   defaultArgs?: string;
   terminalPanelOpen?: boolean;
   terminalPanelHeight?: number;
-  readiness?: ReadinessResult;
 }
 
 export interface Preferences {
@@ -282,13 +322,11 @@ export interface Preferences {
   defaultProvider?: ProviderId;
   statusLineConsent?: 'granted' | 'declined' | null;
   keybindings?: Record<string, string>;
-  readinessExcludedProviders?: ProviderId[];
   sidebarViews?: {
     configSections: boolean;
     gitPanel: boolean;
     sessionHistory: boolean;
     costFooter: boolean;
-    readinessSection: boolean;
   };
 }
 
@@ -322,35 +360,6 @@ export interface PersistedState {
   lastSeenVersion?: string;
   appLaunchCount?: number;
   starPromptDismissed?: boolean;
-}
-
-// --- AI Readiness ---
-
-export type ReadinessCheckStatus = 'pass' | 'fail' | 'warning';
-
-export interface ReadinessCheck {
-  id: string;
-  name: string;
-  status: ReadinessCheckStatus;
-  description: string;
-  score: number;
-  maxScore: number;
-  fixPrompt?: string;
-  providerIds?: ProviderId[];
-}
-
-export interface ReadinessCategory {
-  id: string;
-  name: string;
-  weight: number;
-  score: number;
-  checks: ReadinessCheck[];
-}
-
-export interface ReadinessResult {
-  overallScore: number;
-  categories: ReadinessCategory[];
-  scannedAt: string;
 }
 
 // --- Cost / Context ---

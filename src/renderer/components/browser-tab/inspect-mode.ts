@@ -15,6 +15,7 @@ export function toggleInspectMode(instance: BrowserTabInstance): void {
     instance.selectedElement = null;
     instance.inspectPanel.style.display = 'none';
   }
+  instance.syncToolbarState();
 }
 
 export function showElementInfo(instance: BrowserTabInstance, info: ElementInfo, x: number, y: number): void {
@@ -24,6 +25,10 @@ export function showElementInfo(instance: BrowserTabInstance, info: ElementInfo,
 
   const classStr = info.classes.length ? `.${info.classes.join('.')}` : '';
   const idStr = info.id ? `#${info.id}` : '';
+  instance.inspectTitleEl.textContent = `<${info.tagName}> selected`;
+  instance.inspectSubtitleEl.textContent = info.textContent
+    ? `Target text: ${info.textContent}`
+    : `Choose the best selector for this ${info.tagName} element before routing the prompt.`;
   instance.elementInfoEl.innerHTML = '';
 
   const tagLine = document.createElement('div');
@@ -74,8 +79,12 @@ export function buildPrompt(instance: BrowserTabInstance): string | null {
 export function dismissInspect(instance: BrowserTabInstance): void {
   instance.instructionInput.value = '';
   instance.selectedElement = null;
+  instance.inspectTitleEl.textContent = 'Select an element';
+  instance.inspectSubtitleEl.textContent = 'Click a page element to capture its selector and send a focused prompt.';
   instance.inspectPanel.style.display = 'none';
   if (instance.inspectMode) {
     toggleInspectMode(instance);
+    return;
   }
+  instance.syncToolbarState();
 }

@@ -12,13 +12,6 @@ export function areaLabel(area: string): string {
   return AREA_LABELS[area] || area;
 }
 
-/** Return a CSS color for a 0-100 readiness score. */
-export function scoreColor(score: number): string {
-  if (score >= 70) return 'var(--success)';
-  if (score >= 40) return 'var(--warning)';
-  return 'var(--danger)';
-}
-
 interface PassphraseInputOptions {
   placeholder?: string;
   value?: string;

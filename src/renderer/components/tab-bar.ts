@@ -4,7 +4,6 @@ import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshGitStatus } from '../git-status.js';
-import { onChange as onCostChange, getAggregateCost } from '../session-cost.js';
 
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
 import { showShareDialog } from './share-dialog.js';
@@ -32,8 +31,6 @@ import {
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
-const workspaceSpendEl = document.getElementById('workspace-spend')!;
-const workspaceIdentityEl = document.getElementById('workspace-identity')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
@@ -93,7 +90,6 @@ export function initTabBar(): void {
   });
   appState.on('session-changed', render);
   appState.on('layout-changed', render);
-  appState.on('history-changed', renderWorkspaceIdentity);
   appState.on('preferences-changed', renderSessionProviderSelector);
   onShareChange(render);
 
@@ -113,25 +109,19 @@ export function initTabBar(): void {
   });
 
   onUnreadChange(render);
-  onCostChange(renderWorkspaceSpend);
 
   onGitStatusChange((projectId) => {
     if (projectId === appState.activeProjectId) {
       renderGitStatus();
-      renderWorkspaceIdentity();
     }
   });
   appState.on('project-changed', renderGitStatus);
-  appState.on('project-changed', renderWorkspaceSpend);
-  appState.on('project-changed', renderWorkspaceIdentity);
 
   document.addEventListener('click', hideTabContextMenu);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTabContextMenu(); });
 
   render();
   renderGitStatus();
-  renderWorkspaceSpend();
-  renderWorkspaceIdentity();
   renderSessionProviderSelector();
 }
 
@@ -526,55 +516,6 @@ function renderSessionProviderSelector(): void {
   sessionProviderSelect = select;
 }
 
-function renderWorkspaceSpend(): void {
-  const visible = appState.preferences.sidebarViews?.costFooter ?? true;
-  const agg = getAggregateCost();
-  if (!visible || agg.totalCostUsd <= 0) {
-    workspaceSpendEl.hidden = true;
-    workspaceSpendEl.innerHTML = '';
-    return;
-  }
-
-  workspaceSpendEl.hidden = false;
-  workspaceSpendEl.innerHTML = `
-    <span class="workspace-spend-label">Cost</span>
-    <span class="workspace-spend-value">$${agg.totalCostUsd.toFixed(4)}</span>
-  `;
-}
-
-function shortProjectPath(fullPath: string): string {
-  const normalized = fullPath.replace(/\\/g, '/');
-  const parts = normalized.split('/').filter(Boolean);
-  if (parts.length <= 2) return fullPath;
-  return `.../${parts.slice(-2).join('/')}`;
-}
-
-function renderWorkspaceIdentity(): void {
-  const project = appState.activeProject;
-  if (!project) {
-    workspaceIdentityEl.hidden = true;
-    workspaceIdentityEl.innerHTML = '';
-    workspaceIdentityEl.removeAttribute('title');
-    return;
-  }
-
-  const git = getGitStatus(project.id);
-  const branchOrPath = git?.isGitRepo && git.branch
-    ? `git ${git.branch}`
-    : shortProjectPath(project.path);
-  const liveCount = project.sessions.length;
-  const loggedCount = project.sessionHistory?.length ?? 0;
-  const liveLabel = `${liveCount} open`;
-  const archiveLabel = `${loggedCount} logged`;
-
-  workspaceIdentityEl.hidden = false;
-  workspaceIdentityEl.title = project.path;
-  workspaceIdentityEl.innerHTML = `
-    <div class="workspace-project-name">${esc(project.name)}</div>
-    <div class="workspace-project-meta">${esc(branchOrPath)} · ${liveLabel} · ${archiveLabel}</div>
-  `;
-}
-
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {
   const nameSpan = tab.querySelector('.tab-name') as HTMLElement;
   if (nameSpan.querySelector('input')) return;
@@ -618,7 +559,7 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   hideTabContextMenu();
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
@@ -859,7 +800,6 @@ function render(): void {
   tabListEl.innerHTML = '';
   renderSurfaceControls();
   const project = appState.activeProject;
-  renderWorkspaceIdentity();
   if (!project) return;
 
   for (const session of project.sessions) {
@@ -879,13 +819,19 @@ function render(): void {
     const providerId = session.providerId || 'claude';
     const providerIcon = buildProviderIconMarkup(providerId, hasMultipleAvailableProviders());
     const namePrefix = isDiff ? '<span class="tab-diff-badge">DIFF</span> ' : isMcp ? '<span class="tab-mcp-badge">MCP</span> ' : isFileReader ? '<span class="tab-file-badge">FILE</span> ' : isRemoteTab ? '<span class="tab-remote-badge">P2P</span> ' : isBrowserTab ? '<span class="tab-browser-badge">WEB</span> ' : !isSpecial ? providerIcon : '';
-    const shareIndicator = sharing ? '<span class="tab-share-indicator" title="Sharing"></span>' : '';
+    const shareIndicator = sharing ? '<span class="tab-share-indicator calder-status-pill" title="Sharing">Live</span>' : '';
     const statusDot = isSpecial ? '' : `<span class="tab-status ${getStatus(session.id)}"></span>`;
-    const reorderHandle = '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>';
+    const reorderHandle = project.sessions.length > 1
+      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
+      : '';
+    const nameContent = `
+      <span class="tab-name-prefix">${namePrefix}</span>
+      <span class="tab-name-label">${esc(session.name)}</span>
+    `;
     tab.innerHTML = `
       ${reorderHandle}
       ${statusDot}
-      <span class="tab-name">${namePrefix}${esc(session.name)}</span>
+      <span class="tab-name">${nameContent}</span>
       ${shareIndicator}
       <span class="tab-close" title="Close session">&times;</span>
     `;
@@ -921,58 +867,60 @@ function render(): void {
       appState.removeSession(project.id, session.id);
     });
 
-    const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement;
-    reorderHandleEl.draggable = true;
+    const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;
+    if (reorderHandleEl) {
+      reorderHandleEl.draggable = true;
 
-    reorderHandleEl.addEventListener('dragstart', (e) => {
-      e.dataTransfer!.effectAllowed = 'move';
-      e.dataTransfer!.setData('text/plain', session.id);
-      tab.classList.add('dragging');
-    });
-
-    tab.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer!.dropEffect = 'move';
-      // Determine left/right half
-      const rect = tab.getBoundingClientRect();
-      const midX = rect.left + rect.width / 2;
-      tab.classList.remove('drag-over-left', 'drag-over-right');
-      if (e.clientX < midX) {
-        tab.classList.add('drag-over-left');
-      } else {
-        tab.classList.add('drag-over-right');
-      }
-    });
-
-    tab.addEventListener('dragleave', () => {
-      tab.classList.remove('drag-over-left', 'drag-over-right');
-    });
-
-    tab.addEventListener('drop', (e) => {
-      e.preventDefault();
-      tab.classList.remove('drag-over-left', 'drag-over-right');
-      const draggedId = e.dataTransfer!.getData('text/plain');
-      if (!draggedId || draggedId === session.id) return;
-
-      const rect = tab.getBoundingClientRect();
-      const midX = rect.left + rect.width / 2;
-      let targetIndex = project.sessions.findIndex(s => s.id === session.id);
-      if (e.clientX >= midX) targetIndex++;
-
-      // Adjust for the fact that removing the dragged item shifts indices
-      const fromIndex = project.sessions.findIndex(s => s.id === draggedId);
-      if (fromIndex < targetIndex) targetIndex--;
-
-      appState.reorderSession(project.id, draggedId, targetIndex);
-    });
-
-    reorderHandleEl.addEventListener('dragend', () => {
-      tab.classList.remove('dragging');
-      // Clean up all drag indicators
-      tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach(el => {
-        el.classList.remove('drag-over-left', 'drag-over-right');
+      reorderHandleEl.addEventListener('dragstart', (e) => {
+        e.dataTransfer!.effectAllowed = 'move';
+        e.dataTransfer!.setData('text/plain', session.id);
+        tab.classList.add('dragging');
       });
-    });
+
+      tab.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer!.dropEffect = 'move';
+        // Determine left/right half
+        const rect = tab.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+        if (e.clientX < midX) {
+          tab.classList.add('drag-over-left');
+        } else {
+          tab.classList.add('drag-over-right');
+        }
+      });
+
+      tab.addEventListener('dragleave', () => {
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+      });
+
+      tab.addEventListener('drop', (e) => {
+        e.preventDefault();
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+        const draggedId = e.dataTransfer!.getData('text/plain');
+        if (!draggedId || draggedId === session.id) return;
+
+        const rect = tab.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        let targetIndex = project.sessions.findIndex(s => s.id === session.id);
+        if (e.clientX >= midX) targetIndex++;
+
+        // Adjust for the fact that removing the dragged item shifts indices
+        const fromIndex = project.sessions.findIndex(s => s.id === draggedId);
+        if (fromIndex < targetIndex) targetIndex--;
+
+        appState.reorderSession(project.id, draggedId, targetIndex);
+      });
+
+      reorderHandleEl.addEventListener('dragend', () => {
+        tab.classList.remove('dragging');
+        // Clean up all drag indicators
+        tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach(el => {
+          el.classList.remove('drag-over-left', 'drag-over-right');
+        });
+      });
+    }
 
     tabListEl.appendChild(tab);
   }
@@ -1030,7 +978,7 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
   const gitPath = getActiveGitPath(project.id);
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
 
   // Position below the git status element
   const elRect = gitStatusEl.getBoundingClientRect();
@@ -1245,7 +1193,7 @@ function showAddSessionContextMenu(x: number, y: number): void {
   hideTabContextMenu();
 
   const menu = document.createElement('div');
-  menu.className = 'tab-context-menu';
+  menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 

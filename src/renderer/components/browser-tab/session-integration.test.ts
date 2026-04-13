@@ -9,7 +9,38 @@ const mockDismissFlow = vi.fn();
 
 vi.mock('../../state.js', () => ({
   appState: {
-    activeProject: { id: 'project-1' },
+    activeProject: {
+      id: 'project-1',
+      projectContext: {
+        sources: [
+          {
+            id: 'claude:memory:/tmp/demo/CLAUDE.md',
+            provider: 'claude',
+            scope: 'project',
+            kind: 'memory',
+            path: '/tmp/demo/CLAUDE.md',
+            displayName: 'CLAUDE.md',
+            summary: 'Claude repo guidance',
+            lastUpdated: '2026-04-13T12:00:00.000Z',
+          },
+          {
+            id: 'shared:rules:/tmp/demo/.calder/rules/testing.hard.md',
+            provider: 'shared',
+            scope: 'project',
+            kind: 'rules',
+            path: '/tmp/demo/.calder/rules/testing.hard.md',
+            displayName: 'testing.hard.md',
+            summary: 'Tests are required',
+            lastUpdated: '2026-04-13T12:10:00.000Z',
+            priority: 'hard',
+          },
+        ],
+        sharedRuleCount: 1,
+        providerSourceCount: 1,
+        lastUpdated: '2026-04-13T12:10:00.000Z',
+      },
+    },
+    preferences: { defaultProvider: 'claude' },
     resolveBrowserTargetSession: mockResolveBrowserTargetSession,
   },
 }));
@@ -58,10 +89,19 @@ describe('browser session integration errors', () => {
     const { sendToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
     mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-1' });
+    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-1', providerId: 'claude' });
 
     await sendToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', 'inspect prompt');
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('inspect prompt'));
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Project context:'),
+    );
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Shared rules: testing.hard.md'),
+    );
     expect(mockDismissInspect).toHaveBeenCalledTimes(1);
     expect(instance.inspectErrorEl.textContent).toBe('');
     expect(instance.inspectErrorEl.style.display).toBe('none');
