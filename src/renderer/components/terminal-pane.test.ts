@@ -12,12 +12,22 @@ const providerCaps = new Map([
 
 const mockPtyWrite = vi.fn();
 const mockPtyKill = vi.fn();
+const webLinksActivateRef = vi.hoisted(() => ({
+  current: null as null | ((event: MouseEvent, url: string) => void),
+}));
+const terminalOptionsRef = vi.hoisted(() => ({
+  current: null as null | Record<string, unknown>,
+}));
 
 class FakeTerminal {
   cols = 120;
   rows = 30;
   private keyHandler: ((e: KeyboardEvent) => boolean) | null = null;
   private _selection = '';
+
+  constructor(options?: Record<string, unknown>) {
+    terminalOptionsRef.current = options ?? null;
+  }
 
   loadAddon(): void {}
   attachCustomKeyEventHandler(handler: (e: KeyboardEvent) => boolean): void {
@@ -54,7 +64,9 @@ vi.mock('@xterm/addon-search', () => ({
 
 vi.mock('@xterm/addon-web-links', () => ({
   WebLinksAddon: class FakeWebLinksAddon {
-    constructor(_cb: unknown) {}
+    constructor(cb: (event: MouseEvent, url: string) => void) {
+      webLinksActivateRef.current = cb;
+    }
   },
 }));
 
@@ -180,6 +192,7 @@ describe('terminal pending prompt injection', () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.useFakeTimers();
+    webLinksActivateRef.current = null;
 
     vi.stubGlobal('document', new FakeDocument());
     vi.stubGlobal('window', makeWindowStub());
@@ -299,6 +312,7 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     vi.resetModules();
     vi.clearAllMocks();
     vi.useFakeTimers();
+    webLinksActivateRef.current = null;
 
     vi.stubGlobal('document', new FakeDocument());
     vi.stubGlobal('window', makeWindowStub());
@@ -346,5 +360,40 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     const result = term.simulateKey({ ctrlKey: true, shiftKey: true, key: 'C', type: 'keydown' });
 
     expect(result).toBe(false);
+  });
+
+  it('opens detected web links without requiring modifier keys', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    createTerminalPane('links-1', '/project', null);
+    const openExternal = (window as any).calder.app.openExternal;
+
+    expect(webLinksActivateRef.current).toBeTypeOf('function');
+    webLinksActivateRef.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', '/project');
+  });
+
+  it('normalizes bare localhost links before opening', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    createTerminalPane('links-2', '/project', null);
+    const openExternal = (window as any).calder.app.openExternal;
+
+    webLinksActivateRef.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'localhost:5173/preview');
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:5173/preview', '/project');
+  });
+
+  it('routes OSC8 hyperlinks through xterm linkHandler', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    createTerminalPane('links-osc8', '/project', null);
+    const openExternal = (window as any).calder.app.openExternal;
+    const linkHandler = terminalOptionsRef.current?.linkHandler as
+      | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
+      | undefined;
+
+    linkHandler?.activate?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard', {});
+
+    expect(linkHandler?.activate).toBeTypeOf('function');
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:3000/dashboard', '/project');
   });
 });

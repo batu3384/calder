@@ -14,8 +14,11 @@ describe('modal surface stylesheet contract', () => {
   });
 
   it('keeps modal actions and fields in the same tighter rhythm', () => {
+    expect(modalCss).toContain('#modal-actions, .modal-actions');
+    expect(modalCss).toContain('justify-content: flex-end;');
     expect(modalCss).toContain('.modal-btn');
-    expect(modalCss).toContain('border-radius: 10px;');
+    expect(modalCss).toContain('min-width: 112px;');
+    expect(modalCss).toContain('border-radius: 14px;');
     expect(modalCss).toContain('.modal-field input');
     expect(modalCss).toContain('border-radius: 10px;');
   });

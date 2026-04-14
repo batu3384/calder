@@ -79,5 +79,5 @@ export function sendCliSelectionToNewSession(payload: SurfacePromptPayload, sess
 }
 
 export function sendCliSelectionToCustomSession(payload: SurfacePromptPayload, onReady: () => void) {
-  return queueSurfacePromptInCustomSession(buildCliInspectPrompt(payload), onReady);
+  return queueSurfacePromptInCustomSession(buildCliInspectPrompt(payload), onReady, payload.projectId);
 }

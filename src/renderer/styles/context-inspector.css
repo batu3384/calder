@@ -435,7 +435,7 @@
 }
 
 #context-inspector .config-section-add-btn {
-  min-height: 20px;
+  min-height: 24px;
   border-radius: 10px;
 }
 
@@ -506,7 +506,7 @@
 #context-inspector .history-remove-btn,
 #context-inspector .history-bookmark-btn,
 #context-inspector .git-action-btn {
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 #context-inspector .config-empty,

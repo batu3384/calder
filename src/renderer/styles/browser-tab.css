@@ -238,6 +238,14 @@
   transform: translateY(-1px);
 }
 
+.browser-toolbar-tools-shell:has(.browser-viewport-dropdown.visible) {
+  transform: none;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
 .browser-toolbar-presence-shell .browser-toolbar-presence-pill {
   background: color-mix(in srgb, var(--surface-panel) 38%, transparent);
   border-color: color-mix(in srgb, var(--border-subtle) 72%, transparent);
@@ -377,28 +385,72 @@
 }
 
 .browser-tab-pane.split .browser-tab-toolbar {
-  align-items: stretch;
+  align-items: center;
 }
 
 .browser-tab-pane.split .browser-toolbar-address {
-  flex: 1 1 280px;
+  flex: 1 1 260px;
   min-width: min(220px, 100%);
 }
 
-.browser-tab-pane.split .browser-toolbar-presence {
-  flex: 1 1 100%;
-  order: 3;
-  padding-left: 0;
-}
-
 .browser-tab-pane.split .browser-toolbar-tools {
-  flex: 1 1 100%;
-  justify-content: flex-start;
-  padding-left: 0;
+  flex: 0 0 auto;
+  order: 2;
+  margin-left: auto;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0;
 }
 
 .browser-tab-pane.split .browser-toolbar-tools-shell {
-  justify-content: flex-start;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding: 2px 4px;
+}
+
+.browser-tab-pane.split .browser-toolbar-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding-left: 6px;
+}
+
+.browser-tab-pane.split .browser-toolbar-cluster-label {
+  display: none;
+}
+
+.browser-tab-pane.split .browser-toolbar-cluster-controls {
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.browser-tab-pane.split .browser-nav-btn,
+.browser-tab-pane.split .browser-go-btn,
+.browser-tab-pane.split .browser-draw-btn,
+.browser-tab-pane.split .browser-inspect-btn,
+.browser-tab-pane.split .browser-record-btn,
+.browser-tab-pane.split .browser-viewport-btn {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 10px;
+  min-width: 74px;
+}
+
+.browser-tab-pane.split .browser-inspect-btn,
+.browser-tab-pane.split .browser-draw-btn,
+.browser-tab-pane.split .browser-record-btn {
+  min-width: 88px;
+  justify-content: center;
+}
+
+.browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='inspect'] .browser-inspect-btn,
+.browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='draw'] .browser-draw-btn,
+.browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='flow'] .browser-record-btn {
+  background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  color: var(--text-primary);
+  animation: capture-active-settle 1.35s ease-out 1 both;
 }
 
 .browser-tab-pane.split .browser-new-tab-page {
@@ -583,6 +635,38 @@
   background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   color: var(--text-primary);
+}
+
+.browser-inspect-btn[data-state='active'],
+.browser-draw-btn[data-state='active'],
+.browser-record-btn[data-state='active'] {
+  font-weight: 650;
+}
+
+@keyframes capture-active-settle {
+  0% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  62% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  100% {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='inspect'] .browser-inspect-btn,
+  .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='draw'] .browser-draw-btn,
+  .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='flow'] .browser-record-btn {
+    animation: none;
+  }
 }
 
 .browser-draw-btn:disabled,
@@ -1125,7 +1209,7 @@ body.sidebar-resizing .browser-webview {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   min-width: 180px;
-  z-index: 100;
+  z-index: 120;
   box-shadow: var(--shadow-soft);
   overflow: hidden;
 }

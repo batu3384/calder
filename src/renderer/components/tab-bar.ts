@@ -35,10 +35,12 @@ const btnAddSession = document.getElementById('btn-add-session')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
+const sessionLauncherEl = document.getElementById('session-launcher')!;
 
 let activeContextMenu: HTMLElement | null = null;
 let sessionProviderSelect: CustomSelectInstance | null = null;
 let surfaceProfileSelect: CustomSelectInstance | null = null;
+let sessionProviderSelectorSignature = '';
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
 
@@ -74,9 +76,12 @@ export function initTabBar(): void {
 
   // Icons only distinguish providers when multiple are installed
   loadProviderAvailability().then(() => {
-    renderSessionProviderSelector();
+    syncSessionProviderSelector();
     if (hasMultipleAvailableProviders()) render();
-  }).catch(() => {});
+  }).catch((error) => {
+    console.warn('[tab-bar] Failed to load provider availability', error);
+    syncSessionProviderSelector();
+  });
 
   appState.on('state-loaded', render);
   appState.on('project-changed', render);
@@ -90,7 +95,7 @@ export function initTabBar(): void {
   });
   appState.on('session-changed', render);
   appState.on('layout-changed', render);
-  appState.on('preferences-changed', renderSessionProviderSelector);
+  appState.on('preferences-changed', syncSessionProviderSelector);
   onShareChange(render);
 
   onStatusChange((sessionId, status) => {
@@ -122,7 +127,7 @@ export function initTabBar(): void {
 
   render();
   renderGitStatus();
-  renderSessionProviderSelector();
+  syncSessionProviderSelector();
 }
 
 function destroySessionProviderSelector(): void {
@@ -130,6 +135,8 @@ function destroySessionProviderSelector(): void {
     sessionProviderSelect.destroy();
     sessionProviderSelect = null;
   }
+  sessionProviderSelectorSignature = '';
+  sessionLauncherEl.dataset.selectOpen = 'false';
   sessionProviderSlotEl.innerHTML = '';
   sessionProviderSlotEl.hidden = true;
 }
@@ -139,10 +146,16 @@ function destroySurfaceProfileSelector(): void {
     surfaceProfileSelect.destroy();
     surfaceProfileSelect = null;
   }
+  sessionLauncherEl.dataset.selectOpen = 'false';
   surfaceModeSlotEl.innerHTML = '';
   surfaceModeSlotEl.hidden = true;
   surfaceProfileSlotEl.innerHTML = '';
   surfaceProfileSlotEl.hidden = true;
+}
+
+function setSessionLauncherSelectOpen(open: boolean): void {
+  const sessionLauncher = sessionLauncherEl;
+  sessionLauncher.dataset.selectOpen = open ? 'true' : 'false';
 }
 
 function createDefaultProjectSurface(): ProjectSurfaceRecord {
@@ -403,6 +416,7 @@ function renderSurfaceControls(): void {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'surface-mode-button';
+    button.dataset.surfaceKind = kind;
     button.textContent = label;
     button.classList.toggle('active', surface.kind === kind && surface.active);
     button.addEventListener('click', () => {
@@ -430,6 +444,16 @@ function renderSurfaceControls(): void {
         { value: '__new__', label: '+ New profile…' },
       ],
       selectedProfile?.id,
+      {
+        floating: {
+          placement: 'bottom-end',
+          offsetPx: 8,
+          maxWidthPx: 320,
+          maxHeightPx: 320,
+          strategy: 'absolute',
+        },
+        onOpenChange: setSessionLauncherSelectOpen,
+      },
     );
     select.element.classList.add('command-deck-cli-profile-select');
     const hiddenInput = select.element.querySelector('#command-deck-cli-profile') as HTMLInputElement | null;
@@ -464,6 +488,7 @@ function renderSurfaceControls(): void {
   const configureButton = document.createElement('button');
   configureButton.type = 'button';
   configureButton.className = 'surface-profile-config';
+  configureButton.dataset.role = profiles.length > 0 ? 'edit-profile' : 'setup-profile';
   configureButton.textContent = profiles.length > 0 ? 'Edit' : 'Set up';
   configureButton.addEventListener('click', () => {
     promptCliSurfaceProfile(project, selectedProfile);
@@ -481,14 +506,31 @@ function syncQuickSessionButtonMeta(providerId: ProviderId): void {
   btnAddSession.setAttribute('aria-label', `Create new ${providerLabel} session`);
 }
 
-function renderSessionProviderSelector(): void {
-  const snapshot = getProviderAvailabilitySnapshot();
-  destroySessionProviderSelector();
+function buildSessionProviderSelectorSignature(snapshot: ReturnType<typeof getProviderAvailabilitySnapshot>): string {
+  if (!snapshot) return 'hidden';
+  return snapshot.providers
+    .map(provider => `${provider.id}:${provider.displayName}:${snapshot.availability.get(provider.id) ? '1' : '0'}`)
+    .join('|');
+}
 
+function syncSessionProviderSelector(): void {
+  const snapshot = getProviderAvailabilitySnapshot();
   const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
   syncQuickSessionButtonMeta(selectedProvider);
 
-  if (!snapshot || !shouldRenderInlineProviderSelector(snapshot)) return;
+  if (!snapshot || !shouldRenderInlineProviderSelector(snapshot)) {
+    destroySessionProviderSelector();
+    return;
+  }
+
+  const signature = buildSessionProviderSelectorSignature(snapshot);
+  if (sessionProviderSelect && sessionProviderSelectorSignature === signature) {
+    sessionProviderSelect?.setValue(selectedProvider);
+    sessionProviderSlotEl.hidden = false;
+    return;
+  }
+
+  destroySessionProviderSelector();
 
   const select = createCustomSelect(
     'command-deck-provider',
@@ -501,6 +543,17 @@ function renderSessionProviderSelector(): void {
       };
     }),
     selectedProvider,
+    {
+      floating: {
+        placement: 'bottom-end',
+        offsetPx: 8,
+        maxWidthPx: 280,
+        maxHeightPx: 320,
+        strategy: 'absolute',
+      },
+      align: 'end',
+      onOpenChange: setSessionLauncherSelectOpen,
+    },
   );
   select.element.classList.add('command-deck-provider-select');
 
@@ -514,6 +567,7 @@ function renderSessionProviderSelector(): void {
   sessionProviderSlotEl.hidden = false;
   sessionProviderSlotEl.appendChild(select.element);
   sessionProviderSelect = select;
+  sessionProviderSelectorSignature = signature;
 }
 
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {

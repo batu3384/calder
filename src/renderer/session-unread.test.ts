@@ -1,9 +1,11 @@
 import type { ProjectRecord } from '../shared/types';
 
-const { statusChangeCallbacks, mockAppState } = vi.hoisted(() => ({
+const { statusChangeCallbacks, eventCallbacks, mockAppState } = vi.hoisted(() => ({
   statusChangeCallbacks: [] as Array<(sessionId: string, status: string) => void>,
+  eventCallbacks: new Map<string, Array<(data?: unknown) => void>>(),
   mockAppState: {
     activeProjectId: null as string | null,
+    activeProject: undefined as ProjectRecord | undefined,
     projects: [] as ProjectRecord[],
     on: vi.fn(),
   },
@@ -38,9 +40,15 @@ function makeSession(id: string, name: string) {
 beforeEach(() => {
   _resetForTesting();
   statusChangeCallbacks.length = 0;
+  eventCallbacks.clear();
   mockAppState.projects = [];
   mockAppState.activeProjectId = null;
-  mockAppState.on.mockReset();
+  mockAppState.activeProject = undefined;
+  mockAppState.on.mockImplementation((event: string, cb: (data?: unknown) => void) => {
+    const callbacks = eventCallbacks.get(event) ?? [];
+    callbacks.push(cb);
+    eventCallbacks.set(event, callbacks);
+  });
 });
 
 function setupProjects(): void {
@@ -62,10 +70,15 @@ function setupProjects(): void {
       layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
     },
   ] as ProjectRecord[];
+  mockAppState.activeProject = mockAppState.projects.find((project) => project.id === mockAppState.activeProjectId);
 }
 
 function simulateStatusChange(sessionId: string, status: string): void {
   for (const cb of statusChangeCallbacks) cb(sessionId, status);
+}
+
+function emitAppStateEvent(event: string, data?: unknown): void {
+  for (const cb of eventCallbacks.get(event) ?? []) cb(data);
 }
 
 describe('session-unread', () => {
@@ -140,6 +153,75 @@ describe('session-unread', () => {
     expect(isUnread('s1')).toBe(false);
   });
 
+  it('marks unread when working transitions to completed', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    simulateStatusChange('s1', 'working');
+    simulateStatusChange('s1', 'completed');
+
+    expect(isUnread('s1')).toBe(true);
+  });
+
+  it('marks unread when working transitions to input', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    simulateStatusChange('s1', 'working');
+    simulateStatusChange('s1', 'input');
+
+    expect(isUnread('s1')).toBe(true);
+  });
+
+  it('clears unread when active session changes to the unread session', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    simulateStatusChange('s1', 'working');
+    simulateStatusChange('s1', 'waiting');
+    expect(isUnread('s1')).toBe(true);
+
+    mockAppState.activeProjectId = 'p1';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p1');
+    emitAppStateEvent('session-changed');
+
+    expect(isUnread('s1')).toBe(false);
+  });
+
+  it('ignores session-removed events without a sessionId payload', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    simulateStatusChange('s1', 'working');
+    simulateStatusChange('s1', 'waiting');
+    expect(isUnread('s1')).toBe(true);
+
+    emitAppStateEvent('session-removed', {});
+    expect(isUnread('s1')).toBe(true);
+  });
+
+  it('removes unread state when session-removed event includes session id', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    simulateStatusChange('s1', 'working');
+    simulateStatusChange('s1', 'waiting');
+    expect(isUnread('s1')).toBe(true);
+
+    emitAppStateEvent('session-removed', { sessionId: 's1' });
+    expect(isUnread('s1')).toBe(false);
+  });
+
   it('removeSession clears unread state', () => {
     setupProjects();
     mockAppState.activeProjectId = 'p2';
@@ -151,6 +233,19 @@ describe('session-unread', () => {
 
     removeSession('s1');
     expect(isUnread('s1')).toBe(false);
+  });
+
+  it('removeSession on a non-unread session is a silent no-op for listeners', () => {
+    setupProjects();
+    mockAppState.activeProjectId = 'p2';
+    mockAppState.activeProject = mockAppState.projects.find((project) => project.id === 'p2');
+    init();
+
+    const cb = vi.fn();
+    onChange(cb);
+
+    removeSession('s1');
+    expect(cb).not.toHaveBeenCalled();
   });
 
   it('notifies listeners on unread change', () => {
@@ -201,5 +296,10 @@ describe('session-unread', () => {
 
     expect(cb1).not.toHaveBeenCalled();
     expect(cb2).toHaveBeenCalled();
+  });
+
+  it('returns false for unknown projects when checking unread state', () => {
+    setupProjects();
+    expect(hasUnreadInProject('does-not-exist')).toBe(false);
   });
 });

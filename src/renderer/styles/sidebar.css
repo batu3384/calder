@@ -2,7 +2,7 @@
 #sidebar {
   width: 204px;
   min-width: 168px;
-  max-width: 320px;
+  max-width: 540px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0)),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 26%, transparent), transparent 42%),

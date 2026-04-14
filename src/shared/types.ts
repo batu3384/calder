@@ -4,6 +4,7 @@
 
 export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen' | 'minimax' | 'blackbox';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
+export type UiLanguage = 'en' | 'tr';
 
 export interface CliProviderCapabilities {
   sessionResume: boolean;
@@ -194,6 +195,281 @@ export interface ProjectContextState {
   lastUpdated?: string;
 }
 
+export interface ProjectContextStarterFilesResult {
+  created: string[];
+  skipped: string[];
+  state: ProjectContextState;
+}
+
+export interface ProjectContextCreateRuleResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectContextState;
+}
+
+export interface ProjectContextRenameRuleResult {
+  renamed: boolean;
+  relativePath: string;
+  state: ProjectContextState;
+}
+
+export interface ProjectContextDeleteRuleResult {
+  deleted: boolean;
+  state: ProjectContextState;
+}
+
+export interface ProjectWorkflowSource {
+  id: string;
+  path: string;
+  displayName: string;
+  summary: string;
+  lastUpdated: string;
+}
+
+export interface ProjectWorkflowState {
+  workflows: ProjectWorkflowSource[];
+  lastUpdated?: string;
+}
+
+export interface ProjectWorkflowStarterFilesResult {
+  created: string[];
+  skipped: string[];
+  state: ProjectWorkflowState;
+}
+
+export interface ProjectWorkflowCreateResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectWorkflowState;
+}
+
+export interface ProjectWorkflowDocument {
+  path: string;
+  relativePath: string;
+  title: string;
+  contents: string;
+}
+
+export interface ProjectTeamContextSpaceSource {
+  id: string;
+  path: string;
+  displayName: string;
+  summary: string;
+  lastUpdated: string;
+  linkedRuleCount: number;
+  linkedWorkflowCount: number;
+}
+
+export interface ProjectTeamContextState {
+  spaces: ProjectTeamContextSpaceSource[];
+  sharedRuleCount: number;
+  workflowCount: number;
+  lastUpdated?: string;
+}
+
+export interface ProjectTeamContextStarterFilesResult {
+  created: string[];
+  skipped: string[];
+  state: ProjectTeamContextState;
+}
+
+export interface ProjectTeamContextCreateSpaceResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectTeamContextState;
+}
+
+export interface ProjectReviewSource {
+  id: string;
+  path: string;
+  displayName: string;
+  summary: string;
+  lastUpdated: string;
+}
+
+export interface ProjectReviewState {
+  reviews: ProjectReviewSource[];
+  lastUpdated?: string;
+}
+
+export interface ProjectReviewCreateResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectReviewState;
+}
+
+export interface ProjectReviewDocument {
+  path: string;
+  relativePath: string;
+  title: string;
+  contents: string;
+}
+
+export type ProjectBackgroundTaskStatus = 'queued' | 'running' | 'blocked' | 'completed' | 'cancelled';
+
+export interface ProjectBackgroundTaskSource {
+  id: string;
+  path: string;
+  title: string;
+  status: ProjectBackgroundTaskStatus;
+  summary: string;
+  createdAt: string;
+  lastUpdated: string;
+  artifactCount: number;
+  handoffSummary: string;
+}
+
+export interface ProjectBackgroundTaskState {
+  tasks: ProjectBackgroundTaskSource[];
+  queuedCount: number;
+  runningCount: number;
+  completedCount: number;
+  lastUpdated?: string;
+}
+
+export interface ProjectBackgroundTaskCreateResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectBackgroundTaskState;
+}
+
+export interface ProjectBackgroundTaskDocument {
+  path: string;
+  relativePath: string;
+  title: string;
+  status: ProjectBackgroundTaskStatus;
+  prompt: string;
+  createdAt: string;
+  updatedAt: string;
+  artifacts: string[];
+  handoff: string;
+}
+
+export type ProjectGovernanceMode = 'advisory' | 'enforced';
+export type ProjectGovernanceDecisionPolicy = 'allow' | 'ask' | 'block';
+
+export interface ProjectGovernancePolicySource {
+  id: string;
+  path: string;
+  displayName: string;
+  summary: string;
+  lastUpdated: string;
+  mode: 'advisory' | 'enforced';
+  toolPolicy: 'allow' | 'ask' | 'block';
+  writePolicy: 'allow' | 'ask' | 'block';
+  networkPolicy: 'allow' | 'ask' | 'block';
+  mcpAllowlistCount: number;
+  providerProfileCount: number;
+  budgetLimitUsd?: number;
+}
+
+export interface ProjectGovernanceState {
+  policy?: ProjectGovernancePolicySource;
+  lastUpdated?: string;
+}
+
+export interface ProjectGovernanceStarterPolicyResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectGovernanceState;
+}
+
+export interface ProjectCheckpointSnapshotSession {
+  id: string;
+  name: string;
+  type?: SessionRecord['type'];
+  providerId?: ProviderId;
+  args?: string;
+  cliSessionId: string | null;
+  browserTabUrl?: string;
+  browserTargetSessionId?: string;
+  diffFilePath?: string;
+  diffArea?: string;
+  worktreePath?: string;
+  fileReaderPath?: string;
+  fileReaderLine?: number;
+}
+
+export interface ProjectCheckpointSnapshotInput {
+  label: string;
+  createdAt?: string;
+  projectName: string;
+  activeSessionId: string | null;
+  sessions: ProjectCheckpointSnapshotSession[];
+  surface?: {
+    kind: SurfaceKind;
+    active: boolean;
+    targetSessionId?: string;
+    webUrl?: string;
+    webSessionId?: string;
+    cliSelectedProfileId?: string;
+    cliStatus?: CliSurfaceRuntimeState['status'];
+  };
+  projectContext?: {
+    sharedRuleCount: number;
+    providerSourceCount: number;
+  };
+  projectWorkflows?: {
+    workflowCount: number;
+  };
+  projectTeamContext?: {
+    spaceCount: number;
+    sharedRuleCount: number;
+    workflowCount: number;
+  };
+}
+
+export interface ProjectCheckpointSource {
+  id: string;
+  path: string;
+  displayName: string;
+  label: string;
+  createdAt: string;
+  lastUpdated: string;
+  sessionCount: number;
+  changedFileCount: number;
+  restoreSummary: string;
+}
+
+export type ProjectCheckpointRestoreMode = 'additive' | 'replace';
+
+export interface ProjectCheckpointState {
+  checkpoints: ProjectCheckpointSource[];
+  lastUpdated?: string;
+}
+
+export interface ProjectCheckpointCreateResult {
+  created: boolean;
+  relativePath: string;
+  state: ProjectCheckpointState;
+}
+
+export interface ProjectCheckpointDocument {
+  schemaVersion: number;
+  id: string;
+  label: string;
+  createdAt: string;
+  project: {
+    name: string;
+    path: string;
+  };
+  activeSessionId: string | null;
+  sessionCount: number;
+  changedFileCount: number;
+  sessions: ProjectCheckpointSnapshotSession[];
+  surface?: ProjectCheckpointSnapshotInput['surface'];
+  projectContext?: ProjectCheckpointSnapshotInput['projectContext'];
+  projectWorkflows?: ProjectCheckpointSnapshotInput['projectWorkflows'];
+  projectTeamContext?: ProjectCheckpointSnapshotInput['projectTeamContext'];
+  git: {
+    isGitRepo: boolean;
+    branch: string | null;
+    ahead: number;
+    behind: number;
+    changedFiles: GitFileEntry[];
+  };
+}
+
 export interface CliSurfaceProfile {
   id: string;
   name: string;
@@ -304,6 +580,12 @@ export interface ProjectRecord {
   activeSessionId: string | null;
   surface?: ProjectSurfaceRecord;
   projectContext?: ProjectContextState;
+  projectWorkflows?: ProjectWorkflowState;
+  projectTeamContext?: ProjectTeamContextState;
+  projectReviews?: ProjectReviewState;
+  projectGovernance?: ProjectGovernanceState;
+  projectBackgroundTasks?: ProjectBackgroundTaskState;
+  projectCheckpoints?: ProjectCheckpointState;
   layout: ProjectLayoutState;
   sessionHistory?: ArchivedSession[];
   insights?: ProjectInsightsData;
@@ -319,6 +601,7 @@ export interface Preferences {
   sessionHistoryEnabled: boolean;
   insightsEnabled: boolean;
   autoTitleEnabled: boolean;
+  language?: UiLanguage;
   defaultProvider?: ProviderId;
   statusLineConsent?: 'granted' | 'declined' | null;
   keybindings?: Record<string, string>;

@@ -4,6 +4,9 @@ import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
+  readdirSync: vi.fn(),
+  readFileSync: vi.fn(),
+  statSync: vi.fn(),
 }));
 
 vi.mock('os', () => ({
@@ -42,6 +45,9 @@ import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks } from '../gemini-hooks';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
+const mockReaddirSync = vi.mocked(fs.readdirSync);
+const mockReadFileSync = vi.mocked(fs.readFileSync);
+const mockStatSync = vi.mocked(fs.statSync);
 const mockExecSync = vi.mocked(execSync);
 const mockGetGeminiConfig = vi.mocked(getGeminiConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
@@ -239,5 +245,104 @@ describe('other methods', () => {
     const win = { id: 1 } as any;
     provider.startConfigWatcher(win, '/project');
     expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'gemini');
+  });
+
+  it('stops gemini config watcher', () => {
+    provider.stopConfigWatcher();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+  });
+});
+
+describe('getTranscriptPath', () => {
+  const tmpRoot = path.join('/mock/home', '.gemini', 'tmp');
+  const projectA = path.join(tmpRoot, 'project-a');
+  const projectB = path.join(tmpRoot, 'project-b');
+  const chatsDir = path.join(projectB, 'chats');
+
+  it('returns null when gemini tmp root does not exist', () => {
+    mockExistsSync.mockReturnValue(false);
+    expect(provider.getTranscriptPath('12345678abcdef', '/target/project')).toBeNull();
+  });
+
+  it('prefers a file containing the full session id over newer short-id collisions', () => {
+    const sessionId = '12345678abcdef';
+    const olderMatch = path.join(chatsDir, 'session-1000-12345678.json');
+    const newerCollision = path.join(chatsDir, 'session-2000-12345678.json');
+
+    mockExistsSync.mockImplementation((p) => String(p) === tmpRoot || String(p) === chatsDir);
+    mockReaddirSync.mockImplementation((dir: any) => {
+      const target = String(dir);
+      if (target === tmpRoot) return ['project-a', 'project-b'] as any;
+      if (target === chatsDir) return ['session-1000-12345678.json', 'session-2000-12345678.json'] as any;
+      return [] as any;
+    });
+    mockReadFileSync.mockImplementation((file: any) => {
+      const target = String(file);
+      if (target === path.join(projectA, '.project_root')) return '/other/project';
+      if (target === path.join(projectB, '.project_root')) return '/target/project';
+      if (target === olderMatch) return `{"sessionId":"${sessionId}"}`;
+      if (target === newerCollision) return '{"sessionId":"someone-else"}';
+      throw new Error(`ENOENT: ${target}`);
+    });
+    mockStatSync.mockImplementation((file: any) => {
+      const target = String(file);
+      if (target === olderMatch) return { mtimeMs: 1000 } as any;
+      if (target === newerCollision) return { mtimeMs: 2000 } as any;
+      throw new Error(`ENOENT: ${target}`);
+    });
+
+    expect(provider.getTranscriptPath(sessionId, '/target/project')).toBe(olderMatch);
+  });
+
+  it('falls back to newest mtime candidate when none include full session id', () => {
+    const sessionId = 'abcdef1234567890';
+    const older = path.join(chatsDir, 'session-1000-abcdef12.json');
+    const newer = path.join(chatsDir, 'session-2000-abcdef12.json');
+
+    mockExistsSync.mockImplementation((p) => String(p) === tmpRoot || String(p) === chatsDir);
+    mockReaddirSync.mockImplementation((dir: any) => {
+      const target = String(dir);
+      if (target === tmpRoot) return ['project-b'] as any;
+      if (target === chatsDir) return ['session-1000-abcdef12.json', 'session-2000-abcdef12.json'] as any;
+      return [] as any;
+    });
+    mockReadFileSync.mockImplementation((file: any) => {
+      const target = String(file);
+      if (target === path.join(projectB, '.project_root')) return '/target/project';
+      if (target === older) return '{"sessionId":"someone-else"}';
+      if (target === newer) throw new Error('unreadable');
+      throw new Error(`ENOENT: ${target}`);
+    });
+    mockStatSync.mockImplementation((file: any) => {
+      const target = String(file);
+      if (target === older) return { mtimeMs: 1000 } as any;
+      if (target === newer) return { mtimeMs: 2000 } as any;
+      throw new Error(`ENOENT: ${target}`);
+    });
+
+    expect(provider.getTranscriptPath(sessionId, '/target/project')).toBe(newer);
+  });
+
+  it('returns null when project is found but chats directory is missing', () => {
+    mockExistsSync.mockImplementation((p) => String(p) === tmpRoot);
+    mockReaddirSync.mockImplementation((dir: any) => {
+      if (String(dir) === tmpRoot) return ['project-b'] as any;
+      return [] as any;
+    });
+    mockReadFileSync.mockImplementation((file: any) => {
+      if (String(file) === path.join(projectB, '.project_root')) return '/target/project';
+      throw new Error(`ENOENT: ${String(file)}`);
+    });
+
+    expect(provider.getTranscriptPath('12345678abcdef', '/target/project')).toBeNull();
+  });
+
+  it('returns null when tmp root enumeration throws', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReaddirSync.mockImplementation(() => {
+      throw new Error('permission denied');
+    });
+
+    expect(provider.getTranscriptPath('12345678abcdef', '/target/project')).toBeNull();
   });
 });

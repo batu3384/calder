@@ -2,6 +2,7 @@ import type { BrowserTabInstance, ElementInfo } from './types.js';
 import { buildSelectorOptions } from './selector-ui.js';
 import { positionPopover } from './popover.js';
 import { getViewportContext } from './viewport.js';
+import { sendGuestMessage } from './guest-messaging.js';
 
 export function toggleInspectMode(instance: BrowserTabInstance): void {
   instance.inspectMode = !instance.inspectMode;
@@ -9,9 +10,9 @@ export function toggleInspectMode(instance: BrowserTabInstance): void {
   instance.recordBtn.disabled = instance.inspectMode;
   instance.drawBtn.disabled = instance.inspectMode;
   if (instance.inspectMode) {
-    instance.webview.send('enter-inspect-mode');
+    void sendGuestMessage(instance.webview, 'enter-inspect-mode');
   } else {
-    instance.webview.send('exit-inspect-mode');
+    void sendGuestMessage(instance.webview, 'exit-inspect-mode');
     instance.selectedElement = null;
     instance.inspectPanel.style.display = 'none';
   }

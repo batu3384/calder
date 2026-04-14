@@ -52,20 +52,34 @@
 
 .history-clear-btn {
   display: inline-block;
-  min-height: var(--control-height-sm);
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 12px;
   font-size: 11px;
-  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 999px;
   cursor: pointer;
   font-family: inherit;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .history-clear-btn:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 82%, var(--surface-panel));
   color: var(--text-primary);
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  transform: translateY(-1px);
 }
 
 .history-list {
@@ -142,65 +156,95 @@
 .history-item-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .history-remove-btn {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 22px;
   text-align: center;
-  background: transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 70%, transparent);
   color: var(--text-dim);
-  border: none;
-  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
   opacity: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    opacity 0.12s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .history-item:hover .history-remove-btn {
-  opacity: 1;
+  opacity: 0.96;
 }
 
 .history-remove-btn:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
-  color: var(--text-primary);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--danger) 22%, var(--border));
+  color: var(--danger);
+  transform: translateY(-1px);
 }
 
 .history-bookmark-btn {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 22px;
   text-align: center;
-  background: transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 70%, transparent);
   color: var(--text-dim);
-  border: none;
-  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
   opacity: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    opacity 0.12s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .history-item:hover .history-bookmark-btn {
-  opacity: 1;
+  opacity: 0.96;
 }
 
 .history-bookmark-btn.bookmarked {
   opacity: 1;
   color: var(--bookmark);
+  border-color: color-mix(in srgb, var(--bookmark) 32%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 74%, transparent);
 }
 
 .history-bookmark-btn:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--bookmark) 32%, var(--border));
   color: var(--bookmark);
+  transform: translateY(-1px);
 }
 
 .history-actions {
@@ -212,25 +256,42 @@
 
 .history-bookmark-filter {
   display: inline-block;
-  min-height: var(--control-height-sm);
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 12px;
   font-size: 11px;
-  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 88%, transparent);
   color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 999px;
   cursor: pointer;
   font-family: inherit;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .history-bookmark-filter:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 82%, var(--surface-panel));
   color: var(--text-primary);
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--bookmark) 20%, var(--border));
+  transform: translateY(-1px);
 }
 
 .history-bookmark-filter.active {
   color: var(--bookmark);
-  border-color: var(--bookmark);
+  border-color: color-mix(in srgb, var(--bookmark) 48%, var(--border));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
 }
 
 .history-empty {

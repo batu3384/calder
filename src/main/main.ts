@@ -40,7 +40,7 @@ function createWindow(): void {
 
   mainWindow.loadFile(path.join(__dirname, '..', '..', 'renderer', 'index.html'));
   attachBrowserWebviewRouting(mainWindow, (url) => {
-    void openUrlWithBrowserPolicy(url, mainWindow, (target) => shell.openExternal(target));
+    void openUrlWithBrowserPolicy({ url, preferEmbedded: true }, mainWindow, (target) => shell.openExternal(target));
   });
 
   mainWindow.on('close', () => {

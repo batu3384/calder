@@ -222,4 +222,59 @@ describe('cli surface runtime manager', () => {
     );
     expect(mockSpawnCommandPty.mock.calls[0]?.[1]?.args?.[0]).toContain('fixtures/cli-surface-demo.js');
   });
+
+  it('flushes pending output and emits stopped state details when runtime exits', () => {
+    vi.useFakeTimers();
+    const manager = createCliSurfaceRuntimeManager(emit);
+    manager.start('project-1', {
+      id: 'bubbletea',
+      name: 'Bubble Tea',
+      command: 'go',
+      args: ['run', './cmd/app'],
+      cwd: '/tmp/demo',
+    });
+
+    const onData = mockSpawnCommandPty.mock.calls[0][2] as (data: string) => void;
+    const onExit = mockSpawnCommandPty.mock.calls[0][3] as (exitCode: number, signal?: number) => void;
+
+    onData('pending');
+    expect(emit.data).not.toHaveBeenCalled();
+
+    onExit(17, 9);
+
+    expect(emit.data).toHaveBeenCalledWith('project-1', 'pending');
+    expect(emit.exit).toHaveBeenCalledWith('project-1', 17, 9);
+    expect(emit.status).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({
+        status: 'stopped',
+        runtimeId: undefined,
+        lastExitCode: 17,
+      }),
+    );
+  });
+
+  it('reports restart errors when no profile has been started', () => {
+    const manager = createCliSurfaceRuntimeManager(emit);
+    manager.restart('project-1');
+    expect(emit.error).toHaveBeenCalledWith('project-1', 'No CLI surface profile is selected.');
+  });
+
+  it('restarts active runtimes by stopping and spawning again', () => {
+    const manager = createCliSurfaceRuntimeManager(emit);
+    manager.start('project-1', {
+      id: 'bubbletea',
+      name: 'Bubble Tea',
+      command: 'go',
+      args: ['run', './cmd/app'],
+      cwd: '/tmp/demo',
+    });
+    expect(mockSpawnCommandPty).toHaveBeenCalledTimes(1);
+
+    manager.restart('project-1');
+
+    expect(mockKillPty).toHaveBeenCalledWith('cli-surface:project-1');
+    expect(mockSpawnCommandPty).toHaveBeenCalledTimes(2);
+    expect(emit.status.mock.calls.filter(([, state]) => state.status === 'starting').length).toBeGreaterThanOrEqual(2);
+  });
 });

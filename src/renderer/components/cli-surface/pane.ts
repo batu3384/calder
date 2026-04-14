@@ -1,6 +1,7 @@
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import type {
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
@@ -30,6 +31,7 @@ import { detectCliAdapter } from './adapters/registry.js';
 import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol.js';
 import { getCliSurfaceProfileLabel } from './profile.js';
 import type { InferredCliRegion } from './heuristics.js';
+import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../../link-routing.js';
 
 interface SelectableCliRegion {
   kind: 'semantic' | 'inferred';
@@ -82,6 +84,7 @@ interface CliSurfaceInstance {
   selectionAnchor: { row: number; col: number } | null;
   contextModeOverride: CliSurfacePromptContextMode | null;
   targetMenuCleanup?: () => void;
+  targetMenuOutsideClickHandler?: (event: MouseEvent) => void;
 }
 
 const instances = new Map<string, CliSurfaceInstance>();
@@ -93,12 +96,16 @@ const protocolRemainders = new Map<string, string>();
 const semanticRegionVersions = new Map<string, number>();
 let runtimeBindingsAttached = false;
 let stateBindingsAttached = false;
+let lastCliSurfaceLinkDispatch: LinkDispatchSnapshot | null = null;
 
-function buildToolbarButton(label: string, action: string): HTMLButtonElement {
+type CliSurfaceButtonTone = 'neutral' | 'primary' | 'danger' | 'ghost';
+
+function buildToolbarButton(label: string, action: string, tone: CliSurfaceButtonTone = 'neutral'): HTMLButtonElement {
   const button = document.createElement('button');
-  button.className = 'cli-surface-button';
+  button.className = `cli-surface-button cli-surface-button-${tone}`;
   button.type = 'button';
   button.dataset.action = action;
+  button.dataset.tone = tone;
   button.textContent = label;
   return button;
 }
@@ -109,6 +116,15 @@ function getCliSurfaceApi() {
 
 function getProject(projectId: string) {
   return appState.projects.find((project) => project.id === projectId);
+}
+
+function openCliSurfaceWebLink(url: string, cwd?: string): void {
+  const normalizedUrl = resolveNavigableHttpUrl(url);
+  if (!normalizedUrl) return;
+  const now = Date.now();
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastCliSurfaceLinkDispatch, now)) return;
+  lastCliSurfaceLinkDispatch = { url: normalizedUrl, at: now };
+  void window.calder.app.openExternal(normalizedUrl, cwd);
 }
 
 function getRuntimeState(projectId: string): CliSurfaceRuntimeState | undefined {
@@ -381,6 +397,7 @@ function runCliTargetMenuAction(instance: CliSurfaceInstance, action: 'new' | 'c
 function renderCliTargetMenu(instance: CliSurfaceInstance): void {
   const targetSessions = appState.listSurfaceTargetSessions(instance.projectId);
   const selectedTarget = appState.resolveSurfaceTargetSession(instance.projectId);
+  const hasPayload = Boolean(instance.inspectState.payload);
   instance.targetMenuListEl.innerHTML = '';
 
   const header = document.createElement('div');
@@ -455,12 +472,16 @@ function renderCliTargetMenu(instance: CliSurfaceInstance): void {
   const newSessionBtn = document.createElement('button');
   newSessionBtn.className = 'cli-surface-target-menu-item cli-surface-target-menu-action';
   newSessionBtn.textContent = 'Send to New Session';
+  newSessionBtn.disabled = !hasPayload;
+  newSessionBtn.title = hasPayload ? 'Open a new session with this captured terminal context' : 'Capture terminal output first to send it.';
   newSessionBtn.addEventListener('click', () => runCliTargetMenuAction(instance, 'new'));
   instance.targetMenuListEl.appendChild(newSessionBtn);
 
   const customSessionBtn = document.createElement('button');
   customSessionBtn.className = 'cli-surface-target-menu-item cli-surface-target-menu-action';
   customSessionBtn.textContent = 'Send to Custom Session…';
+  customSessionBtn.disabled = !hasPayload;
+  customSessionBtn.title = hasPayload ? 'Choose a custom session for this captured terminal context' : 'Capture terminal output first to send it.';
   customSessionBtn.addEventListener('click', () => runCliTargetMenuAction(instance, 'custom'));
   instance.targetMenuListEl.appendChild(customSessionBtn);
 }
@@ -493,7 +514,7 @@ function syncCliTargetControls(instance: CliSurfaceInstance): void {
 
   instance.selectedButton.disabled = !hasPayload || !hasTarget;
   instance.newButton.disabled = !hasPayload;
-  instance.customButton.disabled = !hasPayload;
+  instance.customButton.disabled = false;
 
   instance.selectedButton.title = hasTarget
     ? `Send to ${selectedTarget?.name}`
@@ -502,7 +523,9 @@ function syncCliTargetControls(instance: CliSurfaceInstance): void {
   instance.customButton.textContent = `${buildCliTargetButtonLabel(instance.projectId)} ▾`;
   instance.customButton.title = hasTarget
     ? `Current target: ${getCliProviderLabel(selectedTarget?.providerId ?? 'claude')} / ${selectedTarget?.name}`
-    : 'Choose which open session receives this terminal capture';
+    : hasPayload
+      ? 'Choose which open session receives this terminal capture'
+      : 'Choose the default open session before capturing terminal output';
 
   if (instance.targetMenuEl.style.display !== 'none') {
     renderCliTargetMenu(instance);
@@ -1221,10 +1244,10 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   const actions = document.createElement('div');
   actions.className = 'cli-surface-actions';
 
-  const startButton = buildToolbarButton('Start', 'start');
-  const stopButton = buildToolbarButton('Stop', 'stop');
+  const startButton = buildToolbarButton('Start', 'start', 'primary');
+  const stopButton = buildToolbarButton('Stop', 'stop', 'danger');
   const restartButton = buildToolbarButton('Restart', 'restart');
-  const inspectButton = buildToolbarButton('Inspect', 'inspect');
+  const inspectButton = buildToolbarButton('Inspect', 'inspect', 'ghost');
   const captureButton = buildToolbarButton('Capture', 'capture');
 
   const runtimeGroup = document.createElement('div');
@@ -1340,12 +1363,12 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   const composerActions = document.createElement('div');
   composerActions.className = 'cli-surface-composer-actions';
 
-  const selectedButton = buildToolbarButton('Send to selected', 'send-selected');
+  const selectedButton = buildToolbarButton('Send to selected', 'send-selected', 'primary');
   const newButton = buildToolbarButton('New session', 'send-new');
-  const customButton = buildToolbarButton('Choose session', 'send-custom');
+  const customButton = buildToolbarButton('Choose session', 'send-custom', 'ghost');
   selectedButton.disabled = true;
   newButton.disabled = true;
-  customButton.disabled = true;
+  customButton.disabled = false;
   composerActions.appendChild(selectedButton);
   composerActions.appendChild(newButton);
   composerActions.appendChild(customButton);
@@ -1373,11 +1396,19 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     allowProposedApi: true,
     fontSize: 14,
     cursorBlink: true,
+    linkHandler: {
+      activate: (_event, uri) => {
+        openCliSurfaceWebLink(uri, getProject(projectId)?.path);
+      },
+    },
   });
   const fitAddon = new FitAddon();
   const serializeAddon = new SerializeAddon();
   terminal.loadAddon(fitAddon);
   terminal.loadAddon(serializeAddon);
+  terminal.loadAddon(new WebLinksAddon((_event, url) => {
+    openCliSurfaceWebLink(url, getProject(projectId)?.path);
+  }));
   terminal.open(viewport);
   viewport.appendChild(hoverOverlay);
   viewport.appendChild(selectionOverlay);
@@ -1423,6 +1454,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     pendingDataChunks: [],
     selectionAnchor: null,
     contextModeOverride: null,
+    targetMenuOutsideClickHandler: undefined,
   };
 
   startButton.addEventListener('click', async () => {
@@ -1482,9 +1514,17 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   });
 
   customButton.addEventListener('click', () => {
-    if (!instance.inspectState.payload) return;
     openCliTargetMenu(instance);
   });
+
+  instance.targetMenuOutsideClickHandler = (event: MouseEvent) => {
+    const target = event.target as Node | null;
+    if (!target) return;
+    if (!instance.targetMenuEl.contains(target) && !instance.customButton.contains(target)) {
+      closeCliTargetMenu(instance);
+    }
+  };
+  document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
 
   composerContextSelect.addEventListener('change', () => {
     const nextValue = composerContextSelect.value;

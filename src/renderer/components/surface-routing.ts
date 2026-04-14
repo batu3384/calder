@@ -2,11 +2,23 @@ import { appState } from '../state.js';
 import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './terminal-pane.js';
 import { promptNewSession } from './tab-bar.js';
+import { appendProjectGovernanceToPrompt } from '../project-governance-prompt.js';
+import { appendProjectTeamContextToPrompt } from '../project-team-context-prompt.js';
 
 function getPreferredLaunchProvider() {
   return resolvePreferredProviderForLaunch(
     appState.preferences.defaultProvider,
     getProviderAvailabilitySnapshot(),
+  );
+}
+
+function applyProjectRoutingContext(projectId: string | undefined, prompt: string): string {
+  if (!projectId) return prompt;
+  const project = appState.projects.find((entry) => entry.id === projectId)
+    ?? (appState.activeProject?.id === projectId ? appState.activeProject : undefined);
+  return appendProjectGovernanceToPrompt(
+    appendProjectTeamContextToPrompt(prompt, project?.projectTeamContext),
+    project?.projectGovernance,
   );
 }
 
@@ -19,7 +31,7 @@ export async function deliverSurfacePrompt(
     return { ok: false, error: 'Select an open session target first.' };
   }
 
-  const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
+  const delivered = await deliverPromptToTerminalSession(targetSession.id, applyProjectRoutingContext(projectId, prompt));
   if (!delivered) {
     return { ok: false, error: 'Failed to deliver prompt to the selected session.' };
   }
@@ -35,14 +47,14 @@ export function queueSurfacePromptInNewSession(projectId: string, sessionName: s
     getPreferredLaunchProvider(),
   );
   if (session) {
-    setPendingPrompt(session.id, prompt);
+    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));
   }
   return session;
 }
 
-export function queueSurfacePromptInCustomSession(prompt: string, onReady: () => void): void {
+export function queueSurfacePromptInCustomSession(prompt: string, onReady: () => void, projectId?: string): void {
   promptNewSession((session) => {
-    setPendingPrompt(session.id, prompt);
+    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));
     onReady();
   });
 }

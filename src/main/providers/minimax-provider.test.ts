@@ -134,8 +134,17 @@ describe('buildArgs', () => {
 });
 
 describe('settings and config', () => {
+  it('supports inert install hooks and status script methods without throwing', async () => {
+    await expect(provider.installHooks()).resolves.toBeUndefined();
+    expect(() => provider.installStatusScripts()).not.toThrow();
+  });
+
   it('reports no hook/status integration surface', () => {
     expect(provider.validateSettings()).toEqual({ statusLine: 'missing', hooks: 'missing', hookDetails: {} });
+  });
+
+  it('returns null shift-enter sequence because minimax has no special key mapping', () => {
+    expect(provider.getShiftEnterSequence()).toBeNull();
   });
 
   it('returns parsed provider config', async () => {
@@ -160,6 +169,11 @@ describe('watchers and cleanup', () => {
 
   it('cleanup stops config watching', () => {
     provider.cleanup();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+  });
+
+  it('stopConfigWatcher delegates to config watcher stop', () => {
+    provider.stopConfigWatcher();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
   });
 

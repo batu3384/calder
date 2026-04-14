@@ -40,6 +40,18 @@ describe('attachBrowserWebviewRouting', () => {
     expect(openExternal).toHaveBeenCalledWith('https://example.com');
   });
 
+  it('denies non-http top-level window opens without routing them externally', () => {
+    const host = new FakeWebContents();
+    const openExternal = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+
+    const result = host.windowOpenHandler?.({ url: 'mailto:test@example.com' });
+
+    expect(result).toEqual({ action: 'deny' });
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
   it('keeps webview popup links inside the same guest contents', () => {
     const host = new FakeWebContents();
     const guest = new FakeWebContents();
@@ -69,5 +81,22 @@ describe('attachBrowserWebviewRouting', () => {
     expect(openExternal).toHaveBeenCalledWith('mailto:test@example.com');
     expect(guest.loadURL).not.toHaveBeenCalled();
   });
-});
 
+  it('reroutes top-level navigations externally while allowing local file navigation', () => {
+    const host = new FakeWebContents();
+    const openExternal = vi.fn();
+    const preventDefault = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+
+    host.emit('will-navigate', { preventDefault }, 'https://example.com/docs');
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(openExternal).toHaveBeenCalledWith('https://example.com/docs');
+
+    preventDefault.mockClear();
+    openExternal.mockClear();
+    host.emit('will-navigate', { preventDefault }, 'file:///Applications/Calder.app');
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+});

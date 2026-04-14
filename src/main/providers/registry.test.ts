@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta } from '../../shared/types';
-import { initProviders, registerProvider, getProvider, getAllProviders, getProviderMeta, getAllProviderMetas } from './registry';
+import {
+  initProviders,
+  registerProvider,
+  getProvider,
+  getAllProviders,
+  getProviderMeta,
+  getAllProviderMetas,
+  getAvailableProviderIds,
+} from './registry';
 
 const fakeMeta: CliProviderMeta = {
   id: 'copilot',
@@ -19,11 +27,11 @@ const fakeMeta: CliProviderMeta = {
   defaultContextWindowSize: 128_000,
 };
 
-function makeFakeProvider(meta: CliProviderMeta): CliProvider {
+function makeFakeProvider(meta: CliProviderMeta, prerequisitesOk = true): CliProvider {
   return {
     meta,
     resolveBinaryPath: () => '/usr/bin/fake',
-    validatePrerequisites: () => ({ ok: true, message: '' }),
+    validatePrerequisites: () => ({ ok: prerequisitesOk, message: prerequisitesOk ? '' : 'missing' }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],
     installHooks: async () => {},
@@ -134,5 +142,27 @@ describe('getAllProviderMetas', () => {
     expect(metas.map(m => m.id)).toContain('qwen');
     expect(metas.map(m => m.id)).toContain('minimax');
     expect(metas.map(m => m.id)).toContain('blackbox');
+  });
+});
+
+describe('getAvailableProviderIds', () => {
+  it('returns only providers whose prerequisites validate successfully', () => {
+    const available = makeFakeProvider({
+      ...fakeMeta,
+      id: 'copilot',
+      displayName: 'Copilot Available',
+    }, true);
+    const unavailable = makeFakeProvider({
+      ...fakeMeta,
+      id: 'blackbox',
+      displayName: 'Blackbox Missing',
+    }, false);
+
+    registerProvider(available);
+    registerProvider(unavailable);
+
+    const ids = getAvailableProviderIds();
+    expect(ids).toContain('copilot');
+    expect(ids).not.toContain('blackbox');
   });
 });

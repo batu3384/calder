@@ -8,6 +8,19 @@ const LEGACY_SERVICE_WORKER_DIR = 'Service Worker';
 const LEGACY_BACKUP_DIR = 'Legacy Browser Storage';
 const MIGRATION_MARKER = '.browser-session-storage-v1';
 
+function isErrnoCode(error: unknown, code: string): boolean {
+  return Boolean(
+    error
+    && typeof error === 'object'
+    && 'code' in error
+    && (error as { code?: unknown }).code === code,
+  );
+}
+
+function logStoragePrepWarning(context: string, error: unknown): void {
+  console.warn(`[browser-session-storage] ${context}`, error);
+}
+
 export interface BrowserSessionStoragePrepResult {
   partition: string;
   migratedLegacyServiceWorker: boolean;
@@ -24,24 +37,43 @@ export async function prepareBrowserSessionStorage(userDataPath: string): Promis
       partition: BROWSER_SESSION_PARTITION,
       migratedLegacyServiceWorker: false,
     };
-  } catch {}
+  } catch (error) {
+    if (!isErrnoCode(error, 'ENOENT')) {
+      logStoragePrepWarning('Failed to read migration marker; continuing with migration checks.', error);
+    }
+  }
 
   let migratedLegacyServiceWorker = false;
   let legacyStorageExists = false;
   try {
     await fs.access(legacyPath);
     legacyStorageExists = true;
-    await fs.mkdir(backupRoot, { recursive: true });
+  } catch (error) {
+    if (!isErrnoCode(error, 'ENOENT')) {
+      logStoragePrepWarning('Failed to inspect legacy service worker storage path.', error);
+    }
+  }
 
-    let destination = path.join(backupRoot, LEGACY_SERVICE_WORKER_DIR);
+  if (legacyStorageExists) {
     try {
-      await fs.access(destination);
-      destination = path.join(backupRoot, `${LEGACY_SERVICE_WORKER_DIR}-${Date.now()}`);
-    } catch {}
+      await fs.mkdir(backupRoot, { recursive: true });
 
-    await fs.rename(legacyPath, destination);
-    migratedLegacyServiceWorker = true;
-  } catch {}
+      let destination = path.join(backupRoot, LEGACY_SERVICE_WORKER_DIR);
+      try {
+        await fs.access(destination);
+        destination = path.join(backupRoot, `${LEGACY_SERVICE_WORKER_DIR}-${Date.now()}`);
+      } catch (error) {
+        if (!isErrnoCode(error, 'ENOENT')) {
+          logStoragePrepWarning('Failed while probing backup destination; using default destination.', error);
+        }
+      }
+
+      await fs.rename(legacyPath, destination);
+      migratedLegacyServiceWorker = true;
+    } catch (error) {
+      logStoragePrepWarning('Failed to archive legacy service worker storage.', error);
+    }
+  }
 
   if (legacyStorageExists && !migratedLegacyServiceWorker) {
     return {

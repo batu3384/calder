@@ -260,6 +260,7 @@ export function cleanupSessionStatus(sessionId: string): void {
 export function cleanupAll(): void {
   stopPolling();
   knownSessionIds.clear();
+  eventFileOffsets.clear();
   if (watcher) {
     watcher.close();
     watcher = null;

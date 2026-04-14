@@ -4,6 +4,7 @@ import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
+  readdirSync: vi.fn(),
 }));
 
 vi.mock('os', () => ({
@@ -43,6 +44,7 @@ import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../cod
 import type { ProviderConfig } from '../../shared/types';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
+const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockExecSync = vi.mocked(execSync);
 const mockGetCodexConfig = vi.mocked(getCodexConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
@@ -244,5 +246,60 @@ describe('other methods', () => {
     const win = { id: 1 } as any;
     provider.startConfigWatcher(win, '/project');
     expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'codex');
+  });
+
+  it('stops codex config watcher', () => {
+    provider.stopConfigWatcher();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+  });
+});
+
+describe('getTranscriptPath', () => {
+  const sessionsRoot = path.join('/mock/home', '.codex', 'sessions');
+
+  it('returns newest matching transcript path across date partitions', () => {
+    mockReaddirSync.mockImplementation((dir: any) => {
+      const map: Record<string, string[]> = {
+        [sessionsRoot]: ['2024', '2025'],
+        [path.join(sessionsRoot, '2025')]: ['01', '10'],
+        [path.join(sessionsRoot, '2025', '10')]: ['01', '02'],
+        [path.join(sessionsRoot, '2025', '10', '02')]: ['rollout-new-abc123.jsonl'],
+        [path.join(sessionsRoot, '2025', '10', '01')]: ['rollout-older-abc123.jsonl'],
+        [path.join(sessionsRoot, '2024')]: ['12'],
+        [path.join(sessionsRoot, '2024', '12')]: ['31'],
+        [path.join(sessionsRoot, '2024', '12', '31')]: ['rollout-old-abc123.jsonl'],
+      };
+      const entries = map[String(dir)];
+      if (!entries) throw new Error(`ENOENT: ${String(dir)}`);
+      return entries as any;
+    });
+
+    expect(provider.getTranscriptPath('abc123', '/project')).toBe(
+      path.join(sessionsRoot, '2025', '10', '02', 'rollout-new-abc123.jsonl'),
+    );
+  });
+
+  it('returns null when no transcript file suffix matches session id', () => {
+    mockReaddirSync.mockImplementation((dir: any) => {
+      const map: Record<string, string[]> = {
+        [sessionsRoot]: ['2026'],
+        [path.join(sessionsRoot, '2026')]: ['04'],
+        [path.join(sessionsRoot, '2026', '04')]: ['14'],
+        [path.join(sessionsRoot, '2026', '04', '14')]: ['rollout-new-someoneElse.jsonl'],
+      };
+      const entries = map[String(dir)];
+      if (!entries) throw new Error(`ENOENT: ${String(dir)}`);
+      return entries as any;
+    });
+
+    expect(provider.getTranscriptPath('abc123', '/project')).toBeNull();
+  });
+
+  it('returns null when sessions root cannot be read', () => {
+    mockReaddirSync.mockImplementation(() => {
+      throw new Error('permission denied');
+    });
+
+    expect(provider.getTranscriptPath('abc123', '/project')).toBeNull();
   });
 });

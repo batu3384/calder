@@ -9,7 +9,7 @@ import {
   type FlowPickerMetadata,
   type WebviewElement,
 } from './types.js';
-import { instances, getPreloadPath } from './instance.js';
+import { getPreloadPath, instances } from './instance.js';
 import { navigateTo, normalizeUrl } from './navigation.js';
 import { enablePopoverDragging } from './popover.js';
 import { applyViewport, openViewportDropdown, closeViewportDropdown } from './viewport.js';
@@ -25,6 +25,7 @@ import {
 } from './draw-mode.js';
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
+import { sendGuestMessage } from './guest-messaging.js';
 import { BROWSER_SESSION_PARTITION } from '../../../shared/constants.js';
 import type { BrowserGuestOpenPayload } from '../../../shared/types.js';
 import {
@@ -40,6 +41,7 @@ import { handleBrowserGuestOpenRequest } from './popup-routing.js';
 
 function createBrowserToolbarCluster(labelText: string): {
   element: HTMLDivElement;
+  label: HTMLSpanElement;
   controls: HTMLDivElement;
 } {
   const element = document.createElement('div');
@@ -54,32 +56,19 @@ function createBrowserToolbarCluster(labelText: string): {
   controls.className = 'browser-toolbar-cluster-controls';
   element.appendChild(controls);
 
-  return { element, controls };
-}
-
-function createBrowserPresenceBadge(initialText: string): {
-  button: HTMLButtonElement;
-  icon: HTMLSpanElement;
-  text: HTMLSpanElement;
-} {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'browser-toolbar-presence-pill';
-
-  const icon = document.createElement('span');
-  icon.className = 'browser-toolbar-presence-icon';
-
-  const text = document.createElement('span');
-  text.className = 'browser-toolbar-presence-text';
-  text.textContent = initialText;
-
-  button.appendChild(icon);
-  button.appendChild(text);
-
-  return { button, icon, text };
+  return { element, label, controls };
 }
 
 type BrowserPageState = 'ready' | 'loading' | 'local' | 'remote' | 'offline';
+
+function isLocalBrowserUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(parsed.hostname.toLowerCase());
+  } catch {
+    return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([/:]|$)/i.test(url);
+  }
+}
 
 function resolveBrowserPageState(url: string, isLoading: boolean, offline: boolean): BrowserPageState {
   if (offline) return 'offline';
@@ -87,7 +76,7 @@ function resolveBrowserPageState(url: string, isLoading: boolean, offline: boole
 
   try {
     const parsed = new URL(url);
-    if (['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(parsed.hostname.toLowerCase())) {
+    if (isLocalBrowserUrl(url)) {
       return 'local';
     }
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
@@ -126,36 +115,28 @@ function resolveCaptureModeState(instance: BrowserTabInstance): 'inspect' | 'dra
   return 'idle';
 }
 
-function focusActiveCaptureComposer(instance: BrowserTabInstance): void {
-  const mode = resolveCaptureModeState(instance);
-  if (mode === 'inspect') {
-    if (instance.inspectPanel.style.display !== 'none' && instance.selectedElement) {
-      instance.instructionInput.focus();
-      return;
-    }
-    instance.inspectBtn.focus();
+function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
+  const project = appState.projects.find((entry) =>
+    entry.sessions.some((session) => session.id === instance.sessionId),
+  );
+  const session = project?.sessions.find(
+    (entry) => entry.id === instance.sessionId && entry.type === 'browser-tab',
+  );
+  if (!session) return;
+
+  const nextUrl = normalizeUrl(session.browserTabUrl ?? 'about:blank');
+  const currentUrl = normalizeUrl(instance.committedUrl || instance.webview.src || 'about:blank');
+
+  if (currentUrl === nextUrl) {
+    instance.committedUrl = nextUrl;
+    instance.urlInput.value = nextUrl;
+    instance.newTabPage.dataset.mode = nextUrl === 'about:blank' ? 'default' : 'hidden';
+    instance.syncSurfaceVisibility(nextUrl === 'about:blank');
+    instance.syncAddressBarState();
     return;
   }
 
-  if (mode === 'draw') {
-    if (instance.drawPanel.style.display !== 'none') {
-      instance.drawInstructionInput.focus();
-      return;
-    }
-    instance.drawBtn.focus();
-    return;
-  }
-
-  if (mode === 'flow') {
-    if (instance.flowInputRow.style.display !== 'none') {
-      instance.flowInstructionInput.focus();
-      return;
-    }
-    instance.recordBtn.focus();
-    return;
-  }
-
-  instance.inspectBtn.focus();
+  navigateTo(instance, nextUrl);
 }
 
 function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
@@ -164,7 +145,6 @@ function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
   instance.targetMenu.style.display = 'none';
   instance.activeTargetTrigger = null;
   instance.activeTargetMode = null;
-  instance.targetBadge.setAttribute('aria-expanded', 'false');
 }
 
 function runTargetMenuAction(instance: BrowserTabInstance, action: 'new' | 'custom'): void {
@@ -297,9 +277,6 @@ function openBrowserTargetMenu(
   instance.activeTargetMode = mode;
   renderBrowserTargetMenu(instance);
   instance.targetMenu.style.display = 'flex';
-  if (trigger === instance.targetBadge) {
-    instance.targetBadge.setAttribute('aria-expanded', 'true');
-  }
   instance.targetMenuFloatingCleanup?.();
   instance.targetMenuFloatingCleanup = anchorFloatingSurface(trigger, instance.targetMenu, {
     placement: 'bottom-end',
@@ -409,15 +386,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const toolbarAddressShell = document.createElement('div');
   toolbarAddressShell.className = 'browser-toolbar-address-shell';
 
-  const toolbarPresence = document.createElement('div');
-  toolbarPresence.className = 'browser-toolbar-presence';
-
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
   toolbarTools.setAttribute('aria-label', 'Live View tools');
-
-  const toolbarPresenceShell = document.createElement('div');
-  toolbarPresenceShell.className = 'browser-toolbar-presence-shell';
 
   const toolbarToolsShell = document.createElement('div');
   toolbarToolsShell.className = 'browser-toolbar-tools-shell';
@@ -457,11 +428,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   goBtn.className = 'browser-go-btn';
   goBtn.textContent = 'Go';
   goBtn.ariaLabel = 'Open address';
-
-  const { button: modeBadge, icon: modeBadgeIcon, text: modeBadgeText } = createBrowserPresenceBadge('Idle');
-  const { button: targetBadge, icon: targetBadgeIcon, text: targetBadgeText } = createBrowserPresenceBadge('No target');
-  targetBadge.setAttribute('aria-haspopup', 'menu');
-  targetBadge.setAttribute('aria-expanded', 'false');
 
   // Viewport picker button + dropdown
   const viewportWrapper = document.createElement('div');
@@ -552,10 +518,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   toolbarAddressShell.appendChild(goBtn);
   toolbarAddress.appendChild(toolbarAddressShell);
 
-  toolbarPresenceShell.appendChild(modeBadge);
-  toolbarPresenceShell.appendChild(targetBadge);
-  toolbarPresence.appendChild(toolbarPresenceShell);
-
   viewCluster.controls.appendChild(viewportWrapper);
   captureCluster.controls.appendChild(inspectBtn);
   captureCluster.controls.appendChild(recordBtn);
@@ -567,7 +529,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   toolbar.appendChild(toolbarNav);
   toolbar.appendChild(toolbarAddress);
-  toolbar.appendChild(toolbarPresence);
   toolbar.appendChild(toolbarTools);
   el.appendChild(toolbar);
 
@@ -695,7 +656,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   }
 
   function showOfflineState(failedUrl: string): void {
-    const isLocalSurface = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([/:]|$)/i.test(failedUrl);
+    const isLocalSurface = isLocalBrowserUrl(failedUrl);
 
     ntpState.dataset.state = isLocalSurface ? 'offline' : 'unavailable';
     ntpState.textContent = 'Offline';
@@ -756,7 +717,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   const webview = document.createElement('webview') as unknown as WebviewElement;
   webview.className = 'browser-webview';
   webview.setAttribute('partition', BROWSER_SESSION_PARTITION);
-  viewportContainer.appendChild(webview);
 
   function syncSurfaceVisibility(showEmptySurface: boolean): void {
     newTabPage.style.display = showEmptySurface ? 'flex' : 'none';
@@ -1089,8 +1049,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     webviewReady: false,
     statusBadge,
     toolbarHint: chromeHint,
-    modeBadge,
-    targetBadge,
     committedUrl: normalizeUrl(url || ''),
     contentShell,
     viewportContainer,
@@ -1114,6 +1072,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     currentViewport: VIEWPORT_PRESETS[0],
     isLoading: false,
     viewportOutsideClickHandler: () => {},
+    viewportDropdownFloatingCleanup: null,
     recordBtn,
     flowPanel,
     flowPanelLabel: flowLabel,
@@ -1151,39 +1110,39 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   instance.syncSurfaceVisibility = syncSurfaceVisibility;
   instance.syncToolbarState = () => {
     const mode = resolveCaptureModeState(instance);
-    modeBadge.dataset.state = mode;
     const modeText =
       mode === 'inspect' ? 'Inspecting'
-        : mode === 'draw' ? 'Annotating'
-          : mode === 'flow' ? 'Recording flow'
+        : mode === 'draw' ? 'Drawing'
+          : mode === 'flow' ? 'Recording'
             : 'Idle';
-    modeBadgeText.textContent = modeText;
-    modeBadgeIcon.textContent =
-      mode === 'inspect' ? '◎'
-        : mode === 'draw' ? '✎'
-          : mode === 'flow' ? '●'
-            : '○';
-    modeBadge.title =
-      mode === 'inspect' ? 'Jump to the inspect composer'
-        : mode === 'draw' ? 'Jump to the draw composer'
-          : mode === 'flow' ? 'Jump to the flow composer'
-            : 'Focus the inspect action';
-    modeBadge.setAttribute('aria-label', modeBadge.title);
+    captureCluster.label.textContent = 'Capture';
+    captureCluster.element.dataset.captureMode = mode;
 
     const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-    if (selectedTarget) {
-      targetBadge.dataset.state = 'target';
-      targetBadgeIcon.textContent = '↗';
-      targetBadgeText.textContent = `${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} · ${browserTargetButtonLabel(instance)}`;
-      targetBadge.title = `Current target: ${selectedTarget.name}`;
-      targetBadge.setAttribute('aria-label', `Open target menu. Current target ${selectedTarget.name}`);
-    } else {
-      targetBadge.dataset.state = 'empty-target';
-      targetBadgeIcon.textContent = '⊕';
-      targetBadgeText.textContent = 'No target';
-      targetBadge.title = 'Choose which open session receives browser prompts';
-      targetBadge.setAttribute('aria-label', 'Open target menu. No session selected yet');
-    }
+    captureCluster.label.title = selectedTarget
+      ? `Mode: ${modeText} · Target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
+      : `Mode: ${modeText} · Target: none`;
+
+    inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';
+    inspectBtn.dataset.state = instance.inspectMode ? 'active' : 'idle';
+    inspectBtn.title = instance.inspectMode
+      ? 'Inspect mode is active'
+      : 'Inspect element';
+    inspectBtn.ariaLabel = inspectBtn.title;
+
+    drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';
+    drawBtn.dataset.state = instance.drawMode ? 'active' : 'idle';
+    drawBtn.title = instance.drawMode
+      ? 'Draw mode is active'
+      : 'Draw on page and send annotated screenshot to AI';
+    drawBtn.ariaLabel = drawBtn.title;
+
+    recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';
+    recordBtn.dataset.state = instance.flowMode ? 'active' : 'idle';
+    recordBtn.title = instance.flowMode
+      ? 'Flow recording is active'
+      : 'Record browser flow';
+    recordBtn.ariaLabel = recordBtn.title;
   };
   instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
   focusAddressBtn.addEventListener('click', () => {
@@ -1203,15 +1162,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   instance.cleanupFns.push(appState.on('project-changed', syncTargetingUi));
   syncTargetingUi();
   instance.syncToolbarState();
-
-  modeBadge.addEventListener('click', () => {
-    focusActiveCaptureComposer(instance);
-  });
-
-  targetBadge.addEventListener('click', () => {
-    const mode = resolveCaptureModeState(instance);
-    openBrowserTargetMenu(instance, targetBadge, mode === 'idle' ? 'inspect' : mode);
-  });
 
   function syncNavigationControls(instance: BrowserTabInstance): void {
     if (!instance.webviewReady) {
@@ -1298,11 +1248,17 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     shortcutManager.matchEvent(synthetic);
   }) as EventListener);
 
-  // Preload must be set before src to ensure the inspect script is injected
-  getPreloadPath().then((p) => {
-    webview.setAttribute('preload', `file://${p}`);
-    if (url) webview.src = url;
-  });
+  void getPreloadPath()
+    .then((preloadPath) => {
+      webview.setAttribute('preload', `file://${preloadPath}`);
+    })
+    .catch((err) => {
+      console.error('Failed to resolve browser guest preload path', err);
+    })
+    .finally(() => {
+      webview.src = instance.committedUrl || url || 'about:blank';
+      viewportContainer.appendChild(webview);
+    });
 
   backBtn.addEventListener('click', () => webview.goBack());
   fwdBtn.addEventListener('click', () => webview.goForward());
@@ -1371,7 +1327,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   instance.targetMenuOutsideClickHandler = (e: MouseEvent) => {
     const target = e.target as Node;
-    if (!instance.targetMenu.contains(target) && !instance.inspectTargetBtn.contains(target) && !instance.drawTargetBtn.contains(target) && !instance.flowTargetBtn.contains(target)) {
+    if (
+      !instance.targetMenu.contains(target)
+      && !instance.inspectTargetBtn.contains(target)
+      && !instance.drawTargetBtn.contains(target)
+      && !instance.flowTargetBtn.contains(target)
+    ) {
       closeBrowserTargetMenu(instance);
     }
   };
@@ -1418,7 +1379,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     const metadata = instance.flowPickerPending;
     dismissFlowPicker(instance);
     if (action === 'click' || action === 'click-and-record') {
-      instance.webview.send('flow-do-click', metadata.selectors[0]?.value ?? '');
+      void sendGuestMessage(instance.webview, 'flow-do-click', metadata.selectors[0]?.value ?? '');
     }
     if (action === 'record' || action === 'click-and-record') {
       addFlowStep(instance, {
@@ -1460,6 +1421,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   webview.addEventListener('dom-ready', (() => {
     instance.webviewReady = true;
+    if (instance.inspectMode) void sendGuestMessage(instance.webview, 'enter-inspect-mode');
+    if (instance.flowMode) void sendGuestMessage(instance.webview, 'enter-flow-mode');
+    if (instance.drawMode) void sendGuestMessage(instance.webview, 'enter-draw-mode');
     syncNavigationControls(instance);
     syncAddressBarState(instance);
   }) as EventListener);
@@ -1507,7 +1471,14 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
-  webview.addEventListener('did-fail-load', ((e: Event & { isMainFrame?: boolean; validatedURL?: string }) => {
+  webview.addEventListener('did-fail-load', ((e: Event & {
+    isMainFrame?: boolean;
+    validatedURL?: string;
+    errorCode?: number;
+    errorDescription?: string;
+  }) => {
+    const normalizedError = e.errorDescription?.toUpperCase() ?? '';
+    if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;
     if (e.isMainFrame === false) return;
     const failedUrl = e.validatedURL || urlInput.value.trim();
     if (!failedUrl) return;
@@ -1517,6 +1488,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     syncNavigationControls(instance);
     syncAddressBarState(instance);
     showOfflineState(failedUrl);
+    if (isLocalBrowserUrl(failedUrl)) {
+      appState.passivateBrowserTabSession(sessionId, failedUrl);
+    }
     if (failedUrl !== 'about:blank') {
       // Keep the failed URL visible in the address bar while stopping the
       // guest view, instead of bouncing through about:blank and emitting
@@ -1560,6 +1534,7 @@ export function attachBrowserTabToContainer(sessionId: string, container: HTMLEl
   const instance = instances.get(sessionId);
   if (!instance) return;
   container.appendChild(instance.element);
+  syncBrowserTabToSessionState(instance);
 }
 
 export function showBrowserTabPane(sessionId: string, isSplit: boolean): void {
@@ -1568,6 +1543,7 @@ export function showBrowserTabPane(sessionId: string, isSplit: boolean): void {
   instance.element.classList.remove('hidden');
   instance.element.classList.remove('swarm-dimmed', 'swarm-unread');
   instance.element.classList.toggle('split', isSplit);
+  requestAnimationFrame(() => syncBrowserTabToSessionState(instance));
 }
 
 export function hideAllBrowserTabPanes(): void {
@@ -1585,14 +1561,15 @@ export function destroyBrowserTabPane(sessionId: string): void {
 
   document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);
   document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+  instance.viewportDropdownFloatingCleanup?.();
   instance.targetMenuFloatingCleanup?.();
   for (const cleanup of instance.cleanupFns) cleanup();
 
   // <webview> calls throw if it isn't attached + dom-ready yet. Guard each
   // one individually so a failure can't skip instance.element.remove() below.
-  try { if (instance.inspectMode) instance.webview.send('exit-inspect-mode'); } catch {}
-  try { if (instance.flowMode) instance.webview.send('exit-flow-mode'); } catch {}
-  try { if (instance.drawMode) instance.webview.send('exit-draw-mode'); } catch {}
+  if (instance.inspectMode) void sendGuestMessage(instance.webview, 'exit-inspect-mode');
+  if (instance.flowMode) void sendGuestMessage(instance.webview, 'exit-flow-mode');
+  if (instance.drawMode) void sendGuestMessage(instance.webview, 'exit-draw-mode');
   try { instance.webview.stop(); } catch {}
 
   instance.element.remove();

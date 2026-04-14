@@ -1,9 +1,11 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState, ProjectContextState } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectGovernanceState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
 import { clampRatio } from './components/mosaic-layout-model.js';
+import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
+import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 
@@ -64,6 +66,100 @@ function stripTransientRuntimeFields(runtime: CliSurfaceRuntimeState): CliSurfac
   delete next.runtimeId;
   delete next.startupTiming;
   return next;
+}
+
+function normalizeProjectContextState(
+  incoming: ProjectContextState,
+  previous?: ProjectContextState,
+): ProjectContextState {
+  const previousEnabledById = new Map(
+    (previous?.sources ?? []).map((source) => [source.id, source.enabled]),
+  );
+
+  const sources = incoming.sources.map((source) => ({
+    ...source,
+    enabled: source.enabled ?? previousEnabledById.get(source.id),
+  }));
+
+  return {
+    ...incoming,
+    sources,
+    sharedRuleCount: sources.filter((source) => source.provider === 'shared' && source.kind === 'rules' && source.enabled !== false).length,
+    providerSourceCount: sources.filter((source) => source.provider !== 'shared' && source.enabled !== false).length,
+  };
+}
+
+function normalizeProjectWorkflowState(
+  incoming: ProjectWorkflowState,
+): ProjectWorkflowState {
+  return {
+    ...incoming,
+    workflows: [...incoming.workflows],
+  };
+}
+
+function normalizeProjectTeamContextState(
+  incoming: ProjectTeamContextState,
+): ProjectTeamContextState {
+  return {
+    ...incoming,
+    spaces: [...incoming.spaces],
+  };
+}
+
+function normalizeProjectReviewState(
+  incoming: ProjectReviewState,
+): ProjectReviewState {
+  return {
+    ...incoming,
+    reviews: [...incoming.reviews],
+  };
+}
+
+function normalizeProjectGovernanceState(
+  incoming: ProjectGovernanceState,
+): ProjectGovernanceState {
+  return {
+    ...incoming,
+    policy: incoming.policy ? { ...incoming.policy } : undefined,
+  };
+}
+
+function normalizeProjectBackgroundTaskState(
+  incoming: ProjectBackgroundTaskState,
+): ProjectBackgroundTaskState {
+  return {
+    ...incoming,
+    tasks: [...incoming.tasks],
+  };
+}
+
+function normalizeProjectCheckpointState(
+  incoming: ProjectCheckpointState,
+): ProjectCheckpointState {
+  return {
+    ...incoming,
+    checkpoints: [...incoming.checkpoints],
+  };
+}
+
+function deriveBrowserSessionName(url?: string, fallbackName = 'Browser'): string {
+  if (!url) return fallbackName;
+  try {
+    return new URL(url).hostname || fallbackName;
+  } catch {
+    return fallbackName;
+  }
+}
+
+function buildWorkflowLaunchPrompt(workflow: ProjectWorkflowDocument): string {
+  const body = workflow.contents.trim();
+  return [
+    'Follow this reusable project workflow for the current task.',
+    `Workflow: ${workflow.title}`,
+    `Source: ${workflow.relativePath}`,
+    body,
+  ].filter(Boolean).join('\n\n');
 }
 
 function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
@@ -438,15 +534,347 @@ class AppState {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
 
+    const nextProjectContext = projectContext
+      ? normalizeProjectContextState(projectContext, project.projectContext)
+      : undefined;
+
     const before = JSON.stringify(project.projectContext ?? null);
-    const after = JSON.stringify(projectContext ?? null);
+    const after = JSON.stringify(nextProjectContext ?? null);
     if (before === after) return;
 
-    project.projectContext = projectContext;
+    project.projectContext = nextProjectContext;
     this.persist();
     if (project.id === this.state.activeProjectId) {
       this.emit('project-changed');
     }
+  }
+
+  setProjectWorkflows(projectId: string, projectWorkflows: ProjectWorkflowState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectWorkflows = projectWorkflows
+      ? normalizeProjectWorkflowState(projectWorkflows)
+      : undefined;
+
+    const before = JSON.stringify(project.projectWorkflows ?? null);
+    const after = JSON.stringify(nextProjectWorkflows ?? null);
+    if (before === after) return;
+
+    project.projectWorkflows = nextProjectWorkflows;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  setProjectTeamContext(projectId: string, projectTeamContext: ProjectTeamContextState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectTeamContext = projectTeamContext
+      ? normalizeProjectTeamContextState(projectTeamContext)
+      : undefined;
+
+    const before = JSON.stringify(project.projectTeamContext ?? null);
+    const after = JSON.stringify(nextProjectTeamContext ?? null);
+    if (before === after) return;
+
+    project.projectTeamContext = nextProjectTeamContext;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  setProjectReviews(projectId: string, projectReviews: ProjectReviewState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectReviews = projectReviews
+      ? normalizeProjectReviewState(projectReviews)
+      : undefined;
+
+    const before = JSON.stringify(project.projectReviews ?? null);
+    const after = JSON.stringify(nextProjectReviews ?? null);
+    if (before === after) return;
+
+    project.projectReviews = nextProjectReviews;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  setProjectGovernance(projectId: string, projectGovernance: ProjectGovernanceState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectGovernance = projectGovernance
+      ? normalizeProjectGovernanceState(projectGovernance)
+      : undefined;
+
+    const before = JSON.stringify(project.projectGovernance ?? null);
+    const after = JSON.stringify(nextProjectGovernance ?? null);
+    if (before === after) return;
+
+    project.projectGovernance = nextProjectGovernance;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  setProjectBackgroundTasks(projectId: string, projectBackgroundTasks: ProjectBackgroundTaskState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectBackgroundTasks = projectBackgroundTasks
+      ? normalizeProjectBackgroundTaskState(projectBackgroundTasks)
+      : undefined;
+
+    const before = JSON.stringify(project.projectBackgroundTasks ?? null);
+    const after = JSON.stringify(nextProjectBackgroundTasks ?? null);
+    if (before === after) return;
+
+    project.projectBackgroundTasks = nextProjectBackgroundTasks;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  setProjectCheckpoints(projectId: string, projectCheckpoints: ProjectCheckpointState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const nextProjectCheckpoints = projectCheckpoints
+      ? normalizeProjectCheckpointState(projectCheckpoints)
+      : undefined;
+
+    const before = JSON.stringify(project.projectCheckpoints ?? null);
+    const after = JSON.stringify(nextProjectCheckpoints ?? null);
+    if (before === after) return;
+
+    project.projectCheckpoints = nextProjectCheckpoints;
+    this.persist();
+    if (project.id === this.state.activeProjectId) {
+      this.emit('project-changed');
+    }
+  }
+
+  restoreProjectCheckpoint(
+    projectId: string,
+    checkpoint: ProjectCheckpointDocument,
+    mode: ProjectCheckpointRestoreMode = 'additive',
+  ): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+
+    const restoredIdMap = new Map<string, string>();
+    const createdSessions: SessionRecord[] = [];
+    const removedSessions = mode === 'replace'
+      ? [...project.sessions]
+      : [];
+
+    if (mode === 'replace') {
+      for (const session of removedSessions) {
+        this.pruneNav(session.id);
+      }
+      project.sessions = [];
+      project.activeSessionId = null;
+      project.layout.splitPanes = [];
+      project.surface = normalizeProjectSurface(project);
+    }
+
+    for (const snapshot of checkpoint.sessions) {
+      if (snapshot.type === 'browser-tab') {
+        if (!snapshot.browserTabUrl) continue;
+        const existingBrowser = project.sessions.find(
+          (session) => session.type === 'browser-tab' && session.browserTabUrl === snapshot.browserTabUrl,
+        );
+        if (existingBrowser) {
+          restoredIdMap.set(snapshot.id, existingBrowser.id);
+          continue;
+        }
+
+        const browserSession: SessionRecord = {
+          id: crypto.randomUUID(),
+          name: deriveBrowserSessionName(snapshot.browserTabUrl, snapshot.name || 'Browser'),
+          type: 'browser-tab',
+          browserTabUrl: snapshot.browserTabUrl,
+          cliSessionId: null,
+          createdAt: new Date().toISOString(),
+        };
+        project.sessions.push(browserSession);
+        restoredIdMap.set(snapshot.id, browserSession.id);
+        createdSessions.push(browserSession);
+        continue;
+      }
+
+      if (snapshot.type === 'file-reader') {
+        if (!snapshot.fileReaderPath) continue;
+        const existingReader = project.sessions.find(
+          (session) => session.type === 'file-reader' && session.fileReaderPath === snapshot.fileReaderPath,
+        );
+        if (existingReader) {
+          existingReader.fileReaderLine = snapshot.fileReaderLine;
+          restoredIdMap.set(snapshot.id, existingReader.id);
+          continue;
+        }
+
+        const readerSession: SessionRecord = {
+          id: crypto.randomUUID(),
+          name: snapshot.name,
+          type: 'file-reader',
+          fileReaderPath: snapshot.fileReaderPath,
+          ...(snapshot.fileReaderLine !== undefined ? { fileReaderLine: snapshot.fileReaderLine } : {}),
+          cliSessionId: null,
+          createdAt: new Date().toISOString(),
+        };
+        project.sessions.push(readerSession);
+        restoredIdMap.set(snapshot.id, readerSession.id);
+        createdSessions.push(readerSession);
+        continue;
+      }
+
+      if (snapshot.type === 'diff-viewer') {
+        if (!snapshot.diffFilePath || !snapshot.diffArea) continue;
+        const existingDiff = project.sessions.find(
+          (session) =>
+            session.type === 'diff-viewer'
+            && session.diffFilePath === snapshot.diffFilePath
+            && session.diffArea === snapshot.diffArea
+            && session.worktreePath === snapshot.worktreePath,
+        );
+        if (existingDiff) {
+          restoredIdMap.set(snapshot.id, existingDiff.id);
+          continue;
+        }
+
+        const diffSession: SessionRecord = {
+          id: crypto.randomUUID(),
+          name: snapshot.name,
+          type: 'diff-viewer',
+          diffFilePath: snapshot.diffFilePath,
+          diffArea: snapshot.diffArea,
+          ...(snapshot.worktreePath ? { worktreePath: snapshot.worktreePath } : {}),
+          cliSessionId: null,
+          createdAt: new Date().toISOString(),
+        };
+        project.sessions.push(diffSession);
+        restoredIdMap.set(snapshot.id, diffSession.id);
+        createdSessions.push(diffSession);
+        continue;
+      }
+
+      if (snapshot.type && snapshot.type !== 'claude') {
+        continue;
+      }
+
+      const existingCli = snapshot.cliSessionId
+        ? project.sessions.find((session) => this.isCliSession(session) && session.cliSessionId === snapshot.cliSessionId)
+        : project.sessions.find((session) =>
+          this.isCliSession(session)
+          && session.cliSessionId === null
+          && session.name === snapshot.name
+          && (session.providerId ?? this.state.preferences.defaultProvider ?? 'claude') === (snapshot.providerId ?? this.state.preferences.defaultProvider ?? 'claude'));
+
+      if (existingCli) {
+        restoredIdMap.set(snapshot.id, existingCli.id);
+        continue;
+      }
+
+      const restoredCli: SessionRecord = {
+        id: crypto.randomUUID(),
+        name: snapshot.name,
+        providerId: snapshot.providerId ?? this.state.preferences.defaultProvider ?? 'claude',
+        ...(snapshot.args ? { args: snapshot.args } : {}),
+        cliSessionId: snapshot.cliSessionId,
+        createdAt: new Date().toISOString(),
+      };
+      project.sessions.push(restoredCli);
+      if (project.layout.mode === 'mosaic') {
+        project.layout.splitPanes.push(restoredCli.id);
+      }
+      restoredIdMap.set(snapshot.id, restoredCli.id);
+      createdSessions.push(restoredCli);
+    }
+
+    for (const snapshot of checkpoint.sessions) {
+      if (snapshot.type !== 'browser-tab') continue;
+      const restoredBrowserId = restoredIdMap.get(snapshot.id);
+      if (!restoredBrowserId) continue;
+      const restoredBrowser = this.findSessionInProject(project, restoredBrowserId);
+      if (!restoredBrowser || restoredBrowser.type !== 'browser-tab') continue;
+      const restoredTargetId = snapshot.browserTargetSessionId
+        ? restoredIdMap.get(snapshot.browserTargetSessionId)
+        : undefined;
+      if (restoredTargetId) {
+        restoredBrowser.browserTargetSessionId = restoredTargetId;
+      }
+    }
+
+    const checkpointSurface = checkpoint.surface;
+    project.surface = normalizeProjectSurface(project);
+
+    if (checkpointSurface) {
+      project.surface.kind = checkpointSurface.kind;
+      project.surface.active = checkpointSurface.active;
+
+      const mappedTargetId = checkpointSurface.targetSessionId
+        ? restoredIdMap.get(checkpointSurface.targetSessionId)
+        : undefined;
+      if (mappedTargetId) {
+        project.surface.targetSessionId = mappedTargetId;
+      }
+
+      if (checkpointSurface.kind === 'web') {
+        const mappedWebSessionId = checkpointSurface.webSessionId
+          ? restoredIdMap.get(checkpointSurface.webSessionId)
+          : undefined;
+        const webUrl = checkpointSurface.webUrl
+          ?? (mappedWebSessionId ? this.findSessionInProject(project, mappedWebSessionId)?.browserTabUrl : undefined);
+        project.surface.web = {
+          sessionId: mappedWebSessionId,
+          url: webUrl,
+          history: webUrl
+            ? Array.from(new Set([...(project.surface.web?.history ?? []), webUrl]))
+            : (project.surface.web?.history ?? []),
+        };
+      }
+
+      if (project.surface.cli) {
+        project.surface.cli = {
+          ...project.surface.cli,
+          selectedProfileId: checkpointSurface.cliSelectedProfileId ?? project.surface.cli.selectedProfileId,
+          runtime: {
+            ...(project.surface.cli.runtime ?? { status: 'idle' }),
+            status: checkpointSurface.cliStatus ?? project.surface.cli.runtime?.status ?? 'idle',
+          },
+        };
+      }
+    }
+
+    const nextActiveId = checkpoint.activeSessionId
+      ? restoredIdMap.get(checkpoint.activeSessionId)
+      : undefined;
+    if (nextActiveId) {
+      project.activeSessionId = nextActiveId;
+      this.pushNav(nextActiveId);
+    }
+
+    this.repairProjectSurface(project);
+    this.persist();
+
+    for (const session of removedSessions) {
+      this.emit('session-removed', { projectId, sessionId: session.id });
+    }
+    for (const session of createdSessions) {
+      this.emit('session-added', { projectId, session });
+    }
+    this.emit('project-changed');
+    this.emit('session-changed');
   }
 
   addProject(name: string, path: string): ProjectRecord {
@@ -498,6 +926,39 @@ class AppState {
     const base = project.defaultArgs ?? '';
     const args = [base, planArg].filter(Boolean).join(' ').trim() || undefined;
     return this.addSession(projectId, name, args, providerId);
+  }
+
+  launchWorkflowSession(
+    projectId: string,
+    workflow: ProjectWorkflowDocument,
+    providerOverride?: ProviderId,
+  ): SessionRecord | undefined {
+    const project = this.state.projects.find((p) => p.id === projectId);
+    if (!project) return undefined;
+
+    const session: SessionRecord = {
+      id: crypto.randomUUID(),
+      name: workflow.title,
+      providerId: providerOverride ?? this.state.preferences.defaultProvider ?? 'claude',
+      ...(project.defaultArgs ? { args: project.defaultArgs } : {}),
+      cliSessionId: null,
+      createdAt: new Date().toISOString(),
+      pendingInitialPrompt: appendProjectGovernanceToPrompt(
+        appendProjectTeamContextToPrompt(buildWorkflowLaunchPrompt(workflow), project.projectTeamContext),
+        project.projectGovernance,
+      ),
+    };
+
+    project.sessions.push(session);
+    project.activeSessionId = session.id;
+    this.pushNav(session.id);
+    if (project.layout.mode === 'mosaic') {
+      project.layout.splitPanes.push(session.id);
+    }
+    this.persist();
+    this.emit('session-added', { projectId, session });
+    this.emit('session-changed');
+    return session;
   }
 
   addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined {
@@ -647,35 +1108,39 @@ class AppState {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return undefined;
 
+    const activeBrowserSession = project.activeSessionId
+      ? project.sessions.find((session) => session.id === project.activeSessionId && session.type === 'browser-tab')
+      : undefined;
     const currentSurfaceSessionId = project.surface?.web?.sessionId;
     const currentSurfaceSession = currentSurfaceSessionId
       ? project.sessions.find((session) => session.id === currentSurfaceSessionId && session.type === 'browser-tab')
       : undefined;
     const fallbackBrowserSession = currentSurfaceSession
       ?? [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+    const targetBrowserSession = activeBrowserSession ?? fallbackBrowserSession;
 
-    if (!fallbackBrowserSession) {
+    if (!targetBrowserSession) {
       return this.addBrowserTabSession(project.id, url);
     }
 
-    project.activeSessionId = fallbackBrowserSession.id;
-    this.pushNav(fallbackBrowserSession.id);
-    fallbackBrowserSession.browserTabUrl = url;
+    project.activeSessionId = targetBrowserSession.id;
+    this.pushNav(targetBrowserSession.id);
+    targetBrowserSession.browserTabUrl = url;
     project.surface = normalizeProjectSurface(project);
     project.surface.kind = 'web';
     project.surface.active = true;
     project.surface.web = {
-      sessionId: fallbackBrowserSession.id,
+      sessionId: targetBrowserSession.id,
       url,
       history: Array.from(new Set([...(project.surface.web?.history ?? []), url])),
     };
-    if (fallbackBrowserSession.browserTargetSessionId) {
-      project.surface.targetSessionId = fallbackBrowserSession.browserTargetSessionId;
+    if (targetBrowserSession.browserTargetSessionId) {
+      project.surface.targetSessionId = targetBrowserSession.browserTargetSessionId;
     }
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
-    return fallbackBrowserSession;
+    return targetBrowserSession;
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
@@ -926,7 +1391,10 @@ class AppState {
       providerId: targetProviderId,
       cliSessionId: null,
       createdAt: new Date().toISOString(),
-      pendingInitialPrompt: initialPrompt,
+      pendingInitialPrompt: appendProjectGovernanceToPrompt(
+        appendProjectTeamContextToPrompt(initialPrompt, project.projectTeamContext),
+        project.projectGovernance,
+      ),
     };
     project.sessions.push(session);
     project.activeSessionId = session.id;
@@ -956,7 +1424,26 @@ class AppState {
     if (!project) return;
     project.activeSessionId = sessionId;
     this.pushNav(sessionId);
+    const activeSession = project.sessions.find((session) => session.id === sessionId);
+    let surfaceChanged = false;
+    if (activeSession?.type === 'browser-tab') {
+      project.surface = normalizeProjectSurface(project);
+      project.surface.kind = 'web';
+      project.surface.active = true;
+      project.surface.web = project.surface.web ?? { history: [] };
+      project.surface.web.sessionId = activeSession.id;
+      project.surface.web.url = activeSession.browserTabUrl;
+      if (activeSession.browserTabUrl) {
+        project.surface.web.history = Array.from(
+          new Set([...(project.surface.web.history ?? []), activeSession.browserTabUrl]),
+        );
+      }
+      surfaceChanged = true;
+    }
     this.persist();
+    if (surfaceChanged) {
+      this.emit('project-changed');
+    }
     this.emit('session-changed');
   }
 
@@ -1099,6 +1586,32 @@ class AppState {
       project.surface.web.history = Array.from(new Set([...(project.surface.web.history ?? []), url]));
     }
     this.persist();
+  }
+
+  passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
+    const project = this.findProjectBySession(sessionId);
+    const session = this.findSessionById(sessionId);
+    if (!project || !session || session.type !== 'browser-tab') return;
+
+    const rememberedUrl = failedUrl ?? session.browserTabUrl;
+    delete session.browserTabUrl;
+    project.surface = normalizeProjectSurface(project);
+    project.surface.web = project.surface.web ?? { history: [] };
+
+    if (rememberedUrl) {
+      project.surface.web.history = Array.from(new Set([...(project.surface.web.history ?? []), rememberedUrl]));
+    }
+
+    if (project.surface.web.sessionId === sessionId) {
+      project.surface.web.url = undefined;
+      if (project.surface.kind === 'web') {
+        project.surface.active = false;
+      }
+    }
+
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
   }
 
   renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {

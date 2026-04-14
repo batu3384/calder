@@ -36,9 +36,16 @@ import { getContext } from './session-context.js';
 import { initSessionInspector } from './components/session-inspector.js';
 import { loadProviderMetas } from './provider-availability.js';
 import { initContextInspector } from './components/context-inspector.js';
-import { getBrowserTabInstance } from './components/browser-tab/instance.js';
+import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
 import { navigateTo } from './components/browser-tab/navigation.js';
 import { initProjectContextSync } from './project-context-sync.js';
+import { initProjectWorkflowSync } from './project-workflow-sync.js';
+import { initProjectTeamContextSync } from './project-team-context-sync.js';
+import { initProjectReviewSync } from './project-review-sync.js';
+import { initProjectGovernanceSync } from './project-governance-sync.js';
+import { initProjectBackgroundTaskSync } from './project-background-task-sync.js';
+import { initProjectCheckpointSync } from './project-checkpoint-sync.js';
+import { initLocalization } from './i18n.js';
 
 let isQuitting = false;
 window.calder.app.onQuitting(() => {
@@ -54,10 +61,19 @@ window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
   }
   const session = appState.openUrlInBrowserSurface(project.id, payload.url);
   if (!session) return;
+  createBrowserTabPane(session.id, session.browserTabUrl ?? payload.url);
   const instance = getBrowserTabInstance(session.id);
   if (instance) {
     navigateTo(instance, payload.url);
+    return;
   }
+
+  queueMicrotask(() => {
+    const delayedInstance = getBrowserTabInstance(session.id);
+    if (delayedInstance) {
+      navigateTo(delayedInstance, payload.url);
+    }
+  });
 });
 
 async function main(): Promise<void> {
@@ -212,7 +228,14 @@ async function main(): Promise<void> {
 
   // Load persisted state
   await appState.load();
+  initLocalization();
   initProjectContextSync();
+  initProjectWorkflowSync();
+  initProjectTeamContextSync();
+  initProjectReviewSync();
+  initProjectGovernanceSync();
+  initProjectBackgroundTaskSync();
+  initProjectCheckpointSync();
 
   // Auto-open new project modal when no projects exist
   if (appState.projects.length === 0) {

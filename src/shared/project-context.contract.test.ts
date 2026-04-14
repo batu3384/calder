@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
-const source = readFileSync(
-  new URL('./types.ts', import.meta.url),
-  'utf8',
-);
+const source = readFileSync(path.join(process.cwd(), 'src/shared/types.ts'), 'utf8');
 
 describe('project context contracts', () => {
   it('defines a discovered context source model', () => {

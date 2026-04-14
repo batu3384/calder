@@ -2,13 +2,14 @@ import { vi } from 'vitest';
 import * as path from 'path';
 import { isWin } from './platform';
 
-const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync } = vi.hoisted(() => ({
+const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync } = vi.hoisted(() => ({
   mockSpawn: vi.fn(),
   mockWrite: vi.fn(),
   mockResize: vi.fn(),
   mockKill: vi.fn(),
   mockExecFile: vi.fn(),
   mockExecFileSync: vi.fn(),
+  mockExecSync: vi.fn(() => { throw new Error('not found'); }),
 }));
 
 const { mockBuildBrowserBridgeEnv } = vi.hoisted(() => ({
@@ -26,7 +27,7 @@ vi.mock('node-pty', () => ({
 }));
 
 vi.mock('child_process', () => ({
-  execSync: vi.fn(() => { throw new Error('not found'); }),
+  execSync: mockExecSync,
   execFile: mockExecFile,
   execFileSync: mockExecFileSync,
 }));
@@ -49,7 +50,17 @@ vi.mock('./browser-bridge', () => ({
 }));
 
 import * as fs from 'fs';
-import { spawnPty, spawnCommandPty, writePty, resizePty, killPty, getPtyCwd } from './pty-manager';
+import {
+  spawnPty,
+  spawnCommandPty,
+  spawnShellPty,
+  writePty,
+  resizePty,
+  killPty,
+  killAllPtys,
+  isSilencedExit,
+  getPtyCwd,
+} from './pty-manager';
 import { initProviders } from './providers/registry';
 import { _resetLoginShellEnvCache } from './provider-env';
 
@@ -71,6 +82,7 @@ function createMockPtyProcess() {
 }
 
 beforeEach(() => {
+  killAllPtys();
   vi.clearAllMocks();
   mockExistsSync.mockReturnValue(false);
   _resetLoginShellEnvCache();
@@ -275,6 +287,118 @@ describe('spawnCommandPty', () => {
       }),
     );
   });
+
+  it('keeps the replacement command runtime active when the old PTY exits late', () => {
+    const oldProc = createMockPtyProcess();
+    const newProc = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(oldProc).mockReturnValueOnce(newProc);
+
+    spawnCommandPty(
+      'cli-surface:project-1',
+      {
+        command: 'python',
+        args: ['-m', 'textual', 'run', 'app.py'],
+        cwd: '/project',
+      },
+      vi.fn(),
+      vi.fn(),
+    );
+    spawnCommandPty(
+      'cli-surface:project-1',
+      {
+        command: 'python',
+        args: ['-m', 'textual', 'run', 'app.py'],
+        cwd: '/project',
+      },
+      vi.fn(),
+      vi.fn(),
+    );
+
+    oldProc._emitExit(1, 0);
+    mockWrite.mockClear();
+    writePty('cli-surface:project-1', 'still-active');
+
+    expect(mockKill).toHaveBeenCalled();
+    expect(mockWrite).toHaveBeenCalledWith('still-active');
+  });
+});
+
+describe('getFullPath', () => {
+  it('prefers the login shell PATH when available', async () => {
+    vi.resetModules();
+    (mockExecSync as any).mockImplementation(() => '__PATH__=/custom/bin:/usr/bin\n');
+
+    const { getFullPath: freshGetFullPath } = await import('./pty-manager');
+    expect(freshGetFullPath()).toBe('/custom/bin:/usr/bin');
+  });
+});
+
+describe('spawnShellPty', () => {
+  it('spawns a shell surface with the browser bridge env', () => {
+    const proc = createMockPtyProcess();
+    mockSpawn.mockReturnValue(proc);
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    spawnShellPty('shell-1', '/project', onData, onExit);
+    proc._emitData('shell output');
+    proc._emitExit(0, 0);
+
+    expect(mockSpawn).toHaveBeenCalledWith(
+      isWin ? 'cmd.exe' : '/bin/zsh',
+      [],
+      expect.objectContaining({
+        cwd: '/project',
+        rows: 15,
+        env: expect.objectContaining({
+          BROWSER: '/mock-bridge/calder-open-url',
+          CALDER_BROWSER_BRIDGE_CWD: '/project',
+        }),
+      }),
+    );
+    expect(onData).toHaveBeenCalledWith('shell output');
+    expect(onExit).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('replaces an existing shell PTY before launching a new one', () => {
+    const first = createMockPtyProcess();
+    const second = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+
+    spawnShellPty('shell-replace', '/project', vi.fn(), vi.fn());
+    spawnShellPty('shell-replace', '/project', vi.fn(), vi.fn());
+
+    expect(mockKill).toHaveBeenCalled();
+  });
+});
+
+describe('session replacement and cleanup', () => {
+  it('silences the old exit when respawning the same session id', () => {
+    const first = createMockPtyProcess();
+    const second = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+
+    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    expect(mockKill).toHaveBeenCalledTimes(1);
+    expect(isSilencedExit('replace-me')).toBe(true);
+    expect(isSilencedExit('replace-me')).toBe(false);
+  });
+
+  it('kills every tracked pty with killAllPtys', () => {
+    mockKill.mockClear();
+    const first = createMockPtyProcess();
+    const second = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+
+    spawnPty('kill-a', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+    spawnShellPty('kill-b', '/project', vi.fn(), vi.fn());
+
+    killAllPtys();
+
+    expect(mockKill).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('writePty', () => {
@@ -381,5 +505,62 @@ describe('getPtyCwd', () => {
 
     const result = await getPtyCwd('s2');
     expect(result).toBeNull();
+  });
+
+  it('returns null when lsof output does not contain a cwd path row', async () => {
+    const proc = createMockPtyProcess();
+    (proc as unknown as { pid: number }).pid = 3000;
+    mockSpawn.mockReturnValue(proc);
+    spawnPty('s3', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    if (isWin) {
+      const result = await getPtyCwd('s3');
+      expect(result).toBeNull();
+      return;
+    }
+
+    // No children
+    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
+      callback(new Error('no children'), '');
+      return undefined as never;
+    });
+
+    // lsof output missing n<path> entry
+    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
+      callback(null, 'p3000\nfcwd\n');
+      return undefined as never;
+    });
+
+    const result = await getPtyCwd('s3');
+    expect(result).toBeNull();
+  });
+
+  it('falls back to parent pid when child list cannot be parsed', async () => {
+    const proc = createMockPtyProcess();
+    (proc as unknown as { pid: number }).pid = 4000;
+    mockSpawn.mockReturnValue(proc);
+    spawnPty('s4', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    if (isWin) {
+      const result = await getPtyCwd('s4');
+      expect(result).toBeNull();
+      return;
+    }
+
+    // pgrep reports invalid child output -> parseInt NaN path
+    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
+      callback(null, 'abc\n');
+      return undefined as never;
+    });
+
+    // lsof for original pid
+    mockExecFile.mockImplementationOnce((_cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
+      expect(args).toContain('4000');
+      callback(null, 'p4000\nfcwd\nn/project/from-parent\n');
+      return undefined as never;
+    });
+
+    const result = await getPtyCwd('s4');
+    expect(result).toBe('/project/from-parent');
   });
 });

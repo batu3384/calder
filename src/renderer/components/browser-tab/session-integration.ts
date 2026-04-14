@@ -73,11 +73,12 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
 export function sendFlowToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildFlowPrompt(instance);
   if (!prompt) return;
+  const project = appState.activeProject;
   const routedPrompt = appendAppliedContextToPrompt(prompt, buildBrowserAppliedContext());
 
   queueSurfacePromptInCustomSession(routedPrompt, () => {
     dismissFlow(instance);
-  });
+  }, project?.id);
 }
 
 export async function sendToSelectedSession(instance: BrowserTabInstance): Promise<void> {
@@ -111,9 +112,10 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
 export function sendToCustomSession(instance: BrowserTabInstance): void {
   const prompt = buildPrompt(instance);
   if (!prompt) return;
+  const project = appState.activeProject;
   const routedPrompt = appendAppliedContextToPrompt(prompt, buildBrowserAppliedContext());
 
   queueSurfacePromptInCustomSession(routedPrompt, () => {
     dismissInspect(instance);
-  });
+  }, project?.id);
 }

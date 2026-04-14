@@ -1,5 +1,5 @@
-export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState } from '../shared/types.js';
-import type { CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState } from '../shared/types.js';
+export type { McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types.js';
+import type { CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types.js';
 
 export interface CalderApi {
   pty: {
@@ -47,8 +47,54 @@ export interface CalderApi {
   };
   context: {
     getProjectState(projectPath: string): Promise<ProjectContextState>;
+    createStarterFiles(projectPath: string): Promise<ProjectContextStarterFilesResult>;
+    createSharedRule(projectPath: string, title: string, priority: 'hard' | 'soft'): Promise<ProjectContextCreateRuleResult>;
+    renameSharedRule(projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft'): Promise<ProjectContextRenameRuleResult>;
+    deleteSharedRule(projectPath: string, relativePath: string): Promise<ProjectContextDeleteRuleResult>;
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectContextState) => void): () => void;
+  };
+  workflow: {
+    getProjectState(projectPath: string): Promise<ProjectWorkflowState>;
+    createStarterFiles(projectPath: string): Promise<ProjectWorkflowStarterFilesResult>;
+    createFile(projectPath: string, title: string): Promise<ProjectWorkflowCreateResult>;
+    readFile(projectPath: string, workflowPath: string): Promise<ProjectWorkflowDocument>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectWorkflowState) => void): () => void;
+  };
+  teamContext: {
+    getProjectState(projectPath: string): Promise<ProjectTeamContextState>;
+    createStarterFiles(projectPath: string): Promise<ProjectTeamContextStarterFilesResult>;
+    createSpace(projectPath: string, title: string): Promise<ProjectTeamContextCreateSpaceResult>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectTeamContextState) => void): () => void;
+  };
+  review: {
+    getProjectState(projectPath: string): Promise<ProjectReviewState>;
+    createFile(projectPath: string, title: string): Promise<ProjectReviewCreateResult>;
+    readFile(projectPath: string, reviewPath: string): Promise<ProjectReviewDocument>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectReviewState) => void): () => void;
+  };
+  governance: {
+    getProjectState(projectPath: string): Promise<ProjectGovernanceState>;
+    createStarterPolicy(projectPath: string): Promise<ProjectGovernanceStarterPolicyResult>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectGovernanceState) => void): () => void;
+  };
+  task: {
+    getProjectState(projectPath: string): Promise<ProjectBackgroundTaskState>;
+    create(projectPath: string, title: string, prompt: string): Promise<ProjectBackgroundTaskCreateResult>;
+    read(projectPath: string, taskPath: string): Promise<ProjectBackgroundTaskDocument>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectBackgroundTaskState) => void): () => void;
+  };
+  checkpoint: {
+    getProjectState(projectPath: string): Promise<ProjectCheckpointState>;
+    create(projectPath: string, snapshot: ProjectCheckpointSnapshotInput): Promise<ProjectCheckpointCreateResult>;
+    read(projectPath: string, checkpointPath: string): Promise<ProjectCheckpointDocument>;
+    watchProject(projectPath: string): void;
+    onChanged(callback: (projectPath: string, state: ProjectCheckpointState) => void): () => void;
   };
   /** @deprecated Use provider namespace */
   claude: {
@@ -81,8 +127,9 @@ export interface CalderApi {
   app: {
     focus(): void;
     getVersion(): Promise<string>;
-    openExternal(url: string): Promise<void>;
+    openExternal(url: string, cwd?: string): Promise<void>;
     getBrowserPreloadPath(): Promise<string>;
+    sendToGuestWebContents(webContentsId: number, channel: string, ...args: unknown[]): Promise<boolean>;
     onOpenEmbeddedBrowserUrl(callback: (payload: EmbeddedBrowserOpenPayload) => void): () => void;
     onQuitting(callback: () => void): () => void;
   };

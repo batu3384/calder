@@ -11,6 +11,7 @@ import type { ProviderId } from '../types.js';
 import { getProviderCapabilities } from '../provider-availability.js';
 import { FilePathLinkProvider, GithubLinkProvider } from './terminal-link-provider.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
+import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../link-routing.js';
 
 interface TerminalInstance {
   terminal: Terminal;
@@ -32,6 +33,16 @@ interface TerminalInstance {
 
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
+let lastTerminalLinkDispatch: LinkDispatchSnapshot | null = null;
+
+function openTerminalWebLink(url: string, cwd?: string): void {
+  const normalizedUrl = resolveNavigableHttpUrl(url);
+  if (!normalizedUrl) return;
+  const now = Date.now();
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastTerminalLinkDispatch, now)) return;
+  lastTerminalLinkDispatch = { url: normalizedUrl, at: now };
+  void window.calder.app.openExternal(normalizedUrl, cwd);
+}
 
 function providerDisplayName(providerId: ProviderId): string {
   switch (providerId) {
@@ -140,10 +151,8 @@ export function createTerminalPane(
     cursorBlink: true,
     allowProposedApi: true,
     linkHandler: {
-      activate: (event, uri) => {
-        if (event.metaKey || event.ctrlKey) {
-          window.calder.app.openExternal(uri);
-        }
+      activate: (_event, uri) => {
+        openTerminalWebLink(uri, projectPath);
       },
     },
   });
@@ -154,10 +163,8 @@ export function createTerminalPane(
   const searchAddon = new SearchAddon();
   terminal.loadAddon(searchAddon);
 
-  terminal.loadAddon(new WebLinksAddon((event, url) => {
-    if (event.metaKey || event.ctrlKey) {
-      window.calder.app.openExternal(url);
-    }
+  terminal.loadAddon(new WebLinksAddon((_event, url) => {
+    openTerminalWebLink(url, projectPath);
   }));
 
   // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline

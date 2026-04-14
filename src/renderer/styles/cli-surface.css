@@ -97,13 +97,16 @@
 
 .cli-surface-action-group {
   display: grid;
-  gap: 6px;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  border-radius: 14px;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 78%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 58%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
 .cli-surface-action-label {
@@ -117,31 +120,102 @@
 .cli-surface-action-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
 }
 
 .cli-surface-button {
   appearance: none;
-  border: 1px solid var(--border-hairline);
-  background: rgba(255, 255, 255, 0.04);
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 52%, transparent), color-mix(in srgb, var(--surface-panel) 78%, transparent));
   color: var(--text-primary);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font: inherit;
+  border-radius: 12px;
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-family: var(--font-ui);
   transition:
+    transform 0.16s ease,
     border-color 0.15s ease,
     background-color 0.15s ease,
+    box-shadow 0.15s ease,
     color 0.15s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 0 rgba(0, 0, 0, 0.24);
 }
 
 .cli-surface-button:hover {
-  background: color-mix(in srgb, var(--surface-hover) 74%, rgba(255, 255, 255, 0.04));
-  border-color: color-mix(in srgb, var(--border) 82%, transparent);
+  transform: translateY(-1px);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-hover) 62%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.22);
 }
 
 .cli-surface-button.active {
-  border-color: color-mix(in srgb, var(--accent-soft) 70%, var(--border-hairline));
-  background: color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.04));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 46%, transparent), color-mix(in srgb, var(--surface-panel) 88%, transparent));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent-soft) 48%, rgba(255, 255, 255, 0.14)),
+    0 10px 22px rgba(0, 0, 0, 0.26);
+}
+
+.cli-surface-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
+}
+
+.cli-surface-button:disabled {
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.54;
+  color: var(--text-muted);
+  border-color: color-mix(in srgb, var(--border-hairline) 92%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-muted) 76%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.cli-surface-button-primary {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 50%, transparent), color-mix(in srgb, var(--surface-panel) 84%, transparent));
+}
+
+.cli-surface-button-primary:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border-subtle));
+}
+
+.cli-surface-button-danger {
+  border-color: color-mix(in srgb, var(--danger-text) 34%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--danger-bg) 40%, transparent), color-mix(in srgb, var(--surface-panel) 86%, transparent));
+}
+
+.cli-surface-button-danger:hover {
+  border-color: color-mix(in srgb, var(--danger-text) 48%, var(--border-subtle));
+}
+
+.cli-surface-button-ghost {
+  border-color: color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 42%, transparent), color-mix(in srgb, var(--surface-muted) 78%, transparent));
+}
+
+.cli-surface-button-ghost:hover {
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.cli-surface-button-ghost[data-action='send-custom'] {
+  border-style: dashed;
+  letter-spacing: 0.015em;
 }
 
 .cli-surface-viewport {
@@ -497,26 +571,36 @@
   align-items: flex-start;
   gap: 4px;
   width: 100%;
-  padding: 9px 10px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  min-height: 40px;
+  padding: 10px 11px;
+  background: color-mix(in srgb, var(--surface-panel) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 10px;
   color: var(--text-primary);
   cursor: pointer;
   text-align: left;
   transition:
+    transform 0.15s ease,
     background-color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .cli-surface-target-menu-item:hover {
+  transform: translateY(-1px);
   background: color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
-  border-color: color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-color: color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .cli-surface-target-menu-item.active {
   background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+}
+
+.cli-surface-target-menu-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 1px;
 }
 
 .cli-surface-target-session-name {
@@ -633,6 +717,14 @@
 .cli-surface-quick-setup-actions {
   display: flex;
   gap: 8px;
+}
+
+.cli-surface-quick-setup-btn {
+  min-height: 32px;
+  min-width: 84px;
+  padding: 0 12px;
+  border-radius: 11px;
+  font-size: 12px;
 }
 
 .cli-surface-quick-setup-empty {

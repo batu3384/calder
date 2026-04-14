@@ -7,6 +7,19 @@ interface QuickSetupHandlers {
   onManual: () => void;
 }
 
+function createQuickSetupButton(label: string, options?: { primary?: boolean; action?: string }): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = options?.primary
+    ? 'modal-btn primary cli-surface-quick-setup-btn'
+    : 'modal-btn cli-surface-quick-setup-btn';
+  button.textContent = label;
+  if (options?.action) {
+    button.dataset.action = options.action;
+  }
+  return button;
+}
+
 function formatCommand(candidate: CliSurfaceDiscoveryCandidate): string {
   return [candidate.command, ...(candidate.args ?? [])].join(' ');
 }
@@ -122,17 +135,11 @@ export function showCliSurfaceQuickSetup(
       const cardActions = document.createElement('div');
       cardActions.className = 'cli-surface-quick-setup-actions';
 
-      const runButton = document.createElement('button');
-      runButton.type = 'button';
-      runButton.dataset.action = 'run';
+      const runButton = createQuickSetupButton('Run', { primary: true, action: 'run' });
       runButton.dataset.candidateId = candidate.id;
-      runButton.textContent = 'Run';
 
-      const editButton = document.createElement('button');
-      editButton.type = 'button';
-      editButton.dataset.action = 'edit';
+      const editButton = createQuickSetupButton('Edit', { action: 'edit' });
       editButton.dataset.candidateId = candidate.id;
-      editButton.textContent = 'Edit';
 
       cardActions.appendChild(runButton);
       cardActions.appendChild(editButton);
@@ -160,28 +167,20 @@ export function showCliSurfaceQuickSetup(
     });
   });
 
-  const cancelButton = document.createElement('button');
-  cancelButton.type = 'button';
-  cancelButton.textContent = 'Cancel';
+  const cancelButton = createQuickSetupButton('Cancel');
   cancelButton.addEventListener('click', () => {
     hideQuickSetupModal();
   });
   actionsEl.appendChild(cancelButton);
 
-  const demoButton = document.createElement('button');
-  demoButton.type = 'button';
-  demoButton.dataset.action = 'demo-setup';
-  demoButton.textContent = 'Try demo';
+  const demoButton = createQuickSetupButton('Try demo', { primary: true, action: 'demo-setup' });
   demoButton.addEventListener('click', () => {
     hideQuickSetupModal();
     handlers.onDemo();
   });
   actionsEl.appendChild(demoButton);
 
-  const manualButton = document.createElement('button');
-  manualButton.type = 'button';
-  manualButton.dataset.action = 'manual-setup';
-  manualButton.textContent = 'Manual setup';
+  const manualButton = createQuickSetupButton('Manual setup', { action: 'manual-setup' });
   manualButton.addEventListener('click', () => {
     hideQuickSetupModal();
     handlers.onManual();

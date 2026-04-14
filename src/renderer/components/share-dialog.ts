@@ -5,6 +5,7 @@ import { shareSession, acceptShareAnswer, endShare } from '../sharing/share-mana
 import { isSharing, isConnected } from '../sharing/peer-host.js';
 import { generatePassphrase, validateSharePassphrase } from '../sharing/share-crypto.js';
 import { createPassphraseInput } from '../dom-utils.js';
+import { appState } from '../state.js';
 
 let activeOverlay: HTMLElement | null = null;
 let pendingShareSessionId: string | null = null;
@@ -39,6 +40,14 @@ export function showShareDialog(sessionId: string): void {
   hero.appendChild(kicker);
   hero.appendChild(title);
   hero.appendChild(copy);
+
+  const project = appState.projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+  if (project?.projectTeamContext && (project.projectTeamContext.spaces.length > 0 || project.projectTeamContext.sharedRuleCount > 0 || project.projectTeamContext.workflowCount > 0)) {
+    const collaborationNote = document.createElement('div');
+    collaborationNote.className = 'share-notice calder-inline-notice';
+    collaborationNote.textContent = `Shared team context: ${project.projectTeamContext.spaces.length} spaces · ${project.projectTeamContext.sharedRuleCount} shared rules · ${project.projectTeamContext.workflowCount} workflows.`;
+    hero.appendChild(collaborationNote);
+  }
   dialog.appendChild(hero);
 
   // ── Phase 1: Permission + Disclaimers ──

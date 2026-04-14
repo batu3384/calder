@@ -5,6 +5,7 @@ import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pa
 import type { BrowserTabInstance } from './types.js';
 import { positionPopover } from './popover.js';
 import { getViewportContext } from './viewport.js';
+import { sendGuestMessage } from './guest-messaging.js';
 
 export function toggleDrawMode(instance: BrowserTabInstance): void {
   instance.drawMode = !instance.drawMode;
@@ -12,10 +13,10 @@ export function toggleDrawMode(instance: BrowserTabInstance): void {
   instance.inspectBtn.disabled = instance.drawMode;
   instance.recordBtn.disabled = instance.drawMode;
   if (instance.drawMode) {
-    instance.webview.send('enter-draw-mode');
+    void sendGuestMessage(instance.webview, 'enter-draw-mode');
     instance.drawInstructionInput.value = '';
   } else {
-    instance.webview.send('exit-draw-mode');
+    void sendGuestMessage(instance.webview, 'exit-draw-mode');
     instance.drawPanel.style.display = 'none';
   }
   instance.syncToolbarState();
@@ -29,7 +30,7 @@ export function positionDrawPopover(instance: BrowserTabInstance, x: number, y: 
 }
 
 export function clearDrawing(instance: BrowserTabInstance): void {
-  instance.webview.send('draw-clear');
+  void sendGuestMessage(instance.webview, 'draw-clear');
   instance.drawPanel.style.display = 'none';
   instance.syncToolbarState();
 }

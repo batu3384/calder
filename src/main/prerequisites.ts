@@ -4,6 +4,16 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { isWin, pathSep, whichCmd } from './platform';
 
+function logPrerequisiteProbeFailure(context: string, error: unknown): void {
+  console.warn(`[prerequisites] ${context}`, error);
+}
+
+function isExpectedWhichMiss(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const status = (error as { status?: unknown }).status;
+  return status === 1;
+}
+
 /**
  * Check whether Python is available on Windows (needed for hook scripts).
  * Returns null if OK or not on Windows, or a warning message if missing.
@@ -43,7 +53,9 @@ export function validatePrerequisites(): { ok: boolean; message: string } {
   for (const candidate of candidates) {
     try {
       if (fs.existsSync(candidate)) return { ok: true, message: '' };
-    } catch {}
+    } catch (error) {
+      logPrerequisiteProbeFailure(`Failed to inspect Claude binary candidate: ${candidate}`, error);
+    }
   }
 
   // Try `which`/`where` claude with augmented PATH
@@ -74,7 +86,11 @@ export function validatePrerequisites(): { ok: boolean; message: string } {
       timeout: 3000,
     }).trim();
     if (resolved) return { ok: true, message: '' };
-  } catch {}
+  } catch (error) {
+    if (!isExpectedWhichMiss(error)) {
+      logPrerequisiteProbeFailure('Failed while probing Claude CLI from PATH.', error);
+    }
+  }
 
   return {
     ok: false,

@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, app, dialog, shell } from 'electron';
+import { ipcMain, BrowserWindow, app, dialog, shell, webContents } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -27,7 +27,41 @@ import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { discoverCliSurface } from './cli-surface-discovery';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { discoverProjectContext } from './calder-context/discovery';
+import {
+  createProjectContextStarterFiles,
+  createProjectContextRuleFile,
+  deleteProjectContextRuleFile,
+  renameProjectContextRuleFile,
+} from './calder-context/scaffold';
 import { startProjectContextWatcher } from './calder-context/watcher';
+import { discoverProjectWorkflows } from './calder-workflows/discovery';
+import {
+  createProjectWorkflowFile,
+  createProjectWorkflowStarterFiles,
+} from './calder-workflows/scaffold';
+import { readProjectWorkflowFile } from './calder-workflows/read';
+import { startProjectWorkflowWatcher } from './calder-workflows/watcher';
+import { discoverProjectTeamContext } from './calder-team-context/discovery';
+import {
+  createProjectTeamContextSpaceFile,
+  createProjectTeamContextStarterFiles,
+} from './calder-team-context/scaffold';
+import { startProjectTeamContextWatcher } from './calder-team-context/watcher';
+import { discoverProjectReviews } from './calder-reviews/discovery';
+import { createProjectReviewFile } from './calder-reviews/scaffold';
+import { readProjectReviewFile } from './calder-reviews/read';
+import { startProjectReviewWatcher } from './calder-reviews/watcher';
+import { discoverProjectGovernance } from './calder-governance/discovery';
+import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
+import { startProjectGovernanceWatcher } from './calder-governance/watcher';
+import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
+import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
+import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
+import { readProjectBackgroundTaskFile } from './calder-tasks/read';
+import { startProjectBackgroundTaskWatcher } from './calder-tasks/watcher';
+import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
+import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
+import { startProjectCheckpointWatcher } from './calder-checkpoints/watcher';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -74,6 +108,18 @@ function isAllowedReadPath(resolvedPath: string): boolean {
 let hookWatcherStarted = false;
 let currentProjectContextPath: string | null = null;
 let currentProjectContextWindow: BrowserWindow | null = null;
+let currentProjectWorkflowPath: string | null = null;
+let currentProjectWorkflowWindow: BrowserWindow | null = null;
+let currentProjectTeamContextPath: string | null = null;
+let currentProjectTeamContextWindow: BrowserWindow | null = null;
+let currentProjectReviewPath: string | null = null;
+let currentProjectReviewWindow: BrowserWindow | null = null;
+let currentProjectGovernancePath: string | null = null;
+let currentProjectGovernanceWindow: BrowserWindow | null = null;
+let currentProjectBackgroundTaskPath: string | null = null;
+let currentProjectBackgroundTaskWindow: BrowserWindow | null = null;
+let currentProjectCheckpointPath: string | null = null;
+let currentProjectCheckpointWindow: BrowserWindow | null = null;
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
   data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
   exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
@@ -267,6 +313,105 @@ export function registerIpcHandlers(): void {
     return discoverProjectContext(projectPath);
   });
 
+  ipcMain.handle('context:createStarterFiles', async (_event, projectPath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create context starter files' });
+    return createProjectContextStarterFiles(projectPath);
+  });
+
+  ipcMain.handle('context:createSharedRule', async (_event, projectPath: string, title: string, priority: 'hard' | 'soft') => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create shared context rule' });
+    return createProjectContextRuleFile(projectPath, title, priority);
+  });
+
+  ipcMain.handle('context:renameSharedRule', async (_event, projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft') => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Rename shared context rule' });
+    return renameProjectContextRuleFile(projectPath, relativePath, title, priority);
+  });
+
+  ipcMain.handle('context:deleteSharedRule', async (_event, projectPath: string, relativePath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Delete shared context rule' });
+    return deleteProjectContextRuleFile(projectPath, relativePath);
+  });
+
+  ipcMain.handle('workflow:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectWorkflows(projectPath);
+  });
+
+  ipcMain.handle('workflow:createStarterFiles', async (_event, projectPath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create workflow starter files' });
+    return createProjectWorkflowStarterFiles(projectPath);
+  });
+
+  ipcMain.handle('workflow:createFile', async (_event, projectPath: string, title: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create workflow file' });
+    return createProjectWorkflowFile(projectPath, title);
+  });
+
+  ipcMain.handle('workflow:readFile', async (_event, projectPath: string, workflowPath: string) => {
+    return readProjectWorkflowFile(projectPath, workflowPath);
+  });
+
+  ipcMain.handle('teamContext:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectTeamContext(projectPath);
+  });
+
+  ipcMain.handle('teamContext:createStarterFiles', async (_event, projectPath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create team context starter spaces' });
+    return createProjectTeamContextStarterFiles(projectPath);
+  });
+
+  ipcMain.handle('teamContext:createSpace', async (_event, projectPath: string, title: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create team context space' });
+    return createProjectTeamContextSpaceFile(projectPath, title);
+  });
+
+  ipcMain.handle('review:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectReviews(projectPath);
+  });
+
+  ipcMain.handle('review:createFile', async (_event, projectPath: string, title: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create review findings file' });
+    return createProjectReviewFile(projectPath, title);
+  });
+
+  ipcMain.handle('review:readFile', async (_event, projectPath: string, reviewPath: string) => {
+    return readProjectReviewFile(projectPath, reviewPath);
+  });
+
+  ipcMain.handle('governance:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectGovernance(projectPath);
+  });
+
+  ipcMain.handle('governance:createStarterPolicy', async (_event, projectPath: string) => {
+    return createProjectGovernanceStarterPolicy(projectPath);
+  });
+
+  ipcMain.handle('task:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectBackgroundTasks(projectPath);
+  });
+
+  ipcMain.handle('task:create', async (_event, projectPath: string, title: string, prompt: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create background task' });
+    return createProjectBackgroundTaskFile(projectPath, title, prompt);
+  });
+
+  ipcMain.handle('task:read', async (_event, projectPath: string, taskPath: string) => {
+    return readProjectBackgroundTaskFile(projectPath, taskPath);
+  });
+
+  ipcMain.handle('checkpoint:getProjectState', async (_event, projectPath: string) => {
+    return discoverProjectCheckpoints(projectPath);
+  });
+
+  ipcMain.handle('checkpoint:create', async (_event, projectPath: string, snapshot) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create checkpoint' });
+    return createProjectCheckpointFile(projectPath, snapshot);
+  });
+
+  ipcMain.handle('checkpoint:read', async (_event, projectPath: string, checkpointPath: string) => {
+    return readProjectCheckpointFile(projectPath, checkpointPath);
+  });
+
   ipcMain.on('context:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
@@ -276,6 +421,84 @@ export function registerIpcHandlers(): void {
     startProjectContextWatcher(projectPath, (state) => {
       if (currentProjectContextWindow && !currentProjectContextWindow.isDestroyed()) {
         currentProjectContextWindow.webContents.send('context:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('workflow:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectWorkflowPath && win === currentProjectWorkflowWindow) return;
+    currentProjectWorkflowPath = projectPath;
+    currentProjectWorkflowWindow = win;
+    startProjectWorkflowWatcher(projectPath, (state) => {
+      if (currentProjectWorkflowWindow && !currentProjectWorkflowWindow.isDestroyed()) {
+        currentProjectWorkflowWindow.webContents.send('workflow:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('teamContext:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectTeamContextPath && win === currentProjectTeamContextWindow) return;
+    currentProjectTeamContextPath = projectPath;
+    currentProjectTeamContextWindow = win;
+    startProjectTeamContextWatcher(projectPath, (state) => {
+      if (currentProjectTeamContextWindow && !currentProjectTeamContextWindow.isDestroyed()) {
+        currentProjectTeamContextWindow.webContents.send('teamContext:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('review:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectReviewPath && win === currentProjectReviewWindow) return;
+    currentProjectReviewPath = projectPath;
+    currentProjectReviewWindow = win;
+    startProjectReviewWatcher(projectPath, (state) => {
+      if (currentProjectReviewWindow && !currentProjectReviewWindow.isDestroyed()) {
+        currentProjectReviewWindow.webContents.send('review:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('governance:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectGovernancePath && win === currentProjectGovernanceWindow) return;
+    currentProjectGovernancePath = projectPath;
+    currentProjectGovernanceWindow = win;
+    startProjectGovernanceWatcher(projectPath, (state) => {
+      if (currentProjectGovernanceWindow && !currentProjectGovernanceWindow.isDestroyed()) {
+        currentProjectGovernanceWindow.webContents.send('governance:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('task:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectBackgroundTaskPath && win === currentProjectBackgroundTaskWindow) return;
+    currentProjectBackgroundTaskPath = projectPath;
+    currentProjectBackgroundTaskWindow = win;
+    startProjectBackgroundTaskWatcher(projectPath, (state) => {
+      if (currentProjectBackgroundTaskWindow && !currentProjectBackgroundTaskWindow.isDestroyed()) {
+        currentProjectBackgroundTaskWindow.webContents.send('task:changed', projectPath, state);
+      }
+    });
+  });
+
+  ipcMain.on('checkpoint:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    if (projectPath === currentProjectCheckpointPath && win === currentProjectCheckpointWindow) return;
+    currentProjectCheckpointPath = projectPath;
+    currentProjectCheckpointWindow = win;
+    startProjectCheckpointWatcher(projectPath, (state) => {
+      if (currentProjectCheckpointWindow && !currentProjectCheckpointWindow.isDestroyed()) {
+        currentProjectCheckpointWindow.webContents.send('checkpoint:changed', projectPath, state);
       }
     });
   });
@@ -334,6 +557,12 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('app:getBrowserPreloadPath', () =>
     path.join(__dirname, '..', '..', 'preload', 'preload', 'browser-tab-preload.js')
   );
+  ipcMain.handle('app:sendToGuestWebContents', (_event, webContentsId: number, channel: string, ...args: unknown[]) => {
+    const guest = webContents.fromId(webContentsId);
+    if (!guest || guest.isDestroyed()) return false;
+    guest.send(channel, ...args);
+    return true;
+  });
 
   const MAX_SCREENSHOT_BYTES = 50 * 1024 * 1024;
   const MAX_SCREENSHOT_B64_LEN = Math.ceil((MAX_SCREENSHOT_BYTES * 4) / 3);
@@ -384,13 +613,13 @@ export function registerIpcHandlers(): void {
     return filePath;
   });
   ipcMain.handle('browser:listLocalTargets', async () => discoverLocalBrowserTargets());
-  ipcMain.handle('app:openExternal', (_event, url: string) => {
+  ipcMain.handle('app:openExternal', (_event, url: string, cwd?: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       throw new Error('Only HTTP(S) URLs are allowed');
     }
     const win = BrowserWindow.getAllWindows()[0];
-    return openUrlWithBrowserPolicy(url, win, (target) => shell.openExternal(target));
+    return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) => shell.openExternal(target));
   });
 
   ipcMain.handle('git:getStatus', (_event, projectPath: string) => getGitStatus(projectPath));
@@ -404,16 +633,19 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('git:getWorktrees', (_event, projectPath: string) => getGitWorktrees(projectPath));
 
   ipcMain.handle('git:stageFile', async (_event, projectPath: string, filePath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Stage git file' });
     await gitStageFile(projectPath, filePath);
     notifyGitChanged();
   });
 
   ipcMain.handle('git:unstageFile', async (_event, projectPath: string, filePath: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Unstage git file' });
     await gitUnstageFile(projectPath, filePath);
     notifyGitChanged();
   });
 
   ipcMain.handle('git:discardFile', async (_event, projectPath: string, filePath: string, area: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Discard git file changes' });
     await gitDiscardFile(projectPath, filePath, area as GitFileEntry['area']);
     notifyGitChanged();
   });
@@ -427,11 +659,13 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('git:listBranches', (_event, projectPath: string) => listGitBranches(projectPath));
 
   ipcMain.handle('git:checkoutBranch', async (_event, projectPath: string, branch: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Checkout git branch' });
     await checkoutGitBranch(projectPath, branch);
     notifyGitChanged();
   });
 
   ipcMain.handle('git:createBranch', async (_event, projectPath: string, branch: string) => {
+    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create git branch' });
     await createGitBranch(projectPath, branch);
     notifyGitChanged();
   });
@@ -562,8 +796,11 @@ export function registerIpcHandlers(): void {
     return provider.validateSettings();
   });
 
-  ipcMain.handle('mcp:addServer', (_event, name: string, config: McpServerConfig, scope: 'user' | 'project', projectPath?: string) => {
+  ipcMain.handle('mcp:addServer', async (_event, name: string, config: McpServerConfig, scope: 'user' | 'project', projectPath?: string) => {
     try {
+      if (scope === 'project' && projectPath) {
+        await assertProjectGovernanceAllows(projectPath, { kind: 'mcp', label: 'Add project MCP server', target: name });
+      }
       addMcpServer(name, config, scope, projectPath);
       return { success: true };
     } catch (err) {

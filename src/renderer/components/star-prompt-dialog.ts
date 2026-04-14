@@ -1,4 +1,4 @@
-import { closeModal } from './modal.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { appState } from '../state.js';
 
 const STAR_THRESHOLD = 10;
@@ -56,10 +56,7 @@ function showStarPromptDialog(): void {
 
   overlay.classList.remove('hidden');
 
-  if ((overlay as any)._cleanup) {
-    (overlay as any)._cleanup();
-    (overlay as any)._cleanup = null;
-  }
+  runModalCleanup();
 
   const close = () => {
     closeModal();
@@ -90,12 +87,12 @@ function showStarPromptDialog(): void {
   dontAsk.addEventListener('click', handleDontAsk);
   document.addEventListener('keydown', handleKeydown);
 
-  (overlay as any)._cleanup = () => {
+  registerModalCleanup(() => {
     starBtn.removeEventListener('click', handleStar);
     laterBtn.removeEventListener('click', close);
     dontAsk.removeEventListener('click', handleDontAsk);
     document.removeEventListener('keydown', handleKeydown);
-  };
+  });
 }
 
 export function checkStarPrompt(): void {

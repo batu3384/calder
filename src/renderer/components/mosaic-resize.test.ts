@@ -143,4 +143,31 @@ describe('mosaic-resize', () => {
     cleanup();
     expect(windowListeners.get('pointerup')?.size ?? 0).toBe(0);
   });
+
+  it('stops dragging when pointercancel fires so resize mode cannot get stuck', () => {
+    const handle = new FakeHandle();
+    const onPreview = vi.fn();
+    const onCommit = vi.fn();
+    const preventDefault = vi.fn();
+
+    attachRatioHandle(
+      handle as unknown as HTMLElement,
+      () => ({ left: 100, top: 20, width: 400, height: 300 } as DOMRect),
+      { onPreview, onCommit },
+      { axis: 'x', min: 0.25, max: 0.7, fallback: 0.38 },
+    );
+
+    handle.dispatch('pointerdown', { clientX: 220, clientY: 20, preventDefault });
+    emitWindow('pointermove', { clientX: 280, clientY: 20 });
+
+    expect(handle.classList.contains('active')).toBe(true);
+
+    emitWindow('pointercancel', { clientX: 280, clientY: 20 });
+
+    expect(handle.classList.contains('active')).toBe(false);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(windowListeners.get('pointermove')?.size ?? 0).toBe(0);
+    expect(windowListeners.get('pointerup')?.size ?? 0).toBe(0);
+    expect(windowListeners.get('pointercancel')?.size ?? 0).toBe(0);
+  });
 });

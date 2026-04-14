@@ -6,10 +6,12 @@ const mockAddPlanSession = vi.fn();
 const mockDeliverPromptToTerminalSession = vi.fn();
 const mockSetPendingPrompt = vi.fn();
 const mockPromptNewSession = vi.fn();
+const mockProjects: unknown[] = [];
 
 vi.mock('../state.js', () => ({
   appState: {
     preferences: {},
+    projects: mockProjects,
     resolveSurfaceTargetSession: mockResolveSurfaceTargetSession,
     setActiveSession: mockSetActiveSession,
     addPlanSession: mockAddPlanSession,
@@ -33,6 +35,7 @@ vi.mock('./tab-bar.js', () => ({
 describe('surface routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockProjects.length = 0;
   });
 
   it('delivers prompts to the selected surface target', async () => {
@@ -56,5 +59,40 @@ describe('surface routing', () => {
     expect(session).toEqual({ id: 'plan-1', name: 'Fix footer' });
     expect(mockAddPlanSession).toHaveBeenCalledWith('project-1', 'Fix footer', 'claude');
     expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', 'inspect this footer');
+  });
+
+  it('appends project governance policy to routed prompts', async () => {
+    mockProjects.push({
+      id: 'project-1',
+      projectGovernance: {
+        policy: {
+          id: 'governance:/proj/.calder/governance/policy.json',
+          path: '/proj/.calder/governance/policy.json',
+          displayName: 'Project guardrails',
+          summary: 'enforced · tools ask · writes ask · network block',
+          lastUpdated: '2026-04-13T12:00:00.000Z',
+          mode: 'enforced',
+          toolPolicy: 'ask',
+          writePolicy: 'ask',
+          networkPolicy: 'block',
+          mcpAllowlistCount: 1,
+          providerProfileCount: 0,
+        },
+      },
+    });
+    mockResolveSurfaceTargetSession.mockReturnValue({ id: 'cli-1' });
+    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+
+    const { deliverSurfacePrompt } = await import('./surface-routing.js');
+    await deliverSurfacePrompt('project-1', 'inspect this footer');
+
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      'cli-1',
+      expect.stringContaining('Project governance policy:'),
+    );
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      'cli-1',
+      expect.stringContaining('Network policy: block'),
+    );
   });
 });

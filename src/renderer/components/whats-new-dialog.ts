@@ -1,4 +1,4 @@
-import { closeModal } from './modal.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { appState } from '../state.js';
 
 interface ReleaseNotes {
@@ -95,23 +95,18 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
   btnConfirm.textContent = 'Got it';
   overlay.classList.remove('hidden');
 
-  if ((overlay as any)._cleanup) {
-    (overlay as any)._cleanup();
-    (overlay as any)._cleanup = null;
-  }
+  runModalCleanup();
 
   const cleanup = () => {
     btnConfirm.removeEventListener('click', close);
     document.removeEventListener('keydown', handleKeydown);
-    (overlay as any)._cleanup = null;
+    btnCancel.style.display = '';
+    btnConfirm.textContent = prevConfirmText;
   };
 
   const close = () => {
-    cleanup();
     closeModal();
     modal.classList.remove('modal-wide');
-    btnCancel.style.display = '';
-    btnConfirm.textContent = prevConfirmText;
   };
 
   const handleKeydown = (e: KeyboardEvent) => {
@@ -124,7 +119,7 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
   btnConfirm.addEventListener('click', close);
   document.addEventListener('keydown', handleKeydown);
 
-  (overlay as any)._cleanup = cleanup;
+  registerModalCleanup(cleanup);
 }
 
 function buildSection(title: string, items: string[]): HTMLElement {

@@ -7,7 +7,7 @@ import * as child_process from 'child_process';
 vi.mock('fs');
 vi.mock('child_process');
 
-import { validatePrerequisites } from './prerequisites';
+import { checkPythonAvailable, validatePrerequisites } from './prerequisites';
 import { isWin } from './platform';
 
 describe('validatePrerequisites', () => {
@@ -34,6 +34,27 @@ describe('validatePrerequisites', () => {
 
     const result = validatePrerequisites();
     expect(result.ok).toBe(true);
+    expect(vi.mocked(child_process.execSync)).toHaveBeenCalledWith(
+      expect.stringContaining(' claude'),
+      expect.objectContaining({
+        env: expect.objectContaining({ PATH: expect.any(String) }),
+        encoding: 'utf-8',
+        timeout: 3000,
+      }),
+    );
+  });
+
+  it('continues when candidate probing throws and still resolves via which', () => {
+    let calls = 0;
+    vi.mocked(fs.existsSync).mockImplementation(() => {
+      calls += 1;
+      if (calls === 1) throw new Error('EACCES');
+      return false;
+    });
+    vi.mocked(child_process.execSync).mockReturnValue('/some/other/path/claude\n');
+
+    const result = validatePrerequisites();
+    expect(result.ok).toBe(true);
   });
 
   it('returns not ok with message when nothing found', () => {
@@ -46,5 +67,14 @@ describe('validatePrerequisites', () => {
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Claude CLI not found');
     expect(result.message).toContain('npm install -g @anthropic-ai/claude-code');
+  });
+});
+
+describe('checkPythonAvailable', () => {
+  it('returns null on non-Windows environments', () => {
+    if (isWin) return;
+    vi.mocked(child_process.execSync).mockReset();
+    expect(checkPythonAvailable()).toBeNull();
+    expect(vi.mocked(child_process.execSync)).not.toHaveBeenCalled();
   });
 });

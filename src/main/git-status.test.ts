@@ -8,14 +8,30 @@ vi.mock('child_process', () => ({
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
+  promises: {
+    unlink: vi.fn(),
+  },
 }));
 
 import { execFile } from 'child_process';
-import { readFileSync } from 'fs';
-import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees } from './git-status';
+import * as fs from 'fs';
+import {
+  getGitStatus,
+  getGitFiles,
+  getGitDiff,
+  getGitWorktrees,
+  listGitBranches,
+  checkoutGitBranch,
+  createGitBranch,
+  gitStageFile,
+  gitUnstageFile,
+  gitDiscardFile,
+  getGitRemoteUrl,
+} from './git-status';
 
 const mockExecFile = vi.mocked(execFile);
-const mockReadFileSync = vi.mocked(readFileSync);
+const mockReadFileSync = vi.mocked(fs.readFileSync);
+const mockUnlink = vi.mocked(fs.promises.unlink);
 
 function simulateExecFile(err: ExecFileException | null, stdout: string) {
   mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
@@ -309,5 +325,106 @@ describe('getGitWorktrees', () => {
 
     expect(worktrees).toHaveLength(1);
     expect(worktrees[0].path).toBe('/repo');
+  });
+});
+
+describe('branch and file mutation commands', () => {
+  it('lists branches, marks current branch, and skips detached HEAD entries', async () => {
+    simulateExecFile(null, '* main\n  feature/ui\n  (HEAD detached at abc123)\n');
+    const branches = await listGitBranches('/repo');
+
+    expect(branches).toEqual([
+      { name: 'main', current: true },
+      { name: 'feature/ui', current: false },
+    ]);
+  });
+
+  it('runs checkout/create/stage/unstage commands with expected git args', async () => {
+    const resolveExec = () => {
+      mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
+        (callback as (err: ExecFileException | null) => void)(null);
+        return undefined as never;
+      });
+    };
+
+    resolveExec();
+    await checkoutGitBranch('/repo', 'feature/ui');
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'git',
+      ['checkout', 'feature/ui'],
+      { cwd: '/repo', timeout: 5000 },
+      expect.any(Function),
+    );
+
+    resolveExec();
+    await createGitBranch('/repo', 'feature/new');
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'git',
+      ['checkout', '-b', 'feature/new'],
+      { cwd: '/repo', timeout: 5000 },
+      expect.any(Function),
+    );
+
+    resolveExec();
+    await gitStageFile('/repo', 'src/app.ts');
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'git',
+      ['add', '--', 'src/app.ts'],
+      { cwd: '/repo', timeout: 5000 },
+      expect.any(Function),
+    );
+
+    resolveExec();
+    await gitUnstageFile('/repo', 'src/app.ts');
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'git',
+      ['reset', 'HEAD', '--', 'src/app.ts'],
+      { cwd: '/repo', timeout: 5000 },
+      expect.any(Function),
+    );
+  });
+
+  it('rejects mutation commands when git returns an error', async () => {
+    mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
+      (callback as (err: ExecFileException) => void)(new Error('checkout failed') as ExecFileException);
+      return undefined as never;
+    });
+
+    await expect(checkoutGitBranch('/repo', 'missing')).rejects.toThrow('checkout failed');
+  });
+
+  it('discards untracked files via fs.unlink and tracked files via git checkout', async () => {
+    mockUnlink.mockResolvedValueOnce(undefined as never);
+    await gitDiscardFile('/repo', 'new-file.ts', 'untracked');
+    expect(mockUnlink).toHaveBeenCalledWith('/repo/new-file.ts');
+
+    mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
+      (callback as (err: ExecFileException | null) => void)(null);
+      return undefined as never;
+    });
+    await gitDiscardFile('/repo', 'tracked.ts', 'working');
+    expect(mockExecFile).toHaveBeenCalledWith(
+      'git',
+      ['checkout', '--', 'tracked.ts'],
+      { cwd: '/repo', timeout: 5000 },
+      expect.any(Function),
+    );
+  });
+});
+
+describe('getGitRemoteUrl', () => {
+  it('normalizes SSH remote URLs to HTTPS', async () => {
+    simulateExecFile(null, 'git@github.com:owner/repo.git\n');
+    await expect(getGitRemoteUrl('/repo')).resolves.toBe('https://github.com/owner/repo');
+  });
+
+  it('strips trailing .git from HTTPS remotes', async () => {
+    simulateExecFile(null, 'https://github.com/owner/repo.git\n');
+    await expect(getGitRemoteUrl('/repo')).resolves.toBe('https://github.com/owner/repo');
+  });
+
+  it('returns null when origin remote cannot be read', async () => {
+    simulateExecFile(new Error('no remote') as ExecFileException, '');
+    await expect(getGitRemoteUrl('/repo')).resolves.toBeNull();
   });
 });

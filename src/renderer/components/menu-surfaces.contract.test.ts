@@ -13,6 +13,9 @@ const modalsCss = readFileSync(new URL('../styles/modals.css', import.meta.url),
 describe('menu surface contract', () => {
   it('routes context menus and dropdowns through the shared floating menu shell', () => {
     expect(tabBarSource).toContain('tab-context-menu calder-floating-list');
+    expect(tabBarSource).toContain("'command-deck-provider'");
+    expect(tabBarSource).toContain("floating: {");
+    expect(tabBarSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');
     expect(historySource).toContain('tab-context-menu calder-floating-list');
     expect(gitSource).toContain('tab-context-menu calder-floating-list');

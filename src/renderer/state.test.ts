@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
+const mockBuildResumeWithPrompt = vi.fn();
 
 vi.stubGlobal('window', {
   calder: {
     store: { load: mockLoad, save: mockSave },
+    session: { buildResumeWithPrompt: mockBuildResumeWithPrompt },
   },
 });
 
@@ -35,6 +37,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   uuidCounter = 0;
   mockGetCost.mockReturnValue(null);
+  mockBuildResumeWithPrompt.mockResolvedValue('Resume prompt');
   _resetForTesting();
 });
 
@@ -694,6 +697,66 @@ describe('browser target sessions', () => {
     expect(mockSave).toHaveBeenCalled();
   });
 
+  it('prefers the active browser tab when surface state points to a stale browser session', () => {
+    const project = addProject();
+    const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+
+    appState.setProjectSurface(project.id, {
+      kind: 'web',
+      active: true,
+      web: {
+        sessionId: first.id,
+        url: first.browserTabUrl,
+        history: [first.browserTabUrl!, second.browserTabUrl!],
+      },
+    });
+
+    mockSave.mockClear();
+    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:3002');
+
+    expect(reused.id).toBe(second.id);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: second.id,
+      url: 'http://localhost:3002',
+    });
+    expect(appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl)
+      .toBe('http://localhost:3002');
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('synchronizes live view surface metadata when activating a browser tab', () => {
+    const project = addProject();
+    const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+
+    appState.setProjectSurface(project.id, {
+      kind: 'web',
+      active: true,
+      web: {
+        sessionId: first.id,
+        url: first.browserTabUrl,
+        history: [first.browserTabUrl!],
+      },
+    });
+
+    mockSave.mockClear();
+    appState.setActiveSession(project.id, second.id);
+
+    expect(appState.activeProject!.activeSessionId).toBe(second.id);
+    expect(appState.activeProject!.surface?.kind).toBe('web');
+    expect(appState.activeProject!.surface?.active).toBe(true);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: second.id,
+      url: second.browserTabUrl,
+    });
+    expect(appState.activeProject!.surface?.web?.history).toEqual([
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]);
+    expect(mockSave).toHaveBeenCalled();
+  });
+
   it('can open a distinct browser tab session even when the same url is already open', () => {
     const project = addProject();
     const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
@@ -711,6 +774,25 @@ describe('browser target sessions', () => {
       sessionId: second.id,
       url: 'http://localhost:3000',
     });
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('passivates an unreachable browser surface while preserving its history', () => {
+    const project = addProject();
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    mockSave.mockClear();
+    appState.passivateBrowserTabSession(browser.id, 'http://localhost:3000');
+
+    const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
+    expect(browserSession.browserTabUrl).toBeUndefined();
+    expect(appState.activeProject!.surface?.kind).toBe('web');
+    expect(appState.activeProject!.surface?.active).toBe(false);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: browser.id,
+      url: undefined,
+    });
+    expect(appState.activeProject!.surface?.web?.history).toEqual(['http://localhost:3000']);
     expect(mockSave).toHaveBeenCalled();
   });
 
@@ -788,6 +870,101 @@ describe('setActiveSession()', () => {
   });
 });
 
+describe('setSurfaceTargetSession()', () => {
+  it('updates project and browser-tab targets when switching to another cli session', () => {
+    const project = addProject();
+    const first = appState.addSession(project.id, 'First')!;
+    const second = appState.addSession(project.id, 'Second')!;
+    const browserA = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    const browserB = appState.addBrowserTabSession(project.id, 'http://localhost:4173', { dedupeByUrl: false })!;
+    const sessionChanged = vi.fn();
+    appState.on('session-changed', sessionChanged);
+
+    appState.setSurfaceTargetSession(project.id, first.id);
+
+    const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
+    expect(updatedProject.surface.targetSessionId).toBe(first.id);
+    expect(updatedProject.sessions.find((entry) => entry.id === browserA.id)?.browserTargetSessionId).toBe(first.id);
+    expect(updatedProject.sessions.find((entry) => entry.id === browserB.id)?.browserTargetSessionId).toBe(first.id);
+    expect(updatedProject.sessions.find((entry) => entry.id === second.id)?.browserTargetSessionId).toBeUndefined();
+    expect(sessionChanged).toHaveBeenCalled();
+  });
+
+  it('clears explicit target and browser-tab links when target is set to null', () => {
+    const project = addProject();
+    const first = appState.addSession(project.id, 'First')!;
+    appState.addSession(project.id, 'Second')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    appState.setSurfaceTargetSession(project.id, first.id);
+    const sessionChanged = vi.fn();
+    appState.on('session-changed', sessionChanged);
+
+    appState.setSurfaceTargetSession(project.id, null);
+
+    const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
+    expect(updatedProject.surface.targetSessionId).toBeUndefined();
+    expect(updatedProject.sessions.find((entry) => entry.id === browser.id)?.browserTargetSessionId).toBeUndefined();
+    expect(sessionChanged).toHaveBeenCalled();
+  });
+});
+
+describe('resumeWithProvider()', () => {
+  it('creates a new session with a provider-routed resume prompt', async () => {
+    const project = addProject();
+    const source = appState.addSession(project.id, 'Source Session', undefined, 'claude')!;
+    source.cliSessionId = 'cli-source';
+    appState.setProjectGovernance(project.id, {
+      policy: {
+        id: 'governance:/proj/.calder/governance/policy.json',
+        path: '/proj/.calder/governance/policy.json',
+        displayName: 'Project guardrails',
+        summary: 'advisory · tools ask · writes ask · network ask',
+        lastUpdated: '2026-04-13T20:00:00.000Z',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+        mcpAllowlistCount: 0,
+        providerProfileCount: 0,
+      },
+    });
+
+    const resumed = await appState.resumeWithProvider(project.id, { sessionId: source.id }, 'codex');
+
+    expect(resumed).toBeDefined();
+    expect(resumed?.providerId).toBe('codex');
+    expect(resumed?.cliSessionId).toBeNull();
+    expect(resumed?.name).toContain('Source Session');
+    expect(resumed?.name).toContain('codex');
+    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith('claude', 'cli-source', '/test', 'Source Session');
+    expect(resumed?.pendingInitialPrompt).toContain('Project governance policy:');
+  });
+
+  it('returns undefined when source session cannot be resolved', async () => {
+    const project = addProject();
+
+    const resumed = await appState.resumeWithProvider(project.id, {}, 'codex');
+
+    expect(resumed).toBeUndefined();
+    expect(mockBuildResumeWithPrompt).not.toHaveBeenCalled();
+  });
+
+  it('can resume from an archived session reference', async () => {
+    const project = addProject();
+    const source = appState.addSession(project.id, 'Archived Source', undefined, 'claude')!;
+    appState.updateSessionCliId(project.id, source.id, 'cli-archived');
+    appState.removeSession(project.id, source.id);
+    const archived = appState.getSessionHistory(project.id)[0];
+
+    const resumed = await appState.resumeWithProvider(project.id, { archivedSessionId: archived.id }, 'codex');
+
+    expect(resumed).toBeDefined();
+    expect(resumed?.providerId).toBe('codex');
+    expect(resumed?.name).toContain('Archived Source');
+    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith('claude', 'cli-archived', '/test', 'Archived Source');
+  });
+});
+
 describe('updateSessionCliId()', () => {
   it('updates cliSessionId and persists', () => {
     const project = addProject();
@@ -807,6 +984,27 @@ describe('updateSessionCliId()', () => {
     // Simulate /clear: new cliSessionId
     appState.updateSessionCliId(project.id, session.id, 'claude-xyz');
     expect(appState.activeSession!.userRenamed).toBe(false);
+  });
+});
+
+describe('deprecated session id wrappers', () => {
+  it('updateSessionClaudeId delegates to updateSessionCliId', () => {
+    const project = addProject();
+    const session = appState.addSession(project.id, 'S1')!;
+
+    appState.updateSessionClaudeId(project.id, session.id, 'cli-legacy');
+
+    expect(appState.activeSession?.cliSessionId).toBe('cli-legacy');
+  });
+});
+
+describe('hasSession()', () => {
+  it('returns true for existing sessions and false otherwise', () => {
+    const project = addProject();
+    const session = appState.addSession(project.id, 'S1')!;
+
+    expect(appState.hasSession(session.id)).toBe(true);
+    expect(appState.hasSession('missing-session')).toBe(false);
   });
 });
 

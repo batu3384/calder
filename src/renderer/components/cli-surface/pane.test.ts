@@ -70,6 +70,12 @@ class FakeElement {
     return child;
   }
 
+  contains(target: unknown): boolean {
+    if (!(target instanceof FakeElement)) return false;
+    if (target === this) return true;
+    return this.children.some((child) => child.contains(target));
+  }
+
   querySelector(selector: string): FakeElement | null {
     return this.querySelectorAll(selector)[0] ?? null;
   }
@@ -116,15 +122,20 @@ const {
   mockOpen,
   mockSerialize,
   mockSendCliSelectionToSelectedSession,
+  webLinksActivate,
+  terminalOptionsRef,
   MockTerminal,
   MockFitAddon,
   MockSerializeAddon,
+  MockWebLinksAddon,
 } = vi.hoisted(() => {
   const mockFit = vi.fn();
   const mockOpen = vi.fn();
   const mockLoadAddon = vi.fn();
   const mockSerialize = vi.fn(() => '');
   const mockSendCliSelectionToSelectedSession = vi.fn(async () => ({ ok: true, targetSessionId: 'session-1' }));
+  const webLinksActivate: { current: ((event: MouseEvent, url: string) => void) | null } = { current: null };
+  const terminalOptionsRef: { current: Record<string, unknown> | null } = { current: null };
 
   return {
     mockFit,
@@ -132,7 +143,12 @@ const {
     mockLoadAddon,
     mockSerialize,
     mockSendCliSelectionToSelectedSession,
+    webLinksActivate,
+    terminalOptionsRef,
     MockTerminal: class {
+      constructor(options?: Record<string, unknown>) {
+        terminalOptionsRef.current = options ?? null;
+      }
       rows = 24;
       cols = 80;
       buffer = {
@@ -155,6 +171,11 @@ const {
     MockSerializeAddon: class {
       serialize = mockSerialize;
     },
+    MockWebLinksAddon: class {
+      constructor(cb: (event: MouseEvent, url: string) => void) {
+        webLinksActivate.current = cb;
+      }
+    },
   };
 });
 
@@ -170,6 +191,10 @@ vi.mock('@xterm/addon-serialize', () => ({
   SerializeAddon: MockSerializeAddon,
 }));
 
+vi.mock('@xterm/addon-web-links', () => ({
+  WebLinksAddon: MockWebLinksAddon,
+}));
+
 let cliSurfaceDataCallbacks: Array<(projectId: string, data: string) => void> = [];
 
 vi.mock('./session-integration.js', () => ({
@@ -183,6 +208,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.doUnmock('./heuristics.js');
   cliSurfaceDataCallbacks = [];
+  webLinksActivate.current = null;
   vi.stubGlobal('document', {
     createElement: (tagName: string) => new FakeElement(tagName),
     addEventListener: vi.fn(),
@@ -210,6 +236,9 @@ beforeEach(() => {
         onExit: vi.fn(() => () => {}),
         onError: vi.fn(() => () => {}),
       },
+      app: {
+        openExternal: vi.fn(),
+      },
     },
   });
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
@@ -229,6 +258,47 @@ describe('cli surface pane', () => {
     expect((container as unknown as FakeElement).querySelector('.cli-surface-pane')).toBeTruthy();
     expect(mockOpen).toHaveBeenCalled();
     expect(mockFit).toHaveBeenCalled();
+  });
+
+  it('opens detected links through Calder browser routing', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const openExternal = (window as any).calder.app.openExternal;
+
+    expect(webLinksActivate.current).toBeTypeOf('function');
+    webLinksActivate.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', undefined);
+  });
+
+  it('normalizes bare localhost links in CLI surface output before opening', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const openExternal = (window as any).calder.app.openExternal;
+
+    webLinksActivate.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'localhost:4173/health');
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
+  });
+
+  it('routes OSC8 hyperlinks through xterm linkHandler', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const openExternal = (window as any).calder.app.openExternal;
+    const linkHandler = terminalOptionsRef.current?.linkHandler as
+      | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
+      | undefined;
+
+    linkHandler?.activate?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:4173/health', {});
+
+    expect(linkHandler?.activate).toBeTypeOf('function');
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
   });
 
   it('opens inspect mode without auto-selecting the full viewport', async () => {
@@ -734,6 +804,78 @@ describe('cli surface pane', () => {
     };
 
     expect(instance.customButton.textContent).toContain('Gemini Fix');
+  });
+
+  it('keeps the session picker available before a capture payload exists', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Security', '/tmp/security');
+    appState.addSession(project.id, 'Codex Main', undefined, 'codex')!;
+    appState.addSession(project.id, 'Claude Patch', undefined, 'claude');
+    appState.setProjectSurface(project.id, {
+      ...project.surface!,
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'preview',
+        profiles: [{ id: 'preview', name: 'Preview', command: 'python', args: ['app.py'] }],
+        runtime: { status: 'idle' },
+      },
+    });
+
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+    attachCliSurfacePane(project.id, container);
+    const instance = getCliSurfacePaneInstance(project.id) as unknown as {
+      customButton: FakeElement;
+      targetMenuEl: FakeElement;
+      targetMenuListEl: FakeElement;
+    };
+
+    expect(instance.customButton.disabled).toBe(false);
+
+    instance.customButton.listeners.get('click')?.[0]?.();
+
+    expect(instance.targetMenuEl.style.display).toBe('flex');
+    const items = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-menu-item');
+    const labels = items.map((entry) => entry.children[0]?.textContent ?? entry.textContent);
+    expect(labels).toContain('Codex Main');
+    expect(labels).toContain('Claude Patch');
+    expect(items.slice(-2).every((entry) => entry.disabled)).toBe(true);
+  });
+
+  it('closes the session picker when clicking outside it', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Security', '/tmp/security');
+    appState.addSession(project.id, 'Codex Main', undefined, 'codex')!;
+    appState.setProjectSurface(project.id, {
+      ...project.surface!,
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'preview',
+        profiles: [{ id: 'preview', name: 'Preview', command: 'python', args: ['app.py'] }],
+        runtime: { status: 'idle' },
+      },
+    });
+
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+    attachCliSurfacePane(project.id, container);
+    const instance = getCliSurfacePaneInstance(project.id) as unknown as {
+      customButton: FakeElement;
+      targetMenuEl: FakeElement;
+    };
+
+    instance.customButton.listeners.get('click')?.[0]?.();
+    expect(instance.targetMenuEl.style.display).toBe('flex');
+
+    const mousedownHandler = (document.addEventListener as any).mock.calls
+      .find(([eventName]: [string]) => eventName === 'mousedown')?.[1];
+    expect(typeof mousedownHandler).toBe('function');
+
+    mousedownHandler({ target: new FakeElement('div') });
+
+    expect(instance.targetMenuEl.style.display).toBe('none');
   });
 
   it('opens a browser-style target menu with open sessions and quick actions', async () => {

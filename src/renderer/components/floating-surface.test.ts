@@ -21,8 +21,21 @@ describe('floating-surface', () => {
     const cleanup = anchorFloatingSurface(reference, floating);
     await Promise.resolve();
 
+    expect(floating.style.position).toBe('fixed');
     expect(floating.style.left).toBe('12px');
     expect(floating.style.top).toBe('24px');
+    expect(typeof cleanup).toBe('function');
+  });
+
+  it('allows callers to opt into absolute strategy when needed', async () => {
+    const reference = {} as HTMLElement;
+    const floating = { style: {} } as HTMLElement;
+    const { anchorFloatingSurface } = await import('./floating-surface.js');
+
+    const cleanup = anchorFloatingSurface(reference, floating, { strategy: 'absolute' });
+    await Promise.resolve();
+
+    expect(floating.style.position).toBe('absolute');
     expect(typeof cleanup).toBe('function');
   });
 });

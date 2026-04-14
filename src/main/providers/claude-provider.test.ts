@@ -24,9 +24,14 @@ vi.mock('../hook-status', () => ({
   cleanupAll: vi.fn(),
 }));
 
+vi.mock('../config-watcher', () => ({
+  startConfigWatcher: vi.fn(),
+  stopConfigWatcher: vi.fn(),
+}));
+
 vi.mock('../claude-cli', () => ({
   installHooks: vi.fn(),
-  getClaudeConfig: vi.fn(),
+  getClaudeConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
 }));
 
 vi.mock('../settings-guard', () => ({
@@ -38,11 +43,20 @@ vi.mock('../settings-guard', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { ClaudeProvider, _resetCachedPath } from './claude-provider';
-import { installStatusLineScript } from '../hook-status';
+import { cleanupAll, installStatusLineScript } from '../hook-status';
+import { getClaudeConfig } from '../claude-cli';
+import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { guardedInstall, validateSettings as validateGuardedSettings } from '../settings-guard';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockCleanupAll = vi.mocked(cleanupAll);
+const mockGetClaudeConfig = vi.mocked(getClaudeConfig);
 const mockInstallStatusLineScript = vi.mocked(installStatusLineScript);
+const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
+const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
+const mockGuardedInstall = vi.mocked(guardedInstall);
+const mockValidateGuardedSettings = vi.mocked(validateGuardedSettings);
 
 let provider: ClaudeProvider;
 
@@ -253,5 +267,47 @@ describe('statusline installation hooks', () => {
   it('reinstallSettings refreshes the managed runtime assets', () => {
     provider.reinstallSettings();
     expect(mockInstallStatusLineScript).toHaveBeenCalled();
+  });
+});
+
+describe('hooks, settings, and config integration', () => {
+  it('installHooks delegates to guardedInstall with null window when omitted', async () => {
+    await provider.installHooks();
+    expect(mockGuardedInstall).toHaveBeenCalledWith(null);
+  });
+
+  it('installHooks delegates to guardedInstall with provided window', async () => {
+    const win = { id: 123 } as any;
+    await provider.installHooks(win);
+    expect(mockGuardedInstall).toHaveBeenCalledWith(win);
+  });
+
+  it('cleanup stops watcher and hook runtime cleanup', () => {
+    provider.cleanup();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+    expect(mockCleanupAll).toHaveBeenCalled();
+  });
+
+  it('starts a claude config watcher for project scope', () => {
+    const win = { id: 1 } as any;
+    provider.startConfigWatcher(win, '/project');
+    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'claude');
+  });
+
+  it('stops claude config watcher explicitly', () => {
+    provider.stopConfigWatcher();
+    expect(mockStopConfigWatcher).toHaveBeenCalled();
+  });
+
+  it('getConfig delegates to claude config loader', async () => {
+    const config = { mcpServers: [], agents: [], skills: [], commands: [] };
+    mockGetClaudeConfig.mockResolvedValueOnce(config);
+    await expect(provider.getConfig('/tmp/project')).resolves.toEqual(config);
+    expect(mockGetClaudeConfig).toHaveBeenCalledWith('/tmp/project');
+  });
+
+  it('validateSettings delegates to settings guard', () => {
+    expect(provider.validateSettings()).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
+    expect(mockValidateGuardedSettings).toHaveBeenCalled();
   });
 });

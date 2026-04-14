@@ -43,10 +43,9 @@ describe('browser stage contract', () => {
     expect(css).toContain('background: color-mix(in srgb, var(--surface-panel) 56%, transparent);');
   });
 
-  it('gives presence badges and tool clusters the same shell language', () => {
-    expect(source).toContain('browser-toolbar-presence-shell');
+  it('keeps view/capture controls grouped in a single tools shell', () => {
+    expect(source).not.toContain('browser-toolbar-presence-shell');
     expect(source).toContain('browser-toolbar-tools-shell');
-    expect(css).toContain('.browser-toolbar-presence-shell');
     expect(css).toContain('.browser-toolbar-tools-shell');
     expect(css).toContain('padding: 2px;');
     expect(css).toContain('gap: 8px;');
@@ -95,12 +94,17 @@ describe('browser stage contract', () => {
     expect(css).toContain('padding-left: 0;');
   });
 
+  it('keeps the viewport picker dropdown above live content layers', () => {
+    expect(css).toContain('.browser-viewport-dropdown');
+    expect(css).toContain('z-index: 120;');
+  });
+
   it('tightens the toolbar before the right rail forces an early wrap', () => {
     expect(css).toContain('@container workspace-stack (max-width: 1020px)');
     expect(css).toContain('.browser-toolbar-primary');
     expect(css).toContain('min-width: min(340px, 100%);');
-    expect(css).toContain('.browser-toolbar-presence-pill');
-    expect(css).toContain('max-width: 172px;');
+    expect(css).toContain('.browser-toolbar-address');
+    expect(css).toContain('flex: 1 1 260px;');
     expect(css).toContain('.browser-toolbar-cluster-controls');
     expect(css).toContain('gap: 4px;');
   });

@@ -19,6 +19,39 @@ const bodyEl = document.getElementById('modal-body')!;
 const btnCancel = document.getElementById('modal-cancel')!;
 const btnConfirm = document.getElementById('modal-confirm')!;
 let restoreFocusAfterClose: HTMLElement | null = null;
+let modalCleanupHandler: (() => void) | null = null;
+let selectCleanupHandlers: Array<() => void> = [];
+
+export function runModalCleanup(): void {
+  if (modalCleanupHandler) {
+    const handler = modalCleanupHandler;
+    modalCleanupHandler = null;
+    handler();
+  }
+  if (selectCleanupHandlers.length > 0) {
+    const handlers = selectCleanupHandlers;
+    selectCleanupHandlers = [];
+    for (const handler of handlers) {
+      handler();
+    }
+  }
+}
+
+export function registerModalCleanup(handler: () => void): void {
+  modalCleanupHandler = handler;
+}
+
+export function extendModalCleanup(handler: () => void): void {
+  const previous = modalCleanupHandler;
+  modalCleanupHandler = () => {
+    previous?.();
+    handler();
+  };
+}
+
+export function registerModalSelectCleanup(handler: () => void): void {
+  selectCleanupHandlers.push(handler);
+}
 
 export function prepareModalSurface(): void {
   restoreFocusAfterClose = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -47,7 +80,7 @@ export function setModalError(fieldId: string, message: string): void {
 export function closeModal(): void {
   overlay.classList.add('hidden');
   delete overlay.dataset.modalView;
-  cleanup();
+  runModalCleanup();
   modal.classList.remove('modal-surface');
   restoreFocusAfterClose?.focus?.();
   restoreFocusAfterClose = null;
@@ -58,6 +91,8 @@ export function showModal(
   fields: FieldDef[],
   onConfirm: (values: Record<string, string>) => void | Promise<void>
 ): void {
+  // Clean up previous listeners before building a new modal body.
+  runModalCleanup();
   prepareModalSurface();
   titleEl.textContent = title;
   bodyEl.innerHTML = '';
@@ -86,8 +121,7 @@ export function showModal(
       div.appendChild(label);
       const sel = createCustomSelect(`modal-${field.id}`, field.options ?? [], field.defaultValue);
       div.appendChild(sel.element);
-      if (!(overlay as any)._selectCleanups) (overlay as any)._selectCleanups = [];
-      (overlay as any)._selectCleanups.push(() => sel.destroy());
+      registerModalSelectCleanup(() => sel.destroy());
     } else {
       input.type = 'text';
       input.placeholder = field.placeholder ?? '';
@@ -125,9 +159,6 @@ export function showModal(
     });
   }
 
-  // Clean up previous listeners
-  cleanup();
-
   const handleConfirm = async () => {
     const values: Record<string, string> = {};
     for (const field of fields) {
@@ -159,21 +190,9 @@ export function showModal(
   btnCancel.addEventListener('click', handleCancel);
   overlay.addEventListener('keydown', handleKeydown);
 
-  // Store for cleanup
-  (overlay as any)._cleanup = () => {
+  registerModalCleanup(() => {
     btnConfirm.removeEventListener('click', handleConfirm);
     btnCancel.removeEventListener('click', handleCancel);
     overlay.removeEventListener('keydown', handleKeydown);
-  };
-}
-
-function cleanup(): void {
-  if ((overlay as any)._cleanup) {
-    (overlay as any)._cleanup();
-    (overlay as any)._cleanup = null;
-  }
-  if ((overlay as any)._selectCleanups) {
-    for (const fn of (overlay as any)._selectCleanups) fn();
-    (overlay as any)._selectCleanups = null;
-  }
+  });
 }

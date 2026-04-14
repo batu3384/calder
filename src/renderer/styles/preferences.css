@@ -294,19 +294,297 @@
   color: var(--text-secondary);
 }
 
-.context-discovery-shell {
+.orchestration-overview-shell {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.context-discovery-summary {
+.orchestration-overview-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+}
+
+.orchestration-overview-snapshot {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.orchestration-overview-pulse {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.orchestration-overview-pulse-segment {
+  min-height: 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 50%, transparent);
+}
+
+.orchestration-overview-pulse-segment[data-tone="active"] {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
+  background: color-mix(in srgb, var(--success) 52%, transparent);
+}
+
+.orchestration-overview-pulse-segment[data-tone="partial"] {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--border-subtle));
+  background: color-mix(in srgb, var(--warning) 52%, transparent);
+}
+
+.orchestration-overview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.orchestration-overview-action-btn {
+  min-height: var(--control-height-md);
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 22px rgba(0, 0, 0, 0.08);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.orchestration-overview-action-btn:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-raised) 84%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.orchestration-overview-action-btn[data-role="toggle-details"] {
+  color: var(--text-primary);
+}
+
+.orchestration-overview-action-btn:disabled {
+  opacity: 0.58;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.orchestration-overview-status {
+  min-width: 220px;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.orchestration-overview-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.orchestration-overview-details[hidden] {
+  display: none;
+}
+
+.orchestration-overview-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+}
+
+.orchestration-overview-flow-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.orchestration-overview-flow-step {
+  min-width: 26px;
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface-raised));
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.orchestration-overview-flow-copy {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.orchestration-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.orchestration-overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+}
+
+.orchestration-overview-item[data-tone="active"] {
+  border-color: color-mix(in srgb, var(--success) 24%, var(--border-subtle));
+}
+
+.orchestration-overview-item[data-tone="partial"] {
+  border-color: color-mix(in srgb, var(--warning) 26%, var(--border-subtle));
+}
+
+.orchestration-overview-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.orchestration-overview-item-phase {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.orchestration-overview-item-state {
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 42%, transparent);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+.orchestration-overview-item[data-tone="active"] .orchestration-overview-item-state {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
+  color: color-mix(in srgb, var(--success) 82%, white);
+}
+
+.orchestration-overview-item[data-tone="partial"] .orchestration-overview-item-state {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--border-subtle));
+  color: color-mix(in srgb, var(--warning) 82%, white);
+}
+
+.orchestration-overview-item-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.orchestration-overview-item-summary {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.orchestration-overview-item-updated {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.orchestration-overview-item-detail {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.orchestration-overview-empty {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.context-discovery-shell,
+.governance-discovery-shell,
+.preview-discovery-shell,
+.workflow-discovery-shell,
+.team-context-discovery-shell,
+.review-discovery-shell,
+.task-discovery-shell,
+.checkpoint-discovery-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.context-discovery-summary,
+.governance-discovery-summary,
+.preview-discovery-summary,
+.workflow-discovery-summary,
+.team-context-discovery-summary,
+.review-discovery-summary,
+.task-discovery-summary,
+.checkpoint-discovery-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
-.context-discovery-stat {
+.context-discovery-stat,
+.governance-discovery-stat,
+.preview-discovery-stat,
+.workflow-discovery-stat,
+.team-context-discovery-stat,
+.review-discovery-stat,
+.task-discovery-stat,
+.checkpoint-discovery-stat {
   min-height: 72px;
   padding: 12px 12px 11px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
@@ -318,7 +596,14 @@
   gap: 6px;
 }
 
-.context-discovery-stat-label {
+.context-discovery-stat-label,
+.governance-discovery-stat-label,
+.preview-discovery-stat-label,
+.workflow-discovery-stat-label,
+.team-context-discovery-stat-label,
+.review-discovery-stat-label,
+.task-discovery-stat-label,
+.checkpoint-discovery-stat-label {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -326,19 +611,40 @@
   color: var(--text-muted);
 }
 
-.context-discovery-stat-value {
+.context-discovery-stat-value,
+.governance-discovery-stat-value,
+.preview-discovery-stat-value,
+.workflow-discovery-stat-value,
+.team-context-discovery-stat-value,
+.review-discovery-stat-value,
+.task-discovery-stat-value,
+.checkpoint-discovery-stat-value {
   font-size: 16px;
   font-weight: 650;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
-.context-discovery-list {
+.context-discovery-list,
+.governance-discovery-list,
+.preview-discovery-list,
+.workflow-discovery-list,
+.team-context-discovery-list,
+.review-discovery-list,
+.task-discovery-list,
+.checkpoint-discovery-list {
   display: flex;
   flex-direction: column;
 }
 
-.context-discovery-item {
+.context-discovery-item,
+.governance-discovery-item,
+.preview-discovery-item,
+.workflow-discovery-item,
+.team-context-discovery-item,
+.review-discovery-item,
+.task-discovery-item,
+.checkpoint-discovery-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -346,24 +652,402 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
 }
 
-.context-discovery-item:last-child {
+.context-discovery-item-header,
+.governance-discovery-item-header,
+.preview-discovery-item-header,
+.workflow-discovery-item-header,
+.team-context-discovery-item-header,
+.review-discovery-item-header,
+.task-discovery-item-header,
+.checkpoint-discovery-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.context-discovery-item-actions,
+.governance-discovery-item-actions,
+.preview-discovery-item-actions,
+.workflow-discovery-item-actions,
+.team-context-discovery-item-actions,
+.review-discovery-item-actions,
+.task-discovery-item-actions,
+.checkpoint-discovery-item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.context-discovery-item:last-child,
+.governance-discovery-item:last-child,
+.preview-discovery-item:last-child,
+.workflow-discovery-item:last-child,
+.team-context-discovery-item:last-child,
+.review-discovery-item:last-child,
+.task-discovery-item:last-child,
+.checkpoint-discovery-item:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.context-discovery-item-title {
+.context-discovery-item-title,
+.governance-discovery-item-title,
+.preview-discovery-item-title,
+.workflow-discovery-item-title,
+.team-context-discovery-item-title,
+.review-discovery-item-title,
+.task-discovery-item-title,
+.checkpoint-discovery-item-title {
   font-size: 13px;
   font-weight: 620;
   color: var(--text-primary);
 }
 
-.context-discovery-item-meta {
+.context-discovery-item-meta,
+.governance-discovery-item-meta,
+.preview-discovery-item-meta,
+.workflow-discovery-item-meta,
+.team-context-discovery-item-meta,
+.review-discovery-item-meta,
+.task-discovery-item-meta,
+.checkpoint-discovery-item-meta {
   font-size: 12px;
   line-height: 1.55;
   color: var(--text-secondary);
 }
 
-.context-discovery-empty {
+.preview-discovery-item-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-discovery-health {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 12%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+}
+
+.preview-discovery-health[data-tone="healthy"] {
+  border-color: color-mix(in srgb, var(--success) 22%, var(--border-subtle));
+}
+
+.preview-discovery-health[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 24%, var(--border-subtle));
+}
+
+.preview-discovery-health[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--danger) 24%, var(--border-subtle));
+}
+
+.preview-discovery-health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-discovery-health-status {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.preview-discovery-health-detail {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-discovery-health-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-discovery-health-fact {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.checkpoint-discovery-item-restore-summary {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.checkpoint-restore-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px 2px;
+}
+
+.checkpoint-restore-confirm-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkpoint-restore-confirm-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.checkpoint-restore-confirm-description {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.checkpoint-restore-confirm-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkpoint-restore-confirm-stat {
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkpoint-restore-confirm-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.checkpoint-restore-confirm-stat-value {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+.checkpoint-restore-confirm-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+}
+
+.checkpoint-restore-confirm-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkpoint-restore-confirm-fact-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.checkpoint-restore-confirm-fact-value {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.checkpoint-restore-confirm-file-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkpoint-restore-confirm-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+}
+
+.checkpoint-restore-confirm-file-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-raised) 36%, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.checkpoint-restore-confirm-file-item:hover {
+  background: color-mix(in srgb, var(--surface-raised) 68%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-strong));
+  transform: translateY(-1px);
+}
+
+.checkpoint-restore-confirm-file-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.checkpoint-restore-confirm-file-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.checkpoint-restore-confirm-file-more {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.context-discovery-item-status,
+.governance-discovery-item-status,
+.preview-discovery-item-status,
+.workflow-discovery-item-status,
+.team-context-discovery-item-status,
+.review-discovery-item-status,
+.task-discovery-item-status,
+.checkpoint-discovery-item-status {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.context-discovery-item-btn,
+.governance-discovery-item-btn,
+.preview-discovery-item-btn,
+.workflow-discovery-item-btn,
+.team-context-discovery-item-btn,
+.review-discovery-item-btn,
+.task-discovery-item-btn,
+.checkpoint-discovery-item-btn {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.context-discovery-item-btn:hover:not(:disabled),
+.governance-discovery-item-btn:hover:not(:disabled),
+.preview-discovery-item-btn:hover:not(:disabled),
+.workflow-discovery-item-btn:hover:not(:disabled),
+.team-context-discovery-item-btn:hover:not(:disabled),
+.review-discovery-item-btn:hover:not(:disabled),
+.task-discovery-item-btn:hover:not(:disabled),
+.checkpoint-discovery-item-btn:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-raised) 86%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.context-discovery-item-btn:disabled,
+.governance-discovery-item-btn:disabled,
+.preview-discovery-item-btn:disabled,
+.workflow-discovery-item-btn:disabled,
+.team-context-discovery-item-btn:disabled,
+.review-discovery-item-btn:disabled,
+.task-discovery-item-btn:disabled,
+.checkpoint-discovery-item-btn:disabled {
+  opacity: 0.58;
+  cursor: default;
+  transform: none;
+}
+
+.context-discovery-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 42%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.context-discovery-toggle input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+}
+
+.context-discovery-empty,
+.governance-discovery-empty,
+.preview-discovery-empty,
+.workflow-discovery-empty,
+.team-context-discovery-empty,
+.review-discovery-empty,
+.task-discovery-empty,
+.checkpoint-discovery-empty {
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 14px;
@@ -372,6 +1056,90 @@
   font-size: 12px;
   line-height: 1.6;
   color: var(--text-secondary);
+}
+
+.context-discovery-actions,
+.governance-discovery-actions,
+.preview-discovery-actions,
+.workflow-discovery-actions,
+.team-context-discovery-actions,
+.review-discovery-actions,
+.task-discovery-actions,
+.checkpoint-discovery-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.context-discovery-action-btn,
+.governance-discovery-action-btn,
+.preview-discovery-action-btn,
+.workflow-discovery-action-btn,
+.team-context-discovery-action-btn,
+.review-discovery-action-btn,
+.task-discovery-action-btn,
+.checkpoint-discovery-action-btn,
+.about-update-btn {
+  min-height: var(--control-height-md);
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 22px rgba(0, 0, 0, 0.08);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.context-discovery-action-btn:hover:not(:disabled),
+.governance-discovery-action-btn:hover:not(:disabled),
+.preview-discovery-action-btn:hover:not(:disabled),
+.workflow-discovery-action-btn:hover:not(:disabled),
+.team-context-discovery-action-btn:hover:not(:disabled),
+.review-discovery-action-btn:hover:not(:disabled),
+.task-discovery-action-btn:hover:not(:disabled),
+.checkpoint-discovery-action-btn:hover:not(:disabled),
+.about-update-btn:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-raised) 84%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.context-discovery-action-btn:disabled,
+.governance-discovery-action-btn:disabled,
+.preview-discovery-action-btn:disabled,
+.workflow-discovery-action-btn:disabled,
+.team-context-discovery-action-btn:disabled,
+.review-discovery-action-btn:disabled,
+.task-discovery-action-btn:disabled,
+.checkpoint-discovery-action-btn:disabled,
+.about-update-btn:disabled {
+  opacity: 0.58;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
 }
 
 .about-section {
@@ -424,27 +1192,6 @@
   border-radius: 16px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 96%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
-}
-
-.about-update-btn {
-  min-height: var(--control-height-md);
-  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
-  color: var(--text-primary);
-  border: 1px solid color-mix(in srgb, var(--border-strong) 92%, transparent);
-  padding: 0 14px;
-  border-radius: 12px;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.about-update-btn:hover:not(:disabled) {
-  background: var(--bg-hover);
-}
-
-.about-update-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .about-update-status {
@@ -635,22 +1382,38 @@
   font-size: 11px;
   min-height: var(--control-height-sm);
   padding: 0 12px;
-  border: 1px solid var(--border-strong);
-  background: color-mix(in srgb, var(--surface-panel) 88%, transparent);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 1px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .setup-fix-btn:hover {
-  background: var(--bg-hover);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .setup-fix-btn:disabled {
   opacity: 0.5;
   cursor: default;
+  transform: none;
 }
 
 .setup-hook-details {
@@ -706,13 +1469,22 @@
     padding: 18px;
   }
 
-  .preferences-overview-grid {
+  .preferences-overview-grid,
+  .orchestration-overview-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .context-discovery-summary {
-    grid-template-columns: minmax(0, 1fr);
-  }
+   .context-discovery-summary,
+   .governance-discovery-summary,
+   .preview-discovery-summary,
+   .workflow-discovery-summary,
+   .team-context-discovery-summary,
+   .review-discovery-summary,
+   .task-discovery-summary,
+   .checkpoint-discovery-summary,
+   .checkpoint-restore-confirm-stats {
+     grid-template-columns: minmax(0, 1fr);
+   }
 }
 
 /* Shortcut preferences */
@@ -786,54 +1558,90 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  padding: 4px;
+  padding: 5px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-raised) 36%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-raised) 36%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .shortcut-key-btn {
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
   font-size: 11px;
-  padding: 5px 10px;
-  background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-muted) 82%, black);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--border-strong) 84%, transparent);
+  border-radius: 10px;
   color: var(--text-secondary);
   cursor: pointer;
   min-width: 80px;
   text-align: center;
   white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 18px rgba(0, 0, 0, 0.12);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .shortcut-key-btn:hover {
-  border-color: var(--accent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
   color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
 .shortcut-key-btn.recording {
-  border-color: var(--accent);
-  background: rgba(233, 69, 96, 0.1);
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border-strong));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 92%, rgba(255, 255, 255, 0.08)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 84%, black);
   color: var(--accent);
   animation: pulse 1s ease-in-out infinite;
 }
 
 .shortcut-key-btn.customized {
-  color: var(--accent);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
 }
 
 .shortcut-reset-btn {
   font-size: 11px;
-  padding: 5px 8px;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 999px;
   color: var(--text-muted);
   cursor: pointer;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .shortcut-reset-btn:hover {
-  background: var(--bg-hover);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 82%, var(--surface-panel));
   color: var(--text-primary);
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
+  transform: translateY(-1px);
 }

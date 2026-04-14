@@ -17,6 +17,10 @@ const rendererTypesSource = readFileSync(
 describe('project context IPC contract', () => {
   it('registers context IPC handlers in main', () => {
     expect(ipcHandlersSource).toContain("ipcMain.handle('context:getProjectState'");
+    expect(ipcHandlersSource).toContain("ipcMain.handle('context:createStarterFiles'");
+    expect(ipcHandlersSource).toContain("ipcMain.handle('context:createSharedRule'");
+    expect(ipcHandlersSource).toContain("ipcMain.handle('context:renameSharedRule'");
+    expect(ipcHandlersSource).toContain("ipcMain.handle('context:deleteSharedRule'");
     expect(ipcHandlersSource).toContain("ipcMain.on('context:watchProject'");
     expect(ipcHandlersSource).toContain("webContents.send('context:changed'");
   });
@@ -24,6 +28,10 @@ describe('project context IPC contract', () => {
   it('exposes context APIs from preload', () => {
     expect(preloadSource).toContain('context: {');
     expect(preloadSource).toContain('getProjectState');
+    expect(preloadSource).toContain('createStarterFiles');
+    expect(preloadSource).toContain('createSharedRule');
+    expect(preloadSource).toContain('renameSharedRule');
+    expect(preloadSource).toContain('deleteSharedRule');
     expect(preloadSource).toContain('watchProject');
     expect(preloadSource).toContain("onChanged: (callback) => onChannel('context:changed'");
   });
@@ -31,6 +39,10 @@ describe('project context IPC contract', () => {
   it('declares context APIs in renderer types', () => {
     expect(rendererTypesSource).toContain('context: {');
     expect(rendererTypesSource).toContain('getProjectState(projectPath: string)');
+    expect(rendererTypesSource).toContain('createStarterFiles(projectPath: string)');
+    expect(rendererTypesSource).toContain("createSharedRule(projectPath: string, title: string, priority: 'hard' | 'soft')");
+    expect(rendererTypesSource).toContain("renameSharedRule(projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft')");
+    expect(rendererTypesSource).toContain('deleteSharedRule(projectPath: string, relativePath: string)');
     expect(rendererTypesSource).toContain('watchProject(projectPath: string)');
   });
 });

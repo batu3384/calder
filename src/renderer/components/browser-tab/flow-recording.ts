@@ -1,5 +1,6 @@
 import type { BrowserTabInstance, FlowStep } from './types.js';
 import { buildSelectorOptions } from './selector-ui.js';
+import { sendGuestMessage } from './guest-messaging.js';
 
 export function renderFlowSteps(instance: BrowserTabInstance): void {
   const list = instance.flowStepsList;
@@ -78,15 +79,14 @@ export function addFlowStep(instance: BrowserTabInstance, step: FlowStep): void 
 export function toggleFlowMode(instance: BrowserTabInstance): void {
   instance.flowMode = !instance.flowMode;
   instance.recordBtn.classList.toggle('active', instance.flowMode);
-  instance.recordBtn.textContent = instance.flowMode ? '\u25A0 Stop' : '\u25CF Record';
 
   instance.inspectBtn.disabled = instance.flowMode;
   instance.drawBtn.disabled = instance.flowMode;
   if (instance.flowMode) {
-    instance.webview.send('enter-flow-mode');
+    void sendGuestMessage(instance.webview, 'enter-flow-mode');
     instance.flowPanel.style.display = 'flex';
   } else {
-    instance.webview.send('exit-flow-mode');
+    void sendGuestMessage(instance.webview, 'exit-flow-mode');
     if (instance.flowSteps.length === 0) {
       instance.flowPanel.style.display = 'none';
     }

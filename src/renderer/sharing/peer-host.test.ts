@@ -1,0 +1,260 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mockGetTerminalInstance = vi.hoisted(() => vi.fn());
+const mockSendMessage = vi.hoisted(() => vi.fn());
+const mockWaitForIceGathering = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const mockEncodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue('encoded-offer'));
+const mockDecodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue({ type: 'answer', sdp: 'answer-sdp' }));
+const mockGenerateChallenge = vi.hoisted(() => vi.fn().mockReturnValue(new Uint8Array([1, 2, 3])));
+const mockComputeChallengeResponse = vi.hoisted(() => vi.fn().mockResolvedValue('expected-response'));
+const mockBytesToHex = vi.hoisted(() => vi.fn().mockReturnValue('deadbeef'));
+const serializeAddonInstances = vi.hoisted(() => [] as Array<{ serialize: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }>);
+
+vi.mock('../components/terminal-pane.js', () => ({
+  getTerminalInstance: mockGetTerminalInstance,
+}));
+
+vi.mock('@xterm/addon-serialize', () => ({
+  SerializeAddon: class MockSerializeAddon {
+    serialize = vi.fn(() => 'SCROLLBACK');
+    dispose = vi.fn();
+
+    constructor() {
+      serializeAddonInstances.push(this);
+    }
+  },
+}));
+
+vi.mock('./webrtc-utils.js', () => ({
+  ICE_CONFIG: { iceServers: [] },
+  sendMessage: mockSendMessage,
+  waitForIceGathering: mockWaitForIceGathering,
+  encodeConnectionCode: mockEncodeConnectionCode,
+  decodeConnectionCode: mockDecodeConnectionCode,
+}));
+
+vi.mock('./share-crypto.js', () => ({
+  generateChallenge: mockGenerateChallenge,
+  computeChallengeResponse: mockComputeChallengeResponse,
+  bytesToHex: mockBytesToHex,
+}));
+
+import {
+  broadcastData,
+  broadcastResize,
+  isConnected,
+  isSharing,
+  startShare,
+  stopShare,
+} from './peer-host.js';
+
+class FakeDataChannel {
+  readyState = 'open';
+  onopen?: () => void;
+  onmessage?: (event: MessageEvent) => void;
+  onclose?: () => void;
+  close = vi.fn(() => {
+    this.onclose?.();
+  });
+}
+
+class FakePeerConnection {
+  static instances: FakePeerConnection[] = [];
+
+  iceConnectionState: RTCIceConnectionState = 'new';
+  iceGatheringState: RTCIceGatheringState = 'complete';
+  localDescription: RTCSessionDescriptionInit | null = null;
+  remoteDescription: RTCSessionDescriptionInit | null = null;
+  oniceconnectionstatechange?: () => void;
+  readonly dc = new FakeDataChannel();
+  createDataChannel = vi.fn(() => this.dc);
+  createOffer = vi.fn(async () => ({ type: 'offer', sdp: 'offer-sdp' }));
+  setLocalDescription = vi.fn(async (desc: RTCSessionDescriptionInit) => {
+    this.localDescription = desc;
+  });
+  setRemoteDescription = vi.fn(async (desc: RTCSessionDescriptionInit) => {
+    this.remoteDescription = desc;
+  });
+  close = vi.fn();
+
+  constructor(_config: RTCConfiguration) {
+    FakePeerConnection.instances.push(this);
+  }
+}
+
+const mockPtyWrite = vi.fn();
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  serializeAddonInstances.length = 0;
+  FakePeerConnection.instances = [];
+
+  vi.stubGlobal('RTCPeerConnection', FakePeerConnection as any);
+  vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(desc: RTCSessionDescriptionInit) {
+    return desc;
+  } as any);
+  vi.stubGlobal('window', {
+    calder: {
+      pty: {
+        write: mockPtyWrite,
+      },
+    },
+  });
+
+  mockGetTerminalInstance.mockReturnValue({
+    sessionId: 'Session title',
+    terminal: {
+      cols: 120,
+      rows: 40,
+      loadAddon: vi.fn(),
+    },
+  });
+});
+
+afterEach(() => {
+  for (const sessionId of ['session-1', 'session-2']) {
+    stopShare(sessionId);
+  }
+  vi.unstubAllGlobals();
+});
+
+describe('peer-host', () => {
+  it('throws when there is no terminal instance for the session', () => {
+    mockGetTerminalInstance.mockReturnValue(undefined);
+    expect(() => startShare('missing', 'readonly', 'secret-1234')).toThrow(/No terminal instance/i);
+  });
+
+  it('creates offers and accepts answers through the RTC connection', async () => {
+    const handle = startShare('session-1', 'readonly', 'secret-1234');
+    const pc = FakePeerConnection.instances[0];
+
+    await expect(handle.getOffer()).resolves.toBe('encoded-offer');
+    expect(pc?.createOffer).toHaveBeenCalledTimes(1);
+    expect(pc?.setLocalDescription).toHaveBeenCalledWith({ type: 'offer', sdp: 'offer-sdp' });
+
+    await handle.acceptAnswer('answer-code');
+    expect(mockDecodeConnectionCode).toHaveBeenCalledWith('answer-code', 'answer', 'secret-1234');
+    expect(pc?.setRemoteDescription).toHaveBeenCalledWith({ type: 'answer', sdp: 'answer-sdp' });
+  });
+
+  it('completes auth, sends init data, and forwards terminal traffic once verified', async () => {
+    const handle = startShare('session-1', 'readwrite', 'secret-1234');
+    const connectedSpy = vi.fn();
+    handle.onConnected(connectedSpy);
+
+    const pc = FakePeerConnection.instances[0];
+    const dc = pc!.dc;
+
+    dc.onopen?.();
+    expect(mockBytesToHex).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-challenge', challenge: 'deadbeef' });
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-result', ok: true });
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'init',
+        scrollback: 'SCROLLBACK',
+        mode: 'readwrite',
+        cols: 120,
+        rows: 40,
+        sessionName: 'Session title',
+      }),
+    );
+    expect(connectedSpy).toHaveBeenCalledTimes(1);
+    expect(isSharing('session-1')).toBe(true);
+
+    broadcastData('session-1', 'stdout');
+    broadcastResize('session-1', 132, 50);
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'data', payload: 'stdout' });
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'resize', cols: 132, rows: 50 });
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'pwd\r' }) } as MessageEvent);
+    expect(mockPtyWrite).toHaveBeenCalledWith('session-1', 'pwd\r');
+
+    stopShare('session-1');
+    expect(serializeAddonInstances[0]?.dispose).toHaveBeenCalledTimes(1);
+    expect(dc.close).toHaveBeenCalledTimes(1);
+    expect(pc?.close).toHaveBeenCalledTimes(1);
+    expect(isSharing('session-1')).toBe(false);
+  });
+
+  it('reports auth failures and tears down the share on mismatch', async () => {
+    const handle = startShare('session-2', 'readonly', 'secret-1234');
+    const authFailedSpy = vi.fn();
+    handle.onAuthFailed(authFailedSpy);
+
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'wrong-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      { type: 'auth-result', ok: false, reason: 'Passphrase mismatch' },
+    );
+    expect(authFailedSpy).toHaveBeenCalledWith('Passphrase mismatch');
+    expect(isSharing('session-2')).toBe(false);
+  });
+
+  it('tracks connected state, notifies disconnections, and ignores input in readonly mode', async () => {
+    const handle = startShare('session-2', 'readonly', 'secret-1234');
+    const disconnectedSpy = vi.fn();
+    handle.onDisconnected(disconnectedSpy);
+
+    const pc = FakePeerConnection.instances[0]!;
+    const dc = pc.dc;
+    dc.onopen?.();
+    expect(isConnected('session-2')).toBe(true);
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'should-not-write' }) } as MessageEvent);
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+
+    pc.iceConnectionState = 'failed';
+    pc.oniceconnectionstatechange?.();
+    expect(disconnectedSpy).toHaveBeenCalledTimes(1);
+    expect(isConnected('session-2')).toBe(false);
+  });
+
+  it('clears pending auth timeout when stopped before authentication completes', () => {
+    vi.useFakeTimers();
+    const handle = startShare('session-2', 'readonly', 'secret-1234');
+    const authFailedSpy = vi.fn();
+    handle.onAuthFailed(authFailedSpy);
+
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    stopShare('session-2');
+
+    vi.advanceTimersByTime(11_000);
+    expect(authFailedSpy).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('does not broadcast data/resize for missing or disconnected sessions', () => {
+    const handle = startShare('session-2', 'readonly', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    broadcastData('session-2', 'ignored');
+    broadcastResize('session-2', 100, 30);
+    broadcastData('missing-session', 'ignored');
+    broadcastResize('missing-session', 100, 30);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    return Promise.resolve().then(() => {
+      stopShare('session-2');
+      mockSendMessage.mockClear();
+      broadcastData('session-2', 'still-ignored');
+      broadcastResize('session-2', 100, 30);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+      handle.stop();
+    });
+  });
+});

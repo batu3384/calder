@@ -1,4 +1,5 @@
 import type { BrowserTabInstance, ViewportPreset } from './types.js';
+import { anchorFloatingSurface } from '../floating-surface.js';
 
 export function applyViewport(instance: BrowserTabInstance, preset: ViewportPreset): void {
   instance.currentViewport = preset;
@@ -23,10 +24,23 @@ export function applyViewport(instance: BrowserTabInstance, preset: ViewportPres
 
 export function openViewportDropdown(instance: BrowserTabInstance): void {
   instance.viewportDropdown.classList.add('visible');
+  instance.viewportDropdownFloatingCleanup?.();
+  instance.viewportDropdownFloatingCleanup = anchorFloatingSurface(
+    instance.viewportBtn,
+    instance.viewportDropdown,
+    {
+      placement: 'bottom-end',
+      offsetPx: 6,
+      maxWidthPx: 260,
+      maxHeightPx: 360,
+    },
+  );
 }
 
 export function closeViewportDropdown(instance: BrowserTabInstance): void {
   instance.viewportDropdown.classList.remove('visible');
+  instance.viewportDropdownFloatingCleanup?.();
+  instance.viewportDropdownFloatingCleanup = null;
 }
 
 export function getViewportContext(instance: BrowserTabInstance, include: boolean): string {

@@ -18,6 +18,7 @@ export interface FloatingSurfaceOptions {
   offsetPx?: number;
   maxWidthPx?: number;
   maxHeightPx?: number;
+  strategy?: 'absolute' | 'fixed';
 }
 
 export function anchorFloatingSurface(
@@ -30,10 +31,22 @@ export function anchorFloatingSurface(
     offsetPx = 8,
     maxWidthPx = 420,
     maxHeightPx = 420,
+    strategy = 'fixed',
   } = options;
+
+  const previousVisibility = floating.style.visibility;
+  let revealed = false;
+  floating.style.visibility = 'hidden';
+
+  const reveal = () => {
+    if (revealed) return;
+    revealed = true;
+    floating.style.visibility = previousVisibility;
+  };
 
   const update = async () => {
     const { x, y } = await computePosition(reference, floating, {
+      strategy,
       placement,
       middleware: [
         offset(offsetPx),
@@ -52,13 +65,19 @@ export function anchorFloatingSurface(
     });
 
     Object.assign(floating.style, {
-      position: 'absolute',
+      position: strategy,
       left: `${x}px`,
       top: `${y}px`,
+      right: 'auto',
+      bottom: 'auto',
     });
+    reveal();
   };
 
   const cleanup = autoUpdate(reference, floating, update);
-  void update();
-  return cleanup;
+  void update().catch(() => reveal());
+  return () => {
+    cleanup();
+    floating.style.visibility = previousVisibility;
+  };
 }

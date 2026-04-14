@@ -107,7 +107,9 @@ export async function handleToolFailure(sessionId: string, data: ToolFailureData
 
 export function initLargeFileDetector(): void {
   window.calder.session.onToolFailure((sessionId, data) => {
-    handleToolFailure(sessionId, data).catch(() => {});
+    handleToolFailure(sessionId, data).catch((error) => {
+      console.warn('[large-file-detector] Failed to process tool failure payload', { sessionId, error });
+    });
   });
 
   appState.on('session-removed', (data?: unknown) => {

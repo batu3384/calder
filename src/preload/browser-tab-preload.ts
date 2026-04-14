@@ -4,8 +4,6 @@
  * and sends element metadata back to the host renderer via ipcRenderer.sendToHost().
  */
 import { ipcRenderer } from 'electron';
-import { shouldRouteBrowserOpenIntent } from './browser-tab-open-intent.js';
-import { resolveBrowserGuestOpenPayload } from './browser-tab-popup.js';
 
 interface SelectorOption {
   type: 'qa' | 'attr' | 'id' | 'css';
@@ -13,7 +11,53 @@ interface SelectorOption {
   value: string;
 }
 
+type BrowserGuestOpenSource = 'anchor' | 'window-open';
+
+interface BrowserGuestOpenPayload {
+  url: string;
+  source: BrowserGuestOpenSource;
+}
+
 const QA_ATTRS = ['data-testid', 'data-qa', 'data-cy', 'data-test', 'data-automation', 'qaTag'];
+
+function shouldRouteBrowserOpenIntent(input: {
+  targetAttr?: string | null;
+  button?: number;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+}): boolean {
+  const target = (input.targetAttr || '').trim().toLowerCase();
+  if (target === '_blank') return true;
+  if (input.button === 1) return true;
+  if (input.metaKey || input.ctrlKey || input.shiftKey) return true;
+  return false;
+}
+
+const BLOCKED_PROTOCOLS = new Set(['javascript:', 'data:', 'file:']);
+
+function resolveBrowserGuestOpenPayload(
+  requestedUrl: string,
+  baseUrl: string,
+  source: BrowserGuestOpenSource,
+): BrowserGuestOpenPayload | null {
+  const trimmed = requestedUrl.trim();
+  if (!trimmed) return null;
+
+  try {
+    const resolved = new URL(trimmed, baseUrl);
+    if (BLOCKED_PROTOCOLS.has(resolved.protocol)) {
+      return null;
+    }
+    return {
+      url: resolved.href,
+      source,
+    };
+  } catch {
+    return null;
+  }
+}
 
 let inspectMode = false;
 let flowMode = false;
@@ -26,7 +70,7 @@ let drawCtx: CanvasRenderingContext2D | null = null;
 let drawing = false;
 let strokeCompleted = false;
 
-function sendBrowserOpenRequest(requestedUrl: string, source: 'anchor' | 'window-open'): void {
+function sendBrowserOpenRequest(requestedUrl: string, source: BrowserGuestOpenSource): void {
   const payload = resolveBrowserGuestOpenPayload(requestedUrl, window.location.href, source);
   if (!payload) return;
   ipcRenderer.sendToHost('browser-open-request', payload);
@@ -235,7 +279,8 @@ function getElementMetadata(el: Element) {
 
 function onMouseOver(e: MouseEvent): void {
   if (!inspectMode && !flowMode) return;
-  const target = e.target as Element;
+  const target = e.target;
+  if (!(target instanceof Element)) return;
   if (target === highlightOverlay) return;
   positionOverlay(target);
 }
@@ -250,7 +295,8 @@ function onClick(e: MouseEvent): void {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  const target = e.target as Element;
+  const target = e.target;
+  if (!(target instanceof Element)) return;
   if (target === highlightOverlay) return;
   const metadata = getElementMetadata(target);
   ipcRenderer.sendToHost('element-selected', { metadata, x: e.clientX, y: e.clientY });
@@ -282,7 +328,8 @@ function onFlowClick(e: MouseEvent): void {
     suppressNextFlowClick = false;
     return;
   }
-  const target = e.target as Element;
+  const target = e.target;
+  if (!(target instanceof Element)) return;
   if (target === highlightOverlay) return;
   e.preventDefault();
   e.stopPropagation();
@@ -317,6 +364,7 @@ function enterInspectMode(): void {
   document.addEventListener('mouseout', onMouseOut, true);
   document.addEventListener('click', onClick, true);
   document.body.style.cursor = 'crosshair';
+  document.documentElement.dataset.calderInspectMode = 'on';
 }
 
 function exitInspectMode(): void {
@@ -326,6 +374,7 @@ function exitInspectMode(): void {
   document.removeEventListener('click', onClick, true);
   hideOverlay();
   document.body.style.cursor = '';
+  document.documentElement.dataset.calderInspectMode = 'off';
 }
 
 ipcRenderer.on('enter-inspect-mode', () => enterInspectMode());

@@ -1,4 +1,4 @@
-import { closeModal } from './modal.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { shortcutManager, displayKeys } from '../shortcuts.js';
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -166,10 +166,7 @@ export function showHelpDialog(): void {
   btnConfirm.textContent = 'Done';
   overlay.classList.remove('hidden');
 
-  if ((overlay as any)._cleanup) {
-    (overlay as any)._cleanup();
-    (overlay as any)._cleanup = null;
-  }
+  runModalCleanup();
 
   const close = () => {
     closeModal();
@@ -189,9 +186,9 @@ export function showHelpDialog(): void {
   btnCancel.addEventListener('click', close);
   document.addEventListener('keydown', handleKeydown);
 
-  (overlay as any)._cleanup = () => {
+  registerModalCleanup(() => {
     btnConfirm.removeEventListener('click', close);
     btnCancel.removeEventListener('click', close);
     document.removeEventListener('keydown', handleKeydown);
-  };
+  });
 }

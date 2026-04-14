@@ -92,4 +92,43 @@ describe('project context prompt helpers', () => {
     expect(prompt).toContain('Shared rules: testing.hard.md');
     expect(prompt).toContain('Applied sources: CLAUDE.md');
   });
+
+  it('excludes disabled shared rules from the applied context summary', () => {
+    const project = appState.addProject('Calder', '/proj');
+    appState.setProjectContext(project.id, {
+      sources: [
+        {
+          id: 'claude:memory:/proj/CLAUDE.md',
+          provider: 'claude',
+          scope: 'project',
+          kind: 'memory',
+          path: '/proj/CLAUDE.md',
+          displayName: 'CLAUDE.md',
+          summary: 'Claude repo guidance',
+          lastUpdated: '2026-04-13T12:00:00.000Z',
+        },
+        {
+          id: 'shared:rules:/proj/.calder/rules/testing.hard.md',
+          provider: 'shared',
+          scope: 'project',
+          kind: 'rules',
+          path: '/proj/.calder/rules/testing.hard.md',
+          displayName: 'testing.hard.md',
+          summary: 'Tests are required',
+          lastUpdated: '2026-04-13T12:10:00.000Z',
+          priority: 'hard',
+          enabled: false,
+        },
+      ],
+      sharedRuleCount: 0,
+      providerSourceCount: 1,
+      lastUpdated: '2026-04-13T12:10:00.000Z',
+    });
+
+    const summary = buildAppliedContextSummary(project.id, 'claude');
+
+    expect(summary?.sharedRuleCount).toBe(0);
+    expect(summary?.sharedRulesSummary).toBeUndefined();
+    expect(summary?.sources.map((source) => source.displayName)).toEqual(['CLAUDE.md']);
+  });
 });

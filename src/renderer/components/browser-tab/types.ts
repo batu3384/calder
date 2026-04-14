@@ -59,6 +59,7 @@ export interface WebviewElement extends HTMLElement {
   reload(): void;
   stop(): void;
   send(channel: string, ...args: unknown[]): void;
+  getWebContentsId(): number;
   capturePage(rect?: { x: number; y: number; width: number; height: number }): Promise<{
     toDataURL(): string;
     toPNG(): Uint8Array;
@@ -72,8 +73,6 @@ export interface BrowserTabInstance {
   webviewReady: boolean;
   statusBadge: HTMLSpanElement;
   toolbarHint: HTMLDivElement;
-  modeBadge: HTMLButtonElement;
-  targetBadge: HTMLButtonElement;
   committedUrl: string;
   contentShell: HTMLDivElement;
   viewportContainer: HTMLDivElement;
@@ -97,6 +96,7 @@ export interface BrowserTabInstance {
   currentViewport: ViewportPreset;
   isLoading: boolean;
   viewportOutsideClickHandler: (e: MouseEvent) => void;
+  viewportDropdownFloatingCleanup: (() => void) | null;
   recordBtn: HTMLButtonElement;
   flowPanel: HTMLDivElement;
   flowPanelLabel: HTMLSpanElement;

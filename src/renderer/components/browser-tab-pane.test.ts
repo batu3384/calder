@@ -3,12 +3,12 @@ import { readFileSync } from 'fs';
 
 const source = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
 const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
+const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
 
 describe('browser tab pane contract', () => {
   it('groups the toolbar into nav, address, and tools regions', () => {
     expect(source).toContain('browser-toolbar-nav');
     expect(source).toContain('browser-toolbar-address');
-    expect(source).toContain('browser-toolbar-presence');
     expect(source).toContain('browser-toolbar-tools');
     expect(source).toContain('browser-toolbar-cluster');
     expect(source).toContain('browser-toolbar-cluster-label');
@@ -17,33 +17,24 @@ describe('browser tab pane contract', () => {
     expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
   });
 
-  it('surfaces active capture mode and target session in the toolbar', () => {
-    expect(source).toContain('browser-toolbar-presence');
-    expect(source).toContain('browser-toolbar-presence-pill');
-    expect(source).toContain("createBrowserPresenceBadge('Idle')");
-    expect(source).toContain("createBrowserPresenceBadge('No target')");
+  it('surfaces active capture mode inside the capture cluster label', () => {
+    expect(source).toContain("createBrowserToolbarCluster('Capture')");
     expect(source).toContain('instance.syncToolbarState = () => {');
-    expect(source).toContain('modeBadge.dataset.state =');
-    expect(source).toContain('targetBadge.dataset.state =');
-    expect(source).toContain('modeBadgeText.textContent =');
-    expect(source).toContain('targetBadgeText.textContent =');
+    expect(source).toContain("captureCluster.label.textContent = 'Capture';");
+    expect(source).toContain('captureCluster.element.dataset.captureMode = mode;');
+    expect(source).toContain('captureCluster.label.title = selectedTarget');
+    expect(source).toContain("inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';");
+    expect(source).toContain("drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';");
+    expect(source).toContain("recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';");
   });
 
-  it('lets toolbar badges jump into capture actions without hunting through the composer', () => {
-    expect(source).toContain('modeBadge.addEventListener(\'click\'');
-    expect(source).toContain('targetBadge.addEventListener(\'click\'');
-    expect(source).toContain('focusActiveCaptureComposer(instance)');
-    expect(source).toContain('openBrowserTargetMenu(instance, targetBadge');
-  });
-
-  it('treats toolbar badges like first-class controls with icons and menu semantics', () => {
-    expect(source).toContain('browser-toolbar-presence-icon');
-    expect(source).toContain('browser-toolbar-presence-text');
-    expect(source).toContain("targetBadge.setAttribute('aria-haspopup', 'menu')");
-    expect(source).toContain("targetBadge.setAttribute('aria-expanded', 'false')");
-    expect(source).toContain("targetBadge.setAttribute('aria-expanded', 'true')");
-    expect(source).toContain('modeBadge.title =');
-    expect(source).toContain('targetBadge.title =');
+  it('keeps target session selection inside capture composer controls', () => {
+    expect(source).toContain('drawCustomBtn.addEventListener(\'click\'');
+    expect(source).toContain('flowCustomBtn.addEventListener(\'click\'');
+    expect(source).toContain('customBtn.addEventListener(\'click\'');
+    expect(source).toContain("openBrowserTargetMenu(instance, drawCustomBtn, 'draw')");
+    expect(source).toContain("openBrowserTargetMenu(instance, flowCustomBtn, 'flow')");
+    expect(source).toContain("openBrowserTargetMenu(instance, customBtn, 'inspect')");
   });
 
   it('tracks loading state in the chrome and toggles the primary button behavior', () => {
@@ -60,6 +51,9 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('backBtn.disabled = !instance.webview.canGoBack()');
     expect(source).toContain('fwdBtn.disabled = !instance.webview.canGoForward()');
     expect(source).toContain("webview.addEventListener('dom-ready'");
+    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-inspect-mode\')');
+    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-flow-mode\')');
+    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-draw-mode\')');
     expect(source).toContain('urlInput.addEventListener(\'focus\'');
     expect(source).toContain('urlInput.select()');
     expect(source).toContain("e.key === 'Escape'");
@@ -91,6 +85,39 @@ describe('browser tab pane contract', () => {
     expect(source).toContain("import { BROWSER_SESSION_PARTITION } from '../../../shared/constants.js';");
     expect(source).toContain("webview.setAttribute('partition', BROWSER_SESSION_PARTITION);");
     expect(source).not.toContain("webview.setAttribute('allowpopups', '');");
+  });
+
+  it('loads the guest preload script before assigning the browser surface src', () => {
+    expect(source).toContain("import { getPreloadPath, instances } from './instance.js';");
+    expect(source).toContain('void getPreloadPath()');
+    expect(source).toContain("webview.setAttribute('preload', `file://${preloadPath}`);");
+    expect(source).toContain('viewportContainer.appendChild(webview);');
+  });
+
+  it('does not overwrite a newer navigation with a stale initial src assignment', () => {
+    expect(source).toContain("webview.src = instance.committedUrl || url || 'about:blank';");
+  });
+
+  it('re-synchronizes a browser pane with the latest stored url when it is reattached and shown', () => {
+    expect(source).toContain('function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {');
+    expect(source).toContain('attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void');
+    expect(source).toContain('syncBrowserTabToSessionState(instance);');
+    expect(source).toContain('requestAnimationFrame(() => syncBrowserTabToSessionState(instance));');
+  });
+
+  it('ignores benign aborted loads instead of forcing offline fallback', () => {
+    expect(source).toContain("if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;");
+  });
+
+  it('anchors the viewport picker with floating placement and cleans it up', () => {
+    expect(viewportSource).toContain("import { anchorFloatingSurface } from '../floating-surface.js';");
+    expect(viewportSource).toContain('anchorFloatingSurface(');
+    expect(viewportSource).toContain('instance.viewportBtn,');
+    expect(viewportSource).toContain('instance.viewportDropdown,');
+    expect(viewportSource).toContain("placement: 'bottom-end'");
+    expect(viewportSource).toContain('instance.viewportDropdownFloatingCleanup?.();');
+    expect(source).toContain('viewportDropdownFloatingCleanup: null');
+    expect(source).toContain('instance.viewportDropdownFloatingCleanup?.();');
   });
 
   it('routes popup requests through the host instead of enabling webview popups', () => {
@@ -135,6 +162,7 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('Surface offline');
     expect(source).toContain('Start the local app again');
     expect(source).toContain('webview.stop()');
+    expect(source).toContain('appState.passivateBrowserTabSession(sessionId, failedUrl);');
   });
 
   it('treats about:blank as an empty surface instead of a white content area', () => {
@@ -153,6 +181,7 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-target-trigger');
     expect(source).toContain('browser-target-menu');
     expect(source).toContain("import { anchorFloatingSurface } from '../floating-surface.js';");
+    expect(source).toContain("import { sendGuestMessage } from './guest-messaging.js';");
     expect(source).toContain('targetMenuFloatingCleanup');
     expect(source).toContain('anchorFloatingSurface(trigger, instance.targetMenu');
     expect(source).toContain('Open Sessions');
@@ -160,6 +189,7 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('Send to selected');
     expect(source).not.toContain('browser-target-rail');
     expect(source).not.toContain('Send to Session');
+    expect(source).not.toContain('instance.targetBadge.contains(target)');
   });
 
   it('adds a drag handle to the inspect panel instead of locking it in place', () => {

@@ -21,6 +21,10 @@ const COMMON_BIN_DIRS = isWin
 // On Windows, CLI tools installed via npm are .cmd shims
 const WIN_EXTENSIONS = ['.cmd', '.exe', '.ps1', ''];
 
+function logBinaryProbeWarning(context: string, error: unknown): void {
+  console.warn(`[resolve-binary] ${context}`, error);
+}
+
 function expandHomePath(input: string): string {
   if (input === '~') return os.homedir();
   if (input.startsWith('~/')) return path.join(os.homedir(), input.slice(2));
@@ -56,12 +60,20 @@ function findBinaryInDir(dir: string, binaryName: string): string | null {
   if (isWin) {
     for (const ext of WIN_EXTENSIONS) {
       const candidate = path.join(dir, binaryName + ext);
-      try { if (fs.existsSync(candidate)) return candidate; } catch {}
+      try {
+        if (fs.existsSync(candidate)) return candidate;
+      } catch (error) {
+        logBinaryProbeWarning(`Failed to probe candidate path: ${candidate}`, error);
+      }
     }
     return null;
   }
   const candidate = path.join(dir, binaryName);
-  try { if (fs.existsSync(candidate)) return candidate; } catch {}
+  try {
+    if (fs.existsSync(candidate)) return candidate;
+  } catch (error) {
+    logBinaryProbeWarning(`Failed to probe candidate path: ${candidate}`, error);
+  }
   return null;
 }
 

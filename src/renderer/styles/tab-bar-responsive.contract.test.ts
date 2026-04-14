@@ -13,7 +13,7 @@ describe('tab bar responsive command deck contract', () => {
     expect(tabsCss).toContain('#git-status .git-ahead-behind');
     expect(tabsCss).toContain('display: none;');
     expect(tabsCss).toContain('max-width: 110px;');
-    expect(tabsCss).toContain('@container workspace-stack (max-width: 860px)');
+    expect(tabsCss).toContain('@container workspace-stack (max-width: 820px)');
     expect(tabsCss).toContain('"main"');
     expect(tabsCss).toContain('"meta"');
     expect(tabsCss).toContain('"actions"');

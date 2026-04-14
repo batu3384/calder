@@ -1,4 +1,4 @@
-import { anchorFloatingSurface } from './floating-surface.js';
+import { anchorFloatingSurface, type FloatingSurfaceOptions } from './floating-surface.js';
 
 export interface SelectOption {
   value: string;
@@ -9,19 +9,29 @@ export interface SelectOption {
 export interface CustomSelectInstance {
   element: HTMLElement;
   getValue(): string;
+  setValue(value: string): void;
   destroy(): void;
+}
+
+export interface CustomSelectConfig {
+  floating?: FloatingSurfaceOptions | false;
+  align?: 'start' | 'end';
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function createCustomSelect(
   id: string,
   options: SelectOption[],
   defaultValue?: string,
+  config: CustomSelectConfig = {},
 ): CustomSelectInstance {
   const defaultOpt = options.find(o => o.value === defaultValue) ?? options.find(o => !o.disabled) ?? options[0];
 
   const wrapper = document.createElement('div');
   wrapper.className = 'custom-select';
   wrapper.dataset.state = 'closed';
+  wrapper.dataset.floating = config.floating === false ? 'inline' : 'floating';
+  wrapper.dataset.align = config.align ?? 'start';
 
   const hidden = document.createElement('input');
   hidden.type = 'hidden';
@@ -69,16 +79,22 @@ export function createCustomSelect(
     dropdown.appendChild(item);
   }
 
-  function selectOption(index: number): void {
+  function applySelectedIndex(index: number): void {
     const opt = options[index];
-    if (!opt || opt.disabled) return;
-    const prevValue = hidden.value;
+    if (!opt) return;
     hidden.value = opt.value;
     trigger.textContent = opt.label;
     items.forEach((el, itemIndex) => {
       el.classList.toggle('selected', itemIndex === index);
       el.setAttribute('aria-selected', String(itemIndex === index));
     });
+  }
+
+  function selectOption(index: number): void {
+    const opt = options[index];
+    if (!opt || opt.disabled) return;
+    const prevValue = hidden.value;
+    applySelectedIndex(index);
     if (prevValue !== opt.value) {
       hidden.dispatchEvent(new Event('input', { bubbles: true }));
       hidden.dispatchEvent(new Event('change', { bubbles: true }));
@@ -92,22 +108,31 @@ export function createCustomSelect(
   }
 
   function openDropdown(): void {
+    if (isOpen()) return;
+    const triggerWidth = Math.ceil(trigger.getBoundingClientRect().width);
+    dropdown.style.minWidth = `${Math.max(triggerWidth, 120)}px`;
+    dropdown.style.width = 'max-content';
     dropdown.classList.add('visible');
     trigger.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     wrapper.dataset.state = 'open';
     activeIndex = options.findIndex(o => o.value === hidden.value);
-    floatingCleanup?.();
-    floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
-      placement: 'bottom-start',
-      offsetPx: 6,
-      maxWidthPx: 360,
-      maxHeightPx: 320,
-    });
+    if (config.floating !== false) {
+      floatingCleanup?.();
+      floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
+        placement: 'bottom-start',
+        offsetPx: 6,
+        maxWidthPx: 360,
+        maxHeightPx: 320,
+        ...config.floating,
+      });
+    }
     updateActive();
+    config.onOpenChange?.(true);
   }
 
   function closeDropdown(): void {
+    const wasOpen = isOpen();
     floatingCleanup?.();
     floatingCleanup = null;
     dropdown.classList.remove('visible');
@@ -116,6 +141,9 @@ export function createCustomSelect(
     wrapper.dataset.state = 'closed';
     activeIndex = -1;
     items.forEach(el => el.classList.remove('active'));
+    if (wasOpen) {
+      config.onOpenChange?.(false);
+    }
   }
 
   function isOpen(): boolean {
@@ -164,6 +192,11 @@ export function createCustomSelect(
   };
   document.addEventListener('mousedown', onOutsideClick);
 
+  const initialIndex = options.findIndex(o => o.value === hidden.value);
+  if (initialIndex >= 0) {
+    applySelectedIndex(initialIndex);
+  }
+
   wrapper.appendChild(hidden);
   wrapper.appendChild(trigger);
   wrapper.appendChild(dropdown);
@@ -171,8 +204,14 @@ export function createCustomSelect(
   return {
     element: wrapper,
     getValue() { return hidden.value; },
+    setValue(value: string) {
+      const nextIndex = options.findIndex(opt => opt.value === value && !opt.disabled);
+      if (nextIndex >= 0) {
+        applySelectedIndex(nextIndex);
+      }
+    },
     destroy() {
-      floatingCleanup?.();
+      closeDropdown();
       document.removeEventListener('mousedown', onOutsideClick);
     },
   };

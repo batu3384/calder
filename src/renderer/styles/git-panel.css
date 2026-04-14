@@ -65,11 +65,11 @@
 .git-item-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   flex-shrink: 0;
   margin-left: auto;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity 0.12s ease;
 }
 
 .config-item:hover .git-item-actions {
@@ -77,21 +77,33 @@
 }
 
 .git-action-btn {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 70%, transparent);
   color: var(--text-muted);
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 22px;
   text-align: center;
   cursor: pointer;
   font-family: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .git-action-btn:hover {
-  background: var(--bg-hover);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
   color: var(--text-primary);
+  transform: translateY(-1px);
 }

@@ -9,6 +9,10 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(),
+  openSync: vi.fn(),
+  fstatSync: vi.fn(),
+  readSync: vi.fn(),
+  closeSync: vi.fn(),
   readdirSync: vi.fn(),
   statSync: vi.fn(),
   unlinkSync: vi.fn(),
@@ -51,6 +55,10 @@ beforeEach(() => {
   vi.mocked(fs.mkdirSync).mockImplementation(vi.fn() as any);
   vi.mocked(fs.writeFileSync).mockImplementation(vi.fn() as any);
   vi.mocked(fs.readFileSync).mockImplementation(vi.fn() as any);
+  vi.mocked(fs.openSync).mockImplementation(vi.fn() as any);
+  vi.mocked(fs.fstatSync).mockImplementation(vi.fn() as any);
+  vi.mocked(fs.readSync).mockImplementation(vi.fn() as any);
+  vi.mocked(fs.closeSync).mockImplementation(vi.fn() as any);
   vi.mocked(fs.readdirSync).mockReturnValue([] as any);
   vi.mocked(fs.statSync).mockImplementation(vi.fn() as any);
   vi.mocked(fs.unlinkSync).mockImplementation(vi.fn() as any);
@@ -230,6 +238,15 @@ describe('hook-status', () => {
       expect(mockSend).not.toHaveBeenCalled();
     });
 
+    it('ignores unknown file extensions without crashing', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+
+      expect(() => watchCallback!('change', 'abc123.unknown')).not.toThrow();
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
     it('skips sending when window is destroyed', () => {
       const win = createMockWin();
       startWatching(win);
@@ -261,6 +278,76 @@ describe('hook-status', () => {
 
       expect(fs.readdirSync).toHaveBeenCalledWith(STATUS_DIR);
       expect(mockSend).toHaveBeenCalledWith('session:costData', 'abc123', costData);
+    });
+
+    it('.events streams JSONL inspector events and tracks offsets', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+      const eventFile = path.join(STATUS_DIR, 'abc123.events');
+      const payload = '{"type":"tool","name":"Bash"}\n{"type":"stop"}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      vi.mocked(fs.openSync).mockReturnValue(11 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+      expect(fs.openSync).toHaveBeenCalledWith(eventFile, 'r');
+      expect(fs.readSync).toHaveBeenCalled();
+      expect(mockSend).toHaveBeenCalledWith('session:inspectorEvents', 'abc123', [
+        { type: 'tool', name: 'Bash' },
+        { type: 'stop' },
+      ]);
+      expect(fs.closeSync).toHaveBeenCalledWith(11);
+
+      // Same size again should not re-read or re-emit (offset already advanced)
+      vi.clearAllMocks();
+      vi.mocked(fs.openSync).mockReturnValue(12 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      watchCallback!('change', 'abc123.events');
+      expect(fs.readSync).not.toHaveBeenCalled();
+      expect(mockSend).not.toHaveBeenCalled();
+      expect(fs.closeSync).toHaveBeenCalledWith(12);
+    });
+
+    it('.events skips malformed JSON lines but still emits valid ones', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+      const payload = '{"type":"ok"}\nnot-json\n{"type":"ok2"}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      vi.mocked(fs.openSync).mockReturnValue(21 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+      expect(mockSend).toHaveBeenCalledWith('session:inspectorEvents', 'abc123', [
+        { type: 'ok' },
+        { type: 'ok2' },
+      ]);
+    });
+
+    it('.events handles read failures and still closes opened descriptors', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+
+      vi.mocked(fs.openSync).mockReturnValue(31 as any);
+      vi.mocked(fs.fstatSync).mockImplementation(() => {
+        throw new Error('stat failed');
+      });
+
+      expect(() => watchCallback!('change', 'abc123.events')).not.toThrow();
+      expect(mockSend).not.toHaveBeenCalled();
+      expect(fs.closeSync).toHaveBeenCalledWith(31);
     });
   });
 

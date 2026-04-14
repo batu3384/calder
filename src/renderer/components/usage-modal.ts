@@ -1,4 +1,4 @@
-import { closeModal } from './modal.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import type { StatsCache } from '../types.js';
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -232,10 +232,7 @@ export async function showUsageModal(): Promise<void> {
   overlay.classList.remove('hidden');
 
   // Clean up previous listeners
-  if ((overlay as any)._cleanup) {
-    (overlay as any)._cleanup();
-    (overlay as any)._cleanup = null;
-  }
+  runModalCleanup();
 
   const handleClose = () => {
     closeModal();
@@ -255,11 +252,11 @@ export async function showUsageModal(): Promise<void> {
   btnCancel.addEventListener('click', handleClose);
   document.addEventListener('keydown', handleKeydown);
 
-  (overlay as any)._cleanup = () => {
+  registerModalCleanup(() => {
     btnConfirm.removeEventListener('click', handleClose);
     btnCancel.removeEventListener('click', handleClose);
     document.removeEventListener('keydown', handleKeydown);
-  };
+  });
 
   // Load stats
   try {

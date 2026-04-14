@@ -30,26 +30,27 @@
 
 ## Why Calder?
 
-Running AI coding agents in a bare terminal gets messy fast. Calder gives you a proper workspace — multi-session management, split panes, swarm mode, cost tracking, and session resume — so you can focus on building, not juggling terminals.
+Running AI coding agents in a bare terminal gets messy fast. Calder gives you a proper workspace — multi-session orchestration, Live View, CLI Surface inspect, cost/context tracking, and session resume — so you can focus on building instead of juggling terminals.
 
 ## Highlights
 
 - **P2P session sharing** — share live terminal sessions with teammates over encrypted peer-to-peer connections (WebRTC), with read-only or read-write modes and PIN-based authentication
-- **Multi-session management** — run multiple agent sessions per project, each in its own PTY; use swarm mode for a grid view of all sessions at once and spin up new ones with `Cmd+\`
+- **Multi-session management** — run multiple agent sessions per project, each in its own PTY; switch between session deck and mosaic layouts and spin up new ones with `Cmd+\`
 - **Cost & context tracking** — real-time spend, token usage, and context window monitoring per session
 - **Session inspector** — real-time session telemetry with timeline, cost breakdown, tool usage stats, and context window monitoring (`Cmd+Shift+I`)
-- **AI Readiness Score** — see how well-prepared your project is for AI-assisted coding, with one-click fixes
+- **Hybrid context discovery** — surface provider-native memory like `CLAUDE.md` alongside shared project rules, then route a compact applied-context summary into browser and CLI prompts
 - **Session resume** — pick up where you left off, even after restarting the app
 - **Smart alerts** — detects missing tools, context bloat, and session health issues
 - **Session status indicators** — color-coded dots on each tab show real-time session state (working, waiting, input needed, completed), with optional desktop notifications
-- **Embedded browser tab** — open any URL (e.g. `localhost:3000`) in a session tab, toggle element inspection to click any DOM element, and send AI editing instructions with the exact selector, text content, and page URL as context
+- **Live View** — open any URL (for example `localhost:3000`) inside Calder, inspect page elements, annotate flows, and route focused prompts into the right coding session
+- **CLI Surface** — attach a local dev command, inspect terminal output semantically, and route compact terminal selections into an AI session without losing project context
 - **Keyboard-driven** — full shortcut support, built for speed
 
-> Supports Claude Code, OpenAI Codex CLI, and Gemini CLI. More AI CLI providers coming soon.
+> Supports Claude Code, Codex CLI, GitHub Copilot, Gemini CLI, Qwen Code, MiniMax CLI, and Blackbox CLI.
 
 ## Install
 
-Requires at least one supported CLI installed and authenticated: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [OpenAI Codex CLI](https://github.com/openai/codex), or [Gemini CLI](https://github.com/google-gemini/gemini-cli).
+Requires at least one supported CLI installed and authenticated. Common setups include [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [OpenAI Codex CLI](https://github.com/openai/codex), [GitHub Copilot](https://docs.github.com/en/copilot), and [Gemini CLI](https://github.com/google-gemini/gemini-cli).
 
 ### macOS
 

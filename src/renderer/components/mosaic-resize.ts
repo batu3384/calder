@@ -42,6 +42,15 @@ export function attachRatioHandle(
 
   let onPointerMove: ((event: PointerEvent) => void) | null = null;
   let onPointerUp: ((event: PointerEvent) => void) | null = null;
+  let onPointerCancel: ((event: PointerEvent) => void) | null = null;
+  let onWindowBlur: (() => void) | null = null;
+  let onLostPointerCapture: ((event: PointerEvent) => void) | null = null;
+  let activePointerId: number | null = null;
+
+  const matchesActivePointer = (event: Pick<PointerEvent, 'pointerId'>): boolean => {
+    if (activePointerId === null) return true;
+    return typeof event.pointerId !== 'number' || event.pointerId === activePointerId;
+  };
 
   const stopDragging = () => {
     handle.classList.remove('active');
@@ -53,27 +62,68 @@ export function attachRatioHandle(
       window.removeEventListener('pointerup', onPointerUp);
       onPointerUp = null;
     }
+    if (onPointerCancel) {
+      window.removeEventListener('pointercancel', onPointerCancel);
+      onPointerCancel = null;
+    }
+    if (onWindowBlur) {
+      window.removeEventListener('blur', onWindowBlur);
+      onWindowBlur = null;
+    }
+    if (onLostPointerCapture) {
+      handle.removeEventListener('lostpointercapture', onLostPointerCapture);
+      onLostPointerCapture = null;
+    }
+    activePointerId = null;
   };
 
   const onPointerDown = (event: PointerEvent) => {
     const bounds = getBounds();
     let lastRatio = resolvePointerRatio(bounds, event, axis, min, max, fallback);
+    activePointerId = typeof event.pointerId === 'number' ? event.pointerId : null;
     handle.classList.add('active');
 
     onPointerMove = (moveEvent: PointerEvent) => {
+      if (!matchesActivePointer(moveEvent)) return;
       lastRatio = resolvePointerRatio(bounds, moveEvent, axis, min, max, fallback);
       callbacks.onPreview?.(lastRatio);
     };
 
     onPointerUp = (upEvent: PointerEvent) => {
+      if (!matchesActivePointer(upEvent)) return;
       lastRatio = resolvePointerRatio(bounds, upEvent, axis, min, max, fallback);
       callbacks.onPreview?.(lastRatio);
       callbacks.onCommit?.(lastRatio);
       stopDragging();
     };
 
+    onPointerCancel = (cancelEvent: PointerEvent) => {
+      if (!matchesActivePointer(cancelEvent)) return;
+      stopDragging();
+    };
+
+    onWindowBlur = () => {
+      stopDragging();
+    };
+
+    onLostPointerCapture = (lostCaptureEvent: PointerEvent) => {
+      if (!matchesActivePointer(lostCaptureEvent)) return;
+      stopDragging();
+    };
+
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('blur', onWindowBlur);
+    handle.addEventListener('lostpointercapture', onLostPointerCapture);
+
+    if (activePointerId !== null && typeof handle.setPointerCapture === 'function') {
+      try {
+        handle.setPointerCapture(activePointerId);
+      } catch {
+        // Ignore capture failures (e.g., non-primary pointer or unsupported environments).
+      }
+    }
     event.preventDefault();
   };
 

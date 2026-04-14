@@ -6,7 +6,11 @@ const mockAppState = vi.hoisted(() => ({
   dismissStarPrompt: vi.fn(),
 }));
 
-vi.mock('./modal.js', () => ({ closeModal: vi.fn() }));
+vi.mock('./modal.js', () => ({
+  closeModal: vi.fn(),
+  runModalCleanup: vi.fn(),
+  registerModalCleanup: vi.fn(),
+}));
 vi.mock('../state.js', () => ({ appState: mockAppState }));
 
 // Stub minimal DOM elements that the dialog needs
