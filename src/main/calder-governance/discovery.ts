@@ -8,8 +8,7 @@ import type {
   ProjectGovernanceState,
 } from '../../shared/types.js';
 import {
-  readGlobalAutoApprovalMode,
-  readAutoApprovalModeFromPolicyFile,
+  readGlobalAutoApprovalPolicy,
   resolveEffectiveAutoApprovalMode,
 } from './auto-approval-policy.js';
 
@@ -108,10 +107,14 @@ function buildPolicySource(filePath: string): ProjectGovernancePolicySource {
 
 export async function discoverProjectGovernance(projectPath: string): Promise<ProjectGovernanceState> {
   const policyPath = path.join(projectPath, POLICY_RELATIVE_PATH);
-  const globalMode = readGlobalAutoApprovalMode();
+  const globalPolicy = readGlobalAutoApprovalPolicy();
+  const globalMode = globalPolicy.mode;
 
   if (!isFile(policyPath)) {
-    const resolved = resolveEffectiveAutoApprovalMode({ globalMode });
+    const resolved = resolveEffectiveAutoApprovalMode({
+      globalMode,
+      hasGlobalMode: globalPolicy.isExplicit,
+    });
     return {
       autoApproval: {
         globalMode,
@@ -125,8 +128,13 @@ export async function discoverProjectGovernance(projectPath: string): Promise<Pr
 
   const policy = buildPolicySource(policyPath);
   const raw = readPolicy(policyPath);
-  const projectMode = asAutoApprovalMode(raw.autoApproval?.mode) ?? readAutoApprovalModeFromPolicyFile(policyPath);
-  const resolved = resolveEffectiveAutoApprovalMode({ globalMode, projectMode });
+  const projectMode = asAutoApprovalMode(raw.autoApproval?.mode);
+  const resolved = resolveEffectiveAutoApprovalMode({
+    globalMode,
+    hasGlobalMode: globalPolicy.isExplicit,
+    projectMode,
+    hasProjectMode: projectMode !== undefined,
+  });
 
   return {
     policy,

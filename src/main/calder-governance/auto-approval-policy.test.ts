@@ -58,10 +58,29 @@ describe('resolveEffectiveAutoApprovalMode', () => {
     expect(result.policySource).toBe('global');
   });
 
-  it('falls back to off when all layers resolve to off', () => {
+  it('treats explicit project off as an override over global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'off',
+      globalMode: 'edit_plus_safe_tools',
+      projectMode: 'off',
     });
+
+    expect(result.effectiveMode).toBe('off');
+    expect(result.policySource).toBe('project');
+  });
+
+  it('treats explicit session off as an override over project and global mode', () => {
+    const result = resolveEffectiveAutoApprovalMode({
+      globalMode: 'edit_plus_safe_tools',
+      projectMode: 'edit_only',
+      sessionMode: 'off',
+    });
+
+    expect(result.effectiveMode).toBe('off');
+    expect(result.policySource).toBe('session');
+  });
+
+  it('falls back to off when all layers resolve to off', () => {
+    const result = resolveEffectiveAutoApprovalMode({});
 
     expect(result.effectiveMode).toBe('off');
     expect(result.policySource).toBe('fallback');

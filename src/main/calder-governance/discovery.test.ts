@@ -1,8 +1,24 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import type { AutoApprovalMode } from '../../shared/types.js';
 import { discoverProjectGovernance } from './discovery.js';
+
+let mockedGlobalMode: AutoApprovalMode = 'off';
+let mockedGlobalIsExplicit = false;
+
+vi.mock('./auto-approval-policy.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./auto-approval-policy.js')>();
+  return {
+    ...actual,
+    readGlobalAutoApprovalMode: () => mockedGlobalMode,
+    readGlobalAutoApprovalPolicy: () => ({
+      mode: mockedGlobalMode,
+      isExplicit: mockedGlobalIsExplicit,
+    }),
+  };
+});
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));
@@ -19,6 +35,8 @@ function writeFiles(root: string, files: Record<string, string>): void {
 const roots: string[] = [];
 
 afterEach(() => {
+  mockedGlobalMode = 'off';
+  mockedGlobalIsExplicit = false;
   while (roots.length > 0) {
     rmSync(roots.pop()!, { recursive: true, force: true });
   }
@@ -87,5 +105,65 @@ describe('discoverProjectGovernance', () => {
       recentDecisions: [],
     });
     expect(result.lastUpdated).toBeUndefined();
+  });
+
+  it('keeps projectMode undefined for legacy policies without auto approval', async () => {
+    const root = makeProject('governance-legacy');
+    roots.push(root);
+    mockedGlobalMode = 'edit_plus_safe_tools';
+    mockedGlobalIsExplicit = true;
+    writeFiles(root, {
+      '.calder/governance/policy.json': JSON.stringify({
+        schemaVersion: 1,
+        profileName: 'Legacy policy',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+      }, null, 2),
+    });
+
+    const result = await discoverProjectGovernance(root);
+
+    expect(result.autoApproval).toEqual({
+      globalMode: 'edit_plus_safe_tools',
+      projectMode: undefined,
+      effectiveMode: 'edit_plus_safe_tools',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+  });
+
+  it('uses explicit project off as the effective source', async () => {
+    const root = makeProject('governance-project-off');
+    roots.push(root);
+    mockedGlobalMode = 'edit_plus_safe_tools';
+    mockedGlobalIsExplicit = true;
+    writeFiles(root, {
+      '.calder/governance/policy.json': JSON.stringify({
+        schemaVersion: 1,
+        profileName: 'Project override',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+        autoApproval: {
+          mode: 'off',
+          safeToolProfile: 'default-read-only',
+        },
+      }, null, 2),
+    });
+
+    const result = await discoverProjectGovernance(root);
+
+    expect(result.autoApproval).toEqual({
+      globalMode: 'edit_plus_safe_tools',
+      projectMode: 'off',
+      effectiveMode: 'off',
+      policySource: 'project',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
   });
 });

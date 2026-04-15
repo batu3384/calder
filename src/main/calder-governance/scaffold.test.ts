@@ -37,7 +37,7 @@ describe('project governance scaffold', () => {
       globalMode: 'off',
       projectMode: 'off',
       effectiveMode: 'off',
-      policySource: 'fallback',
+      policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
