@@ -42,6 +42,10 @@ describe('discoverProjectGovernance', () => {
           claude: { defaultArgs: '--permission-mode=plan' },
         },
         budgetLimitUsd: 8,
+        autoApproval: {
+          mode: 'edit_only',
+          safeToolProfile: 'default-read-only',
+        },
       }, null, 2),
     });
 
@@ -57,6 +61,14 @@ describe('discoverProjectGovernance', () => {
       providerProfileCount: 2,
       budgetLimitUsd: 8,
     }));
+    expect(result.autoApproval).toEqual({
+      globalMode: 'off',
+      projectMode: 'edit_only',
+      effectiveMode: 'edit_only',
+      policySource: 'project',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
     expect(result.lastUpdated).toBeTypeOf('string');
   });
 
@@ -67,6 +79,13 @@ describe('discoverProjectGovernance', () => {
     const result = await discoverProjectGovernance(root);
 
     expect(result.policy).toBeUndefined();
+    expect(result.autoApproval).toEqual({
+      globalMode: 'off',
+      effectiveMode: 'off',
+      policySource: 'fallback',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
     expect(result.lastUpdated).toBeUndefined();
   });
 });

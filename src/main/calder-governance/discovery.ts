@@ -1,11 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  AutoApprovalMode,
   ProjectGovernanceDecisionPolicy,
   ProjectGovernanceMode,
   ProjectGovernancePolicySource,
   ProjectGovernanceState,
 } from '../../shared/types.js';
+import {
+  readGlobalAutoApprovalMode,
+  readAutoApprovalModeFromPolicyFile,
+  resolveEffectiveAutoApprovalMode,
+} from './auto-approval-policy.js';
 
 interface RawGovernancePolicy {
   profileName?: unknown;
@@ -16,6 +22,9 @@ interface RawGovernancePolicy {
   mcpAllowlist?: unknown;
   providerProfiles?: unknown;
   budgetLimitUsd?: unknown;
+  autoApproval?: {
+    mode?: unknown;
+  };
 }
 
 const POLICY_RELATIVE_PATH = path.join('.calder', 'governance', 'policy.json');
@@ -52,6 +61,12 @@ function countAllowlist(value: unknown): number {
 function countProviderProfiles(value: unknown): number {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
   return Object.values(value).filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry)).length;
+}
+
+function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
+  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools'
+    ? value
+    : undefined;
 }
 
 function readPolicy(filePath: string): RawGovernancePolicy {
@@ -93,13 +108,36 @@ function buildPolicySource(filePath: string): ProjectGovernancePolicySource {
 
 export async function discoverProjectGovernance(projectPath: string): Promise<ProjectGovernanceState> {
   const policyPath = path.join(projectPath, POLICY_RELATIVE_PATH);
+  const globalMode = readGlobalAutoApprovalMode();
+
   if (!isFile(policyPath)) {
-    return {};
+    const resolved = resolveEffectiveAutoApprovalMode({ globalMode });
+    return {
+      autoApproval: {
+        globalMode,
+        effectiveMode: resolved.effectiveMode,
+        policySource: resolved.policySource,
+        safeToolProfile: 'default-read-only',
+        recentDecisions: [],
+      },
+    };
   }
 
   const policy = buildPolicySource(policyPath);
+  const raw = readPolicy(policyPath);
+  const projectMode = asAutoApprovalMode(raw.autoApproval?.mode) ?? readAutoApprovalModeFromPolicyFile(policyPath);
+  const resolved = resolveEffectiveAutoApprovalMode({ globalMode, projectMode });
+
   return {
     policy,
+    autoApproval: {
+      globalMode,
+      projectMode,
+      effectiveMode: resolved.effectiveMode,
+      policySource: resolved.policySource,
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    },
     lastUpdated: policy.lastUpdated,
   };
 }

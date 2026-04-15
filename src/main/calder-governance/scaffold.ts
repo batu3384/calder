@@ -11,6 +11,10 @@ function buildStarterPolicy(): string {
     toolPolicy: 'ask',
     writePolicy: 'ask',
     networkPolicy: 'ask',
+    autoApproval: {
+      mode: 'off',
+      safeToolProfile: 'default-read-only',
+    },
     mcpAllowlist: [],
     providerProfiles: {},
     budgetLimitUsd: 10,
