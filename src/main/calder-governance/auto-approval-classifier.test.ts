@@ -36,6 +36,8 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'rm -rf dist' }, 'destructive'],
     [{ tool: 'Bash', command: 'git reset --hard HEAD~1' }, 'destructive'],
     [{ tool: 'Bash', command: 'git checkout -- src/main.ts' }, 'destructive'],
+    [{ tool: 'bash', command: 'bash', args: ['-lc', 'rm -rf dist'] }, 'destructive'],
+    [{ tool: 'sh', command: 'sh', args: ['-lc', 'git reset --hard HEAD~1'] }, 'destructive'],
   ] as const)('classifies destructive bash commands as destructive: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
@@ -45,6 +47,8 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'git add src/main.ts' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'python script.py' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'cat README.md | xargs rm' }, 'risky_tool'],
+    [{ tool: 'Bash', command: 'find . -maxdepth 1 -type f -fprint out.txt' }, 'risky_tool'],
+    [{ tool: 'Bash', command: 'find . -maxdepth 1 -type f -fprintf out.txt %p' }, 'risky_tool'],
   ] as const)('classifies other bash commands as risky_tool: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });

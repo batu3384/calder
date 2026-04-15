@@ -18,6 +18,7 @@ export interface AutoApprovalDecisionResult {
 }
 
 const EDIT_TOOLS = new Set(['write', 'edit', 'multiedit']);
+const SHELL_TOOLS = new Set(['bash', 'sh']);
 
 const DESTRUCTIVE_PATTERNS: RegExp[] = [
   /\brm\s+-rf\b/i,
@@ -42,10 +43,11 @@ function normalize(value: string | null | undefined): string {
   return (value ?? '').trim();
 }
 
-function getCommandText(input: AutoApprovalOperationInput): string {
+function getShellCommandText(input: AutoApprovalOperationInput): string {
   const command = normalize(input.command);
   if (command) {
-    return command;
+    const args = normalize(input.args?.join(' '));
+    return args ? `${command} ${args}` : command;
   }
 
   const args = normalize(input.args?.join(' '));
@@ -57,7 +59,22 @@ function getCommandText(input: AutoApprovalOperationInput): string {
 }
 
 function isClearlyReadOnlyFind(command: string): boolean {
-  return /^find(?:\s|$)/i.test(command) && !/\b(?:-delete|-exec|-execdir|-ok)\b/i.test(command);
+  if (!/^find(?:\s|$)/i.test(command)) {
+    return false;
+  }
+
+  const disallowedFindFlags = new Set([
+    '-delete',
+    '-exec',
+    '-execdir',
+    '-ok',
+    '-okdir',
+    '-fprint',
+    '-fprintf',
+    '-fls',
+  ]);
+  const tokens = command.toLowerCase().split(/\s+/);
+  return !tokens.some((token) => disallowedFindFlags.has(token));
 }
 
 function isSafeReadOnlyCommand(command: string): boolean {
@@ -86,11 +103,11 @@ export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput 
     return 'edit';
   }
 
-  if (tool !== 'bash') {
+  if (!SHELL_TOOLS.has(tool)) {
     return 'risky_tool';
   }
 
-  const command = getCommandText(input);
+  const command = getShellCommandText(input);
   if (!command) {
     return 'unknown';
   }
