@@ -366,12 +366,7 @@ export interface ProjectGovernanceAutoApprovalState {
   effectiveMode: AutoApprovalMode;
   policySource: AutoApprovalPolicySource;
   safeToolProfile: 'default-read-only';
-  recentDecisions: Array<{
-    timestamp: string;
-    operationClass: AutoApprovalOperationClass;
-    decision: AutoApprovalDecision;
-    reason?: string;
-  }>;
+  recentDecisions: ProjectGovernanceAutoApprovalDecisionRecord[];
 }
 
 export interface ProjectGovernancePolicySource {
@@ -743,6 +738,7 @@ export interface InspectorEvent {
   config_key?: string;
   question?: string;
   answer?: string;
+  // Snake_case matches the hook payload shape emitted by the inspector bridge.
   auto_approval?: {
     policy_source: AutoApprovalPolicySource;
     effective_mode: AutoApprovalMode;

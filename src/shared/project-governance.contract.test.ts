@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import type { ProjectGovernanceAutoApprovalDecisionRecord, ProjectGovernanceAutoApprovalState } from './types';
 
 const source = readFileSync(path.join(process.cwd(), 'src/shared/types.ts'), 'utf8');
 
@@ -20,10 +21,14 @@ describe('project governance contracts', () => {
     expect(source).toContain('globalMode: AutoApprovalMode');
     expect(source).toContain('effectiveMode: AutoApprovalMode');
     expect(source).toContain("safeToolProfile: 'default-read-only';");
-    expect(source).toContain('recentDecisions: Array<');
+    expect(source).toContain('recentDecisions: ProjectGovernanceAutoApprovalDecisionRecord[];');
     expect(source).toContain('export interface ProjectGovernanceState');
     expect(source).toContain('policy?: ProjectGovernancePolicySource');
     expect(source).toContain('autoApproval?: ProjectGovernanceAutoApprovalState');
+  });
+
+  it('keeps recent decision items aligned to the named record type', () => {
+    expectTypeOf<ProjectGovernanceAutoApprovalState['recentDecisions'][number]>().toEqualTypeOf<ProjectGovernanceAutoApprovalDecisionRecord>();
   });
 
   it('extends project records with governance state', () => {
