@@ -7,7 +7,7 @@ import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, 
 import { addMcpServer, removeMcpServer } from './claude-cli';
 import type { McpServerConfig } from './claude-cli';
 import { loadState, saveState, PersistedState } from './store';
-import { startWatching, cleanupSessionStatus } from './hook-status';
+import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession } from './codex-session-watcher';
 import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession } from './blackbox-session-watcher';
 import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, gitUnstageFile, gitDiscardFile, getGitRemoteUrl, listGitBranches, checkoutGitBranch, createGitBranch } from './git-status';
@@ -144,30 +144,17 @@ export function registerIpcHandlers(): void {
       }
     },
   });
-  const bridgedInspectorWebContents = new Set<number>();
 
-  const ensureInspectorBridge = (win: BrowserWindow): void => {
-    const contents = win.webContents;
-    if (bridgedInspectorWebContents.has(contents.id)) return;
-    bridgedInspectorWebContents.add(contents.id);
-
-    const originalSend = contents.send.bind(contents);
-    (contents as unknown as { send: typeof contents.send }).send = ((channel: string, ...args: unknown[]) => {
-      originalSend(channel, ...args);
-      if (channel !== 'session:inspectorEvents') return;
-
-      const [sessionId, events] = args;
-      if (typeof sessionId !== 'string' || !Array.isArray(events)) return;
-      void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events).catch((error) => {
-        console.warn('Auto-approval orchestrator failed:', error);
-      });
-    }) as typeof contents.send;
-  };
+  setInspectorEventsMiddleware((sessionId, events) => {
+    void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events).catch((error) => {
+      console.warn('Auto-approval orchestrator failed:', error);
+    });
+    return events;
+  });
 
   ipcMain.handle('pty:create', (_event, sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs: string, providerId: ProviderId = 'claude', initialPrompt?: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    ensureInspectorBridge(win);
 
     // Start hook status watcher on first PTY creation (window is guaranteed to exist)
     if (!hookWatcherStarted) {

@@ -39,6 +39,7 @@ import {
   cleanupSessionStatus,
   cleanupAll,
   registerSession,
+  setInspectorEventsMiddleware,
 } from './hook-status';
 
 let watchCallback: ((eventType: string, filename: string | null) => void) | null = null;
@@ -74,6 +75,7 @@ beforeEach(() => {
 
   // Reset module-level watcher state
   cleanupAll();
+  setInspectorEventsMiddleware(null);
 
   // Clear call counts after cleanup
   vi.clearAllMocks();
@@ -332,6 +334,56 @@ describe('hook-status', () => {
       expect(mockSend).toHaveBeenCalledWith('session:inspectorEvents', 'abc123', [
         { type: 'ok' },
         { type: 'ok2' },
+      ]);
+    });
+
+    it('.events runs middleware before forwarding inspector events', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+      const payload = '{"type":"permission_request"}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      setInspectorEventsMiddleware((sessionId, events) => {
+        return [
+          ...events,
+          {
+            type: 'approval_decision',
+            timestamp: 123,
+            hookEvent: 'AutoApproval',
+            auto_approval: {
+              policy_source: 'project',
+              effective_mode: 'edit_only',
+              operation_class: 'edit',
+              decision: 'allow',
+              reason: `session:${sessionId}`,
+            },
+          },
+        ] as any;
+      });
+
+      vi.mocked(fs.openSync).mockReturnValue(22 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+      expect(mockSend).toHaveBeenCalledWith('session:inspectorEvents', 'abc123', [
+        { type: 'permission_request' },
+        {
+          type: 'approval_decision',
+          timestamp: 123,
+          hookEvent: 'AutoApproval',
+          auto_approval: {
+            policy_source: 'project',
+            effective_mode: 'edit_only',
+            operation_class: 'edit',
+            decision: 'allow',
+            reason: 'session:abc123',
+          },
+        },
       ]);
     });
 

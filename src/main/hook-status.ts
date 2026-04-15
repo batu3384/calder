@@ -4,6 +4,7 @@ import * as os from 'os';
 import { BrowserWindow } from 'electron';
 import { isWin } from './platform';
 import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from './statusline-template';
+import type { InspectorEvent } from '../shared/types';
 
 export const STATUS_DIR = path.join(os.homedir(), '.calder', 'runtime');
 const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');
@@ -16,6 +17,8 @@ let pollInterval: ReturnType<typeof setInterval> | null = null;
 const lastMtimes = new Map<string, number>();
 const eventFileOffsets = new Map<string, number>();
 const knownSessionIds = new Set<string>();
+type InspectorEventsMiddleware = (sessionId: string, events: InspectorEvent[]) => InspectorEvent[];
+let inspectorEventsMiddleware: InspectorEventsMiddleware | null = null;
 
 export function registerSession(sessionId: string): void {
   knownSessionIds.add(sessionId);
@@ -23,6 +26,10 @@ export function registerSession(sessionId: string): void {
 
 export function unregisterSession(sessionId: string): void {
   knownSessionIds.delete(sessionId);
+}
+
+export function setInspectorEventsMiddleware(middleware: InspectorEventsMiddleware | null): void {
+  inspectorEventsMiddleware = middleware;
 }
 
 function isKnownExtension(filename: string): boolean {
@@ -144,12 +151,20 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
         eventFileOffsets.set(sessionId, stat.size);
 
         const lines = buf.toString('utf-8').trim().split('\n').filter(Boolean);
-        const events = [];
+        const events: InspectorEvent[] = [];
         for (const line of lines) {
           try { events.push(JSON.parse(line)); } catch { /* skip malformed */ }
         }
-        if (events.length > 0 && !win.isDestroyed()) {
-          win.webContents.send('session:inspectorEvents', sessionId, events);
+        let finalEvents = events;
+        if (events.length > 0 && inspectorEventsMiddleware) {
+          try {
+            finalEvents = inspectorEventsMiddleware(sessionId, events);
+          } catch (error) {
+            console.warn('Inspector events middleware failed:', error);
+          }
+        }
+        if (finalEvents.length > 0 && !win.isDestroyed()) {
+          win.webContents.send('session:inspectorEvents', sessionId, finalEvents);
         }
       }
     } catch {
@@ -261,6 +276,7 @@ export function cleanupAll(): void {
   stopPolling();
   knownSessionIds.clear();
   eventFileOffsets.clear();
+  inspectorEventsMiddleware = null;
   if (watcher) {
     watcher.close();
     watcher = null;
