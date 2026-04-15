@@ -2,7 +2,7 @@ import { appState, ArchivedSession } from '../state.js';
 import { loadProviderAvailability } from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import type { ProviderId } from '../../shared/types.js';
-type SectionPresentation = 'compact' | 'expanded' | 'promoted';
+type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 
 let historyContextMenu: HTMLElement | null = null;
 function hideHistoryContextMenu(): void {
@@ -72,12 +72,14 @@ let bookmarkFilterActive = false;
 function getSectionPresentation(): SectionPresentation {
   const wrapper = container?.parentNode as { dataset?: Record<string, string> } | null;
   const value = wrapper?.dataset?.presentation;
-  return value === 'compact' || value === 'promoted' || value === 'expanded' ? value : 'expanded';
+  return value === 'compact' || value === 'promoted' || value === 'expanded' || value === 'ultra'
+    ? value
+    : 'expanded';
 }
 
 function isDetailExpanded(presentation: SectionPresentation): boolean {
   if (presentation === 'promoted') return true;
-  if (presentation === 'compact') return compactExpanded;
+  if (presentation === 'compact' || presentation === 'ultra') return compactExpanded;
   return !collapsed;
 }
 
@@ -137,7 +139,7 @@ function render(): void {
   const history = project ? appState.getSessionHistory(project.id) : [];
   const presentation = getSectionPresentation();
   const detailExpanded = isDetailExpanded(presentation);
-  const showCompactSummary = presentation === 'compact' && !detailExpanded;
+  const showCompactSummary = (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
 
   if (!project) {
     container.innerHTML = '';
@@ -172,7 +174,7 @@ function render(): void {
 
   button.addEventListener('click', () => {
     if (presentation === 'promoted') return;
-    if (presentation === 'compact') compactExpanded = !compactExpanded;
+    if (presentation === 'compact' || presentation === 'ultra') compactExpanded = !compactExpanded;
     else collapsed = !collapsed;
     render();
   });

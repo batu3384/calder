@@ -74,6 +74,9 @@ export interface BrowserTabInstance {
   statusBadge: HTMLSpanElement;
   toolbarHint: HTMLDivElement;
   committedUrl: string;
+  pendingNavigationUrl?: string;
+  pendingNavigationPreviousUrl?: string;
+  pendingNavigationAt?: number;
   contentShell: HTMLDivElement;
   viewportContainer: HTMLDivElement;
   newTabPage: HTMLDivElement;

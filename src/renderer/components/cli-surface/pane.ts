@@ -97,6 +97,7 @@ const semanticRegionVersions = new Map<string, number>();
 let runtimeBindingsAttached = false;
 let stateBindingsAttached = false;
 let lastCliSurfaceLinkDispatch: LinkDispatchSnapshot | null = null;
+const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
 
 type CliSurfaceButtonTone = 'neutral' | 'primary' | 'danger' | 'ghost';
 
@@ -118,13 +119,48 @@ function getProject(projectId: string) {
   return appState.projects.find((project) => project.id === projectId);
 }
 
-function openCliSurfaceWebLink(url: string, cwd?: string): void {
+function openCliSurfaceWebLink(url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
   const normalizedUrl = resolveNavigableHttpUrl(url);
   if (!normalizedUrl) return;
   const now = Date.now();
-  if (!shouldDispatchLinkOpen(normalizedUrl, lastCliSurfaceLinkDispatch, now)) return;
-  lastCliSurfaceLinkDispatch = { url: normalizedUrl, at: now };
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastCliSurfaceLinkDispatch, source, now)) return;
+  lastCliSurfaceLinkDispatch = { url: normalizedUrl, at: now, source };
   void window.calder.app.openExternal(normalizedUrl, cwd);
+}
+
+function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: MouseEvent): string | null {
+  if (terminal.cols <= 0 || terminal.rows <= 0) return null;
+  const rect = host.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  if (event.clientX < rect.left || event.clientX > rect.right) return null;
+  if (event.clientY < rect.top || event.clientY > rect.bottom) return null;
+
+  const col = Math.max(0, Math.min(
+    terminal.cols - 1,
+    Math.floor((event.clientX - rect.left) / (rect.width / terminal.cols)),
+  ));
+  const row = Math.max(0, Math.min(
+    terminal.rows - 1,
+    Math.floor((event.clientY - rect.top) / (rect.height / terminal.rows)),
+  ));
+
+  const lineIndex = terminal.buffer.active.viewportY + row;
+  const line = terminal.buffer.active.getLine(lineIndex);
+  if (!line) return null;
+  const text = line.translateToString(true);
+  if (!text) return null;
+
+  INLINE_URL_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = INLINE_URL_PATTERN.exec(text)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length - 1;
+    if (col >= start && col <= end) {
+      return match[0];
+    }
+  }
+
+  return null;
 }
 
 function getRuntimeState(projectId: string): CliSurfaceRuntimeState | undefined {
@@ -1397,8 +1433,12 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     fontSize: 14,
     cursorBlink: true,
     linkHandler: {
-      activate: (_event, uri) => {
-        openCliSurfaceWebLink(uri, getProject(projectId)?.path);
+      activate: (event, uri) => {
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        try { terminal.clearSelection(); } catch {}
+        window.getSelection?.()?.removeAllRanges?.();
+        openCliSurfaceWebLink(uri, 'osc-link', getProject(projectId)?.path);
       },
     },
   });
@@ -1406,9 +1446,37 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   const serializeAddon = new SerializeAddon();
   terminal.loadAddon(fitAddon);
   terminal.loadAddon(serializeAddon);
-  terminal.loadAddon(new WebLinksAddon((_event, url) => {
-    openCliSurfaceWebLink(url, getProject(projectId)?.path);
+  terminal.loadAddon(new WebLinksAddon((event, url) => {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    try { terminal.clearSelection(); } catch {}
+    window.getSelection?.()?.removeAllRanges?.();
+    openCliSurfaceWebLink(url, 'web-link', getProject(projectId)?.path);
   }));
+  const clearPointerSelection = (): void => {
+    try { terminal.clearSelection(); } catch {}
+    window.getSelection?.()?.removeAllRanges?.();
+  };
+  const suppressPointerEvent = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    (event as MouseEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
+  };
+  viewport.addEventListener('mousedown', (event: MouseEvent) => {
+    if (event.button !== 0) return;
+    const candidate = findInlineUrlAtPointer(terminal, viewport, event);
+    if (!candidate) return;
+    suppressPointerEvent(event);
+    clearPointerSelection();
+  }, { capture: true });
+  viewport.addEventListener('click', (event: MouseEvent) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    const candidate = findInlineUrlAtPointer(terminal, viewport, event);
+    if (!candidate) return;
+    suppressPointerEvent(event);
+    clearPointerSelection();
+    openCliSurfaceWebLink(candidate, 'web-link', getProject(projectId)?.path);
+  }, { capture: true });
   terminal.open(viewport);
   viewport.appendChild(hoverOverlay);
   viewport.appendChild(selectionOverlay);

@@ -30,7 +30,8 @@ describe('shouldDispatchLinkOpen', () => {
   it('drops same-origin duplicate urls in the dedupe window', () => {
     expect(shouldDispatchLinkOpen(
       'http://localhost:3000/dashboard',
-      { url: 'http://localhost:3000/dashboard', at: 1000 },
+      { url: 'http://localhost:3000/dashboard', at: 1000, source: 'web-link' },
+      'web-link',
       1080,
     )).toBe(false);
   });
@@ -38,7 +39,8 @@ describe('shouldDispatchLinkOpen', () => {
   it('drops less specific same-origin urls arriving right after a deep path', () => {
     expect(shouldDispatchLinkOpen(
       'http://localhost:3000/',
-      { url: 'http://localhost:3000/admin/tickets', at: 1000 },
+      { url: 'http://localhost:3000/admin/tickets', at: 1000, source: 'web-link' },
+      'web-link',
       1090,
     )).toBe(false);
   });
@@ -46,8 +48,45 @@ describe('shouldDispatchLinkOpen', () => {
   it('keeps more specific same-origin urls arriving right after root', () => {
     expect(shouldDispatchLinkOpen(
       'http://localhost:3000/admin/tickets',
-      { url: 'http://localhost:3000/', at: 1000 },
+      { url: 'http://localhost:3000/', at: 1000, source: 'web-link' },
+      'web-link',
       1090,
     )).toBe(true);
+  });
+
+  it('keeps the more specific target when mixed link sources fire', () => {
+    expect(shouldDispatchLinkOpen(
+      'http://localhost:3000/dashboard',
+      { url: 'http://localhost:3000/', at: 1000, source: 'web-link' },
+      'osc-link',
+      1030,
+    )).toBe(true);
+  });
+
+  it('prefers osc-link when same-origin urls have equal specificity', () => {
+    expect(shouldDispatchLinkOpen(
+      'http://localhost:3000/bravo',
+      { url: 'http://localhost:3000/alpha', at: 1000, source: 'web-link' },
+      'osc-link',
+      1030,
+    )).toBe(true);
+  });
+
+  it('keeps the first winner for same-source equal-specificity urls', () => {
+    expect(shouldDispatchLinkOpen(
+      'http://localhost:3000/bravo',
+      { url: 'http://localhost:3000/alpha', at: 1000, source: 'web-link' },
+      'web-link',
+      1030,
+    )).toBe(false);
+  });
+
+  it('blocks mixed-source events that do not increase url specificity', () => {
+    expect(shouldDispatchLinkOpen(
+      'http://localhost:3000/dashboard',
+      { url: 'http://localhost:3000/dashboard', at: 1000, source: 'osc-link' },
+      'web-link',
+      1030,
+    )).toBe(false);
   });
 });

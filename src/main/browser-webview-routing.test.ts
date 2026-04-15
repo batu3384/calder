@@ -99,4 +99,21 @@ describe('attachBrowserWebviewRouting', () => {
     expect(preventDefault).not.toHaveBeenCalled();
     expect(openExternal).not.toHaveBeenCalled();
   });
+
+  it('deduplicates repeated external routes for the same url in quick succession', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_000);
+    const host = new FakeWebContents();
+    const openExternal = vi.fn();
+    const preventDefault = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+
+    host.windowOpenHandler?.({ url: 'https://example.com/docs' });
+    host.emit('will-navigate', { preventDefault }, 'https://example.com/docs');
+
+    expect(openExternal).toHaveBeenCalledTimes(1);
+    expect(openExternal).toHaveBeenCalledWith('https://example.com/docs');
+    vi.useRealTimers();
+  });
 });

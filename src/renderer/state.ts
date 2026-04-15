@@ -42,6 +42,7 @@ const defaultPreferences: Preferences = {
   sessionHistoryEnabled: true,
   insightsEnabled: true,
   autoTitleEnabled: true,
+  rightRailDensity: 'ultra-compact',
   sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true },
 };
 
@@ -167,10 +168,16 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
   const existing = project.surface;
   const history = existing?.web?.history
     ?? (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []);
+  const kind = existing?.kind ?? (browserSession ? 'web' : 'cli');
+  const active = existing?.active ?? Boolean(browserSession);
+  const tabFocus = kind === 'cli'
+    ? (existing?.tabFocus ?? (active ? 'cli' : 'session'))
+    : 'session';
 
   return {
-    kind: existing?.kind ?? (browserSession ? 'web' : 'cli'),
-    active: existing?.active ?? Boolean(browserSession),
+    kind,
+    active,
+    tabFocus,
     targetSessionId: existing?.targetSessionId ?? browserSession?.browserTargetSessionId,
     web: {
       sessionId: existing?.web?.sessionId ?? browserSession?.id,
@@ -887,6 +894,7 @@ class AppState {
       surface: {
         kind: 'web',
         active: false,
+        tabFocus: 'session',
         web: { history: [] },
         cli: { profiles: [], runtime: { status: 'idle' } },
       },
@@ -1087,6 +1095,7 @@ class AppState {
     project.surface = normalizeProjectSurface(project);
     project.surface.kind = 'web';
     project.surface.active = true;
+    project.surface.tabFocus = 'session';
     project.surface.web = {
       sessionId: session.id,
       url,
@@ -1117,7 +1126,7 @@ class AppState {
       : undefined;
     const fallbackBrowserSession = currentSurfaceSession
       ?? [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
-    const targetBrowserSession = activeBrowserSession ?? fallbackBrowserSession;
+    const targetBrowserSession = currentSurfaceSession ?? activeBrowserSession ?? fallbackBrowserSession;
 
     if (!targetBrowserSession) {
       return this.addBrowserTabSession(project.id, url);
@@ -1129,6 +1138,7 @@ class AppState {
     project.surface = normalizeProjectSurface(project);
     project.surface.kind = 'web';
     project.surface.active = true;
+    project.surface.tabFocus = 'session';
     project.surface.web = {
       sessionId: targetBrowserSession.id,
       url,
@@ -1426,10 +1436,16 @@ class AppState {
     this.pushNav(sessionId);
     const activeSession = project.sessions.find((session) => session.id === sessionId);
     let surfaceChanged = false;
+    if (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') {
+      project.surface = normalizeProjectSurface(project);
+      project.surface.tabFocus = 'session';
+      surfaceChanged = true;
+    }
     if (activeSession?.type === 'browser-tab') {
       project.surface = normalizeProjectSurface(project);
       project.surface.kind = 'web';
       project.surface.active = true;
+      project.surface.tabFocus = 'session';
       project.surface.web = project.surface.web ?? { history: [] };
       project.surface.web.sessionId = activeSession.id;
       project.surface.web.url = activeSession.browserTabUrl;
@@ -1466,8 +1482,12 @@ class AppState {
   setProjectSurface(projectId: string, surface: ProjectSurfaceRecord): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
+    const tabFocus = surface.kind === 'cli'
+      ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
+      : 'session';
     project.surface = {
       ...surface,
+      tabFocus,
       web: surface.web
         ? {
             ...surface.web,
@@ -1485,6 +1505,30 @@ class AppState {
     this.repairProjectSurface(project);
     this.persist();
     this.emit('project-changed');
+  }
+
+  focusCliSurfaceTab(projectId: string): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = normalizeProjectSurface(project);
+    if (project.surface.kind !== 'cli') return;
+    project.surface.active = true;
+    project.surface.tabFocus = 'cli';
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
+  }
+
+  closeCliSurface(projectId: string): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = normalizeProjectSurface(project);
+    if (project.surface.kind !== 'cli') return;
+    project.surface.active = false;
+    project.surface.tabFocus = 'session';
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
   }
 
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {
@@ -1606,6 +1650,7 @@ class AppState {
       project.surface.web.url = undefined;
       if (project.surface.kind === 'web') {
         project.surface.active = false;
+        project.surface.tabFocus = 'session';
       }
     }
 

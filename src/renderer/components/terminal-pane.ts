@@ -34,14 +34,50 @@ interface TerminalInstance {
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
 let lastTerminalLinkDispatch: LinkDispatchSnapshot | null = null;
+const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
 
-function openTerminalWebLink(url: string, cwd?: string): void {
+function openTerminalWebLink(url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
   const normalizedUrl = resolveNavigableHttpUrl(url);
   if (!normalizedUrl) return;
   const now = Date.now();
-  if (!shouldDispatchLinkOpen(normalizedUrl, lastTerminalLinkDispatch, now)) return;
-  lastTerminalLinkDispatch = { url: normalizedUrl, at: now };
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastTerminalLinkDispatch, source, now)) return;
+  lastTerminalLinkDispatch = { url: normalizedUrl, at: now, source };
   void window.calder.app.openExternal(normalizedUrl, cwd);
+}
+
+function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: MouseEvent): string | null {
+  if (terminal.cols <= 0 || terminal.rows <= 0) return null;
+  const rect = host.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  if (event.clientX < rect.left || event.clientX > rect.right) return null;
+  if (event.clientY < rect.top || event.clientY > rect.bottom) return null;
+
+  const col = Math.max(0, Math.min(
+    terminal.cols - 1,
+    Math.floor((event.clientX - rect.left) / (rect.width / terminal.cols)),
+  ));
+  const row = Math.max(0, Math.min(
+    terminal.rows - 1,
+    Math.floor((event.clientY - rect.top) / (rect.height / terminal.rows)),
+  ));
+
+  const lineIndex = terminal.buffer.active.viewportY + row;
+  const line = terminal.buffer.active.getLine(lineIndex);
+  if (!line) return null;
+  const text = line.translateToString(true);
+  if (!text) return null;
+
+  INLINE_URL_PATTERN.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = INLINE_URL_PATTERN.exec(text)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length - 1;
+    if (col >= start && col <= end) {
+      return match[0];
+    }
+  }
+
+  return null;
 }
 
 function providerDisplayName(providerId: ProviderId): string {
@@ -151,8 +187,12 @@ export function createTerminalPane(
     cursorBlink: true,
     allowProposedApi: true,
     linkHandler: {
-      activate: (_event, uri) => {
-        openTerminalWebLink(uri, projectPath);
+      activate: (event, uri) => {
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        try { terminal.clearSelection(); } catch {}
+        window.getSelection?.()?.removeAllRanges?.();
+        openTerminalWebLink(uri, 'osc-link', projectPath);
       },
     },
   });
@@ -163,9 +203,53 @@ export function createTerminalPane(
   const searchAddon = new SearchAddon();
   terminal.loadAddon(searchAddon);
 
-  terminal.loadAddon(new WebLinksAddon((_event, url) => {
-    openTerminalWebLink(url, projectPath);
+  terminal.loadAddon(new WebLinksAddon((event, url) => {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    try { terminal.clearSelection(); } catch {}
+    window.getSelection?.()?.removeAllRanges?.();
+    openTerminalWebLink(url, 'web-link', projectPath);
   }));
+
+  let suppressLinkDragSelection = false;
+  const clearPointerSelection = (): void => {
+    try { terminal.clearSelection(); } catch {}
+    window.getSelection?.()?.removeAllRanges?.();
+  };
+  const suppressPointerEvent = (event: MouseEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    (event as MouseEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
+  };
+
+  xtermWrap.addEventListener('mousedown', (event: MouseEvent) => {
+    if (event.button !== 0) return;
+    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event);
+    if (!candidate) return;
+    suppressLinkDragSelection = true;
+    suppressPointerEvent(event);
+    clearPointerSelection();
+  }, { capture: true });
+  xtermWrap.addEventListener('mousemove', (event: MouseEvent) => {
+    if (!suppressLinkDragSelection) return;
+    if ((event.buttons & 1) !== 1) return;
+    suppressPointerEvent(event);
+    clearPointerSelection();
+  }, { capture: true });
+  xtermWrap.addEventListener('mouseup', () => {
+    suppressLinkDragSelection = false;
+  }, { capture: true });
+  xtermWrap.addEventListener('mouseleave', () => {
+    suppressLinkDragSelection = false;
+  }, { capture: true });
+  xtermWrap.addEventListener('click', (event: MouseEvent) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event);
+    if (!candidate) return;
+    suppressPointerEvent(event);
+    clearPointerSelection();
+    openTerminalWebLink(candidate, 'web-link', projectPath);
+  }, { capture: true });
 
   // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline
   attachClipboardCopyHandler(terminal, (e) => {

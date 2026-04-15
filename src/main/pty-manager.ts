@@ -1,5 +1,5 @@
 import * as pty from 'node-pty';
-import { execSync, execFile } from 'child_process';
+import { execSync, execFile, execFileSync } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import type { ProviderId } from '../shared/types';
@@ -183,8 +183,68 @@ export function resizePty(sessionId: string, cols: number, rows: number): void {
 export function killPty(sessionId: string): void {
   const instance = ptys.get(sessionId);
   if (instance) {
+    const rootPid = Number((instance.process as unknown as { pid?: number }).pid);
+    if (Number.isFinite(rootPid) && rootPid > 0) {
+      terminateProcessTree(rootPid);
+    }
     instance.process.kill();
     ptys.delete(sessionId);
+  }
+}
+
+function terminateProcessTree(rootPid: number): void {
+  if (isWin) {
+    // /T = terminate child processes, /F = force
+    execFile('taskkill', ['/PID', String(rootPid), '/T', '/F'], { timeout: 2500 }, () => {});
+    return;
+  }
+
+  // Kill known descendants first so detached dev servers don't survive parent shell teardown.
+  const descendants = collectDescendantPids(rootPid).reverse();
+  for (const pid of descendants) {
+    terminatePid(pid);
+  }
+  terminatePid(rootPid);
+}
+
+function collectDescendantPids(rootPid: number): number[] {
+  const descendants: number[] = [];
+  const seen = new Set<number>([rootPid]);
+
+  function walk(parentPid: number): void {
+    const children = listChildPids(parentPid);
+    for (const childPid of children) {
+      if (seen.has(childPid)) continue;
+      seen.add(childPid);
+      descendants.push(childPid);
+      walk(childPid);
+    }
+  }
+
+  walk(rootPid);
+  return descendants;
+}
+
+function listChildPids(parentPid: number): number[] {
+  try {
+    const stdout = execFileSync('pgrep', ['-P', String(parentPid)], {
+      encoding: 'utf-8',
+      timeout: 1200,
+    });
+    return stdout
+      .split('\n')
+      .map((value) => Number.parseInt(value.trim(), 10))
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } catch {
+    return [];
+  }
+}
+
+function terminatePid(pid: number): void {
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    // Process already exited or inaccessible
   }
 }
 

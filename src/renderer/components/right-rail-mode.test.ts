@@ -16,6 +16,10 @@ describe('deriveRightRailMode', () => {
     expect(deriveRightRailMode(baseSignals)).toBe('tools-focus');
   });
 
+  it('uses ultra-compact when explicitly preferred', () => {
+    expect(deriveRightRailMode({ ...baseSignals, preferUltraCompact: true })).toBe('ultra-compact');
+  });
+
   it('falls back to normal when there is no active tooling context', () => {
     expect(deriveRightRailMode({ ...baseSignals, hasToolingContext: false })).toBe('normal');
   });
@@ -30,5 +34,12 @@ describe('deriveRightRailPresentation', () => {
     expect(
       deriveRightRailPresentation('normal', { hasDirtyGit: true, hasGitConflicts: false }).git,
     ).toBe('promoted');
+  });
+
+  it('switches all sections to ultra presentation in ultra-compact mode', () => {
+    const presentation = deriveRightRailPresentation('ultra-compact');
+    expect(presentation.capabilities).toBe('ultra');
+    expect(presentation.git).toBe('ultra');
+    expect(presentation.activity).toBe('ultra');
   });
 });

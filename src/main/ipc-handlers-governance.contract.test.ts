@@ -23,5 +23,6 @@ describe('IPC governance contract', () => {
   it('exposes governance IPC handlers for auto-approval controls', () => {
     expect(source).toContain("'governance:setAutoApprovalMode'");
     expect(source).toContain("'governance:setSessionAutoApprovalOverride'");
+    expect(source).toContain("scope === 'project' && (mode === null || isAutoApprovalMode(mode))");
   });
 });

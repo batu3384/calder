@@ -25,6 +25,10 @@ export const GLOBAL_AUTO_APPROVAL_POLICY_PATH = path.join(
   'default-policy.json',
 );
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
   return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools'
     ? value
@@ -55,6 +59,45 @@ export function readGlobalAutoApprovalMode(): AutoApprovalMode {
 
 export function readGlobalAutoApprovalPolicy(): AutoApprovalPolicyModeReadResult {
   return readAutoApprovalPolicyMode(GLOBAL_AUTO_APPROVAL_POLICY_PATH);
+}
+
+export function setAutoApprovalModeInPolicyFile(filePath: string, mode: AutoApprovalMode | null): void {
+  let existing: Record<string, unknown> | undefined;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (isRecord(parsed)) {
+      existing = parsed;
+    }
+  } catch {
+    existing = undefined;
+  }
+
+  if (!existing) {
+    if (mode === null) {
+      return;
+    }
+    existing = {};
+  }
+
+  const rawAutoApproval = existing.autoApproval;
+  const autoApproval = isRecord(rawAutoApproval)
+    ? { ...rawAutoApproval }
+    : {};
+
+  if (mode === null) {
+    delete autoApproval.mode;
+    if (Object.keys(autoApproval).length > 0) {
+      existing.autoApproval = autoApproval;
+    } else {
+      delete existing.autoApproval;
+    }
+  } else {
+    autoApproval.mode = mode;
+    existing.autoApproval = autoApproval;
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(existing, null, 2)}\n`, 'utf8');
 }
 
 export function resolveEffectiveAutoApprovalMode(input: {

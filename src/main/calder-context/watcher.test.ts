@@ -55,6 +55,34 @@ describe('project context watcher', () => {
     expect(seen).toContain('Updated summary');
   });
 
+  it('watches provider instruction files beyond CLAUDE memory', async () => {
+    const root = makeProject('provider-watch');
+    roots.push(root);
+    writeFiles(root, {
+      'AGENTS.md': '# First codex summary\nUse AGENTS defaults.\n',
+    });
+
+    const seen: string[] = [];
+    let resolveUpdate: (() => void) | null = null;
+    const updateSeen = new Promise<void>((resolve) => {
+      resolveUpdate = resolve;
+    });
+
+    startProjectContextWatcher(root, (state) => {
+      const codexSource = state.sources.find((source) => source.provider === 'codex');
+      const summary = codexSource?.summary ?? '';
+      seen.push(summary);
+      if (summary === 'Updated codex summary') {
+        resolveUpdate?.();
+      }
+    });
+
+    writeFileSync(join(root, 'AGENTS.md'), '# Updated codex summary\nUse AGENTS defaults.\n', 'utf8');
+    await updateSeen;
+
+    expect(seen).toContain('Updated codex summary');
+  });
+
   it('stops emitting updates after teardown', async () => {
     const root = makeProject('context-stop');
     roots.push(root);

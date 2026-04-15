@@ -13,6 +13,9 @@ export function normalizeUrl(url: string): string {
 export function navigateTo(instance: BrowserTabInstance, url: string): void {
   const normalizedUrl = normalizeUrl(url);
   if (!normalizedUrl) return;
+  instance.pendingNavigationPreviousUrl = instance.committedUrl;
+  instance.pendingNavigationUrl = normalizedUrl;
+  instance.pendingNavigationAt = Date.now();
   instance.committedUrl = normalizedUrl;
   instance.urlInput.value = normalizedUrl;
   instance.newTabPage.dataset.mode = normalizedUrl === 'about:blank' ? 'default' : 'hidden';

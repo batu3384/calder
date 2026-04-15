@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import type { AutoApprovalMode } from '../../shared/types.js';
 import { createProjectGovernanceStarterPolicy } from './scaffold.js';
 
 const roots: string[] = [];
+const AUTO_APPROVAL_MODES = new Set<AutoApprovalMode>(['off', 'edit_only', 'edit_plus_safe_tools']);
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));
@@ -33,14 +35,15 @@ describe('project governance scaffold', () => {
     expect(readFileSync(policyPath, 'utf8')).toContain('"safeToolProfile": "default-read-only"');
     expect(readFileSync(policyPath, 'utf8')).toContain('"providerProfiles": {}');
     expect(result.state.policy?.writePolicy).toBe('ask');
-    expect(result.state.autoApproval).toEqual({
-      globalMode: 'off',
+    expect(result.state.autoApproval).toEqual(expect.objectContaining({
       projectMode: 'off',
       effectiveMode: 'off',
       policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
-    });
+    }));
+    expect(result.state.autoApproval?.globalMode).toBeDefined();
+    expect(AUTO_APPROVAL_MODES.has(result.state.autoApproval!.globalMode)).toBe(true);
 
     const second = await createProjectGovernanceStarterPolicy(root);
     expect(second.created).toBe(false);

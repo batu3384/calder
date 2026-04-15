@@ -18,15 +18,28 @@ function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
 }
 
+function createExternalRouteDispatcher(openExternal: (url: string) => void): (url: string) => void {
+  let lastUrl = '';
+  let lastAt = 0;
+  const dedupeWindowMs = 800;
+  return (url: string) => {
+    const now = Date.now();
+    if (url === lastUrl && now - lastAt <= dedupeWindowMs) return;
+    lastUrl = url;
+    lastAt = now;
+    openExternal(url);
+  };
+}
+
 function redirectGuestWindowToCurrentView(
   guestContents: WebContentsLike,
-  openExternal: (url: string) => void,
+  routeExternal: (url: string) => void,
 ): void {
   guestContents.setWindowOpenHandler(({ url }) => {
     if (isHttpUrl(url)) {
       void guestContents.loadURL?.(url);
     } else {
-      openExternal(url);
+      routeExternal(url);
     }
     return { action: 'deny' };
   });
@@ -36,9 +49,11 @@ export function attachBrowserWebviewRouting(
   mainWindow: BrowserWindowLike,
   openExternal: (url: string) => void = (url) => { void shell.openExternal(url); },
 ): void {
+  const routeExternal = createExternalRouteDispatcher(openExternal);
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isHttpUrl(url)) {
-      openExternal(url);
+      routeExternal(url);
     }
     return { action: 'deny' };
   });
@@ -47,11 +62,11 @@ export function attachBrowserWebviewRouting(
     if (url.startsWith('file://')) return;
     event.preventDefault();
     if (isHttpUrl(url)) {
-      openExternal(url);
+      routeExternal(url);
     }
   });
 
   mainWindow.webContents.on('did-attach-webview', (_event: unknown, guestContents: WebContents) => {
-    redirectGuestWindowToCurrentView(guestContents, openExternal);
+    redirectGuestWindowToCurrentView(guestContents, routeExternal);
   });
 }

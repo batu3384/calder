@@ -59,6 +59,7 @@ export function showPreferencesModal(): void {
   titleEl.textContent = 'Workspace Center';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
+  bodyEl.classList.add('preferences-body');
 
   // Build two-pane layout
   const layout = document.createElement('div');
@@ -2438,6 +2439,7 @@ export function showPreferencesModal(): void {
     cleanupRecorder();
     currentSection = section;
     content.innerHTML = '';
+    content.scrollTop = 0;
 
     // Update active menu item
     for (const [id, item] of menuItems) {
@@ -2454,7 +2456,7 @@ export function showPreferencesModal(): void {
       appendOverviewGrid(content, [
         {
           label: 'Language',
-          value: appState.preferences.language === 'tr' ? 'Türkçe' : 'English',
+          value: appState.preferences.language === 'tr' ? 'Turkish' : 'English',
           note: 'Applies to the full Calder interface.',
         },
         {
@@ -2538,7 +2540,7 @@ export function showPreferencesModal(): void {
         'pref-language',
         [
           { value: 'en', label: 'English' },
-          { value: 'tr', label: 'Türkçe' },
+          { value: 'tr', label: 'Turkish' },
         ],
         currentLanguage,
       );
@@ -3273,6 +3275,11 @@ export function showPreferencesModal(): void {
 
   // Clean up previous listeners
   runModalCleanup();
+  extendModalCleanup(() => {
+    bodyEl.classList.remove('preferences-body');
+    modal.classList.remove('modal-wide');
+    btnConfirm.textContent = 'Create';
+  });
 
   const save = () => {
     if (soundCheckbox) {

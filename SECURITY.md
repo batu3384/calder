@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Calder, please report it through [GitHub Security Advisories](https://github.com/batuhanyuksel/calder/security/advisories/new).
+If you discover a security vulnerability in Calder, please report it privately via [the maintainer GitHub profile](https://github.com/batu3384).
 
 **Please do not open a public issue for security vulnerabilities.**
 

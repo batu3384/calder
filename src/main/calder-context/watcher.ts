@@ -11,6 +11,18 @@ let dirWatchers: fs.FSWatcher[] = [];
 let currentProjectPath: string | null = null;
 let currentHandler: ((state: ProjectContextState) => void) | null = null;
 
+const PROJECT_CONTEXT_FILES = [
+  'CLAUDE.md',
+  'CLAUDE.local.md',
+  path.join('.claude', 'CLAUDE.md'),
+  'AGENTS.md',
+  'GEMINI.md',
+  'QWEN.md',
+  path.join('.github', 'copilot-instructions.md'),
+  'CALDER.shared.md',
+  '.mcp.json',
+] as const;
+
 function notify(): void {
   if (!currentProjectPath || !currentHandler) return;
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -32,6 +44,23 @@ function watchDir(dirPath: string): void {
     dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
+  }
+}
+
+function listSubdirectoriesRecursive(dirPath: string): string[] {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name));
+    const directories: string[] = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const fullPath = path.join(dirPath, entry.name);
+      directories.push(fullPath);
+      directories.push(...listSubdirectoriesRecursive(fullPath));
+    }
+    return directories;
+  } catch {
+    return [];
   }
 }
 
@@ -62,8 +91,16 @@ export function startProjectContextWatcher(
   currentProjectPath = projectPath;
   currentHandler = onChange;
 
-  watchFile(path.join(projectPath, 'CLAUDE.md'));
-  watchFile(path.join(projectPath, 'CALDER.shared.md'));
-  watchFile(path.join(projectPath, '.mcp.json'));
+  for (const relativePath of PROJECT_CONTEXT_FILES) {
+    watchFile(path.join(projectPath, relativePath));
+  }
+
   watchDir(path.join(projectPath, '.calder', 'rules'));
+  watchDir(path.join(projectPath, '.claude'));
+  watchDir(path.join(projectPath, '.github'));
+  const copilotInstructionsPath = path.join(projectPath, '.github', 'instructions');
+  watchDir(copilotInstructionsPath);
+  for (const childDirPath of listSubdirectoriesRecursive(copilotInstructionsPath)) {
+    watchDir(childDirPath);
+  }
 }

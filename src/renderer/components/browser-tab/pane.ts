@@ -60,6 +60,21 @@ function createBrowserToolbarCluster(labelText: string): {
 }
 
 type BrowserPageState = 'ready' | 'loading' | 'local' | 'remote' | 'offline';
+const STALE_NAVIGATION_REVERT_WINDOW_MS = 1800;
+
+function canonicalizeNavigationUrl(value: string | undefined): string {
+  const url = (value || '').trim();
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.pathname.length > 1) {
+      parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+    }
+    return parsed.href;
+  } catch {
+    return url;
+  }
+}
 
 function isLocalBrowserUrl(url: string): boolean {
   try {
@@ -115,6 +130,32 @@ function resolveCaptureModeState(instance: BrowserTabInstance): 'inspect' | 'dra
   return 'idle';
 }
 
+function isStaleNavigationRevert(instance: BrowserTabInstance, nextUrl: string): boolean {
+  const pendingUrl = canonicalizeNavigationUrl(instance.pendingNavigationUrl);
+  if (!pendingUrl) return false;
+  const pendingAt = instance.pendingNavigationAt;
+  if (!pendingAt || Date.now() - pendingAt > STALE_NAVIGATION_REVERT_WINDOW_MS) {
+    clearPendingNavigation(instance);
+    return false;
+  }
+
+  const candidateUrl = canonicalizeNavigationUrl(nextUrl);
+  if (!candidateUrl) return false;
+  if (candidateUrl === pendingUrl) return false;
+
+  const previousUrl = canonicalizeNavigationUrl(instance.pendingNavigationPreviousUrl);
+  if (previousUrl && candidateUrl === previousUrl) {
+    return true;
+  }
+  return false;
+}
+
+function clearPendingNavigation(instance: BrowserTabInstance): void {
+  delete instance.pendingNavigationUrl;
+  delete instance.pendingNavigationPreviousUrl;
+  delete instance.pendingNavigationAt;
+}
+
 function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
   const project = appState.projects.find((entry) =>
     entry.sessions.some((session) => session.id === instance.sessionId),
@@ -126,6 +167,9 @@ function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
 
   const nextUrl = normalizeUrl(session.browserTabUrl ?? 'about:blank');
   const currentUrl = normalizeUrl(instance.committedUrl || instance.webview.src || 'about:blank');
+  if (isStaleNavigationRevert(instance, nextUrl)) {
+    return;
+  }
 
   if (currentUrl === nextUrl) {
     instance.committedUrl = nextUrl;
@@ -133,6 +177,7 @@ function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
     instance.newTabPage.dataset.mode = nextUrl === 'about:blank' ? 'default' : 'hidden';
     instance.syncSurfaceVisibility(nextUrl === 'about:blank');
     instance.syncAddressBarState();
+    clearPendingNavigation(instance);
     return;
   }
 
@@ -417,6 +462,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   reloadBtn.title = 'Reload';
   reloadBtn.ariaLabel = 'Reload page';
 
+  const homeBtn = document.createElement('button');
+  homeBtn.className = 'browser-nav-btn browser-home-btn';
+  homeBtn.textContent = '\u2302';
+  homeBtn.title = 'Home';
+  homeBtn.ariaLabel = 'Open Live View home';
+
   const urlInput = document.createElement('input');
   urlInput.className = 'browser-url-input';
   urlInput.type = 'text';
@@ -512,6 +563,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   toolbarNavShell.appendChild(backBtn);
   toolbarNavShell.appendChild(fwdBtn);
   toolbarNavShell.appendChild(reloadBtn);
+  toolbarNavShell.appendChild(homeBtn);
   toolbarNav.appendChild(toolbarNavShell);
 
   toolbarAddressShell.appendChild(urlInput);
@@ -1220,6 +1272,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     webview.reload();
   }
 
+  function openBrowserHome(): void {
+    resetNewTabCopy();
+    navigateTo(instance, 'about:blank');
+    void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
+  }
+
   webview.addEventListener('before-input-event', ((e: CustomEvent & { preventDefault(): void; input: { type: string; key: string; shift: boolean; control: boolean; alt: boolean; meta: boolean } }) => {
     if (e.input.type !== 'keyDown') return;
     if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l') {
@@ -1263,6 +1321,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   backBtn.addEventListener('click', () => webview.goBack());
   fwdBtn.addEventListener('click', () => webview.goForward());
   reloadBtn.addEventListener('click', () => reloadCurrentPage());
+  homeBtn.addEventListener('click', () => openBrowserHome());
 
   goBtn.addEventListener('click', () => {
     if (instance.isLoading) {
@@ -1436,6 +1495,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   }) as EventListener);
 
   webview.addEventListener('did-navigate', ((e: Event & { url: string }) => {
+    if (isStaleNavigationRevert(instance, e.url)) return;
     if (e.url === 'about:blank') {
       if (newTabPage.dataset.mode !== 'offline') {
         resetNewTabCopy();
@@ -1451,9 +1511,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     syncNavigationControls(instance);
     syncAddressBarState(instance);
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
+    clearPendingNavigation(instance);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
   webview.addEventListener('did-navigate-in-page', ((e: Event & { url: string }) => {
+    if (isStaleNavigationRevert(instance, e.url)) return;
     if (e.url === 'about:blank') {
       if (newTabPage.dataset.mode !== 'offline') {
         resetNewTabCopy();
@@ -1469,6 +1531,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     syncNavigationControls(instance);
     syncAddressBarState(instance);
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
+    clearPendingNavigation(instance);
     if (instance.flowMode) recordNavigationStep(e.url);
   }) as EventListener);
   webview.addEventListener('did-fail-load', ((e: Event & {
@@ -1481,6 +1544,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;
     if (e.isMainFrame === false) return;
     const failedUrl = e.validatedURL || urlInput.value.trim();
+    if (isStaleNavigationRevert(instance, failedUrl)) return;
     if (!failedUrl) return;
     instance.isLoading = false;
     instance.committedUrl = failedUrl;
@@ -1497,6 +1561,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       // another noisy Electron load failure.
       try { webview.stop(); } catch {}
     }
+    clearPendingNavigation(instance);
   }) as EventListener);
 
   syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));

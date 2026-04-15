@@ -5,12 +5,9 @@
 <h1 align="center">Calder</h1>
 
 <p align="center">
-  <a href="https://github.com/batuhanyuksel/calder/releases"><img src="https://img.shields.io/github/v/release/batuhanyuksel/calder" alt="GitHub Release" /></a>
-  <a href="https://github.com/batuhanyuksel/calder/blob/main/LICENSE"><img src="https://img.shields.io/github/license/batuhanyuksel/calder" alt="License" /></a>
-  <a href="https://github.com/batuhanyuksel/calder/issues"><img src="https://img.shields.io/github/issues/batuhanyuksel/calder" alt="Issues" /></a>
-  <a href="https://github.com/batuhanyuksel/calder/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs Welcome" /></a>
-  <a href="https://star-history.com/#batuhanyuksel/calder&Date"><img src="https://img.shields.io/github/stars/batuhanyuksel/calder?style=social" alt="GitHub Stars" /></a>
-  <a href="https://github.com/batuhanyuksel"><img src="https://img.shields.io/github/followers/batuhanyuksel?style=social" alt="Follow on GitHub" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
+  <a href="https://github.com/batu3384"><img src="https://img.shields.io/badge/Repository-publishing%20soon-lightgrey" alt="Repository Publishing Soon" /></a>
+  <a href="https://github.com/batu3384"><img src="https://img.shields.io/github/followers/batu3384?style=social" alt="Follow on GitHub" /></a>
 </p>
 
 <p align="center">
@@ -54,11 +51,11 @@ Requires at least one supported CLI installed and authenticated. Common setups i
 
 ### macOS
 
-Download the latest `.dmg` from [GitHub Releases](https://github.com/batuhanyuksel/calder/releases), drag to Applications, and launch. Signed and notarized by Apple.
+Prebuilt `.dmg` installers will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
 
 ### Linux
 
-Download the latest `.deb` (Debian/Ubuntu) or `.AppImage` (universal) from [GitHub Releases](https://github.com/batuhanyuksel/calder/releases).
+Prebuilt `.deb` (Debian/Ubuntu) and `.AppImage` (universal) packages will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
 
 ```bash
 # Debian/Ubuntu
@@ -71,7 +68,7 @@ chmod +x Calder-*.AppImage
 
 ### Windows
 
-Download the latest Setup `.exe` (NSIS installer) or portable `.exe` from [GitHub Releases](https://github.com/batuhanyuksel/calder/releases). Run the installer and launch Calder from the Start menu, or run the portable build directly.
+Prebuilt Setup `.exe` (NSIS installer) and portable `.exe` packages will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
 
 ### npm (macOS, Linux & Windows)
 
@@ -84,8 +81,10 @@ On first run, the app is automatically downloaded and launched. No extra steps n
 
 ### Build from Source
 
+Once the repository is published, replace `<REPO_URL>` with the official GitHub URL.
+
 ```bash
-git clone https://github.com/batuhanyuksel/calder.git
+git clone <REPO_URL>
 cd calder
 npm install && npm start
 ```
@@ -121,11 +120,11 @@ PRs welcome! See the [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct]
 ---
 
 <p align="center">
-  <a href="https://github.com/batuhanyuksel/calder"><img src="https://img.shields.io/badge/Star%20Calder%20on%20GitHub-%E2%AD%90-yellow?style=for-the-badge&logo=github" alt="Star on GitHub" /></a>
+  <a href="https://github.com/batu3384"><img src="https://img.shields.io/badge/Follow%20on%20GitHub-batu3384-181717?style=for-the-badge&logo=github" alt="Follow on GitHub" /></a>
 </p>
 
 <p align="center">
-  If Calder helps your workflow, a star helps us grow. Thanks for the support!
+  If Calder helps your workflow, follow the profile to catch the public repo launch and releases.
 </p>
 
 <p align="center">

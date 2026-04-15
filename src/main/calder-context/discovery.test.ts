@@ -69,6 +69,63 @@ describe('discoverProjectContext', () => {
     );
   });
 
+  it('discovers provider-native instruction files across supported CLIs', async () => {
+    const root = makeProject('provider-context');
+    roots.push(root);
+    writeFiles(root, {
+      'AGENTS.md': '# Codex instructions\nUse AGENTS.md defaults.\n',
+      'GEMINI.md': '# Gemini instructions\nKeep responses short.\n',
+      'QWEN.md': '# Qwen instructions\nPrioritize safety checks.\n',
+      '.github/copilot-instructions.md': '# Copilot instructions\nPrefer concise PR notes.\n',
+      '.github/instructions/api/backend.instructions.md': '# Backend instructions\nUse strict API schemas.\n',
+      '.claude/CLAUDE.md': '# Claude workspace memory\nFavor vitest for tests.\n',
+    });
+
+    const result = await discoverProjectContext(root);
+
+    expect(result.providerSourceCount).toBe(6);
+    expect(result.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          provider: 'codex',
+          kind: 'instructions',
+          displayName: 'AGENTS.md',
+          summary: 'Codex instructions',
+        }),
+        expect.objectContaining({
+          provider: 'gemini',
+          kind: 'instructions',
+          displayName: 'GEMINI.md',
+          summary: 'Gemini instructions',
+        }),
+        expect.objectContaining({
+          provider: 'qwen',
+          kind: 'instructions',
+          displayName: 'QWEN.md',
+          summary: 'Qwen instructions',
+        }),
+        expect.objectContaining({
+          provider: 'copilot',
+          kind: 'instructions',
+          displayName: 'copilot-instructions.md',
+          summary: 'Copilot instructions',
+        }),
+        expect.objectContaining({
+          provider: 'copilot',
+          kind: 'instructions',
+          displayName: 'backend.instructions.md',
+          summary: 'Backend instructions',
+        }),
+        expect.objectContaining({
+          provider: 'claude',
+          kind: 'memory',
+          displayName: 'CLAUDE.md',
+          summary: 'Claude workspace memory',
+        }),
+      ]),
+    );
+  });
+
   it('returns a clean empty result when no supported project context files exist', async () => {
     const root = makeProject('empty-context');
     roots.push(root);

@@ -70,6 +70,7 @@ export function resolveNavigableHttpUrl(raw: string): string | null {
 export interface LinkDispatchSnapshot {
   at: number;
   url: string;
+  source: 'osc-link' | 'web-link';
 }
 
 function specificityScore(url: string): number {
@@ -79,6 +80,12 @@ function specificityScore(url: string): number {
   } catch {
     return 0;
   }
+}
+
+function sourcePriority(source: LinkDispatchSnapshot['source']): number {
+  // OSC links carry explicit targets and should win tie-breaks over web-link
+  // regex heuristics when both fire for the same click.
+  return source === 'osc-link' ? 2 : 1;
 }
 
 function isSameOrigin(left: string, right: string): boolean {
@@ -92,13 +99,24 @@ function isSameOrigin(left: string, right: string): boolean {
 export function shouldDispatchLinkOpen(
   nextUrl: string,
   lastDispatch: LinkDispatchSnapshot | null,
+  source: LinkDispatchSnapshot['source'],
   now: number = Date.now(),
-  dedupeWindowMs: number = 180,
+  dedupeWindowMs: number = 300,
 ): boolean {
   if (!lastDispatch) return true;
   if (now - lastDispatch.at > dedupeWindowMs) return true;
   if (!isSameOrigin(nextUrl, lastDispatch.url)) return true;
   if (nextUrl === lastDispatch.url) return false;
 
-  return specificityScore(nextUrl) > specificityScore(lastDispatch.url);
+  const nextSpecificity = specificityScore(nextUrl);
+  const previousSpecificity = specificityScore(lastDispatch.url);
+  if (nextSpecificity !== previousSpecificity) {
+    return nextSpecificity > previousSpecificity;
+  }
+
+  if (sourcePriority(source) !== sourcePriority(lastDispatch.source)) {
+    return sourcePriority(source) > sourcePriority(lastDispatch.source);
+  }
+
+  return false;
 }

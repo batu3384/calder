@@ -86,4 +86,61 @@ describe('getConfigProviderId', () => {
     expect(source).toContain('setSessionAutoApprovalOverride');
     expect(source).toContain('auto-approval-control');
   });
+
+  it('shows inherit state for project scope instead of mirroring global mode', async () => {
+    const source = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+
+    expect(source).toContain('Inherit (Global)');
+    expect(source).toContain('Inherit (Project/Global)');
+    expect(source).toContain('Global (This Mac)');
+    expect(source).toContain('Project (This Repo)');
+    expect(source).toContain('Session (Active CLI)');
+    expect(source).toContain('Current Behavior');
+    expect(source).toContain('Policy Stack');
+    expect(source).toContain('PROJECT_INHERIT_VALUE');
+    expect(source).toContain('SESSION_INHERIT_VALUE');
+    expect(source).toContain('projectSelect.value === PROJECT_INHERIT_VALUE');
+    expect(source).toContain('sessionSelect.value === SESSION_INHERIT_VALUE');
+  });
+
+  it('derives human-readable auto-approval scope state', async () => {
+    const { describeAutoApprovalScopes } = await import('./config-sections.js');
+    const summary = describeAutoApprovalScopes({
+      globalMode: 'edit_only',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'edit_only',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+
+    expect(summary.global).toBe('Edit Only');
+    expect(summary.project).toBe('Inherit (Global)');
+    expect(summary.session).toBe('Inherit (Project/Global)');
+    expect(summary.effectiveSource).toBe('Global default');
+    expect(summary.effectiveExplanation).toBe('Project and Session are inherit, so Global setting applies.');
+    expect(summary.effectiveBehavior).toBe('Auto-approves file edits only.');
+  });
+
+  it('describes effective scope when session override is active', async () => {
+    const { describeAutoApprovalScopes } = await import('./config-sections.js');
+    const summary = describeAutoApprovalScopes({
+      globalMode: 'edit_only',
+      projectMode: 'off',
+      sessionMode: 'edit_plus_safe_tools',
+      effectiveMode: 'edit_plus_safe_tools',
+      policySource: 'session',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+
+    expect(summary.global).toBe('Edit Only');
+    expect(summary.project).toBe('Off');
+    expect(summary.session).toBe('Edit + Safe Tools');
+    expect(summary.effectiveSource).toBe('Session override');
+    expect(summary.effectiveExplanation).toBe('Session override is active, so Session setting applies.');
+    expect(summary.effectiveBehavior).toBe('Auto-approves file edits and safe read-only commands.');
+  });
 });

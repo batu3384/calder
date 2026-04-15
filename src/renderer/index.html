@@ -48,6 +48,7 @@
                 <div id="surface-mode-slot" hidden></div>
                 <div id="surface-profile-slot" hidden></div>
                 <div id="session-provider-slot" hidden></div>
+                <button id="btn-update-cli-tools" class="icon-btn" title="Update CLI Tools" aria-label="Update CLI tools">&#x21BB;</button>
                 <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
               </div>
             </div>
@@ -68,7 +69,10 @@
               <span class="context-inspector-eyebrow">Workspace</span>
               <span class="context-inspector-title">Overview</span>
             </div>
-            <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
+            <div class="context-inspector-header-actions">
+              <button id="btn-toggle-right-rail-density" class="icon-btn context-density-btn" title="Toggle ultra compact right rail" aria-label="Toggle ultra compact right rail">Ultra</button>
+              <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
+            </div>
           </div>
           <div id="context-inspector-overview"></div>
           <div id="context-inspector-sections">
@@ -83,6 +87,7 @@
             </section>
           </div>
         </aside>
+        <button id="btn-open-context-inspector" class="context-inspector-reopen hidden" type="button" title="Open control panel" aria-label="Open context inspector">Overview</button>
       </div>
     </div>
   </div>

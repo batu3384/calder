@@ -237,13 +237,94 @@ export function installHooksOnly(): void {
   // Each hook event appends one JSON line to STATUS_DIR/{sessionId}.events
   const captureEventCmd = (hookEvent: string, eventType: string) => {
     const pyCode = `import sys,json,os,time
+from pathlib import Path
 try:
  d=json.load(sys.stdin)
 except:
  sys.exit(0)
 sid=os.environ.get("CLAUDE_IDE_SESSION_ID","")
 if not sid:
+ raw_sid=d.get("session_id","")
+ if isinstance(raw_sid,str):
+  sid=raw_sid
+if not sid:
  sys.exit(0)
+status_dir=r'${STATUS_DIR}'
+def _provider_sync_path(session_id):
+ return Path(status_dir)/f"{session_id}.provider_sync.json"
+def _load_provider_sync(session_id):
+ path=_provider_sync_path(session_id)
+ payload={}
+ if path.is_file():
+  try:
+   loaded=json.loads(path.read_text())
+   if isinstance(loaded,dict):
+    payload=loaded
+  except:
+   payload={}
+ provider=payload.get("main_provider_family") or payload.get("main_provider") or ""
+ provider=provider.lower() if isinstance(provider,str) else ""
+ model=payload.get("main_model_exact") or ""
+ model=model if isinstance(model,str) else ""
+ raw_active=payload.get("active_subagent_ids")
+ active_ids=[]
+ if isinstance(raw_active,list):
+  for value in raw_active:
+   text=str(value).strip()
+   if text and text not in active_ids:
+    active_ids.append(text)
+ pending=payload.get("pending_subagent_launches",0)
+ if not isinstance(pending,int) or pending<0:
+  pending=0
+ return path,provider,model,active_ids,pending
+def _write_provider_sync(path,provider,model,active_ids,pending):
+ payload={
+  "main_provider_family":provider if provider else None,
+  "main_model_exact":model,
+  "active_subagent_ids":active_ids,
+  "pending_subagent_launches":pending if isinstance(pending,int) and pending>=0 else 0,
+  "updated_at_ms":int(time.time()*1000),
+ }
+ tmp_path=path.with_suffix(path.suffix+".tmp")
+ try:
+  path.parent.mkdir(parents=True,exist_ok=True)
+  tmp_path.write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":")))
+  tmp_path.replace(path)
+ except:
+  try:
+   if tmp_path.exists():
+    tmp_path.unlink()
+  except:
+   pass
+def _session_main_provider(session_id):
+ try:
+  _,provider,_,_,_=_load_provider_sync(session_id)
+  return provider
+ except:
+  return ""
+def _mark_subagent_launch_started(session_id):
+ path,provider,model,active_ids,pending=_load_provider_sync(session_id)
+ _write_provider_sync(path,provider,model,active_ids,pending+1)
+def _mark_subagent_launch_finished(session_id):
+ path,provider,model,active_ids,pending=_load_provider_sync(session_id)
+ _write_provider_sync(path,provider,model,active_ids,max(pending-1,0))
+def _mark_subagent_started(session_id,agent_id):
+ path,provider,model,active_ids,pending=_load_provider_sync(session_id)
+ normalized=str(agent_id).strip()
+ if normalized and normalized not in active_ids:
+  active_ids.append(normalized)
+ _write_provider_sync(path,provider,model,sorted(active_ids),max(pending-1,0))
+def _mark_subagent_stopped(session_id,agent_id):
+ path,provider,model,active_ids,pending=_load_provider_sync(session_id)
+ normalized=str(agent_id).strip()
+ if normalized:
+  active_ids=[value for value in active_ids if value!=normalized]
+ elif active_ids:
+  active_ids=active_ids[:-1]
+ _write_provider_sync(path,provider,model,sorted(active_ids),pending)
+def _clear_subagent_state(session_id):
+ path,provider,model,_,_=_load_provider_sync(session_id)
+ _write_provider_sync(path,provider,model,[],0)
 cs=d.get("cost",{})
 cw=d.get("context_window",{})
 e={"type":"${eventType}","timestamp":int(time.time()*1000),"hookEvent":"${hookEvent}"}
@@ -269,7 +350,6 @@ if cw:
   "context_window_size":cw.get("context_window_size",200000),
   "used_percentage":cw.get("used_percentage",0)
  }
-status_dir=r'${STATUS_DIR}'
 if tn and "${hookEvent}"=="PostToolUse":
  import random,string as st
  tr=d.get("tool_result","") or d.get("tool_response","")
@@ -279,6 +359,61 @@ if tn and "${hookEvent}"=="PostToolUse":
   json.dump({"tool_name":tn,"tool_input":d.get("tool_input",{}),"error":fe},open(os.path.join(status_dir,sid+"-"+sfx+".toolfailure"),"w"))
 with open(os.path.join(status_dir,sid+".events"),"a") as f:
  f.write(json.dumps(e)+"\\n")
+if "${hookEvent}"=="SubagentStart":
+ _mark_subagent_started(sid,d.get("agent_id",""))
+elif "${hookEvent}"=="SubagentStop":
+ _mark_subagent_stopped(sid,d.get("agent_id",""))
+elif "${hookEvent}"=="PostToolUseFailure" and tn=="Task":
+ _mark_subagent_launch_finished(sid)
+elif "${hookEvent}"=="SessionEnd":
+ _clear_subagent_state(sid)
+if "${hookEvent}"=="PreToolUse":
+ if tn=="Task":
+  _mark_subagent_launch_started(sid)
+ provider=_session_main_provider(sid)
+ is_zai_search_tool = tn in ("mcp__web-search-prime__web_search_prime","mcp__web-search-prime__webSearchPrime")
+ is_minimax_search_tool = (tn.endswith("__web_search") and ("__MiniMax__" in tn or "__minimax__" in tn))
+ if provider in ("zai","minimax") and tn=="WebSearch":
+  allowed_hint = "mcp__MiniMax__web_search"
+  print(json.dumps({
+   "hookSpecificOutput":{
+    "hookEventName":"PreToolUse",
+    "permissionDecision":"deny",
+    "permissionDecisionReason":f"WebSearch is disabled for {provider} sessions to avoid consuming Claude web-search quota. Use {allowed_hint} instead."
+   }
+  }))
+ elif provider=="zai" and is_minimax_search_tool:
+  print(json.dumps({
+   "hookSpecificOutput":{
+    "hookEventName":"PreToolUse",
+    "permissionDecision":"allow",
+    "permissionDecisionReason":"Allowing MiniMax web_search MCP tool for zai session."
+   }
+  }))
+ elif provider=="zai" and is_zai_search_tool:
+  print(json.dumps({
+   "hookSpecificOutput":{
+    "hookEventName":"PreToolUse",
+    "permissionDecision":"deny",
+    "permissionDecisionReason":"Z.ai web-search-prime tool is disabled for zai session. Use mcp__MiniMax__web_search."
+   }
+  }))
+ elif provider=="minimax" and is_minimax_search_tool:
+  print(json.dumps({
+   "hookSpecificOutput":{
+    "hookEventName":"PreToolUse",
+    "permissionDecision":"allow",
+    "permissionDecisionReason":"Allowing MiniMax web_search MCP tool for minimax session."
+   }
+  }))
+ elif provider=="minimax" and is_zai_search_tool:
+  print(json.dumps({
+   "hookSpecificOutput":{
+    "hookEventName":"PreToolUse",
+    "permissionDecision":"deny",
+    "permissionDecisionReason":"Z.ai web-search-prime tool is blocked in minimax session. Use mcp__MiniMax__web_search."
+   }
+  }))
 `;
     const scriptName = `claude_event_${hookEvent}.py`;
     installEventScript(scriptName, pyCode);

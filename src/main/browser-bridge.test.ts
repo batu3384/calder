@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as http from 'node:http';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   buildBrowserBridgeEnv,
   startBrowserBridge,
   stopBrowserBridge,
 } from './browser-bridge';
+
+const execFileAsync = promisify(execFile);
 
 async function postToBridge(
   url: string,
@@ -168,5 +174,58 @@ describe('browser-bridge', () => {
     expect(status).toBe(204);
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to the system browser when bridge launch fails by default', async () => {
+    if (process.platform === 'win32') return;
+
+    await startBrowserBridge(() => {});
+    const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin' });
+
+    const markerPath = path.join(os.tmpdir(), `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`);
+    const fallbackScript = path.join(os.tmpdir(), `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`);
+    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, { mode: 0o755 });
+
+    const shimPath = path.join(path.dirname(env.BROWSER), 'open');
+    await expect(execFileAsync(shimPath, ['https://example.com/docs'], {
+      env: {
+        ...process.env,
+        ...env,
+        CALDER_BROWSER_BRIDGE_TOKEN: 'invalid-token',
+        CALDER_BROWSER_BRIDGE_REAL_OPEN: fallbackScript,
+      },
+    })).rejects.toMatchObject({ code: 1 });
+
+    expect(fs.existsSync(markerPath)).toBe(false);
+
+    fs.rmSync(fallbackScript, { force: true });
+    fs.rmSync(markerPath, { force: true });
+  });
+
+  it('allows fallback only when explicitly opted in', async () => {
+    if (process.platform === 'win32') return;
+
+    await startBrowserBridge(() => {});
+    const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin' });
+
+    const markerPath = path.join(os.tmpdir(), `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`);
+    const fallbackScript = path.join(os.tmpdir(), `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`);
+    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, { mode: 0o755 });
+
+    const shimPath = path.join(path.dirname(env.BROWSER), 'open');
+    await execFileAsync(shimPath, ['https://example.com/docs'], {
+      env: {
+        ...process.env,
+        ...env,
+        CALDER_BROWSER_BRIDGE_TOKEN: 'invalid-token',
+        CALDER_BROWSER_BRIDGE_REAL_OPEN: fallbackScript,
+        CALDER_BROWSER_BRIDGE_ALLOW_EXTERNAL_FALLBACK: '1',
+      },
+    });
+
+    expect(fs.existsSync(markerPath)).toBe(true);
+
+    fs.rmSync(fallbackScript, { force: true });
+    fs.rmSync(markerPath, { force: true });
   });
 });

@@ -6,7 +6,7 @@ import { areaLabel } from '../dom-utils.js';
 import type { GitFileEntry } from '../types.js';
 
 const MAX_FILES = 100;
-type SectionPresentation = 'compact' | 'expanded' | 'promoted';
+type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 
 let collapsed = false;
 let compactExpanded = false;
@@ -136,12 +136,14 @@ function shortPath(fullPath: string): string {
 function getSectionPresentation(container: HTMLElement): SectionPresentation {
   const wrapper = container.parentNode as { dataset?: Record<string, string> } | null;
   const value = wrapper?.dataset?.presentation;
-  return value === 'compact' || value === 'promoted' || value === 'expanded' ? value : 'expanded';
+  return value === 'compact' || value === 'promoted' || value === 'expanded' || value === 'ultra'
+    ? value
+    : 'expanded';
 }
 
 function isDetailExpanded(presentation: SectionPresentation): boolean {
   if (presentation === 'promoted') return true;
-  if (presentation === 'compact') return compactExpanded;
+  if (presentation === 'compact' || presentation === 'ultra') return compactExpanded;
   return !collapsed;
 }
 
@@ -168,7 +170,7 @@ function updateGitHeader(header: HTMLElement, total: number, headerSuffix: strin
   `;
   button.addEventListener('click', () => {
     if (presentation === 'promoted') return;
-    if (presentation === 'compact') compactExpanded = !compactExpanded;
+    if (presentation === 'compact' || presentation === 'ultra') compactExpanded = !compactExpanded;
     else collapsed = !collapsed;
     lastFilesKey = '';
     void refresh();
@@ -202,7 +204,7 @@ function ensureGitSection(
 ): HTMLElement {
   const presentation = getSectionPresentation(container);
   const detailExpanded = isDetailExpanded(presentation);
-  const showCompactSummary = presentation === 'compact' && !detailExpanded;
+  const showCompactSummary = (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
   const existingSection = container.querySelector('.config-section');
   if (existingSection) {
     const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
@@ -309,7 +311,7 @@ async function refresh(): Promise<void> {
     : 0;
   const presentation = getSectionPresentation(container);
   const detailExpanded = isDetailExpanded(presentation);
-  const showCompactSummary = presentation === 'compact' && !detailExpanded;
+  const showCompactSummary = (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
 
   // Find active worktree branch for header
   let headerSuffix = '';
@@ -462,7 +464,7 @@ export function toggleGitPanel(): void {
 
   container.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (presentation === 'promoted') return;
-  if (presentation === 'compact') compactExpanded = !compactExpanded;
+  if (presentation === 'compact' || presentation === 'ultra') compactExpanded = !compactExpanded;
   else collapsed = !collapsed;
   lastFilesKey = '';
   void refresh();

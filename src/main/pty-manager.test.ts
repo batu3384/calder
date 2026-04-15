@@ -442,6 +442,40 @@ describe('killPty', () => {
     writePty('s1', 'input');
     expect(mockWrite).not.toHaveBeenCalled();
   });
+
+  it('terminates descendant processes before the root PTY process on unix', () => {
+    if (isWin) return;
+
+    const proc = createMockPtyProcess();
+    (proc as unknown as { pid: number }).pid = 4242;
+    mockSpawn.mockReturnValue(proc);
+    spawnPty('tree-1', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+
+    mockExecFileSync.mockImplementation((command: string, args: string[]) => {
+      if (command !== 'pgrep') throw new Error('unexpected command');
+      const parentPid = args[1];
+      if (parentPid === '4242') return '5000\n5001\n' as never;
+      if (parentPid === '5000') return '' as never;
+      if (parentPid === '5001') return '7000\n' as never;
+      if (parentPid === '7000') throw new Error('no children');
+      return '' as never;
+    });
+
+    const processKillSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+
+    killPty('tree-1');
+
+    const calls = processKillSpy.mock.calls.map(([pid, signal]) => [pid, signal]);
+    expect(calls).toEqual([
+      [7000, 'SIGTERM'],
+      [5001, 'SIGTERM'],
+      [5000, 'SIGTERM'],
+      [4242, 'SIGTERM'],
+    ]);
+    expect(mockKill).toHaveBeenCalled();
+
+    processKillSpy.mockRestore();
+  });
 });
 
 describe('getPtyCwd', () => {

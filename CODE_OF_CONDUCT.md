@@ -41,7 +41,7 @@ an individual is officially representing the community in public spaces.
 ## Enforcement
 
 Instances of unacceptable behavior may be reported via
-[GitHub Security Advisories](https://github.com/batuhanyuksel/calder/security/advisories/new)
+[the maintainer GitHub profile](https://github.com/batu3384)
 or by contacting the project maintainer through GitHub.
 
 All complaints will be reviewed and investigated promptly and fairly.

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, powerMonitor, shell } from 'electron';
+import { app, BrowserWindow, dialog, nativeImage, powerMonitor, shell } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
 import { killAllPtys } from './pty-manager';
@@ -19,6 +19,17 @@ import { prepareBrowserSessionStorage } from './browser-session-storage';
 let mainWindow: BrowserWindow | null = null;
 
 app.setName('Calder');
+
+function setMacDockIcon(): void {
+  if (!isMac) return;
+  const iconPath = path.join(__dirname, '..', '..', '..', 'build', 'icon.png');
+  const icon = nativeImage.createFromPath(iconPath);
+  if (icon.isEmpty()) {
+    console.warn('Failed to load macOS dock icon from:', iconPath);
+    return;
+  }
+  app.dock?.setIcon(icon);
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -55,6 +66,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  // Re-assert runtime name on macOS so app menus/about panel use Calder.
+  app.setName('Calder');
+  app.setAboutPanelOptions({
+    applicationName: 'Calder',
+    applicationVersion: app.getVersion(),
+  });
+  setMacDockIcon();
   const state = loadState();
   const browserStorage = await prepareBrowserSessionStorage(app.getPath('userData'));
   if (browserStorage.migratedLegacyServiceWorker) {

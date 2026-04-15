@@ -12,11 +12,14 @@ import {
 const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
+const openBtn = document.getElementById('btn-open-context-inspector') as HTMLButtonElement | null;
+const densityBtn = document.getElementById('btn-toggle-right-rail-density') as HTMLButtonElement | null;
 const overviewEl = document.getElementById('context-inspector-overview')!;
 
 let inspectorOpen = true;
 
 type OverviewMetricTone = 'default' | 'healthy' | 'warning' | 'muted';
+type RightRailDensity = 'standard' | 'ultra-compact';
 
 function getSectionEls(): HTMLElement[] {
   if (typeof (inspectorEl as Element).querySelectorAll !== 'function') {
@@ -36,6 +39,24 @@ function getInspectorProviderId(): ProviderId {
 
   const recentCliSession = [...project.sessions].reverse().find(session => !session.type);
   return (recentCliSession?.providerId || 'claude') as ProviderId;
+}
+
+function getRightRailDensity(): RightRailDensity {
+  return appState.preferences.rightRailDensity === 'ultra-compact'
+    ? 'ultra-compact'
+    : 'standard';
+}
+
+function updateDensityToggleButton(): void {
+  if (!densityBtn) return;
+  const density = getRightRailDensity();
+  const isUltra = density === 'ultra-compact';
+  densityBtn.textContent = isUltra ? 'Ultra' : 'Standard';
+  densityBtn.dataset.state = isUltra ? 'active' : 'default';
+  densityBtn.title = isUltra
+    ? 'Switch to standard right rail'
+    : 'Switch to ultra compact right rail';
+  densityBtn.setAttribute('aria-label', densityBtn.title);
 }
 
 function renderOverviewMetric(
@@ -65,33 +86,20 @@ function describeProjectContext(projectContext?: ProjectContextState): {
   }
 
   const providerMemoryCount = projectContext.sources.filter((source) => source.provider !== 'shared').length;
-  const parts: string[] = [];
-  if (providerMemoryCount > 0) {
-    parts.push(
-      providerMemoryCount === 1
-        ? '1 provider memory source'
-        : `${providerMemoryCount} provider memory sources`,
-    );
+  const hasProviderMemory = providerMemoryCount > 0;
+  const hasSharedRules = projectContext.sharedRuleCount > 0;
+  let copy = 'Context connected.';
+  if (hasProviderMemory && hasSharedRules) {
+    copy = 'Provider memory + shared rules connected.';
+  } else if (hasProviderMemory) {
+    copy = 'Provider memory connected.';
+  } else if (hasSharedRules) {
+    copy = 'Shared rules connected.';
   }
-  if (projectContext.sharedRuleCount > 0) {
-    parts.push(
-      projectContext.sharedRuleCount === 1
-        ? '1 shared rule'
-        : `${projectContext.sharedRuleCount} shared rules`,
-    );
-  }
-  if (parts.length === 0) {
-    parts.push(projectContext.sources.length === 1 ? '1 discovered source' : `${projectContext.sources.length} discovered sources`);
-  }
-
-  const sourcePreview = projectContext.sources
-    .slice(0, 2)
-    .map((source) => source.displayName)
-    .join(' · ');
 
   return {
     tone: 'default',
-    copy: sourcePreview ? `${parts.join(' · ')}. ${sourcePreview}` : parts.join(' · '),
+    copy,
   };
 }
 
@@ -164,15 +172,19 @@ function applyRailMode(): void {
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
   const hasToolingContext = true;
+  const density = getRightRailDensity();
+  const preferUltraCompact = density === 'ultra-compact';
 
   const mode = deriveRightRailMode({
     hasDirtyGit,
     hasGitConflicts,
     hasToolingContext,
+    preferUltraCompact,
   });
   const presentation = deriveRightRailPresentation(mode, { hasDirtyGit, hasGitConflicts });
 
   inspectorEl.dataset.railMode = mode;
+  inspectorEl.dataset.railDensity = density;
   for (const sectionEl of getSectionEls()) {
     const sectionId = sectionEl.dataset.section as RightRailSectionId | undefined;
     sectionEl.dataset.presentation = sectionId ? presentation[sectionId] : 'compact';
@@ -182,6 +194,8 @@ function applyRailMode(): void {
 function renderInspectorChrome(): void {
   renderOverview();
   applyRailMode();
+  updateDensityToggleButton();
+  openBtn?.classList.toggle('hidden', inspectorOpen || !appState.activeProject);
 }
 
 export function setContextInspectorOpen(next: boolean): void {
@@ -189,6 +203,7 @@ export function setContextInspectorOpen(next: boolean): void {
   mainAreaEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
+  openBtn?.classList.toggle('hidden', next || !appState.activeProject);
 }
 
 export function toggleContextInspector(): void {
@@ -197,12 +212,21 @@ export function toggleContextInspector(): void {
 
 export function initContextInspector(): void {
   closeBtn.addEventListener('click', () => setContextInspectorOpen(false));
+  openBtn?.addEventListener('click', () => setContextInspectorOpen(true));
+  densityBtn?.addEventListener('click', () => {
+    const nextDensity = getRightRailDensity() === 'ultra-compact'
+      ? 'standard'
+      : 'ultra-compact';
+    appState.setPreference('rightRailDensity', nextDensity);
+    renderInspectorChrome();
+  });
 
   appState.on('project-changed', () => {
     if (!appState.activeProject) setContextInspectorOpen(false);
     renderInspectorChrome();
   });
   appState.on('state-loaded', renderInspectorChrome);
+  appState.on('preferences-changed', renderInspectorChrome);
   appState.on('session-changed', renderInspectorChrome);
   appState.on('session-added', renderInspectorChrome);
   appState.on('session-removed', renderInspectorChrome);

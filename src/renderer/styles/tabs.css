@@ -555,6 +555,15 @@
   margin-left: 1px;
 }
 
+.session-launcher-group #btn-update-cli-tools {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.session-launcher-group #btn-update-cli-tools.is-updating {
+  animation: tab-launcher-spin 0.9s linear infinite;
+}
+
 .session-launcher-group .icon-btn {
   background: transparent;
   border-color: transparent;
@@ -571,6 +580,11 @@
 .session-launcher-group .tab-action-primary {
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)), transparent);
   border-color: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+@keyframes tab-launcher-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .icon-btn {
@@ -892,7 +906,8 @@
 .tab-mcp-badge,
 .tab-file-badge,
 .tab-remote-badge,
-.tab-browser-badge {
+.tab-browser-badge,
+.tab-cli-surface-badge {
   display: inline-flex;
   align-items: center;
   min-height: 16px;
@@ -926,4 +941,8 @@
 
 .tab-browser-badge {
   color: color-mix(in srgb, #2ea043 76%, var(--text-secondary));
+}
+
+.tab-cli-surface-badge {
+  color: color-mix(in srgb, #5aa9ff 78%, var(--text-secondary));
 }

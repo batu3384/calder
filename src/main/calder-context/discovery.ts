@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectContextSource, ProjectContextState } from '../../shared/types.js';
+import type { ProjectContextSource, ProjectContextState, ProviderId } from '../../shared/types.js';
 
 function isFile(filePath: string): boolean {
   try {
@@ -15,6 +15,25 @@ function listMarkdownFiles(dirPath: string): string[] {
     return fs.readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.md'))
       .sort((left, right) => left.localeCompare(right));
+  } catch {
+    return [];
+  }
+}
+
+function listFilesRecursive(dirPath: string, predicate: (entryName: string) => boolean): string[] {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+      .sort((left, right) => left.name.localeCompare(right.name));
+    const results: string[] = [];
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        results.push(...listFilesRecursive(fullPath, predicate));
+      } else if (entry.isFile() && predicate(entry.name)) {
+        results.push(fullPath);
+      }
+    }
+    return results;
   } catch {
     return [];
   }
@@ -69,12 +88,44 @@ function inferRulePriority(filePath: string): 'hard' | 'soft' {
   return path.basename(filePath).includes('.hard.') ? 'hard' : 'soft';
 }
 
+const PROJECT_PROVIDER_CONTEXT_FILES: Array<{
+  relativePath: string;
+  provider: ProviderId;
+  kind: 'memory' | 'instructions';
+}> = [
+  { relativePath: 'CLAUDE.md', provider: 'claude', kind: 'memory' },
+  { relativePath: 'CLAUDE.local.md', provider: 'claude', kind: 'memory' },
+  { relativePath: path.join('.claude', 'CLAUDE.md'), provider: 'claude', kind: 'memory' },
+  { relativePath: 'AGENTS.md', provider: 'codex', kind: 'instructions' },
+  { relativePath: 'GEMINI.md', provider: 'gemini', kind: 'instructions' },
+  { relativePath: 'QWEN.md', provider: 'qwen', kind: 'instructions' },
+  { relativePath: path.join('.github', 'copilot-instructions.md'), provider: 'copilot', kind: 'instructions' },
+];
+
 export async function discoverProjectContext(projectPath: string): Promise<ProjectContextState> {
   const sources: ProjectContextSource[] = [];
 
-  const claudePath = path.join(projectPath, 'CLAUDE.md');
-  if (isFile(claudePath)) {
-    sources.push(buildSource(claudePath, { provider: 'claude', scope: 'project', kind: 'memory' }));
+  for (const descriptor of PROJECT_PROVIDER_CONTEXT_FILES) {
+    const filePath = path.join(projectPath, descriptor.relativePath);
+    if (!isFile(filePath)) continue;
+    sources.push(
+      buildSource(filePath, {
+        provider: descriptor.provider,
+        scope: 'project',
+        kind: descriptor.kind,
+      }),
+    );
+  }
+
+  const copilotInstructionDir = path.join(projectPath, '.github', 'instructions');
+  for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) => entryName.endsWith('.instructions.md'))) {
+    sources.push(
+      buildSource(filePath, {
+        provider: 'copilot',
+        scope: 'project',
+        kind: 'instructions',
+      }),
+    );
   }
 
   const sharedPath = path.join(projectPath, 'CALDER.shared.md');

@@ -697,7 +697,7 @@ describe('browser target sessions', () => {
     expect(mockSave).toHaveBeenCalled();
   });
 
-  it('prefers the active browser tab when surface state points to a stale browser session', () => {
+  it('prefers the surfaced browser tab even when another browser tab is active', () => {
     const project = addProject();
     const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
     const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
@@ -715,6 +715,47 @@ describe('browser target sessions', () => {
     mockSave.mockClear();
     const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:3002');
 
+    expect(reused.id).toBe(first.id);
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: first.id,
+      url: 'http://localhost:3002',
+    });
+    expect(appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl)
+      .toBe('http://localhost:3002');
+    expect(appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl)
+      .toBe('http://localhost:3001');
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('does not let split pane order override the surfaced browser tab target', () => {
+    const project = addProject();
+    const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+    appState.addSession(project.id, 'Claude');
+
+    appState.activeProject!.layout = {
+      mode: 'mosaic',
+      splitPanes: [first.id],
+      splitDirection: 'horizontal',
+      browserWidthRatio: 0.38,
+      mosaicRatios: {},
+    };
+
+    appState.setProjectSurface(project.id, {
+      kind: 'web',
+      active: true,
+      web: {
+        sessionId: second.id,
+        url: second.browserTabUrl,
+        history: [first.browserTabUrl!, second.browserTabUrl!],
+      },
+    });
+
+    appState.setActiveSession(project.id, second.id);
+    mockSave.mockClear();
+
+    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:3002');
+
     expect(reused.id).toBe(second.id);
     expect(appState.activeProject!.surface?.web).toMatchObject({
       sessionId: second.id,
@@ -722,6 +763,8 @@ describe('browser target sessions', () => {
     });
     expect(appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl)
       .toBe('http://localhost:3002');
+    expect(appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl)
+      .toBe('http://localhost:3000');
     expect(mockSave).toHaveBeenCalled();
   });
 
@@ -867,6 +910,79 @@ describe('setActiveSession()', () => {
     appState.setActiveSession(project.id, sessions[0].id);
     expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
     expect(mockSave).toHaveBeenCalled();
+  });
+
+  it('returns cli surface tab focus back to session tabs when a session is selected', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      tabFocus: 'cli',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+
+    appState.setActiveSession(project.id, sessions[1].id);
+
+    expect(appState.activeProject!.surface?.tabFocus).toBe('session');
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
+  });
+});
+
+describe('cli surface tab state', () => {
+  it('focusCliSurfaceTab marks the cli surface as the active top tab without changing the active session', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      tabFocus: 'session',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, sessions[0].id);
+
+    appState.focusCliSurfaceTab(project.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'cli',
+        active: true,
+        tabFocus: 'cli',
+      }),
+    );
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
+  });
+
+  it('closeCliSurface hides the cli surface and restores session tab focus', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      tabFocus: 'cli',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, sessions[0].id);
+
+    appState.closeCliSurface(project.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'cli',
+        active: false,
+        tabFocus: 'session',
+      }),
+    );
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
   });
 });
 

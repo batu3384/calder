@@ -593,6 +593,41 @@ describe('split-layout mosaic behavior', () => {
     expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
   });
 
+  it('expands the session mosaic back to full width after closing the cli surface tab', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { renderLayout } = await import('./split-layout.js');
+    vi.mocked(isInspectorOpen).mockReturnValue(false);
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      tabFocus: 'cli',
+      cli: {
+        selectedProfileId: 'textual',
+        profiles: [{ id: 'textual', name: 'Textual', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, first.id);
+
+    renderLayout();
+    appState.closeCliSurface(project.id);
+    renderLayout();
+
+    const container = document.getElementById('terminal-container') as unknown as FakeElement;
+    const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement | null;
+    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
+
+    expect(browserColumn).toBeNull();
+    expect(canvas).toBeTruthy();
+    expect(container.style.gridTemplateColumns).toBe('1fr');
+  });
+
   it('does not rebuild the pinned browser surface when only the browser URL changes', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();

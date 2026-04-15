@@ -121,6 +121,7 @@ const {
   mockFit,
   mockOpen,
   mockSerialize,
+  mockDomSelectionClear,
   mockSendCliSelectionToSelectedSession,
   webLinksActivate,
   terminalOptionsRef,
@@ -133,6 +134,7 @@ const {
   const mockOpen = vi.fn();
   const mockLoadAddon = vi.fn();
   const mockSerialize = vi.fn(() => '');
+  const mockDomSelectionClear = vi.fn();
   const mockSendCliSelectionToSelectedSession = vi.fn(async () => ({ ok: true, targetSessionId: 'session-1' }));
   const webLinksActivate: { current: ((event: MouseEvent, url: string) => void) | null } = { current: null };
   const terminalOptionsRef: { current: Record<string, unknown> | null } = { current: null };
@@ -142,6 +144,7 @@ const {
     mockOpen,
     mockLoadAddon,
     mockSerialize,
+    mockDomSelectionClear,
     mockSendCliSelectionToSelectedSession,
     webLinksActivate,
     terminalOptionsRef,
@@ -162,6 +165,7 @@ const {
       onSelectionChange = vi.fn();
       onData = vi.fn();
       getSelection = vi.fn(() => '');
+      clearSelection = vi.fn();
       getSelectionPosition = vi.fn(() => undefined);
       write = vi.fn();
     },
@@ -215,6 +219,9 @@ beforeEach(() => {
     removeEventListener: vi.fn(),
   });
   vi.stubGlobal('window', {
+    getSelection: () => ({
+      removeAllRanges: mockDomSelectionClear,
+    }),
     calder: {
       store: {
         save: vi.fn(),
@@ -262,15 +269,20 @@ describe('cli surface pane', () => {
 
   it('opens detected links through Calder browser routing', async () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
-    const { attachCliSurfacePane } = await import('./pane.js');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
 
     attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      terminal: { clearSelection: ReturnType<typeof vi.fn> };
+    };
     const openExternal = (window as any).calder.app.openExternal;
 
     expect(webLinksActivate.current).toBeTypeOf('function');
     webLinksActivate.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', undefined);
+    expect(instance.terminal.clearSelection).toHaveBeenCalled();
+    expect(mockDomSelectionClear).toHaveBeenCalled();
   });
 
   it('normalizes bare localhost links in CLI surface output before opening', async () => {
@@ -287,9 +299,12 @@ describe('cli surface pane', () => {
 
   it('routes OSC8 hyperlinks through xterm linkHandler', async () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
-    const { attachCliSurfacePane } = await import('./pane.js');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
 
     attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      terminal: { clearSelection: ReturnType<typeof vi.fn> };
+    };
     const openExternal = (window as any).calder.app.openExternal;
     const linkHandler = terminalOptionsRef.current?.linkHandler as
       | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
@@ -299,6 +314,8 @@ describe('cli surface pane', () => {
 
     expect(linkHandler?.activate).toBeTypeOf('function');
     expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
+    expect(instance.terminal.clearSelection).toHaveBeenCalled();
+    expect(mockDomSelectionClear).toHaveBeenCalled();
   });
 
   it('opens inspect mode without auto-selecting the full viewport', async () => {

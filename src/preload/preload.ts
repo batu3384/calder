@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types';
+import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -44,6 +44,7 @@ export interface CalderApi {
     getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
     listProviders(): Promise<CliProviderMeta[]>;
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
+    updateAll(): Promise<ProviderUpdateSummary>;
     watchProject(providerId: ProviderId, projectPath: string): void;
     onConfigChanged(callback: () => void): () => void;
   };
@@ -80,7 +81,7 @@ export interface CalderApi {
   };
   governance: {
     getProjectState(projectPath: string, sessionId?: string): Promise<ProjectGovernanceState>;
-    setAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode, sessionId?: string): Promise<ProjectGovernanceState>;
+    setAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null, sessionId?: string): Promise<ProjectGovernanceState>;
     setSessionAutoApprovalOverride(sessionId: string, mode: AutoApprovalMode | null): Promise<{ ok: boolean }>;
     createStarterPolicy(projectPath: string): Promise<ProjectGovernanceStarterPolicyResult>;
     watchProject(projectPath: string): void;
@@ -258,6 +259,7 @@ const api: CalderApi = {
     getMeta: (providerId) => ipcRenderer.invoke('provider:getMeta', providerId),
     listProviders: () => ipcRenderer.invoke('provider:listProviders'),
     checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
+    updateAll: () => ipcRenderer.invoke('provider:updateAll'),
     watchProject: (providerId, projectPath) => ipcRenderer.send('config:watchProject', providerId, projectPath),
     onConfigChanged: (callback) => onChannel('config:changed', callback),
   },
@@ -301,7 +303,7 @@ const api: CalderApi = {
   },
   governance: {
     getProjectState: (projectPath: string, sessionId?: string) => ipcRenderer.invoke('governance:getProjectState', projectPath, sessionId),
-    setAutoApprovalMode: (projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode, sessionId?: string) =>
+    setAutoApprovalMode: (projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null, sessionId?: string) =>
       ipcRenderer.invoke('governance:setAutoApprovalMode', projectPath, scope, mode, sessionId),
     setSessionAutoApprovalOverride: (sessionId: string, mode: AutoApprovalMode | null) =>
       ipcRenderer.invoke('governance:setSessionAutoApprovalOverride', sessionId, mode),

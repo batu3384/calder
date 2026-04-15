@@ -29,6 +29,7 @@ fi
 BRIDGE_URL="\${CALDER_BROWSER_BRIDGE_URL:-}"
 BRIDGE_TOKEN="\${CALDER_BROWSER_BRIDGE_TOKEN:-}"
 CURRENT_CWD="\${CALDER_BROWSER_BRIDGE_CWD:-\${PWD:-$(pwd)}}"
+ALLOW_EXTERNAL_FALLBACK="\${CALDER_BROWSER_BRIDGE_ALLOW_EXTERNAL_FALLBACK:-}"
 
 if [ -n "$BRIDGE_URL" ] && [ -n "$BRIDGE_TOKEN" ]; then
   if curl -fsS -X POST \\
@@ -39,6 +40,10 @@ if [ -n "$BRIDGE_URL" ] && [ -n "$BRIDGE_TOKEN" ]; then
     "$BRIDGE_URL" >/dev/null 2>&1; then
     exit 0
   fi
+fi
+
+if [ "$ALLOW_EXTERNAL_FALLBACK" != "1" ]; then
+  exit 1
 fi
 
 if [ -n "$CALDER_BROWSER_BRIDGE_REAL_OPEN" ]; then
@@ -57,6 +62,7 @@ function createUrlShim(realCommandEnvName: string): string {
   return `#!/bin/sh
 REAL_CMD="\${${realCommandEnvName}:-}"
 TARGET=""
+ALLOW_EXTERNAL_FALLBACK="\${CALDER_BROWSER_BRIDGE_ALLOW_EXTERNAL_FALLBACK:-}"
 
 for arg in "$@"; do
   case "$arg" in
@@ -70,6 +76,10 @@ if [ -n "$TARGET" ] && [ -n "$CALDER_BROWSER_BRIDGE_LAUNCHER" ]; then
   if [ "$STATUS" -eq 0 ]; then
     exit 0
   fi
+fi
+
+if [ -n "$TARGET" ] && [ "$ALLOW_EXTERNAL_FALLBACK" != "1" ]; then
+  exit 1
 fi
 
 if [ -n "$REAL_CMD" ]; then

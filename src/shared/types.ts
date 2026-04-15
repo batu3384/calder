@@ -25,6 +25,31 @@ export interface CliProviderMeta {
   defaultContextWindowSize: number;
 }
 
+export type ProviderUpdateSource = 'self' | 'npm' | 'brew-formula' | 'brew-cask' | 'unknown';
+export type ProviderUpdateStatus = 'updated' | 'up_to_date' | 'skipped' | 'error';
+
+export interface ProviderUpdateResult {
+  providerId: ProviderId;
+  providerName: string;
+  source: ProviderUpdateSource;
+  status: ProviderUpdateStatus;
+  checked: boolean;
+  updateAttempted: boolean;
+  message: string;
+  checkCommand?: string;
+  updateCommand?: string;
+  beforeVersion?: string;
+  latestVersion?: string;
+  afterVersion?: string;
+  durationMs: number;
+}
+
+export interface ProviderUpdateSummary {
+  startedAt: string;
+  finishedAt: string;
+  results: ProviderUpdateResult[];
+}
+
 // --- Git ---
 
 export interface GitWorktree {
@@ -556,6 +581,7 @@ export interface CliSurfaceState {
 export interface ProjectSurfaceRecord {
   kind: SurfaceKind;
   active: boolean;
+  tabFocus?: 'session' | 'cli';
   targetSessionId?: string;
   web?: WebSurfaceState;
   cli?: CliSurfaceState;
@@ -623,6 +649,7 @@ export interface Preferences {
   sessionHistoryEnabled: boolean;
   insightsEnabled: boolean;
   autoTitleEnabled: boolean;
+  rightRailDensity?: 'standard' | 'ultra-compact';
   language?: UiLanguage;
   defaultProvider?: ProviderId;
   statusLineConsent?: 'granted' | 'declined' | null;

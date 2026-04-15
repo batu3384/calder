@@ -376,6 +376,10 @@
   opacity: 0.72;
 }
 
+html[lang='tr'] .browser-toolbar-cluster-label {
+  letter-spacing: 0.08em;
+}
+
 .browser-toolbar-cluster-controls {
   display: flex;
   align-items: center;
@@ -536,6 +540,16 @@
     box-shadow 0.15s ease;
 }
 
+html[lang='tr'] .browser-go-btn,
+html[lang='tr'] .browser-draw-btn,
+html[lang='tr'] .browser-inspect-btn,
+html[lang='tr'] .browser-record-btn,
+html[lang='tr'] .browser-viewport-btn {
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
 .browser-nav-btn:hover,
 .browser-draw-btn:hover,
 .browser-inspect-btn:hover,
@@ -566,6 +580,11 @@
 
 .browser-reload-btn {
   font-size: 16px;
+}
+
+.browser-home-btn {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .browser-url-input {

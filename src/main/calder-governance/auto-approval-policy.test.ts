@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -6,6 +6,7 @@ import {
   GLOBAL_AUTO_APPROVAL_POLICY_PATH,
   readAutoApprovalModeFromPolicyFile,
   resolveEffectiveAutoApprovalMode,
+  setAutoApprovalModeInPolicyFile,
 } from './auto-approval-policy.js';
 
 const roots: string[] = [];
@@ -133,5 +134,49 @@ describe('readAutoApprovalModeFromPolicyFile', () => {
     expect(GLOBAL_AUTO_APPROVAL_POLICY_PATH).toContain('.calder');
     expect(GLOBAL_AUTO_APPROVAL_POLICY_PATH).toContain('governance');
     expect(GLOBAL_AUTO_APPROVAL_POLICY_PATH).toContain('default-policy.json');
+  });
+});
+
+describe('setAutoApprovalModeInPolicyFile', () => {
+  it('writes a mode into a missing policy file', () => {
+    const root = makeTempDir('auto-approval-set-mode');
+    roots.push(root);
+    const filePath = join(root, '.calder/governance/policy.json');
+
+    setAutoApprovalModeInPolicyFile(filePath, 'edit_plus_safe_tools');
+
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('edit_plus_safe_tools');
+  });
+
+  it('removes project auto approval override while preserving other policy fields', () => {
+    const root = makeTempDir('auto-approval-clear-mode');
+    roots.push(root);
+    const filePath = writePolicy(root, '.calder/governance/policy.json', {
+      schemaVersion: 1,
+      profileName: 'Project guardrails',
+      toolPolicy: 'ask',
+      autoApproval: {
+        mode: 'edit_only',
+        safeToolProfile: 'default-read-only',
+      },
+    });
+
+    setAutoApprovalModeInPolicyFile(filePath, null);
+
+    const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, unknown>;
+    const autoApproval = parsed.autoApproval as Record<string, unknown>;
+    expect(autoApproval.mode).toBeUndefined();
+    expect(autoApproval.safeToolProfile).toBe('default-read-only');
+    expect(parsed.toolPolicy).toBe('ask');
+  });
+
+  it('does not create a policy file when clearing a missing override', () => {
+    const root = makeTempDir('auto-approval-clear-missing');
+    roots.push(root);
+    const filePath = join(root, '.calder/governance/policy.json');
+
+    setAutoApprovalModeInPolicyFile(filePath, null);
+
+    expect(existsSync(filePath)).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 {
   "name": "calder",
+  "productName": "Calder",
   "version": "0.2.25",
   "description": "A terminal-centric IDE for AI-powered CLI tools, built on Electron",
   "author": {
@@ -66,6 +67,10 @@
       ],
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
+      "extendInfo": {
+        "CFBundleDisplayName": "Calder",
+        "CFBundleName": "Calder"
+      },
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",

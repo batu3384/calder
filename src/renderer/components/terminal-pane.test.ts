@@ -18,6 +18,7 @@ const webLinksActivateRef = vi.hoisted(() => ({
 const terminalOptionsRef = vi.hoisted(() => ({
   current: null as null | Record<string, unknown>,
 }));
+const mockDomSelectionClear = vi.hoisted(() => vi.fn());
 
 class FakeTerminal {
   cols = 120;
@@ -38,6 +39,9 @@ class FakeTerminal {
   }
   getSelection(): string { return this._selection; }
   setSelection(s: string): void { this._selection = s; }
+  clearSelection = vi.fn(() => {
+    this._selection = '';
+  });
   registerLinkProvider(): void {}
   onData(): void {}
   open(): void {}
@@ -174,6 +178,9 @@ const mockClipboardWrite = vi.fn();
 
 function makeWindowStub() {
   return {
+    getSelection: () => ({
+      removeAllRanges: mockDomSelectionClear,
+    }),
     calder: {
       pty: {
         write: mockPtyWrite,
@@ -364,13 +371,16 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
 
   it('opens detected web links without requiring modifier keys', async () => {
     const { createTerminalPane } = await import('./terminal-pane.js');
-    createTerminalPane('links-1', '/project', null);
+    const instance = createTerminalPane('links-1', '/project', null);
     const openExternal = (window as any).calder.app.openExternal;
+    const terminal = instance.terminal as unknown as FakeTerminal;
 
     expect(webLinksActivateRef.current).toBeTypeOf('function');
     webLinksActivateRef.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', '/project');
+    expect(terminal.clearSelection).toHaveBeenCalled();
+    expect(mockDomSelectionClear).toHaveBeenCalled();
   });
 
   it('normalizes bare localhost links before opening', async () => {
@@ -385,8 +395,9 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
 
   it('routes OSC8 hyperlinks through xterm linkHandler', async () => {
     const { createTerminalPane } = await import('./terminal-pane.js');
-    createTerminalPane('links-osc8', '/project', null);
+    const instance = createTerminalPane('links-osc8', '/project', null);
     const openExternal = (window as any).calder.app.openExternal;
+    const terminal = instance.terminal as unknown as FakeTerminal;
     const linkHandler = terminalOptionsRef.current?.linkHandler as
       | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
       | undefined;
@@ -395,5 +406,7 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
 
     expect(linkHandler?.activate).toBeTypeOf('function');
     expect(openExternal).toHaveBeenCalledWith('http://localhost:3000/dashboard', '/project');
+    expect(terminal.clearSelection).toHaveBeenCalled();
+    expect(mockDomSelectionClear).toHaveBeenCalled();
   });
 });

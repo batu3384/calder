@@ -18,6 +18,7 @@ import { checkForUpdates, quitAndInstall } from './auto-updater';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
+import { updateAllProviders } from './provider-updater';
 import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
@@ -56,7 +57,11 @@ import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffo
 import { startProjectGovernanceWatcher } from './calder-governance/watcher';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
-import { GLOBAL_AUTO_APPROVAL_POLICY_PATH, resolveEffectiveAutoApprovalMode } from './calder-governance/auto-approval-policy';
+import {
+  GLOBAL_AUTO_APPROVAL_POLICY_PATH,
+  resolveEffectiveAutoApprovalMode,
+  setAutoApprovalModeInPolicyFile,
+} from './calder-governance/auto-approval-policy';
 import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
 import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
 import { readProjectBackgroundTaskFile } from './calder-tasks/read';
@@ -111,39 +116,11 @@ function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
   return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools';
 }
 
-function readJsonObject(filePath: string): Record<string, unknown> {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeJsonObject(filePath: string, value: Record<string, unknown>): void {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-}
-
-function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode): void {
+function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null): void {
   const targetPath = scope === 'global'
     ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
     : path.join(projectPath, POLICY_RELATIVE_PATH);
-  const raw = readJsonObject(targetPath);
-  const rawAutoApproval = raw.autoApproval;
-  const existingAutoApproval = rawAutoApproval && typeof rawAutoApproval === 'object' && !Array.isArray(rawAutoApproval)
-    ? rawAutoApproval as Record<string, unknown>
-    : {};
-
-  writeJsonObject(targetPath, {
-    ...raw,
-    autoApproval: {
-      ...existingAutoApproval,
-      mode,
-    },
-  });
+  setAutoApprovalModeInPolicyFile(targetPath, mode);
 }
 
 async function applySessionOverrideToGovernanceState(
@@ -486,10 +463,12 @@ export function registerIpcHandlers(): void {
       _event,
       projectPath: string,
       scope: 'global' | 'project',
-      mode: AutoApprovalMode,
+      mode: AutoApprovalMode | null,
       sessionId?: string,
     ) => {
-      if ((scope !== 'global' && scope !== 'project') || !isAutoApprovalMode(mode)) {
+      const validGlobalPayload = scope === 'global' && isAutoApprovalMode(mode);
+      const validProjectPayload = scope === 'project' && (mode === null || isAutoApprovalMode(mode));
+      if (!validGlobalPayload && !validProjectPayload) {
         throw new Error('Invalid auto-approval update payload.');
       }
       updateAutoApprovalMode(projectPath, scope, mode);
@@ -656,6 +635,10 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('provider:checkBinary', (_event, providerId: ProviderId = 'claude') => {
     const provider = getProvider(providerId);
     return provider.validatePrerequisites();
+  });
+
+  ipcMain.handle('provider:updateAll', async () => {
+    return updateAllProviders();
   });
 
   ipcMain.handle('fs:browseDirectory', async () => {

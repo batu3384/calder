@@ -25,12 +25,14 @@ vi.mock('./hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as hookCommands from './hook-commands';
 import { getClaudeConfig, installHooks } from './claude-cli';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
+const mockInstallEventScript = vi.mocked(hookCommands.installEventScript);
 const mockReaddirSyncAny = mockReaddirSync as unknown as { mockImplementation: (fn: (...args: any[]) => any) => void };
 
 // Normalize paths for cross-platform comparison
@@ -497,5 +499,43 @@ describe('installHooks', () => {
       expect(allHooks.some((h: { command: string }) => h.command.includes('.status'))).toBe(false);
       expect(allHooks.some((h: { command: string }) => h.command.includes('.events'))).toBe(true);
     }
+  });
+
+  it('generates PreToolUse hook script with subagent launch tracking and web-search guards', () => {
+    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+    installHooks();
+
+    const preToolUseScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_PreToolUse.py');
+    expect(preToolUseScript).toBeDefined();
+    const py = String(preToolUseScript![1]);
+    expect(py).toContain('def _mark_subagent_launch_started');
+    expect(py).toContain('if tn=="Task":');
+    expect(py).toContain('_mark_subagent_launch_started(sid)');
+    expect(py).toContain('WebSearch is disabled for {provider} sessions');
+  });
+
+  it('generates SubagentStart/Stop and SessionEnd scripts with provider_sync state writes', () => {
+    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+    installHooks();
+
+    const startScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SubagentStart.py');
+    const stopScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SubagentStop.py');
+    const endScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SessionEnd.py');
+    expect(startScript).toBeDefined();
+    expect(stopScript).toBeDefined();
+    expect(endScript).toBeDefined();
+
+    const startPy = String(startScript![1]);
+    const stopPy = String(stopScript![1]);
+    const endPy = String(endScript![1]);
+
+    expect(startPy).toContain('def _mark_subagent_started');
+    expect(startPy).toContain('_mark_subagent_started(sid,d.get("agent_id",""))');
+    expect(stopPy).toContain('def _mark_subagent_stopped');
+    expect(stopPy).toContain('_mark_subagent_stopped(sid,d.get("agent_id",""))');
+    expect(endPy).toContain('def _clear_subagent_state');
+    expect(endPy).toContain('_clear_subagent_state(sid)');
   });
 });

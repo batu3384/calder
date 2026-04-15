@@ -1,5 +1,5 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
-import type { CliSurfaceProfile, ProjectSurfaceRecord, ProviderId } from '../../shared/types.js';
+import type { CliSurfaceProfile, ProjectSurfaceRecord, ProviderId, ProviderUpdateSummary } from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
@@ -32,6 +32,7 @@ import {
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
+const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
@@ -43,6 +44,8 @@ let surfaceProfileSelect: CustomSelectInstance | null = null;
 let sessionProviderSelectorSignature = '';
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
+let cliUpdateInFlight = false;
+let cliUpdateResetTimer: number | null = null;
 
 function buildTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
@@ -64,8 +67,19 @@ function buildTabTitle(session: SessionRecord): string {
   return `${baseTitle}\nDrag to reorder`;
 }
 
+function buildCliSurfaceTabTitle(project: ProjectRecord): string {
+  const surface = getProjectSurface(project);
+  const selectedProfile = surface.cli?.profiles.find((profile) => profile.id === surface.cli?.selectedProfileId);
+  const profileLabel = selectedProfile ? getCliSurfaceProfileLabel(selectedProfile) : 'No profile selected';
+  return `CLI Surface\nProfile: ${profileLabel}`;
+}
+
 export function initTabBar(): void {
   btnAddSession.classList.add('tab-action-primary');
+  btnUpdateCliTools.classList.add('tab-action-primary');
+  btnUpdateCliTools.addEventListener('click', () => {
+    void runCliToolUpdates();
+  });
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -162,6 +176,7 @@ function createDefaultProjectSurface(): ProjectSurfaceRecord {
   return {
     kind: 'web',
     active: false,
+    tabFocus: 'session',
     web: { history: [] },
     cli: { profiles: [], runtime: { status: 'idle' } },
   };
@@ -570,6 +585,101 @@ function syncSessionProviderSelector(): void {
   sessionProviderSelectorSignature = signature;
 }
 
+function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): {
+  updated: number;
+  upToDate: number;
+  skipped: number;
+  error: number;
+} {
+  let updated = 0;
+  let upToDate = 0;
+  let skipped = 0;
+  let error = 0;
+  for (const result of summary.results) {
+    if (result.status === 'updated') updated += 1;
+    else if (result.status === 'up_to_date') upToDate += 1;
+    else if (result.status === 'skipped') skipped += 1;
+    else error += 1;
+  }
+  return { updated, upToDate, skipped, error };
+}
+
+function clearCliUpdateResetTimer(): void {
+  if (cliUpdateResetTimer !== null) {
+    window.clearTimeout(cliUpdateResetTimer);
+    cliUpdateResetTimer = null;
+  }
+}
+
+function setCliUpdateButtonIdle(): void {
+  btnUpdateCliTools.classList.remove('is-updating');
+  btnUpdateCliTools.disabled = false;
+  btnUpdateCliTools.innerHTML = '&#x21BB;';
+  btnUpdateCliTools.title = 'Update CLI Tools';
+  btnUpdateCliTools.setAttribute('aria-label', 'Update CLI tools');
+}
+
+function setCliUpdateButtonBusy(): void {
+  clearCliUpdateResetTimer();
+  btnUpdateCliTools.classList.add('is-updating');
+  btnUpdateCliTools.disabled = true;
+  btnUpdateCliTools.innerHTML = '&#x21BB;';
+  btnUpdateCliTools.title = 'Updating CLI tools...';
+  btnUpdateCliTools.setAttribute('aria-label', 'Updating CLI tools');
+}
+
+function showCliUpdateOutcome(summary: ProviderUpdateSummary): void {
+  clearCliUpdateResetTimer();
+  const counters = summarizeCliUpdateStatuses(summary);
+  if (counters.error > 0) {
+    btnUpdateCliTools.classList.remove('is-updating');
+    btnUpdateCliTools.disabled = false;
+    btnUpdateCliTools.textContent = '!';
+    btnUpdateCliTools.title = 'CLI update completed with errors';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
+    console.warn('[tab-bar] CLI update completed with errors', summary.results);
+  } else if (counters.updated > 0) {
+    btnUpdateCliTools.classList.remove('is-updating');
+    btnUpdateCliTools.disabled = false;
+    btnUpdateCliTools.textContent = '✓';
+    btnUpdateCliTools.title = 'CLI tools updated';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI tools updated');
+    console.info('[tab-bar] CLI tools updated', summary.results);
+  } else {
+    btnUpdateCliTools.classList.remove('is-updating');
+    btnUpdateCliTools.disabled = false;
+    btnUpdateCliTools.textContent = '•';
+    btnUpdateCliTools.title = 'CLI tools are already up to date.';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI tools are already up to date');
+  }
+
+  cliUpdateResetTimer = window.setTimeout(() => {
+    setCliUpdateButtonIdle();
+  }, 4500);
+}
+
+async function runCliToolUpdates(): Promise<void> {
+  if (cliUpdateInFlight) return;
+  cliUpdateInFlight = true;
+  setCliUpdateButtonBusy();
+  try {
+    const summary = await window.calder.provider.updateAll();
+    showCliUpdateOutcome(summary);
+  } catch (error) {
+    btnUpdateCliTools.classList.remove('is-updating');
+    btnUpdateCliTools.disabled = false;
+    btnUpdateCliTools.textContent = '!';
+    btnUpdateCliTools.title = 'CLI update failed.';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI update failed');
+    cliUpdateResetTimer = window.setTimeout(() => {
+      setCliUpdateButtonIdle();
+    }, 4500);
+    console.error('[tab-bar] Failed to update CLI tools', error);
+  } finally {
+    cliUpdateInFlight = false;
+  }
+}
+
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {
   const nameSpan = tab.querySelector('.tab-name') as HTMLElement;
   if (nameSpan.querySelector('input')) return;
@@ -855,10 +965,11 @@ function render(): void {
   renderSurfaceControls();
   const project = appState.activeProject;
   if (!project) return;
+  const cliSurfaceTabActive = project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli';
 
   for (const session of project.sessions) {
     const tab = document.createElement('div');
-    const isActive = session.id === project.activeSessionId;
+    const isActive = !cliSurfaceTabActive && session.id === project.activeSessionId;
     const unread = !isActive && isUnread(session.id);
     const isMcp = session.type === 'mcp-inspector';
     const isDiff = session.type === 'diff-viewer';
@@ -979,7 +1090,46 @@ function render(): void {
     tabListEl.appendChild(tab);
   }
 
-  ensureActiveTabVisible(`${appState.activeProjectId}:${project.activeSessionId}:${project.sessions.length}`);
+  if (project.surface?.active && project.surface.kind === 'cli') {
+    const tab = document.createElement('div');
+    tab.className = 'tab-item tab-surface-item' + (cliSurfaceTabActive ? ' active' : '');
+    tab.dataset.surfaceTab = 'cli';
+    tab.title = buildCliSurfaceTabTitle(project);
+    tab.innerHTML = `
+      <span class="tab-name">
+        <span class="tab-name-prefix"><span class="tab-cli-surface-badge">CLI</span></span>
+        <span class="tab-name-label">CLI Surface</span>
+      </span>
+      <span class="tab-close" title="Close CLI surface">&times;</span>
+    `;
+
+    tab.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).classList.contains('tab-close')) return;
+      appState.focusCliSurfaceTab(project.id);
+    });
+
+    tab.addEventListener('auxclick', (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        appState.closeCliSurface(project.id);
+      }
+    });
+
+    tab.querySelector('.tab-close')!.addEventListener('click', () => {
+      appState.closeCliSurface(project.id);
+    });
+
+    tabListEl.appendChild(tab);
+  }
+
+  ensureActiveTabVisible([
+    appState.activeProjectId,
+    project.activeSessionId,
+    project.sessions.length,
+    project.surface?.kind ?? 'none',
+    project.surface?.active ? 'surface-open' : 'surface-closed',
+    project.surface?.tabFocus ?? 'session',
+  ].join(':'));
 }
 
 function renderGitStatus(): void {

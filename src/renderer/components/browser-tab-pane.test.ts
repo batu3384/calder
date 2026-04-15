@@ -71,6 +71,16 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('urlInput.addEventListener(\'input\'');
   });
 
+  it('adds a compact home button beside reload to reopen the localhost start surface', () => {
+    expect(source).toContain("homeBtn.className = 'browser-nav-btn browser-home-btn'");
+    expect(source).toContain("homeBtn.title = 'Home'");
+    expect(source).toContain('toolbarNavShell.appendChild(homeBtn);');
+    expect(source).toContain('function openBrowserHome(): void {');
+    expect(source).toContain("navigateTo(instance, 'about:blank');");
+    expect(source).toContain('void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);');
+    expect(source).toContain("homeBtn.addEventListener('click', () => openBrowserHome());");
+  });
+
   it('supports browser-like keyboard flow for address focus and reload', () => {
     expect(source).toContain("if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l')");
     expect(source).toContain("if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'r')");
@@ -107,6 +117,13 @@ describe('browser tab pane contract', () => {
 
   it('ignores benign aborted loads instead of forcing offline fallback', () => {
     expect(source).toContain("if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;");
+  });
+
+  it('ignores stale navigation events that try to revert to the previous url', () => {
+    expect(source).toContain('function isStaleNavigationRevert(instance: BrowserTabInstance, nextUrl: string): boolean {');
+    expect(source).toContain('function canonicalizeNavigationUrl(value: string | undefined): string {');
+    expect(source).toContain('if (isStaleNavigationRevert(instance, e.url)) return;');
+    expect(source).toContain('if (isStaleNavigationRevert(instance, failedUrl)) return;');
   });
 
   it('anchors the viewport picker with floating placement and cleans it up', () => {

@@ -4,7 +4,12 @@ import { attachCliSurfacePane, showCliSurfacePane } from './cli-surface/pane.js'
 
 function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefined {
   const surfaceSessionId = project.surface?.web?.sessionId;
-  if (surfaceSessionId) return surfaceSessionId;
+  if (surfaceSessionId) {
+    const surfaceSession = project.sessions.find(
+      (session) => session.id === surfaceSessionId && session.type === 'browser-tab',
+    );
+    if (surfaceSession) return surfaceSession.id;
+  }
   return [...project.sessions].reverse().find((session) => session.type === 'browser-tab')?.id;
 }
 
