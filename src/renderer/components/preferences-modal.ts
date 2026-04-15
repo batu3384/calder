@@ -156,6 +156,32 @@ export function showPreferencesModal(): void {
     return card;
   }
 
+  function appendSectionGroup(
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ): HTMLElement {
+    const group = document.createElement('section');
+    group.className = 'preferences-subsection';
+
+    const header = document.createElement('div');
+    header.className = 'preferences-subsection-header';
+    header.innerHTML = `
+      <div class="preferences-subsection-eyebrow shell-kicker">${eyebrow}</div>
+      <div class="preferences-subsection-title">${title}</div>
+      <div class="preferences-subsection-description">${description}</div>
+    `;
+    group.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'preferences-subsection-grid';
+    group.appendChild(body);
+
+    container.appendChild(group);
+    return body;
+  }
+
   function appendOverviewGrid(
     container: HTMLElement,
     items: Array<{ label: string; value: string; note?: string }>,
@@ -2763,16 +2789,38 @@ export function showPreferencesModal(): void {
           note: 'Claude, Codex, Gemini, Qwen, and the rest share one health view.',
         },
       ]);
-      renderOrchestrationOverviewSection(content);
-      renderProjectContextSection(content);
-      renderProjectGovernanceSection(content);
-      renderProjectPreviewCenterSection(content);
-      renderProjectWorkflowSection(content);
-      renderProjectTeamContextSection(content);
-      renderProjectReviewSection(content);
-      renderProjectBackgroundTaskSection(content);
-      renderProjectCheckpointSection(content);
-      renderSetupSection(content);
+      const providerHealthGroup = appendSectionGroup(
+        content,
+        'Integrations',
+        'Provider health',
+        'Installed tools, defaults, and repair actions.',
+      );
+
+      const orchestrationGroup = appendSectionGroup(
+        content,
+        'Project flow',
+        'Orchestration phases',
+        'Context, previews, reviews, checkpoints, and workflow health in calmer groups.',
+      );
+
+      const trackingGroup = appendSectionGroup(
+        content,
+        'Diagnostics',
+        'Tracking & fixes',
+        'Validation, install health, and direct repair actions.',
+      );
+
+      renderOrchestrationOverviewSection(orchestrationGroup);
+      renderProjectPreviewCenterSection(orchestrationGroup);
+      renderProjectWorkflowSection(orchestrationGroup);
+
+      renderProjectContextSection(trackingGroup);
+      renderProjectGovernanceSection(trackingGroup);
+      renderProjectTeamContextSection(trackingGroup);
+      renderProjectReviewSection(trackingGroup);
+      renderProjectBackgroundTaskSection(trackingGroup);
+      renderProjectCheckpointSection(trackingGroup);
+      renderSetupSection(providerHealthGroup);
 
     } else if (section === 'about') {
       appendSectionIntro(

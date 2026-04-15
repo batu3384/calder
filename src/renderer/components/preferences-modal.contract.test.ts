@@ -91,4 +91,14 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('overscroll-behavior: contain;');
     expect(styles).not.toContain('transform: translateX(1px);');
   });
+
+  it('groups dense settings content into subsection shells instead of one flat stack', () => {
+    expect(source).toContain('function appendSectionGroup');
+    expect(source).toContain('preferences-subsection');
+    expect(source).toContain('Provider health');
+    expect(source).toContain('Orchestration phases');
+    expect(source).toContain('Tracking & fixes');
+    expect(styles).toContain('.preferences-subsection');
+    expect(styles).toContain('.preferences-subsection-grid');
+  });
 });

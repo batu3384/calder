@@ -8,7 +8,8 @@ const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/prefer
 describe('project orchestration overview preferences contract', () => {
   it('surfaces a compact phase map inside integrations', () => {
     expect(source).toContain('Calder orchestration map');
-    expect(source).toContain('renderOrchestrationOverviewSection(content)');
+    expect(source).toContain('Orchestration phases');
+    expect(source).toContain('renderOrchestrationOverviewSection(orchestrationGroup)');
     expect(source).toContain('buildOrchestrationPhaseStates');
     expect(source).toContain('Phase 0-1');
     expect(source).toContain('Phase 2');
