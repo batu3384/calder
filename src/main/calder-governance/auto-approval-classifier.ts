@@ -21,9 +21,9 @@ const EDIT_TOOLS = new Set(['write', 'edit', 'multiedit']);
 const SHELL_TOOLS = new Set(['bash', 'sh']);
 
 const DESTRUCTIVE_PATTERNS: RegExp[] = [
-  /\brm\s+-rf\b/i,
-  /\bgit\s+reset\s+--hard\b/i,
-  /\bgit\s+checkout\s+--(?=\s|$)/i,
+  /\brm\s+(?:"|')?-rf(?:"|')?(?=\s|$)/i,
+  /\bgit\s+reset\s+(?:"|')?--hard(?:"|')?(?=\s|$)/i,
+  /\bgit\s+checkout\s+(?:"|')?--(?:"|')?(?=\s|$)/i,
 ];
 
 const SAFE_COMMAND_PATTERNS: RegExp[] = [
@@ -32,7 +32,6 @@ const SAFE_COMMAND_PATTERNS: RegExp[] = [
   /^ls(?:\s|$)/i,
   /^pwd(?:\s|$)/i,
   /^cat(?:\s|$)/i,
-  /^sed\s+-n(?:\s|$)/i,
   /^head(?:\s|$)/i,
   /^tail(?:\s|$)/i,
   /^wc(?:\s|$)/i,
@@ -69,6 +68,88 @@ function stripWrappingQuotes(token: string): string {
   return token;
 }
 
+function containsUnquotedSequence(command: string, sequence: string): boolean {
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (character === '\\' && !inSingleQuote) {
+      escaped = true;
+      continue;
+    }
+
+    if (character === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (character === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (inSingleQuote || inDoubleQuote) {
+      continue;
+    }
+
+    if (command.startsWith(sequence, index)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function hasUnquotedSingleAmpersandOperator(command: string): boolean {
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (character === '\\' && !inSingleQuote) {
+      escaped = true;
+      continue;
+    }
+
+    if (character === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    if (character === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (inSingleQuote || inDoubleQuote || character !== '&') {
+      continue;
+    }
+
+    const previousCharacter = command[index - 1];
+    const nextCharacter = command[index + 1];
+    if (previousCharacter !== '&' && nextCharacter !== '&') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function hasDangerousFindFlag(command: string): boolean {
   if (!/^find(?:\s|$)/i.test(command)) {
     return false;
@@ -81,6 +162,7 @@ function hasDangerousFindFlag(command: string): boolean {
     '-ok',
     '-okdir',
     '-fprint',
+    '-fprint0',
     '-fprintf',
     '-fls',
   ]);
@@ -105,6 +187,14 @@ function isSafeReadOnlyCommand(command: string): boolean {
   }
 
   if (/[;\r\n]|&&|\|\||\||`|\$\(/.test(command)) {
+    return false;
+  }
+
+  if (hasUnquotedSingleAmpersandOperator(command)) {
+    return false;
+  }
+
+  if (containsUnquotedSequence(command, '<(')) {
     return false;
   }
 
