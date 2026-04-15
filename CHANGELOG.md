@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.26] - 2026-04-15
+
+### Features
+
+- Calder auto-approval orchestration with global default, project override, and session override controls
+- Unified `approval_decision` inspector events for governance auditability in the right rail
+- Permission request hook coverage for Codex and Gemini providers
+
+### Fixes
+
+- Harden auto-approval command classifier against shell-escape and safe-tool bypass patterns
+- Session lifecycle cleanup for auto-approval state and rate guard consistency
+
 ## [0.2.25] - 2026-04-09
 
 ### Features
