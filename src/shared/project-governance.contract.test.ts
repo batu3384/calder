@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ProjectGovernanceAutoApprovalDecisionRecord, ProjectGovernanceAutoApprovalState } from './types';
+import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalOperationClass, AutoApprovalPolicySource, InspectorEvent } from './types';
 
 const source = readFileSync(path.join(process.cwd(), 'src/shared/types.ts'), 'utf8');
 
@@ -27,7 +28,13 @@ describe('project governance contracts', () => {
     expect(source).toContain('autoApproval?: ProjectGovernanceAutoApprovalState');
   });
 
-  it('keeps recent decision items aligned to the named record type', () => {
+  it('pins the auto-approval decision record shape', () => {
+    expectTypeOf<ProjectGovernanceAutoApprovalDecisionRecord>().toEqualTypeOf<{
+      timestamp: string;
+      operationClass: AutoApprovalOperationClass;
+      decision: AutoApprovalDecision;
+      reason?: string;
+    }>();
     expectTypeOf<ProjectGovernanceAutoApprovalState['recentDecisions'][number]>().toEqualTypeOf<ProjectGovernanceAutoApprovalDecisionRecord>();
   });
 
@@ -48,5 +55,15 @@ describe('project governance contracts', () => {
     expect(source).toContain('operation_class: AutoApprovalOperationClass');
     expect(source).toContain('decision: AutoApprovalDecision');
     expect(source).toContain('reason?: string');
+  });
+
+  it('pins the inspector auto-approval payload shape', () => {
+    expectTypeOf<InspectorEvent['auto_approval']>().toEqualTypeOf<{
+      policy_source: AutoApprovalPolicySource;
+      effective_mode: AutoApprovalMode;
+      operation_class: AutoApprovalOperationClass;
+      decision: AutoApprovalDecision;
+      reason?: string;
+    } | undefined>();
   });
 });
