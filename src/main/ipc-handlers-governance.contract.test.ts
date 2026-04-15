@@ -19,4 +19,9 @@ describe('IPC governance contract', () => {
     expect(source).toContain("label: 'Add project MCP server'");
     expect(source).toContain('target: name');
   });
+
+  it('exposes governance IPC handlers for auto-approval controls', () => {
+    expect(source).toContain("'governance:setAutoApprovalMode'");
+    expect(source).toContain("'governance:setSessionAutoApprovalOverride'");
+  });
 });

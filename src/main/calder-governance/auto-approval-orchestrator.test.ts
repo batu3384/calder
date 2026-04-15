@@ -132,4 +132,31 @@ describe('createAutoApprovalOrchestrator', () => {
     });
     expect(secondEvent.auto_approval?.reason).toContain('rate limited');
   });
+
+  it('honors session override over resolved project policy', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'edit_plus_safe_tools',
+        policySource: 'project',
+      }),
+    });
+
+    orchestrator.registerSession('session-1', 'claude', '/tmp/project');
+    orchestrator.setSessionOverride('session-1', 'off');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({ toolName: 'Edit' }),
+    ]);
+
+    expect(sendApproval).not.toHaveBeenCalled();
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      policy_source: 'session',
+      effective_mode: 'off',
+      decision: 'ask',
+    });
+  });
 });

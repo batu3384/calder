@@ -28,8 +28,11 @@ async function syncActiveProjectGovernance(): Promise<void> {
     window.calder.governance.watchProject(project.path);
   }
 
+  const activeCliSessionId = appState.activeSession && !appState.activeSession.type
+    ? appState.activeSession.id
+    : undefined;
   const requestToken = ++activeRequestToken;
-  const projectGovernance = await window.calder.governance.getProjectState(project.path);
+  const projectGovernance = await window.calder.governance.getProjectState(project.path, activeCliSessionId);
   if (requestToken !== activeRequestToken) return;
   applyProjectGovernance(project.path, projectGovernance);
 }

@@ -18,7 +18,7 @@ import { checkForUpdates, quitAndInstall } from './auto-updater';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
-import type { ProviderId, GitFileEntry, SettingsValidationResult } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
@@ -51,11 +51,12 @@ import { discoverProjectReviews } from './calder-reviews/discovery';
 import { createProjectReviewFile } from './calder-reviews/scaffold';
 import { readProjectReviewFile } from './calder-reviews/read';
 import { startProjectReviewWatcher } from './calder-reviews/watcher';
-import { discoverProjectGovernance } from './calder-governance/discovery';
+import { POLICY_RELATIVE_PATH, discoverProjectGovernance } from './calder-governance/discovery';
 import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
 import { startProjectGovernanceWatcher } from './calder-governance/watcher';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
+import { GLOBAL_AUTO_APPROVAL_POLICY_PATH, resolveEffectiveAutoApprovalMode } from './calder-governance/auto-approval-policy';
 import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
 import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
 import { readProjectBackgroundTaskFile } from './calder-tasks/read';
@@ -106,6 +107,71 @@ function isAllowedReadPath(resolvedPath: string): boolean {
   return allowedPaths.some(allowed => resolvedPath === allowed || resolvedPath.startsWith(allowed));
 }
 
+function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
+  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools';
+}
+
+function readJsonObject(filePath: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeJsonObject(filePath: string, value: Record<string, unknown>): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode): void {
+  const targetPath = scope === 'global'
+    ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
+    : path.join(projectPath, POLICY_RELATIVE_PATH);
+  const raw = readJsonObject(targetPath);
+  const rawAutoApproval = raw.autoApproval;
+  const existingAutoApproval = rawAutoApproval && typeof rawAutoApproval === 'object' && !Array.isArray(rawAutoApproval)
+    ? rawAutoApproval as Record<string, unknown>
+    : {};
+
+  writeJsonObject(targetPath, {
+    ...raw,
+    autoApproval: {
+      ...existingAutoApproval,
+      mode,
+    },
+  });
+}
+
+async function applySessionOverrideToGovernanceState(
+  state: ProjectGovernanceState,
+  sessionMode: AutoApprovalMode | undefined,
+): Promise<ProjectGovernanceState> {
+  if (!state.autoApproval || sessionMode === undefined) return state;
+
+  const resolved = resolveEffectiveAutoApprovalMode({
+    globalMode: state.autoApproval.globalMode,
+    hasGlobalMode: true,
+    projectMode: state.autoApproval.projectMode,
+    hasProjectMode: state.autoApproval.projectMode !== undefined,
+    sessionMode,
+    hasSessionMode: true,
+  });
+
+  return {
+    ...state,
+    autoApproval: {
+      ...state.autoApproval,
+      sessionMode,
+      effectiveMode: resolved.effectiveMode,
+      policySource: resolved.policySource,
+    },
+  };
+}
+
 let hookWatcherStarted = false;
 let currentProjectContextPath: string | null = null;
 let currentProjectContextWindow: BrowserWindow | null = null;
@@ -151,6 +217,11 @@ export function registerIpcHandlers(): void {
     });
     return events;
   });
+  const getGovernanceState = async (projectPath: string, sessionId?: string): Promise<ProjectGovernanceState> => {
+    const baseState = await discoverProjectGovernance(projectPath);
+    const sessionMode = sessionId ? autoApprovalOrchestrator.getSessionOverride(sessionId) : undefined;
+    return applySessionOverrideToGovernanceState(baseState, sessionMode);
+  };
 
   ipcMain.handle('pty:create', (_event, sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs: string, providerId: ProviderId = 'claude', initialPrompt?: string) => {
     const win = BrowserWindow.getAllWindows()[0];
@@ -401,13 +472,41 @@ export function registerIpcHandlers(): void {
     return readProjectReviewFile(projectPath, reviewPath);
   });
 
-  ipcMain.handle('governance:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectGovernance(projectPath);
+  ipcMain.handle('governance:getProjectState', async (_event, projectPath: string, sessionId?: string) => {
+    return getGovernanceState(projectPath, sessionId);
   });
 
   ipcMain.handle('governance:createStarterPolicy', async (_event, projectPath: string) => {
     return createProjectGovernanceStarterPolicy(projectPath);
   });
+
+  ipcMain.handle(
+    'governance:setAutoApprovalMode',
+    async (
+      _event,
+      projectPath: string,
+      scope: 'global' | 'project',
+      mode: AutoApprovalMode,
+      sessionId?: string,
+    ) => {
+      if ((scope !== 'global' && scope !== 'project') || !isAutoApprovalMode(mode)) {
+        throw new Error('Invalid auto-approval update payload.');
+      }
+      updateAutoApprovalMode(projectPath, scope, mode);
+      return getGovernanceState(projectPath, sessionId);
+    },
+  );
+
+  ipcMain.handle(
+    'governance:setSessionAutoApprovalOverride',
+    async (_event, sessionId: string, mode: AutoApprovalMode | null) => {
+      if (mode !== null && !isAutoApprovalMode(mode)) {
+        throw new Error('Invalid session auto-approval override mode.');
+      }
+      autoApprovalOrchestrator.setSessionOverride(sessionId, mode);
+      return { ok: true };
+    },
+  );
 
   ipcMain.handle('task:getProjectState', async (_event, projectPath: string) => {
     return discoverProjectBackgroundTasks(projectPath);

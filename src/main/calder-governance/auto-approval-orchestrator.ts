@@ -25,6 +25,8 @@ interface ResolvedAutoApprovalState {
 export interface AutoApprovalOrchestrator {
   registerSession(sessionId: string, providerId: ProviderId | null | undefined, projectPath: string | null | undefined): void;
   unregisterSession(sessionId: string): void;
+  setSessionOverride(sessionId: string, mode: AutoApprovalMode | null): void;
+  getSessionOverride(sessionId: string): AutoApprovalMode | undefined;
   handleInspectorEvents(sessionId: string, events: InspectorEvent[]): Promise<void>;
 }
 
@@ -88,6 +90,7 @@ async function resolveAutoApprovalStateFromProject(projectPath: string | null): 
 
 export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestratorOptions): AutoApprovalOrchestrator {
   const sessions = new Map<string, SessionRegistration>();
+  const sessionOverrides = new Map<string, AutoApprovalMode>();
   const lastAutoApprovalAt = new Map<string, number>();
   const now = options.now ?? (() => Date.now());
   const rateLimitMs = options.rateLimitMs ?? DEFAULT_RATE_LIMIT_MS;
@@ -103,7 +106,20 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
 
     unregisterSession(sessionId) {
       sessions.delete(sessionId);
+      sessionOverrides.delete(sessionId);
       lastAutoApprovalAt.delete(sessionId);
+    },
+
+    setSessionOverride(sessionId, mode) {
+      if (mode === null) {
+        sessionOverrides.delete(sessionId);
+        return;
+      }
+      sessionOverrides.set(sessionId, mode);
+    },
+
+    getSessionOverride(sessionId) {
+      return sessionOverrides.get(sessionId);
     },
 
     async handleInspectorEvents(sessionId, events) {
@@ -116,8 +132,11 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
         const providerId = session?.providerId;
         const providerSupported = providerId !== null && providerId !== undefined && SUPPORTED_PROVIDER_IDS.has(providerId);
         const approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
+        const sessionMode = sessionOverrides.get(sessionId);
+        const effectiveMode = sessionMode ?? approvalState.effectiveMode;
+        const policySource = sessionMode ? 'session' : approvalState.policySource;
         const operationClass = classifyAutoApprovalOperation(extractOperationInput(event));
-        const initialDecision = decideAutoApprovalAction(approvalState.effectiveMode, operationClass);
+        const initialDecision = decideAutoApprovalAction(effectiveMode, operationClass);
 
         let finalDecision: AutoApprovalDecision = initialDecision.decision;
         let finalReason = initialDecision.reason;
@@ -146,8 +165,8 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
           tool_name: event.tool_name,
           tool_input: event.tool_input,
           auto_approval: {
-            policy_source: approvalState.policySource,
-            effective_mode: approvalState.effectiveMode,
+            policy_source: policySource,
+            effective_mode: effectiveMode,
             operation_class: operationClass,
             decision: finalDecision,
             reason: finalReason,

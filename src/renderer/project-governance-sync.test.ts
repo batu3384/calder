@@ -82,7 +82,7 @@ describe('project governance sync', () => {
     await flushTasks();
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
-    expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
+    expect(mockGetProjectState).toHaveBeenCalledWith('/proj', undefined);
     expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.displayName).toBe('Project guardrails');
   });
 
