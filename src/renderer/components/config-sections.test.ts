@@ -76,4 +76,14 @@ describe('getConfigProviderId', () => {
 
     expect(source).toContain("el.className = 'config-item config-item-clickable calder-list-row'");
   });
+
+  it('includes an auto-approval control block wired to governance APIs', async () => {
+    const source = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+
+    expect(source).toContain("'Auto Approval'");
+    expect(source).toContain('setAutoApprovalMode');
+    expect(source).toContain('setSessionAutoApprovalOverride');
+    expect(source).toContain('auto-approval-control');
+  });
 });

@@ -14,6 +14,7 @@ describe('context language contract', () => {
     expect(html).toContain('id="context-inspector-overview"');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(configSectionsSource).toContain("'MCP Servers'");
+    expect(configSectionsSource).toContain("'Auto Approval'");
     expect(configSectionsSource).toContain('Model Context Protocol');
     expect(configSectionsSource).toContain("'Skills'");
     expect(configSectionsSource).toContain("'Commands'");
@@ -67,6 +68,7 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
     expect(inspectorCss).toContain('.inspector-overview-pill');
+    expect(inspectorCss).toContain('.auto-approval-control');
   });
 
   it('keeps the ops rail flatter than a stacked dashboard card column', () => {
