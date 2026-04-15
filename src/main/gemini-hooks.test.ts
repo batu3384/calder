@@ -62,6 +62,7 @@ describe('installGeminiHooks', () => {
     expect(hooks.AfterTool).toBeDefined();
     expect(hooks.AfterAgent).toBeDefined();
     expect(hooks.SessionEnd).toBeDefined();
+    expect(hooks.PermissionRequest).toBeDefined();
   });
 
   it('all hook commands contain the calder marker', () => {
@@ -149,7 +150,7 @@ describe('installGeminiHooks', () => {
     const secondOutput = JSON.parse(String(secondCall![1]));
     const firstParsed = JSON.parse(firstOutput);
 
-    for (const event of ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd']) {
+    for (const event of ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest']) {
       expect(secondOutput.hooks[event]?.length).toBe(firstParsed.hooks[event]?.length);
     }
   });
@@ -170,6 +171,7 @@ describe('installGeminiHooks', () => {
     expect(getStatusCmd('AfterTool')).toContain('AfterTool:working');
     expect(getStatusCmd('AfterAgent')).toContain('AfterAgent:completed');
     expect(getStatusCmd('SessionEnd')).toContain('SessionEnd:completed');
+    expect(getStatusCmd('PermissionRequest')).toContain('PermissionRequest:input');
   });
 
   it('includes session ID capture on SessionStart and BeforeAgent only', () => {
@@ -189,6 +191,7 @@ describe('installGeminiHooks', () => {
     expect(hasSessionIdCapture('AfterTool')).toBe(false);
     expect(hasSessionIdCapture('AfterAgent')).toBe(false);
     expect(hasSessionIdCapture('SessionEnd')).toBe(false);
+    expect(hasSessionIdCapture('PermissionRequest')).toBe(false);
   });
 });
 
@@ -209,6 +212,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hookDetails.AfterTool).toBe(true);
     expect(result.hookDetails.AfterAgent).toBe(true);
     expect(result.hookDetails.SessionEnd).toBe(true);
+    expect(result.hookDetails.PermissionRequest).toBe(true);
   });
 
   it('returns missing when settings.json does not exist', () => {
@@ -241,6 +245,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hookDetails.BeforeAgent).toBe(true);
     expect(result.hookDetails.AfterTool).toBe(false);
     expect(result.hookDetails.SessionEnd).toBe(false);
+    expect(result.hookDetails.PermissionRequest).toBe(false);
   });
 
   it('does not treat unknown legacy hooks as installed', () => {
@@ -251,6 +256,7 @@ describe('validateGeminiHooks', () => {
         AfterTool: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         AfterAgent: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         SessionEnd: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
+        PermissionRequest: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
       },
     };
 
@@ -263,6 +269,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hookDetails.AfterTool).toBe(false);
     expect(result.hookDetails.AfterAgent).toBe(false);
     expect(result.hookDetails.SessionEnd).toBe(false);
+    expect(result.hookDetails.PermissionRequest).toBe(false);
   });
 });
 

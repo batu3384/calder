@@ -13,7 +13,7 @@ const SETTINGS_PATH = path.join(GEMINI_DIR, 'settings.json');
 
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
 
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd'];
+const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest'];
 
 interface HookHandler {
   type: string;
@@ -102,6 +102,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     AfterTool: 'working',
     AfterAgent: 'completed',
     SessionEnd: 'completed',
+    PermissionRequest: 'input',
   };
 
   const eventTypeMap: Record<string, InspectorEventType> = {
@@ -110,6 +111,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     AfterTool: 'tool_use',
     AfterAgent: 'stop',
     SessionEnd: 'stop',
+    PermissionRequest: 'permission_request',
   };
 
   for (const [event, status] of Object.entries(ideEvents)) {
