@@ -68,6 +68,17 @@ function stripWrappingQuotes(token: string): string {
   return token;
 }
 
+function normalizeFlagToken(token: string): string {
+  return stripWrappingQuotes(token.trim()).replace(/^\\+/, '').toLowerCase();
+}
+
+function tokenizeFlags(command: string): string[] {
+  return command
+    .split(/\s+/)
+    .map(normalizeFlagToken)
+    .filter((token) => token.length > 0);
+}
+
 function containsUnquotedSequence(command: string, sequence: string): boolean {
   let inSingleQuote = false;
   let inDoubleQuote = false;
@@ -166,10 +177,7 @@ function hasDangerousFindFlag(command: string): boolean {
     '-fprintf',
     '-fls',
   ]);
-  const tokens = command
-    .toLowerCase()
-    .split(/\s+/)
-    .map(stripWrappingQuotes);
+  const tokens = tokenizeFlags(command);
   return tokens.some((token) => disallowedFindFlags.has(token));
 }
 
@@ -179,6 +187,50 @@ function isClearlyReadOnlyFind(command: string): boolean {
   }
 
   return !hasDangerousFindFlag(command);
+}
+
+function hasRiskyRgFlag(command: string): boolean {
+  if (!/^rg(?:\s|$)/i.test(command)) {
+    return false;
+  }
+
+  const tokens = tokenizeFlags(command);
+  for (let index = 1; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (token === '--') {
+      break;
+    }
+
+    if (token === '--pre' || token.startsWith('--pre=')) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function hasRiskyGitDiffFlag(command: string): boolean {
+  if (!/^git\s+diff(?:\s|$)/i.test(command)) {
+    return false;
+  }
+
+  const tokens = tokenizeFlags(command);
+  if (tokens[0] !== 'git' || tokens[1] !== 'diff') {
+    return false;
+  }
+
+  for (let index = 2; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (token === '--') {
+      break;
+    }
+
+    if (token === '--output' || token.startsWith('--output=')) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function isSafeReadOnlyCommand(command: string): boolean {
@@ -199,6 +251,10 @@ function isSafeReadOnlyCommand(command: string): boolean {
   }
 
   if (/>|>>/.test(command)) {
+    return false;
+  }
+
+  if (hasRiskyRgFlag(command) || hasRiskyGitDiffFlag(command)) {
     return false;
   }
 
