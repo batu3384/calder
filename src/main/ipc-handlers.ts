@@ -55,6 +55,7 @@ import { discoverProjectGovernance } from './calder-governance/discovery';
 import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
 import { startProjectGovernanceWatcher } from './calder-governance/watcher';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
+import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
 import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
 import { readProjectBackgroundTaskFile } from './calder-tasks/read';
@@ -132,15 +133,46 @@ export function resetHookWatcher(): void {
 }
 
 export function registerIpcHandlers(): void {
+  const autoApprovalOrchestrator = createAutoApprovalOrchestrator({
+    sendApproval: (sessionId, providerId) => {
+      writePty(sessionId, providerId === 'codex' ? '1\n' : '\n');
+    },
+    emitInspectorEvents: (sessionId, events) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('session:inspectorEvents', sessionId, events);
+      }
+    },
+  });
+  const bridgedInspectorWebContents = new Set<number>();
+
+  const ensureInspectorBridge = (win: BrowserWindow): void => {
+    const contents = win.webContents;
+    if (bridgedInspectorWebContents.has(contents.id)) return;
+    bridgedInspectorWebContents.add(contents.id);
+
+    const originalSend = contents.send.bind(contents);
+    (contents as unknown as { send: typeof contents.send }).send = ((channel: string, ...args: unknown[]) => {
+      originalSend(channel, ...args);
+      if (channel !== 'session:inspectorEvents') return;
+
+      const [sessionId, events] = args;
+      if (typeof sessionId !== 'string' || !Array.isArray(events)) return;
+      void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events);
+    }) as typeof contents.send;
+  };
+
   ipcMain.handle('pty:create', (_event, sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs: string, providerId: ProviderId = 'claude', initialPrompt?: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
+    ensureInspectorBridge(win);
 
     // Start hook status watcher on first PTY creation (window is guaranteed to exist)
     if (!hookWatcherStarted) {
       startWatching(win);
       hookWatcherStarted = true;
     }
+    autoApprovalOrchestrator.registerSession(sessionId, providerId, cwd);
 
     // Validate provider settings and warn renderer if missing/tampered
     const provider = getProvider(providerId);
@@ -186,6 +218,7 @@ export function registerIpcHandlers(): void {
         unregisterCodexSession(sessionId);
         unregisterBlackboxSession(sessionId);
         if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
+        autoApprovalOrchestrator.unregisterSession(sessionId);
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
           w.webContents.send('pty:exit', sessionId, exitCode, signal);
@@ -225,6 +258,7 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('pty:kill', (_event, sessionId: string) => {
+    autoApprovalOrchestrator.unregisterSession(sessionId);
     killPty(sessionId);
   });
 
