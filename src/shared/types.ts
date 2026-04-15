@@ -347,6 +347,32 @@ export interface ProjectBackgroundTaskDocument {
 
 export type ProjectGovernanceMode = 'advisory' | 'enforced';
 export type ProjectGovernanceDecisionPolicy = 'allow' | 'ask' | 'block';
+export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools';
+export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
+export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';
+export type AutoApprovalDecision = 'allow' | 'ask' | 'block';
+
+export interface ProjectGovernanceAutoApprovalDecisionRecord {
+  timestamp: string;
+  operationClass: AutoApprovalOperationClass;
+  decision: AutoApprovalDecision;
+  reason?: string;
+}
+
+export interface ProjectGovernanceAutoApprovalState {
+  globalMode: AutoApprovalMode;
+  projectMode?: AutoApprovalMode;
+  sessionMode?: AutoApprovalMode;
+  effectiveMode: AutoApprovalMode;
+  policySource: AutoApprovalPolicySource;
+  safeToolProfile: 'default-read-only';
+  recentDecisions: Array<{
+    timestamp: string;
+    operationClass: AutoApprovalOperationClass;
+    decision: AutoApprovalDecision;
+    reason?: string;
+  }>;
+}
 
 export interface ProjectGovernancePolicySource {
   id: string;
@@ -365,6 +391,7 @@ export interface ProjectGovernancePolicySource {
 
 export interface ProjectGovernanceState {
   policy?: ProjectGovernancePolicySource;
+  autoApproval?: ProjectGovernanceAutoApprovalState;
   lastUpdated?: string;
 }
 
@@ -691,6 +718,7 @@ export type InspectorEventType =
   | 'cwd_changed' | 'file_changed' | 'config_change'
   | 'elicitation' | 'elicitation_result'
   | 'instructions_loaded'
+  | 'approval_decision'
   | 'teammate_idle'
   | 'status_update';
 
@@ -715,6 +743,13 @@ export interface InspectorEvent {
   config_key?: string;
   question?: string;
   answer?: string;
+  auto_approval?: {
+    policy_source: AutoApprovalPolicySource;
+    effective_mode: AutoApprovalMode;
+    operation_class: AutoApprovalOperationClass;
+    decision: AutoApprovalDecision;
+    reason?: string;
+  };
 }
 
 export interface ToolUsageStats {
