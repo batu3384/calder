@@ -48,6 +48,7 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'find . -maxdepth 1 -type f -fprint0 out.txt' }, 'destructive'],
     [{ tool: 'Bash', command: 'find . -maxdepth 1 -type f -fprintf out.txt %p' }, 'destructive'],
     [{ tool: 'Bash', command: 'find . \\-exec echo {} \\;' }, 'destructive'],
+    [{ tool: 'Bash', command: 'find . -ex\\ec echo {} \\;' }, 'destructive'],
   ] as const)('classifies destructive bash commands as destructive: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
@@ -63,8 +64,10 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'cat README.md\ngit add src/main.ts' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'rg --pre=cat "needle" src' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'rg --pre cat "needle" src' }, 'risky_tool'],
+    [{ tool: 'Bash', command: 'rg --pr\\e=cat "needle" src' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'git diff --output=patch.diff -- src/main.ts' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'git diff --output patch.diff -- src/main.ts' }, 'risky_tool'],
+    [{ tool: 'Bash', command: 'git diff --out\\put=patch.diff -- src/main.ts' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'rg foo $(rm -rf dist)' }, 'destructive'],
     [{ tool: 'Bash', command: 'cat README.md `rm -rf dist`' }, 'destructive'],
     [{ tool: 'Bash', command: "find . '-exec' rm -rf {} \\;" }, 'destructive'],

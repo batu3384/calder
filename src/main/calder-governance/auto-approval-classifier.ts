@@ -69,7 +69,10 @@ function stripWrappingQuotes(token: string): string {
 }
 
 function normalizeFlagToken(token: string): string {
-  return stripWrappingQuotes(token.trim()).replace(/^\\+/, '').toLowerCase();
+  return stripWrappingQuotes(token.trim())
+    .replace(/^\\+/, '')
+    .replace(/\\(.)/g, '$1')
+    .toLowerCase();
 }
 
 function tokenizeFlags(command: string): string[] {
