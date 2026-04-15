@@ -58,12 +58,19 @@ function getShellCommandText(input: AutoApprovalOperationInput): string {
   return '';
 }
 
-function isClearlyReadOnlyFind(command: string): boolean {
-  if (!/^find(?:\s|$)/i.test(command)) {
-    return false;
+function stripWrappingQuotes(token: string): string {
+  if (
+    (token.startsWith("'") && token.endsWith("'")) ||
+    (token.startsWith('"') && token.endsWith('"'))
+  ) {
+    return token.slice(1, -1);
   }
 
-  if (/'|"/.test(command)) {
+  return token;
+}
+
+function hasDangerousFindFlag(command: string): boolean {
+  if (!/^find(?:\s|$)/i.test(command)) {
     return false;
   }
 
@@ -77,8 +84,19 @@ function isClearlyReadOnlyFind(command: string): boolean {
     '-fprintf',
     '-fls',
   ]);
-  const tokens = command.toLowerCase().split(/\s+/);
-  return !tokens.some((token) => disallowedFindFlags.has(token));
+  const tokens = command
+    .toLowerCase()
+    .split(/\s+/)
+    .map(stripWrappingQuotes);
+  return tokens.some((token) => disallowedFindFlags.has(token));
+}
+
+function isClearlyReadOnlyFind(command: string): boolean {
+  if (!/^find(?:\s|$)/i.test(command)) {
+    return false;
+  }
+
+  return !hasDangerousFindFlag(command);
 }
 
 function isSafeReadOnlyCommand(command: string): boolean {
@@ -86,7 +104,7 @@ function isSafeReadOnlyCommand(command: string): boolean {
     return false;
   }
 
-  if (/[;]|&&|\|\||\||`|\$\(/.test(command)) {
+  if (/[;\r\n]|&&|\|\||\||`|\$\(/.test(command)) {
     return false;
   }
 
@@ -117,6 +135,10 @@ export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput 
   }
 
   if (DESTRUCTIVE_PATTERNS.some((pattern) => pattern.test(command))) {
+    return 'destructive';
+  }
+
+  if (hasDangerousFindFlag(command)) {
     return 'destructive';
   }
 
