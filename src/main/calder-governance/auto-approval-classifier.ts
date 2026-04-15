@@ -63,6 +63,10 @@ function isClearlyReadOnlyFind(command: string): boolean {
     return false;
   }
 
+  if (/'|"/.test(command)) {
+    return false;
+  }
+
   const disallowedFindFlags = new Set([
     '-delete',
     '-exec',
@@ -82,7 +86,7 @@ function isSafeReadOnlyCommand(command: string): boolean {
     return false;
   }
 
-  if (/[;]|&&|\|\||\|/.test(command)) {
+  if (/[;]|&&|\|\||\||`|\$\(/.test(command)) {
     return false;
   }
 
