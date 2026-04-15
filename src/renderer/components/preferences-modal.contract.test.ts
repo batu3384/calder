@@ -84,4 +84,11 @@ describe('preferences modal contract', () => {
     expect(modalStyles).toContain('#modal, .modal-box');
     expect(modalStyles).toContain('border-radius: 16px;');
   });
+
+  it('keeps the settings rail scrollable and anchored on short viewports', () => {
+    expect(styles).toContain('.preferences-menu {');
+    expect(styles).toContain('overflow-y: auto;');
+    expect(styles).toContain('overscroll-behavior: contain;');
+    expect(styles).not.toContain('transform: translateX(1px);');
+  });
 });

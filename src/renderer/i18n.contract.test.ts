@@ -13,6 +13,13 @@ describe('i18n contract', () => {
     expect(source).toContain("['Team context', 'Ekip bağlamı']");
   });
 
+  it('covers settings shell subgroup copy in Turkish', () => {
+    expect(source).toContain("['Provider health', 'Sağlayıcı durumu']");
+    expect(source).toContain("['Orchestration phases', 'Orkestrasyon fazları']");
+    expect(source).toContain("['Tracking & fixes', 'İzleme ve düzeltmeler']");
+    expect(source).toContain("['Installed tools, defaults, and repair actions.', 'Yüklü araçlar, varsayılanlar ve onarım eylemleri.']");
+  });
+
   it('covers session inspector and usage modal labels in Turkish', () => {
     expect(source).toContain("['Timeline', 'Zaman çizelgesi']");
     expect(source).toContain("['Costs', 'Maliyetler']");
