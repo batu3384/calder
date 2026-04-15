@@ -413,6 +413,16 @@ html[lang='tr'] .browser-toolbar-cluster-label {
   padding: 2px 4px;
 }
 
+@container workspace-stack (max-width: 1180px) {
+  .browser-toolbar-primary {
+    min-width: 100%;
+  }
+
+  .browser-toolbar-tools {
+    width: 100%;
+  }
+}
+
 .browser-tab-pane.split .browser-toolbar-cluster {
   display: inline-flex;
   align-items: center;

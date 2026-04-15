@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tabsCss = readFileSync(new URL('./tabs.css', import.meta.url), 'utf-8');
+const browserCss = readFileSync(new URL('./browser-tab.css', import.meta.url), 'utf-8');
+const preferencesCss = readFileSync(new URL('./preferences.css', import.meta.url), 'utf-8');
 
 describe('tab bar responsive command deck contract', () => {
   it('keeps the live view and cli surface controls inline until a narrower shell width', () => {
@@ -17,5 +19,11 @@ describe('tab bar responsive command deck contract', () => {
     expect(tabsCss).toContain('"main"');
     expect(tabsCss).toContain('"meta"');
     expect(tabsCss).toContain('"actions"');
+  });
+
+  it('keeps shell controls readable on constrained width and height', () => {
+    expect(tabsCss).toContain('@container workspace-stack (max-width: 1180px)');
+    expect(browserCss).toContain('@container workspace-stack (max-width: 1180px)');
+    expect(preferencesCss).toContain('@media (max-height: 860px)');
   });
 });

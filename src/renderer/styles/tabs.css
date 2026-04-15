@@ -634,6 +634,17 @@
   letter-spacing: 0.04em;
 }
 
+@container workspace-stack (max-width: 1180px) {
+  #tab-bar {
+    gap: 9px;
+    padding: 8px 12px 9px;
+  }
+
+  .tab-bar-meta {
+    gap: 7px;
+  }
+}
+
 @container workspace-stack (max-width: 1120px) {
   #tab-bar {
     gap: 8px;
