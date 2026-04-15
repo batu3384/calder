@@ -158,7 +158,9 @@ export function registerIpcHandlers(): void {
 
       const [sessionId, events] = args;
       if (typeof sessionId !== 'string' || !Array.isArray(events)) return;
-      void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events);
+      void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events).catch((error) => {
+        console.warn('Auto-approval orchestrator failed:', error);
+      });
     }) as typeof contents.send;
   };
 
@@ -217,8 +219,8 @@ export function registerIpcHandlers(): void {
         cleanupSessionStatus(sessionId);
         unregisterCodexSession(sessionId);
         unregisterBlackboxSession(sessionId);
-        if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
         autoApprovalOrchestrator.unregisterSession(sessionId);
+        if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
           w.webContents.send('pty:exit', sessionId, exitCode, signal);

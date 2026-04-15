@@ -3,6 +3,7 @@ import type {
   AutoApprovalMode,
   AutoApprovalPolicySource,
   InspectorEvent,
+  ProviderId,
 } from '../../shared/types.js';
 import {
   classifyAutoApprovalOperation,
@@ -12,7 +13,7 @@ import {
 import { discoverProjectGovernance } from './discovery.js';
 
 interface SessionRegistration {
-  providerId: string | null;
+  providerId: ProviderId | null;
   projectPath: string | null;
 }
 
@@ -22,13 +23,13 @@ interface ResolvedAutoApprovalState {
 }
 
 export interface AutoApprovalOrchestrator {
-  registerSession(sessionId: string, providerId: string | null | undefined, projectPath: string | null | undefined): void;
+  registerSession(sessionId: string, providerId: ProviderId | null | undefined, projectPath: string | null | undefined): void;
   unregisterSession(sessionId: string): void;
   handleInspectorEvents(sessionId: string, events: InspectorEvent[]): Promise<void>;
 }
 
 interface AutoApprovalOrchestratorOptions {
-  sendApproval: (sessionId: string, providerId: string) => void | Promise<void>;
+  sendApproval: (sessionId: string, providerId: ProviderId) => void | Promise<void>;
   emitInspectorEvents: (sessionId: string, events: InspectorEvent[]) => void;
   resolveAutoApprovalState?: (projectPath: string | null) => Promise<ResolvedAutoApprovalState>;
   now?: () => number;
@@ -36,14 +37,11 @@ interface AutoApprovalOrchestratorOptions {
 }
 
 const DEFAULT_RATE_LIMIT_MS = 1500;
-const SUPPORTED_PROVIDER_IDS = new Set([
+const SUPPORTED_PROVIDER_IDS = new Set<ProviderId>([
   'claude',
   'codex',
-  'copilot',
   'gemini',
   'qwen',
-  'minimax',
-  'blackbox',
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -116,7 +114,7 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
 
         const session = sessions.get(sessionId);
         const providerId = session?.providerId;
-        const providerSupported = typeof providerId === 'string' && SUPPORTED_PROVIDER_IDS.has(providerId);
+        const providerSupported = providerId !== null && providerId !== undefined && SUPPORTED_PROVIDER_IDS.has(providerId);
         const approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
         const operationClass = classifyAutoApprovalOperation(extractOperationInput(event));
         const initialDecision = decideAutoApprovalAction(approvalState.effectiveMode, operationClass);
@@ -137,7 +135,7 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
             finalReason = `Auto-approval rate limited: requests must be at least ${rateLimitMs}ms apart.`;
           } else {
             lastAutoApprovalAt.set(sessionId, requestTimestamp);
-            await options.sendApproval(sessionId, providerId as string);
+            await options.sendApproval(sessionId, providerId as ProviderId);
           }
         }
 

@@ -75,7 +75,7 @@ describe('createAutoApprovalOrchestrator', () => {
     });
   });
 
-  it('asks when provider is unsupported', async () => {
+  it('asks when provider does not support auto-approval hooks', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const orchestrator = createAutoApprovalOrchestrator({
@@ -87,7 +87,7 @@ describe('createAutoApprovalOrchestrator', () => {
       }),
     });
 
-    orchestrator.registerSession('session-1', 'unsupported-provider', '/tmp/project');
+    orchestrator.registerSession('session-1', 'minimax', '/tmp/project');
     await orchestrator.handleInspectorEvents('session-1', [
       permissionRequestEvent({ toolName: 'Edit' }),
     ]);
