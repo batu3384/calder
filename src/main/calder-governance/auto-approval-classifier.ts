@@ -48,16 +48,6 @@ function getCommandText(input: AutoApprovalOperationInput): string {
     return command;
   }
 
-  const text = normalize(input.text);
-  if (text) {
-    return text;
-  }
-
-  const label = normalize(input.label);
-  if (label) {
-    return label;
-  }
-
   const args = normalize(input.args?.join(' '));
   if (args) {
     return args;
@@ -75,7 +65,7 @@ function isSafeReadOnlyCommand(command: string): boolean {
     return false;
   }
 
-  if (/[;]|&&|\|\|/.test(command)) {
+  if (/[;]|&&|\|\||\|/.test(command)) {
     return false;
   }
 
@@ -87,13 +77,17 @@ function isSafeReadOnlyCommand(command: string): boolean {
 }
 
 export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput | undefined | null): AutoApprovalOperationClass {
-  if (!input) {
+  if (!input || !normalize(input.tool)) {
     return 'unknown';
   }
 
   const tool = normalize(input.tool).toLowerCase();
   if (EDIT_TOOLS.has(tool)) {
     return 'edit';
+  }
+
+  if (tool !== 'bash') {
+    return 'risky_tool';
   }
 
   const command = getCommandText(input);

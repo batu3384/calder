@@ -44,7 +44,15 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'npm test' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'git add src/main.ts' }, 'risky_tool'],
     [{ tool: 'Bash', command: 'python script.py' }, 'risky_tool'],
+    [{ tool: 'Bash', command: 'cat README.md | xargs rm' }, 'risky_tool'],
   ] as const)('classifies other bash commands as risky_tool: %j', (input, expected) => {
+    expect(classifyAutoApprovalOperation(input)).toBe(expected);
+  });
+
+  it.each([
+    [{ tool: 'Read', command: 'ls -la' }, 'risky_tool'],
+    [{ tool: 'Search', command: 'cat README.md' }, 'risky_tool'],
+  ] as const)('does not classify non-Bash tool payloads as safe_tool: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
 
