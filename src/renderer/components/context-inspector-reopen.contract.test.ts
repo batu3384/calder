@@ -12,4 +12,10 @@ describe('context inspector reopen contract', () => {
     expect(source).toContain("openBtn?.addEventListener('click'");
     expect(styles).toContain('.context-inspector-reopen');
   });
+
+  it('keeps the reopen control visible and state-synchronised with the right rail', () => {
+    expect(source).toContain('syncInspectorOpenState');
+    expect(styles).toContain('.context-inspector-reopen');
+    expect(styles).toContain('opacity: 0.96;');
+  });
 });

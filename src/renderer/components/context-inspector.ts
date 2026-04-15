@@ -191,11 +191,18 @@ function applyRailMode(): void {
   }
 }
 
+function syncInspectorOpenState(): void {
+  const hideOpenButton = inspectorOpen || !appState.activeProject;
+  openBtn?.classList.toggle('hidden', hideOpenButton);
+  openBtn?.toggleAttribute('hidden', hideOpenButton);
+  openBtn?.setAttribute('aria-hidden', hideOpenButton ? 'true' : 'false');
+}
+
 function renderInspectorChrome(): void {
   renderOverview();
   applyRailMode();
   updateDensityToggleButton();
-  openBtn?.classList.toggle('hidden', inspectorOpen || !appState.activeProject);
+  syncInspectorOpenState();
 }
 
 export function setContextInspectorOpen(next: boolean): void {
@@ -203,7 +210,7 @@ export function setContextInspectorOpen(next: boolean): void {
   mainAreaEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
-  openBtn?.classList.toggle('hidden', next || !appState.activeProject);
+  syncInspectorOpenState();
 }
 
 export function toggleContextInspector(): void {

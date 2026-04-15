@@ -29,10 +29,16 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('.sidebar-header-actions');
     expect(sidebarCss).toContain('border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
     expect(sidebarCss).toContain('.project-item:hover');
-    expect(sidebarCss).toContain('transform: translateY(-1px);');
+    expect(sidebarCss).toContain('box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);');
     expect(sidebarCss).toContain('.project-item-main');
     expect(sidebarCss).toContain('gap: 4px;');
     expect(sidebarCss).toContain('min-height: 52px;');
     expect(sidebarCss).toContain('font-size: 9px;');
+  });
+
+  it('prefers anchored emphasis over hover lift in the project rail', () => {
+    expect(sidebarCss).toContain('.project-item:hover');
+    expect(sidebarCss).toContain('transform: none;');
+    expect(sidebarCss).toContain('box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);');
   });
 });

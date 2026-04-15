@@ -31,4 +31,11 @@ describe('tab bar cli surface contract', () => {
     expect(tabsCss).toContain('.surface-profile-group');
     expect(tabsCss).toContain('.tab-cli-surface-badge');
   });
+
+  it('keeps session actions and surface controls in one steady control family', () => {
+    expect(tabsCss).toContain('.tab-item.active');
+    expect(tabsCss).toContain('.tab-item:hover');
+    expect(tabsCss).toContain('transform: none;');
+    expect(tabsCss).toContain('.tab-action-primary');
+  });
 });
