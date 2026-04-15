@@ -38,4 +38,11 @@ describe('tab bar cli surface contract', () => {
     expect(tabsCss).toContain('transform: none;');
     expect(tabsCss).toContain('.tab-action-primary');
   });
+
+  it('styles the top deck like one polished control rail', () => {
+    expect(tabsCss).toContain('.tab-bar-meta');
+    expect(tabsCss).toContain('.surface-mode-switcher');
+    expect(tabsCss).toContain('.surface-profile-group');
+    expect(tabsCss).toContain('height: 34px;');
+  });
 });

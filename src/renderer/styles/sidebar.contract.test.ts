@@ -41,4 +41,10 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('transform: none;');
     expect(sidebarCss).toContain('box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);');
   });
+
+  it('treats sidebar actions and rows like one authored rail system', () => {
+    expect(sidebarCss).toContain('.sidebar-header-actions');
+    expect(sidebarCss).toContain('.project-item.active');
+    expect(sidebarCss).toContain('border-radius: 14px;');
+  });
 });

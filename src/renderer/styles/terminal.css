@@ -197,8 +197,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),

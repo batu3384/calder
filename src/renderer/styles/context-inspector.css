@@ -70,7 +70,7 @@
 
 .context-inspector-reopen:hover,
 .context-inspector-reopen:focus {
-  transform: translateY(-1px);
+  transform: none;
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
   background: color-mix(in srgb, var(--surface-hover) 78%, transparent);
   color: var(--text-primary);

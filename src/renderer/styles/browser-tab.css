@@ -176,7 +176,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 14px 28px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .browser-toolbar-address-shell {
@@ -235,7 +235,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 14px 28px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .browser-toolbar-tools-shell:has(.browser-viewport-dropdown.visible) {
@@ -343,7 +343,7 @@
 .browser-toolbar-tools-shell {
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   max-width: 100%;
 }
 
@@ -353,9 +353,9 @@
 
 .browser-toolbar-cluster {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-  padding: 0 0 0 8px;
+  padding: 0 0 0 10px;
   border: 0;
   border-left: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
   border-radius: 0;
