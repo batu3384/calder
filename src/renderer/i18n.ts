@@ -13,9 +13,6 @@ const EXCLUDED_SELECTOR = [
   '.xterm-screen',
   '.xterm-rows',
   '.xterm-helper-textarea',
-  '.terminal-pane',
-  '.project-terminal-container',
-  '.remote-terminal-pane',
   '.ansi-buffer',
 ].join(', ');
 
@@ -31,8 +28,17 @@ const DIRECT_TRANSLATIONS = new Map<string, string>([
   ['Create new project', 'Yeni proje oluştur'],
   ['New Session (Ctrl+Shift+N)', 'Yeni Oturum (Ctrl+Shift+N)'],
   ['Create new session', 'Yeni oturum oluştur'],
+  ['configured', 'yapılandırıldı'],
+  ['inherit', 'devral'],
+  ['Drag to reorder', 'Yeniden sıralamak için sürükle'],
+  ['Drag to reorder pane', 'Paneli yeniden sıralamak için sürükle'],
+  ['Drag to resize Live View and sessions', 'Canlı Görünüm ve oturumları yeniden boyutlandırmak için sürükle'],
   ['Quick Terminal', 'Hızlı Terminal'],
   ['Close Terminal', 'Terminali Kapat'],
+  ['Restored terminal surface', 'Geri yüklenen terminal yüzeyi'],
+  ['Live terminal surface', 'Canlı terminal yüzeyi'],
+  ['linked run', 'bağlı çalışma'],
+  ['active run', 'aktif çalışma'],
   ['Workspace', 'Çalışma Alanı'],
   ['Overview', 'Genel Bakış'],
   ['Close Context Inspector', 'Bağlam Denetçisini Kapat'],
@@ -236,6 +242,39 @@ const DIRECT_TRANSLATIONS = new Map<string, string>([
   ['Restart failed', 'Yeniden başlatma başarısız'],
   ['Restarting…', 'Yeniden başlatılıyor…'],
   ['Live View', 'Canlı Görünüm'],
+  ['No profile selected', 'Profil seçilmedi'],
+  ['Project Snapshot', 'Proje Özeti'],
+  ['Open sessions', 'Açık oturumlar'],
+  ['Changes', 'Değişiklikler'],
+  ['Project context', 'Proje bağlamı'],
+  ['No Surface', 'Yüzey yok'],
+  ['clean', 'temiz'],
+  ['tracked', 'izlenen'],
+  ['open', 'açık'],
+  ['open now', 'şu an açık'],
+  ['saved run', 'kayıtlı çalışma'],
+  ['saved runs', 'kayıtlı çalışmalar'],
+  ['conflict', 'çakışma'],
+  ['conflicts', 'çakışmalar'],
+  ['running', 'çalışıyor'],
+  ['working', 'çalışıyor'],
+  ['waiting', 'bekliyor'],
+  ['idle', 'boşta'],
+  ['completed', 'tamamlandı'],
+  ['input', 'girdi bekliyor'],
+  ['live', 'canlı'],
+  ['Working', 'Çalışıyor'],
+  ['Waiting', 'Bekliyor'],
+  ['Completed', 'Tamamlandı'],
+  ['Needs input', 'Girdi bekliyor'],
+  ['Idle', 'Boşta'],
+  ['Select Session', 'Oturum Seç'],
+  ['Routing is not set', 'Yönlendirme ayarlanmadı'],
+  ['Context connected.', 'Bağlam bağlı.'],
+  ['Provider memory + shared rules connected.', 'Sağlayıcı belleği + ortak kurallar bağlı.'],
+  ['Provider memory connected.', 'Sağlayıcı belleği bağlı.'],
+  ['Shared rules connected.', 'Ortak kurallar bağlı.'],
+  ['No provider memory or shared rules discovered yet.', 'Henüz sağlayıcı belleği veya ortak kural bulunmadı.'],
   ['Capture context', 'Bağlamı yakala'],
   ['Ready to capture', 'Yakalamaya hazır'],
   ['Offline', 'Çevrimdışı'],
@@ -1006,7 +1045,7 @@ const PATTERN_TRANSLATIONS: PatternTranslation[] = [
   },
   {
     pattern: /^Routing to\s+(.+)$/u,
-    replace: (match) => `${match[1]} oturumuna yönlendiriliyor`,
+    replace: (match) => `${translate(match[1])} oturumuna yönlendiriliyor`,
   },
   {
     pattern: /^(\d+) earlier events not shown$/u,
@@ -1031,6 +1070,86 @@ const PATTERN_TRANSLATIONS: PatternTranslation[] = [
   {
     pattern: /^(\d+) session(s?) · (\d+) changed file(s?)$/u,
     replace: (match) => `${match[1]} oturum · ${match[3]} değişen dosya`,
+  },
+  {
+    pattern: /^Status:\s*(\S+)\s+Session:\s*(.+)\s+Drag to reorder$/u,
+    replace: (match) => `Durum: ${translate(match[1])} · Oturum: ${match[2]} · Yeniden sıralamak için sürükle`,
+  },
+  {
+    pattern: /^CLI Surface\s+Profile:\s*(.+)$/u,
+    replace: (match) => `CLI Yüzeyi · Profil: ${translate(match[1])}`,
+  },
+  {
+    pattern: /^Configured for (.+)$/u,
+    replace: (match) => `${match[1]} için yapılandırıldı`,
+  },
+  {
+    pattern: /^configured\s+·\s+(.+)$/u,
+    replace: (match) => `yapılandırıldı · ${match[1]}`,
+  },
+  {
+    pattern: /^New (.+) Session \(Ctrl\+Shift\+N\)$/u,
+    replace: (match) => `Yeni ${match[1]} Oturumu (Ctrl+Shift+N)`,
+  },
+  {
+    pattern: /^Create new (.+) session$/u,
+    replace: (match) => `Yeni ${match[1]} oturumu oluştur`,
+  },
+  {
+    pattern: /^Profile:\s*(.+)$/u,
+    replace: (match) => `Profil: ${translate(match[1])}`,
+  },
+  {
+    pattern: /^Session:\s*(.+)$/u,
+    replace: (match) => `Oturum: ${match[1]}`,
+  },
+  {
+    pattern: /^Status:\s*(.+)$/u,
+    replace: (match) => `Durum: ${translate(match[1])}`,
+  },
+  {
+    pattern: /^(\d+) MCP server(s?) connected$/u,
+    replace: (match) => `${match[1]} MCP sunucusu bağlı`,
+  },
+  {
+    pattern: /^(\d+) agent(s?) available$/u,
+    replace: (match) => `${match[1]} ajan kullanılabilir`,
+  },
+  {
+    pattern: /^(\d+) skill(s?) ready$/u,
+    replace: (match) => `${match[1]} beceri hazır`,
+  },
+  {
+    pattern: /^(\d+) custom command(s?) available$/u,
+    replace: (match) => `${match[1]} özel komut kullanılabilir`,
+  },
+  {
+    pattern: /^(.+)\s+·\s+(live|starting|stopped|error|idle)$/u,
+    replace: (match) => `${match[1]} · ${translate(match[2])}`,
+  },
+  {
+    pattern: /^Browser:\s*(.+)$/u,
+    replace: (match) => `Tarayıcı: ${match[1]}`,
+  },
+  {
+    pattern: /^File:\s*(.+)$/u,
+    replace: (match) => `Dosya: ${match[1]}`,
+  },
+  {
+    pattern: /^Remote:\s*(.+)$/u,
+    replace: (match) => `Uzak: ${match[1]}`,
+  },
+  {
+    pattern: /^Diff:\s*(.+)$/u,
+    replace: (match) => `Karşılaştırma: ${match[1]}`,
+  },
+  {
+    pattern: /^MCP Inspector$/u,
+    replace: () => 'MCP Denetçisi',
+  },
+  {
+    pattern: /^(.+) \(not installed\)$/u,
+    replace: (match) => `${match[1]} (kurulu değil)`,
   },
   {
     pattern: /^Task created: (.+)$/u,
@@ -1106,15 +1225,20 @@ function withSuppressedObserver(work: () => void): void {
   }
 }
 
-function shouldSkipElement(element: Element | null): boolean {
+function shouldSkipTextElement(element: Element | null): boolean {
   if (!element) return true;
   if (element.closest(EXCLUDED_SELECTOR)) return true;
   const tag = element.tagName;
   return tag === 'SCRIPT' || tag === 'STYLE';
 }
 
-function translate(value: string): string {
-  if (activeLanguage !== 'tr') return value;
+function shouldSkipAttributeElement(element: Element | null): boolean {
+  if (!element) return true;
+  const tag = element.tagName;
+  return tag === 'SCRIPT' || tag === 'STYLE';
+}
+
+function translateScalar(value: string): string {
   const normalized = normalizeTranslationKey(value);
   const direct = DIRECT_TRANSLATIONS.get(value)
     ?? NORMALIZED_DIRECT_TRANSLATIONS.get(normalized);
@@ -1130,12 +1254,25 @@ function translate(value: string): string {
   return value;
 }
 
+function translate(value: string): string {
+  if (activeLanguage !== 'tr') return value;
+  const direct = translateScalar(value);
+  if (direct !== value) return direct;
+  if (!value.includes('\n')) return value;
+
+  const lines = value.split('\n');
+  const translatedLines = lines.map(line => line.trim() ? translateScalar(line) : line);
+  return translatedLines.some((line, index) => line !== lines[index])
+    ? translatedLines.join('\n')
+    : value;
+}
+
 function localizeTextNode(node: Text): void {
   const raw = node.nodeValue;
   if (!raw) return;
   if (!raw.trim()) return;
   const parent = node.parentElement;
-  if (shouldSkipElement(parent)) return;
+  if (shouldSkipTextElement(parent)) return;
 
   const core = raw.trim();
   const translated = translate(core);
@@ -1144,7 +1281,7 @@ function localizeTextNode(node: Text): void {
 }
 
 function localizeAttributes(element: Element): void {
-  if (shouldSkipElement(element)) return;
+  if (shouldSkipAttributeElement(element)) return;
   for (const attribute of ATTRIBUTES_TO_LOCALIZE) {
     const value = element.getAttribute(attribute);
     if (!value) continue;
@@ -1173,8 +1310,9 @@ function localizeNode(node: Node): void {
   if (node.nodeType !== Node.ELEMENT_NODE) return;
 
   const element = node as Element;
-  if (shouldSkipElement(element)) return;
+  if (shouldSkipAttributeElement(element)) return;
   localizeAttributes(element);
+  if (shouldSkipTextElement(element)) return;
   for (const child of element.childNodes) {
     localizeNode(child);
   }

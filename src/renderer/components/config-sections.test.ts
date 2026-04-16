@@ -12,7 +12,7 @@ const mockState = vi.hoisted(() => {
   return {
     ...state,
     on: vi.fn(() => () => {}),
-    preferences: { sidebarViews: { configSections: true } },
+    preferences: { sidebarViews: { configSections: true }, language: 'en' as 'en' | 'tr' },
   };
 });
 
@@ -29,6 +29,7 @@ describe('getConfigProviderId', () => {
     vi.resetModules();
     mockState.activeProject.sessions = [];
     mockState.activeSession = undefined;
+    mockState.preferences.language = 'en';
   });
 
   it('uses the active CLI session provider', async () => {
@@ -142,5 +143,30 @@ describe('getConfigProviderId', () => {
     expect(summary.effectiveSource).toBe('Session override');
     expect(summary.effectiveExplanation).toBe('Session override is active, so Session setting applies.');
     expect(summary.effectiveBehavior).toBe('Auto-approves file edits and safe read-only commands.');
+  });
+
+  it('renders concise Turkish metadata summaries for right-rail skills and commands', async () => {
+    mockState.preferences.language = 'tr';
+    const { localizeConfigMetadataDetail } = await import('./config-sections.js');
+
+    expect(
+      localizeConfigMetadataDetail(
+        'skill',
+        'using-superpowers',
+        'Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions',
+      ),
+    ).toBe('Konuşma başında doğru beceri ve süper güç akışını başlatır.');
+
+    expect(
+      localizeConfigMetadataDetail(
+        'command',
+        'commit',
+        'Create well-formatted commits with conventional commit messages',
+      ),
+    ).toBe('Düzenli commit mesajlarıyla temiz commit oluşturur.');
+
+    expect(
+      localizeConfigMetadataDetail('skill', 'unknown-skill', 'Keep original detail'),
+    ).toBe('Keep original detail');
   });
 });

@@ -46,6 +46,42 @@ describe('i18n contract', () => {
     expect(source).toContain('pattern: /^Last error:\\s*(.+)$/u');
   });
 
+  it('covers dynamic shell tooltip and launcher translations in Turkish', () => {
+    expect(source).toContain("['Drag to reorder', 'Yeniden sıralamak için sürükle']");
+    expect(source).toContain("['Drag to resize Live View and sessions', 'Canlı Görünüm ve oturumları yeniden boyutlandırmak için sürükle']");
+    expect(source).toContain("['Drag to reorder pane', 'Paneli yeniden sıralamak için sürükle']");
+    expect(source).toContain("['No profile selected', 'Profil seçilmedi']");
+    expect(source).toContain("['configured', 'yapılandırıldı']");
+    expect(source).toContain("['inherit', 'devral']");
+    expect(source).toContain("['Restored terminal surface', 'Geri yüklenen terminal yüzeyi']");
+    expect(source).toContain("['Live terminal surface', 'Canlı terminal yüzeyi']");
+    expect(source).toContain("['linked run', 'bağlı çalışma']");
+    expect(source).toContain("['active run', 'aktif çalışma']");
+    expect(source).toContain("pattern: /^New (.+) Session \\(Ctrl\\+Shift\\+N\\)$/u");
+    expect(source).toContain("pattern: /^Create new (.+) session$/u");
+    expect(source).toContain("pattern: /^Status:\\s*(\\S+)\\s+Session:\\s*(.+)\\s+Drag to reorder$/u");
+    expect(source).toContain("pattern: /^CLI Surface\\s+Profile:\\s*(.+)$/u");
+    expect(source).toContain("pattern: /^Configured for (.+)$/u");
+    expect(source).toContain("pattern: /^(\\d+) MCP server(s?) connected$/u");
+    expect(source).toContain("pattern: /^(\\d+) agent(s?) available$/u");
+    expect(source).toContain("pattern: /^(\\d+) skill(s?) ready$/u");
+    expect(source).toContain("pattern: /^(\\d+) custom command(s?) available$/u");
+    expect(source).toContain("pattern: /^(.+)\\s+·\\s+(live|starting|stopped|error|idle)$/u");
+    expect(source).toContain("pattern: /^Profile:\\s*(.+)$/u");
+    expect(source).toContain("pattern: /^Session:\\s*(.+)$/u");
+    expect(source).toContain("pattern: /^Status:\\s*(.+)$/u");
+    expect(source).toContain("pattern: /^(.+) \\(not installed\\)$/u");
+    expect(source).toContain("value.includes('\\n')");
+  });
+
+  it('keeps terminal localization exclusions narrow enough for shell chrome labels', () => {
+    expect(source).not.toContain("'.terminal-pane',");
+    expect(source).not.toContain("'.project-terminal-container',");
+    expect(source).not.toContain("'.remote-terminal-pane',");
+    expect(source).toContain("'.xterm',");
+    expect(source).toContain("'.ansi-buffer',");
+  });
+
   it('covers live view and capture controls in Turkish', () => {
     expect(source).toContain("['Browser View', 'Tarayıcı Görünümü']");
     expect(source).toContain("['Go back', 'Geri git']");
