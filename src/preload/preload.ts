@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types';
+import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -45,6 +45,8 @@ export interface CalderApi {
     listProviders(): Promise<CliProviderMeta[]>;
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
     updateAll(): Promise<ProviderUpdateSummary>;
+    cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
+    onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
     watchProject(providerId: ProviderId, projectPath: string): void;
     onConfigChanged(callback: () => void): () => void;
   };
@@ -260,6 +262,8 @@ const api: CalderApi = {
     listProviders: () => ipcRenderer.invoke('provider:listProviders'),
     checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
     updateAll: () => ipcRenderer.invoke('provider:updateAll'),
+    cancelUpdateAll: () => ipcRenderer.invoke('provider:cancelUpdateAll'),
+    onUpdateProgress: (callback) => onChannel('provider:update-progress', (event) => callback(event as ProviderUpdateProgressEvent)),
     watchProject: (providerId, projectPath) => ipcRenderer.send('config:watchProject', providerId, projectPath),
     onConfigChanged: (callback) => onChannel('config:changed', callback),
   },

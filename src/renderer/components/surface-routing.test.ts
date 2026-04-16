@@ -46,7 +46,15 @@ describe('surface routing', () => {
     const result = await deliverSurfacePrompt('project-1', 'inspect this footer');
 
     expect(result).toEqual({ ok: true, targetSessionId: 'cli-1' });
-    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith('cli-1', 'inspect this footer');
+    expect(mockResolveSurfaceTargetSession).toHaveBeenCalledWith('project-1', { requireExplicitTarget: true });
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      'cli-1',
+      expect.stringContaining('Routing contract (strict):'),
+    );
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      'cli-1',
+      expect.stringContaining('inspect this footer'),
+    );
     expect(mockSetActiveSession).toHaveBeenCalledWith('project-1', 'cli-1');
   });
 
@@ -58,7 +66,8 @@ describe('surface routing', () => {
 
     expect(session).toEqual({ id: 'plan-1', name: 'Fix footer' });
     expect(mockAddPlanSession).toHaveBeenCalledWith('project-1', 'Fix footer', 'claude');
-    expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', 'inspect this footer');
+    expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', expect.stringContaining('Routing contract (strict):'));
+    expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', expect.stringContaining('inspect this footer'));
   });
 
   it('appends project governance policy to routed prompts', async () => {

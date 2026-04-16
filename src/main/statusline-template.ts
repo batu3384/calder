@@ -254,6 +254,58 @@ def snapshot_is_stale(snapshot):
         return True
     return int(time.time() * 1000) - updated_at > CONFIG['staleAfterMs']
 
+def format_claude_model_name(model_id):
+    if not isinstance(model_id, str):
+        return ''
+    normalized = model_id.strip().lower()
+    if not normalized.startswith('claude-'):
+        return ''
+    parts = normalized.split('-')
+    if len(parts) < 4:
+        return ''
+    family = parts[1]
+    major = parts[2]
+    minor = parts[3]
+    if family not in ('opus', 'sonnet', 'haiku'):
+        return ''
+    if not major.isdigit() or not minor.isdigit():
+        return ''
+    return family.capitalize() + ' ' + major + '.' + minor
+
+def derive_model_name(payload):
+    display_name = ((payload.get('model') or {}).get('display_name') or '').strip()
+    model_usage = payload.get('modelUsage')
+    if not isinstance(model_usage, dict) or not model_usage:
+        return display_name
+
+    selected_model_id = ''
+    selected_score = -1.0
+    for model_id, usage in model_usage.items():
+        if not isinstance(model_id, str) or not model_id.strip():
+            continue
+        score = 0.0
+        if isinstance(usage, dict):
+            for field in ('inputTokens', 'outputTokens', 'cacheCreationInputTokens', 'cacheReadInputTokens'):
+                value = numeric_value(usage.get(field))
+                if value is not None:
+                    score += value
+        if selected_model_id == '' or score > selected_score:
+            selected_model_id = model_id
+            selected_score = score
+
+    usage_name = format_claude_model_name(selected_model_id)
+    if not usage_name:
+        return display_name
+    if not display_name:
+        return usage_name
+
+    display_lower = display_name.lower()
+    usage_lower = usage_name.lower()
+    for family in ('opus', 'sonnet', 'haiku'):
+        if display_lower.startswith(family) and usage_lower.startswith(family) and display_lower != usage_lower:
+            return usage_name
+    return display_name
+
 def anthropic_rate_limit_snapshot(payload, model_name):
     rate_limits = payload.get('rate_limits')
     if not isinstance(rate_limits, dict):
@@ -490,7 +542,7 @@ def minimax_quota_snapshot(model_name):
 
 def render_statusline(payload):
     sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '') or os.environ.get('CALDER_SESSION_ID', '')
-    model_name = ((payload.get('model') or {}).get('display_name') or '').strip()
+    model_name = derive_model_name(payload)
     lower_model_name = model_name.lower()
     if lower_model_name.startswith('glm-'):
         provider = 'zai'

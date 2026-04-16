@@ -166,4 +166,36 @@ describe('discoverProjectGovernance', () => {
       recentDecisions: [],
     });
   });
+
+  it('parses full_auto project override from policy', async () => {
+    const root = makeProject('governance-project-full-auto');
+    roots.push(root);
+    mockedGlobalMode = 'off';
+    mockedGlobalIsExplicit = true;
+    writeFiles(root, {
+      '.calder/governance/policy.json': JSON.stringify({
+        schemaVersion: 1,
+        profileName: 'Project full auto',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+        autoApproval: {
+          mode: 'full_auto',
+          safeToolProfile: 'default-read-only',
+        },
+      }, null, 2),
+    });
+
+    const result = await discoverProjectGovernance(root);
+
+    expect(result.autoApproval).toEqual({
+      globalMode: 'off',
+      projectMode: 'full_auto',
+      effectiveMode: 'full_auto',
+      policySource: 'project',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+  });
 });

@@ -3,7 +3,13 @@ import { execFile } from 'child_process';
 import type { CliProvider } from './providers/provider';
 import { getAllProviders } from './providers/registry';
 import { getFullPath } from './pty-manager';
-import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource, ProviderUpdateSummary } from '../shared/types';
+import type {
+  ProviderId,
+  ProviderUpdateProgressEvent,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+  ProviderUpdateSummary,
+} from '../shared/types';
 
 export interface ProviderUpdaterTarget {
   meta: Pick<CliProvider['meta'], 'id' | 'displayName'>;
@@ -15,7 +21,7 @@ export interface ProviderUpdaterRunner {
   run(
     command: string,
     args: string[],
-    options?: { timeoutMs?: number },
+    options?: { timeoutMs?: number; signal?: AbortSignal },
   ): Promise<{ code: number; stdout: string; stderr: string }>;
 }
 
@@ -29,6 +35,8 @@ interface ProviderUpdateSpec {
 interface ProviderUpdaterOptions {
   runner?: ProviderUpdaterRunner;
   now?: () => number;
+  onProgress?: (event: ProviderUpdateProgressEvent) => void;
+  signal?: AbortSignal;
 }
 
 const CHECK_TIMEOUT_MS = 20_000;
@@ -45,7 +53,7 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
   },
   copilot: {
     npmPackage: '@github/copilot',
-    selfUpdateArgs: ['update'],
+    brewFormula: 'copilot-cli',
   },
   gemini: {
     npmPackage: '@google/gemini-cli',
@@ -67,8 +75,21 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
 const defaultRunner: ProviderUpdaterRunner = {
   run(command, args, options) {
     const timeoutMs = options?.timeoutMs ?? CHECK_TIMEOUT_MS;
+    const signal = options?.signal;
     return new Promise((resolve) => {
-      execFile(
+      if (signal?.aborted) {
+        resolve({ code: 130, stdout: '', stderr: 'Update cancelled.' });
+        return;
+      }
+
+      let settled = false;
+      const finish = (result: { code: number; stdout: string; stderr: string }): void => {
+        if (settled) return;
+        settled = true;
+        resolve(result);
+      };
+
+      const child = execFile(
         command,
         args,
         {
@@ -79,18 +100,64 @@ const defaultRunner: ProviderUpdaterRunner = {
         },
         (error, stdout, stderr) => {
           if (!error) {
-            resolve({ code: 0, stdout, stderr });
+            finish({ code: 0, stdout, stderr });
             return;
           }
           const err = error as NodeJS.ErrnoException & { code?: number | string; stdout?: string; stderr?: string };
+          if (signal?.aborted) {
+            finish({
+              code: 130,
+              stdout: err.stdout ?? stdout ?? '',
+              stderr: err.stderr ?? stderr ?? 'Update cancelled.',
+            });
+            return;
+          }
           const exitCode = typeof err.code === 'number' ? err.code : 1;
-          resolve({
+          finish({
             code: exitCode,
             stdout: err.stdout ?? stdout ?? '',
             stderr: err.stderr ?? stderr ?? err.message ?? 'Command failed',
           });
         },
       );
+
+      if (!signal) return;
+
+      const forceKillTimer = { current: null as ReturnType<typeof setTimeout> | null };
+      const clearForceKill = (): void => {
+        if (!forceKillTimer.current) return;
+        clearTimeout(forceKillTimer.current);
+        forceKillTimer.current = null;
+      };
+      const abortHandler = (): void => {
+        try {
+          if (!child.killed) {
+            child.kill('SIGTERM');
+          }
+          forceKillTimer.current = setTimeout(() => {
+            try {
+              if (!child.killed) {
+                child.kill('SIGKILL');
+              }
+            } catch {
+              // no-op: process already exited
+            }
+          }, 1200);
+          forceKillTimer.current.unref?.();
+        } catch {
+          // no-op: process already exited
+        }
+      };
+
+      child.once('close', () => {
+        clearForceKill();
+        signal.removeEventListener('abort', abortHandler);
+      });
+
+      signal.addEventListener('abort', abortHandler, { once: true });
+      if (signal.aborted) {
+        abortHandler();
+      }
     });
   },
 };
@@ -105,19 +172,64 @@ export async function updateProviders(
 ): Promise<ProviderUpdateSummary> {
   const runner = options?.runner ?? defaultRunner;
   const now = options?.now ?? Date.now;
+  const onProgress = options?.onProgress;
+  const signal = options?.signal;
   const startedAtMs = now();
   const startedAt = new Date(startedAtMs).toISOString();
   const results: ProviderUpdateResult[] = [];
+  const providerTargets = providers.map((provider) => ({
+    providerId: provider.meta.id,
+    providerName: provider.meta.displayName,
+  }));
+
+  onProgress?.({
+    phase: 'started',
+    startedAt,
+    totalProviders: providers.length,
+    completedProviders: 0,
+    providers: providerTargets,
+  });
+
+  if (signal?.aborted) {
+    const finishedAt = new Date(now()).toISOString();
+    const summary: ProviderUpdateSummary = {
+      startedAt,
+      finishedAt,
+      results,
+      cancelled: true,
+    };
+    onProgress?.({
+      phase: 'finished',
+      startedAt,
+      finishedAt,
+      cancelled: true,
+      totalProviders: providers.length,
+      completedProviders: results.length,
+    });
+    return summary;
+  }
 
   for (const provider of providers) {
+    if (signal?.aborted) {
+      break;
+    }
     const providerStart = now();
     const id = provider.meta.id;
     const providerName = provider.meta.displayName;
     const spec = PROVIDER_UPDATE_SPECS[id];
     const prerequisites = provider.validatePrerequisites();
 
+    onProgress?.({
+      phase: 'provider_started',
+      startedAt,
+      totalProviders: providers.length,
+      completedProviders: results.length,
+      providerId: id,
+      providerName,
+    });
+
     if (!prerequisites.ok) {
-      results.push({
+      const result: ProviderUpdateResult = {
         providerId: id,
         providerName,
         source: 'unknown',
@@ -126,6 +238,16 @@ export async function updateProviders(
         updateAttempted: false,
         message: `${providerName} is not installed.`,
         durationMs: Math.max(0, now() - providerStart),
+      };
+      results.push(result);
+      onProgress?.({
+        phase: 'provider_finished',
+        startedAt,
+        totalProviders: providers.length,
+        completedProviders: results.length,
+        providerId: id,
+        providerName,
+        result,
       });
       continue;
     }
@@ -133,9 +255,9 @@ export async function updateProviders(
     const binaryPath = provider.resolveBinaryPath();
     const resolvedBinaryPath = resolveRealPath(binaryPath);
     const source = detectUpdateSource(id, spec, resolvedBinaryPath);
-    const beforeVersion = await readBinaryVersion(runner, binaryPath);
+    const beforeVersion = await readBinaryVersion(runner, binaryPath, signal);
 
-    const result = await runProviderUpdate({
+    const baseResult = await runProviderUpdate({
       providerId: id,
       providerName,
       binaryPath,
@@ -143,20 +265,45 @@ export async function updateProviders(
       spec,
       beforeVersion,
       runner,
+      signal,
+    });
+    const result: ProviderUpdateResult = {
+      ...baseResult,
+      durationMs: Math.max(0, now() - providerStart),
+    };
+
+    results.push(result);
+    onProgress?.({
+      phase: 'provider_finished',
+      startedAt,
+      totalProviders: providers.length,
+      completedProviders: results.length,
+      providerId: id,
+      providerName,
+      result,
     });
 
-    results.push({
-      ...result,
-      durationMs: Math.max(0, now() - providerStart),
-    });
+    if (result.status === 'cancelled') {
+      break;
+    }
   }
 
   const finishedAt = new Date(now()).toISOString();
-  return {
+  const summary: ProviderUpdateSummary = {
     startedAt,
     finishedAt,
     results,
+    cancelled: signal?.aborted === true,
   };
+  onProgress?.({
+    phase: 'finished',
+    startedAt,
+    finishedAt,
+    cancelled: summary.cancelled,
+    totalProviders: providers.length,
+    completedProviders: results.length,
+  });
+  return summary;
 }
 
 async function runProviderUpdate(input: {
@@ -167,8 +314,19 @@ async function runProviderUpdate(input: {
   spec: ProviderUpdateSpec;
   beforeVersion?: string;
   runner: ProviderUpdaterRunner;
+  signal?: AbortSignal;
 }): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
-  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner } = input;
+  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal } = input;
+
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      message: 'Update cancelled before checks completed.',
+    });
+  }
 
   if (source === 'unknown') {
     return {
@@ -189,16 +347,28 @@ async function runProviderUpdate(input: {
 
   if (source === 'npm' && spec.npmPackage) {
     checkCommand = `npm view ${spec.npmPackage} version --silent`;
-    latestVersion = await readNpmLatestVersion(runner, spec.npmPackage);
+    latestVersion = await readNpmLatestVersion(runner, spec.npmPackage, signal);
     updateNeeded = shouldUpdate(beforeVersion, latestVersion);
   } else if (source === 'brew-formula' && spec.brewFormula) {
     checkCommand = `brew info --json=v2 ${spec.brewFormula}`;
-    latestVersion = await readBrewLatestVersion(runner, 'formula', spec.brewFormula);
+    latestVersion = await readBrewLatestVersion(runner, 'formula', spec.brewFormula, signal);
     updateNeeded = shouldUpdate(beforeVersion, latestVersion);
   } else if (source === 'brew-cask' && spec.brewCask) {
     checkCommand = `brew info --json=v2 --cask ${spec.brewCask}`;
-    latestVersion = await readBrewLatestVersion(runner, 'cask', spec.brewCask);
+    latestVersion = await readBrewLatestVersion(runner, 'cask', spec.brewCask, signal);
     updateNeeded = shouldUpdate(beforeVersion, latestVersion);
+  }
+
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      message: 'Update cancelled before execution.',
+    });
   }
 
   if (!updateNeeded) {
@@ -233,7 +403,20 @@ async function runProviderUpdate(input: {
   }
 
   const updateCommand = `${command.command} ${command.args.join(' ')}`.trim();
-  const updateExec = await runner.run(command.command, command.args, { timeoutMs: UPDATE_TIMEOUT_MS });
+  const updateExec = await runner.run(command.command, command.args, { timeoutMs: UPDATE_TIMEOUT_MS, signal });
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      updateCommand,
+      updateAttempted: true,
+      message: 'Update cancelled while command was running.',
+    });
+  }
   if (updateExec.code !== 0) {
     const errorMessage = (updateExec.stderr || updateExec.stdout || 'Update command failed').trim();
     return {
@@ -251,7 +434,20 @@ async function runProviderUpdate(input: {
     };
   }
 
-  const afterVersion = await readBinaryVersion(runner, binaryPath);
+  const afterVersion = await readBinaryVersion(runner, binaryPath, signal);
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      updateCommand,
+      updateAttempted: true,
+      message: 'Update cancelled before version verification completed.',
+    });
+  }
   const hasVersionBump = hasDifferentVersion(beforeVersion, afterVersion);
   return {
     providerId,
@@ -268,6 +464,32 @@ async function runProviderUpdate(input: {
     message: hasVersionBump
       ? `${providerName} was updated successfully.`
       : `${providerName} is already up to date.`,
+  };
+}
+
+function buildCancelledResult(input: {
+  providerId: ProviderId;
+  providerName: string;
+  source: ProviderUpdateSource;
+  beforeVersion?: string;
+  latestVersion?: string;
+  checkCommand?: string;
+  updateCommand?: string;
+  updateAttempted?: boolean;
+  message: string;
+}): Omit<ProviderUpdateResult, 'durationMs'> {
+  return {
+    providerId: input.providerId,
+    providerName: input.providerName,
+    source: input.source,
+    status: 'cancelled',
+    checked: true,
+    updateAttempted: input.updateAttempted ?? false,
+    checkCommand: input.checkCommand,
+    updateCommand: input.updateCommand,
+    beforeVersion: input.beforeVersion,
+    latestVersion: input.latestVersion,
+    message: input.message,
   };
 }
 
@@ -330,14 +552,23 @@ function resolveRealPath(binaryPath: string): string {
   }
 }
 
-async function readBinaryVersion(runner: ProviderUpdaterRunner, binaryPath: string): Promise<string | undefined> {
-  const result = await runner.run(binaryPath, ['--version'], { timeoutMs: CHECK_TIMEOUT_MS });
+async function readBinaryVersion(
+  runner: ProviderUpdaterRunner,
+  binaryPath: string,
+  signal?: AbortSignal,
+): Promise<string | undefined> {
+  const result = await runner.run(binaryPath, ['--version'], { timeoutMs: CHECK_TIMEOUT_MS, signal });
+  if (result.code !== 0) return undefined;
   const raw = `${result.stdout}\n${result.stderr}`.trim();
   return parseVersion(raw);
 }
 
-async function readNpmLatestVersion(runner: ProviderUpdaterRunner, npmPackage: string): Promise<string | undefined> {
-  const result = await runner.run('npm', ['view', npmPackage, 'version', '--silent'], { timeoutMs: CHECK_TIMEOUT_MS });
+async function readNpmLatestVersion(
+  runner: ProviderUpdaterRunner,
+  npmPackage: string,
+  signal?: AbortSignal,
+): Promise<string | undefined> {
+  const result = await runner.run('npm', ['view', npmPackage, 'version', '--silent'], { timeoutMs: CHECK_TIMEOUT_MS, signal });
   if (result.code !== 0) return undefined;
   return parseVersion(result.stdout.trim());
 }
@@ -346,9 +577,10 @@ async function readBrewLatestVersion(
   runner: ProviderUpdaterRunner,
   kind: 'formula' | 'cask',
   token: string,
+  signal?: AbortSignal,
 ): Promise<string | undefined> {
   const args = kind === 'cask' ? ['info', '--json=v2', '--cask', token] : ['info', '--json=v2', token];
-  const result = await runner.run('brew', args, { timeoutMs: CHECK_TIMEOUT_MS });
+  const result = await runner.run('brew', args, { timeoutMs: CHECK_TIMEOUT_MS, signal });
   if (result.code !== 0) return undefined;
   try {
     const payload = JSON.parse(result.stdout) as {

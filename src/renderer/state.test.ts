@@ -660,6 +660,17 @@ describe('browser target sessions', () => {
     expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(second.id);
   });
 
+  it('supports strict target resolution that skips active-session fallback', () => {
+    const project = appState.addProject('Strict Routing', '/tmp/strict-routing');
+    const first = appState.addSession(project.id, 'First')!;
+
+    expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(first.id);
+    expect(appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true })).toBeUndefined();
+
+    appState.setSurfaceTargetSession(project.id, first.id);
+    expect(appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true })?.id).toBe(first.id);
+  });
+
   it('keeps browser wrapper helpers working through surface state', () => {
     const project = addProject();
     const target = appState.addSession(project.id, 'Claude')!;

@@ -40,6 +40,16 @@ describe('resolveEffectiveAutoApprovalMode', () => {
     expect(result.policySource).toBe('session');
   });
 
+  it('supports full_auto as an explicit override mode', () => {
+    const result = resolveEffectiveAutoApprovalMode({
+      globalMode: 'off',
+      projectMode: 'full_auto',
+    });
+
+    expect(result.effectiveMode).toBe('full_auto');
+    expect(result.policySource).toBe('project');
+  });
+
   it('uses project mode over global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
       globalMode: 'off',
@@ -128,6 +138,18 @@ describe('readAutoApprovalModeFromPolicyFile', () => {
     });
 
     expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('off');
+  });
+
+  it('reads full_auto mode from policy files', () => {
+    const root = makeTempDir('auto-approval-full-auto');
+    roots.push(root);
+    const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
+      autoApproval: {
+        mode: 'full_auto',
+      },
+    });
+
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('full_auto');
   });
 
   it('exposes the default global policy path', () => {

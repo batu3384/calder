@@ -26,7 +26,7 @@ export interface CliProviderMeta {
 }
 
 export type ProviderUpdateSource = 'self' | 'npm' | 'brew-formula' | 'brew-cask' | 'unknown';
-export type ProviderUpdateStatus = 'updated' | 'up_to_date' | 'skipped' | 'error';
+export type ProviderUpdateStatus = 'updated' | 'up_to_date' | 'skipped' | 'error' | 'cancelled';
 
 export interface ProviderUpdateResult {
   providerId: ProviderId;
@@ -48,6 +48,35 @@ export interface ProviderUpdateSummary {
   startedAt: string;
   finishedAt: string;
   results: ProviderUpdateResult[];
+  cancelled?: boolean;
+}
+
+export interface ProviderUpdateCancelResult {
+  cancelled: boolean;
+}
+
+export type ProviderUpdateProgressPhase =
+  | 'started'
+  | 'provider_started'
+  | 'provider_finished'
+  | 'finished';
+
+export interface ProviderUpdateProgressTarget {
+  providerId: ProviderId;
+  providerName: string;
+}
+
+export interface ProviderUpdateProgressEvent {
+  phase: ProviderUpdateProgressPhase;
+  startedAt: string;
+  finishedAt?: string;
+  cancelled?: boolean;
+  totalProviders: number;
+  completedProviders: number;
+  providerId?: ProviderId;
+  providerName?: string;
+  providers?: ProviderUpdateProgressTarget[];
+  result?: ProviderUpdateResult;
 }
 
 // --- Git ---
@@ -372,7 +401,7 @@ export interface ProjectBackgroundTaskDocument {
 
 export type ProjectGovernanceMode = 'advisory' | 'enforced';
 export type ProjectGovernanceDecisionPolicy = 'allow' | 'ask' | 'block';
-export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools';
+export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto';
 export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
 export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';
 export type AutoApprovalDecision = 'allow' | 'ask' | 'block';
@@ -649,7 +678,6 @@ export interface Preferences {
   sessionHistoryEnabled: boolean;
   insightsEnabled: boolean;
   autoTitleEnabled: boolean;
-  rightRailDensity?: 'standard' | 'ultra-compact';
   language?: UiLanguage;
   defaultProvider?: ProviderId;
   statusLineConsent?: 'granted' | 'declined' | null;

@@ -69,6 +69,7 @@ describe('project background task actions', () => {
     mockDeliverPromptToTerminalSession.mockResolvedValue(true);
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    appState.setSurfaceTargetSession(project.id, session!.id);
     appState.setProjectGovernance(project.id, {
       policy: {
         id: 'governance:/proj/.calder/governance/policy.json',
@@ -126,7 +127,8 @@ describe('project background task actions', () => {
   it('returns an error when prompt delivery to the selected session fails', async () => {
     mockDeliverPromptToTerminalSession.mockResolvedValue(false);
     const project = appState.addProject('Calder', '/proj');
-    appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    appState.setSurfaceTargetSession(project.id, session!.id);
 
     const result = await sendProjectBackgroundTaskToSelectedSession(project.id, {
       path: '/proj/.calder/tasks/review-ui.json',

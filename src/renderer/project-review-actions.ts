@@ -26,7 +26,7 @@ export async function sendProjectReviewToSelectedSession(
   projectId: string,
   review: ProjectReviewDocument,
 ): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId);
+  const targetSession = appState.resolveSurfaceTargetSession(projectId, { requireExplicitTarget: true });
   if (!targetSession) {
     return { ok: false, error: 'Open or select a CLI session first.' };
   }

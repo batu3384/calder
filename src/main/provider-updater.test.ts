@@ -143,4 +143,85 @@ describe('updateProviders', () => {
     expect(summary.results[0].status).toBe('updated');
     expect(summary.results[0].updateCommand).toBe(`${claudeBinary} update`);
   });
+
+  it('uses npm-based checks for Copilot instead of self-update commands', async () => {
+    const runner = new FakeRunner();
+    const copilotBinary = '/Users/test/.npm-global/lib/node_modules/@github/copilot/bin/copilot.js';
+    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
+    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], { code: 0, stdout: '1.0.30' });
+
+    const summary = await updateProviders(
+      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
+      { runner, now: (() => 4_500) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('copilot');
+    expect(summary.results[0].source).toBe('npm');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(false);
+    expect(summary.results[0].checkCommand).toBe('npm view @github/copilot version --silent');
+    expect(summary.results[0].updateCommand).toBeUndefined();
+  });
+
+  it('emits provider update progress events from start to finish', async () => {
+    const runner = new FakeRunner();
+    const progressEvents: string[] = [];
+
+    const summary = await updateProviders(
+      [createTarget('blackbox', 'Blackbox CLI', '/usr/local/bin/blackbox', false)],
+      {
+        runner,
+        now: (() => 5_000) as () => number,
+        onProgress: (event) => {
+          progressEvents.push(event.phase);
+        },
+      },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(progressEvents).toEqual([
+      'started',
+      'provider_started',
+      'provider_finished',
+      'finished',
+    ]);
+  });
+
+  it('marks summary as cancelled when update run is aborted', async () => {
+    const abortController = new AbortController();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    const runner: ProviderUpdaterRunner = {
+      async run(command, args, options) {
+        if (command === codexBinary && args[0] === '--version') {
+          return { code: 0, stdout: 'codex 0.120.0', stderr: '' };
+        }
+        if (command === 'npm' && args[0] === 'view') {
+          return { code: 0, stdout: '0.121.0', stderr: '' };
+        }
+        if (command === 'npm' && args[0] === 'install') {
+          abortController.abort();
+          return {
+            code: options?.signal?.aborted ? 130 : 1,
+            stdout: '',
+            stderr: 'Update cancelled.',
+          };
+        }
+        return { code: 1, stdout: '', stderr: 'Unexpected command' };
+      },
+    };
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      {
+        runner,
+        signal: abortController.signal,
+      },
+    );
+
+    expect(summary.cancelled).toBe(true);
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].status).toBe('cancelled');
+    expect(summary.results[0].message).toContain('cancelled');
+  });
 });

@@ -88,6 +88,37 @@ describe('generated renderer payload parsing', () => {
     expect(output).toContain('Ctx 12%  Cost $0.12');
   });
 
+  it('prefers modelUsage-derived Claude model names when display_name lags behind', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    const payload = JSON.stringify({
+      model: { display_name: 'Opus 4.6' },
+      modelUsage: {
+        'claude-opus-4-7': {
+          inputTokens: 12,
+          outputTokens: 3,
+          cacheCreationInputTokens: 0,
+          cacheReadInputTokens: 0,
+        },
+      },
+      cost: { total_cost_usd: 0.01 },
+      context_window: { used_percentage: 1 },
+      cwd: '/Users/batuhanyuksel/Documents/aa',
+    });
+
+    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+      input: payload,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-opus-refresh' },
+    }).trim();
+
+    expect(output).toContain('Opus 4.7  Anthropic  --  aa');
+    expect(output).not.toContain('Opus 4.6  Anthropic');
+  });
+
   it('uses Claude Code OAuth rate_limits for visible remaining quota', () => {
     const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
     const scriptPath = join(statusDir, 'statusline.py');

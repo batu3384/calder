@@ -28,6 +28,8 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'git show HEAD~1' }, 'safe_tool'],
     [{ tool: 'Bash', command: 'git diff -- src/main.ts' }, 'safe_tool'],
     [{ tool: 'Bash', command: 'rg "needle" src' }, 'safe_tool'],
+    [{ tool: 'Bash', command: 'find src -type f -name "*.tsx" | xargs -I {} basename {} | sort' }, 'safe_tool'],
+    [{ tool: 'Bash', command: 'find ~/.claude/projects -type f -name "*.md" | head -20' }, 'safe_tool'],
   ] as const)('classifies read-only bash commands as safe_tool: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
@@ -77,6 +79,7 @@ describe('classifyAutoApprovalOperation', () => {
   });
 
   it.each([
+    [{ tool: 'ExitPlanMode' }, 'safe_tool'],
     [{ tool: 'Read', command: 'ls -la' }, 'risky_tool'],
     [{ tool: 'Search', command: 'cat README.md' }, 'risky_tool'],
   ] as const)('does not classify non-Bash tool payloads as safe_tool: %j', (input, expected) => {
@@ -94,7 +97,7 @@ describe('classifyAutoApprovalOperation', () => {
 });
 
 describe('decideAutoApprovalAction', () => {
-  it('hard-blocks destructive operations in every mode', () => {
+  it('hard-blocks destructive operations outside full_auto mode', () => {
     expect(decideAutoApprovalAction('off', 'destructive')).toEqual({
       decision: 'block',
       reason: 'Destructive operations are blocked in every auto-approval mode.',
@@ -106,6 +109,29 @@ describe('decideAutoApprovalAction', () => {
     expect(decideAutoApprovalAction('edit_plus_safe_tools', 'destructive')).toEqual({
       decision: 'block',
       reason: 'Destructive operations are blocked in every auto-approval mode.',
+    });
+  });
+
+  it('allows every operation in full_auto mode', () => {
+    expect(decideAutoApprovalAction('full_auto', 'edit')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto mode (edit).',
+    });
+    expect(decideAutoApprovalAction('full_auto', 'safe_tool')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto mode (safe_tool).',
+    });
+    expect(decideAutoApprovalAction('full_auto', 'risky_tool')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto mode (risky_tool).',
+    });
+    expect(decideAutoApprovalAction('full_auto', 'unknown')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto mode (unknown).',
+    });
+    expect(decideAutoApprovalAction('full_auto', 'destructive')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto mode (destructive).',
     });
   });
 

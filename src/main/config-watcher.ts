@@ -101,6 +101,12 @@ function setupGeminiWatchers(projectPath: string): void {
     path.join(projectPath, '.gemini', 'settings.json'),
   ];
   for (const f of files) watchFile(f);
+
+  const dirs = [
+    path.join(home, '.gemini', 'skills'),
+    path.join(projectPath, '.gemini', 'skills'),
+  ];
+  for (const d of dirs) watchDir(d);
 }
 
 function setupQwenWatchers(projectPath: string): void {
@@ -144,7 +150,7 @@ function setupCopilotWatchers(projectPath: string): void {
   for (const d of dirs) watchDir(d);
 }
 
-function setupMiniMaxWatchers(): void {
+function setupMiniMaxWatchers(projectPath: string): void {
   const home = os.homedir();
   const mmxDir = path.join(home, '.mmx');
 
@@ -153,6 +159,12 @@ function setupMiniMaxWatchers(): void {
     path.join(mmxDir, 'credentials.json'),
   ];
   for (const f of files) watchFile(f);
+
+  const dirs = [
+    path.join(mmxDir, 'skills'),
+    path.join(projectPath, '.mmx', 'skills'),
+  ];
+  for (const d of dirs) watchDir(d);
 }
 
 function setupBlackboxWatchers(projectPath: string): void {
@@ -164,6 +176,12 @@ function setupBlackboxWatchers(projectPath: string): void {
     path.join(projectPath, '.blackboxcli', 'settings.json'),
   ];
   for (const f of files) watchFile(f);
+
+  const dirs = [
+    path.join(blackboxDir, 'skills'),
+    path.join(projectPath, '.blackboxcli', 'skills'),
+  ];
+  for (const d of dirs) watchDir(d);
 }
 
 export function startConfigWatcher(win: BrowserWindow, projectPath: string, providerId: ProviderId = 'claude'): void {
@@ -181,7 +199,7 @@ export function startConfigWatcher(win: BrowserWindow, projectPath: string, prov
   } else if (providerId === 'qwen') {
     setupQwenWatchers(projectPath);
   } else if (providerId === 'minimax') {
-    setupMiniMaxWatchers();
+    setupMiniMaxWatchers(projectPath);
   } else if (providerId === 'blackbox') {
     setupBlackboxWatchers(projectPath);
   } else {

@@ -46,6 +46,7 @@ import { initProjectGovernanceSync } from './project-governance-sync.js';
 import { initProjectBackgroundTaskSync } from './project-background-task-sync.js';
 import { initProjectCheckpointSync } from './project-checkpoint-sync.js';
 import { initLocalization } from './i18n.js';
+import { initUpdateCenter } from './update-center.js';
 
 let isQuitting = false;
 const EMBEDDED_REVERT_WINDOW_MS = 1800;
@@ -227,6 +228,7 @@ async function main(): Promise<void> {
 
   // Load provider metadata before components so capabilities are available synchronously
   await loadProviderMetas();
+  initUpdateCenter();
 
   // Initialize components
   initSessionUnread();

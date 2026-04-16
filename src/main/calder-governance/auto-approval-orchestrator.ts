@@ -17,6 +17,11 @@ interface SessionRegistration {
   projectPath: string | null;
 }
 
+interface AutoApprovalRecord {
+  timestamp: number;
+  fingerprint: string;
+}
+
 interface ResolvedAutoApprovalState {
   effectiveMode: AutoApprovalMode;
   policySource: AutoApprovalPolicySource;
@@ -60,6 +65,17 @@ function asStringArray(value: unknown): string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
+function buildApprovalFingerprint(event: InspectorEvent): string {
+  const toolName = asString(event.tool_name) ?? '';
+  let toolInput = '';
+  try {
+    toolInput = JSON.stringify(event.tool_input ?? {});
+  } catch {
+    toolInput = '';
+  }
+  return `${toolName}:${toolInput}`;
+}
+
 function extractOperationInput(event: InspectorEvent): AutoApprovalOperationInput {
   const rawInput = isRecord(event.tool_input) ? event.tool_input : undefined;
   return {
@@ -91,7 +107,7 @@ async function resolveAutoApprovalStateFromProject(projectPath: string | null): 
 export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestratorOptions): AutoApprovalOrchestrator {
   const sessions = new Map<string, SessionRegistration>();
   const sessionOverrides = new Map<string, AutoApprovalMode>();
-  const lastAutoApprovalAt = new Map<string, number>();
+  const lastAutoApproval = new Map<string, AutoApprovalRecord>();
   const now = options.now ?? (() => Date.now());
   const rateLimitMs = options.rateLimitMs ?? DEFAULT_RATE_LIMIT_MS;
   const resolveAutoApprovalState = options.resolveAutoApprovalState ?? resolveAutoApprovalStateFromProject;
@@ -107,7 +123,7 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
     unregisterSession(sessionId) {
       sessions.delete(sessionId);
       sessionOverrides.delete(sessionId);
-      lastAutoApprovalAt.delete(sessionId);
+      lastAutoApproval.delete(sessionId);
     },
 
     setSessionOverride(sessionId, mode) {
@@ -148,12 +164,18 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
 
         if (finalDecision === 'allow') {
           const requestTimestamp = now();
-          const lastTimestamp = lastAutoApprovalAt.get(sessionId);
-          if (lastTimestamp !== undefined && requestTimestamp - lastTimestamp < rateLimitMs) {
-            finalDecision = 'ask';
-            finalReason = `Auto-approval rate limited: requests must be at least ${rateLimitMs}ms apart.`;
+          const operationFingerprint = buildApprovalFingerprint(event);
+          const lastApproval = lastAutoApproval.get(sessionId);
+          const isRapidDuplicate = lastApproval !== undefined
+            && requestTimestamp - lastApproval.timestamp < rateLimitMs
+            && lastApproval.fingerprint === operationFingerprint;
+          if (isRapidDuplicate) {
+            finalReason = `Duplicate permission request detected within ${rateLimitMs}ms; reused prior auto-approval.`;
           } else {
-            lastAutoApprovalAt.set(sessionId, requestTimestamp);
+            lastAutoApproval.set(sessionId, {
+              timestamp: requestTimestamp,
+              fingerprint: operationFingerprint,
+            });
             await options.sendApproval(sessionId, providerId as ProviderId);
           }
         }

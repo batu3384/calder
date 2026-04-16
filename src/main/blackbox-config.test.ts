@@ -64,6 +64,51 @@ describe('getBlackboxConfig', () => {
       { name: 'github', url: 'http://user', status: 'configured', scope: 'user', filePath: path.join('/mock/home', '.blackboxcli', 'settings.json') },
     ]);
   });
+
+  it('reads skills from user and project directories', async () => {
+    mockReadFileSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (filePath === '/mock/home/.blackboxcli/skills/ui-ux-pro-max/SKILL.md') {
+        return '---\nname: ui-ux-pro-max\ndescription: User skill\n---\n' as any;
+      }
+      if (filePath === '/project/.blackboxcli/skills/local/SKILL.md') {
+        return '---\nname: local\ndescription: Project skill\n---\n' as any;
+      }
+      throw new Error('ENOENT');
+    });
+    mockReaddirSync.mockImplementation((inputPath) => {
+      const dirPath = n(String(inputPath));
+      if (dirPath === '/mock/home/.blackboxcli/skills') return ['ui-ux-pro-max'] as any;
+      if (dirPath === '/project/.blackboxcli/skills') return ['local'] as any;
+      throw new Error('ENOENT');
+    });
+    mockStatSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (
+        filePath === '/mock/home/.blackboxcli/skills/ui-ux-pro-max/SKILL.md'
+        || filePath === '/project/.blackboxcli/skills/local/SKILL.md'
+      ) {
+        return { isFile: () => true } as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    const config = await getBlackboxConfig('/project');
+    expect(config.skills).toEqual([
+      {
+        name: 'ui-ux-pro-max',
+        description: 'User skill',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.blackboxcli', 'skills', 'ui-ux-pro-max', 'SKILL.md'),
+      },
+      {
+        name: 'local',
+        description: 'Project skill',
+        scope: 'project',
+        filePath: path.join('/project', '.blackboxcli', 'skills', 'local', 'SKILL.md'),
+      },
+    ]);
+  });
 });
 
 describe('findBlackboxTranscriptPath', () => {
@@ -102,4 +147,3 @@ describe('findBlackboxTranscriptPath', () => {
     expect(findBlackboxTranscriptPath('sid-2', '/project')).toBe('/mock/home/.blackboxcli/sessions/blackbox_secure_session_sid-2.json');
   });
 });
-

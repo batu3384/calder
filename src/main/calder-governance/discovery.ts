@@ -63,7 +63,7 @@ function countProviderProfiles(value: unknown): number {
 }
 
 function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
-  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools'
+  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools' || value === 'full_auto'
     ? value
     : undefined;
 }

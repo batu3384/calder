@@ -230,7 +230,9 @@ describe('config-watcher', () => {
     expect(fs.watchFile).toHaveBeenCalledTimes(2);
     expect(watchFileCallbacks.has('/home/testuser/.blackboxcli/settings.json')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.blackboxcli/settings.json')).toBe(true);
-    expect(fs.watch).not.toHaveBeenCalled();
+    expect(fs.watch).toHaveBeenCalledTimes(2);
+    expect(watchDirCallbacks.has('/home/testuser/.blackboxcli/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.blackboxcli/skills')).toBe(true);
   });
 
   it('watches copilot config, mcp, and skills for a project', () => {
@@ -260,6 +262,23 @@ describe('config-watcher', () => {
     expect(fs.watchFile).toHaveBeenCalledTimes(2);
     expect(watchFileCallbacks.has('/home/testuser/.mmx/config.json')).toBe(true);
     expect(watchFileCallbacks.has('/home/testuser/.mmx/credentials.json')).toBe(true);
-    expect(fs.watch).not.toHaveBeenCalled();
+    expect(fs.watch).toHaveBeenCalledTimes(2);
+    expect(watchDirCallbacks.has('/home/testuser/.mmx/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.mmx/skills')).toBe(true);
+  });
+
+  it('watches gemini settings and skills for a project', () => {
+    const win = createMockWin();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+    startConfigWatcher(win, '/projects/test', 'gemini');
+
+    expect(fs.watchFile).toHaveBeenCalledTimes(2);
+    expect(watchFileCallbacks.has('/home/testuser/.gemini/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.gemini/settings.json')).toBe(true);
+
+    expect(fs.watch).toHaveBeenCalledTimes(2);
+    expect(watchDirCallbacks.has('/home/testuser/.gemini/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.gemini/skills')).toBe(true);
   });
 });

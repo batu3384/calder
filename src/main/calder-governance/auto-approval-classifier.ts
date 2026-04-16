@@ -19,6 +19,9 @@ export interface AutoApprovalDecisionResult {
 
 const EDIT_TOOLS = new Set(['write', 'edit', 'multiedit']);
 const SHELL_TOOLS = new Set(['bash', 'sh']);
+const SAFE_NON_SHELL_TOOLS = new Set([
+  'exitplanmode',
+]);
 
 const DESTRUCTIVE_PATTERNS: RegExp[] = [
   /\brm\s+(?:"|')?-rf(?:"|')?(?=\s|$)/i,
@@ -36,6 +39,13 @@ const SAFE_COMMAND_PATTERNS: RegExp[] = [
   /^tail(?:\s|$)/i,
   /^wc(?:\s|$)/i,
   /^git\s+(?:status|log|show|diff)(?:\s|$)/i,
+];
+
+const SAFE_PIPE_SEGMENT_PATTERNS: RegExp[] = [
+  /^sort(?:\s|$)/i,
+  /^uniq(?:\s|$)/i,
+  /^basename(?:\s|$)/i,
+  /^dirname(?:\s|$)/i,
 ];
 
 function normalize(value: string | null | undefined): string {
@@ -236,12 +246,89 @@ function hasRiskyGitDiffFlag(command: string): boolean {
   return false;
 }
 
+function splitUnquotedPipes(command: string): string[] {
+  const segments: string[] = [];
+  let current = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let index = 0; index < command.length; index += 1) {
+    const character = command[index];
+
+    if (escaped) {
+      current += character;
+      escaped = false;
+      continue;
+    }
+
+    if (character === '\\' && !inSingleQuote) {
+      current += character;
+      escaped = true;
+      continue;
+    }
+
+    if (character === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      current += character;
+      continue;
+    }
+
+    if (character === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      current += character;
+      continue;
+    }
+
+    if (!inSingleQuote && !inDoubleQuote && character === '|') {
+      const previousCharacter = command[index - 1];
+      const nextCharacter = command[index + 1];
+      if (previousCharacter !== '|' && nextCharacter !== '|') {
+        segments.push(current.trim());
+        current = '';
+        continue;
+      }
+    }
+
+    current += character;
+  }
+
+  segments.push(current.trim());
+  return segments;
+}
+
+function isSafeReadOnlyXargs(command: string): boolean {
+  return /^xargs(?:\s+-0)?(?:\s+-r)?(?:\s+-I\s+\{\})?\s+(?:basename|dirname)(?:\s|$)/i.test(command);
+}
+
+function isSafeReadOnlyCommandSegment(command: string): boolean {
+  if (!command) return false;
+
+  if (hasRiskyRgFlag(command) || hasRiskyGitDiffFlag(command)) {
+    return false;
+  }
+
+  if (SAFE_COMMAND_PATTERNS.some((pattern) => pattern.test(command)) || isClearlyReadOnlyFind(command)) {
+    return true;
+  }
+
+  if (SAFE_PIPE_SEGMENT_PATTERNS.some((pattern) => pattern.test(command))) {
+    return true;
+  }
+
+  if (isSafeReadOnlyXargs(command)) {
+    return true;
+  }
+
+  return false;
+}
+
 function isSafeReadOnlyCommand(command: string): boolean {
   if (!command) {
     return false;
   }
 
-  if (/[;\r\n]|&&|\|\||\||`|\$\(/.test(command)) {
+  if (/[;\r\n]|&&|\|\||`|\$\(/.test(command)) {
     return false;
   }
 
@@ -261,7 +348,12 @@ function isSafeReadOnlyCommand(command: string): boolean {
     return false;
   }
 
-  return SAFE_COMMAND_PATTERNS.some((pattern) => pattern.test(command)) || isClearlyReadOnlyFind(command);
+  const segments = splitUnquotedPipes(command);
+  if (segments.length === 0) {
+    return false;
+  }
+
+  return segments.every((segment) => isSafeReadOnlyCommandSegment(segment));
 }
 
 export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput | undefined | null): AutoApprovalOperationClass {
@@ -272,6 +364,10 @@ export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput 
   const tool = normalize(input.tool).toLowerCase();
   if (EDIT_TOOLS.has(tool)) {
     return 'edit';
+  }
+
+  if (SAFE_NON_SHELL_TOOLS.has(tool)) {
+    return 'safe_tool';
   }
 
   if (!SHELL_TOOLS.has(tool)) {
@@ -302,6 +398,13 @@ export function decideAutoApprovalAction(
   mode: AutoApprovalMode,
   operationClass: AutoApprovalOperationClass,
 ): AutoApprovalDecisionResult {
+  if (mode === 'full_auto') {
+    return {
+      decision: 'allow',
+      reason: `All operations are auto-approved in full_auto mode (${operationClass}).`,
+    };
+  }
+
   if (operationClass === 'destructive') {
     return {
       decision: 'block',

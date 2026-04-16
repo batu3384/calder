@@ -73,6 +73,7 @@ describe('project review actions', () => {
 
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    appState.setSurfaceTargetSession(project.id, session!.id);
     appState.setProjectSurface(project.id, {
       kind: 'web',
       active: true,
@@ -125,6 +126,7 @@ describe('project review actions', () => {
 
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    appState.setSurfaceTargetSession(project.id, session!.id);
     appState.setProjectSurface(project.id, {
       kind: 'web',
       active: true,
@@ -156,6 +158,7 @@ describe('project review actions', () => {
 
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+    appState.setSurfaceTargetSession(project.id, session!.id);
     appState.setProjectSurface(project.id, {
       kind: 'web',
       active: true,

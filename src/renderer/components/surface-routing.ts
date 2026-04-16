@@ -12,12 +12,24 @@ function getPreferredLaunchProvider() {
   );
 }
 
+function appendStrictRoutingContract(prompt: string): string {
+  return [
+    'Routing contract (strict):',
+    '- Work only on the exact task requested below.',
+    '- Do not continue into unrelated flows unless the prompt explicitly asks for it.',
+    '- When the requested task is complete, stop and report completion briefly.',
+    '',
+    prompt,
+  ].join('\n');
+}
+
 function applyProjectRoutingContext(projectId: string | undefined, prompt: string): string {
-  if (!projectId) return prompt;
+  const strictPrompt = appendStrictRoutingContract(prompt);
+  if (!projectId) return strictPrompt;
   const project = appState.projects.find((entry) => entry.id === projectId)
     ?? (appState.activeProject?.id === projectId ? appState.activeProject : undefined);
   return appendProjectGovernanceToPrompt(
-    appendProjectTeamContextToPrompt(prompt, project?.projectTeamContext),
+    appendProjectTeamContextToPrompt(strictPrompt, project?.projectTeamContext),
     project?.projectGovernance,
   );
 }
@@ -26,7 +38,7 @@ export async function deliverSurfacePrompt(
   projectId: string,
   prompt: string,
 ): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId);
+  const targetSession = appState.resolveSurfaceTargetSession(projectId, { requireExplicitTarget: true });
   if (!targetSession) {
     return { ok: false, error: 'Select an open session target first.' };
   }

@@ -19,7 +19,7 @@ import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
@@ -113,7 +113,7 @@ function isAllowedReadPath(resolvedPath: string): boolean {
 }
 
 function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
-  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools';
+  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools' || value === 'full_auto';
 }
 
 function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null): void {
@@ -164,6 +164,8 @@ let currentProjectBackgroundTaskPath: string | null = null;
 let currentProjectBackgroundTaskWindow: BrowserWindow | null = null;
 let currentProjectCheckpointPath: string | null = null;
 let currentProjectCheckpointWindow: BrowserWindow | null = null;
+let providerUpdateAbortController: AbortController | null = null;
+let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
   data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
   exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
@@ -637,8 +639,37 @@ export function registerIpcHandlers(): void {
     return provider.validatePrerequisites();
   });
 
-  ipcMain.handle('provider:updateAll', async () => {
-    return updateAllProviders();
+  ipcMain.handle('provider:updateAll', async (event) => {
+    if (providerUpdateInFlight) {
+      return providerUpdateInFlight;
+    }
+
+    const abortController = new AbortController();
+    providerUpdateAbortController = abortController;
+    providerUpdateInFlight = updateAllProviders({
+      signal: abortController.signal,
+      onProgress: (progressEvent) => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('provider:update-progress', progressEvent);
+        }
+      },
+    }).finally(() => {
+      if (providerUpdateAbortController === abortController) {
+        providerUpdateAbortController = null;
+      }
+      if (providerUpdateInFlight) {
+        providerUpdateInFlight = null;
+      }
+    });
+    return providerUpdateInFlight;
+  });
+
+  ipcMain.handle('provider:cancelUpdateAll', async () => {
+    if (!providerUpdateAbortController || providerUpdateAbortController.signal.aborted) {
+      return { cancelled: false };
+    }
+    providerUpdateAbortController.abort();
+    return { cancelled: true };
   });
 
   ipcMain.handle('fs:browseDirectory', async () => {

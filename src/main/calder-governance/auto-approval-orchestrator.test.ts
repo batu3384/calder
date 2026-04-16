@@ -101,7 +101,7 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(emittedEvent.auto_approval?.reason).toContain('unsupported');
   });
 
-  it('rate limits rapid approvals by converting second allow to ask', async () => {
+  it('dedupes rapid duplicate approvals without switching to ask', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const nowValues = [1000, 1000, 1200, 1200];
@@ -128,9 +128,40 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(emitInspectorEvents).toHaveBeenCalledTimes(2);
     const secondEvent = emitInspectorEvents.mock.calls[1][1][0] as InspectorEvent;
     expect(secondEvent.auto_approval).toMatchObject({
-      decision: 'ask',
+      decision: 'allow',
     });
-    expect(secondEvent.auto_approval?.reason).toContain('rate limited');
+    expect(secondEvent.auto_approval?.reason).toContain('Duplicate permission request');
+  });
+
+  it('continues approving rapid non-duplicate requests', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const nowValues = [1000, 1000, 1100, 1100];
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      now: () => nowValues.shift() ?? 1100,
+      rateLimitMs: 1500,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'edit_plus_safe_tools',
+        policySource: 'project',
+      }),
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({ toolName: 'Edit', toolInput: { file_path: 'a.txt' } }),
+    ]);
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({ toolName: 'Edit', toolInput: { file_path: 'b.txt' } }),
+    ]);
+
+    expect(sendApproval).toHaveBeenCalledTimes(2);
+    expect(emitInspectorEvents).toHaveBeenCalledTimes(2);
+    const secondEvent = emitInspectorEvents.mock.calls[1][1][0] as InspectorEvent;
+    expect(secondEvent.auto_approval).toMatchObject({
+      decision: 'allow',
+    });
   });
 
   it('honors session override over resolved project policy', async () => {

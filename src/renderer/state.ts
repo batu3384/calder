@@ -42,7 +42,6 @@ const defaultPreferences: Preferences = {
   sessionHistoryEnabled: true,
   insightsEnabled: true,
   autoTitleEnabled: true,
-  rightRailDensity: 'ultra-compact',
   sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true },
 };
 
@@ -268,13 +267,21 @@ class AppState {
     return undefined;
   }
 
-  private resolveSurfaceTargetFromProject(project: ProjectRecord): SessionRecord | undefined {
+  private resolveSurfaceTargetFromProject(
+    project: ProjectRecord,
+    options?: { allowActiveFallback?: boolean },
+  ): SessionRecord | undefined {
+    const allowActiveFallback = options?.allowActiveFallback ?? true;
     const storedTargetId = project.surface?.targetSessionId;
     if (storedTargetId) {
       const storedTarget = this.findSessionInProject(project, storedTargetId);
       if (storedTarget && this.isCliSession(storedTarget)) {
         return storedTarget;
       }
+    }
+
+    if (!allowActiveFallback) {
+      return undefined;
     }
 
     return this.findActiveCliSession(project);
@@ -1537,10 +1544,15 @@ class AppState {
     return project.sessions.filter((session) => this.isCliSession(session));
   }
 
-  resolveSurfaceTargetSession(projectId: string): SessionRecord | undefined {
+  resolveSurfaceTargetSession(
+    projectId: string,
+    options?: { requireExplicitTarget?: boolean },
+  ): SessionRecord | undefined {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return undefined;
-    return this.resolveSurfaceTargetFromProject(project);
+    return this.resolveSurfaceTargetFromProject(project, {
+      allowActiveFallback: options?.requireExplicitTarget ? false : true,
+    });
   }
 
   setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {

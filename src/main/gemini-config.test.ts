@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
   statSync: vi.fn(),
+  readdirSync: vi.fn(),
 }));
 
 vi.mock('os', () => ({
@@ -13,6 +14,8 @@ import * as fs from 'fs';
 import { getGeminiConfig } from './gemini-config';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
+const mockReaddirSync = vi.mocked(fs.readdirSync);
+const mockStatSync = vi.mocked(fs.statSync);
 const n = (p: string) => p.replace(/\\/g, '/');
 
 function mockFiles(rawFiles: Record<string, string>): void {
@@ -27,6 +30,12 @@ function mockFiles(rawFiles: Record<string, string>): void {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockReaddirSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
+  mockStatSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
 });
 
 describe('getGeminiConfig', () => {
@@ -120,7 +129,7 @@ describe('getGeminiConfig', () => {
     expect(config.mcpServers).toHaveLength(0);
   });
 
-  it('always returns empty agents, skills, and commands', async () => {
+  it('always returns empty agents and commands', async () => {
     mockFiles({
       '/mock/home/.gemini/settings.json': JSON.stringify({
         mcpServers: {
@@ -131,7 +140,48 @@ describe('getGeminiConfig', () => {
 
     const config = await getGeminiConfig('/project');
     expect(config.agents).toEqual([]);
-    expect(config.skills).toEqual([]);
     expect(config.commands).toEqual([]);
+  });
+
+  it('reads skills from user and project directories and deduplicates by name', async () => {
+    mockFiles({
+      '/mock/home/.gemini/skills/shared/SKILL.md': '---\nname: SharedSkill\ndescription: User version\n---\n',
+      '/project/.gemini/skills/shared/SKILL.md': '---\nname: SharedSkill\ndescription: Project version\n---\n',
+      '/project/.gemini/skills/project-only/SKILL.md': '---\nname: ProjectOnly\ndescription: Project only\n---\n',
+    });
+
+    mockReaddirSync.mockImplementation((inputPath) => {
+      const dirPath = n(String(inputPath));
+      if (dirPath === '/mock/home/.gemini/skills') return ['shared'] as any;
+      if (dirPath === '/project/.gemini/skills') return ['shared', 'project-only'] as any;
+      throw new Error('ENOENT');
+    });
+    mockStatSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (
+        filePath === '/mock/home/.gemini/skills/shared/SKILL.md'
+        || filePath === '/project/.gemini/skills/shared/SKILL.md'
+        || filePath === '/project/.gemini/skills/project-only/SKILL.md'
+      ) {
+        return { isFile: () => true } as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    const config = await getGeminiConfig('/project');
+    expect(config.skills).toEqual([
+      {
+        name: 'SharedSkill',
+        description: 'User version',
+        scope: 'user',
+        filePath: '/mock/home/.gemini/skills/shared/SKILL.md',
+      },
+      {
+        name: 'ProjectOnly',
+        description: 'Project only',
+        scope: 'project',
+        filePath: '/project/.gemini/skills/project-only/SKILL.md',
+      },
+    ]);
   });
 });
