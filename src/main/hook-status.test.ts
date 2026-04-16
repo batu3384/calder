@@ -34,6 +34,7 @@ import * as fs from 'fs';
 import {
   installStatusLineScript,
   startWatching,
+  stopWatching,
   resyncAllSessions,
   restartAndResync,
   cleanupSessionStatus,
@@ -662,6 +663,37 @@ describe('hook-status', () => {
 
       vi.advanceTimersByTime(4000);
       expect(fs.statSync).not.toHaveBeenCalled();
+    });
+
+    it('stopWatching keeps inspector middleware for next watcher start', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+
+      setInspectorEventsMiddleware((_, events) => [
+        ...events,
+        { type: 'marker' } as any,
+      ]);
+
+      stopWatching();
+      startWatching(win);
+      registerSession('abc123');
+
+      const payload = '{"type":"permission_request"}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      vi.mocked(fs.openSync).mockReturnValue(23 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+      expect(mockSend).toHaveBeenCalledWith('session:inspectorEvents', 'abc123', [
+        { type: 'permission_request' },
+        { type: 'marker' },
+      ]);
     });
   });
 

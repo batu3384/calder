@@ -240,6 +240,13 @@ function stopPolling(): void {
   lastMtimes.clear();
 }
 
+function stopWatcher(): void {
+  if (watcher) {
+    watcher.close();
+    watcher = null;
+  }
+}
+
 function restartWatcher(win: BrowserWindow): void {
   if (watcher) {
     watcher.close();
@@ -283,6 +290,14 @@ export function startWatching(win: BrowserWindow): void {
   restartWatcher(win);
 }
 
+export function stopWatching(): void {
+  stopPolling();
+  stopWatcher();
+  knownSessionIds.clear();
+  eventFileOffsets.clear();
+  eventFileRemainders.clear();
+}
+
 export function cleanupSessionStatus(sessionId: string): void {
   for (const ext of KNOWN_EXTENSIONS) {
     try {
@@ -297,15 +312,8 @@ export function cleanupSessionStatus(sessionId: string): void {
 }
 
 export function cleanupAll(): void {
-  stopPolling();
-  knownSessionIds.clear();
-  eventFileOffsets.clear();
-  eventFileRemainders.clear();
+  stopWatching();
   inspectorEventsMiddleware = null;
-  if (watcher) {
-    watcher.close();
-    watcher = null;
-  }
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {

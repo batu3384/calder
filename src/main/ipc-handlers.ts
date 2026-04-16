@@ -7,9 +7,9 @@ import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, 
 import { addMcpServer, removeMcpServer } from './claude-cli';
 import type { McpServerConfig } from './claude-cli';
 import { loadState, saveState, PersistedState } from './store';
-import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware } from './hook-status';
-import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession } from './codex-session-watcher';
-import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession } from './blackbox-session-watcher';
+import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
+import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
+import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
 import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, gitUnstageFile, gitDiscardFile, getGitRemoteUrl, listGitBranches, checkoutGitBranch, createGitBranch } from './git-status';
 import { startGitWatcher, notifyGitChanged } from './git-watcher';
 import { watchFile as watchFileForChanges, unwatchFile as unwatchFileForChanges, setFileWatcherWindow } from './file-watcher';
@@ -34,14 +34,14 @@ import {
   deleteProjectContextRuleFile,
   renameProjectContextRuleFile,
 } from './calder-context/scaffold';
-import { startProjectContextWatcher } from './calder-context/watcher';
+import { startProjectContextWatcher, stopProjectContextWatcher } from './calder-context/watcher';
 import { discoverProjectWorkflows } from './calder-workflows/discovery';
 import {
   createProjectWorkflowFile,
   createProjectWorkflowStarterFiles,
 } from './calder-workflows/scaffold';
 import { readProjectWorkflowFile } from './calder-workflows/read';
-import { startProjectWorkflowWatcher } from './calder-workflows/watcher';
+import { startProjectWorkflowWatcher, stopProjectWorkflowWatcher } from './calder-workflows/watcher';
 import { discoverProjectTeamContext } from './calder-team-context/discovery';
 import {
   createProjectTeamContextSpaceFile,
@@ -51,10 +51,10 @@ import { startProjectTeamContextWatcher } from './calder-team-context/watcher';
 import { discoverProjectReviews } from './calder-reviews/discovery';
 import { createProjectReviewFile } from './calder-reviews/scaffold';
 import { readProjectReviewFile } from './calder-reviews/read';
-import { startProjectReviewWatcher } from './calder-reviews/watcher';
+import { startProjectReviewWatcher, stopProjectReviewWatcher } from './calder-reviews/watcher';
 import { POLICY_RELATIVE_PATH, discoverProjectGovernance } from './calder-governance/discovery';
 import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
-import { startProjectGovernanceWatcher } from './calder-governance/watcher';
+import { startProjectGovernanceWatcher, stopProjectGovernanceWatcher } from './calder-governance/watcher';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import {
@@ -65,10 +65,10 @@ import {
 import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
 import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
 import { readProjectBackgroundTaskFile } from './calder-tasks/read';
-import { startProjectBackgroundTaskWatcher } from './calder-tasks/watcher';
+import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } from './calder-tasks/watcher';
 import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
 import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
-import { startProjectCheckpointWatcher } from './calder-checkpoints/watcher';
+import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './calder-checkpoints/watcher';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -176,10 +176,32 @@ const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
 
 export function resetHookWatcher(): void {
   hookWatcherStarted = false;
+  stopHookWatching();
+  stopCodexSessionWatcher();
+  stopBlackboxSessionWatcher();
+  stopProjectContextWatcher();
+  stopProjectWorkflowWatcher();
+  stopProjectReviewWatcher();
+  stopProjectGovernanceWatcher();
+  stopProjectBackgroundTaskWatcher();
+  stopProjectCheckpointWatcher();
+
+  currentProjectContextPath = null;
+  currentProjectContextWindow = null;
+  currentProjectWorkflowPath = null;
+  currentProjectWorkflowWindow = null;
   currentProjectTeamContextDispose?.();
   currentProjectTeamContextDispose = null;
   currentProjectTeamContextPath = null;
   currentProjectTeamContextWindow = null;
+  currentProjectReviewPath = null;
+  currentProjectReviewWindow = null;
+  currentProjectGovernancePath = null;
+  currentProjectGovernanceWindow = null;
+  currentProjectBackgroundTaskPath = null;
+  currentProjectBackgroundTaskWindow = null;
+  currentProjectCheckpointPath = null;
+  currentProjectCheckpointWindow = null;
 }
 
 export function registerIpcHandlers(): void {
