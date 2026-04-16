@@ -317,6 +317,7 @@
   align-items: center;
   gap: 4px;
   justify-content: flex-end;
+  position: relative;
 }
 
 .session-launcher-group {
@@ -350,6 +351,205 @@
     background-color 0.1s ease,
     border-color 0.1s ease,
     box-shadow 0.1s ease;
+}
+
+#cli-update-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 90;
+  width: min(390px, calc(100vw - 32px));
+  max-height: 420px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 26%, transparent), transparent 70%),
+    color-mix(in srgb, var(--surface-panel) 96%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
+#cli-update-panel.hidden {
+  display: none;
+}
+
+.cli-update-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cli-update-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cli-update-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.cli-update-panel-close {
+  min-height: 24px;
+  width: 24px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cli-update-panel-cancel {
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--warning) 24%, var(--border-subtle));
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--warning);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.cli-update-panel-cancel.hidden {
+  display: none;
+}
+
+.cli-update-panel-cancel:hover {
+  border-color: color-mix(in srgb, var(--warning) 34%, var(--border-subtle));
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+}
+
+.cli-update-panel-cancel:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.cli-update-panel-close:hover {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  color: var(--text-primary);
+}
+
+.cli-update-panel-status {
+  font-size: 12px;
+  font-weight: 620;
+  color: var(--text-primary);
+}
+
+.cli-update-panel-meta {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.cli-update-panel-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 65%, var(--surface-muted));
+  overflow: hidden;
+}
+
+.cli-update-panel-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent) 78%, #ffffff);
+  transition: width 0.2s ease;
+}
+
+.cli-update-panel-progress-fill.is-running {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #fff), color-mix(in srgb, var(--info) 66%, #fff));
+}
+
+.cli-update-panel-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cli-update-panel-progress-label {
+  font-size: 10px;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+
+.cli-update-panel-timestamp {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cli-update-panel-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cli-update-panel-empty {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cli-update-provider-row {
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  display: grid;
+  gap: 4px;
+}
+
+.cli-update-provider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cli-update-provider-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cli-update-provider-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.cli-update-provider-status.updated {
+  color: var(--success);
+}
+
+.cli-update-provider-status.error {
+  color: var(--danger);
+}
+
+.cli-update-provider-status.running {
+  color: var(--accent);
+}
+
+.cli-update-provider-status.cancelled {
+  color: var(--warning);
+}
+
+.cli-update-provider-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 #surface-mode-slot,

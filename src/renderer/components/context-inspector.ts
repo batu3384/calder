@@ -3,30 +3,22 @@ import { esc } from '../dom-utils.js';
 import { getGitStatus, onChange as onGitStatusChange } from '../git-status.js';
 import { getProviderDisplayName } from '../provider-availability.js';
 import type { ProviderId, ProjectContextState } from '../types.js';
-import {
-  deriveRightRailMode,
-  deriveRightRailPresentation,
-  type RightRailSectionId,
-} from './right-rail-mode.js';
 
 const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
 const openBtn = document.getElementById('btn-open-context-inspector') as HTMLButtonElement | null;
-const densityBtn = document.getElementById('btn-toggle-right-rail-density') as HTMLButtonElement | null;
 const overviewEl = document.getElementById('context-inspector-overview')!;
 
 let inspectorOpen = true;
+let renderQueued = false;
+let lastOverviewSignature: string | null = null;
 
 type OverviewMetricTone = 'default' | 'healthy' | 'warning' | 'muted';
-type RightRailDensity = 'standard' | 'ultra-compact';
 
-function getSectionEls(): HTMLElement[] {
-  if (typeof (inspectorEl as Element).querySelectorAll !== 'function') {
-    return [];
-  }
-  return Array.from(inspectorEl.querySelectorAll<HTMLElement>('.context-inspector-section'));
-}
+const queueFrame = typeof requestAnimationFrame === 'function'
+  ? requestAnimationFrame
+  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
 
 function getInspectorProviderId(): ProviderId {
   const project = appState.activeProject;
@@ -39,24 +31,6 @@ function getInspectorProviderId(): ProviderId {
 
   const recentCliSession = [...project.sessions].reverse().find(session => !session.type);
   return (recentCliSession?.providerId || 'claude') as ProviderId;
-}
-
-function getRightRailDensity(): RightRailDensity {
-  return appState.preferences.rightRailDensity === 'ultra-compact'
-    ? 'ultra-compact'
-    : 'standard';
-}
-
-function updateDensityToggleButton(): void {
-  if (!densityBtn) return;
-  const density = getRightRailDensity();
-  const isUltra = density === 'ultra-compact';
-  densityBtn.textContent = isUltra ? 'Ultra' : 'Standard';
-  densityBtn.dataset.state = isUltra ? 'active' : 'default';
-  densityBtn.title = isUltra
-    ? 'Switch to standard right rail'
-    : 'Switch to ultra compact right rail';
-  densityBtn.setAttribute('aria-label', densityBtn.title);
 }
 
 function renderOverviewMetric(
@@ -106,6 +80,7 @@ function describeProjectContext(projectContext?: ProjectContextState): {
 function renderOverview(): void {
   const project = appState.activeProject;
   if (!project) {
+    lastOverviewSignature = null;
     overviewEl.innerHTML = '';
     return;
   }
@@ -130,6 +105,22 @@ function renderOverview(): void {
         : renderOverviewMetric('Changes', String(changeCount), 'tracked', 'warning')
     : renderOverviewMetric('Changes', 'No', 'Git', 'muted');
   const projectContextSummary = describeProjectContext(project.projectContext);
+  const overviewSignature = JSON.stringify({
+    projectId: project.id,
+    projectName: project.name,
+    providerLabel,
+    surfaceLabel,
+    sessionCount,
+    runCount,
+    conflictCount: gitStatus?.conflicted ?? 0,
+    changeCount,
+    contextTone: projectContextSummary.tone,
+    contextCopy: projectContextSummary.copy,
+  });
+  if (overviewSignature === lastOverviewSignature) {
+    return;
+  }
+  lastOverviewSignature = overviewSignature;
 
   overviewEl.innerHTML = `
     <section class="inspector-overview-card">
@@ -156,13 +147,10 @@ function renderOverview(): void {
   `;
 }
 
-function applyRailMode(): void {
+function syncRailSignal(): void {
   const project = appState.activeProject;
   if (!project) {
-    inspectorEl.dataset.railMode = 'normal';
-    for (const sectionEl of getSectionEls()) {
-      sectionEl.dataset.presentation = 'compact';
-    }
+    inspectorEl.dataset.railSignal = 'default';
     return;
   }
 
@@ -171,24 +159,11 @@ function applyRailMode(): void {
     gitStatus?.isGitRepo && (gitStatus.staged + gitStatus.modified + gitStatus.untracked) > 0,
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
-  const hasToolingContext = true;
-  const density = getRightRailDensity();
-  const preferUltraCompact = density === 'ultra-compact';
-
-  const mode = deriveRightRailMode({
-    hasDirtyGit,
-    hasGitConflicts,
-    hasToolingContext,
-    preferUltraCompact,
-  });
-  const presentation = deriveRightRailPresentation(mode, { hasDirtyGit, hasGitConflicts });
-
-  inspectorEl.dataset.railMode = mode;
-  inspectorEl.dataset.railDensity = density;
-  for (const sectionEl of getSectionEls()) {
-    const sectionId = sectionEl.dataset.section as RightRailSectionId | undefined;
-    sectionEl.dataset.presentation = sectionId ? presentation[sectionId] : 'compact';
+  const nextSignal = hasGitConflicts ? 'warning' : hasDirtyGit ? 'active' : 'default';
+  if (inspectorEl.dataset.railSignal === nextSignal) {
+    return;
   }
+  inspectorEl.dataset.railSignal = nextSignal;
 }
 
 function syncInspectorOpenState(): void {
@@ -200,9 +175,19 @@ function syncInspectorOpenState(): void {
 
 function renderInspectorChrome(): void {
   renderOverview();
-  applyRailMode();
-  updateDensityToggleButton();
+  syncRailSignal();
   syncInspectorOpenState();
+}
+
+function scheduleInspectorRender(): void {
+  if (renderQueued) {
+    return;
+  }
+  renderQueued = true;
+  queueFrame(() => {
+    renderQueued = false;
+    renderInspectorChrome();
+  });
 }
 
 export function setContextInspectorOpen(next: boolean): void {
@@ -220,26 +205,19 @@ export function toggleContextInspector(): void {
 export function initContextInspector(): void {
   closeBtn.addEventListener('click', () => setContextInspectorOpen(false));
   openBtn?.addEventListener('click', () => setContextInspectorOpen(true));
-  densityBtn?.addEventListener('click', () => {
-    const nextDensity = getRightRailDensity() === 'ultra-compact'
-      ? 'standard'
-      : 'ultra-compact';
-    appState.setPreference('rightRailDensity', nextDensity);
-    renderInspectorChrome();
-  });
 
   appState.on('project-changed', () => {
     if (!appState.activeProject) setContextInspectorOpen(false);
-    renderInspectorChrome();
+    scheduleInspectorRender();
   });
-  appState.on('state-loaded', renderInspectorChrome);
-  appState.on('preferences-changed', renderInspectorChrome);
-  appState.on('session-changed', renderInspectorChrome);
-  appState.on('session-added', renderInspectorChrome);
-  appState.on('session-removed', renderInspectorChrome);
-  appState.on('history-changed', renderInspectorChrome);
+  appState.on('state-loaded', scheduleInspectorRender);
+  appState.on('preferences-changed', scheduleInspectorRender);
+  appState.on('session-changed', scheduleInspectorRender);
+  appState.on('session-added', scheduleInspectorRender);
+  appState.on('session-removed', scheduleInspectorRender);
+  appState.on('history-changed', scheduleInspectorRender);
   onGitStatusChange((projectId) => {
-    if (projectId === appState.activeProject?.id) renderInspectorChrome();
+    if (projectId === appState.activeProject?.id) scheduleInspectorRender();
   });
 
   setContextInspectorOpen(true);

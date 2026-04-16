@@ -65,6 +65,7 @@ const PROVIDER_LABELS: Record<string, string> = {
 let container: HTMLElement;
 let searchInput: HTMLInputElement;
 let listEl: HTMLElement;
+let resultCountEl: HTMLElement | null = null;
 let collapsed = true;
 let compactExpanded = false;
 let bookmarkFilterActive = false;
@@ -251,6 +252,10 @@ function render(): void {
 
   const actions = document.createElement('div');
   actions.className = 'history-actions';
+  resultCountEl = document.createElement('span');
+  resultCountEl.className = 'history-result-count control-chip';
+  resultCountEl.textContent = `${history.length}`;
+  actions.appendChild(resultCountEl);
   actions.appendChild(bookmarkFilter);
   actions.appendChild(clearBtn);
   toolbar.appendChild(actions);
@@ -271,6 +276,10 @@ function renderList(history: ArchivedSession[]): void {
     .filter((a) => a.name.toLowerCase().includes(filter))
     .filter((a) => !bookmarkFilterActive || a.bookmarked)
     .reverse(); // newest first
+  if (resultCountEl) {
+    resultCountEl.textContent = `${Math.min(filtered.length, MAX_VISIBLE)}/${history.length}`;
+    resultCountEl.title = `${filtered.length} matching run${filtered.length === 1 ? '' : 's'}`;
+  }
 
   listEl.innerHTML = '';
 

@@ -254,6 +254,20 @@
   justify-content: flex-end;
 }
 
+.history-result-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 70%, transparent);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
 .history-bookmark-filter {
   display: inline-block;
   min-height: 30px;

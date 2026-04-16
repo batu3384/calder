@@ -24,6 +24,11 @@ import {
   resumeProjectBackgroundTaskInNewSession,
   sendProjectBackgroundTaskToSelectedSession,
 } from '../project-background-task-actions.js';
+import {
+  checkForAppUpdates,
+  getUpdateCenterState,
+  onUpdateCenterChange,
+} from '../update-center.js';
 import type {
   CliProviderMeta,
   ProjectCheckpointDocument,
@@ -124,6 +129,7 @@ export function showPreferencesModal(): void {
   let debugModeCheckbox: HTMLInputElement | null = null;
   let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement } | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
+  let aboutUpdateCleanup: (() => void) | null = null;
 
   function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string) {
     const intro = document.createElement('div');
@@ -2461,8 +2467,16 @@ export function showPreferencesModal(): void {
     }
   }
 
+  function cleanupAboutUpdateListeners() {
+    if (aboutUpdateCleanup) {
+      aboutUpdateCleanup();
+      aboutUpdateCleanup = null;
+    }
+  }
+
   function renderSection(section: Section) {
     cleanupRecorder();
+    cleanupAboutUpdateListeners();
     currentSection = section;
     content.innerHTML = '';
     content.scrollTop = 0;
@@ -2875,37 +2889,86 @@ export function showPreferencesModal(): void {
       updateBtn.className = 'about-update-btn';
       updateBtn.textContent = 'Check for Updates';
 
-      const updateStatus = document.createElement('span');
+      const updateInfo = document.createElement('div');
+      updateInfo.className = 'about-update-info';
+
+      const updateStatus = document.createElement('div');
       updateStatus.className = 'about-update-status';
 
-      updateBtn.addEventListener('click', () => {
-        updateBtn.disabled = true;
-        updateStatus.textContent = 'Checking...';
-        window.calder.update.checkNow().then(() => {
-          // If no update event fires within a few seconds, show "up to date"
-          const timeout = setTimeout(() => {
-            updateStatus.textContent = 'You\u2019re up to date.';
-            updateBtn.disabled = false;
-          }, 5000);
-          const unsub = window.calder.update.onAvailable((info) => {
-            clearTimeout(timeout);
-            updateStatus.textContent = `Update v${info.version} available — downloading...`;
-            unsub();
-          });
-          const unsubErr = window.calder.update.onError(() => {
-            clearTimeout(timeout);
-            updateStatus.textContent = 'Update check failed.';
-            updateBtn.disabled = false;
-            unsubErr();
-          });
-        }).catch(() => {
-          updateStatus.textContent = 'Update check failed.';
+      const updateMeta = document.createElement('div');
+      updateMeta.className = 'about-update-meta';
+
+      const updateProgress = document.createElement('div');
+      updateProgress.className = 'about-update-progress hidden';
+
+      const updateProgressFill = document.createElement('div');
+      updateProgressFill.className = 'about-update-progress-fill';
+      updateProgress.appendChild(updateProgressFill);
+
+      const renderAppUpdateState = (
+        appUpdateState: ReturnType<typeof getUpdateCenterState>['app'],
+      ) => {
+        if (appUpdateState.phase === 'checking') {
+          updateBtn.disabled = true;
+          updateStatus.textContent = 'Checking for updates...';
+          updateMeta.textContent = 'Contacting update server.';
+          updateProgress.classList.add('hidden');
+          return;
+        }
+        if (appUpdateState.phase === 'downloading') {
+          updateBtn.disabled = true;
+          const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new version';
+          const percent = typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
+          updateStatus.textContent = `Downloading ${versionLabel}...`;
+          updateMeta.textContent = `${percent}% completed`;
+          updateProgress.classList.remove('hidden');
+          updateProgressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+          return;
+        }
+        if (appUpdateState.phase === 'ready_to_restart') {
           updateBtn.disabled = false;
-        });
+          const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new update';
+          updateStatus.textContent = `${versionLabel} is ready. Restart to apply.`;
+          updateMeta.textContent = 'The update is downloaded.';
+          updateProgress.classList.remove('hidden');
+          updateProgressFill.style.width = '100%';
+          return;
+        }
+        if (appUpdateState.phase === 'up_to_date') {
+          updateBtn.disabled = false;
+          updateStatus.textContent = 'You’re up to date.';
+          updateMeta.textContent = appUpdateState.lastCheckedAt
+            ? `Checked ${formatRelativeTimestamp(appUpdateState.lastCheckedAt)}`
+            : 'No recent check.';
+          updateProgress.classList.add('hidden');
+          return;
+        }
+        if (appUpdateState.phase === 'error') {
+          updateBtn.disabled = false;
+          updateStatus.textContent = 'Update check failed.';
+          updateMeta.textContent = appUpdateState.errorMessage ?? 'Try again in a moment.';
+          updateProgress.classList.add('hidden');
+          return;
+        }
+        updateBtn.disabled = false;
+        updateStatus.textContent = 'No check yet.';
+        updateMeta.textContent = 'Use this to check for a newer Calder build.';
+        updateProgress.classList.add('hidden');
+      };
+
+      updateBtn.addEventListener('click', () => {
+        void checkForAppUpdates();
       });
 
+      updateInfo.appendChild(updateStatus);
+      updateInfo.appendChild(updateMeta);
+      updateInfo.appendChild(updateProgress);
       updateRow.appendChild(updateBtn);
-      updateRow.appendChild(updateStatus);
+      updateRow.appendChild(updateInfo);
+      renderAppUpdateState(getUpdateCenterState().app);
+      aboutUpdateCleanup = onUpdateCenterChange((snapshot) => {
+        renderAppUpdateState(snapshot.app);
+      });
 
       const linksDiv = document.createElement('div');
       linksDiv.className = 'about-links about-link-grid';
@@ -3398,6 +3461,7 @@ export function showPreferencesModal(): void {
 
   registerModalCleanup(() => {
     cleanupRecorder();
+    cleanupAboutUpdateListeners();
     if (defaultProviderSelect) defaultProviderSelect.destroy();
     if (languageSelect) languageSelect.destroy();
     btnConfirm.removeEventListener('click', handleConfirm);

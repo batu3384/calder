@@ -42,10 +42,8 @@ describe('context language contract', () => {
     expect(html).not.toContain('Config');
   });
 
-  it('marks the right rail with rail mode and keeps a dedicated project snapshot card', () => {
-    expect(inspectorSource).toContain('deriveRightRailMode');
-    expect(inspectorSource).toContain('deriveRightRailPresentation');
-    expect(inspectorSource).toContain('inspectorEl.dataset.railMode');
+  it('keeps a dedicated project snapshot card with stable rail section structure', () => {
+    expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
     expect(inspectorSource).toContain('Project Snapshot');
     expect(html).toContain('data-section="capabilities"');
     expect(html).toContain('data-section="git"');

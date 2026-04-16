@@ -12,8 +12,11 @@ let collapsed = false;
 let compactExpanded = false;
 let lastCountKey = '';
 let lastFilesKey = '';
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshQueued = false;
 let activeContextMenu: HTMLElement | null = null;
+const queueFrame = typeof requestAnimationFrame === 'function'
+  ? requestAnimationFrame
+  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
 
 function hideGitContextMenu(): void {
   if (activeContextMenu) {
@@ -131,6 +134,13 @@ function createActionButton(title: string, icon: string, onClick: (e: Event) => 
 function shortPath(fullPath: string): string {
   const parts = fullPath.split('/');
   return parts.length > 2 ? '.../' + parts.slice(-2).join('/') : fullPath;
+}
+
+function compactGitPath(fullPath: string): string {
+  const normalized = fullPath.replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  if (parts.length <= 3) return normalized;
+  return `.../${parts.slice(-3).join('/')}`;
 }
 
 function getSectionPresentation(container: HTMLElement): SectionPresentation {
@@ -281,13 +291,14 @@ function applyGitPanelVisibility(): void {
   container.classList.toggle('hidden', !visible);
 }
 
-/** Debounced refresh — coalesces rapid-fire events into a single render */
+/** Frame-batched refresh — coalesces rapid-fire events into a single render */
 function scheduleRefresh(): void {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(() => {
-    refreshTimer = null;
-    refresh();
-  }, 100);
+  if (refreshQueued) return;
+  refreshQueued = true;
+  queueFrame(() => {
+    refreshQueued = false;
+    void refresh();
+  });
 }
 
 async function refresh(): Promise<void> {
@@ -401,7 +412,7 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
       if (rendered >= MAX_FILES) break;
       const item = document.createElement('div');
       item.className = 'config-item config-item-clickable calder-list-row';
-      item.innerHTML = `${statusBadge(entry)}<span class="config-item-detail" title="${esc(entry.path)}">${esc(entry.path)}</span>`;
+      item.innerHTML = `${statusBadge(entry)}<span class="config-item-detail git-file-path" title="${esc(entry.path)}">${esc(compactGitPath(entry.path))}</span>`;
 
       // Hover action buttons
       const actions = document.createElement('span');

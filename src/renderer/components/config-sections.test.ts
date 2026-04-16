@@ -86,19 +86,22 @@ describe('getConfigProviderId', () => {
     expect(source).toContain('setAutoApprovalMode');
     expect(source).toContain('setSessionAutoApprovalOverride');
     expect(source).toContain('auto-approval-control');
+    expect(source).toContain('Full Auto (All)');
+    expect(source).toContain('Session policy is temporary and takes priority');
+    expect(source).toContain('Mode Guide');
+    expect(source).toContain('auto-approval-mode-guide-toggle');
   });
 
   it('shows inherit state for project scope instead of mirroring global mode', async () => {
     const source = await import('node:fs/promises')
       .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
 
-    expect(source).toContain('Inherit (Global)');
-    expect(source).toContain('Inherit (Project/Global)');
-    expect(source).toContain('Global (This Mac)');
-    expect(source).toContain('Project (This Repo)');
-    expect(source).toContain('Session (Active CLI)');
-    expect(source).toContain('Current Behavior');
-    expect(source).toContain('Policy Stack');
+    expect(source).toContain('Use Global Default');
+    expect(source).toContain('Use Project / Global Default');
+    expect(source).toContain('Global Default');
+    expect(source).toContain('Project Policy');
+    expect(source).toContain('Session Policy');
+    expect(source).toContain('Effective Mode');
     expect(source).toContain('PROJECT_INHERIT_VALUE');
     expect(source).toContain('SESSION_INHERIT_VALUE');
     expect(source).toContain('projectSelect.value === PROJECT_INHERIT_VALUE');
@@ -118,10 +121,10 @@ describe('getConfigProviderId', () => {
     });
 
     expect(summary.global).toBe('Edit Only');
-    expect(summary.project).toBe('Inherit (Global)');
-    expect(summary.session).toBe('Inherit (Project/Global)');
+    expect(summary.project).toBe('Use Global Default');
+    expect(summary.session).toBe('Use Project / Global Default');
     expect(summary.effectiveSource).toBe('Global default');
-    expect(summary.effectiveExplanation).toBe('Project and Session are inherit, so Global setting applies.');
+    expect(summary.effectiveExplanation).toBe('Project and Session follow higher scope, so Global setting applies.');
     expect(summary.effectiveBehavior).toBe('Auto-approves file edits only.');
   });
 
@@ -143,6 +146,39 @@ describe('getConfigProviderId', () => {
     expect(summary.effectiveSource).toBe('Session override');
     expect(summary.effectiveExplanation).toBe('Session override is active, so Session setting applies.');
     expect(summary.effectiveBehavior).toBe('Auto-approves file edits and safe read-only commands.');
+  });
+
+  it('shows fallback explanation when nothing is explicitly configured', async () => {
+    const { describeAutoApprovalScopes } = await import('./config-sections.js');
+    const summary = describeAutoApprovalScopes({
+      globalMode: 'off',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'off',
+      policySource: 'fallback',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+
+    expect(summary.effectiveSource).toBe('Fallback default');
+    expect(summary.effectiveExplanation).toBe('No explicit setting found; fallback Off applies.');
+    expect(summary.effectiveBehavior).toBe('Always asks for approval before actions.');
+  });
+
+  it('describes full_auto behavior clearly', async () => {
+    const { describeAutoApprovalScopes } = await import('./config-sections.js');
+    const summary = describeAutoApprovalScopes({
+      globalMode: 'full_auto',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'full_auto',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+
+    expect(summary.global).toBe('Full Auto (All)');
+    expect(summary.effectiveBehavior).toBe('Auto-approves every operation, including risky and destructive actions.');
   });
 
   it('renders concise Turkish metadata summaries for right-rail skills and commands', async () => {

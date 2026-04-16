@@ -70,20 +70,31 @@
               <span class="context-inspector-title">Overview</span>
             </div>
             <div class="context-inspector-header-actions">
-              <button id="btn-toggle-right-rail-density" class="icon-btn context-density-btn" title="Toggle ultra compact right rail" aria-label="Toggle ultra compact right rail">Ultra</button>
               <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
             </div>
           </div>
           <div id="context-inspector-overview"></div>
           <div id="context-inspector-sections">
             <section class="context-inspector-section" data-section="capabilities">
-              <div id="config-sections"></div>
+              <header class="context-inspector-block-header">
+                <span class="context-inspector-block-title">Controls</span>
+                <span class="context-inspector-block-copy">Provider, approvals, and project rules.</span>
+              </header>
+              <div id="config-sections" class="context-inspector-block-body"></div>
             </section>
             <section class="context-inspector-section" data-section="git">
-              <div id="git-panel"></div>
+              <header class="context-inspector-block-header">
+                <span class="context-inspector-block-title">Git Workspace</span>
+                <span class="context-inspector-block-copy">Worktree status, branches, and quick git actions.</span>
+              </header>
+              <div id="git-panel" class="context-inspector-block-body"></div>
             </section>
             <section class="context-inspector-section" data-section="activity">
-              <div id="session-history"></div>
+              <header class="context-inspector-block-header">
+                <span class="context-inspector-block-title">Run Activity</span>
+                <span class="context-inspector-block-copy">Recent executions, notes, and session timeline.</span>
+              </header>
+              <div id="session-history" class="context-inspector-block-body"></div>
             </section>
           </div>
         </aside>

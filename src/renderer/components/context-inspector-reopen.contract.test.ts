@@ -17,5 +17,9 @@ describe('context inspector reopen contract', () => {
     expect(source).toContain('syncInspectorOpenState');
     expect(styles).toContain('.context-inspector-reopen');
     expect(styles).toContain('opacity: 0.96;');
+    expect(styles).toContain('top: 50%;');
+    expect(styles).toContain('right: 0;');
+    expect(styles).toContain('transform: translateY(-50%);');
+    expect(styles).toContain('writing-mode: vertical-rl;');
   });
 });

@@ -19,8 +19,7 @@ import type {
 
 const collapsed: Record<string, boolean> = {};
 let refreshGeneration = 0;
-type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
-let lastCapabilitiesPresentation: SectionPresentation = 'expanded';
+let refreshQueued = false;
 
 type ToolchainSection = {
   id: string;
@@ -110,20 +109,25 @@ const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, string> = {
   off: 'Off',
   edit_only: 'Edit Only',
   edit_plus_safe_tools: 'Edit + Safe Tools',
+  full_auto: 'Full Auto (All)',
 };
 
 const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string }> = [
   { value: 'off', label: AUTO_APPROVAL_MODE_LABELS.off },
   { value: 'edit_only', label: AUTO_APPROVAL_MODE_LABELS.edit_only },
   { value: 'edit_plus_safe_tools', label: AUTO_APPROVAL_MODE_LABELS.edit_plus_safe_tools },
+  { value: 'full_auto', label: AUTO_APPROVAL_MODE_LABELS.full_auto },
 ];
 const PROJECT_INHERIT_VALUE = '__inherit_global__';
 const SESSION_INHERIT_VALUE = '';
+const queueFrame = typeof requestAnimationFrame === 'function'
+  ? requestAnimationFrame
+  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
 
 const AUTO_APPROVAL_SCOPE_HELP = {
-  global: 'Default for this Mac.',
-  project: 'Override for this repository.',
-  session: 'Temporary override for the active session.',
+  global: 'Default policy for this Mac.',
+  project: 'Repository-level policy.',
+  session: 'Temporary policy for the active session.',
 } as const;
 
 function autoApprovalSourceLabel(source: AutoApprovalPolicySource): string {
@@ -147,7 +151,23 @@ function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
   if (mode === 'edit_only') {
     return 'Auto-approves file edits only.';
   }
-  return 'Auto-approves file edits and safe read-only commands.';
+  if (mode === 'edit_plus_safe_tools') {
+    return 'Auto-approves file edits and safe read-only commands.';
+  }
+  return 'Auto-approves every operation, including risky and destructive actions.';
+}
+
+function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
+  if (mode === 'off') {
+    return 'Asks before approving operations.';
+  }
+  if (mode === 'edit_only') {
+    return 'Auto-approves file edits.';
+  }
+  if (mode === 'edit_plus_safe_tools') {
+    return 'Auto-approves edits and read-only safe commands.';
+  }
+  return 'Auto-approves every operation without asking.';
 }
 
 export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoApprovalState): {
@@ -162,19 +182,19 @@ export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoAp
   if (autoApproval.policySource === 'session') {
     effectiveExplanation = 'Session override is active, so Session setting applies.';
   } else if (autoApproval.policySource === 'project') {
-    effectiveExplanation = 'Session is inherit, so Project setting applies.';
+    effectiveExplanation = 'Session follows Project, so Project setting applies.';
   } else if (autoApproval.policySource === 'global') {
-    effectiveExplanation = 'Project and Session are inherit, so Global setting applies.';
+    effectiveExplanation = 'Project and Session follow higher scope, so Global setting applies.';
   }
 
   return {
     global: AUTO_APPROVAL_MODE_LABELS[autoApproval.globalMode],
     project: autoApproval.projectMode
       ? AUTO_APPROVAL_MODE_LABELS[autoApproval.projectMode]
-      : 'Inherit (Global)',
+      : 'Use Global Default',
     session: autoApproval.sessionMode
       ? AUTO_APPROVAL_MODE_LABELS[autoApproval.sessionMode]
-      : 'Inherit (Project/Global)',
+      : 'Use Project / Global Default',
     effectiveSource: autoApprovalSourceLabel(autoApproval.policySource),
     effectiveExplanation,
     effectiveBehavior: autoApprovalModeBehavior(autoApproval.effectiveMode),
@@ -183,7 +203,6 @@ export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoAp
 
 function createAutoApprovalScopeCard(
   title: string,
-  currentValue: string,
   helperText: string,
   select: HTMLSelectElement,
 ): HTMLDivElement {
@@ -191,31 +210,25 @@ function createAutoApprovalScopeCard(
   card.className = 'auto-approval-control auto-approval-scope-card';
   card.title = helperText;
 
-  const header = document.createElement('div');
-  header.className = 'auto-approval-scope-header';
+  const row = document.createElement('div');
+  row.className = 'auto-approval-scope-row';
 
   const titleEl = document.createElement('div');
   titleEl.className = 'auto-approval-scope-title';
   titleEl.textContent = title;
 
-  const currentChip = document.createElement('span');
-  currentChip.className = 'scope-badge control-chip';
-  currentChip.textContent = `Currently: ${currentValue}`;
-
-  header.appendChild(titleEl);
-  header.appendChild(currentChip);
+  const control = document.createElement('div');
+  control.className = 'auto-approval-scope-control';
+  control.appendChild(select);
+  row.appendChild(titleEl);
+  row.appendChild(control);
 
   const helper = document.createElement('div');
   helper.className = 'auto-approval-scope-helper';
   helper.textContent = helperText;
 
-  const control = document.createElement('div');
-  control.className = 'auto-approval-scope-control';
-  control.appendChild(select);
-
-  card.appendChild(header);
+  card.appendChild(row);
   card.appendChild(helper);
-  card.appendChild(control);
   return card;
 }
 
@@ -413,15 +426,6 @@ function getVisibleToolchainSections(sections: ToolchainSection[]): ToolchainSec
   return sections.filter((section) => section.count > 0 || !!section.onAdd);
 }
 
-function getCapabilitiesPresentation(container: HTMLElement): SectionPresentation {
-  const wrapper = container.closest('.context-inspector-section') as HTMLElement | null;
-  const value = wrapper?.dataset?.presentation;
-  if (value === 'compact' || value === 'expanded' || value === 'promoted' || value === 'ultra') {
-    return value;
-  }
-  return 'expanded';
-}
-
 function renderToolchainSummary(
   providerId: ProviderId,
   sections: ToolchainSection[],
@@ -478,6 +482,7 @@ function renderAutoApprovalSection(
   projectPath: string,
   providerId: ProviderId,
   governanceState: ProjectGovernanceState | undefined,
+  supportsPermissionHooks: boolean,
 ): HTMLElement | null {
   const autoApproval = governanceState?.autoApproval;
   if (!autoApproval) return null;
@@ -491,20 +496,44 @@ function renderAutoApprovalSection(
   const scopeSummary = describeAutoApprovalScopes(autoApproval);
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
-      <span class="config-item-name">Current Behavior</span>
+      <span class="config-item-name">Effective Mode</span>
       <span class="scope-badge control-chip">${esc(AUTO_APPROVAL_MODE_LABELS[autoApproval.effectiveMode])}</span>
     </div>
-    <div class="auto-approval-summary-meta">
-      ${esc(scopeSummary.effectiveBehavior)}
+    <div class="auto-approval-meta-card">
+      <div class="auto-approval-meta-row">
+        <span class="auto-approval-meta-label">Effective Source</span>
+        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveSource)}</span>
+      </div>
+      <div class="auto-approval-meta-row">
+        <span class="auto-approval-meta-label">Current Behavior</span>
+        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveBehavior)}</span>
+      </div>
+      <div class="auto-approval-meta-row">
+        <span class="auto-approval-meta-label">Provider</span>
+        <span class="auto-approval-meta-value">${esc(providerLabel(providerId))}</span>
+      </div>
     </div>
-    <div class="auto-approval-summary-meta">
-      Resolved from: ${esc(scopeSummary.effectiveSource)} · Provider: ${esc(providerLabel(providerId))}
+    <div class="auto-approval-policy-stack" aria-label="Policy Stack">
+      <div class="auto-approval-policy-row">
+        <span class="auto-approval-policy-name">Global Default</span>
+        <span class="scope-badge control-chip">${esc(scopeSummary.global)}</span>
+      </div>
+      <div class="auto-approval-policy-row">
+        <span class="auto-approval-policy-name">Project Policy</span>
+        <span class="scope-badge control-chip">${esc(scopeSummary.project)}</span>
+      </div>
+      <div class="auto-approval-policy-row">
+        <span class="auto-approval-policy-name">Session Policy</span>
+        <span class="scope-badge control-chip">${esc(scopeSummary.session)}</span>
+      </div>
+      <div class="auto-approval-policy-row is-effective">
+        <span class="auto-approval-policy-name">Effective</span>
+        <span class="scope-badge control-chip">${esc(AUTO_APPROVAL_MODE_LABELS[autoApproval.effectiveMode])}</span>
+      </div>
     </div>
-    <div class="auto-approval-state-strip">
-      <span class="control-chip">G: ${esc(scopeSummary.global)}</span>
-      <span class="control-chip">P: ${esc(scopeSummary.project)}</span>
-      <span class="control-chip">S: ${esc(scopeSummary.session)}</span>
-    </div>
+    ${autoApproval.effectiveMode === 'full_auto'
+      ? '<div class="auto-approval-risk-note">Warning: Full Auto approves all operations without asking.</div>'
+      : ''}
   `;
   item.appendChild(summary);
 
@@ -542,10 +571,10 @@ function renderAutoApprovalSection(
     return select;
   };
 
-  const stackIntro = document.createElement('div');
-  stackIntro.className = 'auto-approval-stack-intro';
-  stackIntro.innerHTML = `<div class="auto-approval-stack-title">Policy Stack</div>`;
-  controls.appendChild(stackIntro);
+  const controlsIntro = document.createElement('div');
+  controlsIntro.className = 'auto-approval-controls-intro';
+  controlsIntro.textContent = 'Session policy is temporary and takes priority (Session > Project > Global).';
+  controls.appendChild(controlsIntro);
 
   const globalSelect = createModeSelect(autoApproval.globalMode, AUTO_APPROVAL_SCOPE_HELP.global, async (nextMode) => {
     const nextState = await window.calder.governance.setAutoApprovalMode(
@@ -558,9 +587,8 @@ function renderAutoApprovalSection(
     void refresh();
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Global (This Mac)',
-    scopeSummary.global,
-    AUTO_APPROVAL_SCOPE_HELP.global,
+    'Global Default',
+    `${AUTO_APPROVAL_SCOPE_HELP.global} Current: ${scopeSummary.global}.`,
     globalSelect,
   ));
 
@@ -569,7 +597,7 @@ function renderAutoApprovalSection(
   projectSelect.title = AUTO_APPROVAL_SCOPE_HELP.project;
   const projectInheritOption = document.createElement('option');
   projectInheritOption.value = PROJECT_INHERIT_VALUE;
-  projectInheritOption.textContent = 'Inherit (Global)';
+  projectInheritOption.textContent = 'Use Global Default';
   if (autoApproval.projectMode === undefined) {
     projectInheritOption.selected = true;
   }
@@ -602,18 +630,19 @@ function renderAutoApprovalSection(
     }
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Project (This Repo)',
-    scopeSummary.project,
-    AUTO_APPROVAL_SCOPE_HELP.project,
+    'Project Policy',
+    `${AUTO_APPROVAL_SCOPE_HELP.project} Current: ${scopeSummary.project}.`,
     projectSelect,
   ));
 
   const sessionSelect = document.createElement('select');
   sessionSelect.className = 'auto-approval-select';
-  sessionSelect.title = AUTO_APPROVAL_SCOPE_HELP.session;
+  sessionSelect.title = supportsPermissionHooks
+    ? AUTO_APPROVAL_SCOPE_HELP.session
+    : 'Auto approval unavailable';
   const inheritOption = document.createElement('option');
   inheritOption.value = SESSION_INHERIT_VALUE;
-  inheritOption.textContent = 'Inherit (Project/Global)';
+  inheritOption.textContent = 'Use Project / Global Default';
   sessionSelect.appendChild(inheritOption);
   for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
     const el = document.createElement('option');
@@ -627,7 +656,7 @@ function renderAutoApprovalSection(
   if (autoApproval.sessionMode === undefined) {
     inheritOption.selected = true;
   }
-  sessionSelect.disabled = !sessionId;
+  sessionSelect.disabled = !sessionId || !supportsPermissionHooks;
   sessionSelect.addEventListener('change', async () => {
     if (!sessionId) return;
     const selectedMode = sessionSelect.value === SESSION_INHERIT_VALUE
@@ -644,11 +673,44 @@ function renderAutoApprovalSection(
     }
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Session (Active CLI)',
-    scopeSummary.session,
-    AUTO_APPROVAL_SCOPE_HELP.session,
+    'Session Policy',
+    !supportsPermissionHooks
+      ? 'Active provider does not support permission hooks, so session auto-approval cannot run.'
+      : (sessionId
+        ? `${AUTO_APPROVAL_SCOPE_HELP.session} Current: ${scopeSummary.session}.`
+        : 'Open a CLI session to apply a temporary session override.'),
     sessionSelect,
   ));
+
+  const modeGuide = document.createElement('div');
+  modeGuide.className = 'auto-approval-mode-guide';
+  const modeGuideToggle = document.createElement('button');
+  modeGuideToggle.type = 'button';
+  modeGuideToggle.className = 'auto-approval-mode-guide-toggle';
+  modeGuideToggle.textContent = 'Mode Guide';
+  modeGuideToggle.setAttribute('aria-expanded', 'false');
+
+  const modeGuideBody = document.createElement('div');
+  modeGuideBody.className = 'auto-approval-mode-guide-body hidden';
+  for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
+    const row = document.createElement('div');
+    row.className = 'auto-approval-mode-guide-row';
+    row.innerHTML = `
+      <span class="auto-approval-mode-guide-row-label">${esc(option.label)}</span>
+      <span class="auto-approval-mode-guide-row-detail">${esc(autoApprovalModeGuideSummary(option.value))}</span>
+    `;
+    modeGuideBody.appendChild(row);
+  }
+
+  modeGuideToggle.addEventListener('click', () => {
+    const expanded = modeGuideToggle.getAttribute('aria-expanded') === 'true';
+    modeGuideToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    modeGuideBody.classList.toggle('hidden', expanded);
+  });
+
+  modeGuide.appendChild(modeGuideToggle);
+  modeGuide.appendChild(modeGuideBody);
+  controls.appendChild(modeGuide);
 
   item.appendChild(controls);
   return renderSection('auto-approval', 'Auto Approval', [item], 1, undefined, 'Auto approval unavailable');
@@ -686,13 +748,6 @@ async function refresh(): Promise<void> {
   const container = document.getElementById('config-sections');
   if (!container) return;
   const generation = ++refreshGeneration;
-  const presentation = getCapabilitiesPresentation(container);
-  if (presentation === 'ultra' && lastCapabilitiesPresentation !== 'ultra') {
-    for (const key of Object.keys(collapsed)) {
-      collapsed[key] = true;
-    }
-  }
-  lastCapabilitiesPresentation = presentation;
 
   applyVisibility();
 
@@ -766,6 +821,7 @@ async function refresh(): Promise<void> {
     project.path,
     providerId,
     project.projectGovernance,
+    Boolean(meta?.capabilities.hookStatus),
   );
   if (autoApprovalSection) {
     container.appendChild(autoApprovalSection);
@@ -785,6 +841,17 @@ async function refresh(): Promise<void> {
   }
 }
 
+function scheduleRefresh(): void {
+  if (refreshQueued) {
+    return;
+  }
+  refreshQueued = true;
+  queueFrame(() => {
+    refreshQueued = false;
+    void refresh();
+  });
+}
+
 function watchActiveProject(): void {
   const project = appState.activeProject;
   if (project) {
@@ -793,9 +860,12 @@ function watchActiveProject(): void {
 }
 
 export function initConfigSections(): void {
-  appState.on('project-changed', () => { watchActiveProject(); refresh(); });
-  appState.on('state-loaded', () => { watchActiveProject(); refresh(); });
-  appState.on('session-changed', () => { watchActiveProject(); refresh(); });
-  appState.on('preferences-changed', () => applyVisibility());
-  window.calder.provider.onConfigChanged(() => refresh());
+  appState.on('project-changed', () => { watchActiveProject(); scheduleRefresh(); });
+  appState.on('state-loaded', () => { watchActiveProject(); scheduleRefresh(); });
+  appState.on('session-changed', () => { watchActiveProject(); scheduleRefresh(); });
+  appState.on('preferences-changed', () => {
+    applyVisibility();
+    scheduleRefresh();
+  });
+  window.calder.provider.onConfigChanged(() => scheduleRefresh());
 }

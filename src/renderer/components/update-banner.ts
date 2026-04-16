@@ -1,3 +1,5 @@
+import { getUpdateCenterState, onUpdateCenterChange } from '../update-center.js';
+
 export function initUpdateBanner(): void {
   const mainArea = document.getElementById('main-area');
   if (!mainArea) return;
@@ -43,26 +45,41 @@ export function initUpdateBanner(): void {
     }
   }
 
-  let latestVersion = '';
+  let previousPhase = getUpdateCenterState().app.phase;
 
-  window.calder.update.onAvailable((info) => {
-    latestVersion = info.version;
-    show(`Downloading update v${info.version}...`);
-  });
+  const render = (appUpdateState: ReturnType<typeof getUpdateCenterState>['app']) => {
+    const targetLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'update';
 
-  window.calder.update.onDownloadProgress((info) => {
-    const label = latestVersion ? `v${latestVersion}` : 'update';
-    show(`Downloading ${label}... ${info.percent}%`);
-  });
+    if (appUpdateState.phase === 'downloading') {
+      const percent = typeof appUpdateState.downloadPercent === 'number'
+        ? ` ${appUpdateState.downloadPercent}%`
+        : '';
+      show(`Downloading ${targetLabel}...${percent}`);
+    } else if (appUpdateState.phase === 'ready_to_restart') {
+      show(`Update ${targetLabel} ready.`, {
+        label: 'Restart',
+        action: () => {
+          void window.calder.update.install();
+        },
+      });
+    } else if (
+      appUpdateState.phase === 'up_to_date'
+      && (previousPhase === 'checking' || previousPhase === 'downloading')
+    ) {
+      show('You’re up to date.', undefined, 3600);
+    } else if (
+      appUpdateState.phase === 'error'
+      && (previousPhase === 'checking' || previousPhase === 'downloading')
+    ) {
+      show(appUpdateState.errorMessage ? `Update failed: ${appUpdateState.errorMessage}` : 'Update check failed.', undefined, 7000);
+    }
 
-  window.calder.update.onDownloaded((info) => {
-    show(`Update v${info.version} ready.`, {
-      label: 'Restart',
-      action: () => window.calder.update.install(),
-    });
-  });
+    previousPhase = appUpdateState.phase;
+  };
 
-  window.calder.update.onError(() => {
-    // Silently ignore update failures
+  render(getUpdateCenterState().app);
+  const unsubscribe = onUpdateCenterChange((snapshot) => {
+    render(snapshot.app);
   });
+  window.addEventListener('beforeunload', () => unsubscribe(), { once: true });
 }

@@ -28,11 +28,21 @@ import {
   createDiscoveredCliSurfaceProfile,
   getCliSurfaceProfileLabel,
 } from './cli-surface/profile.js';
+import {
+  cancelCliProviderUpdates,
+  getUpdateCenterState,
+  onUpdateCenterChange,
+  runCliProviderUpdates,
+  initUpdateCenter,
+  type CliProviderProgressState,
+  type CliUpdateCenterState,
+} from '../update-center.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
+const tabActionsEl = document.getElementById('tab-actions')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
@@ -44,8 +54,16 @@ let surfaceProfileSelect: CustomSelectInstance | null = null;
 let sessionProviderSelectorSignature = '';
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
-let cliUpdateInFlight = false;
-let cliUpdateResetTimer: number | null = null;
+let cliUpdatePanelEl: HTMLElement | null = null;
+let cliUpdatePanelVisible = false;
+let cliUpdatePanelStatusEl: HTMLElement | null = null;
+let cliUpdatePanelMetaEl: HTMLElement | null = null;
+let cliUpdatePanelProgressFillEl: HTMLElement | null = null;
+let cliUpdatePanelProgressLabelEl: HTMLElement | null = null;
+let cliUpdatePanelTimestampEl: HTMLElement | null = null;
+let cliUpdatePanelListEl: HTMLElement | null = null;
+let cliUpdatePanelCancelBtnEl: HTMLButtonElement | null = null;
+let unsubscribeUpdateCenter: (() => void) | null = null;
 
 function buildTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
@@ -75,10 +93,28 @@ function buildCliSurfaceTabTitle(project: ProjectRecord): string {
 }
 
 export function initTabBar(): void {
+  initUpdateCenter();
   btnAddSession.classList.add('tab-action-primary');
   btnUpdateCliTools.classList.add('tab-action-primary');
+  setupCliUpdatePanel();
+  unsubscribeUpdateCenter?.();
+  let lastCliPhase: CliUpdateCenterState['phase'] = getUpdateCenterState().cli.phase;
+  unsubscribeUpdateCenter = onUpdateCenterChange((snapshot) => {
+    renderCliUpdateButton(snapshot.cli);
+    renderCliUpdatePanel(snapshot.cli);
+    if (snapshot.cli.phase === 'running' && lastCliPhase !== 'running' && !cliUpdatePanelVisible) {
+      toggleCliUpdatePanel(true);
+    }
+    lastCliPhase = snapshot.cli.phase;
+  });
+
   btnUpdateCliTools.addEventListener('click', () => {
-    void runCliToolUpdates();
+    toggleCliUpdatePanel(true);
+    if (getUpdateCenterState().cli.phase !== 'running') {
+      void runCliProviderUpdates().catch((error) => {
+        console.error('[tab-bar] Failed to update CLI tools', error);
+      });
+    }
   });
   btnAddSession.addEventListener('click', () => quickNewSession());
   btnAddSession.addEventListener('contextmenu', (e) => {
@@ -136,12 +172,25 @@ export function initTabBar(): void {
   });
   appState.on('project-changed', renderGitStatus);
 
-  document.addEventListener('click', hideTabContextMenu);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTabContextMenu(); });
+  document.addEventListener('click', (event) => {
+    hideTabContextMenu();
+    if (!cliUpdatePanelVisible) return;
+    const target = event.target as Node | null;
+    if (!target) return;
+    if (cliUpdatePanelEl?.contains(target)) return;
+    if (btnUpdateCliTools.contains(target)) return;
+    toggleCliUpdatePanel(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    hideTabContextMenu();
+    toggleCliUpdatePanel(false);
+  });
 
   render();
   renderGitStatus();
   syncSessionProviderSelector();
+  renderCliUpdateButton(getUpdateCenterState().cli);
 }
 
 function destroySessionProviderSelector(): void {
@@ -589,94 +638,267 @@ function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): {
   updated: number;
   upToDate: number;
   skipped: number;
+  cancelled: number;
   error: number;
 } {
   let updated = 0;
   let upToDate = 0;
   let skipped = 0;
+  let cancelled = 0;
   let error = 0;
   for (const result of summary.results) {
     if (result.status === 'updated') updated += 1;
     else if (result.status === 'up_to_date') upToDate += 1;
     else if (result.status === 'skipped') skipped += 1;
+    else if (result.status === 'cancelled') cancelled += 1;
     else error += 1;
   }
-  return { updated, upToDate, skipped, error };
+  return { updated, upToDate, skipped, cancelled, error };
 }
 
-function clearCliUpdateResetTimer(): void {
-  if (cliUpdateResetTimer !== null) {
-    window.clearTimeout(cliUpdateResetTimer);
-    cliUpdateResetTimer = null;
+function formatRelativeTimestamp(timestamp?: string): string {
+  if (!timestamp) return 'No updates yet';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'No updates yet';
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 60_000) return 'just now';
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}h ago`;
+  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function getCliProviderStatusLabel(status: CliProviderProgressState['status']): string {
+  if (status === 'up_to_date') return 'up to date';
+  if (status === 'cancelled') return 'cancelled';
+  return status.replace(/_/g, ' ');
+}
+
+function setupCliUpdatePanel(): void {
+  if (cliUpdatePanelEl) return;
+  const panel = document.createElement('section');
+  panel.id = 'cli-update-panel';
+  panel.className = 'cli-update-panel hidden';
+  panel.innerHTML = `
+    <div class="cli-update-panel-header">
+      <div class="cli-update-panel-title">CLI Update Center</div>
+      <div class="cli-update-panel-header-actions">
+        <button type="button" class="cli-update-panel-cancel hidden" aria-label="Cancel CLI update">Cancel</button>
+        <button type="button" class="cli-update-panel-close" aria-label="Close update panel">&times;</button>
+      </div>
+    </div>
+    <div class="cli-update-panel-status">No update run yet.</div>
+    <div class="cli-update-panel-progress-track">
+      <div class="cli-update-panel-progress-fill" style="width: 0%"></div>
+    </div>
+    <div class="cli-update-panel-stats">
+      <span class="cli-update-panel-progress-label">Progress: 0/0 (0%)</span>
+      <span class="cli-update-panel-timestamp">Last run: No updates yet</span>
+    </div>
+    <div class="cli-update-panel-meta">Press the update button to start a provider refresh.</div>
+    <div class="cli-update-panel-list"></div>
+  `;
+  panel.addEventListener('click', (event) => event.stopPropagation());
+
+  const closeBtn = panel.querySelector('.cli-update-panel-close') as HTMLButtonElement | null;
+  const cancelBtn = panel.querySelector('.cli-update-panel-cancel') as HTMLButtonElement | null;
+  closeBtn?.addEventListener('click', () => toggleCliUpdatePanel(false));
+  cancelBtn?.addEventListener('click', () => {
+    if (cancelBtn.disabled) return;
+    void cancelCliProviderUpdates().catch((error) => {
+      console.error('[tab-bar] Failed to cancel CLI update', error);
+    });
+  });
+
+  cliUpdatePanelStatusEl = panel.querySelector('.cli-update-panel-status');
+  cliUpdatePanelMetaEl = panel.querySelector('.cli-update-panel-meta');
+  cliUpdatePanelProgressFillEl = panel.querySelector('.cli-update-panel-progress-fill');
+  cliUpdatePanelProgressLabelEl = panel.querySelector('.cli-update-panel-progress-label');
+  cliUpdatePanelTimestampEl = panel.querySelector('.cli-update-panel-timestamp');
+  cliUpdatePanelListEl = panel.querySelector('.cli-update-panel-list');
+  cliUpdatePanelCancelBtnEl = cancelBtn;
+
+  tabActionsEl.appendChild(panel);
+  cliUpdatePanelEl = panel;
+}
+
+function toggleCliUpdatePanel(visible: boolean): void {
+  if (!cliUpdatePanelEl) return;
+  cliUpdatePanelVisible = visible;
+  cliUpdatePanelEl.classList.toggle('hidden', !visible);
+  btnUpdateCliTools.setAttribute('aria-expanded', visible ? 'true' : 'false');
+}
+
+function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
+  if (cliState.phase === 'running') {
+    btnUpdateCliTools.classList.add('is-updating');
+    btnUpdateCliTools.disabled = false;
+    btnUpdateCliTools.innerHTML = '&#x21BB;';
+    const progressLabel = cliState.totalProviders > 0
+      ? `${cliState.completedProviders}/${cliState.totalProviders}`
+      : 'running';
+    btnUpdateCliTools.title = `Updating CLI tools... (${progressLabel})`;
+    btnUpdateCliTools.setAttribute('aria-label', 'Updating CLI tools');
+    return;
   }
-}
 
-function setCliUpdateButtonIdle(): void {
   btnUpdateCliTools.classList.remove('is-updating');
   btnUpdateCliTools.disabled = false;
+
+  if (cliState.phase === 'error') {
+    btnUpdateCliTools.textContent = '!';
+    btnUpdateCliTools.title = 'CLI update failed.';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI update failed');
+    return;
+  }
+
+  if (cliState.phase === 'cancelled') {
+    btnUpdateCliTools.textContent = 'x';
+    btnUpdateCliTools.title = 'CLI update cancelled.';
+    btnUpdateCliTools.setAttribute('aria-label', 'CLI update cancelled');
+    return;
+  }
+
+  if (cliState.phase === 'completed' && cliState.lastSummary) {
+    const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
+    if (counters.error > 0) {
+      btnUpdateCliTools.textContent = '!';
+      btnUpdateCliTools.title = 'CLI update completed with errors';
+      btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
+    } else if (counters.updated > 0) {
+      btnUpdateCliTools.textContent = '✓';
+      btnUpdateCliTools.title = 'CLI tools updated';
+      btnUpdateCliTools.setAttribute('aria-label', 'CLI tools updated');
+    } else {
+      btnUpdateCliTools.textContent = '•';
+      btnUpdateCliTools.title = 'CLI tools are already up to date.';
+      btnUpdateCliTools.setAttribute('aria-label', 'CLI tools are already up to date');
+    }
+    return;
+  }
+
   btnUpdateCliTools.innerHTML = '&#x21BB;';
   btnUpdateCliTools.title = 'Update CLI Tools';
   btnUpdateCliTools.setAttribute('aria-label', 'Update CLI tools');
 }
 
-function setCliUpdateButtonBusy(): void {
-  clearCliUpdateResetTimer();
-  btnUpdateCliTools.classList.add('is-updating');
-  btnUpdateCliTools.disabled = true;
-  btnUpdateCliTools.innerHTML = '&#x21BB;';
-  btnUpdateCliTools.title = 'Updating CLI tools...';
-  btnUpdateCliTools.setAttribute('aria-label', 'Updating CLI tools');
-}
+function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
+  if (
+    !cliUpdatePanelStatusEl
+    || !cliUpdatePanelMetaEl
+    || !cliUpdatePanelProgressFillEl
+    || !cliUpdatePanelListEl
+    || !cliUpdatePanelProgressLabelEl
+    || !cliUpdatePanelTimestampEl
+  ) return;
 
-function showCliUpdateOutcome(summary: ProviderUpdateSummary): void {
-  clearCliUpdateResetTimer();
-  const counters = summarizeCliUpdateStatuses(summary);
-  if (counters.error > 0) {
-    btnUpdateCliTools.classList.remove('is-updating');
-    btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.textContent = '!';
-    btnUpdateCliTools.title = 'CLI update completed with errors';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
-    console.warn('[tab-bar] CLI update completed with errors', summary.results);
-  } else if (counters.updated > 0) {
-    btnUpdateCliTools.classList.remove('is-updating');
-    btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.textContent = '✓';
-    btnUpdateCliTools.title = 'CLI tools updated';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI tools updated');
-    console.info('[tab-bar] CLI tools updated', summary.results);
-  } else {
-    btnUpdateCliTools.classList.remove('is-updating');
-    btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.textContent = '•';
-    btnUpdateCliTools.title = 'CLI tools are already up to date.';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI tools are already up to date');
+  if (cliUpdatePanelCancelBtnEl) {
+    const running = cliState.phase === 'running';
+    cliUpdatePanelCancelBtnEl.classList.toggle('hidden', !running);
+    cliUpdatePanelCancelBtnEl.disabled = !running || cliState.cancelRequested;
+    cliUpdatePanelCancelBtnEl.textContent = cliState.cancelRequested ? 'Cancelling...' : 'Cancel';
   }
 
-  cliUpdateResetTimer = window.setTimeout(() => {
-    setCliUpdateButtonIdle();
-  }, 4500);
-}
+  const total = cliState.totalProviders > 0 ? cliState.totalProviders : Math.max(cliState.providers.length, 0);
+  const completed = Math.min(cliState.completedProviders, total || cliState.completedProviders);
+  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const progressLabel = total > 0 ? `${completed}/${total}` : '0/0';
+  cliUpdatePanelProgressLabelEl.textContent = `Progress: ${progressLabel} (${progressPercent}%)`;
 
-async function runCliToolUpdates(): Promise<void> {
-  if (cliUpdateInFlight) return;
-  cliUpdateInFlight = true;
-  setCliUpdateButtonBusy();
-  try {
-    const summary = await window.calder.provider.updateAll();
-    showCliUpdateOutcome(summary);
-  } catch (error) {
-    btnUpdateCliTools.classList.remove('is-updating');
-    btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.textContent = '!';
-    btnUpdateCliTools.title = 'CLI update failed.';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI update failed');
-    cliUpdateResetTimer = window.setTimeout(() => {
-      setCliUpdateButtonIdle();
-    }, 4500);
-    console.error('[tab-bar] Failed to update CLI tools', error);
-  } finally {
-    cliUpdateInFlight = false;
+  if (cliState.phase === 'running') {
+    cliUpdatePanelTimestampEl.textContent = cliState.startedAt
+      ? `Started: ${formatRelativeTimestamp(cliState.startedAt)}`
+      : 'Started: just now';
+  } else {
+    const reference = cliState.finishedAt ?? cliState.startedAt;
+    cliUpdatePanelTimestampEl.textContent = reference
+      ? `Last run: ${formatRelativeTimestamp(reference)}`
+      : 'Last run: No updates yet';
+  }
+
+  if (cliState.phase === 'running') {
+    const activeProvider = cliState.providers.find((provider) => provider.providerId === cliState.activeProviderId);
+    const activeLabel = cliState.cancelRequested
+      ? 'Cancellation requested. Waiting for the active command to stop...'
+      : activeProvider
+        ? `${activeProvider.providerName} in progress.`
+        : 'Waiting for provider progress...';
+    cliUpdatePanelStatusEl.textContent = total > 0
+      ? `${cliState.cancelRequested ? 'Cancelling CLI update' : 'Updating CLI tools'} (${completed}/${total})`
+      : 'Updating CLI tools...';
+    cliUpdatePanelMetaEl.textContent = activeLabel;
+  } else if (cliState.phase === 'cancelled') {
+    const processedLabel = total > 0
+      ? `${completed}/${total} providers finished before cancellation.`
+      : `${completed} provider${completed === 1 ? '' : 's'} finished before cancellation.`;
+    cliUpdatePanelStatusEl.textContent = 'CLI update cancelled.';
+    cliUpdatePanelMetaEl.textContent = `Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`;
+  } else if (cliState.phase === 'completed' && cliState.lastSummary) {
+    const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
+    if (counters.error > 0) {
+      cliUpdatePanelStatusEl.textContent = `Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`;
+    } else if (counters.updated > 0) {
+      cliUpdatePanelStatusEl.textContent = `${counters.updated} provider${counters.updated === 1 ? '' : 's'} updated.`;
+    } else {
+      cliUpdatePanelStatusEl.textContent = 'All providers are already up to date.';
+    }
+    cliUpdatePanelMetaEl.textContent = `Finished ${formatRelativeTimestamp(cliState.finishedAt)}.`;
+  } else if (cliState.phase === 'error') {
+    cliUpdatePanelStatusEl.textContent = 'CLI update failed.';
+    cliUpdatePanelMetaEl.textContent = cliState.errorMessage ?? 'An unknown error occurred.';
+  } else {
+    cliUpdatePanelStatusEl.textContent = 'No update run yet.';
+    cliUpdatePanelMetaEl.textContent = 'Press the update button to start a provider refresh.';
+  }
+
+  cliUpdatePanelProgressFillEl.style.width = `${Math.max(progressPercent, cliState.phase === 'running' ? 8 : 0)}%`;
+  cliUpdatePanelProgressFillEl.classList.toggle('is-running', cliState.phase === 'running');
+
+  cliUpdatePanelListEl.innerHTML = '';
+  const providers = cliState.providers;
+  if (providers.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'cli-update-panel-empty';
+    empty.textContent = 'Provider status will appear here as checks complete.';
+    cliUpdatePanelListEl.appendChild(empty);
+    return;
+  }
+
+  for (const provider of providers) {
+    const row = document.createElement('div');
+    row.className = 'cli-update-provider-row';
+
+    const top = document.createElement('div');
+    top.className = 'cli-update-provider-head';
+
+    const name = document.createElement('div');
+    name.className = 'cli-update-provider-name';
+    name.textContent = provider.providerName;
+
+    const status = document.createElement('div');
+    status.className = `cli-update-provider-status ${provider.status}`;
+    status.textContent = getCliProviderStatusLabel(provider.status);
+
+    top.appendChild(name);
+    top.appendChild(status);
+
+    const detail = document.createElement('div');
+    detail.className = 'cli-update-provider-detail';
+    const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
+    if (versionParts.length === 2) {
+      detail.textContent = `${versionParts[0]} → ${versionParts[1]}`;
+    } else if (provider.latestVersion) {
+      detail.textContent = `Latest: ${provider.latestVersion}`;
+    } else if (provider.message) {
+      detail.textContent = provider.message;
+    } else {
+      detail.textContent = provider.status === 'running' ? 'Running...' : 'Waiting...';
+    }
+
+    row.appendChild(top);
+    row.appendChild(detail);
+    cliUpdatePanelListEl.appendChild(row);
   }
 }
 
