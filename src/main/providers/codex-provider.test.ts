@@ -35,12 +35,17 @@ vi.mock('../codex-hooks', () => ({
   SESSION_ID_VAR: 'CALDER_SESSION_ID',
 }));
 
+vi.mock('../codex-session-watcher', () => ({
+  stopCodexSessionWatcher: vi.fn(),
+}));
+
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { CodexProvider, _resetCachedPath } from './codex-provider';
 import { getCodexConfig } from '../codex-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../codex-hooks';
+import { stopCodexSessionWatcher } from '../codex-session-watcher';
 import type { ProviderConfig } from '../../shared/types';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -52,6 +57,7 @@ const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
 const mockInstallCodexHooks = vi.mocked(installCodexHooks);
 const mockValidateCodexHooks = vi.mocked(validateCodexHooks);
 const mockCleanupCodexHooks = vi.mocked(cleanupCodexHooks);
+const mockStopCodexSessionWatcher = vi.mocked(stopCodexSessionWatcher);
 
 let provider: CodexProvider;
 
@@ -213,9 +219,10 @@ describe('hooks integration', () => {
     expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
   });
 
-  it('cleanup calls cleanupCodexHooks and stopConfigWatcher', () => {
+  it('cleanup calls cleanupCodexHooks, stopConfigWatcher, and stopCodexSessionWatcher', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
+    expect(mockStopCodexSessionWatcher).toHaveBeenCalled();
     expect(mockCleanupCodexHooks).toHaveBeenCalled();
   });
 

@@ -12,6 +12,7 @@ let knownSessionFiles = new Set<string>();
 
 let watcher: fs.FSWatcher | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
+let currentWindow: BrowserWindow | null = null;
 
 function isSessionFile(filename: string): boolean {
   return filename.startsWith('blackbox_secure_session_') && filename.endsWith('.json');
@@ -95,6 +96,8 @@ export function unregisterBlackboxSession(sessionId: string): void {
 }
 
 export function startBlackboxSessionWatcher(win: BrowserWindow): void {
+  // Keep polling target current even if watcher was already started.
+  currentWindow = win;
   if (watcher) return;
 
   try {
@@ -109,7 +112,7 @@ export function startBlackboxSessionWatcher(win: BrowserWindow): void {
   }
 
   pollInterval = setInterval(() => {
-    if (pendingSessions.size > 0 && !win.isDestroyed()) {
+    if (pendingSessions.size > 0 && currentWindow && !currentWindow.isDestroyed()) {
       scanForNewSessions();
     }
   }, 2000);
@@ -128,4 +131,5 @@ export function stopBlackboxSessionWatcher(): void {
   pendingSessions.clear();
   assignedBlackboxIds.clear();
   knownSessionFiles = new Set();
+  currentWindow = null;
 }

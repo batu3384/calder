@@ -74,6 +74,30 @@ describe('startBlackboxSessionWatcher', () => {
       expect.any(Function)
     );
   });
+
+  it('refreshes polling window reference when started again with a new window', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const staleWin = { isDestroyed: () => true, webContents: { send: vi.fn() } };
+    const liveWin = createMockWin();
+    startBlackboxSessionWatcher(staleWin as any);
+    startBlackboxSessionWatcher(liveWin);
+
+    mockReaddirSync
+      .mockReturnValueOnce([] as any)
+      .mockReturnValue(['blackbox_secure_session_refreshed.json'] as any);
+    mockReadFileSync.mockReturnValue(JSON.stringify({ sessionId: 'bbx-refreshed-window' }) as any);
+
+    registerPendingBlackboxSession('ui-session-1');
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWatch).toHaveBeenCalledTimes(1);
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-session-1.sessionid'),
+      'bbx-refreshed-window',
+    );
+  });
 });
 
 describe('session ID assignment via polling', () => {

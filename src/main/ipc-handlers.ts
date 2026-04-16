@@ -156,6 +156,7 @@ let currentProjectWorkflowPath: string | null = null;
 let currentProjectWorkflowWindow: BrowserWindow | null = null;
 let currentProjectTeamContextPath: string | null = null;
 let currentProjectTeamContextWindow: BrowserWindow | null = null;
+let currentProjectTeamContextDispose: (() => void) | null = null;
 let currentProjectReviewPath: string | null = null;
 let currentProjectReviewWindow: BrowserWindow | null = null;
 let currentProjectGovernancePath: string | null = null;
@@ -175,6 +176,10 @@ const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
 
 export function resetHookWatcher(): void {
   hookWatcherStarted = false;
+  currentProjectTeamContextDispose?.();
+  currentProjectTeamContextDispose = null;
+  currentProjectTeamContextPath = null;
+  currentProjectTeamContextWindow = null;
 }
 
 export function registerIpcHandlers(): void {
@@ -545,9 +550,11 @@ export function registerIpcHandlers(): void {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
     if (projectPath === currentProjectTeamContextPath && win === currentProjectTeamContextWindow) return;
+    currentProjectTeamContextDispose?.();
+    currentProjectTeamContextDispose = null;
     currentProjectTeamContextPath = projectPath;
     currentProjectTeamContextWindow = win;
-    startProjectTeamContextWatcher(projectPath, (state) => {
+    currentProjectTeamContextDispose = startProjectTeamContextWatcher(projectPath, (state) => {
       if (currentProjectTeamContextWindow && !currentProjectTeamContextWindow.isDestroyed()) {
         currentProjectTeamContextWindow.webContents.send('teamContext:changed', projectPath, state);
       }

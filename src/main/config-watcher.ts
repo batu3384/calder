@@ -191,7 +191,11 @@ function setupBlackboxWatchers(projectPath: string): void {
 }
 
 export function startConfigWatcher(win: BrowserWindow, projectPath: string, providerId: ProviderId = 'claude'): void {
-  if (projectPath === currentProjectPath && providerId === currentProviderId) return;
+  // Keep notification target current even when watcher topology is unchanged.
+  if (projectPath === currentProjectPath && providerId === currentProviderId) {
+    currentWin = win;
+    return;
+  }
   stopAll();
   currentWin = win;
   currentProjectPath = projectPath;

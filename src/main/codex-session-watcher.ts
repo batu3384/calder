@@ -18,6 +18,7 @@ const assignedCodexIds = new Set<string>();
 
 let watcher: fs.FSWatcher | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
+let currentWindow: BrowserWindow | null = null;
 let lastSize = 0;
 let trailingLineRemainder = '';
 
@@ -119,6 +120,8 @@ export function unregisterCodexSession(sessionId: string): void {
 }
 
 export function startCodexSessionWatcher(win: BrowserWindow): void {
+  // Keep polling target current even if watcher was already started.
+  currentWindow = win;
   if (watcher) return;
 
   const dir = path.dirname(HISTORY_PATH);
@@ -135,7 +138,7 @@ export function startCodexSessionWatcher(win: BrowserWindow): void {
 
   // Polling fallback — fs.watch can miss events on some systems
   pollInterval = setInterval(() => {
-    if (pendingSessions.size > 0 && !win.isDestroyed()) {
+    if (pendingSessions.size > 0 && currentWindow && !currentWindow.isDestroyed()) {
       readNewEntries();
     }
   }, 2000);
@@ -152,6 +155,7 @@ export function stopCodexSessionWatcher(): void {
   }
   pendingSessions.clear();
   assignedCodexIds.clear();
+  currentWindow = null;
   lastSize = 0;
   trailingLineRemainder = '';
 }

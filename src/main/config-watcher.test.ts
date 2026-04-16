@@ -147,6 +147,23 @@ describe('config-watcher', () => {
     expect(fs.watch).not.toHaveBeenCalled();
   });
 
+  it('updates notification window when restart is skipped for same project/provider', () => {
+    const firstSend = vi.fn();
+    const secondSend = vi.fn();
+    const firstWin = { isDestroyed: () => false, webContents: { send: firstSend } } as any;
+    const secondWin = { isDestroyed: () => false, webContents: { send: secondSend } } as any;
+
+    startConfigWatcher(firstWin, '/projects/test');
+    startConfigWatcher(secondWin, '/projects/test');
+
+    watchFileCallbacks.get('/home/testuser/.claude.json')!();
+    vi.advanceTimersByTime(500);
+
+    expect(firstSend).not.toHaveBeenCalled();
+    expect(secondSend).toHaveBeenCalledTimes(1);
+    expect(secondSend).toHaveBeenCalledWith('config:changed');
+  });
+
   it('restarts watchers for new project', () => {
     const win = createMockWin();
     startConfigWatcher(win, '/projects/test');

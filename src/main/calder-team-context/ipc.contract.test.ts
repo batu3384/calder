@@ -12,6 +12,8 @@ describe('project team context IPC contract', () => {
     expect(ipcSource).toContain("ipcMain.handle('teamContext:createStarterFiles'");
     expect(ipcSource).toContain("ipcMain.handle('teamContext:createSpace'");
     expect(ipcSource).toContain("ipcMain.on('teamContext:watchProject'");
+    expect(ipcSource).toContain('currentProjectTeamContextDispose?.();');
+    expect(ipcSource).toContain('currentProjectTeamContextDispose = startProjectTeamContextWatcher(');
   });
 
   it('exposes team context APIs in preload', () => {

@@ -121,6 +121,36 @@ describe('startCodexSessionWatcher', () => {
 
     expect(mockWatch).toHaveBeenCalledTimes(1);
   });
+
+  it('refreshes polling window reference when started again with a new window', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const staleWin = { isDestroyed: () => true, webContents: { send: vi.fn() } };
+    const liveWin = createMockWin();
+    startCodexSessionWatcher(staleWin as any);
+    startCodexSessionWatcher(liveWin);
+
+    mockStatSync.mockReturnValue({ size: 0 } as fs.Stats);
+    registerPendingCodexSession('ui-session-1');
+
+    const newLine = '{"session_id":"codex-refreshed-window","ts":1774904000,"text":"hello"}\n';
+    const buf = Buffer.from(newLine);
+    mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
+    mockOpenSync.mockReturnValue(77);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
+      return buf.length;
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWatch).toHaveBeenCalledTimes(1);
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-session-1.sessionid'),
+      'codex-refreshed-window',
+    );
+  });
 });
 
 describe('session ID assignment via polling', () => {
