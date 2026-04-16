@@ -18,7 +18,12 @@ import { toggleContextInspector } from './components/context-inspector.js';
 import { showPreferencesModal } from './components/preferences-modal.js';
 import { closeModal, showModal } from './components/modal.js';
 
+let initialized = false;
+
 export function initKeybindings(): void {
+  if (initialized) return;
+  initialized = true;
+
   // Menu-based shortcuts (registered via Electron menu accelerators)
   // These handlers receive events forwarded from the main process menu
   window.calder.menu.onPreferences(() => showPreferencesModal());
@@ -98,6 +103,10 @@ export function initKeybindings(): void {
   document.addEventListener('keydown', (e) => {
     shortcutManager.matchEvent(e);
   });
+}
+
+export function _resetKeybindingsForTesting(): void {
+  initialized = false;
 }
 
 function promptNewMcpInspector(): void {

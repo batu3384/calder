@@ -180,7 +180,8 @@ describe('initKeybindings control panel wiring', () => {
   });
 
   it('toggles the control panel open state from the forwarded menu event', async () => {
-    const { initKeybindings } = await import('./keybindings.js');
+    const { initKeybindings, _resetKeybindingsForTesting } = await import('./keybindings.js');
+    _resetKeybindingsForTesting();
 
     initKeybindings();
 
@@ -203,5 +204,16 @@ describe('initKeybindings control panel wiring', () => {
     expect(mainArea.classList.contains('context-inspector-open')).toBe(true);
     expect(inspector.classList.contains('context-inspector-open')).toBe(true);
     expect(inspector.classList.contains('context-inspector-closed')).toBe(false);
+  });
+
+  it('is idempotent when initialized more than once', async () => {
+    const { initKeybindings, _resetKeybindingsForTesting } = await import('./keybindings.js');
+    _resetKeybindingsForTesting();
+
+    initKeybindings();
+    initKeybindings();
+
+    expect(document.addEventListener).toHaveBeenCalledTimes(1);
+    expect(document.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
   });
 });

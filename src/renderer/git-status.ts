@@ -30,6 +30,7 @@ const sessionWorktreeMap = new Map<string, string>();
 const manualOverride = new Map<string, string>();
 let worktreePollCounter = 0;
 let unwatchGitChanged: (() => void) | null = null;
+let initialized = false;
 
 async function refreshWorktrees(projectId: string, projectPath: string): Promise<void> {
   try {
@@ -179,6 +180,9 @@ function stopInterval(): void {
 }
 
 export function startPolling(): void {
+  if (initialized) return;
+  initialized = true;
+
   startInterval();
 
   // Subscribe to main-process file system watcher push events (once)
@@ -234,4 +238,8 @@ export function startPolling(): void {
       poll();
     }
   });
+}
+
+export function _resetGitStatusForTesting(): void {
+  initialized = false;
 }
