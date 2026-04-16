@@ -252,6 +252,30 @@ export async function updateProviders(
       continue;
     }
 
+    if (!spec) {
+      const result: ProviderUpdateResult = {
+        providerId: id,
+        providerName,
+        source: 'unknown',
+        status: 'skipped',
+        checked: false,
+        updateAttempted: false,
+        message: 'No update strategy configured for this provider.',
+        durationMs: Math.max(0, now() - providerStart),
+      };
+      results.push(result);
+      onProgress?.({
+        phase: 'provider_finished',
+        startedAt,
+        totalProviders: providers.length,
+        completedProviders: results.length,
+        providerId: id,
+        providerName,
+        result,
+      });
+      continue;
+    }
+
     const binaryPath = provider.resolveBinaryPath();
     const resolvedBinaryPath = resolveRealPath(binaryPath);
     const source = detectUpdateSource(id, spec, resolvedBinaryPath);
