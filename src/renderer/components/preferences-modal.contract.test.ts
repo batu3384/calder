@@ -75,7 +75,7 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('.about-link-grid');
     expect(styles).toContain('.about-update-btn');
     expect(styles).toContain('.setup-fix-btn');
-    expect(styles).toContain('box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);');
+    expect(styles).toContain('var(--shadow-card-strong);');
     expect(modalStyles).toContain('#modal-actions, .modal-actions');
     expect(modalStyles).toContain('justify-content: flex-end;');
     expect(modalStyles).toContain('.modal-btn.primary');
