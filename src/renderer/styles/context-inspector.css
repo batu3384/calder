@@ -25,7 +25,9 @@
   flex-direction: column;
   min-height: 0;
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.025);
-  background: color-mix(in srgb, var(--surface-ops) 94%, black);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 30%),
+    color-mix(in srgb, var(--surface-ops) 94%, black);
 }
 
 .control-panel-surface {
@@ -58,7 +60,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   border-radius: 12px 0 0 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 84%, black);
   color: var(--text-secondary);
   font-family: var(--font-sans);
@@ -153,8 +155,13 @@
   padding: 14px 14px 13px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-panel) 82%, black);
-  box-shadow: none;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, black);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(2, 4, 10, 0.14);
 }
 
 #context-inspector[data-rail-signal='active'] .inspector-overview-card {
@@ -360,8 +367,13 @@
   padding: 12px 12px 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--surface-panel) 80%, black);
-  box-shadow: none;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 80%, black);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(2, 4, 10, 0.12);
 }
 
 #context-inspector .context-inspector-section[data-section="capabilities"] .context-inspector-block-title {
@@ -444,8 +456,10 @@
   padding: 7px 8px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
   border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-panel) 58%, transparent);
-  box-shadow: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 58%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   cursor: pointer;
 }
 
@@ -478,7 +492,9 @@
 
 #context-inspector .toolchain-summary-chip:hover {
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--surface-hover) 54%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 54%, transparent);
 }
 
 #context-inspector .config-section,
@@ -597,20 +613,20 @@
 #context-inspector .auto-approval-item {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 10px 0 14px 2px;
 }
 
 #context-inspector .auto-approval-summary {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
 }
 
 #context-inspector .auto-approval-current-card {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   border-radius: 11px;
-  padding: 8px 10px;
+  padding: 9px 10px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--surface-muted) 75%, black) 0%,
@@ -618,11 +634,22 @@
   );
 }
 
+#context-inspector .auto-approval-priority-note {
+  margin: 0;
+}
+
+#context-inspector .auto-approval-priority-map {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  padding: 0 2px;
+}
+
 #context-inspector .auto-approval-meta-card {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px 10px;
+  gap: 7px;
+  padding: 9px 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface-panel) 72%, black);
@@ -630,7 +657,7 @@
 
 #context-inspector .auto-approval-meta-row {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
@@ -645,10 +672,10 @@
 
 #context-inspector .auto-approval-meta-value {
   color: var(--text-secondary);
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
   flex: 1 1 auto;
-  text-align: right;
+  text-align: left;
   overflow-wrap: anywhere;
 }
 
@@ -663,14 +690,14 @@
 
 #context-inspector .auto-approval-policy-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
 #context-inspector .auto-approval-policy-row .scope-badge {
   margin-left: 0;
-  max-width: 58%;
+  max-width: 62%;
 }
 
 #context-inspector .auto-approval-policy-name {
@@ -721,15 +748,23 @@
 #context-inspector .auto-approval-controls {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
 }
 
 #context-inspector .auto-approval-controls-intro {
   color: var(--text-dim);
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
-  padding: 1px 2px 0;
+  padding: 1px 2px 2px;
+}
+
+#context-inspector .auto-approval-controls-hint {
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.45;
+  padding: 0 2px 2px;
+  overflow-wrap: anywhere;
 }
 
 #context-inspector .auto-approval-control {
@@ -740,10 +775,12 @@
 }
 
 #context-inspector .auto-approval-scope-card {
-  padding: 9px 10px;
+  padding: 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-muted) 65%, black);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-muted) 65%, black);
 }
 
 #context-inspector .auto-approval-scope-row {
@@ -755,7 +792,7 @@
 
 #context-inspector .auto-approval-scope-title {
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   min-width: 0;
   flex: 1 1 110px;
@@ -764,30 +801,32 @@
 #context-inspector .auto-approval-scope-helper {
   color: var(--text-dim);
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 1.45;
   overflow-wrap: anywhere;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 #context-inspector .auto-approval-scope-control {
   display: flex;
   justify-content: stretch;
-  flex: 0 0 44%;
-  min-width: 118px;
+  flex: 0 0 46%;
+  min-width: 126px;
 }
 
 #context-inspector .auto-approval-select {
-  min-height: 28px;
+  min-height: 30px;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: 9px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  background: color-mix(in srgb, var(--surface-muted) 78%, black);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-muted) 78%, black);
   color: var(--text-primary);
-  font-size: 10px;
-  font-weight: 560;
-  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 580;
+  padding: 0 9px;
 }
 
 #context-inspector .context-inspector-section[data-section="capabilities"] .config-item:not(.auto-approval-item) {
@@ -805,13 +844,13 @@
 #context-inspector .auto-approval-mode-guide {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   margin-top: 2px;
-  padding-top: 7px;
+  padding-top: 9px;
   border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-dim);
-  line-height: 1.35;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
@@ -860,21 +899,21 @@
 
 #context-inspector .auto-approval-mode-guide-row {
   display: grid;
-  grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 128px) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
 
 #context-inspector .auto-approval-mode-guide-row-label {
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
 }
 
 #context-inspector .auto-approval-mode-guide-row-detail {
   color: var(--text-dim);
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 #context-inspector .auto-approval-hint {
@@ -1113,4 +1152,199 @@
   #context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary-chips {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Premium polish overrides */
+#context-inspector {
+  border-left-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background:
+    radial-gradient(circle at 120% -6%, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 58%),
+    color-mix(in srgb, var(--surface-ops) 94%, black);
+}
+
+#context-inspector-header {
+  border-bottom-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+}
+
+.inspector-overview-card {
+  border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 24%, transparent), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 84%, black);
+}
+
+.inspector-overview-metric {
+  border-color: color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-muted) 68%, transparent);
+}
+
+#context-inspector .context-inspector-section[data-section="capabilities"] {
+  border-color: color-mix(in srgb, var(--border-subtle) 76%, transparent);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 20%, transparent), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, black);
+}
+
+#context-inspector .toolchain-summary-chip {
+  border-color: color-mix(in srgb, var(--border-subtle) 74%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 62%, transparent);
+}
+
+#context-inspector .toolchain-summary-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+}
+
+#context-inspector .auto-approval-meta-card,
+#context-inspector .auto-approval-policy-stack,
+#context-inspector .auto-approval-scope-card {
+  border-color: color-mix(in srgb, var(--border-subtle) 76%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 74%, black);
+}
+
+#context-inspector .auto-approval-scope-title {
+  color: var(--text-primary);
+}
+
+#context-inspector .auto-approval-scope-helper,
+#context-inspector .auto-approval-controls-intro,
+#context-inspector .auto-approval-mode-guide-row-detail {
+  color: var(--text-secondary);
+}
+
+#context-inspector .auto-approval-select {
+  border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-muted) 82%, black);
+}
+
+/* Micro polish pass */
+#context-inspector {
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.026),
+    -18px 0 40px rgba(2, 8, 16, 0.12);
+  background:
+    radial-gradient(circle at 118% -4%, color-mix(in srgb, var(--accent-soft) 34%, transparent), transparent 56%),
+    radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--accent-cool) 8%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface-ops) 95%, black);
+}
+
+#context-inspector-header {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  box-shadow:
+    inset 0 -1px 0 color-mix(in srgb, var(--border-subtle) 72%, transparent),
+    0 10px 22px rgba(2, 8, 16, 0.12);
+}
+
+.context-inspector-reopen {
+  right: 4px;
+  box-shadow: var(--shadow-card);
+}
+
+.context-inspector-reopen:hover,
+.context-inspector-reopen:focus {
+  transform: translateY(-50%) translateX(-1px);
+  box-shadow: var(--shadow-lift);
+}
+
+.inspector-overview-card {
+  gap: 12px;
+  padding: 15px 15px 14px;
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--shadow-card);
+}
+
+.inspector-overview-pill {
+  background: color-mix(in srgb, var(--surface-muted) 72%, transparent);
+  border-color: color-mix(in srgb, var(--border-subtle) 76%, transparent);
+}
+
+.inspector-overview-metric {
+  padding: 9px 10px;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+#context-inspector-sections {
+  padding: 12px 12px 16px;
+  gap: 3px;
+}
+
+.context-inspector-section + .context-inspector-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top-color: color-mix(in srgb, var(--border-subtle) 72%, transparent);
+}
+
+#context-inspector .context-inspector-section[data-section="capabilities"] {
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--shadow-card);
+}
+
+#context-inspector .toolchain-summary-chip {
+  min-height: 46px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+#context-inspector .toolchain-summary-chip:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(2, 8, 16, 0.14);
+}
+
+#context-inspector .config-item {
+  padding: 9px 6px 9px 5px;
+}
+
+#context-inspector .config-item:hover {
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 38%, transparent);
+}
+
+#context-inspector .auto-approval-current-card,
+#context-inspector .auto-approval-meta-card,
+#context-inspector .auto-approval-policy-stack,
+#context-inspector .auto-approval-scope-card {
+  border-radius: 13px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+#context-inspector .auto-approval-risk-note {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+#context-inspector .ops-rail-note {
+  border-radius: 13px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    var(--shadow-card);
+}
+
+#context-inspector .history-item:hover {
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 44%, transparent);
 }

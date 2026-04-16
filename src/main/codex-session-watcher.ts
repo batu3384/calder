@@ -19,6 +19,7 @@ const assignedCodexIds = new Set<string>();
 let watcher: fs.FSWatcher | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 let lastSize = 0;
+let trailingLineRemainder = '';
 
 function readNewEntries(): void {
   if (pendingSessions.size === 0) return;
@@ -30,16 +31,30 @@ function readNewEntries(): void {
     return;
   }
 
+  // Handle history truncation/rotation without permanently skipping new lines.
+  if (stat.size < lastSize) {
+    lastSize = 0;
+    trailingLineRemainder = '';
+  }
+
   if (stat.size <= lastSize) return;
 
   let fd: number | null = null;
   try {
     fd = fs.openSync(HISTORY_PATH, 'r');
-    const buf = Buffer.alloc(stat.size - lastSize);
-    fs.readSync(fd, buf, 0, buf.length, lastSize);
-    lastSize = stat.size;
+    const readLength = stat.size - lastSize;
+    const buf = Buffer.alloc(readLength);
+    const bytesRead = fs.readSync(fd, buf, 0, readLength, lastSize);
+    if (bytesRead <= 0) return;
+    lastSize += bytesRead;
 
-    const lines = buf.toString('utf-8').trim().split('\n').filter(Boolean);
+    const chunk = `${trailingLineRemainder}${buf.toString('utf-8', 0, bytesRead)}`;
+    const hasTrailingNewline = chunk.endsWith('\n');
+    const splitLines = chunk.split('\n');
+    const lines = (hasTrailingNewline ? splitLines : splitLines.slice(0, -1))
+      .map((line) => line.trim())
+      .filter(Boolean);
+    trailingLineRemainder = hasTrailingNewline ? '' : (splitLines[splitLines.length - 1] ?? '');
 
     for (const line of lines) {
       try {
@@ -66,7 +81,9 @@ function readNewEntries(): void {
             path.join(STATUS_DIR, `${oldestId}.sessionid`),
             codexSessionId
           );
-          break;
+          if (pendingSessions.size === 0) {
+            break;
+          }
         }
       } catch {
         // Skip malformed lines
@@ -91,6 +108,7 @@ export function registerPendingCodexSession(sessionId: string): void {
     } catch {
       lastSize = 0;
     }
+    trailingLineRemainder = '';
   }
 
   pendingSessions.set(sessionId, Date.now());
@@ -135,4 +153,5 @@ export function stopCodexSessionWatcher(): void {
   pendingSessions.clear();
   assignedCodexIds.clear();
   lastSize = 0;
+  trailingLineRemainder = '';
 }

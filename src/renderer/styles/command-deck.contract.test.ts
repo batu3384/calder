@@ -11,12 +11,13 @@ describe('command deck stylesheet contract', () => {
     expect(tabsCss).toContain('#git-status');
     expect(tabsCss).toContain('.session-launcher-group');
     expect(tabsCss).toContain('border-radius: 999px;');
-    expect(tabsCss).toContain('background: color-mix(in srgb, var(--surface-panel) 52%, transparent);');
+    expect(tabsCss).toContain('color-mix(in srgb, var(--surface-panel) 56%, transparent);');
+    expect(tabsCss).toContain('color-mix(in srgb, var(--surface-panel) 62%, transparent);');
   });
 
   it('keeps launcher and provider selection in the same compact rhythm', () => {
     expect(tabsCss).toContain('.command-deck-provider-select .custom-select-trigger');
-    expect(tabsCss).toContain('min-height: 30px;');
+    expect(tabsCss).toContain('min-height: 34px;');
     expect(tabsCss).toContain('padding: 3px 4px;');
     expect(tabsCss).toContain('.tab-action-primary');
   });
@@ -24,9 +25,9 @@ describe('command deck stylesheet contract', () => {
   it('treats the launcher cluster like a polished shell instead of a loose icon row', () => {
     expect(tabsCss).toContain('.session-launcher-group');
     expect(tabsCss).toContain('box-shadow:');
-    expect(tabsCss).toContain('0 8px 22px rgba(0, 0, 0, 0.08);');
+    expect(tabsCss).toContain('0 10px 24px rgba(2, 4, 10, 0.12);');
     expect(tabsCss).toContain('.session-launcher-group:hover');
-    expect(tabsCss).toContain('background: color-mix(in srgb, var(--surface-panel) 60%, transparent);');
+    expect(tabsCss).toContain('color-mix(in srgb, var(--surface-panel) 66%, transparent);');
   });
 
   it('keeps the launcher controls on the top row until the workspace is genuinely narrow', () => {

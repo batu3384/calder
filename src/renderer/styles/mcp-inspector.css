@@ -99,11 +99,11 @@
 }
 
 .mcp-status.connected {
-  background: #34a853;
+  background: var(--status-success-text);
 }
 
 .mcp-status.connecting {
-  background: #f4b400;
+  background: var(--status-warning-text);
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -112,13 +112,15 @@
 }
 
 .mcp-status-pill.connected {
-  border-color: color-mix(in srgb, #34a853 30%, var(--border-subtle));
-  color: #8ad79b;
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
 }
 
 .mcp-status-pill.connecting {
-  border-color: color-mix(in srgb, #f4b400 30%, var(--border-subtle));
-  color: #f4d46a;
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
 }
 
 .mcp-status-pill.disconnected {
@@ -357,7 +359,7 @@ select.mcp-form-input {
 }
 
 .mcp-result {
-  background: #000000;
+  background: color-mix(in srgb, var(--surface-canvas) 96%, black);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 10px 12px;
@@ -376,5 +378,5 @@ select.mcp-form-input {
 }
 
 .tab-status.mcp {
-  background: #4a90d9;
+  background: var(--accent-cool);
 }

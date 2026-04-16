@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWatch = vi.hoisted(() => vi.fn());
+const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockDiscoverProjectCheckpoints = vi.hoisted(() => vi.fn());
 
 vi.mock('node:fs', () => ({
   default: {
+    mkdirSync: mockMkdirSync,
     watch: mockWatch,
   },
 }));
@@ -36,6 +38,7 @@ beforeEach(() => {
       on: vi.fn().mockReturnThis(),
     } as any;
   }) as any);
+  mockMkdirSync.mockReset();
 });
 
 afterEach(() => {
@@ -65,6 +68,7 @@ describe('project checkpoint watcher', () => {
     const onChange = vi.fn();
 
     startProjectCheckpointWatcher('/repo', onChange);
+    expect(mockMkdirSync).toHaveBeenCalledWith('/repo/.calder/checkpoints', { recursive: true });
     expect(watchCallbacks.has('/repo/.calder/checkpoints')).toBe(true);
 
     watchCallbacks.get('/repo/.calder/checkpoints')?.();

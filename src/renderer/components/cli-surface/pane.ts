@@ -85,6 +85,7 @@ interface CliSurfaceInstance {
   contextModeOverride: CliSurfacePromptContextMode | null;
   targetMenuCleanup?: () => void;
   targetMenuOutsideClickHandler?: (event: MouseEvent) => void;
+  cleanupFns: Array<() => void>;
 }
 
 const instances = new Map<string, CliSurfaceInstance>();
@@ -96,7 +97,7 @@ const protocolRemainders = new Map<string, string>();
 const semanticRegionVersions = new Map<string, number>();
 let runtimeBindingsAttached = false;
 let stateBindingsAttached = false;
-let lastCliSurfaceLinkDispatch: LinkDispatchSnapshot | null = null;
+const lastCliSurfaceLinkDispatchByProject = new Map<string, LinkDispatchSnapshot>();
 const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
 
 type CliSurfaceButtonTone = 'neutral' | 'primary' | 'danger' | 'ghost';
@@ -119,12 +120,13 @@ function getProject(projectId: string) {
   return appState.projects.find((project) => project.id === projectId);
 }
 
-function openCliSurfaceWebLink(url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
+function openCliSurfaceWebLink(projectId: string, url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
   const normalizedUrl = resolveNavigableHttpUrl(url);
   if (!normalizedUrl) return;
   const now = Date.now();
-  if (!shouldDispatchLinkOpen(normalizedUrl, lastCliSurfaceLinkDispatch, source, now)) return;
-  lastCliSurfaceLinkDispatch = { url: normalizedUrl, at: now, source };
+  const lastDispatch = lastCliSurfaceLinkDispatchByProject.get(projectId) ?? null;
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastDispatch, source, now)) return;
+  lastCliSurfaceLinkDispatchByProject.set(projectId, { url: normalizedUrl, at: now, source });
   void window.calder.app.openExternal(normalizedUrl, cwd);
 }
 
@@ -163,8 +165,29 @@ function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: Mo
   return null;
 }
 
+function extractUrlFromEventTarget(event: MouseEvent): string | null {
+  const maybeTarget = event.target as {
+    closest?: (selector: string) => { getAttribute?: (name: string) => string | null } | null;
+  } | null;
+  if (!maybeTarget?.closest) return null;
+  const anchor = maybeTarget.closest('a[href]');
+  if (!anchor?.getAttribute) return null;
+  const href = anchor.getAttribute('href');
+  return typeof href === 'string' && href.trim().length > 0 ? href : null;
+}
+
 function getRuntimeState(projectId: string): CliSurfaceRuntimeState | undefined {
   return getProject(projectId)?.surface?.cli?.runtime;
+}
+
+function clearProjectSurfaceCaches(projectId: string): void {
+  semanticNodes.delete(projectId);
+  semanticFocusNodes.delete(projectId);
+  semanticStateNodes.delete(projectId);
+  semanticAdapterHints.delete(projectId);
+  protocolRemainders.delete(projectId);
+  semanticRegionVersions.delete(projectId);
+  lastCliSurfaceLinkDispatchByProject.delete(projectId);
 }
 
 function resolveSelectedProfile(projectId: string) {
@@ -596,7 +619,7 @@ function positionComposerNearPointer(
   setComposerPosition(instance, event.clientX - paneRect.left + 12, event.clientY - paneRect.top + 12);
 }
 
-function enableComposerDragging(instance: CliSurfaceInstance): void {
+function enableComposerDragging(instance: CliSurfaceInstance): () => void {
   let dragging = false;
   let offsetX = 0;
   let offsetY = 0;
@@ -631,6 +654,12 @@ function enableComposerDragging(instance: CliSurfaceInstance): void {
   };
 
   instance.composerHandleEl.addEventListener('mousedown', onMouseDown);
+  return () => {
+    stopDragging();
+    (instance.composerHandleEl as unknown as {
+      removeEventListener?: (type: string, listener: (event: MouseEvent) => void) => void;
+    }).removeEventListener?.('mousedown', onMouseDown);
+  };
 }
 
 function updateProjectRuntime(projectId: string, runtime: CliSurfaceRuntimeState): void {
@@ -1216,7 +1245,17 @@ function attachStateBindings(): void {
   if (stateBindingsAttached) return;
   stateBindingsAttached = true;
 
+  const pruneStaleInstances = () => {
+    const activeProjectIds = new Set(appState.projects.map((project) => project.id));
+    for (const projectId of [...instances.keys()]) {
+      if (!activeProjectIds.has(projectId)) {
+        destroyCliSurfacePane(projectId);
+      }
+    }
+  };
+
   const rerender = () => {
+    pruneStaleInstances();
     instances.forEach((instance) => {
       renderRuntimeMeta(instance);
       renderInspectState(instance);
@@ -1225,6 +1264,7 @@ function attachStateBindings(): void {
 
   appState.on('state-loaded', rerender);
   appState.on('project-changed', rerender);
+  appState.on('project-removed', rerender);
   appState.on('session-changed', rerender);
   appState.on('session-added', rerender);
   appState.on('session-removed', rerender);
@@ -1438,7 +1478,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
         event.stopPropagation?.();
         try { terminal.clearSelection(); } catch {}
         window.getSelection?.()?.removeAllRanges?.();
-        openCliSurfaceWebLink(uri, 'osc-link', getProject(projectId)?.path);
+        openCliSurfaceWebLink(projectId, uri, 'osc-link', getProject(projectId)?.path);
       },
     },
   });
@@ -1451,8 +1491,9 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     event.stopPropagation?.();
     try { terminal.clearSelection(); } catch {}
     window.getSelection?.()?.removeAllRanges?.();
-    openCliSurfaceWebLink(url, 'web-link', getProject(projectId)?.path);
+    openCliSurfaceWebLink(projectId, url, 'web-link', getProject(projectId)?.path);
   }));
+  let suppressLinkDragSelection = false;
   const clearPointerSelection = (): void => {
     try { terminal.clearSelection(); } catch {}
     window.getSelection?.()?.removeAllRanges?.();
@@ -1464,18 +1505,37 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   };
   viewport.addEventListener('mousedown', (event: MouseEvent) => {
     if (event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event);
+    // Clear stale suppression from a previous link click before evaluating
+    // the current pointer target.
+    suppressLinkDragSelection = false;
+    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
     if (!candidate) return;
+    suppressLinkDragSelection = true;
     suppressPointerEvent(event);
     clearPointerSelection();
   }, { capture: true });
+  viewport.addEventListener('mousemove', (event: MouseEvent) => {
+    if (!suppressLinkDragSelection) return;
+    if ((event.buttons & 1) !== 1) {
+      suppressLinkDragSelection = false;
+      return;
+    }
+    suppressPointerEvent(event);
+    clearPointerSelection();
+  }, { capture: true });
+  viewport.addEventListener('mouseup', () => {
+    suppressLinkDragSelection = false;
+  }, { capture: true });
+  viewport.addEventListener('mouseleave', () => {
+    suppressLinkDragSelection = false;
+  }, { capture: true });
   viewport.addEventListener('click', (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event);
+    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
     if (!candidate) return;
     suppressPointerEvent(event);
     clearPointerSelection();
-    openCliSurfaceWebLink(candidate, 'web-link', getProject(projectId)?.path);
+    openCliSurfaceWebLink(projectId, candidate, 'web-link', getProject(projectId)?.path);
   }, { capture: true });
   terminal.open(viewport);
   viewport.appendChild(hoverOverlay);
@@ -1523,6 +1583,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     selectionAnchor: null,
     contextModeOverride: null,
     targetMenuOutsideClickHandler: undefined,
+    cleanupFns: [],
   };
 
   startButton.addEventListener('click', async () => {
@@ -1664,7 +1725,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   });
 
   instances.set(projectId, instance);
-  enableComposerDragging(instance);
+  instance.cleanupFns.push(enableComposerDragging(instance));
   syncViewportLines(instance);
   renderRuntimeMeta(instance);
   renderInspectState(instance);
@@ -1690,4 +1751,34 @@ export function hideAllCliSurfacePanes(): void {
 
 export function getCliSurfacePaneInstance(projectId: string): CliSurfaceInstance | undefined {
   return instances.get(projectId);
+}
+
+export function destroyCliSurfacePane(projectId: string): void {
+  const instance = instances.get(projectId);
+  if (!instance) {
+    clearProjectSurfaceCaches(projectId);
+    return;
+  }
+
+  instances.delete(projectId);
+
+  if (instance.targetMenuOutsideClickHandler) {
+    document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+  }
+  instance.targetMenuCleanup?.();
+  for (const cleanup of instance.cleanupFns) {
+    try {
+      cleanup();
+    } catch {
+      // Best-effort cleanup only.
+    }
+  }
+
+  try {
+    (instance.terminal as unknown as { dispose?: () => void }).dispose?.();
+  } catch {
+    // Terminal may already be disposed in tests or during teardown.
+  }
+  instance.element.remove();
+  clearProjectSurfaceCaches(projectId);
 }

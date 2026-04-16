@@ -190,4 +190,29 @@ describe('createAutoApprovalOrchestrator', () => {
       decision: 'ask',
     });
   });
+
+  it('falls back to safe off mode when policy resolution throws', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => {
+        throw new Error('resolver failed');
+      },
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({ toolName: 'Edit' }),
+    ]);
+
+    expect(sendApproval).not.toHaveBeenCalled();
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      policy_source: 'fallback',
+      effective_mode: 'off',
+      decision: 'ask',
+    });
+  });
 });

@@ -12,12 +12,16 @@ export function startProjectTeamContextWatcher(
   const workflowsDir = path.join(projectPath, '.calder', 'workflows');
   const watchers: fs.FSWatcher[] = [];
   let timer: NodeJS.Timeout | undefined;
+  let active = true;
 
   const schedule = () => {
+    if (!active) return;
     if (timer) clearTimeout(timer);
     timer = setTimeout(async () => {
       try {
-        onChange(await discoverProjectTeamContext(projectPath));
+        const nextState = await discoverProjectTeamContext(projectPath);
+        if (!active) return;
+        onChange(nextState);
       } catch {
         // Watchers are best-effort; explicit refresh still works through IPC.
       }
@@ -27,13 +31,20 @@ export function startProjectTeamContextWatcher(
   for (const dirPath of [teamDir, rulesDir, workflowsDir]) {
     try {
       fs.mkdirSync(dirPath, { recursive: true });
-      watchers.push(fs.watch(dirPath, { recursive: true }, schedule));
+      try {
+        watchers.push(fs.watch(dirPath, { recursive: true }, schedule));
+      } catch {
+        // Some platforms do not support recursive directory watching.
+        // Fall back to a standard watch so top-level changes still refresh.
+        watchers.push(fs.watch(dirPath, schedule));
+      }
     } catch {
       // Some platforms do not support recursive watches for every directory.
     }
   }
 
   return () => {
+    active = false;
     if (timer) clearTimeout(timer);
     for (const watcher of watchers) watcher.close();
   };

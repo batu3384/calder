@@ -25,7 +25,16 @@ export function initUpdateBanner(): void {
   actionBtn.className = 'update-banner-btn hidden';
   actions.appendChild(actionBtn);
 
+  let autoHideTimer: number | null = null;
+
+  function clearAutoHideTimer(): void {
+    if (autoHideTimer === null) return;
+    window.clearTimeout(autoHideTimer);
+    autoHideTimer = null;
+  }
+
   function show(msg: string, btn?: { label: string; action: () => void }, autoHideMs?: number): void {
+    clearAutoHideTimer();
     messageSpan.textContent = msg;
     banner.classList.remove('hidden');
 
@@ -41,7 +50,10 @@ export function initUpdateBanner(): void {
     }
 
     if (autoHideMs) {
-      setTimeout(() => banner.classList.add('hidden'), autoHideMs);
+      autoHideTimer = window.setTimeout(() => {
+        autoHideTimer = null;
+        banner.classList.add('hidden');
+      }, autoHideMs);
     }
   }
 
@@ -81,5 +93,8 @@ export function initUpdateBanner(): void {
   const unsubscribe = onUpdateCenterChange((snapshot) => {
     render(snapshot.app);
   });
-  window.addEventListener('beforeunload', () => unsubscribe(), { once: true });
+  window.addEventListener('beforeunload', () => {
+    clearAutoHideTimer();
+    unsubscribe();
+  }, { once: true });
 }

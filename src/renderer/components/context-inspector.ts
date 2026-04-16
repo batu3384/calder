@@ -155,11 +155,17 @@ function syncRailSignal(): void {
   }
 
   const gitStatus = getGitStatus(project.id);
+  const autoApprovalMode = project.projectGovernance?.autoApproval?.effectiveMode;
   const hasDirtyGit = Boolean(
     gitStatus?.isGitRepo && (gitStatus.staged + gitStatus.modified + gitStatus.untracked) > 0,
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
-  const nextSignal = hasGitConflicts ? 'warning' : hasDirtyGit ? 'active' : 'default';
+  const hasRiskyApproval = autoApprovalMode === 'full_auto';
+  const nextSignal = hasGitConflicts || hasRiskyApproval
+    ? 'warning'
+    : hasDirtyGit
+      ? 'active'
+      : 'default';
   if (inspectorEl.dataset.railSignal === nextSignal) {
     return;
   }

@@ -10,6 +10,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let dirWatchers: fs.FSWatcher[] = [];
 let currentProjectPath: string | null = null;
 let currentWin: BrowserWindow | null = null;
+let setupNonce = 0;
 
 function notify(): void {
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -22,7 +23,7 @@ function notify(): void {
 
 function shouldIgnore(filename: string | null): boolean {
   if (!filename) return false;
-  const first = filename.split(path.sep)[0];
+  const first = filename.split(/[\\/]/)[0];
   return IGNORE_SEGMENTS.has(first);
 }
 
@@ -54,6 +55,7 @@ function resolveGitDir(projectPath: string): Promise<string> {
 }
 
 function stopAll(): void {
+  setupNonce += 1;
   if (debounceTimer) {
     clearTimeout(debounceTimer);
     debounceTimer = null;
@@ -64,8 +66,9 @@ function stopAll(): void {
 
 const GIT_DIR_FILES = new Set(['index', 'HEAD']);
 
-async function setupWatchers(projectPath: string): Promise<void> {
+async function setupWatchers(projectPath: string, nonce: number): Promise<void> {
   const gitDir = await resolveGitDir(projectPath);
+  if (nonce !== setupNonce || currentProjectPath !== projectPath) return;
 
   // Watch git dir for index changes (stage/unstage) and HEAD (branch switch, commit)
   watchDir(gitDir, (filename) => !filename || !GIT_DIR_FILES.has(filename));
@@ -90,11 +93,15 @@ async function setupWatchers(projectPath: string): Promise<void> {
 }
 
 export async function startGitWatcher(win: BrowserWindow, projectPath: string): Promise<void> {
-  if (projectPath === currentProjectPath) return;
+  if (projectPath === currentProjectPath) {
+    currentWin = win;
+    return;
+  }
   stopAll();
   currentWin = win;
   currentProjectPath = projectPath;
-  await setupWatchers(projectPath);
+  const nonce = setupNonce;
+  await setupWatchers(projectPath, nonce);
 }
 
 export function stopGitWatcher(): void {

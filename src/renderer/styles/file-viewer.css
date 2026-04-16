@@ -71,10 +71,10 @@
   flex-shrink: 0;
 }
 
-.file-viewer-area-badge.staged { background: rgba(52, 168, 83, 0.15); color: #34a853; }
-.file-viewer-area-badge.working { background: rgba(244, 180, 0, 0.15); color: #f4b400; }
-.file-viewer-area-badge.untracked { background: rgba(96, 96, 112, 0.15); color: var(--text-muted); }
-.file-viewer-area-badge.conflicted { background: rgba(230, 126, 34, 0.15); color: #e67e22; }
+.file-viewer-area-badge.staged { background: var(--status-success-bg); border-color: var(--status-success-border); color: var(--status-success-text); }
+.file-viewer-area-badge.working { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
+.file-viewer-area-badge.untracked { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
+.file-viewer-area-badge.conflicted { background: var(--status-danger-bg); border-color: var(--status-danger-border); color: var(--status-danger-text); }
 
 .file-viewer-close {
   background: none;
@@ -122,8 +122,8 @@
 }
 
 .diff-line.added {
-  background: rgba(52, 168, 83, 0.15);
-  color: #34a853;
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
 }
 
 .diff-line.removed {
@@ -184,10 +184,10 @@
   flex-shrink: 0;
 }
 
-.file-viewer-area-badge.staged { background: rgba(52, 168, 83, 0.15); color: #34a853; }
-.file-viewer-area-badge.working { background: rgba(244, 180, 0, 0.15); color: #f4b400; }
-.file-viewer-area-badge.untracked { background: rgba(96, 96, 112, 0.15); color: var(--text-muted); }
-.file-viewer-area-badge.conflicted { background: rgba(233, 69, 96, 0.15); color: var(--accent); }
+.file-viewer-area-badge.staged { background: var(--status-success-bg); color: var(--status-success-text); }
+.file-viewer-area-badge.working { background: var(--status-warning-bg); color: var(--status-warning-text); }
+.file-viewer-area-badge.untracked { background: var(--status-neutral-bg); color: var(--status-neutral-text); }
+.file-viewer-area-badge.conflicted { background: var(--status-danger-bg); color: var(--status-danger-text); }
 
 .file-viewer-body {
   flex: 1;
@@ -208,8 +208,8 @@
 }
 
 .diff-line.added {
-  background: rgba(52, 168, 83, 0.12);
-  color: #5fba7d;
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: color-mix(in srgb, var(--success) 64%, white);
 }
 
 .diff-line.removed {
@@ -439,12 +439,12 @@
 .file-reader-agent-card {
   margin: 4px 0 18px;
   padding: 20px 22px;
-  border: 1px solid rgba(79, 70, 229, 0.18);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, rgba(79, 70, 229, 0.18), transparent 38%),
-    linear-gradient(180deg, rgba(15, 23, 42, 0.52), rgba(15, 23, 42, 0.2));
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 90%, transparent), transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 88%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+  box-shadow: 0 18px 44px rgba(2, 8, 16, 0.2);
 }
 
 .file-reader-agent-title {
@@ -473,9 +473,9 @@
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(79, 70, 229, 0.14);
-  border: 1px solid rgba(79, 70, 229, 0.18);
-  color: var(--text-primary);
+  background: var(--status-accent-bg);
+  border: 1px solid var(--status-accent-border);
+  color: var(--status-accent-text);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -483,9 +483,9 @@
 }
 
 .file-reader-agent-chip.secondary {
-  background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.16);
-  color: var(--text-secondary);
+  background: var(--status-neutral-bg);
+  border-color: var(--status-neutral-border);
+  color: var(--status-neutral-text);
 }
 
 .file-reader-doc-outline {
@@ -497,7 +497,7 @@
 
 .file-reader-doc-outline-btn {
   border: 1px solid var(--border);
-  background: rgba(148, 163, 184, 0.08);
+  background: color-mix(in srgb, var(--surface-muted) 76%, transparent);
   color: var(--text-secondary);
   border-radius: 999px;
   padding: 7px 11px;
@@ -509,8 +509,8 @@
 }
 
 .file-reader-doc-outline-btn:hover {
-  background: rgba(79, 70, 229, 0.12);
-  border-color: rgba(79, 70, 229, 0.22);
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
   color: var(--text-primary);
   transform: translateY(-1px);
 }
@@ -655,9 +655,9 @@
   padding: 0 10px;
   font-size: 9px;
   font-weight: 700;
-  background: rgba(74, 144, 217, 0.15);
-  color: #4a90d9;
-  border-color: rgba(74, 144, 217, 0.22);
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  border-color: var(--status-info-border);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
@@ -709,9 +709,9 @@
 }
 
 .file-reader-line-highlight {
-  background: rgba(233, 69, 96, 0.15);
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
 }
 
 .file-reader-line-highlight .file-reader-line-num {
-  color: var(--accent);
+  color: var(--warning-strong);
 }

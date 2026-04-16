@@ -54,6 +54,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
   stopCodexSessionWatcher();
+  mockStatSync.mockReset();
+  mockOpenSync.mockReset();
+  mockReadSync.mockReset();
+  mockCloseSync.mockReset();
+  mockWriteFileSync.mockReset();
+  mockMkdirSync.mockReset();
+  mockWatch.mockReset();
+  mockWatch.mockReturnValue({ close: vi.fn() } as any);
 });
 
 afterEach(() => {
@@ -179,6 +187,143 @@ describe('session ID assignment via polling', () => {
       path.join(MOCK_STATUS_DIR, 'ui-older.sessionid'),
       'codex-first'
     );
+  });
+
+  it('assigns multiple pending sessions when multiple IDs arrive in one read', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    mockStatSync.mockReturnValue({ size: 0 } as fs.Stats);
+    registerPendingCodexSession('ui-older');
+    vi.advanceTimersByTime(100);
+    registerPendingCodexSession('ui-newer');
+
+    const payload = [
+      '{"session_id":"codex-first","ts":1774904000,"text":"first"}',
+      '{"session_id":"codex-second","ts":1774904001,"text":"second"}',
+      '',
+    ].join('\n');
+    const buf = Buffer.from(payload);
+    mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
+    mockOpenSync.mockReturnValue(44);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
+      return buf.length;
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-older.sessionid'),
+      'codex-first',
+    );
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-newer.sessionid'),
+      'codex-second',
+    );
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
+  });
+
+  it('buffers trailing partial JSONL entry until it is completed', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    const partialLine = '{"session_id":"codex-part';
+    const completedTail = 'ial","ts":1774904000,"text":"ok"}\n';
+    const partialSize = Buffer.byteLength(partialLine);
+    const totalSize = partialSize + Buffer.byteLength(completedTail);
+
+    let statCalls = 0;
+    mockStatSync.mockImplementation(() => {
+      statCalls += 1;
+      if (statCalls === 1) return { size: 0 } as fs.Stats; // register
+      if (statCalls === 2) return { size: partialSize } as fs.Stats; // first poll
+      if (statCalls === 3) return { size: totalSize } as fs.Stats; // second poll
+      return { size: totalSize } as fs.Stats;
+    });
+
+    registerPendingCodexSession('ui-session-1');
+
+    mockOpenSync
+      .mockReturnValueOnce(71 as any)
+      .mockReturnValueOnce(72 as any);
+    mockReadSync
+      .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+        Buffer.from(partialLine, 'utf-8').copy(target as Uint8Array);
+        return partialSize;
+      })
+      .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+        Buffer.from(completedTail, 'utf-8').copy(target as Uint8Array);
+        return Buffer.byteLength(completedTail);
+      });
+
+    vi.advanceTimersByTime(2000);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(2000);
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-session-1.sessionid'),
+      'codex-partial',
+    );
+  });
+
+  it('resets read offset when history file is truncated', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    const firstLine = '{"session_id":"codex-old","ts":1774904000,"text":"line-that-makes-this-entry-longer"}\n';
+    const secondLine = '{"session_id":"codex-new"}\n';
+    const firstSize = Buffer.byteLength(firstLine);
+    const secondSize = Buffer.byteLength(secondLine);
+
+    let statCalls = 0;
+    mockStatSync.mockImplementation(() => {
+      statCalls += 1;
+      if (statCalls === 1) return { size: 0 } as fs.Stats; // register ui-1
+      if (statCalls === 2) return { size: firstSize } as fs.Stats; // poll ui-1
+      if (statCalls === 3) return { size: firstSize } as fs.Stats; // register ui-2 baseline
+      if (statCalls === 4) return { size: secondSize } as fs.Stats; // poll after truncate
+      return { size: secondSize } as fs.Stats;
+    });
+
+    registerPendingCodexSession('ui-1');
+
+    mockOpenSync
+      .mockReturnValueOnce(81 as any)
+      .mockReturnValueOnce(82 as any);
+    mockReadSync
+      .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+        Buffer.from(firstLine, 'utf-8').copy(target as Uint8Array);
+        return firstSize;
+      })
+      .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+        Buffer.from(secondLine, 'utf-8').copy(target as Uint8Array);
+        return secondSize;
+      });
+
+    vi.advanceTimersByTime(2000);
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-1.sessionid'),
+      'codex-old',
+    );
+
+    registerPendingCodexSession('ui-2');
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-2.sessionid'),
+      'codex-new',
+    );
+    expect(mockReadSync).toHaveBeenLastCalledWith(82, expect.any(Buffer), 0, secondSize, 0);
   });
 
   it('does not assign the same codex session ID twice', () => {

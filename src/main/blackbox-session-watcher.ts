@@ -61,7 +61,17 @@ function assignToOldestPending(cliSessionId: string): void {
 function scanForNewSessions(): void {
   if (pendingSessions.size === 0) return;
 
-  for (const filename of listSessionFiles()) {
+  const sessionFiles = listSessionFiles();
+  const currentFiles = new Set(sessionFiles);
+  // Drop stale entries so a filename that disappears and later reappears
+  // can be processed again.
+  for (const known of Array.from(knownSessionFiles)) {
+    if (!currentFiles.has(known)) {
+      knownSessionFiles.delete(known);
+    }
+  }
+
+  for (const filename of sessionFiles) {
     if (knownSessionFiles.has(filename)) continue;
     knownSessionFiles.add(filename);
 
@@ -119,4 +129,3 @@ export function stopBlackboxSessionWatcher(): void {
   assignedBlackboxIds.clear();
   knownSessionFiles = new Set();
 }
-

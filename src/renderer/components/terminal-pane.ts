@@ -33,15 +33,16 @@ interface TerminalInstance {
 
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
-let lastTerminalLinkDispatch: LinkDispatchSnapshot | null = null;
+const lastTerminalLinkDispatchBySession = new Map<string, LinkDispatchSnapshot>();
 const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
 
-function openTerminalWebLink(url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
+function openTerminalWebLink(sessionId: string, url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
   const normalizedUrl = resolveNavigableHttpUrl(url);
   if (!normalizedUrl) return;
   const now = Date.now();
-  if (!shouldDispatchLinkOpen(normalizedUrl, lastTerminalLinkDispatch, source, now)) return;
-  lastTerminalLinkDispatch = { url: normalizedUrl, at: now, source };
+  const lastDispatch = lastTerminalLinkDispatchBySession.get(sessionId) ?? null;
+  if (!shouldDispatchLinkOpen(normalizedUrl, lastDispatch, source, now)) return;
+  lastTerminalLinkDispatchBySession.set(sessionId, { url: normalizedUrl, at: now, source });
   void window.calder.app.openExternal(normalizedUrl, cwd);
 }
 
@@ -78,6 +79,17 @@ function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: Mo
   }
 
   return null;
+}
+
+function extractUrlFromEventTarget(event: MouseEvent): string | null {
+  const maybeTarget = event.target as {
+    closest?: (selector: string) => { getAttribute?: (name: string) => string | null } | null;
+  } | null;
+  if (!maybeTarget?.closest) return null;
+  const anchor = maybeTarget.closest('a[href]');
+  if (!anchor?.getAttribute) return null;
+  const href = anchor.getAttribute('href');
+  return typeof href === 'string' && href.trim().length > 0 ? href : null;
 }
 
 function providerDisplayName(providerId: ProviderId): string {
@@ -192,7 +204,7 @@ export function createTerminalPane(
         event.stopPropagation?.();
         try { terminal.clearSelection(); } catch {}
         window.getSelection?.()?.removeAllRanges?.();
-        openTerminalWebLink(uri, 'osc-link', projectPath);
+        openTerminalWebLink(sessionId, uri, 'osc-link', projectPath);
       },
     },
   });
@@ -208,7 +220,7 @@ export function createTerminalPane(
     event.stopPropagation?.();
     try { terminal.clearSelection(); } catch {}
     window.getSelection?.()?.removeAllRanges?.();
-    openTerminalWebLink(url, 'web-link', projectPath);
+    openTerminalWebLink(sessionId, url, 'web-link', projectPath);
   }));
 
   let suppressLinkDragSelection = false;
@@ -224,7 +236,10 @@ export function createTerminalPane(
 
   xtermWrap.addEventListener('mousedown', (event: MouseEvent) => {
     if (event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event);
+    // Clear stale suppression from a previous link click before evaluating
+    // the current pointer target.
+    suppressLinkDragSelection = false;
+    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
     if (!candidate) return;
     suppressLinkDragSelection = true;
     suppressPointerEvent(event);
@@ -232,7 +247,10 @@ export function createTerminalPane(
   }, { capture: true });
   xtermWrap.addEventListener('mousemove', (event: MouseEvent) => {
     if (!suppressLinkDragSelection) return;
-    if ((event.buttons & 1) !== 1) return;
+    if ((event.buttons & 1) !== 1) {
+      suppressLinkDragSelection = false;
+      return;
+    }
     suppressPointerEvent(event);
     clearPointerSelection();
   }, { capture: true });
@@ -244,11 +262,11 @@ export function createTerminalPane(
   }, { capture: true });
   xtermWrap.addEventListener('click', (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event);
+    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
     if (!candidate) return;
     suppressPointerEvent(event);
     clearPointerSelection();
-    openTerminalWebLink(candidate, 'web-link', projectPath);
+    openTerminalWebLink(sessionId, candidate, 'web-link', projectPath);
   }, { capture: true });
 
   // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline
@@ -486,6 +504,7 @@ export function destroyTerminal(sessionId: string): void {
   instance.terminal.dispose();
   instance.element.remove();
   instances.delete(sessionId);
+  lastTerminalLinkDispatchBySession.delete(sessionId);
   removeSession(sessionId);
   removeCostSession(sessionId);
   removeContextSession(sessionId);

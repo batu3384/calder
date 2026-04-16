@@ -144,6 +144,26 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateCommand).toBe(`${claudeBinary} update`);
   });
 
+  it('prefers npm updates for providers installed from npm even when self-update exists', async () => {
+    const runner = new FakeRunner();
+    const claudeBinary = '/Users/test/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js';
+    runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.109' });
+    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], { code: 0, stdout: '2.1.110' });
+    runner.enqueue('npm', ['install', '-g', '@anthropic-ai/claude-code@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.110' });
+
+    const summary = await updateProviders(
+      [createTarget('claude', 'Claude Code', claudeBinary)],
+      { runner, now: (() => 4_250) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('claude');
+    expect(summary.results[0].source).toBe('npm');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].updateCommand).toBe('npm install -g @anthropic-ai/claude-code@latest');
+  });
+
   it('uses npm-based checks for Copilot instead of self-update commands', async () => {
     const runner = new FakeRunner();
     const copilotBinary = '/Users/test/.npm-global/lib/node_modules/@github/copilot/bin/copilot.js';
@@ -162,6 +182,100 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateAttempted).toBe(false);
     expect(summary.results[0].checkCommand).toBe('npm view @github/copilot version --silent');
     expect(summary.results[0].updateCommand).toBeUndefined();
+  });
+
+  it('treats two-part versions as comparable and avoids unnecessary updates', async () => {
+    const runner = new FakeRunner();
+    const claudeBinary = '/Users/test/.local/bin/claude';
+    runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: 'Claude Code v2.1' });
+    runner.enqueue(claudeBinary, ['update'], { code: 0, stdout: 'already up to date' });
+    runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: 'Claude Code v2.1' });
+
+    const summary = await updateProviders(
+      [createTarget('claude', 'Claude Code', claudeBinary)],
+      { runner, now: (() => 4_600) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].beforeVersion).toBe('2.1');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(true);
+  });
+
+  it('treats semver build metadata as equivalent when comparing versions', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0+build.42' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_700) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].beforeVersion).toBe('0.121.0+build.42');
+    expect(summary.results[0].latestVersion).toBe('0.121.0');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(false);
+  });
+
+  it('treats prerelease versions as lower than stable and applies updates', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.1' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_750) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].beforeVersion).toBe('0.121.0-rc.1');
+    expect(summary.results[0].latestVersion).toBe('0.121.0');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].updateAttempted).toBe(true);
+  });
+
+  it('does not downgrade stable versions when latest channel is prerelease', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0-rc.2' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_800) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].beforeVersion).toBe('0.121.0');
+    expect(summary.results[0].latestVersion).toBe('0.121.0-rc.2');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(false);
+  });
+
+  it('compares prerelease identifiers numerically when both versions are prerelease', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.1' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0-rc.2' });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.2' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_850) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].beforeVersion).toBe('0.121.0-rc.1');
+    expect(summary.results[0].latestVersion).toBe('0.121.0-rc.2');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].updateAttempted).toBe(true);
   });
 
   it('emits provider update progress events from start to finish', async () => {

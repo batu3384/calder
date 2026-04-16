@@ -29,9 +29,15 @@ function watchFile(filePath: string): void {
 
 function watchDir(dirPath: string): void {
   try {
-    const watcher = fs.watch(dirPath, { recursive: true }, () => notify());
-    watcher.on('error', () => {}); // ignore errors (dir deleted, etc.)
-    dirWatchers.push(watcher);
+    try {
+      const watcher = fs.watch(dirPath, { recursive: true }, () => notify());
+      watcher.on('error', () => {}); // ignore errors (dir deleted, etc.)
+      dirWatchers.push(watcher);
+    } catch {
+      const watcher = fs.watch(dirPath, () => notify());
+      watcher.on('error', () => {}); // ignore errors (dir deleted, etc.)
+      dirWatchers.push(watcher);
+    }
   } catch {
     // Directory doesn't exist — that's fine
   }

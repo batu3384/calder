@@ -22,4 +22,12 @@ describe('notice surfaces contract', () => {
     expect(sidebarCss).toContain('.update-banner-copy');
     expect(sidebarCss).toContain('.update-banner-actions');
   });
+
+  it('cleans stale auto-hide timers before rendering the next update notice', () => {
+    expect(updateSource).toContain('let autoHideTimer: number | null = null;');
+    expect(updateSource).toContain('function clearAutoHideTimer(): void');
+    expect(updateSource).toContain('clearAutoHideTimer();');
+    expect(updateSource).toContain('autoHideTimer = window.setTimeout(');
+    expect(updateSource).toContain('window.clearTimeout(autoHideTimer);');
+  });
 });

@@ -25,6 +25,17 @@ class FakeTerminal {
   rows = 30;
   private keyHandler: ((e: KeyboardEvent) => boolean) | null = null;
   private _selection = '';
+  private _viewportLine = '';
+  buffer = {
+    active: {
+      viewportY: 0,
+      getLine: (_lineIndex: number) => (
+        this._viewportLine
+          ? { translateToString: () => this._viewportLine }
+          : null
+      ),
+    },
+  };
 
   constructor(options?: Record<string, unknown>) {
     terminalOptionsRef.current = options ?? null;
@@ -37,6 +48,7 @@ class FakeTerminal {
   simulateKey(event: Partial<KeyboardEvent>): boolean {
     return this.keyHandler ? this.keyHandler(event as KeyboardEvent) : true;
   }
+  setViewportLine(text: string): void { this._viewportLine = text; }
   getSelection(): string { return this._selection; }
   setSelection(s: string): void { this._selection = s; }
   clearSelection = vi.fn(() => {
@@ -130,6 +142,7 @@ class FakeElement {
   classList = new FakeClassList();
   dataset: Record<string, string> = {};
   textContent = '';
+  private listeners = new Map<string, Array<(event: unknown) => void>>();
 
   constructor(public tagName: string) {}
 
@@ -145,7 +158,31 @@ class FakeElement {
     this.parentElement = null;
   }
 
-  addEventListener(): void {}
+  addEventListener(type: string, listener: (event: unknown) => void): void {
+    const existing = this.listeners.get(type) ?? [];
+    existing.push(listener);
+    this.listeners.set(type, existing);
+  }
+
+  emit(type: string, event: unknown): void {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
+  }
+
+  getBoundingClientRect(): DOMRect {
+    return {
+      left: 0,
+      top: 0,
+      right: 1200,
+      bottom: 300,
+      width: 1200,
+      height: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect;
+  }
 
   querySelector(selector: string): FakeElement | null {
     if (selector.startsWith('.')) {
@@ -408,5 +445,116 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     expect(openExternal).toHaveBeenCalledWith('http://localhost:3000/dashboard', '/project');
     expect(terminal.clearSelection).toHaveBeenCalled();
     expect(mockDomSelectionClear).toHaveBeenCalled();
+  });
+
+  it('does not cross-dedupe link opens between different terminal sessions', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    createTerminalPane('links-scope-a', '/project', null);
+    const sessionALink = webLinksActivateRef.current;
+
+    const openExternal = (window as any).calder.app.openExternal;
+    sessionALink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+
+    createTerminalPane('links-scope-b', '/project', null);
+    const sessionBLink = webLinksActivateRef.current;
+    sessionBLink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+
+    expect(openExternal).toHaveBeenCalledTimes(2);
+    expect(openExternal).toHaveBeenNthCalledWith(1, 'http://localhost:3000/dashboard', '/project');
+    expect(openExternal).toHaveBeenNthCalledWith(2, 'http://localhost:3000/dashboard', '/project');
+  });
+
+  it('suppresses drag selection when a link anchor is the pointer target', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    const instance = createTerminalPane('links-anchor-target', '/project', null);
+    const xtermWrap = instance.element.querySelector('.xterm-wrap') as unknown as FakeElement;
+
+    const linkTarget = {
+      closest: () => ({
+        getAttribute: () => 'http://localhost:4100/path',
+      }),
+    };
+
+    const mousedown = {
+      button: 0,
+      clientX: 1024,
+      clientY: 32,
+      target: linkTarget,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    xtermWrap.emit('mousedown', mousedown);
+
+    expect((mousedown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+  });
+
+  it('opens link anchors when pointer-based URL detection misses', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    const instance = createTerminalPane('links-anchor-open', '/project', null);
+    const openExternal = (window as any).calder.app.openExternal;
+    const xtermWrap = instance.element.querySelector('.xterm-wrap') as unknown as FakeElement;
+
+    const linkTarget = {
+      closest: () => ({
+        getAttribute: () => 'http://localhost:4101/from-anchor',
+      }),
+    };
+
+    const click = {
+      defaultPrevented: false,
+      button: 0,
+      clientX: 1008,
+      clientY: 30,
+      target: linkTarget,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    xtermWrap.emit('click', click);
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:4101/from-anchor', '/project');
+  });
+
+  it('resets link-drag suppression before a non-link drag starts', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+    const instance = createTerminalPane('links-drag-reset', '/project', null);
+    const terminal = instance.terminal as unknown as FakeTerminal;
+    terminal.setViewportLine('http://localhost:3000/dashboard plain text tail');
+
+    const xtermWrap = instance.element.querySelector('.xterm-wrap') as unknown as FakeElement;
+    const linkMouseDown = {
+      button: 0,
+      clientX: 16,
+      clientY: 12,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    xtermWrap.emit('mousedown', linkMouseDown);
+    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+
+    const nonLinkMouseDown = {
+      button: 0,
+      clientX: 1080,
+      clientY: 12,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    xtermWrap.emit('mousedown', nonLinkMouseDown);
+    expect((nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+
+    const dragMove = {
+      buttons: 1,
+      button: 0,
+      clientX: 1090,
+      clientY: 18,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    xtermWrap.emit('mousemove', dragMove);
+    expect((dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
   });
 });

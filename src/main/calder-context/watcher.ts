@@ -27,8 +27,14 @@ function notify(): void {
   if (!currentProjectPath || !currentHandler) return;
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
-    if (!currentProjectPath || !currentHandler) return;
-    currentHandler(await discoverProjectContext(currentProjectPath));
+    const projectPath = currentProjectPath;
+    const handler = currentHandler;
+    if (!projectPath || !handler) return;
+    const nextState = await discoverProjectContext(projectPath);
+    // Ignore stale async callbacks that complete after watcher teardown
+    // or a project/handler switch.
+    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
+    handler(nextState);
   }, DEBOUNCE_MS);
 }
 

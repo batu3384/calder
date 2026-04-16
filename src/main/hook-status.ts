@@ -16,6 +16,7 @@ let watcher: fs.FSWatcher | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 const lastMtimes = new Map<string, number>();
 const eventFileOffsets = new Map<string, number>();
+const eventFileRemainders = new Map<string, string>();
 const knownSessionIds = new Set<string>();
 type InspectorEventsMiddleware = (sessionId: string, events: InspectorEvent[]) => InspectorEvent[];
 let inspectorEventsMiddleware: InspectorEventsMiddleware | null = null;
@@ -139,18 +140,31 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
   } else if (filename.endsWith('.events')) {
     const sessionId = filename.replace('.events', '');
     const filePath = path.join(STATUS_DIR, filename);
-    const offset = eventFileOffsets.get(sessionId) ?? 0;
+    let offset = eventFileOffsets.get(sessionId) ?? 0;
 
     let fd: number | null = null;
     try {
       fd = fs.openSync(filePath, 'r');
       const stat = fs.fstatSync(fd);
+      if (stat.size < offset) {
+        offset = 0;
+        eventFileOffsets.set(sessionId, 0);
+        eventFileRemainders.delete(sessionId);
+      }
       if (stat.size > offset) {
         const buf = Buffer.alloc(stat.size - offset);
         fs.readSync(fd, buf, 0, buf.length, offset);
         eventFileOffsets.set(sessionId, stat.size);
-
-        const lines = buf.toString('utf-8').trim().split('\n').filter(Boolean);
+        const chunk = `${eventFileRemainders.get(sessionId) ?? ''}${buf.toString('utf-8')}`;
+        const hasTrailingNewline = chunk.endsWith('\n');
+        const splitLines = chunk.split('\n');
+        const lines = (hasTrailingNewline ? splitLines : splitLines.slice(0, -1)).filter(Boolean);
+        const trailing = hasTrailingNewline ? '' : (splitLines[splitLines.length - 1] ?? '');
+        if (trailing) {
+          eventFileRemainders.set(sessionId, trailing);
+        } else {
+          eventFileRemainders.delete(sessionId);
+        }
         const events: InspectorEvent[] = [];
         for (const line of lines) {
           try { events.push(JSON.parse(line)); } catch { /* skip malformed */ }
@@ -182,8 +196,12 @@ function pollForChanges(win: BrowserWindow): void {
 
   try {
     const files = fs.readdirSync(STATUS_DIR);
+    const seenFiles = new Set<string>();
     for (const filename of files) {
       if (!isKnownExtension(filename)) continue;
+      const extractedId = extractSessionId(filename);
+      if (extractedId && !knownSessionIds.has(extractedId)) continue;
+      seenFiles.add(filename);
       const filePath = path.join(STATUS_DIR, filename);
       try {
         const stat = fs.statSync(filePath);
@@ -191,12 +209,17 @@ function pollForChanges(win: BrowserWindow): void {
         const prev = lastMtimes.get(filename);
         if (prev === undefined || mtime > prev) {
           lastMtimes.set(filename, mtime);
-          if (prev !== undefined) {
-            handleFileChange(win, filename);
-          }
+          handleFileChange(win, filename);
         }
       } catch {
         // File may have been deleted
+      }
+    }
+    // Remove mtimes for files that no longer exist (or are no longer relevant)
+    // so recreated one-shot files are handled again instead of being skipped.
+    for (const tracked of Array.from(lastMtimes.keys())) {
+      if (!seenFiles.has(tracked)) {
+        lastMtimes.delete(tracked);
       }
     }
   } catch {
@@ -269,6 +292,7 @@ export function cleanupSessionStatus(sessionId: string): void {
     }
   }
   eventFileOffsets.delete(sessionId);
+  eventFileRemainders.delete(sessionId);
   unregisterSession(sessionId);
 }
 
@@ -276,6 +300,7 @@ export function cleanupAll(): void {
   stopPolling();
   knownSessionIds.clear();
   eventFileOffsets.clear();
+  eventFileRemainders.clear();
   inspectorEventsMiddleware = null;
   if (watcher) {
     watcher.close();

@@ -6,15 +6,18 @@
   right: 0;
   bottom: 0;
   border: 1px solid var(--pane-unfocus);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at top left, rgba(108, 165, 234, 0.08), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 0% 0%, rgba(221, 177, 120, 0.07), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(109, 155, 216, 0.06), transparent 20%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
     var(--bg-primary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 20px 44px rgba(2, 4, 10, 0.18);
 }
 
 .browser-tab-pane.split {
@@ -30,11 +33,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 32px;
-  padding: 0 14px;
+  min-height: var(--control-height-md);
+  padding: 0 var(--space-12);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 94%, black);
   user-select: none;
 }
@@ -47,8 +50,8 @@
   border-radius: 0;
   border: none;
   background: transparent;
-  color: color-mix(in srgb, var(--accent) 72%, var(--text-secondary));
-  font-size: 10px;
+  color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
+  font-size: var(--type-xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -56,7 +59,7 @@
 
 .browser-pane-hint {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--type-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -79,7 +82,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   background: color-mix(in srgb, var(--surface-panel-alt) 72%, transparent);
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: var(--type-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -109,11 +112,11 @@
 .browser-tab-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-8);
   flex-wrap: wrap;
   padding: 8px 12px 9px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 84%, black);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   flex-shrink: 0;
@@ -151,12 +154,14 @@
 .browser-toolbar-address-shell {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: var(--control-height-md);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background: color-mix(in srgb, var(--surface-panel) 56%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 58%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.028),
-    0 10px 24px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(2, 4, 10, 0.12);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -172,10 +177,12 @@
 
 .browser-toolbar-nav-shell:hover,
 .browser-toolbar-address-shell:hover {
-  background: color-mix(in srgb, var(--surface-panel) 62%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 14px 28px rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 30px rgba(2, 4, 10, 0.16);
   transform: none;
 }
 
@@ -188,10 +195,13 @@
 
 .browser-toolbar-address-shell:focus-within {
   border-color: var(--border-focus);
-  background: color-mix(in srgb, var(--surface-panel) 66%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 68%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.032),
-    0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 14px 28px rgba(2, 4, 10, 0.12);
 }
 
 .browser-toolbar-address-shell[data-dirty='true'] {
@@ -210,14 +220,16 @@
 .browser-toolbar-tools-shell {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: var(--control-height-md);
   padding: 2px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background: color-mix(in srgb, var(--surface-panel) 56%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 58%, transparent);
   border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.028),
-    0 10px 24px rgba(0, 0, 0, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(2, 4, 10, 0.12);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -231,10 +243,12 @@
 
 .browser-toolbar-presence-shell:hover,
 .browser-toolbar-tools-shell:hover {
-  background: color-mix(in srgb, var(--surface-panel) 62%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 14px 28px rgba(0, 0, 0, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 30px rgba(2, 4, 10, 0.16);
   transform: none;
 }
 
@@ -256,14 +270,14 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 30px;
+  min-height: var(--control-height-sm);
   max-width: 220px;
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   background: color-mix(in srgb, var(--surface-panel) 62%, transparent);
   color: var(--text-secondary);
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 600;
   font-family: inherit;
   white-space: nowrap;
@@ -532,14 +546,16 @@ html[lang='tr'] .browser-toolbar-cluster-label {
 .browser-inspect-btn,
 .browser-record-btn,
 .browser-viewport-btn {
-  min-height: 30px;
+  min-height: var(--control-height-sm);
   padding: 0 10px;
-  background: color-mix(in srgb, var(--surface-panel) 64%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 66%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 999px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
@@ -565,9 +581,11 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-inspect-btn:hover,
 .browser-record-btn:hover,
 .browser-viewport-btn:hover {
-  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, transparent);
   color: var(--text-primary);
-  border-color: var(--border);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
 }
 
 .browser-nav-btn:disabled {
@@ -605,7 +623,7 @@ html[lang='tr'] .browser-viewport-btn {
   border: none;
   border-radius: 0;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: var(--type-sm);
   font-family: inherit;
   outline: none;
   -webkit-appearance: none;
@@ -623,16 +641,21 @@ html[lang='tr'] .browser-viewport-btn {
 
 .browser-go-btn {
   min-width: 40px;
-  background: var(--accent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white), var(--accent));
   border-color: transparent;
   border-radius: 999px;
-  color: #fff;
+  color: #17120d;
   font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 12px 24px rgba(2, 4, 10, 0.16);
 }
 
 .browser-go-btn:hover {
-  background: var(--accent-dim);
-  color: #fff;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-dim) 84%, white), var(--accent-dim));
+  color: #130f0b;
 }
 
 .browser-go-btn.loading {
@@ -661,7 +684,9 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-inspect-btn.active,
 .browser-record-btn.active,
 .browser-viewport-btn.active {
-  background: color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   color: var(--text-primary);
 }
@@ -714,8 +739,8 @@ html[lang='tr'] .browser-viewport-btn {
   align-items: flex-start;
   justify-content: center;
   background:
-    radial-gradient(circle at top left, rgba(239, 104, 121, 0.06), transparent 22%),
-    radial-gradient(circle at top right, rgba(108, 165, 234, 0.06), transparent 18%),
+    radial-gradient(circle at top left, rgba(221, 177, 120, 0.08), transparent 22%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 12%, transparent), transparent 18%),
     var(--bg-primary);
 }
 
@@ -766,8 +791,9 @@ body.sidebar-resizing .browser-webview {
   padding: 34px 40px;
   overflow: auto;
   background:
-    radial-gradient(circle at top left, rgba(239, 104, 121, 0.07), transparent 18%),
-    radial-gradient(circle at bottom right, rgba(108, 165, 234, 0.06), transparent 22%),
+    radial-gradient(circle at top left, rgba(221, 177, 120, 0.12), transparent 22%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--accent-cool) 16%, transparent), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(60, 74, 101, 0.12), transparent 34%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 76%, black), var(--surface-canvas));
 }
 
@@ -779,7 +805,9 @@ body.sidebar-resizing .browser-webview {
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 56%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 64%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    transparent;
   color: var(--accent);
 }
 
@@ -790,7 +818,11 @@ body.sidebar-resizing .browser-webview {
   line-height: 1.08;
   font-weight: 680;
   letter-spacing: -0.03em;
-  color: var(--text-primary);
+  color: transparent;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 92%, white), color-mix(in srgb, var(--accent) 46%, var(--text-primary)));
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .browser-ntp-subtitle {
@@ -813,7 +845,9 @@ body.sidebar-resizing .browser-webview {
   padding: 0 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 620;
@@ -833,7 +867,9 @@ body.sidebar-resizing .browser-webview {
 }
 
 .browser-ntp-action-secondary {
-  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
   border-color: var(--border-subtle);
   color: var(--text-secondary);
 }
@@ -979,10 +1015,13 @@ body.sidebar-resizing .browser-webview {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
   border-radius: 22px;
   background:
-    radial-gradient(circle at top right, rgba(108, 165, 234, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 0% 0%, rgba(221, 177, 120, 0.09), transparent 28%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 15%, transparent), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 74%, transparent);
-  box-shadow: var(--shadow-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--shadow-soft);
 }
 
 .browser-ntp-hero-top {
@@ -1034,10 +1073,14 @@ body.sidebar-resizing .browser-webview {
   gap: 10px;
   min-height: 100%;
   padding: 16px 18px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-panel) 68%, transparent);
-  box-shadow: var(--shadow-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    var(--shadow-soft);
 }
 
 .browser-ntp-section-header {
@@ -1107,9 +1150,9 @@ body.sidebar-resizing .browser-webview {
   min-height: 82px;
   padding: 14px 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 92%, black);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-size: 12px;
@@ -1119,12 +1162,14 @@ body.sidebar-resizing .browser-webview {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: var(--shadow-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    var(--shadow-soft);
 }
 
 .browser-ntp-link:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 40%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
@@ -1161,7 +1206,9 @@ body.sidebar-resizing .browser-webview {
   min-width: 32px;
   min-height: 32px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent-soft) 58%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    transparent;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
   color: var(--accent);
   font-size: 11px;
@@ -2005,4 +2052,153 @@ body.sidebar-resizing .browser-webview {
   font-size: 10px;
   color: var(--text-secondary);
   margin-top: 1px;
+}
+
+/* Micro polish pass */
+.browser-tab-pane {
+  border-color: color-mix(in srgb, var(--pane-unfocus) 84%, var(--border-subtle));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 26%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-cool) 12%, transparent), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-canvas) 96%, black);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--shadow-card-strong);
+}
+
+.browser-pane-chrome {
+  min-height: 36px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--border-subtle) 72%, transparent);
+}
+
+.browser-pane-status {
+  background: color-mix(in srgb, var(--surface-panel-alt) 76%, transparent);
+}
+
+.browser-pane-status[data-state='local'] {
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
+}
+
+.browser-pane-status[data-state='remote'] {
+  border-color: var(--status-info-border);
+  color: var(--status-info-text);
+}
+
+.browser-pane-status[data-state='offline'] {
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-text);
+}
+
+.browser-tab-toolbar {
+  padding: 9px 12px 10px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--border-subtle) 72%, transparent);
+}
+
+.browser-toolbar-nav-shell,
+.browser-toolbar-address-shell,
+.browser-toolbar-presence-shell,
+.browser-toolbar-tools-shell {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--shadow-card);
+}
+
+.browser-toolbar-nav-shell:hover,
+.browser-toolbar-address-shell:hover,
+.browser-toolbar-presence-shell:hover,
+.browser-toolbar-tools-shell:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--shadow-lift);
+}
+
+.browser-toolbar-presence-pill[data-state='inspect'] {
+  border-color: var(--status-info-border);
+  color: var(--status-info-text);
+}
+
+.browser-toolbar-presence-pill[data-state='draw'] {
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+
+.browser-toolbar-presence-pill[data-state='flow'] {
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
+}
+
+.browser-nav-btn,
+.browser-go-btn,
+.browser-draw-btn,
+.browser-inspect-btn,
+.browser-record-btn,
+.browser-viewport-btn {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.browser-nav-btn:hover,
+.browser-go-btn:hover,
+.browser-draw-btn:hover,
+.browser-inspect-btn:hover,
+.browser-record-btn:hover,
+.browser-viewport-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    0 10px 18px rgba(2, 8, 16, 0.14);
+}
+
+.browser-go-btn {
+  min-width: 44px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 14px 24px rgba(2, 8, 16, 0.18);
+}
+
+.browser-viewport-container {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 36%, transparent), transparent 24%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 14%, transparent), transparent 20%),
+    color-mix(in srgb, var(--surface-canvas) 98%, black);
+}
+
+.browser-ntp-hero,
+.browser-ntp-panel,
+.browser-ntp-link {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    var(--shadow-card);
+}
+
+.browser-ntp-link:hover,
+.browser-ntp-action:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    var(--shadow-lift);
+}
+
+.flow-step-type-badge-click {
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  border: 1px solid var(--status-info-border);
+}
+
+.flow-step-type-badge-expect {
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-border);
+}
+
+.flow-picker-menu {
+  border-radius: 12px;
+  border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, black);
+  box-shadow: var(--shadow-card-strong);
+}
+
+.flow-picker-item {
+  border-radius: 10px;
 }

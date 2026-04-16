@@ -401,6 +401,81 @@ describe('hook-status', () => {
       expect(mockSend).not.toHaveBeenCalled();
       expect(fs.closeSync).toHaveBeenCalledWith(31);
     });
+
+    it('.events buffers trailing partial JSON and emits it once completed', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+
+      const chunk1 = '{"type":"tool","name":"Bash"}\n{"type":"st';
+      const chunk2 = 'op"}\n';
+      const size1 = Buffer.byteLength(chunk1);
+      const totalSize = size1 + Buffer.byteLength(chunk2);
+
+      vi.mocked(fs.openSync)
+        .mockReturnValueOnce(51 as any)
+        .mockReturnValueOnce(52 as any);
+      vi.mocked(fs.fstatSync)
+        .mockReturnValueOnce({ size: size1 } as any)
+        .mockReturnValueOnce({ size: totalSize } as any);
+      vi.mocked(fs.readSync)
+        .mockImplementationOnce((_fd: any, buffer: any) => {
+          Buffer.from(chunk1, 'utf-8').copy(buffer as Buffer);
+          return size1 as any;
+        })
+        .mockImplementationOnce((_fd: any, buffer: any) => {
+          Buffer.from(chunk2, 'utf-8').copy(buffer as Buffer);
+          return Buffer.byteLength(chunk2) as any;
+        });
+
+      watchCallback!('change', 'abc123.events');
+      watchCallback!('change', 'abc123.events');
+
+      expect(mockSend).toHaveBeenNthCalledWith(1, 'session:inspectorEvents', 'abc123', [
+        { type: 'tool', name: 'Bash' },
+      ]);
+      expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
+        { type: 'stop' },
+      ]);
+    });
+
+    it('.events resets offset when file is truncated and reads from start', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123');
+
+      const payload1 = '{"type":"first"}\n';
+      const payload2 = '{"type":"r"}\n';
+      const size1 = Buffer.byteLength(payload1);
+      const size2 = Buffer.byteLength(payload2);
+
+      vi.mocked(fs.openSync)
+        .mockReturnValueOnce(61 as any)
+        .mockReturnValueOnce(62 as any);
+      vi.mocked(fs.fstatSync)
+        .mockReturnValueOnce({ size: size1 } as any)
+        .mockReturnValueOnce({ size: size2 } as any);
+      vi.mocked(fs.readSync)
+        .mockImplementationOnce((_fd: any, buffer: any) => {
+          Buffer.from(payload1, 'utf-8').copy(buffer as Buffer);
+          return size1 as any;
+        })
+        .mockImplementationOnce((_fd: any, buffer: any) => {
+          Buffer.from(payload2, 'utf-8').copy(buffer as Buffer);
+          return size2 as any;
+        });
+
+      watchCallback!('change', 'abc123.events');
+      watchCallback!('change', 'abc123.events');
+
+      expect(mockSend).toHaveBeenNthCalledWith(1, 'session:inspectorEvents', 'abc123', [
+        { type: 'first' },
+      ]);
+      expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
+        { type: 'r' },
+      ]);
+      expect(vi.mocked(fs.readSync).mock.calls[1][4]).toBe(0);
+    });
   });
 
   describe('resyncAllSessions', () => {
@@ -482,6 +557,62 @@ describe('hook-status', () => {
   });
 
   describe('polling fallback', () => {
+    it('re-processes a file recreated with the same mtime after it disappeared', () => {
+      const win = createMockWin();
+      registerSession('s1');
+      const costPayload = { cost: { total: 1 }, context_window: {} };
+
+      vi.mocked(fs.readdirSync)
+        .mockReturnValueOnce(['s1.cost'] as any)
+        .mockReturnValueOnce([] as any)
+        .mockReturnValueOnce(['s1.cost'] as any);
+      vi.mocked(fs.statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(costPayload));
+
+      startWatching(win);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockSend).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockSend).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockSend).toHaveBeenCalledTimes(2);
+      expect(mockSend).toHaveBeenNthCalledWith(2, 'session:costData', 's1', costPayload);
+    });
+
+    it('skips stat/read work for files that belong to unknown sessions', () => {
+      const win = createMockWin();
+      registerSession('s1');
+
+      vi.mocked(fs.readdirSync).mockReturnValue(['unknown.cost', 's1.cost'] as any);
+      vi.mocked(fs.statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ cost: { total: 1 }, context_window: {} }));
+
+      startWatching(win);
+      vi.advanceTimersByTime(2000);
+
+      expect(fs.statSync).toHaveBeenCalledTimes(1);
+      expect(fs.statSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 's1.cost'));
+      expect(mockSend).toHaveBeenCalledWith('session:costData', 's1', { cost: { total: 1 }, context_window: {} });
+    });
+
+    it('processes first-seen session files during polling when watch misses the event', () => {
+      const win = createMockWin();
+      registerSession('s1');
+
+      vi.mocked(fs.readdirSync).mockReturnValue(['s1.sessionid'] as any);
+      vi.mocked(fs.statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(fs.readFileSync).mockReturnValue('cli-session-1');
+
+      startWatching(win);
+      vi.advanceTimersByTime(2000);
+
+      expect(mockSend).toHaveBeenCalledWith('session:cliSessionId', 's1', 'cli-session-1');
+      expect(mockSend).toHaveBeenCalledWith('session:claudeSessionId', 's1', 'cli-session-1');
+    });
+
     it('detects changed files on poll interval', () => {
       const win = createMockWin();
       registerSession('s1');

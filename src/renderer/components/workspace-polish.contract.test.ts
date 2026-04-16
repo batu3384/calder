@@ -28,7 +28,7 @@ describe('workspace polish contract', () => {
     expect(baseCss).toContain('.empty-state-primary-action');
     expect(baseCss).toContain('align-items: flex-start;');
     expect(baseCss).toContain('justify-content: flex-start;');
-    expect(baseCss).toContain('border-top: 1px solid var(--border-subtle);');
+    expect(baseCss).toContain('border-top: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
     expect(baseCss).toContain('background: transparent;');
     expect(baseCss).toContain('--font-display:');
   });

@@ -16,10 +16,10 @@ const mockSend = vi.fn();
 const watchCallbacks = new Map<string, (_event: string, filename: string | null) => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
 
-function createWindow(destroyed = false): any {
+function createWindow(destroyed = false, send = mockSend): any {
   return {
     isDestroyed: () => destroyed,
-    webContents: { send: mockSend },
+    webContents: { send },
   };
 }
 
@@ -88,7 +88,9 @@ describe('git-watcher', () => {
     await startGitWatcher(createWindow(), '/repo/project');
 
     watchCallbacks.get('/repo/project')?.('change', 'node_modules/pkg/index.js');
+    watchCallbacks.get('/repo/project')?.('change', 'node_modules\\pkg\\index.js');
     watchCallbacks.get('/repo/project')?.('change', '.cache/build.txt');
+    watchCallbacks.get('/repo/project')?.('change', '.cache\\build.txt');
     vi.advanceTimersByTime(300);
 
     expect(mockSend).not.toHaveBeenCalled();
@@ -109,5 +111,69 @@ describe('git-watcher', () => {
 
     stopGitWatcher();
     expect(closeFns.every((close) => close.mock.calls.length === 1)).toBe(true);
+  });
+
+  it('updates the active window even when watching the same project path', async () => {
+    const firstSend = vi.fn();
+    const secondSend = vi.fn();
+
+    await startGitWatcher(createWindow(false, firstSend), '/repo/project');
+    vi.mocked(fs.watch).mockClear();
+
+    await startGitWatcher(createWindow(false, secondSend), '/repo/project');
+    expect(fs.watch).not.toHaveBeenCalled();
+
+    watchCallbacks.get('/repo/project')?.('change', 'src/app.ts');
+    vi.advanceTimersByTime(300);
+
+    expect(firstSend).not.toHaveBeenCalled();
+    expect(secondSend).toHaveBeenCalledWith('git:changed');
+  });
+
+  it('ignores stale async setup results when the active project switches', async () => {
+    const callbacks: Array<(err: Error | null, stdout: string, stderr: string) => void> = [];
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: readonly string[],
+      _options: { cwd: string; timeout: number },
+      callback: (err: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callbacks.push(callback);
+    }) as any);
+
+    const firstStart = startGitWatcher(createWindow(), '/repo/a');
+    const secondStart = startGitWatcher(createWindow(), '/repo/b');
+
+    expect(callbacks).toHaveLength(2);
+
+    callbacks[1]?.(null, '.git\n', '');
+    await secondStart;
+    callbacks[0]?.(null, '.git\n', '');
+    await firstStart;
+
+    const watchedPaths = Array.from(watchCallbacks.keys());
+    expect(watchedPaths.some((entry) => entry.startsWith('/repo/a'))).toBe(false);
+    expect(watchedPaths.some((entry) => entry.startsWith('/repo/b'))).toBe(true);
+  });
+
+  it('does not attach watchers if setup resolves after stop', async () => {
+    const callbacks: Array<(err: Error | null, stdout: string, stderr: string) => void> = [];
+    vi.mocked(execFile).mockImplementation(((
+      _cmd: string,
+      _args: readonly string[],
+      _options: { cwd: string; timeout: number },
+      callback: (err: Error | null, stdout: string, stderr: string) => void,
+    ) => {
+      callbacks.push(callback);
+    }) as any);
+
+    const startPromise = startGitWatcher(createWindow(), '/repo/project');
+    expect(callbacks).toHaveLength(1);
+
+    stopGitWatcher();
+    callbacks[0]?.(null, '.git\n', '');
+    await startPromise;
+
+    expect(fs.watch).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWatch = vi.hoisted(() => vi.fn());
+const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockDiscoverProjectReviews = vi.hoisted(() => vi.fn());
 
 vi.mock('node:fs', () => ({
   default: {
+    mkdirSync: mockMkdirSync,
     watch: mockWatch,
   },
 }));
@@ -26,6 +28,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   watchCallbacks.clear();
   closeFns.length = 0;
+  mockMkdirSync.mockReset();
 
   mockWatch.mockImplementation(((dirPath: string, listener: () => void) => {
     const close = vi.fn();
@@ -61,6 +64,7 @@ describe('project review watcher', () => {
     const onChange = vi.fn();
 
     startProjectReviewWatcher('/repo', onChange);
+    expect(mockMkdirSync).toHaveBeenCalledWith('/repo/.calder/reviews', { recursive: true });
     expect(watchCallbacks.has('/repo/.calder/reviews')).toBe(true);
 
     watchCallbacks.get('/repo/.calder/reviews')?.();

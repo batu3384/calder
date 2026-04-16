@@ -147,7 +147,12 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
         const session = sessions.get(sessionId);
         const providerId = session?.providerId;
         const providerSupported = providerId !== null && providerId !== undefined && SUPPORTED_PROVIDER_IDS.has(providerId);
-        const approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
+        let approvalState: ResolvedAutoApprovalState;
+        try {
+          approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
+        } catch {
+          approvalState = { effectiveMode: 'off', policySource: 'fallback' };
+        }
         const sessionMode = sessionOverrides.get(sessionId);
         const effectiveMode = sessionMode ?? approvalState.effectiveMode;
         const policySource = sessionMode ? 'session' : approvalState.policySource;

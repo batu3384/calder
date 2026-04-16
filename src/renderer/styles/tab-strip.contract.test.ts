@@ -19,6 +19,6 @@ describe('tab strip polish contract', () => {
     expect(tabsCss).toContain('.tab-item:hover');
     expect(tabsCss).toContain('transform: translateY(-1px);');
     expect(tabsCss).toContain('.tab-item.active {');
-    expect(tabsCss).toContain('0 10px 24px rgba(0, 0, 0, 0.08);');
+    expect(tabsCss).toContain('0 14px 28px rgba(2, 4, 10, 0.16);');
   });
 });

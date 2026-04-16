@@ -70,6 +70,12 @@ class FakeElement {
     return child;
   }
 
+  remove(): void {
+    if (!this.parentElement) return;
+    this.parentElement.children = this.parentElement.children.filter((child) => child !== this);
+    this.parentElement = null;
+  }
+
   contains(target: unknown): boolean {
     if (!(target instanceof FakeElement)) return false;
     if (target === this) return true;
@@ -267,6 +273,22 @@ describe('cli surface pane', () => {
     expect(mockFit).toHaveBeenCalled();
   });
 
+  it('disposes stale CLI surface pane when the project is removed', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Cleanup', '/tmp/cleanup');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+
+    attachCliSurfacePane(project.id, container);
+    expect(getCliSurfacePaneInstance(project.id)).toBeTruthy();
+    expect((container as unknown as FakeElement).querySelector('.cli-surface-pane')).toBeTruthy();
+
+    appState.removeProject(project.id);
+
+    expect(getCliSurfacePaneInstance(project.id)).toBeUndefined();
+    expect((container as unknown as FakeElement).querySelector('.cli-surface-pane')).toBeNull();
+  });
+
   it('opens detected links through Calder browser routing', async () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
     const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
@@ -316,6 +338,159 @@ describe('cli surface pane', () => {
     expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
     expect(instance.terminal.clearSelection).toHaveBeenCalled();
     expect(mockDomSelectionClear).toHaveBeenCalled();
+  });
+
+  it('does not cross-dedupe link opens between different CLI surface projects', async () => {
+    const containerA = new FakeElement('div') as unknown as HTMLElement;
+    const containerB = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const projectA = appState.addProject('Alpha', '/tmp/alpha');
+    const projectB = appState.addProject('Beta', '/tmp/beta');
+    const { attachCliSurfacePane } = await import('./pane.js');
+
+    attachCliSurfacePane(projectA.id, containerA);
+    const projectALink = webLinksActivate.current;
+    const openExternal = (window as any).calder.app.openExternal;
+    projectALink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+
+    attachCliSurfacePane(projectB.id, containerB);
+    const projectBLink = webLinksActivate.current;
+    projectBLink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+
+    expect(openExternal).toHaveBeenCalledTimes(2);
+    expect(openExternal).toHaveBeenNthCalledWith(1, 'http://localhost:3000/dashboard', '/tmp/alpha');
+    expect(openExternal).toHaveBeenNthCalledWith(2, 'http://localhost:3000/dashboard', '/tmp/beta');
+  });
+
+  it('suppresses drag selection when an anchor target is clicked in CLI surface', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      viewport: FakeElement;
+    };
+
+    const mousedown = instance.viewport.listeners.get('mousedown')?.[0];
+    expect(typeof mousedown).toBe('function');
+
+    const linkTarget = {
+      closest: () => ({
+        getAttribute: () => 'http://localhost:4300/anchor',
+      }),
+    };
+
+    const linkMouseDown = {
+      button: 0,
+      clientX: 780,
+      clientY: 16,
+      target: linkTarget,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    mousedown?.(linkMouseDown);
+
+    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+  });
+
+  it('opens link anchors when inline pointer detection misses in CLI surface', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      viewport: FakeElement;
+    };
+    const openExternal = (window as any).calder.app.openExternal;
+    const click = instance.viewport.listeners.get('click')?.[0];
+    expect(typeof click).toBe('function');
+
+    const linkTarget = {
+      closest: () => ({
+        getAttribute: () => 'http://localhost:4301/fallback',
+      }),
+    };
+
+    const clickEvent = {
+      defaultPrevented: false,
+      button: 0,
+      clientX: 768,
+      clientY: 18,
+      target: linkTarget,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    click?.(clickEvent);
+
+    expect(openExternal).toHaveBeenCalledWith('http://localhost:4301/fallback', undefined);
+  });
+
+  it('resets link-drag suppression before a non-link drag starts in CLI surface', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      terminal: {
+        cols: number;
+        rows: number;
+        buffer: {
+          active: {
+            viewportY: number;
+            getLine: ReturnType<typeof vi.fn>;
+          };
+        };
+      };
+      viewport: FakeElement;
+    };
+
+    instance.terminal.cols = 80;
+    instance.terminal.rows = 24;
+    instance.terminal.buffer.active.viewportY = 0;
+    instance.terminal.buffer.active.getLine.mockReturnValue({
+      translateToString: () => 'http://localhost:3000/dashboard plain text tail',
+    });
+
+    const mousedown = instance.viewport.listeners.get('mousedown')?.[0];
+    const mousemove = instance.viewport.listeners.get('mousemove')?.[0];
+    expect(typeof mousedown).toBe('function');
+    expect(typeof mousemove).toBe('function');
+
+    const linkMouseDown = {
+      button: 0,
+      clientX: 16,
+      clientY: 12,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    mousedown?.(linkMouseDown);
+    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+
+    const nonLinkMouseDown = {
+      button: 0,
+      clientX: 790,
+      clientY: 12,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    mousedown?.(nonLinkMouseDown);
+    expect((nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+
+    const dragMove = {
+      buttons: 1,
+      button: 0,
+      clientX: 795,
+      clientY: 20,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as MouseEvent;
+    mousemove?.(dragMove);
+    expect((dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
   });
 
   it('opens inspect mode without auto-selecting the full viewport', async () => {

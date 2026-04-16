@@ -41,7 +41,8 @@ beforeEach(() => {
     return {} as any;
   }) as any);
   vi.mocked(fs.unwatchFile).mockImplementation(vi.fn() as any);
-  vi.mocked(fs.watch).mockImplementation(((dirPath: any, _opts: any, cb: any) => {
+  vi.mocked(fs.watch).mockImplementation(((dirPath: any, optsOrCb: any, maybeCb: any) => {
+    const cb = typeof optsOrCb === 'function' ? optsOrCb : maybeCb;
     watchDirCallbacks.set(n(String(dirPath)), cb);
     return { close: mockClose, on: vi.fn().mockReturnThis() } as any;
   }) as any);
@@ -169,6 +170,26 @@ describe('config-watcher', () => {
     const win = createMockWin();
     // Should not throw
     expect(() => startConfigWatcher(win, '/projects/test')).not.toThrow();
+  });
+
+  it('falls back to non-recursive fs.watch when recursive mode is unsupported', () => {
+    let callCount = 0;
+    vi.mocked(fs.watch).mockImplementation(((dirPath: any, optsOrCb: any, maybeCb: any) => {
+      callCount += 1;
+      const cb = typeof optsOrCb === 'function' ? optsOrCb : maybeCb;
+      const opts = typeof optsOrCb === 'function' ? undefined : optsOrCb;
+      if (callCount === 1 && opts && opts.recursive) {
+        throw new Error(`recursive watch unsupported for ${String(dirPath)}`);
+      }
+      watchDirCallbacks.set(n(String(dirPath)), cb);
+      return { close: mockClose, on: vi.fn().mockReturnThis() } as any;
+    }) as any);
+
+    const win = createMockWin();
+    startConfigWatcher(win, '/projects/test');
+
+    expect(fs.watch).toHaveBeenCalled();
+    expect(watchDirCallbacks.has('/home/testuser/.claude/agents')).toBe(true);
   });
 
   it('watches codex config files and directories for a project', () => {

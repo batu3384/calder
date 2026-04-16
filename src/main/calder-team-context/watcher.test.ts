@@ -28,9 +28,15 @@ beforeEach(() => {
 
   mockWatch.mockImplementation(((
     dirPath: string,
-    _options: { recursive: boolean },
-    listener: () => void,
+    optionsOrListener: { recursive: boolean } | (() => void),
+    maybeListener?: () => void,
   ) => {
+    const listener = typeof optionsOrListener === 'function'
+      ? optionsOrListener
+      : maybeListener;
+    if (!listener) {
+      throw new Error('listener is required');
+    }
     const close = vi.fn();
     closeFns.push(close);
     watchCallbacks.set(dirPath, listener);
@@ -99,6 +105,32 @@ describe('project team context watcher', () => {
     expect(closeFns.every((close) => close.mock.calls.length === 1)).toBe(true);
   });
 
+  it('ignores in-flight discovery results after disposer is called', async () => {
+    let resolveDiscovery: ((value: unknown) => void) | null = null;
+    mockDiscoverProjectTeamContext.mockImplementation(() => new Promise((resolve) => {
+      resolveDiscovery = resolve;
+    }));
+    const onChange = vi.fn();
+
+    const cleanup = startProjectTeamContextWatcher('/repo', onChange);
+    watchCallbacks.get('/repo/.calder/team')?.();
+    vi.advanceTimersByTime(80);
+    await Promise.resolve();
+    expect(mockDiscoverProjectTeamContext).toHaveBeenCalledWith('/repo');
+
+    cleanup();
+    resolveDiscovery?.({
+      spaces: [],
+      sharedRuleCount: 0,
+      workflowCount: 0,
+      lastUpdated: undefined,
+    });
+    await Promise.resolve();
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(closeFns.every((close) => close.mock.calls.length === 1)).toBe(true);
+  });
+
   it('swallows discovery errors from the debounced refresh', async () => {
     mockDiscoverProjectTeamContext.mockRejectedValue(new Error('discovery failed'));
     const onChange = vi.fn();
@@ -116,9 +148,15 @@ describe('project team context watcher', () => {
     let watchCall = 0;
     mockWatch.mockImplementation(((
       dirPath: string,
-      _options: { recursive: boolean },
-      listener: () => void,
+      optionsOrListener: { recursive: boolean } | (() => void),
+      maybeListener?: () => void,
     ) => {
+      const listener = typeof optionsOrListener === 'function'
+        ? optionsOrListener
+        : maybeListener;
+      if (!listener) {
+        throw new Error('listener is required');
+      }
       watchCall += 1;
       if (watchCall === 1) {
         throw new Error(`watch unsupported for ${dirPath}`);
@@ -130,7 +168,10 @@ describe('project team context watcher', () => {
     }) as any);
 
     expect(() => startProjectTeamContextWatcher('/repo', vi.fn())).not.toThrow();
-    expect(mockWatch).toHaveBeenCalledTimes(3);
+    expect(mockWatch).toHaveBeenCalledTimes(4);
+    expect(watchCallbacks.has('/repo/.calder/team')).toBe(true);
+    expect(watchCallbacks.has('/repo/.calder/rules')).toBe(true);
+    expect(watchCallbacks.has('/repo/.calder/workflows')).toBe(true);
   });
 
   it('continues when one directory cannot be created for watching', () => {

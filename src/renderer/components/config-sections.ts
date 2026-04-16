@@ -112,6 +112,13 @@ const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, string> = {
   full_auto: 'Full Auto (All)',
 };
 
+const AUTO_APPROVAL_MODE_LABELS_TR: Record<AutoApprovalMode, string> = {
+  off: 'Kapalı',
+  edit_only: 'Sadece Düzenleme',
+  edit_plus_safe_tools: 'Düzenleme + Güvenli Komutlar',
+  full_auto: 'Tam Otomatik (Tümü)',
+};
+
 const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string }> = [
   { value: 'off', label: AUTO_APPROVAL_MODE_LABELS.off },
   { value: 'edit_only', label: AUTO_APPROVAL_MODE_LABELS.edit_only },
@@ -130,44 +137,81 @@ const AUTO_APPROVAL_SCOPE_HELP = {
   session: 'Temporary policy for the active session.',
 } as const;
 
+function isTurkishUiLanguage(): boolean {
+  return appState.preferences.language === 'tr';
+}
+
+function localizedText(english: string, turkish: string): string {
+  return isTurkishUiLanguage() ? turkish : english;
+}
+
+function autoApprovalModeLabel(mode: AutoApprovalMode): string {
+  return isTurkishUiLanguage()
+    ? AUTO_APPROVAL_MODE_LABELS_TR[mode]
+    : AUTO_APPROVAL_MODE_LABELS[mode];
+}
+
+function projectInheritLabel(): string {
+  return localizedText('Use Global Default', 'Global varsayılanını kullan');
+}
+
+function sessionInheritLabel(): string {
+  return localizedText('Use Project / Global Default', 'Proje / Global varsayılanını kullan');
+}
+
 function autoApprovalSourceLabel(source: AutoApprovalPolicySource): string {
+  const tr = isTurkishUiLanguage();
   switch (source) {
     case 'session':
-      return 'Session override';
+      return tr ? 'Oturum geçersiz kılması' : 'Session override';
     case 'project':
-      return 'Project policy';
+      return tr ? 'Proje politikası' : 'Project policy';
     case 'global':
-      return 'Global default';
+      return tr ? 'Global varsayılan' : 'Global default';
     case 'fallback':
     default:
-      return 'Fallback default';
+      return tr ? 'Yedek varsayılan' : 'Fallback default';
   }
 }
 
 function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
+  const tr = isTurkishUiLanguage();
   if (mode === 'off') {
-    return 'Always asks for approval before actions.';
+    return tr
+      ? 'Her işlemden önce onay ister.'
+      : 'Always asks for approval before actions.';
   }
   if (mode === 'edit_only') {
-    return 'Auto-approves file edits only.';
+    return tr
+      ? 'Yalnızca dosya düzenlemelerini otomatik onaylar.'
+      : 'Auto-approves file edits only.';
   }
   if (mode === 'edit_plus_safe_tools') {
-    return 'Auto-approves file edits and safe read-only commands.';
+    return tr
+      ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
+      : 'Auto-approves file edits and safe read-only commands.';
   }
-  return 'Auto-approves every operation, including risky and destructive actions.';
+  return tr
+    ? 'Riskli ve yıkıcı eylemler dahil tüm işlemleri otomatik onaylar.'
+    : 'Auto-approves every operation, including risky and destructive actions.';
 }
 
 function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
+  const tr = isTurkishUiLanguage();
   if (mode === 'off') {
-    return 'Asks before approving operations.';
+    return tr ? 'İşlemleri onaylamadan önce sorar.' : 'Asks before approving operations.';
   }
   if (mode === 'edit_only') {
-    return 'Auto-approves file edits.';
+    return tr ? 'Dosya düzenlemelerini otomatik onaylar.' : 'Auto-approves file edits.';
   }
   if (mode === 'edit_plus_safe_tools') {
-    return 'Auto-approves edits and read-only safe commands.';
+    return tr
+      ? 'Düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
+      : 'Auto-approves edits and read-only safe commands.';
   }
-  return 'Auto-approves every operation without asking.';
+  return tr
+    ? 'Sormadan tüm işlemleri otomatik onaylar.'
+    : 'Auto-approves every operation without asking.';
 }
 
 export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoApprovalState): {
@@ -180,21 +224,36 @@ export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoAp
 } {
   let effectiveExplanation = 'No explicit setting found; fallback Off applies.';
   if (autoApproval.policySource === 'session') {
-    effectiveExplanation = 'Session override is active, so Session setting applies.';
+    effectiveExplanation = localizedText(
+      'Session override is active, so Session setting applies.',
+      'Oturum geçersiz kılması aktif, bu yüzden Oturum ayarı uygulanır.',
+    );
   } else if (autoApproval.policySource === 'project') {
-    effectiveExplanation = 'Session follows Project, so Project setting applies.';
+    effectiveExplanation = localizedText(
+      'Session follows Project, so Project setting applies.',
+      'Oturum Projeyi izlediği için Proje ayarı uygulanır.',
+    );
   } else if (autoApproval.policySource === 'global') {
-    effectiveExplanation = 'Project and Session follow higher scope, so Global setting applies.';
+    effectiveExplanation = localizedText(
+      'Project and Session follow higher scope, so Global setting applies.',
+      'Proje ve Oturum üst kapsamı izlediği için Global ayar uygulanır.',
+    );
+  }
+  if (autoApproval.policySource === 'fallback') {
+    effectiveExplanation = localizedText(
+      'No explicit setting found; fallback Off applies.',
+      'Açık bir ayar bulunamadı; yedek Kapalı modu uygulanır.',
+    );
   }
 
   return {
-    global: AUTO_APPROVAL_MODE_LABELS[autoApproval.globalMode],
+    global: autoApprovalModeLabel(autoApproval.globalMode),
     project: autoApproval.projectMode
-      ? AUTO_APPROVAL_MODE_LABELS[autoApproval.projectMode]
-      : 'Use Global Default',
+      ? autoApprovalModeLabel(autoApproval.projectMode)
+      : projectInheritLabel(),
     session: autoApproval.sessionMode
-      ? AUTO_APPROVAL_MODE_LABELS[autoApproval.sessionMode]
-      : 'Use Project / Global Default',
+      ? autoApprovalModeLabel(autoApproval.sessionMode)
+      : sessionInheritLabel(),
     effectiveSource: autoApprovalSourceLabel(autoApproval.policySource),
     effectiveExplanation,
     effectiveBehavior: autoApprovalModeBehavior(autoApproval.effectiveMode),
@@ -494,45 +553,75 @@ function renderAutoApprovalSection(
   const summary = document.createElement('div');
   summary.className = 'auto-approval-summary';
   const scopeSummary = describeAutoApprovalScopes(autoApproval);
+  const providerName = providerLabel(providerId);
+  const priorityRule = localizedText(
+    'Priority: Session > Project > Global.',
+    'Öncelik sırası: Oturum > Proje > Global.',
+  );
+  const effectiveModeLabel = localizedText('Effective Mode', 'Etkin Mod');
+  const effectiveSourceLabel = localizedText('Effective Source', 'Etkin Kaynak');
+  const currentBehaviorLabel = localizedText('Current Behavior', 'Mevcut Davranış');
+  const providerLabelText = localizedText('Provider', 'Sağlayıcı');
+  const policyStackLabel = localizedText('Policy Stack', 'Politika Katmanı');
+  const globalPolicyLabel = localizedText('Global Default', 'Global Varsayılan');
+  const projectPolicyLabel = localizedText('Project Policy', 'Proje Politikası');
+  const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
+  const effectiveShortLabel = localizedText('Effective', 'Etkin');
+  const fullAutoWarning = localizedText(
+    'Warning: Full Auto approves all operations without asking.',
+    'Uyarı: Tam Otomatik mod tüm işlemleri sormadan onaylar.',
+  );
+  const priorityMapLabel = localizedText(
+    'Applied order: Global -> Project -> Session -> Effective.',
+    'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
+  );
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
-      <span class="config-item-name">Effective Mode</span>
-      <span class="scope-badge control-chip">${esc(AUTO_APPROVAL_MODE_LABELS[autoApproval.effectiveMode])}</span>
+      <span class="config-item-name">${esc(effectiveModeLabel)}</span>
+      <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
     </div>
+    <div class="auto-approval-priority-note ops-rail-note" data-tone="default">
+      ${esc(priorityRule)}
+    </div>
+    <div class="auto-approval-priority-map">${esc(priorityMapLabel)}</div>
     <div class="auto-approval-meta-card">
       <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">Effective Source</span>
+        <span class="auto-approval-meta-label">${esc(effectiveSourceLabel)}</span>
         <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveSource)}</span>
       </div>
       <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">Current Behavior</span>
+        <span class="auto-approval-meta-label">${esc(currentBehaviorLabel)}</span>
         <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveBehavior)}</span>
       </div>
       <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">Provider</span>
-        <span class="auto-approval-meta-value">${esc(providerLabel(providerId))}</span>
+        <span class="auto-approval-meta-label">${esc(providerLabelText)}</span>
+        <span class="auto-approval-meta-value">${esc(providerName)}</span>
+      </div>
+      <div class="auto-approval-meta-row">
+        <span class="auto-approval-meta-label">${esc(localizedText('Why this applies', 'Neden bu uygulanıyor'))}</span>
+        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveExplanation)}</span>
       </div>
     </div>
-    <div class="auto-approval-policy-stack" aria-label="Policy Stack">
+    <div class="auto-approval-policy-stack" aria-label="${esc(policyStackLabel)}">
       <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">Global Default</span>
+        <span class="auto-approval-policy-name">${esc(globalPolicyLabel)}</span>
         <span class="scope-badge control-chip">${esc(scopeSummary.global)}</span>
       </div>
       <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">Project Policy</span>
+        <span class="auto-approval-policy-name">${esc(projectPolicyLabel)}</span>
         <span class="scope-badge control-chip">${esc(scopeSummary.project)}</span>
       </div>
       <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">Session Policy</span>
+        <span class="auto-approval-policy-name">${esc(sessionPolicyLabel)}</span>
         <span class="scope-badge control-chip">${esc(scopeSummary.session)}</span>
       </div>
       <div class="auto-approval-policy-row is-effective">
-        <span class="auto-approval-policy-name">Effective</span>
-        <span class="scope-badge control-chip">${esc(AUTO_APPROVAL_MODE_LABELS[autoApproval.effectiveMode])}</span>
+        <span class="auto-approval-policy-name">${esc(effectiveShortLabel)}</span>
+        <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
       </div>
     </div>
     ${autoApproval.effectiveMode === 'full_auto'
-      ? '<div class="auto-approval-risk-note">Warning: Full Auto approves all operations without asking.</div>'
+      ? `<div class="auto-approval-risk-note">${esc(fullAutoWarning)}</div>`
       : ''}
   `;
   item.appendChild(summary);
@@ -551,7 +640,7 @@ function renderAutoApprovalSection(
     for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
       const el = document.createElement('option');
       el.value = option.value;
-      el.textContent = option.label;
+      el.textContent = autoApprovalModeLabel(option.value);
       if (option.value === currentMode) {
         el.selected = true;
       }
@@ -573,8 +662,19 @@ function renderAutoApprovalSection(
 
   const controlsIntro = document.createElement('div');
   controlsIntro.className = 'auto-approval-controls-intro';
-  controlsIntro.textContent = 'Session policy is temporary and takes priority (Session > Project > Global).';
+  controlsIntro.textContent = localizedText(
+    'Session policy is temporary and takes priority (Session > Project > Global).',
+    'Oturum politikası geçicidir ve en yüksek önceliğe sahiptir (Oturum > Proje > Global).',
+  );
   controls.appendChild(controlsIntro);
+
+  const controlsHint = document.createElement('div');
+  controlsHint.className = 'auto-approval-controls-hint';
+  controlsHint.textContent = localizedText(
+    'Recommended: set Global once, keep Project for repo defaults, then use Session only when needed.',
+    'Öneri: Globali bir kez ayarlayın, Projeyi depo varsayılanı için kullanın, Oturumu yalnızca gerektiğinde açın.',
+  );
+  controls.appendChild(controlsHint);
 
   const globalSelect = createModeSelect(autoApproval.globalMode, AUTO_APPROVAL_SCOPE_HELP.global, async (nextMode) => {
     const nextState = await window.calder.governance.setAutoApprovalMode(
@@ -587,8 +687,11 @@ function renderAutoApprovalSection(
     void refresh();
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Global Default',
-    `${AUTO_APPROVAL_SCOPE_HELP.global} Current: ${scopeSummary.global}.`,
+    globalPolicyLabel,
+    localizedText(
+      `${AUTO_APPROVAL_SCOPE_HELP.global} Current: ${scopeSummary.global}.`,
+      `${AUTO_APPROVAL_SCOPE_HELP.global.replace('Default policy for this Mac.', 'Bu Mac için varsayılan politika.')} Şu an: ${scopeSummary.global}.`,
+    ),
     globalSelect,
   ));
 
@@ -597,7 +700,7 @@ function renderAutoApprovalSection(
   projectSelect.title = AUTO_APPROVAL_SCOPE_HELP.project;
   const projectInheritOption = document.createElement('option');
   projectInheritOption.value = PROJECT_INHERIT_VALUE;
-  projectInheritOption.textContent = 'Use Global Default';
+  projectInheritOption.textContent = projectInheritLabel();
   if (autoApproval.projectMode === undefined) {
     projectInheritOption.selected = true;
   }
@@ -605,7 +708,7 @@ function renderAutoApprovalSection(
   for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
     const el = document.createElement('option');
     el.value = option.value;
-    el.textContent = option.label;
+    el.textContent = autoApprovalModeLabel(option.value);
     if (autoApproval.projectMode === option.value) {
       el.selected = true;
     }
@@ -630,8 +733,11 @@ function renderAutoApprovalSection(
     }
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Project Policy',
-    `${AUTO_APPROVAL_SCOPE_HELP.project} Current: ${scopeSummary.project}.`,
+    projectPolicyLabel,
+    localizedText(
+      `${AUTO_APPROVAL_SCOPE_HELP.project} Current: ${scopeSummary.project}.`,
+      `${AUTO_APPROVAL_SCOPE_HELP.project.replace('Repository-level policy.', 'Depo düzeyinde politika.')} Şu an: ${scopeSummary.project}.`,
+    ),
     projectSelect,
   ));
 
@@ -642,12 +748,12 @@ function renderAutoApprovalSection(
     : 'Auto approval unavailable';
   const inheritOption = document.createElement('option');
   inheritOption.value = SESSION_INHERIT_VALUE;
-  inheritOption.textContent = 'Use Project / Global Default';
+  inheritOption.textContent = sessionInheritLabel();
   sessionSelect.appendChild(inheritOption);
   for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
     const el = document.createElement('option');
     el.value = option.value;
-    el.textContent = option.label;
+    el.textContent = autoApprovalModeLabel(option.value);
     if (autoApproval.sessionMode === option.value) {
       el.selected = true;
     }
@@ -673,12 +779,21 @@ function renderAutoApprovalSection(
     }
   });
   controls.appendChild(createAutoApprovalScopeCard(
-    'Session Policy',
+    sessionPolicyLabel,
     !supportsPermissionHooks
-      ? 'Active provider does not support permission hooks, so session auto-approval cannot run.'
+      ? localizedText(
+        'Active provider does not support permission hooks, so session auto-approval cannot run.',
+        'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
+      )
       : (sessionId
-        ? `${AUTO_APPROVAL_SCOPE_HELP.session} Current: ${scopeSummary.session}.`
-        : 'Open a CLI session to apply a temporary session override.'),
+        ? localizedText(
+          `${AUTO_APPROVAL_SCOPE_HELP.session} Current: ${scopeSummary.session}.`,
+          `${AUTO_APPROVAL_SCOPE_HELP.session.replace('Temporary policy for the active session.', 'Aktif oturum için geçici politika.')} Şu an: ${scopeSummary.session}.`,
+        )
+        : localizedText(
+          'Open a CLI session to apply a temporary session override.',
+          'Geçici oturum politikası uygulamak için bir CLI oturumu açın.',
+        )),
     sessionSelect,
   ));
 
@@ -687,7 +802,7 @@ function renderAutoApprovalSection(
   const modeGuideToggle = document.createElement('button');
   modeGuideToggle.type = 'button';
   modeGuideToggle.className = 'auto-approval-mode-guide-toggle';
-  modeGuideToggle.textContent = 'Mode Guide';
+  modeGuideToggle.textContent = localizedText('Mode Guide', 'Mod Rehberi');
   modeGuideToggle.setAttribute('aria-expanded', 'false');
 
   const modeGuideBody = document.createElement('div');
@@ -713,7 +828,14 @@ function renderAutoApprovalSection(
   controls.appendChild(modeGuide);
 
   item.appendChild(controls);
-  return renderSection('auto-approval', 'Auto Approval', [item], 1, undefined, 'Auto approval unavailable');
+  return renderSection(
+    'auto-approval',
+    localizedText('Auto Approval', 'Otomatik Onay'),
+    [item],
+    1,
+    undefined,
+    localizedText('Auto approval unavailable', 'Otomatik onay kullanılamıyor'),
+  );
 }
 
 function applyVisibility(): void {

@@ -65,6 +65,14 @@ let cliUpdatePanelListEl: HTMLElement | null = null;
 let cliUpdatePanelCancelBtnEl: HTMLButtonElement | null = null;
 let unsubscribeUpdateCenter: (() => void) | null = null;
 
+const CLI_UPDATE_BUTTON_GLYPHS = {
+  refresh: '↻',
+  warning: '⚠',
+  cancelled: '✕',
+  updated: '✓',
+  upToDate: '•',
+} as const;
+
 function buildTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
   return cliSessionId ? `${statusLine}\nSession: ${cliSessionId}` : statusLine;
@@ -718,6 +726,14 @@ function setupCliUpdatePanel(): void {
   cliUpdatePanelTimestampEl = panel.querySelector('.cli-update-panel-timestamp');
   cliUpdatePanelListEl = panel.querySelector('.cli-update-panel-list');
   cliUpdatePanelCancelBtnEl = cancelBtn;
+  if (cliUpdatePanelStatusEl) {
+    cliUpdatePanelStatusEl.setAttribute('role', 'status');
+    cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite');
+  }
+  if (cliUpdatePanelMetaEl) {
+    cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite');
+  }
+  panel.setAttribute('aria-busy', 'false');
 
   tabActionsEl.appendChild(panel);
   cliUpdatePanelEl = panel;
@@ -731,10 +747,12 @@ function toggleCliUpdatePanel(visible: boolean): void {
 }
 
 function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
+  btnUpdateCliTools.classList.remove('is-warning', 'is-success', 'is-cancelled', 'is-idle');
+
   if (cliState.phase === 'running') {
     btnUpdateCliTools.classList.add('is-updating');
     btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.innerHTML = '&#x21BB;';
+    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
     const progressLabel = cliState.totalProviders > 0
       ? `${cliState.completedProviders}/${cliState.totalProviders}`
       : 'running';
@@ -747,14 +765,16 @@ function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
   btnUpdateCliTools.disabled = false;
 
   if (cliState.phase === 'error') {
-    btnUpdateCliTools.textContent = '!';
+    btnUpdateCliTools.classList.add('is-warning');
+    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
     btnUpdateCliTools.title = 'CLI update failed.';
     btnUpdateCliTools.setAttribute('aria-label', 'CLI update failed');
     return;
   }
 
   if (cliState.phase === 'cancelled') {
-    btnUpdateCliTools.textContent = 'x';
+    btnUpdateCliTools.classList.add('is-cancelled');
+    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.cancelled;
     btnUpdateCliTools.title = 'CLI update cancelled.';
     btnUpdateCliTools.setAttribute('aria-label', 'CLI update cancelled');
     return;
@@ -763,22 +783,26 @@ function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
   if (cliState.phase === 'completed' && cliState.lastSummary) {
     const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
     if (counters.error > 0) {
-      btnUpdateCliTools.textContent = '!';
+      btnUpdateCliTools.classList.add('is-warning');
+      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
       btnUpdateCliTools.title = 'CLI update completed with errors';
       btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
     } else if (counters.updated > 0) {
-      btnUpdateCliTools.textContent = '✓';
+      btnUpdateCliTools.classList.add('is-success');
+      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.updated;
       btnUpdateCliTools.title = 'CLI tools updated';
       btnUpdateCliTools.setAttribute('aria-label', 'CLI tools updated');
     } else {
-      btnUpdateCliTools.textContent = '•';
+      btnUpdateCliTools.classList.add('is-idle');
+      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.upToDate;
       btnUpdateCliTools.title = 'CLI tools are already up to date.';
       btnUpdateCliTools.setAttribute('aria-label', 'CLI tools are already up to date');
     }
     return;
   }
 
-  btnUpdateCliTools.innerHTML = '&#x21BB;';
+  btnUpdateCliTools.classList.add('is-idle');
+  btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
   btnUpdateCliTools.title = 'Update CLI Tools';
   btnUpdateCliTools.setAttribute('aria-label', 'Update CLI tools');
 }
@@ -792,6 +816,9 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     || !cliUpdatePanelProgressLabelEl
     || !cliUpdatePanelTimestampEl
   ) return;
+  if (cliUpdatePanelEl) {
+    cliUpdatePanelEl.setAttribute('aria-busy', cliState.phase === 'running' ? 'true' : 'false');
+  }
 
   if (cliUpdatePanelCancelBtnEl) {
     const running = cliState.phase === 'running';
@@ -843,7 +870,14 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     } else {
       cliUpdatePanelStatusEl.textContent = 'All providers are already up to date.';
     }
-    cliUpdatePanelMetaEl.textContent = `Finished ${formatRelativeTimestamp(cliState.finishedAt)}.`;
+    const summaryParts = [
+      `Updated ${counters.updated}`,
+      `Up to date ${counters.upToDate}`,
+      `Skipped ${counters.skipped}`,
+      `Cancelled ${counters.cancelled}`,
+    ];
+    if (counters.error > 0) summaryParts.push(`Errors ${counters.error}`);
+    cliUpdatePanelMetaEl.textContent = `Finished ${formatRelativeTimestamp(cliState.finishedAt)}. ${summaryParts.join(' · ')}`;
   } else if (cliState.phase === 'error') {
     cliUpdatePanelStatusEl.textContent = 'CLI update failed.';
     cliUpdatePanelMetaEl.textContent = cliState.errorMessage ?? 'An unknown error occurred.';
@@ -941,6 +975,82 @@ function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionR
   input.addEventListener('blur', commit);
 }
 
+function applyContextMenuSemantics(menu: HTMLElement, label: string, focusFirstItem = true): void {
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', label);
+
+  const isInteractive = (item: HTMLElement): boolean => (
+    !item.classList.contains('disabled')
+    && !item.classList.contains('active')
+    && item.getAttribute('aria-disabled') !== 'true'
+  );
+  const getEnabledItems = (): HTMLElement[] => Array
+    .from(menu.querySelectorAll<HTMLElement>('.tab-context-menu-item'))
+    .filter(isInteractive);
+
+  for (const item of menu.querySelectorAll<HTMLElement>('.tab-context-menu-item')) {
+    const interactive = isInteractive(item);
+    item.setAttribute('role', 'menuitem');
+    item.setAttribute('aria-disabled', interactive ? 'false' : 'true');
+    item.tabIndex = -1;
+  }
+
+  for (const separator of menu.querySelectorAll<HTMLElement>('.tab-context-menu-separator')) {
+    separator.setAttribute('role', 'separator');
+  }
+
+  const focusItemAt = (index: number, enabledItems: HTMLElement[]): void => {
+    if (enabledItems.length === 0) return;
+    const normalized = (index + enabledItems.length) % enabledItems.length;
+    enabledItems[normalized]?.focus();
+  };
+
+  menu.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      hideTabContextMenu();
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (
+      target instanceof HTMLInputElement
+      || target instanceof HTMLTextAreaElement
+      || target instanceof HTMLSelectElement
+    ) return;
+
+    const enabledItems = getEnabledItems();
+    if (enabledItems.length === 0) return;
+    const focusedIndex = enabledItems.findIndex((item) => item === document.activeElement);
+    if (event.key === 'Enter' || event.key === ' ') {
+      if (document.activeElement instanceof HTMLElement && isInteractive(document.activeElement)) {
+        event.preventDefault();
+        document.activeElement.click();
+      }
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusItemAt(focusedIndex < 0 ? 0 : focusedIndex + 1, enabledItems);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusItemAt(focusedIndex < 0 ? enabledItems.length - 1 : focusedIndex - 1, enabledItems);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusItemAt(0, enabledItems);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusItemAt(enabledItems.length - 1, enabledItems);
+    } else if (event.key === 'Tab') {
+      hideTabContextMenu();
+    }
+  });
+
+  if (focusFirstItem) {
+    requestAnimationFrame(() => {
+      getEnabledItems()[0]?.focus();
+    });
+  }
+}
+
 function showTabContextMenu(x: number, y: number, project: ProjectRecord, session: SessionRecord, tab: HTMLElement): void {
   hideTabContextMenu();
 
@@ -948,6 +1058,7 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
+  menu.addEventListener('click', (event) => event.stopPropagation());
 
   const renameItem = document.createElement('div');
   renameItem.className = 'tab-context-menu-item';
@@ -1162,6 +1273,7 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  applyContextMenuSemantics(menu, 'Session actions');
 }
 
 function hideTabContextMenu(): void {
@@ -1405,6 +1517,9 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
 
   const menu = document.createElement('div');
   menu.className = 'tab-context-menu calder-floating-list';
+  menu.addEventListener('click', (event) => event.stopPropagation());
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', 'Branch actions');
 
   // Position below the git status element
   const elRect = gitStatusEl.getBoundingClientRect();
@@ -1433,6 +1548,7 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
     searchInput.className = 'branch-search-input';
     searchInput.type = 'text';
     searchInput.placeholder = 'Filter branches\u2026';
+    searchInput.setAttribute('aria-label', 'Filter branches');
     menu.appendChild(searchInput);
 
     const container = document.createElement('div');
@@ -1456,6 +1572,9 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
         const empty = document.createElement('div');
         empty.className = 'tab-context-menu-item disabled';
         empty.textContent = 'No matching branches';
+        empty.setAttribute('role', 'menuitem');
+        empty.setAttribute('aria-disabled', 'true');
+        empty.tabIndex = -1;
         container.appendChild(empty);
         return;
       }
@@ -1467,6 +1586,9 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
           + (branch.current ? ' active' : '')
           + (i === activeIndex ? ' keyboard-active' : '');
         item.textContent = (branch.current ? '\u2713 ' : '  ') + branch.name;
+        item.setAttribute('role', 'menuitem');
+        item.setAttribute('aria-disabled', branch.current ? 'true' : 'false');
+        item.tabIndex = -1;
 
         item.addEventListener('mouseenter', () => {
           activeIndex = i;
@@ -1552,6 +1674,7 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
     if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
     if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
 
+    applyContextMenuSemantics(menu, 'Branch actions', false);
     searchInput.focus();
   } catch {
     if (activeContextMenu !== menu) return;
@@ -1560,6 +1683,7 @@ async function showBranchContextMenu(e: MouseEvent): Promise<void> {
     errItem.className = 'tab-context-menu-item disabled';
     errItem.textContent = 'Failed to load branches';
     menu.appendChild(errItem);
+    applyContextMenuSemantics(menu, 'Branch actions', false);
   }
 }
 
@@ -1622,6 +1746,7 @@ function showAddSessionContextMenu(x: number, y: number): void {
   menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
+  menu.addEventListener('click', (event) => event.stopPropagation());
 
   const quickItem = document.createElement('div');
   quickItem.className = 'tab-context-menu-item';
@@ -1674,6 +1799,7 @@ function showAddSessionContextMenu(x: number, y: number): void {
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  applyContextMenuSemantics(menu, 'New session actions');
 }
 
 export async function promptNewSession(onCreated?: (session: SessionRecord) => void): Promise<void> {

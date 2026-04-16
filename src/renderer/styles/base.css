@@ -1,51 +1,80 @@
 :root {
-  --surface-canvas: #071019;
-  --surface-panel: #101923;
-  --surface-panel-alt: #131d28;
-  --surface-elevated: #16212d;
-  --surface-shell: #09131c;
-  --surface-rail: #0a1118;
-  --surface-live: #08131d;
-  --surface-deck: #0d1722;
-  --surface-ops: #0b141d;
-  --surface-workspace: #08121b;
-  --surface-raised: #141f2a;
-  --surface-glass: rgba(14, 22, 31, 0.86);
-  --surface-overlay: rgba(4, 7, 10, 0.8);
-  --surface-hover: #1b2632;
-  --surface-muted: #0b131c;
-  --surface-contrast: #243241;
-  --text-primary: #edf3fa;
-  --text-secondary: #b8c3cf;
-  --text-muted: #7f8c9d;
-  --text-dim: #617084;
-  --accent-warm: #d39a56;
+  --surface-canvas: #06080d;
+  --surface-panel: #0d1118;
+  --surface-panel-alt: #131924;
+  --surface-elevated: #1a212f;
+  --surface-shell: #090d14;
+  --surface-rail: #0b1017;
+  --surface-live: #080d14;
+  --surface-deck: #0c1119;
+  --surface-ops: #0c111a;
+  --surface-workspace: #060a11;
+  --surface-raised: #20283a;
+  --surface-glass: rgba(14, 18, 27, 0.9);
+  --surface-overlay: rgba(3, 4, 7, 0.82);
+  --surface-hover: #1b2230;
+  --surface-muted: #101620;
+  --surface-contrast: #293244;
+  --text-primary: #f6f1e8;
+  --text-secondary: #d7d0c2;
+  --text-muted: #a2a8b6;
+  --text-dim: #777e8e;
+  --accent-warm: #ddb178;
+  --accent-cool: #7fbaf7;
   --accent: var(--accent-warm);
-  --accent-dim: #b98449;
-  --accent-soft: rgba(211, 154, 86, 0.14);
-  --accent-ghost: rgba(211, 154, 86, 0.08);
+  --accent-dim: #bd8f58;
+  --accent-soft: rgba(221, 177, 120, 0.16);
+  --accent-ghost: rgba(221, 177, 120, 0.08);
   --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
+  --accent-positive: #22c55e;
+  --accent-warning: #f59e0b;
+  --warning-strong: #f1b963;
+  --accent-info: #60a5fa;
+  --accent-danger: #fb7185;
   --border-hairline: rgba(255, 255, 255, 0.055);
-  --border-muted: #1b2834;
-  --border-subtle: #263545;
-  --border: #2f4051;
-  --border-strong: #41566d;
-  --border-focus: rgba(211, 154, 86, 0.36);
-  --tab-active: #121d28;
-  --tab-inactive: #0c1219;
-  --pane-focus: #4d6076;
-  --pane-unfocus: #29384a;
-  --bookmark: #d1aa62;
-  --success: #61b88b;
-  --warning: #d7a65b;
-  --info: #6ca5ea;
-  --danger: #ef6879;
-  --git-added: #61b88b;
-  --git-modified: #d7a65b;
-  --git-renamed: #6ca5ea;
-  --git-conflicted: #e88c52;
-  --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.26);
-  --shadow-elevated: 0 26px 72px rgba(0, 0, 0, 0.4);
+  --border-muted: #202938;
+  --border-subtle: #303a4e;
+  --border: #465066;
+  --border-strong: #62708a;
+  --border-focus: rgba(221, 177, 120, 0.38);
+  --tab-active: #151c29;
+  --tab-inactive: #0d121a;
+  --pane-focus: #c9a16b;
+  --pane-unfocus: #384356;
+  --bookmark: #f2ba67;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --info: #60a5fa;
+  --danger: #fb7185;
+  --status-success-bg: color-mix(in srgb, var(--success) 14%, transparent);
+  --status-success-border: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
+  --status-success-text: color-mix(in srgb, var(--success) 76%, white);
+  --status-warning-bg: color-mix(in srgb, var(--warning) 16%, transparent);
+  --status-warning-border: color-mix(in srgb, var(--warning) 34%, var(--border-subtle));
+  --status-warning-text: color-mix(in srgb, var(--warning) 82%, white);
+  --status-info-bg: color-mix(in srgb, var(--accent-cool) 16%, transparent);
+  --status-info-border: color-mix(in srgb, var(--accent-cool) 32%, var(--border-subtle));
+  --status-info-text: color-mix(in srgb, var(--accent-cool) 74%, white);
+  --status-danger-bg: color-mix(in srgb, var(--danger) 16%, transparent);
+  --status-danger-border: color-mix(in srgb, var(--danger) 30%, var(--border-subtle));
+  --status-danger-text: color-mix(in srgb, var(--danger) 76%, white);
+  --status-accent-bg: color-mix(in srgb, var(--accent) 16%, transparent);
+  --status-accent-border: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  --status-accent-text: color-mix(in srgb, var(--accent) 82%, white);
+  --status-neutral-bg: color-mix(in srgb, var(--surface-contrast) 52%, transparent);
+  --status-neutral-border: color-mix(in srgb, var(--border) 68%, transparent);
+  --status-neutral-text: color-mix(in srgb, var(--text-muted) 88%, white);
+  --git-added: #22c55e;
+  --git-modified: #f59e0b;
+  --git-renamed: #60a5fa;
+  --git-conflicted: #f97316;
+  --shadow-soft: 0 20px 48px rgba(2, 4, 10, 0.34);
+  --shadow-elevated: 0 28px 80px rgba(2, 4, 10, 0.48);
+  --shadow-card: 0 14px 30px rgba(2, 8, 16, 0.14);
+  --shadow-card-strong: 0 22px 48px rgba(2, 8, 16, 0.22);
+  --shadow-lift: 0 16px 34px rgba(2, 8, 16, 0.18);
+  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+  --glass-highlight: rgba(255, 255, 255, 0.045);
   --radius-xs: 5px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -68,9 +97,27 @@
   --motion-normal: 180ms;
   --motion-panel: 220ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --font-sans: "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Manrope", "IBM Plex Sans", "Plus Jakarta Sans", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Sora", "Space Grotesk", "IBM Plex Sans", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
+  --font-ui: var(--font-sans);
+  --type-2xs: 10px;
+  --type-xs: 11px;
+  --type-sm: 12px;
+  --type-md: 13px;
+  --type-lg: 15px;
+  --type-xl: 18px;
+  --type-2xl: 20px;
+  --type-display-sm: 24px;
+  --type-display-md: 30px;
+  --type-display-lg: 36px;
+  --line-tight: 1.2;
+  --line-normal: 1.45;
+  --line-relaxed: 1.6;
+  --sidebar-width-default: 236px;
+  --sidebar-width-collapsed: 46px;
+  --ops-rail-width-default: 336px;
+  --ops-rail-width-compact: 292px;
   --debug-panel-height: 300px;
 
   /* Compatibility aliases for existing renderer styles. */
@@ -92,14 +139,15 @@ html, body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: var(--type-md);
+  line-height: var(--line-normal);
   color: var(--text-primary);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 17%),
-    radial-gradient(circle at 16% 0%, rgba(211, 154, 86, 0.04), transparent 24%),
-    radial-gradient(circle at 88% 0%, rgba(96, 134, 176, 0.045), transparent 20%),
-    linear-gradient(180deg, #0a1219 0%, var(--surface-canvas) 34%, #05080c 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 16%),
+    radial-gradient(circle at 14% 0%, rgba(221, 177, 120, 0.13), transparent 28%),
+    radial-gradient(circle at 86% 2%, rgba(107, 157, 216, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(63, 78, 109, 0.12), transparent 34%),
+    linear-gradient(180deg, #0b0d12 0%, var(--surface-canvas) 38%, #040507 100%);
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -109,8 +157,9 @@ html, body {
   display: flex;
   height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 12%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 88%, black), var(--surface-canvas));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12%),
+    radial-gradient(circle at top, rgba(221, 177, 120, 0.04), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 90%, black), var(--surface-canvas));
 }
 
 ::selection {
@@ -121,6 +170,7 @@ html, body {
 :focus-visible {
   outline: 1px solid var(--border-focus);
   outline-offset: 2px;
+  box-shadow: var(--shadow-focus-ring);
 }
 
 button,
@@ -182,7 +232,7 @@ body.debug-panel-open #app {
 }
 
 .empty-state-eyebrow {
-  font-size: 10px;
+  font-size: var(--type-2xs);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -191,18 +241,22 @@ body.debug-panel-open #app {
 
 .empty-state-title {
   font-family: var(--font-display);
-  color: var(--text-primary);
+  color: transparent;
   max-width: 12ch;
-  font-size: 34px;
+  font-size: var(--type-display-lg);
   line-height: 0.98;
   font-weight: 680;
   letter-spacing: -0.03em;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 92%, white), color-mix(in srgb, var(--accent) 44%, var(--text-primary)));
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .empty-state-copy {
   max-width: 44ch;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: var(--type-md);
+  line-height: var(--line-relaxed);
   color: var(--text-secondary);
 }
 
@@ -211,11 +265,12 @@ body.debug-panel-open #app {
   padding: 12px 0 0;
   border: none;
   border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--type-sm);
+  line-height: var(--line-relaxed);
 }
 
 .empty-state-actions {
@@ -226,15 +281,18 @@ body.debug-panel-open #app {
 .empty-state-primary-action {
   min-height: 38px;
   padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
   border-radius: 12px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 28%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 44%, rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 82%, black);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--type-md);
   font-weight: 650;
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 24px rgba(2, 4, 10, 0.16);
   transition:
     border-color 0.15s ease,
     transform 0.15s ease,
@@ -242,9 +300,11 @@ body.debug-panel-open #app {
 }
 
 .empty-state-primary-action:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border-subtle));
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 28px rgba(2, 4, 10, 0.22);
 }
 
 .empty-state .hint {

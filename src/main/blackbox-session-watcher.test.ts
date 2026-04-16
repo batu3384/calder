@@ -124,6 +124,44 @@ describe('session ID assignment via polling', () => {
     vi.advanceTimersByTime(2000);
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
   });
+
+  it('re-processes a session filename recreated after it disappeared', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startBlackboxSessionWatcher(win);
+
+    mockReaddirSync
+      .mockReturnValueOnce([] as any) // register ui-1 baseline
+      .mockReturnValueOnce(['blackbox_secure_session_reused.json'] as any) // poll #1
+      .mockReturnValueOnce([] as any) // poll #2 (file removed)
+      .mockReturnValueOnce(['blackbox_secure_session_reused.json'] as any); // poll #3 (file recreated)
+
+    mockReadFileSync
+      .mockReturnValueOnce(JSON.stringify({ sessionId: 'bbx-first' }) as any)
+      .mockReturnValueOnce(JSON.stringify({ sessionId: 'bbx-second' }) as any);
+
+    registerPendingBlackboxSession('ui-1');
+    vi.advanceTimersByTime(10);
+    registerPendingBlackboxSession('ui-2');
+
+    vi.advanceTimersByTime(2000);
+    expect(mockWriteFileSync).toHaveBeenNthCalledWith(
+      1,
+      path.join(MOCK_STATUS_DIR, 'ui-1.sessionid'),
+      'bbx-first',
+    );
+
+    vi.advanceTimersByTime(2000); // filename disappears
+    vi.advanceTimersByTime(2000); // filename reappears
+
+    expect(mockWriteFileSync).toHaveBeenNthCalledWith(
+      2,
+      path.join(MOCK_STATUS_DIR, 'ui-2.sessionid'),
+      'bbx-second',
+    );
+  });
 });
 
 describe('unregisterBlackboxSession', () => {

@@ -29,6 +29,12 @@ import {
   getUpdateCenterState,
   onUpdateCenterChange,
 } from '../update-center.js';
+import {
+  appendOverviewGrid as appendOverviewGridLayout,
+  appendSectionCard as appendSectionCardLayout,
+  appendSectionGroup as appendSectionGroupLayout,
+  appendSectionIntro as appendSectionIntroLayout,
+} from './preferences-layout.js';
 import type {
   CliProviderMeta,
   ProjectCheckpointDocument,
@@ -57,6 +63,34 @@ interface OrchestrationPhaseState {
   summary: string;
   detail: string;
   updatedAt?: string;
+}
+
+function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string): void {
+  // preferences-section-intro
+  appendSectionIntroLayout(container, eyebrow, title, description);
+}
+
+function appendSectionCard(container: HTMLElement, title: string, description?: string): HTMLElement {
+  // preferences-section-card
+  return appendSectionCardLayout(container, title, description);
+}
+
+function appendSectionGroup(
+  container: HTMLElement,
+  eyebrow: string,
+  title: string,
+  description: string,
+): HTMLElement {
+  // preferences-subsection + preferences-subsection-grid
+  return appendSectionGroupLayout(container, eyebrow, title, description);
+}
+
+function appendOverviewGrid(
+  container: HTMLElement,
+  items: Array<{ label: string; value: string; note?: string }>,
+): void {
+  // preferences-overview-grid
+  appendOverviewGridLayout(container, items);
 }
 
 export function showPreferencesModal(): void {
@@ -130,84 +164,6 @@ export function showPreferencesModal(): void {
   let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement } | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
   let aboutUpdateCleanup: (() => void) | null = null;
-
-  function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string) {
-    const intro = document.createElement('div');
-    intro.className = 'preferences-section-intro';
-    intro.innerHTML = `
-      <div class="preferences-section-eyebrow shell-kicker">${eyebrow}</div>
-      <div class="preferences-section-title">${title}</div>
-      <div class="preferences-section-description">${description}</div>
-    `;
-    container.appendChild(intro);
-  }
-
-  function appendSectionCard(container: HTMLElement, title: string, description?: string): HTMLElement {
-    const card = document.createElement('div');
-    card.className = 'preferences-section-card';
-
-    const heading = document.createElement('div');
-    heading.className = 'preferences-card-heading';
-    heading.textContent = title;
-    card.appendChild(heading);
-
-    if (description) {
-      const copy = document.createElement('div');
-      copy.className = 'preferences-card-copy';
-      copy.textContent = description;
-      card.appendChild(copy);
-    }
-
-    container.appendChild(card);
-    return card;
-  }
-
-  function appendSectionGroup(
-    container: HTMLElement,
-    eyebrow: string,
-    title: string,
-    description: string,
-  ): HTMLElement {
-    const group = document.createElement('section');
-    group.className = 'preferences-subsection';
-
-    const header = document.createElement('div');
-    header.className = 'preferences-subsection-header';
-    header.innerHTML = `
-      <div class="preferences-subsection-eyebrow shell-kicker">${eyebrow}</div>
-      <div class="preferences-subsection-title">${title}</div>
-      <div class="preferences-subsection-description">${description}</div>
-    `;
-    group.appendChild(header);
-
-    const body = document.createElement('div');
-    body.className = 'preferences-subsection-grid';
-    group.appendChild(body);
-
-    container.appendChild(group);
-    return body;
-  }
-
-  function appendOverviewGrid(
-    container: HTMLElement,
-    items: Array<{ label: string; value: string; note?: string }>,
-  ) {
-    const grid = document.createElement('div');
-    grid.className = 'preferences-overview-grid';
-
-    for (const item of items) {
-      const card = document.createElement('div');
-      card.className = 'preferences-overview-card';
-      card.innerHTML = `
-        <div class="preferences-overview-label">${item.label}</div>
-        <div class="preferences-overview-value">${item.value}</div>
-        ${item.note ? `<div class="preferences-overview-note">${item.note}</div>` : ''}
-      `;
-      grid.appendChild(card);
-    }
-
-    container.appendChild(grid);
-  }
 
   function formatCountLabel(count: number, singular: string, plural: string): string {
     return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
@@ -2898,6 +2854,9 @@ export function showPreferencesModal(): void {
       const updateMeta = document.createElement('div');
       updateMeta.className = 'about-update-meta';
 
+      const updateActivity = document.createElement('div');
+      updateActivity.className = 'about-update-activity';
+
       const updateProgress = document.createElement('div');
       updateProgress.className = 'about-update-progress hidden';
 
@@ -2910,58 +2869,76 @@ export function showPreferencesModal(): void {
       ) => {
         if (appUpdateState.phase === 'checking') {
           updateBtn.disabled = true;
+          updateBtn.textContent = 'Checking...';
           updateStatus.textContent = 'Checking for updates...';
           updateMeta.textContent = 'Contacting update server.';
+          updateActivity.textContent = 'Status: request sent to release channel.';
           updateProgress.classList.add('hidden');
           return;
         }
         if (appUpdateState.phase === 'downloading') {
           updateBtn.disabled = true;
+          updateBtn.textContent = 'Downloading...';
           const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new version';
           const percent = typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
           updateStatus.textContent = `Downloading ${versionLabel}...`;
           updateMeta.textContent = `${percent}% completed`;
+          updateActivity.textContent = 'Status: package download is in progress.';
           updateProgress.classList.remove('hidden');
           updateProgressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
           return;
         }
         if (appUpdateState.phase === 'ready_to_restart') {
           updateBtn.disabled = false;
+          updateBtn.textContent = 'Restart to Apply';
           const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new update';
           updateStatus.textContent = `${versionLabel} is ready. Restart to apply.`;
           updateMeta.textContent = 'The update is downloaded.';
+          updateActivity.textContent = 'Status: restart is required to finish update.';
           updateProgress.classList.remove('hidden');
           updateProgressFill.style.width = '100%';
           return;
         }
         if (appUpdateState.phase === 'up_to_date') {
           updateBtn.disabled = false;
+          updateBtn.textContent = 'Check for Updates';
           updateStatus.textContent = 'You’re up to date.';
           updateMeta.textContent = appUpdateState.lastCheckedAt
             ? `Checked ${formatRelativeTimestamp(appUpdateState.lastCheckedAt)}`
             : 'No recent check.';
+          updateActivity.textContent = 'Status: no newer build found.';
           updateProgress.classList.add('hidden');
           return;
         }
         if (appUpdateState.phase === 'error') {
           updateBtn.disabled = false;
+          updateBtn.textContent = 'Retry Check';
           updateStatus.textContent = 'Update check failed.';
           updateMeta.textContent = appUpdateState.errorMessage ?? 'Try again in a moment.';
+          updateActivity.textContent = 'Status: check failed, retry is available.';
           updateProgress.classList.add('hidden');
           return;
         }
         updateBtn.disabled = false;
+        updateBtn.textContent = 'Check for Updates';
         updateStatus.textContent = 'No check yet.';
         updateMeta.textContent = 'Use this to check for a newer Calder build.';
+        updateActivity.textContent = 'Status: update check has not run in this session.';
         updateProgress.classList.add('hidden');
       };
 
       updateBtn.addEventListener('click', () => {
+        const appStateSnapshot = getUpdateCenterState().app;
+        if (appStateSnapshot.phase === 'ready_to_restart') {
+          void window.calder.update.install();
+          return;
+        }
         void checkForAppUpdates();
       });
 
       updateInfo.appendChild(updateStatus);
       updateInfo.appendChild(updateMeta);
+      updateInfo.appendChild(updateActivity);
       updateInfo.appendChild(updateProgress);
       updateRow.appendChild(updateBtn);
       updateRow.appendChild(updateInfo);

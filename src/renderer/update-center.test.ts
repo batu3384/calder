@@ -167,6 +167,21 @@ describe('update center app updates', () => {
     expect(getUpdateCenterState().app.phase).toBe('ready_to_restart');
     expect(getUpdateCenterState().app.targetVersion).toBe('1.4.0');
   });
+
+  it('surfaces check failures as app error state', async () => {
+    const mockApi = createMockApi({
+      checkNow: async () => {
+        throw new Error('network unreachable');
+      },
+    });
+    initUpdateCenter(mockApi as any);
+
+    await checkForAppUpdates();
+    const app = getUpdateCenterState().app;
+    expect(app.phase).toBe('error');
+    expect(app.errorMessage).toBe('network unreachable');
+    expect(app.lastCheckedAt).toBeTruthy();
+  });
 });
 
 describe('update center cli updates', () => {
@@ -321,5 +336,266 @@ describe('update center cli updates', () => {
     expect(cliState.phase).toBe('cancelled');
     expect(cliState.cancelRequested).toBe(false);
     expect(mockApi.cancelUpdateAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces updater failures as cli error state and rethrows', async () => {
+    const mockApi = createMockApi({
+      updateAll: async () => {
+        throw new Error('provider updater crashed');
+      },
+    });
+    initUpdateCenter(mockApi as any);
+
+    await expect(runCliProviderUpdates()).rejects.toThrow('provider updater crashed');
+    const cli = getUpdateCenterState().cli;
+    expect(cli.phase).toBe('error');
+    expect(cli.errorMessage).toBe('provider updater crashed');
+    expect(cli.cancelRequested).toBe(false);
+  });
+
+  it('does not carry stale providers into a new run when no progress events are emitted', async () => {
+    const firstRunSummary = buildSummary([
+      {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'Claude Code was updated successfully.',
+        durationMs: 100,
+      },
+      {
+        providerId: 'codex',
+        providerName: 'Codex CLI',
+        source: 'npm',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Codex CLI is already up to date.',
+        durationMs: 110,
+      },
+    ]);
+    const secondRunSummary = buildSummary([
+      {
+        providerId: 'minimax',
+        providerName: 'MiniMax CLI',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'MiniMax CLI was updated successfully.',
+        durationMs: 95,
+      },
+    ]);
+
+    const summaries = [firstRunSummary, secondRunSummary];
+    const mockApi = createMockApi({
+      updateAll: async () => summaries.shift() ?? buildSummary([]),
+    });
+    initUpdateCenter(mockApi as any);
+
+    await runCliProviderUpdates();
+    const firstState = getUpdateCenterState().cli;
+    expect(firstState.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
+
+    // Second run intentionally emits no provider progress events; final state should be derived from summary only.
+    await runCliProviderUpdates();
+    const secondState = getUpdateCenterState().cli;
+    expect(secondState.providers.map((provider) => provider.providerId)).toEqual(['minimax']);
+    expect(secondState.totalProviders).toBe(1);
+    expect(secondState.completedProviders).toBe(1);
+  });
+
+  it('returns cancelled=false when cancellation is requested while no run is active', async () => {
+    const mockApi = createMockApi();
+    initUpdateCenter(mockApi as any);
+
+    const result = await cancelCliProviderUpdates();
+    expect(result).toEqual({ cancelled: false });
+    expect(mockApi.cancelUpdateAll).not.toHaveBeenCalled();
+  });
+
+  it('clears cancelRequested when provider cancel endpoint declines cancellation', async () => {
+    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    const mockApi = createMockApi({
+      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      cancelUpdateAll: async () => ({ cancelled: false }),
+    });
+    initUpdateCenter(mockApi as any);
+
+    const updatePromise = runCliProviderUpdates();
+    const cancelResult = await cancelCliProviderUpdates();
+    expect(cancelResult).toEqual({ cancelled: false });
+    expect(getUpdateCenterState().cli.cancelRequested).toBe(false);
+
+    resolveSummary?.(buildSummary([]));
+    await updatePromise;
+  });
+
+  it('ignores stale progress events from a previous run after a new run starts', async () => {
+    const resolvers: Array<(value: ProviderUpdateSummary) => void> = [];
+    const mockApi = createMockApi({
+      updateAll: () => new Promise((resolve) => { resolvers.push(resolve); }),
+    });
+    initUpdateCenter(mockApi as any);
+
+    const runOne = runCliProviderUpdates();
+    mockApi.emitProviderProgress({
+      phase: 'started',
+      startedAt: '2026-04-16T09:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
+    });
+    resolvers[0]?.(buildSummary([
+      {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Claude Code is already up to date.',
+        durationMs: 50,
+      },
+    ]));
+    await runOne;
+
+    const runTwo = runCliProviderUpdates();
+    mockApi.emitProviderProgress({
+      phase: 'started',
+      startedAt: '2026-04-16T09:10:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providers: [{ providerId: 'minimax', providerName: 'MiniMax CLI' }],
+    });
+
+    // Simulate a delayed progress event from run one. This must not pollute run two state.
+    mockApi.emitProviderProgress({
+      phase: 'provider_finished',
+      startedAt: '2026-04-16T09:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 1,
+      providerId: 'claude',
+      providerName: 'Claude Code',
+      result: {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'Claude Code was updated successfully.',
+        durationMs: 100,
+      },
+    });
+
+    const midState = getUpdateCenterState().cli;
+    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['minimax']);
+    expect(midState.activeProviderId).toBeUndefined();
+
+    resolvers[1]?.(buildSummary([
+      {
+        providerId: 'minimax',
+        providerName: 'MiniMax CLI',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'MiniMax CLI was updated successfully.',
+        durationMs: 60,
+      },
+    ]));
+    await runTwo;
+  });
+
+  it('ignores provider events until current run emits started', async () => {
+    const resolvers: Array<(value: ProviderUpdateSummary) => void> = [];
+    const mockApi = createMockApi({
+      updateAll: () => new Promise((resolve) => { resolvers.push(resolve); }),
+    });
+    initUpdateCenter(mockApi as any);
+
+    const runOne = runCliProviderUpdates();
+    mockApi.emitProviderProgress({
+      phase: 'started',
+      startedAt: '2026-04-16T10:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
+    });
+    resolvers[0]?.(buildSummary([
+      {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Claude Code is already up to date.',
+        durationMs: 40,
+      },
+    ]));
+    await runOne;
+
+    const runTwo = runCliProviderUpdates();
+    // Late event from previous run arrives before new run emits `started`.
+    mockApi.emitProviderProgress({
+      phase: 'provider_finished',
+      startedAt: '2026-04-16T10:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 1,
+      providerId: 'claude',
+      providerName: 'Claude Code',
+      result: {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'Claude Code was updated successfully.',
+        durationMs: 90,
+      },
+    });
+
+    const midState = getUpdateCenterState().cli;
+    expect(midState.providers).toEqual([]);
+    expect(midState.completedProviders).toBe(0);
+
+    resolvers[1]?.(buildSummary([
+      {
+        providerId: 'minimax',
+        providerName: 'MiniMax CLI',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'MiniMax CLI was updated successfully.',
+        durationMs: 60,
+      },
+    ]));
+    await runTwo;
+  });
+
+  it('resets cancelRequested and surfaces errors when cancel request fails', async () => {
+    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    const mockApi = createMockApi({
+      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      cancelUpdateAll: async () => {
+        throw new Error('cancel endpoint unavailable');
+      },
+    });
+    initUpdateCenter(mockApi as any);
+
+    const updatePromise = runCliProviderUpdates();
+    await expect(cancelCliProviderUpdates()).rejects.toThrow('cancel endpoint unavailable');
+    const cli = getUpdateCenterState().cli;
+    expect(cli.cancelRequested).toBe(false);
+    expect(cli.errorMessage).toBe('cancel endpoint unavailable');
+
+    resolveSummary?.(buildSummary([]));
+    await updatePromise;
   });
 });

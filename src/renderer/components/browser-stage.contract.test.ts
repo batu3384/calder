@@ -40,7 +40,7 @@ describe('browser stage contract', () => {
     expect(css).toContain('.browser-toolbar-nav-shell');
     expect(css).toContain('.browser-toolbar-address-shell');
     expect(css).toContain('border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
-    expect(css).toContain('background: color-mix(in srgb, var(--surface-panel) 56%, transparent);');
+    expect(css).toContain('color-mix(in srgb, var(--surface-panel) 58%, transparent);');
   });
 
   it('keeps view/capture controls grouped in a single tools shell', () => {

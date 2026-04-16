@@ -79,6 +79,7 @@ let cleanupCallbacks: Array<() => void> = [];
 let appCheckToken = 0;
 let appCheckTimer: ReturnType<typeof setTimeout> | null = null;
 let cliInFlight: Promise<ProviderUpdateSummary> | null = null;
+let activeCliProgressStartedAt: string | null = null;
 
 function cloneState(input: UpdateCenterState): UpdateCenterState {
   return {
@@ -167,6 +168,18 @@ function mergeCliResult(
   return next;
 }
 
+function deriveProvidersFromSummary(summary: ProviderUpdateSummary): CliProviderProgressState[] {
+  return summary.results.map((result) => ({
+    providerId: result.providerId,
+    providerName: result.providerName,
+    status: result.status,
+    message: result.message,
+    beforeVersion: result.beforeVersion,
+    latestVersion: result.latestVersion,
+    afterVersion: result.afterVersion,
+  }));
+}
+
 function handleAppAvailable(info: { version: string }): void {
   clearAppCheckTimer();
   setAppState({
@@ -207,7 +220,12 @@ function handleAppError(info: { message: string }): void {
 }
 
 function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
+  if (!cliInFlight && state.cli.phase !== 'running') {
+    return;
+  }
+
   if (event.phase === 'started') {
+    activeCliProgressStartedAt = event.startedAt;
     setCliState({
       phase: 'running',
       startedAt: event.startedAt,
@@ -223,6 +241,14 @@ function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
       cancelRequested: false,
       errorMessage: undefined,
     });
+    return;
+  }
+
+  if (!activeCliProgressStartedAt) {
+    return;
+  }
+
+  if (activeCliProgressStartedAt && event.startedAt !== activeCliProgressStartedAt) {
     return;
   }
 
@@ -331,29 +357,27 @@ export async function checkForAppUpdates(): Promise<void> {
 export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
   ensureInitialized();
   if (cliInFlight) return cliInFlight;
+  activeCliProgressStartedAt = null;
 
   setCliState({
     phase: 'running',
     startedAt: nowIso(),
     finishedAt: undefined,
-    totalProviders: state.cli.totalProviders,
+    totalProviders: 0,
     completedProviders: 0,
     activeProviderId: undefined,
-    providers: state.cli.providers.map((provider) => ({ ...provider, status: 'queued', message: undefined })),
+    providers: [],
     cancelRequested: false,
     errorMessage: undefined,
   });
 
   cliInFlight = bridge.provider.updateAll()
     .then((summary) => {
-      let providers = state.cli.providers.slice();
-      for (const result of summary.results) {
-        providers = mergeCliResult(providers, result);
-      }
+      const providers = deriveProvidersFromSummary(summary);
       const totalProviders = state.cli.totalProviders > 0
         ? state.cli.totalProviders
-        : Math.max(summary.results.length, state.cli.providers.length);
-      const completedProviders = Math.max(state.cli.completedProviders, summary.results.length);
+        : providers.length;
+      const completedProviders = Math.max(state.cli.completedProviders, providers.length);
       setCliState({
         phase: summary.cancelled ? 'cancelled' : 'completed',
         startedAt: summary.startedAt,
@@ -379,6 +403,7 @@ export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
       throw error;
     })
     .finally(() => {
+      activeCliProgressStartedAt = null;
       cliInFlight = null;
     });
 
@@ -419,4 +444,5 @@ export function _resetUpdateCenterForTesting(): void {
   state = cloneState(INITIAL_STATE);
   appCheckToken = 0;
   cliInFlight = null;
+  activeCliProgressStartedAt = null;
 }

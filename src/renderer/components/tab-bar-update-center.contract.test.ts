@@ -28,4 +28,11 @@ describe('tab bar update center contract', () => {
     expect(tabsCss).toContain('.cli-update-panel-progress-label');
     expect(tabsCss).toContain('.cli-update-panel-timestamp');
   });
+
+  it('announces update status changes for assistive technologies', () => {
+    expect(tabBarSource).toContain("cliUpdatePanelStatusEl.setAttribute('role', 'status')");
+    expect(tabBarSource).toContain("cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite')");
+    expect(tabBarSource).toContain("cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite')");
+    expect(tabBarSource).toContain("cliUpdatePanelEl.setAttribute('aria-busy'");
+  });
 });

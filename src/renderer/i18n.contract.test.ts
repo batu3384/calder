@@ -33,10 +33,36 @@ describe('i18n contract', () => {
   it('keeps branch and validation copy consistent in Turkish', () => {
     expect(source).toContain("['Branch name', 'Dal adı']");
     expect(source).toContain("['Loading branches…', 'Dallar yükleniyor…']");
+    expect(source).toContain("['Filter branches…', 'Dalları filtrele…']");
+    expect(source).toContain("['Filter branches', 'Dalları filtrele']");
     expect(source).toContain("['No matching branches', 'Eşleşen dal yok']");
     expect(source).toContain("['Failed to load branches', 'Dallar yüklenemedi']");
     expect(source).toContain("['Branch name is required', 'Dal adı zorunludur']");
     expect(source).toContain("['Branch name cannot contain spaces', 'Dal adı boşluk içeremez']");
+    expect(source).not.toContain("['Loading branches…', 'Branchler yükleniyor…']");
+    expect(source).not.toContain("['No matching branches', 'Eşleşen branch yok']");
+    expect(source).not.toContain("['Failed to load branches', 'Branchler yüklenemedi']");
+    expect(source).not.toContain("['Branch name', 'Branch adı']");
+  });
+
+  it('covers update center accessibility and runtime status copy in Turkish', () => {
+    expect(source).toContain("['Cancel CLI update', 'CLI güncellemesini iptal et']");
+    expect(source).toContain("['Close update panel', 'Güncelleme panelini kapat']");
+    expect(source).toContain("['Cancellation requested. Waiting for the active command to stop...', 'İptal istendi. Etkin komutun durması bekleniyor...']");
+    expect(source).toContain("['Waiting for provider progress...', 'Sağlayıcı ilerlemesi bekleniyor...']");
+    expect(source).toContain("['All providers are already up to date.', 'Tüm sağlayıcılar zaten güncel.']");
+    expect(source).toContain("['Session actions', 'Oturum eylemleri']");
+    expect(source).toContain("['Branch actions', 'Dal eylemleri']");
+    expect(source).toContain("['New session actions', 'Yeni oturum eylemleri']");
+  });
+
+  it('keeps shared-rules translation terminology consistent', () => {
+    expect(source).toContain("['Provider memory + shared rules connected.', 'Sağlayıcı belleği + paylaşılan kurallar bağlı.']");
+    expect(source).toContain("['Shared rules connected.', 'Paylaşılan kurallar bağlı.']");
+    expect(source).toContain("['No provider memory or shared rules discovered yet.', 'Henüz sağlayıcı belleği veya paylaşılan kural bulunamadı.']");
+    expect(source).not.toContain("['Provider memory + shared rules connected.', 'Sağlayıcı belleği + ortak kurallar bağlı.']");
+    expect(source).not.toContain("['Shared rules connected.', 'Ortak kurallar bağlı.']");
+    expect(source).not.toContain("['No provider memory or shared rules discovered yet.', 'Henüz sağlayıcı belleği veya ortak kural bulunmadı.']");
   });
 
   it('includes dynamic error translation patterns for mixed-language surfaces', () => {

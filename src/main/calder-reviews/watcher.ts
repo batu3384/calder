@@ -14,13 +14,18 @@ function notify(): void {
   if (!currentProjectPath || !currentHandler) return;
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
-    if (!currentProjectPath || !currentHandler) return;
-    currentHandler(await discoverProjectReviews(currentProjectPath));
+    const projectPath = currentProjectPath;
+    const handler = currentHandler;
+    if (!projectPath || !handler) return;
+    const nextState = await discoverProjectReviews(projectPath);
+    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
+    handler(nextState);
   }, DEBOUNCE_MS);
 }
 
 function watchDir(dirPath: string): void {
   try {
+    fs.mkdirSync(dirPath, { recursive: true });
     const watcher = fs.watch(dirPath, () => notify());
     watcher.on('error', () => {});
     dirWatchers.push(watcher);
