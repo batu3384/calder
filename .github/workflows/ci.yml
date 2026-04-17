@@ -23,6 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          CALDER_SKIP_APP_DEPS: "1"
 
       - name: Build
         run: npm run build

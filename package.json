@@ -43,7 +43,7 @@
     "copy-assets": "node scripts/copy-assets.js",
     "start": "npm run build && node scripts/run-electron.js",
     "dev": "npm run build && node scripts/run-electron.js",
-    "postinstall": "node -e \"try{require('electron-builder/package.json');require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})}catch{}\"",
+    "postinstall": "node -e \"if(process.env.CALDER_SKIP_APP_DEPS==='1'){process.exit(0)};try{require('electron-builder/package.json');require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})}catch{}\"",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
     "test": "vitest run",
