@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 const mockWatch = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
@@ -22,6 +23,7 @@ import {
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
+const n = (value: string) => value.replace(/\\/g, '/');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -32,7 +34,7 @@ beforeEach(() => {
   mockWatch.mockImplementation(((dirPath: string, listener: () => void) => {
     const close = vi.fn();
     closeFns.push(close);
-    watchCallbacks.set(dirPath, listener);
+    watchCallbacks.set(n(dirPath), listener);
     return {
       close,
       on: vi.fn().mockReturnThis(),
@@ -67,10 +69,12 @@ describe('project governance watcher', () => {
     };
     mockDiscoverProjectGovernance.mockResolvedValue(nextState);
     const onChange = vi.fn();
+    const calderDir = path.join('/repo', '.calder');
+    const governanceDir = path.join('/repo', '.calder', 'governance');
 
     startProjectGovernanceWatcher('/repo', onChange);
-    expect(mockMkdirSync).toHaveBeenCalledWith('/repo/.calder', { recursive: true });
-    expect(mockMkdirSync).toHaveBeenCalledWith('/repo/.calder/governance', { recursive: true });
+    expect(mockMkdirSync).toHaveBeenCalledWith(calderDir, { recursive: true });
+    expect(mockMkdirSync).toHaveBeenCalledWith(governanceDir, { recursive: true });
     expect(watchCallbacks.has('/repo/.calder')).toBe(true);
     expect(watchCallbacks.has('/repo/.calder/governance')).toBe(true);
 

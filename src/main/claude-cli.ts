@@ -178,17 +178,38 @@ function isIdeHook(h: HookHandler): boolean {
   return h.command?.includes(HOOK_MARKER) || false;
 }
 
+function isMissingSettingsError(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException | undefined)?.code;
+  if (code === 'ENOENT' || code === 'ENOTDIR') return true;
+  if (!(error instanceof Error)) return false;
+  return /ENOENT|ENOTDIR/.test(error.message);
+}
+
+function readClaudeSettingsFile(settingsPath: string): Record<string, unknown> {
+  try {
+    const raw = fs.readFileSync(settingsPath, 'utf-8');
+    if (!raw.trim()) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Claude settings root must be a JSON object.');
+    }
+    return parsed as Record<string, unknown>;
+  } catch (error) {
+    if (isMissingSettingsError(error)) {
+      // File may not exist yet
+      return {};
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to parse Claude settings at ${settingsPath}: ${message}`);
+  }
+}
+
 /**
  * Read and clean Claude settings, returning the settings object and cleaned hooks.
  */
 function prepareSettings(): { settings: Record<string, unknown>; cleaned: HooksConfig } {
   const settingsPath = path.join(homedir(), '.claude', 'settings.json');
-  let settings: Record<string, unknown> = {};
-  try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-  } catch {
-    // File may not exist yet
-  }
+  const settings = readClaudeSettingsFile(settingsPath);
 
   const existingHooks: HooksConfig = (settings.hooks ?? {}) as HooksConfig;
 
@@ -504,12 +525,7 @@ export function installStatusLine(): void {
   installStatusLineScript();
 
   const settingsPath = path.join(homedir(), '.claude', 'settings.json');
-  let settings: Record<string, unknown> = {};
-  try {
-    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-  } catch {
-    // File may not exist yet
-  }
+  const settings = readClaudeSettingsFile(settingsPath);
 
   settings.statusLine = {
     type: 'command',

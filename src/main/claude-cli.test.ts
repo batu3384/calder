@@ -359,6 +359,18 @@ describe('getClaudeConfig', () => {
 });
 
 describe('installHooks', () => {
+  it('fails fast and does not overwrite malformed settings.json', () => {
+    mockReadFileSync.mockImplementation((filePath) => {
+      if (n(String(filePath)) === '/mock/home/.claude/settings.json') {
+        return '{invalid json';
+      }
+      throw new Error('ENOENT');
+    });
+
+    expect(() => installHooks()).toThrow(/Unable to parse Claude settings/);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
   it('writes hooks to settings.json', () => {
     mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
 
@@ -385,7 +397,7 @@ describe('installHooks', () => {
     const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[3][1]));
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
-    expect(withStatusLine.statusLine.command).toBe('/mock/home/.calder/runtime/statusline.sh');
+    expect(withStatusLine.statusLine.command).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.sh'));
   });
 
   it('preserves existing non-calder hooks', () => {

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 const mockWatch = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
@@ -19,6 +20,10 @@ import { startProjectTeamContextWatcher } from './watcher.js';
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
+const n = (value: string) => value.replace(/\\/g, '/');
+const teamDir = path.join('/repo', '.calder', 'team');
+const rulesDir = path.join('/repo', '.calder', 'rules');
+const workflowsDir = path.join('/repo', '.calder', 'workflows');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -39,7 +44,7 @@ beforeEach(() => {
     }
     const close = vi.fn();
     closeFns.push(close);
-    watchCallbacks.set(dirPath, listener);
+    watchCallbacks.set(n(dirPath), listener);
     return { close } as any;
   }) as any);
 });
@@ -73,11 +78,11 @@ describe('project team context watcher', () => {
 
     expect(mockMkdirSync).toHaveBeenCalledTimes(3);
     expect(mockWatch).toHaveBeenCalledTimes(3);
-    expect(watchCallbacks.has('/repo/.calder/team')).toBe(true);
-    expect(watchCallbacks.has('/repo/.calder/rules')).toBe(true);
-    expect(watchCallbacks.has('/repo/.calder/workflows')).toBe(true);
+    expect(watchCallbacks.has(n(teamDir))).toBe(true);
+    expect(watchCallbacks.has(n(rulesDir))).toBe(true);
+    expect(watchCallbacks.has(n(workflowsDir))).toBe(true);
 
-    watchCallbacks.get('/repo/.calder/team')?.();
+    watchCallbacks.get(n(teamDir))?.();
     vi.advanceTimersByTime(80);
     await Promise.resolve();
 
@@ -95,7 +100,7 @@ describe('project team context watcher', () => {
     const onChange = vi.fn();
 
     const cleanup = startProjectTeamContextWatcher('/repo', onChange);
-    watchCallbacks.get('/repo/.calder/team')?.();
+    watchCallbacks.get(n(teamDir))?.();
     cleanup();
 
     vi.advanceTimersByTime(100);
@@ -113,7 +118,7 @@ describe('project team context watcher', () => {
     const onChange = vi.fn();
 
     const cleanup = startProjectTeamContextWatcher('/repo', onChange);
-    watchCallbacks.get('/repo/.calder/team')?.();
+    watchCallbacks.get(n(teamDir))?.();
     vi.advanceTimersByTime(80);
     await Promise.resolve();
     expect(mockDiscoverProjectTeamContext).toHaveBeenCalledWith('/repo');
@@ -136,7 +141,7 @@ describe('project team context watcher', () => {
     const onChange = vi.fn();
 
     startProjectTeamContextWatcher('/repo', onChange);
-    watchCallbacks.get('/repo/.calder/team')?.();
+    watchCallbacks.get(n(teamDir))?.();
     vi.advanceTimersByTime(100);
     await Promise.resolve();
 
@@ -163,15 +168,15 @@ describe('project team context watcher', () => {
       }
       const close = vi.fn();
       closeFns.push(close);
-      watchCallbacks.set(dirPath, listener);
+      watchCallbacks.set(n(dirPath), listener);
       return { close } as any;
     }) as any);
 
     expect(() => startProjectTeamContextWatcher('/repo', vi.fn())).not.toThrow();
     expect(mockWatch).toHaveBeenCalledTimes(4);
-    expect(watchCallbacks.has('/repo/.calder/team')).toBe(true);
-    expect(watchCallbacks.has('/repo/.calder/rules')).toBe(true);
-    expect(watchCallbacks.has('/repo/.calder/workflows')).toBe(true);
+    expect(watchCallbacks.has(n(teamDir))).toBe(true);
+    expect(watchCallbacks.has(n(rulesDir))).toBe(true);
+    expect(watchCallbacks.has(n(workflowsDir))).toBe(true);
   });
 
   it('continues when one directory cannot be created for watching', () => {

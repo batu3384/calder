@@ -13,6 +13,7 @@ vi.mock('os', () => ({
 }));
 
 import * as fs from 'fs';
+import path from 'path';
 import { loadState, saveState, flushState, saveStateSync } from './store';
 import type { PersistedState } from './store';
 
@@ -150,8 +151,8 @@ describe('saveStateSync', () => {
     saveStateSync(DEFAULT_STATE);
 
     expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
-    expect(mockWriteFileSync.mock.calls[0]?.[0]).toBe('/mock/home/.calder/state.json.tmp');
-    expect(mockWriteFileSync.mock.calls[1]?.[0]).toBe('/mock/home/.calder/state.json');
+    expect(mockWriteFileSync.mock.calls[0]?.[0]).toBe(path.join('/mock/home', '.calder', 'state.json.tmp'));
+    expect(mockWriteFileSync.mock.calls[1]?.[0]).toBe(path.join('/mock/home', '.calder', 'state.json'));
   });
 });
 

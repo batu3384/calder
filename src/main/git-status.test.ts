@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import type { ExecFileException } from 'child_process';
+import path from 'node:path';
 
 // Mock child_process and fs before importing the module
 vi.mock('child_process', () => ({
@@ -396,7 +397,7 @@ describe('branch and file mutation commands', () => {
   it('discards untracked files via fs.unlink and tracked files via git checkout', async () => {
     mockUnlink.mockResolvedValueOnce(undefined as never);
     await gitDiscardFile('/repo', 'new-file.ts', 'untracked');
-    expect(mockUnlink).toHaveBeenCalledWith('/repo/new-file.ts');
+    expect(mockUnlink).toHaveBeenCalledWith(path.join('/repo', 'new-file.ts'));
 
     mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
       (callback as (err: ExecFileException | null) => void)(null);

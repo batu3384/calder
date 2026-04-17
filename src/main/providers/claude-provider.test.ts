@@ -94,7 +94,7 @@ describe('resolveBinaryPath', () => {
   const firstCandidate = isWin
     ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'claude.cmd')
     : '/usr/local/bin/claude';
-  const aliasPath = '/mock/home/.litellm/claude-gateway.sh';
+  const aliasPath = path.join('/mock/home', '.litellm', 'claude-gateway.sh');
 
   it('returns candidate path when existsSync returns true', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
@@ -132,7 +132,7 @@ describe('validatePrerequisites', () => {
   const validateCandidate = isWin
     ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'claude.cmd')
     : '/opt/homebrew/bin/claude';
-  const aliasPath = '/mock/home/.litellm/claude-gateway.sh';
+  const aliasPath = path.join('/mock/home', '.litellm', 'claude-gateway.sh');
 
   it('returns ok when binary found via existsSync', () => {
     mockExistsSync.mockImplementation((p) => p === validateCandidate);

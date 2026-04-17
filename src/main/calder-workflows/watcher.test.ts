@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 const mockWatch = vi.hoisted(() => vi.fn());
 const mockMkdirSync = vi.hoisted(() => vi.fn());
@@ -22,6 +23,7 @@ import {
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
+const n = (value: string) => value.replace(/\\/g, '/');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -33,7 +35,7 @@ beforeEach(() => {
   mockWatch.mockImplementation(((dirPath: string, listener: () => void) => {
     const close = vi.fn();
     closeFns.push(close);
-    watchCallbacks.set(dirPath, listener);
+    watchCallbacks.set(n(dirPath), listener);
     return {
       close,
       on: vi.fn().mockReturnThis(),
@@ -62,9 +64,10 @@ describe('project workflow watcher', () => {
     };
     mockDiscoverProjectWorkflows.mockResolvedValue(nextState);
     const onChange = vi.fn();
+    const workflowsDir = path.join('/repo', '.calder', 'workflows');
 
     startProjectWorkflowWatcher('/repo', onChange);
-    expect(mockMkdirSync).toHaveBeenCalledWith('/repo/.calder/workflows', { recursive: true });
+    expect(mockMkdirSync).toHaveBeenCalledWith(workflowsDir, { recursive: true });
     expect(watchCallbacks.has('/repo/.calder/workflows')).toBe(true);
 
     watchCallbacks.get('/repo/.calder/workflows')?.();

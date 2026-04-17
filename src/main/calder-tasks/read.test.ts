@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 const { mockReadFile } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),
@@ -31,9 +32,10 @@ describe('readProjectBackgroundTaskFile', () => {
 
     const doc = await readProjectBackgroundTaskFile('/repo', './.calder\\tasks\\release.json');
 
-    expect(mockReadFile).toHaveBeenCalledWith('/repo/.calder/tasks/release.json', 'utf8');
+    const fullPath = path.join('/repo', '.calder', 'tasks', 'release.json');
+    expect(mockReadFile).toHaveBeenCalledWith(fullPath, 'utf8');
     expect(doc).toEqual({
-      path: '/repo/.calder/tasks/release.json',
+      path: fullPath,
       relativePath: '.calder/tasks/release.json',
       title: 'Ship v1',
       status: 'running',

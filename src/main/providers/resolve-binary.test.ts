@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 async function loadResolveBinaryModule(isWindows: boolean) {
   vi.resetModules();
@@ -34,27 +35,29 @@ async function loadResolveBinaryModule(isWindows: boolean) {
 describe('resolve-binary', () => {
   it('prefers non-Windows alias launcher and expands ~ paths', async () => {
     const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(false);
+    const aliasPath = path.join('/mock/home', '.local', 'bin', 'codex-wrapper');
 
     mockExecSync.mockReturnValue(`alias codex='~/.local/bin/codex-wrapper --fast'\n` as any);
-    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === '/mock/home/.local/bin/codex-wrapper');
+    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === aliasPath);
 
     const cache = { path: null as string | null };
-    expect(resolveBinary('codex', cache)).toBe('/mock/home/.local/bin/codex-wrapper');
+    expect(resolveBinary('codex', cache)).toBe(aliasPath);
 
     // Cached resolution should bypass additional probing.
     mockExecSync.mockReset();
-    expect(resolveBinary('codex', cache)).toBe('/mock/home/.local/bin/codex-wrapper');
+    expect(resolveBinary('codex', cache)).toBe(aliasPath);
     expect(mockExecSync).not.toHaveBeenCalled();
   });
 
   it('falls back to common non-Windows bin directories when alias executable is missing', async () => {
     const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(false);
+    const fallbackPath = path.join('/usr/local/bin', 'codex');
 
     mockExecSync.mockReturnValue(`alias codex='/does/not/exist --flag'\n` as any);
-    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === '/usr/local/bin/codex');
+    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === fallbackPath);
 
     const resolved = resolveBinary('codex', { path: null });
-    expect(resolved).toBe('/usr/local/bin/codex');
+    expect(resolved).toBe(fallbackPath);
   });
 
   it('handles Windows extension probing and keeps first where() result line', async () => {

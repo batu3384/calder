@@ -203,6 +203,8 @@ describe('spawnPty', () => {
   });
 
   it('hydrates missing Claude auth env from the login shell', () => {
+    if (isWin) return;
+
     mockExecFileSync.mockReturnValue(
       [
         'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',
@@ -325,6 +327,8 @@ describe('spawnCommandPty', () => {
 
 describe('getFullPath', () => {
   it('prefers the login shell PATH when available', async () => {
+    if (isWin) return;
+
     vi.resetModules();
     (mockExecSync as any).mockImplementation(() => '__PATH__=/custom/bin:/usr/bin\n');
 
@@ -344,8 +348,12 @@ describe('spawnShellPty', () => {
     proc._emitData('shell output');
     proc._emitExit(0, 0);
 
+    const expectedShell = isWin
+      ? (process.env.COMSPEC || 'cmd.exe')
+      : (process.env.SHELL || '/bin/zsh');
+
     expect(mockSpawn).toHaveBeenCalledWith(
-      isWin ? 'cmd.exe' : (process.env.SHELL || '/bin/zsh'),
+      expectedShell,
       [],
       expect.objectContaining({
         cwd: '/project',

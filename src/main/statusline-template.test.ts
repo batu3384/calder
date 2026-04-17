@@ -7,6 +7,7 @@ import { createServer } from 'http';
 import { promisify } from 'util';
 import { buildStatusLinePython, buildStatusLineWrapper } from './statusline-template';
 import { getProviderQuotaCacheFile } from './statusline-format';
+import { pythonBin } from './platform';
 
 const execFileAsync = promisify(execFile);
 
@@ -78,7 +79,7 @@ describe('generated renderer payload parsing', () => {
       session_id: 'claude-session-1',
     });
 
-    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
       input: payload,
       encoding: 'utf8',
       env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-1' },
@@ -109,7 +110,7 @@ describe('generated renderer payload parsing', () => {
       cwd: '/Users/batuhanyuksel/Documents/aa',
     });
 
-    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
       input: payload,
       encoding: 'utf8',
       env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-opus-refresh' },
@@ -136,7 +137,7 @@ describe('generated renderer payload parsing', () => {
       cwd: '/Users/batuhanyuksel/Documents/aa',
     });
 
-    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
       input: payload,
       encoding: 'utf8',
       env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-claude-limits', TZ: 'Europe/Istanbul' },
@@ -159,7 +160,7 @@ describe('generated renderer payload parsing', () => {
       session_id: 'qwen-session-1',
     });
 
-    const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
       input: payload,
       encoding: 'utf8',
       env: { ...process.env, CALDER_SESSION_ID: 'sess-qwen-1' },
@@ -195,7 +196,7 @@ describe('generated renderer payload parsing', () => {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
 
-      await execFileAsync('/usr/bin/python3', [scriptPath, 'refresh', 'zai', 'glm-5.1'], {
+      await execFileAsync(pythonBin, [scriptPath, 'refresh', 'zai', 'glm-5.1'], {
         encoding: 'utf8',
         env: {
           ...process.env,
@@ -221,7 +222,7 @@ describe('generated renderer payload parsing', () => {
         source: 'zai:quota-limit',
       });
 
-      const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+      const output = execFileSync(pythonBin, [scriptPath, 'render'], {
         input: JSON.stringify({
           model: { display_name: 'glm-5.1' },
           cost: { total_cost_usd: 0.07 },
@@ -286,7 +287,7 @@ describe('generated renderer payload parsing', () => {
         cwd: '/Users/batuhanyuksel/Documents/aa',
       });
 
-      execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+      execFileSync(pythonBin, [scriptPath, 'render'], {
         input: payload,
         encoding: 'utf8',
         env: {
@@ -334,7 +335,7 @@ describe('generated renderer payload parsing', () => {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
 
-      await execFileAsync('/usr/bin/python3', [scriptPath, 'refresh', 'zai', 'glm-5.1'], {
+      await execFileAsync(pythonBin, [scriptPath, 'refresh', 'zai', 'glm-5.1'], {
         encoding: 'utf8',
         env: {
           ...process.env,
@@ -398,7 +399,7 @@ describe('generated renderer payload parsing', () => {
       const address = server.address();
       if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
 
-      await execFileAsync('/usr/bin/python3', [scriptPath, 'refresh', 'minimax', 'MiniMax-M2.7'], {
+      await execFileAsync(pythonBin, [scriptPath, 'refresh', 'minimax', 'MiniMax-M2.7'], {
         encoding: 'utf8',
         env: {
           ...process.env,
@@ -423,7 +424,7 @@ describe('generated renderer payload parsing', () => {
         source: 'minimax:remains',
       });
 
-      const output = execFileSync('/usr/bin/python3', [scriptPath, 'render'], {
+      const output = execFileSync(pythonBin, [scriptPath, 'render'], {
         input: JSON.stringify({
           model: { display_name: 'MiniMax-M2.7' },
           cost: { total_cost_usd: 0.07 },

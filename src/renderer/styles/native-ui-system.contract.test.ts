@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8');
+const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8').replace(/\r\n/g, '\n');
 const base = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 const primitives = readFileSync(new URL('./primitives.css', import.meta.url), 'utf-8');
 const contextInspector = readFileSync(new URL('./context-inspector.css', import.meta.url), 'utf-8');
