@@ -17,13 +17,7 @@
 
 ---
 
-<p align="center">
-  <img src="assets/calder-720.gif" alt="Calder Demo" width="800" />
-</p>
 
-<p align="center">
-  <img src="assets/web-ui-short.gif" alt="Calder UI Edit Demo" width="800" />
-</p>
 
 ## Why Calder?
 
