@@ -22,7 +22,10 @@ describe('tab bar command deck contract', () => {
   it('pins launcher dropdowns to the right edge and stabilizes the launcher shell while they are open', () => {
     expect(source).toContain("placement: 'bottom-end'");
     expect(source).toContain("strategy: 'absolute'");
-    expect(source).toContain("sessionLauncher.dataset.selectOpen = open ? 'true' : 'false';");
+    expect(source).toContain("function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void");
+    expect(source).toContain('const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;');
+    expect(source).toContain("onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open)");
+    expect(source).toContain("onOpenChange: (open) => setSessionLauncherSelectOpen('profile', open)");
   });
 
   it('keeps the inline provider picker mounted instead of rebuilding it on every preference write', () => {
@@ -30,6 +33,12 @@ describe('tab bar command deck contract', () => {
     expect(source).toContain('let sessionProviderSelectorSignature =');
     expect(source).toContain('sessionProviderSelect?.setValue(selectedProvider);');
     expect(source).not.toContain("appState.on('preferences-changed', renderSessionProviderSelector);");
+  });
+
+  it('keeps surface controls mounted when signatures have not changed to avoid dropdown flicker', () => {
+    expect(source).toContain('let surfaceControlsSignature =');
+    expect(source).toContain('function buildSurfaceControlsSignature(project: ProjectRecord): string');
+    expect(source).toContain('if (nextSignature === surfaceControlsSignature) return;');
   });
 
   it('keeps former command deck tools reachable from the app menu', () => {

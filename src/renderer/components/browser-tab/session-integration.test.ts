@@ -74,8 +74,10 @@ function makeInstance() {
     selectedElement: { tagName: 'button' },
     instructionInput: { value: 'Inspect this' },
     inspectErrorEl: makeMessageEl(),
+    inspectContextTraceEl: makeMessageEl(),
     flowInstructionInput: { value: 'Replay this flow' },
     flowErrorEl: makeMessageEl(),
+    flowContextTraceEl: makeMessageEl(),
   } as any;
 }
 
@@ -105,6 +107,9 @@ describe('browser session integration errors', () => {
     expect(mockDismissInspect).toHaveBeenCalledTimes(1);
     expect(instance.inspectErrorEl.textContent).toBe('');
     expect(instance.inspectErrorEl.style.display).toBe('none');
+    expect(instance.inspectContextTraceEl.textContent).toContain('Applied context:');
+    expect(instance.inspectContextTraceEl.textContent).toContain('Shared/rules [hard]: testing.hard.md');
+    expect(instance.inspectContextTraceEl.style.display).toBe('block');
   });
 
   it('shows an inspect error when no target session is selected', async () => {
@@ -147,5 +152,8 @@ describe('browser session integration errors', () => {
     expect(mockDismissFlow).toHaveBeenCalledTimes(1);
     expect(instance.flowErrorEl.textContent).toBe('');
     expect(instance.flowErrorEl.style.display).toBe('none');
+    expect(instance.flowContextTraceEl.textContent).toContain('Applied context:');
+    expect(instance.flowContextTraceEl.textContent).toContain('claude/memory: CLAUDE.md');
+    expect(instance.flowContextTraceEl.style.display).toBe('block');
   });
 });

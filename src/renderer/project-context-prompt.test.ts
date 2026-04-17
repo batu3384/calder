@@ -23,7 +23,11 @@ vi.mock('./session-context.js', () => ({
 }));
 
 import { appState, _resetForTesting } from './state.js';
-import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
+import {
+  appendAppliedContextToPrompt,
+  buildAppliedContextSummary,
+  formatAppliedContextTrace,
+} from './project-context-prompt.js';
 
 describe('project context prompt helpers', () => {
   beforeEach(() => {
@@ -70,6 +74,10 @@ describe('project context prompt helpers', () => {
       sharedRulesSummary: 'testing.hard.md',
     });
     expect(summary?.sources.map((source) => source.displayName)).toEqual(['CLAUDE.md', 'testing.hard.md']);
+    expect(summary?.sources[1]).toMatchObject({
+      priority: 'hard',
+      summary: 'Tests are required',
+    });
   });
 
   it('appends a compact project context block to routed prompts', () => {
@@ -130,5 +138,35 @@ describe('project context prompt helpers', () => {
     expect(summary?.sharedRuleCount).toBe(0);
     expect(summary?.sharedRulesSummary).toBeUndefined();
     expect(summary?.sources.map((source) => source.displayName)).toEqual(['CLAUDE.md']);
+  });
+
+  it('formats a compact applied-context trace with source, priority, and summary', () => {
+    const lines = formatAppliedContextTrace({
+      sources: [
+        {
+          id: 'claude:memory:/proj/CLAUDE.md',
+          provider: 'claude',
+          displayName: 'CLAUDE.md',
+          kind: 'memory',
+          summary: 'Claude repo guidance',
+        },
+        {
+          id: 'shared:rules:/proj/.calder/rules/testing.hard.md',
+          provider: 'shared',
+          displayName: 'testing.hard.md',
+          kind: 'rules',
+          priority: 'hard',
+          summary: 'Tests are required',
+        },
+      ],
+      sharedRuleCount: 1,
+      providerContextSummary: 'CLAUDE.md',
+      sharedRulesSummary: 'testing.hard.md',
+    });
+
+    expect(lines).toEqual([
+      'claude/memory: CLAUDE.md — Claude repo guidance',
+      'Shared/rules [hard]: testing.hard.md — Tests are required',
+    ]);
   });
 });

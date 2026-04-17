@@ -33,6 +33,8 @@ export function buildAppliedContextSummary(
       provider: source.provider,
       displayName: source.displayName,
       kind: source.kind,
+      priority: source.priority,
+      summary: source.summary,
     })),
     sharedRuleCount: sharedRules.length,
     providerContextSummary: providerSources.length > 0
@@ -61,4 +63,17 @@ export function appendAppliedContextToPrompt(
   }
   lines.push(`Applied sources: ${appliedContext.sources.map((source) => source.displayName).join(', ')}`);
   return `${prompt}${lines.join('\n')}`;
+}
+
+export function formatAppliedContextTrace(appliedContext?: AppliedContextSummary): string[] {
+  if (!appliedContext || appliedContext.sources.length === 0) {
+    return ['No provider memory or shared rules applied.'];
+  }
+
+  return appliedContext.sources.slice(0, 4).map((source) => {
+    const providerLabel = source.provider === 'shared' ? 'Shared' : source.provider;
+    const priorityLabel = source.priority ? ` [${source.priority}]` : '';
+    const summaryLabel = source.summary ? ` — ${source.summary}` : '';
+    return `${providerLabel}/${source.kind}${priorityLabel}: ${source.displayName}${summaryLabel}`;
+  });
 }

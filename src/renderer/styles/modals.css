@@ -6,8 +6,8 @@
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 14%, transparent), transparent 24%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 18%, transparent), transparent 26%),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 12%, transparent), transparent 24%),
+    radial-gradient(circle at top right, rgba(101, 80, 57, 0.12), transparent 26%),
     var(--bg-overlay);
   backdrop-filter: blur(14px);
   display: flex;
@@ -23,8 +23,8 @@
 
 #modal, .modal-box {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-elevated) 92%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-elevated) 94%, black);
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
@@ -39,8 +39,8 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
   border-radius: 16px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-glass) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-glass) 96%, black);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -182,11 +182,11 @@
 
 .custom-select-item:hover:not(.disabled),
 .custom-select-item.active:not(.disabled) {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  background: color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
 }
 
 .custom-select-item.selected {
-  background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface-panel));
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-panel));
 }
 
 .custom-select-item.disabled {
@@ -395,8 +395,8 @@
 #modal-overlay, .modal-overlay {
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent-soft) 44%, transparent), transparent 28%),
-    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--accent-cool) 22%, transparent), transparent 28%),
-    radial-gradient(circle at 50% 100%, rgba(58, 72, 101, 0.14), transparent 40%),
+    radial-gradient(circle at 88% 0%, rgba(101, 79, 57, 0.14), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(58, 47, 37, 0.14), transparent 40%),
     var(--bg-overlay);
 }
 
@@ -484,6 +484,12 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 18px 34px rgba(2, 4, 10, 0.22);
+}
+
+.modal-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 54%, transparent);
+  outline-offset: 2px;
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
 }
 
 .modal-btn.primary {

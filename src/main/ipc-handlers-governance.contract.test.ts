@@ -20,6 +20,12 @@ describe('IPC governance contract', () => {
     expect(source).toContain('target: name');
   });
 
+  it('guards renderer-triggered external URL opens with network governance', () => {
+    expect(source).toContain("kind: 'network'");
+    expect(source).toContain("label: 'Open external URL'");
+    expect(source).toContain('target: parsed.hostname');
+  });
+
   it('exposes governance IPC handlers for auto-approval controls', () => {
     expect(source).toContain("'governance:setAutoApprovalMode'");
     expect(source).toContain("'governance:setSessionAutoApprovalOverride'");

@@ -27,18 +27,19 @@
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.025);
   background:
     radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 30%),
-    color-mix(in srgb, var(--surface-ops) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-ops) 96%, black);
 }
 
 .control-panel-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
     var(--surface-rail);
 }
 
 .ops-rail-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)),
     var(--surface-ops);
 }
 
@@ -60,8 +61,8 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   border-radius: 12px 0 0 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 84%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, black);
   color: var(--text-secondary);
   font-family: var(--font-sans);
   font-size: 10px;
@@ -82,7 +83,7 @@
 .context-inspector-reopen:focus {
   transform: translateY(-50%);
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
-  background: color-mix(in srgb, var(--surface-hover) 78%, transparent);
+  background: color-mix(in srgb, var(--surface-hover) 90%, transparent);
   color: var(--text-primary);
 }
 
@@ -109,14 +110,14 @@
   border-radius: var(--ops-control-radius);
   font-size: 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 84%, transparent);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
 }
 
 #context-inspector .context-inspector-header-actions .icon-btn:hover {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+    linear-gradient(180deg, rgba(255, 248, 236, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
 }
 
 .context-inspector-title-group {
@@ -157,11 +158,11 @@
   border-radius: 14px;
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 82%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 90%, black);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 28px rgba(2, 4, 10, 0.14);
+    0 16px 34px rgba(8, 5, 3, 0.18);
 }
 
 #context-inspector[data-rail-signal='active'] .inspector-overview-card {
@@ -218,7 +219,7 @@
   padding: 0 8px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background: color-mix(in srgb, var(--surface-muted) 68%, transparent);
+  background: color-mix(in srgb, var(--surface-muted) 76%, transparent);
   color: var(--text-secondary);
   font-size: 10px;
   font-weight: 600;
@@ -226,7 +227,7 @@
 }
 
 .inspector-overview-pill-muted {
-  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
 }
 
 .inspector-overview-metrics {
@@ -241,7 +242,7 @@
   gap: 3px;
   padding: 8px 9px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-muted) 62%, transparent);
+  background: color-mix(in srgb, var(--surface-muted) 74%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
 }
 
@@ -1231,7 +1232,7 @@
     -18px 0 40px rgba(2, 8, 16, 0.12);
   background:
     radial-gradient(circle at 118% -4%, color-mix(in srgb, var(--accent-soft) 34%, transparent), transparent 56%),
-    radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--accent-cool) 8%, transparent), transparent 34%),
+    radial-gradient(circle at 0% 100%, rgba(99, 77, 55, 0.08), transparent 34%),
     color-mix(in srgb, var(--surface-ops) 95%, black);
 }
 

@@ -86,4 +86,68 @@ describe('project governance enforcement', () => {
       status: 'block',
     });
   });
+
+  it('enforces network policy for runtime URL opens', async () => {
+    const root = tempRoot();
+    writePolicy(root, {
+      mode: 'enforced',
+      toolPolicy: 'allow',
+      writePolicy: 'allow',
+      networkPolicy: 'ask',
+    });
+
+    expect(await evaluateProjectGovernanceOperation(root, {
+      kind: 'network',
+      label: 'Open external URL',
+      target: 'https://example.com',
+    })).toMatchObject({
+      allowed: false,
+      status: 'ask',
+    });
+
+    writePolicy(root, {
+      mode: 'enforced',
+      toolPolicy: 'allow',
+      writePolicy: 'allow',
+      networkPolicy: 'block',
+    });
+
+    expect(await evaluateProjectGovernanceOperation(root, {
+      kind: 'network',
+      label: 'Open external URL',
+      target: 'https://example.com',
+    })).toMatchObject({
+      allowed: false,
+      status: 'block',
+    });
+  });
+
+  it('blocks operations that exceed the enforced project budget limit', async () => {
+    const root = tempRoot();
+    writePolicy(root, {
+      mode: 'enforced',
+      toolPolicy: 'allow',
+      writePolicy: 'allow',
+      networkPolicy: 'allow',
+      budgetLimitUsd: 5,
+    });
+
+    expect(await evaluateProjectGovernanceOperation(root, {
+      kind: 'budget',
+      label: 'Run premium automation',
+      estimatedCostUsd: 3,
+    })).toMatchObject({
+      allowed: true,
+      status: 'allow',
+    });
+
+    expect(await evaluateProjectGovernanceOperation(root, {
+      kind: 'budget',
+      label: 'Run premium automation',
+      estimatedCostUsd: 7.5,
+    })).toMatchObject({
+      allowed: false,
+      status: 'block',
+    });
+  });
 });

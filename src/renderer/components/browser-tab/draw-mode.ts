@@ -1,5 +1,10 @@
 import { appState } from '../../state.js';
 import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
+import {
+  appendAppliedContextToPrompt,
+  buildAppliedContextSummary,
+  formatAppliedContextTrace,
+} from '../../project-context-prompt.js';
 import { promptNewSession } from '../tab-bar.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
 import type { BrowserTabInstance } from './types.js';
@@ -18,6 +23,7 @@ export function toggleDrawMode(instance: BrowserTabInstance): void {
   } else {
     void sendGuestMessage(instance.webview, 'exit-draw-mode');
     instance.drawPanel.style.display = 'none';
+    hideDrawContextTrace(instance);
   }
   instance.syncToolbarState();
 }
@@ -38,6 +44,7 @@ export function clearDrawing(instance: BrowserTabInstance): void {
 export function dismissDraw(instance: BrowserTabInstance): void {
   instance.drawInstructionInput.value = '';
   hideDrawError(instance);
+  hideDrawContextTrace(instance);
   if (instance.drawMode) {
     toggleDrawMode(instance);
     return;
@@ -54,6 +61,16 @@ function showDrawError(instance: BrowserTabInstance, message: string): void {
   instance.drawErrorEl.textContent = message;
   instance.drawErrorEl.style.display = 'block';
   setTimeout(() => hideDrawError(instance), 4000);
+}
+
+function hideDrawContextTrace(instance: BrowserTabInstance): void {
+  instance.drawContextTraceEl.textContent = '';
+  instance.drawContextTraceEl.style.display = 'none';
+}
+
+function showDrawContextTrace(instance: BrowserTabInstance, contextLines: string[]): void {
+  instance.drawContextTraceEl.textContent = `Applied context:\n${contextLines.join('\n')}`;
+  instance.drawContextTraceEl.style.display = 'block';
 }
 
 async function captureScreenshotPath(instance: BrowserTabInstance): Promise<string | null> {
@@ -75,6 +92,12 @@ function buildDrawPrompt(instance: BrowserTabInstance, imagePath: string): strin
     `See annotated screenshot: ${imagePath}\n` +
     `${instruction}`
   );
+}
+
+function buildDrawAppliedContext(providerId?: ProviderId) {
+  const project = appState.activeProject;
+  if (!project) return undefined;
+  return buildAppliedContextSummary(project.id, providerId);
 }
 
 function getPreferredLaunchProvider() {
@@ -103,7 +126,9 @@ export async function sendDrawToSelectedSession(instance: BrowserTabInstance): P
     return;
   }
 
-  const prompt = buildDrawPrompt(instance, imagePath);
+  const appliedContext = buildDrawAppliedContext(targetSession.providerId);
+  const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
+  showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
   const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
   if (!delivered) {
     showDrawError(instance, 'Failed to deliver prompt to the selected session.');
@@ -127,7 +152,9 @@ export async function sendDrawToNewSession(instance: BrowserTabInstance): Promis
     return;
   }
 
-  const prompt = buildDrawPrompt(instance, imagePath);
+  const appliedContext = buildDrawAppliedContext(appState.preferences.defaultProvider);
+  const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
+  showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
   const newSession = appState.addPlanSession(
     project.id,
     `Draw: ${instruction.slice(0, 30)}`,
@@ -150,7 +177,9 @@ export async function sendDrawToCustomSession(instance: BrowserTabInstance): Pro
     return;
   }
 
-  const prompt = buildDrawPrompt(instance, imagePath);
+  const appliedContext = buildDrawAppliedContext();
+  const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
+  showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
   promptNewSession((session) => {
     setPendingPrompt(session.id, prompt);
     dismissDraw(instance);

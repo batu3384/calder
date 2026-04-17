@@ -19,6 +19,9 @@ describe('custom select floating surface contract', () => {
     expect(source).toContain('...config.floating');
     expect(source).toContain('config.onOpenChange?.(true);');
     expect(source).toContain('config.onOpenChange?.(false);');
+    expect(source).toContain('event.composedPath');
+    expect(source).toContain('eventTargetsCurrentSelect');
+    expect(source).toContain("document.addEventListener('pointerdown', onOutsidePointerDown);");
   });
 
   it('locks dropdown width to trigger width to avoid full-page expansion', () => {

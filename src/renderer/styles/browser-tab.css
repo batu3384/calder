@@ -11,13 +11,13 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 0% 0%, rgba(221, 177, 120, 0.07), transparent 24%),
-    radial-gradient(circle at 100% 0%, rgba(109, 155, 216, 0.06), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 0% 0%, rgba(201, 154, 92, 0.065), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(103, 81, 58, 0.045), transparent 20%),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.024), rgba(255, 255, 255, 0)),
     var(--bg-primary);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 20px 44px rgba(2, 4, 10, 0.18);
+    0 20px 44px rgba(8, 5, 3, 0.2);
 }
 
 .browser-tab-pane.split {
@@ -37,8 +37,8 @@
   padding: 0 var(--space-12);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
   user-select: none;
 }
 
@@ -116,8 +116,8 @@
   flex-wrap: wrap;
   padding: 8px 12px 9px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 84%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 88%, black);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   flex-shrink: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
@@ -157,11 +157,11 @@
   min-height: var(--control-height-md);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 58%, transparent);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 26px rgba(2, 4, 10, 0.12);
+    0 12px 26px rgba(8, 5, 3, 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -178,11 +178,11 @@
 .browser-toolbar-nav-shell:hover,
 .browser-toolbar-address-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 64%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, var(--surface-panel));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 16px 30px rgba(2, 4, 10, 0.16);
+    0 16px 30px rgba(8, 5, 3, 0.18);
   transform: none;
 }
 
@@ -196,12 +196,12 @@
 .browser-toolbar-address-shell:focus-within {
   border-color: var(--border-focus);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 68%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 16%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 74%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
-    0 14px 28px rgba(2, 4, 10, 0.12);
+    0 14px 28px rgba(8, 5, 3, 0.14);
 }
 
 .browser-toolbar-address-shell[data-dirty='true'] {
@@ -224,12 +224,12 @@
   padding: 2px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 58%, transparent);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   border-radius: 999px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 26px rgba(2, 4, 10, 0.12);
+    0 12px 26px rgba(8, 5, 3, 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -244,11 +244,11 @@
 .browser-toolbar-presence-shell:hover,
 .browser-toolbar-tools-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 64%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 16px 30px rgba(2, 4, 10, 0.16);
+    0 16px 30px rgba(8, 5, 3, 0.18);
   transform: none;
 }
 
@@ -739,8 +739,8 @@ html[lang='tr'] .browser-viewport-btn {
   align-items: flex-start;
   justify-content: center;
   background:
-    radial-gradient(circle at top left, rgba(221, 177, 120, 0.08), transparent 22%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 12%, transparent), transparent 18%),
+    radial-gradient(circle at top left, rgba(201, 154, 92, 0.08), transparent 22%),
+    radial-gradient(circle at top right, rgba(102, 79, 56, 0.08), transparent 18%),
     var(--bg-primary);
 }
 
@@ -791,9 +791,9 @@ body.sidebar-resizing .browser-webview {
   padding: 34px 40px;
   overflow: auto;
   background:
-    radial-gradient(circle at top left, rgba(221, 177, 120, 0.12), transparent 22%),
-    radial-gradient(circle at bottom right, color-mix(in srgb, var(--accent-cool) 16%, transparent), transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(60, 74, 101, 0.12), transparent 34%),
+    radial-gradient(circle at top left, rgba(201, 154, 92, 0.12), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(96, 75, 53, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(58, 47, 37, 0.12), transparent 34%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 76%, black), var(--surface-canvas));
 }
 
@@ -1015,9 +1015,9 @@ body.sidebar-resizing .browser-webview {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
   border-radius: 22px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(221, 177, 120, 0.09), transparent 28%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 15%, transparent), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 0% 0%, rgba(201, 154, 92, 0.09), transparent 28%),
+    radial-gradient(circle at top right, rgba(100, 78, 55, 0.11), transparent 28%),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 74%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -1823,6 +1823,19 @@ body.sidebar-resizing .browser-webview {
   font-size: 12px;
 }
 
+.inspect-context-trace {
+  display: none;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 76%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 /* Record Flow Button */
 .browser-record-btn.active {
   background: #e5534b;
@@ -2059,7 +2072,7 @@ body.sidebar-resizing .browser-webview {
   border-color: color-mix(in srgb, var(--pane-unfocus) 84%, var(--border-subtle));
   background:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 26%),
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-cool) 12%, transparent), transparent 22%),
+    radial-gradient(circle at 100% 0%, rgba(101, 79, 57, 0.1), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 96%, black);
   box-shadow:
@@ -2159,7 +2172,7 @@ body.sidebar-resizing .browser-webview {
 .browser-viewport-container {
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 36%, transparent), transparent 24%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-cool) 14%, transparent), transparent 20%),
+    radial-gradient(circle at top right, rgba(100, 78, 55, 0.12), transparent 20%),
     color-mix(in srgb, var(--surface-canvas) 98%, black);
 }
 

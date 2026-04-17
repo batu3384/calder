@@ -93,6 +93,7 @@ export interface BrowserTabInstance {
   inspectTargetBtn: HTMLButtonElement;
   inspectAttachDimsCheckbox: HTMLInputElement;
   inspectErrorEl: HTMLDivElement;
+  inspectContextTraceEl: HTMLDivElement;
   elementInfoEl: HTMLDivElement;
   inspectMode: boolean;
   selectedElement: ElementInfo | null;
@@ -109,6 +110,7 @@ export interface BrowserTabInstance {
   flowSubmitBtn: HTMLButtonElement;
   flowTargetBtn: HTMLButtonElement;
   flowErrorEl: HTMLDivElement;
+  flowContextTraceEl: HTMLDivElement;
   flowMode: boolean;
   flowSteps: FlowStep[];
   flowPickerOverlay: HTMLDivElement;
@@ -121,6 +123,7 @@ export interface BrowserTabInstance {
   drawTargetBtn: HTMLButtonElement;
   drawAttachDimsCheckbox: HTMLInputElement;
   drawErrorEl: HTMLDivElement;
+  drawContextTraceEl: HTMLDivElement;
   drawMode: boolean;
   targetMenu: HTMLDivElement;
   targetMenuList: HTMLDivElement;

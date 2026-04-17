@@ -881,6 +881,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   inspectErrorEl.className = 'inspect-error-text';
   inspectPanel.appendChild(inspectErrorEl);
 
+  const inspectContextTraceEl = document.createElement('div');
+  inspectContextTraceEl.className = 'inspect-context-trace';
+  inspectPanel.appendChild(inspectContextTraceEl);
+
   inspectPanel.appendChild(submitGroup);
   el.appendChild(inspectPanel);
 
@@ -970,6 +974,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawErrorEl.className = 'inspect-error-text';
   drawPanel.appendChild(drawErrorEl);
 
+  const drawContextTraceEl = document.createElement('div');
+  drawContextTraceEl.className = 'inspect-context-trace';
+  drawPanel.appendChild(drawContextTraceEl);
+
   drawPanel.appendChild(drawActions);
   el.appendChild(drawPanel);
 
@@ -1052,6 +1060,10 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   flowErrorEl.className = 'inspect-error-text';
   flowPanel.appendChild(flowErrorEl);
 
+  const flowContextTraceEl = document.createElement('div');
+  flowContextTraceEl.className = 'inspect-context-trace';
+  flowPanel.appendChild(flowContextTraceEl);
+
   el.appendChild(flowPanel);
 
   // Flow action picker popup
@@ -1118,6 +1130,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     inspectTargetBtn: customBtn,
     inspectAttachDimsCheckbox,
     inspectErrorEl,
+    inspectContextTraceEl,
     elementInfoEl,
     inspectMode: false,
     selectedElement: null,
@@ -1134,6 +1147,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     flowSubmitBtn,
     flowTargetBtn: flowCustomBtn,
     flowErrorEl,
+    flowContextTraceEl,
     flowMode: false,
     flowSteps: [],
     flowPickerOverlay,
@@ -1146,6 +1160,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     drawTargetBtn: drawCustomBtn,
     drawAttachDimsCheckbox,
     drawErrorEl,
+    drawContextTraceEl,
     drawMode: false,
     targetMenu,
     targetMenuList,

@@ -186,11 +186,21 @@ export function createCustomSelect(
     }
   });
 
-  const onOutsideClick = (e: MouseEvent) => {
+  function eventTargetsCurrentSelect(event: PointerEvent): boolean {
+    const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    if (composedPath.includes(wrapper) || composedPath.includes(dropdown) || composedPath.includes(trigger)) {
+      return true;
+    }
+    const target = event.target as Node | null;
+    return Boolean(target && wrapper.contains(target));
+  }
+
+  const onOutsidePointerDown = (event: PointerEvent) => {
     if (!isOpen()) return;
-    if (!wrapper.contains(e.target as Node)) closeDropdown();
+    if (eventTargetsCurrentSelect(event)) return;
+    closeDropdown();
   };
-  document.addEventListener('mousedown', onOutsideClick);
+  document.addEventListener('pointerdown', onOutsidePointerDown);
 
   const initialIndex = options.findIndex(o => o.value === hidden.value);
   if (initialIndex >= 0) {
@@ -212,7 +222,7 @@ export function createCustomSelect(
     },
     destroy() {
       closeDropdown();
-      document.removeEventListener('mousedown', onOutsideClick);
+      document.removeEventListener('pointerdown', onOutsidePointerDown);
     },
   };
 }

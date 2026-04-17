@@ -28,6 +28,7 @@ describe('project orchestration overview preferences contract', () => {
   it('styles the orchestration overview to stay compact and readable', () => {
     expect(styles).toContain('.orchestration-overview-shell');
     expect(styles).toContain('.orchestration-overview-summary');
+    expect(styles).toContain('.orchestration-overview-health');
     expect(styles).toContain('.orchestration-overview-pulse');
     expect(styles).toContain('.orchestration-overview-details');
     expect(styles).toContain('.orchestration-overview-actions');

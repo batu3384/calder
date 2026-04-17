@@ -49,7 +49,8 @@
     "dist": "npm run build && electron-builder",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/cli-surface/quick-setup.test.ts src/renderer/components/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts"
   },
   "build": {
     "appId": "com.batuhanyuksel.calder",

@@ -10,11 +10,11 @@
   gap: 8px;
   padding: 8px 10px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 16px;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 16px 34px rgba(8, 5, 3, 0.24);
 }
 
 .search-bar.hidden,
@@ -105,7 +105,7 @@
 
 .search-toggle-btn:hover,
 .search-nav-btn:hover {
-  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
+  background: color-mix(in srgb, var(--surface-hover) 94%, var(--surface-panel));
   color: var(--text-primary);
   transform: translateY(-1px);
 }

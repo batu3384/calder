@@ -19,8 +19,8 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--border-subtle);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
   flex-shrink: 0;
 }
 
@@ -127,8 +127,8 @@
 }
 
 .diff-line.removed {
-  background: rgba(233, 69, 96, 0.15);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: color-mix(in srgb, var(--danger) 72%, white);
 }
 
 .diff-line.hunk {
@@ -163,8 +163,8 @@
   gap: 12px;
   padding: 10px 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, black);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
@@ -213,8 +213,8 @@
 }
 
 .diff-line.removed {
-  background: rgba(233, 69, 96, 0.12);
-  color: #e8788a;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: color-mix(in srgb, var(--danger) 72%, white);
 }
 
 .diff-line.hunk {

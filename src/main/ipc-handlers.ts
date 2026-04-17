@@ -778,10 +778,17 @@ export function registerIpcHandlers(): void {
     return filePath;
   });
   ipcMain.handle('browser:listLocalTargets', async () => discoverLocalBrowserTargets());
-  ipcMain.handle('app:openExternal', (_event, url: string, cwd?: string) => {
+  ipcMain.handle('app:openExternal', async (_event, url: string, cwd?: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       throw new Error('Only HTTP(S) URLs are allowed');
+    }
+    if (cwd) {
+      await assertProjectGovernanceAllows(cwd, {
+        kind: 'network',
+        label: 'Open external URL',
+        target: parsed.hostname,
+      });
     }
     const win = BrowserWindow.getAllWindows()[0];
     return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) => shell.openExternal(target));

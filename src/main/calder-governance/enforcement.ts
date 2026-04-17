@@ -2,13 +2,14 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { discoverProjectGovernance, POLICY_RELATIVE_PATH } from './discovery.js';
 
-export type ProjectGovernanceOperationKind = 'write' | 'mcp';
+export type ProjectGovernanceOperationKind = 'write' | 'mcp' | 'network' | 'budget';
 export type ProjectGovernanceDecisionStatus = 'allow' | 'advisory' | 'ask' | 'block';
 
 export interface ProjectGovernanceOperation {
   kind: ProjectGovernanceOperationKind;
   label: string;
   target?: string;
+  estimatedCostUsd?: number;
 }
 
 export interface ProjectGovernanceDecision {
@@ -44,6 +45,31 @@ function decision(status: ProjectGovernanceDecisionStatus, reason?: string): Pro
     status,
     ...(reason ? { reason } : {}),
   };
+}
+
+function asFiniteNonNegativeNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? value
+    : null;
+}
+
+function formatUsd(value: number): string {
+  return `$${value.toFixed(2)}`;
+}
+
+function evaluateBudgetLimit(
+  budgetLimitUsd: number | undefined,
+  operation: ProjectGovernanceOperation,
+): ProjectGovernanceDecision | null {
+  const budgetLimit = asFiniteNonNegativeNumber(budgetLimitUsd);
+  const estimatedCost = asFiniteNonNegativeNumber(operation.estimatedCostUsd);
+  if (budgetLimit === null || estimatedCost === null || estimatedCost <= budgetLimit) {
+    return null;
+  }
+  return decision(
+    'block',
+    `${operation.label} exceeds the project budget limit (${formatUsd(budgetLimit)}): estimated ${formatUsd(estimatedCost)}.`,
+  );
 }
 
 export async function evaluateProjectGovernanceOperation(
@@ -85,6 +111,32 @@ export async function evaluateProjectGovernanceOperation(
     }
     if (policy.writePolicy === 'block') {
       return decision('block', `${operation.label} is blocked by the enforced write policy.`);
+    }
+    const budgetDecision = evaluateBudgetLimit(policy.budgetLimitUsd, operation);
+    if (budgetDecision) {
+      return budgetDecision;
+    }
+    return decision('allow');
+  }
+
+  if (operation.kind === 'network') {
+    if (policy.networkPolicy === 'ask') {
+      return decision('ask', `${operation.label} requires approval under the enforced network policy.`);
+    }
+    if (policy.networkPolicy === 'block') {
+      return decision('block', `${operation.label} is blocked by the enforced network policy.`);
+    }
+    const budgetDecision = evaluateBudgetLimit(policy.budgetLimitUsd, operation);
+    if (budgetDecision) {
+      return budgetDecision;
+    }
+    return decision('allow');
+  }
+
+  if (operation.kind === 'budget') {
+    const budgetDecision = evaluateBudgetLimit(policy.budgetLimitUsd, operation);
+    if (budgetDecision) {
+      return budgetDecision;
     }
     return decision('allow');
   }

@@ -112,4 +112,48 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
       status: 'allow',
     });
   });
+
+  it('enforces network ask/block decisions when mode is enforced', async () => {
+    mockDiscoverProjectGovernance.mockResolvedValueOnce({
+      policy: enforcedPolicy({ networkPolicy: 'ask' }),
+      lastUpdated: '2026-04-14T00:00:00.000Z',
+    });
+
+    await expect(
+      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'network', label: 'Open external URL' }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      status: 'ask',
+    });
+
+    mockDiscoverProjectGovernance.mockResolvedValueOnce({
+      policy: enforcedPolicy({ networkPolicy: 'block' }),
+      lastUpdated: '2026-04-14T00:00:00.000Z',
+    });
+
+    await expect(
+      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'network', label: 'Open external URL' }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      status: 'block',
+    });
+  });
+
+  it('blocks when estimated operation cost exceeds budget limit', async () => {
+    mockDiscoverProjectGovernance.mockResolvedValueOnce({
+      policy: enforcedPolicy({ budgetLimitUsd: 2 }),
+      lastUpdated: '2026-04-14T00:00:00.000Z',
+    });
+
+    await expect(
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'budget',
+        label: 'Run expensive task',
+        estimatedCostUsd: 3,
+      }),
+    ).resolves.toMatchObject({
+      allowed: false,
+      status: 'block',
+    });
+  });
 });

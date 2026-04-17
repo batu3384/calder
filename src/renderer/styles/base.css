@@ -1,51 +1,51 @@
 :root {
-  --surface-canvas: #06080d;
-  --surface-panel: #0d1118;
-  --surface-panel-alt: #131924;
-  --surface-elevated: #1a212f;
-  --surface-shell: #090d14;
-  --surface-rail: #0b1017;
-  --surface-live: #080d14;
-  --surface-deck: #0c1119;
-  --surface-ops: #0c111a;
-  --surface-workspace: #060a11;
-  --surface-raised: #20283a;
-  --surface-glass: rgba(14, 18, 27, 0.9);
-  --surface-overlay: rgba(3, 4, 7, 0.82);
-  --surface-hover: #1b2230;
-  --surface-muted: #101620;
-  --surface-contrast: #293244;
-  --text-primary: #f6f1e8;
-  --text-secondary: #d7d0c2;
-  --text-muted: #a2a8b6;
-  --text-dim: #777e8e;
-  --accent-warm: #ddb178;
-  --accent-cool: #7fbaf7;
+  --surface-canvas: #090705;
+  --surface-panel: #13100d;
+  --surface-panel-alt: #191510;
+  --surface-elevated: #201a14;
+  --surface-shell: #0f0c09;
+  --surface-rail: #120f0c;
+  --surface-live: #0d0a08;
+  --surface-deck: #14100d;
+  --surface-ops: #15110d;
+  --surface-workspace: #0a0806;
+  --surface-raised: #2a221b;
+  --surface-glass: rgba(24, 19, 14, 0.92);
+  --surface-overlay: rgba(5, 4, 3, 0.84);
+  --surface-hover: #251d16;
+  --surface-muted: #18130f;
+  --surface-contrast: #32281f;
+  --text-primary: #f6efe2;
+  --text-secondary: #ddcfba;
+  --text-muted: #b4a188;
+  --text-dim: #816f5c;
+  --accent-warm: #d6aa69;
+  --accent-cool: #768aa3;
   --accent: var(--accent-warm);
-  --accent-dim: #bd8f58;
-  --accent-soft: rgba(221, 177, 120, 0.16);
-  --accent-ghost: rgba(221, 177, 120, 0.08);
+  --accent-dim: #b88749;
+  --accent-soft: rgba(214, 170, 105, 0.18);
+  --accent-ghost: rgba(214, 170, 105, 0.1);
   --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
-  --accent-positive: #22c55e;
-  --accent-warning: #f59e0b;
-  --warning-strong: #f1b963;
-  --accent-info: #60a5fa;
-  --accent-danger: #fb7185;
-  --border-hairline: rgba(255, 255, 255, 0.055);
-  --border-muted: #202938;
-  --border-subtle: #303a4e;
-  --border: #465066;
-  --border-strong: #62708a;
-  --border-focus: rgba(221, 177, 120, 0.38);
-  --tab-active: #151c29;
-  --tab-inactive: #0d121a;
-  --pane-focus: #c9a16b;
-  --pane-unfocus: #384356;
-  --bookmark: #f2ba67;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --info: #60a5fa;
-  --danger: #fb7185;
+  --accent-positive: #4db57b;
+  --accent-warning: #d89a3d;
+  --warning-strong: #e0ae68;
+  --accent-info: #88a1c0;
+  --accent-danger: #df7b83;
+  --border-hairline: rgba(255, 245, 230, 0.055);
+  --border-muted: #2b231c;
+  --border-subtle: #43372c;
+  --border: #5c4d40;
+  --border-strong: #725f4d;
+  --border-focus: rgba(214, 170, 105, 0.4);
+  --tab-active: #1d1712;
+  --tab-inactive: #100e0d;
+  --pane-focus: #cda16c;
+  --pane-unfocus: #493c30;
+  --bookmark: #ddb36f;
+  --success: #4db57b;
+  --warning: #d89a3d;
+  --info: #88a1c0;
+  --danger: #df7b83;
   --status-success-bg: color-mix(in srgb, var(--success) 14%, transparent);
   --status-success-border: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
   --status-success-text: color-mix(in srgb, var(--success) 76%, white);
@@ -66,15 +66,15 @@
   --status-neutral-text: color-mix(in srgb, var(--text-muted) 88%, white);
   --git-added: #22c55e;
   --git-modified: #f59e0b;
-  --git-renamed: #60a5fa;
+  --git-renamed: #88a1c0;
   --git-conflicted: #f97316;
-  --shadow-soft: 0 20px 48px rgba(2, 4, 10, 0.34);
-  --shadow-elevated: 0 28px 80px rgba(2, 4, 10, 0.48);
-  --shadow-card: 0 14px 30px rgba(2, 8, 16, 0.14);
-  --shadow-card-strong: 0 22px 48px rgba(2, 8, 16, 0.22);
-  --shadow-lift: 0 16px 34px rgba(2, 8, 16, 0.18);
+  --shadow-soft: 0 22px 54px rgba(7, 5, 2, 0.38);
+  --shadow-elevated: 0 32px 92px rgba(7, 5, 2, 0.52);
+  --shadow-card: 0 16px 34px rgba(9, 6, 3, 0.16);
+  --shadow-card-strong: 0 24px 56px rgba(9, 6, 3, 0.26);
+  --shadow-lift: 0 20px 42px rgba(9, 6, 3, 0.22);
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-  --glass-highlight: rgba(255, 255, 255, 0.045);
+  --glass-highlight: rgba(255, 245, 230, 0.05);
   --radius-xs: 5px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -143,11 +143,11 @@ html, body {
   line-height: var(--line-normal);
   color: var(--text-primary);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 16%),
-    radial-gradient(circle at 14% 0%, rgba(221, 177, 120, 0.13), transparent 28%),
-    radial-gradient(circle at 86% 2%, rgba(107, 157, 216, 0.08), transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(63, 78, 109, 0.12), transparent 34%),
-    linear-gradient(180deg, #0b0d12 0%, var(--surface-canvas) 38%, #040507 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 16%),
+    radial-gradient(circle at 12% 0%, rgba(214, 170, 105, 0.15), transparent 28%),
+    radial-gradient(circle at 86% 6%, rgba(122, 92, 58, 0.1), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(74, 54, 35, 0.16), transparent 34%),
+    linear-gradient(180deg, #0c0a08 0%, var(--surface-canvas) 38%, #040302 100%);
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -157,8 +157,8 @@ html, body {
   display: flex;
   height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 12%),
-    radial-gradient(circle at top, rgba(221, 177, 120, 0.04), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), transparent 12%),
+    radial-gradient(circle at top, rgba(214, 170, 105, 0.05), transparent 30%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 90%, black), var(--surface-canvas));
 }
 

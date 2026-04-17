@@ -9,7 +9,7 @@ import type {
   SurfaceSelectionRange,
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
-import { buildAppliedContextSummary } from '../../project-context-prompt.js';
+import { buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
 import { getProviderDisplayName } from '../../provider-availability.js';
 import { getStatus } from '../../session-activity.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
@@ -64,6 +64,7 @@ interface CliSurfaceInstance {
   composerHintEl: HTMLDivElement;
   composerPreviewEl: HTMLPreElement;
   composerScopeEl: HTMLDivElement;
+  composerContextTraceEl: HTMLDivElement;
   composerContextSelectEl: HTMLSelectElement;
   composerErrorEl: HTMLDivElement;
   selectedButton: HTMLButtonElement;
@@ -350,6 +351,18 @@ function syncComposerContextControl(
 ): void {
   instance.composerContextSelectEl.value = instance.contextModeOverride ?? 'auto';
   instance.composerScopeEl.textContent = `Will send: ${describeContextMode(mode)}`;
+}
+
+function syncComposerContextTrace(instance: CliSurfaceInstance): void {
+  const payload = instance.inspectState.payload;
+  if (!payload) {
+    instance.composerContextTraceEl.textContent = '';
+    instance.composerContextTraceEl.style.display = 'none';
+    return;
+  }
+  const lines = formatAppliedContextTrace(payload.appliedContext);
+  instance.composerContextTraceEl.textContent = `Applied context:\n${lines.join('\n')}`;
+  instance.composerContextTraceEl.style.display = 'block';
 }
 
 function buildSemanticMeta(projectId: string, semanticNode?: CalderProtocolMessage): Record<string, unknown> | undefined {
@@ -752,6 +765,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
     instance.composerHintEl.textContent = 'Press Inspect, then drag over terminal output. Use Capture only when you want the whole screen.';
     instance.composerPreviewEl.textContent = '';
     syncComposerContextControl(instance, 'selection-only');
+    syncComposerContextTrace(instance);
     syncCliTargetControls(instance);
     clearComposerError(instance);
     return;
@@ -763,6 +777,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
       : 'Inspect mode is on. Hover to preview a panel, click to select it, or drag for a precise region.';
     instance.composerPreviewEl.textContent = '';
     syncComposerContextControl(instance, 'selection-only');
+    syncComposerContextTrace(instance);
     syncCliTargetControls(instance);
     return;
   }
@@ -788,6 +803,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
   instance.composerHintEl.textContent = hintParts.join(' · ');
   instance.composerPreviewEl.textContent = payload.selectedText || payload.viewportText;
   syncComposerContextControl(instance, payload.contextMode ?? 'selection-only');
+  syncComposerContextTrace(instance);
   syncCliTargetControls(instance);
 }
 
@@ -1415,6 +1431,10 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   composerScope.textContent = 'Will send: Selection only';
   composer.appendChild(composerScope);
 
+  const composerContextTrace = document.createElement('div');
+  composerContextTrace.className = 'cli-surface-composer-context-trace';
+  composer.appendChild(composerContextTrace);
+
   const composerContextRow = document.createElement('label');
   composerContextRow.className = 'cli-surface-composer-toggle';
   const composerContextLabel = document.createElement('span');
@@ -1563,6 +1583,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     composerHintEl: composerHint,
     composerPreviewEl: composerPreview,
     composerScopeEl: composerScope,
+    composerContextTraceEl: composerContextTrace,
     composerContextSelectEl: composerContextSelect,
     composerErrorEl: composerError,
     selectedButton,

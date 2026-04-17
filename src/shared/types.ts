@@ -233,6 +233,8 @@ export interface AppliedContextSourceRef {
   provider: ProviderId | 'shared';
   displayName: string;
   kind: ProjectContextSource['kind'];
+  priority?: ProjectContextSource['priority'];
+  summary?: string;
 }
 
 export interface AppliedContextSummary {

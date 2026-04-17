@@ -54,6 +54,7 @@ const btnConfirm = document.getElementById('modal-confirm') as HTMLButtonElement
 
 type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
 type OrchestrationPhaseTone = 'active' | 'partial' | 'empty';
+type OrchestrationHealthTone = 'healthy' | 'watch' | 'risk';
 
 interface OrchestrationPhaseState {
   phase: string;
@@ -63,6 +64,11 @@ interface OrchestrationPhaseState {
   summary: string;
   detail: string;
   updatedAt?: string;
+}
+
+interface OrchestrationHealthState {
+  tone: OrchestrationHealthTone;
+  label: string;
 }
 
 function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string): void {
@@ -190,6 +196,20 @@ export function showPreferencesModal(): void {
     }
   }
 
+  function buildOrchestrationHealthState(phases: OrchestrationPhaseState[]): OrchestrationHealthState {
+    const activeCount = phases.filter((phase) => phase.tone === 'active').length;
+    const partialCount = phases.filter((phase) => phase.tone === 'partial').length;
+    const emptyCount = phases.length - activeCount - partialCount;
+
+    if (emptyCount === 0 && partialCount <= 1) {
+      return { tone: 'healthy', label: 'Stable' };
+    }
+    if (activeCount >= Math.ceil(phases.length / 2)) {
+      return { tone: 'watch', label: 'Needs tuning' };
+    }
+    return { tone: 'risk', label: 'Needs setup' };
+  }
+
   function pickLatestTimestamp(...values: Array<string | undefined>): string | undefined {
     const filtered = values.filter((entry): entry is string => Boolean(entry));
     if (filtered.length === 0) return undefined;
@@ -312,7 +332,7 @@ export function showPreferencesModal(): void {
         summary: governancePolicy
           ? `${governancePolicy.mode} · tools ${governancePolicy.toolPolicy} · writes ${governancePolicy.writePolicy}`
           : 'No policy discovered',
-        detail: 'Applies repo-local safety policy before write and MCP operations.',
+        detail: 'Applies repo-local safety policy before write, network, MCP, and budget operations.',
         updatedAt: pickLatestTimestamp(
           project.projectGovernance?.lastUpdated,
           governancePolicy?.lastUpdated,
@@ -364,6 +384,7 @@ export function showPreferencesModal(): void {
     const partialCount = phaseStates.filter((phase) => phase.tone === 'partial').length;
     const emptyCount = phaseStates.length - activeCount - partialCount;
     const latestUpdatedAt = pickLatestTimestamp(...phaseStates.map((phase) => phase.updatedAt));
+    const healthState = buildOrchestrationHealthState(phaseStates);
 
     const summary = document.createElement('div');
     summary.className = 'orchestration-overview-summary';
@@ -372,6 +393,22 @@ export function showPreferencesModal(): void {
     snapshot.className = 'orchestration-overview-snapshot';
     snapshot.textContent = `${activeCount}/${phaseStates.length} phases active · ${partialCount} partial · ${emptyCount} empty · ${formatRelativeTimestamp(latestUpdatedAt)}`;
     summary.appendChild(snapshot);
+
+    const health = document.createElement('div');
+    health.className = 'orchestration-overview-health';
+    health.dataset.tone = healthState.tone;
+
+    const healthLabel = document.createElement('span');
+    healthLabel.className = 'orchestration-overview-health-label';
+    healthLabel.textContent = 'System health';
+
+    const healthValue = document.createElement('span');
+    healthValue.className = 'orchestration-overview-health-value';
+    healthValue.textContent = healthState.label;
+
+    health.appendChild(healthLabel);
+    health.appendChild(healthValue);
+    summary.appendChild(health);
 
     const pulse = document.createElement('div');
     pulse.className = 'orchestration-overview-pulse';

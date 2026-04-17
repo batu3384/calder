@@ -241,10 +241,12 @@
 }
 
 .mcp-card {
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  border-radius: 12px;
   margin-bottom: 8px;
   overflow: hidden;
+  background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  box-shadow: var(--shadow-card);
 }
 
 .mcp-card-header {
@@ -253,11 +255,13 @@
   gap: 10px;
   padding: 10px 14px;
   cursor: pointer;
-  background: var(--bg-secondary);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.02), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 96%, transparent);
 }
 
 .mcp-card-header:hover {
-  background: var(--bg-hover);
+  background: color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
 }
 
 .mcp-card-name {
@@ -284,7 +288,7 @@
 
 .mcp-card-body {
   padding: 12px 14px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
 }
 
 .mcp-card-body.hidden {
@@ -312,9 +316,9 @@
 
 .mcp-form-input {
   padding: 6px 10px;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface-canvas) 94%, black);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  border-radius: 10px;
   color: var(--text-primary);
   font-size: 13px;
   outline: none;
@@ -338,9 +342,11 @@ select.mcp-form-input {
 
 .mcp-exec-btn {
   padding: 6px 20px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  border-radius: 10px;
   color: var(--text-primary);
   font-size: 13px;
   cursor: pointer;
@@ -348,8 +354,10 @@ select.mcp-form-input {
 }
 
 .mcp-exec-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 52%, rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0)),
+    var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
   color: white;
 }
 

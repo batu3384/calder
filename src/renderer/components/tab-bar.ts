@@ -52,6 +52,7 @@ let activeContextMenu: HTMLElement | null = null;
 let sessionProviderSelect: CustomSelectInstance | null = null;
 let surfaceProfileSelect: CustomSelectInstance | null = null;
 let sessionProviderSelectorSignature = '';
+let surfaceControlsSignature = '';
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
 let cliUpdatePanelEl: HTMLElement | null = null;
@@ -64,6 +65,11 @@ let cliUpdatePanelTimestampEl: HTMLElement | null = null;
 let cliUpdatePanelListEl: HTMLElement | null = null;
 let cliUpdatePanelCancelBtnEl: HTMLButtonElement | null = null;
 let unsubscribeUpdateCenter: (() => void) | null = null;
+type LauncherSelectKey = 'profile' | 'provider';
+const launcherSelectOpenState: Record<LauncherSelectKey, boolean> = {
+  profile: false,
+  provider: false,
+};
 
 const CLI_UPDATE_BUTTON_GLYPHS = {
   refresh: '↻',
@@ -207,7 +213,7 @@ function destroySessionProviderSelector(): void {
     sessionProviderSelect = null;
   }
   sessionProviderSelectorSignature = '';
-  sessionLauncherEl.dataset.selectOpen = 'false';
+  setSessionLauncherSelectOpen('provider', false);
   sessionProviderSlotEl.innerHTML = '';
   sessionProviderSlotEl.hidden = true;
 }
@@ -217,16 +223,18 @@ function destroySurfaceProfileSelector(): void {
     surfaceProfileSelect.destroy();
     surfaceProfileSelect = null;
   }
-  sessionLauncherEl.dataset.selectOpen = 'false';
+  setSessionLauncherSelectOpen('profile', false);
+  surfaceControlsSignature = '';
   surfaceModeSlotEl.innerHTML = '';
   surfaceModeSlotEl.hidden = true;
   surfaceProfileSlotEl.innerHTML = '';
   surfaceProfileSlotEl.hidden = true;
 }
 
-function setSessionLauncherSelectOpen(open: boolean): void {
-  const sessionLauncher = sessionLauncherEl;
-  sessionLauncher.dataset.selectOpen = open ? 'true' : 'false';
+function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void {
+  launcherSelectOpenState[selectKey] = open;
+  const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;
+  sessionLauncherEl.dataset.selectOpen = anyOpen ? 'true' : 'false';
 }
 
 function createDefaultProjectSurface(): ProjectSurfaceRecord {
@@ -471,11 +479,36 @@ async function activateCliSurface(project: ProjectRecord): Promise<void> {
   });
 }
 
-function renderSurfaceControls(): void {
-  destroySurfaceProfileSelector();
+function buildSurfaceControlsSignature(project: ProjectRecord): string {
+  const surface = getProjectSurface(project);
+  const profiles = surface.cli?.profiles ?? [];
+  const profileSignature = profiles
+    .map((profile) => `${profile.id}:${getCliSurfaceProfileLabel(profile)}:${profile.cwd ?? ''}:${profile.command}`)
+    .join('|');
+  return [
+    project.id,
+    surface.kind,
+    surface.active ? '1' : '0',
+    surface.tabFocus ?? 'session',
+    surface.cli?.selectedProfileId ?? '',
+    profileSignature,
+  ].join('::');
+}
 
+function renderSurfaceControls(): void {
   const project = appState.activeProject;
-  if (!project) return;
+  if (!project) {
+    if (surfaceControlsSignature || surfaceModeSlotEl.childElementCount > 0 || surfaceProfileSlotEl.childElementCount > 0) {
+      destroySurfaceProfileSelector();
+    }
+    return;
+  }
+
+  const nextSignature = buildSurfaceControlsSignature(project);
+  if (nextSignature === surfaceControlsSignature) return;
+
+  destroySurfaceProfileSelector();
+  surfaceControlsSignature = nextSignature;
 
   const surface = getProjectSurface(project);
   const switcher = document.createElement('div');
@@ -524,7 +557,7 @@ function renderSurfaceControls(): void {
           maxHeightPx: 320,
           strategy: 'absolute',
         },
-        onOpenChange: setSessionLauncherSelectOpen,
+        onOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
       },
     );
     select.element.classList.add('command-deck-cli-profile-select');
@@ -624,7 +657,7 @@ function syncSessionProviderSelector(): void {
         strategy: 'absolute',
       },
       align: 'end',
-      onOpenChange: setSessionLauncherSelectOpen,
+      onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
     },
   );
   select.element.classList.add('command-deck-provider-select');

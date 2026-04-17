@@ -3,7 +3,9 @@
   grid-template-rows: auto 1fr;
   min-height: 0;
   position: relative;
-  background: linear-gradient(180deg, rgba(12, 16, 24, 0.98), rgba(7, 10, 17, 0.99));
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--accent-soft) 30%, transparent), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-shell) 98%, black), color-mix(in srgb, var(--surface-canvas) 98%, black));
   border-left: 1px solid var(--border-hairline);
 }
 
@@ -15,6 +17,9 @@
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-hairline);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, transparent);
 }
 
 .cli-surface-toolbar-main {
@@ -45,7 +50,7 @@
 
 .cli-surface-meta {
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-muted);
 }
 
 .cli-surface-route {
@@ -57,7 +62,9 @@
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 78%, transparent);
   font-size: 11px;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -82,7 +89,7 @@
   padding: 0 8px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  background: color-mix(in srgb, var(--surface-raised) 48%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 40%, transparent);
   font-size: 11px;
   color: var(--text-secondary);
 }
@@ -102,11 +109,12 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 16px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 58%, transparent), transparent 100%),
-    color-mix(in srgb, var(--surface-panel) 80%, transparent);
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 52%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-panel) 88%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 18px rgba(0, 0, 0, 0.16);
+    0 10px 22px rgba(8, 5, 3, 0.2);
 }
 
 .cli-surface-action-label {
@@ -128,7 +136,7 @@
   position: relative;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 52%, transparent), color-mix(in srgb, var(--surface-panel) 78%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 42%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
   color: var(--text-primary);
   border-radius: 12px;
   min-height: 34px;
@@ -145,26 +153,26 @@
     color 0.15s ease;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 0 rgba(0, 0, 0, 0.24);
+    0 1px 0 rgba(8, 5, 3, 0.24);
 }
 
 .cli-surface-button:hover {
   transform: translateY(-1px);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-hover) 62%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-hover) 78%, transparent), color-mix(in srgb, var(--surface-panel) 86%, transparent));
   border-color: color-mix(in srgb, var(--border) 78%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 16px rgba(0, 0, 0, 0.22);
+    0 8px 16px rgba(8, 5, 3, 0.22);
 }
 
 .cli-surface-button.active {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 46%, transparent), color-mix(in srgb, var(--surface-panel) 88%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 32%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--accent-soft) 48%, rgba(255, 255, 255, 0.14)),
-    0 10px 22px rgba(0, 0, 0, 0.26);
+    0 10px 22px rgba(8, 5, 3, 0.26);
 }
 
 .cli-surface-button:focus-visible {
@@ -194,13 +202,14 @@
 }
 
 .cli-surface-button-danger {
-  border-color: color-mix(in srgb, var(--danger-text) 34%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--status-danger-text) 24%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--danger-bg) 40%, transparent), color-mix(in srgb, var(--surface-panel) 86%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--status-danger-bg) 72%, transparent), color-mix(in srgb, var(--surface-panel) 88%, transparent));
+  color: var(--status-danger-text);
 }
 
 .cli-surface-button-danger:hover {
-  border-color: color-mix(in srgb, var(--danger-text) 48%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--status-danger-text) 34%, var(--border-subtle));
 }
 
 .cli-surface-button-ghost {
@@ -231,8 +240,8 @@
   touch-action: none;
   user-select: none;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.018), transparent 42%),
-    rgba(5, 9, 16, 0.1);
+    linear-gradient(135deg, rgba(255, 248, 236, 0.016), transparent 42%),
+    rgba(12, 9, 7, 0.1);
 }
 
 .cli-surface-selection-overlay.hidden {
@@ -256,25 +265,25 @@
   border: 1px solid color-mix(in srgb, var(--accent) 54%, rgba(255, 255, 255, 0.18));
   border-radius: 12px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 15%, transparent), transparent 100%),
-    rgba(255, 255, 255, 0.04);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-panel) 40%, rgba(255, 248, 236, 0.03));
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+    0 10px 24px rgba(8, 5, 3, 0.2);
 }
 
 .cli-surface-hover-overlay.semantic {
   border-color: color-mix(in srgb, var(--accent) 72%, rgba(255, 255, 255, 0.2));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, transparent), transparent 100%),
-    rgba(255, 255, 255, 0.05);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 16%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-panel) 48%, rgba(255, 248, 236, 0.04));
 }
 
 .cli-surface-hover-overlay.focused {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, rgba(255, 255, 255, 0.06)),
     0 0 0 1px color-mix(in srgb, var(--accent-soft) 28%, transparent),
-    0 14px 30px rgba(0, 0, 0, 0.22);
+    0 14px 30px rgba(8, 5, 3, 0.22);
 }
 
 .cli-surface-hover-overlay.hidden {
@@ -352,7 +361,7 @@
   overflow: hidden;
   padding: 8px 10px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 86%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   color: var(--text-primary);
   font: 11px/1.45 var(--font-mono);
@@ -443,7 +452,7 @@
 }
 
 .cli-surface-composer.dragging {
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 14px 34px rgba(8, 5, 3, 0.34);
 }
 
 .cli-surface-composer-handle {
@@ -494,9 +503,11 @@
   margin: 0;
   max-height: 168px;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.02), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 84%, transparent);
   padding: 12px;
   color: var(--text-primary);
   font: 12px/1.55 var(--font-mono);
@@ -507,6 +518,18 @@
 .cli-surface-composer-scope {
   font-size: 12px;
   color: var(--text-primary);
+}
+
+.cli-surface-composer-context-trace {
+  display: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .cli-surface-composer-toggle {
@@ -536,7 +559,7 @@
 
 .cli-surface-composer-error {
   font-size: 12px;
-  color: var(--danger-text);
+  color: var(--status-danger-text);
 }
 
 .cli-surface-target-menu {
@@ -588,9 +611,9 @@
 
 .cli-surface-target-menu-item:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+  background: color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--border-subtle) 72%, transparent);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 16px rgba(8, 5, 3, 0.22);
 }
 
 .cli-surface-target-menu-item.active {
@@ -666,9 +689,11 @@
   display: grid;
   gap: 8px;
   padding: 12px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent);
 }
 
 .cli-surface-quick-setup-summary {
@@ -717,14 +742,129 @@
 .cli-surface-quick-setup-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cli-surface-quick-setup-control {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans, inherit);
+  line-height: 1;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cli-surface-quick-setup-btn {
-  min-height: 32px;
+  min-height: 34px;
   min-width: 84px;
-  padding: 0 12px;
+  padding: 0 13px;
   border-radius: 11px;
   font-size: 12px;
+  font-weight: 650;
+  color: var(--text-secondary);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.cli-surface-quick-setup-card-btn {
+  min-width: 90px;
+}
+
+.cli-surface-quick-setup-btn-neutral {
+  border-color: color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 88%, transparent);
+}
+
+.cli-surface-quick-setup-btn-neutral:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  box-shadow: 0 12px 24px rgba(8, 5, 3, 0.16);
+}
+
+.cli-surface-quick-setup-btn-ghost {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.014), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 78%, transparent);
+}
+
+.cli-surface-quick-setup-btn-ghost:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  box-shadow: 0 10px 18px rgba(8, 5, 3, 0.13);
+}
+
+#modal.cli-surface-quick-setup-modal {
+  min-width: 520px;
+  max-width: 720px;
+}
+
+#modal-body.cli-surface-quick-setup-body {
+  gap: 12px;
+}
+
+#modal-actions.cli-surface-quick-setup-footer {
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+#modal-actions.cli-surface-quick-setup-footer .cli-surface-quick-setup-footer-group:first-child {
+  margin-inline-end: auto;
+}
+
+#modal-actions.cli-surface-quick-setup-footer .cli-surface-quick-setup-btn {
+  min-height: 36px;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(2, 4, 10, 0.12);
+}
+
+.cli-surface-quick-setup-footer-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cli-surface-quick-setup-footer-btn {
+  min-width: 108px;
+}
+
+.cli-surface-quick-setup-footer-btn[data-action='demo-setup'] {
+  min-width: 122px;
+}
+
+@media (max-width: 720px) {
+  #modal.cli-surface-quick-setup-modal {
+    min-width: min(94vw, 520px);
+    max-width: 94vw;
+  }
+
+  #modal-actions.cli-surface-quick-setup-footer {
+    justify-content: flex-end;
+  }
+
+  .cli-surface-quick-setup-footer-group {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .cli-surface-quick-setup-footer-group:first-child {
+    justify-content: flex-start;
+  }
 }
 
 .cli-surface-quick-setup-empty {
@@ -733,7 +873,7 @@
   padding: 14px;
   border: 1px dashed color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 78%, transparent);
   color: var(--text-secondary);
 }
 

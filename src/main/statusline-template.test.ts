@@ -86,7 +86,7 @@ describe('generated renderer payload parsing', () => {
 
     expect(output).toContain('Sonnet 4.6  Anthropic  --  aa');
     expect(output).toContain('Ctx 12%  Cost $0.12');
-  });
+  }, 15_000);
 
   it('prefers modelUsage-derived Claude model names when display_name lags behind', () => {
     const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));

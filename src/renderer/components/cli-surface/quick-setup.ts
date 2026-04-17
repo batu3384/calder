@@ -7,13 +7,22 @@ interface QuickSetupHandlers {
   onManual: () => void;
 }
 
-function createQuickSetupButton(label: string, options?: { primary?: boolean; action?: string }): HTMLButtonElement {
+function createQuickSetupButton(
+  label: string,
+  options?: { primary?: boolean; action?: string; tone?: 'neutral' | 'ghost' },
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = options?.primary
-    ? 'modal-btn primary cli-surface-quick-setup-btn'
-    : 'modal-btn cli-surface-quick-setup-btn';
+    ? 'modal-btn primary cli-surface-quick-setup-btn cli-surface-quick-setup-btn-primary'
+    : `modal-btn cli-surface-quick-setup-btn ${
+      options?.tone === 'ghost'
+        ? 'cli-surface-quick-setup-btn-ghost'
+        : 'cli-surface-quick-setup-btn-neutral'
+    }`;
+  button.classList.add('cli-surface-quick-setup-control');
   button.textContent = label;
+  button.setAttribute('aria-label', label);
   if (options?.action) {
     button.dataset.action = options.action;
   }
@@ -63,6 +72,7 @@ function getModalElements() {
 function openQuickSetupModal() {
   const elements = getModalElements();
   elements.modal.classList.add('modal-surface');
+  elements.modal.classList.add('cli-surface-quick-setup-modal');
   elements.modal.setAttribute('role', 'dialog');
   elements.modal.setAttribute('aria-modal', 'true');
   elements.modal.setAttribute('aria-labelledby', 'modal-title');
@@ -71,9 +81,12 @@ function openQuickSetupModal() {
 }
 
 function hideQuickSetupModal(): void {
-  const { overlay, modal } = getModalElements();
+  const { overlay, modal, body, actions } = getModalElements();
   overlay.classList.add('hidden');
   modal.classList.remove('modal-surface');
+  modal.classList.remove('cli-surface-quick-setup-modal');
+  body.classList.remove('cli-surface-quick-setup-body');
+  actions.classList.remove('cli-surface-quick-setup-footer');
 }
 
 export function showCliSurfaceQuickSetup(
@@ -84,6 +97,8 @@ export function showCliSurfaceQuickSetup(
   titleEl.textContent = 'CLI Surface Suggestions';
   bodyEl.innerHTML = '';
   actionsEl.innerHTML = '';
+  bodyEl.classList.add('cli-surface-quick-setup-body');
+  actionsEl.classList.add('cli-surface-quick-setup-footer');
 
   if (candidates.length === 0) {
     const emptyState = document.createElement('div');
@@ -137,9 +152,11 @@ export function showCliSurfaceQuickSetup(
 
       const runButton = createQuickSetupButton('Run', { primary: true, action: 'run' });
       runButton.dataset.candidateId = candidate.id;
+      runButton.classList.add('cli-surface-quick-setup-card-btn');
 
       const editButton = createQuickSetupButton('Edit', { action: 'edit' });
       editButton.dataset.candidateId = candidate.id;
+      editButton.classList.add('cli-surface-quick-setup-card-btn');
 
       cardActions.appendChild(runButton);
       cardActions.appendChild(editButton);
@@ -167,23 +184,35 @@ export function showCliSurfaceQuickSetup(
     });
   });
 
-  const cancelButton = createQuickSetupButton('Cancel');
+  const footerLeft = document.createElement('div');
+  footerLeft.className = 'cli-surface-quick-setup-footer-group';
+
+  const footerRight = document.createElement('div');
+  footerRight.className = 'cli-surface-quick-setup-footer-group';
+
+  const cancelButton = createQuickSetupButton('Cancel', { tone: 'ghost', action: 'cancel' });
+  cancelButton.classList.add('cli-surface-quick-setup-footer-btn');
   cancelButton.addEventListener('click', () => {
     hideQuickSetupModal();
   });
-  actionsEl.appendChild(cancelButton);
+  footerLeft.appendChild(cancelButton);
 
   const demoButton = createQuickSetupButton('Try demo', { primary: true, action: 'demo-setup' });
+  demoButton.classList.add('cli-surface-quick-setup-footer-btn');
   demoButton.addEventListener('click', () => {
     hideQuickSetupModal();
     handlers.onDemo();
   });
-  actionsEl.appendChild(demoButton);
+  footerRight.appendChild(demoButton);
 
-  const manualButton = createQuickSetupButton('Manual setup', { action: 'manual-setup' });
+  const manualButton = createQuickSetupButton('Manual setup', { action: 'manual-setup', tone: 'neutral' });
+  manualButton.classList.add('cli-surface-quick-setup-footer-btn');
   manualButton.addEventListener('click', () => {
     hideQuickSetupModal();
     handlers.onManual();
   });
-  actionsEl.appendChild(manualButton);
+  footerRight.appendChild(manualButton);
+
+  actionsEl.appendChild(footerLeft);
+  actionsEl.appendChild(footerRight);
 }

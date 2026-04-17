@@ -130,6 +130,7 @@ describe('i18n contract', () => {
 
   it('covers orchestration and history labels in Turkish', () => {
     expect(source).toContain("['Calder orchestration map', 'Calder orkestrasyon haritası']");
+    expect(source).toContain("['System health', 'Sistem sağlığı']");
     expect(source).toContain("['Governance policies', 'Yönetişim politikaları']");
     expect(source).toContain("['Workflow templates', 'İş akışı şablonları']");
     expect(source).toContain("['Recovery checkpoints', 'Kurtarma kontrol noktaları']");
