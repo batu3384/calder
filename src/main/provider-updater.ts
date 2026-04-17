@@ -53,7 +53,7 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
   },
   copilot: {
     npmPackage: '@github/copilot',
-    brewFormula: 'copilot-cli',
+    brewCask: 'copilot-cli',
   },
   gemini: {
     npmPackage: '@google/gemini-cli',
@@ -226,7 +226,20 @@ export async function updateProviders(
       completedProviders: results.length,
       providerId: id,
       providerName,
+      providerMessage: 'Preparing update checks…',
     });
+
+    const emitProviderMessage = (providerMessage: string): void => {
+      onProgress?.({
+        phase: 'provider_started',
+        startedAt,
+        totalProviders: providers.length,
+        completedProviders: results.length,
+        providerId: id,
+        providerName,
+        providerMessage,
+      });
+    };
 
     if (!prerequisites.ok) {
       const result: ProviderUpdateResult = {
@@ -279,6 +292,7 @@ export async function updateProviders(
     const binaryPath = provider.resolveBinaryPath();
     const resolvedBinaryPath = resolveRealPath(binaryPath);
     const source = detectUpdateSource(id, spec, resolvedBinaryPath);
+    emitProviderMessage('Checking installed version…');
     const beforeVersion = await readBinaryVersion(runner, binaryPath, signal);
 
     const baseResult = await runProviderUpdate({
@@ -290,6 +304,7 @@ export async function updateProviders(
       beforeVersion,
       runner,
       signal,
+      onStage: emitProviderMessage,
     });
     const result: ProviderUpdateResult = {
       ...baseResult,
@@ -339,8 +354,9 @@ async function runProviderUpdate(input: {
   beforeVersion?: string;
   runner: ProviderUpdaterRunner;
   signal?: AbortSignal;
+  onStage?: (message: string) => void;
 }): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
-  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal } = input;
+  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal, onStage } = input;
 
   if (signal?.aborted) {
     return buildCancelledResult({
@@ -353,6 +369,7 @@ async function runProviderUpdate(input: {
   }
 
   if (source === 'unknown') {
+    onStage?.('Update source could not be detected.');
     return {
       providerId,
       providerName,
@@ -370,17 +387,36 @@ async function runProviderUpdate(input: {
   let checkCommand: string | undefined;
 
   if (source === 'npm' && spec.npmPackage) {
+    onStage?.('Checking latest npm version…');
     checkCommand = `npm view ${spec.npmPackage} version --silent`;
     latestVersion = await readNpmLatestVersion(runner, spec.npmPackage, signal);
     updateNeeded = shouldUpdate(beforeVersion, latestVersion);
   } else if (source === 'brew-formula' && spec.brewFormula) {
-    checkCommand = `brew info --json=v2 ${spec.brewFormula}`;
-    latestVersion = await readBrewLatestVersion(runner, 'formula', spec.brewFormula, signal);
-    updateNeeded = shouldUpdate(beforeVersion, latestVersion);
+    onStage?.('Checking Homebrew formula updates…');
+    checkCommand = `brew outdated --json=v2 --formula ${spec.brewFormula}`;
+    const outdatedStatus = await readBrewOutdatedStatus(runner, 'formula', spec.brewFormula, signal);
+    if (outdatedStatus) {
+      latestVersion = outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
+      updateNeeded = outdatedStatus.updateNeeded;
+    } else {
+      onStage?.('Falling back to Homebrew metadata check…');
+      checkCommand = `brew info --json=v2 ${spec.brewFormula}`;
+      latestVersion = await readBrewLatestVersion(runner, 'formula', spec.brewFormula, signal);
+      updateNeeded = shouldUpdate(beforeVersion, latestVersion);
+    }
   } else if (source === 'brew-cask' && spec.brewCask) {
-    checkCommand = `brew info --json=v2 --cask ${spec.brewCask}`;
-    latestVersion = await readBrewLatestVersion(runner, 'cask', spec.brewCask, signal);
-    updateNeeded = shouldUpdate(beforeVersion, latestVersion);
+    onStage?.('Checking Homebrew cask updates…');
+    checkCommand = `brew outdated --json=v2 --cask ${spec.brewCask}`;
+    const outdatedStatus = await readBrewOutdatedStatus(runner, 'cask', spec.brewCask, signal);
+    if (outdatedStatus) {
+      latestVersion = outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
+      updateNeeded = outdatedStatus.updateNeeded;
+    } else {
+      onStage?.('Falling back to Homebrew metadata check…');
+      checkCommand = `brew info --json=v2 --cask ${spec.brewCask}`;
+      latestVersion = await readBrewLatestVersion(runner, 'cask', spec.brewCask, signal);
+      updateNeeded = shouldUpdate(beforeVersion, latestVersion);
+    }
   }
 
   if (signal?.aborted) {
@@ -396,6 +432,7 @@ async function runProviderUpdate(input: {
   }
 
   if (!updateNeeded) {
+    onStage?.('Already up to date.');
     return {
       providerId,
       providerName,
@@ -412,6 +449,7 @@ async function runProviderUpdate(input: {
 
   const command = resolveUpdateCommand(binaryPath, source, spec);
   if (!command) {
+    onStage?.('No update command configured for this source.');
     return {
       providerId,
       providerName,
@@ -427,6 +465,7 @@ async function runProviderUpdate(input: {
   }
 
   const updateCommand = `${command.command} ${command.args.join(' ')}`.trim();
+  onStage?.('Applying update command…');
   const updateExec = await runner.run(command.command, command.args, { timeoutMs: UPDATE_TIMEOUT_MS, signal });
   if (signal?.aborted) {
     return buildCancelledResult({
@@ -458,6 +497,7 @@ async function runProviderUpdate(input: {
     };
   }
 
+  onStage?.('Verifying installed version…');
   const afterVersion = await readBinaryVersion(runner, binaryPath, signal);
   if (signal?.aborted) {
     return buildCancelledResult({
@@ -618,6 +658,61 @@ async function readBrewLatestVersion(
   } catch {
     return undefined;
   }
+}
+
+async function readBrewOutdatedStatus(
+  runner: ProviderUpdaterRunner,
+  kind: 'formula' | 'cask',
+  token: string,
+  signal?: AbortSignal,
+): Promise<{ updateNeeded: boolean; latestVersion?: string } | undefined> {
+  const args = kind === 'cask'
+    ? ['outdated', '--json=v2', '--cask', token]
+    : ['outdated', '--json=v2', '--formula', token];
+  const result = await runner.run('brew', args, { timeoutMs: CHECK_TIMEOUT_MS, signal });
+  // Homebrew returns exit code 1 when outdated packages are found, while still
+  // printing valid JSON payloads. Parse both 0 and 1 exit codes.
+  if (result.code !== 0 && result.code !== 1) return undefined;
+  if (!result.stdout.trim()) return undefined;
+
+  try {
+    const payload = JSON.parse(result.stdout) as {
+      formulae?: Array<{
+        name?: string | string[];
+        current_version?: string;
+        currentVersion?: string;
+        version?: string;
+      }>;
+      casks?: Array<{
+        name?: string | string[];
+        current_version?: string;
+        currentVersion?: string;
+        version?: string;
+      }>;
+    };
+    const entries = kind === 'formula' ? (payload.formulae ?? []) : (payload.casks ?? []);
+    if (entries.length === 0) {
+      return { updateNeeded: false };
+    }
+
+    const matchedEntry = entries.find((entry) => brewEntryMatchesToken(entry.name, token));
+    const entry = matchedEntry ?? entries[0];
+    const latestCandidate = entry.current_version ?? entry.currentVersion ?? entry.version ?? '';
+    return {
+      updateNeeded: true,
+      latestVersion: parseVersion(latestCandidate),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+function brewEntryMatchesToken(name: string | string[] | undefined, token: string): boolean {
+  if (!name) return false;
+  if (Array.isArray(name)) {
+    return name.includes(token);
+  }
+  return name === token;
 }
 
 function shouldUpdate(currentVersion?: string, latestVersion?: string): boolean {

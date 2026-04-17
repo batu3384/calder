@@ -33,10 +33,10 @@ Current behavior intermittently fails in two places:
 
 ## 3. User Contract (Approved)
 
-- Terminalde link olarak görünen metne tek tıklandığında, link Calder içi browser'da açılır.
-- Dış tarayıcı sekmesi açılmaz (unless policy explicitly requires external non-http schemes).
-- Tıklama sonrası terminal seçim davranışı bozulmaz.
-- Adres kısa süre görünüp geri dönmez; clicked URL kararlı şekilde commit olur.
+- When the text that appears as a link in the terminal is clicked, the link opens in the Calder browser.
+- The external browser tab does not open (unless policy explicitly requires external non-http schemes).
+- Post-click terminal selection behavior is not broken.
+- The address appears for a short time and does not return; The clicked URL is committed permanently.
 
 ## 4. Design Options Considered
 

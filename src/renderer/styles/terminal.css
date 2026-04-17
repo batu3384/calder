@@ -210,18 +210,32 @@
 }
 
 .terminal-pane-provider {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 16px;
-  padding: 0;
+  padding: 0 0 0 14px;
   border: none;
   border-radius: 0;
   background: transparent;
-  color: color-mix(in srgb, var(--accent) 64%, var(--text-dim));
+  color: color-mix(in srgb, var(--provider-accent, var(--accent)) 64%, var(--text-dim));
   font-size: var(--type-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.terminal-pane-provider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--provider-accent, var(--accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--provider-accent, var(--accent)) 28%, transparent),
+    0 0 16px color-mix(in srgb, var(--provider-accent, var(--accent)) 24%, transparent);
 }
 
 .terminal-pane-header-copy {

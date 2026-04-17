@@ -20,6 +20,8 @@ describe('command deck stylesheet contract', () => {
     expect(tabsCss).toContain('min-height: 34px;');
     expect(tabsCss).toContain('padding: 3px 4px;');
     expect(tabsCss).toContain('.tab-action-primary');
+    expect(tabsCss).not.toContain('.session-provider-chipbar');
+    expect(tabsCss).not.toContain('.session-provider-chip {');
   });
 
   it('treats the launcher cluster like a polished shell instead of a loose icon row', () => {

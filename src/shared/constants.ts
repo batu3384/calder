@@ -33,8 +33,5 @@ export const EXTRA_ALERT_IGNORE = [
   '*.bundle.*',
 ];
 
-/** Sentinel command used to launch Calder's built-in CLI Surface demo profile. */
-export const CLI_SURFACE_DEMO_COMMAND = '__calder_cli_surface_demo__';
-
 /** Dedicated persistent Chromium partition for Calder browser surfaces. */
 export const BROWSER_SESSION_PARTITION = 'persist:calder-live-view';

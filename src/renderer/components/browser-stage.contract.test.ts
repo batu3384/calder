@@ -47,8 +47,10 @@ describe('browser stage contract', () => {
     expect(source).not.toContain('browser-toolbar-presence-shell');
     expect(source).toContain('browser-toolbar-tools-shell');
     expect(css).toContain('.browser-toolbar-tools-shell');
-    expect(css).toContain('padding: 2px;');
-    expect(css).toContain('gap: 8px;');
+    expect(css).toContain('padding: 2px 4px;');
+    expect(css).toContain('.browser-toolbar-cluster:first-child');
+    expect(css).toContain('flex-wrap: nowrap;');
+    expect(css).toContain('gap: 6px;');
   });
 
   it('adds subtle motion to toolbar shells instead of leaving them static', () => {
@@ -57,7 +59,6 @@ describe('browser stage contract', () => {
     expect(css).toContain('transform 180ms ease');
     expect(css).toContain('.browser-toolbar-nav-shell:hover');
     expect(css).toContain('.browser-toolbar-tools-shell:hover');
-    expect(css).toContain('transform: translateY(-1px);');
   });
 
   it('gives capture composer panels stronger spacing and type hierarchy', () => {

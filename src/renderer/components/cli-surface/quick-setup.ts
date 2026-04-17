@@ -3,7 +3,6 @@ import type { CliSurfaceDiscoveryCandidate } from '../../../shared/types.js';
 interface QuickSetupHandlers {
   onRun: (candidate: CliSurfaceDiscoveryCandidate) => void;
   onEdit: (candidate: CliSurfaceDiscoveryCandidate) => void;
-  onDemo: () => void;
   onManual: () => void;
 }
 
@@ -105,7 +104,7 @@ export function showCliSurfaceQuickSetup(
     emptyState.className = 'cli-surface-quick-setup-empty';
     emptyState.innerHTML = `
       <strong>No launch command detected yet.</strong>
-      <p>Try Calder's built-in demo to preview the workflow, or set up your own CLI command manually.</p>
+      <p>Set up your own CLI command manually to continue.</p>
     `;
     bodyEl.appendChild(emptyState);
   } else {
@@ -196,14 +195,6 @@ export function showCliSurfaceQuickSetup(
     hideQuickSetupModal();
   });
   footerLeft.appendChild(cancelButton);
-
-  const demoButton = createQuickSetupButton('Try demo', { primary: true, action: 'demo-setup' });
-  demoButton.classList.add('cli-surface-quick-setup-footer-btn');
-  demoButton.addEventListener('click', () => {
-    hideQuickSetupModal();
-    handlers.onDemo();
-  });
-  footerRight.appendChild(demoButton);
 
   const manualButton = createQuickSetupButton('Manual setup', { action: 'manual-setup', tone: 'neutral' });
   manualButton.classList.add('cli-surface-quick-setup-footer-btn');

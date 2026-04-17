@@ -101,14 +101,15 @@ describe('updateProviders', () => {
     expect(runner.calls).toHaveLength(0);
   });
 
-  it('marks brew formula providers as up to date when latest equals current', async () => {
+  it('marks brew formula providers as up to date when brew reports no outdated version', async () => {
     const runner = new FakeRunner();
     const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.37.1/bin/gemini';
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.37.1' });
-    runner.enqueue('brew', ['info', '--json=v2', 'gemini-cli'], {
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
       code: 0,
       stdout: JSON.stringify({
-        formulae: [{ versions: { stable: '0.37.1' } }],
+        formulae: [],
+        casks: [],
       }),
     });
 
@@ -123,6 +124,7 @@ describe('updateProviders', () => {
     expect(summary.results[0].status).toBe('up_to_date');
     expect(summary.results[0].updateAttempted).toBe(false);
     expect(summary.results[0].latestVersion).toBe('0.37.1');
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --formula gemini-cli');
   });
 
   it('uses built-in self update commands for self-managed providers', async () => {
@@ -184,14 +186,15 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateCommand).toBeUndefined();
   });
 
-  it('uses brew cask metadata for cask-installed providers', async () => {
+  it('uses brew outdated checks for cask-installed providers', async () => {
     const runner = new FakeRunner();
     const codexBinary = '/opt/homebrew/Caskroom/codex/0.121.0/codex';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
-    runner.enqueue('brew', ['info', '--json=v2', '--cask', 'codex'], {
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'codex'], {
       code: 0,
       stdout: JSON.stringify({
-        casks: [{ version: '0.121.0' }],
+        formulae: [],
+        casks: [],
       }),
     });
 
@@ -205,13 +208,17 @@ describe('updateProviders', () => {
     expect(summary.results[0].source).toBe('brew-cask');
     expect(summary.results[0].status).toBe('up_to_date');
     expect(summary.results[0].updateAttempted).toBe(false);
-    expect(summary.results[0].checkCommand).toBe('brew info --json=v2 --cask codex');
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask codex');
   });
 
-  it('continues update flow when brew metadata payload cannot be parsed', async () => {
+  it('continues update flow when brew check payloads cannot be parsed', async () => {
     const runner = new FakeRunner();
     const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.37.1/bin/gemini';
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.37.1' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
+      code: 0,
+      stdout: '{ not valid json',
+    });
     runner.enqueue('brew', ['info', '--json=v2', 'gemini-cli'], {
       code: 0,
       stdout: '{ not valid json',
@@ -231,6 +238,64 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateAttempted).toBe(true);
     expect(summary.results[0].latestVersion).toBeUndefined();
     expect(summary.results[0].updateCommand).toBe('brew upgrade gemini-cli');
+  });
+
+  it('detects brew formula updates from outdated data and upgrades without relying on stale info data', async () => {
+    const runner = new FakeRunner();
+    const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.38.0/bin/gemini';
+    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.0' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
+      code: 1,
+      stdout: JSON.stringify({
+        formulae: [{
+          name: 'gemini-cli',
+          installed_versions: ['0.38.0'],
+          current_version: '0.38.1',
+        }],
+      }),
+    });
+    runner.enqueue('brew', ['upgrade', 'gemini-cli'], { code: 0, stdout: 'upgraded' });
+    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
+
+    const summary = await updateProviders(
+      [createTarget('gemini', 'Gemini CLI', geminiBinary)],
+      { runner, now: (() => 4_576) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('gemini');
+    expect(summary.results[0].source).toBe('brew-formula');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].latestVersion).toBe('0.38.1');
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --formula gemini-cli');
+    expect(runner.calls.some((call) => (
+      call.command === 'brew' && call.args[0] === 'info'
+    ))).toBe(false);
+  });
+
+  it('detects Copilot installed from Homebrew cask and applies cask update strategy', async () => {
+    const runner = new FakeRunner();
+    const copilotBinary = '/opt/homebrew/Caskroom/copilot-cli/1.0.30/copilot';
+    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
+      code: 0,
+      stdout: JSON.stringify({
+        formulae: [],
+        casks: [],
+      }),
+    });
+
+    const summary = await updateProviders(
+      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
+      { runner, now: (() => 4_590) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('copilot');
+    expect(summary.results[0].source).toBe('brew-cask');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(false);
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask copilot-cli');
   });
 
   it('skips provider updates when installation source cannot be determined', async () => {
@@ -404,6 +469,37 @@ describe('updateProviders', () => {
       'provider_finished',
       'finished',
     ]);
+  });
+
+  it('emits running stage messages for the active provider while update checks execute', async () => {
+    const runner = new FakeRunner();
+    const progressEvents: Array<{
+      phase: string;
+      providerMessage?: string;
+    }> = [];
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      {
+        runner,
+        now: (() => 5_250) as () => number,
+        onProgress: (event) => {
+          progressEvents.push({
+            phase: event.phase,
+            providerMessage: event.providerMessage,
+          });
+        },
+      },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(progressEvents.some((event) => event.providerMessage === 'Checking installed version…')).toBe(true);
+    expect(progressEvents.some((event) => event.providerMessage === 'Checking latest npm version…')).toBe(true);
+    expect(progressEvents.some((event) => event.providerMessage === 'Already up to date.')).toBe(true);
   });
 
   it('marks summary as cancelled when update run is aborted', async () => {

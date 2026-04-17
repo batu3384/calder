@@ -1,5 +1,4 @@
 import type { CliSurfaceDiscoveryCandidate, CliSurfaceProfile } from '../../../shared/types.js';
-import { CLI_SURFACE_DEMO_COMMAND } from '../../../shared/constants.js';
 
 export function formatCliSurfaceCommand(command: string, args?: string[]): string {
   return [command, ...(args ?? [])].join(' ');
@@ -23,15 +22,4 @@ export function getCliSurfaceProfileLabel(profile: CliSurfaceProfile): string {
     return formatCliSurfaceCommand(profile.command, profile.args);
   }
   return profile.name;
-}
-
-export function createDemoCliSurfaceProfile(projectPath: string): CliSurfaceProfile {
-  return {
-    id: 'builtin:cli-surface-demo',
-    name: 'Calder CLI Surface Demo',
-    command: CLI_SURFACE_DEMO_COMMAND,
-    cwd: projectPath,
-    cols: 72,
-    rows: 18,
-  };
 }

@@ -5,8 +5,7 @@
   "entry": [
     "src/main/main.ts",
     "src/preload/preload.ts",
-    "src/preload/browser-tab-preload.ts",
-    "src/main/fixtures/cli-surface-demo.ts"
+    "src/preload/browser-tab-preload.ts"
   ],
 
   // Many renderer helpers intentionally export internal building blocks from the same file.

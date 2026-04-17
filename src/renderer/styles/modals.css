@@ -158,6 +158,12 @@
   margin-top: 0;
 }
 
+.custom-select-dropdown.custom-select-dropdown-floating {
+  right: auto;
+  margin-top: 0;
+  z-index: 12000;
+}
+
 .custom-select-dropdown.calder-floating-list {
   border-radius: 16px;
   padding: 6px 0;

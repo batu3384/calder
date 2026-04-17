@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
-  <a href="https://github.com/batu3384"><img src="https://img.shields.io/badge/Repository-publishing%20soon-lightgrey" alt="Repository Publishing Soon" /></a>
+  <a href="https://github.com/batu3384/calder"><img src="https://img.shields.io/badge/GitHub-calder-181717?logo=github" alt="GitHub Repository" /></a>
   <a href="https://github.com/batu3384"><img src="https://img.shields.io/github/followers/batu3384?style=social" alt="Follow on GitHub" /></a>
 </p>
 
@@ -16,8 +16,6 @@
 </p>
 
 ---
-
-
 
 ## Why Calder?
 
@@ -45,11 +43,11 @@ Requires at least one supported CLI installed and authenticated. Common setups i
 
 ### macOS
 
-Prebuilt `.dmg` installers will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
+Prebuilt `.dmg` installers are published through GitHub Releases when available. You can always use the source build flow below.
 
 ### Linux
 
-Prebuilt `.deb` (Debian/Ubuntu) and `.AppImage` (universal) packages will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
+Prebuilt `.deb` (Debian/Ubuntu) and `.AppImage` packages are published through GitHub Releases when available. You can always use the source build flow below.
 
 ```bash
 # Debian/Ubuntu
@@ -62,7 +60,7 @@ chmod +x Calder-*.AppImage
 
 ### Windows
 
-Prebuilt Setup `.exe` (NSIS installer) and portable `.exe` packages will be published after the public repository is live on [GitHub](https://github.com/batu3384). For now, use the source build flow below.
+Prebuilt Setup `.exe` (NSIS installer) and portable `.exe` packages are published through GitHub Releases when available. You can always use the source build flow below.
 
 ### npm (macOS, Linux & Windows)
 
@@ -75,33 +73,13 @@ On first run, the app is automatically downloaded and launched. No extra steps n
 
 ### Build from Source
 
-Once the repository is published, replace `<REPO_URL>` with the official GitHub URL.
-
 ```bash
-git clone <REPO_URL>
+git clone https://github.com/batu3384/calder.git
 cd calder
 npm install && npm start
 ```
 
 Requires Node v24+ (see `.nvmrc`).
-
-### CLI Surface Demo Fixture
-
-If you want a local terminal UI that already speaks Calder's semantic inspect protocol, run:
-
-```bash
-npm run demo:cli-surface
-```
-
-Inside the demo:
-
-- `j` / `k` or arrow keys move focus
-- `d` toggles dirty state
-- `q` exits
-
-This is useful for testing `CLI Surface` inspect behavior end-to-end without needing a separate external TUI project.
-
-Inside Calder itself, `CLI Surface` now offers the same built-in demo from the suggestion modal whenever Calder cannot confidently detect a project launch command. That gives you a one-click way to preview inspect, routing, and semantic selection before wiring your own CLI profile.
 
 ## Contributing
 
@@ -118,7 +96,7 @@ PRs welcome! See the [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct]
 </p>
 
 <p align="center">
-  If Calder helps your workflow, follow the profile to catch the public repo launch and releases.
+  If Calder helps your workflow, star the repository and follow for release updates.
 </p>
 
 <p align="center">

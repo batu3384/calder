@@ -6,6 +6,7 @@ import type {
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
   CliSurfaceStartupTiming,
+  ProviderId,
   SurfaceSelectionRange,
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
@@ -427,6 +428,14 @@ function getCliProviderLabel(providerId: string): string {
   return providerId.charAt(0).toUpperCase() + providerId.slice(1);
 }
 
+function setProviderAccentTarget(element: HTMLElement, providerId?: ProviderId): void {
+  if (providerId) {
+    element.dataset.provider = providerId;
+    return;
+  }
+  delete element.dataset.provider;
+}
+
 function formatCliSessionStatus(status: ReturnType<typeof getStatus>): string {
   switch (status) {
     case 'working':
@@ -484,8 +493,10 @@ function renderCliTargetMenu(instance: CliSurfaceInstance): void {
     instance.targetMenuListEl.appendChild(emptyState);
   } else {
     for (const session of targetSessions) {
+      const providerId = session.providerId ?? 'claude';
       const button = document.createElement('button');
       button.className = 'cli-surface-target-menu-item';
+      setProviderAccentTarget(button, providerId);
       if (selectedTarget?.id === session.id) {
         button.classList.add('active');
       }
@@ -522,7 +533,8 @@ function renderCliTargetMenu(instance: CliSurfaceInstance): void {
 
       const providerBadge = document.createElement('span');
       providerBadge.className = 'cli-surface-target-session-badge';
-      providerBadge.textContent = getCliProviderLabel(session.providerId ?? 'claude');
+      setProviderAccentTarget(providerBadge, providerId);
+      providerBadge.textContent = getCliProviderLabel(providerId);
       badges.appendChild(providerBadge);
       meta.appendChild(badges);
 
@@ -581,12 +593,19 @@ function openCliTargetMenu(instance: CliSurfaceInstance): void {
 
 function syncCliTargetControls(instance: CliSurfaceInstance): void {
   const selectedTarget = appState.resolveSurfaceTargetSession(instance.projectId);
+  const selectedProviderId: ProviderId | undefined = selectedTarget
+    ? selectedTarget.providerId ?? 'claude'
+    : undefined;
   const hasPayload = Boolean(instance.inspectState.payload);
   const hasTarget = Boolean(selectedTarget);
 
   instance.selectedButton.disabled = !hasPayload || !hasTarget;
   instance.newButton.disabled = !hasPayload;
   instance.customButton.disabled = false;
+  setProviderAccentTarget(instance.composerEl, selectedProviderId);
+  setProviderAccentTarget(instance.selectedButton, selectedProviderId);
+  setProviderAccentTarget(instance.newButton, selectedProviderId);
+  setProviderAccentTarget(instance.customButton, selectedProviderId);
 
   instance.selectedButton.title = hasTarget
     ? `Send to ${selectedTarget?.name}`

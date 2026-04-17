@@ -5,7 +5,7 @@ const quickSetupSource = readFileSync(new URL('./quick-setup.ts', import.meta.ur
 const cliSurfaceCss = readFileSync(new URL('../../styles/cli-surface.css', import.meta.url), 'utf-8');
 
 describe('cli surface quick setup contract', () => {
-  it('renders run, edit, demo, and manual setup actions for discovered candidates', () => {
+  it('renders run, edit, and manual setup actions for discovered candidates', () => {
     expect(quickSetupSource).toContain('CLI Surface Suggestions');
     expect(quickSetupSource).toContain('cli-surface-quick-setup-summary');
     expect(quickSetupSource).toContain('Best match');
@@ -14,7 +14,6 @@ describe('cli surface quick setup contract', () => {
     expect(quickSetupSource).toContain("createQuickSetupButton('Edit', { action: 'edit' })");
     expect(quickSetupSource).toContain('summaryPreview.textContent = formatCommand(candidates[0])');
     expect(quickSetupSource).toContain('cwd.textContent = candidate.cwd ?? \'\'');
-    expect(quickSetupSource).toContain("createQuickSetupButton('Try demo', { primary: true, action: 'demo-setup' })");
     expect(quickSetupSource).toContain("createQuickSetupButton('Manual setup', { action: 'manual-setup', tone: 'neutral' })");
     expect(quickSetupSource).toContain("createQuickSetupButton('Cancel', { tone: 'ghost', action: 'cancel' })");
     expect(quickSetupSource).toContain('cli-surface-quick-setup-btn-primary');
@@ -27,7 +26,6 @@ describe('cli surface quick setup contract', () => {
     expect(quickSetupSource).toContain('cli-surface-quick-setup-card-btn');
     expect(quickSetupSource).toContain('handlers.onRun(candidate)');
     expect(quickSetupSource).toContain('handlers.onEdit(candidate)');
-    expect(quickSetupSource).toContain('handlers.onDemo()');
     expect(quickSetupSource).toContain('handlers.onManual()');
   });
 

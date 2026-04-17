@@ -129,7 +129,7 @@ const PROJECT_INHERIT_VALUE = '__inherit_global__';
 const SESSION_INHERIT_VALUE = '';
 const queueFrame = typeof requestAnimationFrame === 'function'
   ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
+  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 const AUTO_APPROVAL_SCOPE_HELP = {
   global: 'Default policy for this Mac.',

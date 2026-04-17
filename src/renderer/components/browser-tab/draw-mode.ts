@@ -11,6 +11,7 @@ import type { BrowserTabInstance } from './types.js';
 import { positionPopover } from './popover.js';
 import { getViewportContext } from './viewport.js';
 import { sendGuestMessage } from './guest-messaging.js';
+import type { ProviderId } from '../../types.js';
 
 export function toggleDrawMode(instance: BrowserTabInstance): void {
   instance.drawMode = !instance.drawMode;

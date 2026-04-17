@@ -1,54 +1,52 @@
-### VULN-001: Browser target picker'da localhost title kaynakli DOM injection
-- Severity     : High
-- Confidence   : 75/100 (High Probability)
-- CWE          : CWE-79 — Improper Neutralization of Input During Web Page Generation
-- OWASP        : A03:2021 — Injection
-- Dosya        : src/renderer/components/browser-tab/pane.ts:220
-- Erişilebilirlik: Indirect
-- Sanitization : None
-- Framework    : Partial
-- Açıklama     : `window.calder.browser.listLocalTargets()` cagrisi sonunda gelen `target.meta`, `src/main/local-dev-targets.ts:136-140` icinde localhost uygulamasinin `<title>` bilgisinden turetiliyor. Bu deger `src/renderer/components/browser-tab/pane.ts:220-223` satirlarinda `innerHTML` ile DOM'a yaziliyor. Kaynak ile sink arasinda kacislama veya `textContent` kullanimina rastlanmadi.
-- Neden FP değil: Sink dogrudan `innerHTML`; uygulamanin diger yerlerinde kullanilan `esc()` yardimcisi burada uygulanmiyor. Mevcut CSP bazi inline payload siniflarini kisitlasa da, DOM injection yuzeyi gercek ve Electron renderer baglaminda savunma-ici davranis bozulmasina acik.
-- Düzeltme     : Button icerigini `createElement`/`textContent` ile kurun veya `target.label` ve `target.meta` degerlerini `esc()` ile kacislayin. Localhost probe sonucunu sadece plain-text metadata olarak tasiyin.
+### VULN-001: Browser Target Picker DOM Injection
 
-### VULN-002: CLI quick setup modal'inda project path kaynakli DOM injection
-- Severity     : High
-- Confidence   : 60/100 (Probable)
-- CWE          : CWE-79 — Improper Neutralization of Input During Web Page Generation
-- OWASP        : A03:2021 — Injection
-- Dosya        : src/renderer/components/cli-surface/quick-setup.ts:97
-- Erişilebilirlik: Indirect
-- Sanitization : None
-- Framework    : Partial
-- Açıklama     : `candidate.cwd` degeri, kullanicinin sectigi proje dizininden geliyor ve `src/renderer/components/cli-surface/quick-setup.ts:97-105` araliginda `innerHTML` ile render ediliyor. Benzer sekilde `formatCommand(candidate)` ve `candidate.reason` alanlari da HTML olarak basiliyor.
-- Neden FP değil: `candidate.cwd` kullanici kontrollu path karakterleri tasiyabilir; repo icindeki guvenli gorunumlerde kullanilan `esc()` burada yok. Bu nedenle kotu niyetli sekilde adlandirilmis bir klasor veya repo, modal acildiginda DOM injection yaratabilir.
-- Düzeltme     : Kartlari string-templating yerine DOM node'lari ile olusturun. `candidate.cwd`, `reason` ve command preview alanlarini `textContent` ile basip `data-candidate-id` icin `element.dataset.candidateId = candidate.id` kullanin.
+- Severity: High
+- Confidence: 75/100
+- CWE: CWE-79
+- OWASP: A03:2021 Injection
+- File: `src/renderer/components/browser-tab/pane.ts`
+- Reachability: Indirect
+- Sanitization: None in affected path
+- Framework-level mitigation: Partial
+- Why valid: `target.meta` (derived from localhost target metadata) is rendered through `innerHTML` in renderer UI flow.
+- Fix direction: Build DOM nodes explicitly and assign content with `textContent`.
 
-### VULN-003: P2P share akisi dusuk entropili sayisal PIN'e dayaniyor
-- Severity     : Medium
-- Confidence   : 70/100 (High Probability)
-- CWE          : CWE-521 — Weak Password Requirements
-- OWASP        : A07:2021 — Identification and Authentication Failures
-- Dosya        : src/renderer/sharing/share-crypto.ts:24
-- Erişilebilirlik: Indirect
-- Sanitization : None
-- Framework    : Partial
-- Açıklama     : `validatePin()` yalnizca 4-8 haneli sayisal PIN kabul ediyor. P2P share kodlari AES-GCM ile sifrelense de, offer/answer kodu ele gecirildiginde sayisal PIN uzayi offline brute-force icin fazla dar kaliyor.
-- Neden FP değil: Bu bir pattern eslesmesi degil, dogrudan kimlik dogrulama politikasinin kendisi. `MIN_PIN_LENGTH = 4` ve `MAX_PIN_LENGTH = 8` sabitleri ile `^\\d+$` zorlamasi, entropiyi belirgin sekilde dusuruyor.
-- Düzeltme     : Minimum 10-12 karakterlik rastgele passphrase veya uygulama tarafinda uretilecek tek kullanimlik yuksek entropili token zorunlu kilin. Sadece numerik PIN modelinden cikilmasi tercih edilir.
+### VULN-002: CLI Quick-Setup DOM Injection
 
-### VULN-004: Release workflow input'u shell command injection'a acik
-- Severity     : High
-- Confidence   : 100/100 (Confirmed)
-- CWE          : CWE-78 — Improper Neutralization of Special Elements used in a Command
-- OWASP        : A03:2021 — Injection
-- Dosya        : .github/workflows/release.yml:46
-- Erişilebilirlik: Direct
-- Sanitization : None
-- Framework    : None
-- Açıklama     : `workflow_dispatch.inputs.version` degeri dogrudan `run: npm version ${{ inputs.version }} --no-git-tag-version` satirina aktariliyor. GitHub expression expansion sonrasinda bu satir shell tarafinda yorumlandigi icin input icine eklenen shell metakarakterleri komut zincirine donusebilir.
-- Neden FP değil: Input icin allowlist veya quoting yok; sink dogrudan shell `run` adimi. Bu nedenle veri akisi belirsiz bir pattern degil, dogrudan command construction vakasi.
-- Düzeltme     : Ayrı bir validation step ile yalnizca `patch`, `minor`, `major` veya `X.Y.Z` formatini kabul edin ve degiskeni quoted arguman olarak gecin. Mumkunse version bump islemini shell yerine kucuk bir Node script'i ile yapin.
+- Severity: High
+- Confidence: 60/100
+- CWE: CWE-79
+- OWASP: A03:2021 Injection
+- File: `src/renderer/components/cli-surface/quick-setup.ts`
+- Reachability: Indirect
+- Sanitization: None in affected path
+- Framework-level mitigation: Partial
+- Why valid: user-influenced values such as `candidate.cwd` are rendered via HTML templating.
+- Fix direction: replace HTML string templates with explicit DOM creation and safe `textContent` assignment.
 
-## Elenen False Positive'ler
-- `INJ-3-003` — `src/renderer/components/usage-modal.ts:56` ve `:108`: sink gercek olsa da veri kaynagi yalnizca kullanicinin home dizinindeki `~/.claude/stats-cache.json`. Bu dosyanin keyfi bicimde manipule edilmesi bu repo icin uygulama-disi yerel kompromi onkosulu gerektirdiginden final risk skoruna dahil edilmedi.
+### VULN-003: Weak P2P Share Secret Policy (Numeric PIN Entropy)
+
+- Severity: Medium
+- Confidence: 70/100
+- CWE: CWE-521
+- OWASP: A07:2021 Identification and Authentication Failures
+- File: `src/renderer/sharing/share-crypto.ts`
+- Reachability: Indirect
+- Why valid: 4–8 digit numeric-only policy significantly reduces entropy for offline brute-force scenarios.
+- Fix direction: migrate to stronger passphrase/token model and increase minimum secret strength.
+
+### VULN-004: Release Workflow Shell Input Risk
+
+- Severity: High
+- Confidence: 100/100
+- CWE: CWE-78
+- OWASP: A03:2021 Injection
+- File: `.github/workflows/release.yml`
+- Reachability: Direct (workflow dispatch input)
+- Why valid: shell execution context is sensitive to unvalidated input expansion.
+- Fix direction: strict allowlist validation + quoted argument usage for version bump command.
+
+## Rejected False Positive
+
+- `INJ-3-003` at `src/renderer/components/usage-modal.ts` was rejected from final scoring.
+- Reason: effective exploitation requires prior local compromise of user-home stats cache (`~/.claude/stats-cache.json`), which is outside the app’s direct trust boundary assumptions for this report.

@@ -133,6 +133,7 @@ export function createTerminalPane(
 
   const providerBadge = document.createElement('div');
   providerBadge.className = 'terminal-pane-provider';
+  providerBadge.dataset.provider = providerId;
   providerBadge.textContent = providerDisplayName(providerId);
 
   const headerCopy = document.createElement('div');

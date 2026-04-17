@@ -18,7 +18,7 @@ type OverviewMetricTone = 'default' | 'healthy' | 'warning' | 'muted';
 
 const queueFrame = typeof requestAnimationFrame === 'function'
   ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
+  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 function getInspectorProviderId(): ProviderId {
   const project = appState.activeProject;

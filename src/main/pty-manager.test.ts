@@ -345,7 +345,7 @@ describe('spawnShellPty', () => {
     proc._emitExit(0, 0);
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      isWin ? 'cmd.exe' : '/bin/zsh',
+      isWin ? 'cmd.exe' : (process.env.SHELL || '/bin/zsh'),
       [],
       expect.objectContaining({
         cwd: '/project',

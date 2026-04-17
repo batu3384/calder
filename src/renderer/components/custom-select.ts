@@ -26,6 +26,7 @@ export function createCustomSelect(
   config: CustomSelectConfig = {},
 ): CustomSelectInstance {
   const defaultOpt = options.find(o => o.value === defaultValue) ?? options.find(o => !o.disabled) ?? options[0];
+  const usesFloatingSurface = config.floating !== false;
 
   const wrapper = document.createElement('div');
   wrapper.className = 'custom-select';
@@ -37,11 +38,14 @@ export function createCustomSelect(
   hidden.type = 'hidden';
   hidden.id = id;
   hidden.value = defaultOpt?.value ?? '';
+  wrapper.dataset.value = hidden.value;
+  wrapper.dataset.provider = hidden.value;
 
   const trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'custom-select-trigger';
   trigger.textContent = defaultOpt?.label ?? '';
+  trigger.dataset.provider = hidden.value;
   trigger.setAttribute('aria-haspopup', 'listbox');
   trigger.setAttribute('aria-expanded', 'false');
 
@@ -52,6 +56,25 @@ export function createCustomSelect(
   let activeIndex = -1;
   let floatingCleanup: (() => void) | null = null;
   const items: HTMLElement[] = [];
+
+  function ensureFloatingDropdownHost(): void {
+    if (!usesFloatingSurface) return;
+    dropdown.classList.add('custom-select-dropdown-floating');
+    for (const className of wrapper.classList) {
+      if (className === 'custom-select') continue;
+      dropdown.classList.add(className);
+    }
+    if (dropdown.parentElement !== document.body) {
+      document.body.appendChild(dropdown);
+    }
+  }
+
+  function restoreDropdownHost(): void {
+    if (!usesFloatingSurface) return;
+    if (dropdown.parentElement !== wrapper) {
+      wrapper.appendChild(dropdown);
+    }
+  }
 
   for (let i = 0; i < options.length; i++) {
     const opt = options[i];
@@ -83,7 +106,10 @@ export function createCustomSelect(
     const opt = options[index];
     if (!opt) return;
     hidden.value = opt.value;
+    wrapper.dataset.value = hidden.value;
+    wrapper.dataset.provider = hidden.value;
     trigger.textContent = opt.label;
+    trigger.dataset.provider = hidden.value;
     items.forEach((el, itemIndex) => {
       el.classList.toggle('selected', itemIndex === index);
       el.setAttribute('aria-selected', String(itemIndex === index));
@@ -112,12 +138,13 @@ export function createCustomSelect(
     const triggerWidth = Math.ceil(trigger.getBoundingClientRect().width);
     dropdown.style.minWidth = `${Math.max(triggerWidth, 120)}px`;
     dropdown.style.width = 'max-content';
+    ensureFloatingDropdownHost();
     dropdown.classList.add('visible');
     trigger.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     wrapper.dataset.state = 'open';
     activeIndex = options.findIndex(o => o.value === hidden.value);
-    if (config.floating !== false) {
+    if (usesFloatingSurface) {
       floatingCleanup?.();
       floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
         placement: 'bottom-start',
@@ -136,6 +163,7 @@ export function createCustomSelect(
     floatingCleanup?.();
     floatingCleanup = null;
     dropdown.classList.remove('visible');
+    restoreDropdownHost();
     trigger.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
     wrapper.dataset.state = 'closed';

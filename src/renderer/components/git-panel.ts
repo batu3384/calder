@@ -16,7 +16,7 @@ let refreshQueued = false;
 let activeContextMenu: HTMLElement | null = null;
 const queueFrame = typeof requestAnimationFrame === 'function'
   ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => setTimeout(() => callback(Date.now()), 0);
+  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 function hideGitContextMenu(): void {
   if (activeContextMenu) {

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Calder ayarlar ekranını referans yüzey yapıp tüm shell boyunca görsel tutarlılık, dil bütünlüğü ve küçük UI-state güvenilirliği sorunlarını bozmadan düzeltmek.
+**Goal:** To fix the Calder settings screen as a reference surface without disrupting visual consistency, language integrity and minor UI-state reliability issues throughout the shell.
 
-**Architecture:** Önce ayarlar ve locale kapsamı için regresyon kontratları kilitlenecek, ardından settings modal içinde daha sakin alt grup yapısı kurulacak. Sonraki aşamada sidebar, tab bar, browser/CLI chrome ve right rail aynı shell dili altında normalize edilecek; davranış değişikliği sadece doğrudan kalite/kararlılık düzeltmesi gereken yerlerde yapılacak.
+**Architecture:** First, regression contracts for settings and locale scope will be locked, then a calmer subgroup structure will be established within the settings modal. In the next stage, sidebar, tab bar, browser/CLI chrome and right rail will be normalized under the same shell language; behavior change will only be made where direct quality/stability correction is required.
 
 **Tech Stack:** TypeScript, Electron renderer, Vitest contract tests, CSS modules (`preferences.css`, `sidebar.css`, `tabs.css`, `browser-tab.css`, `terminal.css`, `context-inspector.css`)
 
@@ -12,11 +12,11 @@
 
 ## Scope Check
 
-Spec tek alt-sistem odaklıdır: Calder renderer shell consistency. Ayrı alt proje spec’lerine bölünmesi gerekmiyor. Bu plan, davranışı koruyarak settings -> shell -> responsive doğrulama sırasıyla ilerler.
+The spec is focused on one sub-system: Calder renderer shell consistency. It doesn't need to be split into separate subproject specs. This plan proceeds in the order of settings -> shell -> responsive verification, preserving the behavior.
 
 ## Execution Setup
 
-Bu planı uygulamaya başlamadan önce izole worktree aç:
+Before you start implementing this plan, open an isolated worktree:
 
 ```bash
 cd /Users/batuhanyuksel/Documents/browser
@@ -24,7 +24,7 @@ git worktree add ../browser-settings-shell-consistency -b codex/calder-settings-
 cd ../browser-settings-shell-consistency
 ```
 
-İlk baseline komutları:
+First baseline commands:
 
 ```bash
 npm test -- src/renderer/components/preferences-modal.contract.test.ts src/renderer/i18n.contract.test.ts src/renderer/components/tab-bar-cli-surface.contract.test.ts src/renderer/components/context-inspector-reopen.contract.test.ts src/renderer/styles/sidebar.contract.test.ts src/renderer/components/split-layout.test.ts
@@ -33,18 +33,18 @@ npx tsc -p tsconfig.preload.json
 npm run build:renderer
 ```
 
-Beklenen: mevcut çalışma ağacı için komutlar geçebilir; amaç baseline kanıtı almaktır.
+Expected: commands can be passed for the current working tree; The goal is to get baseline evidence.
 
 ## File Structure Lock
 
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
-  Settings shell içeriği, section helper’ları, daha sakin subsection grupları.
+  Settings shell content, section helpers, quieter subsection groups.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/preferences.css`
-  Settings menü scroll davranışı, content density, subsection shells, kısa ekran responsive kuralları.
+  Settings menu scroll behavior, content density, subsection shells, short screen responsive rules.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/i18n.ts`
-  Settings + shell chrome için eksik TR/EN string kapsaması.
+  Missing TR/EN string coverage for settings + shell chrome.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/i18n.contract.test.ts`
-  Dil bütünlüğü kontratı.
+  Linguistic integrity contract.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
   Settings shell contract testi.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
@@ -52,7 +52,7 @@ Beklenen: mevcut çalışma ağacı için komutlar geçebilir; amaç baseline ka
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.contract.test.ts`
   Sidebar style contract.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar.ts`
-  Gerekirse küçük state helper / chrome slot wiring düzeltmeleri.
+  Minor state helper / chrome slot wiring fixes if needed.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
   Top bar, tabs, update/session control polish.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar-cli-surface.contract.test.ts`
@@ -68,9 +68,9 @@ Beklenen: mevcut çalışma ağacı için komutlar geçebilir; amaç baseline ka
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/terminal.css`
   Terminal/browser pane chrome dengelemesi.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tab-bar-responsive.contract.test.ts`
-  Dar alan contract doğrulamaları.
+  Narrow domain contract verifications.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/split-layout.test.ts`
-  Layout iskeletinin korunması.
+  Preservation of the layout skeleton.
 
 ## Task 1: Lock Settings + Locale Regression Contracts
 
@@ -95,10 +95,10 @@ it('keeps the settings rail scrollable and anchored on short viewports', () => {
 ```ts
 // src/renderer/i18n.contract.test.ts
 it('covers settings shell subgroup copy in Turkish', () => {
-  expect(source).toContain("['Provider health', 'Sağlayıcı durumu']");
-  expect(source).toContain("['Orchestration phases', 'Orkestrasyon fazları']");
-  expect(source).toContain("['Tracking & fixes', 'İzleme ve düzeltmeler']");
-  expect(source).toContain("['Installed tools, defaults, and repair actions.', 'Yüklü araçlar, varsayılanlar ve onarım eylemleri.']");
+  expect(source).toContain("['Provider health', 'Provider health']");
+  expect(source).toContain("['Orchestration phases', 'Orchestration phases']");
+  expect(source).toContain("['Tracking & fixes', 'Tracking & fixes']");
+  expect(source).toContain("['Installed tools, defaults, and repair actions.', 'Installed tools, defaults, and repair actions.']");
 });
 ```
 
@@ -129,10 +129,10 @@ Expected: FAIL because the settings menu is not independently scrollable yet, th
 
 ```ts
 // src/renderer/i18n.ts
-['Provider health', 'Sağlayıcı durumu'],
-['Orchestration phases', 'Orkestrasyon fazları'],
-['Tracking & fixes', 'İzleme ve düzeltmeler'],
-['Installed tools, defaults, and repair actions.', 'Yüklü araçlar, varsayılanlar ve onarım eylemleri.'],
+['Provider health', 'Provider health'],
+['Orchestration phases', 'Orchestration phases'],
+['Tracking & fixes', 'Tracking & fixes'],
+['Installed tools, defaults, and repair actions.', 'Installed tools, defaults and repair actions.'],
 ```
 
 - [ ] **Step 4: Re-run the contracts and make sure they pass**

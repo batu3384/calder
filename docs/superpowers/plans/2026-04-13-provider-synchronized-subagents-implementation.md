@@ -874,9 +874,9 @@ export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="${CLAUDE_CODE_DISABLE_EXPERIMENTA
 Run:
 
 ```bash
-zsh -ic 'claude --no-session-persistence --model sonnet -p "Yanıtın sadece OK olsun."'
-zsh -ic 'claude --no-session-persistence --model glm-5.1 -p "Yanıtın sadece OK olsun."'
-zsh -ic 'claude --no-session-persistence --model MiniMax-M2.7 -p "Yanıtın sadece OK olsun."'
+zsh -ic 'claude --no-session-persistence --model sonnet -p "Just reply OK."'
+zsh -ic 'claude --no-session-persistence --model glm-5.1 -p "Just reply OK."'
+zsh -ic 'claude --no-session-persistence --model MiniMax-M2.7 -p "Just reply OK."'
 ```
 
 Expected:
@@ -891,13 +891,13 @@ Open Claude Code three times and run these exact prompts:
 
 1. Claude session
    - select `/model sonnet`
-   - prompt: `Explore subagentını kullan, package.json içindeki name alanını bul ve sadece değeri yaz.`
+   - prompt: `Use the Explore subagent, find the name field in package.json and just write the value.`
 2. Z.ai session
    - select `/model glm-5.1`
-   - prompt: `Explore subagentını kullan, package.json içindeki name alanını bul ve sadece değeri yaz.`
+   - prompt: `Use the Explore subagent, find the name field in package.json and just write the value.`
 3. MiniMax session
    - select `/model MiniMax-M2.7`
-   - prompt: `Explore subagentını kullan, package.json içindeki name alanını bul ve sadece değeri yaz.`
+   - prompt: `Use the Explore subagent, find the name field in package.json and just write the value.`
 
 In a separate terminal, watch the gateway log while running those prompts:
 

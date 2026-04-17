@@ -1,6 +1,4 @@
 import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types';
-import path from 'node:path';
-import { CLI_SURFACE_DEMO_COMMAND } from '../shared/constants';
 import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
 
 export function createCliSurfaceRuntimeManager(emit: {
@@ -23,20 +21,6 @@ export function createCliSurfaceRuntimeManager(emit: {
     cols?: number;
     rows?: number;
   } {
-    if (profile.command === CLI_SURFACE_DEMO_COMMAND) {
-      return {
-        command: process.execPath,
-        args: [path.join(__dirname, 'fixtures', 'cli-surface-demo.js')],
-        cwd: profile.cwd ?? process.cwd(),
-        envPatch: {
-          ...(profile.envPatch ?? {}),
-          ELECTRON_RUN_AS_NODE: '1',
-        },
-        cols: profile.cols,
-        rows: profile.rows,
-      };
-    }
-
     return {
       command: profile.command,
       args: profile.args,

@@ -75,6 +75,7 @@ export interface ProviderUpdateProgressEvent {
   completedProviders: number;
   providerId?: ProviderId;
   providerName?: string;
+  providerMessage?: string;
   providers?: ProviderUpdateProgressTarget[];
   result?: ProviderUpdateResult;
 }

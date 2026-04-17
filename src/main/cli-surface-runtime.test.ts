@@ -198,31 +198,6 @@ describe('cli surface runtime manager', () => {
     );
   });
 
-  it('resolves the built-in CLI surface demo profile into an Electron-as-Node launch', () => {
-    const manager = createCliSurfaceRuntimeManager(emit);
-
-    manager.start('project-1', {
-      id: 'builtin:cli-surface-demo',
-      name: 'Calder CLI Surface Demo',
-      command: '__calder_cli_surface_demo__',
-      cwd: '/tmp/demo',
-    });
-
-    expect(mockSpawnCommandPty).toHaveBeenCalledWith(
-      'cli-surface:project-1',
-      expect.objectContaining({
-        command: process.execPath,
-        cwd: '/tmp/demo',
-        envPatch: expect.objectContaining({
-          ELECTRON_RUN_AS_NODE: '1',
-        }),
-      }),
-      expect.any(Function),
-      expect.any(Function),
-    );
-    expect(mockSpawnCommandPty.mock.calls[0]?.[1]?.args?.[0]).toContain('fixtures/cli-surface-demo.js');
-  });
-
   it('flushes pending output and emits stopped state details when runtime exits', () => {
     vi.useFakeTimers();
     const manager = createCliSurfaceRuntimeManager(emit);

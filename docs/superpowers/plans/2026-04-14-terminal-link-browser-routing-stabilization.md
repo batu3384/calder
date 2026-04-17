@@ -415,15 +415,15 @@ Expected: Successful TypeScript compile + renderer bundle + asset copy.
 - [ ] **Step 3: Manual user-flow validation checklist**
 
 ```text
-1) Terminalde linke tek tıkla -> embedded browser açılıyor mu?
-2) Click sonrası mouse hareketinde “basılı kalmış gibi selection” oluşuyor mu? (olmamalı)
-3) Aşağıdaki URL'lere click ile geçiş kalıcı mı?
+1) Does one click on the link in the terminal -> embedded browser open?
+2) Does a "selection as if it was pressed" occur in the mouse movement after clicking? (shouldn't be)
+3) Is clicking on the following URLs permanent?
    - http://localhost:3000/ -> /dashboard
    - http://localhost:3000/dashboard
    - http://localhost:3000/tickets
    - http://localhost:3000/admin/dashboard
    - http://localhost:3000/admin/tickets
-4) URL flash edip geri dönüyor mu? (dönmemeli)
+4) Does the URL flash and bounce? (shouldn't return)
 ```
 
 - [ ] **Step 4: Final commit**

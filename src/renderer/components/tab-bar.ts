@@ -24,7 +24,6 @@ import { buildProviderIconMarkup } from './tab-provider-icon.js';
 import { openCliSurfaceWithSetup } from './cli-surface/setup.js';
 import { showCliSurfaceQuickSetup } from './cli-surface/quick-setup.js';
 import {
-  createDemoCliSurfaceProfile,
   createDiscoveredCliSurfaceProfile,
   getCliSurfaceProfileLabel,
 } from './cli-surface/profile.js';
@@ -469,9 +468,6 @@ async function activateCliSurface(project: ProjectRecord): Promise<void> {
         onEdit: (candidate) => {
           promptCliSurfaceProfile(project, createDiscoveredCliSurfaceProfile(candidate));
         },
-        onDemo: () => {
-          persistAndLaunchCliSurfaceProfile(project, createDemoCliSurfaceProfile(project.path));
-        },
         onManual: () => promptCliSurfaceProfile(project),
       });
     },
@@ -555,7 +551,7 @@ function renderSurfaceControls(): void {
           offsetPx: 8,
           maxWidthPx: 320,
           maxHeightPx: 320,
-          strategy: 'absolute',
+          strategy: 'fixed',
         },
         onOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
       },
@@ -654,7 +650,7 @@ function syncSessionProviderSelector(): void {
         offsetPx: 8,
         maxWidthPx: 280,
         maxHeightPx: 320,
-        strategy: 'absolute',
+        strategy: 'fixed',
       },
       align: 'end',
       onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
@@ -882,7 +878,9 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     const activeLabel = cliState.cancelRequested
       ? 'Cancellation requested. Waiting for the active command to stop...'
       : activeProvider
-        ? `${activeProvider.providerName} in progress.`
+        ? activeProvider.message
+          ? `${activeProvider.providerName}: ${activeProvider.message}`
+          : `${activeProvider.providerName} in progress.`
         : 'Waiting for provider progress...';
     cliUpdatePanelStatusEl.textContent = total > 0
       ? `${cliState.cancelRequested ? 'Cancelling CLI update' : 'Updating CLI tools'} (${completed}/${total})`
@@ -935,6 +933,7 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
   for (const provider of providers) {
     const row = document.createElement('div');
     row.className = 'cli-update-provider-row';
+    row.classList.toggle('is-active', cliState.phase === 'running' && provider.providerId === cliState.activeProviderId);
 
     const top = document.createElement('div');
     top.className = 'cli-update-provider-head';
@@ -953,7 +952,9 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     const detail = document.createElement('div');
     detail.className = 'cli-update-provider-detail';
     const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
-    if (versionParts.length === 2) {
+    if (provider.status === 'running' && provider.message) {
+      detail.textContent = provider.message;
+    } else if (versionParts.length === 2) {
       detail.textContent = `${versionParts[0]} → ${versionParts[1]}`;
     } else if (provider.latestVersion) {
       detail.textContent = `Latest: ${provider.latestVersion}`;
@@ -1331,7 +1332,10 @@ function render(): void {
   tabListEl.innerHTML = '';
   renderSurfaceControls();
   const project = appState.activeProject;
-  if (!project) return;
+  if (!project) {
+    renderGitStatus();
+    return;
+  }
   const cliSurfaceTabActive = project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli';
 
   for (const session of project.sessions) {
@@ -1497,17 +1501,30 @@ function render(): void {
     project.surface?.active ? 'surface-open' : 'surface-closed',
     project.surface?.tabFocus ?? 'session',
   ].join(':'));
+
+  renderGitStatus();
 }
 
 function renderGitStatus(): void {
   const project = appState.activeProject;
   if (!project) {
     gitStatusEl.innerHTML = '';
+    gitStatusEl.dataset.state = 'hidden';
+    gitStatusEl.removeAttribute('aria-busy');
     return;
   }
 
   const status = getGitStatus(project.id);
-  if (!status || !status.isGitRepo) {
+  if (!status) {
+    gitStatusEl.innerHTML = '<span class="git-branch">\u2387 \u2026</span>';
+    gitStatusEl.dataset.state = 'loading';
+    gitStatusEl.setAttribute('aria-busy', 'true');
+    void refreshGitStatus();
+    return;
+  }
+
+  gitStatusEl.removeAttribute('aria-busy');
+  if (!status.isGitRepo) {
     gitStatusEl.innerHTML = '';
     gitStatusEl.dataset.state = 'hidden';
     return;

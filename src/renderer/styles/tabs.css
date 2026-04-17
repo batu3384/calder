@@ -55,10 +55,15 @@
   justify-content: flex-end;
 }
 
+.tab-bar-meta:empty {
+  display: none;
+}
+
 .command-deck-status {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
 }
 
 #tab-list {
@@ -303,6 +308,14 @@
   background: color-mix(in srgb, var(--accent-soft) 16%, var(--surface-panel));
 }
 
+#git-status[data-state='loading'] {
+  opacity: 0.76;
+}
+
+#git-status[data-state='loading'] .git-branch {
+  color: var(--text-muted);
+}
+
 #git-status .git-branch {
   color: var(--text-secondary);
 }
@@ -331,9 +344,19 @@
   grid-area: actions;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
   gap: 4px;
   justify-content: flex-end;
   position: relative;
+}
+
+#tab-actions .command-deck-status {
+  order: 0;
+}
+
+#tab-actions .session-launcher-group {
+  order: 1;
 }
 
 .session-launcher-group {
@@ -538,6 +561,17 @@
   gap: 4px;
 }
 
+.cli-update-provider-row.is-active {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 24%, transparent), transparent 54%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .cli-update-provider-head {
   display: flex;
   align-items: center;
@@ -580,11 +614,16 @@
   color: var(--text-secondary);
 }
 
+.cli-update-provider-row.is-active .cli-update-provider-detail {
+  color: var(--text-primary);
+}
+
 #surface-mode-slot,
 #surface-profile-slot,
 #session-provider-slot {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 #surface-mode-slot[hidden],
@@ -743,13 +782,16 @@
 }
 
 .command-deck-provider-select {
-  min-width: 148px;
+  min-width: 176px;
+  max-width: 208px;
+  flex: 0 0 auto;
 }
 
 .command-deck-provider-select .custom-select-trigger {
+  position: relative;
   min-height: 34px;
   height: 34px;
-  padding: 0 28px 0 11px;
+  padding: 0 28px 0 28px;
   border-radius: 999px;
   border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
   background:
@@ -760,19 +802,89 @@
   letter-spacing: 0.02em;
   justify-content: flex-start;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.command-deck-provider-select .custom-select-trigger::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--provider-accent, var(--accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--provider-accent, var(--accent)) 24%, transparent),
+    0 0 18px color-mix(in srgb, var(--provider-accent, var(--accent)) 26%, transparent);
 }
 
 .command-deck-provider-select .custom-select-trigger:hover,
 .command-deck-provider-select .custom-select-trigger:focus {
-  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 24%, var(--border-subtle));
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--surface-hover) 76%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 34%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-hover) 76%, transparent);
 }
 
 .command-deck-provider-select .custom-select-dropdown {
   min-width: 100%;
   transform-origin: top right;
+}
+
+.command-deck-provider-select .custom-select-item[data-value]::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  vertical-align: middle;
+}
+
+.command-deck-provider-select .custom-select-item[data-value='claude']::before,
+.command-deck-provider-select[data-provider='claude'] .custom-select-trigger {
+  --provider-accent: #ff9b4a;
+  --provider-accent-soft: rgba(255, 155, 74, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='codex']::before,
+.command-deck-provider-select[data-provider='codex'] .custom-select-trigger {
+  --provider-accent: #32d3a2;
+  --provider-accent-soft: rgba(50, 211, 162, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='copilot']::before,
+.command-deck-provider-select[data-provider='copilot'] .custom-select-trigger {
+  --provider-accent: #7c8cff;
+  --provider-accent-soft: rgba(124, 140, 255, 0.22);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='gemini']::before,
+.command-deck-provider-select[data-provider='gemini'] .custom-select-trigger {
+  --provider-accent: #6bb5ff;
+  --provider-accent-soft: rgba(107, 181, 255, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='qwen']::before,
+.command-deck-provider-select[data-provider='qwen'] .custom-select-trigger {
+  --provider-accent: #3ddbd9;
+  --provider-accent-soft: rgba(61, 219, 217, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='minimax']::before,
+.command-deck-provider-select[data-provider='minimax'] .custom-select-trigger {
+  --provider-accent: #ff7a59;
+  --provider-accent-soft: rgba(255, 122, 89, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='blackbox']::before,
+.command-deck-provider-select[data-provider='blackbox'] .custom-select-trigger {
+  --provider-accent: #b8c2d4;
+  --provider-accent-soft: rgba(184, 194, 212, 0.18);
 }
 
 .command-deck-provider-select[data-floating='inline'] .custom-select-dropdown {
@@ -922,8 +1034,8 @@
 
   .command-deck-provider-select,
   .command-deck-cli-profile-select {
-    min-width: 132px;
-    max-width: 132px;
+    min-width: 156px;
+    max-width: 176px;
   }
 }
 
@@ -942,6 +1054,11 @@
 
   .tab-bar-meta {
     justify-content: flex-start;
+  }
+
+  #tab-actions {
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 
   #git-status {
@@ -975,14 +1092,18 @@
 
   .command-deck-provider-select,
   .command-deck-cli-profile-select {
-    min-width: 118px;
-    max-width: 118px;
+    min-width: 148px;
+    max-width: 164px;
   }
 
   .command-deck-provider-select .custom-select-trigger,
   .command-deck-cli-profile-select .custom-select-trigger {
     padding: 0 24px 0 8px;
     font-size: 10px;
+  }
+
+  .command-deck-provider-select .custom-select-trigger {
+    padding: 0 24px 0 28px;
   }
 
   .surface-profile-config {
@@ -1017,8 +1138,8 @@
 
   .command-deck-provider-select,
   .command-deck-cli-profile-select {
-    min-width: 104px;
-    max-width: 104px;
+    min-width: 136px;
+    max-width: 148px;
   }
 
   .surface-profile-config {

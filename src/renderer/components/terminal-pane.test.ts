@@ -349,6 +349,15 @@ describe('terminal pending prompt injection', () => {
     expect(delivered).toBe(true);
     expect(mockPtyWrite).toHaveBeenCalledWith('codex-live', '\u001b[200~Fix the auth modal\u001b[201~\r');
   });
+
+  it('marks the provider badge with the active provider id for provider-aware styling', async () => {
+    const { createTerminalPane } = await import('./terminal-pane.js');
+
+    const instance = createTerminalPane('claude-themed', '/project', null, false, '', 'claude');
+    const providerBadge = instance.element.querySelector('.terminal-pane-provider') as FakeElement | null;
+
+    expect(providerBadge?.dataset.provider).toBe('claude');
+  });
 });
 
 describe('terminal Ctrl+Shift+C clipboard copy', () => {

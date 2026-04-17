@@ -2,68 +2,68 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Calder içinde Claude/Codex/Gemini/Qwen oturumlarında güvenli auto-approval akışını global default + project override modeliyle çalıştırmak, MiniMax gibi desteklenmeyen akışlarda ise güvenli biçimde `ask` fallback uygulamak.
+**Goal:** To run a safe auto-approval flow in Claude/Codex/Gemini/Qwen sessions in Calder with the global default + project override model, and to safely apply `ask` fallback in unsupported flows such as MiniMax.
 
-**Architecture:** Ana süreçte merkezi bir `AutoApprovalOrchestrator` kurulacak; bu orchestrator policy resolution, komut sınıflandırma, karar verme, rate guard ve provider adapter çağrılarını tek yerden yönetecek. Governance discovery katmanı project policy dosyası ile global default policy dosyasını birlikte okuyup efektif modu hesaplayacak, renderer tarafı da bu efektif durumu right-rail `Auto Approval` bloğunda gösterecek. Tüm kararlar `approval_decision` inspector event’i olarak timeline’a akacak ve session bazlı geçici override desteklenecek.
+**Architecture:** A central `AutoApprovalOrchestrator` will be installed in the main process; This orchestrator will manage policy resolution, command classification, decision making, rate guard and provider adapter calls from a single place. The Governance discovery layer will read the project policy file and the global default policy file together and calculate the effective mode, and the renderer side will show this effective status in the right-rail 'Auto Approval' block. All decisions will flow to the timeline as an 'approval_decision' inspector event and session-based temporary override will be supported.
 
-**Tech Stack:** TypeScript, Electron IPC, Vitest, mevcut `calder-governance` modülleri, hook event JSONL akışı (`~/.calder/runtime/*.events`)
+**Tech Stack:** TypeScript, Electron IPC, Vitest, existing `calder-governance` modules, hook event JSONL stream (`~/.calder/runtime/*.events`)
 
 ---
 
 ## Scope Check
 
-Bu plan tek alt-sistem odaklıdır: Calder governance + hook + right-rail auto-approval zinciri. Ayrı bağımsız alt proje gerektirmiyor; tek plan içinde güvenli şekilde teslim edilebilir.
+This plan focuses on one sub-system: Calder governance + hook + right-rail auto-approval chain. It does not require separate independent subprojects; can be delivered safely in one plan.
 
 ## File Structure Lock
 
 - `/Users/batuhanyuksel/Documents/browser/src/shared/types.ts`  
-  Auto-approval mode/source/decision/event kontratları.
+  Auto-approval mode/source/decision/event contracts.
 - `/Users/batuhanyuksel/Documents/browser/src/shared/project-governance.contract.test.ts`  
-  Yeni governance + auto-approval tip kontratı.
+  New governance + auto-approval type contract.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-policy.ts`  
-  Global + project + session override çözümleyici.
+  Global + project + session override parser.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-policy.test.ts`  
   Precedence ve fallback testleri.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-classifier.ts`  
-  `edit/safe_tool/risky_tool/unknown/destructive` sınıflandırıcı.
+  `edit/safe_tool/risky_tool/unknown/destructive` classifier.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-classifier.test.ts`  
   Safe-tool allowlist + destructive pattern testleri.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-orchestrator.ts`  
-  Karar motoru + adapter tetikleme + audit event üretimi.
+  Decision engine + adapter triggering + audit event generation.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-orchestrator.test.ts`  
   `allow/ask/block`, rate guard, unsupported provider testleri.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/discovery.ts`  
-  Governance state içine auto-approval effective alanlarının eklenmesi.
+  Adding auto-approval effective fields to the Governance state.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/discovery.test.ts`  
-  Effective mode ve source doğrulaması.
+  Effective mode and source verification.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/scaffold.ts`  
-  Starter policy içine `autoApproval` bloğu.
+  `autoApproval` block in Starter policy.
 - `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/scaffold.test.ts`  
-  Scaffold çıktısında `autoApproval.mode` doğrulaması.
+  Validation of `autoApproval.mode` in Scaffold output.
 - `/Users/batuhanyuksel/Documents/browser/src/main/hook-status.ts`  
-  Inspector event middleware noktası (orchestrator entegrasyonu).
+  Inspector event middleware point (orchestrator integration).
 - `/Users/batuhanyuksel/Documents/browser/src/main/hook-status.test.ts`  
-  Middleware sonrası event forward davranışı.
+  Post-middleware event forward behavior.
 - `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`  
   Session registration + policy update IPC + override IPC.
 - `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers-governance.contract.test.ts`  
-  Yeni governance IPC contract doğrulaması.
+  New governance IPC contract verification.
 - `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts`  
   `governance.setAutoApprovalMode` ve `governance.setSessionAutoApprovalOverride` bridge.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/types.ts`  
-  Renderer API tiplerine yeni governance çağrıları.
+  New governance calls to renderer API types.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/project-governance-sync.ts`  
   Active session ile effective governance sync.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/project-governance-sync.test.ts`  
   Session-aware state sync testleri.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.ts`  
-  Right-rail `Auto Approval` bloğu ve kontrol eventleri.
+  Right-rail `Auto Approval` block and control events.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.test.ts`  
   Auto Approval UI contract testi.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-language.contract.test.ts`  
-  Right-rail dil kontratına yeni blok ekleme.
+  Adding a new block to the Right-rail language contract.
 - `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector.css`  
-  Auto Approval blok görsel stilleri.
+  Auto Approval block visual styles.
 - `/Users/batuhanyuksel/Documents/browser/src/main/codex-hooks.ts`  
   `PermissionRequest` event capture + status.
 - `/Users/batuhanyuksel/Documents/browser/src/main/codex-hooks.test.ts`  
@@ -82,7 +82,7 @@ Bu plan tek alt-sistem odaklıdır: Calder governance + hook + right-rail auto-a
 - [ ] **Step 1: Write failing contract assertions**
 
 ```ts
-// src/shared/project-governance.contract.test.ts içine eklenecek beklentiler
+// Expectations to be added in src/shared/project-governance.contract.test.ts
 expect(source).toContain("export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools'");
 expect(source).toContain("export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback'");
 expect(source).toContain('export interface ProjectGovernanceAutoApprovalState');
@@ -93,7 +93,7 @@ expect(source).toContain("| 'approval_decision'");
 - [ ] **Step 2: Run contract test and confirm failure**
 
 Run: `npm test -- src/shared/project-governance.contract.test.ts`  
-Expected: FAIL çünkü yeni `AutoApproval*` tipleri henüz yok.
+Expected: FAIL because new `AutoApproval*` types do not exist yet.
 
 - [ ] **Step 3: Add shared types and inspector event payload fields**
 
@@ -198,7 +198,7 @@ describe('resolveEffectiveAutoApprovalMode', () => {
 - [ ] **Step 2: Run new policy tests and verify they fail**
 
 Run: `npm test -- src/main/calder-governance/auto-approval-policy.test.ts`  
-Expected: FAIL çünkü modül yok.
+Expected: FAIL because the module does not exist.
 
 - [ ] **Step 3: Implement resolver + file readers**
 
@@ -320,7 +320,7 @@ describe('decideAutoApproval', () => {
 - [ ] **Step 2: Run tests and verify failure**
 
 Run: `npm test -- src/main/calder-governance/auto-approval-classifier.test.ts`  
-Expected: FAIL çünkü sınıflandırıcı henüz yok.
+Expected: FAIL because the classifier does not exist yet.
 
 - [ ] **Step 3: Implement classifier and decision function**
 
@@ -410,7 +410,7 @@ describe('auto approval orchestrator', () => {
 - [ ] **Step 2: Run orchestrator tests and verify failure**
 
 Run: `npm test -- src/main/calder-governance/auto-approval-orchestrator.test.ts`  
-Expected: FAIL çünkü orchestrator henüz yok.
+Expected: FAIL because the orchestrator does not exist yet.
 
 - [ ] **Step 3: Implement orchestrator**
 
@@ -460,16 +460,16 @@ export function createAutoApprovalOrchestrator(deps: {
 - [ ] **Step 4: Wire orchestrator into IPC lifecycle**
 
 ```ts
-// src/main/ipc-handlers.ts (özet)
+// src/main/ipc-handlers.ts (summary)
 const autoApproval = createAutoApprovalOrchestrator({
   sendApproval: (sessionId, providerId) => writePty(sessionId, providerId === 'codex' ? '1\n' : '\n'),
   resolvePolicy: (sessionId) => sessionPolicyResolver(sessionId),
 });
 
-// pty:create içinde session metadata kaydı
+// Session metadata record in pty:create
 autoApproval.registerSession?.(sessionId, { providerId, projectPath: cwd });
 
-// pty exit/kill içinde cleanup
+//cleanup in pty exit/kill
 autoApproval.unregisterSession?.(sessionId);
 ```
 
@@ -492,18 +492,18 @@ git commit -m "feat(governance): add auto-approval orchestrator and session wiri
 - [ ] **Step 1: Write failing middleware test**
 
 ```ts
-// src/main/hook-status.test.ts içine yeni test
+// new test in src/main/hook-status.test.ts
 it('passes inspector events through middleware before forwarding', () => {
   const middleware = vi.fn((_sessionId, events) => [...events, { type: 'approval_decision' }]);
   setInspectorEventsMiddleware(middleware);
-  // .events dosyası okutulduktan sonra gönderilen payload middleware ile zenginleşmiş olmalı
+  // After the .events file is read, the payload sent must be enriched with middleware
 });
 ```
 
 - [ ] **Step 2: Run hook-status tests and confirm failure**
 
 Run: `npm test -- src/main/hook-status.test.ts`  
-Expected: FAIL çünkü middleware API yok.
+Expected: FAIL because there is no middleware API.
 
 - [ ] **Step 3: Add middleware hook**
 
@@ -519,7 +519,7 @@ export function setInspectorEventsMiddleware(
   inspectorEventsMiddleware = middleware;
 }
 
-// .events handling bölümünde
+// in the .events handling section
 const finalEvents = inspectorEventsMiddleware
   ? inspectorEventsMiddleware(sessionId, events)
   : events;
@@ -631,7 +631,7 @@ Expected: FAIL.
 - [ ] **Step 3: Render Auto Approval block with scope + effective mode**
 
 ```ts
-// src/renderer/components/config-sections.ts (özet)
+// src/renderer/components/config-sections.ts (summary)
 function renderAutoApprovalCard(): HTMLElement | null {
   const project = appState.activeProject;
   const session = appState.activeSession;
@@ -773,22 +773,22 @@ Run:
 npm test -- src/main/calder-governance/auto-approval-policy.test.ts src/main/calder-governance/auto-approval-classifier.test.ts src/main/calder-governance/auto-approval-orchestrator.test.ts src/main/hook-status.test.ts src/main/codex-hooks.test.ts src/main/gemini-hooks.test.ts src/renderer/project-governance-sync.test.ts src/renderer/components/config-sections.test.ts src/renderer/components/context-language.contract.test.ts src/shared/project-governance.contract.test.ts src/main/ipc-handlers-governance.contract.test.ts
 ```
 
-Expected: PASS (hepsi yeşil).
+Expected: PASS (all green).
 
 - [ ] **Step 2: Run full repository regression**
 
 Run: `npm test`  
-Expected: PASS, yeni davranış `mode=off` iken eski akışa sessiz regression yapmamalı.
+Expected: PASS should not do silent regression to the old stream when the new behavior is `mode=off`.
 
 - [ ] **Step 3: Manual smoke checklist (desktop run)**
 
 Run: `npm run dev`  
 Expected:
-- Right rail’da `Auto Approval` kartı görünür.
-- `Off` modunda permission request manuel kalır.
-- `Edits` modunda edit auto-approve olur, safe tool manuel kalır.
+- 'Auto Approval' card appears on the right rail.
+- In 'Off' mode, permission request remains manual.
+- In 'Edits' mode, the edit becomes auto-approve, the safe tool remains manual.
 - `Edits + Safe tools` modunda `rg`, `ls`, `git status` auto-approve olur.
-- `rm -rf` ve `git reset --hard` kararları `block` olarak `approval_decision` event’i üretir.
+- `rm -rf` and `git reset --hard` decisions produce `approval_decision` event as `block`.
 
 - [ ] **Step 4: Commit any final test-only fixes**
 
@@ -817,26 +817,25 @@ Suggested changelog entry:
 
 ### 1. Spec Coverage
 
-- Policy model (`off`, `edit_only`, `edit_plus_safe_tools`) kapsandı: Task 1-2.
-- Global + project + session precedence kapsandı: Task 2.
-- Decision classification (`edit/safe/risky/unknown/destructive`) kapsandı: Task 3.
-- Fail-safe (`unknown -> ask`, destructive -> block) kapsandı: Task 3-4.
-- Right rail `Auto Approval` block + scope/effective mode + pause aksiyonu kapsandı: Task 7.
-- Audit event (`approval_decision`) kapsandı: Task 1 ve Task 4-5.
-- Provider adapter zinciri ve unsupported fallback kapsandı: Task 4.
-- Codex/Gemini permission_request yakalama kapsandı: Task 8.
+- Policy model (`off`, `edit_only`, `edit_plus_safe_tools`) covered: Task 1-2.
+- Global + project + session precedence covered: Task 2.
+- Decision classification (`edit/safe/risky/unknown/destructive`) covered: Task 3.
+- Fail-safe (`unknown -> ask`, destructive -> block) covered: Task 3-4.
+- Right rail `Auto Approval` block + scope/effective mode + pause action covered: Task 7.
+- Audit event (`approval_decision`) covered: Task 1 and Task 4-5.
+- Provider adapter chain and unsupported fallback covered: Task 4.
+- Codex/Gemini permission_request capture covered: Task 8.
 
-Gap yok.
+No gaps.
 
 ### 2. Placeholder Scan
 
-- `TODO/TBD` yok.
-- Her taskta test + run komutu + beklenen sonuç var.
-- Kod adımlarında gerçek snippet var.
+- No `TODO/TBD` placeholders.
+- Each task has test + run command + expected result.
+- Code steps have actual snippet.
 
 ### 3. Type Consistency
 
-- `AutoApprovalMode`, `AutoApprovalPolicySource`, `AutoApprovalOperationClass`, `AutoApprovalDecision` isimleri tüm tasklarda tutarlı.
-- Inspector event alanı tek isimle kullanıldı: `auto_approval`.
-- IPC method adları tekil ve tutarlı: `setAutoApprovalMode`, `setSessionAutoApprovalOverride`.
-
+- The names `AutoApprovalMode`, `AutoApprovalPolicySource`, `AutoApprovalOperationClass`, `AutoApprovalDecision` are consistent in all tasks.
+- The Inspector event field was used with a single name: `auto_approval`.
+- IPC method names are unique and consistent: `setAutoApprovalMode`, `setSessionAutoApprovalOverride`.

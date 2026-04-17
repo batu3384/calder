@@ -17,11 +17,15 @@ describe('tab bar command deck contract', () => {
     expect(source).toContain('syncSessionProviderSelector');
     expect(source).toContain('resolvePreferredProviderForLaunch');
     expect(source).toContain('syncQuickSessionButtonMeta');
+    expect(source).toContain('command-deck-provider-select');
+    expect(source).not.toContain('session-provider-chipbar');
+    expect(source).not.toContain('session-provider-chip');
+    expect(source).not.toContain('SESSION_PROVIDER_SHORT_LABELS');
   });
 
   it('pins launcher dropdowns to the right edge and stabilizes the launcher shell while they are open', () => {
     expect(source).toContain("placement: 'bottom-end'");
-    expect(source).toContain("strategy: 'absolute'");
+    expect(source).toContain("strategy: 'fixed'");
     expect(source).toContain("function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void");
     expect(source).toContain('const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;');
     expect(source).toContain("onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open)");

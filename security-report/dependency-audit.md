@@ -1,127 +1,102 @@
-# Bağımlılık Denetimi
+# Dependency Audit
 
-## Özet
+## Summary
 
-- Paket yöneticisi: npm
+- Package manager: `npm`
 - Lockfile: `package-lock.json`
-- Doğrudan prod bağımlılık: 13
-- Doğrudan dev bağımlılık: 8
-- Toplam bağımlılık ağacı:
+- Direct production dependencies: 13
+- Direct development dependencies: 8
+- Total dependency tree:
   - prod: 130
   - dev: 462
   - optional: 100
   - peer: 13
-  - toplam: 591
+  - total: 591
 
-## Güncel güvenlik görünümü
+## Current Security Posture
 
-- `npm audit --omit=dev --json` sonucu:
-  0 bulgu
-- `npm audit --json` sonucu:
-  0 bulgu
+- `npm audit --omit=dev --json`: 0 findings
+- `npm audit --json`: 0 findings
 
-Not:
-Bu çıktı 2026-04-12 tarihinde canlı npm advisory verisi ile kontrol edildi. Yine de CI içinde düzenli doğrulama önerilir.
+Latest verification timestamp: 2026-04-17.
 
-## Önemli sınırlama
+## Scope and Limitations
 
-LLM bilgi kesiti sonrası çıkan CVE'leri tek başına güvenilir biçimde bilemem. Bu repo için canlı kontrol yaptım; ayrıca düzenli olarak şu komutlar da çalıştırılmalı:
+This audit relies on lockfile analysis plus live npm advisory checks (`npm audit`).
+For defense-in-depth, keep additional feeds in place:
 
-```bash
-npm audit
-```
+- [OSV.dev](https://osv.dev/)
+- [GitHub Security Advisories](https://github.com/advisories)
+- Dependabot or Renovate
 
-Ek doğrulama kaynakları:
+## Direct Dependencies
 
-- OSV.dev
-- GitHub Security Advisories
-- Dependabot veya Renovate
+### Production
 
-## Doğrudan bağımlılıklar
+| Package | Version | Security Note |
+|---|---|---|
+| `@floating-ui/dom` | `^1.7.6` | Actively maintained |
+| `@modelcontextprotocol/sdk` | `^1.29.0` | High-impact network-facing integration |
+| `@xterm/addon-fit` | `^0.11.0` | Actively maintained |
+| `@xterm/addon-search` | `^0.16.0` | Actively maintained |
+| `@xterm/addon-serialize` | `^0.14.0` | Actively maintained |
+| `@xterm/addon-web-links` | `^0.12.0` | Link handling should stay policy-guarded |
+| `@xterm/addon-webgl` | `^0.19.0` | Actively maintained |
+| `@xterm/xterm` | `^6.0.0` | Critical UI/runtime terminal surface |
+| `dompurify` | `^3.3.3` | Core XSS control |
+| `electron-updater` | `^6.8.3` | High trust impact (update path) |
+| `marked` | `^17.0.5` | Must remain paired with sanitization |
+| `node-pty` | `^1.1.0` | Native process boundary package |
+| `picomatch` | `^4.0.4` | Low risk utility dependency |
 
-### Prod bağımlılıkları
+### Development
 
-| Paket | Sürüm Aralığı | Son yayın sinyali | Not |
-|---|---:|---|---|
-| `@floating-ui/dom` | `^1.7.6` | 2026-03-03 | Aktif bakım sinyali var |
-| `@modelcontextprotocol/sdk` | `^1.29.0` | 2026-03-30 | Ağ/uzak MCP yüzeyi nedeniyle yüksek etki alanı |
-| `@xterm/addon-fit` | `^0.11.0` | 2026-04-06 | Aktif bakım |
-| `@xterm/addon-search` | `^0.16.0` | 2026-04-06 | Aktif bakım |
-| `@xterm/addon-serialize` | `^0.14.0` | 2026-04-06 | Aktif bakım |
-| `@xterm/addon-web-links` | `^0.12.0` | 2026-04-06 | Link açma davranışı nedeniyle güvenlik açısından önemli |
-| `@xterm/addon-webgl` | `^0.19.0` | 2026-04-06 | Aktif bakım |
-| `@xterm/xterm` | `^6.0.0` | 2026-04-06 | Kritik UI/terminal yüzeyi |
-| `dompurify` | `^3.3.3` | 2026-03-11 | XSS savunmasında kritik, iyi seçim |
-| `electron-updater` | `^6.8.3` | 2026-02-12 | Update zinciri yüksek güven etkisine sahip |
-| `marked` | `^17.0.5` | 2026-04-07 | HTML render zinciri; sanitization ile birlikte kullanılmalı |
-| `node-pty` | `^1.1.0` | 2026-03-12 | Native modül, komut yürütme yüzeyine çok yakın |
-| `picomatch` | `^4.0.4` | 2026-03-23 | Düşük riskli yardımcı bağımlılık |
+| Package | Version | Security Note |
+|---|---|---|
+| `@types/dompurify` | `^3.0.5` | Deprecated, removable |
+| `@types/picomatch` | `^4.0.3` | Actively maintained |
+| `@vitest/coverage-v8` | `^4.1.4` | Actively maintained |
+| `electron` | `^41.2.0` | High-impact runtime |
+| `electron-builder` | `^26.8.1` | Packaging and install-path impact |
+| `esbuild` | `^0.27.7` | Minor update available |
+| `typescript` | `^5.7.0` | Major upgrade path available |
+| `vitest` | `^4.1.4` | Actively maintained |
 
-### Dev bağımlılıkları
+## Outdated Snapshot
 
-| Paket | Sürüm Aralığı | Son yayın sinyali | Not |
-|---|---:|---|---|
-| `@types/dompurify` | `^3.0.5` | 2024-11-19 | Deprecated; DOMPurify kendi type tanımlarını sağlıyor |
-| `@types/picomatch` | `^4.0.3` | 2026-04-03 | Aktif bakım |
-| `@vitest/coverage-v8` | `^4.1.4` | 2026-04-09 | Aktif bakım |
-| `electron` | `^41.2.0` | 2026-04-10 | Güvenlik etkisi yüksek çekirdek runtime |
-| `electron-builder` | `^26.8.1` | 2026-03-04 | Paketleme zinciri, install script etkisi var |
-| `esbuild` | `^0.27.7` | 2026-04-02 | Güncel sürüm mevcut |
-| `typescript` | `^5.7.0` | 2026-04-01 | Güncel majör 6.x mevcut |
-| `vitest` | `^4.1.4` | 2026-04-09 | Aktif bakım |
+From `npm outdated --json`:
 
-## Outdated paketler
-
-`npm outdated --json` çıktısına göre:
-
-| Paket | Mevcut | Wanted | Latest | Değerlendirme |
+| Package | Current | Wanted | Latest | Action |
 |---|---:|---:|---:|---|
-| `esbuild` | `0.27.7` | `0.27.7` | `0.28.0` | Takip edilmeli, doğrudan acil risk sinyali yok |
-| `marked` | `17.0.5` | `17.0.6` | `18.0.0` | Markdown işleme zinciri nedeniyle yakından takip edilmeli |
-| `typescript` | `5.9.3` | `5.9.3` | `6.0.2` | Güvenlikten çok toolchain güncelliği konusu |
+| `esbuild` | `0.27.7` | `0.27.7` | `0.28.0` | Track and schedule upgrade |
+| `marked` | `17.0.5` | `17.0.6` | `18.0.0` | Track closely due to render pipeline relevance |
+| `typescript` | `5.9.3` | `5.9.3` | `6.0.2` | Toolchain planning item |
 
-## Supply Chain Değerlendirmesi
+## Supply Chain Assessment
 
-### Düşük-orta riskli alanlar
+### Risk Drivers
 
-- `package.json` içinde `postinstall` script'i var.
-  Bu, `npm install` sırasında ek kod çalıştırıldığı anlamına gelir.
-- `node-pty`, `electron`, `electron-builder` native / platforma duyarlı bağımlılıklar.
-  Derleme ve kurulum zincirinde daha geniş etki alanına sahiptir.
-- Toplam bağımlılık ağacı 591 paket.
-  Advisory temiz olsa da transitif zincir geniş.
+- `postinstall` script executes extra setup code at install time
+- Native/platform-aware dependencies (`node-pty`, `electron`, `electron-builder`)
+- Large transitive tree (591 packages)
 
-### Olumlu sinyaller
+### Positive Signals
 
-- Doğrudan prod bağımlılıklarının neredeyse tamamında 2026 Q1-Q2 yayın aktivitesi var.
-- `npm audit` temiz.
-- Güvenlik için kritik olan `dompurify` doğrudan bağımlılık olarak bulunuyor.
+- No current advisory findings from npm audit
+- Most direct dependencies have recent release activity
+- `dompurify` is directly included for sanitization
 
-### Dikkat edilmesi gerekenler
+### Recommended Actions
 
-- `@types/dompurify` deprecated.
-  Gereksiz bağımlılık azaltımı için kaldırılabilir.
-- `marked` HTML render zincirinde yer alıyor.
-  Sanitization bağı koparsa XSS riski artar.
-- `electron-updater` ve `electron` runtime zinciri güvenlik etkisi yüksek olduğundan release notları izlenmeli.
+1. Remove deprecated `@types/dompurify`
+2. Keep `marked` + sanitization path under contract tests
+3. Track Electron and updater release security notes
+4. Run periodic CI jobs for:
+   - `npm audit`
+   - dependency freshness checks
+   - lockfile drift monitoring
 
-## Prod ortamında olmaması gereken dev paketler
+## Conclusion
 
-- Doğrudan prod dependency setinde bariz test-only paket görünmüyor.
-- Dev tool'lar (`vitest`, `coverage`, `electron-builder`, `typescript`) devDependencies altında doğru konumda.
-
-## Transitif risk notu
-
-- Audit temiz olsa da transitif bağımlılık sayısı yüksek.
-- Özellikle Electron ekosistemi ve native modüllerde advisory'ler hızlı değişebilir.
-- CI içinde düzenli güvenlik taraması önerilir.
-
-## Sonuç
-
-- Mevcut lockfile ve canlı npm audit verisine göre doğrudan görünür kritik/yüksek bağımlılık zafiyeti yok.
-- En belirgin bakım konusu:
-  - deprecated `@types/dompurify`
-  - minor/major update bekleyen `marked`, `esbuild`, `typescript`
-- Supply chain risk seviyesi:
-  düşük-orta
-  çünkü advisory temiz, ancak Electron/native/install-script zinciri güçlü yetkilerle çalışıyor
+- No direct critical/high dependency vulnerabilities were detected in current lockfile state.
+- Supply-chain risk remains **low to medium** because advisory status is clean, but privileged native/runtime dependencies are present.

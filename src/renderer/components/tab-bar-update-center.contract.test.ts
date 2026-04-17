@@ -27,6 +27,12 @@ describe('tab bar update center contract', () => {
     expect(tabsCss).toContain('.cli-update-panel-stats');
     expect(tabsCss).toContain('.cli-update-panel-progress-label');
     expect(tabsCss).toContain('.cli-update-panel-timestamp');
+    expect(tabsCss).toContain('.cli-update-provider-row.is-active');
+  });
+
+  it('renders active provider stage details while updates are running', () => {
+    expect(tabBarSource).toContain("row.classList.toggle('is-active'");
+    expect(tabBarSource).toContain("provider.status === 'running' && provider.message");
   });
 
   it('announces update status changes for assistive technologies', () => {

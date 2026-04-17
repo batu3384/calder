@@ -227,9 +227,24 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providerId: 'claude',
       providerName: 'Claude Code',
+      providerMessage: 'Checking latest version…',
     });
     expect(getUpdateCenterState().cli.activeProviderId).toBe('claude');
     expect(getUpdateCenterState().cli.providers[0].status).toBe('running');
+    expect(getUpdateCenterState().cli.providers[0].message).toBe('Checking latest version…');
+
+    mockApi.emitProviderProgress({
+      phase: 'provider_started',
+      startedAt: '2026-04-16T09:00:00.000Z',
+      totalProviders: 2,
+      completedProviders: 0,
+      providerId: 'claude',
+      providerName: 'Claude Code',
+      providerMessage: 'Applying update command…',
+    });
+    expect(getUpdateCenterState().cli.activeProviderId).toBe('claude');
+    expect(getUpdateCenterState().cli.providers[0].status).toBe('running');
+    expect(getUpdateCenterState().cli.providers[0].message).toBe('Applying update command…');
 
     const providerResult: ProviderUpdateResult = {
       providerId: 'claude',

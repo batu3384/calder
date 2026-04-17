@@ -167,16 +167,16 @@
 }
 
 .cli-surface-button.active {
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 34%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 32%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 32%, transparent), color-mix(in srgb, var(--surface-panel) 90%, transparent));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--accent-soft) 48%, rgba(255, 255, 255, 0.14)),
+    inset 0 1px 0 color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 48%, rgba(255, 255, 255, 0.14)),
     0 10px 22px rgba(8, 5, 3, 0.26);
 }
 
 .cli-surface-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--provider-accent, var(--accent)) 58%, transparent);
   outline-offset: 2px;
 }
 
@@ -192,13 +192,13 @@
 }
 
 .cli-surface-button-primary {
-  border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 36%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 50%, transparent), color-mix(in srgb, var(--surface-panel) 84%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 50%, transparent), color-mix(in srgb, var(--surface-panel) 84%, transparent));
 }
 
 .cli-surface-button-primary:hover {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 48%, var(--border-subtle));
 }
 
 .cli-surface-button-danger {
@@ -617,12 +617,12 @@
 }
 
 .cli-surface-target-menu-item.active {
-  background: color-mix(in srgb, var(--accent-soft) 46%, var(--surface-panel));
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background: color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 46%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 34%, var(--border-subtle));
 }
 
 .cli-surface-target-menu-item:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--provider-accent, var(--accent)) 58%, transparent);
   outline-offset: 1px;
 }
 
@@ -658,6 +658,12 @@
   color: var(--text-secondary);
   font-size: 10px;
   font-weight: 600;
+}
+
+.cli-surface-target-session-badge[data-provider] {
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 32%, var(--border-subtle));
+  background: color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 22%, var(--surface-panel));
+  color: color-mix(in srgb, var(--provider-accent, var(--text-primary)) 72%, var(--text-primary));
 }
 
 .cli-surface-target-session-badge-active {
@@ -841,10 +847,6 @@
 
 .cli-surface-quick-setup-footer-btn {
   min-width: 108px;
-}
-
-.cli-surface-quick-setup-footer-btn[data-action='demo-setup'] {
-  min-width: 122px;
 }
 
 @media (max-width: 720px) {

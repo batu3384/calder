@@ -122,10 +122,11 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function ensureInitialized(): asserts bridge is UpdateCenterBridge {
+function requireBridge(): UpdateCenterBridge {
   if (!initialized || !bridge) {
     throw new Error('Update center has not been initialized.');
   }
+  return bridge;
 }
 
 function getBridgeOrThrow(input?: UpdateCenterBridge): UpdateCenterBridge {
@@ -256,7 +257,7 @@ function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
     const nextProviders = upsertCliProvider(state.cli.providers, event.providerId, event.providerName)
       .map((provider) => (
         provider.providerId === event.providerId
-          ? { ...provider, status: 'running' as const, message: undefined }
+          ? { ...provider, status: 'running' as const, message: event.providerMessage ?? provider.message }
           : provider
       ));
     setCliState({
@@ -322,7 +323,7 @@ export function onUpdateCenterChange(listener: UpdateCenterListener): () => void
 }
 
 export async function checkForAppUpdates(): Promise<void> {
-  ensureInitialized();
+  const currentBridge = requireBridge();
   const token = ++appCheckToken;
   clearAppCheckTimer();
   setAppState({
@@ -332,7 +333,7 @@ export async function checkForAppUpdates(): Promise<void> {
   });
 
   try {
-    await bridge.update.checkNow();
+    await currentBridge.update.checkNow();
   } catch (error) {
     if (token !== appCheckToken) return;
     setAppState({
@@ -355,7 +356,7 @@ export async function checkForAppUpdates(): Promise<void> {
 }
 
 export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
-  ensureInitialized();
+  const currentBridge = requireBridge();
   if (cliInFlight) return cliInFlight;
   activeCliProgressStartedAt = null;
 
@@ -371,7 +372,7 @@ export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
     errorMessage: undefined,
   });
 
-  cliInFlight = bridge.provider.updateAll()
+  cliInFlight = currentBridge.provider.updateAll()
     .then((summary) => {
       const providers = deriveProvidersFromSummary(summary);
       const totalProviders = state.cli.totalProviders > 0
@@ -411,7 +412,7 @@ export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
 }
 
 export async function cancelCliProviderUpdates(): Promise<ProviderUpdateCancelResult> {
-  ensureInitialized();
+  const currentBridge = requireBridge();
   if (!cliInFlight || state.cli.phase !== 'running') {
     return { cancelled: false };
   }
@@ -420,7 +421,7 @@ export async function cancelCliProviderUpdates(): Promise<ProviderUpdateCancelRe
     errorMessage: undefined,
   });
   try {
-    const result = await bridge.provider.cancelUpdateAll();
+    const result = await currentBridge.provider.cancelUpdateAll();
     if (!result.cancelled) {
       setCliState({ cancelRequested: false });
     }

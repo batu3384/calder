@@ -1153,6 +1153,8 @@ describe('cli surface pane', () => {
       inspectButton: FakeElement;
       selectionOverlayEl: FakeElement;
       composerEl: FakeElement;
+      selectedButton: FakeElement;
+      newButton: FakeElement;
       customButton: FakeElement;
       targetMenuListEl: FakeElement;
     };
@@ -1175,6 +1177,16 @@ describe('cli surface pane', () => {
     expect(badges).toContain('Codex');
     expect(badges).toContain('Gemini');
     expect(badges).toContain('Active');
+
+    const providerBadgeTokens = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
+      .map((entry) => entry.dataset.provider)
+      .filter(Boolean);
+    expect(providerBadgeTokens).toContain('codex');
+    expect(providerBadgeTokens).toContain('gemini');
+
+    expect(instance.selectedButton.dataset.provider).toBe('codex');
+    expect(instance.newButton.dataset.provider).toBe('codex');
+    expect(instance.customButton.dataset.provider).toBe('codex');
   });
 
   it('shows session status dots and labels inside the CLI target menu', async () => {

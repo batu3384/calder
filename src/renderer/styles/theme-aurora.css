@@ -1,0 +1,535 @@
+/*
+ * Calder Aurora
+ * Final visual layer for the app shell. It intentionally loads last so the
+ * product can move as one premium theme without rewriting every component.
+ */
+
+:root {
+  --aurora-blue: #38bdf8;
+  --aurora-cyan: #8be9ff;
+  --aurora-violet: #a78bfa;
+  --aurora-indigo: #5b8cff;
+  --aurora-rose: #f472b6;
+  --aurora-emerald: #2dd4bf;
+  --aurora-sheen: rgba(226, 242, 255, 0.045);
+  --aurora-frost: rgba(226, 242, 255, 0.07);
+  --aurora-border: rgba(148, 184, 255, 0.18);
+  --aurora-shadow: rgba(1, 8, 28, 0.44);
+  --aurora-glow-blue: rgba(56, 189, 248, 0.16);
+  --aurora-glow-violet: rgba(167, 139, 250, 0.14);
+  --aurora-glow-rose: rgba(244, 114, 182, 0.1);
+  --aurora-panel-gradient:
+    radial-gradient(circle at 16% -18%, rgba(56, 189, 248, 0.12), transparent 44%),
+    radial-gradient(circle at 94% -22%, rgba(167, 139, 250, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 94%, black);
+  --aurora-card-gradient:
+    radial-gradient(circle at 100% 0%, rgba(139, 233, 255, 0.13), transparent 42%),
+    radial-gradient(circle at 8% 0%, rgba(167, 139, 250, 0.1), transparent 44%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.044), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, black);
+  --aurora-control-gradient:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.062), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 78%, transparent);
+  --aurora-active-gradient:
+    radial-gradient(circle at top right, rgba(139, 233, 255, 0.2), transparent 46%),
+    radial-gradient(circle at top left, rgba(167, 139, 250, 0.16), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.024)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--tab-active) 94%, black);
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at 10% -8%, rgba(56, 189, 248, 0.2), transparent 32%),
+    radial-gradient(circle at 84% -10%, rgba(167, 139, 250, 0.2), transparent 34%),
+    radial-gradient(circle at 52% 112%, rgba(45, 212, 191, 0.12), transparent 42%),
+    linear-gradient(180deg, #070b16 0%, #050711 46%, #02030a 100%);
+}
+
+#app {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(120deg, rgba(139, 233, 255, 0.024), transparent 24%, rgba(167, 139, 250, 0.026) 58%, transparent 82%),
+    radial-gradient(circle at 24% -16%, rgba(56, 189, 248, 0.1), transparent 34%),
+    radial-gradient(circle at 84% -18%, rgba(167, 139, 250, 0.09), transparent 36%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 96%, black), var(--surface-canvas));
+}
+
+#app::before {
+  content: '';
+  position: fixed;
+  inset: -18% -12%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 18% 10%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(ellipse at 78% 4%, rgba(167, 139, 250, 0.16), transparent 32%),
+    conic-gradient(from 205deg at 50% 8%, transparent 0deg, rgba(139, 233, 255, 0.08) 58deg, rgba(244, 114, 182, 0.06) 106deg, transparent 168deg, rgba(45, 212, 191, 0.06) 238deg, transparent 320deg);
+  filter: blur(18px) saturate(1.16);
+  opacity: 0.76;
+}
+
+::selection {
+  background: rgba(139, 233, 255, 0.28);
+  color: var(--text-primary);
+}
+
+#sidebar,
+.sidebar-surface,
+.tab-bar-surface,
+.session-deck-surface,
+#tab-bar,
+#context-inspector,
+.control-panel-surface,
+.ops-rail-surface,
+.cli-surface-toolbar,
+.terminal-pane-chrome,
+.browser-pane-chrome,
+.browser-tab-toolbar {
+  border-color: var(--aurora-border);
+  background: var(--aurora-panel-gradient);
+}
+
+#sidebar,
+#context-inspector {
+  backdrop-filter: blur(18px) saturate(1.18);
+  box-shadow:
+    inset 0 1px 0 var(--aurora-sheen),
+    22px 0 54px rgba(1, 8, 28, 0.18);
+}
+
+#sidebar {
+  border-right-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
+}
+
+#context-inspector {
+  border-left-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
+  box-shadow:
+    inset 1px 0 0 rgba(226, 242, 255, 0.035),
+    -22px 0 54px rgba(1, 8, 28, 0.18);
+}
+
+#sidebar-header,
+#context-inspector-header,
+#sidebar-footer {
+  border-color: color-mix(in srgb, var(--aurora-border) 76%, transparent);
+  background:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.05), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-rail) 90%, transparent);
+}
+
+.sidebar-title,
+.context-inspector-title,
+.terminal-pane-title,
+.browser-pane-label,
+.cli-surface-title,
+.empty-state-title {
+  letter-spacing: -0.035em;
+}
+
+.empty-state-title {
+  background:
+    linear-gradient(135deg, #f8fbff 0%, #bfeeff 42%, #d8c5ff 78%, #f5d0fe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.empty-state-eyebrow,
+.context-inspector-eyebrow,
+.context-inspector-section-label,
+.calder-section-heading,
+.cli-surface-action-label,
+.browser-pane-label {
+  color: color-mix(in srgb, var(--aurora-cyan) 58%, var(--text-muted));
+}
+
+.sidebar-header-actions,
+.project-item,
+.calder-button,
+.calder-icon-button,
+.calder-status-pill,
+.surface-mode-switcher,
+.session-launcher-group,
+#git-status,
+.inspector-overview-card,
+.inspector-overview-metric,
+.cli-surface-action-group,
+.cli-surface-button,
+.cli-surface-route,
+.cli-surface-adapter-badge,
+.usage-stat-card,
+.usage-section-shell,
+.help-section-shell,
+.whats-new-section-shell,
+.cli-update-provider-row {
+  border-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
+  background: var(--aurora-control-gradient);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    0 14px 32px rgba(1, 8, 28, 0.18);
+}
+
+.calder-button:hover,
+.calder-icon-button:hover,
+.cli-surface-button:hover,
+.project-item:hover,
+#git-status:hover,
+.session-launcher-group:hover,
+.context-inspector-reopen:hover,
+.context-inspector-reopen:focus {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 34%, var(--border-subtle));
+  background:
+    radial-gradient(circle at top right, rgba(139, 233, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.07), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 86%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    0 18px 40px rgba(1, 8, 28, 0.28);
+}
+
+.project-item.active,
+.tab-item.active,
+.cli-surface-button.active,
+.surface-mode-button.active,
+.inspector-overview-card,
+.terminal-pane.focused {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 36%, var(--border-subtle));
+  background: var(--aurora-active-gradient);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.085),
+    0 0 0 1px rgba(139, 233, 255, 0.08),
+    var(--shadow-lift);
+}
+
+.project-item::before,
+.tab-item.active::after {
+  background:
+    linear-gradient(180deg, var(--aurora-cyan), var(--aurora-violet));
+  box-shadow: 0 0 16px rgba(139, 233, 255, 0.24);
+}
+
+#tab-bar {
+  height: 54px;
+  min-height: 54px;
+  box-shadow:
+    inset 0 -1px 0 rgba(226, 242, 255, 0.04),
+    0 12px 34px rgba(1, 8, 28, 0.18);
+}
+
+.tab-item {
+  border-color: rgba(148, 184, 255, 0.07);
+  background:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.026), rgba(226, 242, 255, 0)),
+    transparent;
+}
+
+.tab-item:hover {
+  background:
+    radial-gradient(circle at top, rgba(139, 233, 255, 0.12), transparent 54%),
+    color-mix(in srgb, var(--surface-hover) 68%, transparent);
+}
+
+#git-status[data-state='dirty'] {
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--aurora-border));
+  background:
+    radial-gradient(circle at top right, rgba(251, 191, 36, 0.14), transparent 48%),
+    var(--aurora-control-gradient);
+}
+
+.session-launcher-group,
+.surface-mode-switcher {
+  backdrop-filter: blur(16px) saturate(1.16);
+}
+
+#cli-update-panel,
+.calder-popover,
+.calder-floating-list,
+.calder-inline-notice,
+#modal,
+.modal-box,
+.modal-surface,
+.help-hero,
+.whats-new-hero,
+.usage-hero {
+  border-color: color-mix(in srgb, var(--aurora-border) 92%, transparent);
+  background: var(--aurora-card-gradient);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    0 30px 72px rgba(1, 8, 28, 0.42);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+
+#modal-overlay,
+.modal-overlay {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(56, 189, 248, 0.14), transparent 28%),
+    radial-gradient(circle at 84% 4%, rgba(167, 139, 250, 0.14), transparent 30%),
+    rgba(2, 5, 16, 0.86);
+}
+
+.terminal-pane,
+.browser-tab-pane,
+.file-viewer-pane,
+.file-reader-pane,
+.remote-terminal-pane,
+.mcp-inspector-pane {
+  border-color: color-mix(in srgb, var(--pane-unfocus) 72%, var(--aurora-border));
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.11), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-canvas) 94%, black);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    0 24px 58px rgba(1, 8, 28, 0.3);
+}
+
+.terminal-pane.focused,
+.browser-tab-pane.focused,
+.file-viewer-pane.focused,
+.file-reader-pane.focused,
+.remote-terminal-pane.focused,
+.mcp-inspector-pane.focused {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 56%, var(--pane-focus));
+  box-shadow:
+    0 0 0 1px rgba(139, 233, 255, 0.16),
+    0 0 42px rgba(56, 189, 248, 0.08),
+    0 28px 66px rgba(1, 8, 28, 0.38);
+}
+
+.cli-surface-pane {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.13), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.1), transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-shell) 98%, black), color-mix(in srgb, var(--surface-canvas) 98%, black));
+}
+
+.cli-surface-button-primary,
+.empty-state-primary-action,
+.update-banner-btn {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 42%, var(--border-subtle));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 36%, transparent), color-mix(in srgb, var(--aurora-violet) 22%, transparent)),
+    color-mix(in srgb, var(--surface-panel-alt) 86%, transparent);
+  color: var(--text-primary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 16px 38px rgba(56, 189, 248, 0.14);
+}
+
+.cli-surface-button-primary:hover,
+.empty-state-primary-action:hover,
+.update-banner-btn:hover {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 58%, var(--border-subtle));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 20px 46px rgba(56, 189, 248, 0.2);
+}
+
+.usage-activity-bar,
+.usage-hour-cell,
+.cli-update-panel-progress-fill,
+.cli-update-panel-progress-fill.is-running {
+  background:
+    linear-gradient(90deg, var(--aurora-cyan), var(--aurora-violet), var(--aurora-rose));
+}
+
+.browser-pane-status[data-state='loading'],
+.cli-update-provider-status.running,
+.tab-item.unread .tab-name,
+.project-item .project-name.unread {
+  color: color-mix(in srgb, var(--aurora-cyan) 82%, var(--text-primary));
+}
+
+.calder-status-pill,
+.inspector-overview-pill,
+.project-session-count,
+.cli-surface-route,
+.cli-surface-adapter-badge,
+.browser-pane-status {
+  color: var(--text-secondary);
+}
+
+input,
+textarea,
+.custom-select-trigger,
+.modal-field input {
+  border-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
+  background:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.038), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 88%, black);
+}
+
+input:focus,
+textarea:focus,
+.custom-select-trigger:focus,
+.modal-field input:focus {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 54%, var(--border-focus));
+  box-shadow:
+    0 0 0 1px rgba(139, 233, 255, 0.2),
+    0 0 28px rgba(56, 189, 248, 0.08);
+}
+
+#sidebar ::-webkit-scrollbar-thumb,
+#context-inspector ::-webkit-scrollbar-thumb,
+.usage-content::-webkit-scrollbar-thumb,
+.help-container::-webkit-scrollbar-thumb,
+.whats-new-container::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--aurora-cyan) 28%, var(--border));
+}
+
+.search-bar,
+.goto-line-bar,
+.quick-open-container,
+.preferences-menu,
+.preferences-content-shell,
+.preferences-subsection,
+.modal-toggle-field,
+.history-search-shell,
+.history-item,
+.history-clear-btn,
+.history-remove-btn,
+.history-bookmark-btn,
+.history-actions,
+.history-bookmark-filter,
+.mcp-inspector-header,
+.mcp-inspector-nav,
+.mcp-card,
+.mcp-empty-state,
+.mcp-status-pill,
+.file-viewer-header,
+.agent-doc-header,
+.file-reader-agent-card,
+.file-reader-doc-outline,
+.quick-open-hero,
+.quick-open-item,
+.file-reader-doc-outline-btn {
+  border-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
+  background: var(--aurora-card-gradient);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    0 16px 34px rgba(1, 8, 28, 0.18);
+}
+
+.search-bar-label,
+.goto-line-label,
+.search-result-count,
+.search-toggle-btn,
+.search-nav-btn,
+.preferences-menu-item,
+.mcp-nav-tab,
+.mcp-url-input,
+.quick-open-input,
+.file-reader-agent-chip,
+.file-reader-badge.calder-status-pill,
+.file-viewer-area-badge.calder-status-pill {
+  border-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
+  background:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.052), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 80%, transparent);
+}
+
+.search-toggle-btn:hover,
+.search-nav-btn:hover,
+.history-clear-btn:hover,
+.history-remove-btn:hover,
+.history-bookmark-btn:hover,
+.history-bookmark-filter:hover,
+.preferences-menu-item:hover,
+.mcp-nav-tab:hover,
+.quick-open-item:hover,
+.quick-open-item.active,
+.file-reader-doc-outline-btn:hover {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 28%, var(--border-subtle));
+  background:
+    radial-gradient(circle at top right, rgba(139, 233, 255, 0.14), transparent 48%),
+    color-mix(in srgb, var(--surface-hover) 86%, transparent);
+  color: var(--text-primary);
+}
+
+.search-toggle-btn.active,
+.preferences-menu-item.active,
+.mcp-nav-tab.active,
+.history-bookmark-filter.active,
+.history-bookmark-btn.bookmarked,
+.quick-open-item.active {
+  border-color: color-mix(in srgb, var(--aurora-cyan) 36%, var(--border-subtle));
+  background: var(--aurora-active-gradient);
+  color: var(--text-primary);
+  box-shadow:
+    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    0 0 0 1px rgba(139, 233, 255, 0.08),
+    var(--shadow-card);
+}
+
+.preferences-menu-item.active::before,
+.mcp-nav-tab.active::before {
+  background:
+    linear-gradient(180deg, var(--aurora-cyan), var(--aurora-violet));
+  box-shadow: 0 0 16px rgba(139, 233, 255, 0.2);
+}
+
+#file-viewer-overlay,
+.file-viewer-pane,
+.file-reader-pane,
+.mcp-inspector-pane {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.1), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.09), transparent 28%),
+    color-mix(in srgb, var(--surface-canvas) 96%, black);
+}
+
+.file-reader-markdown pre,
+.file-reader-markdown code,
+.file-reader-line-highlight,
+.agent-doc-body {
+  border-color: color-mix(in srgb, var(--aurora-border) 74%, transparent);
+  background:
+    linear-gradient(180deg, rgba(226, 242, 255, 0.04), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 84%, black);
+}
+
+.mcp-connect-btn {
+  background:
+    linear-gradient(135deg, var(--aurora-cyan), color-mix(in srgb, var(--aurora-violet) 84%, var(--aurora-cyan)));
+  color: #03111f;
+  font-weight: 750;
+  box-shadow: 0 14px 28px rgba(56, 189, 248, 0.18);
+}
+
+.mcp-connect-btn:hover {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 92%, white), color-mix(in srgb, var(--aurora-violet) 88%, white));
+}
+
+.preferences-menu-title,
+.quick-open-title,
+.mcp-empty-title,
+.file-reader-agent-title,
+.help-hero-title,
+.whats-new-version,
+.usage-hero-title {
+  background:
+    linear-gradient(135deg, #f8fbff, #bfeeff 46%, #d8c5ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #app::before {
+    animation: calder-aurora-drift 18s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes calder-aurora-drift {
+  0% {
+    transform: translate3d(-1.5%, -1%, 0) scale(1);
+  }
+
+  100% {
+    transform: translate3d(1.5%, 1%, 0) scale(1.03);
+  }
+}
