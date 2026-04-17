@@ -15,6 +15,7 @@ import { notifyGitChanged, startGitWatcher, stopGitWatcher } from './git-watcher
 const mockSend = vi.fn();
 const watchCallbacks = new Map<string, (_event: string, filename: string | null) => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
+const n = (value: string) => value.replace(/\\/g, '/');
 
 function createWindow(destroyed = false, send = mockSend): any {
   return {
@@ -42,7 +43,7 @@ beforeEach(() => {
     const listener = typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
     const close = vi.fn();
     closeFns.push(close);
-    watchCallbacks.set(String(filePath), listener);
+    watchCallbacks.set(n(String(filePath)), listener);
     return {
       close,
       on: vi.fn().mockReturnThis(),

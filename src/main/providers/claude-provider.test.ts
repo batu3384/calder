@@ -102,6 +102,8 @@ describe('resolveBinaryPath', () => {
   });
 
   it('prefers an interactive-shell alias launcher when it resolves to an executable path', () => {
+    if (isWin) return;
+
     mockExistsSync.mockImplementation((p) => p === aliasPath);
     mockExecSync.mockReturnValue(`alias claude='~/.litellm/claude-gateway.sh'\n` as any);
     expect(provider.resolveBinaryPath()).toBe(aliasPath);

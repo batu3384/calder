@@ -128,7 +128,9 @@ describe('findBlackboxTranscriptPath', () => {
       throw new Error('ENOENT');
     });
 
-    expect(findBlackboxTranscriptPath('sid-1', '/project')).toBe('/mock/home/.blackboxcli/tmp/proj-a/checkpoint-session-sid-1.json');
+    expect(findBlackboxTranscriptPath('sid-1', '/project')).toBe(
+      path.join('/mock/home', '.blackboxcli', 'tmp', 'proj-a', 'checkpoint-session-sid-1.json'),
+    );
   });
 
   it('falls back to the secure session file when no checkpoint exists', () => {
@@ -144,6 +146,8 @@ describe('findBlackboxTranscriptPath', () => {
       throw new Error('ENOENT');
     });
 
-    expect(findBlackboxTranscriptPath('sid-2', '/project')).toBe('/mock/home/.blackboxcli/sessions/blackbox_secure_session_sid-2.json');
+    expect(findBlackboxTranscriptPath('sid-2', '/project')).toBe(
+      path.join('/mock/home', '.blackboxcli', 'sessions', 'blackbox_secure_session_sid-2.json'),
+    );
   });
 });

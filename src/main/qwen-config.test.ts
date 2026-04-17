@@ -22,6 +22,7 @@ const mockStatSync = vi.mocked(fs.statSync);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
   mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
   mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
   mockStatSync.mockImplementation(() => { throw new Error('ENOENT'); });
@@ -116,22 +117,27 @@ describe('findQwenTranscriptPath', () => {
   it('prefers QWEN_RUNTIME_DIR when searching for transcripts', () => {
     vi.stubEnv('QWEN_RUNTIME_DIR', '/runtime/qwen');
 
-    mockReaddirSync.mockImplementation((inputPath) => {
-      const dirPath = n(String(inputPath));
-      if (dirPath === '/runtime/qwen/projects') return ['project-a'] as any;
-      if (dirPath === '/runtime/qwen/projects/project-a/chats') return ['sid-1.jsonl'] as any;
-      throw new Error('ENOENT');
-    });
-    mockStatSync.mockImplementation((inputPath) => {
-      const filePath = n(String(inputPath));
-      if (filePath === '/runtime/qwen/projects/project-a') return { isDirectory: () => true, mtimeMs: 10 } as any;
-      if (filePath === '/runtime/qwen/projects/project-a/chats') return { isDirectory: () => true, mtimeMs: 10 } as any;
-      if (filePath === '/runtime/qwen/projects/project-a/chats/sid-1.jsonl') return { isFile: () => true, mtimeMs: 20 } as any;
-      throw new Error('ENOENT');
-    });
+    try {
+      mockReaddirSync.mockImplementation((inputPath) => {
+        const dirPath = n(String(inputPath));
+        if (dirPath === '/runtime/qwen/projects') return ['project-a'] as any;
+        if (dirPath === '/runtime/qwen/projects/project-a/chats') return ['sid-1.jsonl'] as any;
+        throw new Error('ENOENT');
+      });
+      mockStatSync.mockImplementation((inputPath) => {
+        const filePath = n(String(inputPath));
+        if (filePath === '/runtime/qwen/projects/project-a') return { isDirectory: () => true, mtimeMs: 10 } as any;
+        if (filePath === '/runtime/qwen/projects/project-a/chats') return { isDirectory: () => true, mtimeMs: 10 } as any;
+        if (filePath === '/runtime/qwen/projects/project-a/chats/sid-1.jsonl') return { isFile: () => true, mtimeMs: 20 } as any;
+        throw new Error('ENOENT');
+      });
 
-    expect(findQwenTranscriptPath('sid-1', '/project')).toBe('/runtime/qwen/projects/project-a/chats/sid-1.jsonl');
-    vi.unstubAllEnvs();
+      expect(findQwenTranscriptPath('sid-1', '/project')).toBe(
+        path.join('/runtime/qwen', 'projects', 'project-a', 'chats', 'sid-1.jsonl'),
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('falls back to advanced.runtimeOutputDir from settings when env is absent', () => {
@@ -156,11 +162,12 @@ describe('findQwenTranscriptPath', () => {
       throw new Error('ENOENT');
     });
 
-    expect(findQwenTranscriptPath('sid-2', '/project')).toBe('/custom/runtime/projects/project-b/chats/sid-2.jsonl');
+    expect(findQwenTranscriptPath('sid-2', '/project')).toBe(
+      path.join('/custom/runtime', 'projects', 'project-b', 'chats', 'sid-2.jsonl'),
+    );
   });
 
   it('returns null when no matching transcript exists', () => {
     expect(findQwenTranscriptPath('missing', '/project')).toBeNull();
   });
 });
-

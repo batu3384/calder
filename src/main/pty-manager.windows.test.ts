@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 function createMockPtyProcess() {
   const dataCallbacks: Array<(data: string) => void> = [];
@@ -80,13 +81,15 @@ describe('pty-manager windows behaviors', () => {
   it('builds full PATH from current PATH plus Windows-specific extras', async () => {
     const { getFullPath } = await loadWindowsPtyManager();
     const originalPath = process.env.PATH;
-    process.env.PATH = `C:\\Windows\\System32;/mock/home/AppData/Roaming/npm`;
+    const appDataNpm = path.join('/mock/home', 'AppData', 'Roaming', 'npm');
+    const localBin = path.join('/mock/home', '.local', 'bin');
+    process.env.PATH = `C:\\Windows\\System32;${appDataNpm}`;
 
     const full = getFullPath();
     const segments = full.split(';');
-    expect(segments).toContain('/mock/home/AppData/Roaming/npm');
-    expect(segments).toContain('/mock/home/.local/bin');
-    expect(segments.filter((segment) => segment === '/mock/home/AppData/Roaming/npm')).toHaveLength(1);
+    expect(segments).toContain(appDataNpm);
+    expect(segments).toContain(localBin);
+    expect(segments.filter((segment) => segment === appDataNpm)).toHaveLength(1);
 
     process.env.PATH = originalPath;
   });

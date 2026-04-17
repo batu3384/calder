@@ -72,16 +72,20 @@ describe('parseListeningPorts', () => {
 
 describe('discoverLocalBrowserTargets', () => {
   it('returns only localhost targets that look like browser surfaces', async () => {
-    mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
-      cb(
-        null,
-        [
+    const listeningOutput = process.platform === 'win32'
+      ? [
+          '  TCP    0.0.0.0:5173    0.0.0.0:0    LISTENING    123',
+          '  TCP    127.0.0.1:5432  0.0.0.0:0    LISTENING    456',
+          '  TCP    127.0.0.1:5000  0.0.0.0:0    LISTENING    789',
+        ].join('\n')
+      : [
           'node 123 user 23u IPv6 0x01 TCP *:5173 (LISTEN)',
           'postgres 456 user 18u IPv4 0x02 TCP 127.0.0.1:5432 (LISTEN)',
           'ControlCe 789 user 18u IPv4 0x03 TCP 127.0.0.1:5000 (LISTEN)',
-        ].join('\n'),
-        '',
-      );
+        ].join('\n');
+
+    mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
+      cb(null, listeningOutput, '');
     });
     mockFetch.mockImplementation(async (url: string) => {
       if (url === 'http://localhost:5173/') {
@@ -118,8 +122,12 @@ describe('discoverLocalBrowserTargets', () => {
   });
 
   it('keeps redirecting localhost apps because they still open in the browser', async () => {
+    const listeningOutput = process.platform === 'win32'
+      ? '  TCP    0.0.0.0:3000    0.0.0.0:0    LISTENING    123\n'
+      : 'node 123 user 23u IPv6 0x01 TCP *:3000 (LISTEN)\n';
+
     mockExecFile.mockImplementation((_cmd, _args, _opts, cb) => {
-      cb(null, 'node 123 user 23u IPv6 0x01 TCP *:3000 (LISTEN)\n', '');
+      cb(null, listeningOutput, '');
     });
     mockFetch.mockResolvedValue(
       createResponse(302, {

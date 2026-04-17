@@ -11,6 +11,7 @@ vi.mock('os', () => ({
 }));
 
 import * as fs from 'fs';
+import path from 'node:path';
 import { getGeminiConfig } from './gemini-config';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -174,13 +175,13 @@ describe('getGeminiConfig', () => {
         name: 'SharedSkill',
         description: 'User version',
         scope: 'user',
-        filePath: '/mock/home/.gemini/skills/shared/SKILL.md',
+        filePath: path.join('/mock/home', '.gemini', 'skills', 'shared', 'SKILL.md'),
       },
       {
         name: 'ProjectOnly',
         description: 'Project only',
         scope: 'project',
-        filePath: '/project/.gemini/skills/project-only/SKILL.md',
+        filePath: path.join('/project', '.gemini', 'skills', 'project-only', 'SKILL.md'),
       },
     ]);
   });

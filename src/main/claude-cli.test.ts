@@ -381,6 +381,7 @@ describe('installHooks', () => {
     // installHooks writes settings once, then creates the statusline helper pair,
     // then writes settings again with the managed command.
     expect(mockWriteFileSync).toHaveBeenCalledTimes(4);
+    const statusLineScriptName = process.platform === 'win32' ? 'statusline.cmd' : 'statusline.sh';
 
     // First write contains hooks
     const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]));
@@ -391,13 +392,13 @@ describe('installHooks', () => {
     expect(written.hooks.SessionStart).toBeDefined();
 
     expect(String(mockWriteFileSync.mock.calls[1][0])).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.py'));
-    expect(String(mockWriteFileSync.mock.calls[2][0])).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.sh'));
+    expect(String(mockWriteFileSync.mock.calls[2][0])).toBe(path.join('/mock/home', '.calder', 'runtime', statusLineScriptName));
 
     // Fourth write adds statusLine to Claude settings
     const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[3][1]));
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
-    expect(withStatusLine.statusLine.command).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.sh'));
+    expect(withStatusLine.statusLine.command).toBe(path.join('/mock/home', '.calder', 'runtime', statusLineScriptName));
   });
 
   it('preserves existing non-calder hooks', () => {

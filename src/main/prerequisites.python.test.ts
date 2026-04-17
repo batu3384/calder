@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import path from 'node:path';
 
 async function loadPrerequisitesModule(isWindows: boolean) {
   vi.resetModules();
@@ -57,7 +58,7 @@ describe('checkPythonAvailable (Windows-specific behavior)', () => {
 describe('validatePrerequisites (Windows candidate probing)', () => {
   it('detects claude.cmd in the Windows npm directory', async () => {
     const { validatePrerequisites, mockExistsSync } = await loadPrerequisitesModule(true);
-    const expected = '/mock/home/AppData/Roaming/npm/claude.cmd';
+    const expected = path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'claude.cmd');
 
     mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === expected);
 

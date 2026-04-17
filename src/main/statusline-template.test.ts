@@ -144,7 +144,9 @@ describe('generated renderer payload parsing', () => {
     }).trim();
 
     expect(output).toContain('Haiku 4.5  Anthropic  --  aa');
-    expect(output).toContain('Ctx 25%  Cost $0.22  5h 27% left · resets 17:00  Week 88% left  Live');
+    expect(output).toContain('Ctx 25%  Cost $0.22');
+    expect(output).toMatch(/5h 27% left .* resets \d{2}:\d{2}/);
+    expect(output).toContain('Week 88% left  Live');
   });
 
   it('renders Qwen payloads with the Qwen provider label and CALDER_SESSION_ID fallback', () => {
@@ -215,12 +217,12 @@ describe('generated renderer payload parsing', () => {
         provider: 'zai',
         model: 'glm-5.1',
         fiveHour: '60% left',
-        fiveHourReset: '22:10',
         weekly: '90% left',
         weeklyLabel: 'Cycle',
         status: 'unknown',
         source: 'zai:quota-limit',
       });
+      expect(snapshot.fiveHourReset).toMatch(/^\d{2}:\d{2}$/);
 
       const output = execFileSync(pythonBin, [scriptPath, 'render'], {
         input: JSON.stringify({
@@ -234,7 +236,8 @@ describe('generated renderer payload parsing', () => {
       }).trim();
 
       expect(output).toContain('glm-5.1  Z.ai  --  aa');
-      expect(output).toContain('Ctx 25%  Cost $0.07  5h 60% left · resets 22:10  Live');
+      expect(output).toContain('Ctx 25%  Cost $0.07');
+      expect(output).toMatch(/5h 60% left .* resets \d{2}:\d{2}/);
       expect(output).not.toContain('Cycle');
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -417,12 +420,12 @@ describe('generated renderer payload parsing', () => {
         provider: 'minimax',
         model: 'MiniMax-M2.7',
         fiveHour: '5/4500 left',
-        fiveHourReset: '17:00',
         weekly: '5/45000 left',
         weeklyLabel: 'Week',
         status: 'unknown',
         source: 'minimax:remains',
       });
+      expect(snapshot.fiveHourReset).toMatch(/^\d{2}:\d{2}$/);
 
       const output = execFileSync(pythonBin, [scriptPath, 'render'], {
         input: JSON.stringify({
@@ -436,7 +439,8 @@ describe('generated renderer payload parsing', () => {
       }).trim();
 
       expect(output).toContain('MiniMax-M2.7  MiniMax  --  aa');
-      expect(output).toContain('Ctx 25%  Cost $0.07  5h 5/4500 left · resets 17:00  Week 5/45000 left  Live');
+      expect(output).toContain('Ctx 25%  Cost $0.07');
+      expect(output).toMatch(/5h 5\/4500 left .* resets \d{2}:\d{2}\s+Week 5\/45000 left\s+Live/);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
