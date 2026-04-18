@@ -6,9 +6,12 @@ import { onChange as onStatusChange, getStatus, type SessionStatus } from '../se
 import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshGitStatus } from '../git-status.js';
 
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
-import { showShareDialog } from './share-dialog.js';
+import {
+  buildShareDialogMobilePresence,
+  showShareDialog,
+} from './share-dialog.js';
 import { showJoinDialog } from './join-dialog.js';
-import { isSharing } from '../sharing/peer-host.js';
+import { isSharing, isConnected } from '../sharing/peer-host.js';
 import { endShare, onShareChange } from '../sharing/share-manager.js';
 import { openInspector, isInspectorOpen, getInspectedSessionId, closeInspector } from './session-inspector.js';
 import {
@@ -42,6 +45,7 @@ const gitStatusEl = document.getElementById('git-status')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
 const btnMobileControl = document.getElementById('btn-mobile-control') as HTMLButtonElement | null;
+const mobileControlPresenceEl = document.getElementById('mobile-control-presence') as HTMLSpanElement | null;
 const tabActionsEl = document.getElementById('tab-actions')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
@@ -113,35 +117,116 @@ function getActiveCliSession(project: ProjectRecord): SessionRecord | null {
   return isCliSession ? activeSession : null;
 }
 
+function getPreferredCliSession(project: ProjectRecord): SessionRecord | null {
+  const cliSessions = project.sessions.filter((session) => !session.type || session.type === 'claude');
+  const connectedSession = cliSessions.find((session) => isConnected(session.id));
+  if (connectedSession) return connectedSession;
+
+  const sharingSession = cliSessions.find((session) => isSharing(session.id));
+  if (sharingSession) return sharingSession;
+
+  const activeCliSession = getActiveCliSession(project);
+  if (activeCliSession) return activeCliSession;
+  return cliSessions[0] ?? null;
+}
+
 function syncMobileControlButton(): void {
   if (!btnMobileControl) return;
+  const language = appState.preferences.language === 'tr' ? 'tr' : 'en';
+  const uiCopy = language === 'tr'
+    ? {
+        selectCliSessionHint: 'Güvenli devri etkinleştirmek için bir CLI oturum sekmesi seçin',
+        openSecureHandoffFor: (sessionName: string) => `"${sessionName}" için güvenli devir panelini aç`,
+        openPanelSuffix: 'Paneli aç.',
+      }
+    : {
+        selectCliSessionHint: 'Select a CLI session tab to enable secure handoff',
+        openSecureHandoffFor: (sessionName: string) => `Open secure handoff panel for "${sessionName}"`,
+        openPanelSuffix: 'Open panel.',
+      };
   const project = appState.activeProject;
   if (!project) {
     btnMobileControl.hidden = true;
     btnMobileControl.disabled = true;
+    btnMobileControl.classList.remove('is-sharing', 'is-connected');
+    btnMobileControl.removeAttribute('data-connection-state');
+    if (mobileControlPresenceEl) {
+      mobileControlPresenceEl.hidden = true;
+      mobileControlPresenceEl.textContent = '';
+      mobileControlPresenceEl.removeAttribute('data-connection-state');
+      mobileControlPresenceEl.removeAttribute('title');
+    }
     return;
   }
 
-  const activeCliSession = getActiveCliSession(project);
+  const targetCliSession = getPreferredCliSession(project);
   btnMobileControl.hidden = false;
-  if (!activeCliSession) {
+  if (!targetCliSession) {
     btnMobileControl.disabled = true;
-    btnMobileControl.textContent = 'Handoff';
-    btnMobileControl.title = 'Select a CLI session tab to enable secure handoff';
-    btnMobileControl.setAttribute('aria-label', 'Select a CLI session tab to enable secure handoff');
+    btnMobileControl.classList.remove('is-sharing', 'is-connected');
+    btnMobileControl.removeAttribute('data-connection-state');
+    btnMobileControl.setAttribute('aria-pressed', 'false');
+    btnMobileControl.title = uiCopy.selectCliSessionHint;
+    btnMobileControl.setAttribute('aria-label', uiCopy.selectCliSessionHint);
+    if (mobileControlPresenceEl) {
+      mobileControlPresenceEl.hidden = true;
+      mobileControlPresenceEl.textContent = '';
+      mobileControlPresenceEl.removeAttribute('data-connection-state');
+      mobileControlPresenceEl.removeAttribute('title');
+    }
     return;
   }
 
-  const sharing = isSharing(activeCliSession.id);
+  const sharing = isSharing(targetCliSession.id);
+  const connected = sharing && isConnected(targetCliSession.id);
+  const presence = buildShareDialogMobilePresence({
+    sessionId: targetCliSession.id,
+    language: appState.preferences.language,
+    resolveSessionName: (sessionId, fallbackSessionId) =>
+      project.sessions.find((session) => session.id === sessionId)?.name ?? fallbackSessionId,
+    nowMs: Date.now(),
+  });
   btnMobileControl.disabled = false;
-  btnMobileControl.textContent = sharing ? 'Handoff On' : 'Handoff';
-  btnMobileControl.title = sharing
-    ? 'Stop secure handoff for this session'
-    : 'Open secure handoff for this session';
+  btnMobileControl.classList.toggle('is-sharing', sharing);
+  btnMobileControl.classList.toggle('is-connected', connected);
+  btnMobileControl.dataset.connectionState = connected ? 'connected' : sharing ? 'waiting' : 'idle';
+  btnMobileControl.setAttribute('aria-pressed', sharing ? 'true' : 'false');
+  const connectedTitle = presence.metaText
+    ? `${presence.summaryText} · ${presence.metaText} ${uiCopy.openPanelSuffix}`
+    : `${presence.summaryText} ${uiCopy.openPanelSuffix}`;
+  const waitingTitle = presence.metaText
+    ? `${presence.summaryText} · ${presence.metaText} ${uiCopy.openPanelSuffix}`
+    : `${presence.summaryText} ${uiCopy.openPanelSuffix}`;
+  const idleTitle = `${presence.summaryText} · ${uiCopy.openSecureHandoffFor(targetCliSession.name)}`;
+  btnMobileControl.title = connected
+    ? connectedTitle
+    : sharing
+      ? waitingTitle
+      : idleTitle;
   btnMobileControl.setAttribute(
     'aria-label',
-    sharing ? 'Stop secure handoff for this session' : 'Open secure handoff for this session',
+    connected
+      ? connectedTitle
+      : sharing
+        ? waitingTitle
+        : idleTitle,
   );
+
+  if (mobileControlPresenceEl) {
+    if (!sharing) {
+      mobileControlPresenceEl.hidden = true;
+      mobileControlPresenceEl.textContent = '';
+      mobileControlPresenceEl.removeAttribute('data-connection-state');
+      mobileControlPresenceEl.removeAttribute('title');
+    } else {
+      mobileControlPresenceEl.hidden = false;
+      mobileControlPresenceEl.dataset.connectionState = connected ? 'connected' : 'waiting';
+      mobileControlPresenceEl.textContent = presence.stateLabel;
+      mobileControlPresenceEl.title = connected
+        ? connectedTitle
+        : waitingTitle;
+    }
+  }
 }
 
 export function initTabBar(): void {
@@ -173,13 +258,9 @@ export function initTabBar(): void {
   btnMobileControl?.addEventListener('click', () => {
     const project = appState.activeProject;
     if (!project) return;
-    const activeCliSession = getActiveCliSession(project);
-    if (!activeCliSession) return;
-    if (isSharing(activeCliSession.id)) {
-      endShare(activeCliSession.id);
-    } else {
-      showShareDialog(activeCliSession.id);
-    }
+    const targetCliSession = getPreferredCliSession(project);
+    if (!targetCliSession) return;
+    showShareDialog(targetCliSession.id);
     syncMobileControlButton();
   });
   btnAddSession.addEventListener('contextmenu', (e) => {
@@ -294,6 +375,8 @@ function createDefaultProjectSurface(): ProjectSurfaceRecord {
     kind: 'web',
     active: false,
     tabFocus: 'session',
+    tabPlacement: 'end',
+    tabOrder: ['cli', 'mobile'],
     web: { history: [] },
     cli: { profiles: [], runtime: { status: 'idle' } },
   };
@@ -1272,9 +1355,9 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   shareSeparator.className = 'tab-context-menu-separator';
 
   const shareItem = document.createElement('div');
-  shareItem.className = 'tab-context-menu-item' + (!isCliSession || currentlySharing ? ' disabled' : '');
-  shareItem.textContent = 'Share Session\u2026';
-  if (isCliSession && !currentlySharing) {
+  shareItem.className = 'tab-context-menu-item' + (!isCliSession ? ' disabled' : '');
+  shareItem.textContent = currentlySharing ? 'Manage Sharing\u2026' : 'Share Session\u2026';
+  if (isCliSession) {
     shareItem.addEventListener('click', (e) => {
       e.stopPropagation();
       hideTabContextMenu();
@@ -1283,9 +1366,9 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   }
 
   const mobileShareItem = document.createElement('div');
-  mobileShareItem.className = 'tab-context-menu-item' + (!isCliSession || currentlySharing ? ' disabled' : '');
+  mobileShareItem.className = 'tab-context-menu-item' + (!isCliSession ? ' disabled' : '');
   mobileShareItem.textContent = 'Mobile Control\u2026';
-  if (isCliSession && !currentlySharing) {
+  if (isCliSession) {
     mobileShareItem.addEventListener('click', (e) => {
       e.stopPropagation();
       hideTabContextMenu();
@@ -1430,8 +1513,19 @@ function render(): void {
     renderGitStatus();
     return;
   }
-  const cliSurfaceTabActive = project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli';
-  const mobileSurfaceTabActive = project.surface?.active && project.surface.kind === 'mobile' && project.surface.tabFocus === 'mobile';
+  const surfaceState = getProjectSurface(project);
+  const cliSurfaceTabActive = surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli';
+  const mobileSurfaceTabActive = surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile';
+  const surfaceTabPlacement = surfaceState.tabPlacement === 'start' ? 'start' : 'end';
+  const surfaceTabOrder = Array.isArray(surfaceState.tabOrder)
+    && surfaceState.tabOrder.length === 2
+    && surfaceState.tabOrder.includes('cli')
+    && surfaceState.tabOrder.includes('mobile')
+    ? surfaceState.tabOrder
+    : ['cli', 'mobile'];
+
+  const sessionTabNodes: HTMLElement[] = [];
+  const surfaceTabNodes: HTMLElement[] = [];
 
   for (const session of project.sessions) {
     const tab = document.createElement('div');
@@ -1471,7 +1565,13 @@ function render(): void {
     tab.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).classList.contains('tab-close')) return;
       if (tab.querySelector('.tab-name input')) return;
-      if (session.id !== project.activeSessionId) {
+      const shouldReturnSurfaceFocusToSession = session.id === project.activeSessionId
+        && Boolean(project.surface?.active)
+        && (
+          (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli')
+          || (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
+        );
+      if (session.id !== project.activeSessionId || shouldReturnSurfaceFocusToSession) {
         appState.setActiveSession(project.id, session.id);
       }
     });
@@ -1534,6 +1634,17 @@ function render(): void {
 
         const rect = tab.getBoundingClientRect();
         const midX = rect.left + rect.width / 2;
+        if (draggedId.startsWith('__surface:')) {
+          const desiredPlacement = e.clientX < midX ? 'start' : 'end';
+          const currentSurface = getProjectSurface(project);
+          if ((currentSurface.tabPlacement ?? 'end') !== desiredPlacement) {
+            updateProjectSurface(project, {
+              ...currentSurface,
+              tabPlacement: desiredPlacement,
+            });
+          }
+          return;
+        }
         let targetIndex = project.sessions.findIndex(s => s.id === session.id);
         if (e.clientX >= midX) targetIndex++;
 
@@ -1553,71 +1664,170 @@ function render(): void {
       });
     }
 
-    tabListEl.appendChild(tab);
+    sessionTabNodes.push(tab);
   }
 
-  if (project.surface?.active && project.surface.kind === 'cli') {
+  const createSurfaceTab = (
+    kind: 'cli' | 'mobile',
+    options: {
+      active: boolean;
+      title: string;
+      badgeMarkup: string;
+      label: string;
+      onFocus: () => void;
+      onClose: () => void;
+    },
+  ): HTMLElement => {
     const tab = document.createElement('div');
-    tab.className = 'tab-item tab-surface-item' + (cliSurfaceTabActive ? ' active' : '');
-    tab.dataset.surfaceTab = 'cli';
-    tab.title = buildCliSurfaceTabTitle(project);
+    tab.className = 'tab-item tab-surface-item' + (options.active ? ' active' : '');
+    tab.dataset.surfaceTab = kind;
+    tab.title = options.title;
+    const reorderHandle = project.sessions.length > 0
+      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
+      : '';
     tab.innerHTML = `
+      ${reorderHandle}
       <span class="tab-name">
-        <span class="tab-name-prefix"><span class="tab-cli-surface-badge">CLI</span></span>
-        <span class="tab-name-label">CLI Surface</span>
+        <span class="tab-name-prefix">${options.badgeMarkup}</span>
+        <span class="tab-name-label">${options.label}</span>
       </span>
-      <span class="tab-close" title="Close CLI surface">&times;</span>
+      <span class="tab-close" title="Close ${options.label}">&times;</span>
     `;
 
     tab.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).classList.contains('tab-close')) return;
-      appState.focusCliSurfaceTab(project.id);
+      options.onFocus();
     });
 
     tab.addEventListener('auxclick', (e) => {
       if (e.button === 1) {
         e.preventDefault();
-        appState.closeCliSurface(project.id);
+        options.onClose();
       }
     });
 
     tab.querySelector('.tab-close')!.addEventListener('click', () => {
-      appState.closeCliSurface(project.id);
+      options.onClose();
     });
 
-    tabListEl.appendChild(tab);
+    const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;
+    if (reorderHandleEl) {
+      reorderHandleEl.draggable = true;
+      reorderHandleEl.addEventListener('dragstart', (e) => {
+        e.dataTransfer!.effectAllowed = 'move';
+        e.dataTransfer!.setData('text/plain', `__surface:${kind}`);
+        tab.classList.add('dragging');
+      });
+
+      tab.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer!.dropEffect = 'move';
+        const rect = tab.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+        if (e.clientX < midX) {
+          tab.classList.add('drag-over-left');
+        } else {
+          tab.classList.add('drag-over-right');
+        }
+      });
+
+      tab.addEventListener('dragleave', () => {
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+      });
+
+      tab.addEventListener('drop', (e) => {
+        e.preventDefault();
+        tab.classList.remove('drag-over-left', 'drag-over-right');
+        const draggedId = e.dataTransfer!.getData('text/plain');
+        if (!draggedId) return;
+
+        const rect = tab.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        const currentSurface = getProjectSurface(project);
+
+        if (draggedId.startsWith('__surface:')) {
+          const draggedKind = draggedId.replace('__surface:', '') as 'cli' | 'mobile';
+          if (draggedKind === kind) return;
+          const baseOrder = Array.isArray(currentSurface.tabOrder)
+            && currentSurface.tabOrder.length === 2
+            && currentSurface.tabOrder.includes('cli')
+            && currentSurface.tabOrder.includes('mobile')
+            ? [...currentSurface.tabOrder]
+            : ['cli', 'mobile'];
+          const filtered = baseOrder.filter((entry) => entry !== draggedKind);
+          const targetIndex = filtered.indexOf(kind);
+          const insertIndex = e.clientX < midX ? targetIndex : targetIndex + 1;
+          filtered.splice(Math.max(0, insertIndex), 0, draggedKind);
+          updateProjectSurface(project, {
+            ...currentSurface,
+            tabOrder: filtered,
+          });
+          return;
+        }
+
+        const desiredPlacement = e.clientX < midX ? 'start' : 'end';
+        if ((currentSurface.tabPlacement ?? 'end') !== desiredPlacement) {
+          updateProjectSurface(project, {
+            ...currentSurface,
+            tabPlacement: desiredPlacement,
+          });
+        }
+      });
+
+      reorderHandleEl.addEventListener('dragend', () => {
+        tab.classList.remove('dragging');
+        tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach(el => {
+          el.classList.remove('drag-over-left', 'drag-over-right');
+        });
+      });
+    }
+
+    return tab;
+  };
+
+  const surfaceTabFactories: Record<'cli' | 'mobile', () => HTMLElement | null> = {
+    cli: () => {
+      if (!(project.surface?.active && project.surface.kind === 'cli')) return null;
+      return createSurfaceTab('cli', {
+        active: cliSurfaceTabActive,
+        title: buildCliSurfaceTabTitle(project),
+        badgeMarkup: '<span class="tab-cli-surface-badge">CLI</span>',
+        label: 'CLI Surface',
+        onFocus: () => appState.focusCliSurfaceTab(project.id),
+        onClose: () => appState.closeCliSurface(project.id),
+      });
+    },
+    mobile: () => {
+      if (!(project.surface?.active && project.surface.kind === 'mobile')) return null;
+      return createSurfaceTab('mobile', {
+        active: mobileSurfaceTabActive,
+        title: 'Mobile Surface',
+        badgeMarkup: '<span class="tab-browser-badge">MOB</span>',
+        label: 'Mobile Surface',
+        onFocus: () => appState.focusMobileSurfaceTab(project.id),
+        onClose: () => appState.closeMobileSurface(project.id),
+      });
+    },
+  };
+
+  for (const kind of surfaceTabOrder) {
+    const next = surfaceTabFactories[kind]();
+    if (next) surfaceTabNodes.push(next);
   }
 
-  if (project.surface?.active && project.surface.kind === 'mobile') {
-    const tab = document.createElement('div');
-    tab.className = 'tab-item tab-surface-item' + (mobileSurfaceTabActive ? ' active' : '');
-    tab.dataset.surfaceTab = 'mobile';
-    tab.title = 'Mobile Surface';
-    tab.innerHTML = `
-      <span class="tab-name">
-        <span class="tab-name-prefix"><span class="tab-browser-badge">MOB</span></span>
-        <span class="tab-name-label">Mobile Surface</span>
-      </span>
-      <span class="tab-close" title="Close Mobile surface">&times;</span>
-    `;
+  const appendTabs = (nodes: HTMLElement[]): void => {
+    for (const node of nodes) {
+      tabListEl.appendChild(node);
+    }
+  };
 
-    tab.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).classList.contains('tab-close')) return;
-      appState.focusMobileSurfaceTab(project.id);
-    });
-
-    tab.addEventListener('auxclick', (e) => {
-      if (e.button === 1) {
-        e.preventDefault();
-        appState.closeMobileSurface(project.id);
-      }
-    });
-
-    tab.querySelector('.tab-close')!.addEventListener('click', () => {
-      appState.closeMobileSurface(project.id);
-    });
-
-    tabListEl.appendChild(tab);
+  if (surfaceTabPlacement === 'start') {
+    appendTabs(surfaceTabNodes);
+    appendTabs(sessionTabNodes);
+  } else {
+    appendTabs(sessionTabNodes);
+    appendTabs(surfaceTabNodes);
   }
 
   ensureActiveTabVisible([

@@ -1,16 +1,19 @@
 import * as http from 'node:http';
 import * as os from 'node:os';
-import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, pbkdf2Sync, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import type { ShareMode, ShareRtcConfig } from '../shared/sharing-types';
+import type { ShareConnectionDescription } from '../shared/types';
 import { resolveShareRtcConfigFromEnv } from './share-rtc-config';
 
 type PairingStatus = 'pending' | 'ready' | 'expired';
+type MobileUiLanguage = 'en' | 'tr';
 
 interface PairingRecord {
   id: string;
   sessionId: string;
   offer: string;
+  offerDescription: ShareConnectionDescription | null;
   passphrase: string;
   mode: ShareMode;
   accessMode: 'lan' | 'remote';
@@ -20,6 +23,8 @@ interface PairingRecord {
   otpVerified: boolean;
   submitToken: string | null;
   answer: string | null;
+  answerConsumed: boolean;
+  language: MobileUiLanguage;
   rtcConfig: Pick<ShareRtcConfig, 'iceServers' | 'iceTransportPolicy'>;
   createdAtMs: number;
   expiresAtMs: number;
@@ -29,14 +34,17 @@ interface MobileBridgeState {
   server: http.Server;
   port: number;
   host: string;
+  hosts: string[];
   cleanupTimer: NodeJS.Timeout;
 }
 
 export interface MobileControlPairingOptions {
   sessionId: string;
   offer: string;
+  offerDescription?: ShareConnectionDescription;
   passphrase: string;
   mode: ShareMode;
+  language?: MobileUiLanguage;
   ttlMs?: number;
 }
 
@@ -44,6 +52,7 @@ export interface MobileControlPairingResult {
   pairingId: string;
   pairingUrl: string;
   localPairingUrl: string;
+  localPairingUrls: string[];
   accessMode: 'lan' | 'remote';
   otpCode: string;
   expiresAt: string;
@@ -61,6 +70,400 @@ const CLEANUP_INTERVAL_MS = 30_000;
 const RATE_LIMIT_WINDOW_MS = 10_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
 const RATE_LIMIT_BLOCK_MS = 20_000;
+const SHARE_PBKDF2_ITERATIONS = 100_000;
+const SHARE_SALT_LENGTH = 16;
+const SHARE_IV_LENGTH = 12;
+const SHARE_AES_KEY_BYTES = 32;
+const SHARE_CHALLENGE_SALT = Buffer.from('calder-challenge-v1', 'utf8');
+
+type MobilePageCopy = {
+  language: MobileUiLanguage;
+  title: string;
+  heroKicker: string;
+  heading: string;
+  heroBody: string;
+  otpPlaceholder: string;
+  verifyConnect: string;
+  otpMeta: string;
+  otpHelper: string;
+  waitingOtp: string;
+  modePending: string;
+  stateIdle: string;
+  connectionFlowLabel: string;
+  stageVerify: string;
+  stageStream: string;
+  stageControl: string;
+  waitingForSessions: string;
+  sessionSelectorLabel: string;
+  switchButton: string;
+  sessionRoutingUnavailable: string;
+  mobileViewsLabel: string;
+  terminalTab: string;
+  controlsTab: string;
+  clearButton: string;
+  copyButton: string;
+  followOnButton: string;
+  followOffButton: string;
+  commandDeck: string;
+  showShortcutsButton: string;
+  hideShortcutsButton: string;
+  shortcutsHiddenUntilNeeded: string;
+  shortcutsHiddenUntilReady: string;
+  readonlyHint: string;
+  repeatInputHint: string;
+  commandInputPlaceholder: string;
+  prevButton: string;
+  nextButton: string;
+  sendButton: string;
+  suggestedCommandsLabel: string;
+  quickControlsLabel: string;
+  quickControlsTitle: string;
+  browserControlDeckTitle: string;
+  browserSessionSelectorLabel: string;
+  browserNoSessionsAvailable: string;
+  browserStatusWaiting: string;
+  browserStatusReadonly: string;
+  browserStatusReadyTemplate: string;
+  browserBackButton: string;
+  browserForwardButton: string;
+  browserReloadButton: string;
+  browserInspectButton: string;
+  browserResponsiveButton: string;
+  browserPhoneButton: string;
+  browserInspectSelectionNone: string;
+  browserInspectSelectionTemplate: string;
+  browserInspectInputPlaceholder: string;
+  browserInspectSendButton: string;
+  browserInspectInstructionRequired: string;
+  browserInspectNeedSelection: string;
+  browserInspectSubmitting: string;
+  browserInspectSucceeded: string;
+  browserInspectFailedTemplate: string;
+  browserControlApplying: string;
+  browserControlSucceededTemplate: string;
+  browserControlFailedTemplate: string;
+  modePrefix: string;
+  statePrefix: string;
+  modeReadonly: string;
+  modeReadwrite: string;
+  mobileTerminalCleared: string;
+  nothingToCopyYet: string;
+  clipboardApiUnavailable: string;
+  terminalCopied: string;
+  terminalCopyFailed: string;
+  switchingSession: string;
+  noShareableSessions: string;
+  activeSessionTemplate: string;
+  chooseSessionAndSwitch: string;
+  noSessionsAvailable: string;
+  switchedToTemplate: string;
+  switchFailedTemplate: string;
+  unknownReason: string;
+  connectedLiveStream: string;
+  channelOpenWaitingAuth: string;
+  connectionClosed: string;
+  authFailedTemplate: string;
+  hostEndedSession: string;
+  answerDelivered: string;
+  missingPairingToken: string;
+  enterOtpPrompt: string;
+  verifyingOtp: string;
+  connectionFailed: string;
+  couldNotDecodeConnectionCode: string;
+  connectionCodeTooShort: string;
+  wrongPassphraseOrInvalidCode: string;
+  malformedConnectionPayload: string;
+  missingConnectionFields: string;
+  connectionTypeMismatch: string;
+  serverMessage: {
+    pairingExpired: string;
+    tooManyPairingAttempts: string;
+    requestBodyTooLarge: string;
+    invalidJsonPayload: string;
+    pairingTokenInvalid: string;
+    tooManyOtpAttempts: string;
+    otpMismatch: string;
+    tooManyAnswerSubmissions: string;
+    tooManyChallengeRequests: string;
+    otpRequiredFirst: string;
+    answerAlreadySubmitted: string;
+    submitTokenInvalid: string;
+    missingAnswerPayload: string;
+    invalidAnswerPayload: string;
+    missingChallengePayload: string;
+    invalidChallengePayload: string;
+    pairingNotFound: string;
+    invalidPairingTokenPage: string;
+    routeNotFound: string;
+  };
+};
+
+const MOBILE_PAGE_COPY: Record<MobileUiLanguage, MobilePageCopy> = {
+  en: {
+    language: 'en',
+    title: 'Calder Mobile Control',
+    heroKicker: 'Secure Mobile Bridge',
+    heading: 'Calder Mobile Control',
+    heroBody: 'Enter the one-time code from desktop to unlock your live terminal stream and controls.',
+    otpPlaceholder: '000000',
+    verifyConnect: 'Verify & Connect',
+    otpMeta: 'Pairing expires automatically and can be used only once.',
+    otpHelper: 'Use the 6-digit OTP shown under the desktop QR. Do not enter the manual passphrase here.',
+    waitingOtp: 'Waiting for OTP…',
+    modePending: 'Mode: pending',
+    stateIdle: 'State: idle',
+    connectionFlowLabel: 'Connection flow',
+    stageVerify: '1 Verify',
+    stageStream: '2 Stream',
+    stageControl: '3 Control',
+    waitingForSessions: 'Waiting for sessions…',
+    sessionSelectorLabel: 'Session selector',
+    switchButton: 'Switch',
+    sessionRoutingUnavailable: 'Session routing is unavailable until secure connection is ready.',
+    mobileViewsLabel: 'Mobile views',
+    terminalTab: 'Terminal',
+    controlsTab: 'Controls',
+    clearButton: 'Clear',
+    copyButton: 'Copy',
+    followOnButton: 'Follow On',
+    followOffButton: 'Follow Off',
+    commandDeck: 'Command deck',
+    showShortcutsButton: 'Show shortcuts',
+    hideShortcutsButton: 'Hide shortcuts',
+    shortcutsHiddenUntilNeeded: 'Shortcuts stay hidden until you need them.',
+    shortcutsHiddenUntilReady: 'Shortcuts stay hidden until secure connection is ready.',
+    readonlyHint: 'Read-only mode is active. You can watch terminal output but cannot send commands.',
+    repeatInputHint: 'Tap and hold arrows/backspace for repeat input.',
+    commandInputPlaceholder: 'Type a command and press Enter',
+    prevButton: 'Prev',
+    nextButton: 'Next',
+    sendButton: 'Send',
+    suggestedCommandsLabel: 'Suggested commands',
+    quickControlsLabel: 'Quick controls',
+    quickControlsTitle: 'Quick controls',
+    browserControlDeckTitle: 'Browser controls',
+    browserSessionSelectorLabel: 'Browser session',
+    browserNoSessionsAvailable: 'No browser sessions available',
+    browserStatusWaiting: 'Waiting for browser session catalog…',
+    browserStatusReadonly: 'Browser controls require read-write mode.',
+    browserStatusReadyTemplate: 'Active browser: {name}',
+    browserBackButton: 'Back',
+    browserForwardButton: 'Forward',
+    browserReloadButton: 'Reload',
+    browserInspectButton: 'Inspect',
+    browserResponsiveButton: 'Responsive',
+    browserPhoneButton: 'iPhone 14',
+    browserInspectSelectionNone: 'No inspect selection yet. Enable inspect and tap an element.',
+    browserInspectSelectionTemplate: 'Selected element: {summary}',
+    browserInspectInputPlaceholder: 'Explain what to do with the selected element',
+    browserInspectSendButton: 'Send Inspect Prompt',
+    browserInspectInstructionRequired: 'Write an inspect instruction before sending.',
+    browserInspectNeedSelection: 'Select a browser element in inspect mode first.',
+    browserInspectSubmitting: 'Sending inspect prompt…',
+    browserInspectSucceeded: 'Inspect prompt delivered to active CLI session.',
+    browserInspectFailedTemplate: 'Inspect prompt failed: {reason}',
+    browserControlApplying: 'Applying browser action…',
+    browserControlSucceededTemplate: 'Browser action applied: {action}',
+    browserControlFailedTemplate: 'Browser action failed: {reason}',
+    modePrefix: 'Mode',
+    statePrefix: 'State',
+    modeReadonly: 'read-only',
+    modeReadwrite: 'read-write',
+    mobileTerminalCleared: 'Mobile terminal view cleared.',
+    nothingToCopyYet: 'Nothing to copy yet.',
+    clipboardApiUnavailable: 'Clipboard API is unavailable on this browser.',
+    terminalCopied: 'Terminal output copied to clipboard.',
+    terminalCopyFailed: 'Could not copy terminal output.',
+    switchingSession: 'Switching active session…',
+    noShareableSessions: 'No shareable terminal sessions are currently available.',
+    activeSessionTemplate: 'Active session: {name}',
+    chooseSessionAndSwitch: 'Choose a session and tap Switch.',
+    noSessionsAvailable: 'No sessions available',
+    switchedToTemplate: 'Switched to {name}.',
+    switchFailedTemplate: 'Could not switch session: {reason}',
+    unknownReason: 'Unknown reason.',
+    connectedLiveStream: 'Connected. Live stream active.',
+    channelOpenWaitingAuth: 'Channel open, waiting for host authentication challenge…',
+    connectionClosed: 'Connection closed.',
+    authFailedTemplate: 'Authentication failed: {reason}',
+    hostEndedSession: 'Host ended the shared session.',
+    answerDelivered: 'Answer delivered. Waiting for host confirmation…',
+    missingPairingToken: 'Missing pairing token.',
+    enterOtpPrompt: 'Enter the 6-digit one-time code from desktop.',
+    verifyingOtp: 'Verifying one-time code…',
+    connectionFailed: 'Connection failed.',
+    couldNotDecodeConnectionCode: 'Could not decode connection code.',
+    connectionCodeTooShort: 'Connection code is too short.',
+    wrongPassphraseOrInvalidCode: 'Secure handshake could not be verified. QR pairing may be stale or expired. Generate a new QR on desktop and try again.',
+    malformedConnectionPayload: 'Connection code payload is malformed.',
+    missingConnectionFields: 'Connection code is missing fields.',
+    connectionTypeMismatch: 'Connection code type mismatch.',
+    serverMessage: {
+      pairingExpired: 'Pairing expired.',
+      tooManyPairingAttempts: 'Too many pairing attempts. Please wait and try again.',
+      requestBodyTooLarge: 'Request body too large.',
+      invalidJsonPayload: 'Invalid JSON payload.',
+      pairingTokenInvalid: 'Pairing token is invalid.',
+      tooManyOtpAttempts: 'Too many OTP attempts.',
+      otpMismatch: 'One-time code mismatch.',
+      tooManyAnswerSubmissions: 'Too many answer submissions. Please wait and retry.',
+      tooManyChallengeRequests: 'Too many auth requests. Please wait and retry.',
+      otpRequiredFirst: 'OTP verification is required first.',
+      answerAlreadySubmitted: 'Answer has already been submitted for this pairing.',
+      submitTokenInvalid: 'Submit token is invalid.',
+      missingAnswerPayload: 'Missing answer payload.',
+      invalidAnswerPayload: 'Answer payload is invalid.',
+      missingChallengePayload: 'Missing auth challenge payload.',
+      invalidChallengePayload: 'Auth challenge payload is invalid.',
+      pairingNotFound: 'Pairing not found.',
+      invalidPairingTokenPage: 'Invalid pairing token.',
+      routeNotFound: 'Route not found.',
+    },
+  },
+  tr: {
+    language: 'tr',
+    title: 'Calder Mobil Kontrol',
+    heroKicker: 'Güvenli Mobil Köprü',
+    heading: 'Calder Mobil Kontrol',
+    heroBody: 'Canlı terminal akışını ve kontrolleri açmak için masaüstündeki tek kullanımlık kodu girin.',
+    otpPlaceholder: '000000',
+    verifyConnect: 'Doğrula ve Bağlan',
+    otpMeta: 'Eşleştirme otomatik olarak sona erer ve yalnızca bir kez kullanılabilir.',
+    otpHelper: 'Masaüstünde QR altında görünen 6 haneli OTP\'yi girin. Buraya manuel parola girmeyin.',
+    waitingOtp: 'OTP bekleniyor…',
+    modePending: 'Mod: bekleniyor',
+    stateIdle: 'Durum: boşta',
+    connectionFlowLabel: 'Bağlantı akışı',
+    stageVerify: '1 Doğrula',
+    stageStream: '2 Akış',
+    stageControl: '3 Kontrol',
+    waitingForSessions: 'Oturumlar bekleniyor…',
+    sessionSelectorLabel: 'Oturum seçici',
+    switchButton: 'Geç',
+    sessionRoutingUnavailable: 'Güvenli bağlantı hazır olana kadar oturum yönlendirme kullanılamaz.',
+    mobileViewsLabel: 'Mobil görünümler',
+    terminalTab: 'Terminal',
+    controlsTab: 'Kontroller',
+    clearButton: 'Temizle',
+    copyButton: 'Kopyala',
+    followOnButton: 'Takip Açık',
+    followOffButton: 'Takip Kapalı',
+    commandDeck: 'Komut paneli',
+    showShortcutsButton: 'Kısayolları göster',
+    hideShortcutsButton: 'Kısayolları gizle',
+    shortcutsHiddenUntilNeeded: 'İhtiyacınız olana kadar kısayollar gizli kalır.',
+    shortcutsHiddenUntilReady: 'Güvenli bağlantı hazır olana kadar kısayollar gizli kalır.',
+    readonlyHint: 'Salt okunur mod etkin. Terminal çıktısını izleyebilirsiniz ancak komut gönderemezsiniz.',
+    repeatInputHint: 'Tekrarlı giriş için ok/backspace tuşlarına basılı tutun.',
+    commandInputPlaceholder: 'Komut yazın ve Enter\'a basın',
+    prevButton: 'Önceki',
+    nextButton: 'Sonraki',
+    sendButton: 'Gönder',
+    suggestedCommandsLabel: 'Önerilen komutlar',
+    quickControlsLabel: 'Hızlı kontroller',
+    quickControlsTitle: 'Hızlı kontroller',
+    browserControlDeckTitle: 'Tarayıcı kontrolleri',
+    browserSessionSelectorLabel: 'Tarayıcı oturumu',
+    browserNoSessionsAvailable: 'Tarayıcı oturumu yok',
+    browserStatusWaiting: 'Tarayıcı oturum kataloğu bekleniyor…',
+    browserStatusReadonly: 'Tarayıcı kontrolleri için okuma-yazma modu gerekir.',
+    browserStatusReadyTemplate: 'Aktif tarayıcı: {name}',
+    browserBackButton: 'Geri',
+    browserForwardButton: 'İleri',
+    browserReloadButton: 'Yenile',
+    browserInspectButton: 'Inspect',
+    browserResponsiveButton: 'Responsive',
+    browserPhoneButton: 'iPhone 14',
+    browserInspectSelectionNone: 'Henüz inspect seçimi yok. Inspect modunu açıp bir elemana dokunun.',
+    browserInspectSelectionTemplate: 'Seçili element: {summary}',
+    browserInspectInputPlaceholder: 'Seçili element ile ne yapılacağını yazın',
+    browserInspectSendButton: 'Inspect Prompt Gönder',
+    browserInspectInstructionRequired: 'Göndermeden önce bir inspect talimatı yazın.',
+    browserInspectNeedSelection: 'Önce inspect modunda bir tarayıcı elementi seçin.',
+    browserInspectSubmitting: 'Inspect prompt gönderiliyor…',
+    browserInspectSucceeded: 'Inspect prompt aktif CLI oturumuna iletildi.',
+    browserInspectFailedTemplate: 'Inspect prompt başarısız: {reason}',
+    browserControlApplying: 'Tarayıcı aksiyonu uygulanıyor…',
+    browserControlSucceededTemplate: 'Tarayıcı aksiyonu uygulandı: {action}',
+    browserControlFailedTemplate: 'Tarayıcı aksiyonu başarısız: {reason}',
+    modePrefix: 'Mod',
+    statePrefix: 'Durum',
+    modeReadonly: 'salt okunur',
+    modeReadwrite: 'okuma-yazma',
+    mobileTerminalCleared: 'Mobil terminal görünümü temizlendi.',
+    nothingToCopyYet: 'Henüz kopyalanacak içerik yok.',
+    clipboardApiUnavailable: 'Bu tarayıcıda panoya kopyalama API\'si kullanılamıyor.',
+    terminalCopied: 'Terminal çıktısı panoya kopyalandı.',
+    terminalCopyFailed: 'Terminal çıktısı kopyalanamadı.',
+    switchingSession: 'Aktif oturuma geçiliyor…',
+    noShareableSessions: 'Şu anda paylaşılabilir terminal oturumu yok.',
+    activeSessionTemplate: 'Aktif oturum: {name}',
+    chooseSessionAndSwitch: 'Bir oturum seçin ve Geç\'e dokunun.',
+    noSessionsAvailable: 'Oturum yok',
+    switchedToTemplate: '{name} oturumuna geçildi.',
+    switchFailedTemplate: 'Oturum değiştirilemedi: {reason}',
+    unknownReason: 'Bilinmeyen neden.',
+    connectedLiveStream: 'Bağlandı. Canlı akış aktif.',
+    channelOpenWaitingAuth: 'Kanal açıldı, ana makine kimlik doğrulama isteği bekleniyor…',
+    connectionClosed: 'Bağlantı kapandı.',
+    authFailedTemplate: 'Kimlik doğrulama başarısız: {reason}',
+    hostEndedSession: 'Ana makine paylaşılan oturumu sonlandırdı.',
+    answerDelivered: 'Yanıt gönderildi. Ana makine onayı bekleniyor…',
+    missingPairingToken: 'Eşleştirme belirteci eksik.',
+    enterOtpPrompt: 'Masaüstündeki 6 haneli tek kullanımlık kodu girin.',
+    verifyingOtp: 'Tek kullanımlık kod doğrulanıyor…',
+    connectionFailed: 'Bağlantı başarısız.',
+    couldNotDecodeConnectionCode: 'Bağlantı kodu çözümlenemedi.',
+    connectionCodeTooShort: 'Bağlantı kodu çok kısa.',
+    wrongPassphraseOrInvalidCode: 'Güvenli el sıkışma doğrulanamadı. QR eşleştirmesi eski veya süresi dolmuş olabilir. Masaüstünde yeni QR üretip tekrar deneyin.',
+    malformedConnectionPayload: 'Bağlantı kodu verisi bozuk.',
+    missingConnectionFields: 'Bağlantı kodunda gerekli alanlar eksik.',
+    connectionTypeMismatch: 'Bağlantı kodu türü eşleşmiyor.',
+    serverMessage: {
+      pairingExpired: 'Eşleştirme süresi doldu.',
+      tooManyPairingAttempts: 'Çok fazla eşleştirme denemesi yapıldı. Lütfen bekleyip tekrar deneyin.',
+      requestBodyTooLarge: 'İstek gövdesi çok büyük.',
+      invalidJsonPayload: 'Geçersiz JSON verisi.',
+      pairingTokenInvalid: 'Eşleştirme belirteci geçersiz.',
+      tooManyOtpAttempts: 'Çok fazla OTP denemesi yapıldı.',
+      otpMismatch: 'Tek kullanımlık kod eşleşmedi.',
+      tooManyAnswerSubmissions: 'Çok fazla yanıt gönderimi yapıldı. Lütfen bekleyip tekrar deneyin.',
+      tooManyChallengeRequests: 'Çok fazla kimlik doğrulama isteği yapıldı. Lütfen bekleyip tekrar deneyin.',
+      otpRequiredFirst: 'Önce OTP doğrulaması gerekli.',
+      answerAlreadySubmitted: 'Bu eşleştirme için yanıt zaten gönderildi.',
+      submitTokenInvalid: 'Gönderim belirteci geçersiz.',
+      missingAnswerPayload: 'Yanıt verisi eksik.',
+      invalidAnswerPayload: 'Yanıt verisi geçersiz.',
+      missingChallengePayload: 'Kimlik doğrulama isteği verisi eksik.',
+      invalidChallengePayload: 'Kimlik doğrulama isteği verisi geçersiz.',
+      pairingNotFound: 'Eşleştirme bulunamadı.',
+      invalidPairingTokenPage: 'Geçersiz eşleştirme belirteci.',
+      routeNotFound: 'Rota bulunamadı.',
+    },
+  },
+};
+
+function normalizeMobileLanguage(input: unknown): MobileUiLanguage {
+  return input === 'tr' ? 'tr' : 'en';
+}
+
+function getMobileCopy(language: MobileUiLanguage): MobilePageCopy {
+  return MOBILE_PAGE_COPY[normalizeMobileLanguage(language)];
+}
+
+function getRequestLanguage(url: URL, req: http.IncomingMessage): MobileUiLanguage {
+  if (url.searchParams.get('lang') === 'tr') {
+    return 'tr';
+  }
+  const acceptLanguage = req.headers['accept-language'];
+  if (typeof acceptLanguage === 'string' && /\btr\b/i.test(acceptLanguage)) {
+    return 'tr';
+  }
+  if (Array.isArray(acceptLanguage) && acceptLanguage.some((value) => /\btr\b/i.test(value))) {
+    return 'tr';
+  }
+  return 'en';
+}
 
 let bridgeState: MobileBridgeState | null = null;
 const pairings = new Map<string, PairingRecord>();
@@ -103,26 +506,52 @@ function isPrivateIpv4(address: string): boolean {
   );
 }
 
-function pickLanHost(): string {
+function listLanHosts(): string[] {
   const nets = os.networkInterfaces();
   const preferred: string[] = [];
+  const secondary: string[] = [];
   const fallback: string[] = [];
+  const seen = new Set<string>();
 
-  for (const values of Object.values(nets)) {
+  const isProbablyLanInterface = (name: string): boolean => (
+    /^(en|eth|wlan|wifi|wl|lan)/i.test(name)
+    || /wi-?fi/i.test(name)
+  );
+  const isUsuallyVirtualInterface = (name: string): boolean => (
+    /^(lo|loopback|docker|veth|br-|bridge|vmnet|utun|tailscale|wg|awdl)/i.test(name)
+  );
+
+  for (const [interfaceName, values] of Object.entries(nets)) {
     if (!values) continue;
     for (const entry of values) {
       if (entry.family !== 'IPv4' || entry.internal) continue;
-      if (isPrivateIpv4(entry.address)) {
-        preferred.push(entry.address);
-      } else {
-        fallback.push(entry.address);
+      const address = entry.address;
+      if (!address || seen.has(address)) continue;
+      seen.add(address);
+
+      if (isPrivateIpv4(address)) {
+        if (isProbablyLanInterface(interfaceName)) {
+          preferred.push(address);
+        } else if (isUsuallyVirtualInterface(interfaceName)) {
+          fallback.push(address);
+        } else {
+          secondary.push(address);
+        }
       }
     }
   }
 
-  if (preferred.length > 0) return preferred[0];
-  if (fallback.length > 0) return fallback[0];
-  return '127.0.0.1';
+  const ordered = [...preferred, ...secondary, ...fallback];
+  if (ordered.length === 0) {
+    ordered.push('127.0.0.1');
+  } else if (!ordered.includes('127.0.0.1')) {
+    ordered.push('127.0.0.1');
+  }
+  return ordered;
+}
+
+function pickLanHost(): string {
+  return listLanHosts()[0] ?? '127.0.0.1';
 }
 
 function sendJson(res: http.ServerResponse, status: number, payload: unknown): void {
@@ -158,7 +587,7 @@ function readBody(req: http.IncomingMessage, maxBytes: number = MAX_BODY_BYTES):
   });
 }
 
-function getPairingFromPath(pathname: string, suffix: '/bootstrap' | '/answer'): PairingRecord | null {
+function getPairingFromPath(pathname: string, suffix: '/bootstrap' | '/answer' | '/challenge'): PairingRecord | null {
   const match = pathname.match(new RegExp(`^/api/pair/([a-f0-9]{24})${suffix}$`));
   if (!match) return null;
   return pairings.get(match[1]) ?? null;
@@ -188,7 +617,7 @@ function getRequestClientAddress(req: http.IncomingMessage): string {
 function isRateLimited(
   req: http.IncomingMessage,
   pairingId: string,
-  scope: 'bootstrap' | 'answer',
+  scope: 'bootstrap' | 'answer' | 'challenge',
 ): boolean {
   const now = Date.now();
   const key = `${scope}:${pairingId}:${getRequestClientAddress(req)}`;
@@ -224,6 +653,105 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+function normalizeShareConnectionDescription(value: unknown, expectedType: 'offer' | 'answer'): ShareConnectionDescription | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as { type?: unknown; sdp?: unknown };
+  if (candidate.type !== expectedType) return null;
+  if (typeof candidate.sdp !== 'string' || candidate.sdp.trim().length === 0) return null;
+  return {
+    type: expectedType,
+    sdp: candidate.sdp,
+  };
+}
+
+function normalizeSharePassphrase(passphrase: string): string {
+  return passphrase.trim().replace(/[\s-]+/g, '').toUpperCase();
+}
+
+function deriveShareKey(passphrase: string, salt: Uint8Array): Buffer {
+  return pbkdf2Sync(
+    Buffer.from(normalizeSharePassphrase(passphrase), 'utf8'),
+    salt,
+    SHARE_PBKDF2_ITERATIONS,
+    SHARE_AES_KEY_BYTES,
+    'sha256',
+  );
+}
+
+function encodeShareConnectionDescription(description: ShareConnectionDescription, passphrase: string): string {
+  const salt = randomBytes(SHARE_SALT_LENGTH);
+  const iv = randomBytes(SHARE_IV_LENGTH);
+  const key = deriveShareKey(passphrase, salt);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const plaintext = Buffer.from(JSON.stringify(description), 'utf8');
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final(), cipher.getAuthTag()]);
+  const packed = Buffer.concat([salt, iv, ciphertext]);
+  return packed.toString('base64');
+}
+
+function decodeShareConnectionCode(
+  encoded: string,
+  passphrase: string,
+  expectedType: 'offer' | 'answer',
+): ShareConnectionDescription {
+  let packed: Buffer;
+  try {
+    packed = Buffer.from(encoded, 'base64');
+  } catch {
+    throw new Error('invalid_base64');
+  }
+  if (packed.length <= SHARE_SALT_LENGTH + SHARE_IV_LENGTH + 16) {
+    throw new Error('payload_too_short');
+  }
+  const salt = packed.subarray(0, SHARE_SALT_LENGTH);
+  const iv = packed.subarray(SHARE_SALT_LENGTH, SHARE_SALT_LENGTH + SHARE_IV_LENGTH);
+  const encrypted = packed.subarray(SHARE_SALT_LENGTH + SHARE_IV_LENGTH);
+  if (encrypted.length <= 16) {
+    throw new Error('ciphertext_too_short');
+  }
+  const ciphertext = encrypted.subarray(0, encrypted.length - 16);
+  const authTag = encrypted.subarray(encrypted.length - 16);
+  const key = deriveShareKey(passphrase, salt);
+
+  let plaintext: Buffer;
+  try {
+    const decipher = createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  } catch {
+    throw new Error('decrypt_failed');
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(plaintext.toString('utf8'));
+  } catch {
+    throw new Error('json_failed');
+  }
+
+  const description = normalizeShareConnectionDescription(parsed, expectedType);
+  if (!description) {
+    throw new Error('invalid_description');
+  }
+  return description;
+}
+
+function isHexString(value: string): boolean {
+  return value.length > 0 && value.length % 2 === 0 && /^[0-9a-f]+$/i.test(value);
+}
+
+function computeShareChallengeResponse(challengeHex: string, passphrase: string): string {
+  const challenge = Buffer.from(challengeHex, 'hex');
+  const hmacKey = pbkdf2Sync(
+    Buffer.from(normalizeSharePassphrase(passphrase), 'utf8'),
+    SHARE_CHALLENGE_SALT,
+    SHARE_PBKDF2_ITERATIONS,
+    SHARE_AES_KEY_BYTES,
+    'sha256',
+  );
+  return createHmac('sha256', hmacKey).update(challenge).digest('hex');
+}
+
 function resolveMobilePublicBaseUrl(env: NodeJS.ProcessEnv = process.env): URL | null {
   const raw = env.CALDER_MOBILE_PUBLIC_BASE_URL;
   if (!isNonEmptyString(raw)) return null;
@@ -252,15 +780,23 @@ function buildPairingUrl(
   pairingId: string,
   token: string,
   tokenTransport: 'query' | 'fragment' = 'query',
+  includeQueryFallbackToken: boolean = false,
+  language: MobileUiLanguage = 'en',
 ): string {
   const normalizedBaseUrl = new URL(baseUrl.toString());
   if (!normalizedBaseUrl.pathname.endsWith('/')) {
     normalizedBaseUrl.pathname = `${normalizedBaseUrl.pathname}/`;
   }
   const pairingPageUrl = new URL(`m/${pairingId}`, normalizedBaseUrl);
+  if (language === 'tr') {
+    pairingPageUrl.searchParams.set('lang', 'tr');
+  }
   if (tokenTransport === 'query') {
     pairingPageUrl.searchParams.set('t', token);
   } else {
+    if (includeQueryFallbackToken) {
+      pairingPageUrl.searchParams.set('t', token);
+    }
     const hashParams = new URLSearchParams();
     hashParams.set('t', token);
     pairingPageUrl.hash = hashParams.toString();
@@ -268,13 +804,14 @@ function buildPairingUrl(
   return pairingPageUrl.toString();
 }
 
-function renderMobilePage(pairingId: string): string {
+function renderMobilePage(pairingId: string, language: MobileUiLanguage): string {
+  const copy = MOBILE_PAGE_COPY[language];
   return `<!doctype html>
-<html lang="en">
+<html lang="${copy.language}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Calder Mobile Control</title>
+  <title>${copy.title}</title>
   <style>
     :root {
       color-scheme: dark;
@@ -306,6 +843,7 @@ function renderMobilePage(pairingId: string): string {
       padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
       position: relative;
       overflow-x: hidden;
+      overscroll-behavior-y: contain;
     }
     body::before,
     body::after {
@@ -338,7 +876,7 @@ function renderMobilePage(pairingId: string): string {
     .shell {
       position: relative;
       z-index: 1;
-      max-width: 760px;
+      max-width: 680px;
       margin: 0 auto;
       display: grid;
       gap: 14px;
@@ -400,6 +938,12 @@ function renderMobilePage(pairingId: string): string {
       color: var(--muted);
       opacity: 0.9;
     }
+    .otp-helper {
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #b6c6e8;
+    }
     .otp {
       width: 100%;
       min-width: 0;
@@ -426,6 +970,11 @@ function renderMobilePage(pairingId: string): string {
       box-shadow: 0 10px 20px rgba(40, 91, 203, 0.34);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
+    }
+    .btn:hover:not([disabled]) {
+      filter: brightness(1.06);
+      box-shadow: 0 12px 24px rgba(40, 91, 203, 0.36);
+      transform: translateY(-1px);
     }
     .btn:active { transform: translateY(1px); }
     .btn[disabled] {
@@ -465,6 +1014,38 @@ function renderMobilePage(pairingId: string): string {
     .status-grid {
       display: grid;
       gap: 8px;
+    }
+    .stage-rail {
+      margin-top: 11px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .stage-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(125, 160, 240, 0.28);
+      background: rgba(10, 19, 36, 0.72);
+      color: #adc0e8;
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 11px;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      transition: border-color 160ms ease, color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      text-align: center;
+    }
+    .stage-chip.active {
+      border-color: rgba(127, 169, 255, 0.76);
+      color: #e7f0ff;
+      box-shadow: 0 0 0 1px rgba(127, 169, 255, 0.28) inset;
+    }
+    .stage-chip.done {
+      border-color: rgba(84, 207, 156, 0.74);
+      color: #dff8ec;
+      background: rgba(11, 36, 31, 0.8);
     }
     .session-switch-row {
       margin-top: 12px;
@@ -574,6 +1155,39 @@ function renderMobilePage(pairingId: string): string {
     .composer .btn[data-mobile-history-prev] { grid-area: prev; }
     .composer .btn[data-mobile-history-next] { grid-area: next; }
     .composer #send { grid-area: send; }
+    .control-head {
+      display: grid;
+      gap: 7px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+    }
+    .control-title {
+      font-size: 11px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .shortcut-toggle-row {
+      display: none;
+    }
+    .shortcut-toggle-row.visible {
+      display: block;
+    }
+    .shortcut-toggle-row .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .shortcut-toggle-row .btn.active {
+      border-color: var(--border-strong);
+      background: linear-gradient(180deg, rgba(21, 44, 80, 0.96), rgba(15, 31, 58, 0.92));
+      color: #f3f8ff;
+    }
+    .shortcut-hint {
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--muted);
+      margin-top: -2px;
+    }
     .command-chip-list {
       display: none;
       margin-top: 8px;
@@ -622,6 +1236,48 @@ function renderMobilePage(pairingId: string): string {
       font-size: 14px;
       font-weight: 700;
     }
+    .browser-controls {
+      display: none;
+      margin-top: 12px;
+      gap: 8px;
+    }
+    .browser-controls.visible {
+      display: grid;
+    }
+    .browser-session-row {
+      margin-top: 0;
+    }
+    .browser-controls-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .browser-controls-grid .btn {
+      min-height: 36px;
+      font-size: 12px;
+    }
+    .browser-control-status {
+      margin-top: 0;
+    }
+    .browser-inspect-selection {
+      margin: 2px 0 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    .browser-inspect-composer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .browser-inspect-composer input {
+      min-height: 36px;
+    }
+    .browser-inspect-composer .btn {
+      min-height: 36px;
+      white-space: nowrap;
+      padding-inline: 12px;
+    }
     .badge {
       display: inline-flex;
       align-items: center;
@@ -633,6 +1289,18 @@ function renderMobilePage(pairingId: string): string {
       letter-spacing: 0.05em;
       text-transform: uppercase;
       background: rgba(9, 18, 34, 0.78);
+    }
+    input:focus-visible,
+    select:focus-visible,
+    button:focus-visible {
+      outline: 2px solid rgba(142, 183, 255, 0.95);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
     }
     @media (max-width: 520px) {
       .panel {
@@ -649,6 +1317,12 @@ function renderMobilePage(pairingId: string): string {
         grid-template-columns: 1fr 1fr;
       }
       .command-chip-list {
+        grid-template-columns: 1fr;
+      }
+      .browser-inspect-composer {
+        grid-template-columns: 1fr;
+      }
+      .stage-rail {
         grid-template-columns: 1fr;
       }
       .composer.visible {
@@ -669,58 +1343,71 @@ function renderMobilePage(pairingId: string): string {
 <body>
   <main class="shell">
     <section class="panel hero-panel">
-      <div class="hero-kicker">Secure Mobile Bridge</div>
-      <h1>Calder Mobile Control</h1>
-      <p>Enter the one-time code from desktop to unlock your live terminal stream and controls.</p>
+      <div class="hero-kicker">${copy.heroKicker}</div>
+      <h1>${copy.heading}</h1>
+      <p>${copy.heroBody}</p>
       <div class="otp-row">
-        <input id="otp" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" />
-        <button id="connect" class="btn">Verify & Connect</button>
+        <input id="otp" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="${copy.otpPlaceholder}" />
+        <button id="connect" class="btn" disabled>${copy.verifyConnect}</button>
       </div>
-      <div class="otp-meta">Pairing expires automatically and can be used only once.</div>
-      <div id="status" class="status">Waiting for OTP…</div>
+      <div class="otp-meta">${copy.otpMeta}</div>
+      <div class="otp-helper">${copy.otpHelper}</div>
+      <div id="status" class="status">${copy.waitingOtp}</div>
     </section>
 
     <section class="panel">
       <div class="status-grid">
         <div class="row">
-          <span id="modeBadge" class="badge">Mode: pending</span>
-          <span id="connBadge" class="badge">State: idle</span>
+          <span id="modeBadge" class="badge">${copy.modePending}</span>
+          <span id="connBadge" class="badge">${copy.stateIdle}</span>
+        </div>
+        <div class="stage-rail" aria-label="${copy.connectionFlowLabel}">
+          <span class="stage-chip active" data-mobile-stage-chip data-stage="verify">${copy.stageVerify}</span>
+          <span class="stage-chip" data-mobile-stage-chip data-stage="stream">${copy.stageStream}</span>
+          <span class="stage-chip" data-mobile-stage-chip data-stage="controls">${copy.stageControl}</span>
         </div>
         <div class="session-switch-row">
-          <select id="sessionSelect" class="session-select" data-mobile-session-select aria-label="Session selector" disabled>
-            <option value="">Waiting for sessions…</option>
+          <select id="sessionSelect" class="session-select" data-mobile-session-select aria-label="${copy.sessionSelectorLabel}" disabled>
+            <option value="">${copy.waitingForSessions}</option>
           </select>
-          <button id="sessionSwitchButton" type="button" class="btn secondary" data-mobile-session-switch disabled>Switch</button>
+          <button id="sessionSwitchButton" type="button" class="btn secondary" data-mobile-session-switch disabled>${copy.switchButton}</button>
         </div>
-        <div id="sessionSwitchNote" class="session-switch-note">Session routing is unavailable until secure connection is ready.</div>
+        <div id="sessionSwitchNote" class="session-switch-note">${copy.sessionRoutingUnavailable}</div>
       </div>
-      <div class="mobile-view-tabs" role="tablist" aria-label="Mobile views">
-        <button type="button" class="mobile-view-tab active" data-mobile-view-tab="terminal" aria-selected="true">Terminal</button>
-        <button type="button" class="mobile-view-tab" data-mobile-view-tab="controls" aria-selected="false" disabled>Controls</button>
+      <div class="mobile-view-tabs" role="tablist" aria-label="${copy.mobileViewsLabel}">
+        <button type="button" class="mobile-view-tab active" data-mobile-view-tab="terminal" aria-selected="true">${copy.terminalTab}</button>
+        <button type="button" class="mobile-view-tab" data-mobile-view-tab="controls" aria-selected="false" disabled>${copy.controlsTab}</button>
       </div>
       <div id="terminalView" class="mobile-view-pane active" data-mobile-view="terminal">
         <div class="terminal-toolbar">
-          <button id="terminalClearButton" type="button" class="btn ghost slim" data-mobile-terminal-clear>Clear</button>
-          <button id="terminalCopyButton" type="button" class="btn ghost slim" data-mobile-terminal-copy>Copy</button>
-          <button id="terminalFollowButton" type="button" class="btn ghost slim active" data-mobile-terminal-follow>Follow On</button>
+          <button id="terminalClearButton" type="button" class="btn ghost slim" data-mobile-terminal-clear>${copy.clearButton}</button>
+          <button id="terminalCopyButton" type="button" class="btn ghost slim" data-mobile-terminal-copy>${copy.copyButton}</button>
+          <button id="terminalFollowButton" type="button" class="btn ghost slim active" data-mobile-terminal-follow>${copy.followOnButton}</button>
         </div>
         <pre id="terminal" class="terminal" aria-live="polite"></pre>
       </div>
       <div id="controlsView" class="mobile-view-pane" data-mobile-view="controls">
+        <div class="control-head">
+          <div class="control-title">${copy.commandDeck}</div>
+          <div id="shortcutToggleRow" class="shortcut-toggle-row">
+            <button id="shortcutToggleButton" type="button" class="btn ghost slim" data-mobile-shortcut-toggle disabled aria-expanded="false">${copy.showShortcutsButton}</button>
+          </div>
+          <div id="shortcutHint" class="shortcut-hint">${copy.shortcutsHiddenUntilNeeded}</div>
+        </div>
         <form id="composer" class="composer" autocomplete="off">
-          <button id="historyPrevButton" class="btn secondary slim" type="button" data-mobile-history-prev>Prev</button>
-          <input id="commandInput" placeholder="Type a command and press Enter" />
-          <button id="historyNextButton" class="btn secondary slim" type="button" data-mobile-history-next>Next</button>
-          <button id="send" class="btn secondary" type="submit">Send</button>
+          <button id="historyPrevButton" class="btn secondary slim" type="button" data-mobile-history-prev>${copy.prevButton}</button>
+          <input id="commandInput" placeholder="${copy.commandInputPlaceholder}" />
+          <button id="historyNextButton" class="btn secondary slim" type="button" data-mobile-history-next>${copy.nextButton}</button>
+          <button id="send" class="btn secondary" type="submit">${copy.sendButton}</button>
         </form>
-        <div id="commandChipList" class="command-chip-list" aria-label="Suggested commands">
+        <div id="commandChipList" class="command-chip-list" aria-label="${copy.suggestedCommandsLabel}">
           <button type="button" class="btn ghost slim command-chip" data-command-chip="pwd" data-mobile-command-chip>pwd</button>
           <button type="button" class="btn ghost slim command-chip" data-command-chip="ls -la" data-mobile-command-chip>ls -la</button>
           <button type="button" class="btn ghost slim command-chip" data-command-chip="git status" data-mobile-command-chip>git status</button>
           <button type="button" class="btn ghost slim command-chip" data-command-chip="npm test" data-mobile-command-chip>npm test</button>
         </div>
-        <div id="quickControls" class="quick-controls" aria-label="Quick controls">
-          <div class="quick-controls-title">Quick controls</div>
+        <div id="quickControls" class="quick-controls" aria-label="${copy.quickControlsLabel}">
+          <div class="quick-controls-title">${copy.quickControlsTitle}</div>
           <div class="quick-controls-grid">
             <button type="button" class="btn secondary" data-control="ctrl-c">Ctrl+C</button>
             <button type="button" class="btn secondary" data-control="ctrl-l">Ctrl+L</button>
@@ -735,6 +1422,28 @@ function renderMobilePage(pairingId: string): string {
             <button type="button" class="btn secondary" data-control="right" data-repeatable="true">→</button>
           </div>
         </div>
+        <div id="browserControls" class="browser-controls" aria-label="${copy.browserControlDeckTitle}">
+          <div class="quick-controls-title">${copy.browserControlDeckTitle}</div>
+          <div class="session-switch-row browser-session-row">
+            <select id="browserSessionSelect" class="session-select" data-mobile-browser-session-select aria-label="${copy.browserSessionSelectorLabel}" disabled>
+              <option value="">${copy.browserNoSessionsAvailable}</option>
+            </select>
+          </div>
+          <div class="quick-controls-grid browser-controls-grid">
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="back">${copy.browserBackButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="forward">${copy.browserForwardButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="reload">${copy.browserReloadButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="toggle-inspect">${copy.browserInspectButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="Responsive">${copy.browserResponsiveButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="iPhone 14">${copy.browserPhoneButton}</button>
+          </div>
+          <div id="browserInspectSelection" class="browser-inspect-selection" data-mobile-inspect-selection data-mobile-inspect-selection-raw="">${copy.browserInspectSelectionNone}</div>
+          <form id="browserInspectComposer" class="browser-inspect-composer" autocomplete="off">
+            <input id="browserInspectInput" type="text" placeholder="${copy.browserInspectInputPlaceholder}" data-mobile-browser-inspect-input />
+            <button id="browserInspectSendButton" type="submit" class="btn secondary" data-mobile-browser-inspect-send>${copy.browserInspectSendButton}</button>
+          </form>
+          <div id="browserControlStatus" class="session-switch-note browser-control-status" data-mobile-browser-status>${copy.browserStatusWaiting}</div>
+        </div>
       </div>
     </section>
   </main>
@@ -742,6 +1451,7 @@ function renderMobilePage(pairingId: string): string {
   <script>
     (function () {
       const pairingId = ${JSON.stringify(pairingId)};
+      const ui = ${JSON.stringify(copy)};
       const PBKDF2_ITERATIONS = 100000;
       const SALT_LENGTH = 16;
       const IV_LENGTH = 12;
@@ -762,12 +1472,23 @@ function renderMobilePage(pairingId: string): string {
       const historyNextButton = document.getElementById('historyNextButton');
       const commandChipList = document.getElementById('commandChipList');
       const quickControls = document.getElementById('quickControls');
+      const browserControls = document.getElementById('browserControls');
+      const browserSessionSelect = document.getElementById('browserSessionSelect');
+      const browserControlStatus = document.getElementById('browserControlStatus');
+      const browserInspectSelection = document.getElementById('browserInspectSelection');
+      const browserInspectComposer = document.getElementById('browserInspectComposer');
+      const browserInspectInput = document.getElementById('browserInspectInput');
+      const browserInspectSendButton = document.getElementById('browserInspectSendButton');
       const terminalClearButton = document.getElementById('terminalClearButton');
       const terminalCopyButton = document.getElementById('terminalCopyButton');
       const terminalFollowButton = document.getElementById('terminalFollowButton');
       const sessionSelect = document.getElementById('sessionSelect');
       const sessionSwitchButton = document.getElementById('sessionSwitchButton');
       const sessionSwitchNote = document.getElementById('sessionSwitchNote');
+      const stageChips = Array.from(document.querySelectorAll('[data-mobile-stage-chip]'));
+      const shortcutToggleRow = document.getElementById('shortcutToggleRow');
+      const shortcutToggleButton = document.getElementById('shortcutToggleButton');
+      const shortcutHint = document.getElementById('shortcutHint');
       const viewTabs = Array.from(document.querySelectorAll('[data-mobile-view-tab]'));
       const terminalViewTab = document.querySelector('[data-mobile-view-tab="terminal"]');
       const controlsViewTab = document.querySelector('[data-mobile-view-tab="controls"]');
@@ -776,6 +1497,7 @@ function renderMobilePage(pairingId: string): string {
       let currentMode = 'readonly';
       let authenticated = false;
       let passphrase = '';
+      let pairingToken = '';
       let quickControlRepeatTimer = null;
       let quickControlRepeatInterval = null;
       let quickControlRepeatControl = null;
@@ -784,10 +1506,40 @@ function renderMobilePage(pairingId: string): string {
       let availableSessions = [];
       let activeSessionId = '';
       let switchInFlight = false;
+      let availableBrowserSessions = [];
+      let activeBrowserSessionId = '';
+      let browserControlInFlight = false;
+      let browserInspectInFlight = false;
       let followTerminal = true;
       let commandHistory = [];
       let commandHistoryIndex = -1;
+      let otpVerified = false;
+      let streamReady = false;
+      let controlsUnlocked = false;
+      let shortcutsExpanded = false;
       const MAX_COMMAND_HISTORY = 40;
+
+      function normalizeOtpValue(raw) {
+        return String(raw || '').replace(/\\D/g, '').slice(0, 6);
+      }
+
+      function syncOtpUi() {
+        const digits = normalizeOtpValue(otpInput.value);
+        if (otpInput.value !== digits) {
+          otpInput.value = digits;
+        }
+        connectButton.disabled = digits.length !== 6;
+        return digits;
+      }
+
+      function formatCopy(template, replacements) {
+        if (typeof template !== 'string') return '';
+        return template.replace(/\{(\w+)\}/g, function (_match, key) {
+          return Object.prototype.hasOwnProperty.call(replacements, key)
+            ? String(replacements[key])
+            : '';
+        });
+      }
 
       function setStatus(message, kind) {
         statusEl.textContent = message;
@@ -797,11 +1549,55 @@ function renderMobilePage(pairingId: string): string {
       }
 
       function setConnState(label) {
-        connBadge.textContent = 'State: ' + label;
+        connBadge.textContent = ui.statePrefix + ': ' + label;
+      }
+
+      function updateStageChips() {
+        for (const chip of stageChips) {
+          const stage = chip.getAttribute('data-stage');
+          const done = (stage === 'verify' && otpVerified)
+            || (stage === 'stream' && streamReady)
+            || (stage === 'controls' && controlsUnlocked);
+          const active = !done && (
+            (stage === 'verify' && !otpVerified)
+            || (stage === 'stream' && otpVerified && !streamReady)
+            || (stage === 'controls' && streamReady && !controlsUnlocked)
+          );
+          chip.classList.toggle('done', done);
+          chip.classList.toggle('active', active);
+          chip.setAttribute('aria-current', active ? 'step' : 'false');
+        }
+      }
+
+      function updateShortcutHint() {
+        if (!shortcutHint) return;
+        if (!authenticated) {
+          shortcutHint.textContent = ui.shortcutsHiddenUntilReady;
+          return;
+        }
+        if (currentMode !== 'readwrite') {
+          shortcutHint.textContent = ui.readonlyHint;
+          return;
+        }
+        shortcutHint.textContent = shortcutsExpanded
+          ? ui.repeatInputHint
+          : ui.shortcutsHiddenUntilNeeded;
+      }
+
+      function setShortcutsExpanded(expanded) {
+        const canExpand = canSendInteractiveInput();
+        shortcutsExpanded = Boolean(expanded) && canExpand;
+        quickControls.classList.toggle('visible', shortcutsExpanded);
+        if (shortcutToggleButton) {
+          shortcutToggleButton.textContent = shortcutsExpanded ? ui.hideShortcutsButton : ui.showShortcutsButton;
+          shortcutToggleButton.setAttribute('aria-expanded', shortcutsExpanded ? 'true' : 'false');
+          shortcutToggleButton.classList.toggle('active', shortcutsExpanded);
+        }
+        updateShortcutHint();
       }
 
       function updateFollowButton() {
-        terminalFollowButton.textContent = followTerminal ? 'Follow On' : 'Follow Off';
+        terminalFollowButton.textContent = followTerminal ? ui.followOnButton : ui.followOffButton;
         terminalFollowButton.classList.toggle('active', followTerminal);
       }
 
@@ -870,19 +1666,24 @@ function renderMobilePage(pairingId: string): string {
 
       function setInteractiveControlsVisible() {
         const visible = canSendInteractiveInput();
+        controlsUnlocked = visible;
         if (visible) {
           composer.classList.add('visible');
           commandChipList.classList.add('visible');
-          quickControls.classList.add('visible');
+          if (shortcutToggleRow) shortcutToggleRow.classList.add('visible');
         } else {
           composer.classList.remove('visible');
           commandChipList.classList.remove('visible');
-          quickControls.classList.remove('visible');
+          if (shortcutToggleRow) shortcutToggleRow.classList.remove('visible');
         }
+        setShortcutsExpanded(shortcutsExpanded && visible);
+        if (shortcutToggleButton) shortcutToggleButton.disabled = !visible;
         sendButton.disabled = !visible;
         setCommandChipInteractivity(visible);
         updateHistoryNavigationState();
         setControlsViewEnabled(visible);
+        updateBrowserControlsUi();
+        updateStageChips();
       }
 
       function sendInputPayload(payload) {
@@ -1026,24 +1827,24 @@ function renderMobilePage(pairingId: string): string {
 
       function clearTerminalView() {
         replaceTerminal('');
-        setStatus('Mobile terminal view cleared.', 'ok');
+        setStatus(ui.mobileTerminalCleared, 'ok');
       }
 
       async function copyTerminalView() {
         const text = terminalEl.textContent || '';
         if (!text.trim()) {
-          setStatus('Nothing to copy yet.', 'error');
+          setStatus(ui.nothingToCopyYet, 'error');
           return;
         }
         if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
-          setStatus('Clipboard API is unavailable on this browser.', 'error');
+          setStatus(ui.clipboardApiUnavailable, 'error');
           return;
         }
         try {
           await navigator.clipboard.writeText(text);
-          setStatus('Terminal output copied to clipboard.', 'ok');
+          setStatus(ui.terminalCopied, 'ok');
         } catch {
-          setStatus('Could not copy terminal output.', 'error');
+          setStatus(ui.terminalCopyFailed, 'error');
         }
       }
 
@@ -1065,22 +1866,22 @@ function renderMobilePage(pairingId: string): string {
 
       function describeSessionSwitchState() {
         if (switchInFlight) {
-          sessionSwitchNote.textContent = 'Switching active session…';
+          sessionSwitchNote.textContent = ui.switchingSession;
           return;
         }
         if (!authenticated) {
-          sessionSwitchNote.textContent = 'Session routing is unavailable until secure connection is ready.';
+          sessionSwitchNote.textContent = ui.sessionRoutingUnavailable;
           return;
         }
         if (availableSessions.length === 0) {
-          sessionSwitchNote.textContent = 'No shareable terminal sessions are currently available.';
+          sessionSwitchNote.textContent = ui.noShareableSessions;
           return;
         }
         const active = availableSessions.find((session) => session.id === activeSessionId);
         if (active) {
-          sessionSwitchNote.textContent = 'Active session: ' + active.name;
+          sessionSwitchNote.textContent = formatCopy(ui.activeSessionTemplate, { name: active.name });
         } else {
-          sessionSwitchNote.textContent = 'Choose a session and tap Switch.';
+          sessionSwitchNote.textContent = ui.chooseSessionAndSwitch;
         }
       }
 
@@ -1090,7 +1891,7 @@ function renderMobilePage(pairingId: string): string {
         if (availableSessions.length === 0) {
           const emptyOption = document.createElement('option');
           emptyOption.value = '';
-          emptyOption.textContent = 'No sessions available';
+          emptyOption.textContent = ui.noSessionsAvailable;
           sessionSelect.appendChild(emptyOption);
           sessionSelect.value = '';
           updateSessionSwitchUi();
@@ -1132,7 +1933,7 @@ function renderMobilePage(pairingId: string): string {
       function applySessionSwitchResult(msg) {
         switchInFlight = false;
         if (!msg || !msg.ok) {
-          setStatus('Could not switch session: ' + ((msg && msg.reason) || 'Unknown reason.'), 'error');
+          setStatus(formatCopy(ui.switchFailedTemplate, { reason: (msg && msg.reason) || ui.unknownReason }), 'error');
           updateSessionSwitchUi();
           describeSessionSwitchState();
           return;
@@ -1151,9 +1952,243 @@ function renderMobilePage(pairingId: string): string {
         const switchedName = typeof msg.sessionName === 'string' && msg.sessionName.length > 0
           ? msg.sessionName
           : activeSessionId;
-        setStatus('Switched to ' + switchedName + '.', 'ok');
+        setStatus(formatCopy(ui.switchedToTemplate, { name: switchedName }), 'ok');
         updateSessionSwitchUi();
         describeSessionSwitchState();
+      }
+
+      function canUseBrowserControls() {
+        return canSendInteractiveInput();
+      }
+
+      function resolveActiveBrowserSession() {
+        if (availableBrowserSessions.length === 0) return null;
+        const selectedId = browserSessionSelect
+          ? String(browserSessionSelect.value || '').trim()
+          : '';
+        if (selectedId) {
+          const selected = availableBrowserSessions.find((entry) => entry.id === selectedId);
+          if (selected) return selected;
+        }
+        if (activeBrowserSessionId) {
+          const active = availableBrowserSessions.find((entry) => entry.id === activeBrowserSessionId);
+          if (active) return active;
+        }
+        return availableBrowserSessions[0] || null;
+      }
+
+      function setBrowserControlStatus(message) {
+        if (!browserControlStatus) return;
+        browserControlStatus.textContent = message;
+      }
+
+      function renderBrowserInspectSelection() {
+        if (!browserInspectSelection) return;
+        const active = resolveActiveBrowserSession();
+        const rawSummary = active && typeof active.selectedElementSummary === 'string'
+          ? active.selectedElementSummary.trim()
+          : '';
+        if (rawSummary) {
+          browserInspectSelection.textContent = formatCopy(ui.browserInspectSelectionTemplate, { summary: rawSummary });
+          browserInspectSelection.setAttribute('data-mobile-inspect-selection-raw', rawSummary);
+          return;
+        }
+        browserInspectSelection.textContent = ui.browserInspectSelectionNone;
+        browserInspectSelection.setAttribute('data-mobile-inspect-selection-raw', '');
+      }
+
+      function updateBrowserControlsUi() {
+        const interactive = canUseBrowserControls();
+        if (browserControls) {
+          browserControls.classList.toggle('visible', interactive);
+        }
+        if (!browserSessionSelect) return;
+
+        const hasSessions = availableBrowserSessions.length > 0;
+        browserSessionSelect.disabled = !interactive || !hasSessions || browserControlInFlight || browserInspectInFlight;
+
+        const controlButtons = document.querySelectorAll('[data-mobile-browser-control], [data-mobile-browser-viewport]');
+        for (const button of controlButtons) {
+          button.disabled = !interactive || !hasSessions || browserControlInFlight || browserInspectInFlight;
+        }
+
+        const active = resolveActiveBrowserSession();
+        const hasInspectSelection = Boolean(
+          active
+          && typeof active.selectedElementSummary === 'string'
+          && active.selectedElementSummary.trim().length > 0,
+        );
+        renderBrowserInspectSelection();
+
+        if (browserInspectInput instanceof HTMLInputElement) {
+          browserInspectInput.disabled = !interactive || !hasSessions || browserControlInFlight || browserInspectInFlight;
+        }
+        if (browserInspectSendButton instanceof HTMLButtonElement) {
+          browserInspectSendButton.disabled = !interactive
+            || !hasSessions
+            || !hasInspectSelection
+            || browserControlInFlight
+            || browserInspectInFlight;
+        }
+
+        if (browserControlInFlight || browserInspectInFlight) {
+          return;
+        }
+
+        if (!interactive) {
+          setBrowserControlStatus(ui.browserStatusReadonly);
+        } else if (!hasSessions) {
+          setBrowserControlStatus(ui.browserNoSessionsAvailable);
+        } else {
+          const activeName = active ? active.name : availableBrowserSessions[0].name;
+          setBrowserControlStatus(formatCopy(ui.browserStatusReadyTemplate, { name: activeName }));
+        }
+      }
+
+      function syncBrowserSessionOptions() {
+        if (!browserSessionSelect) return;
+        const priorSelection = String(browserSessionSelect.value || '');
+        browserSessionSelect.innerHTML = '';
+        if (availableBrowserSessions.length === 0) {
+          const emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.textContent = ui.browserNoSessionsAvailable;
+          browserSessionSelect.appendChild(emptyOption);
+          browserSessionSelect.value = '';
+          updateBrowserControlsUi();
+          return;
+        }
+
+        for (const session of availableBrowserSessions) {
+          const option = document.createElement('option');
+          option.value = session.id;
+          option.textContent = session.name;
+          browserSessionSelect.appendChild(option);
+        }
+
+        const hasPriorSelection = availableBrowserSessions.some((entry) => entry.id === priorSelection);
+        if (hasPriorSelection) {
+          browserSessionSelect.value = priorSelection;
+        } else if (availableBrowserSessions.some((entry) => entry.id === activeBrowserSessionId)) {
+          browserSessionSelect.value = activeBrowserSessionId;
+        } else {
+          browserSessionSelect.value = availableBrowserSessions[0].id;
+        }
+        updateBrowserControlsUi();
+      }
+
+      function applyBrowserState(msg) {
+        if (!msg || !Array.isArray(msg.sessions)) return;
+        availableBrowserSessions = msg.sessions
+          .filter((session) =>
+            session
+            && typeof session.id === 'string'
+            && typeof session.name === 'string')
+          .map((session) => ({
+            id: session.id,
+            name: session.name,
+            selectedElementSummary: typeof session.selectedElementSummary === 'string'
+              ? session.selectedElementSummary
+              : '',
+          }));
+        if (typeof msg.activeBrowserSessionId === 'string') {
+          activeBrowserSessionId = msg.activeBrowserSessionId;
+        }
+        syncBrowserSessionOptions();
+      }
+
+      function requestBrowserState() {
+        if (!authenticated || !dataChannel || dataChannel.readyState !== 'open') return;
+        sendMessage({ type: 'browser-state-request' });
+      }
+
+      function sendBrowserControl(action, extra) {
+        if (!canUseBrowserControls()) {
+          updateBrowserControlsUi();
+          return;
+        }
+        if (!browserSessionSelect) return;
+        const selectedSessionId = String(browserSessionSelect.value || '').trim();
+        if (!selectedSessionId) {
+          setBrowserControlStatus(ui.browserNoSessionsAvailable);
+          return;
+        }
+        browserControlInFlight = true;
+        updateBrowserControlsUi();
+        setBrowserControlStatus(ui.browserControlApplying);
+        const payload = Object.assign(
+          {
+            type: 'browser-control',
+            action,
+            sessionId: selectedSessionId,
+          },
+          extra || {},
+        );
+        sendMessage(payload);
+      }
+
+      function sendBrowserInspectInstruction() {
+        if (!canUseBrowserControls()) {
+          updateBrowserControlsUi();
+          return;
+        }
+        if (!(browserSessionSelect instanceof HTMLSelectElement) || !(browserInspectInput instanceof HTMLInputElement)) {
+          return;
+        }
+        const selectedSessionId = String(browserSessionSelect.value || '').trim();
+        if (!selectedSessionId) {
+          setBrowserControlStatus(ui.browserNoSessionsAvailable);
+          return;
+        }
+        const instruction = browserInspectInput.value.trim();
+        if (!instruction) {
+          setBrowserControlStatus(ui.browserInspectInstructionRequired);
+          return;
+        }
+        const selected = availableBrowserSessions.find((entry) => entry.id === selectedSessionId);
+        const hasSelection = Boolean(
+          selected
+          && typeof selected.selectedElementSummary === 'string'
+          && selected.selectedElementSummary.trim().length > 0,
+        );
+        if (!hasSelection) {
+          setBrowserControlStatus(ui.browserInspectNeedSelection);
+          return;
+        }
+        browserInspectInFlight = true;
+        updateBrowserControlsUi();
+        setBrowserControlStatus(ui.browserInspectSubmitting);
+        sendMessage({
+          type: 'browser-inspect-submit',
+          sessionId: selectedSessionId,
+          instruction,
+        });
+      }
+
+      function applyBrowserControlResult(msg) {
+        browserControlInFlight = false;
+        updateBrowserControlsUi();
+        if (!msg || !msg.ok) {
+          setBrowserControlStatus(formatCopy(ui.browserControlFailedTemplate, { reason: (msg && msg.reason) || ui.unknownReason }));
+          return;
+        }
+        const actionLabel = typeof msg.action === 'string' ? msg.action : 'ok';
+        setBrowserControlStatus(formatCopy(ui.browserControlSucceededTemplate, { action: actionLabel }));
+        requestBrowserState();
+      }
+
+      function applyBrowserInspectResult(msg) {
+        browserInspectInFlight = false;
+        updateBrowserControlsUi();
+        if (!msg || !msg.ok) {
+          setBrowserControlStatus(formatCopy(ui.browserInspectFailedTemplate, { reason: (msg && msg.reason) || ui.unknownReason }));
+          return;
+        }
+        if (browserInspectInput instanceof HTMLInputElement) {
+          browserInspectInput.value = '';
+        }
+        setBrowserControlStatus(ui.browserInspectSucceeded);
+        requestBrowserState();
       }
 
       function normalizePassphrase(value) {
@@ -1170,6 +2205,16 @@ function renderMobilePage(pairingId: string): string {
 
       function bytesToHex(bytes) {
         return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      function hasWebCryptoSupport() {
+        const browserCrypto = globalThis.crypto;
+        return Boolean(
+          browserCrypto
+          && typeof browserCrypto.getRandomValues === 'function'
+          && browserCrypto.subtle
+          && typeof browserCrypto.subtle.importKey === 'function'
+        );
       }
 
       async function deriveAesKey(phrase, salt, usage) {
@@ -1212,10 +2257,10 @@ function renderMobilePage(pairingId: string): string {
         try {
           bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
         } catch {
-          throw new Error('Could not decode connection code.');
+          throw new Error(ui.couldNotDecodeConnectionCode);
         }
         if (bytes.length < SALT_LENGTH + IV_LENGTH + 1) {
-          throw new Error('Connection code is too short.');
+          throw new Error(ui.connectionCodeTooShort);
         }
         const salt = bytes.slice(0, SALT_LENGTH);
         const iv = bytes.slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
@@ -1225,7 +2270,7 @@ function renderMobilePage(pairingId: string): string {
           const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
           return new TextDecoder().decode(plain);
         } catch {
-          throw new Error('Wrong passphrase or invalid connection code.');
+          throw new Error(ui.wrongPassphraseOrInvalidCode);
         }
       }
 
@@ -1239,16 +2284,16 @@ function renderMobilePage(pairingId: string): string {
         try {
           parsed = JSON.parse(decoded);
         } catch {
-          throw new Error('Connection code payload is malformed.');
+          throw new Error(ui.malformedConnectionPayload);
         }
         const envelope = parsed && typeof parsed === 'object' && parsed.v === 2 && parsed.description
           ? parsed.description
           : parsed;
         if (!envelope || typeof envelope !== 'object' || typeof envelope.type !== 'string' || typeof envelope.sdp !== 'string') {
-          throw new Error('Connection code is missing fields.');
+          throw new Error(ui.missingConnectionFields);
         }
         if (expectedType && envelope.type !== expectedType) {
-          throw new Error('Connection code type mismatch.');
+          throw new Error(ui.connectionTypeMismatch);
         }
         return envelope;
       }
@@ -1281,6 +2326,20 @@ function renderMobilePage(pairingId: string): string {
         if (!hash) return '';
         const hashParams = new URLSearchParams(hash);
         return hashParams.get('t') || '';
+      }
+
+      function resolveNativeBootstrapHint(tokenFromUrl) {
+        const scope = window;
+        const hint = scope && scope.__CALDER_NATIVE_BOOTSTRAP;
+        if (!hint || typeof hint !== 'object') return null;
+        if (hint.pairingId && hint.pairingId !== pairingId) return null;
+        if (typeof hint.token !== 'string' || hint.token.length === 0) return null;
+        if (hint.token !== tokenFromUrl) return null;
+        if (!hint.payload || typeof hint.payload !== 'object') return null;
+        return {
+          token: hint.token,
+          payload: hint.payload,
+        };
       }
 
       function waitForIceGathering(pc) {
@@ -1324,8 +2383,16 @@ function renderMobilePage(pairingId: string): string {
         return postJson('/api/pair/' + pairingId + '/bootstrap', { token, otp: otpCode });
       }
 
-      async function submitAnswer(answer, token, submitToken) {
-        await postJson('/api/pair/' + pairingId + '/answer', { token, submitToken, answer });
+      async function submitAnswer(payload) {
+        await postJson('/api/pair/' + pairingId + '/answer', payload);
+      }
+
+      async function requestChallengeResponse(challenge, token) {
+        const response = await postJson('/api/pair/' + pairingId + '/challenge', { token, challenge });
+        if (!response || typeof response.response !== 'string' || response.response.length === 0) {
+          throw new Error(ui.connectionFailed);
+        }
+        return response.response;
       }
 
       function sendMessage(payload) {
@@ -1335,27 +2402,38 @@ function renderMobilePage(pairingId: string): string {
       }
 
       function onAuthenticated() {
-        setStatus('Connected. Live stream active.', 'ok');
+        streamReady = true;
+        setStatus(ui.connectedLiveStream, 'ok');
         setConnState('connected');
         setInteractiveControlsVisible();
         updateSessionSwitchUi();
         describeSessionSwitchState();
+        requestBrowserState();
+        updateShortcutHint();
       }
 
       async function attachDataChannel(channel) {
         dataChannel = channel;
         channel.onopen = function () {
           setConnState('channel-open');
-          setStatus('Channel open, waiting for host authentication challenge…');
+          setStatus(ui.channelOpenWaitingAuth);
         };
         channel.onclose = function () {
           setConnState('closed');
-          setStatus('Connection closed.', 'error');
+          setStatus(ui.connectionClosed, 'error');
           authenticated = false;
           switchInFlight = false;
+          browserControlInFlight = false;
+          browserInspectInFlight = false;
+          availableBrowserSessions = [];
+          activeBrowserSessionId = '';
+          streamReady = false;
+          controlsUnlocked = false;
           setInteractiveControlsVisible();
+          syncBrowserSessionOptions();
           updateSessionSwitchUi();
           describeSessionSwitchState();
+          updateShortcutHint();
         };
         channel.onmessage = async function (event) {
           let msg;
@@ -1366,8 +2444,14 @@ function renderMobilePage(pairingId: string): string {
           }
 
           if (msg.type === 'auth-challenge') {
-            const response = await computeChallengeResponse(msg.challenge, passphrase);
-            sendMessage({ type: 'auth-response', response });
+            try {
+              const response = hasWebCryptoSupport()
+                ? await computeChallengeResponse(msg.challenge, passphrase)
+                : await requestChallengeResponse(msg.challenge, pairingToken);
+              sendMessage({ type: 'auth-response', response });
+            } catch (error) {
+              setStatus((error && error.message) ? error.message : ui.connectionFailed, 'error');
+            }
             return;
           }
 
@@ -1376,7 +2460,11 @@ function renderMobilePage(pairingId: string): string {
               authenticated = true;
               onAuthenticated();
             } else {
-              setStatus('Authentication failed: ' + (msg.reason || 'Unknown reason'), 'error');
+              streamReady = false;
+              controlsUnlocked = false;
+              setStatus(formatCopy(ui.authFailedTemplate, { reason: msg.reason || ui.unknownReason }), 'error');
+              updateStageChips();
+              updateShortcutHint();
             }
             return;
           }
@@ -1386,15 +2474,25 @@ function renderMobilePage(pairingId: string): string {
           switch (msg.type) {
             case 'init':
               currentMode = msg.mode === 'readwrite' ? 'readwrite' : 'readonly';
-              modeBadge.textContent = 'Mode: ' + currentMode;
+              modeBadge.textContent = ui.modePrefix + ': ' + (currentMode === 'readwrite' ? ui.modeReadwrite : ui.modeReadonly);
               replaceTerminal(msg.scrollback || '');
               setInteractiveControlsVisible();
+              updateShortcutHint();
               break;
             case 'session-catalog':
               applySessionCatalog(msg);
               break;
             case 'session-switch-result':
               applySessionSwitchResult(msg);
+              break;
+            case 'browser-state':
+              applyBrowserState(msg);
+              break;
+            case 'browser-control-result':
+              applyBrowserControlResult(msg);
+              break;
+            case 'browser-inspect-result':
+              applyBrowserInspectResult(msg);
               break;
             case 'data':
               appendTerminal(msg.payload || '');
@@ -1403,7 +2501,11 @@ function renderMobilePage(pairingId: string): string {
               sendMessage({ type: 'pong' });
               break;
             case 'end':
-              setStatus('Host ended the shared session.', 'error');
+              setStatus(ui.hostEndedSession, 'error');
+              streamReady = false;
+              controlsUnlocked = false;
+              updateStageChips();
+              updateShortcutHint();
               break;
           }
         };
@@ -1422,10 +2524,32 @@ function renderMobilePage(pairingId: string): string {
         sendMessage({ type: 'session-switch', sessionId: targetSessionId });
       }
 
+      function resolveBootstrapOfferDescription(payload) {
+        const inlineOffer = payload && typeof payload.offerDescription === 'object'
+          ? payload.offerDescription
+          : null;
+        if (
+          inlineOffer
+          && inlineOffer.type === 'offer'
+          && typeof inlineOffer.sdp === 'string'
+          && inlineOffer.sdp.trim().length > 0
+        ) {
+          return inlineOffer;
+        }
+        return null;
+      }
+
+      function normalizeConnectionDescription(value, expectedType) {
+        if (!value || typeof value !== 'object') return null;
+        if (value.type !== expectedType) return null;
+        if (typeof value.sdp !== 'string' || value.sdp.trim().length === 0) return null;
+        return { type: expectedType, sdp: value.sdp };
+      }
+
       async function connectToHost(payload, token) {
         passphrase = payload.passphrase;
         currentMode = payload.mode === 'readwrite' ? 'readwrite' : 'readonly';
-        modeBadge.textContent = 'Mode: ' + currentMode;
+        modeBadge.textContent = ui.modePrefix + ': ' + (currentMode === 'readwrite' ? ui.modeReadwrite : ui.modeReadonly);
 
         const rtcConfig = {
           iceServers: Array.isArray(payload.iceServers) ? payload.iceServers : []
@@ -1441,42 +2565,100 @@ function renderMobilePage(pairingId: string): string {
           void attachDataChannel(event.channel);
         };
 
-        const remoteDesc = await decodeConnectionCode(payload.offer, 'offer', passphrase);
+        const inlineOffer = resolveBootstrapOfferDescription(payload);
+        if (!inlineOffer && !hasWebCryptoSupport()) {
+          throw new Error(ui.wrongPassphraseOrInvalidCode);
+        }
+        const remoteDesc = inlineOffer || await decodeConnectionCode(payload.offer, 'offer', passphrase);
         await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await waitForIceGathering(pc);
-        const answerCode = await encodeConnectionCode(pc.localDescription, passphrase);
-        await submitAnswer(answerCode, token, payload.submitToken);
-        setStatus('Answer delivered. Waiting for host confirmation…');
+
+        const answerDesc = normalizeConnectionDescription(pc.localDescription || answer, 'answer');
+        if (!answerDesc) {
+          throw new Error(ui.missingConnectionFields);
+        }
+        if (hasWebCryptoSupport()) {
+          const answerCode = await encodeConnectionCode(answerDesc, passphrase);
+          await submitAnswer({ token, submitToken: payload.submitToken, answer: answerCode });
+        } else {
+          await submitAnswer({ token, submitToken: payload.submitToken, answerDescription: answerDesc });
+        }
+        setStatus(ui.answerDelivered);
       }
 
       async function begin() {
         const token = resolvePairingTokenFromUrl();
         if (!token) {
-          setStatus('Missing pairing token.', 'error');
+          setStatus(ui.missingPairingToken, 'error');
           connectButton.disabled = true;
           return;
         }
+        pairingToken = token;
+
+        syncOtpUi();
+        otpInput.addEventListener('input', function () {
+          syncOtpUi();
+        });
+        otpInput.addEventListener('keydown', function (event) {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          if (connectButton.disabled) return;
+          connectButton.click();
+        });
+
+        const nativeBootstrap = resolveNativeBootstrapHint(token);
+        if (nativeBootstrap) {
+          otpVerified = true;
+          streamReady = false;
+          controlsUnlocked = false;
+          updateStageChips();
+          otpInput.value = '';
+          otpInput.disabled = true;
+          connectButton.disabled = true;
+          setStatus(ui.establishingConnection);
+          setConnState('authorizing');
+          try {
+            await connectToHost(nativeBootstrap.payload, nativeBootstrap.token);
+            return;
+          } catch (error) {
+            otpVerified = false;
+            otpInput.disabled = false;
+            setStatus((error && error.message) ? error.message : ui.connectionFailed, 'error');
+            syncOtpUi();
+            setConnState('error');
+            updateStageChips();
+          }
+        }
 
         connectButton.addEventListener('click', async function () {
-          const otp = String(otpInput.value || '').trim();
-          if (!/^\\d{6}$/.test(otp)) {
-            setStatus('Enter the 6-digit one-time code from desktop.', 'error');
+          const otp = syncOtpUi();
+          if (otp.length !== 6) {
+            setStatus(ui.enterOtpPrompt, 'error');
             return;
           }
 
+          otpVerified = false;
+          streamReady = false;
+          controlsUnlocked = false;
+          updateStageChips();
           connectButton.disabled = true;
-          setStatus('Verifying one-time code…');
+          setStatus(ui.verifyingOtp);
           setConnState('authorizing');
 
           try {
             const payload = await bootstrapPairing(otp, token);
+            otpVerified = true;
+            updateStageChips();
             await connectToHost(payload, token);
           } catch (error) {
-            setStatus((error && error.message) ? error.message : 'Connection failed.', 'error');
-            connectButton.disabled = false;
+            setStatus((error && error.message) ? error.message : ui.connectionFailed, 'error');
+            syncOtpUi();
             setConnState('error');
+            if (!otpVerified) {
+              updateStageChips();
+            }
           }
         });
 
@@ -1533,6 +2715,12 @@ function renderMobilePage(pairingId: string): string {
           }
         });
 
+        if (shortcutToggleButton) {
+          shortcutToggleButton.addEventListener('click', function () {
+            setShortcutsExpanded(!shortcutsExpanded);
+          });
+        }
+
         terminalClearButton.addEventListener('click', function () {
           clearTerminalView();
         });
@@ -1588,6 +2776,39 @@ function renderMobilePage(pairingId: string): string {
           requestSessionSwitch();
         });
 
+        if (browserSessionSelect) {
+          browserSessionSelect.addEventListener('change', function () {
+            activeBrowserSessionId = String(browserSessionSelect.value || '');
+            updateBrowserControlsUi();
+          });
+        }
+
+        if (browserControls) {
+          browserControls.addEventListener('click', function (event) {
+            const rawTarget = event.target;
+            if (!(rawTarget instanceof Element)) return;
+            const controlBtn = rawTarget.closest('[data-mobile-browser-control]');
+            if (controlBtn) {
+              const action = controlBtn.getAttribute('data-browser-control');
+              if (!action) return;
+              sendBrowserControl(action);
+              return;
+            }
+            const viewportBtn = rawTarget.closest('[data-mobile-browser-viewport]');
+            if (!viewportBtn) return;
+            const viewportLabel = viewportBtn.getAttribute('data-browser-viewport');
+            if (!viewportLabel) return;
+            sendBrowserControl('set-viewport', { viewportLabel });
+          });
+        }
+
+        if (browserInspectComposer) {
+          browserInspectComposer.addEventListener('submit', function (event) {
+            event.preventDefault();
+            sendBrowserInspectInstruction();
+          });
+        }
+
         for (const tab of viewTabs) {
           tab.addEventListener('click', function () {
             const view = tab.getAttribute('data-mobile-view-tab');
@@ -1600,7 +2821,10 @@ function renderMobilePage(pairingId: string): string {
         setActiveView('terminal');
         setFollowTerminal(true);
         setControlsViewEnabled(false);
+        updateStageChips();
+        updateShortcutHint();
         syncSessionSelectOptions();
+        syncBrowserSessionOptions();
       }
 
       void begin();
@@ -1611,14 +2835,15 @@ function renderMobilePage(pairingId: string): string {
 }
 
 async function handleBootstrapRequest(record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const copy = getMobileCopy(record.language);
   if (isExpired(record)) {
     pairings.delete(record.id);
     clearRateLimitEntriesForPairing(record.id);
-    sendText(res, 410, 'Pairing expired.');
+    sendText(res, 410, copy.serverMessage.pairingExpired);
     return;
   }
   if (isRateLimited(req, record.id, 'bootstrap')) {
-    sendText(res, 429, 'Too many pairing attempts. Please wait and try again.');
+    sendText(res, 429, copy.serverMessage.tooManyPairingAttempts);
     return;
   }
 
@@ -1627,27 +2852,27 @@ async function handleBootstrapRequest(record: PairingRecord, req: http.IncomingM
     payload = JSON.parse(await readBody(req));
   } catch (error) {
     if (error instanceof Error && error.message === 'request_too_large') {
-      sendText(res, 413, 'Request body too large.');
+      sendText(res, 413, copy.serverMessage.requestBodyTooLarge);
       return;
     }
-    sendText(res, 400, 'Invalid JSON payload.');
+    sendText(res, 400, copy.serverMessage.invalidJsonPayload);
     return;
   }
 
   const body = (payload ?? {}) as { token?: unknown; otp?: unknown };
   if (!verifyPairingToken(record, body.token)) {
-    sendText(res, 403, 'Pairing token is invalid.');
+    sendText(res, 403, copy.serverMessage.pairingTokenInvalid);
     return;
   }
 
   if (record.attempts >= MAX_OTP_ATTEMPTS) {
-    sendText(res, 429, 'Too many OTP attempts.');
+    sendText(res, 429, copy.serverMessage.tooManyOtpAttempts);
     return;
   }
 
   if (typeof body.otp !== 'string' || body.otp.trim() !== record.otpCode) {
     record.attempts += 1;
-    sendText(res, 401, 'One-time code mismatch.');
+    sendText(res, 401, copy.serverMessage.otpMismatch);
     return;
   }
 
@@ -1658,6 +2883,7 @@ async function handleBootstrapRequest(record: PairingRecord, req: http.IncomingM
 
   sendJson(res, 200, {
     offer: record.offer,
+    offerDescription: record.offerDescription,
     passphrase: record.passphrase,
     mode: record.mode,
     submitToken: record.submitToken,
@@ -1668,14 +2894,15 @@ async function handleBootstrapRequest(record: PairingRecord, req: http.IncomingM
 }
 
 async function handleAnswerRequest(record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const copy = getMobileCopy(record.language);
   if (isExpired(record)) {
     pairings.delete(record.id);
     clearRateLimitEntriesForPairing(record.id);
-    sendText(res, 410, 'Pairing expired.');
+    sendText(res, 410, copy.serverMessage.pairingExpired);
     return;
   }
   if (isRateLimited(req, record.id, 'answer')) {
-    sendText(res, 429, 'Too many answer submissions. Please wait and retry.');
+    sendText(res, 429, copy.serverMessage.tooManyAnswerSubmissions);
     return;
   }
 
@@ -1684,39 +2911,108 @@ async function handleAnswerRequest(record: PairingRecord, req: http.IncomingMess
     payload = JSON.parse(await readBody(req));
   } catch (error) {
     if (error instanceof Error && error.message === 'request_too_large') {
-      sendText(res, 413, 'Request body too large.');
+      sendText(res, 413, copy.serverMessage.requestBodyTooLarge);
       return;
     }
-    sendText(res, 400, 'Invalid JSON payload.');
+    sendText(res, 400, copy.serverMessage.invalidJsonPayload);
     return;
   }
 
-  const body = (payload ?? {}) as { token?: unknown; submitToken?: unknown; answer?: unknown };
+  const body = (payload ?? {}) as {
+    token?: unknown;
+    submitToken?: unknown;
+    answer?: unknown;
+    answerDescription?: unknown;
+  };
   if (!verifyPairingToken(record, body.token)) {
-    sendText(res, 403, 'Pairing token is invalid.');
+    sendText(res, 403, copy.serverMessage.pairingTokenInvalid);
     return;
   }
   if (!record.otpVerified) {
-    sendText(res, 403, 'OTP verification is required first.');
+    sendText(res, 403, copy.serverMessage.otpRequiredFirst);
     return;
   }
   if (record.answer) {
-    sendText(res, 409, 'Answer has already been submitted for this pairing.');
+    sendText(res, 409, copy.serverMessage.answerAlreadySubmitted);
     return;
   }
   if (typeof body.submitToken !== 'string' || !record.submitToken || !safeCompareToken(record.submitToken, body.submitToken)) {
-    sendText(res, 403, 'Submit token is invalid.');
+    sendText(res, 403, copy.serverMessage.submitTokenInvalid);
     return;
   }
-  if (typeof body.answer !== 'string' || body.answer.trim().length === 0) {
-    sendText(res, 400, 'Missing answer payload.');
+  let answerCode: string | null = null;
+  if (typeof body.answer === 'string' && body.answer.trim().length > 0) {
+    const candidate = body.answer.trim();
+    try {
+      decodeShareConnectionCode(candidate, record.passphrase, 'answer');
+      answerCode = candidate;
+    } catch {
+      sendText(res, 400, copy.serverMessage.invalidAnswerPayload);
+      return;
+    }
+  } else {
+    const answerDescription = normalizeShareConnectionDescription(body.answerDescription, 'answer');
+    if (answerDescription) {
+      answerCode = encodeShareConnectionDescription(answerDescription, record.passphrase);
+    }
+  }
+  if (!answerCode) {
+    sendText(res, 400, copy.serverMessage.missingAnswerPayload);
     return;
   }
 
-  record.answer = body.answer.trim();
+  record.answer = answerCode;
   record.submitToken = null;
   res.writeHead(204, { 'cache-control': 'no-store' });
   res.end();
+}
+
+async function handleChallengeRequest(record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const copy = getMobileCopy(record.language);
+  if (isExpired(record)) {
+    pairings.delete(record.id);
+    clearRateLimitEntriesForPairing(record.id);
+    sendText(res, 410, copy.serverMessage.pairingExpired);
+    return;
+  }
+  if (isRateLimited(req, record.id, 'challenge')) {
+    sendText(res, 429, copy.serverMessage.tooManyChallengeRequests);
+    return;
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readBody(req));
+  } catch (error) {
+    if (error instanceof Error && error.message === 'request_too_large') {
+      sendText(res, 413, copy.serverMessage.requestBodyTooLarge);
+      return;
+    }
+    sendText(res, 400, copy.serverMessage.invalidJsonPayload);
+    return;
+  }
+
+  const body = (payload ?? {}) as { token?: unknown; challenge?: unknown };
+  if (!verifyPairingToken(record, body.token)) {
+    sendText(res, 403, copy.serverMessage.pairingTokenInvalid);
+    return;
+  }
+  if (!record.otpVerified) {
+    sendText(res, 403, copy.serverMessage.otpRequiredFirst);
+    return;
+  }
+  if (typeof body.challenge !== 'string' || body.challenge.trim().length === 0) {
+    sendText(res, 400, copy.serverMessage.missingChallengePayload);
+    return;
+  }
+  const challenge = body.challenge.trim();
+  if (!isHexString(challenge)) {
+    sendText(res, 400, copy.serverMessage.invalidChallengePayload);
+    return;
+  }
+
+  const response = computeShareChallengeResponse(challenge, record.passphrase);
+  sendJson(res, 200, { response });
 }
 
 function ensureServerHandler(req: http.IncomingMessage, res: http.ServerResponse): void {
@@ -1724,6 +3020,8 @@ function ensureServerHandler(req: http.IncomingMessage, res: http.ServerResponse
 
   const url = new URL(req.url || '/', 'http://localhost');
   const pathname = url.pathname;
+  const requestLanguage = getRequestLanguage(url, req);
+  const requestCopy = getMobileCopy(requestLanguage);
 
   if (req.method === 'GET' && pathname === '/health') {
     sendJson(res, 200, { ok: true });
@@ -1731,26 +3029,31 @@ function ensureServerHandler(req: http.IncomingMessage, res: http.ServerResponse
   }
 
   if (req.method === 'GET') {
-    const record = getPagePairing(pathname);
-    if (!record) {
-      sendText(res, 404, 'Pairing not found.');
+    if (!pathname.startsWith('/m/')) {
+      sendText(res, 404, requestCopy.serverMessage.routeNotFound);
       return;
     }
+    const record = getPagePairing(pathname);
+    if (!record) {
+      sendText(res, 404, requestCopy.serverMessage.pairingNotFound);
+      return;
+    }
+    const copy = getMobileCopy(record.language);
     if (isExpired(record)) {
       pairings.delete(record.id);
       clearRateLimitEntriesForPairing(record.id);
-      sendText(res, 410, 'Pairing expired.');
+      sendText(res, 410, copy.serverMessage.pairingExpired);
       return;
     }
     if (record.accessMode === 'lan' && !verifyPairingToken(record, url.searchParams.get('t'))) {
-      sendText(res, 403, 'Invalid pairing token.');
+      sendText(res, 403, copy.serverMessage.invalidPairingTokenPage);
       return;
     }
     res.writeHead(200, {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store',
     });
-    res.end(renderMobilePage(record.id));
+    res.end(renderMobilePage(record.id, record.language));
     return;
   }
 
@@ -1760,6 +3063,11 @@ function ensureServerHandler(req: http.IncomingMessage, res: http.ServerResponse
       void handleBootstrapRequest(bootstrapRecord, req, res);
       return;
     }
+    const challengeRecord = getPairingFromPath(pathname, '/challenge');
+    if (challengeRecord) {
+      void handleChallengeRequest(challengeRecord, req, res);
+      return;
+    }
     const answerRecord = getPairingFromPath(pathname, '/answer');
     if (answerRecord) {
       void handleAnswerRequest(answerRecord, req, res);
@@ -1767,13 +3075,14 @@ function ensureServerHandler(req: http.IncomingMessage, res: http.ServerResponse
     }
   }
 
-  sendText(res, 404, 'Route not found.');
+  sendText(res, 404, requestCopy.serverMessage.routeNotFound);
 }
 
 async function ensureBridgeStarted(): Promise<MobileBridgeState> {
   if (bridgeState) return bridgeState;
 
-  const host = pickLanHost();
+  const hosts = listLanHosts();
+  const host = hosts[0] ?? pickLanHost();
   const server = http.createServer((req, res) => ensureServerHandler(req, res));
   const address = await new Promise<AddressInfo>((resolve, reject) => {
     server.once('error', reject);
@@ -1794,6 +3103,7 @@ async function ensureBridgeStarted(): Promise<MobileBridgeState> {
     server,
     port: address.port,
     host,
+    hosts,
     cleanupTimer,
   };
   return bridgeState;
@@ -1813,10 +3123,13 @@ export async function createMobileControlPairing(
   const ttlMs = typeof requestedTtl === 'number' && Number.isFinite(requestedTtl) && requestedTtl > 0
     ? requestedTtl
     : DEFAULT_TTL_MS;
+  const language = normalizeMobileLanguage(options.language);
+  const offerDescription = normalizeShareConnectionDescription(options.offerDescription, 'offer');
   const record: PairingRecord = {
     id: randomBytes(12).toString('hex'),
     sessionId: options.sessionId,
     offer: options.offer,
+    offerDescription,
     passphrase: options.passphrase,
     mode: options.mode,
     accessMode,
@@ -1826,6 +3139,8 @@ export async function createMobileControlPairing(
     otpVerified: false,
     submitToken: null,
     answer: null,
+    answerConsumed: false,
+    language,
     rtcConfig: {
       iceServers: rtcConfig.iceServers,
       iceTransportPolicy: rtcConfig.iceTransportPolicy,
@@ -1835,15 +3150,35 @@ export async function createMobileControlPairing(
   };
   pairings.set(record.id, record);
 
-  const localPairingUrl = `http://${state.host}:${state.port}/m/${record.id}?t=${record.token}`;
+  const localPairingUrls = Array.from(
+    new Set(
+      (state.hosts.length > 0 ? state.hosts : [state.host]).map((host) => {
+        const localUrl = new URL(`http://${host}:${state.port}/m/${record.id}`);
+        localUrl.searchParams.set('t', record.token);
+        if (record.language === 'tr') {
+          localUrl.searchParams.set('lang', 'tr');
+        }
+        return localUrl.toString();
+      }),
+    ),
+  );
+  const localPairingUrl = localPairingUrls[0] ?? (() => {
+    const fallback = new URL(`http://${state.host}:${state.port}/m/${record.id}`);
+    fallback.searchParams.set('t', record.token);
+    if (record.language === 'tr') {
+      fallback.searchParams.set('lang', 'tr');
+    }
+    return fallback.toString();
+  })();
   const pairingUrl = publicBaseUrl
-    ? buildPairingUrl(publicBaseUrl, record.id, record.token, 'fragment')
+    ? buildPairingUrl(publicBaseUrl, record.id, record.token, 'fragment', true, record.language)
     : localPairingUrl;
 
   return {
     pairingId: record.id,
     pairingUrl,
     localPairingUrl,
+    localPairingUrls,
     accessMode,
     otpCode: record.otpCode,
     expiresAt: new Date(record.expiresAtMs).toISOString(),
@@ -1859,9 +3194,9 @@ export function consumeMobileControlPairingAnswer(pairingId: string): MobileCont
     return { answer: null, status: 'expired' };
   }
   if (!record.answer) return { answer: null, status: 'pending' };
+  if (record.answerConsumed) return { answer: null, status: 'expired' };
+  record.answerConsumed = true;
   const answer = record.answer;
-  pairings.delete(pairingId);
-  clearRateLimitEntriesForPairing(pairingId);
   return { answer, status: 'ready' };
 }
 

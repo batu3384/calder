@@ -95,6 +95,35 @@ describe('createAutoApprovalOrchestrator', () => {
     });
   });
 
+  it('blocks destructive requests even in full_auto mode', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'full_auto',
+        policySource: 'project',
+      }),
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({
+        toolName: 'Bash',
+        toolInput: { command: 'rm -rf dist' },
+      }),
+    ]);
+
+    expect(sendApproval).not.toHaveBeenCalled();
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      effective_mode: 'full_auto',
+      operation_class: 'destructive',
+      decision: 'block',
+    });
+  });
+
   it('asks when provider does not support auto-approval hooks', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();

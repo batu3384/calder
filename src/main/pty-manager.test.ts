@@ -415,12 +415,12 @@ describe('writePty', () => {
     mockSpawn.mockReturnValue(proc);
     spawnPty('s1', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
 
-    writePty('s1', 'input');
+    expect(writePty('s1', 'input')).toBe(true);
     expect(mockWrite).toHaveBeenCalledWith('input');
   });
 
-  it('does nothing for unknown session', () => {
-    writePty('unknown', 'input');
+  it('returns false for unknown session', () => {
+    expect(writePty('unknown', 'input')).toBe(false);
     expect(mockWrite).not.toHaveBeenCalled();
   });
 });

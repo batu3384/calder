@@ -44,6 +44,7 @@ import {
   sendToNewSession,
 } from './session-integration.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
+import { logDebugEvent } from '../debug-panel.js';
 import { handleBrowserGuestOpenRequest } from './popup-routing.js';
 
 function createBrowserToolbarCluster(labelText: string): {
@@ -217,17 +218,25 @@ function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
   navigateTo(instance, nextUrl);
 }
 
-function closeBrowserTargetMenu(instance: BrowserTabInstance): void {
+function closeBrowserTargetMenu(instance: BrowserTabInstance, reason = 'programmatic'): void {
+  const wasOpen = instance.targetMenu.style.display !== 'none';
   instance.targetMenuFloatingCleanup?.();
   instance.targetMenuFloatingCleanup = null;
   instance.targetMenu.style.display = 'none';
   instance.activeTargetTrigger = null;
   instance.activeTargetMode = null;
+  if (wasOpen) {
+    logDebugEvent('browserMenu', instance.sessionId, {
+      menu: 'session-target',
+      state: 'close',
+      reason,
+    });
+  }
 }
 
 function runTargetMenuAction(instance: BrowserTabInstance, action: 'new' | 'custom'): void {
   const mode = instance.activeTargetMode;
-  closeBrowserTargetMenu(instance);
+  closeBrowserTargetMenu(instance, `menu-action:${action}`);
   if (!mode) return;
 
   if (mode === 'inspect') {
@@ -294,7 +303,7 @@ function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
       button.appendChild(meta);
       button.addEventListener('click', () => {
         appState.setBrowserTargetSession(instance.sessionId, session.id);
-        closeBrowserTargetMenu(instance);
+        closeBrowserTargetMenu(instance, 'select-target');
       });
       instance.targetMenuList.appendChild(button);
     }
@@ -355,7 +364,7 @@ function openBrowserTargetMenu(
   mode: 'inspect' | 'draw' | 'flow',
 ): void {
   if (instance.activeTargetTrigger === trigger && instance.targetMenu.style.display !== 'none') {
-    closeBrowserTargetMenu(instance);
+    closeBrowserTargetMenu(instance, 'trigger-toggle');
     return;
   }
 
@@ -369,6 +378,11 @@ function openBrowserTargetMenu(
     offsetPx: 6,
     maxWidthPx: 300,
     maxHeightPx: 360,
+  });
+  logDebugEvent('browserMenu', instance.sessionId, {
+    menu: 'session-target',
+    state: 'open',
+    reason: `trigger:${mode}`,
   });
 }
 
@@ -542,7 +556,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       : preset.label;
     item.addEventListener('click', () => {
       applyViewport(instance, preset);
-      closeViewportDropdown(instance);
+      closeViewportDropdown(instance, 'preset-select');
     });
     viewportDropdown.appendChild(item);
   }
@@ -1822,32 +1836,45 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportBtn.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     if (viewportDropdown.classList.contains('visible')) {
-      closeViewportDropdown(instance);
+      closeViewportDropdown(instance, 'trigger-toggle');
     } else {
       customForm.style.display = 'none';
-      openViewportDropdown(instance);
+      openViewportDropdown(instance, 'trigger-toggle');
     }
   });
 
+  function eventPathContains(event: MouseEvent, node: HTMLElement): boolean {
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    if (path.includes(node)) return true;
+    const target = event.target as Node | null;
+    return Boolean(target && node.contains(target));
+  }
+
   instance.viewportOutsideClickHandler = (e: MouseEvent) => {
-    if (!viewportWrapper.contains(e.target as Node)) {
-      closeViewportDropdown(instance);
+    if (
+      !eventPathContains(e, viewportWrapper)
+      && !eventPathContains(e, viewportBtn)
+      && !eventPathContains(e, viewportDropdown)
+    ) {
+      closeViewportDropdown(instance, 'outside-press');
     }
   };
-  document.addEventListener('mousedown', instance.viewportOutsideClickHandler);
+  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
+    typeof window !== 'undefined' && 'PointerEvent' in window
+  ) ? 'pointerdown' : 'mousedown';
+  document.addEventListener(outsidePressEventName, instance.viewportOutsideClickHandler);
 
   instance.targetMenuOutsideClickHandler = (e: MouseEvent) => {
-    const target = e.target as Node;
     if (
-      !instance.targetMenu.contains(target)
-      && !instance.inspectTargetBtn.contains(target)
-      && !instance.drawTargetBtn.contains(target)
-      && !instance.flowTargetBtn.contains(target)
+      !eventPathContains(e, instance.targetMenu)
+      && !eventPathContains(e, instance.inspectTargetBtn)
+      && !eventPathContains(e, instance.drawTargetBtn)
+      && !eventPathContains(e, instance.flowTargetBtn)
     ) {
-      closeBrowserTargetMenu(instance);
+      closeBrowserTargetMenu(instance, 'outside-press');
     }
   };
-  document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+  document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);
 
   customItem.addEventListener('click', () => {
     customForm.style.display = 'flex';
@@ -1859,7 +1886,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     const h = parseInt(customHInput.value, 10);
     if (w > 0 && h > 0) {
       applyViewport(instance, { label: 'Custom', width: w, height: h });
-      closeViewportDropdown(instance);
+      closeViewportDropdown(instance, 'custom-apply');
     }
   }
 
@@ -2119,6 +2146,9 @@ export function destroyBrowserTabPane(sessionId: string): void {
   // Delete from the map first so errors below can't leave a half-destroyed instance around.
   instances.delete(sessionId);
 
+  closeBrowserTargetMenu(instance, 'destroy');
+  document.removeEventListener('pointerdown', instance.viewportOutsideClickHandler);
+  document.removeEventListener('pointerdown', instance.targetMenuOutsideClickHandler);
   document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);
   document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
   instance.viewportDropdownFloatingCleanup?.();

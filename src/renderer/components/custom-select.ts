@@ -1,4 +1,5 @@
 import { anchorFloatingSurface, type FloatingSurfaceOptions } from './floating-surface.js';
+import { logDebugEvent } from './debug-panel.js';
 
 export interface SelectOption {
   value: string;
@@ -56,6 +57,7 @@ export function createCustomSelect(
   let activeIndex = -1;
   let floatingCleanup: (() => void) | null = null;
   const items: HTMLElement[] = [];
+  const debugSessionId = `custom-select:${id}`;
 
   function ensureFloatingDropdownHost(): void {
     if (!usesFloatingSurface) return;
@@ -116,7 +118,20 @@ export function createCustomSelect(
     });
   }
 
-  function selectOption(index: number): void {
+  function traceDropdownEvent(
+    event: 'open' | 'close' | 'change',
+    reason: string,
+    data?: Record<string, unknown>,
+  ): void {
+    logDebugEvent('uiDropdown', debugSessionId, {
+      event,
+      reason,
+      value: hidden.value,
+      ...data,
+    });
+  }
+
+  function selectOption(index: number, reason = 'select'): void {
     const opt = options[index];
     if (!opt || opt.disabled) return;
     const prevValue = hidden.value;
@@ -124,8 +139,13 @@ export function createCustomSelect(
     if (prevValue !== opt.value) {
       hidden.dispatchEvent(new Event('input', { bubbles: true }));
       hidden.dispatchEvent(new Event('change', { bubbles: true }));
+      traceDropdownEvent('change', reason, {
+        previousValue: prevValue,
+        nextValue: opt.value,
+        index,
+      });
     }
-    closeDropdown();
+    closeDropdown(`select:${reason}`);
   }
 
   function updateActive(): void {
@@ -133,7 +153,7 @@ export function createCustomSelect(
     if (activeIndex >= 0) items[activeIndex]?.scrollIntoView({ block: 'nearest' });
   }
 
-  function openDropdown(): void {
+  function openDropdown(reason = 'programmatic'): void {
     if (isOpen()) return;
     const triggerWidth = Math.ceil(trigger.getBoundingClientRect().width);
     dropdown.style.minWidth = `${Math.max(triggerWidth, 120)}px`;
@@ -156,9 +176,13 @@ export function createCustomSelect(
     }
     updateActive();
     config.onOpenChange?.(true);
+    traceDropdownEvent('open', reason, {
+      floating: usesFloatingSurface,
+      align: config.align ?? 'start',
+    });
   }
 
-  function closeDropdown(): void {
+  function closeDropdown(reason = 'programmatic'): void {
     const wasOpen = isOpen();
     floatingCleanup?.();
     floatingCleanup = null;
@@ -171,6 +195,7 @@ export function createCustomSelect(
     items.forEach(el => el.classList.remove('active'));
     if (wasOpen) {
       config.onOpenChange?.(false);
+      traceDropdownEvent('close', reason);
     }
   }
 
@@ -179,15 +204,15 @@ export function createCustomSelect(
   }
 
   trigger.addEventListener('click', () => {
-    if (isOpen()) closeDropdown();
-    else openDropdown();
+    if (isOpen()) closeDropdown('trigger-toggle');
+    else openDropdown('trigger-toggle');
   });
 
   trigger.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       e.stopPropagation();
-      if (!isOpen()) openDropdown();
+      if (!isOpen()) openDropdown('keyboard-arrow');
       const dir = e.key === 'ArrowDown' ? 1 : -1;
       let next = activeIndex;
       for (let attempt = 0; attempt < options.length; attempt++) {
@@ -201,34 +226,44 @@ export function createCustomSelect(
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       e.stopPropagation();
-      if (isOpen() && activeIndex >= 0) selectOption(activeIndex);
-      else if (!isOpen()) openDropdown();
+      if (isOpen() && activeIndex >= 0) selectOption(activeIndex, 'keyboard-enter');
+      else if (!isOpen()) openDropdown('keyboard-enter');
     } else if (e.key === 'Escape') {
       if (isOpen()) {
         e.preventDefault();
         e.stopPropagation();
-        closeDropdown();
+        closeDropdown('keyboard-escape');
       }
     } else if (e.key === 'Tab') {
-      closeDropdown();
+      closeDropdown('keyboard-tab');
     }
   });
 
-  function eventTargetsCurrentSelect(event: PointerEvent): boolean {
+  function eventTargetsCurrentSelect(event: Event): boolean {
     const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
     if (composedPath.includes(wrapper) || composedPath.includes(dropdown) || composedPath.includes(trigger)) {
       return true;
     }
     const target = event.target as Node | null;
-    return Boolean(target && wrapper.contains(target));
+    return Boolean(
+      target
+      && (
+        wrapper.contains(target)
+        || dropdown.contains(target)
+        || trigger.contains(target)
+      )
+    );
   }
 
-  const onOutsidePointerDown = (event: PointerEvent) => {
+  const onOutsidePointerDown = (event: PointerEvent | MouseEvent) => {
     if (!isOpen()) return;
     if (eventTargetsCurrentSelect(event)) return;
-    closeDropdown();
+    closeDropdown('outside-press');
   };
-  document.addEventListener('pointerdown', onOutsidePointerDown);
+  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
+    typeof window !== 'undefined' && 'PointerEvent' in window
+  ) ? 'pointerdown' : 'mousedown';
+  document.addEventListener(outsidePressEventName, onOutsidePointerDown);
 
   const initialIndex = options.findIndex(o => o.value === hidden.value);
   if (initialIndex >= 0) {
@@ -243,14 +278,24 @@ export function createCustomSelect(
     element: wrapper,
     getValue() { return hidden.value; },
     setValue(value: string) {
+      const previousValue = hidden.value;
       const nextIndex = options.findIndex(opt => opt.value === value && !opt.disabled);
       if (nextIndex >= 0) {
         applySelectedIndex(nextIndex);
+        if (previousValue !== hidden.value) {
+          traceDropdownEvent('change', 'set-value', {
+            previousValue,
+            nextValue: options[nextIndex]?.value,
+            index: nextIndex,
+          });
+        }
       }
     },
     destroy() {
-      closeDropdown();
+      closeDropdown('destroy');
+      document.removeEventListener(outsidePressEventName, onOutsidePointerDown);
       document.removeEventListener('pointerdown', onOutsidePointerDown);
+      document.removeEventListener('mousedown', onOutsidePointerDown);
     },
   };
 }

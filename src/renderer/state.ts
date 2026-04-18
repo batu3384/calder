@@ -174,11 +174,20 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
     : kind === 'mobile'
       ? (existing?.tabFocus ?? (active ? 'mobile' : 'session'))
       : 'session';
+  const tabPlacement = existing?.tabPlacement === 'start' ? 'start' : 'end';
+  const tabOrder = Array.isArray(existing?.tabOrder)
+    ? existing.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
+    : [];
+  const normalizedTabOrder = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
+    ? tabOrder
+    : ['cli', 'mobile'];
 
   return {
     kind,
     active,
     tabFocus,
+    tabPlacement,
+    tabOrder: normalizedTabOrder,
     targetSessionId: existing?.targetSessionId ?? browserSession?.browserTargetSessionId,
     web: {
       sessionId: existing?.web?.sessionId ?? browserSession?.id,
@@ -1502,9 +1511,18 @@ class AppState {
       : surface.kind === 'mobile'
         ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
       : 'session';
+    const tabPlacement = surface.tabPlacement === 'start' ? 'start' : 'end';
+    const tabOrder = Array.isArray(surface.tabOrder)
+      ? surface.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
+      : [];
+    const normalizedTabOrder = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
+      ? tabOrder
+      : ['cli', 'mobile'];
     project.surface = {
       ...surface,
       tabFocus,
+      tabPlacement,
+      tabOrder: normalizedTabOrder,
       web: surface.web
         ? {
             ...surface.web,
@@ -1565,6 +1583,7 @@ class AppState {
     if (!project) return;
     project.surface = normalizeProjectSurface(project);
     if (project.surface.kind !== 'mobile') return;
+    project.surface.kind = 'web';
     project.surface.active = false;
     project.surface.tabFocus = 'session';
     this.persist();

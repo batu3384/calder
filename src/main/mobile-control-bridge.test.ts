@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { decodeConnectionCode } from '../renderer/sharing/webrtc-utils';
 import {
   consumeMobileControlPairingAnswer,
   createMobileControlPairing,
@@ -78,6 +79,8 @@ describe('mobile-control-bridge', () => {
     const page = await getRequest(pairingUrl.toString());
     expect(page.status).toBe(200);
     expect(page.text).toContain('Calder Mobile Control');
+    expect(page.text).toContain('Use the 6-digit OTP shown under the desktop QR. Do not enter the manual passphrase here.');
+    expect(page.text).not.toContain('Wrong passphrase or invalid connection code.');
     expect(page.text).toContain('data-mobile-view-tab="terminal"');
     expect(page.text).toContain('data-mobile-view-tab="controls"');
     expect(page.text).toContain('data-mobile-session-select');
@@ -92,6 +95,15 @@ describe('mobile-control-bridge', () => {
     expect(page.text).toContain('data-mobile-history-prev');
     expect(page.text).toContain('data-mobile-history-next');
     expect(page.text).toContain('data-mobile-command-chip');
+    expect(page.text).toContain('data-mobile-browser-session-select');
+    expect(page.text).toContain('data-mobile-browser-control');
+    expect(page.text).toContain('data-mobile-browser-viewport');
+    expect(page.text).toContain('data-mobile-browser-status');
+    expect(page.text).toContain('data-mobile-inspect-selection');
+    expect(page.text).toContain('data-mobile-browser-inspect-input');
+    expect(page.text).toContain('data-mobile-browser-inspect-send');
+    expect(page.text).toContain('/challenge');
+    expect(page.text).toContain('answerDescription');
     expect(page.text).toContain('data-control="ctrl-c"');
     expect(page.text).toContain('data-control="ctrl-l"');
     expect(page.text).toContain('data-control="ctrl-d"');
@@ -113,6 +125,7 @@ describe('mobile-control-bridge', () => {
     expect(bootstrap.status).toBe(200);
     const bootstrapBody = bootstrap.json as {
       offer: string;
+      offerDescription?: { type: 'offer' | 'answer'; sdp: string } | null;
       passphrase: string;
       mode: 'readonly' | 'readwrite';
       submitToken: string;
@@ -129,7 +142,7 @@ describe('mobile-control-bridge', () => {
     const answerSubmit = await postJson(answerPath, {
       token: pairingUrl.searchParams.get('t'),
       submitToken: bootstrapBody.submitToken,
-      answer: 'answer-code-1',
+      answerDescription: { type: 'answer', sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\n' },
     });
     expect(answerSubmit.status).toBe(204);
 
@@ -142,11 +155,147 @@ describe('mobile-control-bridge', () => {
 
     const consumed = consumeMobileControlPairingAnswer(pairing.pairingId);
     expect(consumed.status).toBe('ready');
-    expect(consumed.answer).toBe('answer-code-1');
+    expect(typeof consumed.answer).toBe('string');
+    expect((consumed.answer ?? '').length).toBeGreaterThan(20);
 
     const consumedAgain = consumeMobileControlPairingAnswer(pairing.pairingId);
     expect(consumedAgain.status).toBe('expired');
     expect(consumedAgain.answer).toBeNull();
+  });
+
+  it('accepts plaintext answer descriptions for mobile browsers without WebCrypto subtle', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-answer-description',
+      offer: 'offer-code-answer-description',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readwrite',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+    const bootstrapBody = bootstrap.json as { submitToken: string };
+
+    const answerPath = `${local.origin}/api/pair/${pairing.pairingId}/answer`;
+    const submit = await postJson(answerPath, {
+      token,
+      submitToken: bootstrapBody.submitToken,
+      answerDescription: { type: 'answer', sdp: 'v=0\r\no=- 42 2 IN IP4 127.0.0.1\r\n' },
+    });
+    expect(submit.status).toBe(204);
+
+    const consumed = consumeMobileControlPairingAnswer(pairing.pairingId);
+    expect(consumed.status).toBe('ready');
+    expect(typeof consumed.answer).toBe('string');
+    expect((consumed.answer ?? '').length).toBeGreaterThan(24);
+    expect(consumed.answer).not.toContain('v=0');
+    const decoded = await decodeConnectionCode(consumed.answer ?? '', 'answer', 'ABCD-EF12-GH34-JK56');
+    expect(decoded.type).toBe('answer');
+    expect(decoded.sdp).toContain('v=0');
+  });
+
+  it('returns challenge signatures for non-WebCrypto auth fallback and validates challenge payloads', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-challenge-signature',
+      offer: 'offer-code-challenge-signature',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+
+    const challengePath = `${local.origin}/api/pair/${pairing.pairingId}/challenge`;
+    const challengeHex = 'ab'.repeat(32);
+    const signature = await postJson(challengePath, {
+      token,
+      challenge: challengeHex,
+    });
+    expect(signature.status).toBe(200);
+    expect((signature.json as { response: string }).response).toMatch(/^[a-f0-9]{64}$/);
+
+    const invalidChallenge = await postJson(challengePath, {
+      token,
+      challenge: 'not-hex',
+    });
+    expect(invalidChallenge.status).toBe(400);
+    expect(invalidChallenge.text).toContain('challenge');
+  });
+
+  it('keeps challenge endpoint access after answer is consumed for mobile auth fallback', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-consume-challenge-probe',
+      offer: 'offer-code-consume-challenge-probe',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+    const bootstrapBody = bootstrap.json as { submitToken: string };
+
+    const answerPath = `${local.origin}/api/pair/${pairing.pairingId}/answer`;
+    const answerSubmit = await postJson(answerPath, {
+      token,
+      submitToken: bootstrapBody.submitToken,
+      answerDescription: { type: 'answer', sdp: 'v=0\r\no=- 43 2 IN IP4 127.0.0.1\r\n' },
+    });
+    expect(answerSubmit.status).toBe(204);
+
+    const consumed = consumeMobileControlPairingAnswer(pairing.pairingId);
+    expect(consumed.status).toBe('ready');
+
+    const challengePath = `${local.origin}/api/pair/${pairing.pairingId}/challenge`;
+    const challengeAfterConsume = await postJson(challengePath, {
+      token,
+      challenge: 'ab'.repeat(32),
+    });
+    expect(challengeAfterConsume.status).toBe(200);
+    expect((challengeAfterConsume.json as { response: string }).response).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('returns provided offer description in bootstrap payload for resilient mobile handshake', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-offer-desc',
+      offer: 'opaque-offer-code',
+      offerDescription: { type: 'offer', sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\n' },
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const pairingUrl = new URL(toLoopbackUrl(pairing.pairingUrl));
+    const bootstrapPath = `${pairingUrl.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+
+    const bootstrap = await postJson(bootstrapPath, {
+      token: pairingUrl.searchParams.get('t'),
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+    const bootstrapBody = bootstrap.json as {
+      offer: string;
+      offerDescription?: { type: 'offer' | 'answer'; sdp: string } | null;
+    };
+    expect(bootstrapBody.offer).toBe('opaque-offer-code');
+    expect(bootstrapBody.offerDescription).toEqual({ type: 'offer', sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\n' });
   });
 
   it('returns pending when no answer has been submitted and supports explicit revoke', async () => {
@@ -181,6 +330,54 @@ describe('mobile-control-bridge', () => {
     expect(result.answer).toBeNull();
   });
 
+  it('renders Turkish mobile page copy when pairing language is set to Turkish', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-tr',
+      offer: 'offer-code-tr',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+      language: 'tr',
+    });
+
+    const pairingUrl = new URL(toLoopbackUrl(pairing.pairingUrl));
+    expect(pairingUrl.searchParams.get('lang')).toBe('tr');
+
+    const page = await getRequest(pairingUrl.toString());
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('<html lang="tr">');
+    expect(page.text).toContain('Calder Mobil Kontrol');
+    expect(page.text).toContain('Doğrula ve Bağlan');
+    expect(page.text).toContain('Masaüstünde QR altında görünen 6 haneli OTP\'yi girin. Buraya manuel parola girmeyin.');
+    expect(page.text).not.toContain('Parola hatalı veya bağlantı kodu geçersiz.');
+    expect(page.text).toContain('Kontroller');
+  });
+
+  it('localizes missing pairing page and unknown route by request language', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-lang-fallbacks',
+      offer: 'offer-code-lang-fallbacks',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+
+    const missingPairingPageTr = await getRequest(`${local.origin}/m/aaaaaaaaaaaaaaaaaaaaaaaa?lang=tr`);
+    expect(missingPairingPageTr.status).toBe(404);
+    expect(missingPairingPageTr.text).toContain('Eşleştirme bulunamadı.');
+
+    const missingPairingPageEn = await getRequest(`${local.origin}/m/aaaaaaaaaaaaaaaaaaaaaaaa`);
+    expect(missingPairingPageEn.status).toBe(404);
+    expect(missingPairingPageEn.text).toContain('Pairing not found.');
+
+    const unknownRouteTr = await getRequest(`${local.origin}/unknown?lang=tr`);
+    expect(unknownRouteTr.status).toBe(404);
+    expect(unknownRouteTr.text).toContain('Rota bulunamadı.');
+
+    const unknownRouteEn = await getRequest(`${local.origin}/unknown`);
+    expect(unknownRouteEn.status).toBe(404);
+    expect(unknownRouteEn.text).toContain('Route not found.');
+  });
+
   it('builds remote pairing URL when public base URL is configured', async () => {
     process.env.CALDER_MOBILE_PUBLIC_BASE_URL = 'https://remote.example.com/calder';
     const pairing = await createMobileControlPairing({
@@ -196,13 +393,27 @@ describe('mobile-control-bridge', () => {
     const remote = new URL(pairing.pairingUrl);
     expect(remote.origin).toBe('https://remote.example.com');
     expect(remote.pathname).toBe(`/calder/m/${pairing.pairingId}`);
-    expect(remote.searchParams.get('t')).toBeNull();
+    expect(remote.searchParams.get('t')).toMatch(/^[a-f0-9]{40}$/);
     const remoteToken = new URLSearchParams(remote.hash.replace(/^#/, '')).get('t');
     expect(remoteToken).toMatch(/^[a-f0-9]{40}$/);
+    expect(remote.searchParams.get('t')).toBe(remoteToken);
 
     const local = new URL(pairing.localPairingUrl ?? '');
     expect(local.pathname).toBe(`/m/${pairing.pairingId}`);
     expect(local.searchParams.get('t')).toBe(remoteToken);
+  });
+
+  it('returns LAN fallback pairing urls including the primary local url', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-lan-fallbacks',
+      offer: 'offer-code-lan-fallbacks',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+
+    expect(Array.isArray(pairing.localPairingUrls)).toBe(true);
+    expect((pairing.localPairingUrls ?? []).length).toBeGreaterThan(0);
+    expect(pairing.localPairingUrls).toContain(pairing.localPairingUrl);
   });
 
   it('falls back to local LAN pairing URL when public base URL is invalid', async () => {
@@ -290,6 +501,35 @@ describe('mobile-control-bridge', () => {
     });
     expect(invalidSubmit.status).toBe(403);
     expect(invalidSubmit.text).toContain('Submit token is invalid');
+  });
+
+  it('rejects malformed encrypted answer payloads before desktop consume path', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-invalid-answer-payload',
+      offer: 'offer-code-invalid-answer-payload',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+    const bootstrapBody = bootstrap.json as { submitToken: string };
+
+    const answerPath = `${local.origin}/api/pair/${pairing.pairingId}/answer`;
+    const invalidAnswer = await postJson(answerPath, {
+      token,
+      submitToken: bootstrapBody.submitToken,
+      answer: 'totally-not-an-encrypted-answer',
+    });
+    expect(invalidAnswer.status).toBe(400);
+    expect(invalidAnswer.text).toContain('invalid');
   });
 
   it('rate-limits repeated bootstrap abuse attempts', async () => {

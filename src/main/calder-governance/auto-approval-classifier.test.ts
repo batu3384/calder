@@ -112,7 +112,7 @@ describe('decideAutoApprovalAction', () => {
     });
   });
 
-  it('allows every operation in full_auto mode', () => {
+  it('allows non-destructive operations in full_auto mode', () => {
     expect(decideAutoApprovalAction('full_auto', 'edit')).toEqual({
       decision: 'allow',
       reason: 'All operations are auto-approved in full_auto mode (edit).',
@@ -129,9 +129,12 @@ describe('decideAutoApprovalAction', () => {
       decision: 'allow',
       reason: 'All operations are auto-approved in full_auto mode (unknown).',
     });
+  });
+
+  it('still blocks destructive operations in full_auto mode', () => {
     expect(decideAutoApprovalAction('full_auto', 'destructive')).toEqual({
-      decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto mode (destructive).',
+      decision: 'block',
+      reason: 'Destructive operations are blocked in every auto-approval mode.',
     });
   });
 

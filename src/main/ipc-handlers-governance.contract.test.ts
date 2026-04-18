@@ -31,4 +31,9 @@ describe('IPC governance contract', () => {
     expect(source).toContain("'governance:setSessionAutoApprovalOverride'");
     expect(source).toContain("scope === 'project' && (mode === null || isAutoApprovalMode(mode))");
   });
+
+  it('uses provider-aware auto-approval dispatch with missing-session fallback', () => {
+    expect(source).toContain('resolveAutoApprovalInput(providerId)');
+    expect(source).toContain('Failed to write approval input: missing PTY session');
+  });
 });

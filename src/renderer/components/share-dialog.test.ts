@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock peer-host before importing share-dialog
 const mockIsSharing = vi.fn<(sessionId: unknown) => boolean>(() => false);
 const mockIsConnected = vi.fn<(sessionId: unknown) => boolean>(() => false);
+const mockGetShareConnectionSnapshot = vi.fn<(sessionId: unknown) => unknown>(() => null);
 vi.mock('../sharing/peer-host.js', () => ({
   isSharing: (sessionId: unknown) => mockIsSharing(sessionId),
   isConnected: (sessionId: unknown) => mockIsConnected(sessionId),
+  getShareConnectionSnapshot: (sessionId: unknown) => mockGetShareConnectionSnapshot(sessionId),
 }));
 
 // Mock share-manager before importing share-dialog

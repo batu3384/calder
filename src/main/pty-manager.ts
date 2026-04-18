@@ -166,11 +166,13 @@ export function spawnCommandPty(
   ptys.set(sessionId, { process: ptyProcess, sessionId });
 }
 
-export function writePty(sessionId: string, data: string): void {
+export function writePty(sessionId: string, data: string): boolean {
   const instance = ptys.get(sessionId);
-  if (instance) {
-    instance.process.write(data);
+  if (!instance) {
+    return false;
   }
+  instance.process.write(data);
+  return true;
 }
 
 export function resizePty(sessionId: string, cols: number, rows: number): void {

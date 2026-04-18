@@ -1,5 +1,6 @@
 import { appState, ArchivedSession } from '../state.js';
 import { loadProviderAvailability } from '../provider-availability.js';
+import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import type { ProviderId } from '../../shared/types.js';
 type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
@@ -320,13 +321,13 @@ function renderList(history: ArchivedSession[]): void {
     const parts: string[] = [];
     parts.push(formatDate(archived.closedAt));
     if (archived.cost) {
-      const costLabel = archived.cost.source === 'fallback'
-        ? `Estimated $${archived.cost.totalCostUsd.toFixed(2)}`
-        : archived.cost.source === 'derived'
+      const costLabel = isEstimatedCost(archived.cost)
+        ? isDerivedCost(archived.cost)
           ? archived.cost.totalCostUsd > 0
             ? `Derived $${archived.cost.totalCostUsd.toFixed(2)}`
             : 'Derived --'
-          : `$${archived.cost.totalCostUsd.toFixed(2)}`;
+          : `Estimated $${archived.cost.totalCostUsd.toFixed(2)}`
+        : `$${archived.cost.totalCostUsd.toFixed(2)}`;
       parts.push(costLabel);
     }
     parts.push(getProviderLabel(archived.providerId));

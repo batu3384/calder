@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockAttachBrowserTabToContainer,
@@ -34,6 +34,10 @@ vi.mock('./mobile-surface/pane.js', () => ({
 import { renderSurfaceHost } from './surface-host.js';
 
 describe('surface host', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders the browser live view when the active surface is web', () => {
     const container = {} as HTMLElement;
     renderSurfaceHost(
@@ -80,6 +84,7 @@ describe('surface host', () => {
         surface: {
           kind: 'cli',
           active: true,
+          tabFocus: 'cli',
           cli: {
             selectedProfileId: 'textual',
             profiles: [{ id: 'textual', name: 'Textual', command: 'python' }],
@@ -148,6 +153,7 @@ describe('surface host', () => {
         surface: {
           kind: 'mobile',
           active: true,
+          tabFocus: 'mobile',
           web: { history: [] },
           cli: { profiles: [], runtime: { status: 'idle' } },
         },
@@ -157,5 +163,41 @@ describe('surface host', () => {
 
     expect(mockAttachMobileSurfacePane).toHaveBeenCalledWith('project-1', container);
     expect(mockShowMobileSurfacePane).toHaveBeenCalledWith('project-1');
+  });
+
+  it('falls back to browser live view when mobile surface tab focus is on sessions', () => {
+    const container = {} as HTMLElement;
+    renderSurfaceHost(
+      {
+        id: 'project-1',
+        name: 'Demo',
+        path: '/tmp/demo',
+        activeSessionId: 'browser-1',
+        sessions: [
+          {
+            id: 'browser-1',
+            name: 'Live View',
+            type: 'browser-tab',
+            cliSessionId: null,
+            createdAt: '2026-04-12',
+            browserTabUrl: 'http://localhost:3000',
+          },
+        ],
+        layout: { mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' },
+        surface: {
+          kind: 'mobile',
+          active: true,
+          tabFocus: 'session',
+          web: { sessionId: 'browser-1', url: 'http://localhost:3000' },
+          cli: { profiles: [], runtime: { status: 'idle' } },
+        },
+      } as any,
+      container,
+    );
+
+    expect(mockAttachMobileSurfacePane).not.toHaveBeenCalled();
+    expect(mockShowMobileSurfacePane).not.toHaveBeenCalled();
+    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith('browser-1', container);
+    expect(mockShowBrowserTabPane).toHaveBeenCalledWith('browser-1', true);
   });
 });

@@ -989,6 +989,29 @@ describe('setActiveSession()', () => {
     });
     expect(appState.activeProject!.surface?.web?.history).toContain('http://localhost:3000');
   });
+
+  it('returns mobile tab focus to session when re-selecting the already-active browser tab', () => {
+    const project = addProject();
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setProjectSurface(project.id, {
+      kind: 'mobile',
+      active: true,
+      tabFocus: 'mobile',
+      web: { sessionId: browser.id, url: browser.browserTabUrl, history: [browser.browserTabUrl!] },
+      cli: { profiles: [], runtime: { status: 'idle' } },
+    });
+
+    appState.setActiveSession(project.id, browser.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'mobile',
+        active: true,
+        tabFocus: 'session',
+      }),
+    );
+  });
 });
 
 describe('cli surface tab state', () => {
@@ -1090,7 +1113,7 @@ describe('mobile surface tab state', () => {
 
     expect(appState.activeProject!.surface).toEqual(
       expect.objectContaining({
-        kind: 'mobile',
+        kind: 'web',
         active: false,
         tabFocus: 'session',
       }),

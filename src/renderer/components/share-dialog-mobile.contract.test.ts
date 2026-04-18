@@ -9,5 +9,10 @@ describe('share dialog mobile control contract', () => {
     expect(source).toContain('createControlPairing');
     expect(source).toContain('consumeControlAnswer');
     expect(source).toContain('revokeControlPairing');
+    expect(source).toContain('decodeConnectionEnvelope');
+    expect(source).toContain('offerDescription');
+    expect(source).toContain("appState.preferences.language ?? 'en'");
+    expect(source).toContain('const sharingConfigApi = getSharingConfigApi();');
+    expect(source).toContain('sharingConfigApi.getRtcConfig()');
   });
 });

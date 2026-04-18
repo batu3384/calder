@@ -138,6 +138,92 @@ export interface MobileDependencyInstallResult {
   stderr?: string;
 }
 
+export type MobileDependencyInstallProgressPhase =
+  | 'started'
+  | 'step_started'
+  | 'step_progress'
+  | 'step_finished'
+  | 'finished'
+  | 'failed';
+
+export interface MobileDependencyInstallProgressEvent {
+  installId: string;
+  dependencyId: MobileDependencyId;
+  phase: MobileDependencyInstallProgressPhase;
+  startedAt: string;
+  finishedAt?: string;
+  stepIndex?: number;
+  totalSteps?: number;
+  command?: string;
+  message?: string;
+  detail?: string;
+  source?: 'stdout' | 'stderr';
+  percent?: number;
+  stepPercent?: number;
+  downloadedBytes?: number;
+  totalBytes?: number;
+  remainingBytes?: number;
+}
+
+// --- Mobile Inspect Surface ---
+
+export type MobileInspectPlatform = 'ios' | 'android';
+
+export interface MobileInspectLaunchResult {
+  platform: MobileInspectPlatform;
+  success: boolean;
+  message: string;
+  deviceId?: string;
+  deviceName?: string;
+  alreadyRunning?: boolean;
+  started?: boolean;
+}
+
+export interface MobileInspectScreenshotResult {
+  platform: MobileInspectPlatform;
+  success: boolean;
+  message: string;
+  dataUrl?: string;
+  width?: number;
+  height?: number;
+  capturedAt?: string;
+  deviceId?: string;
+  deviceName?: string;
+}
+
+export interface MobileInspectElementMatch {
+  className?: string;
+  text?: string;
+  resourceId?: string;
+  contentDesc?: string;
+  bounds?: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  };
+}
+
+export interface MobileInspectPointInspectionResult {
+  platform: MobileInspectPlatform;
+  success: boolean;
+  message: string;
+  point: { x: number; y: number };
+  element?: MobileInspectElementMatch;
+  deviceId?: string;
+  deviceName?: string;
+}
+
+export interface MobileInspectInteractionResult {
+  platform: MobileInspectPlatform;
+  success: boolean;
+  message: string;
+  action: 'tap';
+  point: { x: number; y: number };
+  deviceId?: string;
+  deviceName?: string;
+}
+
 // --- Git ---
 
 export interface GitWorktree {
@@ -305,10 +391,16 @@ export interface ShareRtcConfig {
   issues?: string[];
 }
 
+export interface ShareConnectionDescription {
+  type: 'offer' | 'answer';
+  sdp: string;
+}
+
 export interface MobileControlPairingResult {
   pairingId: string;
   pairingUrl: string;
   localPairingUrl: string;
+  localPairingUrls: string[];
   accessMode: 'lan' | 'remote';
   otpCode: string;
   expiresAt: string;
@@ -722,6 +814,8 @@ export interface ProjectSurfaceRecord {
   kind: SurfaceKind;
   active: boolean;
   tabFocus?: 'session' | 'cli' | 'mobile';
+  tabPlacement?: 'start' | 'end';
+  tabOrder?: Array<'cli' | 'mobile'>;
   targetSessionId?: string;
   web?: WebSurfaceState;
   cli?: CliSurfaceState;

@@ -1,9 +1,13 @@
 // Host-side WebRTC logic for P2P session sharing.
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
-import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
+import type { ShareBrowserControlAction, ShareMode, ShareMessage } from '../../shared/sharing-types.js';
 import type { SessionRecord, ShareRtcConfig } from '../../shared/types.js';
-import { getTerminalInstance } from '../components/terminal-pane.js';
+import { deliverPromptToTerminalSession, getTerminalInstance } from '../components/terminal-pane.js';
+import { getBrowserTabInstance } from '../components/browser-tab/instance.js';
+import { toggleInspectMode } from '../components/browser-tab/inspect-mode.js';
+import { VIEWPORT_PRESETS } from '../components/browser-tab/types.js';
+import { applyViewport } from '../components/browser-tab/viewport.js';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { buildRtcConfiguration, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
 import { generateChallenge, computeChallengeResponse, bytesToHex } from './share-crypto.js';
@@ -22,6 +26,10 @@ interface HostPeer {
   authTimeout: ReturnType<typeof setTimeout> | null;
   keepaliveTimer: ReturnType<typeof setInterval> | null;
   missedPongs: number;
+  connectedAtMs: number | null;
+  verifiedAtMs: number | null;
+  lastPingAtMs: number | null;
+  lastPongAtMs: number | null;
   serializeAddon: SerializeAddon;
 }
 
@@ -42,8 +50,36 @@ interface SessionSnapshot {
   rows: number;
 }
 
+interface BrowserSessionSnapshot {
+  id: string;
+  name: string;
+  url: string;
+  inspectMode: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  viewportLabel: string;
+  selectedElementSummary?: string;
+}
+
+export interface ShareConnectionSnapshot {
+  ownerSessionId: string;
+  activeSessionId: string;
+  mode: ShareMode;
+  connected: boolean;
+  authState: 'none' | 'pending' | 'verified';
+  missedPongs: number;
+  connectedAtMs: number | null;
+  verifiedAtMs: number | null;
+  lastPingAtMs: number | null;
+  lastPongAtMs: number | null;
+}
+
 function isShareableCliSession(session: SessionRecord): boolean {
   return !session.type || session.type === 'claude';
+}
+
+function isShareableBrowserSession(session: SessionRecord): boolean {
+  return session.type === 'browser-tab';
 }
 
 function findProjectForShare(ownerSessionId: string) {
@@ -101,6 +137,261 @@ function buildSessionCatalog(hostPeer: HostPeer): { activeSessionId: string; ses
   };
 }
 
+function buildBrowserSessionCatalog(hostPeer: HostPeer): {
+  activeBrowserSessionId: string;
+  sessions: BrowserSessionSnapshot[];
+} {
+  const project = findProjectForShare(hostPeer.ownerSessionId);
+  if (!project) {
+    return {
+      activeBrowserSessionId: '',
+      sessions: [],
+    };
+  }
+
+  const sessions = project.sessions
+    .filter((session) => isShareableBrowserSession(session))
+    .map((session) => {
+      const instance = getBrowserTabInstance(session.id);
+      if (!instance) return null;
+      let canGoBack = false;
+      let canGoForward = false;
+      try {
+        canGoBack = instance.webview.canGoBack();
+        canGoForward = instance.webview.canGoForward();
+      } catch {
+        canGoBack = false;
+        canGoForward = false;
+      }
+      return {
+        id: session.id,
+        name: session.name,
+        url: instance.committedUrl || instance.webview.src || 'about:blank',
+        inspectMode: Boolean(instance.inspectMode),
+        canGoBack,
+        canGoForward,
+        viewportLabel: instance.currentViewport.label,
+        selectedElementSummary: instance.selectedElement
+          ? `<${instance.selectedElement.tagName}> ${instance.selectedElement.activeSelector.value}`
+          : undefined,
+      } satisfies BrowserSessionSnapshot;
+    })
+    .filter((entry): entry is BrowserSessionSnapshot => Boolean(entry));
+
+  let activeBrowserSessionId = '';
+  const activeProjectSession = project.sessions.find((session) => session.id === project.activeSessionId);
+  if (activeProjectSession && isShareableBrowserSession(activeProjectSession)) {
+    activeBrowserSessionId = project.activeSessionId;
+  } else if (sessions.length > 0) {
+    activeBrowserSessionId = sessions[0].id;
+  }
+  if (activeBrowserSessionId && !sessions.some((session) => session.id === activeBrowserSessionId)) {
+    activeBrowserSessionId = sessions[0]?.id ?? '';
+  }
+
+  return {
+    activeBrowserSessionId,
+    sessions,
+  };
+}
+
+function sendBrowserState(hostPeer: HostPeer): void {
+  if (!hostPeer.connected || hostPeer.authState !== 'verified') return;
+  sendMessage(hostPeer.dc, {
+    type: 'browser-state',
+    ...buildBrowserSessionCatalog(hostPeer),
+  });
+}
+
+function resolveBrowserTargetSessionId(hostPeer: HostPeer, requestedSessionId?: string): string | null {
+  const catalog = buildBrowserSessionCatalog(hostPeer);
+  if (catalog.sessions.length === 0) return null;
+  const normalizedRequested = String(requestedSessionId || '').trim();
+  if (normalizedRequested && catalog.sessions.some((session) => session.id === normalizedRequested)) {
+    return normalizedRequested;
+  }
+  if (catalog.activeBrowserSessionId && catalog.sessions.some((session) => session.id === catalog.activeBrowserSessionId)) {
+    return catalog.activeBrowserSessionId;
+  }
+  return catalog.sessions[0]?.id ?? null;
+}
+
+function sendBrowserControlResult(
+  hostPeer: HostPeer,
+  action: ShareBrowserControlAction,
+  ok: boolean,
+  sessionId?: string,
+  reason?: string,
+): void {
+  sendMessage(hostPeer.dc, {
+    type: 'browser-control-result',
+    ok,
+    action,
+    sessionId,
+    reason,
+  });
+}
+
+function sendBrowserInspectResult(hostPeer: HostPeer, ok: boolean, sessionId?: string, reason?: string): void {
+  sendMessage(hostPeer.dc, {
+    type: 'browser-inspect-result',
+    ok,
+    sessionId,
+    reason,
+  });
+}
+
+function buildInspectPromptFromSelection(
+  instance: ReturnType<typeof getBrowserTabInstance>,
+  instruction: string,
+): string | null {
+  if (!instance) return null;
+  const info = instance.selectedElement;
+  const trimmedInstruction = instruction.trim();
+  if (!info || !trimmedInstruction) return null;
+
+  const clickPoint = info.clickPoint
+    ? `, point: '${Math.round(info.clickPoint.normalizedX * 100)}% x ${Math.round(info.clickPoint.normalizedY * 100)}%'`
+    : '';
+  const canvasHint = info.isCanvasLike ? ', surface: canvas-like element' : '';
+
+  return (
+    `Regarding the <${info.tagName}> element at ${info.pageUrl} ` +
+    `(selector: '${info.activeSelector.value}'` +
+    (info.textContent ? `, text: '${info.textContent}'` : '') +
+    `${clickPoint}${canvasHint}): ${trimmedInstruction}`
+  );
+}
+
+function handleBrowserControl(
+  hostPeer: HostPeer,
+  action: ShareBrowserControlAction,
+  requestedSessionId?: string,
+  viewportLabel?: string,
+): void {
+  const targetSessionId = resolveBrowserTargetSessionId(hostPeer, requestedSessionId);
+  if (!targetSessionId) {
+    sendBrowserControlResult(hostPeer, action, false, undefined, 'No browser session is currently available.');
+    return;
+  }
+
+  const instance = getBrowserTabInstance(targetSessionId);
+  if (!instance) {
+    sendBrowserControlResult(hostPeer, action, false, targetSessionId, 'Browser surface is not ready.');
+    return;
+  }
+
+  let ok = true;
+  let reason: string | undefined;
+
+  try {
+    switch (action) {
+      case 'back':
+        if (!instance.webview.canGoBack()) {
+          ok = false;
+          reason = 'No page behind this one yet.';
+          break;
+        }
+        instance.webview.goBack();
+        break;
+      case 'forward':
+        if (!instance.webview.canGoForward()) {
+          ok = false;
+          reason = 'No forward page yet.';
+          break;
+        }
+        instance.webview.goForward();
+        break;
+      case 'reload':
+        instance.webview.reload();
+        break;
+      case 'toggle-inspect':
+        toggleInspectMode(instance);
+        break;
+      case 'set-viewport': {
+        const requestedLabel = String(viewportLabel || '').trim().toLowerCase();
+        const preset = VIEWPORT_PRESETS.find((entry) => entry.label.toLowerCase() === requestedLabel);
+        if (!preset) {
+          ok = false;
+          reason = 'Viewport preset is not recognized.';
+          break;
+        }
+        applyViewport(instance, preset);
+        break;
+      }
+      default:
+        ok = false;
+        reason = 'Browser action is not supported.';
+    }
+  } catch (error) {
+    ok = false;
+    reason = error instanceof Error ? error.message : 'Browser action failed.';
+  }
+
+  const project = findProjectForShare(hostPeer.ownerSessionId);
+  if (ok && project) {
+    appState.setActiveSession(project.id, targetSessionId);
+  }
+
+  sendBrowserControlResult(hostPeer, action, ok, targetSessionId, reason);
+  sendBrowserState(hostPeer);
+}
+
+async function handleBrowserInspectSubmit(
+  hostPeer: HostPeer,
+  requestedSessionId: string | undefined,
+  instruction: string,
+): Promise<void> {
+  const normalizedInstruction = String(instruction || '').trim();
+  if (!normalizedInstruction) {
+    sendBrowserInspectResult(hostPeer, false, requestedSessionId, 'Inspect instruction is required.');
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  const targetBrowserSessionId = resolveBrowserTargetSessionId(hostPeer, requestedSessionId);
+  if (!targetBrowserSessionId) {
+    sendBrowserInspectResult(hostPeer, false, undefined, 'No browser session is currently available.');
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  const browserInstance = getBrowserTabInstance(targetBrowserSessionId);
+  if (!browserInstance) {
+    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Browser surface is not ready.');
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  const prompt = buildInspectPromptFromSelection(browserInstance, normalizedInstruction);
+  if (!prompt) {
+    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Select an element in inspect mode first.');
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  const routed = await deliverPromptToTerminalSession(hostPeer.activeSessionId, prompt);
+  if (!routed) {
+    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Target CLI session is not available.');
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  sendBrowserInspectResult(hostPeer, true, targetBrowserSessionId);
+  sendBrowserState(hostPeer);
+}
+
+function findHostPeerBySession(sessionId: string): HostPeer | null {
+  const direct = hostPeers.get(sessionId);
+  if (direct) return direct;
+  for (const peer of hostPeers.values()) {
+    if (peer.ownerSessionId === sessionId || peer.activeSessionId === sessionId) {
+      return peer;
+    }
+  }
+  return null;
+}
+
 export interface ShareHandle {
   getOffer(): Promise<string>;
   acceptAnswer(answer: string): Promise<void>;
@@ -146,6 +437,10 @@ export function startShare(
     authTimeout: null,
     keepaliveTimer: null,
     missedPongs: 0,
+    connectedAtMs: null,
+    verifiedAtMs: null,
+    lastPingAtMs: null,
+    lastPongAtMs: null,
     serializeAddon,
   };
 
@@ -175,6 +470,7 @@ export function startShare(
     }
 
     sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+    sendBrowserState(hostPeer);
 
     hostPeer.keepaliveTimer = setInterval(() => {
       if (!hostPeer.connected) return;
@@ -183,6 +479,7 @@ export function startShare(
         stopShare(sessionId);
         return;
       }
+      hostPeer.lastPingAtMs = Date.now();
       sendMessage(dc, { type: 'ping' });
     }, KEEPALIVE_INTERVAL);
 
@@ -191,6 +488,10 @@ export function startShare(
 
   dc.onopen = () => {
     hostPeer.connected = true;
+    hostPeer.connectedAtMs = Date.now();
+    hostPeer.verifiedAtMs = null;
+    hostPeer.lastPingAtMs = null;
+    hostPeer.lastPongAtMs = null;
 
     // Start auth handshake — do not send session data until verified
     const challenge = generateChallenge();
@@ -223,6 +524,7 @@ export function startShare(
         }
         if (expected === msg.response) {
           hostPeer.authState = 'verified';
+          hostPeer.verifiedAtMs = Date.now();
           sendMessage(dc, { type: 'auth-result', ok: true });
           sendInitAndStartKeepalive();
         } else {
@@ -267,6 +569,43 @@ export function startShare(
         rows: snapshot.rows,
       });
       sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+      sendBrowserState(hostPeer);
+      return;
+    }
+
+    if (msg.type === 'browser-state-request') {
+      sendBrowserState(hostPeer);
+      return;
+    }
+
+    if (msg.type === 'browser-control') {
+      if (mode !== 'readwrite') {
+        sendBrowserControlResult(
+          hostPeer,
+          msg.action,
+          false,
+          msg.sessionId,
+          'Browser controls are disabled in read-only mode.',
+        );
+        sendBrowserState(hostPeer);
+        return;
+      }
+      handleBrowserControl(hostPeer, msg.action, msg.sessionId, msg.viewportLabel);
+      return;
+    }
+
+    if (msg.type === 'browser-inspect-submit') {
+      if (mode !== 'readwrite') {
+        sendBrowserInspectResult(
+          hostPeer,
+          false,
+          msg.sessionId,
+          'Inspect submit is disabled in read-only mode.',
+        );
+        sendBrowserState(hostPeer);
+        return;
+      }
+      void handleBrowserInspectSubmit(hostPeer, msg.sessionId, msg.instruction);
       return;
     }
 
@@ -274,6 +613,7 @@ export function startShare(
       window.calder.pty.write(hostPeer.activeSessionId, msg.payload);
     } else if (msg.type === 'pong') {
       hostPeer.missedPongs = 0;
+      hostPeer.lastPongAtMs = Date.now();
     }
   };
 
@@ -348,16 +688,28 @@ export function broadcastResize(sessionId: string, cols: number, rows: number): 
 }
 
 export function isSharing(sessionId: string): boolean {
-  for (const hostPeer of hostPeers.values()) {
-    if (hostPeer.ownerSessionId === sessionId || hostPeer.activeSessionId === sessionId) {
-      return true;
-    }
-  }
-  return false;
+  return findHostPeerBySession(sessionId) !== null;
 }
 
 export function isConnected(sessionId: string): boolean {
-  return hostPeers.get(sessionId)?.connected ?? false;
+  return findHostPeerBySession(sessionId)?.connected ?? false;
+}
+
+export function getShareConnectionSnapshot(sessionId: string): ShareConnectionSnapshot | null {
+  const hostPeer = findHostPeerBySession(sessionId);
+  if (!hostPeer) return null;
+  return {
+    ownerSessionId: hostPeer.ownerSessionId,
+    activeSessionId: hostPeer.activeSessionId,
+    mode: hostPeer.mode,
+    connected: hostPeer.connected,
+    authState: hostPeer.authState,
+    missedPongs: hostPeer.missedPongs,
+    connectedAtMs: hostPeer.connectedAtMs,
+    verifiedAtMs: hostPeer.verifiedAtMs,
+    lastPingAtMs: hostPeer.lastPingAtMs,
+    lastPongAtMs: hostPeer.lastPongAtMs,
+  };
 }
 
 function cleanup(sessionId: string): void {

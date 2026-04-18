@@ -1006,16 +1006,101 @@
 }
 
 .tab-action-handoff {
-  width: auto;
-  min-width: 76px;
-  padding: 0 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  position: relative;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)), transparent),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
+}
+
+.tab-action-handoff-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0;
+  transform: translateY(-0.5px);
+}
+
+.mobile-control-presence {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, var(--accent-soft));
+  background: color-mix(in srgb, var(--surface-panel) 90%, rgba(255, 255, 255, 0.02));
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.mobile-control-presence[data-connection-state='waiting'] {
+  border-color: color-mix(in srgb, #f59e0b 64%, var(--border-subtle));
+  color: color-mix(in srgb, #fbbf24 88%, var(--text-primary));
+  background: color-mix(in srgb, #f59e0b 12%, var(--surface-panel));
+}
+
+.mobile-control-presence[data-connection-state='connected'] {
+  border-color: color-mix(in srgb, var(--status-success-border) 74%, var(--border-subtle));
+  color: var(--status-success-text);
+  background: color-mix(in srgb, var(--status-success-bg) 24%, var(--surface-panel));
+}
+
+.tab-action-handoff.is-sharing {
+  border-color: color-mix(in srgb, var(--status-success-border) 80%, var(--border-subtle));
+  color: var(--status-success-text);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--status-success-border) 52%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--status-success-border) 18%, transparent);
+}
+
+.tab-action-handoff[data-connection-state='waiting'] {
+  border-color: color-mix(in srgb, #f59e0b 72%, var(--border-subtle));
+  color: color-mix(in srgb, #fbbf24 88%, var(--text-primary));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, #f59e0b 35%, transparent),
+    0 0 0 2px color-mix(in srgb, #f59e0b 14%, transparent);
+}
+
+.tab-action-handoff[data-connection-state='waiting']::after,
+.tab-action-handoff.is-connected::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tab-action-handoff[data-connection-state='waiting']::after {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 24%, transparent);
+}
+
+.tab-action-handoff.is-connected {
+  border-color: color-mix(in srgb, var(--status-success-border) 85%, var(--border-subtle));
+  color: var(--status-success-text);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--status-success-bg) 35%, rgba(255, 255, 255, 0.02)), transparent),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--status-success-border) 62%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--status-success-border) 20%, transparent);
+}
+
+.tab-action-handoff.is-connected::after {
+  background: var(--status-success-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-success-border) 24%, transparent);
 }
 
 @container workspace-stack (max-width: 1180px) {
@@ -1135,10 +1220,13 @@
   }
 
   .session-launcher-group .tab-action-handoff {
-    width: auto;
-    min-width: 64px;
-    padding: 0 8px;
-    font-size: 10px;
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+  }
+
+  .mobile-control-presence {
+    display: none;
   }
 }
 

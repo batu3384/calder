@@ -134,9 +134,21 @@ describe('browser tab pane contract', () => {
     expect(viewportSource).toContain('instance.viewportBtn,');
     expect(viewportSource).toContain('instance.viewportDropdown,');
     expect(viewportSource).toContain("placement: 'bottom-end'");
+    expect(source).toContain('event.composedPath');
+    expect(source).toContain("const outsidePressEventName: 'pointerdown' | 'mousedown'");
+    expect(source).toContain('document.addEventListener(outsidePressEventName, instance.viewportOutsideClickHandler);');
+    expect(source).toContain('document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);');
+    expect(viewportSource).toContain("openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
+    expect(viewportSource).toContain("closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
+    expect(viewportSource).toContain("logDebugEvent('browserMenu', instance.sessionId");
+    expect(source).toContain("logDebugEvent('browserMenu', instance.sessionId");
     expect(viewportSource).toContain('instance.viewportDropdownFloatingCleanup?.();');
     expect(source).toContain('viewportDropdownFloatingCleanup: null');
     expect(source).toContain('instance.viewportDropdownFloatingCleanup?.();');
+    expect(source).toContain("document.removeEventListener('pointerdown', instance.viewportOutsideClickHandler);");
+    expect(source).toContain("document.removeEventListener('pointerdown', instance.targetMenuOutsideClickHandler);");
+    expect(source).toContain("document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);");
+    expect(source).toContain("document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);");
   });
 
   it('routes popup requests through the host instead of enabling webview popups', () => {

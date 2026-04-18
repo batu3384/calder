@@ -21,7 +21,14 @@ describe('custom select floating surface contract', () => {
     expect(source).toContain('config.onOpenChange?.(false);');
     expect(source).toContain('event.composedPath');
     expect(source).toContain('eventTargetsCurrentSelect');
-    expect(source).toContain("document.addEventListener('pointerdown', onOutsidePointerDown);");
+    expect(source).toContain('dropdown.contains(target)');
+    expect(source).toContain("const outsidePressEventName: 'pointerdown' | 'mousedown'");
+    expect(source).toContain("document.addEventListener(outsidePressEventName, onOutsidePointerDown);");
+    expect(source).toContain("document.removeEventListener('pointerdown', onOutsidePointerDown);");
+    expect(source).toContain("document.removeEventListener('mousedown', onOutsidePointerDown);");
+    expect(source).toContain("logDebugEvent('uiDropdown'");
+    expect(source).toContain("closeDropdown('outside-press')");
+    expect(source).toContain("closeDropdown('keyboard-escape')");
   });
 
   it('portals floating dropdowns to document body to avoid clip/stacking bugs', () => {

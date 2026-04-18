@@ -170,6 +170,7 @@ function applyDrawStyles(ctx: CanvasRenderingContext2D): void {
 function ensureDrawCanvas(): HTMLCanvasElement {
   if (!drawCanvas) {
     drawCanvas = document.createElement('canvas');
+    drawCanvas.setAttribute('data-calder-overlay', 'true');
     // edit_pen icon with thick white outline for visibility on any background
     const penSvg =
       "<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 -960 960 960'>" +
@@ -246,6 +247,8 @@ function onDrawResize(): void {
 }
 
 function enterDrawMode(): void {
+  if (inspectMode) exitInspectMode();
+  if (flowMode) exitFlowMode();
   drawMode = true;
   strokeCompleted = false;
   const canvas = ensureDrawCanvas();
@@ -655,6 +658,8 @@ function onFrameLoadCapture(e: Event): void {
 document.addEventListener('load', onFrameLoadCapture, true);
 
 function enterFlowMode(): void {
+  if (inspectMode) exitInspectMode();
+  if (drawMode) exitDrawMode();
   flowMode = true;
   syncFlowListeners();
 }
@@ -666,6 +671,8 @@ function exitFlowMode(): void {
 }
 
 function enterInspectMode(): void {
+  if (flowMode) exitFlowMode();
+  if (drawMode) exitDrawMode();
   inspectMode = true;
   syncInspectListeners();
   document.documentElement.dataset.calderInspectMode = 'on';

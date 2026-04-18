@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types';
+import type { AutoApprovalMode, CostData, ProviderId, UiLanguage, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, MobileDependencyInstallProgressEvent, MobileInspectPlatform, MobileInspectLaunchResult, MobileInspectScreenshotResult, MobileInspectPointInspectionResult, MobileInspectInteractionResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, ShareConnectionDescription, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -160,13 +160,22 @@ export interface CalderApi {
       offer: string,
       passphrase: string,
       mode: 'readonly' | 'readwrite',
+      language?: UiLanguage,
+      offerDescription?: ShareConnectionDescription,
     ): Promise<MobileControlPairingResult>;
     consumeControlAnswer(pairingId: string): Promise<MobileControlAnswerResult>;
     revokeControlPairing(pairingId: string): Promise<{ ok: boolean }>;
   };
   mobileSetup: {
     checkDependencies(): Promise<MobileDependencyReport>;
-    installDependency(dependencyId: MobileDependencyId): Promise<MobileDependencyInstallResult>;
+    installDependency(dependencyId: MobileDependencyId, installId?: string): Promise<MobileDependencyInstallResult>;
+    onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void): () => void;
+  };
+  mobileInspect: {
+    launch(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult>;
+    captureScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult>;
+    inspectPoint(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectPointInspectionResult>;
+    interact(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectInteractionResult>;
   };
   cliSurface: {
     discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
@@ -419,14 +428,29 @@ const api: CalderApi = {
       offer: string,
       passphrase: string,
       mode: 'readonly' | 'readwrite',
-    ) => ipcRenderer.invoke('mobile:createControlPairing', sessionId, offer, passphrase, mode),
+      language?: UiLanguage,
+      offerDescription?: ShareConnectionDescription,
+    ) => ipcRenderer.invoke('mobile:createControlPairing', sessionId, offer, passphrase, mode, language, offerDescription),
     consumeControlAnswer: (pairingId: string) => ipcRenderer.invoke('mobile:consumeControlAnswer', pairingId),
     revokeControlPairing: (pairingId: string) => ipcRenderer.invoke('mobile:revokeControlPairing', pairingId),
   },
   mobileSetup: {
     checkDependencies: () => ipcRenderer.invoke('mobileSetup:checkDependencies'),
-    installDependency: (dependencyId: MobileDependencyId) =>
-      ipcRenderer.invoke('mobileSetup:installDependency', dependencyId),
+    installDependency: (dependencyId: MobileDependencyId, installId?: string) =>
+      ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId),
+    onInstallProgress: (callback) =>
+      onChannel('mobileSetup:installProgress', (event) =>
+        callback(event as MobileDependencyInstallProgressEvent)),
+  },
+  mobileInspect: {
+    launch: (platform: MobileInspectPlatform) =>
+      ipcRenderer.invoke('mobileInspect:launch', platform),
+    captureScreenshot: (platform: MobileInspectPlatform) =>
+      ipcRenderer.invoke('mobileInspect:captureScreenshot', platform),
+    inspectPoint: (platform: MobileInspectPlatform, x: number, y: number) =>
+      ipcRenderer.invoke('mobileInspect:inspectPoint', platform, x, y),
+    interact: (platform: MobileInspectPlatform, x: number, y: number) =>
+      ipcRenderer.invoke('mobileInspect:interact', platform, x, y),
   },
   cliSurface: {
     discover: (projectPath: string) =>

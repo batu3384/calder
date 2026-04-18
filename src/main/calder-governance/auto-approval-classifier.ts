@@ -398,17 +398,17 @@ export function decideAutoApprovalAction(
   mode: AutoApprovalMode,
   operationClass: AutoApprovalOperationClass,
 ): AutoApprovalDecisionResult {
-  if (mode === 'full_auto') {
-    return {
-      decision: 'allow',
-      reason: `All operations are auto-approved in full_auto mode (${operationClass}).`,
-    };
-  }
-
   if (operationClass === 'destructive') {
     return {
       decision: 'block',
       reason: 'Destructive operations are blocked in every auto-approval mode.',
+    };
+  }
+
+  if (mode === 'full_auto') {
+    return {
+      decision: 'allow',
+      reason: `All operations are auto-approved in full_auto mode (${operationClass}).`,
     };
   }
 

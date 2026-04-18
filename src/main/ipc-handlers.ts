@@ -20,7 +20,8 @@ import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/r
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput } from '../shared/types';
+import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
@@ -71,6 +72,7 @@ import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffo
 import { startProjectGovernanceWatcher, stopProjectGovernanceWatcher } from './calder-governance/watcher';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
+import { resolveAutoApprovalInput } from './calder-governance/auto-approval-dispatch';
 import {
   GLOBAL_AUTO_APPROVAL_POLICY_PATH,
   resolveEffectiveAutoApprovalMode,
@@ -83,6 +85,11 @@ import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } f
 import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
 import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
 import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './calder-checkpoints/watcher';
+import {
+  buildMiniMaxToolCallRecoveryPrompt,
+  shouldTriggerMiniMaxToolCallRecovery,
+  type MiniMaxToolCallRecoveryState,
+} from './minimax-toolcall-recovery';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -181,6 +188,8 @@ let currentProjectCheckpointPath: string | null = null;
 let currentProjectCheckpointWindow: BrowserWindow | null = null;
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
+const miniMaxToolCallRecoveryBySession = new Map<string, MiniMaxToolCallRecoveryState>();
+const MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS = 45_000;
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
   data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
   exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
@@ -216,12 +225,17 @@ export function resetHookWatcher(): void {
   currentProjectBackgroundTaskWindow = null;
   currentProjectCheckpointPath = null;
   currentProjectCheckpointWindow = null;
+  miniMaxToolCallRecoveryBySession.clear();
 }
 
 export function registerIpcHandlers(): void {
   const autoApprovalOrchestrator = createAutoApprovalOrchestrator({
     sendApproval: (sessionId, providerId) => {
-      writePty(sessionId, providerId === 'codex' ? '1\n' : '\n');
+      const approvalInput = resolveAutoApprovalInput(providerId);
+      const sent = writePty(sessionId, approvalInput);
+      if (!sent) {
+        throw new Error(`Failed to write approval input: missing PTY session (${sessionId}).`);
+      }
     },
     emitInspectorEvents: (sessionId, events) => {
       const win = BrowserWindow.getAllWindows()[0];
@@ -235,7 +249,42 @@ export function registerIpcHandlers(): void {
     void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events).catch((error) => {
       console.warn('Auto-approval orchestrator failed:', error);
     });
-    return events;
+    let finalEvents = events;
+    for (const event of events) {
+      if (event.type !== 'stop') continue;
+      const lastMessage = typeof event.last_assistant_message === 'string'
+        ? event.last_assistant_message
+        : '';
+      const previousState = miniMaxToolCallRecoveryBySession.get(sessionId);
+      const now = Date.now();
+      if (!shouldTriggerMiniMaxToolCallRecovery(lastMessage, previousState, now, MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS)) {
+        continue;
+      }
+
+      const normalizedMessage = lastMessage.trim();
+      miniMaxToolCallRecoveryBySession.set(sessionId, {
+        lastTriggeredAt: now,
+        lastMessage: normalizedMessage,
+        attempts: (previousState?.attempts ?? 0) + 1,
+      });
+
+      try {
+        writePty(sessionId, `${buildMiniMaxToolCallRecoveryPrompt()}\n`);
+      } catch (error) {
+        console.warn('MiniMax tool-call recovery dispatch failed:', error);
+      }
+
+      finalEvents = [
+        ...finalEvents,
+        {
+          type: 'status_update',
+          timestamp: now,
+          hookEvent: 'MiniMaxToolCallRecovery',
+          message: 'MiniMax pseudo tool-call markup detected; recovery prompt was sent automatically.',
+        },
+      ];
+    }
+    return finalEvents;
   });
   const getGovernanceState = async (projectPath: string, sessionId?: string): Promise<ProjectGovernanceState> => {
     const baseState = await discoverProjectGovernance(projectPath);
@@ -298,6 +347,7 @@ export function registerIpcHandlers(): void {
         unregisterCodexSession(sessionId);
         unregisterBlackboxSession(sessionId);
         autoApprovalOrchestrator.unregisterSession(sessionId);
+        miniMaxToolCallRecoveryBySession.delete(sessionId);
         if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
@@ -719,8 +769,42 @@ export function registerIpcHandlers(): void {
     return checkMobileDependencies();
   });
 
-  ipcMain.handle('mobileSetup:installDependency', async (_event, dependencyId: string) => {
-    return installMobileDependency(dependencyId as MobileDependencyId);
+  ipcMain.handle('mobileSetup:installDependency', async (event, dependencyId: string, installId?: string) => {
+    const resolvedInstallId = typeof installId === 'string' && installId.trim().length > 0
+      ? installId.trim()
+      : `mobile-install-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return installMobileDependency(dependencyId as MobileDependencyId, {
+      installId: resolvedInstallId,
+      onProgress: (progressEvent: MobileDependencyInstallProgressEvent) => {
+        if (!event.sender.isDestroyed()) {
+          event.sender.send('mobileSetup:installProgress', progressEvent);
+        }
+      },
+    });
+  });
+
+  ipcMain.handle('mobileInspect:launch', async (_event, platform: MobileInspectPlatform) => {
+    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
+    return launchMobileInspectSurface(resolvedPlatform);
+  });
+
+  ipcMain.handle('mobileInspect:captureScreenshot', async (_event, platform: MobileInspectPlatform) => {
+    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
+    return captureMobileInspectScreenshot(resolvedPlatform);
+  });
+
+  ipcMain.handle('mobileInspect:inspectPoint', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
+    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
+    const safeX = Number.isFinite(x) ? x : 0;
+    const safeY = Number.isFinite(y) ? y : 0;
+    return inspectMobilePoint(resolvedPlatform, safeX, safeY);
+  });
+
+  ipcMain.handle('mobileInspect:interact', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
+    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
+    const safeX = Number.isFinite(x) ? x : 0;
+    const safeY = Number.isFinite(y) ? y : 0;
+    return interactMobileInspectPoint(resolvedPlatform, safeX, safeY);
   });
 
   ipcMain.handle('fs:browseDirectory', async () => {
@@ -813,8 +897,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('sharing:getRtcConfig', () => resolveShareRtcConfigFromEnv());
   ipcMain.handle(
     'mobile:createControlPairing',
-    async (_event, sessionId: string, offer: string, passphrase: string, mode: 'readonly' | 'readwrite') =>
-      createMobileControlPairing({ sessionId, offer, passphrase, mode }),
+    async (
+      _event,
+      sessionId: string,
+      offer: string,
+      passphrase: string,
+      mode: 'readonly' | 'readwrite',
+      language?: 'en' | 'tr',
+      offerDescription?: ShareConnectionDescription,
+    ) =>
+      createMobileControlPairing({ sessionId, offer, passphrase, mode, language, offerDescription }),
   );
   ipcMain.handle('mobile:consumeControlAnswer', (_event, pairingId: string) =>
     consumeMobileControlPairingAnswer(pairingId));

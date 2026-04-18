@@ -1,5 +1,6 @@
 import type { BrowserTabInstance, ViewportPreset } from './types.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
+import { logDebugEvent } from '../debug-panel.js';
 
 export function applyViewport(instance: BrowserTabInstance, preset: ViewportPreset): void {
   instance.currentViewport = preset;
@@ -22,7 +23,8 @@ export function applyViewport(instance: BrowserTabInstance, preset: ViewportPres
   }
 }
 
-export function openViewportDropdown(instance: BrowserTabInstance): void {
+export function openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic'): void {
+  if (instance.viewportDropdown.classList.contains('visible')) return;
   instance.viewportDropdown.classList.add('visible');
   instance.viewportDropdownFloatingCleanup?.();
   instance.viewportDropdownFloatingCleanup = anchorFloatingSurface(
@@ -35,12 +37,27 @@ export function openViewportDropdown(instance: BrowserTabInstance): void {
       maxHeightPx: 360,
     },
   );
+  logDebugEvent('browserMenu', instance.sessionId, {
+    menu: 'viewport',
+    state: 'open',
+    reason,
+    currentViewport: instance.currentViewport.label,
+  });
 }
 
-export function closeViewportDropdown(instance: BrowserTabInstance): void {
+export function closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic'): void {
+  const wasOpen = instance.viewportDropdown.classList.contains('visible');
   instance.viewportDropdown.classList.remove('visible');
   instance.viewportDropdownFloatingCleanup?.();
   instance.viewportDropdownFloatingCleanup = null;
+  if (wasOpen) {
+    logDebugEvent('browserMenu', instance.sessionId, {
+      menu: 'viewport',
+      state: 'close',
+      reason,
+      currentViewport: instance.currentViewport.label,
+    });
+  }
 }
 
 export function getViewportContext(instance: BrowserTabInstance, include: boolean): string {

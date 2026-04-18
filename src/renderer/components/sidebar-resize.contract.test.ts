@@ -24,4 +24,12 @@ describe('sidebar resize contract', () => {
     const cssMax = readCssSidebarMax(sidebarCss);
     expect(cssMax === null || cssMax >= tsMax).toBe(true);
   });
+
+  it('always clears sidebar-resizing mode when focus or visibility is lost', () => {
+    expect(sidebarSource).toContain("const finishDrag = () => {");
+    expect(sidebarSource).toContain("document.addEventListener('mouseup', finishDrag);");
+    expect(sidebarSource).toContain("window.addEventListener('blur', finishDrag);");
+    expect(sidebarSource).toContain("document.addEventListener('visibilitychange'");
+    expect(sidebarSource).toContain("document.body.classList.remove('sidebar-resizing');");
+  });
 });

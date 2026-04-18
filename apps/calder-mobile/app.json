@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Calder Mobile",
+    "slug": "calder-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a111d"
+      }
+    }
+  }
+}

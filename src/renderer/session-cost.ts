@@ -11,6 +11,19 @@ const listeners: CostChangeCallback[] = [];
 // Search for dollar cost patterns (fallback)
 const COST_RE = /\$(\d+\.\d{2,})/g;
 
+function getCostSource(cost: Pick<CostInfo, 'source'> | null | undefined): NonNullable<CostInfo['source']> {
+  return cost?.source ?? 'structured';
+}
+
+export function isDerivedCost(cost: Pick<CostInfo, 'source'> | null | undefined): boolean {
+  return getCostSource(cost) === 'derived';
+}
+
+export function isEstimatedCost(cost: Pick<CostInfo, 'source'> | null | undefined): boolean {
+  const source = getCostSource(cost);
+  return source === 'fallback' || source === 'derived';
+}
+
 export function setCostData(sessionId: string, rawData: CostData): void {
   const { cost, context_window: ctx, model, source } = rawData;
 
@@ -97,7 +110,7 @@ export function getAggregateCost(options?: { includeEstimated?: boolean }): Cost
     source: 'structured',
   };
   for (const info of costs.values()) {
-    if (!includeEstimated && (info.source === 'fallback' || info.source === 'derived')) continue;
+    if (!includeEstimated && isEstimatedCost(info)) continue;
     aggregate.totalCostUsd += info.totalCostUsd;
     aggregate.totalInputTokens += info.totalInputTokens;
     aggregate.totalOutputTokens += info.totalOutputTokens;

@@ -11,19 +11,23 @@ describe('mobile setup IPC contract', () => {
     expect(ipcHandlersSource).toContain("ipcMain.handle('mobileSetup:installDependency'");
     expect(ipcHandlersSource).toContain('checkMobileDependencies()');
     expect(ipcHandlersSource).toContain('installMobileDependency(');
+    expect(ipcHandlersSource).toContain("event.sender.send('mobileSetup:installProgress'");
   });
 
   it('exposes mobile setup APIs on preload bridge', () => {
     expect(preloadSource).toContain('mobileSetup: {');
     expect(preloadSource).toContain('checkDependencies(): Promise<MobileDependencyReport>');
-    expect(preloadSource).toContain('installDependency(dependencyId: MobileDependencyId)');
+    expect(preloadSource).toContain('installDependency(dependencyId: MobileDependencyId, installId?: string)');
+    expect(preloadSource).toContain('onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)');
     expect(preloadSource).toContain("ipcRenderer.invoke('mobileSetup:checkDependencies')");
-    expect(preloadSource).toContain("ipcRenderer.invoke('mobileSetup:installDependency', dependencyId)");
+    expect(preloadSource).toContain("ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId)");
+    expect(preloadSource).toContain("onChannel('mobileSetup:installProgress'");
   });
 
   it('keeps renderer-side CalderApi typing aligned with preload bridge', () => {
     expect(rendererTypesSource).toContain('mobileSetup: {');
     expect(rendererTypesSource).toContain('checkDependencies(): Promise<MobileDependencyReport>');
-    expect(rendererTypesSource).toContain('installDependency(dependencyId: MobileDependencyId)');
+    expect(rendererTypesSource).toContain('installDependency(dependencyId: MobileDependencyId, installId?: string)');
+    expect(rendererTypesSource).toContain('onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)');
   });
 });

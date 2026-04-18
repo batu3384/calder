@@ -14,14 +14,34 @@ function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefi
   return [...project.sessions].reverse().find((session) => session.type === 'browser-tab')?.id;
 }
 
+function isCliSurfaceFocused(project: ProjectRecord): boolean {
+  return Boolean(
+    project.surface?.active
+    && project.surface.kind === 'cli'
+    && project.surface.tabFocus === 'cli',
+  );
+}
+
+function isMobileSurfaceFocused(project: ProjectRecord): boolean {
+  return Boolean(
+    project.surface?.active
+    && project.surface.kind === 'mobile'
+    && project.surface.tabFocus === 'mobile',
+  );
+}
+
+export function hasPinnedSurfaceFocus(project: ProjectRecord): boolean {
+  return isCliSurfaceFocused(project) || isMobileSurfaceFocused(project);
+}
+
 export function renderSurfaceHost(project: ProjectRecord, container: HTMLElement): void {
-  if (project.surface?.active && project.surface.kind === 'cli') {
+  if (isCliSurfaceFocused(project)) {
     attachCliSurfacePane(project.id, container);
     showCliSurfacePane(project.id);
     return;
   }
 
-  if (project.surface?.active && project.surface.kind === 'mobile') {
+  if (isMobileSurfaceFocused(project)) {
     attachMobileSurfacePane(project.id, container);
     showMobileSurfacePane(project.id);
     return;

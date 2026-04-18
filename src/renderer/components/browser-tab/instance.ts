@@ -6,7 +6,11 @@ let preloadPathPromise: Promise<string> | null = null;
 
 export function getPreloadPath(): Promise<string> {
   if (!preloadPathPromise) {
-    preloadPathPromise = window.calder.app.getBrowserPreloadPath();
+    preloadPathPromise = window.calder.app.getBrowserPreloadPath().catch((error) => {
+      // Allow retry on transient IPC/bootstrap failures instead of caching rejection forever.
+      preloadPathPromise = null;
+      throw error;
+    });
   }
   return preloadPathPromise;
 }

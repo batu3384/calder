@@ -28,6 +28,8 @@ const TYPE_COLORS: Record<string, string> = {
 
   'ptyExit': '#e94560',
   'stateEvent': '#bb86fc',
+  'uiDropdown': '#ffd166',
+  'browserMenu': '#5dd6ff',
 };
 
 export function logDebugEvent(type: string, sessionId: string, data?: unknown): void {

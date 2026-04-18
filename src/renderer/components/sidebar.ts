@@ -229,6 +229,19 @@ export function promptNewProject(): void {
 function initResizeHandle(): void {
   let dragging = false;
 
+  const finishDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    resizeHandle.classList.remove('active');
+    document.body.classList.remove('sidebar-resizing');
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    const width = parseInt(sidebarEl.style.width, 10);
+    if (!Number.isNaN(width)) {
+      appState.setSidebarWidth(width);
+    }
+  };
+
   resizeHandle.addEventListener('mousedown', (e) => {
     e.preventDefault();
     dragging = true;
@@ -244,14 +257,10 @@ function initResizeHandle(): void {
     sidebarEl.style.width = width + 'px';
   });
 
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging = false;
-    resizeHandle.classList.remove('active');
-    document.body.classList.remove('sidebar-resizing');
-    document.body.style.userSelect = '';
-    document.body.style.cursor = '';
-    appState.setSidebarWidth(parseInt(sidebarEl.style.width, 10));
+  document.addEventListener('mouseup', finishDrag);
+  window.addEventListener('blur', finishDrag);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') finishDrag();
   });
 }
 

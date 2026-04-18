@@ -5,7 +5,12 @@ import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { initSession, removeSession } from '../session-activity.js';
 import { markFreshSession } from '../session-insights.js';
-import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
+import {
+  removeSession as removeCostSession,
+  isDerivedCost,
+  isEstimatedCost,
+  type CostInfo,
+} from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
 import { getProviderCapabilities } from '../provider-availability.js';
@@ -528,13 +533,14 @@ export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
   const el = instance.element.querySelector('.cost-display');
   if (!el) return;
 
-  const source = cost.source ?? 'structured';
-  const estimatedPrefix = source === 'fallback'
-    ? 'Estimated · '
-    : source === 'derived'
+  const derived = isDerivedCost(cost);
+  const estimated = isEstimatedCost(cost);
+  const estimatedPrefix = !estimated
+    ? ''
+    : derived
       ? 'Derived · '
-      : '';
-  const costStr = source === 'derived' && cost.totalCostUsd <= 0
+      : 'Estimated · ';
+  const costStr = derived && cost.totalCostUsd <= 0
     ? '--'
     : `$${cost.totalCostUsd.toFixed(4)}`;
   const modelPrefix = cost.model ? `${cost.model}  \u00b7  ` : '';
@@ -542,19 +548,19 @@ export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
     el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}  \u00b7  ${formatTokens(cost.totalInputTokens)} in / ${formatTokens(cost.totalOutputTokens)} out`;
     const durationSec = (cost.totalDurationMs / 1000).toFixed(1);
     const apiDurationSec = (cost.totalApiDurationMs / 1000).toFixed(1);
-    const estimateNote = source === 'fallback'
-      ? 'Estimated from terminal output · '
-      : source === 'derived'
+    const estimateNote = !estimated
+      ? ''
+      : derived
         ? 'Derived from hook usage metadata · '
-        : '';
+        : 'Estimated from terminal output · ';
     (el as HTMLElement).title = `${estimateNote}Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
   } else {
     el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}`;
-    (el as HTMLElement).title = source === 'fallback'
-      ? 'Estimated from terminal output'
-      : source === 'derived'
+    (el as HTMLElement).title = !estimated
+      ? ''
+      : derived
         ? 'Derived from hook usage metadata'
-        : '';
+        : 'Estimated from terminal output';
   }
   showStatusBar(instance);
 }

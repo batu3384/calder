@@ -57,7 +57,7 @@ import {
 } from './browser-tab-pane.js';
 import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
 import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
-import { renderSurfaceHost } from './surface-host.js';
+import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
 import { quickNewSession } from './tab-bar.js';
 import { promptNewProject } from './sidebar.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
@@ -94,6 +94,7 @@ function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
       ? {
           kind: project.surface.kind,
           active: project.surface.active,
+          tabFocus: project.surface.tabFocus ?? 'session',
           webSessionId: project.surface.web?.sessionId ?? null,
           cliProfileId: project.surface.cli?.selectedProfileId ?? null,
         }
@@ -639,7 +640,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   const visibleSessions = getVisibleSwarmSessions(project);
   const visiblePaneIds = visibleSessions.map((session) => session.id);
   const browserSession = getSwarmBrowserSession(project);
-  const hasBrowserColumn = Boolean(project.surface?.active || browserSession);
+  const hasBrowserColumn = Boolean(hasPinnedSurfaceFocus(project) || browserSession);
   const count = visiblePaneIds.length;
   const resolvedPreset = resolveMosaicPreset(count, project.layout.mosaicPreset);
   const hasInspector = isInspectorOpen();
