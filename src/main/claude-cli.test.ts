@@ -523,8 +523,15 @@ describe('installHooks', () => {
     expect(preToolUseScript).toBeDefined();
     const py = String(preToolUseScript![1]);
     expect(py).toContain('def _mark_subagent_launch_started');
+    expect(py).toContain('def _resolve_main_provider_and_model');
+    expect(py).toContain('def _configured_model_candidate');
+    expect(py).toContain('candidates.extend(_event_model_candidates(payload))');
+    expect(py).toContain('if model and model not in candidates:');
+    expect(py).toContain('if provider!=inferred_provider or model!=inferred_model:');
+    expect(py).not.toContain('inferred_provider in ("zai","minimax","qwen")');
     expect(py).toContain('if tn=="Task":');
     expect(py).toContain('_mark_subagent_launch_started(sid)');
+    expect(py).toContain('provider,_=_resolve_main_provider_and_model(sid,d)');
     expect(py).toContain('WebSearch is disabled for {provider} sessions');
   });
 

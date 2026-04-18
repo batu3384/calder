@@ -5,57 +5,91 @@ import { discoverProjectBackgroundTasks } from './discovery.js';
 
 const DEBOUNCE_MS = 500;
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let dirWatchers: fs.FSWatcher[] = [];
-let currentProjectPath: string | null = null;
-let currentHandler: ((state: ProjectBackgroundTaskState) => void) | null = null;
+interface BackgroundTaskWatchState {
+  callbacks: Set<(state: ProjectBackgroundTaskState) => void>;
+  debounceTimer: ReturnType<typeof setTimeout> | null;
+  dirWatchers: fs.FSWatcher[];
+}
 
-function notify(): void {
-  if (!currentProjectPath || !currentHandler) return;
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    const projectPath = currentProjectPath;
-    const handler = currentHandler;
-    if (!projectPath || !handler) return;
+const backgroundTaskWatchStates = new Map<string, BackgroundTaskWatchState>();
+
+function notify(projectPath: string): void {
+  const state = backgroundTaskWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) clearTimeout(state.debounceTimer);
+  state.debounceTimer = setTimeout(async () => {
+    const activeState = backgroundTaskWatchStates.get(projectPath);
+    if (!activeState || activeState !== state) return;
     const nextState = await discoverProjectBackgroundTasks(projectPath);
-    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
-    handler(nextState);
+    const latestState = backgroundTaskWatchStates.get(projectPath);
+    if (!latestState || latestState !== state) return;
+    for (const callback of latestState.callbacks) {
+      callback(nextState);
+    }
   }, DEBOUNCE_MS);
 }
 
-function watchDir(dirPath: string): void {
+function watchDir(projectPath: string, state: BackgroundTaskWatchState, dirPath: string): void {
   try {
     fs.mkdirSync(dirPath, { recursive: true });
-    const watcher = fs.watch(dirPath, () => notify());
+    const watcher = fs.watch(dirPath, () => notify(projectPath));
     watcher.on('error', () => {});
-    dirWatchers.push(watcher);
+    state.dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
   }
 }
 
-export function stopProjectBackgroundTaskWatcher(): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
+function teardownProjectWatchState(projectPath: string): void {
+  const state = backgroundTaskWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
   }
-  for (const watcher of dirWatchers) {
+  for (const watcher of state.dirWatchers) {
     watcher.close();
   }
-  dirWatchers = [];
-  currentProjectPath = null;
-  currentHandler = null;
+  state.dirWatchers = [];
+  state.callbacks.clear();
+  backgroundTaskWatchStates.delete(projectPath);
+}
+
+function ensureProjectWatchState(projectPath: string): BackgroundTaskWatchState {
+  const existing = backgroundTaskWatchStates.get(projectPath);
+  if (existing) return existing;
+
+  const state: BackgroundTaskWatchState = {
+    callbacks: new Set(),
+    debounceTimer: null,
+    dirWatchers: [],
+  };
+  backgroundTaskWatchStates.set(projectPath, state);
+  watchDir(projectPath, state, path.join(projectPath, '.calder', 'tasks'));
+  return state;
+}
+
+export function stopProjectBackgroundTaskWatcher(): void {
+  for (const projectPath of Array.from(backgroundTaskWatchStates.keys())) {
+    teardownProjectWatchState(projectPath);
+  }
 }
 
 export function startProjectBackgroundTaskWatcher(
   projectPath: string,
   onChange: (state: ProjectBackgroundTaskState) => void,
-): void {
-  if (projectPath === currentProjectPath && onChange === currentHandler) return;
+): () => void {
+  const state = ensureProjectWatchState(projectPath);
+  if (!state.callbacks.has(onChange)) {
+    state.callbacks.add(onChange);
+  }
 
-  stopProjectBackgroundTaskWatcher();
-  currentProjectPath = projectPath;
-  currentHandler = onChange;
-
-  watchDir(path.join(projectPath, '.calder', 'tasks'));
+  return () => {
+    const activeState = backgroundTaskWatchStates.get(projectPath);
+    if (!activeState) return;
+    activeState.callbacks.delete(onChange);
+    if (activeState.callbacks.size === 0) {
+      teardownProjectWatchState(projectPath);
+    }
+  };
 }

@@ -459,6 +459,34 @@ describe('split-layout mosaic behavior', () => {
     expect(canvas.className).toContain('mosaic-columns-2');
   });
 
+  it('keeps the mosaic shell stable when only active cli session changes', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { renderLayout } = await import('./split-layout.js');
+    const { hideAllBrowserTabPanes } = await import('./browser-tab-pane.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setActiveSession(project.id, first.id);
+    renderLayout();
+
+    const hideBrowserCalls = vi.mocked(hideAllBrowserTabPanes).mock.calls.length;
+    const attachBrowserCalls = mockAttachBrowserTabToContainer.mock.calls.length;
+
+    appState.setActiveSession(project.id, second.id);
+    renderLayout();
+
+    expect(vi.mocked(hideAllBrowserTabPanes).mock.calls.length).toBe(hideBrowserCalls);
+    expect(mockAttachBrowserTabToContainer.mock.calls.length).toBe(attachBrowserCalls);
+    expect(mockSetFocused).toHaveBeenLastCalledWith(second.id);
+    expect(terminalPanes.get(first.id)?.classList.contains('swarm-dimmed')).toBe(true);
+    expect(terminalPanes.get(second.id)?.classList.contains('swarm-dimmed')).toBe(false);
+    expect(browserPanes.get(browser.id)?.parentElement?.className).toContain('mosaic-browser-column');
+  });
+
   it('does not activate a pane on reorder-header mousedown before drag can start', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();

@@ -5,11 +5,19 @@ import { discoverProjectContext } from './discovery.js';
 
 const DEBOUNCE_MS = 500;
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let watchedFiles: string[] = [];
-let dirWatchers: fs.FSWatcher[] = [];
-let currentProjectPath: string | null = null;
-let currentHandler: ((state: ProjectContextState) => void) | null = null;
+interface WatchedFileEntry {
+  filePath: string;
+  listener: () => void;
+}
+
+interface ContextWatchState {
+  callbacks: Set<(state: ProjectContextState) => void>;
+  debounceTimer: ReturnType<typeof setTimeout> | null;
+  watchedFiles: WatchedFileEntry[];
+  dirWatchers: fs.FSWatcher[];
+}
+
+const contextWatchStates = new Map<string, ContextWatchState>();
 
 const PROJECT_CONTEXT_FILES = [
   'CLAUDE.md',
@@ -23,31 +31,34 @@ const PROJECT_CONTEXT_FILES = [
   '.mcp.json',
 ] as const;
 
-function notify(): void {
-  if (!currentProjectPath || !currentHandler) return;
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    const projectPath = currentProjectPath;
-    const handler = currentHandler;
-    if (!projectPath || !handler) return;
+function notify(projectPath: string): void {
+  const state = contextWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) clearTimeout(state.debounceTimer);
+  state.debounceTimer = setTimeout(async () => {
+    const activeState = contextWatchStates.get(projectPath);
+    if (!activeState || activeState !== state) return;
     const nextState = await discoverProjectContext(projectPath);
-    // Ignore stale async callbacks that complete after watcher teardown
-    // or a project/handler switch.
-    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
-    handler(nextState);
+    const latestState = contextWatchStates.get(projectPath);
+    // Ignore stale async callbacks that complete after watcher teardown.
+    if (!latestState || latestState !== state) return;
+    for (const callback of latestState.callbacks) {
+      callback(nextState);
+    }
   }, DEBOUNCE_MS);
 }
 
-function watchFile(filePath: string): void {
-  fs.watchFile(filePath, { interval: 250 }, notify);
-  watchedFiles.push(filePath);
+function watchFile(projectPath: string, state: ContextWatchState, filePath: string): void {
+  const listener = () => notify(projectPath);
+  fs.watchFile(filePath, { interval: 250 }, listener);
+  state.watchedFiles.push({ filePath, listener });
 }
 
-function watchDir(dirPath: string): void {
+function watchDir(projectPath: string, state: ContextWatchState, dirPath: string): void {
   try {
-    const watcher = fs.watch(dirPath, () => notify());
+    const watcher = fs.watch(dirPath, () => notify(projectPath));
     watcher.on('error', () => {});
-    dirWatchers.push(watcher);
+    state.dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
   }
@@ -70,43 +81,73 @@ function listSubdirectoriesRecursive(dirPath: string): string[] {
   }
 }
 
-export function stopProjectContextWatcher(): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
+function teardownProjectWatchState(projectPath: string): void {
+  const state = contextWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
   }
-  for (const filePath of watchedFiles) {
-    fs.unwatchFile(filePath, notify);
+  for (const watchedFile of state.watchedFiles) {
+    fs.unwatchFile(watchedFile.filePath, watchedFile.listener);
   }
-  watchedFiles = [];
-  for (const watcher of dirWatchers) {
+  state.watchedFiles = [];
+  for (const watcher of state.dirWatchers) {
     watcher.close();
   }
-  dirWatchers = [];
-  currentProjectPath = null;
-  currentHandler = null;
+  state.dirWatchers = [];
+  state.callbacks.clear();
+  contextWatchStates.delete(projectPath);
+}
+
+function ensureProjectWatchState(projectPath: string): ContextWatchState {
+  const existing = contextWatchStates.get(projectPath);
+  if (existing) return existing;
+
+  const state: ContextWatchState = {
+    callbacks: new Set(),
+    debounceTimer: null,
+    watchedFiles: [],
+    dirWatchers: [],
+  };
+  contextWatchStates.set(projectPath, state);
+
+  for (const relativePath of PROJECT_CONTEXT_FILES) {
+    watchFile(projectPath, state, path.join(projectPath, relativePath));
+  }
+
+  watchDir(projectPath, state, path.join(projectPath, '.calder', 'rules'));
+  watchDir(projectPath, state, path.join(projectPath, '.claude'));
+  watchDir(projectPath, state, path.join(projectPath, '.github'));
+  const copilotInstructionsPath = path.join(projectPath, '.github', 'instructions');
+  watchDir(projectPath, state, copilotInstructionsPath);
+  for (const childDirPath of listSubdirectoriesRecursive(copilotInstructionsPath)) {
+    watchDir(projectPath, state, childDirPath);
+  }
+  return state;
+}
+
+export function stopProjectContextWatcher(): void {
+  for (const projectPath of Array.from(contextWatchStates.keys())) {
+    teardownProjectWatchState(projectPath);
+  }
 }
 
 export function startProjectContextWatcher(
   projectPath: string,
   onChange: (state: ProjectContextState) => void,
-): void {
-  if (projectPath === currentProjectPath && onChange === currentHandler) return;
-
-  stopProjectContextWatcher();
-  currentProjectPath = projectPath;
-  currentHandler = onChange;
-
-  for (const relativePath of PROJECT_CONTEXT_FILES) {
-    watchFile(path.join(projectPath, relativePath));
+): () => void {
+  const state = ensureProjectWatchState(projectPath);
+  if (!state.callbacks.has(onChange)) {
+    state.callbacks.add(onChange);
   }
 
-  watchDir(path.join(projectPath, '.calder', 'rules'));
-  watchDir(path.join(projectPath, '.claude'));
-  watchDir(path.join(projectPath, '.github'));
-  const copilotInstructionsPath = path.join(projectPath, '.github', 'instructions');
-  watchDir(copilotInstructionsPath);
-  for (const childDirPath of listSubdirectoriesRecursive(copilotInstructionsPath)) {
-    watchDir(childDirPath);
-  }
+  return () => {
+    const activeState = contextWatchStates.get(projectPath);
+    if (!activeState) return;
+    activeState.callbacks.delete(onChange);
+    if (activeState.callbacks.size === 0) {
+      teardownProjectWatchState(projectPath);
+    }
+  };
 }

@@ -5,57 +5,91 @@ import { discoverProjectCheckpoints } from './discovery.js';
 
 const DEBOUNCE_MS = 500;
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let dirWatchers: fs.FSWatcher[] = [];
-let currentProjectPath: string | null = null;
-let currentHandler: ((state: ProjectCheckpointState) => void) | null = null;
+interface CheckpointWatchState {
+  callbacks: Set<(state: ProjectCheckpointState) => void>;
+  debounceTimer: ReturnType<typeof setTimeout> | null;
+  dirWatchers: fs.FSWatcher[];
+}
 
-function notify(): void {
-  if (!currentProjectPath || !currentHandler) return;
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    const projectPath = currentProjectPath;
-    const handler = currentHandler;
-    if (!projectPath || !handler) return;
+const checkpointWatchStates = new Map<string, CheckpointWatchState>();
+
+function notify(projectPath: string): void {
+  const state = checkpointWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) clearTimeout(state.debounceTimer);
+  state.debounceTimer = setTimeout(async () => {
+    const activeState = checkpointWatchStates.get(projectPath);
+    if (!activeState || activeState !== state) return;
     const nextState = await discoverProjectCheckpoints(projectPath);
-    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
-    handler(nextState);
+    const latestState = checkpointWatchStates.get(projectPath);
+    if (!latestState || latestState !== state) return;
+    for (const callback of latestState.callbacks) {
+      callback(nextState);
+    }
   }, DEBOUNCE_MS);
 }
 
-function watchDir(dirPath: string): void {
+function watchDir(projectPath: string, state: CheckpointWatchState, dirPath: string): void {
   try {
     fs.mkdirSync(dirPath, { recursive: true });
-    const watcher = fs.watch(dirPath, () => notify());
+    const watcher = fs.watch(dirPath, () => notify(projectPath));
     watcher.on('error', () => {});
-    dirWatchers.push(watcher);
+    state.dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
   }
 }
 
-export function stopProjectCheckpointWatcher(): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
+function teardownProjectWatchState(projectPath: string): void {
+  const state = checkpointWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
   }
-  for (const watcher of dirWatchers) {
+  for (const watcher of state.dirWatchers) {
     watcher.close();
   }
-  dirWatchers = [];
-  currentProjectPath = null;
-  currentHandler = null;
+  state.dirWatchers = [];
+  state.callbacks.clear();
+  checkpointWatchStates.delete(projectPath);
+}
+
+function ensureProjectWatchState(projectPath: string): CheckpointWatchState {
+  const existing = checkpointWatchStates.get(projectPath);
+  if (existing) return existing;
+
+  const state: CheckpointWatchState = {
+    callbacks: new Set(),
+    debounceTimer: null,
+    dirWatchers: [],
+  };
+  checkpointWatchStates.set(projectPath, state);
+  watchDir(projectPath, state, path.join(projectPath, '.calder', 'checkpoints'));
+  return state;
+}
+
+export function stopProjectCheckpointWatcher(): void {
+  for (const projectPath of Array.from(checkpointWatchStates.keys())) {
+    teardownProjectWatchState(projectPath);
+  }
 }
 
 export function startProjectCheckpointWatcher(
   projectPath: string,
   onChange: (state: ProjectCheckpointState) => void,
-): void {
-  if (projectPath === currentProjectPath && onChange === currentHandler) return;
+): () => void {
+  const state = ensureProjectWatchState(projectPath);
+  if (!state.callbacks.has(onChange)) {
+    state.callbacks.add(onChange);
+  }
 
-  stopProjectCheckpointWatcher();
-  currentProjectPath = projectPath;
-  currentHandler = onChange;
-
-  watchDir(path.join(projectPath, '.calder', 'checkpoints'));
+  return () => {
+    const activeState = checkpointWatchStates.get(projectPath);
+    if (!activeState) return;
+    activeState.callbacks.delete(onChange);
+    if (activeState.callbacks.size === 0) {
+      teardownProjectWatchState(projectPath);
+    }
+  };
 }

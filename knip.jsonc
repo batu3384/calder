@@ -5,7 +5,15 @@
   "entry": [
     "src/main/main.ts",
     "src/preload/preload.ts",
-    "src/preload/browser-tab-preload.ts"
+    "src/preload/browser-tab-preload.ts",
+    "apps/calder-mobile/App.tsx",
+    "apps/calder-mobile/babel.config.js"
+  ],
+
+  // Mobile workspace contains type augmentation files that are loaded by TS config,
+  // but static import graphs cannot always discover them.
+  "ignore": [
+    "apps/calder-mobile/src/types/react-native-webview.d.ts"
   ],
 
   // Many renderer helpers intentionally export internal building blocks from the same file.

@@ -89,15 +89,14 @@ window.calder.app.onQuitting(() => {
 });
 
 window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
-  const project = appState.findProjectForPath(payload.cwd) ?? appState.activeProject;
+  const projectFromPath = payload.cwd ? appState.findProjectForPath(payload.cwd) : undefined;
+  const project = projectFromPath ?? (payload.cwd ? undefined : appState.activeProject);
   if (!project) return;
   const now = Date.now();
   const previousUrl = canonicalizeEmbeddedUrl(project.surface?.web?.url);
   const requestedUrl = canonicalizeEmbeddedUrl(payload.url);
   if (!shouldAcceptEmbeddedRoute(project.id, requestedUrl, now)) return;
-  if (requestedUrl && previousUrl && requestedUrl === previousUrl) {
-    return;
-  }
+  const isSameRoute = !!(requestedUrl && previousUrl && requestedUrl === previousUrl);
 
   if (appState.activeProjectId !== project.id) {
     appState.setActiveProject(project.id);
@@ -114,13 +113,15 @@ window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
   createBrowserTabPane(session.id, session.browserTabUrl ?? payload.url);
   const instance = getBrowserTabInstance(session.id);
   if (instance) {
-    navigateTo(instance, payload.url);
+    if (!isSameRoute) {
+      navigateTo(instance, payload.url);
+    }
     return;
   }
 
   queueMicrotask(() => {
     const delayedInstance = getBrowserTabInstance(session.id);
-    if (delayedInstance) {
+    if (delayedInstance && !isSameRoute) {
       navigateTo(delayedInstance, payload.url);
     }
   });

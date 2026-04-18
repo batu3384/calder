@@ -22,7 +22,8 @@ describe('project context IPC contract', () => {
     expect(ipcHandlersSource).toContain("ipcMain.handle('context:renameSharedRule'");
     expect(ipcHandlersSource).toContain("ipcMain.handle('context:deleteSharedRule'");
     expect(ipcHandlersSource).toContain("ipcMain.on('context:watchProject'");
-    expect(ipcHandlersSource).toContain("webContents.send('context:changed'");
+    expect(ipcHandlersSource).toContain("bindProjectWatcher(projectContextBindings");
+    expect(ipcHandlersSource).toContain("'context:changed'");
   });
 
   it('exposes context APIs from preload', () => {

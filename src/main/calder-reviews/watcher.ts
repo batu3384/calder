@@ -5,57 +5,91 @@ import { discoverProjectReviews } from './discovery.js';
 
 const DEBOUNCE_MS = 500;
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let dirWatchers: fs.FSWatcher[] = [];
-let currentProjectPath: string | null = null;
-let currentHandler: ((state: ProjectReviewState) => void) | null = null;
+interface ReviewWatchState {
+  callbacks: Set<(state: ProjectReviewState) => void>;
+  debounceTimer: ReturnType<typeof setTimeout> | null;
+  dirWatchers: fs.FSWatcher[];
+}
 
-function notify(): void {
-  if (!currentProjectPath || !currentHandler) return;
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    const projectPath = currentProjectPath;
-    const handler = currentHandler;
-    if (!projectPath || !handler) return;
+const reviewWatchStates = new Map<string, ReviewWatchState>();
+
+function notify(projectPath: string): void {
+  const state = reviewWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) clearTimeout(state.debounceTimer);
+  state.debounceTimer = setTimeout(async () => {
+    const activeState = reviewWatchStates.get(projectPath);
+    if (!activeState || activeState !== state) return;
     const nextState = await discoverProjectReviews(projectPath);
-    if (projectPath !== currentProjectPath || handler !== currentHandler) return;
-    handler(nextState);
+    const latestState = reviewWatchStates.get(projectPath);
+    if (!latestState || latestState !== state) return;
+    for (const callback of latestState.callbacks) {
+      callback(nextState);
+    }
   }, DEBOUNCE_MS);
 }
 
-function watchDir(dirPath: string): void {
+function watchDir(projectPath: string, state: ReviewWatchState, dirPath: string): void {
   try {
     fs.mkdirSync(dirPath, { recursive: true });
-    const watcher = fs.watch(dirPath, () => notify());
+    const watcher = fs.watch(dirPath, () => notify(projectPath));
     watcher.on('error', () => {});
-    dirWatchers.push(watcher);
+    state.dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
   }
 }
 
-export function stopProjectReviewWatcher(): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
+function teardownProjectWatchState(projectPath: string): void {
+  const state = reviewWatchStates.get(projectPath);
+  if (!state) return;
+  if (state.debounceTimer) {
+    clearTimeout(state.debounceTimer);
+    state.debounceTimer = null;
   }
-  for (const watcher of dirWatchers) {
+  for (const watcher of state.dirWatchers) {
     watcher.close();
   }
-  dirWatchers = [];
-  currentProjectPath = null;
-  currentHandler = null;
+  state.dirWatchers = [];
+  state.callbacks.clear();
+  reviewWatchStates.delete(projectPath);
+}
+
+function ensureProjectWatchState(projectPath: string): ReviewWatchState {
+  const existing = reviewWatchStates.get(projectPath);
+  if (existing) return existing;
+
+  const state: ReviewWatchState = {
+    callbacks: new Set(),
+    debounceTimer: null,
+    dirWatchers: [],
+  };
+  reviewWatchStates.set(projectPath, state);
+  watchDir(projectPath, state, path.join(projectPath, '.calder', 'reviews'));
+  return state;
+}
+
+export function stopProjectReviewWatcher(): void {
+  for (const projectPath of Array.from(reviewWatchStates.keys())) {
+    teardownProjectWatchState(projectPath);
+  }
 }
 
 export function startProjectReviewWatcher(
   projectPath: string,
   onChange: (state: ProjectReviewState) => void,
-): void {
-  if (projectPath === currentProjectPath && onChange === currentHandler) return;
+): () => void {
+  const state = ensureProjectWatchState(projectPath);
+  if (!state.callbacks.has(onChange)) {
+    state.callbacks.add(onChange);
+  }
 
-  stopProjectReviewWatcher();
-  currentProjectPath = projectPath;
-  currentHandler = onChange;
-
-  watchDir(path.join(projectPath, '.calder', 'reviews'));
+  return () => {
+    const activeState = reviewWatchStates.get(projectPath);
+    if (!activeState) return;
+    activeState.callbacks.delete(onChange);
+    if (activeState.callbacks.size === 0) {
+      teardownProjectWatchState(projectPath);
+    }
+  };
 }

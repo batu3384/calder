@@ -21,7 +21,7 @@ import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
@@ -144,6 +144,88 @@ function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project'
   setAutoApprovalModeInPolicyFile(targetPath, mode);
 }
 
+const PLAYWRIGHT_NAVIGATE_TOOL = 'mcp__plugin_playwright_playwright__browser_navigate';
+const PLAYWRIGHT_MIRROR_COOLDOWN_MS = 1_500;
+
+interface PlaywrightMirrorState {
+  lastUrl: string;
+  lastMirroredAtMs: number;
+}
+
+interface PlaywrightMirrorTarget {
+  url: string;
+  cwd: string;
+}
+
+function isPlaywrightNavigateToolName(toolName: string | undefined): boolean {
+  if (!toolName) return false;
+  if (toolName === PLAYWRIGHT_NAVIGATE_TOOL) return true;
+  return toolName.includes('playwright') && toolName.endsWith('__browser_navigate');
+}
+
+function extractPlaywrightNavigateUrl(toolInput: InspectorEvent['tool_input']): string | null {
+  if (!toolInput || typeof toolInput !== 'object') return null;
+  const raw = toolInput.url;
+  if (typeof raw !== 'string') return null;
+  const url = raw.trim();
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function extractPlaywrightNavigateCwd(cwd: InspectorEvent['cwd']): string | null {
+  if (typeof cwd !== 'string') return null;
+  const normalized = cwd.trim();
+  return normalized ? normalized : null;
+}
+
+function shouldMirrorPlaywrightNavigate(
+  sessionId: string,
+  event: InspectorEvent,
+  stateBySession: Map<string, PlaywrightMirrorState>,
+  nowMs = Date.now(),
+): PlaywrightMirrorTarget | null {
+  if (event.type !== 'tool_use') return null;
+  if (!isPlaywrightNavigateToolName(event.tool_name)) return null;
+  const url = extractPlaywrightNavigateUrl(event.tool_input);
+  const cwd = extractPlaywrightNavigateCwd(event.cwd);
+  if (!cwd) return null;
+  if (!url) return null;
+
+  const previous = stateBySession.get(sessionId);
+  if (previous && previous.lastUrl === url && nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS) {
+    return null;
+  }
+
+  stateBySession.set(sessionId, { lastUrl: url, lastMirroredAtMs: nowMs });
+  return { url, cwd };
+}
+
+/** @internal test-only */
+export function _extractPlaywrightNavigateUrlForTesting(toolInput: InspectorEvent['tool_input']): string | null {
+  return extractPlaywrightNavigateUrl(toolInput);
+}
+
+/** @internal test-only */
+export function _extractPlaywrightNavigateCwdForTesting(cwd: InspectorEvent['cwd']): string | null {
+  return extractPlaywrightNavigateCwd(cwd);
+}
+
+/** @internal test-only */
+export function _shouldMirrorPlaywrightNavigateForTesting(
+  sessionId: string,
+  event: InspectorEvent,
+  stateBySession: Map<string, PlaywrightMirrorState>,
+  nowMs = Date.now(),
+): PlaywrightMirrorTarget | null {
+  return shouldMirrorPlaywrightNavigate(sessionId, event, stateBySession, nowMs);
+}
+
 async function applySessionOverrideToGovernanceState(
   state: ProjectGovernanceState,
   sessionMode: AutoApprovalMode | undefined,
@@ -171,25 +253,75 @@ async function applySessionOverrideToGovernanceState(
 }
 
 let hookWatcherStarted = false;
-let currentProjectContextPath: string | null = null;
-let currentProjectContextWindow: BrowserWindow | null = null;
-let currentProjectWorkflowPath: string | null = null;
-let currentProjectWorkflowWindow: BrowserWindow | null = null;
-let currentProjectTeamContextPath: string | null = null;
-let currentProjectTeamContextWindow: BrowserWindow | null = null;
-let currentProjectTeamContextDispose: (() => void) | null = null;
-let currentProjectReviewPath: string | null = null;
-let currentProjectReviewWindow: BrowserWindow | null = null;
-let currentProjectGovernancePath: string | null = null;
-let currentProjectGovernanceWindow: BrowserWindow | null = null;
-let currentProjectBackgroundTaskPath: string | null = null;
-let currentProjectBackgroundTaskWindow: BrowserWindow | null = null;
-let currentProjectCheckpointPath: string | null = null;
-let currentProjectCheckpointWindow: BrowserWindow | null = null;
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
 const miniMaxToolCallRecoveryBySession = new Map<string, MiniMaxToolCallRecoveryState>();
 const MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS = 45_000;
+const playwrightMirrorBySession = new Map<string, PlaywrightMirrorState>();
+
+interface ProjectWatchBinding {
+  projectPath: string;
+  dispose: () => void;
+  win: BrowserWindow;
+  onWindowClosed: () => void;
+}
+
+const projectContextBindings = new Map<number, ProjectWatchBinding>();
+const projectWorkflowBindings = new Map<number, ProjectWatchBinding>();
+const projectTeamContextBindings = new Map<number, ProjectWatchBinding>();
+const projectReviewBindings = new Map<number, ProjectWatchBinding>();
+const projectGovernanceBindings = new Map<number, ProjectWatchBinding>();
+const projectTaskBindings = new Map<number, ProjectWatchBinding>();
+const projectCheckpointBindings = new Map<number, ProjectWatchBinding>();
+
+function removeWindowClosedListener(win: BrowserWindow, listener: () => void): void {
+  if (typeof win.off === 'function') {
+    win.off('closed', listener);
+    return;
+  }
+  win.removeListener('closed', listener);
+}
+
+function clearProjectBindings(bindings: Map<number, ProjectWatchBinding>): void {
+  for (const binding of bindings.values()) {
+    removeWindowClosedListener(binding.win, binding.onWindowClosed);
+    binding.dispose();
+  }
+  bindings.clear();
+}
+
+function bindProjectWatcher<State>(
+  bindings: Map<number, ProjectWatchBinding>,
+  win: BrowserWindow,
+  projectPath: string,
+  start: (projectPath: string, onChange: (state: State) => void) => () => void,
+  channel: string,
+): void {
+  const windowId = win.id;
+  const existing = bindings.get(windowId);
+  if (existing?.projectPath === projectPath) return;
+  if (existing) {
+    removeWindowClosedListener(existing.win, existing.onWindowClosed);
+    existing.dispose();
+    bindings.delete(windowId);
+  }
+
+  const dispose = start(projectPath, (state) => {
+    const targetWindow = BrowserWindow.fromId(windowId);
+    if (!targetWindow || targetWindow.isDestroyed()) return;
+    targetWindow.webContents.send(channel, projectPath, state);
+  });
+
+  const onWindowClosed = () => {
+    const current = bindings.get(windowId);
+    if (!current || current.dispose !== dispose) return;
+    current.dispose();
+    bindings.delete(windowId);
+  };
+  bindings.set(windowId, { projectPath, dispose, win, onWindowClosed });
+  win.once('closed', onWindowClosed);
+}
+
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
   data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
   exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
@@ -209,23 +341,15 @@ export function resetHookWatcher(): void {
   stopProjectBackgroundTaskWatcher();
   stopProjectCheckpointWatcher();
 
-  currentProjectContextPath = null;
-  currentProjectContextWindow = null;
-  currentProjectWorkflowPath = null;
-  currentProjectWorkflowWindow = null;
-  currentProjectTeamContextDispose?.();
-  currentProjectTeamContextDispose = null;
-  currentProjectTeamContextPath = null;
-  currentProjectTeamContextWindow = null;
-  currentProjectReviewPath = null;
-  currentProjectReviewWindow = null;
-  currentProjectGovernancePath = null;
-  currentProjectGovernanceWindow = null;
-  currentProjectBackgroundTaskPath = null;
-  currentProjectBackgroundTaskWindow = null;
-  currentProjectCheckpointPath = null;
-  currentProjectCheckpointWindow = null;
+  clearProjectBindings(projectContextBindings);
+  clearProjectBindings(projectWorkflowBindings);
+  clearProjectBindings(projectTeamContextBindings);
+  clearProjectBindings(projectReviewBindings);
+  clearProjectBindings(projectGovernanceBindings);
+  clearProjectBindings(projectTaskBindings);
+  clearProjectBindings(projectCheckpointBindings);
   miniMaxToolCallRecoveryBySession.clear();
+  playwrightMirrorBySession.clear();
 }
 
 export function registerIpcHandlers(): void {
@@ -251,12 +375,36 @@ export function registerIpcHandlers(): void {
     });
     let finalEvents = events;
     for (const event of events) {
+      const now = Date.now();
+
+      const mirroredTarget = shouldMirrorPlaywrightNavigate(sessionId, event, playwrightMirrorBySession, now);
+      if (mirroredTarget) {
+        const win = BrowserWindow.getAllWindows()[0];
+        if (win && !win.isDestroyed()) {
+          void openUrlWithBrowserPolicy(
+            { url: mirroredTarget.url, cwd: mirroredTarget.cwd, preferEmbedded: true },
+            win,
+            (target) => shell.openExternal(target),
+          ).catch((error) => {
+            console.warn('Playwright mirror open failed:', error);
+          });
+        }
+        finalEvents = [
+          ...finalEvents,
+          {
+            type: 'status_update',
+            timestamp: now,
+            hookEvent: 'PlaywrightMirror',
+            message: `Mirrored Playwright navigate to Calder browser: ${mirroredTarget.url}`,
+          },
+        ];
+      }
+
       if (event.type !== 'stop') continue;
       const lastMessage = typeof event.last_assistant_message === 'string'
         ? event.last_assistant_message
         : '';
       const previousState = miniMaxToolCallRecoveryBySession.get(sessionId);
-      const now = Date.now();
       if (!shouldTriggerMiniMaxToolCallRecovery(lastMessage, previousState, now, MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS)) {
         continue;
       }
@@ -609,94 +757,43 @@ export function registerIpcHandlers(): void {
   ipcMain.on('context:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectContextPath && win === currentProjectContextWindow) return;
-    currentProjectContextPath = projectPath;
-    currentProjectContextWindow = win;
-    startProjectContextWatcher(projectPath, (state) => {
-      if (currentProjectContextWindow && !currentProjectContextWindow.isDestroyed()) {
-        currentProjectContextWindow.webContents.send('context:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectContextBindings, win, projectPath, startProjectContextWatcher, 'context:changed');
   });
 
   ipcMain.on('workflow:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectWorkflowPath && win === currentProjectWorkflowWindow) return;
-    currentProjectWorkflowPath = projectPath;
-    currentProjectWorkflowWindow = win;
-    startProjectWorkflowWatcher(projectPath, (state) => {
-      if (currentProjectWorkflowWindow && !currentProjectWorkflowWindow.isDestroyed()) {
-        currentProjectWorkflowWindow.webContents.send('workflow:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectWorkflowBindings, win, projectPath, startProjectWorkflowWatcher, 'workflow:changed');
   });
 
   ipcMain.on('teamContext:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectTeamContextPath && win === currentProjectTeamContextWindow) return;
-    currentProjectTeamContextDispose?.();
-    currentProjectTeamContextDispose = null;
-    currentProjectTeamContextPath = projectPath;
-    currentProjectTeamContextWindow = win;
-    currentProjectTeamContextDispose = startProjectTeamContextWatcher(projectPath, (state) => {
-      if (currentProjectTeamContextWindow && !currentProjectTeamContextWindow.isDestroyed()) {
-        currentProjectTeamContextWindow.webContents.send('teamContext:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectTeamContextBindings, win, projectPath, startProjectTeamContextWatcher, 'teamContext:changed');
   });
 
   ipcMain.on('review:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectReviewPath && win === currentProjectReviewWindow) return;
-    currentProjectReviewPath = projectPath;
-    currentProjectReviewWindow = win;
-    startProjectReviewWatcher(projectPath, (state) => {
-      if (currentProjectReviewWindow && !currentProjectReviewWindow.isDestroyed()) {
-        currentProjectReviewWindow.webContents.send('review:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectReviewBindings, win, projectPath, startProjectReviewWatcher, 'review:changed');
   });
 
   ipcMain.on('governance:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectGovernancePath && win === currentProjectGovernanceWindow) return;
-    currentProjectGovernancePath = projectPath;
-    currentProjectGovernanceWindow = win;
-    startProjectGovernanceWatcher(projectPath, (state) => {
-      if (currentProjectGovernanceWindow && !currentProjectGovernanceWindow.isDestroyed()) {
-        currentProjectGovernanceWindow.webContents.send('governance:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectGovernanceBindings, win, projectPath, startProjectGovernanceWatcher, 'governance:changed');
   });
 
   ipcMain.on('task:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectBackgroundTaskPath && win === currentProjectBackgroundTaskWindow) return;
-    currentProjectBackgroundTaskPath = projectPath;
-    currentProjectBackgroundTaskWindow = win;
-    startProjectBackgroundTaskWatcher(projectPath, (state) => {
-      if (currentProjectBackgroundTaskWindow && !currentProjectBackgroundTaskWindow.isDestroyed()) {
-        currentProjectBackgroundTaskWindow.webContents.send('task:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectTaskBindings, win, projectPath, startProjectBackgroundTaskWatcher, 'task:changed');
   });
 
   ipcMain.on('checkpoint:watchProject', (event, projectPath: string) => {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    if (projectPath === currentProjectCheckpointPath && win === currentProjectCheckpointWindow) return;
-    currentProjectCheckpointPath = projectPath;
-    currentProjectCheckpointWindow = win;
-    startProjectCheckpointWatcher(projectPath, (state) => {
-      if (currentProjectCheckpointWindow && !currentProjectCheckpointWindow.isDestroyed()) {
-        currentProjectCheckpointWindow.webContents.send('checkpoint:changed', projectPath, state);
-      }
-    });
+    bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
   });
 
   ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {

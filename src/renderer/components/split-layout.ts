@@ -77,11 +77,24 @@ const lastSwarmBrowserSessionIds = new Map<string, string>();
 let mosaicResizeCleanups: Array<() => void> = [];
 let lastLayoutRenderSignature: string | null = null;
 
+function getMosaicActiveLayoutKey(project: ProjectRecord): string {
+  const activeSession = project.activeSessionId
+    ? project.sessions.find((session) => session.id === project.activeSessionId)
+    : undefined;
+  if (!activeSession) return 'none';
+  const activeType = activeSession.type ?? 'claude';
+  if (activeType === 'claude') return 'cli';
+  if (activeType === 'browser-tab') return `browser:${activeSession.id}`;
+  return `non-cli:${activeSession.id}:${activeType}`;
+}
+
 function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
   if (!project) return 'no-project';
   return JSON.stringify({
     projectId: project.id,
-    activeSessionId: project.activeSessionId,
+    activeLayoutKey: project.layout.mode === 'mosaic'
+      ? getMosaicActiveLayoutKey(project)
+      : `tab:${project.activeSessionId ?? 'none'}`,
     layout: {
       mode: project.layout.mode,
       splitPanes: project.layout.splitPanes,
@@ -459,6 +472,10 @@ export function renderLayout(): void {
   const project = appState.activeProject;
   const signature = getLayoutRenderSignature(project);
   if (signature === lastLayoutRenderSignature) {
+    if (project && isMosaicMode(project)) {
+      updateSwarmPaneStyles(project);
+      focusActivePane(project);
+    }
     return;
   }
   lastLayoutRenderSignature = signature;

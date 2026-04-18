@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { decodeConnectionCode } from '../renderer/sharing/webrtc-utils';
 import {
+  _internal,
   consumeMobileControlPairingAnswer,
   createMobileControlPairing,
   revokeMobileControlPairing,
@@ -414,6 +415,55 @@ describe('mobile-control-bridge', () => {
     expect(Array.isArray(pairing.localPairingUrls)).toBe(true);
     expect((pairing.localPairingUrls ?? []).length).toBeGreaterThan(0);
     expect(pairing.localPairingUrls).toContain(pairing.localPairingUrl);
+  });
+
+  it('filters unusable tunnel and network-address LAN candidates from pairing links', async () => {
+    const hosts = _internal.listLanHosts({
+      lo0: [
+        {
+          address: '127.0.0.1',
+          netmask: '255.0.0.0',
+          family: 'IPv4',
+          internal: true,
+          mac: '00:00:00:00:00:00',
+          cidr: '127.0.0.1/8',
+        },
+      ],
+      en0: [
+        {
+          address: '10.20.45.84',
+          netmask: '255.255.0.0',
+          family: 'IPv4',
+          internal: false,
+          mac: '00:00:00:00:00:00',
+          cidr: '10.20.45.84/16',
+        },
+      ],
+      utun5: [
+        {
+          address: '172.16.0.2',
+          netmask: '255.255.255.255',
+          family: 'IPv4',
+          internal: false,
+          mac: '00:00:00:00:00:00',
+          cidr: '172.16.0.2/32',
+        },
+      ],
+      bridge101: [
+        {
+          address: '192.168.97.0',
+          netmask: '255.255.255.0',
+          family: 'IPv4',
+          internal: false,
+          mac: '00:00:00:00:00:00',
+          cidr: '192.168.97.0/24',
+        },
+      ],
+    } as NodeJS.Dict<any[]>);
+
+    expect(hosts).toContain('10.20.45.84');
+    expect(hosts).not.toContain('172.16.0.2');
+    expect(hosts).not.toContain('192.168.97.0');
   });
 
   it('falls back to local LAN pairing URL when public base URL is invalid', async () => {
