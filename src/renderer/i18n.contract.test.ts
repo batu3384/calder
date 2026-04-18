@@ -147,4 +147,17 @@ describe('i18n contract', () => {
     expect(source).toContain("['Toggle auto-scroll to bottom', 'Otomatik aşağı kaydırmayı aç/kapat']");
     expect(source).toContain("['Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.', 'Bu kodlama aracı için izleme kapalı. Calder henüz maliyet, bağlam kullanımı veya oturum etkinliğini gösteremez.']");
   });
+
+  it('covers mobile dependency doctor copy and dynamic status translation patterns', () => {
+    expect(source).toContain("['Mobile automation readiness', 'Mobil otomasyon hazırlığı']");
+    expect(source).toContain("['Mobile Dependency Doctor', 'Mobil Bağımlılık Doktoru']");
+    expect(source).toContain("['iOS simulator inspect', 'iOS simülatör inceleme']");
+    expect(source).toContain("['Android emulator inspect', 'Android emülatör inceleme']");
+    expect(source).toContain("['Optional tools', 'İsteğe bağlı araçlar']");
+    expect(source).toContain("['Install', 'Kur']");
+    expect(source).toContain("['Installing…', 'Kuruluyor…']");
+    expect(source).toContain('pattern: /^Ready:\\s*(\\d+)\\s+·\\s+Warnings:\\s*(\\d+)\\s+·\\s+Required missing:\\s*(\\d+)$/u');
+    expect(source).toContain('pattern: /^Command:\\s*(.+)$/u');
+    expect(source).toContain('pattern: /^(.+) was not found on PATH\\.$/u');
+  });
 });

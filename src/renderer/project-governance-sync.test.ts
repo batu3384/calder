@@ -113,6 +113,59 @@ describe('project governance sync', () => {
     expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.networkPolicy).toBe('block');
   });
 
+  it('re-resolves governance for the active CLI session when live updates arrive', async () => {
+    let includeSessionOverride = false;
+    mockGetProjectState.mockImplementation(async () => (
+      includeSessionOverride
+        ? {
+            autoApproval: {
+              globalMode: 'off',
+              projectMode: 'edit_only',
+              sessionMode: 'full_auto',
+              effectiveMode: 'full_auto',
+              policySource: 'session',
+              safeToolProfile: 'default-read-only',
+              recentDecisions: [],
+            },
+          }
+        : {
+            autoApproval: {
+              globalMode: 'off',
+              effectiveMode: 'off',
+              policySource: 'fallback',
+              safeToolProfile: 'default-read-only',
+              recentDecisions: [],
+            },
+          }
+    ));
+
+    const project = appState.addProject('Calder', '/proj');
+    const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
+
+    initProjectGovernanceSync();
+    await flushTasks();
+
+    includeSessionOverride = true;
+    onChangedHandler?.('/proj', {
+      autoApproval: {
+        globalMode: 'off',
+        projectMode: 'edit_only',
+        effectiveMode: 'edit_only',
+        policySource: 'project',
+        safeToolProfile: 'default-read-only',
+        recentDecisions: [],
+      },
+    });
+    await flushTasks();
+
+    expect(mockGetProjectState).toHaveBeenLastCalledWith('/proj', session?.id);
+    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.autoApproval).toMatchObject({
+      sessionMode: 'full_auto',
+      effectiveMode: 'full_auto',
+      policySource: 'session',
+    });
+  });
+
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
     initProjectGovernanceSync();
     initProjectGovernanceSync();

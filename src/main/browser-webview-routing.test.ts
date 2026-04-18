@@ -82,6 +82,21 @@ describe('attachBrowserWebviewRouting', () => {
     expect(guest.loadURL).not.toHaveBeenCalled();
   });
 
+  it('blocks unsupported guest popup schemes', () => {
+    const host = new FakeWebContents();
+    const guest = new FakeWebContents();
+    const openExternal = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+    host.emit('did-attach-webview', {}, guest);
+
+    const result = guest.windowOpenHandler?.({ url: 'javascript:alert(1)' });
+
+    expect(result).toEqual({ action: 'deny' });
+    expect(openExternal).not.toHaveBeenCalled();
+    expect(guest.loadURL).not.toHaveBeenCalled();
+  });
+
   it('reroutes top-level navigations externally while allowing local file navigation', () => {
     const host = new FakeWebContents();
     const openExternal = vi.fn();

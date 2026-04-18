@@ -3,16 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockSendMessage = vi.hoisted(() => vi.fn());
 const mockWaitForIceGathering = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockEncodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue('encoded-answer'));
-const mockDecodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue({ type: 'offer', sdp: 'offer-sdp' }));
+const mockDecodeConnectionEnvelope = vi.hoisted(() => vi.fn().mockResolvedValue({
+  description: { type: 'offer', sdp: 'offer-sdp' },
+  rtcConfig: { iceServers: [{ urls: 'turn:turn.example.com:3478' }], iceTransportPolicy: 'relay' },
+}));
+const mockBuildRtcConfiguration = vi.hoisted(() => vi.fn().mockReturnValue({ iceServers: [] }));
 const mockComputeChallengeResponse = vi.hoisted(() => vi.fn().mockResolvedValue('signed-response'));
 const mockHexToBytes = vi.hoisted(() => vi.fn().mockReturnValue(new Uint8Array([1, 2, 3])));
 
 vi.mock('./webrtc-utils.js', () => ({
-  ICE_CONFIG: { iceServers: [] },
+  buildRtcConfiguration: mockBuildRtcConfiguration,
   sendMessage: mockSendMessage,
   waitForIceGathering: mockWaitForIceGathering,
   encodeConnectionCode: mockEncodeConnectionCode,
-  decodeConnectionCode: mockDecodeConnectionCode,
+  decodeConnectionEnvelope: mockDecodeConnectionEnvelope,
 }));
 
 vi.mock('./share-crypto.js', () => ({
@@ -44,6 +48,7 @@ class FakePeerConnection {
   setRemoteDescription = vi.fn(async (desc: RTCSessionDescriptionInit) => {
     this.remoteDescription = desc;
   });
+  setConfiguration = vi.fn((_config: RTCConfiguration) => {});
   createAnswer = vi.fn(async () => ({ type: 'answer', sdp: 'answer-sdp' }));
   setLocalDescription = vi.fn(async (desc: RTCSessionDescriptionInit) => {
     this.localDescription = desc;
@@ -76,7 +81,8 @@ describe('peer-guest', () => {
     const pc = FakePeerConnection.instances[0];
 
     expect(guestId).toMatch(/^guest-\d+$/);
-    expect(mockDecodeConnectionCode).toHaveBeenCalledWith('offer-code', 'offer', 'secret-1234');
+    expect(mockDecodeConnectionEnvelope).toHaveBeenCalledWith('offer-code', 'offer', 'secret-1234');
+    expect(pc?.setConfiguration).toHaveBeenCalledWith({ iceServers: [] });
     expect(pc?.setRemoteDescription).toHaveBeenCalledWith({ type: 'offer', sdp: 'offer-sdp' });
     expect(pc?.setLocalDescription).toHaveBeenCalledWith({ type: 'answer', sdp: 'answer-sdp' });
     expect(answer).toBe('encoded-answer');

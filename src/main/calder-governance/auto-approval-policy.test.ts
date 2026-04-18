@@ -96,6 +96,34 @@ describe('resolveEffectiveAutoApprovalMode', () => {
     expect(result.effectiveMode).toBe('off');
     expect(result.policySource).toBe('fallback');
   });
+
+  it('honors precedence across global, project, and session mode combinations', () => {
+    const modeOptions = [undefined, 'off', 'edit_only', 'edit_plus_safe_tools', 'full_auto'] as const;
+
+    for (const globalMode of modeOptions) {
+      for (const projectMode of modeOptions) {
+        for (const sessionMode of modeOptions) {
+          const result = resolveEffectiveAutoApprovalMode({
+            ...(globalMode !== undefined ? { globalMode } : {}),
+            ...(projectMode !== undefined ? { projectMode } : {}),
+            ...(sessionMode !== undefined ? { sessionMode } : {}),
+          });
+
+          const expectedMode = sessionMode ?? projectMode ?? globalMode ?? 'off';
+          const expectedSource = sessionMode !== undefined
+            ? 'session'
+            : projectMode !== undefined
+              ? 'project'
+              : globalMode !== undefined
+                ? 'global'
+                : 'fallback';
+
+          expect(result.effectiveMode).toBe(expectedMode);
+          expect(result.policySource).toBe(expectedSource);
+        }
+      }
+    }
+  });
 });
 
 describe('readAutoApprovalModeFromPolicyFile', () => {

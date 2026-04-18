@@ -24,10 +24,12 @@ vi.mock('./hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as hookCommands from './hook-commands';
 import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks, GEMINI_HOOK_MARKER } from './gemini-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+const mockInstallEventScript = vi.mocked(hookCommands.installEventScript);
 
 const n = (p: string) => p.replace(/\\/g, '/');
 
@@ -192,6 +194,19 @@ describe('installGeminiHooks', () => {
     expect(hasSessionIdCapture('AfterAgent')).toBe(false);
     expect(hasSessionIdCapture('SessionEnd')).toBe(false);
     expect(hasSessionIdCapture('PermissionRequest')).toBe(false);
+  });
+
+  it('captures usageMetadata payloads in generated event scripts for token accounting', () => {
+    mockFiles({});
+    installGeminiHooks();
+
+    const afterToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'gemini_event_AfterTool.py');
+    expect(afterToolScript).toBeDefined();
+    const py = String(afterToolScript![1]);
+
+    expect(py).toContain('usage=d.get("usageMetadata")');
+    expect(py).toContain('nested=d.get(key)');
+    expect(py).toContain('e["usage_metadata"]=usage');
   });
 });
 

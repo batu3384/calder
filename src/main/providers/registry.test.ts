@@ -165,4 +165,31 @@ describe('getAvailableProviderIds', () => {
     expect(ids).toContain('copilot');
     expect(ids).not.toContain('blackbox');
   });
+
+  it('skips providers whose prerequisite check throws unexpectedly', () => {
+    const unstable = makeFakeProvider({
+      ...fakeMeta,
+      id: 'qwen',
+      displayName: 'Qwen Unstable',
+    }, true);
+    unstable.validatePrerequisites = () => {
+      throw new Error('shell probe failed');
+    };
+
+    const available = makeFakeProvider({
+      ...fakeMeta,
+      id: 'copilot',
+      displayName: 'Copilot Available',
+    }, true);
+
+    registerProvider(unstable);
+    registerProvider(available);
+
+    let ids: ReturnType<typeof getAvailableProviderIds> = [];
+    expect(() => {
+      ids = getAvailableProviderIds();
+    }).not.toThrow();
+    expect(ids).toContain('copilot');
+    expect(ids).not.toContain('qwen');
+  });
 });

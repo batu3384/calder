@@ -43,4 +43,18 @@ describe('handleBrowserGuestOpenRequest', () => {
     expect(openEmbedded).not.toHaveBeenCalled();
     expect(openExternal).not.toHaveBeenCalled();
   });
+
+  it('ignores popup payloads with unsupported URL schemes', async () => {
+    const openEmbedded = vi.fn();
+    const openExternal = vi.fn();
+
+    const result = await handleBrowserGuestOpenRequest(
+      { url: 'javascript:alert(1)', source: 'window-open' },
+      { openEmbedded, openExternal },
+    );
+
+    expect(result).toBe('ignored');
+    expect(openEmbedded).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
 });

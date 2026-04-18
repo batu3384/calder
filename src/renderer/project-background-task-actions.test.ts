@@ -70,6 +70,25 @@ describe('project background task actions', () => {
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
     appState.setSurfaceTargetSession(project.id, session!.id);
+    appState.setProjectContext(project.id, {
+      sources: [
+        {
+          id: 'shared:rules:/proj/.calder/rules/testing.hard.md',
+          provider: 'shared',
+          scope: 'project',
+          kind: 'rules',
+          path: '/proj/.calder/rules/testing.hard.md',
+          displayName: 'testing.hard.md',
+          summary: 'Tests are required',
+          lastUpdated: '2026-04-13T20:00:00.000Z',
+          enabled: true,
+          priority: 'hard',
+        },
+      ],
+      sharedRuleCount: 1,
+      providerSourceCount: 0,
+      lastUpdated: '2026-04-13T20:00:00.000Z',
+    });
     appState.setProjectGovernance(project.id, {
       policy: {
         id: 'governance:/proj/.calder/governance/policy.json',
@@ -102,6 +121,10 @@ describe('project background task actions', () => {
     expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
       session?.id,
       expect.stringContaining('Project governance policy:'),
+    );
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      session?.id,
+      expect.stringContaining('Project context:\nShared rules: testing.hard.md'),
     );
   });
 

@@ -42,6 +42,7 @@ vi.mock('../codex-session-watcher', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { CodexProvider, _resetCachedPath } from './codex-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { getCodexConfig } from '../codex-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../codex-hooks';
@@ -64,6 +65,7 @@ let provider: CodexProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new CodexProvider();
 });
 
@@ -77,8 +79,8 @@ describe('meta', () => {
   it('has sessionResume and hookStatus capabilities enabled', () => {
     const caps = provider.meta.capabilities;
     expect(caps.sessionResume).toBe(true);
-    expect(caps.costTracking).toBe(false);
-    expect(caps.contextWindow).toBe(false);
+    expect(caps.costTracking).toBe(true);
+    expect(caps.contextWindow).toBe(true);
     expect(caps.hookStatus).toBe(true);
     expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(false);

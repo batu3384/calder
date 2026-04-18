@@ -97,7 +97,7 @@ export function spawnPty(
     killPty(sessionId);
   }
 
-  registerSession(sessionId);
+  registerSession(sessionId, providerId);
 
   const provider = getProvider(providerId);
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);

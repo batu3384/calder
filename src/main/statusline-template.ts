@@ -87,8 +87,13 @@ def read_snapshot(provider):
         return None
 
 def write_snapshot(provider, snapshot):
-    with open(quota_cache_path(provider), 'w') as f:
+    target_path = quota_cache_path(provider)
+    temp_path = target_path + '.tmp'
+    with open(temp_path, 'w') as f:
         json.dump(snapshot, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temp_path, target_path)
 
 def refresh_lock_is_active():
     if os.path.exists(REFRESH_LOCK):
@@ -154,7 +159,16 @@ def context_percent(ctx):
     if isinstance(used_percentage, (int, float)):
         return int(round(used_percentage))
     current_usage = ctx.get('current_usage')
-    if isinstance(current_usage, (int, float)):
+    if isinstance(current_usage, dict):
+        total = ctx.get('max') or ctx.get('context_window_size') or ctx.get('context_window_tokens')
+        used_from_usage = (
+            (current_usage.get('input_tokens') or 0)
+            + (current_usage.get('cache_creation_input_tokens') or 0)
+            + (current_usage.get('cache_read_input_tokens') or 0)
+        )
+        if isinstance(total, (int, float)) and total:
+            return int(round((used_from_usage / total) * 100))
+    elif isinstance(current_usage, (int, float)):
         return int(round(current_usage * 100 if current_usage <= 1 else current_usage))
     used = ctx.get('used')
     total = ctx.get('max') or ctx.get('context_window_size')

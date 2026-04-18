@@ -31,6 +31,7 @@ const mockClose = vi.fn();
 beforeEach(() => {
   vi.useFakeTimers();
   vi.restoreAllMocks();
+  vi.clearAllMocks();
   watchFileCallbacks = new Map();
   watchDirCallbacks = new Map();
   mockClose.mockClear();

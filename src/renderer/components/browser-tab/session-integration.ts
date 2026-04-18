@@ -4,6 +4,7 @@ import {
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from '../../project-context-prompt.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
 import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
 import type { BrowserTabInstance } from './types.js';
 import type { ProviderId } from '../../types.js';
@@ -29,6 +30,13 @@ function buildBrowserAppliedContext(providerId?: ProviderId) {
   const project = appState.activeProject;
   if (!project) return undefined;
   return buildAppliedContextSummary(project.id, providerId);
+}
+
+function getPreferredLaunchProvider(): ProviderId {
+  return resolvePreferredProviderForLaunch(
+    appState.preferences.defaultProvider,
+    getProviderAvailabilitySnapshot(),
+  );
 }
 
 async function sendPromptToSelectedSession(
@@ -69,7 +77,8 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
   if (!prompt) return;
   const project = appState.activeProject;
   if (!project) return;
-  const appliedContext = buildBrowserAppliedContext(appState.preferences.defaultProvider);
+  const launchProvider = getPreferredLaunchProvider();
+  const appliedContext = buildBrowserAppliedContext(launchProvider);
   const routedPrompt = appendAppliedContextToPrompt(
     prompt,
     appliedContext,
@@ -80,6 +89,7 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
     project.id,
     `Flow: ${instruction.slice(0, 30)}`,
     routedPrompt,
+    launchProvider,
   );
   dismissFlow(instance);
 }
@@ -118,7 +128,8 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
   if (!info || !prompt) return;
   const project = appState.activeProject;
   if (!project) return;
-  const appliedContext = buildBrowserAppliedContext(appState.preferences.defaultProvider);
+  const launchProvider = getPreferredLaunchProvider();
+  const appliedContext = buildBrowserAppliedContext(launchProvider);
   const routedPrompt = appendAppliedContextToPrompt(
     prompt,
     appliedContext,
@@ -129,6 +140,7 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
     project.id,
     `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`,
     routedPrompt,
+    launchProvider,
   );
   dismissInspect(instance);
 }

@@ -2,6 +2,7 @@
 // AppState, and the terminal/remote-terminal panes.
 
 import type { ShareMode } from '../../shared/sharing-types.js';
+import type { ShareRtcConfig } from '../../shared/types.js';
 import { startShare, stopShare, broadcastData, broadcastResize, isSharing, type ShareHandle } from './peer-host.js';
 import { joinShare, type JoinHandle, type InitData } from './peer-guest.js';
 import { appState } from '../state.js';
@@ -35,8 +36,15 @@ export interface ShareResult {
   handle: ShareHandle;
 }
 
-export async function shareSession(sessionId: string, mode: ShareMode, passphrase: string): Promise<ShareResult> {
-  const handle = startShare(sessionId, mode, passphrase);
+export async function shareSession(
+  sessionId: string,
+  mode: ShareMode,
+  passphrase: string,
+  rtcConfig?: ShareRtcConfig,
+): Promise<ShareResult> {
+  const handle = rtcConfig
+    ? startShare(sessionId, mode, passphrase, rtcConfig)
+    : startShare(sessionId, mode, passphrase);
   shareHandles.set(sessionId, handle);
   notifyShareChange();
 

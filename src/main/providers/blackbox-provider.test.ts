@@ -35,6 +35,7 @@ vi.mock('../blackbox-session-watcher', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { BlackboxProvider, _resetCachedPath } from './blackbox-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { getBlackboxConfig, findBlackboxTranscriptPath } from '../blackbox-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { stopBlackboxSessionWatcher } from '../blackbox-session-watcher';
@@ -52,6 +53,7 @@ let provider: BlackboxProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new BlackboxProvider();
 });
 

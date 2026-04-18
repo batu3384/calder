@@ -1,6 +1,7 @@
 import type { ProjectRecord } from '../state.js';
 import { attachBrowserTabToContainer, showBrowserTabPane } from './browser-tab-pane.js';
 import { attachCliSurfacePane, showCliSurfacePane } from './cli-surface/pane.js';
+import { attachMobileSurfacePane, showMobileSurfacePane } from './mobile-surface/pane.js';
 
 function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefined {
   const surfaceSessionId = project.surface?.web?.sessionId;
@@ -17,6 +18,12 @@ export function renderSurfaceHost(project: ProjectRecord, container: HTMLElement
   if (project.surface?.active && project.surface.kind === 'cli') {
     attachCliSurfacePane(project.id, container);
     showCliSurfacePane(project.id);
+    return;
+  }
+
+  if (project.surface?.active && project.surface.kind === 'mobile') {
+    attachMobileSurfacePane(project.id, container);
+    showMobileSurfacePane(project.id);
     return;
   }
 

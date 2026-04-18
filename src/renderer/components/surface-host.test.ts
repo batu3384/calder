@@ -5,11 +5,15 @@ const {
   mockShowBrowserTabPane,
   mockAttachCliSurfacePane,
   mockShowCliSurfacePane,
+  mockAttachMobileSurfacePane,
+  mockShowMobileSurfacePane,
 } = vi.hoisted(() => ({
   mockAttachBrowserTabToContainer: vi.fn(),
   mockShowBrowserTabPane: vi.fn(),
   mockAttachCliSurfacePane: vi.fn(),
   mockShowCliSurfacePane: vi.fn(),
+  mockAttachMobileSurfacePane: vi.fn(),
+  mockShowMobileSurfacePane: vi.fn(),
 }));
 
 vi.mock('./browser-tab-pane.js', () => ({
@@ -20,6 +24,11 @@ vi.mock('./browser-tab-pane.js', () => ({
 vi.mock('./cli-surface/pane.js', () => ({
   attachCliSurfacePane: mockAttachCliSurfacePane,
   showCliSurfacePane: mockShowCliSurfacePane,
+}));
+
+vi.mock('./mobile-surface/pane.js', () => ({
+  attachMobileSurfacePane: mockAttachMobileSurfacePane,
+  showMobileSurfacePane: mockShowMobileSurfacePane,
 }));
 
 import { renderSurfaceHost } from './surface-host.js';
@@ -124,5 +133,29 @@ describe('surface host', () => {
 
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith('browser-2', container);
     expect(mockShowBrowserTabPane).toHaveBeenCalledWith('browser-2', true);
+  });
+
+  it('renders the mobile surface when the active surface is mobile', () => {
+    const container = {} as HTMLElement;
+    renderSurfaceHost(
+      {
+        id: 'project-1',
+        name: 'Demo',
+        path: '/tmp/demo',
+        activeSessionId: 'claude-1',
+        sessions: [],
+        layout: { mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' },
+        surface: {
+          kind: 'mobile',
+          active: true,
+          web: { history: [] },
+          cli: { profiles: [], runtime: { status: 'idle' } },
+        },
+      } as any,
+      container,
+    );
+
+    expect(mockAttachMobileSurfacePane).toHaveBeenCalledWith('project-1', container);
+    expect(mockShowMobileSurfacePane).toHaveBeenCalledWith('project-1');
   });
 });

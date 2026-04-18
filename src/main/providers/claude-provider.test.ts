@@ -43,6 +43,7 @@ vi.mock('../settings-guard', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { ClaudeProvider, _resetCachedPath } from './claude-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { cleanupAll, installStatusLineScript } from '../hook-status';
 import { getClaudeConfig } from '../claude-cli';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
@@ -63,6 +64,7 @@ let provider: ClaudeProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new ClaudeProvider();
 });
 

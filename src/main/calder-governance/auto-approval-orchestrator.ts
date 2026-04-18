@@ -145,6 +145,7 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
         if (event.type !== 'permission_request') continue;
 
         const session = sessions.get(sessionId);
+        if (!session) continue;
         const providerId = session?.providerId;
         const providerSupported = providerId !== null && providerId !== undefined && SUPPORTED_PROVIDER_IDS.has(providerId);
         let approvalState: ResolvedAutoApprovalState;
@@ -177,11 +178,16 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
           if (isRapidDuplicate) {
             finalReason = `Duplicate permission request detected within ${rateLimitMs}ms; reused prior auto-approval.`;
           } else {
-            lastAutoApproval.set(sessionId, {
-              timestamp: requestTimestamp,
-              fingerprint: operationFingerprint,
-            });
-            await options.sendApproval(sessionId, providerId as ProviderId);
+            try {
+              await options.sendApproval(sessionId, providerId as ProviderId);
+              lastAutoApproval.set(sessionId, {
+                timestamp: requestTimestamp,
+                fingerprint: operationFingerprint,
+              });
+            } catch {
+              finalDecision = 'ask';
+              finalReason = 'Auto-approval dispatch failed; manual approval required.';
+            }
           }
         }
 

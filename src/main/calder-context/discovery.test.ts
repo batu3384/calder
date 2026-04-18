@@ -126,6 +126,39 @@ describe('discoverProjectContext', () => {
     );
   });
 
+  it('indexes all Claude memory variants and keeps non-rule shared files out of rule counts', async () => {
+    const root = makeProject('claude-memory-context');
+    roots.push(root);
+    writeFiles(root, {
+      'CLAUDE.md': '# Root Claude memory\nKeep global conventions here.\n',
+      'CLAUDE.local.md': '# Local Claude memory\nOnly local machine notes.\n',
+      '.claude/CLAUDE.md': '# Workspace Claude memory\nWorkspace-only memory.\n',
+      '.mcp.json': JSON.stringify({ mcpServers: { local: { command: 'npx test-server' } } }),
+    });
+
+    const result = await discoverProjectContext(root);
+    const claudeMemorySources = result.sources
+      .filter((source) => source.provider === 'claude' && source.kind === 'memory')
+      .map((source) => source.path);
+
+    expect(claudeMemorySources).toEqual([
+      join(root, 'CLAUDE.md'),
+      join(root, 'CLAUDE.local.md'),
+      join(root, '.claude', 'CLAUDE.md'),
+    ]);
+    expect(result.sharedRuleCount).toBe(0);
+    expect(result.providerSourceCount).toBe(3);
+    expect(result.sources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          provider: 'shared',
+          kind: 'mcp',
+          displayName: '.mcp.json',
+        }),
+      ]),
+    );
+  });
+
   it('returns a clean empty result when no supported project context files exist', async () => {
     const root = makeProject('empty-context');
     roots.push(root);

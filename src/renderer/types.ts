@@ -1,5 +1,5 @@
-export type { AutoApprovalMode, AutoApprovalPolicySource, McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, ProviderUpdateResult, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceAutoApprovalState, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types.js';
-import type { AutoApprovalMode, CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types.js';
+export type { AutoApprovalMode, AutoApprovalPolicySource, McpServer, Agent, Skill, Command, ProviderConfig, ClaudeConfig, GitWorktree, GitFileEntry, CostData, McpResult, ProviderId, CliProviderMeta, CliProviderCapabilities, ProviderUpdateResult, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyCheck, MobileDependencyReport, MobileDependencyInstallResult, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ShareRtcConfig, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceAutoApprovalState, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types.js';
+import type { AutoApprovalMode, CostData, ProviderConfig, GitWorktree, GitFileEntry, McpResult, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, StatsCache, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, EmbeddedBrowserOpenPayload, ShareRtcConfig, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types.js';
 
 export interface CalderApi {
   pty: {
@@ -141,6 +141,30 @@ export interface CalderApi {
   browser: {
     saveScreenshot(sessionId: string, dataUrl: string): Promise<string>;
     listLocalTargets(): Promise<Array<{ url: string; label: string; meta: string }>>;
+  };
+  browserCredential: {
+    listForUrl(url: string): Promise<BrowserCredentialSummary[]>;
+    saveForUrl(input: BrowserCredentialSaveInput): Promise<BrowserCredentialSummary>;
+    deleteById(id: string): Promise<{ deleted: boolean }>;
+    getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
+    getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
+  };
+  sharing: {
+    getRtcConfig(): Promise<ShareRtcConfig>;
+  };
+  mobile: {
+    createControlPairing(
+      sessionId: string,
+      offer: string,
+      passphrase: string,
+      mode: 'readonly' | 'readwrite',
+    ): Promise<MobileControlPairingResult>;
+    consumeControlAnswer(pairingId: string): Promise<MobileControlAnswerResult>;
+    revokeControlPairing(pairingId: string): Promise<{ ok: boolean }>;
+  };
+  mobileSetup: {
+    checkDependencies(): Promise<MobileDependencyReport>;
+    installDependency(dependencyId: MobileDependencyId): Promise<MobileDependencyInstallResult>;
   };
   cliSurface: {
     discover(projectPath: string): Promise<CliSurfaceDiscoveryResult>;

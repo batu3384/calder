@@ -551,4 +551,18 @@ describe('installHooks', () => {
     expect(endPy).toContain('def _clear_subagent_state');
     expect(endPy).toContain('_clear_subagent_state(sid)');
   });
+
+  it('generates context snapshot logic that prefers current_usage input+cache totals', () => {
+    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+    installHooks();
+
+    const postToolUseScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_PostToolUse.py');
+    expect(postToolUseScript).toBeDefined();
+
+    const py = String(postToolUseScript![1]);
+    expect(py).toContain('cu=cw.get("current_usage") if isinstance(cw.get("current_usage"),dict) else None');
+    expect(py).toContain('tt=(cu.get("input_tokens",0) or 0)+(cu.get("cache_creation_input_tokens",0) or 0)+(cu.get("cache_read_input_tokens",0) or 0)');
+    expect(py).toContain('tt=(cw.get("total_input_tokens",0) or 0)+(cw.get("total_output_tokens",0) or 0)');
+  });
 });

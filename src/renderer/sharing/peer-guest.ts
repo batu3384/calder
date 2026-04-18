@@ -2,7 +2,7 @@
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
 import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
-import { ICE_CONFIG, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
+import { buildRtcConfiguration, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionEnvelope } from './webrtc-utils.js';
 import { computeChallengeResponse, hexToBytes } from './share-crypto.js';
 
 export interface InitData {
@@ -49,7 +49,7 @@ export function joinShare(offer: string, passphrase: string): { guestId: string;
   let authFailedCb: ((reason: string) => void) | null = null;
   let disconnectFired = false;
 
-  const pc = new RTCPeerConnection(ICE_CONFIG);
+  const pc = new RTCPeerConnection(buildRtcConfiguration());
 
   const guestPeer: GuestPeer = {
     pc,
@@ -147,8 +147,9 @@ export function joinShare(offer: string, passphrase: string): { guestId: string;
     guestId,
     handle: {
       async getAnswer(): Promise<string> {
-        const desc = await decodeConnectionCode(offer, 'offer', passphrase);
-        await pc.setRemoteDescription(new RTCSessionDescription(desc));
+        const decoded = await decodeConnectionEnvelope(offer, 'offer', passphrase);
+        pc.setConfiguration(buildRtcConfiguration(decoded.rtcConfig));
+        await pc.setRemoteDescription(new RTCSessionDescription(decoded.description));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await waitForIceGathering(pc);

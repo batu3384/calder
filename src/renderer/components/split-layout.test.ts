@@ -301,6 +301,12 @@ vi.mock('./cli-surface/pane.js', () => ({
   getCliSurfacePaneInstance: vi.fn((projectId: string) => cliSurfacePanes.get(projectId)),
 }));
 
+vi.mock('./mobile-surface/pane.js', () => ({
+  hideAllMobileSurfacePanes: vi.fn(),
+  attachMobileSurfacePane: vi.fn(),
+  showMobileSurfacePane: vi.fn(),
+}));
+
 vi.mock('./tab-bar.js', () => ({
   quickNewSession: vi.fn(),
 }));
@@ -314,7 +320,7 @@ vi.mock('./session-inspector.js', () => ({
 }));
 
 describe('split-layout mosaic behavior', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
     uuidCounter = 0;
@@ -331,6 +337,9 @@ describe('split-layout mosaic behavior', () => {
       cb(0);
       return 1;
     });
+
+    const { isInspectorOpen } = await import('./session-inspector.js');
+    vi.mocked(isInspectorOpen).mockReturnValue(false);
   });
 
   it('renders browser-left with a single large session canvas when one cli session is visible', async () => {

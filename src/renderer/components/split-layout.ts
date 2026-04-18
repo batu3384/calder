@@ -56,6 +56,7 @@ import {
   getBrowserTabInstance,
 } from './browser-tab-pane.js';
 import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
+import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
 import { renderSurfaceHost } from './surface-host.js';
 import { quickNewSession } from './tab-bar.js';
 import { promptNewProject } from './sidebar.js';
@@ -470,6 +471,7 @@ export function renderLayout(): void {
     hideAllRemotePanes();
     hideAllBrowserTabPanes();
     hideAllCliSurfacePanes();
+    hideAllMobileSurfacePanes();
     setContainerClass('');
     showEmptyState(project);
     return;
@@ -517,6 +519,7 @@ export function renderLayout(): void {
   hideAllRemotePanes();
   hideAllBrowserTabPanes();
   hideAllCliSurfacePanes();
+  hideAllMobileSurfacePanes();
 
   const activeSession = project.activeSessionId
     ? project.sessions.find((session) => session.id === project.activeSessionId)

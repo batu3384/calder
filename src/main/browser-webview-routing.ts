@@ -1,5 +1,6 @@
 import { shell } from 'electron';
 import type { WebContents } from 'electron';
+import { isAllowedExternalUrl } from './browser-open-policy';
 
 type WindowOpenHandler = (details: { url: string }) => { action: 'allow' | 'deny' };
 type EventHandler = (...args: any[]) => void;
@@ -23,6 +24,7 @@ function createExternalRouteDispatcher(openExternal: (url: string) => void): (ur
   let lastAt = 0;
   const dedupeWindowMs = 800;
   return (url: string) => {
+    if (!isAllowedExternalUrl(url)) return;
     const now = Date.now();
     if (url === lastUrl && now - lastAt <= dedupeWindowMs) return;
     lastUrl = url;
@@ -38,7 +40,7 @@ function redirectGuestWindowToCurrentView(
   guestContents.setWindowOpenHandler(({ url }) => {
     if (isHttpUrl(url)) {
       void guestContents.loadURL?.(url);
-    } else {
+    } else if (isAllowedExternalUrl(url)) {
       routeExternal(url);
     }
     return { action: 'deny' };

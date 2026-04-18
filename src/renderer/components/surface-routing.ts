@@ -52,11 +52,16 @@ export async function deliverSurfacePrompt(
   return { ok: true, targetSessionId: targetSession.id };
 }
 
-export function queueSurfacePromptInNewSession(projectId: string, sessionName: string, prompt: string) {
+export function queueSurfacePromptInNewSession(
+  projectId: string,
+  sessionName: string,
+  prompt: string,
+  providerOverride?: ReturnType<typeof getPreferredLaunchProvider>,
+) {
   const session = appState.addPlanSession(
     projectId,
     sessionName,
-    getPreferredLaunchProvider(),
+    providerOverride ?? getPreferredLaunchProvider(),
   );
   if (session) {
     setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));

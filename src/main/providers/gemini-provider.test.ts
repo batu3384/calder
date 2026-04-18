@@ -40,6 +40,7 @@ vi.mock('../gemini-hooks', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { GeminiProvider, _resetCachedPath } from './gemini-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { getGeminiConfig } from '../gemini-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks } from '../gemini-hooks';
@@ -61,6 +62,7 @@ let provider: GeminiProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new GeminiProvider();
 });
 
@@ -74,8 +76,8 @@ describe('meta', () => {
   it('has sessionResume, hookStatus, and configReading capabilities enabled', () => {
     const caps = provider.meta.capabilities;
     expect(caps.sessionResume).toBe(true);
-    expect(caps.costTracking).toBe(false);
-    expect(caps.contextWindow).toBe(false);
+    expect(caps.costTracking).toBe(true);
+    expect(caps.contextWindow).toBe(true);
     expect(caps.hookStatus).toBe(true);
     expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(false);

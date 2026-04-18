@@ -4,6 +4,8 @@
  * and sends element metadata back to the host renderer via ipcRenderer.sendToHost().
  */
 import { ipcRenderer } from 'electron';
+import { escapeCssAttributeValue, escapeCssIdentifier } from './browser-tab-selector-utils';
+import { replayFlowClick } from './browser-tab-flow-replay';
 
 interface SelectorOption {
   type: 'qa' | 'attr' | 'id' | 'css';
@@ -18,7 +20,35 @@ interface BrowserGuestOpenPayload {
   source: BrowserGuestOpenSource;
 }
 
+interface RelativeClickPoint {
+  normalizedX: number;
+  normalizedY: number;
+}
+
+interface ElementMetadata {
+  tagName: string;
+  id: string;
+  classes: string[];
+  textContent: string;
+  selectors: SelectorOption[];
+  selectorValues: string[];
+  shadowHostSelectors: string[][];
+  pageUrl: string;
+  clickPoint?: RelativeClickPoint;
+  isCanvasLike?: boolean;
+}
+
+interface AuthFillPayload {
+  username?: unknown;
+  password?: unknown;
+}
+
 const QA_ATTRS = ['data-testid', 'data-qa', 'data-cy', 'data-test', 'data-automation', 'qaTag'];
+
+function clampNumber(value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
 
 function shouldRouteBrowserOpenIntent(input: {
   targetAttr?: string | null;
@@ -63,15 +93,19 @@ let inspectMode = false;
 let flowMode = false;
 let drawMode = false;
 let suppressNextFlowClick = false;
-let highlightOverlay: HTMLDivElement | null = null;
+const highlightOverlays = new Map<Document, HTMLDivElement>();
 
 let drawCanvas: HTMLCanvasElement | null = null;
 let drawCtx: CanvasRenderingContext2D | null = null;
 let drawing = false;
 let strokeCompleted = false;
 
-function sendBrowserOpenRequest(requestedUrl: string, source: BrowserGuestOpenSource): void {
-  const payload = resolveBrowserGuestOpenPayload(requestedUrl, window.location.href, source);
+function sendBrowserOpenRequest(
+  requestedUrl: string,
+  source: BrowserGuestOpenSource,
+  baseUrl = window.location.href,
+): void {
+  const payload = resolveBrowserGuestOpenPayload(requestedUrl, baseUrl, source);
   if (!payload) return;
   ipcRenderer.sendToHost('browser-open-request', payload);
 }
@@ -81,6 +115,49 @@ function findPopupAnchor(target: EventTarget | null): HTMLAnchorElement | null {
   const anchor = target.closest('a[href]');
   if (!(anchor instanceof HTMLAnchorElement)) return null;
   return anchor;
+}
+
+function isOverlayElement(el: Element): boolean {
+  return el.getAttribute('data-calder-overlay') === 'true';
+}
+
+function resolveEventElementTarget(e: Event): Element | null {
+  const composedPath = typeof e.composedPath === 'function' ? e.composedPath() : [];
+  for (const node of composedPath) {
+    if (node instanceof Element && !isOverlayElement(node)) return node;
+  }
+  const target = e.target;
+  if (target instanceof Element && !isOverlayElement(target)) return target;
+  return null;
+}
+
+function collectSameOriginFrameDocuments(rootDocument: Document): Document[] {
+  const docs: Document[] = [];
+  const visited = new Set<Document>();
+
+  const visit = (doc: Document): void => {
+    if (visited.has(doc)) return;
+    visited.add(doc);
+    docs.push(doc);
+
+    for (const frameNode of doc.querySelectorAll('iframe,frame')) {
+      const frame = frameNode as HTMLIFrameElement | HTMLFrameElement;
+      try {
+        const childDoc = frame.contentDocument;
+        if (childDoc) visit(childDoc);
+      } catch {
+        // Cross-origin frames are intentionally skipped.
+      }
+    }
+  };
+
+  visit(rootDocument);
+  return docs;
+}
+
+function updateDocumentCursor(doc: Document, active: boolean): void {
+  if (!doc.body) return;
+  doc.body.style.cursor = active ? 'crosshair' : '';
 }
 
 function applyDrawStyles(ctx: CanvasRenderingContext2D): void {
@@ -117,6 +194,13 @@ function onDrawPointerDown(e: PointerEvent): void {
   if (!drawMode || !drawCtx) return;
   e.preventDefault();
   e.stopPropagation();
+  if (drawCanvas && drawCanvas.hasPointerCapture && drawCanvas.setPointerCapture) {
+    try {
+      if (!drawCanvas.hasPointerCapture(e.pointerId)) drawCanvas.setPointerCapture(e.pointerId);
+    } catch {
+      // Pointer capture can fail on synthetic/untrusted events.
+    }
+  }
   if (strokeCompleted && drawCanvas) {
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     strokeCompleted = false;
@@ -136,6 +220,13 @@ function onDrawPointerMove(e: PointerEvent): void {
 function onDrawPointerUp(e: PointerEvent): void {
   if (!drawMode || !drawing) return;
   e.preventDefault();
+  if (drawCanvas && drawCanvas.hasPointerCapture && drawCanvas.releasePointerCapture) {
+    try {
+      if (drawCanvas.hasPointerCapture(e.pointerId)) drawCanvas.releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignore release failures; stroke completion still proceeds.
+    }
+  }
   drawing = false;
   strokeCompleted = true;
   ipcRenderer.sendToHost('draw-stroke-end', { x: e.clientX, y: e.clientY });
@@ -190,20 +281,24 @@ function clearDrawing(): void {
   strokeCompleted = false;
 }
 
-function ensureOverlay(): HTMLDivElement {
-  if (!highlightOverlay) {
-    highlightOverlay = document.createElement('div');
-    highlightOverlay.style.cssText =
-      'position:fixed;pointer-events:none;z-index:2147483647;' +
-      'border:2px solid #4a9eff;background:rgba(74,158,255,0.15);' +
-      'transition:all 0.05s ease;display:none;';
-    document.documentElement.appendChild(highlightOverlay);
-  }
-  return highlightOverlay;
+function ensureOverlay(doc: Document): HTMLDivElement {
+  const existing = highlightOverlays.get(doc);
+  if (existing) return existing;
+
+  const overlay = doc.createElement('div');
+  overlay.setAttribute('data-calder-overlay', 'true');
+  overlay.style.cssText =
+    'position:fixed;pointer-events:none;z-index:2147483647;' +
+    'border:2px solid #4a9eff;background:rgba(74,158,255,0.15);' +
+    'transition:all 0.05s ease;display:none;';
+  doc.documentElement.appendChild(overlay);
+  highlightOverlays.set(doc, overlay);
+  return overlay;
 }
 
 function positionOverlay(el: Element): void {
-  const overlay = ensureOverlay();
+  const doc = el.ownerDocument;
+  const overlay = ensureOverlay(doc);
   const rect = el.getBoundingClientRect();
   overlay.style.top = `${rect.top}px`;
   overlay.style.left = `${rect.left}px`;
@@ -212,17 +307,28 @@ function positionOverlay(el: Element): void {
   overlay.style.display = 'block';
 }
 
-function hideOverlay(): void {
-  if (highlightOverlay) highlightOverlay.style.display = 'none';
+function hideOverlay(doc?: Document): void {
+  if (doc) {
+    const overlay = highlightOverlays.get(doc);
+    if (overlay) overlay.style.display = 'none';
+    return;
+  }
+
+  for (const overlay of highlightOverlays.values()) {
+    overlay.style.display = 'none';
+  }
 }
 
 function buildCssPath(el: Element): string {
+  if (el === document.documentElement) return 'html';
+  if (el === document.body) return 'body';
+
   const parts: string[] = [];
   let current: Element | null = el;
   while (current && current !== document.body && current !== document.documentElement) {
     let selector = current.tagName.toLowerCase();
     if (current.id) {
-      selector += `#${current.id}`;
+      selector += `#${escapeCssIdentifier(current.id)}`;
       parts.unshift(selector);
       break; // ID is unique enough
     }
@@ -239,6 +345,7 @@ function buildCssPath(el: Element): string {
     parts.unshift(selector);
     current = current.parentElement;
   }
+  if (parts.length === 0) return el.tagName.toLowerCase();
   return parts.join(' > ');
 }
 
@@ -248,46 +355,190 @@ function buildAllSelectors(el: Element): SelectorOption[] {
   const qaSet = new Set(QA_ATTRS);
   for (const attr of QA_ATTRS) {
     const val = el.getAttribute(attr);
-    if (val) options.push({ type: 'qa', label: attr, value: `[${attr}="${val}"]` });
+    if (val) {
+      options.push({
+        type: 'qa',
+        label: attr,
+        value: `[${escapeCssIdentifier(attr)}="${escapeCssAttributeValue(val)}"]`,
+      });
+    }
   }
 
   for (const attr of el.getAttributeNames()) {
     if (attr.startsWith('data-') && !qaSet.has(attr)) {
       const val = el.getAttribute(attr);
-      if (val) options.push({ type: 'attr', label: attr, value: `[${attr}="${val}"]` });
+      if (val) {
+        options.push({
+          type: 'attr',
+          label: attr,
+          value: `[${escapeCssIdentifier(attr)}="${escapeCssAttributeValue(val)}"]`,
+        });
+      }
     }
   }
 
-  if (el.id) options.push({ type: 'id', label: 'id', value: `#${el.id}` });
+  if (el.id) options.push({ type: 'id', label: 'id', value: `#${escapeCssIdentifier(el.id)}` });
 
   options.push({ type: 'css', label: 'css', value: buildCssPath(el) });
 
   return options;
 }
 
-function getElementMetadata(el: Element) {
+function selectorValuesFromOptions(options: SelectorOption[]): string[] {
+  const values: string[] = [];
+  const seen = new Set<string>();
+  for (const option of options) {
+    const value = option.value.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    values.push(value);
+  }
+  return values;
+}
+
+function buildShadowHostSelectorChain(el: Element): string[][] {
+  const chain: string[][] = [];
+  let root: Node = el.getRootNode();
+  while (root instanceof ShadowRoot) {
+    const hostSelectors = selectorValuesFromOptions(buildAllSelectors(root.host));
+    if (hostSelectors.length > 0) chain.unshift(hostSelectors);
+    root = root.host.getRootNode();
+  }
+  return chain;
+}
+
+function buildRelativeClickPoint(el: Element, clientX: number, clientY: number): RelativeClickPoint | undefined {
+  const rect = el.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return undefined;
+  const normalizedX = (clientX - rect.left) / rect.width;
+  const normalizedY = (clientY - rect.top) / rect.height;
+  if (!Number.isFinite(normalizedX) || !Number.isFinite(normalizedY)) return undefined;
+  return {
+    normalizedX: clampNumber(normalizedX, 0, 1),
+    normalizedY: clampNumber(normalizedY, 0, 1),
+  };
+}
+
+function getElementMetadata(
+  el: Element,
+  clickPosition?: { clientX: number; clientY: number },
+): ElementMetadata {
   const text = (el.textContent || '').trim();
+  const selectors = buildAllSelectors(el);
+  const pageUrl = el.ownerDocument.defaultView?.location.href || window.location.href;
+  const clickPoint = clickPosition
+    ? buildRelativeClickPoint(el, clickPosition.clientX, clickPosition.clientY)
+    : undefined;
+  const isCanvasLike = el.tagName.toLowerCase() === 'canvas';
   return {
     tagName: el.tagName.toLowerCase(),
     id: el.id || '',
     classes: Array.from(el.classList),
     textContent: text.length > 150 ? text.slice(0, 150) + '\u2026' : text,
-    selectors: buildAllSelectors(el),
-    pageUrl: window.location.href,
+    selectors,
+    selectorValues: selectorValuesFromOptions(selectors),
+    shadowHostSelectors: buildShadowHostSelectorChain(el),
+    pageUrl,
+    clickPoint,
+    isCanvasLike,
   };
+}
+
+function setInputElementValue(input: HTMLInputElement, value: string): void {
+  const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  if (descriptor?.set) {
+    descriptor.set.call(input, value);
+  } else {
+    input.value = value;
+  }
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function isLikelyUsernameInput(input: HTMLInputElement): boolean {
+  if (input.disabled || input.readOnly) return false;
+  if (input.type === 'hidden' || input.type === 'password') return false;
+  const type = (input.type || '').toLowerCase();
+  if (type && !['text', 'email', 'search', 'tel', 'url', 'number'].includes(type)) return false;
+
+  const name = `${input.name || ''} ${input.id || ''} ${input.getAttribute('autocomplete') || ''}`.toLowerCase();
+  if (name.includes('user') || name.includes('login') || name.includes('email')) return true;
+  return true;
+}
+
+function findPrimaryPasswordInput(doc: Document): HTMLInputElement | null {
+  return doc.querySelector<HTMLInputElement>('input[type="password"]:not([disabled]):not([readonly])');
+}
+
+function isPrecedingNode(candidate: Node, reference: Node): boolean {
+  const relation = candidate.compareDocumentPosition(reference);
+  return Boolean(relation & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
+function findUsernameNearPassword(passwordInput: HTMLInputElement): HTMLInputElement | null {
+  const scope = passwordInput.form ?? passwordInput.ownerDocument;
+  const candidates = Array.from(scope.querySelectorAll<HTMLInputElement>('input'))
+    .filter(isLikelyUsernameInput);
+  const beforePassword = candidates.find((candidate) => isPrecedingNode(candidate, passwordInput));
+  if (beforePassword) return beforePassword;
+  return candidates[0] ?? null;
+}
+
+function fillCredentialsInDocument(doc: Document, username: string, password: string): {
+  filledUsername: boolean;
+  filledPassword: boolean;
+} {
+  const passwordInput = findPrimaryPasswordInput(doc);
+  const usernameInput = passwordInput
+    ? findUsernameNearPassword(passwordInput)
+    : doc.querySelector<HTMLInputElement>('input[autocomplete="username"], input[type="email"], input[type="text"]');
+
+  let filledUsername = false;
+  let filledPassword = false;
+
+  if (usernameInput && username) {
+    setInputElementValue(usernameInput, username);
+    filledUsername = true;
+  }
+
+  if (passwordInput && password) {
+    setInputElementValue(passwordInput, password);
+    filledPassword = true;
+  }
+
+  return { filledUsername, filledPassword };
+}
+
+function fillCredentialsAcrossFrames(payload: AuthFillPayload): { filledUsername: boolean; filledPassword: boolean } {
+  const username = typeof payload.username === 'string' ? payload.username : '';
+  const password = typeof payload.password === 'string' ? payload.password : '';
+  if (!username && !password) {
+    return { filledUsername: false, filledPassword: false };
+  }
+
+  const docs = collectSameOriginFrameDocuments(document);
+  let filledUsername = false;
+  let filledPassword = false;
+  for (const doc of docs) {
+    const result = fillCredentialsInDocument(doc, username, password);
+    filledUsername = filledUsername || result.filledUsername;
+    filledPassword = filledPassword || result.filledPassword;
+  }
+  return { filledUsername, filledPassword };
 }
 
 function onMouseOver(e: MouseEvent): void {
   if (!inspectMode && !flowMode) return;
-  const target = e.target;
-  if (!(target instanceof Element)) return;
-  if (target === highlightOverlay) return;
+  const target = resolveEventElementTarget(e);
+  if (!target) return;
   positionOverlay(target);
 }
 
-function onMouseOut(_e: MouseEvent): void {
+function onMouseOut(e: MouseEvent): void {
   if (!inspectMode && !flowMode) return;
-  hideOverlay();
+  const targetDoc = resolveEventElementTarget(e)?.ownerDocument;
+  hideOverlay(targetDoc);
+  if (!targetDoc) hideOverlay();
 }
 
 function onClick(e: MouseEvent): void {
@@ -295,16 +546,16 @@ function onClick(e: MouseEvent): void {
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
-  const target = e.target;
-  if (!(target instanceof Element)) return;
-  if (target === highlightOverlay) return;
-  const metadata = getElementMetadata(target);
+  const target = resolveEventElementTarget(e);
+  if (!target) return;
+  const metadata = getElementMetadata(target, { clientX: e.clientX, clientY: e.clientY });
   ipcRenderer.sendToHost('element-selected', { metadata, x: e.clientX, y: e.clientY });
 }
 
 function onPopupAnchorClick(e: MouseEvent): void {
   if (inspectMode || flowMode || drawMode || e.defaultPrevented) return;
-  const anchor = findPopupAnchor(e.target);
+  const target = resolveEventElementTarget(e);
+  const anchor = findPopupAnchor(target);
   if (!anchor) return;
   if (!shouldRouteBrowserOpenIntent({
     targetAttr: anchor.getAttribute('target'),
@@ -319,7 +570,8 @@ function onPopupAnchorClick(e: MouseEvent): void {
   const href = anchor.getAttribute('href') || anchor.href;
   if (!href) return;
   e.preventDefault();
-  sendBrowserOpenRequest(href, 'anchor');
+  const baseUrl = anchor.ownerDocument.defaultView?.location.href || window.location.href;
+  sendBrowserOpenRequest(href, 'anchor', baseUrl);
 }
 
 function onFlowClick(e: MouseEvent): void {
@@ -328,52 +580,101 @@ function onFlowClick(e: MouseEvent): void {
     suppressNextFlowClick = false;
     return;
   }
-  const target = e.target;
-  if (!(target instanceof Element)) return;
-  if (target === highlightOverlay) return;
+  const target = resolveEventElementTarget(e);
+  if (!target) return;
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
   ipcRenderer.sendToHost('flow-element-picked', {
-    metadata: getElementMetadata(target),
+    metadata: getElementMetadata(target, { clientX: e.clientX, clientY: e.clientY }),
     x: e.clientX,
     y: e.clientY,
   });
 }
 
+const inspectListenerDocs = new Set<Document>();
+const flowListenerDocs = new Set<Document>();
+
+function addInspectListeners(doc: Document): void {
+  if (inspectListenerDocs.has(doc)) return;
+  doc.addEventListener('mouseover', onMouseOver, true);
+  doc.addEventListener('mouseout', onMouseOut, true);
+  doc.addEventListener('click', onClick, true);
+  inspectListenerDocs.add(doc);
+  updateDocumentCursor(doc, true);
+}
+
+function removeInspectListeners(): void {
+  for (const doc of inspectListenerDocs) {
+    doc.removeEventListener('mouseover', onMouseOver, true);
+    doc.removeEventListener('mouseout', onMouseOut, true);
+    doc.removeEventListener('click', onClick, true);
+    updateDocumentCursor(doc, false);
+  }
+  inspectListenerDocs.clear();
+}
+
+function syncInspectListeners(): void {
+  for (const doc of collectSameOriginFrameDocuments(document)) {
+    addInspectListeners(doc);
+  }
+}
+
+function addFlowListeners(doc: Document): void {
+  if (flowListenerDocs.has(doc)) return;
+  doc.addEventListener('mouseover', onMouseOver, true);
+  doc.addEventListener('mouseout', onMouseOut, true);
+  doc.addEventListener('click', onFlowClick, true);
+  flowListenerDocs.add(doc);
+  updateDocumentCursor(doc, true);
+}
+
+function removeFlowListeners(): void {
+  for (const doc of flowListenerDocs) {
+    doc.removeEventListener('mouseover', onMouseOver, true);
+    doc.removeEventListener('mouseout', onMouseOut, true);
+    doc.removeEventListener('click', onFlowClick, true);
+    updateDocumentCursor(doc, false);
+  }
+  flowListenerDocs.clear();
+}
+
+function syncFlowListeners(): void {
+  for (const doc of collectSameOriginFrameDocuments(document)) {
+    addFlowListeners(doc);
+  }
+}
+
+function onFrameLoadCapture(e: Event): void {
+  const target = e.target;
+  if (!(target instanceof HTMLIFrameElement || target instanceof HTMLFrameElement)) return;
+  if (inspectMode) syncInspectListeners();
+  if (flowMode) syncFlowListeners();
+}
+
+document.addEventListener('load', onFrameLoadCapture, true);
+
 function enterFlowMode(): void {
   flowMode = true;
-  document.addEventListener('mouseover', onMouseOver, true);
-  document.addEventListener('mouseout', onMouseOut, true);
-  document.addEventListener('click', onFlowClick, true);
-  document.body.style.cursor = 'crosshair';
+  syncFlowListeners();
 }
 
 function exitFlowMode(): void {
   flowMode = false;
-  document.removeEventListener('mouseover', onMouseOver, true);
-  document.removeEventListener('mouseout', onMouseOut, true);
-  document.removeEventListener('click', onFlowClick, true);
+  removeFlowListeners();
   hideOverlay();
-  document.body.style.cursor = '';
 }
 
 function enterInspectMode(): void {
   inspectMode = true;
-  document.addEventListener('mouseover', onMouseOver, true);
-  document.addEventListener('mouseout', onMouseOut, true);
-  document.addEventListener('click', onClick, true);
-  document.body.style.cursor = 'crosshair';
+  syncInspectListeners();
   document.documentElement.dataset.calderInspectMode = 'on';
 }
 
 function exitInspectMode(): void {
   inspectMode = false;
-  document.removeEventListener('mouseover', onMouseOver, true);
-  document.removeEventListener('mouseout', onMouseOut, true);
-  document.removeEventListener('click', onClick, true);
+  removeInspectListeners();
   hideOverlay();
-  document.body.style.cursor = '';
   document.documentElement.dataset.calderInspectMode = 'off';
 }
 
@@ -384,12 +685,16 @@ ipcRenderer.on('exit-flow-mode', () => exitFlowMode());
 ipcRenderer.on('enter-draw-mode', () => enterDrawMode());
 ipcRenderer.on('exit-draw-mode', () => exitDrawMode());
 ipcRenderer.on('draw-clear', () => clearDrawing());
-ipcRenderer.on('flow-do-click', (_event, selector: string) => {
-  const el = document.querySelector(selector);
-  if (el instanceof HTMLElement) {
-    suppressNextFlowClick = true;
-    el.click();
-  }
+ipcRenderer.on('flow-do-click', (_event, payload: unknown) => {
+  void replayFlowClick(payload, {
+    suppressRecording: () => {
+      suppressNextFlowClick = true;
+    },
+  });
+});
+ipcRenderer.on('auth-fill-credentials', (_event, payload: AuthFillPayload) => {
+  const result = fillCredentialsAcrossFrames(payload);
+  ipcRenderer.sendToHost('auth-fill-result', result);
 });
 
 document.addEventListener('click', onPopupAnchorClick, true);

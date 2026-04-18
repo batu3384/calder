@@ -477,6 +477,99 @@ describe('hook-status', () => {
       ]);
       expect(vi.mocked(fs.readSync).mock.calls[1][4]).toBe(0);
     });
+
+    it('.events derives codex token snapshots into session:costData updates', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123', 'codex');
+      const payload = '{"type":"tool_use","model":"gpt-5.1","usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10}}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      vi.mocked(fs.openSync).mockReturnValue(71 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+
+      expect(mockSend).toHaveBeenNthCalledWith(1, 'session:costData', 'abc123', {
+        source: 'derived',
+        model: 'gpt-5.1',
+        cost: {
+          total_cost_usd: 0,
+          total_duration_ms: 0,
+          total_api_duration_ms: 0,
+        },
+        context_window: {
+          total_input_tokens: 100,
+          total_output_tokens: 10,
+          context_window_size: 200000,
+          used_percentage: 0.05,
+          current_usage: {
+            input_tokens: 80,
+            output_tokens: 10,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 20,
+          },
+        },
+      });
+      expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
+        { type: 'tool_use', model: 'gpt-5.1', usage: { input_tokens: 100, cached_input_tokens: 20, output_tokens: 10 } },
+      ]);
+    });
+
+    it('.events derives gemini usageMetadata snapshots into session:costData updates', () => {
+      const win = createMockWin();
+      startWatching(win);
+      registerSession('abc123', 'gemini');
+      const payload = '{"type":"tool_use","model":"gemini-2.5-pro","usage_metadata":{"promptTokenCount":120,"cachedContentTokenCount":30,"candidatesTokenCount":40,"totalTokenCount":160}}\n';
+      const payloadSize = Buffer.byteLength(payload);
+
+      vi.mocked(fs.openSync).mockReturnValue(72 as any);
+      vi.mocked(fs.fstatSync).mockReturnValue({ size: payloadSize } as any);
+      vi.mocked(fs.readSync).mockImplementation((_fd: any, buffer: any) => {
+        Buffer.from(payload, 'utf-8').copy(buffer as Buffer);
+        return payloadSize as any;
+      });
+
+      watchCallback!('change', 'abc123.events');
+
+      expect(mockSend).toHaveBeenNthCalledWith(1, 'session:costData', 'abc123', {
+        source: 'derived',
+        model: 'gemini-2.5-pro',
+        cost: {
+          total_cost_usd: 0,
+          total_duration_ms: 0,
+          total_api_duration_ms: 0,
+        },
+        context_window: {
+          total_input_tokens: 120,
+          total_output_tokens: 40,
+          context_window_size: 1000000,
+          used_percentage: 0.012,
+          current_usage: {
+            input_tokens: 90,
+            output_tokens: 40,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 30,
+          },
+        },
+      });
+      expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
+        {
+          type: 'tool_use',
+          model: 'gemini-2.5-pro',
+          usage_metadata: {
+            promptTokenCount: 120,
+            cachedContentTokenCount: 30,
+            candidatesTokenCount: 40,
+            totalTokenCount: 160,
+          },
+        },
+      ]);
+    });
   });
 
   describe('resyncAllSessions', () => {

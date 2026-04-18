@@ -117,8 +117,12 @@ export function buildFlowPrompt(instance: BrowserTabInstance): string | null {
       const text = step.textContent ? ` "${step.textContent}"` : '';
       const at = step.pageUrl ? ` at ${step.pageUrl}` : '';
       const sel = step.activeSelector ? `\n   selector: '${step.activeSelector.value}'` : '';
+      const clickPoint = step.clickPoint
+        ? `\n   point: ${Math.round(step.clickPoint.normalizedX * 100)}% x ${Math.round(step.clickPoint.normalizedY * 100)}%`
+        : '';
+      const canvasHint = step.isCanvasLike ? '\n   surface: canvas-like element' : '';
       const verb = step.type === 'expect' ? 'Assert/Expect' : 'Click';
-      return `${n}. ${verb}: ${tag}${text}${at}${sel}`;
+      return `${n}. ${verb}: ${tag}${text}${at}${sel}${clickPoint}${canvasHint}`;
     } else {
       return `${n}. Navigate to: ${step.url}`;
     }

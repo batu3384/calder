@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { analyzeInitialContext, registerAnalyzer } from './registry.js';
+import { beforeEach, describe, it, expect } from 'vitest';
+import { _resetAnalyzersForTest, analyzeInitialContext, registerAnalyzer } from './registry.js';
 import type { InitialContextSnapshot } from '../../shared/types.js';
 import type { InsightAnalyzer } from './types.js';
 
@@ -14,6 +14,10 @@ function makeSnapshot(usedPercentage: number): InitialContextSnapshot {
 }
 
 describe('insight registry', () => {
+  beforeEach(() => {
+    _resetAnalyzersForTest();
+  });
+
   it('returns results from built-in bigInitialContext analyzer', () => {
     const results = analyzeInitialContext(makeSnapshot(20));
     expect(results).toHaveLength(1);

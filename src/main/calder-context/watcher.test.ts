@@ -83,6 +83,40 @@ describe('project context watcher', () => {
     expect(seen).toContain('Updated codex summary');
   });
 
+  it('detects shared rule files created after watcher startup', async () => {
+    const root = makeProject('shared-rule-watch');
+    roots.push(root);
+
+    const seen: string[] = [];
+    let resolveUpdate: (() => void) | null = null;
+    let rejectUpdate: ((error: Error) => void) | null = null;
+    const updateSeen = new Promise<void>((resolve, reject) => {
+      resolveUpdate = resolve;
+      rejectUpdate = reject;
+    });
+    const timeout = setTimeout(() => {
+      rejectUpdate?.(new Error('Timed out waiting for shared rule update'));
+    }, 1800);
+
+    startProjectContextWatcher(root, (state) => {
+      const sharedRule = state.sources.find((source) =>
+        source.provider === 'shared' && source.kind === 'rules' && source.displayName === 'new-guideline.soft.md');
+      const summary = sharedRule?.summary ?? '';
+      seen.push(summary);
+      if (summary === 'New guideline') {
+        clearTimeout(timeout);
+        resolveUpdate?.();
+      }
+    });
+
+    writeFiles(root, {
+      '.calder/rules/new-guideline.soft.md': '# New guideline\nKeep updates concise.\n',
+    });
+    await updateSeen;
+
+    expect(seen).toContain('New guideline');
+  });
+
   it('stops emitting updates after teardown', async () => {
     const root = makeProject('context-stop');
     roots.push(root);

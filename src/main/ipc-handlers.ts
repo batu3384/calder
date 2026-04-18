@@ -19,14 +19,28 @@ import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary } from '../shared/types';
+import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput } from '../shared/types';
 import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
+import {
+  deleteBrowserCredentialById,
+  getBrowserAutoFillCredentialForUrl,
+  getBrowserCredentialForFill,
+  listBrowserCredentialSummariesForUrl,
+  saveBrowserCredentialForUrl,
+} from './browser-credential-vault';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { discoverCliSurface } from './cli-surface-discovery';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
+import { resolveShareRtcConfigFromEnv } from './share-rtc-config';
+import {
+  createMobileControlPairing,
+  consumeMobileControlPairingAnswer,
+  revokeMobileControlPairing,
+} from './mobile-control-bridge';
 import { discoverProjectContext } from './calder-context/discovery';
 import {
   createProjectContextStarterFiles,
@@ -701,6 +715,14 @@ export function registerIpcHandlers(): void {
     return { cancelled: true };
   });
 
+  ipcMain.handle('mobileSetup:checkDependencies', async () => {
+    return checkMobileDependencies();
+  });
+
+  ipcMain.handle('mobileSetup:installDependency', async (_event, dependencyId: string) => {
+    return installMobileDependency(dependencyId as MobileDependencyId);
+  });
+
   ipcMain.handle('fs:browseDirectory', async () => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return null;
@@ -778,6 +800,28 @@ export function registerIpcHandlers(): void {
     return filePath;
   });
   ipcMain.handle('browser:listLocalTargets', async () => discoverLocalBrowserTargets());
+  ipcMain.handle('browserCredential:listForUrl', async (_event, url: string) =>
+    listBrowserCredentialSummariesForUrl(url));
+  ipcMain.handle('browserCredential:saveForUrl', async (_event, input: BrowserCredentialSaveInput) =>
+    saveBrowserCredentialForUrl(input));
+  ipcMain.handle('browserCredential:deleteById', async (_event, id: string) =>
+    deleteBrowserCredentialById(id));
+  ipcMain.handle('browserCredential:getForFill', async (_event, url: string, id: string) =>
+    getBrowserCredentialForFill(url, id));
+  ipcMain.handle('browserCredential:getAutoFillForUrl', async (_event, url: string) =>
+    getBrowserAutoFillCredentialForUrl(url));
+  ipcMain.handle('sharing:getRtcConfig', () => resolveShareRtcConfigFromEnv());
+  ipcMain.handle(
+    'mobile:createControlPairing',
+    async (_event, sessionId: string, offer: string, passphrase: string, mode: 'readonly' | 'readwrite') =>
+      createMobileControlPairing({ sessionId, offer, passphrase, mode }),
+  );
+  ipcMain.handle('mobile:consumeControlAnswer', (_event, pairingId: string) =>
+    consumeMobileControlPairingAnswer(pairingId));
+  ipcMain.handle('mobile:revokeControlPairing', (_event, pairingId: string) => {
+    revokeMobileControlPairing(pairingId);
+    return { ok: true };
+  });
   ipcMain.handle('app:openExternal', async (_event, url: string, cwd?: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {

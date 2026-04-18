@@ -6,6 +6,8 @@ const mockQueueSurfacePromptInNewSession = vi.fn();
 const mockQueueSurfacePromptInCustomSession = vi.fn();
 const mockDismissInspect = vi.fn();
 const mockDismissFlow = vi.fn();
+const mockGetProviderAvailabilitySnapshot = vi.fn(() => null);
+const mockResolvePreferredProviderForLaunch = vi.fn(() => 'claude');
 
 vi.mock('../../state.js', () => ({
   appState: {
@@ -34,15 +36,30 @@ vi.mock('../../state.js', () => ({
             lastUpdated: '2026-04-13T12:10:00.000Z',
             priority: 'hard',
           },
+          {
+            id: 'codex:instructions:/tmp/demo/AGENTS.md',
+            provider: 'codex',
+            scope: 'project',
+            kind: 'instructions',
+            path: '/tmp/demo/AGENTS.md',
+            displayName: 'AGENTS.md',
+            summary: 'Codex project guidance',
+            lastUpdated: '2026-04-13T12:20:00.000Z',
+          },
         ],
         sharedRuleCount: 1,
-        providerSourceCount: 1,
-        lastUpdated: '2026-04-13T12:10:00.000Z',
+        providerSourceCount: 2,
+        lastUpdated: '2026-04-13T12:20:00.000Z',
       },
     },
     preferences: { defaultProvider: 'claude' },
     resolveBrowserTargetSession: mockResolveBrowserTargetSession,
   },
+}));
+
+vi.mock('../../provider-availability.js', () => ({
+  getProviderAvailabilitySnapshot: mockGetProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch: mockResolvePreferredProviderForLaunch,
 }));
 
 vi.mock('../surface-routing.js', () => ({
@@ -155,5 +172,21 @@ describe('browser session integration errors', () => {
     expect(instance.flowContextTraceEl.textContent).toContain('Applied context:');
     expect(instance.flowContextTraceEl.textContent).toContain('claude/memory: CLAUDE.md');
     expect(instance.flowContextTraceEl.style.display).toBe('block');
+  });
+
+  it('uses the resolved launch provider context when queuing a new session', async () => {
+    const { sendToNewSession } = await import('./session-integration.js');
+    const instance = makeInstance();
+    mockResolvePreferredProviderForLaunch.mockReturnValue('codex');
+
+    sendToNewSession(instance);
+
+    expect(mockResolvePreferredProviderForLaunch).toHaveBeenCalled();
+    expect(mockQueueSurfacePromptInNewSession).toHaveBeenCalledWith(
+      'project-1',
+      expect.any(String),
+      expect.stringContaining('Provider memory: AGENTS.md'),
+      'codex',
+    );
   });
 });

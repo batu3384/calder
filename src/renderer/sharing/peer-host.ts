@@ -2,13 +2,16 @@
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
 import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
+import type { SessionRecord, ShareRtcConfig } from '../../shared/types.js';
 import { getTerminalInstance } from '../components/terminal-pane.js';
 import { SerializeAddon } from '@xterm/addon-serialize';
-import { ICE_CONFIG, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
+import { buildRtcConfiguration, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
 import { generateChallenge, computeChallengeResponse, bytesToHex } from './share-crypto.js';
+import { appState } from '../state.js';
 
 interface HostPeer {
-  sessionId: string;
+  ownerSessionId: string;
+  activeSessionId: string;
   mode: ShareMode;
   passphrase: string;
   pc: RTCPeerConnection;
@@ -31,6 +34,73 @@ const AUTH_TIMEOUT = 10_000;
 
 type EventCallback = () => void;
 
+interface SessionSnapshot {
+  sessionId: string;
+  sessionName: string;
+  scrollback: string;
+  cols: number;
+  rows: number;
+}
+
+function isShareableCliSession(session: SessionRecord): boolean {
+  return !session.type || session.type === 'claude';
+}
+
+function findProjectForShare(ownerSessionId: string) {
+  return appState.projects.find((project) => project.sessions.some((session) => session.id === ownerSessionId));
+}
+
+function getSessionSnapshot(hostPeer: HostPeer, sessionId: string): SessionSnapshot | null {
+  const instance = getTerminalInstance(sessionId);
+  if (!instance) return null;
+
+  let scrollback = '';
+  if (sessionId === hostPeer.ownerSessionId) {
+    scrollback = hostPeer.serializeAddon.serialize();
+  } else {
+    const addon = new SerializeAddon();
+    instance.terminal.loadAddon(addon);
+    scrollback = addon.serialize();
+    addon.dispose();
+  }
+
+  return {
+    sessionId,
+    sessionName: instance.sessionId,
+    scrollback,
+    cols: instance.terminal.cols,
+    rows: instance.terminal.rows,
+  };
+}
+
+function buildSessionCatalog(hostPeer: HostPeer): { activeSessionId: string; sessions: Array<{ id: string; name: string }> } {
+  const project = findProjectForShare(hostPeer.ownerSessionId);
+  if (!project) {
+    const fallback = getSessionSnapshot(hostPeer, hostPeer.activeSessionId);
+    if (!fallback) {
+      return { activeSessionId: hostPeer.activeSessionId, sessions: [] };
+    }
+    return {
+      activeSessionId: fallback.sessionId,
+      sessions: [{ id: fallback.sessionId, name: fallback.sessionName }],
+    };
+  }
+
+  const sessions = project.sessions
+    .filter((session) => isShareableCliSession(session))
+    .filter((session) => Boolean(getTerminalInstance(session.id)))
+    .map((session) => ({ id: session.id, name: session.name }));
+
+  if (!sessions.some((session) => session.id === hostPeer.activeSessionId) && sessions.length > 0) {
+    hostPeer.activeSessionId = sessions[0].id;
+  }
+
+  return {
+    activeSessionId: hostPeer.activeSessionId,
+    sessions,
+  };
+}
+
 export interface ShareHandle {
   getOffer(): Promise<string>;
   acceptAnswer(answer: string): Promise<void>;
@@ -40,7 +110,12 @@ export interface ShareHandle {
   onAuthFailed(cb: (reason: string) => void): void;
 }
 
-export function startShare(sessionId: string, mode: ShareMode, passphrase: string): ShareHandle {
+export function startShare(
+  sessionId: string,
+  mode: ShareMode,
+  passphrase: string,
+  rtcConfig?: ShareRtcConfig,
+): ShareHandle {
   stopShare(sessionId);
 
   const instance = getTerminalInstance(sessionId);
@@ -55,11 +130,12 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
   const authFailedCbs: ((reason: string) => void)[] = [];
   let disconnectFired = false;
 
-  const pc = new RTCPeerConnection(ICE_CONFIG);
+  const pc = new RTCPeerConnection(buildRtcConfiguration(rtcConfig));
   const dc = pc.createDataChannel('terminal', { ordered: true });
 
   const hostPeer: HostPeer = {
-    sessionId,
+    ownerSessionId: sessionId,
+    activeSessionId: sessionId,
     mode,
     passphrase,
     pc,
@@ -76,28 +152,29 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
   hostPeers.set(sessionId, hostPeer);
 
   function sendInitAndStartKeepalive(): void {
-    const scrollback = serializeAddon.serialize();
-    const { cols, rows } = terminalInstance.terminal;
-    const sessionName = terminalInstance.sessionId;
+    const snapshot = getSessionSnapshot(hostPeer, hostPeer.activeSessionId);
+    if (!snapshot) return;
 
     const initMsg: ShareMessage = {
       type: 'init',
       scrollback: '',
       mode,
-      cols,
-      rows,
-      sessionName,
+      cols: snapshot.cols,
+      rows: snapshot.rows,
+      sessionName: snapshot.sessionName,
     };
 
-    if (scrollback.length > CHUNK_SIZE) {
+    if (snapshot.scrollback.length > CHUNK_SIZE) {
       sendMessage(dc, initMsg);
-      for (let i = 0; i < scrollback.length; i += CHUNK_SIZE) {
-        sendMessage(dc, { type: 'data', payload: scrollback.slice(i, i + CHUNK_SIZE) });
+      for (let i = 0; i < snapshot.scrollback.length; i += CHUNK_SIZE) {
+        sendMessage(dc, { type: 'data', payload: snapshot.scrollback.slice(i, i + CHUNK_SIZE) });
       }
     } else {
-      initMsg.scrollback = scrollback;
+      initMsg.scrollback = snapshot.scrollback;
       sendMessage(dc, initMsg);
     }
+
+    sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
 
     hostPeer.keepaliveTimer = setInterval(() => {
       if (!hostPeer.connected) return;
@@ -160,8 +237,41 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
     // Ignore all non-auth messages until verified
     if (hostPeer.authState !== 'verified') return;
 
+    if (msg.type === 'session-switch') {
+      const catalog = buildSessionCatalog(hostPeer);
+      const exists = catalog.sessions.some((session) => session.id === msg.sessionId);
+      if (!exists) {
+        sendMessage(dc, { type: 'session-switch-result', ok: false, reason: 'Session not available.' });
+        return;
+      }
+
+      const snapshot = getSessionSnapshot(hostPeer, msg.sessionId);
+      if (!snapshot) {
+        sendMessage(dc, { type: 'session-switch-result', ok: false, reason: 'Session terminal is not available.' });
+        return;
+      }
+
+      hostPeer.activeSessionId = msg.sessionId;
+      const project = findProjectForShare(hostPeer.ownerSessionId);
+      if (project) {
+        appState.setActiveSession(project.id, msg.sessionId);
+      }
+
+      sendMessage(dc, {
+        type: 'session-switch-result',
+        ok: true,
+        sessionId: snapshot.sessionId,
+        sessionName: snapshot.sessionName,
+        scrollback: snapshot.scrollback,
+        cols: snapshot.cols,
+        rows: snapshot.rows,
+      });
+      sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+      return;
+    }
+
     if (msg.type === 'input' && mode === 'readwrite') {
-      window.calder.pty.write(sessionId, msg.payload);
+      window.calder.pty.write(hostPeer.activeSessionId, msg.payload);
     } else if (msg.type === 'pong') {
       hostPeer.missedPongs = 0;
     }
@@ -188,7 +298,7 @@ export function startShare(sessionId: string, mode: ShareMode, passphrase: strin
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await waitForIceGathering(pc);
-      return encodeConnectionCode(pc.localDescription, passphrase);
+      return encodeConnectionCode(pc.localDescription, passphrase, rtcConfig);
     },
     async acceptAnswer(answer: string): Promise<void> {
       const desc = await decodeConnectionCode(answer, 'answer', passphrase);
@@ -222,19 +332,28 @@ export function stopShare(sessionId: string): void {
 }
 
 export function broadcastData(sessionId: string, data: string): void {
-  const hostPeer = hostPeers.get(sessionId);
-  if (!hostPeer?.connected) return;
-  sendMessage(hostPeer.dc, { type: 'data', payload: data });
+  for (const hostPeer of hostPeers.values()) {
+    if (!hostPeer.connected) continue;
+    if (hostPeer.activeSessionId !== sessionId) continue;
+    sendMessage(hostPeer.dc, { type: 'data', payload: data });
+  }
 }
 
 export function broadcastResize(sessionId: string, cols: number, rows: number): void {
-  const hostPeer = hostPeers.get(sessionId);
-  if (!hostPeer?.connected) return;
-  sendMessage(hostPeer.dc, { type: 'resize', cols, rows });
+  for (const hostPeer of hostPeers.values()) {
+    if (!hostPeer.connected) continue;
+    if (hostPeer.activeSessionId !== sessionId) continue;
+    sendMessage(hostPeer.dc, { type: 'resize', cols, rows });
+  }
 }
 
 export function isSharing(sessionId: string): boolean {
-  return hostPeers.has(sessionId);
+  for (const hostPeer of hostPeers.values()) {
+    if (hostPeer.ownerSessionId === sessionId || hostPeer.activeSessionId === sessionId) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function isConnected(sessionId: string): boolean {

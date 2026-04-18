@@ -14,7 +14,9 @@ describe('tab bar cli surface contract', () => {
   it('renders a top-deck surface switcher and cli profile controls from the tab bar', () => {
     expect(tabBarSource).toContain('renderSurfaceControls');
     expect(tabBarSource).toContain('focusCliSurfaceTab');
+    expect(tabBarSource).toContain('focusMobileSurfaceTab');
     expect(tabBarSource).toContain('closeCliSurface');
+    expect(tabBarSource).toContain('closeMobileSurface');
     expect(tabBarSource).toContain('surface-mode-slot');
     expect(tabBarSource).toContain('surface-profile-slot');
     expect(tabBarSource).toContain('promptCliSurfaceProfile');
@@ -22,6 +24,7 @@ describe('tab bar cli surface contract', () => {
     expect(tabBarSource).toContain('showCliSurfaceQuickSetup');
     expect(tabBarSource).toContain("label: 'Live View'");
     expect(tabBarSource).toContain("label: 'CLI Surface'");
+    expect(tabBarSource).toContain("label: 'Mobile'");
     expect(tabBarSource).toContain('tab-cli-surface-badge');
   });
 

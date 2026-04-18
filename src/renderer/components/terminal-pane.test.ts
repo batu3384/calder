@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const providerCaps = new Map([
   ['claude', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['copilot', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['gemini', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['codex', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['qwen', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
+  ['gemini', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['codex', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['qwen', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['minimax', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
   ['blackbox', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
 ]);

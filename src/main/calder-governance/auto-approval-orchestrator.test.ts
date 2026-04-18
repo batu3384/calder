@@ -16,6 +16,26 @@ function permissionRequestEvent(input: {
 }
 
 describe('createAutoApprovalOrchestrator', () => {
+  it('ignores permission requests for unknown sessions', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'full_auto',
+        policySource: 'project',
+      }),
+    });
+
+    await orchestrator.handleInspectorEvents('missing-session', [
+      permissionRequestEvent({ toolName: 'Edit' }),
+    ]);
+
+    expect(sendApproval).not.toHaveBeenCalled();
+    expect(emitInspectorEvents).not.toHaveBeenCalled();
+  });
+
   it('allows eligible operations, sends approval, and emits approval_decision', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
@@ -214,5 +234,34 @@ describe('createAutoApprovalOrchestrator', () => {
       effective_mode: 'off',
       decision: 'ask',
     });
+  });
+
+  it('falls back to ask mode when approval dispatch fails', async () => {
+    const sendApproval = vi.fn(async () => {
+      throw new Error('pipe unavailable');
+    });
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'edit_plus_safe_tools',
+        policySource: 'project',
+      }),
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
+    await expect(orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({ toolName: 'Edit' }),
+    ])).resolves.toBeUndefined();
+
+    expect(sendApproval).toHaveBeenCalledTimes(1);
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      decision: 'ask',
+      effective_mode: 'edit_plus_safe_tools',
+      policy_source: 'project',
+    });
+    expect(emittedEvent.auto_approval?.reason).toContain('dispatch failed');
   });
 });

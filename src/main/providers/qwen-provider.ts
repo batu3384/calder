@@ -17,8 +17,8 @@ export class QwenProvider implements CliProvider {
     binaryName: 'qwen',
     capabilities: {
       sessionResume: true,
-      costTracking: false,
-      contextWindow: false,
+      costTracking: true,
+      contextWindow: true,
       hookStatus: true,
       configReading: true,
       shiftEnterNewline: false,

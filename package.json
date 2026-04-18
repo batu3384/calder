@@ -49,7 +49,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/cli-surface/quick-setup.test.ts src/renderer/components/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts"
+    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/cli-surface/quick-setup.test.ts src/renderer/components/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts",
+    "audit:deep": "node scripts/deep-system-audit.mjs"
   },
   "build": {
     "appId": "com.batuhanyuksel.calder",
@@ -125,7 +126,8 @@
     "electron-updater": "^6.8.3",
     "marked": "^17.0.5",
     "node-pty": "^1.1.0",
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.4",
+    "qrcode": "^1.5.4"
   },
   "overrides": {
     "hono": "^4.12.14"

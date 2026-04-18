@@ -20,6 +20,15 @@ const COMMON_BIN_DIRS = isWin
 
 // On Windows, CLI tools installed via npm are .cmd shims
 const WIN_EXTENSIONS = ['.cmd', '.exe', '.ps1', ''];
+const DEFAULT_BINARY_PROBE_TIMEOUT_MS = 3000;
+const PREREQ_ALIAS_PROBE_TIMEOUT_MS = 250;
+const PREREQ_CACHE_TTL_MS = 10_000;
+
+type PrereqCheckCacheEntry = {
+  checkedAtMs: number;
+};
+
+const prereqCheckCache = new Map<string, PrereqCheckCacheEntry>();
 
 function logBinaryProbeWarning(context: string, error: unknown): void {
   console.warn(`[resolve-binary] ${context}`, error);
@@ -31,7 +40,7 @@ function expandHomePath(input: string): string {
   return input;
 }
 
-function findAliasLauncher(binaryName: string): string | null {
+function findAliasLauncher(binaryName: string, timeoutMs = DEFAULT_BINARY_PROBE_TIMEOUT_MS): string | null {
   if (isWin) return null;
 
   const shell = process.env.SHELL || '/bin/zsh';
@@ -40,7 +49,7 @@ function findAliasLauncher(binaryName: string): string | null {
     const resolved = execSync(`${shell} -ilc 'command -v "${binaryName}"'`, {
       env: { ...process.env, HOME: os.homedir() },
       encoding: 'utf-8',
-      timeout: 3000,
+      timeout: timeoutMs,
     }).trim();
 
     const aliasMatch = resolved.match(/^alias\s+\S+=(['"])(.+)\1$/s);
@@ -82,7 +91,7 @@ function whichBinary(binaryName: string, envPath: string): string | null {
     const resolved = execSync(`${whichCmd} "${binaryName}"`, {
       env: { ...process.env, PATH: envPath },
       encoding: 'utf-8',
-      timeout: 3000,
+      timeout: DEFAULT_BINARY_PROBE_TIMEOUT_MS,
     }).trim();
     // 'where' on Windows may return multiple lines — take the first
     const firstLine = resolved.split(/\r?\n/)[0];
@@ -126,13 +135,47 @@ export function validateBinaryExists(
   displayName: string,
   installCommand: string,
 ): { ok: boolean; message: string } {
-  if (findAliasLauncher(binaryName)) return { ok: true, message: '' };
+  const envPath = getFullPath();
+  const cacheKey = `${binaryName}::${envPath}`;
+  const nowMs = Date.now();
+  const cached = prereqCheckCache.get(cacheKey);
 
-  for (const dir of COMMON_BIN_DIRS) {
-    if (findBinaryInDir(dir, binaryName)) return { ok: true, message: '' };
+  if (cached && (nowMs - cached.checkedAtMs) < PREREQ_CACHE_TTL_MS) {
+    return {
+      ok: false,
+      message:
+        `${displayName} not found.\n\n` +
+        `Calder can launch sessions with ${displayName} after it is installed.\n\n` +
+        `Install it with:\n` +
+        `  ${installCommand}\n\n` +
+        `After installing, restart Calder.`,
+    };
   }
 
-  if (whichBinary(binaryName, getFullPath())) return { ok: true, message: '' };
+  let ok = false;
+  for (const dir of COMMON_BIN_DIRS) {
+    if (findBinaryInDir(dir, binaryName)) {
+      ok = true;
+      break;
+    }
+  }
+
+  if (!ok && whichBinary(binaryName, envPath)) {
+    ok = true;
+  }
+
+  // Alias probing is intentionally last and short-lived, since login shells
+  // can be slow and this check runs for multiple providers during startup.
+  if (!ok && findAliasLauncher(binaryName, PREREQ_ALIAS_PROBE_TIMEOUT_MS)) {
+    ok = true;
+  }
+
+  if (ok) {
+    prereqCheckCache.delete(cacheKey);
+    return { ok: true, message: '' };
+  }
+
+  prereqCheckCache.set(cacheKey, { checkedAtMs: nowMs });
 
   return {
     ok: false,
@@ -143,4 +186,9 @@ export function validateBinaryExists(
       `  ${installCommand}\n\n` +
       `After installing, restart Calder.`,
   };
+}
+
+/** @internal Test-only helper for clearing prerequisite-result memoization. */
+export function _resetPrereqCheckCache(): void {
+  prereqCheckCache.clear();
 }

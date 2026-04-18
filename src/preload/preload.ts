@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types';
+import type { AutoApprovalMode, CostData, ProviderId, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types';
 
 export type { CostData } from '../shared/types';
 
@@ -143,6 +143,30 @@ export interface CalderApi {
   browser: {
     saveScreenshot(sessionId: string, dataUrl: string): Promise<string>;
     listLocalTargets(): Promise<Array<{ url: string; label: string; meta: string }>>;
+  };
+  browserCredential: {
+    listForUrl(url: string): Promise<BrowserCredentialSummary[]>;
+    saveForUrl(input: BrowserCredentialSaveInput): Promise<BrowserCredentialSummary>;
+    deleteById(id: string): Promise<{ deleted: boolean }>;
+    getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
+    getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
+  };
+  sharing: {
+    getRtcConfig(): Promise<ShareRtcConfig>;
+  };
+  mobile: {
+    createControlPairing(
+      sessionId: string,
+      offer: string,
+      passphrase: string,
+      mode: 'readonly' | 'readwrite',
+    ): Promise<MobileControlPairingResult>;
+    consumeControlAnswer(pairingId: string): Promise<MobileControlAnswerResult>;
+    revokeControlPairing(pairingId: string): Promise<{ ok: boolean }>;
+  };
+  mobileSetup: {
+    checkDependencies(): Promise<MobileDependencyReport>;
+    installDependency(dependencyId: MobileDependencyId): Promise<MobileDependencyInstallResult>;
   };
   cliSurface: {
     discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
@@ -378,6 +402,31 @@ const api: CalderApi = {
     saveScreenshot: (sessionId: string, dataUrl: string) =>
       ipcRenderer.invoke('browser:saveScreenshot', sessionId, dataUrl),
     listLocalTargets: () => ipcRenderer.invoke('browser:listLocalTargets'),
+  },
+  browserCredential: {
+    listForUrl: (url: string) => ipcRenderer.invoke('browserCredential:listForUrl', url),
+    saveForUrl: (input: BrowserCredentialSaveInput) => ipcRenderer.invoke('browserCredential:saveForUrl', input),
+    deleteById: (id: string) => ipcRenderer.invoke('browserCredential:deleteById', id),
+    getForFill: (url: string, id: string) => ipcRenderer.invoke('browserCredential:getForFill', url, id),
+    getAutoFillForUrl: (url: string) => ipcRenderer.invoke('browserCredential:getAutoFillForUrl', url),
+  },
+  sharing: {
+    getRtcConfig: () => ipcRenderer.invoke('sharing:getRtcConfig'),
+  },
+  mobile: {
+    createControlPairing: (
+      sessionId: string,
+      offer: string,
+      passphrase: string,
+      mode: 'readonly' | 'readwrite',
+    ) => ipcRenderer.invoke('mobile:createControlPairing', sessionId, offer, passphrase, mode),
+    consumeControlAnswer: (pairingId: string) => ipcRenderer.invoke('mobile:consumeControlAnswer', pairingId),
+    revokeControlPairing: (pairingId: string) => ipcRenderer.invoke('mobile:revokeControlPairing', pairingId),
+  },
+  mobileSetup: {
+    checkDependencies: () => ipcRenderer.invoke('mobileSetup:checkDependencies'),
+    installDependency: (dependencyId: MobileDependencyId) =>
+      ipcRenderer.invoke('mobileSetup:installDependency', dependencyId),
   },
   cliSurface: {
     discover: (projectPath: string) =>

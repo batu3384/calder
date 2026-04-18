@@ -68,12 +68,16 @@ export function buildPrompt(instance: BrowserTabInstance): string | null {
   if (!instruction) return null;
 
   const vpCtx = getViewportContext(instance, instance.inspectAttachDimsCheckbox.checked);
+  const clickPoint = info.clickPoint
+    ? `, point: '${Math.round(info.clickPoint.normalizedX * 100)}% x ${Math.round(info.clickPoint.normalizedY * 100)}%'`
+    : '';
+  const canvasHint = info.isCanvasLike ? ', surface: canvas-like element' : '';
 
   return (
     `Regarding the <${info.tagName}> element at ${info.pageUrl}${vpCtx} ` +
     `(selector: '${info.activeSelector.value}'` +
     (info.textContent ? `, text: '${info.textContent}'` : '') +
-    `): ${instruction}`
+    `${clickPoint}${canvasHint}): ${instruction}`
   );
 }
 

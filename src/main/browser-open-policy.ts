@@ -15,6 +15,13 @@ const EMBEDDED_BROWSER_HOSTS = new Set([
   '[::1]',
 ]);
 
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set([
+  'http:',
+  'https:',
+  'mailto:',
+  'tel:',
+]);
+
 export function isEmbeddedBrowserCandidate(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -31,6 +38,15 @@ function isHttpUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+export function isAllowedExternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ALLOWED_EXTERNAL_PROTOCOLS.has(parsed.protocol);
   } catch {
     return false;
   }

@@ -30,6 +30,7 @@ vi.mock('../config-watcher', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { CopilotProvider, _resetCachedPath } from './copilot-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { getCopilotConfig } from '../copilot-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 
@@ -44,6 +45,7 @@ let provider: CopilotProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new CopilotProvider();
 });
 

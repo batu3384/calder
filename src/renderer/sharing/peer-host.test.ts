@@ -5,6 +5,7 @@ const mockSendMessage = vi.hoisted(() => vi.fn());
 const mockWaitForIceGathering = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockEncodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue('encoded-offer'));
 const mockDecodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue({ type: 'answer', sdp: 'answer-sdp' }));
+const mockBuildRtcConfiguration = vi.hoisted(() => vi.fn().mockReturnValue({ iceServers: [] }));
 const mockGenerateChallenge = vi.hoisted(() => vi.fn().mockReturnValue(new Uint8Array([1, 2, 3])));
 const mockComputeChallengeResponse = vi.hoisted(() => vi.fn().mockResolvedValue('expected-response'));
 const mockBytesToHex = vi.hoisted(() => vi.fn().mockReturnValue('deadbeef'));
@@ -26,7 +27,7 @@ vi.mock('@xterm/addon-serialize', () => ({
 }));
 
 vi.mock('./webrtc-utils.js', () => ({
-  ICE_CONFIG: { iceServers: [] },
+  buildRtcConfiguration: mockBuildRtcConfiguration,
   sendMessage: mockSendMessage,
   waitForIceGathering: mockWaitForIceGathering,
   encodeConnectionCode: mockEncodeConnectionCode,
@@ -47,6 +48,7 @@ import {
   startShare,
   stopShare,
 } from './peer-host.js';
+import { appState, _resetForTesting as resetAppState } from '../state.js';
 
 class FakeDataChannel {
   readyState = 'open';
@@ -88,6 +90,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   serializeAddonInstances.length = 0;
   FakePeerConnection.instances = [];
+  resetAppState();
 
   vi.stubGlobal('RTCPeerConnection', FakePeerConnection as any);
   vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(desc: RTCSessionDescriptionInit) {
@@ -95,6 +98,10 @@ beforeEach(() => {
   } as any);
   vi.stubGlobal('window', {
     calder: {
+      store: {
+        save: vi.fn(),
+        load: vi.fn(),
+      },
       pty: {
         write: mockPtyWrite,
       },
@@ -256,5 +263,69 @@ describe('peer-host', () => {
       expect(mockSendMessage).not.toHaveBeenCalled();
       handle.stop();
     });
+  });
+
+  it('switches the active streamed session and routes input/output accordingly', async () => {
+    const project = appState.addProject('Switch', '/tmp/switch');
+    const sessionA = appState.addSession(project.id, 'Session A', undefined, 'claude')!;
+    const sessionB = appState.addSession(project.id, 'Session B', undefined, 'claude')!;
+    appState.setActiveSession(project.id, sessionA.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id === sessionA.id) {
+        return {
+          sessionId: 'Session A',
+          terminal: {
+            cols: 120,
+            rows: 40,
+            loadAddon: vi.fn(),
+          },
+        };
+      }
+      if (id === sessionB.id) {
+        return {
+          sessionId: 'Session B',
+          terminal: {
+            cols: 100,
+            rows: 30,
+            loadAddon: vi.fn(),
+          },
+        };
+      }
+      return undefined;
+    });
+
+    const handle = startShare(sessionA.id, 'readwrite', 'secret-1234');
+    const pc = FakePeerConnection.instances[0]!;
+    const dc = pc.dc;
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }) } as MessageEvent);
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-switch-result',
+        ok: true,
+        sessionId: sessionB.id,
+        sessionName: 'Session B',
+      }),
+    );
+    expect(appState.activeProject?.activeSessionId).toBe(sessionB.id);
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'whoami\r' }) } as MessageEvent);
+    expect(mockPtyWrite).toHaveBeenCalledWith(sessionB.id, 'whoami\r');
+
+    mockSendMessage.mockClear();
+    broadcastData(sessionA.id, 'old session data');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    broadcastData(sessionB.id, 'new session data');
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'data', payload: 'new session data' });
+
+    handle.stop();
   });
 });

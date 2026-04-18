@@ -95,7 +95,9 @@ function renderOverview(): void {
   const surfaceLabel = project.surface?.active
     ? project.surface.kind === 'cli'
       ? 'CLI Surface'
-      : 'Browser View'
+      : project.surface.kind === 'mobile'
+        ? 'Mobile Surface'
+        : 'Browser View'
     : 'No Surface';
   const changeMetric = gitStatus?.isGitRepo
     ? gitStatus.conflicted > 0

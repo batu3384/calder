@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, nativeImage, powerMonitor, shell } from 'electron';
+import { app, BrowserWindow, dialog, nativeImage, powerMonitor, session, shell } from 'electron';
 import * as path from 'path';
 import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
 import { killAllPtys } from './pty-manager';
@@ -15,6 +15,8 @@ import { analyzeProviderStartup, formatMissingProviderDialog, formatProviderStar
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
 import { prepareBrowserSessionStorage } from './browser-session-storage';
+import { stopMobileControlBridge } from './mobile-control-bridge';
+import { installSessionPermissionPolicy } from './session-permission-policy';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -44,7 +46,7 @@ function createWindow(): void {
       preload: path.join(__dirname, '..', '..', 'preload', 'preload', 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false, // needed for node-pty IPC
+      sandbox: true,
       webviewTag: true, // needed for browser-tab sessions
     },
   });
@@ -78,6 +80,10 @@ app.whenReady().then(async () => {
   if (browserStorage.migratedLegacyServiceWorker) {
     console.info('Moved legacy browser service worker storage into an isolated archive');
   }
+  installSessionPermissionPolicy(session.defaultSession);
+  app.on('session-created', (createdSession) => {
+    installSessionPermissionPolicy(createdSession);
+  });
   initProviders();
 
   const providerStartup = analyzeProviderStartup(getAllProviders(), state);
@@ -151,6 +157,7 @@ app.on('before-quit', () => {
   killAllPtys();
   stopGitWatcher();
   void stopBrowserBridge();
+  void stopMobileControlBridge();
   // Cleanup all providers
   for (const provider of getAllProviders()) {
     provider.cleanup();

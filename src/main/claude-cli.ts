@@ -365,7 +365,11 @@ for fld in ("agent_id","agent_type","last_assistant_message","agent_transcript_p
 if cs:
  e["cost_snapshot"]={k:cs[k] for k in ("total_cost_usd","total_duration_ms") if k in cs}
 if cw:
- tt=cw.get("total_input_tokens",0)+cw.get("total_output_tokens",0)
+ cu=cw.get("current_usage") if isinstance(cw.get("current_usage"),dict) else None
+ if cu:
+  tt=(cu.get("input_tokens",0) or 0)+(cu.get("cache_creation_input_tokens",0) or 0)+(cu.get("cache_read_input_tokens",0) or 0)
+ else:
+  tt=(cw.get("total_input_tokens",0) or 0)+(cw.get("total_output_tokens",0) or 0)
  e["context_snapshot"]={
   "total_tokens":tt,
   "context_window_size":cw.get("context_window_size",200000),

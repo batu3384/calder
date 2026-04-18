@@ -53,10 +53,6 @@ export function readAutoApprovalModeFromPolicyFile(filePath: string): AutoApprov
   return readAutoApprovalPolicyMode(filePath).mode;
 }
 
-export function readGlobalAutoApprovalMode(): AutoApprovalMode {
-  return readAutoApprovalModeFromPolicyFile(GLOBAL_AUTO_APPROVAL_POLICY_PATH);
-}
-
 export function readGlobalAutoApprovalPolicy(): AutoApprovalPolicyModeReadResult {
   return readAutoApprovalPolicyMode(GLOBAL_AUTO_APPROVAL_POLICY_PATH);
 }

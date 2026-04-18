@@ -102,6 +102,21 @@ describe('project review actions', () => {
       providerSourceCount: 0,
       lastUpdated: '2026-04-13T18:10:00.000Z',
     });
+    appState.setProjectGovernance(project.id, {
+      policy: {
+        id: 'governance:/proj/.calder/governance/policy.json',
+        path: '/proj/.calder/governance/policy.json',
+        displayName: 'Project guardrails',
+        summary: 'enforced · tools ask · writes ask · network block',
+        lastUpdated: '2026-04-13T18:12:00.000Z',
+        mode: 'enforced',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'block',
+        mcpAllowlistCount: 1,
+        providerProfileCount: 0,
+      },
+    });
 
     const result = await sendProjectReviewToSelectedSession(project.id, {
       path: '/proj/.calder/reviews/pr-42.md',
@@ -118,6 +133,10 @@ describe('project review actions', () => {
     expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
       session?.id,
       expect.stringContaining('Project context:\nShared rules: testing.hard.md'),
+    );
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      session?.id,
+      expect.stringContaining('Project governance policy:'),
     );
   });
 

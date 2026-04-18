@@ -101,4 +101,16 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('.preferences-subsection');
     expect(styles).toContain('.preferences-subsection-grid');
   });
+
+  it('shows mobile readiness setup group and install actions in integrations', () => {
+    expect(source).toContain('Mobile automation readiness');
+    expect(source).toContain('Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
+    expect(source).toContain('renderMobileSetupSection');
+    expect(source).toContain('Mobile Dependency Doctor');
+    expect(source).toContain('iOS simulator inspect');
+    expect(source).toContain('Android emulator inspect');
+    expect(source).toContain('Optional tools');
+    expect(source).toContain("opts.actionLabel ? 'Installing");
+    expect(source).toContain("actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined");
+  });
 });

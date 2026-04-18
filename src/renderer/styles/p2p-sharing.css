@@ -84,6 +84,20 @@
   display: none;
 }
 
+.share-manual-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 2px 0 10px;
+}
+
+.share-manual-toggle-row.hidden {
+  display: none;
+}
+
+.share-manual-section.hidden {
+  display: none;
+}
+
 .share-label {
   font-size: 12px;
   color: var(--text-secondary);
@@ -125,6 +139,114 @@
 .share-code:focus {
   outline: 1px solid var(--accent);
   border-color: var(--accent);
+}
+
+.share-mobile-section {
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 12%, transparent), transparent 58%),
+    color-mix(in srgb, var(--surface-panel) 94%, transparent);
+}
+
+.share-mobile-quick-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.share-mobile-link-row,
+.share-mobile-otp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.share-mobile-link {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 90%, black);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.share-mobile-link:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.share-mobile-otp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, transparent), transparent),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  color: var(--text-primary);
+}
+
+.share-mobile-qr-wrap {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 90%, black);
+  display: flex;
+  justify-content: center;
+}
+
+.share-mobile-qr {
+  width: 168px;
+  height: 168px;
+  border-radius: 10px;
+  image-rendering: crisp-edges;
+}
+
+.share-mobile-qr.hidden {
+  display: none;
+}
+
+.share-mobile-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 0;
+}
+
+.share-mobile-status.is-success {
+  color: var(--status-success-text);
+}
+
+.share-mobile-status.is-error {
+  color: var(--status-warning-text);
+}
+
+.share-mobile-status-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-mobile-retry {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
 }
 
 .share-label-spaced {

@@ -37,6 +37,9 @@ import {
 } from './preferences-layout.js';
 import type {
   CliProviderMeta,
+  MobileDependencyCheck,
+  MobileDependencyId,
+  MobileDependencyReport,
   ProjectCheckpointDocument,
   ProviderId,
   SettingsValidationResult,
@@ -1545,7 +1548,11 @@ export function showPreferencesModal(): void {
     const surface = project.surface;
     const cliRuntime = surface?.cli?.runtime;
     const runtimeHealth = describePreviewRuntimeHealth(project.id);
-    const activeSurfaceLabel = surface?.kind === 'cli' ? 'CLI Surface' : 'Live View';
+    const activeSurfaceLabel = surface?.kind === 'cli'
+      ? 'CLI Surface'
+      : surface?.kind === 'mobile'
+        ? 'Mobile Surface'
+        : 'Live View';
 
     const summary = document.createElement('div');
     summary.className = 'preview-discovery-summary';
@@ -2803,6 +2810,13 @@ export function showPreferencesModal(): void {
         'Installed tools, defaults, and repair actions.',
       );
 
+      const mobileHealthGroup = appendSectionGroup(
+        content,
+        'Mobile',
+        'Mobile automation readiness',
+        'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
+      );
+
       const orchestrationGroup = appendSectionGroup(
         content,
         'Project flow',
@@ -2828,6 +2842,7 @@ export function showPreferencesModal(): void {
       renderProjectBackgroundTaskSection(trackingGroup);
       renderProjectCheckpointSection(trackingGroup);
       renderSetupSection(providerHealthGroup);
+      renderMobileSetupSection(mobileHealthGroup);
 
     } else if (section === 'about') {
       appendSectionIntro(
@@ -3156,6 +3171,7 @@ export function showPreferencesModal(): void {
     statusText: string;
     helpText?: string;
     onFix?: () => Promise<void>;
+    actionLabel?: string;
   }) {
     const row = document.createElement('div');
     row.className = 'setup-check-row';
@@ -3197,15 +3213,15 @@ export function showPreferencesModal(): void {
     if (onFix) {
       const btn = document.createElement('button');
       btn.className = 'setup-fix-btn';
-      btn.textContent = 'Fix';
+      btn.textContent = opts.actionLabel ?? 'Fix';
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        btn.textContent = 'Fixing\u2026';
+        btn.textContent = opts.actionLabel ? 'Installing\u2026' : 'Fixing\u2026';
         try {
           await onFix();
         } catch {
           btn.disabled = false;
-          btn.textContent = 'Fix';
+          btn.textContent = opts.actionLabel ?? 'Fix';
         }
       });
       row.appendChild(btn);
@@ -3216,6 +3232,14 @@ export function showPreferencesModal(): void {
 
   async function fixAndRerender(providerId?: ProviderId) {
     await window.calder.settings.reinstall(providerId);
+    renderSection('providers');
+  }
+
+  async function installMobileDependencyAndRerender(dependencyId: MobileDependencyId): Promise<void> {
+    const result = await window.calder.mobileSetup.installDependency(dependencyId);
+    if (!result.success) {
+      throw new Error(result.message || 'Install command failed.');
+    }
     renderSection('providers');
   }
 
@@ -3246,6 +3270,26 @@ export function showPreferencesModal(): void {
     binary: { ok: boolean; message: string };
   }
 
+  function hasMobileRequiredIssue(report: MobileDependencyReport): boolean {
+    return report.checks.some((check) =>
+      check.required && (check.status === 'missing' || check.status === 'warning'));
+  }
+
+  function getMobileStatusText(check: MobileDependencyCheck): string {
+    if (check.status === 'ready') return 'Ready';
+    if (check.status === 'warning') return 'Needs attention';
+    if (check.status === 'unsupported') return 'Unsupported';
+    return 'Not found';
+  }
+
+  function getMobileHelpText(check: MobileDependencyCheck): string {
+    const segments: string[] = [];
+    if (check.message) segments.push(check.message);
+    if (check.installHint) segments.push(check.installHint);
+    if (check.installCommand) segments.push(`Command: ${check.installCommand}`);
+    return segments.join(' ');
+  }
+
   async function fetchProviderStatuses(): Promise<ProviderStatus[]> {
     const providers = await window.calder.provider.listProviders();
     return Promise.all(
@@ -3273,11 +3317,14 @@ export function showPreferencesModal(): void {
     section.appendChild(loading);
     container.appendChild(section);
 
-    const results = await fetchProviderStatuses();
+    const [results, mobileReport] = await Promise.all([
+      fetchProviderStatuses(),
+      window.calder.mobileSetup.checkDependencies(),
+    ]);
 
     if (currentSection !== 'providers') return;
 
-    applySetupBadge(results.some(hasProviderIssue));
+    applySetupBadge(results.some(hasProviderIssue) || hasMobileRequiredIssue(mobileReport));
 
     section.innerHTML = '';
 
@@ -3371,6 +3418,79 @@ export function showPreferencesModal(): void {
     }
   }
 
+  async function renderMobileSetupSection(container: HTMLElement) {
+    const section = document.createElement('div');
+    section.className = 'setup-section';
+
+    const loading = document.createElement('div');
+    loading.className = 'setup-loading';
+    loading.textContent = 'Checking mobile automation requirements…';
+    section.appendChild(loading);
+    container.appendChild(section);
+
+    const report = await window.calder.mobileSetup.checkDependencies();
+    if (currentSection !== 'providers') return;
+
+    section.innerHTML = '';
+
+    const summary = document.createElement('div');
+    summary.className = 'setup-provider-shell';
+    summary.innerHTML = `
+      <div class="setup-provider-header">
+        <div class="setup-provider-header-row">
+          <div class="setup-provider-name">Mobile Dependency Doctor</div>
+          <div class="${hasMobileRequiredIssue(report) ? 'setup-provider-status error' : 'setup-provider-status ok'}">
+            ${hasMobileRequiredIssue(report) ? 'Needs attention' : 'Ready'}
+          </div>
+        </div>
+      </div>
+      <div class="setup-check-desc">
+        Ready: ${report.summary.ready} · Warnings: ${report.summary.warnings} · Required missing: ${report.summary.requiredMissing}
+      </div>
+    `;
+    section.appendChild(summary);
+
+    const groups: Array<{ title: string; checks: MobileDependencyCheck[] }> = [
+      {
+        title: 'iOS simulator inspect',
+        checks: report.checks.filter((check) => check.requiredFor.includes('ios')),
+      },
+      {
+        title: 'Android emulator inspect',
+        checks: report.checks.filter((check) => check.requiredFor.includes('android')),
+      },
+      {
+        title: 'Optional tools',
+        checks: report.checks.filter((check) => check.requiredFor.length === 0),
+      },
+    ];
+
+    for (const group of groups) {
+      if (group.checks.length === 0) continue;
+      const groupShell = document.createElement('div');
+      groupShell.className = 'setup-provider-shell';
+      section.appendChild(groupShell);
+
+      renderProviderHeader(groupShell, group.title, group.checks.some((check) =>
+        check.status === 'missing' || check.status === 'warning'));
+
+      for (const check of group.checks) {
+        const isReady = check.status === 'ready' || check.status === 'unsupported';
+        renderCheckItem(groupShell, {
+          label: check.label,
+          description: check.description,
+          ok: isReady,
+          statusText: getMobileStatusText(check),
+          helpText: isReady ? undefined : getMobileHelpText(check),
+          onFix: check.autoFixAvailable && !isReady
+            ? () => installMobileDependencyAndRerender(check.id)
+            : undefined,
+          actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined,
+        });
+      }
+    }
+  }
+
   function applySetupBadge(hasIssue: boolean) {
     const setupItem = menuItems.get('providers');
     if (setupItem) {
@@ -3379,8 +3499,13 @@ export function showPreferencesModal(): void {
   }
 
   async function updateSetupBadge() {
-    const results = await fetchProviderStatuses();
-    applySetupBadge(results.some(hasProviderIssue));
+    const [providerResults, mobileReport] = await Promise.all([
+      fetchProviderStatuses(),
+      window.calder.mobileSetup.checkDependencies(),
+    ]);
+    applySetupBadge(
+      providerResults.some(hasProviderIssue) || hasMobileRequiredIssue(mobileReport),
+    );
   }
   updateSetupBadge();
 

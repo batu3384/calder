@@ -6,8 +6,14 @@ const source = readFileSync(path.join(process.cwd(), 'src/preload/browser-tab-pr
 
 describe('browser tab preload inspect contract', () => {
   it('guards inspect and flow handlers against non-element event targets', () => {
-    expect(source).toContain('if (!(target instanceof Element)) return;');
-    expect(source).toContain('const target = e.target;');
+    expect(source).toContain('resolveEventElementTarget');
+    expect(source).toContain('collectSameOriginFrameDocuments');
+    expect(source).toContain('escapeCssIdentifier');
+    expect(source).toContain('escapeCssAttributeValue');
+    expect(source).toContain('void replayFlowClick(payload');
+    expect(source).toContain("ipcRenderer.on('auth-fill-credentials'");
+    expect(source).toContain("ipcRenderer.sendToHost('auth-fill-result'");
+    expect(source).toContain('document.addEventListener(\'load\', onFrameLoadCapture, true);');
     expect(source).not.toContain('browser-tab-open-intent');
     expect(source).not.toContain('browser-tab-popup');
   });

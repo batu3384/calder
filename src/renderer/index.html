@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self' http: https:; frame-src *;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self' https: wss: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; frame-src 'self';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Calder</title>
   <link rel="icon" type="image/png" href="icon.png">
@@ -14,7 +14,7 @@
     <div id="sidebar" class="sidebar-surface project-rail">
       <div id="sidebar-header">
         <div class="sidebar-title-group">
-          <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar" style="font-size:13px;">&#x25E7;</button>
+          <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar">&#x25E7;</button>
           <div class="sidebar-brand-block">
             <span class="sidebar-eyebrow">Calder</span>
             <span class="sidebar-title">Project Index</span>
@@ -48,6 +48,7 @@
                 <div id="surface-mode-slot" hidden></div>
                 <div id="surface-profile-slot" hidden></div>
                 <div id="session-provider-slot" hidden></div>
+                <button id="btn-mobile-control" class="icon-btn tab-action-primary tab-action-handoff" title="Open secure handoff panel" aria-label="Open secure handoff panel" hidden>Handoff</button>
                 <button id="btn-update-cli-tools" class="icon-btn" title="Update CLI Tools" aria-label="Update CLI tools">&#x21BB;</button>
                 <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
               </div>

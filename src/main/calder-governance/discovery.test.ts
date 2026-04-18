@@ -12,7 +12,6 @@ vi.mock('./auto-approval-policy.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auto-approval-policy.js')>();
   return {
     ...actual,
-    readGlobalAutoApprovalMode: () => mockedGlobalMode,
     readGlobalAutoApprovalPolicy: () => ({
       mode: mockedGlobalMode,
       isExplicit: mockedGlobalIsExplicit,

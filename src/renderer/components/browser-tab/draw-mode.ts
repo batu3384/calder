@@ -115,15 +115,15 @@ export async function sendDrawToSelectedSession(instance: BrowserTabInstance): P
   if (!project) return;
 
   hideDrawError(instance);
-  const imagePath = await captureScreenshotPath(instance);
-  if (!imagePath) {
-    showDrawError(instance, 'Failed to capture screenshot. Try again.');
-    return;
-  }
-
   const targetSession = appState.resolveBrowserTargetSession(instance.sessionId);
   if (!targetSession) {
     showDrawError(instance, 'Select an open session target first.');
+    return;
+  }
+
+  const imagePath = await captureScreenshotPath(instance);
+  if (!imagePath) {
+    showDrawError(instance, 'Failed to capture screenshot. Try again.');
     return;
   }
 
@@ -153,13 +153,14 @@ export async function sendDrawToNewSession(instance: BrowserTabInstance): Promis
     return;
   }
 
-  const appliedContext = buildDrawAppliedContext(appState.preferences.defaultProvider);
+  const launchProvider = getPreferredLaunchProvider();
+  const appliedContext = buildDrawAppliedContext(launchProvider);
   const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
   showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
   const newSession = appState.addPlanSession(
     project.id,
     `Draw: ${instruction.slice(0, 30)}`,
-    getPreferredLaunchProvider(),
+    launchProvider,
   );
   if (newSession) {
     setPendingPrompt(newSession.id, prompt);

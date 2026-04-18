@@ -70,6 +70,15 @@ describe('surface routing', () => {
     expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', expect.stringContaining('inspect this footer'));
   });
 
+  it('respects an explicit provider override for new plan sessions', async () => {
+    mockAddPlanSession.mockReturnValue({ id: 'plan-2', name: 'Fix footer' });
+
+    const { queueSurfacePromptInNewSession } = await import('./surface-routing.js');
+    queueSurfacePromptInNewSession('project-1', 'Fix footer', 'inspect this footer', 'codex');
+
+    expect(mockAddPlanSession).toHaveBeenCalledWith('project-1', 'Fix footer', 'codex');
+  });
+
   it('appends project governance policy to routed prompts', async () => {
     mockProjects.push({
       id: 'project-1',

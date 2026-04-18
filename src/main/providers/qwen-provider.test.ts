@@ -42,6 +42,7 @@ vi.mock('../hook-status', () => ({
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { QwenProvider, _resetCachedPath } from './qwen-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
 import { installQwenHooks, validateQwenHooks, cleanupQwenHooks } from '../qwen-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
@@ -63,6 +64,7 @@ let provider: QwenProvider;
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
+  _resetPrereqCheckCache();
   provider = new QwenProvider();
 });
 
@@ -76,8 +78,8 @@ describe('meta', () => {
   it('enables session resume, hooks, and config reading parity', () => {
     expect(provider.meta.capabilities).toEqual({
       sessionResume: true,
-      costTracking: false,
-      contextWindow: false,
+      costTracking: true,
+      contextWindow: true,
       hookStatus: true,
       configReading: true,
       shiftEnterNewline: false,
@@ -223,4 +225,3 @@ describe('getShiftEnterSequence', () => {
     expect(provider.getShiftEnterSequence()).toBeNull();
   });
 });
-

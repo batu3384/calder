@@ -941,6 +941,54 @@ describe('setActiveSession()', () => {
     expect(appState.activeProject!.surface?.tabFocus).toBe('session');
     expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
   });
+
+  it('returns mobile surface tab focus back to session tabs when a session is selected', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'mobile',
+      active: true,
+      tabFocus: 'mobile',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+
+    appState.setActiveSession(project.id, sessions[1].id);
+
+    expect(appState.activeProject!.surface?.tabFocus).toBe('session');
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
+  });
+
+  it('keeps mobile surface active when selecting a browser session tab', () => {
+    const project = addProject();
+    appState.addSession(project.id, 'CLI A');
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    appState.setProjectSurface(project.id, {
+      kind: 'mobile',
+      active: true,
+      tabFocus: 'mobile',
+      web: { history: [] },
+      cli: { profiles: [], runtime: { status: 'idle' } },
+    });
+
+    appState.setActiveSession(project.id, browser.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'mobile',
+        active: true,
+        tabFocus: 'session',
+      }),
+    );
+    expect(appState.activeProject!.surface?.web).toMatchObject({
+      sessionId: browser.id,
+      url: 'http://localhost:3000',
+    });
+    expect(appState.activeProject!.surface?.web?.history).toContain('http://localhost:3000');
+  });
 });
 
 describe('cli surface tab state', () => {
@@ -989,6 +1037,60 @@ describe('cli surface tab state', () => {
     expect(appState.activeProject!.surface).toEqual(
       expect.objectContaining({
         kind: 'cli',
+        active: false,
+        tabFocus: 'session',
+      }),
+    );
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
+  });
+});
+
+describe('mobile surface tab state', () => {
+  it('focusMobileSurfaceTab marks the mobile surface as the active top tab without changing the active session', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'mobile',
+      active: true,
+      tabFocus: 'session',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, sessions[0].id);
+
+    appState.focusMobileSurfaceTab(project.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'mobile',
+        active: true,
+        tabFocus: 'mobile',
+      }),
+    );
+    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
+  });
+
+  it('closeMobileSurface hides the mobile surface and restores session tab focus', () => {
+    const { project, sessions } = addProjectWithSessions(2);
+    appState.setProjectSurface(project.id, {
+      kind: 'mobile',
+      active: true,
+      tabFocus: 'mobile',
+      cli: {
+        selectedProfileId: 'surface-1',
+        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
+        runtime: { status: 'idle' },
+      },
+    });
+    appState.setActiveSession(project.id, sessions[0].id);
+
+    appState.closeMobileSurface(project.id);
+
+    expect(appState.activeProject!.surface).toEqual(
+      expect.objectContaining({
+        kind: 'mobile',
         active: false,
         tabFocus: 'session',
       }),

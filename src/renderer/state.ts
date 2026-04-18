@@ -171,7 +171,9 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
   const active = existing?.active ?? Boolean(browserSession);
   const tabFocus = kind === 'cli'
     ? (existing?.tabFocus ?? (active ? 'cli' : 'session'))
-    : 'session';
+    : kind === 'mobile'
+      ? (existing?.tabFocus ?? (active ? 'mobile' : 'session'))
+      : 'session';
 
   return {
     kind,
@@ -1443,15 +1445,21 @@ class AppState {
     this.pushNav(sessionId);
     const activeSession = project.sessions.find((session) => session.id === sessionId);
     let surfaceChanged = false;
-    if (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') {
+    if (
+      (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli')
+      || (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
+    ) {
       project.surface = normalizeProjectSurface(project);
       project.surface.tabFocus = 'session';
       surfaceChanged = true;
     }
     if (activeSession?.type === 'browser-tab') {
       project.surface = normalizeProjectSurface(project);
-      project.surface.kind = 'web';
-      project.surface.active = true;
+      const preserveMobileSurface = project.surface.kind === 'mobile' && project.surface.active;
+      if (!preserveMobileSurface) {
+        project.surface.kind = 'web';
+        project.surface.active = true;
+      }
       project.surface.tabFocus = 'session';
       project.surface.web = project.surface.web ?? { history: [] };
       project.surface.web.sessionId = activeSession.id;
@@ -1491,6 +1499,8 @@ class AppState {
     if (!project) return;
     const tabFocus = surface.kind === 'cli'
       ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
+      : surface.kind === 'mobile'
+        ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
       : 'session';
     project.surface = {
       ...surface,
@@ -1531,6 +1541,30 @@ class AppState {
     if (!project) return;
     project.surface = normalizeProjectSurface(project);
     if (project.surface.kind !== 'cli') return;
+    project.surface.active = false;
+    project.surface.tabFocus = 'session';
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
+  }
+
+  focusMobileSurfaceTab(projectId: string): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = normalizeProjectSurface(project);
+    if (project.surface.kind !== 'mobile') return;
+    project.surface.active = true;
+    project.surface.tabFocus = 'mobile';
+    this.persist();
+    this.emit('project-changed');
+    this.emit('session-changed');
+  }
+
+  closeMobileSurface(projectId: string): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    project.surface = normalizeProjectSurface(project);
+    if (project.surface.kind !== 'mobile') return;
     project.surface.active = false;
     project.surface.tabFocus = 'session';
     this.persist();

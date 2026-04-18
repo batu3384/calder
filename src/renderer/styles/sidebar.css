@@ -58,6 +58,10 @@
   flex: 1;
 }
 
+.sidebar-toggle-btn {
+  font-size: 13px;
+}
+
 .sidebar-title {
   font-family: var(--font-display);
   font-weight: 620;

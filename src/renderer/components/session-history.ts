@@ -322,7 +322,11 @@ function renderList(history: ArchivedSession[]): void {
     if (archived.cost) {
       const costLabel = archived.cost.source === 'fallback'
         ? `Estimated $${archived.cost.totalCostUsd.toFixed(2)}`
-        : `$${archived.cost.totalCostUsd.toFixed(2)}`;
+        : archived.cost.source === 'derived'
+          ? archived.cost.totalCostUsd > 0
+            ? `Derived $${archived.cost.totalCostUsd.toFixed(2)}`
+            : 'Derived --'
+          : `$${archived.cost.totalCostUsd.toFixed(2)}`;
       parts.push(costLabel);
     }
     parts.push(getProviderLabel(archived.providerId));

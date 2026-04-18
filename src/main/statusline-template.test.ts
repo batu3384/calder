@@ -16,8 +16,18 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 async function waitForSnapshotSource(statusDir: string, provider: 'zai' | 'minimax', source: string) {
   const path = join(statusDir, getProviderQuotaCacheFile(provider));
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const snapshot = JSON.parse(readFileSync(path, 'utf8'));
-    if (snapshot.source === source) return snapshot;
+    try {
+      const raw = readFileSync(path, 'utf8').trim();
+      if (!raw) {
+        await sleep(50);
+        continue;
+      }
+      const snapshot = JSON.parse(raw);
+      if (snapshot.source === source) return snapshot;
+    } catch {
+      // Background refresh writes snapshots asynchronously. Retry until
+      // the next complete snapshot is visible.
+    }
     await sleep(50);
   }
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -52,6 +62,7 @@ describe('quota cache refresh scaffolding', () => {
     expect(py).toContain('calder:no-supported-anthropic-quota-api');
     expect(py).toContain('zai:quota-surface-pending');
     expect(py).toContain('subprocess.Popen');
+    expect(py).toContain('os.replace(temp_path, target_path)');
   });
 });
 
@@ -88,6 +99,38 @@ describe('generated renderer payload parsing', () => {
     expect(output).toContain('Sonnet 4.6  Anthropic  --  aa');
     expect(output).toContain('Ctx 12%  Cost $0.12');
   }, 15_000);
+
+  it('prefers current_usage input+cache fields for context when used_percentage is missing', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    const payload = JSON.stringify({
+      model: { display_name: 'Sonnet 4.6' },
+      cost: { total_cost_usd: 0.25 },
+      context_window: {
+        total_input_tokens: 100_000,
+        total_output_tokens: 40_000,
+        context_window_size: 200_000,
+        current_usage: {
+          input_tokens: 20_000,
+          cache_creation_input_tokens: 5_000,
+          cache_read_input_tokens: 15_000,
+        },
+      },
+      cwd: '/Users/batuhanyuksel/Documents/aa',
+    });
+
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
+      input: payload,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-current-usage' },
+    }).trim();
+
+    // current_usage (20k + 5k + 15k = 40k) / 200k => 20%
+    expect(output).toContain('Ctx 20%  Cost $0.25');
+  });
 
   it('prefers modelUsage-derived Claude model names when display_name lags behind', () => {
     const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
@@ -177,7 +220,8 @@ describe('generated renderer payload parsing', () => {
     const scriptPath = join(statusDir, 'statusline.py');
     writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
     chmodSync(scriptPath, 0o755);
-    const tokenReset = Date.UTC(2026, 3, 11, 19, 10, 0);
+    const tokenReset = Date.now() + 5 * 60 * 60_000;
+    const secondaryReset = Date.now() + 14 * 24 * 60 * 60_000;
 
     const server = createServer((_req, res) => {
       res.setHeader('content-type', 'application/json');
@@ -186,7 +230,7 @@ describe('generated renderer payload parsing', () => {
           data: {
             limits: [
               { type: 'TOKENS_LIMIT', percentage: 40, nextResetTime: tokenReset },
-              { type: 'TIME_LIMIT', percentage: 10, nextResetTime: tokenReset + 14 * 24 * 60 * 60_000 },
+              { type: 'TIME_LIMIT', percentage: 10, nextResetTime: secondaryReset },
             ],
           },
         }),

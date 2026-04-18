@@ -4,6 +4,11 @@ export interface SelectorOption {
   value: string;
 }
 
+export interface RelativeClickPoint {
+  normalizedX: number;
+  normalizedY: number;
+}
+
 export type ActiveSelector = SelectorOption;
 
 export interface ElementInfo {
@@ -12,6 +17,10 @@ export interface ElementInfo {
   classes: string[];
   textContent: string;
   selectors: SelectorOption[];
+  selectorValues?: string[];
+  shadowHostSelectors?: string[][];
+  clickPoint?: RelativeClickPoint;
+  isCanvasLike?: boolean;
   activeSelector: ActiveSelector;
   pageUrl: string;
 }
@@ -22,6 +31,9 @@ export interface FlowStep {
   textContent?: string;
   selectors?: SelectorOption[];
   activeSelector?: SelectorOption;
+  shadowHostSelectors?: string[][];
+  clickPoint?: RelativeClickPoint;
+  isCanvasLike?: boolean;
   pageUrl?: string;
   url?: string;
 }
@@ -30,7 +42,22 @@ export interface FlowPickerMetadata {
   tagName: string;
   textContent: string;
   selectors: SelectorOption[];
+  selectorValues?: string[];
+  shadowHostSelectors?: string[][];
+  clickPoint?: RelativeClickPoint;
+  isCanvasLike?: boolean;
   pageUrl: string;
+}
+
+export interface FlowReplayPayload {
+  selectors?: string[];
+  selector?: string;
+  shadowHostSelectors?: string[][];
+  clickPoint?: RelativeClickPoint;
+  isCanvasLike?: boolean;
+  tagName?: string;
+  timeoutMs?: number;
+  retryIntervalMs?: number;
 }
 
 export type FlowPickerAction = 'click' | 'record' | 'click-and-record';

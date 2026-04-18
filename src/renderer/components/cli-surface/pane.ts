@@ -11,7 +11,11 @@ import type {
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
 import { buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
-import { getProviderDisplayName } from '../../provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  getProviderDisplayName,
+  resolvePreferredProviderForLaunch,
+} from '../../provider-availability.js';
 import { getStatus } from '../../session-activity.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
 import {
@@ -1033,7 +1037,10 @@ function buildInspectPayload(
       : 'exact';
   const contextMode = getContextModeForSelection(instance, selectionSource);
   const targetProviderId = appState.resolveSurfaceTargetSession(instance.projectId)?.providerId
-    ?? appState.preferences.defaultProvider;
+    ?? resolvePreferredProviderForLaunch(
+      appState.preferences.defaultProvider,
+      getProviderAvailabilitySnapshot(),
+    );
   return createSelectionPayload({
     projectId: instance.projectId,
     projectPath: project?.path ?? '',

@@ -7,6 +7,7 @@ import {
   type ElementInfo,
   type FlowPickerAction,
   type FlowPickerMetadata,
+  type FlowReplayPayload,
   type WebviewElement,
 } from './types.js';
 import { getPreloadPath, instances } from './instance.js';
@@ -26,8 +27,14 @@ import {
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
 import { sendGuestMessage } from './guest-messaging.js';
-import { BROWSER_SESSION_PARTITION } from '../../../shared/constants.js';
-import type { BrowserGuestOpenPayload, ProviderId } from '../../../shared/types.js';
+import { buildBrowserSessionPartition } from '../../../shared/constants.js';
+import type {
+  BrowserCredentialFillData,
+  BrowserCredentialSaveInput,
+  BrowserCredentialSummary,
+  BrowserGuestOpenPayload,
+  ProviderId,
+} from '../../../shared/types.js';
 import {
   sendFlowToCustomSession,
   sendFlowToSelectedSession,
@@ -114,6 +121,24 @@ function describeBrowserPageState(state: BrowserPageState): string {
       return 'Offline';
     default:
       return 'Ready';
+  }
+}
+
+function resolveBrowserPartitionForSession(sessionId: string): string {
+  const owningProject = appState.projects.find((project) =>
+    project.sessions.some((session) => session.id === sessionId),
+  );
+  return buildBrowserSessionPartition(owningProject?.id);
+}
+
+function resolveCredentialOrigin(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    return parsed.origin;
+  } catch {
+    return null;
   }
 }
 
@@ -576,6 +601,12 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   drawBtn.title = 'Draw on page and send annotated screenshot to AI';
   drawBtn.ariaLabel = 'Draw on page';
 
+  const authBtn = document.createElement('button');
+  authBtn.className = 'browser-auth-btn';
+  authBtn.textContent = 'Login';
+  authBtn.title = 'Manage saved login credentials';
+  authBtn.ariaLabel = 'Manage saved login credentials';
+
   toolbarNavShell.appendChild(backBtn);
   toolbarNavShell.appendChild(fwdBtn);
   toolbarNavShell.appendChild(reloadBtn);
@@ -587,6 +618,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   toolbarAddress.appendChild(toolbarAddressShell);
 
   viewCluster.controls.appendChild(viewportWrapper);
+  viewCluster.controls.appendChild(authBtn);
   captureCluster.controls.appendChild(inspectBtn);
   captureCluster.controls.appendChild(recordBtn);
   captureCluster.controls.appendChild(drawBtn);
@@ -784,7 +816,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
 
   const webview = document.createElement('webview') as unknown as WebviewElement;
   webview.className = 'browser-webview';
-  webview.setAttribute('partition', BROWSER_SESSION_PARTITION);
+  webview.setAttribute('partition', resolveBrowserPartitionForSession(sessionId));
 
   function syncSurfaceVisibility(showEmptySurface: boolean): void {
     newTabPage.style.display = showEmptySurface ? 'flex' : 'none';
@@ -1122,6 +1154,145 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   targetMenu.appendChild(targetMenuList);
   el.appendChild(targetMenu);
 
+  const authPanel = document.createElement('div');
+  authPanel.className = 'browser-capture-panel browser-auth-panel';
+  authPanel.classList.add('calder-popover');
+  authPanel.style.display = 'none';
+
+  const authHeader = document.createElement('div');
+  authHeader.className = 'browser-capture-header';
+
+  const authCopy = document.createElement('div');
+  authCopy.className = 'browser-capture-copy';
+
+  const authKicker = document.createElement('div');
+  authKicker.className = 'browser-capture-kicker';
+  authKicker.textContent = 'Saved login';
+
+  const authTitle = document.createElement('div');
+  authTitle.className = 'browser-capture-title';
+  authTitle.textContent = 'Credential vault';
+
+  const authSubtitle = document.createElement('div');
+  authSubtitle.className = 'browser-capture-subtitle';
+  authSubtitle.textContent = 'Save credentials securely, fill them in one click, and remove them whenever you want.';
+
+  const authOriginEl = document.createElement('div');
+  authOriginEl.className = 'browser-auth-origin';
+  authOriginEl.textContent = 'No page origin';
+
+  authCopy.appendChild(authKicker);
+  authCopy.appendChild(authTitle);
+  authCopy.appendChild(authSubtitle);
+  authCopy.appendChild(authOriginEl);
+
+  const authChip = document.createElement('span');
+  authChip.className = 'browser-capture-chip';
+  authChip.textContent = 'Login';
+
+  authHeader.appendChild(authCopy);
+  authHeader.appendChild(authChip);
+  authPanel.appendChild(authHeader);
+
+  const authForm = document.createElement('div');
+  authForm.className = 'browser-auth-form';
+
+  const authProfileField = document.createElement('label');
+  authProfileField.className = 'browser-auth-field';
+  const authProfileLabel = document.createElement('span');
+  authProfileLabel.className = 'browser-auth-field-label';
+  authProfileLabel.textContent = 'Saved profiles';
+  const authProfileSelect = document.createElement('select');
+  authProfileSelect.className = 'browser-auth-select';
+  authProfileField.appendChild(authProfileLabel);
+  authProfileField.appendChild(authProfileSelect);
+  authForm.appendChild(authProfileField);
+
+  const authLabelField = document.createElement('label');
+  authLabelField.className = 'browser-auth-field';
+  const authLabelText = document.createElement('span');
+  authLabelText.className = 'browser-auth-field-label';
+  authLabelText.textContent = 'Profile name';
+  const authLabelInput = document.createElement('input');
+  authLabelInput.className = 'browser-auth-input';
+  authLabelInput.type = 'text';
+  authLabelInput.placeholder = 'Work account';
+  authLabelField.appendChild(authLabelText);
+  authLabelField.appendChild(authLabelInput);
+  authForm.appendChild(authLabelField);
+
+  const authUsernameField = document.createElement('label');
+  authUsernameField.className = 'browser-auth-field';
+  const authUsernameText = document.createElement('span');
+  authUsernameText.className = 'browser-auth-field-label';
+  authUsernameText.textContent = 'Username / email';
+  const authUsernameInput = document.createElement('input');
+  authUsernameInput.className = 'browser-auth-input';
+  authUsernameInput.type = 'text';
+  authUsernameInput.autocomplete = 'username';
+  authUsernameInput.placeholder = 'name@example.com';
+  authUsernameField.appendChild(authUsernameText);
+  authUsernameField.appendChild(authUsernameInput);
+  authForm.appendChild(authUsernameField);
+
+  const authPasswordField = document.createElement('label');
+  authPasswordField.className = 'browser-auth-field';
+  const authPasswordText = document.createElement('span');
+  authPasswordText.className = 'browser-auth-field-label';
+  authPasswordText.textContent = 'Password';
+  const authPasswordInput = document.createElement('input');
+  authPasswordInput.className = 'browser-auth-input';
+  authPasswordInput.type = 'password';
+  authPasswordInput.autocomplete = 'current-password';
+  authPasswordInput.placeholder = '••••••••';
+  authPasswordField.appendChild(authPasswordText);
+  authPasswordField.appendChild(authPasswordInput);
+  authForm.appendChild(authPasswordField);
+
+  const authAutoFillRow = document.createElement('label');
+  authAutoFillRow.className = 'browser-auth-autofill-row';
+  const authAutoFillCheckbox = document.createElement('input');
+  authAutoFillCheckbox.type = 'checkbox';
+  const authAutoFillText = document.createElement('span');
+  authAutoFillText.textContent = 'Auto-fill this profile on page load';
+  authAutoFillRow.appendChild(authAutoFillCheckbox);
+  authAutoFillRow.appendChild(authAutoFillText);
+  authForm.appendChild(authAutoFillRow);
+
+  authPanel.appendChild(authForm);
+
+  const authStatusEl = document.createElement('div');
+  authStatusEl.className = 'browser-auth-status';
+  authPanel.appendChild(authStatusEl);
+
+  const authActions = document.createElement('div');
+  authActions.className = 'browser-auth-actions';
+
+  const authDeleteBtn = document.createElement('button');
+  authDeleteBtn.className = 'browser-auth-btn-secondary';
+  authDeleteBtn.textContent = 'Delete';
+  authDeleteBtn.type = 'button';
+
+  const authSaveBtn = document.createElement('button');
+  authSaveBtn.className = 'browser-auth-btn-secondary';
+  authSaveBtn.textContent = 'Save';
+  authSaveBtn.type = 'button';
+
+  const authFillBtn = document.createElement('button');
+  authFillBtn.className = 'browser-auth-btn-primary';
+  authFillBtn.textContent = 'Fill now';
+  authFillBtn.type = 'button';
+
+  authActions.appendChild(authDeleteBtn);
+  authActions.appendChild(authSaveBtn);
+  authActions.appendChild(authFillBtn);
+  authPanel.appendChild(authActions);
+  el.appendChild(authPanel);
+
+  let authPanelFloatingCleanup: (() => void) | null = null;
+  let authSelectedCredentialId: string | null = null;
+  let authCredentialList: BrowserCredentialSummary[] = [];
+
   const instance: BrowserTabInstance = {
     sessionId,
     element: el,
@@ -1227,6 +1398,256 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       : 'Record browser flow';
     recordBtn.ariaLabel = recordBtn.title;
   };
+
+  function syncAuthActionsEnabledState(): void {
+    const hasOrigin = Boolean(resolveCredentialOrigin(instance.committedUrl || urlInput.value || webview.src));
+    const hasManualCredentials = authUsernameInput.value.trim().length > 0 && authPasswordInput.value.length > 0;
+    authSaveBtn.disabled = !hasOrigin || !hasManualCredentials;
+    authFillBtn.disabled = !hasOrigin || (!authSelectedCredentialId && !hasManualCredentials);
+    authDeleteBtn.disabled = !authSelectedCredentialId;
+  }
+
+  function setAuthStatus(message: string, tone: 'neutral' | 'success' | 'error' = 'neutral'): void {
+    authStatusEl.textContent = message;
+    authStatusEl.dataset.tone = tone;
+  }
+
+  function applyAuthSelectionToInputs(summary: BrowserCredentialSummary | null): void {
+    if (!summary) {
+      authLabelInput.value = '';
+      authUsernameInput.value = '';
+      authAutoFillCheckbox.checked = false;
+      syncAuthActionsEnabledState();
+      return;
+    }
+    authLabelInput.value = summary.label;
+    authUsernameInput.value = summary.username;
+    authPasswordInput.value = '';
+    authAutoFillCheckbox.checked = summary.autoFill;
+    syncAuthActionsEnabledState();
+  }
+
+  function getCredentialTargetUrl(): string | null {
+    const candidate = instance.committedUrl || urlInput.value || webview.src;
+    return resolveCredentialOrigin(candidate) ? candidate : null;
+  }
+
+  function currentCredentialOriginLabel(): string {
+    const url = getCredentialTargetUrl();
+    if (!url) return 'No HTTP(S) page selected';
+    try {
+      return new URL(url).origin;
+    } catch {
+      return 'No HTTP(S) page selected';
+    }
+  }
+
+  function closeAuthPanel(): void {
+    authPanel.style.display = 'none';
+    authPanelFloatingCleanup?.();
+    authPanelFloatingCleanup = null;
+    authBtn.dataset.state = 'idle';
+  }
+
+  async function refreshCredentialProfiles(preferredId?: string | null): Promise<void> {
+    const targetUrl = getCredentialTargetUrl();
+    authProfileSelect.innerHTML = '';
+    authCredentialList = [];
+    authSelectedCredentialId = null;
+    authOriginEl.textContent = currentCredentialOriginLabel();
+
+    if (!targetUrl) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'Open an HTTP(S) page first';
+      authProfileSelect.appendChild(option);
+      applyAuthSelectionToInputs(null);
+      return;
+    }
+
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select a saved profile';
+    authProfileSelect.appendChild(defaultOption);
+
+    authCredentialList = await window.calder.browserCredential.listForUrl(targetUrl);
+    for (const summary of authCredentialList) {
+      const option = document.createElement('option');
+      option.value = summary.id;
+      option.textContent = `${summary.label} · ${summary.username}`;
+      authProfileSelect.appendChild(option);
+    }
+
+    const nextSelectedId = preferredId
+      ?? authCredentialList.find((entry) => entry.autoFill)?.id
+      ?? null;
+    if (nextSelectedId && authCredentialList.some((entry) => entry.id === nextSelectedId)) {
+      authProfileSelect.value = nextSelectedId;
+      authSelectedCredentialId = nextSelectedId;
+      applyAuthSelectionToInputs(authCredentialList.find((entry) => entry.id === nextSelectedId) ?? null);
+      return;
+    }
+
+    authProfileSelect.value = '';
+    applyAuthSelectionToInputs(null);
+  }
+
+  async function fillCredentialPayload(payload: BrowserCredentialFillData): Promise<void> {
+    if (!payload.username || !payload.password) {
+      setAuthStatus('Selected profile is missing username or password.', 'error');
+      return;
+    }
+    await sendGuestMessage(instance.webview, 'auth-fill-credentials', {
+      username: payload.username,
+      password: payload.password,
+    });
+  }
+
+  async function maybeAutoFillCredentials(): Promise<void> {
+    const targetUrl = getCredentialTargetUrl();
+    if (!targetUrl) return;
+    const payload = await window.calder.browserCredential.getAutoFillForUrl(targetUrl);
+    if (!payload) return;
+    await fillCredentialPayload(payload);
+    setAuthStatus(`Auto-filled ${payload.label}.`, 'success');
+  }
+
+  async function saveCredentialFromForm(): Promise<void> {
+    const targetUrl = getCredentialTargetUrl();
+    if (!targetUrl) {
+      setAuthStatus('Open an HTTP(S) page before saving credentials.', 'error');
+      return;
+    }
+    const input: BrowserCredentialSaveInput = {
+      id: authSelectedCredentialId ?? undefined,
+      url: targetUrl,
+      label: authLabelInput.value,
+      username: authUsernameInput.value,
+      password: authPasswordInput.value,
+      autoFill: authAutoFillCheckbox.checked,
+    };
+    const saved = await window.calder.browserCredential.saveForUrl(input);
+    authPasswordInput.value = '';
+    setAuthStatus(`Saved profile: ${saved.label}.`, 'success');
+    await refreshCredentialProfiles(saved.id);
+  }
+
+  async function deleteSelectedCredential(): Promise<void> {
+    if (!authSelectedCredentialId) {
+      setAuthStatus('Select a saved profile first.', 'error');
+      return;
+    }
+    const result = await window.calder.browserCredential.deleteById(authSelectedCredentialId);
+    if (!result.deleted) {
+      setAuthStatus('Selected profile could not be deleted.', 'error');
+      return;
+    }
+    authSelectedCredentialId = null;
+    authPasswordInput.value = '';
+    setAuthStatus('Saved profile deleted.', 'success');
+    await refreshCredentialProfiles();
+  }
+
+  async function fillFromProfileOrForm(): Promise<void> {
+    const targetUrl = getCredentialTargetUrl();
+    if (!targetUrl) {
+      setAuthStatus('Open an HTTP(S) page before filling credentials.', 'error');
+      return;
+    }
+
+    if (authSelectedCredentialId) {
+      const payload = await window.calder.browserCredential.getForFill(targetUrl, authSelectedCredentialId);
+      if (!payload) {
+        setAuthStatus('Selected profile is unavailable for this page.', 'error');
+        return;
+      }
+      await fillCredentialPayload(payload);
+      setAuthStatus(`Filled profile: ${payload.label}.`, 'success');
+      return;
+    }
+
+    const manualUsername = authUsernameInput.value.trim();
+    const manualPassword = authPasswordInput.value;
+    if (!manualUsername || !manualPassword) {
+      setAuthStatus('Enter username and password, or choose a saved profile.', 'error');
+      return;
+    }
+    await sendGuestMessage(instance.webview, 'auth-fill-credentials', {
+      username: manualUsername,
+      password: manualPassword,
+    });
+    setAuthStatus('Filled credentials from the form.', 'success');
+  }
+
+  authProfileSelect.addEventListener('change', () => {
+    authSelectedCredentialId = authProfileSelect.value || null;
+    const selected = authCredentialList.find((entry) => entry.id === authSelectedCredentialId) ?? null;
+    applyAuthSelectionToInputs(selected);
+    setAuthStatus(selected ? `Selected profile: ${selected.label}.` : 'Create a new profile or choose an existing one.');
+  });
+
+  authLabelInput.addEventListener('input', () => syncAuthActionsEnabledState());
+  authUsernameInput.addEventListener('input', () => syncAuthActionsEnabledState());
+  authPasswordInput.addEventListener('input', () => syncAuthActionsEnabledState());
+  authAutoFillCheckbox.addEventListener('change', () => syncAuthActionsEnabledState());
+
+  authSaveBtn.addEventListener('click', () => {
+    void saveCredentialFromForm().catch((error) => {
+      setAuthStatus(error instanceof Error ? error.message : 'Failed to save credentials.', 'error');
+    });
+  });
+  authDeleteBtn.addEventListener('click', () => {
+    void deleteSelectedCredential().catch((error) => {
+      setAuthStatus(error instanceof Error ? error.message : 'Failed to delete credentials.', 'error');
+    });
+  });
+  authFillBtn.addEventListener('click', () => {
+    void fillFromProfileOrForm().catch((error) => {
+      setAuthStatus(error instanceof Error ? error.message : 'Failed to fill credentials.', 'error');
+    });
+  });
+
+  authBtn.addEventListener('click', () => {
+    if (authPanel.style.display !== 'none') {
+      closeAuthPanel();
+      return;
+    }
+
+    setAuthStatus('Loading saved profiles…');
+    authPanel.style.display = 'flex';
+    authBtn.dataset.state = 'active';
+    authPanelFloatingCleanup?.();
+    authPanelFloatingCleanup = anchorFloatingSurface(authBtn, authPanel, {
+      placement: 'bottom-end',
+      offsetPx: 6,
+      maxWidthPx: 360,
+      maxHeightPx: 440,
+    });
+
+    void refreshCredentialProfiles()
+      .then(() => {
+        setAuthStatus(authCredentialList.length > 0
+          ? 'Saved profiles ready.'
+          : 'No saved profiles for this page yet.');
+      })
+      .catch((error) => {
+        setAuthStatus(error instanceof Error ? error.message : 'Failed to load saved profiles.', 'error');
+      });
+  });
+
+  const authPanelOutsideClickHandler = (e: MouseEvent) => {
+    const target = e.target as Node;
+    if (!authPanel.contains(target) && !authBtn.contains(target)) {
+      closeAuthPanel();
+    }
+  };
+  document.addEventListener('mousedown', authPanelOutsideClickHandler);
+  instance.cleanupFns.push(() => {
+    document.removeEventListener('mousedown', authPanelOutsideClickHandler);
+    authPanelFloatingCleanup?.();
+    authPanelFloatingCleanup = null;
+  });
+
   instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
   focusAddressBtn.addEventListener('click', () => {
     urlInput.focus();
@@ -1469,7 +1890,17 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     const metadata = instance.flowPickerPending;
     dismissFlowPicker(instance);
     if (action === 'click' || action === 'click-and-record') {
-      void sendGuestMessage(instance.webview, 'flow-do-click', metadata.selectors[0]?.value ?? '');
+      const selectorValues = metadata.selectorValues?.length
+        ? metadata.selectorValues
+        : metadata.selectors.map((selector) => selector.value).filter((value) => value.trim().length > 0);
+      const replayPayload: FlowReplayPayload = {
+        selectors: selectorValues,
+        shadowHostSelectors: metadata.shadowHostSelectors,
+        clickPoint: metadata.clickPoint,
+        isCanvasLike: metadata.isCanvasLike,
+        tagName: metadata.tagName,
+      };
+      void sendGuestMessage(instance.webview, 'flow-do-click', replayPayload);
     }
     if (action === 'record' || action === 'click-and-record') {
       addFlowStep(instance, {
@@ -1478,6 +1909,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
         textContent: metadata.textContent,
         selectors: metadata.selectors,
         activeSelector: metadata.selectors[0],
+        shadowHostSelectors: metadata.shadowHostSelectors,
+        clickPoint: metadata.clickPoint,
+        isCanvasLike: metadata.isCanvasLike,
         pageUrl: metadata.pageUrl,
       });
     }
@@ -1514,6 +1948,9 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     if (instance.inspectMode) void sendGuestMessage(instance.webview, 'enter-inspect-mode');
     if (instance.flowMode) void sendGuestMessage(instance.webview, 'enter-flow-mode');
     if (instance.drawMode) void sendGuestMessage(instance.webview, 'enter-draw-mode');
+    void maybeAutoFillCredentials().catch((error) => {
+      setAuthStatus(error instanceof Error ? error.message : 'Auto-fill failed.', 'error');
+    });
     syncNavigationControls(instance);
     syncAddressBarState(instance);
   }) as EventListener);
@@ -1544,6 +1981,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     clearPendingNavigation(instance);
     if (instance.flowMode) recordNavigationStep(e.url);
+    if (authPanel.style.display !== 'none') {
+      void refreshCredentialProfiles(authSelectedCredentialId).catch((error) => {
+        setAuthStatus(error instanceof Error ? error.message : 'Failed to refresh saved profiles.', 'error');
+      });
+    }
   }) as EventListener);
   webview.addEventListener('did-navigate-in-page', ((e: Event & { url: string }) => {
     if (isStaleNavigationRevert(instance, e.url)) return;
@@ -1564,6 +2006,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     appState.updateSessionBrowserTabUrl(sessionId, e.url);
     clearPendingNavigation(instance);
     if (instance.flowMode) recordNavigationStep(e.url);
+    if (authPanel.style.display !== 'none') {
+      void refreshCredentialProfiles(authSelectedCredentialId).catch((error) => {
+        setAuthStatus(error instanceof Error ? error.message : 'Failed to refresh saved profiles.', 'error');
+      });
+    }
   }) as EventListener);
   webview.addEventListener('did-fail-load', ((e: Event & {
     isMainFrame?: boolean;
@@ -1598,11 +2045,15 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
   syncNavigationControls(instance);
   syncAddressBarState(instance);
+  syncAuthActionsEnabledState();
 
   webview.addEventListener('ipc-message', ((e: Event & { channel: string; args: unknown[] }) => {
     if (e.channel === 'element-selected') {
       const { metadata, x, y } = e.args[0] as { metadata: Omit<ElementInfo, 'activeSelector'>; x: number; y: number };
-      const info: ElementInfo = { ...metadata, activeSelector: metadata.selectors[0] };
+      const info: ElementInfo = {
+        ...metadata,
+        activeSelector: metadata.selectors[0] ?? { type: 'css', label: 'css', value: metadata.tagName },
+      };
       showElementInfo(instance, info, x, y);
     } else if (e.channel === 'flow-element-picked') {
       const { metadata, x, y } = e.args[0] as { metadata: FlowPickerMetadata; x: number; y: number };
@@ -1622,6 +2073,19 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
         },
         openExternal: (nextUrl) => window.calder.app.openExternal(nextUrl),
       });
+    } else if (e.channel === 'auth-fill-result') {
+      const payload = e.args[0] as { filledUsername?: boolean; filledPassword?: boolean };
+      const filledUsername = Boolean(payload?.filledUsername);
+      const filledPassword = Boolean(payload?.filledPassword);
+      if (filledUsername && filledPassword) {
+        setAuthStatus('Credentials were filled on the page.', 'success');
+      } else if (filledPassword) {
+        setAuthStatus('Password field was filled.', 'success');
+      } else if (filledUsername) {
+        setAuthStatus('Username field was filled.', 'success');
+      } else {
+        setAuthStatus('No login inputs were found on this page.', 'error');
+      }
     }
   }) as EventListener);
 }

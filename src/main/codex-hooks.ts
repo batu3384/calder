@@ -150,6 +150,15 @@ for fld in ("session_id","cwd","model","turn_id"):
  v=d.get(fld,"")
  if v:
   e[fld]=v
+usage=d.get("usage")
+if not isinstance(usage,dict):
+ for key in ("response","result","message","assistant_message","last_assistant_message"):
+  nested=d.get(key)
+  if isinstance(nested,dict) and isinstance(nested.get("usage"),dict):
+   usage=nested.get("usage")
+   break
+if isinstance(usage,dict):
+ e["usage"]=usage
 status_dir=r'${STATUS_DIR}'
 with open(os.path.join(status_dir,sid+".events"),"a") as f:
  f.write(json.dumps(e)+"\\n")

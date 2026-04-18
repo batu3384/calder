@@ -6,10 +6,12 @@ import { randomBytes } from 'crypto';
 import type { AddressInfo } from 'net';
 import type { EmbeddedBrowserOpenPayload } from '../shared/types';
 import { isMac, isWin, pathSep } from './platform';
+import { isAllowedExternalUrl } from './browser-open-policy';
 
 interface BrowserBridgeState {
   launcherPath: string;
   shimDir: string;
+  nodeHookPath: string;
   token: string;
   url: string;
   server: http.Server;
@@ -90,6 +92,319 @@ exit 1
 `;
 }
 
+function createNodeOpenHookScript(): string {
+  return `'use strict';
+
+const childProcess = require('node:child_process');
+const Module = require('node:module');
+const path = require('node:path');
+
+const launcher = process.env.CALDER_BROWSER_BRIDGE_LAUNCHER;
+if (launcher) {
+  const OPEN_COMMANDS = new Set(['open', 'xdg-open', 'start']);
+  const FORCE_PLAYWRIGHT_HEADLESS = process.env.CALDER_PLAYWRIGHT_FORCE_HEADLESS !== '0';
+  const PLAYWRIGHT_MODULES = new Set(['playwright', 'playwright-core', '@playwright/test']);
+  const WRAPPED_PAGE = Symbol.for('calder.playwright.page');
+  const WRAPPED_CONTEXT = Symbol.for('calder.playwright.context');
+  const WRAPPED_BROWSER = Symbol.for('calder.playwright.browser');
+  const WRAPPED_BROWSER_TYPE = Symbol.for('calder.playwright.browserType');
+  const WRAPPED_EXPORTS = Symbol.for('calder.playwright.exports');
+
+  function normalizeCommandName(command) {
+    if (typeof command !== 'string' || command.length === 0) return '';
+    const base = path.basename(command).toLowerCase();
+    return base.endsWith('.exe') ? base.slice(0, -4) : base;
+  }
+
+  function looksLikePlaywrightBrowserCommand(command, args) {
+    if (!FORCE_PLAYWRIGHT_HEADLESS) return false;
+    if (typeof command !== 'string' || command.length === 0) return false;
+    if (!Array.isArray(args)) return false;
+    const normalizedPath = command.toLowerCase();
+    const commandName = normalizeCommandName(command);
+    const looksLikeBrowserName = /(?:chrome|chromium|msedge|edge|firefox|webkit)/.test(commandName);
+    if (!looksLikeBrowserName) return false;
+    const fromPlaywrightCache = normalizedPath.includes('ms-playwright') || normalizedPath.includes('playwright');
+    const fromPlaywrightFlags = args.some((arg) =>
+      typeof arg === 'string' && (
+        arg.includes('--remote-debugging-pipe')
+        || arg.startsWith('--user-data-dir=')
+      )
+    );
+    return fromPlaywrightCache || fromPlaywrightFlags;
+  }
+
+  function ensureHeadlessFlag(args) {
+    const nextArgs = [...args];
+    const hasHeadless = nextArgs.some((arg) => typeof arg === 'string' && arg.startsWith('--headless'));
+    if (!hasHeadless) {
+      nextArgs.push('--headless=new');
+    }
+    return nextArgs;
+  }
+
+  function forceHeadlessLaunchOptions(options) {
+    if (!FORCE_PLAYWRIGHT_HEADLESS) return options;
+    if (!options || typeof options !== 'object') {
+      return { headless: true };
+    }
+    const nextOptions = { ...options };
+    if (nextOptions.headless !== true) {
+      nextOptions.headless = true;
+    }
+    return nextOptions;
+  }
+
+  function markWrapped(target, marker) {
+    if (!target || (typeof target !== 'object' && typeof target !== 'function')) return;
+    try {
+      Object.defineProperty(target, marker, { value: true, configurable: false });
+    } catch {
+      try { target[marker] = true; } catch {}
+    }
+  }
+
+  function isWrapped(target, marker) {
+    return Boolean(target && target[marker]);
+  }
+
+  const originalSpawn = childProcess.spawn;
+
+  function mirrorUrlToCalder(url) {
+    if (typeof url !== 'string' || !/^https?:\\/\\//i.test(url)) return;
+    try {
+      const child = originalSpawn.call(childProcess, launcher, [url], {
+        stdio: 'ignore',
+        detached: true,
+      });
+      if (child && typeof child.unref === 'function') {
+        child.unref();
+      }
+    } catch {}
+  }
+
+  function wrapPage(page) {
+    if (!page || typeof page !== 'object') return page;
+    if (isWrapped(page, WRAPPED_PAGE)) return page;
+    markWrapped(page, WRAPPED_PAGE);
+
+    if (typeof page.goto === 'function') {
+      const originalGoto = page.goto.bind(page);
+      page.goto = async function patchedGoto(url, ...rest) {
+        if (typeof url === 'string') {
+          mirrorUrlToCalder(url);
+        }
+        return originalGoto(url, ...rest);
+      };
+    }
+    return page;
+  }
+
+  function wrapContext(context) {
+    if (!context || typeof context !== 'object') return context;
+    if (isWrapped(context, WRAPPED_CONTEXT)) return context;
+    markWrapped(context, WRAPPED_CONTEXT);
+
+    if (typeof context.newPage === 'function') {
+      const originalNewPage = context.newPage.bind(context);
+      context.newPage = async function patchedNewPage(...args) {
+        const page = await originalNewPage(...args);
+        return wrapPage(page);
+      };
+    }
+    if (typeof context.pages === 'function') {
+      const originalPages = context.pages.bind(context);
+      context.pages = function patchedPages(...args) {
+        const pages = originalPages(...args);
+        return Array.isArray(pages) ? pages.map((page) => wrapPage(page)) : pages;
+      };
+    }
+    return context;
+  }
+
+  function wrapBrowser(browser) {
+    if (!browser || typeof browser !== 'object') return browser;
+    if (isWrapped(browser, WRAPPED_BROWSER)) return browser;
+    markWrapped(browser, WRAPPED_BROWSER);
+
+    if (typeof browser.newPage === 'function') {
+      const originalNewPage = browser.newPage.bind(browser);
+      browser.newPage = async function patchedBrowserNewPage(...args) {
+        const page = await originalNewPage(...args);
+        return wrapPage(page);
+      };
+    }
+    if (typeof browser.newContext === 'function') {
+      const originalNewContext = browser.newContext.bind(browser);
+      browser.newContext = async function patchedBrowserNewContext(...args) {
+        const context = await originalNewContext(...args);
+        return wrapContext(context);
+      };
+    }
+    if (typeof browser.contexts === 'function') {
+      const originalContexts = browser.contexts.bind(browser);
+      browser.contexts = function patchedContexts(...args) {
+        const contexts = originalContexts(...args);
+        return Array.isArray(contexts) ? contexts.map((ctx) => wrapContext(ctx)) : contexts;
+      };
+    }
+    return browser;
+  }
+
+  function wrapBrowserType(browserType) {
+    if (!browserType || typeof browserType !== 'object') return browserType;
+    if (isWrapped(browserType, WRAPPED_BROWSER_TYPE)) return browserType;
+    markWrapped(browserType, WRAPPED_BROWSER_TYPE);
+
+    if (typeof browserType.launch === 'function') {
+      const originalLaunch = browserType.launch.bind(browserType);
+      browserType.launch = async function patchedLaunch(options) {
+        const browser = await originalLaunch(forceHeadlessLaunchOptions(options));
+        return wrapBrowser(browser);
+      };
+    }
+    if (typeof browserType.launchPersistentContext === 'function') {
+      const originalLaunchPersistent = browserType.launchPersistentContext.bind(browserType);
+      browserType.launchPersistentContext = async function patchedLaunchPersistent(userDataDir, options) {
+        const context = await originalLaunchPersistent(userDataDir, forceHeadlessLaunchOptions(options));
+        return wrapContext(context);
+      };
+    }
+    if (typeof browserType.connect === 'function') {
+      const originalConnect = browserType.connect.bind(browserType);
+      browserType.connect = async function patchedConnect(...args) {
+        const browser = await originalConnect(...args);
+        return wrapBrowser(browser);
+      };
+    }
+    if (typeof browserType.connectOverCDP === 'function') {
+      const originalConnectOverCDP = browserType.connectOverCDP.bind(browserType);
+      browserType.connectOverCDP = async function patchedConnectOverCDP(...args) {
+        const browser = await originalConnectOverCDP(...args);
+        return wrapBrowser(browser);
+      };
+    }
+
+    return browserType;
+  }
+
+  function patchPlaywrightExports(loaded) {
+    if (!loaded || typeof loaded !== 'object') return loaded;
+    if (isWrapped(loaded, WRAPPED_EXPORTS)) return loaded;
+    markWrapped(loaded, WRAPPED_EXPORTS);
+    wrapBrowserType(loaded.chromium);
+    wrapBrowserType(loaded.firefox);
+    wrapBrowserType(loaded.webkit);
+    return loaded;
+  }
+
+  function extractHttpUrl(args) {
+    if (!Array.isArray(args)) return null;
+    for (const arg of args) {
+      if (typeof arg !== 'string') continue;
+      const lowered = arg.toLowerCase();
+      if (lowered.startsWith('http://') || lowered.startsWith('https://')) {
+        return arg;
+      }
+    }
+    return null;
+  }
+
+  function resolveEmbeddedTarget(command, args) {
+    if (!OPEN_COMMANDS.has(normalizeCommandName(command))) return null;
+    return extractHttpUrl(args);
+  }
+
+  childProcess.spawn = function patchedSpawn(command, args, options) {
+    const parsedArgs = Array.isArray(args) ? args : [];
+    const target = resolveEmbeddedTarget(command, parsedArgs);
+    if (!target) {
+      if (looksLikePlaywrightBrowserCommand(command, parsedArgs)) {
+        return originalSpawn.call(this, command, ensureHeadlessFlag(parsedArgs), options);
+      }
+      return originalSpawn.call(this, command, args, options);
+    }
+    return originalSpawn.call(this, launcher, [target], options);
+  };
+
+  const originalSpawnSync = childProcess.spawnSync;
+  childProcess.spawnSync = function patchedSpawnSync(command, args, options) {
+    const parsedArgs = Array.isArray(args) ? args : [];
+    const target = resolveEmbeddedTarget(command, parsedArgs);
+    if (!target) {
+      if (looksLikePlaywrightBrowserCommand(command, parsedArgs)) {
+        return originalSpawnSync.call(this, command, ensureHeadlessFlag(parsedArgs), options);
+      }
+      return originalSpawnSync.call(this, command, args, options);
+    }
+    return originalSpawnSync.call(this, launcher, [target], options);
+  };
+
+  const originalExecFile = childProcess.execFile;
+  childProcess.execFile = function patchedExecFile(file, args, options, callback) {
+    let nextArgs = args;
+    let nextOptions = options;
+    let nextCallback = callback;
+
+    if (typeof nextArgs === 'function') {
+      nextCallback = nextArgs;
+      nextArgs = undefined;
+      nextOptions = undefined;
+    } else if (typeof nextOptions === 'function') {
+      nextCallback = nextOptions;
+      nextOptions = undefined;
+    }
+
+    const parsedArgs = Array.isArray(nextArgs) ? nextArgs : [];
+    const target = resolveEmbeddedTarget(file, parsedArgs);
+    if (!target) {
+      if (looksLikePlaywrightBrowserCommand(file, parsedArgs)) {
+        return originalExecFile.call(this, file, ensureHeadlessFlag(parsedArgs), nextOptions, nextCallback);
+      }
+      return originalExecFile.call(this, file, nextArgs, nextOptions, nextCallback);
+    }
+    return originalExecFile.call(this, launcher, [target], nextOptions, nextCallback);
+  };
+
+  const originalExecFileSync = childProcess.execFileSync;
+  childProcess.execFileSync = function patchedExecFileSync(file, args, options) {
+    const parsedArgs = Array.isArray(args) ? args : [];
+    const target = resolveEmbeddedTarget(file, parsedArgs);
+    if (!target) {
+      if (looksLikePlaywrightBrowserCommand(file, parsedArgs)) {
+        return originalExecFileSync.call(this, file, ensureHeadlessFlag(parsedArgs), options);
+      }
+      return originalExecFileSync.call(this, file, args, options);
+    }
+    return originalExecFileSync.call(this, launcher, [target], options);
+  };
+
+  const ModuleClass = Module.Module || Module;
+  if (ModuleClass && typeof ModuleClass._load === 'function') {
+    const originalLoad = ModuleClass._load;
+    ModuleClass._load = function patchedLoad(request, parent, isMain) {
+      const loaded = originalLoad.call(this, request, parent, isMain);
+      if (!PLAYWRIGHT_MODULES.has(request)) {
+        return loaded;
+      }
+      return patchPlaywrightExports(loaded);
+    };
+  }
+}
+`;
+}
+
+function appendNodeRequire(existingNodeOptions: string | undefined, hookPath: string): string {
+  const requireFlag = `--require=${hookPath}`;
+  if (!existingNodeOptions || existingNodeOptions.trim().length === 0) {
+    return requireFlag;
+  }
+  if (existingNodeOptions.includes(requireFlag) || existingNodeOptions.includes(hookPath)) {
+    return existingNodeOptions;
+  }
+  return `${existingNodeOptions} ${requireFlag}`;
+}
+
 function writeExecutable(filePath: string, contents: string): void {
   fs.writeFileSync(filePath, contents, { mode: 0o755 });
 }
@@ -108,7 +423,7 @@ function parseRequestBody(raw: string): EmbeddedBrowserOpenPayload | null {
   const url = params.get('url')?.trim();
   const cwd = params.get('cwd')?.trim();
   const preferEmbedded = params.get('preferEmbedded') === '1';
-  if (!url) return null;
+  if (!url || !isAllowedExternalUrl(url)) return null;
   return {
     url,
     ...(cwd ? { cwd } : {}),
@@ -125,9 +440,11 @@ export async function startBrowserBridge(
   fs.mkdirSync(shimDir, { recursive: true });
 
   const launcherPath = path.join(shimDir, 'calder-open-url');
+  const nodeHookPath = path.join(shimDir, 'calder-node-open-hook.cjs');
   writeExecutable(launcherPath, createLauncherScript());
   writeExecutable(path.join(shimDir, 'open'), createUrlShim('CALDER_BROWSER_BRIDGE_REAL_OPEN'));
   writeExecutable(path.join(shimDir, 'xdg-open'), createUrlShim('CALDER_BROWSER_BRIDGE_REAL_XDG_OPEN'));
+  fs.writeFileSync(nodeHookPath, createNodeOpenHookScript(), { mode: 0o644 });
 
   const token = randomBytes(16).toString('hex');
   const server = http.createServer((req, res) => {
@@ -182,6 +499,7 @@ export async function startBrowserBridge(
   bridgeState = {
     launcherPath,
     shimDir,
+    nodeHookPath,
     token,
     url: `http://127.0.0.1:${address.port}/open`,
     server,
@@ -201,6 +519,7 @@ export function buildBrowserBridgeEnv(cwd: string, env: Record<string, string>):
     CALDER_BROWSER_BRIDGE_TOKEN: bridgeState.token,
     CALDER_BROWSER_BRIDGE_LAUNCHER: bridgeState.launcherPath,
     CALDER_BROWSER_BRIDGE_CWD: cwd,
+    NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, bridgeState.nodeHookPath),
   };
 
   if (bridgeState.realOpenPath) {

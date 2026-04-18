@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isEmbeddedBrowserCandidate, openUrlWithBrowserPolicy } from './browser-open-policy';
+import {
+  isAllowedExternalUrl,
+  isEmbeddedBrowserCandidate,
+  openUrlWithBrowserPolicy,
+} from './browser-open-policy';
 
 describe('isEmbeddedBrowserCandidate', () => {
   it('treats loopback dev urls as embedded browser targets', () => {
@@ -14,6 +18,15 @@ describe('isEmbeddedBrowserCandidate', () => {
     expect(isEmbeddedBrowserCandidate('https://github.com/batuhanyuksel/calder')).toBe(false);
     expect(isEmbeddedBrowserCandidate('mailto:test@example.com')).toBe(false);
     expect(isEmbeddedBrowserCandidate('not a url')).toBe(false);
+  });
+
+  it('allows only safe external URL schemes', () => {
+    expect(isAllowedExternalUrl('https://example.com')).toBe(true);
+    expect(isAllowedExternalUrl('mailto:test@example.com')).toBe(true);
+    expect(isAllowedExternalUrl('tel:+905550000000')).toBe(true);
+    expect(isAllowedExternalUrl('javascript:alert(1)')).toBe(false);
+    expect(isAllowedExternalUrl('data:text/html,hi')).toBe(false);
+    expect(isAllowedExternalUrl('file:///Applications/Calder.app')).toBe(false);
   });
 
   it('routes localhost urls into the embedded browser when a window is available', async () => {

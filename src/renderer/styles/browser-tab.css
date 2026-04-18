@@ -475,6 +475,7 @@ html[lang='tr'] .browser-toolbar-cluster-label {
 
 .browser-tab-pane.split .browser-nav-btn,
 .browser-tab-pane.split .browser-go-btn,
+.browser-tab-pane.split .browser-auth-btn,
 .browser-tab-pane.split .browser-draw-btn,
 .browser-tab-pane.split .browser-inspect-btn,
 .browser-tab-pane.split .browser-record-btn,
@@ -563,6 +564,7 @@ html[lang='tr'] .browser-toolbar-cluster-label {
 
 .browser-nav-btn,
 .browser-go-btn,
+.browser-auth-btn,
 .browser-draw-btn,
 .browser-inspect-btn,
 .browser-record-btn,
@@ -594,11 +596,13 @@ html[lang='tr'] .browser-toolbar-cluster-label {
 .browser-draw-btn,
 .browser-inspect-btn,
 .browser-record-btn,
+.browser-auth-btn,
 .browser-viewport-btn {
   padding: 0 8px;
 }
 
 html[lang='tr'] .browser-go-btn,
+html[lang='tr'] .browser-auth-btn,
 html[lang='tr'] .browser-draw-btn,
 html[lang='tr'] .browser-inspect-btn,
 html[lang='tr'] .browser-record-btn,
@@ -610,6 +614,7 @@ html[lang='tr'] .browser-viewport-btn {
 
 .browser-nav-btn:hover,
 .browser-draw-btn:hover,
+.browser-auth-btn:hover,
 .browser-inspect-btn:hover,
 .browser-record-btn:hover,
 .browser-viewport-btn:hover {
@@ -715,6 +720,7 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-draw-btn.active,
 .browser-inspect-btn.active,
 .browser-record-btn.active,
+.browser-auth-btn.active,
 .browser-viewport-btn.active {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
@@ -725,7 +731,8 @@ html[lang='tr'] .browser-viewport-btn {
 
 .browser-inspect-btn[data-state='active'],
 .browser-draw-btn[data-state='active'],
-.browser-record-btn[data-state='active'] {
+.browser-record-btn[data-state='active'],
+.browser-auth-btn[data-state='active'] {
   font-weight: 650;
 }
 
@@ -1904,6 +1911,115 @@ body.sidebar-resizing .browser-webview {
   height: 1px;
   margin: 4px 2px;
   background: color-mix(in srgb, var(--border-subtle) 90%, transparent);
+}
+
+.browser-auth-panel {
+  min-width: 320px;
+  max-width: 360px;
+}
+
+.browser-auth-origin {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.browser-auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.browser-auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.browser-auth-field-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.browser-auth-input,
+.browser-auth-select {
+  min-height: 34px;
+  width: 100%;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 74%, transparent);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+}
+
+.browser-auth-input:focus,
+.browser-auth-select:focus {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+
+.browser-auth-autofill-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.browser-auth-autofill-row input[type='checkbox'] {
+  margin: 0;
+}
+
+.browser-auth-status {
+  min-height: 18px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.browser-auth-status[data-tone='success'] {
+  color: color-mix(in srgb, #63d9a7 78%, var(--text-primary));
+}
+
+.browser-auth-status[data-tone='error'] {
+  color: color-mix(in srgb, #ff8f8f 86%, var(--text-primary));
+}
+
+.browser-auth-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.browser-auth-btn-secondary,
+.browser-auth-btn-primary {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.browser-auth-btn-secondary {
+  background: color-mix(in srgb, var(--surface-panel) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
+  color: var(--text-primary);
+}
+
+.browser-auth-btn-primary {
+  background: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  color: #fff;
+}
+
+.browser-auth-btn-secondary:disabled,
+.browser-auth-btn-primary:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
 }
 
 .inspect-draw-actions {

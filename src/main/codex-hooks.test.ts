@@ -24,10 +24,12 @@ vi.mock('./hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as hookCommands from './hook-commands';
 import { installCodexHooks, validateCodexHooks, cleanupCodexHooks, CODEX_HOOK_MARKER } from './codex-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+const mockInstallEventScript = vi.mocked(hookCommands.installEventScript);
 
 const n = (p: string) => p.replace(/\\/g, '/');
 
@@ -198,6 +200,18 @@ describe('installCodexHooks', () => {
         }
       }
     }
+  });
+
+  it('captures usage payloads in generated event scripts for token accounting', () => {
+    installCodexHooks();
+
+    const postToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'codex_event_PostToolUse.py');
+    expect(postToolScript).toBeDefined();
+    const py = String(postToolScript![1]);
+
+    expect(py).toContain('usage=d.get("usage")');
+    expect(py).toContain('nested=d.get(key)');
+    expect(py).toContain('e["usage"]=usage');
   });
 
   it('preserves existing user hooks', () => {

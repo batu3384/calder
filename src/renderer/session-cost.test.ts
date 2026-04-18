@@ -61,6 +61,23 @@ describe('setCostData', () => {
     expect(cb).toHaveBeenCalledOnce();
     expect(cb).toHaveBeenCalledWith('s1', expect.objectContaining({ totalCostUsd: 2.0 }));
   });
+
+  it('preserves derived source metadata from IPC payloads', () => {
+    setCostData('s1', {
+      source: 'derived',
+      cost: { total_cost_usd: 0 },
+      context_window: {
+        total_input_tokens: 120,
+        total_output_tokens: 20,
+        current_usage: { input_tokens: 90, cache_read_input_tokens: 30, cache_creation_input_tokens: 0 },
+      },
+    });
+
+    const cost = getCost('s1');
+    expect(cost?.source).toBe('derived');
+    expect(cost?.totalInputTokens).toBe(120);
+    expect(cost?.cacheReadTokens).toBe(30);
+  });
 });
 
 describe('setCostData model tracking', () => {
@@ -146,6 +163,30 @@ describe('parseCost', () => {
     parseCost('s1', '$0.01');
     expect(getCost('s1')!.totalCostUsd).toBe(5.0);
     expect(getCost('s1')!.source).toBe('structured');
+  });
+
+  it('merges fallback dollar parses into derived usage entries without losing token counts', () => {
+    setCostData('s1', {
+      source: 'derived',
+      cost: { total_cost_usd: 0 },
+      context_window: {
+        total_input_tokens: 150,
+        total_output_tokens: 25,
+        current_usage: {
+          input_tokens: 120,
+          cache_read_input_tokens: 30,
+          cache_creation_input_tokens: 0,
+        },
+      },
+    });
+
+    parseCost('s1', 'Cost now $1.25');
+
+    const cost = getCost('s1')!;
+    expect(cost.totalCostUsd).toBe(1.25);
+    expect(cost.totalInputTokens).toBe(150);
+    expect(cost.totalOutputTokens).toBe(25);
+    expect(cost.source).toBe('derived');
   });
 
   it('does nothing when no dollar amount found', () => {

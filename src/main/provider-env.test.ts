@@ -98,4 +98,24 @@ describe('buildProviderBaseEnv', () => {
 
     expect(mockExecFileSync).toHaveBeenCalledTimes(1);
   });
+
+  it('does not spawn a login shell for providers with no env hydration keys', () => {
+    mockExecFileSync.mockReturnValue('ANTHROPIC_AUTH_TOKEN=test-token');
+
+    const env = buildProviderBaseEnv('copilot', { PATH: '/usr/bin' });
+
+    expect(env).toEqual({ PATH: '/usr/bin' });
+    expect(mockExecFileSync).not.toHaveBeenCalled();
+  });
+
+  it('fails safe when login shell probing errors', () => {
+    mockExecFileSync.mockImplementation(() => {
+      throw new Error('shell unavailable');
+    });
+
+    const env = buildProviderBaseEnv('claude', { PATH: '/usr/bin' });
+
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.PATH).toBe('/usr/bin');
+  });
 });

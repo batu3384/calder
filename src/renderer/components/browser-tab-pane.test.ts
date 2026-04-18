@@ -92,8 +92,10 @@ describe('browser tab pane contract', () => {
   });
 
   it('isolates browser guests into a dedicated live-view partition', () => {
-    expect(source).toContain("import { BROWSER_SESSION_PARTITION } from '../../../shared/constants.js';");
-    expect(source).toContain("webview.setAttribute('partition', BROWSER_SESSION_PARTITION);");
+    expect(source).toContain("import { buildBrowserSessionPartition } from '../../../shared/constants.js';");
+    expect(source).toContain('function resolveBrowserPartitionForSession(sessionId: string): string {');
+    expect(source).toContain('return buildBrowserSessionPartition(owningProject?.id);');
+    expect(source).toContain("webview.setAttribute('partition', resolveBrowserPartitionForSession(sessionId));");
     expect(source).not.toContain("webview.setAttribute('allowpopups', '');");
   });
 
@@ -207,6 +209,20 @@ describe('browser tab pane contract', () => {
     expect(source).not.toContain('browser-target-rail');
     expect(source).not.toContain('Send to Session');
     expect(source).not.toContain('instance.targetBadge.contains(target)');
+  });
+
+  it('adds a secure login vault panel with fill, save, and delete actions', () => {
+    expect(source).toContain("authBtn.className = 'browser-auth-btn'");
+    expect(source).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
+    expect(source).toContain("authFillBtn.textContent = 'Fill now'");
+    expect(source).toContain("authSaveBtn.textContent = 'Save'");
+    expect(source).toContain("authDeleteBtn.textContent = 'Delete'");
+    expect(source).toContain('window.calder.browserCredential.listForUrl');
+    expect(source).toContain('window.calder.browserCredential.saveForUrl');
+    expect(source).toContain('window.calder.browserCredential.deleteById');
+    expect(source).toContain('window.calder.browserCredential.getForFill');
+    expect(source).toContain('window.calder.browserCredential.getAutoFillForUrl');
+    expect(source).toContain("sendGuestMessage(instance.webview, 'auth-fill-credentials'");
   });
 
   it('adds a drag handle to the inspect panel instead of locking it in place', () => {
