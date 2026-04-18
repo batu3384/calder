@@ -609,6 +609,10 @@
   color: var(--warning);
 }
 
+.cli-update-provider-status.sync_pending {
+  color: var(--warning);
+}
+
 .cli-update-provider-detail {
   font-size: 11px;
   color: var(--text-secondary);
@@ -1001,6 +1005,19 @@
   letter-spacing: 0.04em;
 }
 
+.tab-action-handoff {
+  width: auto;
+  min-width: 76px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)), transparent),
+    color-mix(in srgb, var(--surface-panel) 90%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
+}
+
 @container workspace-stack (max-width: 1180px) {
   #tab-bar {
     gap: 9px;
@@ -1115,6 +1132,13 @@
   .session-launcher-group .icon-btn {
     width: 28px;
     height: 28px;
+  }
+
+  .session-launcher-group .tab-action-handoff {
+    width: auto;
+    min-width: 64px;
+    padding: 0 8px;
+    font-size: 10px;
   }
 }
 

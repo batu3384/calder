@@ -1,4 +1,5 @@
 // Shared type definitions used across main, preload, and renderer processes.
+import type { ShareIceServer } from './sharing-types';
 
 // --- Provider ---
 
@@ -26,7 +27,7 @@ export interface CliProviderMeta {
 }
 
 export type ProviderUpdateSource = 'self' | 'npm' | 'brew-formula' | 'brew-cask' | 'unknown';
-export type ProviderUpdateStatus = 'updated' | 'up_to_date' | 'skipped' | 'error' | 'cancelled';
+export type ProviderUpdateStatus = 'updated' | 'up_to_date' | 'sync_pending' | 'skipped' | 'error' | 'cancelled';
 
 export interface ProviderUpdateResult {
   providerId: ProviderId;
@@ -80,6 +81,63 @@ export interface ProviderUpdateProgressEvent {
   result?: ProviderUpdateResult;
 }
 
+// --- Mobile Dependency Doctor ---
+
+export type MobileDependencyId =
+  | 'xcode'
+  | 'simctl'
+  | 'appium'
+  | 'appium-xcuitest-driver'
+  | 'java-jdk'
+  | 'android-sdkmanager'
+  | 'android-avdmanager'
+  | 'android-adb'
+  | 'android-emulator'
+  | 'appium-uiautomator2-driver'
+  | 'maestro';
+
+export type MobileDependencyStatus = 'ready' | 'missing' | 'warning' | 'unsupported';
+export type MobileDependencyScope = 'ios' | 'android' | 'shared';
+
+export interface MobileDependencyCheck {
+  id: MobileDependencyId;
+  label: string;
+  scope: MobileDependencyScope;
+  requiredFor: Array<'ios' | 'android'>;
+  required: boolean;
+  status: MobileDependencyStatus;
+  description: string;
+  message: string;
+  version?: string;
+  docsUrl?: string;
+  installHint?: string;
+  installCommand?: string;
+  autoFixAvailable?: boolean;
+}
+
+export interface MobileDependencyReportSummary {
+  ready: number;
+  warnings: number;
+  requiredMissing: number;
+  optionalMissing: number;
+}
+
+export interface MobileDependencyReport {
+  generatedAt: string;
+  hostPlatform: string;
+  checks: MobileDependencyCheck[];
+  summary: MobileDependencyReportSummary;
+}
+
+export interface MobileDependencyInstallResult {
+  dependencyId: MobileDependencyId;
+  success: boolean;
+  message: string;
+  command?: string;
+  stdout?: string;
+  stderr?: string;
+}
+
 // --- Git ---
 
 export interface GitWorktree {
@@ -104,6 +162,35 @@ export interface Command { name: string; description: string; scope: 'user' | 'p
 export interface ProviderConfig { mcpServers: McpServer[]; agents: Agent[]; skills: Skill[]; commands: Command[] }
 export type ClaudeConfig = ProviderConfig;
 
+// --- Browser Credential Vault ---
+
+export interface BrowserCredentialSummary {
+  id: string;
+  origin: string;
+  label: string;
+  username: string;
+  autoFill: boolean;
+  updatedAt: string;
+  lastUsedAt?: string;
+}
+
+export interface BrowserCredentialFillData {
+  id: string;
+  origin: string;
+  label: string;
+  username: string;
+  password: string;
+}
+
+export interface BrowserCredentialSaveInput {
+  url: string;
+  username: string;
+  password: string;
+  label?: string;
+  autoFill?: boolean;
+  id?: string;
+}
+
 // --- Cost / Context (shared with renderer modules) ---
 
 export interface CostInfo {
@@ -115,7 +202,7 @@ export interface CostInfo {
   totalDurationMs: number;
   totalApiDurationMs: number;
   model?: string;
-  source?: 'structured' | 'fallback';
+  source?: 'structured' | 'fallback' | 'derived';
 }
 
 export interface ContextWindowInfo {
@@ -195,7 +282,7 @@ export interface ProjectInsightsData {
   dismissed: string[];
 }
 
-export type SurfaceKind = 'web' | 'cli';
+export type SurfaceKind = 'web' | 'cli' | 'mobile';
 export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
 export type CliSurfacePromptContextMode = 'selection-only' | 'selection-nearby' | 'selection-nearby-viewport';
 
@@ -209,6 +296,27 @@ export interface EmbeddedBrowserOpenPayload {
   url: string;
   cwd?: string;
   preferEmbedded?: boolean;
+}
+
+export interface ShareRtcConfig {
+  iceServers: ShareIceServer[];
+  iceTransportPolicy?: 'all' | 'relay';
+  source?: 'default' | 'env';
+  issues?: string[];
+}
+
+export interface MobileControlPairingResult {
+  pairingId: string;
+  pairingUrl: string;
+  localPairingUrl: string;
+  accessMode: 'lan' | 'remote';
+  otpCode: string;
+  expiresAt: string;
+}
+
+export interface MobileControlAnswerResult {
+  answer: string | null;
+  status: 'pending' | 'ready' | 'expired';
 }
 
 export interface BrowserGuestOpenPayload {
@@ -613,7 +721,7 @@ export interface CliSurfaceState {
 export interface ProjectSurfaceRecord {
   kind: SurfaceKind;
   active: boolean;
-  tabFocus?: 'session' | 'cli';
+  tabFocus?: 'session' | 'cli' | 'mobile';
   targetSessionId?: string;
   web?: WebSurfaceState;
   cli?: CliSurfaceState;
@@ -730,6 +838,7 @@ export interface PersistedState {
 export interface CostData {
   cost: { total_cost_usd?: number; total_duration_ms?: number; total_api_duration_ms?: number };
   model?: string;
+  source?: 'structured' | 'fallback' | 'derived';
   context_window: {
     total_input_tokens?: number;
     total_output_tokens?: number;

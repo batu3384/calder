@@ -41,6 +41,7 @@ const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
+const btnMobileControl = document.getElementById('btn-mobile-control') as HTMLButtonElement | null;
 const tabActionsEl = document.getElementById('tab-actions')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
@@ -105,10 +106,49 @@ function buildCliSurfaceTabTitle(project: ProjectRecord): string {
   return `CLI Surface\nProfile: ${profileLabel}`;
 }
 
+function getActiveCliSession(project: ProjectRecord): SessionRecord | null {
+  const activeSession = project.sessions.find((session) => session.id === project.activeSessionId) ?? null;
+  if (!activeSession) return null;
+  const isCliSession = !activeSession.type || activeSession.type === 'claude';
+  return isCliSession ? activeSession : null;
+}
+
+function syncMobileControlButton(): void {
+  if (!btnMobileControl) return;
+  const project = appState.activeProject;
+  if (!project) {
+    btnMobileControl.hidden = true;
+    btnMobileControl.disabled = true;
+    return;
+  }
+
+  const activeCliSession = getActiveCliSession(project);
+  btnMobileControl.hidden = false;
+  if (!activeCliSession) {
+    btnMobileControl.disabled = true;
+    btnMobileControl.textContent = 'Handoff';
+    btnMobileControl.title = 'Select a CLI session tab to enable secure handoff';
+    btnMobileControl.setAttribute('aria-label', 'Select a CLI session tab to enable secure handoff');
+    return;
+  }
+
+  const sharing = isSharing(activeCliSession.id);
+  btnMobileControl.disabled = false;
+  btnMobileControl.textContent = sharing ? 'Handoff On' : 'Handoff';
+  btnMobileControl.title = sharing
+    ? 'Stop secure handoff for this session'
+    : 'Open secure handoff for this session';
+  btnMobileControl.setAttribute(
+    'aria-label',
+    sharing ? 'Stop secure handoff for this session' : 'Open secure handoff for this session',
+  );
+}
+
 export function initTabBar(): void {
   initUpdateCenter();
   btnAddSession.classList.add('tab-action-primary');
   btnUpdateCliTools.classList.add('tab-action-primary');
+  btnMobileControl?.classList.add('tab-action-primary');
   setupCliUpdatePanel();
   unsubscribeUpdateCenter?.();
   let lastCliPhase: CliUpdateCenterState['phase'] = getUpdateCenterState().cli.phase;
@@ -130,6 +170,18 @@ export function initTabBar(): void {
     }
   });
   btnAddSession.addEventListener('click', () => quickNewSession());
+  btnMobileControl?.addEventListener('click', () => {
+    const project = appState.activeProject;
+    if (!project) return;
+    const activeCliSession = getActiveCliSession(project);
+    if (!activeCliSession) return;
+    if (isSharing(activeCliSession.id)) {
+      endShare(activeCliSession.id);
+    } else {
+      showShareDialog(activeCliSession.id);
+    }
+    syncMobileControlButton();
+  });
   btnAddSession.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -203,6 +255,7 @@ export function initTabBar(): void {
   render();
   renderGitStatus();
   syncSessionProviderSelector();
+  syncMobileControlButton();
   renderCliUpdateButton(getUpdateCenterState().cli);
 }
 
@@ -405,6 +458,16 @@ function activateLiveViewSurface(project: ProjectRecord): void {
   });
 }
 
+function activateMobileSurface(project: ProjectRecord): void {
+  const surface = getProjectSurface(project);
+  updateProjectSurface(project, {
+    ...surface,
+    kind: 'mobile',
+    active: true,
+    tabFocus: 'mobile',
+  });
+}
+
 async function activateCliSurface(project: ProjectRecord): Promise<void> {
   const cliApi = window.calder?.cliSurface;
   if (!cliApi) {
@@ -513,6 +576,7 @@ function renderSurfaceControls(): void {
   ([
     { kind: 'web' as const, label: 'Live View' },
     { kind: 'cli' as const, label: 'CLI Surface' },
+    { kind: 'mobile' as const, label: 'Mobile' },
   ]).forEach(({ kind, label }) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -522,7 +586,8 @@ function renderSurfaceControls(): void {
     button.classList.toggle('active', surface.kind === kind && surface.active);
     button.addEventListener('click', () => {
       if (kind === 'web') activateLiveViewSurface(project);
-      else void activateCliSurface(project);
+      else if (kind === 'cli') void activateCliSurface(project);
+      else activateMobileSurface(project);
     });
     switcher.appendChild(button);
   });
@@ -674,23 +739,26 @@ function syncSessionProviderSelector(): void {
 function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): {
   updated: number;
   upToDate: number;
+  syncPending: number;
   skipped: number;
   cancelled: number;
   error: number;
 } {
   let updated = 0;
   let upToDate = 0;
+  let syncPending = 0;
   let skipped = 0;
   let cancelled = 0;
   let error = 0;
   for (const result of summary.results) {
     if (result.status === 'updated') updated += 1;
     else if (result.status === 'up_to_date') upToDate += 1;
+    else if (result.status === 'sync_pending') syncPending += 1;
     else if (result.status === 'skipped') skipped += 1;
     else if (result.status === 'cancelled') cancelled += 1;
     else error += 1;
   }
-  return { updated, upToDate, skipped, cancelled, error };
+  return { updated, upToDate, syncPending, skipped, cancelled, error };
 }
 
 function formatRelativeTimestamp(timestamp?: string): string {
@@ -708,6 +776,7 @@ function formatRelativeTimestamp(timestamp?: string): string {
 
 function getCliProviderStatusLabel(status: CliProviderProgressState['status']): string {
   if (status === 'up_to_date') return 'up to date';
+  if (status === 'sync_pending') return 'sync pending';
   if (status === 'cancelled') return 'cancelled';
   return status.replace(/_/g, ' ');
 }
@@ -816,6 +885,11 @@ function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
       btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
       btnUpdateCliTools.title = 'CLI update completed with errors';
       btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
+    } else if (counters.syncPending > 0) {
+      btnUpdateCliTools.classList.add('is-warning');
+      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
+      btnUpdateCliTools.title = 'CLI updates waiting for package sync';
+      btnUpdateCliTools.setAttribute('aria-label', 'CLI updates waiting for package sync');
     } else if (counters.updated > 0) {
       btnUpdateCliTools.classList.add('is-success');
       btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.updated;
@@ -896,6 +970,8 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
     if (counters.error > 0) {
       cliUpdatePanelStatusEl.textContent = `Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`;
+    } else if (counters.syncPending > 0) {
+      cliUpdatePanelStatusEl.textContent = `${counters.syncPending} provider${counters.syncPending === 1 ? '' : 's'} waiting for package sync.`;
     } else if (counters.updated > 0) {
       cliUpdatePanelStatusEl.textContent = `${counters.updated} provider${counters.updated === 1 ? '' : 's'} updated.`;
     } else {
@@ -904,6 +980,7 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     const summaryParts = [
       `Updated ${counters.updated}`,
       `Up to date ${counters.upToDate}`,
+      `Sync pending ${counters.syncPending}`,
       `Skipped ${counters.skipped}`,
       `Cancelled ${counters.cancelled}`,
     ];
@@ -953,6 +1030,8 @@ function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
     detail.className = 'cli-update-provider-detail';
     const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
     if (provider.status === 'running' && provider.message) {
+      detail.textContent = provider.message;
+    } else if (provider.status === 'sync_pending' && provider.message) {
       detail.textContent = provider.message;
     } else if (versionParts.length === 2) {
       detail.textContent = `${versionParts[0]} → ${versionParts[1]}`;
@@ -1203,6 +1282,17 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
     });
   }
 
+  const mobileShareItem = document.createElement('div');
+  mobileShareItem.className = 'tab-context-menu-item' + (!isCliSession || currentlySharing ? ' disabled' : '');
+  mobileShareItem.textContent = 'Mobile Control\u2026';
+  if (isCliSession && !currentlySharing) {
+    mobileShareItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideTabContextMenu();
+      showShareDialog(session.id);
+    });
+  }
+
   const stopShareItem = document.createElement('div');
   stopShareItem.className = 'tab-context-menu-item' + (!currentlySharing ? ' disabled' : '');
   stopShareItem.textContent = 'Stop Sharing';
@@ -1272,7 +1362,10 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   menu.appendChild(moveSeparator);
   if (isCliSession || isRemote) {
     menu.appendChild(shareSeparator);
-    if (!currentlySharing) menu.appendChild(shareItem);
+    if (!currentlySharing) {
+      menu.appendChild(shareItem);
+      menu.appendChild(mobileShareItem);
+    }
     if (currentlySharing) menu.appendChild(stopShareItem);
   }
   if (canInspect) {
@@ -1333,14 +1426,16 @@ function render(): void {
   renderSurfaceControls();
   const project = appState.activeProject;
   if (!project) {
+    syncMobileControlButton();
     renderGitStatus();
     return;
   }
   const cliSurfaceTabActive = project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli';
+  const mobileSurfaceTabActive = project.surface?.active && project.surface.kind === 'mobile' && project.surface.tabFocus === 'mobile';
 
   for (const session of project.sessions) {
     const tab = document.createElement('div');
-    const isActive = !cliSurfaceTabActive && session.id === project.activeSessionId;
+    const isActive = !cliSurfaceTabActive && !mobileSurfaceTabActive && session.id === project.activeSessionId;
     const unread = !isActive && isUnread(session.id);
     const isMcp = session.type === 'mcp-inspector';
     const isDiff = session.type === 'diff-viewer';
@@ -1493,6 +1588,38 @@ function render(): void {
     tabListEl.appendChild(tab);
   }
 
+  if (project.surface?.active && project.surface.kind === 'mobile') {
+    const tab = document.createElement('div');
+    tab.className = 'tab-item tab-surface-item' + (mobileSurfaceTabActive ? ' active' : '');
+    tab.dataset.surfaceTab = 'mobile';
+    tab.title = 'Mobile Surface';
+    tab.innerHTML = `
+      <span class="tab-name">
+        <span class="tab-name-prefix"><span class="tab-browser-badge">MOB</span></span>
+        <span class="tab-name-label">Mobile Surface</span>
+      </span>
+      <span class="tab-close" title="Close Mobile surface">&times;</span>
+    `;
+
+    tab.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).classList.contains('tab-close')) return;
+      appState.focusMobileSurfaceTab(project.id);
+    });
+
+    tab.addEventListener('auxclick', (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        appState.closeMobileSurface(project.id);
+      }
+    });
+
+    tab.querySelector('.tab-close')!.addEventListener('click', () => {
+      appState.closeMobileSurface(project.id);
+    });
+
+    tabListEl.appendChild(tab);
+  }
+
   ensureActiveTabVisible([
     appState.activeProjectId,
     project.activeSessionId,
@@ -1502,6 +1629,7 @@ function render(): void {
     project.surface?.tabFocus ?? 'session',
   ].join(':'));
 
+  syncMobileControlButton();
   renderGitStatus();
 }
 

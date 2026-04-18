@@ -431,6 +431,47 @@ async function runProviderUpdate(input: {
     });
   }
 
+  if (
+    !updateNeeded
+    && (source === 'brew-formula' || source === 'brew-cask')
+    && spec.npmPackage
+    && beforeVersion
+  ) {
+    onStage?.('Checking upstream npm release…');
+    const npmLatestVersion = await readNpmLatestVersion(runner, spec.npmPackage, signal);
+    if (signal?.aborted) {
+      return buildCancelledResult({
+        providerId,
+        providerName,
+        source,
+        beforeVersion,
+        latestVersion,
+        checkCommand,
+        message: 'Update cancelled before execution.',
+      });
+    }
+    if (npmLatestVersion && shouldUpdate(beforeVersion, npmLatestVersion)) {
+      const packageToken = source === 'brew-formula' ? spec.brewFormula : spec.brewCask;
+      const brewKindLabel = source === 'brew-formula' ? 'formula' : 'cask';
+      const npmCheckCommand = `npm view ${spec.npmPackage} version --silent`;
+      const combinedCheckCommand = checkCommand ? `${checkCommand}; ${npmCheckCommand}` : npmCheckCommand;
+      return {
+        providerId,
+        providerName,
+        source,
+        status: 'sync_pending',
+        checked: true,
+        updateAttempted: false,
+        checkCommand: combinedCheckCommand,
+        beforeVersion,
+        latestVersion: npmLatestVersion,
+        message: `${providerName} upstream has ${npmLatestVersion}, but Homebrew ${brewKindLabel}`
+          + `${packageToken ? ` "${packageToken}"` : ''} has not synced yet. `
+          + 'Run `brew update` and retry later, or switch to npm install for immediate updates.',
+      };
+    }
+  }
+
   if (!updateNeeded) {
     onStage?.('Already up to date.');
     return {
