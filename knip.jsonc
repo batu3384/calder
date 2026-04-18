@@ -16,6 +16,14 @@
     "apps/calder-mobile/src/types/react-native-webview.d.ts"
   ],
 
+  // Mobile app dependencies are declared in apps/calder-mobile/package.json,
+  // while root Knip runs against the desktop workspace package.
+  "ignoreDependencies": [
+    "react",
+    "react-native",
+    "react-native-webview"
+  ],
+
   // Many renderer helpers intentionally export internal building blocks from the same file.
   "ignoreExportsUsedInFile": true,
 
