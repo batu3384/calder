@@ -5,53 +5,55 @@
  */
 
 :root {
-  --aurora-blue: #69bde7;
-  --aurora-cyan: #7fd4ff;
-  --aurora-violet: #5d8ec6;
-  --aurora-indigo: #567aa2;
-  --aurora-rose: #d69584;
-  --aurora-emerald: #44c69e;
-  --aurora-sheen: rgba(227, 236, 247, 0.036);
-  --aurora-frost: rgba(227, 236, 247, 0.055);
-  --aurora-border: rgba(127, 167, 212, 0.16);
-  --aurora-shadow: rgba(2, 8, 18, 0.42);
-  --aurora-glow-blue: rgba(127, 212, 255, 0.1);
-  --aurora-glow-violet: rgba(93, 142, 198, 0.08);
-  --aurora-glow-rose: rgba(213, 169, 79, 0.08);
+  --aurora-blue: #38bdf8;
+  --aurora-cyan: #8be9ff;
+  --aurora-violet: #a78bfa;
+  --aurora-indigo: #5b8cff;
+  --aurora-rose: #f472b6;
+  --aurora-emerald: #2dd4bf;
+  --aurora-sheen: rgba(226, 242, 255, 0.045);
+  --aurora-frost: rgba(226, 242, 255, 0.07);
+  --aurora-border: rgba(148, 184, 255, 0.18);
+  --aurora-shadow: rgba(1, 8, 28, 0.44);
+  --aurora-glow-blue: rgba(56, 189, 248, 0.16);
+  --aurora-glow-violet: rgba(167, 139, 250, 0.14);
+  --aurora-glow-rose: rgba(244, 114, 182, 0.1);
   --aurora-panel-gradient:
-    radial-gradient(circle at 12% -16%, rgba(127, 212, 255, 0.08), transparent 42%),
-    radial-gradient(circle at 92% -18%, rgba(213, 169, 79, 0.06), transparent 38%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.026), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at 16% -18%, rgba(56, 189, 248, 0.12), transparent 44%),
+    radial-gradient(circle at 94% -22%, rgba(167, 139, 250, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(226, 242, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 94%, black);
   --aurora-card-gradient:
-    radial-gradient(circle at 100% 0%, rgba(127, 212, 255, 0.11), transparent 42%),
-    radial-gradient(circle at 8% 0%, rgba(213, 169, 79, 0.06), transparent 44%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.034), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at 100% 0%, rgba(139, 233, 255, 0.13), transparent 42%),
+    radial-gradient(circle at 8% 0%, rgba(167, 139, 250, 0.1), transparent 44%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.044), rgba(226, 242, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 92%, black);
   --aurora-control-gradient:
-    linear-gradient(180deg, rgba(227, 236, 247, 0.042), rgba(227, 236, 247, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 86%, transparent);
+    linear-gradient(180deg, rgba(226, 242, 255, 0.062), rgba(226, 242, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 78%, transparent);
   --aurora-active-gradient:
-    radial-gradient(circle at top right, rgba(127, 212, 255, 0.14), transparent 46%),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 28%, rgba(255, 255, 255, 0.024)), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at top right, rgba(139, 233, 255, 0.2), transparent 46%),
+    radial-gradient(circle at top left, rgba(167, 139, 250, 0.16), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.024)), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--tab-active) 94%, black);
 }
 
 html,
 body {
   background:
-    radial-gradient(circle at 12% -8%, rgba(127, 212, 255, 0.12), transparent 30%),
-    radial-gradient(circle at 86% -6%, rgba(213, 169, 79, 0.08), transparent 26%),
-    linear-gradient(180deg, #0a111b 0%, #060911 48%, #04060c 100%);
+    radial-gradient(circle at 10% -8%, rgba(56, 189, 248, 0.2), transparent 32%),
+    radial-gradient(circle at 84% -10%, rgba(167, 139, 250, 0.2), transparent 34%),
+    radial-gradient(circle at 52% 112%, rgba(45, 212, 191, 0.12), transparent 42%),
+    linear-gradient(180deg, #070b16 0%, #050711 46%, #02030a 100%);
 }
 
 #app {
   position: relative;
   isolation: isolate;
   background:
-    linear-gradient(120deg, rgba(127, 212, 255, 0.018), transparent 22%, rgba(213, 169, 79, 0.016) 58%, transparent 82%),
-    radial-gradient(circle at 24% -16%, rgba(127, 212, 255, 0.06), transparent 34%),
-    radial-gradient(circle at 84% -18%, rgba(213, 169, 79, 0.05), transparent 32%),
+    linear-gradient(120deg, rgba(139, 233, 255, 0.024), transparent 24%, rgba(167, 139, 250, 0.026) 58%, transparent 82%),
+    radial-gradient(circle at 24% -16%, rgba(56, 189, 248, 0.1), transparent 34%),
+    radial-gradient(circle at 84% -18%, rgba(167, 139, 250, 0.09), transparent 36%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 96%, black), var(--surface-canvas));
 }
 
@@ -62,14 +64,15 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 18% 10%, rgba(127, 212, 255, 0.1), transparent 28%),
-    radial-gradient(ellipse at 78% 4%, rgba(213, 169, 79, 0.08), transparent 30%);
-  filter: blur(24px) saturate(1.08);
-  opacity: 0.54;
+    radial-gradient(ellipse at 18% 10%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(ellipse at 78% 4%, rgba(167, 139, 250, 0.16), transparent 32%),
+    conic-gradient(from 205deg at 50% 8%, transparent 0deg, rgba(139, 233, 255, 0.08) 58deg, rgba(244, 114, 182, 0.06) 106deg, transparent 168deg, rgba(45, 212, 191, 0.06) 238deg, transparent 320deg);
+  filter: blur(18px) saturate(1.16);
+  opacity: 0.76;
 }
 
 ::selection {
-  background: rgba(127, 212, 255, 0.22);
+  background: rgba(139, 233, 255, 0.28);
   color: var(--text-primary);
 }
 
@@ -89,10 +92,10 @@ body {
 }
 
 #sidebar {
-  backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.18);
   box-shadow:
     inset 0 1px 0 var(--aurora-sheen),
-    18px 0 42px rgba(2, 8, 18, 0.16);
+    22px 0 54px rgba(1, 8, 28, 0.18);
 }
 
 #sidebar {
@@ -104,7 +107,7 @@ body {
 #sidebar-footer {
   border-color: color-mix(in srgb, var(--aurora-border) 76%, transparent);
   background:
-    linear-gradient(180deg, rgba(227, 236, 247, 0.032), rgba(227, 236, 247, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.05), rgba(226, 242, 255, 0)),
     color-mix(in srgb, var(--surface-rail) 90%, transparent);
 }
 
@@ -119,10 +122,9 @@ body {
 
 .empty-state-title {
   background:
-    linear-gradient(135deg, #f7fbff 0%, #cfe8f7 54%, #f1d59a 100%);
+    linear-gradient(135deg, #f8fbff 0%, #bfeeff 42%, #d8c5ff 78%, #f5d0fe 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
 }
 
 .empty-state-eyebrow,
@@ -131,7 +133,7 @@ body {
 .calder-section-heading,
 .cli-surface-action-label,
 .browser-pane-label {
-  color: color-mix(in srgb, var(--aurora-cyan) 44%, var(--text-muted));
+  color: color-mix(in srgb, var(--aurora-cyan) 58%, var(--text-muted));
 }
 
 .sidebar-header-actions,
@@ -156,8 +158,8 @@ body {
   border-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
   background: var(--aurora-control-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.045),
-    0 10px 22px rgba(2, 8, 18, 0.14);
+    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    0 14px 32px rgba(1, 8, 28, 0.18);
 }
 
 .calder-button:hover,
@@ -168,14 +170,14 @@ body {
 .session-launcher-group:hover,
 .context-inspector-reopen:hover,
 .context-inspector-reopen:focus {
-  border-color: color-mix(in srgb, var(--aurora-cyan) 28%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--aurora-cyan) 34%, var(--border-subtle));
   background:
-    radial-gradient(circle at top right, rgba(127, 212, 255, 0.1), transparent 44%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.05), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at top right, rgba(139, 233, 255, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.07), rgba(226, 242, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.06),
-    0 14px 32px rgba(2, 8, 18, 0.22);
+    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    0 18px 40px rgba(1, 8, 28, 0.28);
 }
 
 .project-item.active,
@@ -184,27 +186,27 @@ body {
 .surface-mode-button.active,
 .inspector-overview-card,
 .terminal-pane.focused {
-  border-color: color-mix(in srgb, var(--aurora-cyan) 30%, var(--border-subtle));
+  border-color: color-mix(in srgb, var(--aurora-cyan) 36%, var(--border-subtle));
   background: var(--aurora-active-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.065),
-    0 0 0 1px rgba(127, 212, 255, 0.06),
+    inset 0 1px 0 rgba(226, 242, 255, 0.085),
+    0 0 0 1px rgba(139, 233, 255, 0.08),
     var(--shadow-lift);
 }
 
 .project-item::before,
 .tab-item.active::after {
   background:
-    linear-gradient(180deg, var(--aurora-cyan), color-mix(in srgb, var(--aurora-cyan) 54%, white));
-  box-shadow: 0 0 12px rgba(127, 212, 255, 0.16);
+    linear-gradient(180deg, var(--aurora-cyan), var(--aurora-violet));
+  box-shadow: 0 0 16px rgba(139, 233, 255, 0.24);
 }
 
 #tab-bar {
   height: 54px;
   min-height: 54px;
   box-shadow:
-    inset 0 -1px 0 rgba(227, 236, 247, 0.03),
-    0 8px 22px rgba(2, 8, 18, 0.14);
+    inset 0 -1px 0 rgba(226, 242, 255, 0.04),
+    0 12px 34px rgba(1, 8, 28, 0.18);
 }
 
 .tab-item {
@@ -216,20 +218,20 @@ body {
 
 .tab-item:hover {
   background:
-    radial-gradient(circle at top, rgba(127, 212, 255, 0.08), transparent 54%),
-    color-mix(in srgb, var(--surface-hover) 62%, transparent);
+    radial-gradient(circle at top, rgba(139, 233, 255, 0.12), transparent 54%),
+    color-mix(in srgb, var(--surface-hover) 68%, transparent);
 }
 
 #git-status[data-state='dirty'] {
   border-color: color-mix(in srgb, var(--warning) 28%, var(--aurora-border));
   background:
-    radial-gradient(circle at top right, rgba(213, 169, 79, 0.12), transparent 48%),
+    radial-gradient(circle at top right, rgba(251, 191, 36, 0.14), transparent 48%),
     var(--aurora-control-gradient);
 }
 
 .session-launcher-group,
 .surface-mode-switcher {
-  backdrop-filter: blur(14px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.16);
 }
 
 #cli-update-panel,
@@ -245,17 +247,17 @@ body {
   border-color: color-mix(in srgb, var(--aurora-border) 92%, transparent);
   background: var(--aurora-card-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.065),
-    0 24px 56px rgba(2, 8, 18, 0.34);
-  backdrop-filter: blur(18px) saturate(1.08);
+    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    0 30px 72px rgba(1, 8, 28, 0.42);
+  backdrop-filter: blur(20px) saturate(1.2);
 }
 
 #modal-overlay,
 .modal-overlay {
   background:
-    radial-gradient(circle at 16% 0%, rgba(127, 212, 255, 0.12), transparent 28%),
-    radial-gradient(circle at 84% 4%, rgba(213, 169, 79, 0.08), transparent 30%),
-    rgba(3, 7, 16, 0.84);
+    radial-gradient(circle at 16% 0%, rgba(56, 189, 248, 0.14), transparent 28%),
+    radial-gradient(circle at 84% 4%, rgba(167, 139, 250, 0.14), transparent 30%),
+    rgba(2, 5, 16, 0.86);
 }
 
 .terminal-pane,
@@ -266,13 +268,13 @@ body {
 .mcp-inspector-pane {
   border-color: color-mix(in srgb, var(--pane-unfocus) 72%, var(--aurora-border));
   background:
-    radial-gradient(circle at 0% 0%, rgba(127, 212, 255, 0.08), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(213, 169, 79, 0.05), transparent 26%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.024), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.11), transparent 28%),
+    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(226, 242, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 94%, black);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.045),
-    0 20px 48px rgba(2, 8, 18, 0.24);
+    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    0 24px 58px rgba(1, 8, 28, 0.3);
 }
 
 .terminal-pane.focused,
@@ -283,9 +285,9 @@ body {
 .mcp-inspector-pane.focused {
   border-color: color-mix(in srgb, var(--aurora-cyan) 56%, var(--pane-focus));
   box-shadow:
-    0 0 0 1px rgba(127, 212, 255, 0.14),
-    0 0 30px rgba(127, 212, 255, 0.05),
-    0 24px 56px rgba(2, 8, 18, 0.3);
+    0 0 0 1px rgba(139, 233, 255, 0.16),
+    0 0 42px rgba(56, 189, 248, 0.08),
+    0 28px 66px rgba(1, 8, 28, 0.38);
 }
 
 .cli-surface-pane {
@@ -300,12 +302,12 @@ body {
 .update-banner-btn {
   border-color: color-mix(in srgb, var(--aurora-cyan) 42%, var(--border-subtle));
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 28%, transparent), color-mix(in srgb, var(--accent-warm) 18%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 36%, transparent), color-mix(in srgb, var(--aurora-violet) 22%, transparent)),
     color-mix(in srgb, var(--surface-panel-alt) 86%, transparent);
   color: var(--text-primary);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 14px 30px rgba(127, 212, 255, 0.1);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 16px 38px rgba(56, 189, 248, 0.14);
 }
 
 .cli-surface-button-primary:hover,
@@ -313,8 +315,8 @@ body {
 .update-banner-btn:hover {
   border-color: color-mix(in srgb, var(--aurora-cyan) 58%, var(--border-subtle));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.11),
-    0 18px 36px rgba(127, 212, 255, 0.14);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 20px 46px rgba(56, 189, 248, 0.2);
 }
 
 .usage-activity-bar,
@@ -322,7 +324,7 @@ body {
 .cli-update-panel-progress-fill,
 .cli-update-panel-progress-fill.is-running {
   background:
-    linear-gradient(90deg, var(--aurora-cyan), color-mix(in srgb, var(--aurora-cyan) 64%, white), var(--accent-warm));
+    linear-gradient(90deg, var(--aurora-cyan), var(--aurora-violet), var(--aurora-rose));
 }
 
 .browser-pane-status[data-state='loading'],
@@ -456,8 +458,8 @@ textarea:focus,
 .preferences-menu-item.active::before,
 .mcp-nav-tab.active::before {
   background:
-    linear-gradient(180deg, var(--aurora-cyan), color-mix(in srgb, var(--aurora-cyan) 56%, white));
-  box-shadow: 0 0 12px rgba(127, 212, 255, 0.14);
+    linear-gradient(180deg, var(--aurora-cyan), var(--aurora-violet));
+  box-shadow: 0 0 16px rgba(139, 233, 255, 0.2);
 }
 
 #file-viewer-overlay,
@@ -482,15 +484,15 @@ textarea:focus,
 
 .mcp-connect-btn {
   background:
-    linear-gradient(135deg, var(--aurora-cyan), color-mix(in srgb, var(--accent-warm) 38%, var(--aurora-cyan)));
+    linear-gradient(135deg, var(--aurora-cyan), color-mix(in srgb, var(--aurora-violet) 84%, var(--aurora-cyan)));
   color: #03111f;
   font-weight: 750;
-  box-shadow: 0 14px 28px rgba(127, 212, 255, 0.14);
+  box-shadow: 0 14px 28px rgba(56, 189, 248, 0.18);
 }
 
 .mcp-connect-btn:hover {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 92%, white), color-mix(in srgb, var(--accent-warm) 52%, white));
+    linear-gradient(135deg, color-mix(in srgb, var(--aurora-cyan) 92%, white), color-mix(in srgb, var(--aurora-violet) 88%, white));
 }
 
 .preferences-menu-title,
@@ -501,7 +503,7 @@ textarea:focus,
 .whats-new-version,
 .usage-hero-title {
   background:
-    linear-gradient(135deg, #f7fbff, #cfe8f7 56%, #efd39a 100%);
+    linear-gradient(135deg, #f8fbff, #bfeeff 46%, #d8c5ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -509,20 +511,20 @@ textarea:focus,
 
 /* Right Rail Pro: cleaner hierarchy, less card clutter, stronger typography rhythm. */
 #context-inspector {
-  --rail-bg: #0a1018;
-  --rail-surface: #0f151f;
-  --rail-surface-strong: #121b27;
-  --rail-line: color-mix(in srgb, var(--aurora-border) 62%, rgba(103, 137, 175, 0.18));
-  --rail-line-soft: color-mix(in srgb, var(--aurora-border) 46%, rgba(103, 137, 175, 0.12));
-  backdrop-filter: blur(16px) saturate(1.06);
+  --rail-bg: #070c17;
+  --rail-surface: #0c1424;
+  --rail-surface-strong: #101a2d;
+  --rail-line: color-mix(in srgb, var(--aurora-border) 68%, rgba(115, 150, 210, 0.22));
+  --rail-line-soft: color-mix(in srgb, var(--aurora-border) 52%, rgba(115, 150, 210, 0.16));
+  backdrop-filter: blur(18px) saturate(1.18);
   background:
-    radial-gradient(circle at 100% -8%, rgba(127, 212, 255, 0.1), transparent 42%),
-    radial-gradient(circle at 0% 108%, rgba(213, 169, 79, 0.05), transparent 34%),
-    linear-gradient(180deg, #0d141e 0%, var(--rail-bg) 54%, #070c13 100%);
+    radial-gradient(circle at 100% -8%, rgba(139, 233, 255, 0.12), transparent 42%),
+    radial-gradient(circle at 0% 108%, rgba(167, 139, 250, 0.08), transparent 36%),
+    linear-gradient(180deg, #0a1120 0%, var(--rail-bg) 54%, #060a13 100%);
   border-left: 1px solid var(--rail-line);
   box-shadow:
-    inset 1px 0 0 rgba(227, 236, 247, 0.025),
-    -18px 0 40px rgba(2, 8, 18, 0.24);
+    inset 1px 0 0 rgba(226, 242, 255, 0.03),
+    -20px 0 46px rgba(2, 9, 22, 0.3);
 }
 
 #context-inspector-header {
@@ -532,9 +534,9 @@ textarea:focus,
   padding: 16px 14px 12px;
   border-bottom: 1px solid var(--rail-line);
   background:
-    linear-gradient(180deg, rgba(11, 17, 26, 0.98), rgba(11, 17, 26, 0.92)),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.024), rgba(227, 236, 247, 0));
-  backdrop-filter: blur(8px) saturate(1.04);
+    linear-gradient(180deg, rgba(8, 15, 29, 0.98), rgba(8, 15, 29, 0.9)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(226, 242, 255, 0));
+  backdrop-filter: blur(8px) saturate(1.1);
 }
 
 #context-inspector-overview {

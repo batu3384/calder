@@ -11,13 +11,13 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 0% 0%, rgba(127, 212, 255, 0.05), transparent 24%),
-    radial-gradient(circle at 100% 0%, rgba(213, 169, 79, 0.035), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 0% 0%, rgba(201, 154, 92, 0.065), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(103, 81, 58, 0.045), transparent 20%),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.024), rgba(255, 255, 255, 0)),
     var(--bg-primary);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 18px 38px rgba(2, 8, 18, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 20px 44px rgba(8, 5, 3, 0.2);
 }
 
 .browser-tab-pane.split {
@@ -37,7 +37,7 @@
   padding: 0 var(--space-12);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, black);
   user-select: none;
 }
@@ -50,7 +50,7 @@
   border-radius: 0;
   border: none;
   background: transparent;
-  color: color-mix(in srgb, var(--accent) 52%, var(--text-secondary));
+  color: color-mix(in srgb, var(--accent) 68%, var(--text-secondary));
   font-size: var(--type-xs);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -116,8 +116,8 @@
   flex-wrap: wrap;
   padding: 8px 12px 9px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 92%, black);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 88%, black);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
   flex-shrink: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
@@ -157,11 +157,11 @@
   min-height: var(--control-height-md);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 82%, transparent);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 20px rgba(2, 8, 18, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(8, 5, 3, 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -178,34 +178,30 @@
 .browser-toolbar-nav-shell:hover,
 .browser-toolbar-address-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-hover) 68%, var(--surface-panel));
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, var(--surface-panel));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 26px rgba(2, 8, 18, 0.14);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 30px rgba(8, 5, 3, 0.18);
   transform: none;
 }
 
 .browser-toolbar-address-shell {
   width: 100%;
   gap: 8px;
-  padding: 2px 4px 2px 14px;
+  padding: 2px 2px 2px 12px;
   border-radius: 999px;
-  border-color: color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, transparent);
 }
 
 .browser-toolbar-address-shell:focus-within {
   border-color: var(--border-focus);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-hover) 70%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 16%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 74%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
-    0 14px 28px rgba(2, 8, 18, 0.14);
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 14px 28px rgba(8, 5, 3, 0.14);
 }
 
 .browser-toolbar-address-shell[data-dirty='true'] {
@@ -228,12 +224,12 @@
   padding: 2px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 72%, transparent);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 64%, transparent);
   border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 22px rgba(2, 8, 18, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(8, 5, 3, 0.14);
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -248,11 +244,11 @@
 .browser-toolbar-presence-shell:hover,
 .browser-toolbar-tools-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-hover) 68%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 24px rgba(2, 8, 18, 0.14);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 30px rgba(8, 5, 3, 0.18);
   transform: none;
 }
 
@@ -275,11 +271,11 @@
   justify-content: center;
   gap: 6px;
   min-height: var(--control-height-sm);
-  max-width: 196px;
+  max-width: 220px;
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 62%, transparent);
   color: var(--text-secondary);
   font-size: var(--type-xs);
   font-weight: 600;
@@ -363,9 +359,9 @@
   justify-content: flex-end;
   flex-wrap: nowrap;
   row-gap: 6px;
-  gap: 4px;
+  gap: 6px;
   max-width: 100%;
-  padding: 2px 3px;
+  padding: 2px 4px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 999px;
   background:
@@ -384,9 +380,9 @@
 .browser-toolbar-cluster {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
-  padding: 0 0 0 5px;
+  padding: 0 0 0 6px;
   border: 0;
   border-left: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
   border-radius: 0;
@@ -407,9 +403,9 @@
 
 .browser-toolbar-cluster-label {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.8;
   white-space: nowrap;
@@ -576,16 +572,16 @@ html[lang='tr'] .browser-toolbar-cluster-label {
   min-height: var(--control-height-sm);
   min-width: 0;
   max-width: 100%;
-  padding: 0 9px;
+  padding: 0 10px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 72%, transparent);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 66%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 999px;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: var(--type-xs);
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -602,7 +598,7 @@ html[lang='tr'] .browser-toolbar-cluster-label {
 .browser-record-btn,
 .browser-auth-btn,
 .browser-viewport-btn {
-  padding: 0 7px;
+  padding: 0 8px;
 }
 
 html[lang='tr'] .browser-go-btn,
@@ -623,10 +619,10 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-record-btn:hover,
 .browser-viewport-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-hover) 68%, transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 72%, transparent);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
 }
 
 .browser-nav-btn:disabled {
@@ -683,19 +679,19 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-go-btn {
   min-width: 40px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, white), color-mix(in srgb, var(--accent) 76%, var(--accent-warm)));
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white), var(--accent));
   border-color: transparent;
   border-radius: 999px;
   color: #17120d;
   font-weight: 600;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 10px 20px rgba(2, 8, 18, 0.16);
+    0 12px 24px rgba(2, 4, 10, 0.16);
 }
 
 .browser-go-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-dim) 76%, white), color-mix(in srgb, var(--accent-warm) 58%, var(--accent-dim)));
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-dim) 84%, white), var(--accent-dim));
   color: #130f0b;
 }
 
@@ -727,9 +723,9 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-auth-btn.active,
 .browser-viewport-btn.active {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--accent-soft) 24%, var(--surface-panel));
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--accent-soft) 34%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   color: var(--text-primary);
 }
 

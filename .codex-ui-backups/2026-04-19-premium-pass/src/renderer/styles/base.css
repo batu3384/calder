@@ -1,55 +1,55 @@
 :root {
-  --surface-canvas: #060911;
-  --surface-panel: #0c121b;
-  --surface-panel-alt: #101722;
-  --surface-elevated: #151d29;
-  --surface-shell: #0a1018;
-  --surface-rail: #0b1018;
-  --surface-live: #080c13;
-  --surface-deck: #0d131c;
-  --surface-ops: #0d131b;
-  --surface-workspace: #070b12;
-  --surface-raised: #18212d;
-  --surface-glass: rgba(12, 18, 27, 0.84);
-  --surface-overlay: rgba(4, 7, 15, 0.82);
-  --surface-hover: #151d28;
-  --surface-muted: #0f151f;
-  --surface-contrast: #223243;
-  --text-primary: #f2f6fb;
-  --text-secondary: #cdd8e6;
-  --text-muted: #96a5b8;
-  --text-dim: #5d6b7d;
-  --accent-warm: #d5a94f;
-  --accent-cool: #7fd4ff;
-  --accent-aurora: #7fd4ff;
-  --accent-violet: #6da4ff;
-  --accent-rose: #d69584;
-  --accent-emerald: #3ccca9;
+  --surface-canvas: #050711;
+  --surface-panel: #0b1020;
+  --surface-panel-alt: #10172a;
+  --surface-elevated: #151d33;
+  --surface-shell: #080c18;
+  --surface-rail: #090f1d;
+  --surface-live: #070a14;
+  --surface-deck: #0d1324;
+  --surface-ops: #0d1425;
+  --surface-workspace: #040712;
+  --surface-raised: #1a2440;
+  --surface-glass: rgba(11, 17, 31, 0.88);
+  --surface-overlay: rgba(3, 6, 18, 0.84);
+  --surface-hover: #17223a;
+  --surface-muted: #10182a;
+  --surface-contrast: #22304f;
+  --text-primary: #f7fbff;
+  --text-secondary: #d8e5f7;
+  --text-muted: #9db0cf;
+  --text-dim: #64748f;
+  --accent-warm: #7dd3fc;
+  --accent-cool: #a78bfa;
+  --accent-aurora: #8be9ff;
+  --accent-violet: #9f7aea;
+  --accent-rose: #f472b6;
+  --accent-emerald: #2dd4bf;
   --accent: var(--accent-aurora);
-  --accent-dim: #5997c6;
-  --accent-soft: rgba(127, 212, 255, 0.14);
-  --accent-ghost: rgba(127, 212, 255, 0.08);
+  --accent-dim: #5b8cff;
+  --accent-soft: rgba(91, 140, 255, 0.2);
+  --accent-ghost: rgba(125, 211, 252, 0.1);
   --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
-  --accent-positive: #44c69e;
-  --accent-warning: #d5a94f;
-  --warning-strong: #efd39a;
-  --accent-info: #7fd4ff;
-  --accent-danger: #ef8a74;
-  --border-hairline: rgba(227, 236, 247, 0.045);
-  --border-muted: #1a2431;
-  --border-subtle: #233142;
-  --border: #33485d;
-  --border-strong: #49657f;
-  --border-focus: rgba(127, 212, 255, 0.42);
-  --tab-active: #121923;
-  --tab-inactive: #0a0f17;
-  --pane-focus: #7fd4ff;
-  --pane-unfocus: #253444;
-  --bookmark: #aeb7ff;
-  --success: #44c69e;
-  --warning: #d5a94f;
-  --info: #7fd4ff;
-  --danger: #ef8a74;
+  --accent-positive: #34d399;
+  --accent-warning: #fbbf24;
+  --warning-strong: #fde68a;
+  --accent-info: #7dd3fc;
+  --accent-danger: #fb7185;
+  --border-hairline: rgba(226, 242, 255, 0.055);
+  --border-muted: #17223a;
+  --border-subtle: #263553;
+  --border: #3a4d72;
+  --border-strong: #536b98;
+  --border-focus: rgba(139, 233, 255, 0.48);
+  --tab-active: #111b31;
+  --tab-inactive: #090e19;
+  --pane-focus: #7dd3fc;
+  --pane-unfocus: #273653;
+  --bookmark: #a78bfa;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #7dd3fc;
+  --danger: #fb7185;
   --status-success-bg: color-mix(in srgb, var(--success) 14%, transparent);
   --status-success-border: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
   --status-success-text: color-mix(in srgb, var(--success) 76%, white);
@@ -72,13 +72,13 @@
   --git-modified: #f59e0b;
   --git-renamed: #88a1c0;
   --git-conflicted: #f97316;
-  --shadow-soft: 0 20px 48px rgba(2, 8, 18, 0.34);
-  --shadow-elevated: 0 30px 80px rgba(2, 8, 18, 0.5);
-  --shadow-card: 0 12px 28px rgba(2, 8, 18, 0.14);
-  --shadow-card-strong: 0 20px 48px rgba(2, 8, 18, 0.24);
-  --shadow-lift: 0 16px 34px rgba(2, 8, 18, 0.22);
+  --shadow-soft: 0 22px 54px rgba(1, 6, 20, 0.38);
+  --shadow-elevated: 0 34px 96px rgba(1, 6, 20, 0.56);
+  --shadow-card: 0 16px 36px rgba(1, 9, 26, 0.18);
+  --shadow-card-strong: 0 26px 60px rgba(1, 9, 26, 0.3);
+  --shadow-lift: 0 20px 44px rgba(1, 9, 26, 0.26);
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-  --glass-highlight: rgba(227, 236, 247, 0.05);
+  --glass-highlight: rgba(226, 242, 255, 0.06);
   --radius-xs: 5px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -101,8 +101,8 @@
   --motion-normal: 180ms;
   --motion-panel: 220ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --font-sans: "Inter", "SF Pro Text", "IBM Plex Sans", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: "Inter", "SF Pro Display", "IBM Plex Sans", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Manrope", "IBM Plex Sans", "Plus Jakarta Sans", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Sora", "Space Grotesk", "IBM Plex Sans", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
   --font-ui: var(--font-sans);
   --type-2xs: 10px;
@@ -147,9 +147,11 @@ html, body {
   line-height: var(--line-normal);
   color: var(--text-primary);
   background:
-    radial-gradient(circle at 14% -6%, rgba(127, 212, 255, 0.14), transparent 30%),
-    radial-gradient(circle at 84% 0%, rgba(213, 169, 79, 0.08), transparent 28%),
-    linear-gradient(180deg, #0a111b 0%, var(--surface-canvas) 44%, #04070d 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 16%),
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(circle at 86% 6%, rgba(168, 85, 247, 0.16), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(45, 212, 191, 0.1), transparent 36%),
+    linear-gradient(180deg, #07101f 0%, var(--surface-canvas) 42%, #02040c 100%);
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -159,10 +161,10 @@ html, body {
   display: flex;
   height: 100vh;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 14%),
-    radial-gradient(circle at 22% -8%, rgba(127, 212, 255, 0.06), transparent 34%),
-    radial-gradient(circle at 82% -10%, rgba(213, 169, 79, 0.05), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 94%, black), var(--surface-canvas));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%),
+    radial-gradient(circle at 22% -8%, rgba(56, 189, 248, 0.08), transparent 34%),
+    radial-gradient(circle at 82% -10%, rgba(168, 85, 247, 0.08), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 92%, black), var(--surface-canvas));
 }
 
 ::selection {
