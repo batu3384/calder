@@ -97,44 +97,55 @@ describe('classifyAutoApprovalOperation', () => {
 });
 
 describe('decideAutoApprovalAction', () => {
-  it('hard-blocks destructive operations outside full_auto mode', () => {
+  it('hard-blocks destructive operations outside full_auto_unsafe mode', () => {
     expect(decideAutoApprovalAction('off', 'destructive')).toEqual({
       decision: 'block',
-      reason: 'Destructive operations are blocked in every auto-approval mode.',
+      reason: 'Destructive operations are not auto-approved in this mode.',
     });
     expect(decideAutoApprovalAction('edit_only', 'destructive')).toEqual({
       decision: 'block',
-      reason: 'Destructive operations are blocked in every auto-approval mode.',
+      reason: 'Destructive operations are not auto-approved in this mode.',
     });
     expect(decideAutoApprovalAction('edit_plus_safe_tools', 'destructive')).toEqual({
       decision: 'block',
-      reason: 'Destructive operations are blocked in every auto-approval mode.',
+      reason: 'Destructive operations are not auto-approved in this mode.',
     });
   });
 
   it('allows non-destructive operations in full_auto mode', () => {
     expect(decideAutoApprovalAction('full_auto', 'edit')).toEqual({
       decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto mode (edit).',
+      reason: 'Non-destructive operations are auto-approved in full_auto mode (edit).',
     });
     expect(decideAutoApprovalAction('full_auto', 'safe_tool')).toEqual({
       decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto mode (safe_tool).',
+      reason: 'Non-destructive operations are auto-approved in full_auto mode (safe_tool).',
     });
     expect(decideAutoApprovalAction('full_auto', 'risky_tool')).toEqual({
       decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto mode (risky_tool).',
+      reason: 'Non-destructive operations are auto-approved in full_auto mode (risky_tool).',
     });
     expect(decideAutoApprovalAction('full_auto', 'unknown')).toEqual({
       decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto mode (unknown).',
+      reason: 'Non-destructive operations are auto-approved in full_auto mode (unknown).',
     });
   });
 
   it('still blocks destructive operations in full_auto mode', () => {
     expect(decideAutoApprovalAction('full_auto', 'destructive')).toEqual({
       decision: 'block',
-      reason: 'Destructive operations are blocked in every auto-approval mode.',
+      reason: 'Destructive operations are not auto-approved in this mode.',
+    });
+  });
+
+  it('allows destructive operations in full_auto_unsafe mode', () => {
+    expect(decideAutoApprovalAction('full_auto_unsafe', 'destructive')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto_unsafe mode (destructive).',
+    });
+    expect(decideAutoApprovalAction('full_auto_unsafe', 'risky_tool')).toEqual({
+      decision: 'allow',
+      reason: 'All operations are auto-approved in full_auto_unsafe mode (risky_tool).',
     });
   });
 

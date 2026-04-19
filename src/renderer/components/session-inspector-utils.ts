@@ -248,6 +248,7 @@ export function badgeClass(type: string): string {
     case 'session_end': case 'pre_compact': case 'post_compact': case 'instructions_loaded': return 'lifecycle';
     case 'task_created': case 'task_completed': return 'task';
     case 'cwd_changed': case 'file_changed': case 'config_change': case 'worktree_create': case 'worktree_remove': case 'status_update': return 'system';
+    case 'approval_decision': return 'approval';
     case 'notification': return 'notify';
     default: return 'default';
   }
@@ -277,6 +278,7 @@ export function badgeLabel(type: string): string {
     case 'cwd_changed': return 'CWD';
     case 'file_changed': return 'File';
     case 'config_change': return 'Config';
+    case 'approval_decision': return 'Approval';
     case 'elicitation': return 'Ask';
     case 'elicitation_result': return 'Answer';
     case 'instructions_loaded': return 'Instr';

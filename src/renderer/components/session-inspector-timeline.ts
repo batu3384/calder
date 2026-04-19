@@ -279,6 +279,12 @@ export function renderTimeline(container: HTMLElement): void {
       desc.textContent = 'Session ended';
     } else if (ev.type === 'permission_request') {
       desc.textContent = 'Waiting for permission';
+    } else if (ev.type === 'approval_decision') {
+      const decision = ev.auto_approval?.decision ?? 'ask';
+      const operationClass = ev.auto_approval?.operation_class
+        ? ev.auto_approval.operation_class.replace(/_/g, ' ')
+        : 'unknown operation';
+      desc.textContent = `Auto-approval ${decision}: ${operationClass}`;
     } else if (ev.type === 'subagent_start') {
       // Unmatched start (agent still running) — render inline
       desc.textContent = `Agent started: ${agentLabel(ev)}`;
@@ -339,6 +345,20 @@ export function renderTimeline(container: HTMLElement): void {
     row.appendChild(desc);
     row.appendChild(durationEl);
     row.appendChild(costEl);
+
+    if (ev.type === 'approval_decision' && ev.auto_approval) {
+      const details: string[] = [
+        `Mode: ${ev.auto_approval.effective_mode}`,
+        `Source: ${ev.auto_approval.policy_source}`,
+      ];
+      if (ev.auto_approval.reason) {
+        details.push(`Reason: ${ev.auto_approval.reason}`);
+      }
+      const metaEl = document.createElement('div');
+      metaEl.className = 'inspector-meta-text';
+      metaEl.textContent = details.join(' · ');
+      row.appendChild(metaEl);
+    }
 
     // Expandable tool input
     if (ev.tool_input) {

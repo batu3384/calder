@@ -6,7 +6,13 @@ import type { AutoApprovalMode } from '../../shared/types.js';
 import { createProjectGovernanceStarterPolicy } from './scaffold.js';
 
 const roots: string[] = [];
-const AUTO_APPROVAL_MODES = new Set<AutoApprovalMode>(['off', 'edit_only', 'edit_plus_safe_tools', 'full_auto']);
+const AUTO_APPROVAL_MODES = new Set<AutoApprovalMode>([
+  'off',
+  'edit_only',
+  'edit_plus_safe_tools',
+  'full_auto',
+  'full_auto_unsafe',
+]);
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));

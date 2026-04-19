@@ -109,14 +109,16 @@ const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, string> = {
   off: 'Off',
   edit_only: 'Edit Only',
   edit_plus_safe_tools: 'Edit + Safe Tools',
-  full_auto: 'Full Auto (All)',
+  full_auto: 'Full Auto',
+  full_auto_unsafe: 'Full Auto (Unsafe)',
 };
 
 const AUTO_APPROVAL_MODE_LABELS_TR: Record<AutoApprovalMode, string> = {
   off: 'Kapalı',
   edit_only: 'Sadece Düzenleme',
   edit_plus_safe_tools: 'Düzenleme + Güvenli Komutlar',
-  full_auto: 'Tam Otomatik (Tümü)',
+  full_auto: 'Tam Otomatik',
+  full_auto_unsafe: 'Tam Otomatik (Tehlikeli)',
 };
 
 const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string }> = [
@@ -124,18 +126,13 @@ const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string
   { value: 'edit_only', label: AUTO_APPROVAL_MODE_LABELS.edit_only },
   { value: 'edit_plus_safe_tools', label: AUTO_APPROVAL_MODE_LABELS.edit_plus_safe_tools },
   { value: 'full_auto', label: AUTO_APPROVAL_MODE_LABELS.full_auto },
+  { value: 'full_auto_unsafe', label: AUTO_APPROVAL_MODE_LABELS.full_auto_unsafe },
 ];
 const PROJECT_INHERIT_VALUE = '__inherit_global__';
 const SESSION_INHERIT_VALUE = '';
 const queueFrame = typeof requestAnimationFrame === 'function'
   ? requestAnimationFrame
   : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
-
-const AUTO_APPROVAL_SCOPE_HELP = {
-  global: 'Default policy for this Mac.',
-  project: 'Repository-level policy.',
-  session: 'Temporary policy for the active session.',
-} as const;
 
 function isTurkishUiLanguage(): boolean {
   return appState.preferences.language === 'tr';
@@ -157,6 +154,14 @@ function projectInheritLabel(): string {
 
 function sessionInheritLabel(): string {
   return localizedText('Use Project / Global Default', 'Proje / Global varsayılanını kullan');
+}
+
+function autoApprovalScopeHelp(): { global: string; project: string; session: string } {
+  return {
+    global: localizedText('Default policy for this Mac.', 'Bu Mac için varsayılan politika.'),
+    project: localizedText('Repository-level policy.', 'Depo düzeyinde politika.'),
+    session: localizedText('Temporary policy for the active session.', 'Aktif oturum için geçici politika.'),
+  };
 }
 
 function autoApprovalSourceLabel(source: AutoApprovalPolicySource): string {
@@ -191,9 +196,14 @@ function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
       ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
       : 'Auto-approves file edits and safe read-only commands.';
   }
+  if (mode === 'full_auto') {
+    return tr
+      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemler manuel onay gerektirir.'
+      : 'Auto-approves non-destructive operations; destructive actions still require manual approval.';
+  }
   return tr
-    ? 'Riskli ve yıkıcı eylemler dahil tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation, including risky and destructive actions.';
+    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
+    : 'Auto-approves every operation, including destructive actions.';
 }
 
 function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
@@ -209,9 +219,14 @@ function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
       ? 'Düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
       : 'Auto-approves edits and read-only safe commands.';
   }
+  if (mode === 'full_auto') {
+    return tr
+      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemlerde sorar.'
+      : 'Auto-approves non-destructive operations; asks before destructive actions.';
+  }
   return tr
-    ? 'Sormadan tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation without asking.';
+    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
+    : 'Auto-approves every operation, including destructive actions.';
 }
 
 export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoApprovalState): {
@@ -367,9 +382,34 @@ function openConfigFile(filePath: string): void {
   }
 }
 
+function createConfigOpenButton(filePath: string): HTMLButtonElement {
+  const openBtn = document.createElement('button');
+  openBtn.type = 'button';
+  openBtn.className = 'config-item-open-btn config-item-action-btn';
+  openBtn.textContent = '↗';
+  const openLabel = localizedText(
+    'Open source file',
+    'Kaynak dosyayı aç',
+  );
+  openBtn.title = openLabel;
+  openBtn.setAttribute('aria-label', openLabel);
+  openBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openConfigFile(filePath);
+  });
+  return openBtn;
+}
+
+function createConfigActionGroup(...buttons: HTMLButtonElement[]): HTMLDivElement {
+  const actions = document.createElement('div');
+  actions.className = 'config-item-actions';
+  buttons.forEach((button) => actions.appendChild(button));
+  return actions;
+}
+
 function mcpItem(server: McpServer): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable calder-list-row';
+  el.className = 'config-item calder-list-row';
   const detail = server.url
     ? `${server.status} · ${server.url}`
     : server.status;
@@ -378,7 +418,12 @@ function mcpItem(server: McpServer): HTMLElement {
   const removeBtn = document.createElement('button');
   removeBtn.className = 'config-item-remove-btn';
   removeBtn.textContent = '\u00d7';
-  removeBtn.title = 'Remove server';
+  const removeLabel = localizedText(
+    `Remove MCP server ${server.name}`,
+    `MCP sunucusunu kaldır: ${server.name}`,
+  );
+  removeBtn.title = removeLabel;
+  removeBtn.setAttribute('aria-label', removeLabel);
   removeBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     if (!confirm(`Remove MCP server "${server.name}"?`)) return;
@@ -386,20 +431,15 @@ function mcpItem(server: McpServer): HTMLElement {
     await window.calder.mcp.removeServer(server.name, server.filePath, server.scope, projectPath);
     refresh();
   });
-  el.appendChild(removeBtn);
-
-  el.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('.config-item-remove-btn')) return;
-    openConfigFile(server.filePath);
-  });
+  el.appendChild(createConfigActionGroup(createConfigOpenButton(server.filePath), removeBtn));
   return el;
 }
 
 function agentItem(agent: Agent): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable calder-list-row';
+  el.className = 'config-item calder-list-row';
   el.innerHTML = `<span class="config-item-name">${esc(agent.name)}</span><span class="config-item-detail">${esc(agent.model)}</span>${scopeBadge(agent.scope)}`;
-  el.addEventListener('click', () => openConfigFile(agent.filePath));
+  el.appendChild(createConfigActionGroup(createConfigOpenButton(agent.filePath)));
   return el;
 }
 
@@ -423,19 +463,19 @@ export function localizeConfigMetadataDetail(
 
 function skillItem(skill: Skill): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable calder-list-row';
+  el.className = 'config-item calder-list-row';
   const detail = localizeConfigMetadataDetail('skill', skill.name, skill.description);
   el.innerHTML = `<span class="config-item-name">${esc(skill.name)}</span><span class="config-item-detail">${esc(detail)}</span>${scopeBadge(skill.scope)}`;
-  el.addEventListener('click', () => openConfigFile(skill.filePath));
+  el.appendChild(createConfigActionGroup(createConfigOpenButton(skill.filePath)));
   return el;
 }
 
 function commandItem(cmd: Command): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'config-item config-item-clickable calder-list-row';
+  el.className = 'config-item calder-list-row';
   const detail = localizeConfigMetadataDetail('command', cmd.name, cmd.description);
   el.innerHTML = `<span class="config-item-name">/${esc(cmd.name)}</span><span class="config-item-detail">${esc(detail)}</span>${scopeBadge(cmd.scope)}`;
-  el.addEventListener('click', () => openConfigFile(cmd.filePath));
+  el.appendChild(createConfigActionGroup(createConfigOpenButton(cmd.filePath)));
   return el;
 }
 
@@ -568,13 +608,24 @@ function renderAutoApprovalSection(
   const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
   const effectiveShortLabel = localizedText('Effective', 'Etkin');
   const fullAutoWarning = localizedText(
-    'Warning: Full Auto approves all operations without asking.',
-    'Uyarı: Tam Otomatik mod tüm işlemleri sormadan onaylar.',
+    'Note: Full Auto still requires manual approval for destructive operations.',
+    'Not: Tam Otomatik modda yıkıcı işlemler için manuel onay gerekir.',
+  );
+  const fullAutoUnsafeWarning = localizedText(
+    'Warning: Full Auto (Unsafe) auto-approves destructive operations.',
+    'Uyarı: Tam Otomatik (Tehlikeli) modu yıkıcı işlemleri otomatik onaylar.',
   );
   const priorityMapLabel = localizedText(
     'Applied order: Global -> Project -> Session -> Effective.',
     'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
   );
+  const showPolicyDetailsLabel = localizedText('Show policy details', 'Politika detaylarını göster');
+  const hidePolicyDetailsLabel = localizedText('Hide policy details', 'Politika detaylarını gizle');
+  const quickSummaryLabel = localizedText('Quick summary', 'Hızlı özet');
+  const modeRiskNote = autoApproval.effectiveMode === 'full_auto_unsafe'
+    ? fullAutoUnsafeWarning
+    : (autoApproval.effectiveMode === 'full_auto' ? fullAutoWarning : null);
+
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
       <span class="config-item-name">${esc(effectiveModeLabel)}</span>
@@ -583,16 +634,32 @@ function renderAutoApprovalSection(
     <div class="auto-approval-priority-note ops-rail-note" data-tone="default">
       ${esc(priorityRule)}
     </div>
+    <div class="auto-approval-meta-inline" aria-label="${esc(quickSummaryLabel)}">
+      <div class="auto-approval-meta-inline-item">
+        <span class="auto-approval-meta-inline-label">${esc(effectiveSourceLabel)}</span>
+        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveSource)}</span>
+      </div>
+      <div class="auto-approval-meta-inline-item">
+        <span class="auto-approval-meta-inline-label">${esc(currentBehaviorLabel)}</span>
+        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveBehavior)}</span>
+      </div>
+    </div>
+  `;
+  item.appendChild(summary);
+
+  const detailsToggle = document.createElement('button');
+  detailsToggle.type = 'button';
+  detailsToggle.className = 'auto-approval-details-toggle';
+  detailsToggle.textContent = showPolicyDetailsLabel;
+  detailsToggle.setAttribute('aria-expanded', 'false');
+
+  const details = document.createElement('div');
+  details.className = 'auto-approval-details hidden';
+  details.id = `auto-approval-details-${projectId}`;
+  detailsToggle.setAttribute('aria-controls', details.id);
+  details.innerHTML = `
     <div class="auto-approval-priority-map">${esc(priorityMapLabel)}</div>
     <div class="auto-approval-meta-card">
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(effectiveSourceLabel)}</span>
-        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveSource)}</span>
-      </div>
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(currentBehaviorLabel)}</span>
-        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveBehavior)}</span>
-      </div>
       <div class="auto-approval-meta-row">
         <span class="auto-approval-meta-label">${esc(providerLabelText)}</span>
         <span class="auto-approval-meta-value">${esc(providerName)}</span>
@@ -620,11 +687,20 @@ function renderAutoApprovalSection(
         <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
       </div>
     </div>
-    ${autoApproval.effectiveMode === 'full_auto'
-      ? `<div class="auto-approval-risk-note">${esc(fullAutoWarning)}</div>`
+    ${modeRiskNote
+      ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>`
       : ''}
   `;
-  item.appendChild(summary);
+
+  detailsToggle.addEventListener('click', () => {
+    const expanded = detailsToggle.getAttribute('aria-expanded') === 'true';
+    detailsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    detailsToggle.textContent = expanded ? showPolicyDetailsLabel : hidePolicyDetailsLabel;
+    details.classList.toggle('hidden', expanded);
+  });
+
+  item.appendChild(detailsToggle);
+  item.appendChild(details);
 
   const controls = document.createElement('div');
   controls.className = 'auto-approval-controls';
@@ -676,7 +752,9 @@ function renderAutoApprovalSection(
   );
   controls.appendChild(controlsHint);
 
-  const globalSelect = createModeSelect(autoApproval.globalMode, AUTO_APPROVAL_SCOPE_HELP.global, async (nextMode) => {
+  const scopeHelp = autoApprovalScopeHelp();
+
+  const globalSelect = createModeSelect(autoApproval.globalMode, scopeHelp.global, async (nextMode) => {
     const nextState = await window.calder.governance.setAutoApprovalMode(
       projectPath,
       'global',
@@ -689,15 +767,15 @@ function renderAutoApprovalSection(
   controls.appendChild(createAutoApprovalScopeCard(
     globalPolicyLabel,
     localizedText(
-      `${AUTO_APPROVAL_SCOPE_HELP.global} Current: ${scopeSummary.global}.`,
-      `${AUTO_APPROVAL_SCOPE_HELP.global.replace('Default policy for this Mac.', 'Bu Mac için varsayılan politika.')} Şu an: ${scopeSummary.global}.`,
+      `${scopeHelp.global} Current: ${scopeSummary.global}.`,
+      `${scopeHelp.global} Şu an: ${scopeSummary.global}.`,
     ),
     globalSelect,
   ));
 
   const projectSelect = document.createElement('select');
   projectSelect.className = 'auto-approval-select';
-  projectSelect.title = AUTO_APPROVAL_SCOPE_HELP.project;
+  projectSelect.title = scopeHelp.project;
   const projectInheritOption = document.createElement('option');
   projectInheritOption.value = PROJECT_INHERIT_VALUE;
   projectInheritOption.textContent = projectInheritLabel();
@@ -735,8 +813,8 @@ function renderAutoApprovalSection(
   controls.appendChild(createAutoApprovalScopeCard(
     projectPolicyLabel,
     localizedText(
-      `${AUTO_APPROVAL_SCOPE_HELP.project} Current: ${scopeSummary.project}.`,
-      `${AUTO_APPROVAL_SCOPE_HELP.project.replace('Repository-level policy.', 'Depo düzeyinde politika.')} Şu an: ${scopeSummary.project}.`,
+      `${scopeHelp.project} Current: ${scopeSummary.project}.`,
+      `${scopeHelp.project} Şu an: ${scopeSummary.project}.`,
     ),
     projectSelect,
   ));
@@ -744,8 +822,8 @@ function renderAutoApprovalSection(
   const sessionSelect = document.createElement('select');
   sessionSelect.className = 'auto-approval-select';
   sessionSelect.title = supportsPermissionHooks
-    ? AUTO_APPROVAL_SCOPE_HELP.session
-    : 'Auto approval unavailable';
+    ? scopeHelp.session
+    : localizedText('Auto approval unavailable', 'Otomatik onay kullanılamıyor');
   const inheritOption = document.createElement('option');
   inheritOption.value = SESSION_INHERIT_VALUE;
   inheritOption.textContent = sessionInheritLabel();
@@ -787,8 +865,8 @@ function renderAutoApprovalSection(
       )
       : (sessionId
         ? localizedText(
-          `${AUTO_APPROVAL_SCOPE_HELP.session} Current: ${scopeSummary.session}.`,
-          `${AUTO_APPROVAL_SCOPE_HELP.session.replace('Temporary policy for the active session.', 'Aktif oturum için geçici politika.')} Şu an: ${scopeSummary.session}.`,
+          `${scopeHelp.session} Current: ${scopeSummary.session}.`,
+          `${scopeHelp.session} Şu an: ${scopeSummary.session}.`,
         )
         : localizedText(
           'Open a CLI session to apply a temporary session override.',
@@ -827,7 +905,7 @@ function renderAutoApprovalSection(
   modeGuide.appendChild(modeGuideBody);
   controls.appendChild(modeGuide);
 
-  item.appendChild(controls);
+  details.appendChild(controls);
   return renderSection(
     'auto-approval',
     localizedText('Auto Approval', 'Otomatik Onay'),

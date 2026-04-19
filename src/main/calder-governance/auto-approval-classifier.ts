@@ -398,17 +398,24 @@ export function decideAutoApprovalAction(
   mode: AutoApprovalMode,
   operationClass: AutoApprovalOperationClass,
 ): AutoApprovalDecisionResult {
+  if (mode === 'full_auto_unsafe') {
+    return {
+      decision: 'allow',
+      reason: `All operations are auto-approved in full_auto_unsafe mode (${operationClass}).`,
+    };
+  }
+
   if (operationClass === 'destructive') {
     return {
       decision: 'block',
-      reason: 'Destructive operations are blocked in every auto-approval mode.',
+      reason: 'Destructive operations are not auto-approved in this mode.',
     };
   }
 
   if (mode === 'full_auto') {
     return {
       decision: 'allow',
-      reason: `All operations are auto-approved in full_auto mode (${operationClass}).`,
+      reason: `Non-destructive operations are auto-approved in full_auto mode (${operationClass}).`,
     };
   }
 

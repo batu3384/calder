@@ -50,6 +50,16 @@ describe('resolveEffectiveAutoApprovalMode', () => {
     expect(result.policySource).toBe('project');
   });
 
+  it('supports full_auto_unsafe as an explicit override mode', () => {
+    const result = resolveEffectiveAutoApprovalMode({
+      globalMode: 'off',
+      projectMode: 'full_auto_unsafe',
+    });
+
+    expect(result.effectiveMode).toBe('full_auto_unsafe');
+    expect(result.policySource).toBe('project');
+  });
+
   it('uses project mode over global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
       globalMode: 'off',
@@ -98,7 +108,7 @@ describe('resolveEffectiveAutoApprovalMode', () => {
   });
 
   it('honors precedence across global, project, and session mode combinations', () => {
-    const modeOptions = [undefined, 'off', 'edit_only', 'edit_plus_safe_tools', 'full_auto'] as const;
+    const modeOptions = [undefined, 'off', 'edit_only', 'edit_plus_safe_tools', 'full_auto', 'full_auto_unsafe'] as const;
 
     for (const globalMode of modeOptions) {
       for (const projectMode of modeOptions) {
@@ -178,6 +188,18 @@ describe('readAutoApprovalModeFromPolicyFile', () => {
     });
 
     expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('full_auto');
+  });
+
+  it('reads full_auto_unsafe mode from policy files', () => {
+    const root = makeTempDir('auto-approval-full-auto-unsafe');
+    roots.push(root);
+    const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
+      autoApproval: {
+        mode: 'full_auto_unsafe',
+      },
+    });
+
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('full_auto_unsafe');
   });
 
   it('exposes the default global policy path', () => {

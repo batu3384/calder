@@ -75,7 +75,8 @@ describe('getConfigProviderId', () => {
     const source = await import('node:fs/promises')
       .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
 
-    expect(source).toContain("el.className = 'config-item config-item-clickable calder-list-row'");
+    expect(source).toContain("el.className = 'config-item calder-list-row'");
+    expect(source).toContain('createConfigOpenButton');
   });
 
   it('includes an auto-approval control block wired to governance APIs', async () => {
@@ -86,7 +87,7 @@ describe('getConfigProviderId', () => {
     expect(source).toContain('setAutoApprovalMode');
     expect(source).toContain('setSessionAutoApprovalOverride');
     expect(source).toContain('auto-approval-control');
-    expect(source).toContain('Full Auto (All)');
+    expect(source).toContain('Full Auto (Unsafe)');
     expect(source).toContain('Session policy is temporary and takes priority');
     expect(source).toContain('Mode Guide');
     expect(source).toContain('auto-approval-mode-guide-toggle');
@@ -177,8 +178,24 @@ describe('getConfigProviderId', () => {
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Full Auto (All)');
-    expect(summary.effectiveBehavior).toBe('Auto-approves every operation, including risky and destructive actions.');
+    expect(summary.global).toBe('Full Auto');
+    expect(summary.effectiveBehavior).toBe('Auto-approves non-destructive operations; destructive actions still require manual approval.');
+  });
+
+  it('describes full_auto_unsafe behavior clearly', async () => {
+    const { describeAutoApprovalScopes } = await import('./config-sections.js');
+    const summary = describeAutoApprovalScopes({
+      globalMode: 'full_auto_unsafe',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'full_auto_unsafe',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+
+    expect(summary.global).toBe('Full Auto (Unsafe)');
+    expect(summary.effectiveBehavior).toBe('Auto-approves every operation, including destructive actions.');
   });
 
   it('renders concise Turkish metadata summaries for right-rail skills and commands', async () => {
@@ -204,5 +221,16 @@ describe('getConfigProviderId', () => {
     expect(
       localizeConfigMetadataDetail('skill', 'unknown-skill', 'Keep original detail'),
     ).toBe('Keep original detail');
+  });
+
+  it('adds accessible labels and keyboard focus affordance for MCP remove buttons', async () => {
+    const source = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+    const modalCss = await import('node:fs/promises')
+      .then(fs => fs.readFile(new URL('../styles/modals.css', import.meta.url), 'utf-8'));
+
+    expect(source).toContain("removeBtn.setAttribute('aria-label', removeLabel);");
+    expect(modalCss).toContain('.config-item-remove-btn:focus-visible');
+    expect(modalCss).toContain('.config-item:focus-within .config-item-remove-btn');
   });
 });

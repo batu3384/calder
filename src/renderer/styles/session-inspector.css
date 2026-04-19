@@ -232,18 +232,18 @@
 .inspector-time {
   color: var(--text-muted);
   font-family: monospace;
-  font-size: 10px;
-  min-width: 36px;
+  font-size: 11px;
+  min-width: 40px;
 }
 
 .inspector-badge {
-  font-size: 9px;
-  padding: 1px 5px;
+  font-size: 10px;
+  padding: 2px 6px;
   border-radius: 3px;
   border: 1px solid transparent;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.24px;
 }
 
 .inspector-badge-prompt { background: var(--status-info-bg); border-color: var(--status-info-border); color: var(--status-info-text); }
@@ -256,6 +256,7 @@
 .inspector-badge-lifecycle { background: color-mix(in srgb, var(--accent-soft) 54%, transparent); border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle)); color: color-mix(in srgb, var(--accent) 74%, white); }
 .inspector-badge-task { background: var(--status-accent-bg); border-color: var(--status-accent-border); color: var(--status-accent-text); }
 .inspector-badge-system { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
+.inspector-badge-approval { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
 .inspector-badge-notify { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
 .inspector-badge-mcp { background: var(--status-info-bg); color: var(--status-info-text); border-color: var(--status-info-border); }
 .inspector-badge-default { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
@@ -406,6 +407,15 @@
   margin-top: 2px;
   color: var(--accent);
   font-size: 10px;
+}
+
+.inspector-meta-text {
+  width: 100%;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .inspector-load-more {

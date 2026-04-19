@@ -14,7 +14,7 @@ describe('project governance contracts', () => {
     expect(source).toContain("writePolicy: 'allow' | 'ask' | 'block'");
     expect(source).toContain("networkPolicy: 'allow' | 'ask' | 'block'");
     expect(source).toContain('providerProfileCount: number');
-    expect(source).toContain("export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto';");
+    expect(source).toContain("export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';");
     expect(source).toContain("export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';");
     expect(source).toContain("export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';");
     expect(source).toContain("export type AutoApprovalDecision = 'allow' | 'ask' | 'block';");

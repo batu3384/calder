@@ -148,6 +148,36 @@ describe('session-inspector timeline MCP badges', () => {
     expect(badges).toContain('Tool');
     expect(badges).not.toContain('MCP');
   });
+
+  it('renders approval decision reason details for auto-approval events', () => {
+    vi.mocked(getEvents).mockReturnValue([
+      {
+        type: 'approval_decision',
+        timestamp: 1000,
+        hookEvent: 'AutoApprovalOrchestrator',
+        auto_approval: {
+          policy_source: 'project',
+          effective_mode: 'full_auto',
+          operation_class: 'destructive',
+          decision: 'block',
+          reason: 'Destructive operations are not auto-approved in this mode.',
+        },
+      },
+    ]);
+
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    renderTimeline(container);
+
+    const badges = (container as unknown as FakeElement)
+      .querySelectorAll('.inspector-badge')
+      .map((el) => el.textContent);
+    const desc = (container as unknown as FakeElement).querySelector('.inspector-desc');
+    const meta = (container as unknown as FakeElement).querySelector('.inspector-meta-text');
+
+    expect(badges).toContain('Approval');
+    expect(desc?.textContent).toContain('Auto-approval block: destructive');
+    expect(meta?.textContent).toContain('Reason: Destructive operations are not auto-approved in this mode.');
+  });
 });
 
 // Helper to create minimal InspectorEvent

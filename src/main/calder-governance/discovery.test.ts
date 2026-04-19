@@ -197,4 +197,36 @@ describe('discoverProjectGovernance', () => {
       recentDecisions: [],
     });
   });
+
+  it('parses full_auto_unsafe project override from policy', async () => {
+    const root = makeProject('governance-project-full-auto-unsafe');
+    roots.push(root);
+    mockedGlobalMode = 'off';
+    mockedGlobalIsExplicit = true;
+    writeFiles(root, {
+      '.calder/governance/policy.json': JSON.stringify({
+        schemaVersion: 1,
+        profileName: 'Project full auto unsafe',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+        autoApproval: {
+          mode: 'full_auto_unsafe',
+          safeToolProfile: 'default-read-only',
+        },
+      }, null, 2),
+    });
+
+    const result = await discoverProjectGovernance(root);
+
+    expect(result.autoApproval).toEqual({
+      globalMode: 'off',
+      projectMode: 'full_auto_unsafe',
+      effectiveMode: 'full_auto_unsafe',
+      policySource: 'project',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    });
+  });
 });

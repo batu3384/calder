@@ -692,7 +692,7 @@
   color: var(--accent);
 }
 
-.config-item-remove-btn {
+.config-item-action-btn {
   flex-shrink: 0;
   width: 22px;
   height: 22px;
@@ -706,7 +706,6 @@
   font-size: 13px;
   line-height: 22px;
   cursor: pointer;
-  opacity: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition:
     opacity 0.12s ease,
@@ -716,8 +715,37 @@
     transform 0.15s ease;
 }
 
-.config-item:hover .config-item-remove-btn {
+.config-item-remove-btn {
+  opacity: 0;
+}
+
+.config-item-open-btn {
+  opacity: 0;
+  color: var(--text-secondary);
+}
+
+.config-item:hover .config-item-action-btn {
   opacity: 0.96;
+}
+
+.config-item:focus-within .config-item-action-btn {
+  opacity: 0.96;
+}
+
+.config-item-action-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.config-item:focus-within .config-item-remove-btn {
+  opacity: 0.96;
+}
+
+.config-item-remove-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 .config-item-remove-btn:hover {
@@ -727,6 +755,20 @@
   border-color: color-mix(in srgb, var(--danger) 24%, var(--border));
   color: var(--danger);
   transform: translateY(-1px);
+}
+
+.config-item:hover .config-item-open-btn,
+.config-item:focus-within .config-item-open-btn {
+  opacity: 1;
+}
+
+.config-item-open-btn:focus-visible {
+  opacity: 1;
+}
+
+.config-item-open-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  color: var(--text-primary);
 }
 
 .mcp-add-type-row {

@@ -29,4 +29,13 @@ describe('ops rail stylesheet contract', () => {
     expect(inspectorCss).toContain('min-width: 236px;');
     expect(inspectorCss).toContain('grid-template-columns: minmax(0, 1fr);');
   });
+
+  it('keeps auto-approval controls wrapping so dropdowns never stretch the rail', () => {
+    expect(inspectorCss).toContain('#context-inspector-sections {');
+    expect(inspectorCss).toContain('overflow-x: hidden;');
+    expect(inspectorCss).toContain('.auto-approval-scope-row');
+    expect(inspectorCss).toContain('flex-wrap: wrap;');
+    expect(inspectorCss).toContain('.auto-approval-scope-control');
+    expect(inspectorCss).toContain('max-width: 100%;');
+  });
 });
