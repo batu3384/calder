@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <strong>Desktop workspace for AI coding CLIs.</strong><br/>
+  <strong>Desktop workspace across modern AI coding CLIs.</strong><br/>
   Run multiple agent sessions in parallel, inspect costs/context, route browser + terminal signals to the right session, and keep project workflows organized.
 </p>
 
