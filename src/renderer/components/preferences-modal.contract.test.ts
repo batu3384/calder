@@ -113,4 +113,13 @@ describe('preferences modal contract', () => {
     expect(source).toContain("opts.actionLabel ? 'Installing");
     expect(source).toContain("actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined");
   });
+
+  it('stages shortcut overrides until Done and applies modal cleanup extensions safely', () => {
+    expect(source).toContain('const shortcutOverridesDraft');
+    expect(source).toContain("appState.setPreference('keybindings', { ...shortcutOverridesDraft });");
+    expect(source).not.toContain('shortcutManager.setOverride(');
+    expect(source).not.toContain('shortcutManager.resetOverride(');
+    expect(source).toContain('extendModalCleanup(() => {');
+    expect(source).not.toContain('registerModalCleanup(() => {');
+  });
 });

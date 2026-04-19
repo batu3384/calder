@@ -171,16 +171,14 @@ export class ShortcutManager {
   }
 
   /** Get resolved keys (override or default) for a shortcut */
-  getKeys(id: string): string {
-    const overrides = appState.preferences.keybindings ?? {};
+  getKeys(id: string, overrides: Record<string, string> = appState.preferences.keybindings ?? {}): string {
     const shortcut = this.shortcuts.find((s) => s.id === id);
     if (!shortcut) return '';
     return overrides[id] ?? shortcut.defaultKeys;
   }
 
   /** Get all shortcuts with resolved keys, grouped by category */
-  getAll(): Map<string, Array<ShortcutDef & { resolvedKeys: string }>> {
-    const overrides = appState.preferences.keybindings ?? {};
+  getAll(overrides: Record<string, string> = appState.preferences.keybindings ?? {}): Map<string, Array<ShortcutDef & { resolvedKeys: string }>> {
     const groups = new Map<string, Array<ShortcutDef & { resolvedKeys: string }>>();
 
     for (const shortcut of this.shortcuts) {
@@ -210,8 +208,7 @@ export class ShortcutManager {
   }
 
   /** Check if a shortcut has a custom override */
-  hasOverride(id: string): boolean {
-    const overrides = appState.preferences.keybindings ?? {};
+  hasOverride(id: string, overrides: Record<string, string> = appState.preferences.keybindings ?? {}): boolean {
     return id in overrides;
   }
 

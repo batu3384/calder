@@ -3,7 +3,6 @@ import {
   closeModal,
   extendModalCleanup,
   prepareModalSurface,
-  registerModalCleanup,
   runModalCleanup,
   setModalError,
   showModal,
@@ -170,9 +169,40 @@ export function showPreferencesModal(): void {
   let defaultProviderSelect: CustomSelectInstance | null = null;
   let languageSelect: CustomSelectInstance | null = null;
   let debugModeCheckbox: HTMLInputElement | null = null;
-  let sidebarCheckboxes: { configSections: HTMLInputElement; gitPanel: HTMLInputElement; sessionHistory: HTMLInputElement; costFooter: HTMLInputElement } | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
   let aboutUpdateCleanup: (() => void) | null = null;
+  const preferenceDraft: {
+    soundOnSessionWaiting: boolean;
+    notificationsDesktop: boolean;
+    sessionHistoryEnabled: boolean;
+    insightsEnabled: boolean;
+    autoTitleEnabled: boolean;
+    defaultProvider: ProviderId;
+    language: UiLanguage;
+    debugMode: boolean;
+    sidebarViews: {
+      configSections: boolean;
+      gitPanel: boolean;
+      sessionHistory: boolean;
+      costFooter: boolean;
+    };
+  } = {
+    soundOnSessionWaiting: appState.preferences.soundOnSessionWaiting,
+    notificationsDesktop: appState.preferences.notificationsDesktop,
+    sessionHistoryEnabled: appState.preferences.sessionHistoryEnabled,
+    insightsEnabled: appState.preferences.insightsEnabled,
+    autoTitleEnabled: appState.preferences.autoTitleEnabled,
+    defaultProvider: appState.preferences.defaultProvider ?? 'claude',
+    language: appState.preferences.language ?? 'en',
+    debugMode: appState.preferences.debugMode,
+    sidebarViews: {
+      configSections: appState.preferences.sidebarViews?.configSections ?? true,
+      gitPanel: appState.preferences.sidebarViews?.gitPanel ?? true,
+      sessionHistory: appState.preferences.sidebarViews?.sessionHistory ?? true,
+      costFooter: appState.preferences.sidebarViews?.costFooter ?? true,
+    },
+  };
+  const shortcutOverridesDraft: Record<string, string> = { ...(appState.preferences.keybindings ?? {}) };
 
   function formatCountLabel(count: number, singular: string, plural: string): string {
     return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
@@ -2452,9 +2482,9 @@ export function showPreferencesModal(): void {
 
   function countCustomizedShortcuts(): number {
     let count = 0;
-    for (const [, shortcuts] of shortcutManager.getAll()) {
+    for (const [, shortcuts] of shortcutManager.getAll(shortcutOverridesDraft)) {
       for (const shortcut of shortcuts) {
-        if (shortcutManager.hasOverride(shortcut.id)) count += 1;
+        if (shortcutManager.hasOverride(shortcut.id, shortcutOverridesDraft)) count += 1;
       }
     }
     return count;
@@ -2496,22 +2526,22 @@ export function showPreferencesModal(): void {
       appendOverviewGrid(content, [
         {
           label: 'Language',
-          value: appState.preferences.language === 'tr' ? 'Turkish' : 'English',
+          value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
           note: 'Applies to the full Calder interface.',
         },
         {
           label: 'Default tool',
-          value: appState.preferences.defaultProvider ?? 'claude',
+          value: preferenceDraft.defaultProvider,
           note: 'Used when a new session has no explicit provider.',
         },
         {
           label: 'History',
-          value: appState.preferences.sessionHistoryEnabled ? 'On' : 'Off',
+          value: preferenceDraft.sessionHistoryEnabled ? 'On' : 'Off',
           note: 'Closed sessions can stay searchable in the run log.',
         },
         {
           label: 'Alerts',
-          value: appState.preferences.notificationsDesktop ? 'Desktop' : 'In-app only',
+          value: preferenceDraft.notificationsDesktop ? 'Desktop' : 'In-app only',
           note: 'Sound and notification behavior stays local to this workspace.',
         },
       ]);
@@ -2522,7 +2552,7 @@ export function showPreferencesModal(): void {
       const providerLabel = document.createElement('label');
       providerLabel.textContent = 'Default coding tool';
 
-      const currentDefault = appState.preferences.defaultProvider ?? 'claude';
+      const currentDefault = preferenceDraft.defaultProvider;
 
       const buildProviderOptions = (snapshot: { providers: CliProviderMeta[]; availability: Map<ProviderId, boolean> }) =>
         snapshot.providers.map(provider => {
@@ -2545,6 +2575,7 @@ export function showPreferencesModal(): void {
       let snapshot = getProviderAvailabilitySnapshot();
       if (snapshot) {
         defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
+        preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
       } else {
         defaultProviderSelect = createCustomSelect('pref-default-provider', [{ value: currentDefault, label: 'Loading…' }], currentDefault);
         loadProviderAvailability().then(() => {
@@ -2552,17 +2583,33 @@ export function showPreferencesModal(): void {
           snapshot = getProviderAvailabilitySnapshot();
           if (snapshot) {
             if (defaultProviderSelect) defaultProviderSelect.destroy();
-            defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
+            defaultProviderSelect = createCustomSelect(
+              'pref-default-provider',
+              buildProviderOptions(snapshot),
+              preferenceDraft.defaultProvider,
+            );
             providerRow.querySelector('.custom-select')?.remove();
             providerRow.appendChild(defaultProviderSelect.element);
-            providerNote.textContent = buildProviderNote(snapshot, currentDefault);
+            preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
+            providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+            defaultProviderSelect.element.addEventListener('change', () => {
+              if (!defaultProviderSelect) return;
+              preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
+              providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+            });
           }
         });
       }
 
       const providerNote = document.createElement('div');
       providerNote.className = 'preferences-control-note';
-      providerNote.textContent = buildProviderNote(snapshot, currentDefault);
+      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+
+      defaultProviderSelect.element.addEventListener('change', () => {
+        if (!defaultProviderSelect) return;
+        preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
+        providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+      });
 
       providerRow.appendChild(providerLabel);
       providerRow.appendChild(defaultProviderSelect.element);
@@ -2575,7 +2622,7 @@ export function showPreferencesModal(): void {
       const languageLabel = document.createElement('label');
       languageLabel.textContent = 'Interface language';
 
-      const currentLanguage = appState.preferences.language ?? 'en';
+      const currentLanguage = preferenceDraft.language;
       languageSelect = createCustomSelect(
         'pref-language',
         [
@@ -2593,6 +2640,10 @@ export function showPreferencesModal(): void {
       languageRow.appendChild(languageSelect.element);
       content.appendChild(languageRow);
       content.appendChild(languageNote);
+      languageSelect.element.addEventListener('change', () => {
+        if (!languageSelect) return;
+        preferenceDraft.language = languageSelect.getValue() as UiLanguage;
+      });
 
       const row = document.createElement('div');
       row.className = 'modal-toggle-field';
@@ -2604,7 +2655,11 @@ export function showPreferencesModal(): void {
       soundCheckbox = document.createElement('input');
       soundCheckbox.type = 'checkbox';
       soundCheckbox.id = 'pref-sound-on-waiting';
-      soundCheckbox.checked = appState.preferences.soundOnSessionWaiting;
+      soundCheckbox.checked = preferenceDraft.soundOnSessionWaiting;
+      soundCheckbox.addEventListener('change', () => {
+        if (!soundCheckbox) return;
+        preferenceDraft.soundOnSessionWaiting = soundCheckbox.checked;
+      });
 
       row.appendChild(label);
       row.appendChild(soundCheckbox);
@@ -2620,7 +2675,11 @@ export function showPreferencesModal(): void {
       notificationsCheckbox = document.createElement('input');
       notificationsCheckbox.type = 'checkbox';
       notificationsCheckbox.id = 'pref-notifications-desktop';
-      notificationsCheckbox.checked = appState.preferences.notificationsDesktop;
+      notificationsCheckbox.checked = preferenceDraft.notificationsDesktop;
+      notificationsCheckbox.addEventListener('change', () => {
+        if (!notificationsCheckbox) return;
+        preferenceDraft.notificationsDesktop = notificationsCheckbox.checked;
+      });
 
       notifRow.appendChild(notifLabel);
       notifRow.appendChild(notificationsCheckbox);
@@ -2636,7 +2695,11 @@ export function showPreferencesModal(): void {
       historyCheckbox = document.createElement('input');
       historyCheckbox.type = 'checkbox';
       historyCheckbox.id = 'pref-session-history';
-      historyCheckbox.checked = appState.preferences.sessionHistoryEnabled;
+      historyCheckbox.checked = preferenceDraft.sessionHistoryEnabled;
+      historyCheckbox.addEventListener('change', () => {
+        if (!historyCheckbox) return;
+        preferenceDraft.sessionHistoryEnabled = historyCheckbox.checked;
+      });
 
       historyRow.appendChild(historyLabel);
       historyRow.appendChild(historyCheckbox);
@@ -2652,7 +2715,11 @@ export function showPreferencesModal(): void {
       insightsCheckbox = document.createElement('input');
       insightsCheckbox.type = 'checkbox';
       insightsCheckbox.id = 'pref-insights-enabled';
-      insightsCheckbox.checked = appState.preferences.insightsEnabled;
+      insightsCheckbox.checked = preferenceDraft.insightsEnabled;
+      insightsCheckbox.addEventListener('change', () => {
+        if (!insightsCheckbox) return;
+        preferenceDraft.insightsEnabled = insightsCheckbox.checked;
+      });
 
       insightsRow.appendChild(insightsLabel);
       insightsRow.appendChild(insightsCheckbox);
@@ -2668,7 +2735,11 @@ export function showPreferencesModal(): void {
       autoTitleCheckbox = document.createElement('input');
       autoTitleCheckbox.type = 'checkbox';
       autoTitleCheckbox.id = 'pref-auto-title';
-      autoTitleCheckbox.checked = appState.preferences.autoTitleEnabled;
+      autoTitleCheckbox.checked = preferenceDraft.autoTitleEnabled;
+      autoTitleCheckbox.addEventListener('change', () => {
+        if (!autoTitleCheckbox) return;
+        preferenceDraft.autoTitleEnabled = autoTitleCheckbox.checked;
+      });
 
       autoTitleRow.appendChild(autoTitleLabel);
       autoTitleRow.appendChild(autoTitleCheckbox);
@@ -2681,7 +2752,7 @@ export function showPreferencesModal(): void {
         'Stage layout',
         'Keep the left surface stable while deciding which support modules stay visible around active sessions.',
       );
-      const views = appState.preferences.sidebarViews ?? { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true };
+      const views = preferenceDraft.sidebarViews;
       appendOverviewGrid(content, [
         {
           label: 'Ops rail',
@@ -2722,7 +2793,6 @@ export function showPreferencesModal(): void {
         'Tune the shared AI work area and the strip above active sessions.',
       );
 
-      const checkboxes: Record<string, HTMLInputElement> = {};
       for (const toggle of toggles) {
         const row = document.createElement('div');
         row.className = 'modal-toggle-field';
@@ -2735,6 +2805,9 @@ export function showPreferencesModal(): void {
         cb.type = 'checkbox';
         cb.id = `pref-sidebar-${toggle.key}`;
         cb.checked = views[toggle.key];
+        cb.addEventListener('change', () => {
+          preferenceDraft.sidebarViews[toggle.key] = cb.checked;
+        });
 
         row.appendChild(label);
         row.appendChild(cb);
@@ -2743,15 +2816,12 @@ export function showPreferencesModal(): void {
         } else {
           sessionDeckCard.appendChild(row);
         }
-        checkboxes[toggle.key] = cb;
       }
 
       const pinnedNote = document.createElement('div');
       pinnedNote.className = 'preferences-card-note';
       pinnedNote.textContent = 'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
       liveViewCard.appendChild(pinnedNote);
-
-      sidebarCheckboxes = checkboxes as typeof sidebarCheckboxes;
 
     } else if (section === 'shortcuts') {
       appendSectionIntro(
@@ -3035,7 +3105,11 @@ export function showPreferencesModal(): void {
       debugModeCheckbox = document.createElement('input');
       debugModeCheckbox.type = 'checkbox';
       debugModeCheckbox.id = 'pref-debug-mode';
-      debugModeCheckbox.checked = appState.preferences.debugMode;
+      debugModeCheckbox.checked = preferenceDraft.debugMode;
+      debugModeCheckbox.addEventListener('change', () => {
+        if (!debugModeCheckbox) return;
+        preferenceDraft.debugMode = debugModeCheckbox.checked;
+      });
 
       debugRow.appendChild(debugLabel);
       debugRow.appendChild(debugModeCheckbox);
@@ -3054,7 +3128,7 @@ export function showPreferencesModal(): void {
   }
 
   function renderShortcutsSection(container: HTMLElement) {
-    const grouped = shortcutManager.getAll();
+    const grouped = shortcutManager.getAll(shortcutOverridesDraft);
 
     for (const [category, shortcuts] of grouped) {
       const groupShell = document.createElement('div');
@@ -3092,7 +3166,7 @@ export function showPreferencesModal(): void {
         keyBtn.className = 'shortcut-key-btn';
         keyBtn.textContent = displayKeys(shortcut.resolvedKeys);
 
-        const hasOverride = shortcutManager.hasOverride(shortcut.id);
+        const hasOverride = shortcutManager.hasOverride(shortcut.id, shortcutOverridesDraft);
         if (hasOverride) {
           keyBtn.classList.add('customized');
         }
@@ -3121,8 +3195,8 @@ export function showPreferencesModal(): void {
             const accelerator = eventToAccelerator(e);
             if (!accelerator) return; // Bare modifier press
 
-            // Save the override
-            shortcutManager.setOverride(shortcut.id, accelerator);
+            // Stage the override and persist only when the modal confirms.
+            shortcutOverridesDraft[shortcut.id] = accelerator;
             cleanup();
             // Re-render to update display
             renderSection('shortcuts');
@@ -3130,7 +3204,7 @@ export function showPreferencesModal(): void {
 
           const onBlur = () => {
             cleanup();
-            keyBtn.textContent = displayKeys(shortcutManager.getKeys(shortcut.id));
+            keyBtn.textContent = displayKeys(shortcutManager.getKeys(shortcut.id, shortcutOverridesDraft));
             keyBtn.classList.remove('recording');
           };
 
@@ -3149,7 +3223,7 @@ export function showPreferencesModal(): void {
         // Reset button
         resetBtn.addEventListener('click', () => {
           cleanupRecorder();
-          shortcutManager.resetOverride(shortcut.id);
+          delete shortcutOverridesDraft[shortcut.id];
           renderSection('shortcuts');
         });
 
@@ -3532,38 +3606,23 @@ export function showPreferencesModal(): void {
   });
 
   const save = () => {
-    if (soundCheckbox) {
-      appState.setPreference('soundOnSessionWaiting', soundCheckbox.checked);
-    }
-    if (notificationsCheckbox) {
-      appState.setPreference('notificationsDesktop', notificationsCheckbox.checked);
-    }
-    if (historyCheckbox) {
-      appState.setPreference('sessionHistoryEnabled', historyCheckbox.checked);
-    }
-    if (insightsCheckbox) {
-      appState.setPreference('insightsEnabled', insightsCheckbox.checked);
-    }
-    if (autoTitleCheckbox) {
-      appState.setPreference('autoTitleEnabled', autoTitleCheckbox.checked);
-    }
-    if (defaultProviderSelect) {
-      appState.setPreference('defaultProvider', defaultProviderSelect.getValue() as ProviderId);
-    }
-    if (debugModeCheckbox && debugModeCheckbox.checked !== appState.preferences.debugMode) {
-      appState.setPreference('debugMode', debugModeCheckbox.checked);
-      window.calder.menu.rebuild(debugModeCheckbox.checked);
-    }
-    if (sidebarCheckboxes) {
-      appState.setPreference('sidebarViews', {
-        configSections: sidebarCheckboxes.configSections.checked,
-        gitPanel: sidebarCheckboxes.gitPanel.checked,
-        sessionHistory: sidebarCheckboxes.sessionHistory.checked,
-        costFooter: sidebarCheckboxes.costFooter.checked,
-      });
-    }
-    if (languageSelect) {
-      appState.setPreference('language', languageSelect.getValue() as UiLanguage);
+    appState.setPreference('soundOnSessionWaiting', preferenceDraft.soundOnSessionWaiting);
+    appState.setPreference('notificationsDesktop', preferenceDraft.notificationsDesktop);
+    appState.setPreference('sessionHistoryEnabled', preferenceDraft.sessionHistoryEnabled);
+    appState.setPreference('insightsEnabled', preferenceDraft.insightsEnabled);
+    appState.setPreference('autoTitleEnabled', preferenceDraft.autoTitleEnabled);
+    appState.setPreference('defaultProvider', preferenceDraft.defaultProvider);
+    appState.setPreference('sidebarViews', {
+      configSections: preferenceDraft.sidebarViews.configSections,
+      gitPanel: preferenceDraft.sidebarViews.gitPanel,
+      sessionHistory: preferenceDraft.sidebarViews.sessionHistory,
+      costFooter: preferenceDraft.sidebarViews.costFooter,
+    });
+    appState.setPreference('keybindings', { ...shortcutOverridesDraft });
+    appState.setPreference('language', preferenceDraft.language);
+    if (preferenceDraft.debugMode !== appState.preferences.debugMode) {
+      appState.setPreference('debugMode', preferenceDraft.debugMode);
+      window.calder.menu.rebuild(preferenceDraft.debugMode);
     }
   };
 
@@ -3598,7 +3657,7 @@ export function showPreferencesModal(): void {
   btnCancel.addEventListener('click', handleCancel);
   document.addEventListener('keydown', handleKeydown);
 
-  registerModalCleanup(() => {
+  extendModalCleanup(() => {
     cleanupRecorder();
     cleanupAboutUpdateListeners();
     if (defaultProviderSelect) defaultProviderSelect.destroy();
