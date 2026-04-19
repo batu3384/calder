@@ -699,12 +699,6 @@ textarea:focus,
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  #app::before {
-    animation: calder-aurora-drift 18s ease-in-out infinite alternate;
-  }
-}
-
 @keyframes calder-aurora-drift {
   0% {
     transform: translate3d(-1.5%, -1%, 0) scale(1);

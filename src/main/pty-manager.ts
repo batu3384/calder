@@ -16,6 +16,7 @@ interface PtyInstance {
 
 const ptys = new Map<string, PtyInstance>();
 const silencedExits = new Set<string>();
+const RESUME_SESSION_MISSING_PATTERN = /no conversation found with session id|session(?:\s+id)?[^.\n]*not found/i;
 
 /**
  * Get the full PATH by sourcing the user's login shell.
@@ -102,28 +103,56 @@ export function spawnPty(
   const provider = getProvider(providerId);
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
   const env = buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv));
-  const args = provider.buildArgs({ cliSessionId, isResume, extraArgs, initialPrompt });
   const shell = provider.resolveBinaryPath();
+  let attemptedResumeFallback = false;
 
-  const ptyProcess = pty.spawn(shell, args, {
-    name: 'xterm-256color',
-    cols: 120,
-    rows: 30,
-    cwd,
-    env,
-  });
+  const spawnAttempt = (attemptCliSessionId: string | null, attemptIsResume: boolean): void => {
+    const args = provider.buildArgs({
+      cliSessionId: attemptCliSessionId,
+      isResume: attemptIsResume,
+      extraArgs,
+      initialPrompt,
+    });
+    const ptyProcess = pty.spawn(shell, args, {
+      name: 'xterm-256color',
+      cols: 120,
+      rows: 30,
+      cwd,
+      env,
+    });
+    let shouldRetryWithoutResume = false;
 
-  ptyProcess.onData((data) => onData(data));
-  ptyProcess.onExit(({ exitCode, signal }) => {
-    // Only remove from map if this PTY is still the active one for this session
-    const current = ptys.get(sessionId);
-    if (current?.process === ptyProcess) {
-      ptys.delete(sessionId);
-    }
-    onExit(exitCode, signal);
-  });
+    ptyProcess.onData((data) => {
+      onData(data);
+      if (
+        !attemptedResumeFallback
+        && attemptIsResume
+        && !!attemptCliSessionId
+        && RESUME_SESSION_MISSING_PATTERN.test(data)
+      ) {
+        attemptedResumeFallback = true;
+        shouldRetryWithoutResume = true;
+        onData('\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n');
+        ptyProcess.kill();
+      }
+    });
+    ptyProcess.onExit(({ exitCode, signal }) => {
+      // Only remove from map if this PTY is still the active one for this session
+      const current = ptys.get(sessionId);
+      if (current?.process === ptyProcess) {
+        ptys.delete(sessionId);
+      }
+      if (shouldRetryWithoutResume) {
+        spawnAttempt(null, false);
+        return;
+      }
+      onExit(exitCode, signal);
+    });
 
-  ptys.set(sessionId, { process: ptyProcess, sessionId });
+    ptys.set(sessionId, { process: ptyProcess, sessionId });
+  };
+
+  spawnAttempt(cliSessionId, isResume);
 }
 
 export function spawnCommandPty(

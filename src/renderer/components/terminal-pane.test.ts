@@ -325,6 +325,28 @@ describe('terminal pending prompt injection', () => {
     expect(mockPtyCreate).toHaveBeenCalledWith('claude-2', '/project', null, false, '', 'claude', undefined);
   });
 
+  it('recovers from spawn failures without leaving the session stuck', async () => {
+    const { createTerminalPane, spawnTerminal, getTerminalInstance } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    mockPtyCreate
+      .mockRejectedValueOnce(new Error('spawn failed'))
+      .mockResolvedValueOnce(undefined);
+
+    createTerminalPane('recover-1', '/missing/project', null, true, '', 'claude');
+
+    await expect(spawnTerminal('recover-1')).resolves.toBeUndefined();
+    const afterFailure = getTerminalInstance('recover-1');
+    expect(afterFailure?.spawned).toBe(false);
+    expect(afterFailure?.exited).toBe(true);
+
+    await expect(spawnTerminal('recover-1')).resolves.toBeUndefined();
+    const afterRetry = getTerminalInstance('recover-1');
+    expect(afterRetry?.spawned).toBe(true);
+    expect(afterRetry?.exited).toBe(false);
+    expect(mockPtyCreate).toHaveBeenCalledTimes(2);
+  });
+
   it('does not inject pending prompt from PTY output', async () => {
     const { createTerminalPane, setPendingPrompt, handlePtyData, spawnTerminal } = await import('./terminal-pane.js');
 

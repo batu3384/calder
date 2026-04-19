@@ -121,6 +121,44 @@ describe('spawnPty', () => {
     );
   });
 
+  it('falls back to a fresh spawn when restored conversation is missing', () => {
+    const firstProc = createMockPtyProcess();
+    const secondProc = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(firstProc).mockReturnValueOnce(secondProc);
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    spawnPty('s1', '/project', 'missing-conversation', true, '', 'claude', undefined, onData, onExit);
+
+    expect(mockSpawn).toHaveBeenNthCalledWith(
+      1,
+      'claude',
+      ['-r', 'missing-conversation'],
+      expect.any(Object),
+    );
+
+    firstProc._emitData('Error: no conversation found with session ID: missing-conversation');
+    expect(onData).toHaveBeenCalledWith('Error: no conversation found with session ID: missing-conversation');
+    expect(onData).toHaveBeenCalledWith(
+      '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
+    );
+    expect(mockKill).toHaveBeenCalledTimes(1);
+
+    // The first failed resume should not surface an exit to the renderer.
+    firstProc._emitExit(1, 0);
+    expect(onExit).not.toHaveBeenCalled();
+
+    expect(mockSpawn).toHaveBeenNthCalledWith(
+      2,
+      'claude',
+      [],
+      expect.any(Object),
+    );
+
+    secondProc._emitExit(0, 0);
+    expect(onExit).toHaveBeenCalledWith(0, 0);
+  });
+
   it('adds --session-id flag when not resuming', () => {
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);

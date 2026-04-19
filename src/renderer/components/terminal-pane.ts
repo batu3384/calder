@@ -377,8 +377,23 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
     initialPrompt = instance.pendingPrompt;
     instance.pendingPrompt = null;
   }
-  await window.calder.pty.create(sessionId, instance.projectPath, instance.cliSessionId, instance.isResume, instance.args, instance.providerId, initialPrompt);
-  instance.isResume = true; // subsequent spawns (e.g. Restart Session) should resume
+  try {
+    await window.calder.pty.create(
+      sessionId,
+      instance.projectPath,
+      instance.cliSessionId,
+      instance.isResume,
+      instance.args,
+      instance.providerId,
+      initialPrompt,
+    );
+    instance.isResume = true; // subsequent spawns (e.g. Restart Session) should resume
+  } catch (error) {
+    // Keep restore/startup failures non-fatal so one broken session does not crash the whole UI.
+    instance.spawned = false;
+    instance.exited = true;
+    console.error(`[terminal-pane] Failed to spawn terminal session ${sessionId}`, error);
+  }
 }
 
 export async function deliverPromptToTerminalSession(sessionId: string, prompt: string): Promise<boolean> {
