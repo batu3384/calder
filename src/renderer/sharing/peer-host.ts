@@ -573,6 +573,11 @@ export function startShare(
       return;
     }
 
+    if (msg.type === 'session-catalog-request') {
+      sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+      return;
+    }
+
     if (msg.type === 'browser-state-request') {
       sendBrowserState(hostPeer);
       return;

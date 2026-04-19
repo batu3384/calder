@@ -226,9 +226,14 @@ describe('browser tab pane contract', () => {
   it('adds a secure login vault panel with fill, save, and delete actions', () => {
     expect(source).toContain("authBtn.className = 'browser-auth-btn'");
     expect(source).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
+    expect(source).toContain("authCloseBtn.className = 'browser-auth-close-btn'");
+    expect(source).toContain("authCloseBtn.textContent = 'Close'");
     expect(source).toContain("authFillBtn.textContent = 'Fill now'");
     expect(source).toContain("authSaveBtn.textContent = 'Save'");
     expect(source).toContain("authDeleteBtn.textContent = 'Delete'");
+    expect(source).toContain('let closeAuthPanelAfterFill = false;');
+    expect(source).toContain('if (filledAnyField && closeAuthPanelAfterFill) {');
+    expect(source).toContain('closeAuthPanel();');
     expect(source).toContain('window.calder.browserCredential.listForUrl');
     expect(source).toContain('window.calder.browserCredential.saveForUrl');
     expect(source).toContain('window.calder.browserCredential.deleteById');

@@ -99,6 +99,7 @@ type MobilePageCopy = {
   sessionRoutingUnavailable: string;
   mobileViewsLabel: string;
   terminalTab: string;
+  browserTab: string;
   controlsTab: string;
   clearButton: string;
   copyButton: string;
@@ -222,6 +223,7 @@ const MOBILE_PAGE_COPY: Record<MobileUiLanguage, MobilePageCopy> = {
     sessionRoutingUnavailable: 'Session routing is unavailable until secure connection is ready.',
     mobileViewsLabel: 'Mobile views',
     terminalTab: 'Terminal',
+    browserTab: 'Browser',
     controlsTab: 'Controls',
     clearButton: 'Clear',
     copyButton: 'Copy',
@@ -343,6 +345,7 @@ const MOBILE_PAGE_COPY: Record<MobileUiLanguage, MobilePageCopy> = {
     sessionRoutingUnavailable: 'Güvenli bağlantı hazır olana kadar oturum yönlendirme kullanılamaz.',
     mobileViewsLabel: 'Mobil görünümler',
     terminalTab: 'Terminal',
+    browserTab: 'Tarayıcı',
     controlsTab: 'Kontroller',
     clearButton: 'Temizle',
     copyButton: 'Kopyala',
@@ -866,7 +869,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "Avenir Next", "SF Pro Text", "Segoe UI", "Helvetica Neue", sans-serif;
+      font-family: "Fira Sans", "Avenir Next", "SF Pro Text", "Segoe UI", "Helvetica Neue", sans-serif;
       background:
         radial-gradient(circle at 14% 18%, rgba(42, 109, 255, 0.44) 0%, rgba(42, 109, 255, 0) 42%),
         radial-gradient(circle at 86% 4%, rgba(74, 203, 255, 0.24) 0%, rgba(74, 203, 255, 0) 34%),
@@ -1105,11 +1108,15 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
     }
     .mobile-view-tabs {
       margin-top: 12px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
       gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
     }
     .mobile-view-tab {
+      flex: 1 1 0;
+      min-width: 100px;
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 9px 10px;
@@ -1135,6 +1142,11 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
     }
     .mobile-view-pane.active {
       display: block;
+      animation: pane-enter 160ms ease;
+    }
+    @keyframes pane-enter {
+      0% { opacity: 0; transform: translateY(6px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
     .terminal-toolbar {
       display: flex;
@@ -1158,7 +1170,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
         repeating-linear-gradient(180deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 26px);
       padding: 12px 12px 14px;
       margin-top: 0;
-      font-family: "SFMono-Regular", "Menlo", "Monaco", "Cascadia Mono", "Liberation Mono", monospace;
+      font-family: "Fira Code", "SFMono-Regular", "Menlo", "Monaco", "Cascadia Mono", "Liberation Mono", monospace;
       font-size: 12px;
       line-height: 1.45;
       white-space: pre-wrap;
@@ -1271,7 +1283,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
     }
     .browser-controls {
       display: none;
-      margin-top: 12px;
+      margin-top: 0;
       gap: 8px;
     }
     .browser-controls.visible {
@@ -1346,9 +1358,6 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       .session-switch-row {
         grid-template-columns: 1fr;
       }
-      .mobile-view-tabs {
-        grid-template-columns: 1fr 1fr;
-      }
       .command-chip-list {
         grid-template-columns: 1fr;
       }
@@ -1409,6 +1418,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       </div>
       <div class="mobile-view-tabs" role="tablist" aria-label="${copy.mobileViewsLabel}">
         <button type="button" class="mobile-view-tab active" data-mobile-view-tab="terminal" aria-selected="true">${copy.terminalTab}</button>
+        <button type="button" class="mobile-view-tab" data-mobile-view-tab="browser" aria-selected="false" disabled>${copy.browserTab}</button>
         <button type="button" class="mobile-view-tab" data-mobile-view-tab="controls" aria-selected="false" disabled>${copy.controlsTab}</button>
       </div>
       <div id="terminalView" class="mobile-view-pane active" data-mobile-view="terminal">
@@ -1418,6 +1428,32 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
           <button id="terminalFollowButton" type="button" class="btn ghost slim active" data-mobile-terminal-follow>${copy.followOnButton}</button>
         </div>
         <pre id="terminal" class="terminal" aria-live="polite"></pre>
+      </div>
+      <div id="browserView" class="mobile-view-pane" data-mobile-view="browser">
+        <div class="control-head">
+          <div class="control-title">${copy.browserControlDeckTitle}</div>
+        </div>
+        <div id="browserControls" class="browser-controls" aria-label="${copy.browserControlDeckTitle}">
+          <div class="session-switch-row browser-session-row">
+            <select id="browserSessionSelect" class="session-select" data-mobile-browser-session-select aria-label="${copy.browserSessionSelectorLabel}" disabled>
+              <option value="">${copy.browserNoSessionsAvailable}</option>
+            </select>
+          </div>
+          <div class="quick-controls-grid browser-controls-grid">
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="back">${copy.browserBackButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="forward">${copy.browserForwardButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="reload">${copy.browserReloadButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="toggle-inspect">${copy.browserInspectButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="Responsive">${copy.browserResponsiveButton}</button>
+            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="iPhone 14">${copy.browserPhoneButton}</button>
+          </div>
+          <div id="browserInspectSelection" class="browser-inspect-selection" data-mobile-inspect-selection data-mobile-inspect-selection-raw="">${copy.browserInspectSelectionNone}</div>
+          <form id="browserInspectComposer" class="browser-inspect-composer" autocomplete="off">
+            <input id="browserInspectInput" type="text" placeholder="${copy.browserInspectInputPlaceholder}" data-mobile-browser-inspect-input />
+            <button id="browserInspectSendButton" type="submit" class="btn secondary" data-mobile-browser-inspect-send>${copy.browserInspectSendButton}</button>
+          </form>
+          <div id="browserControlStatus" class="session-switch-note browser-control-status" data-mobile-browser-status>${copy.browserStatusWaiting}</div>
+        </div>
       </div>
       <div id="controlsView" class="mobile-view-pane" data-mobile-view="controls">
         <div class="control-head">
@@ -1455,28 +1491,6 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
             <button type="button" class="btn secondary" data-control="right" data-repeatable="true">→</button>
           </div>
         </div>
-        <div id="browserControls" class="browser-controls" aria-label="${copy.browserControlDeckTitle}">
-          <div class="quick-controls-title">${copy.browserControlDeckTitle}</div>
-          <div class="session-switch-row browser-session-row">
-            <select id="browserSessionSelect" class="session-select" data-mobile-browser-session-select aria-label="${copy.browserSessionSelectorLabel}" disabled>
-              <option value="">${copy.browserNoSessionsAvailable}</option>
-            </select>
-          </div>
-          <div class="quick-controls-grid browser-controls-grid">
-            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="back">${copy.browserBackButton}</button>
-            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="forward">${copy.browserForwardButton}</button>
-            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="reload">${copy.browserReloadButton}</button>
-            <button type="button" class="btn secondary" data-mobile-browser-control data-browser-control="toggle-inspect">${copy.browserInspectButton}</button>
-            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="Responsive">${copy.browserResponsiveButton}</button>
-            <button type="button" class="btn secondary" data-mobile-browser-viewport data-browser-viewport="iPhone 14">${copy.browserPhoneButton}</button>
-          </div>
-          <div id="browserInspectSelection" class="browser-inspect-selection" data-mobile-inspect-selection data-mobile-inspect-selection-raw="">${copy.browserInspectSelectionNone}</div>
-          <form id="browserInspectComposer" class="browser-inspect-composer" autocomplete="off">
-            <input id="browserInspectInput" type="text" placeholder="${copy.browserInspectInputPlaceholder}" data-mobile-browser-inspect-input />
-            <button id="browserInspectSendButton" type="submit" class="btn secondary" data-mobile-browser-inspect-send>${copy.browserInspectSendButton}</button>
-          </form>
-          <div id="browserControlStatus" class="session-switch-note browser-control-status" data-mobile-browser-status>${copy.browserStatusWaiting}</div>
-        </div>
       </div>
     </section>
   </main>
@@ -1497,6 +1511,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       const modeBadge = document.getElementById('modeBadge');
       const connBadge = document.getElementById('connBadge');
       const terminalView = document.getElementById('terminalView');
+      const browserView = document.getElementById('browserView');
       const controlsView = document.getElementById('controlsView');
       const composer = document.getElementById('composer');
       const commandInput = document.getElementById('commandInput');
@@ -1523,7 +1538,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       const shortcutToggleButton = document.getElementById('shortcutToggleButton');
       const shortcutHint = document.getElementById('shortcutHint');
       const viewTabs = Array.from(document.querySelectorAll('[data-mobile-view-tab]'));
-      const terminalViewTab = document.querySelector('[data-mobile-view-tab="terminal"]');
+      const browserViewTab = document.querySelector('[data-mobile-view-tab="browser"]');
       const controlsViewTab = document.querySelector('[data-mobile-view-tab="controls"]');
 
       let dataChannel = null;
@@ -1543,6 +1558,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       let activeBrowserSessionId = '';
       let browserControlInFlight = false;
       let browserInspectInFlight = false;
+      let liveSyncTimer = null;
       let followTerminal = true;
       let commandHistory = [];
       let commandHistoryIndex = -1;
@@ -1643,22 +1659,31 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
       }
 
       function setActiveView(view) {
-        activeView = view === 'controls' ? 'controls' : 'terminal';
+        activeView = view === 'controls' || view === 'browser' ? view : 'terminal';
         if (activeView === 'terminal') {
           stopQuickControlRepeat();
         }
         terminalView.classList.toggle('active', activeView === 'terminal');
+        if (browserView) {
+          browserView.classList.toggle('active', activeView === 'browser');
+        }
         controlsView.classList.toggle('active', activeView === 'controls');
-        terminalViewTab.classList.toggle('active', activeView === 'terminal');
-        controlsViewTab.classList.toggle('active', activeView === 'controls');
-        terminalViewTab.setAttribute('aria-selected', activeView === 'terminal' ? 'true' : 'false');
-        controlsViewTab.setAttribute('aria-selected', activeView === 'controls' ? 'true' : 'false');
+        for (const tab of viewTabs) {
+          const viewName = tab.getAttribute('data-mobile-view-tab');
+          const isActive = viewName === activeView;
+          tab.classList.toggle('active', isActive);
+          tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        }
       }
 
-      function setControlsViewEnabled(enabled) {
+      function setInteractiveViewsEnabled(enabled) {
         controlsViewTab.disabled = !enabled;
         controlsViewTab.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-        if (!enabled && activeView === 'controls') {
+        if (browserViewTab) {
+          browserViewTab.disabled = !enabled;
+          browserViewTab.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+        }
+        if (!enabled && activeView !== 'terminal') {
           setActiveView('terminal');
         }
       }
@@ -1714,7 +1739,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
         sendButton.disabled = !visible;
         setCommandChipInteractivity(visible);
         updateHistoryNavigationState();
-        setControlsViewEnabled(visible);
+        setInteractiveViewsEnabled(visible);
         updateBrowserControlsUi();
         updateStageChips();
       }
@@ -2135,6 +2160,30 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
         sendMessage({ type: 'browser-state-request' });
       }
 
+      function requestSessionCatalog() {
+        if (!authenticated || !dataChannel || dataChannel.readyState !== 'open') return;
+        sendMessage({ type: 'session-catalog-request' });
+      }
+
+      function requestLiveSync() {
+        requestSessionCatalog();
+        requestBrowserState();
+      }
+
+      function stopLiveSyncLoop() {
+        if (liveSyncTimer) {
+          clearInterval(liveSyncTimer);
+          liveSyncTimer = null;
+        }
+      }
+
+      function startLiveSyncLoop() {
+        if (liveSyncTimer || !authenticated || !dataChannel || dataChannel.readyState !== 'open') return;
+        liveSyncTimer = setInterval(function () {
+          requestLiveSync();
+        }, 1200);
+      }
+
       function sendBrowserControl(action, extra) {
         if (!canUseBrowserControls()) {
           updateBrowserControlsUi();
@@ -2441,7 +2490,8 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
         setInteractiveControlsVisible();
         updateSessionSwitchUi();
         describeSessionSwitchState();
-        requestBrowserState();
+        requestLiveSync();
+        startLiveSyncLoop();
         updateShortcutHint();
       }
 
@@ -2454,6 +2504,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
         channel.onclose = function () {
           setConnState('closed');
           setStatus(ui.connectionClosed, 'error');
+          stopLiveSyncLoop();
           authenticated = false;
           switchInFlight = false;
           browserControlInFlight = false;
@@ -2493,6 +2544,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
               authenticated = true;
               onAuthenticated();
             } else {
+              stopLiveSyncLoop();
               streamReady = false;
               controlsUnlocked = false;
               setStatus(formatCopy(ui.authFailedTemplate, { reason: msg.reason || ui.unknownReason }), 'error');
@@ -2535,6 +2587,7 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
               break;
             case 'end':
               setStatus(ui.hostEndedSession, 'error');
+              stopLiveSyncLoop();
               streamReady = false;
               controlsUnlocked = false;
               updateStageChips();
@@ -2846,14 +2899,16 @@ function renderMobilePage(pairingId: string, language: MobileUiLanguage): string
           tab.addEventListener('click', function () {
             const view = tab.getAttribute('data-mobile-view-tab');
             if (!view) return;
-            if (view === 'controls' && controlsViewTab.disabled) return;
+            if (tab.disabled) return;
             setActiveView(view);
           });
         }
 
+        window.addEventListener('beforeunload', stopLiveSyncLoop);
+
         setActiveView('terminal');
         setFollowTerminal(true);
-        setControlsViewEnabled(false);
+        setInteractiveViewsEnabled(false);
         updateStageChips();
         updateShortcutHint();
         syncSessionSelectOptions();

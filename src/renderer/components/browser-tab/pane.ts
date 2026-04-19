@@ -1204,8 +1204,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   authChip.className = 'browser-capture-chip';
   authChip.textContent = 'Login';
 
+  const authHeaderMeta = document.createElement('div');
+  authHeaderMeta.className = 'browser-auth-header-meta';
+
+  const authCloseBtn = document.createElement('button');
+  authCloseBtn.className = 'browser-auth-close-btn';
+  authCloseBtn.type = 'button';
+  authCloseBtn.textContent = 'Close';
+  authCloseBtn.title = 'Close login panel';
+  authCloseBtn.ariaLabel = 'Close login panel';
+
+  authHeaderMeta.appendChild(authChip);
+  authHeaderMeta.appendChild(authCloseBtn);
   authHeader.appendChild(authCopy);
-  authHeader.appendChild(authChip);
+  authHeader.appendChild(authHeaderMeta);
   authPanel.appendChild(authHeader);
 
   const authForm = document.createElement('div');
@@ -1306,6 +1318,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   let authPanelFloatingCleanup: (() => void) | null = null;
   let authSelectedCredentialId: string | null = null;
   let authCredentialList: BrowserCredentialSummary[] = [];
+  let closeAuthPanelAfterFill = false;
 
   const instance: BrowserTabInstance = {
     sessionId,
@@ -1457,6 +1470,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   }
 
   function closeAuthPanel(): void {
+    closeAuthPanelAfterFill = false;
     authPanel.style.display = 'none';
     authPanelFloatingCleanup?.();
     authPanelFloatingCleanup = null;
@@ -1575,6 +1589,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
         setAuthStatus('Selected profile is unavailable for this page.', 'error');
         return;
       }
+      closeAuthPanelAfterFill = true;
       await fillCredentialPayload(payload);
       setAuthStatus(`Filled profile: ${payload.label}.`, 'success');
       return;
@@ -1586,6 +1601,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       setAuthStatus('Enter username and password, or choose a saved profile.', 'error');
       return;
     }
+    closeAuthPanelAfterFill = true;
     await sendGuestMessage(instance.webview, 'auth-fill-credentials', {
       username: manualUsername,
       password: manualPassword,
@@ -1617,9 +1633,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   });
   authFillBtn.addEventListener('click', () => {
     void fillFromProfileOrForm().catch((error) => {
+      closeAuthPanelAfterFill = false;
       setAuthStatus(error instanceof Error ? error.message : 'Failed to fill credentials.', 'error');
     });
   });
+  authCloseBtn.addEventListener('click', () => closeAuthPanel());
 
   authBtn.addEventListener('click', () => {
     if (authPanel.style.display !== 'none') {
@@ -2104,6 +2122,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       const payload = e.args[0] as { filledUsername?: boolean; filledPassword?: boolean };
       const filledUsername = Boolean(payload?.filledUsername);
       const filledPassword = Boolean(payload?.filledPassword);
+      const filledAnyField = filledUsername || filledPassword;
       if (filledUsername && filledPassword) {
         setAuthStatus('Credentials were filled on the page.', 'success');
       } else if (filledPassword) {
@@ -2112,6 +2131,11 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
         setAuthStatus('Username field was filled.', 'success');
       } else {
         setAuthStatus('No login inputs were found on this page.', 'error');
+      }
+      if (filledAnyField && closeAuthPanelAfterFill) {
+        closeAuthPanel();
+      } else if (!filledAnyField) {
+        closeAuthPanelAfterFill = false;
       }
     }
   }) as EventListener);

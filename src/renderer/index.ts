@@ -89,8 +89,11 @@ window.calder.app.onQuitting(() => {
 });
 
 window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
+  const projectFromSession = payload.sessionId
+    ? appState.projects.find((entry) => entry.sessions.some((session) => session.id === payload.sessionId))
+    : undefined;
   const projectFromPath = payload.cwd ? appState.findProjectForPath(payload.cwd) : undefined;
-  const project = projectFromPath ?? (payload.cwd ? undefined : appState.activeProject);
+  const project = projectFromSession ?? projectFromPath ?? appState.activeProject;
   if (!project) return;
   const now = Date.now();
   const previousUrl = canonicalizeEmbeddedUrl(project.surface?.web?.url);

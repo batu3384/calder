@@ -39,6 +39,7 @@ export type ShareMessage =
   | { type: 'data'; payload: string }
   | { type: 'input'; payload: string }
   | { type: 'session-switch'; sessionId: string }
+  | { type: 'session-catalog-request' }
   | { type: 'browser-state-request' }
   | { type: 'browser-control'; action: ShareBrowserControlAction; sessionId?: string; viewportLabel?: string }
   | {

@@ -19,6 +19,8 @@ describe('mobile control discoverability contract', () => {
     expect(tabBarSource).toContain("mobileControlPresenceEl.dataset.connectionState = connected ? 'connected' : 'waiting';");
     expect(tabBarSource).toContain('buildShareDialogMobilePresence');
     expect(tabBarSource).toContain('showShareDialog(targetCliSession.id);');
+    expect(tabBarSource).toContain('void promptNewSession((session) => {');
+    expect(tabBarSource).toContain('showShareDialog(session.id);');
   });
 
   it('renders dedicated waiting and connected states for mobile handoff status', () => {

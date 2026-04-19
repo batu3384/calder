@@ -11,8 +11,9 @@ describe('index embedded browser routing contract', () => {
     expect(source).toContain('if (!shouldAcceptEmbeddedRoute(project.id, requestedUrl, now)) return;');
     expect(source).not.toContain('if (lastRoute.previous && requestedUrl === lastRoute.previous) return false;');
     expect(source).toContain('const isSameRoute = !!(requestedUrl && previousUrl && requestedUrl === previousUrl);');
+    expect(source).toContain('const projectFromSession = payload.sessionId');
     expect(source).toContain('const projectFromPath = payload.cwd ? appState.findProjectForPath(payload.cwd) : undefined;');
-    expect(source).toContain('const project = projectFromPath ?? (payload.cwd ? undefined : appState.activeProject);');
+    expect(source).toContain('const project = projectFromSession ?? projectFromPath ?? appState.activeProject;');
     expect(source).toContain('createBrowserTabPane(session.id, session.browserTabUrl ?? payload.url);');
     expect(source).toContain('if (!isSameRoute) {');
     expect(source).toContain('queueMicrotask(() => {');

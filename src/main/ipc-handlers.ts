@@ -134,7 +134,11 @@ function isAllowedReadPath(resolvedPath: string): boolean {
 }
 
 function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
-  return value === 'off' || value === 'edit_only' || value === 'edit_plus_safe_tools' || value === 'full_auto';
+  return value === 'off'
+    || value === 'edit_only'
+    || value === 'edit_plus_safe_tools'
+    || value === 'full_auto'
+    || value === 'full_auto_unsafe';
 }
 
 function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null): void {
@@ -146,6 +150,7 @@ function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project'
 
 const PLAYWRIGHT_NAVIGATE_TOOL = 'mcp__plugin_playwright_playwright__browser_navigate';
 const PLAYWRIGHT_MIRROR_COOLDOWN_MS = 1_500;
+const PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS = 8_192;
 
 interface PlaywrightMirrorState {
   lastUrl: string;
@@ -155,17 +160,38 @@ interface PlaywrightMirrorState {
 interface PlaywrightMirrorTarget {
   url: string;
   cwd: string;
+  sessionId: string;
 }
 
 function isPlaywrightNavigateToolName(toolName: string | undefined): boolean {
   if (!toolName) return false;
-  if (toolName === PLAYWRIGHT_NAVIGATE_TOOL) return true;
-  return toolName.includes('playwright') && toolName.endsWith('__browser_navigate');
+  const normalized = toolName.trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized === PLAYWRIGHT_NAVIGATE_TOOL) return true;
+  if (normalized.includes('playwright') && normalized.endsWith('__browser_navigate')) return true;
+
+  // Some providers/tooling surfaces use human-readable tool names instead of
+  // canonical MCP IDs (for example: "plugin:playwright:playwright - Navigate to a URL").
+  const isPlaywrightTool = normalized.includes('playwright');
+  if (!isPlaywrightTool) return false;
+  if (/(^|[^a-z0-9])browser_navigate([^a-z0-9]|$)/.test(normalized)) return true;
+  if (normalized.includes('navigate to a url')) return true;
+  return /(?:^|[^a-z0-9])navigate([^a-z0-9]|$)/.test(normalized);
 }
 
 function extractPlaywrightNavigateUrl(toolInput: InspectorEvent['tool_input']): string | null {
   if (!toolInput || typeof toolInput !== 'object') return null;
-  const raw = toolInput.url;
+  const urlCandidate = (toolInput as Record<string, unknown>).url;
+  return normalizePlaywrightNavigateUrl(typeof urlCandidate === 'string' ? urlCandidate : null);
+}
+
+function extractPlaywrightNavigateCwd(cwd: InspectorEvent['cwd']): string | null {
+  if (typeof cwd !== 'string') return null;
+  const normalized = cwd.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizePlaywrightNavigateUrl(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string') return null;
   const url = raw.trim();
   if (!url) return null;
@@ -178,10 +204,18 @@ function extractPlaywrightNavigateUrl(toolInput: InspectorEvent['tool_input']): 
   }
 }
 
-function extractPlaywrightNavigateCwd(cwd: InspectorEvent['cwd']): string | null {
-  if (typeof cwd !== 'string') return null;
-  const normalized = cwd.trim();
-  return normalized ? normalized : null;
+function shouldMirrorPlaywrightNavigateUrl(
+  sessionId: string,
+  url: string,
+  stateBySession: Map<string, PlaywrightMirrorState>,
+  nowMs = Date.now(),
+): boolean {
+  const previous = stateBySession.get(sessionId);
+  if (previous && previous.lastUrl === url && nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS) {
+    return false;
+  }
+  stateBySession.set(sessionId, { lastUrl: url, lastMirroredAtMs: nowMs });
+  return true;
 }
 
 function shouldMirrorPlaywrightNavigate(
@@ -196,14 +230,28 @@ function shouldMirrorPlaywrightNavigate(
   const cwd = extractPlaywrightNavigateCwd(event.cwd);
   if (!cwd) return null;
   if (!url) return null;
+  if (!shouldMirrorPlaywrightNavigateUrl(sessionId, url, stateBySession, nowMs)) return null;
+  return { url, cwd, sessionId };
+}
 
-  const previous = stateBySession.get(sessionId);
-  if (previous && previous.lastUrl === url && nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS) {
-    return null;
+function extractPlaywrightNavigateUrlsFromTerminalChunk(text: string): string[] {
+  if (!text) return [];
+  const matches: string[] = [];
+  const patterns = [
+    /plugin:playwright:playwright[^\n\r]{0,160}navigate to a url[\s\S]{0,360}?\(mcp\)\(url:\s*"([^"\n\r]+)"/gi,
+    /playwright:[^\n\r]{0,160}browser_navigate[^\n\r]*[\s\S]{0,360}?\(mcp\)\(url:\s*"([^"\n\r]+)"/gi,
+  ];
+  for (const pattern of patterns) {
+    pattern.lastIndex = 0;
+    let result: RegExpExecArray | null;
+    while ((result = pattern.exec(text)) !== null) {
+      const normalized = normalizePlaywrightNavigateUrl(result[1]);
+      if (normalized) {
+        matches.push(normalized);
+      }
+    }
   }
-
-  stateBySession.set(sessionId, { lastUrl: url, lastMirroredAtMs: nowMs });
-  return { url, cwd };
+  return Array.from(new Set(matches));
 }
 
 /** @internal test-only */
@@ -214,6 +262,11 @@ export function _extractPlaywrightNavigateUrlForTesting(toolInput: InspectorEven
 /** @internal test-only */
 export function _extractPlaywrightNavigateCwdForTesting(cwd: InspectorEvent['cwd']): string | null {
   return extractPlaywrightNavigateCwd(cwd);
+}
+
+/** @internal test-only */
+export function _extractPlaywrightNavigateUrlsFromTerminalChunkForTesting(text: string): string[] {
+  return extractPlaywrightNavigateUrlsFromTerminalChunk(text);
 }
 
 /** @internal test-only */
@@ -258,6 +311,7 @@ let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
 const miniMaxToolCallRecoveryBySession = new Map<string, MiniMaxToolCallRecoveryState>();
 const MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS = 45_000;
 const playwrightMirrorBySession = new Map<string, PlaywrightMirrorState>();
+const playwrightTranscriptBufferBySession = new Map<string, string>();
 
 interface ProjectWatchBinding {
   projectPath: string;
@@ -350,6 +404,7 @@ export function resetHookWatcher(): void {
   clearProjectBindings(projectCheckpointBindings);
   miniMaxToolCallRecoveryBySession.clear();
   playwrightMirrorBySession.clear();
+  playwrightTranscriptBufferBySession.clear();
 }
 
 export function registerIpcHandlers(): void {
@@ -382,7 +437,12 @@ export function registerIpcHandlers(): void {
         const win = BrowserWindow.getAllWindows()[0];
         if (win && !win.isDestroyed()) {
           void openUrlWithBrowserPolicy(
-            { url: mirroredTarget.url, cwd: mirroredTarget.cwd, preferEmbedded: true },
+            {
+              url: mirroredTarget.url,
+              cwd: mirroredTarget.cwd,
+              sessionId: mirroredTarget.sessionId,
+              preferEmbedded: true,
+            },
             win,
             (target) => shell.openExternal(target),
           ).catch((error) => {
@@ -440,6 +500,44 @@ export function registerIpcHandlers(): void {
     return applySessionOverrideToGovernanceState(baseState, sessionMode);
   };
 
+  const mirrorPlaywrightFromPtyData = (sessionId: string, cwd: string, chunk: string): void => {
+    if (!chunk || chunk.length === 0) return;
+    const previous = playwrightTranscriptBufferBySession.get(sessionId) ?? '';
+    const combined = `${previous}${chunk}`;
+    const buffer = combined.length > PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS
+      ? combined.slice(-PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS)
+      : combined;
+    playwrightTranscriptBufferBySession.set(sessionId, buffer);
+
+    const urls = extractPlaywrightNavigateUrlsFromTerminalChunk(buffer);
+    if (urls.length === 0) return;
+
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win || win.isDestroyed()) return;
+
+    for (const url of urls) {
+      const now = Date.now();
+      if (!shouldMirrorPlaywrightNavigateUrl(sessionId, url, playwrightMirrorBySession, now)) {
+        continue;
+      }
+
+      void openUrlWithBrowserPolicy(
+        { url, cwd, sessionId, preferEmbedded: true },
+        win,
+        (target) => shell.openExternal(target),
+      ).catch((error) => {
+        console.warn('Playwright transcript mirror open failed:', error);
+      });
+
+      win.webContents.send('session:inspectorEvents', sessionId, [{
+        type: 'status_update',
+        timestamp: now,
+        hookEvent: 'PlaywrightMirror',
+        message: `Mirrored Playwright navigate from terminal output: ${url}`,
+      } satisfies InspectorEvent]);
+    }
+  };
+
   ipcMain.handle('pty:create', (_event, sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs: string, providerId: ProviderId = 'claude', initialPrompt?: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
@@ -485,6 +583,7 @@ export function registerIpcHandlers(): void {
       providerId,
       initialPrompt,
       (data) => {
+        mirrorPlaywrightFromPtyData(sessionId, cwd, data);
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
           w.webContents.send('pty:data', sessionId, data);
@@ -496,6 +595,8 @@ export function registerIpcHandlers(): void {
         unregisterBlackboxSession(sessionId);
         autoApprovalOrchestrator.unregisterSession(sessionId);
         miniMaxToolCallRecoveryBySession.delete(sessionId);
+        playwrightMirrorBySession.delete(sessionId);
+        playwrightTranscriptBufferBySession.delete(sessionId);
         if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {

@@ -463,6 +463,21 @@ describe('peer-host', () => {
     await Promise.resolve();
 
     mockSendMessage.mockClear();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'session-catalog-request' }) } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-catalog',
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: cliSession.id,
+            name: cliSession.name,
+          }),
+        ]),
+      }),
+    );
+
+    mockSendMessage.mockClear();
     dc.onmessage?.({ data: JSON.stringify({ type: 'browser-state-request' }) } as MessageEvent);
     expect(mockSendMessage).toHaveBeenCalledWith(
       dc,

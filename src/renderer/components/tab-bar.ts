@@ -135,12 +135,12 @@ function syncMobileControlButton(): void {
   const language = appState.preferences.language === 'tr' ? 'tr' : 'en';
   const uiCopy = language === 'tr'
     ? {
-        selectCliSessionHint: 'Güvenli devri etkinleştirmek için bir CLI oturum sekmesi seçin',
+        createCliSessionHint: 'Henüz CLI oturumu yok. Bir tane oluşturup güvenli devri başlatmak için tıklayın',
         openSecureHandoffFor: (sessionName: string) => `"${sessionName}" için güvenli devir panelini aç`,
         openPanelSuffix: 'Paneli aç.',
       }
     : {
-        selectCliSessionHint: 'Select a CLI session tab to enable secure handoff',
+        createCliSessionHint: 'No CLI session yet. Click to create one and start secure handoff',
         openSecureHandoffFor: (sessionName: string) => `Open secure handoff panel for "${sessionName}"`,
         openPanelSuffix: 'Open panel.',
       };
@@ -162,12 +162,12 @@ function syncMobileControlButton(): void {
   const targetCliSession = getPreferredCliSession(project);
   btnMobileControl.hidden = false;
   if (!targetCliSession) {
-    btnMobileControl.disabled = true;
+    btnMobileControl.disabled = false;
     btnMobileControl.classList.remove('is-sharing', 'is-connected');
-    btnMobileControl.removeAttribute('data-connection-state');
+    btnMobileControl.dataset.connectionState = 'idle';
     btnMobileControl.setAttribute('aria-pressed', 'false');
-    btnMobileControl.title = uiCopy.selectCliSessionHint;
-    btnMobileControl.setAttribute('aria-label', uiCopy.selectCliSessionHint);
+    btnMobileControl.title = uiCopy.createCliSessionHint;
+    btnMobileControl.setAttribute('aria-label', uiCopy.createCliSessionHint);
     if (mobileControlPresenceEl) {
       mobileControlPresenceEl.hidden = true;
       mobileControlPresenceEl.textContent = '';
@@ -259,7 +259,13 @@ export function initTabBar(): void {
     const project = appState.activeProject;
     if (!project) return;
     const targetCliSession = getPreferredCliSession(project);
-    if (!targetCliSession) return;
+    if (!targetCliSession) {
+      void promptNewSession((session) => {
+        showShareDialog(session.id);
+        syncMobileControlButton();
+      });
+      return;
+    }
     showShareDialog(targetCliSession.id);
     syncMobileControlButton();
   });

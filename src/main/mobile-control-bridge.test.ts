@@ -83,6 +83,7 @@ describe('mobile-control-bridge', () => {
     expect(page.text).toContain('Use the 6-digit OTP shown under the desktop QR. Do not enter the manual passphrase here.');
     expect(page.text).not.toContain('Wrong passphrase or invalid connection code.');
     expect(page.text).toContain('data-mobile-view-tab="terminal"');
+    expect(page.text).toContain('data-mobile-view-tab="browser"');
     expect(page.text).toContain('data-mobile-view-tab="controls"');
     expect(page.text).toContain('data-mobile-session-select');
     expect(page.text).toContain('data-mobile-session-switch');

@@ -381,6 +381,7 @@ export interface WebSurfaceState {
 export interface EmbeddedBrowserOpenPayload {
   url: string;
   cwd?: string;
+  sessionId?: string;
   preferEmbedded?: boolean;
 }
 
@@ -604,7 +605,7 @@ export interface ProjectBackgroundTaskDocument {
 
 export type ProjectGovernanceMode = 'advisory' | 'enforced';
 export type ProjectGovernanceDecisionPolicy = 'allow' | 'ask' | 'block';
-export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto';
+export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';
 export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
 export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';
 export type AutoApprovalDecision = 'allow' | 'ask' | 'block';
