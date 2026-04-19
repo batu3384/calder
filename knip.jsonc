@@ -13,7 +13,19 @@
   // Mobile workspace contains type augmentation files that are loaded by TS config,
   // but static import graphs cannot always discover them.
   "ignore": [
-    "apps/calder-mobile/src/types/react-native-webview.d.ts"
+    "apps/calder-mobile/src/types/react-native-webview.d.ts",
+    "awesome-claude-design/**",
+    "awesome-design-systems/**",
+    "caveman/**",
+    "claude-context/**",
+    "claude-token-efficient/**",
+    "claude-token-optimizer/**",
+    "code-review-graph/**",
+    "context-mode/**",
+    "rtk/**",
+    "token-optimizer/**",
+    "token-optimizer-mcp/**",
+    "token-savior/**"
   ],
 
   // Mobile app dependencies are declared in apps/calder-mobile/package.json,
