@@ -6,6 +6,7 @@ describe('IPC governance contract', () => {
   const source = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
   const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
   const appBrowserIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
+  const inspectorSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-inspector-orchestration.ts'), 'utf8');
   const mcpGovernanceSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-mcp-governance.ts'), 'utf8');
 
   it('guards Calder-controlled project writes through governance enforcement', () => {
@@ -44,7 +45,8 @@ describe('IPC governance contract', () => {
   });
 
   it('uses provider-aware auto-approval dispatch with missing-session fallback', () => {
-    expect(source).toContain('resolveAutoApprovalInput(providerId)');
-    expect(source).toContain('Failed to write approval input: missing PTY session');
+    expect(source).toContain("from './ipc-inspector-orchestration'");
+    expect(inspectorSource).toContain('resolveAutoApprovalInput(providerId)');
+    expect(inspectorSource).toContain('Failed to write approval input: missing PTY session');
   });
 });
