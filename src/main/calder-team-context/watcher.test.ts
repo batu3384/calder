@@ -16,7 +16,7 @@ vi.mock('./discovery.js', () => ({
   discoverProjectTeamContext: mockDiscoverProjectTeamContext,
 }));
 
-import { startProjectTeamContextWatcher } from './watcher.js';
+import { startProjectTeamContextWatcher, stopProjectTeamContextWatcher } from './watcher.js';
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];
@@ -50,6 +50,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  stopProjectTeamContextWatcher();
   vi.useRealTimers();
 });
 

@@ -20,7 +20,7 @@ import {
   createProjectTeamContextSpaceFile,
   createProjectTeamContextStarterFiles,
 } from './calder-team-context/scaffold';
-import { startProjectTeamContextWatcher } from './calder-team-context/watcher';
+import { startProjectTeamContextWatcher, stopProjectTeamContextWatcher } from './calder-team-context/watcher';
 import { discoverProjectReviews } from './calder-reviews/discovery';
 import { createProjectReviewFile } from './calder-reviews/scaffold';
 import { readProjectReviewFile } from './calder-reviews/read';
@@ -110,6 +110,7 @@ function bindProjectWatcher<State>(
 export function resetCalderProjectWatchers(): void {
   stopProjectContextWatcher();
   stopProjectWorkflowWatcher();
+  stopProjectTeamContextWatcher();
   stopProjectReviewWatcher();
   stopProjectGovernanceWatcher();
   stopProjectBackgroundTaskWatcher();

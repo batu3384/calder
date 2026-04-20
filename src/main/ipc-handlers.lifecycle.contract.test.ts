@@ -14,6 +14,7 @@ describe('ipc handlers lifecycle contract', () => {
     expect(ipcSource).toContain('resetCalderProjectWatchers();');
     expect(calderIpcSource).toContain('stopProjectContextWatcher();');
     expect(calderIpcSource).toContain('stopProjectWorkflowWatcher();');
+    expect(calderIpcSource).toContain('stopProjectTeamContextWatcher();');
     expect(calderIpcSource).toContain('stopProjectReviewWatcher();');
     expect(calderIpcSource).toContain('stopProjectGovernanceWatcher();');
     expect(calderIpcSource).toContain('stopProjectBackgroundTaskWatcher();');

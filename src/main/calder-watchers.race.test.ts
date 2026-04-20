@@ -7,6 +7,7 @@ interface WatcherRaceCase {
   discoveryExport: string;
   startExport: string;
   stopExport: string;
+  debounceMs?: number;
 }
 
 const RACE_CASES: WatcherRaceCase[] = [
@@ -25,6 +26,15 @@ const RACE_CASES: WatcherRaceCase[] = [
     discoveryExport: 'discoverProjectWorkflows',
     startExport: 'startProjectWorkflowWatcher',
     stopExport: 'stopProjectWorkflowWatcher',
+  },
+  {
+    name: 'team-context',
+    watcherModule: './calder-team-context/watcher.js',
+    discoveryModule: './calder-team-context/discovery.js',
+    discoveryExport: 'discoverProjectTeamContext',
+    startExport: 'startProjectTeamContextWatcher',
+    stopExport: 'stopProjectTeamContextWatcher',
+    debounceMs: 80,
   },
   {
     name: 'governance',
@@ -64,7 +74,17 @@ describe('calder watchers race safety', () => {
       const watchCallbacks: Array<() => void> = [];
       const closeFns: Array<ReturnType<typeof vi.fn>> = [];
       const mkdirSync = vi.fn();
-      const watch = vi.fn(((_dirPath: string, listener: () => void) => {
+      const watch = vi.fn(((
+        _dirPath: string,
+        optionsOrListener: { recursive: boolean } | (() => void),
+        maybeListener?: () => void,
+      ) => {
+        const listener = typeof optionsOrListener === 'function'
+          ? optionsOrListener
+          : maybeListener;
+        if (!listener) {
+          throw new Error('listener is required');
+        }
         watchCallbacks.push(listener);
         const close = vi.fn();
         closeFns.push(close);
@@ -109,7 +129,7 @@ describe('calder watchers race safety', () => {
 
         // Trigger watcher, then let debounce schedule discovery.
         watchCallbacks[0]?.();
-        vi.advanceTimersByTime(500);
+        vi.advanceTimersByTime(testCase.debounceMs ?? 500);
         await Promise.resolve();
         expect(discoverySpy).toHaveBeenCalledWith('/repo');
 
@@ -128,4 +148,3 @@ describe('calder watchers race safety', () => {
     });
   }
 });
-
