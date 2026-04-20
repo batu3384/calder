@@ -94,6 +94,22 @@ describe('resolveCliSurfaceLaunch', () => {
       .toThrow('Port 4800 is already in use and fallback is disabled.');
   });
 
+  it('throws when fixed mode is used with an unsupported command profile', async () => {
+    const root = makeRoot('unsupported-fixed-project');
+    const profile = makeProfile({
+      cwd: root,
+      command: 'python',
+      args: ['app.py'],
+      portMode: 'fixed',
+      preferredPort: 9000,
+      allowPortFallback: true,
+    });
+
+    await expect(resolveCliSurfaceLaunch('project-unsupported', profile, new Set<number>()))
+      .rejects
+      .toThrow('Fixed port mode is not supported for this command profile.');
+  });
+
   it('keeps launch untouched when mode is off', async () => {
     const root = makeRoot('off-mode-project');
     writePackageJson(root, { dev: 'vite' });

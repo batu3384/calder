@@ -265,6 +265,11 @@ export async function resolveCliSurfaceLaunch(
   }
 
   if (plan.mode === 'none') {
+    if (mode === 'fixed') {
+      throw new Error(
+        'Fixed port mode is not supported for this command profile. Use a supported web server command (vite/next/nuxt/astro or npm/pnpm/yarn dev/start script), or switch port mode to auto/off.',
+      );
+    }
     return {
       launch: { command, args, cwd, envPatch, cols: profile.cols, rows: profile.rows },
       metadata: { portMode: mode, portReason: plan.reason },

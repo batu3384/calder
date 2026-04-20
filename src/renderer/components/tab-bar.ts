@@ -411,6 +411,43 @@ function parseCliSurfacePortMode(raw: string | undefined, fallback: CliSurfacePo
   return fallback;
 }
 
+function normalizeCliSurfaceCommand(command: string): string {
+  const trimmed = command.trim();
+  const slashIndex = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+  const base = slashIndex >= 0 ? trimmed.slice(slashIndex + 1) : trimmed;
+  return base.toLowerCase();
+}
+
+function parsePackageManagerScriptName(command: string, args: string[] | undefined): string | undefined {
+  if (!args || args.length === 0) return undefined;
+  if (command === 'npm') {
+    if (args[0] === 'run' || args[0] === 'run-script') return args[1];
+    return undefined;
+  }
+  if (command === 'pnpm') {
+    if (args[0] === 'run' || args[0] === 'run-script') return args[1];
+    if (!args[0].startsWith('-')) return args[0];
+    return undefined;
+  }
+  if (command === 'yarn') {
+    if (args[0] === 'run') return args[1];
+    if (!args[0].startsWith('-')) return args[0];
+    return undefined;
+  }
+  return undefined;
+}
+
+function isLikelyFixedPortCompatible(command: string, args: string[] | undefined): boolean {
+  const normalized = normalizeCliSurfaceCommand(command);
+  if (normalized === 'vite' || normalized === 'astro' || normalized === 'next' || normalized === 'nuxt' || normalized === 'nuxi') {
+    return true;
+  }
+  if (normalized === 'npm' || normalized === 'pnpm' || normalized === 'yarn') {
+    return Boolean(parsePackageManagerScriptName(normalized, args));
+  }
+  return false;
+}
+
 function updateProjectSurface(project: ProjectRecord, next: ProjectSurfaceRecord): void {
   appState.setProjectSurface(project.id, next);
 }
@@ -490,7 +527,7 @@ function promptCliSurfaceProfile(
         defaultValue: existing?.portMode ?? 'auto',
         options: [
           { value: 'auto', label: 'Auto (recommended)' },
-          { value: 'fixed', label: 'Fixed port' },
+          { value: 'fixed', label: 'Fixed port (supported web-server commands)' },
           { value: 'off', label: 'Off (no orchestration)' },
         ],
       },
@@ -510,6 +547,7 @@ function promptCliSurfaceProfile(
     (values) => {
       const name = values['cli-profile-name']?.trim();
       const command = values['cli-profile-command']?.trim();
+      const parsedArgs = parseCliSurfaceArgs(values['cli-profile-args'] ?? '');
       const cwd = values['cli-profile-cwd']?.trim() || project.path;
       if (!name) {
         setModalError('cli-profile-name', 'Profile name is required');
@@ -536,12 +574,19 @@ function promptCliSurfaceProfile(
       }
 
       const allowPortFallback = values['cli-profile-port-fallback'] === 'true';
+      if (portMode === 'fixed' && !isLikelyFixedPortCompatible(command, parsedArgs)) {
+        setModalError(
+          'cli-profile-port-mode',
+          'Fixed mode needs a supported command: vite/next/nuxt/astro or npm/pnpm/yarn with a script target.',
+        );
+        return;
+      }
 
       const profile: CliSurfaceProfile = {
         id: existing?.id ?? crypto.randomUUID(),
         name,
         command,
-        args: parseCliSurfaceArgs(values['cli-profile-args'] ?? ''),
+        args: parsedArgs,
         cwd,
         portMode,
         preferredPort,
