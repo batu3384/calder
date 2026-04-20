@@ -4,16 +4,18 @@ import { describe, expect, it } from 'vitest';
 
 describe('IPC governance contract', () => {
   const source = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
+  const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
   const mcpGovernanceSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-mcp-governance.ts'), 'utf8');
 
   it('guards Calder-controlled project writes through governance enforcement', () => {
-    expect(source).toContain('assertProjectGovernanceAllows');
-    expect(source).toContain("label: 'Create context starter files'");
-    expect(source).toContain("label: 'Create shared context rule'");
-    expect(source).toContain("label: 'Create workflow file'");
-    expect(source).toContain("label: 'Create review findings file'");
-    expect(source).toContain("label: 'Create checkpoint'");
-    expect(source).toContain("label: 'Create governance starter policy'");
+    expect(source).toContain('registerCalderIpcHandlers({');
+    expect(calderIpcSource).toContain('ops.assertProjectGovernanceAllows');
+    expect(calderIpcSource).toContain("label: 'Create context starter files'");
+    expect(calderIpcSource).toContain("label: 'Create shared context rule'");
+    expect(calderIpcSource).toContain("label: 'Create workflow file'");
+    expect(calderIpcSource).toContain("label: 'Create review findings file'");
+    expect(calderIpcSource).toContain("label: 'Create checkpoint'");
+    expect(calderIpcSource).toContain("label: 'Create governance starter policy'");
   });
 
   it('guards project MCP server additions and removals with governance enforcement', () => {
@@ -34,9 +36,9 @@ describe('IPC governance contract', () => {
   });
 
   it('exposes governance IPC handlers for auto-approval controls', () => {
-    expect(source).toContain("'governance:setAutoApprovalMode'");
-    expect(source).toContain("'governance:setSessionAutoApprovalOverride'");
-    expect(source).toContain("scope === 'project' && (mode === null || isAutoApprovalMode(mode))");
+    expect(calderIpcSource).toContain("'governance:setAutoApprovalMode'");
+    expect(calderIpcSource).toContain("'governance:setSessionAutoApprovalOverride'");
+    expect(calderIpcSource).toContain("scope === 'project' && (mode === null || ops.isAutoApprovalMode(mode))");
   });
 
   it('uses provider-aware auto-approval dispatch with missing-session fallback', () => {

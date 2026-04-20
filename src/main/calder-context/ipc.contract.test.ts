@@ -5,6 +5,10 @@ const ipcHandlersSource = readFileSync(
   new URL('../ipc-handlers.ts', import.meta.url),
   'utf8',
 );
+const calderIpcSource = readFileSync(
+  new URL('../ipc-calder.ts', import.meta.url),
+  'utf8',
+);
 const preloadSource = readFileSync(
   new URL('../../preload/preload.ts', import.meta.url),
   'utf8',
@@ -15,15 +19,16 @@ const rendererTypesSource = readFileSync(
 );
 
 describe('project context IPC contract', () => {
-  it('registers context IPC handlers in main', () => {
-    expect(ipcHandlersSource).toContain("ipcMain.handle('context:getProjectState'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('context:createStarterFiles'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('context:createSharedRule'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('context:renameSharedRule'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('context:deleteSharedRule'");
-    expect(ipcHandlersSource).toContain("ipcMain.on('context:watchProject'");
-    expect(ipcHandlersSource).toContain("bindProjectWatcher(projectContextBindings");
-    expect(ipcHandlersSource).toContain("'context:changed'");
+  it('delegates context IPC handlers from main registration module', () => {
+    expect(ipcHandlersSource).toContain('registerCalderIpcHandlers({');
+    expect(calderIpcSource).toContain("ipcMain.handle('context:getProjectState'");
+    expect(calderIpcSource).toContain("ipcMain.handle('context:createStarterFiles'");
+    expect(calderIpcSource).toContain("ipcMain.handle('context:createSharedRule'");
+    expect(calderIpcSource).toContain("ipcMain.handle('context:renameSharedRule'");
+    expect(calderIpcSource).toContain("ipcMain.handle('context:deleteSharedRule'");
+    expect(calderIpcSource).toContain("ipcMain.on('context:watchProject'");
+    expect(calderIpcSource).toContain("bindProjectWatcher(projectContextBindings");
+    expect(calderIpcSource).toContain("'context:changed'");
   });
 
   it('exposes context APIs from preload', () => {

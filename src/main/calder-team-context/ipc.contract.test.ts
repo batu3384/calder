@@ -3,18 +3,20 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
+const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
 const preloadSource = readFileSync(path.join(process.cwd(), 'src/preload/preload.ts'), 'utf8');
 const rendererTypesSource = readFileSync(path.join(process.cwd(), 'src/renderer/types.ts'), 'utf8');
 
 describe('project team context IPC contract', () => {
-  it('registers team context ipc handlers in main', () => {
-    expect(ipcSource).toContain("ipcMain.handle('teamContext:getProjectState'");
-    expect(ipcSource).toContain("ipcMain.handle('teamContext:createStarterFiles'");
-    expect(ipcSource).toContain("ipcMain.handle('teamContext:createSpace'");
-    expect(ipcSource).toContain("ipcMain.on('teamContext:watchProject'");
-    expect(ipcSource).toContain("bindProjectWatcher(projectTeamContextBindings");
-    expect(ipcSource).toContain("startProjectTeamContextWatcher");
-    expect(ipcSource).toContain("'teamContext:changed'");
+  it('delegates team context ipc handlers to calder module', () => {
+    expect(ipcSource).toContain('registerCalderIpcHandlers({');
+    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:getProjectState'");
+    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:createStarterFiles'");
+    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:createSpace'");
+    expect(calderIpcSource).toContain("ipcMain.on('teamContext:watchProject'");
+    expect(calderIpcSource).toContain("bindProjectWatcher(projectTeamContextBindings");
+    expect(calderIpcSource).toContain("startProjectTeamContextWatcher");
+    expect(calderIpcSource).toContain("'teamContext:changed'");
   });
 
   it('exposes team context APIs in preload', () => {

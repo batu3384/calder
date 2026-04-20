@@ -3,15 +3,17 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
+const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
 const preloadSource = readFileSync(path.join(process.cwd(), 'src/preload/preload.ts'), 'utf8');
 const rendererTypesSource = readFileSync(path.join(process.cwd(), 'src/renderer/types.ts'), 'utf8');
 
 describe('project review IPC contract', () => {
-  it('registers project review ipc handlers in main', () => {
-    expect(ipcSource).toContain("ipcMain.handle('review:getProjectState'");
-    expect(ipcSource).toContain("ipcMain.handle('review:createFile'");
-    expect(ipcSource).toContain("ipcMain.handle('review:readFile'");
-    expect(ipcSource).toContain("ipcMain.on('review:watchProject'");
+  it('delegates project review ipc handlers to calder module', () => {
+    expect(ipcSource).toContain('registerCalderIpcHandlers({');
+    expect(calderIpcSource).toContain("ipcMain.handle('review:getProjectState'");
+    expect(calderIpcSource).toContain("ipcMain.handle('review:createFile'");
+    expect(calderIpcSource).toContain("ipcMain.handle('review:readFile'");
+    expect(calderIpcSource).toContain("ipcMain.on('review:watchProject'");
   });
 
   it('exposes project review APIs in preload', () => {
