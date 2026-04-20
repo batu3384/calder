@@ -1,5 +1,4 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import type { PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
 import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
@@ -15,7 +14,7 @@ import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-cal
 import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerPtyIpcHandlers } from './ipc-pty';
-import { sanitizePersistedStateForSave as sanitizePersistedStateForSavePayload } from './ipc-state-sanitizer';
+import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
 import {
   clearInspectorOrchestrationSession,
   createInspectorOrchestration,
@@ -38,10 +37,6 @@ import type { ProviderId } from '../shared/types';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
-
-function sanitizePersistedStateForSave(state: unknown): PersistedState {
-  return sanitizePersistedStateForSavePayload(state);
-}
 
 let hookWatcherStarted = false;
 

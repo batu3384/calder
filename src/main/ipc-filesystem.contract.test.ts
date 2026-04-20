@@ -31,7 +31,8 @@ describe('ipc filesystem contract', () => {
   });
 
   it('sanitizes persisted state payloads before saving', () => {
-    expect(ipcSource).toContain('sanitizePersistedStateForSavePayload');
+    expect(ipcSource).toContain("from './ipc-state-sanitizer'");
+    expect(ipcSource).toContain('sanitizePersistedStateForSave,');
     expect(ipcStateSanitizerSource).toContain('function validatePersistedStateReferences');
     expect(ipcStateSanitizerSource).toContain('duplicate project.id detected');
     expect(ipcStateSanitizerSource).toContain('browserTargetSessionId is missing in project');

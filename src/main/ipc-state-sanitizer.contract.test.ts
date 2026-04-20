@@ -7,7 +7,8 @@ describe('state sanitizer delegation contract', () => {
   const sanitizerSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-state-sanitizer.ts'), 'utf8');
 
   it('delegates persisted-state sanitization from ipc-handlers to dedicated module', () => {
-    expect(ipcHandlersSource).toContain('sanitizePersistedStateForSavePayload');
+    expect(ipcHandlersSource).toContain("from './ipc-state-sanitizer'");
+    expect(ipcHandlersSource).toContain('sanitizePersistedStateForSave,');
     expect(sanitizerSource).toContain('export function sanitizePersistedStateForSave');
     expect(sanitizerSource).toContain('duplicate project.id detected');
     expect(sanitizerSource).toContain('unsupported session.providerId');
