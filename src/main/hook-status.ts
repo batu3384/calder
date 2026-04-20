@@ -258,7 +258,7 @@ function isKnownExtension(filename: string): boolean {
 
 function isStatuslineArtifact(filename: string): boolean {
   return filename.endsWith('.quota.json')
-    || filename === 'statusline.refresh.lock'
+    || (filename.startsWith('statusline.refresh') && filename.endsWith('.lock'))
     || filename === 'statusline.log';
 }
 

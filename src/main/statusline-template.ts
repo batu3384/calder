@@ -19,7 +19,7 @@ export function buildStatusLinePython(statusDir: string): string {
   return `import datetime, json, os, subprocess, sys, time, urllib.parse, urllib.request
 CONFIG = json.loads(r'''${config}''')
 STATUS_DIR = r'''${statusDir}'''
-REFRESH_LOCK = os.path.join(STATUS_DIR, 'statusline.refresh.lock')
+LEGACY_REFRESH_LOCK = os.path.join(STATUS_DIR, 'statusline.refresh.lock')
 
 def read_payload():
     try:
@@ -95,12 +95,16 @@ def write_snapshot(provider, snapshot):
         os.fsync(f.fileno())
     os.replace(temp_path, target_path)
 
-def refresh_lock_is_active():
-    if os.path.exists(REFRESH_LOCK):
+def refresh_lock_path(provider):
+    return os.path.join(STATUS_DIR, 'statusline.refresh.' + str(provider) + '.lock')
+
+def refresh_lock_is_active(provider):
+    lock_path = refresh_lock_path(provider)
+    if os.path.exists(lock_path):
         try:
-            age_ms = int(time.time() * 1000) - int(os.path.getmtime(REFRESH_LOCK) * 1000)
+            age_ms = int(time.time() * 1000) - int(os.path.getmtime(lock_path) * 1000)
             if age_ms > CONFIG['staleAfterMs']:
-                os.unlink(REFRESH_LOCK)
+                os.unlink(lock_path)
                 return False
         except OSError:
             return False
@@ -109,10 +113,31 @@ def refresh_lock_is_active():
         return True
     return False
 
-def spawn_refresh(provider, model_name):
-    if refresh_lock_is_active():
+def clear_refresh_locks(provider):
+    for lock_path in (refresh_lock_path(provider), LEGACY_REFRESH_LOCK):
+        try:
+            os.unlink(lock_path)
+        except OSError:
+            pass
+
+def clear_stale_legacy_refresh_lock():
+    if not os.path.exists(LEGACY_REFRESH_LOCK):
         return
-    with open(REFRESH_LOCK, 'w') as f:
+    try:
+        age_ms = int(time.time() * 1000) - int(os.path.getmtime(LEGACY_REFRESH_LOCK) * 1000)
+        if age_ms > CONFIG['staleAfterMs']:
+            os.unlink(LEGACY_REFRESH_LOCK)
+    except OSError:
+        pass
+    except Exception:
+        pass
+
+def spawn_refresh(provider, model_name):
+    clear_stale_legacy_refresh_lock()
+    lock_path = refresh_lock_path(provider)
+    if refresh_lock_is_active(provider):
+        return
+    with open(lock_path, 'w') as f:
         f.write(str(int(time.time() * 1000)))
     try:
         subprocess.Popen(
@@ -122,7 +147,7 @@ def spawn_refresh(provider, model_name):
         )
     except Exception:
         try:
-            os.unlink(REFRESH_LOCK)
+            os.unlink(lock_path)
         except OSError:
             pass
 
@@ -251,6 +276,37 @@ def quota_with_reset_label(label, reset_label):
         return label + ' · resets ' + reset_label
     return label
 
+def infer_provider_from_model_name(model_name):
+    text = str(model_name or '').strip().lower()
+    if not text:
+        return ''
+    if text.startswith('glm-') or 'glm-' in text:
+        return 'zai'
+    if text.startswith('minimax-') or 'minimax-' in text or text.startswith('codex-minimax-') or ' minimax-' in text:
+        return 'minimax'
+    if text.startswith('qwen') or 'qwen-' in text:
+        return 'qwen'
+    if text in ('haiku', 'sonnet', 'opus') or text.startswith('claude-'):
+        return 'anthropic'
+    return ''
+
+def read_provider_sync(session_id):
+    if not isinstance(session_id, str) or not session_id:
+        return ('', '')
+    sync_path = os.path.join(STATUS_DIR, session_id + '.provider_sync.json')
+    try:
+        with open(sync_path, 'r') as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict):
+            return ('', '')
+        provider = str(payload.get('main_provider_family') or payload.get('main_provider') or '').strip().lower()
+        model = str(payload.get('main_model_exact') or payload.get('model') or '').strip()
+        if provider not in ('anthropic', 'zai', 'minimax', 'qwen'):
+            provider = infer_provider_from_model_name(model)
+        return (provider, model)
+    except Exception:
+        return ('', '')
+
 def zai_secondary_window_label(next_reset_time):
     reset_ms = numeric_value(next_reset_time)
     if reset_ms is None:
@@ -370,7 +426,7 @@ def zai_quota_url():
     return parsed.scheme + '://' + parsed.netloc + '/api/monitor/usage/quota/limit'
 
 def zai_auth_token():
-    for env_key in ('CALDER_ZAI_AUTH_TOKEN', 'ZAI_API_KEY', 'ANTHROPIC_AUTH_TOKEN'):
+    for env_key in ('CALDER_ZAI_AUTH_TOKEN', 'ZAI_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_API_KEY'):
         value = os.environ.get(env_key, '').strip()
         if not value:
             continue
@@ -393,7 +449,17 @@ def minimax_quota_url():
     override = os.environ.get('CALDER_MINIMAX_QUOTA_REMAINS_URL', '').strip()
     if override:
         return override
-    return minimax_base_url().rstrip('/') + '/v1/api/openplatform/coding_plan/remains'
+    return minimax_base_url().rstrip('/') + '/v1/token_plan/remains'
+
+def minimax_quota_urls():
+    override = os.environ.get('CALDER_MINIMAX_QUOTA_REMAINS_URL', '').strip()
+    if override:
+        return [override]
+    base = minimax_base_url().rstrip('/')
+    return [
+        base + '/v1/token_plan/remains',
+        base + '/v1/api/openplatform/coding_plan/remains',
+    ]
 
 def minimax_auth_token():
     for env_key in ('CALDER_MINIMAX_AUTH_TOKEN', 'MINIMAX_API_KEY'):
@@ -401,7 +467,7 @@ def minimax_auth_token():
         if not value:
             continue
         return value if value.lower().startswith('bearer ') else 'Bearer ' + value
-    anthropic_token = os.environ.get('ANTHROPIC_AUTH_TOKEN', '').strip()
+    anthropic_token = os.environ.get('ANTHROPIC_AUTH_TOKEN', '').strip() or os.environ.get('ANTHROPIC_API_KEY', '').strip()
     anthropic_base = os.environ.get('ANTHROPIC_BASE_URL', '').strip().lower()
     if anthropic_token and 'minimax' in anthropic_base:
         return anthropic_token if anthropic_token.lower().startswith('bearer ') else 'Bearer ' + anthropic_token
@@ -430,6 +496,8 @@ def zai_quota_snapshot(model_name):
         if not isinstance(data, dict):
             data = response if isinstance(response, dict) else {}
         limits = data.get('limits')
+        if isinstance(limits, dict):
+            limits = list(limits.values())
         five_hour = None
         five_hour_reset = None
         monthly = None
@@ -475,6 +543,8 @@ def zai_quota_snapshot(model_name):
         }
 
 def minimax_remains_entry(entries, model_name):
+    if isinstance(entries, dict):
+        entries = list(entries.values())
     if not isinstance(entries, list):
         return None
     normalized_model = str(model_name or '').strip().lower()
@@ -492,18 +562,94 @@ def minimax_remains_entry(entries, model_name):
             break
         if normalized_model.startswith('minimax-m') and lowered == 'minimax-m*':
             wildcard_match = item
-    return exact_match or wildcard_match
+    if exact_match or wildcard_match:
+        return exact_match or wildcard_match
+    normalized_family = normalized_model.replace('-highspeed', '')
+    family_match = None
+    for item in entries:
+        if not isinstance(item, dict):
+            continue
+        item_name = str(item.get('model_name') or '').strip().lower()
+        if not item_name:
+            continue
+        item_family = item_name.replace('-highspeed', '')
+        if item_family == normalized_family:
+            family_match = item
+            break
+    return family_match
+
+def minimax_usage_field_mode(quota_url):
+    override = os.environ.get('CALDER_MINIMAX_USAGE_FIELD_MODE', '').strip().lower()
+    if override in ('remaining', 'used'):
+        return override
+    if isinstance(quota_url, str) and '/v1/token_plan/remains' in quota_url:
+        # Official Token Plan endpoint exposes "usage_count" fields that represent
+        # remaining request budget despite legacy naming.
+        return 'remaining'
+    # Legacy coding_plan endpoint reports used counts in "usage_count" fields.
+    return 'used'
+
+def minimax_count_label(entry, scope, usage_mode):
+    if not isinstance(entry, dict):
+        return None
+    total = numeric_value(entry.get(scope + '_total_count') if entry.get(scope + '_total_count') is not None else entry.get(scope + 'TotalCount'))
+    if total is None or total <= 0:
+        return None
+
+    remaining = numeric_value(
+        entry.get(scope + '_remaining_count')
+        if entry.get(scope + '_remaining_count') is not None
+        else entry.get(scope + '_remains_count')
+    )
+    if remaining is None:
+        remaining = numeric_value(
+            entry.get(scope + 'RemainingCount')
+            if entry.get(scope + 'RemainingCount') is not None
+            else entry.get(scope + 'RemainsCount')
+        )
+
+    if remaining is None:
+        used = numeric_value(entry.get(scope + '_used_count') if entry.get(scope + '_used_count') is not None else entry.get(scope + 'UsedCount'))
+        if used is not None:
+            remaining = max(0.0, total - used)
+
+    if remaining is None:
+        usage = numeric_value(entry.get(scope + '_usage_count') if entry.get(scope + '_usage_count') is not None else entry.get(scope + 'UsageCount'))
+        if usage is None:
+            return None
+        if usage_mode == 'remaining':
+            remaining = usage
+        else:
+            remaining = max(0.0, total - usage)
+
+    bounded_remaining = max(0.0, min(total, remaining))
+    return str(int(round(bounded_remaining))) + '/' + str(int(round(total))) + ' left'
 
 def minimax_quota_snapshot(model_name):
     auth_token = minimax_auth_token()
-    quota_url = minimax_quota_url()
-    if not auth_token or not quota_url:
+    quota_urls = minimax_quota_urls()
+    if not auth_token or not quota_urls:
         return fallback_snapshot('minimax', model_name)
-    try:
-        response = fetch_json(quota_url, auth_token)
+    saw_payload = False
+    for quota_url in quota_urls:
+        try:
+            response = fetch_json(quota_url, auth_token)
+        except Exception:
+            continue
+
+        usage_mode = minimax_usage_field_mode(quota_url)
+
         if not isinstance(response, dict):
             response = {}
-        base_resp = response.get('base_resp')
+        saw_payload = True
+
+        payload = response.get('data') if isinstance(response.get('data'), dict) else response
+        if not isinstance(payload, dict):
+            payload = {}
+
+        base_resp = payload.get('base_resp') if isinstance(payload.get('base_resp'), dict) else None
+        if not isinstance(base_resp, dict):
+            base_resp = response.get('base_resp') if isinstance(response.get('base_resp'), dict) else None
         if isinstance(base_resp, dict) and numeric_value(base_resp.get('status_code')) not in (None, 0):
             return {
                 **fallback_snapshot('minimax', model_name),
@@ -511,30 +657,22 @@ def minimax_quota_snapshot(model_name):
                 'source': 'minimax:remains-error',
                 'message': str(base_resp.get('status_msg') or 'MiniMax remains endpoint returned an error'),
             }
-        entry = minimax_remains_entry(response.get('model_remains'), model_name)
+
+        entries = payload.get('model_remains') or payload.get('modelRemains') or payload.get('remains')
+        if entries is None:
+            entries = response.get('model_remains') or response.get('modelRemains') or response.get('remains')
+
+        entry = minimax_remains_entry(entries, model_name)
         if not isinstance(entry, dict):
-            return {
-                **fallback_snapshot('minimax', model_name),
-                'status': 'unknown',
-                'source': 'minimax:remains-empty',
-                'message': 'MiniMax remains endpoint returned no recognizable quota entry',
-            }
-        five_hour = count_remaining_label(
-            entry.get('current_interval_usage_count'),
-            entry.get('current_interval_total_count'),
-        )
-        five_hour_reset = reset_time_label_from_ms(entry.get('end_time'))
-        weekly = count_remaining_label(
-            entry.get('current_weekly_usage_count'),
-            entry.get('current_weekly_total_count'),
-        )
+            continue
+
+        five_hour = minimax_count_label(entry, 'current_interval', usage_mode)
+        five_hour_reset = reset_time_label_from_ms(entry.get('end_time') if entry.get('end_time') is not None else entry.get('endTime'))
+        weekly = minimax_count_label(entry, 'current_weekly', usage_mode)
+
         if not five_hour and not weekly:
-            return {
-                **fallback_snapshot('minimax', model_name),
-                'status': 'unknown',
-                'source': 'minimax:remains-empty',
-                'message': 'MiniMax remains entry did not include usable quotas',
-            }
+            continue
+
         return {
             'provider': 'minimax',
             'model': model_name,
@@ -546,50 +684,60 @@ def minimax_quota_snapshot(model_name):
             'updatedAt': int(time.time() * 1000),
             'source': 'minimax:remains',
         }
-    except Exception:
+
+    if saw_payload:
         return {
             **fallback_snapshot('minimax', model_name),
-            'status': 'syncing',
-            'source': 'minimax:remains-error',
-            'message': 'MiniMax quota refresh failed',
+            'status': 'unknown',
+            'source': 'minimax:remains-empty',
+            'message': 'MiniMax remains endpoint returned no recognizable quota entry',
         }
+
+    return {
+        **fallback_snapshot('minimax', model_name),
+        'status': 'syncing',
+        'source': 'minimax:remains-error',
+        'message': 'MiniMax quota refresh failed',
+    }
 
 def render_statusline(payload):
     sid = os.environ.get('CLAUDE_IDE_SESSION_ID', '') or os.environ.get('CALDER_SESSION_ID', '')
     model_name = derive_model_name(payload)
-    lower_model_name = model_name.lower()
-    if lower_model_name.startswith('glm-'):
-        provider = 'zai'
+    sync_provider, sync_model = read_provider_sync(sid)
+    display_model_name = model_name or sync_model
+    provider = sync_provider or infer_provider_from_model_name(display_model_name)
+    if provider not in ('anthropic', 'zai', 'minimax', 'qwen'):
+        provider = 'anthropic'
+    if provider == 'zai':
         provider_label = 'Z.ai'
-    elif lower_model_name.startswith('minimax-'):
-        provider = 'minimax'
+    elif provider == 'minimax':
         provider_label = 'MiniMax'
-    elif lower_model_name.startswith('qwen'):
-        provider = 'qwen'
+    elif provider == 'qwen':
         provider_label = 'Qwen'
     else:
-        provider = 'anthropic'
         provider_label = 'Anthropic'
+    quota_model_name = sync_model if (provider == 'zai' or provider == 'minimax') and sync_model else display_model_name
     cost = payload.get('cost', {})
     ctx = payload.get('context_window', {})
-    if sid and (cost or ctx or model_name):
+    if sid and (cost or ctx or display_model_name):
         with open(os.path.join(STATUS_DIR, sid+'.cost'), 'w') as f:
-            json.dump({'cost': cost, 'context_window': ctx, 'model': model_name}, f)
+            json.dump({'cost': cost, 'context_window': ctx, 'model': display_model_name}, f)
     claude_sid = payload.get('session_id', '')
     if sid and claude_sid:
         with open(os.path.join(STATUS_DIR, sid+'.sessionid'), 'w') as f:
             f.write(claude_sid)
-    snapshot = anthropic_rate_limit_snapshot(payload, model_name) if provider == 'anthropic' else None
+    snapshot = anthropic_rate_limit_snapshot(payload, quota_model_name) if provider == 'anthropic' else None
     if snapshot is None and provider != 'qwen':
         snapshot = read_snapshot(provider)
     if snapshot is None:
         if provider == 'zai' or provider == 'minimax':
-            spawn_refresh(provider, model_name)
-        snapshot = fallback_snapshot(provider, model_name)
-    elif (provider == 'zai' or provider == 'minimax') and (snapshot.get('status') == 'syncing' or snapshot_is_stale(snapshot)):
-        spawn_refresh(provider, model_name)
+            spawn_refresh(provider, quota_model_name)
+        snapshot = fallback_snapshot(provider, quota_model_name)
+    is_stale_snapshot = snapshot_is_stale(snapshot)
+    if (provider == 'zai' or provider == 'minimax') and (snapshot.get('status') == 'syncing' or is_stale_snapshot):
+        spawn_refresh(provider, quota_model_name)
     ctx_percent = context_percent(ctx)
-    freshness = 'Syncing' if snapshot.get('status') == 'syncing' else 'Live'
+    freshness = 'Syncing' if snapshot.get('status') == 'syncing' else ('Stale' if is_stale_snapshot else 'Live')
     cwd_label = latest_cwd_label(sid, payload)
     five_hour_label = snapshot.get('fiveHour') or snapshot['status']
     five_hour_display = quota_with_reset_label(five_hour_label, snapshot.get('fiveHourReset'))
@@ -599,7 +747,7 @@ def render_statusline(payload):
     if provider != 'zai':
         quota_parts.append(f"{weekly_name} {weekly_value}")
     return '\\n'.join([
-        f"{model_name or 'Unknown Model'}  {provider_label}  --  {cwd_label}",
+        f"{display_model_name or 'Unknown Model'}  {provider_label}  --  {cwd_label}",
         '  '.join([f"Ctx {ctx_percent}%", f"Cost {cost_label(cost)}"] + quota_parts + [freshness]),
     ])
 
@@ -611,10 +759,7 @@ def refresh_provider_cache(provider, model_name):
     else:
         snapshot = fallback_snapshot(provider, model_name)
     write_snapshot(provider, snapshot)
-    try:
-        os.unlink(REFRESH_LOCK)
-    except OSError:
-        pass
+    clear_refresh_locks(provider)
     return snapshot
 
 if __name__ == '__main__':

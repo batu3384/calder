@@ -2125,12 +2125,25 @@ export function quickNewSession(): void {
   const project = appState.activeProject;
   if (!project) return;
   (document.activeElement as HTMLElement)?.blur?.();
-  const sessionNum = project.sessions.length + 1;
-  const providerId = resolvePreferredProviderForLaunch(
-    appState.preferences.defaultProvider,
-    getProviderAvailabilitySnapshot(),
-  );
-  appState.addSession(project.id, `Session ${sessionNum}`, undefined, providerId);
+  void (async () => {
+    let providerSnapshot = getProviderAvailabilitySnapshot();
+    if (!providerSnapshot) {
+      try {
+        await loadProviderAvailability();
+        providerSnapshot = getProviderAvailabilitySnapshot();
+      } catch (error) {
+        console.warn('[tab-bar] Failed to refresh provider availability for quick session launch', error);
+      }
+    }
+    const refreshedProject = appState.projects.find((entry) => entry.id === project.id);
+    if (!refreshedProject) return;
+    const sessionNum = refreshedProject.sessions.length + 1;
+    const providerId = resolvePreferredProviderForLaunch(
+      appState.preferences.defaultProvider,
+      providerSnapshot,
+    );
+    appState.addSession(refreshedProject.id, `Session ${sessionNum}`, undefined, providerId);
+  })();
 }
 
 function showAddSessionContextMenu(x: number, y: number): void {

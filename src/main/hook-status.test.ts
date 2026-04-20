@@ -796,6 +796,7 @@ describe('hook-status', () => {
         'anthropic.quota.json',
         'zai.quota.json',
         'statusline.refresh.lock',
+        'statusline.refresh.minimax.lock',
       ] as any);
 
       cleanupAll();
@@ -803,6 +804,7 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'anthropic.quota.json'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'zai.quota.json'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.lock'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.minimax.lock'));
     });
 
     it('closes watcher and removes transient runtime artifacts only', () => {

@@ -339,8 +339,14 @@ describe('terminal pending prompt injection', () => {
     const afterFailure = getTerminalInstance('recover-1');
     expect(afterFailure?.spawned).toBe(false);
     expect(afterFailure?.exited).toBe(true);
+    expect(afterFailure?.element.querySelector('.terminal-exit-overlay')).not.toBeNull();
+    expect(afterFailure?.element.querySelector('.terminal-exit-title')?.textContent).toBe('Session failed to start');
+    const retryButton = afterFailure?.element.querySelector('.respawn-btn') as FakeElement | null;
+    expect(retryButton).not.toBeNull();
 
-    await expect(spawnTerminal('recover-1')).resolves.toBeUndefined();
+    retryButton?.emit('click', {});
+    await vi.runAllTimersAsync();
+
     const afterRetry = getTerminalInstance('recover-1');
     expect(afterRetry?.spawned).toBe(true);
     expect(afterRetry?.exited).toBe(false);

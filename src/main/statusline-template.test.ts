@@ -61,6 +61,8 @@ describe('quota cache refresh scaffolding', () => {
     const py = buildStatusLinePython('/tmp/calder');
     expect(py).toContain('calder:no-supported-anthropic-quota-api');
     expect(py).toContain('zai:quota-surface-pending');
+    expect(py).toContain('/v1/token_plan/remains');
+    expect(py).toContain('/v1/api/openplatform/coding_plan/remains');
     expect(py).toContain('subprocess.Popen');
     expect(py).toContain('os.replace(temp_path, target_path)');
   });
@@ -306,7 +308,7 @@ describe('generated renderer payload parsing', () => {
         source: 'zai:quota-surface-pending',
       }),
     );
-    const lockPath = join(statusDir, 'statusline.refresh.lock');
+    const lockPath = join(statusDir, 'statusline.refresh.zai.lock');
     writeFileSync(lockPath, 'old-refresh');
     const staleLockTime = new Date(Date.now() - 10 * 60_000);
     utimesSync(lockPath, staleLockTime, staleLockTime);
@@ -355,6 +357,90 @@ describe('generated renderer payload parsing', () => {
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+
+  it('surfaces stale quota snapshots as Stale while scheduling a refresh', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    writeFileSync(
+      join(statusDir, getProviderQuotaCacheFile('zai')),
+      JSON.stringify({
+        provider: 'zai',
+        model: 'glm-5.1',
+        fiveHour: '80% left',
+        weekly: null,
+        weeklyLabel: 'Cycle',
+        status: 'unknown',
+        updatedAt: Date.now() - 10 * 60 * 1000,
+        source: 'zai:quota-limit',
+      }),
+    );
+
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
+      input: JSON.stringify({
+        model: { display_name: 'glm-5.1' },
+        cost: { total_cost_usd: 0.1 },
+        context_window: { used_percentage: 20 },
+        cwd: '/Users/batuhanyuksel/Documents/aa',
+      }),
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CLAUDE_IDE_SESSION_ID: 'sess-zai-stale',
+      },
+    }).trim();
+
+    expect(output).toContain('Ctx 20%  Cost $0.10  5h 80% left  Stale');
+  });
+
+  it('uses provider_sync hints when display model name is custom', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    writeFileSync(
+      join(statusDir, 'sess-provider-sync.provider_sync.json'),
+      JSON.stringify({
+        main_provider_family: 'zai',
+        main_model_exact: 'glm-5.1',
+      }),
+    );
+
+    writeFileSync(
+      join(statusDir, getProviderQuotaCacheFile('zai')),
+      JSON.stringify({
+        provider: 'zai',
+        model: 'glm-5.1',
+        fiveHour: '88% left',
+        fiveHourReset: null,
+        weekly: null,
+        weeklyLabel: 'Cycle',
+        status: 'unknown',
+        updatedAt: Date.now(),
+        source: 'zai:quota-limit',
+      }),
+    );
+
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
+      input: JSON.stringify({
+        model: { display_name: 'Custom Model' },
+        cost: { total_cost_usd: 0.07 },
+        context_window: { used_percentage: 25 },
+        cwd: '/Users/batuhanyuksel/Documents/aa',
+      }),
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CLAUDE_IDE_SESSION_ID: 'sess-provider-sync',
+      },
+    }).trim();
+
+    expect(output).toContain('Custom Model  Z.ai  --  aa');
+    expect(output).toContain('Ctx 25%  Cost $0.07  5h 88% left  Live');
   });
 
   it('labels short Z.ai secondary windows as Week', async () => {
@@ -485,6 +571,67 @@ describe('generated renderer payload parsing', () => {
       expect(output).toContain('MiniMax-M2.7  MiniMax  --  aa');
       expect(output).toContain('Ctx 25%  Cost $0.07');
       expect(output).toMatch(/5h 5\/4500 left .* resets \d{2}:\d{2}\s+Week 5\/45000 left\s+Live/);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it('interprets token_plan remains usage_count fields as remaining quota', async () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+    const fiveHourReset = Date.UTC(2026, 3, 11, 14, 0, 0);
+
+    const server = createServer((_req, res) => {
+      res.setHeader('content-type', 'application/json');
+      res.end(
+        JSON.stringify({
+          data: {
+            model_remains: [
+              {
+                model_name: 'MiniMax-M2.7',
+                current_interval_total_count: 4500,
+                current_interval_usage_count: 4495,
+                end_time: fiveHourReset,
+              },
+            ],
+            base_resp: {
+              status_code: 0,
+              status_msg: 'success',
+            },
+          },
+        }),
+      );
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const address = server.address();
+      if (!address || typeof address === 'string') throw new Error('server did not bind to a port');
+
+      await execFileAsync(pythonBin, [scriptPath, 'refresh', 'minimax', 'MiniMax-M2.7'], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          MINIMAX_API_KEY: 'test-token',
+          CALDER_MINIMAX_QUOTA_REMAINS_URL: `http://127.0.0.1:${address.port}/v1/token_plan/remains`,
+          TZ: 'Europe/Istanbul',
+        },
+      });
+
+      const snapshot = JSON.parse(
+        readFileSync(join(statusDir, getProviderQuotaCacheFile('minimax')), 'utf8'),
+      );
+
+      expect(snapshot).toMatchObject({
+        provider: 'minimax',
+        model: 'MiniMax-M2.7',
+        fiveHour: '4495/4500 left',
+        status: 'unknown',
+        source: 'minimax:remains',
+      });
+      expect(snapshot.fiveHourReset).toMatch(/^\d{2}:\d{2}$/);
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
