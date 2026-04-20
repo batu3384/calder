@@ -539,6 +539,21 @@ export function cleanupSessionStatus(sessionId: string): void {
       // Already gone
     }
   }
+  try {
+    const dynamicToolFailurePrefix = `${sessionId}-`;
+    for (const file of fs.readdirSync(STATUS_DIR)) {
+      if (!file.startsWith(dynamicToolFailurePrefix) || !file.endsWith('.toolfailure')) {
+        continue;
+      }
+      try {
+        fs.unlinkSync(path.join(STATUS_DIR, file));
+      } catch {
+        // Already gone
+      }
+    }
+  } catch {
+    // Directory may not exist.
+  }
   eventFileOffsets.delete(sessionId);
   eventFileRemainders.delete(sessionId);
   unregisterSession(sessionId);

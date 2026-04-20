@@ -93,6 +93,7 @@ function setupCodexWatchers(projectPath: string): void {
   const dirs = [
     path.join(codexDir, 'agents'),
     path.join(codexDir, 'skills'),
+    path.join(codexDir, 'plugins', 'cache'),
     path.join(projectPath, '.codex', 'agents'),
     path.join(projectPath, '.codex', 'skills'),
   ];

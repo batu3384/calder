@@ -146,4 +146,48 @@ url = "http://project"
       { name: 'ValidSkill', description: 'Useful', scope: 'user', filePath: path.join('/mock/home', '.codex', 'skills', 'valid-skill', 'SKILL.md') },
     ]);
   });
+
+  it('reads plugin cache skills for enabled plugins in codex config', async () => {
+    mockReadFileSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (filePath === '/mock/home/.codex/config.toml') {
+        return `
+[plugins."superpowers@openai-curated"]
+enabled = true
+
+[plugins."gmail@openai-curated"]
+enabled = false
+` as any;
+      }
+      if (filePath === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md') {
+        return '---\nname: using-superpowers\ndescription: Use superpowers skill.\n---\n' as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    mockReaddirSync.mockImplementation((dirPath) => {
+      const input = n(String(dirPath));
+      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers') return ['hash-1'] as any;
+      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills') return ['using-superpowers'] as any;
+      throw new Error('ENOENT');
+    });
+
+    mockStatSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (filePath === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md') {
+        return { isFile: () => true } as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    const config = await getCodexConfig('/project');
+    expect(config.skills).toEqual([
+      {
+        name: 'using-superpowers',
+        description: 'Use superpowers skill.',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.codex', 'plugins', 'cache', 'openai-curated', 'superpowers', 'hash-1', 'skills', 'using-superpowers', 'SKILL.md'),
+      },
+    ]);
+  });
 });

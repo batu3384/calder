@@ -642,6 +642,19 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledTimes(6);
     });
 
+    it('also unlinks dynamic tool failure artifacts for the session', () => {
+      vi.mocked(fs.readdirSync).mockReturnValue([
+        'sess-1-ab12cd.toolfailure',
+        'sess-2-ef34gh.toolfailure',
+        'other.txt',
+      ] as any);
+
+      cleanupSessionStatus('sess-1');
+
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1-ab12cd.toolfailure'));
+      expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-2-ef34gh.toolfailure'));
+    });
+
     it('handles errors when files do not exist', () => {
       vi.mocked(fs.unlinkSync).mockImplementation(() => {
         throw new Error('ENOENT');

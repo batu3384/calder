@@ -55,6 +55,79 @@ function readSkillsFromDir(dirPath: string, scope: 'user' | 'project'): Skill[] 
   return skills;
 }
 
+function parseEnabledPluginEntries(configTomlPath: string): Array<{ pluginId: string; marketplace: string }> {
+  const content = readFileSafe(configTomlPath);
+  if (!content) return [];
+
+  const enabled = new Set<string>();
+  let currentPluginKey: string | null = null;
+  let currentPluginEnabled = false;
+
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const pluginSectionMatch = line.match(/^\[plugins\."([^"]+)"\]$/);
+    if (pluginSectionMatch) {
+      if (currentPluginKey && currentPluginEnabled) {
+        enabled.add(currentPluginKey);
+      }
+      currentPluginKey = pluginSectionMatch[1];
+      currentPluginEnabled = false;
+      continue;
+    }
+
+    if (/^\[.+\]$/.test(line)) {
+      if (currentPluginKey && currentPluginEnabled) {
+        enabled.add(currentPluginKey);
+      }
+      currentPluginKey = null;
+      currentPluginEnabled = false;
+      continue;
+    }
+
+    if (currentPluginKey && /^enabled\s*=\s*true(?:\s|$)/.test(line)) {
+      currentPluginEnabled = true;
+    }
+  }
+
+  if (currentPluginKey && currentPluginEnabled) {
+    enabled.add(currentPluginKey);
+  }
+
+  const entries: Array<{ pluginId: string; marketplace: string }> = [];
+  for (const rawKey of enabled) {
+    const separator = rawKey.lastIndexOf('@');
+    if (separator <= 0 || separator === rawKey.length - 1) continue;
+    const pluginId = rawKey.slice(0, separator).trim();
+    const marketplace = rawKey.slice(separator + 1).trim();
+    if (!pluginId || !marketplace) continue;
+    entries.push({ pluginId, marketplace });
+  }
+  return entries;
+}
+
+function readPluginSkillsFromCache(codexDir: string): Skill[] {
+  const configTomlPath = path.join(codexDir, 'config.toml');
+  const enabledPlugins = parseEnabledPluginEntries(configTomlPath);
+  const skills: Skill[] = [];
+
+  for (const plugin of enabledPlugins) {
+    const pluginRoot = path.join(codexDir, 'plugins', 'cache', plugin.marketplace, plugin.pluginId);
+    const versionDirs = readDirSafe(pluginRoot).sort().reverse();
+    for (const versionDir of versionDirs) {
+      const skillsDir = path.join(pluginRoot, versionDir, 'skills');
+      const pluginSkills = readSkillsFromDir(skillsDir, 'user');
+      if (pluginSkills.length === 0) continue;
+      skills.push(...pluginSkills);
+      // Keep newest cache entry only to avoid duplicate skill listings.
+      break;
+    }
+  }
+
+  return skills;
+}
+
 function splitTomlSectionPath(sectionPath: string): string[] {
   const parts: string[] = [];
   let current = '';
@@ -160,6 +233,7 @@ export async function getCodexConfig(projectPath: string): Promise<ProviderConfi
   for (const list of [
     readSkillsFromDir(path.join(codexDir, 'skills'), 'user'),
     readSkillsFromDir(path.join(projectCodexDir, 'skills'), 'project'),
+    readPluginSkillsFromCache(codexDir),
   ]) {
     for (const skill of list) {
       if (skillNames.has(skill.name)) continue;

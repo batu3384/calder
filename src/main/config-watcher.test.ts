@@ -220,9 +220,10 @@ describe('config-watcher', () => {
     expect(watchFileCallbacks.has('/home/testuser/.codex/config.toml')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.codex/config.toml')).toBe(true);
 
-    expect(fs.watch).toHaveBeenCalledTimes(4);
+    expect(fs.watch).toHaveBeenCalledTimes(5);
     expect(watchDirCallbacks.has('/home/testuser/.codex/agents')).toBe(true);
     expect(watchDirCallbacks.has('/home/testuser/.codex/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/home/testuser/.codex/plugins/cache')).toBe(true);
     expect(watchDirCallbacks.has('/projects/test/.codex/agents')).toBe(true);
     expect(watchDirCallbacks.has('/projects/test/.codex/skills')).toBe(true);
   });
@@ -237,7 +238,7 @@ describe('config-watcher', () => {
     startConfigWatcher(win, '/projects/test', 'codex');
 
     expect(fs.watchFile).toHaveBeenCalledTimes(2);
-    expect(fs.watch).toHaveBeenCalledTimes(4);
+    expect(fs.watch).toHaveBeenCalledTimes(5);
     expect(watchFileCallbacks.has('/home/testuser/.codex/config.toml')).toBe(true);
   });
 
