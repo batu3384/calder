@@ -143,4 +143,178 @@ describe('resolveCliSurfaceLaunch', () => {
     expect(result.metadata.resolvedPort).toBeUndefined();
     expect(result.metadata.portReason).toContain('explicit port settings');
   });
+
+  it('injects direct framework command args for astro and next CLIs', async () => {
+    const astroProfile = makeProfile({
+      command: 'astro',
+      args: ['dev'],
+      portMode: 'auto',
+    });
+    const astroResult = await resolveCliSurfaceLaunch('project-direct-astro', astroProfile, new Set<number>());
+    expect(astroResult.launch.args).toContain('--port');
+    expect(astroResult.metadata.portReason).toContain('Direct framework CLI supports --port');
+
+    const nextProfile = makeProfile({
+      command: 'next',
+      args: ['dev'],
+      portMode: 'auto',
+    });
+    const nextResult = await resolveCliSurfaceLaunch('project-direct-next', nextProfile, new Set<number>());
+    expect(nextResult.launch.args).toContain('-p');
+    expect(nextResult.metadata.portReason).toContain('Direct framework CLI supports -p/--port');
+  });
+
+  it('handles pnpm/yarn package-manager script parsing branches', async () => {
+    const root = makeRoot('package-manager-branches');
+    writePackageJson(root, {
+      dev: 'react-scripts start',
+      start: 'node server.js',
+      lint: 'eslint .',
+    });
+
+    const pnpmDev = makeProfile({
+      cwd: root,
+      command: 'pnpm',
+      args: ['dev'],
+      portMode: 'auto',
+    });
+    const pnpmResult = await resolveCliSurfaceLaunch('project-pnpm-dev', pnpmDev, new Set<number>());
+    expect(pnpmResult.launch.args).toEqual(['dev']);
+    expect(pnpmResult.launch.envPatch?.PORT).toBe(String(pnpmResult.metadata.resolvedPort));
+    expect(pnpmResult.metadata.portReason).toContain('react-scripts');
+
+    const yarnStart = makeProfile({
+      cwd: root,
+      command: 'yarn',
+      args: ['run', 'start'],
+      portMode: 'auto',
+    });
+    const yarnStartResult = await resolveCliSurfaceLaunch('project-yarn-start', yarnStart, new Set<number>());
+    expect(yarnStartResult.launch.args).toEqual(['run', 'start']);
+    expect(yarnStartResult.launch.envPatch?.PORT).toBe(String(yarnStartResult.metadata.resolvedPort));
+    expect(yarnStartResult.metadata.portReason).toContain('Generic dev/start script');
+
+    const yarnLint = makeProfile({
+      cwd: root,
+      command: 'yarn',
+      args: ['run', 'lint'],
+      portMode: 'auto',
+    });
+    const yarnLintResult = await resolveCliSurfaceLaunch('project-yarn-lint', yarnLint, new Set<number>());
+    expect(yarnLintResult.metadata.resolvedPort).toBeUndefined();
+    expect(yarnLintResult.metadata.portReason).toContain('does not look like a local web server');
+
+    const npmNoScriptTarget = makeProfile({
+      cwd: root,
+      command: 'npm',
+      args: ['test'],
+      portMode: 'auto',
+    });
+    const npmNoScriptResult = await resolveCliSurfaceLaunch('project-npm-test', npmNoScriptTarget, new Set<number>());
+    expect(npmNoScriptResult.metadata.resolvedPort).toBeUndefined();
+    expect(npmNoScriptResult.metadata.portReason).toContain('does not target a script');
+
+    const pnpmFlagOnly = makeProfile({
+      cwd: root,
+      command: 'pnpm',
+      args: ['--filter', 'web', 'run', 'dev'],
+      portMode: 'auto',
+    });
+    const pnpmFlagOnlyResult = await resolveCliSurfaceLaunch('project-pnpm-flag-only', pnpmFlagOnly, new Set<number>());
+    expect(pnpmFlagOnlyResult.metadata.resolvedPort).toBeUndefined();
+    expect(pnpmFlagOnlyResult.metadata.portReason).toContain('does not target a script');
+
+    const yarnFlagOnly = makeProfile({
+      cwd: root,
+      command: 'yarn',
+      args: ['--cwd', 'apps/web'],
+      portMode: 'auto',
+    });
+    const yarnFlagOnlyResult = await resolveCliSurfaceLaunch('project-yarn-flag-only', yarnFlagOnly, new Set<number>());
+    expect(yarnFlagOnlyResult.metadata.resolvedPort).toBeUndefined();
+    expect(yarnFlagOnlyResult.metadata.portReason).toContain('does not target a script');
+  });
+
+  it('falls back to generic script mode when package.json parsing fails', async () => {
+    const root = makeRoot('broken-package-json');
+    writeFileSync(join(root, 'package.json'), '{ this is not valid json', 'utf8');
+
+    const profile = makeProfile({
+      cwd: root,
+      command: 'npm',
+      args: ['run', 'dev'],
+      portMode: 'auto',
+    });
+
+    const result = await resolveCliSurfaceLaunch('project-broken-package-json', profile, new Set<number>());
+    expect(result.launch.envPatch?.PORT).toBe(String(result.metadata.resolvedPort));
+    expect(result.metadata.portReason).toContain('Generic dev/start script');
+  });
+
+  it('keeps explicit npm port arguments in fixed mode while applying env patch', async () => {
+    const root = makeRoot('fixed-explicit-port');
+    writePackageJson(root, { dev: 'vite' });
+    const profile = makeProfile({
+      cwd: root,
+      command: 'npm',
+      args: ['run', 'dev', '--', '--port', '5100'],
+      portMode: 'fixed',
+      preferredPort: 5200,
+    });
+
+    const result = await resolveCliSurfaceLaunch('project-fixed-explicit-port', profile, new Set<number>());
+    expect(result.launch.args).toEqual(['run', 'dev', '--', '--port', '5100']);
+    expect(result.launch.envPatch?.PORT).toBe(String(result.metadata.resolvedPort));
+  });
+
+  it('appends pnpm and direct-command port flags when needed', async () => {
+    const root = makeRoot('pnpm-and-direct');
+    writePackageJson(root, { dev: 'vite' });
+
+    const pnpmProfile = makeProfile({
+      cwd: root,
+      command: 'pnpm',
+      args: ['dev'],
+      portMode: 'auto',
+    });
+    const pnpmResult = await resolveCliSurfaceLaunch('project-pnpm-append', pnpmProfile, new Set<number>());
+    expect(pnpmResult.launch.args?.slice(-2)).toEqual(['--port', String(pnpmResult.metadata.resolvedPort)]);
+
+    const directProfile = makeProfile({
+      command: 'vite',
+      args: undefined,
+      portMode: 'auto',
+    });
+    const directResult = await resolveCliSurfaceLaunch('project-direct-append', directProfile, new Set<number>());
+    expect(directResult.launch.args).toEqual(['--port', String(directResult.metadata.resolvedPort)]);
+  });
+
+  it('validates fixed preferred ports and fails after fallback attempt exhaustion', async () => {
+    const root = makeRoot('fixed-validation');
+    writePackageJson(root, { dev: 'next dev' });
+
+    const invalidPortProfile = makeProfile({
+      cwd: root,
+      command: 'npm',
+      args: ['run', 'dev'],
+      portMode: 'fixed',
+      preferredPort: 70000,
+    });
+    await expect(resolveCliSurfaceLaunch('project-invalid-fixed-port', invalidPortProfile, new Set<number>()))
+      .rejects
+      .toThrow('Fixed port mode requires a valid preferred port (1-65535).');
+
+    const exhaustingProfile = makeProfile({
+      cwd: root,
+      command: 'npm',
+      args: ['run', 'dev'],
+      portMode: 'fixed',
+      preferredPort: 4500,
+      allowPortFallback: true,
+    });
+    const reserved = new Set<number>(Array.from({ length: 201 }, (_value, index) => 4500 + index));
+    await expect(resolveCliSurfaceLaunch('project-fixed-exhaustion', exhaustingProfile, reserved))
+      .rejects
+      .toThrow('Could not allocate a free local port after checking 200 candidates.');
+  });
 });
