@@ -7,19 +7,18 @@ import { loadState, PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
 import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
-import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, gitUnstageFile, gitDiscardFile, getGitRemoteUrl, listGitBranches, checkoutGitBranch, createGitBranch } from './git-status';
-import { startGitWatcher, notifyGitChanged } from './git-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
 import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
+import { registerGitIpcHandlers } from './ipc-git';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
@@ -1052,6 +1051,9 @@ export function registerIpcHandlers(): void {
     requireKnownProjectPath,
     assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
   });
+  registerGitIpcHandlers({
+    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+  });
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
@@ -1495,59 +1497,6 @@ export function registerIpcHandlers(): void {
     }
     const win = BrowserWindow.getAllWindows()[0];
     return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) => shell.openExternal(target));
-  });
-
-  ipcMain.handle('git:getStatus', (_event, projectPath: string) => getGitStatus(projectPath));
-
-  ipcMain.handle('git:getRemoteUrl', (_event, projectPath: string) => getGitRemoteUrl(projectPath));
-
-  ipcMain.handle('git:getFiles', (_event, projectPath: string) => getGitFiles(projectPath));
-
-  ipcMain.handle('git:getDiff', (_event, projectPath: string, filePath: string, area: string) => getGitDiff(projectPath, filePath, area));
-
-  ipcMain.handle('git:getWorktrees', (_event, projectPath: string) => getGitWorktrees(projectPath));
-
-  ipcMain.handle('git:stageFile', async (_event, projectPath: string, filePath: string) => {
-    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Stage git file' });
-    await gitStageFile(projectPath, filePath);
-    notifyGitChanged();
-  });
-
-  ipcMain.handle('git:unstageFile', async (_event, projectPath: string, filePath: string) => {
-    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Unstage git file' });
-    await gitUnstageFile(projectPath, filePath);
-    notifyGitChanged();
-  });
-
-  ipcMain.handle('git:discardFile', async (_event, projectPath: string, filePath: string, area: string) => {
-    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Discard git file changes' });
-    await gitDiscardFile(projectPath, filePath, area as GitFileEntry['area']);
-    notifyGitChanged();
-  });
-
-  ipcMain.on('git:watchProject', (_event, projectPath: string) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    startGitWatcher(win, projectPath);
-  });
-
-  ipcMain.handle('git:listBranches', (_event, projectPath: string) => listGitBranches(projectPath));
-
-  ipcMain.handle('git:checkoutBranch', async (_event, projectPath: string, branch: string) => {
-    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Checkout git branch' });
-    await checkoutGitBranch(projectPath, branch);
-    notifyGitChanged();
-  });
-
-  ipcMain.handle('git:createBranch', async (_event, projectPath: string, branch: string) => {
-    await assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create git branch' });
-    await createGitBranch(projectPath, branch);
-    notifyGitChanged();
-  });
-
-  ipcMain.handle('git:openInEditor', (_event, projectPath: string, filePath: string) => {
-    const fullPath = path.join(projectPath, filePath);
-    return shell.openPath(fullPath);
   });
 
   ipcMain.handle('pty:getCwd', (_event, sessionId: string) => getPtyCwd(sessionId));
