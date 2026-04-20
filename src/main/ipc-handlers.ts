@@ -13,12 +13,12 @@ import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
 import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
 import { registerGitIpcHandlers } from './ipc-git';
 import { registerProviderIpcHandlers } from './ipc-provider';
+import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
-import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
@@ -664,8 +664,6 @@ async function applySessionOverrideToGovernanceState(
 }
 
 let hookWatcherStarted = false;
-let providerUpdateAbortController: AbortController | null = null;
-let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
 const miniMaxToolCallRecoveryBySession = new Map<string, MiniMaxToolCallRecoveryState>();
 const MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS = 45_000;
 const playwrightMirrorBySession = new Map<string, PlaywrightMirrorState>();
@@ -1055,6 +1053,7 @@ export function registerIpcHandlers(): void {
     assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
   });
   registerProviderIpcHandlers();
+  registerProviderUpdateIpcHandlers();
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
@@ -1234,39 +1233,6 @@ export function registerIpcHandlers(): void {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
     bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
-  });
-
-  ipcMain.handle('provider:updateAll', async (event) => {
-    if (providerUpdateInFlight) {
-      return providerUpdateInFlight;
-    }
-
-    const abortController = new AbortController();
-    providerUpdateAbortController = abortController;
-    providerUpdateInFlight = updateAllProviders({
-      signal: abortController.signal,
-      onProgress: (progressEvent) => {
-        if (!event.sender.isDestroyed()) {
-          event.sender.send('provider:update-progress', progressEvent);
-        }
-      },
-    }).finally(() => {
-      if (providerUpdateAbortController === abortController) {
-        providerUpdateAbortController = null;
-      }
-      if (providerUpdateInFlight) {
-        providerUpdateInFlight = null;
-      }
-    });
-    return providerUpdateInFlight;
-  });
-
-  ipcMain.handle('provider:cancelUpdateAll', async () => {
-    if (!providerUpdateAbortController || providerUpdateAbortController.signal.aborted) {
-      return { cancelled: false };
-    }
-    providerUpdateAbortController.abort();
-    return { cancelled: true };
   });
 
   ipcMain.handle('mobileSetup:checkDependencies', async () => {
