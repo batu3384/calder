@@ -5,6 +5,7 @@ import path from 'node:path';
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
 const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');
 const ipcAppBrowserSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
+const ipcPtySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-pty.ts'), 'utf8');
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
@@ -20,8 +21,9 @@ describe('ipc filesystem contract', () => {
   });
 
   it('requires known project cwd for PTY creation entry points', () => {
-    expect(ipcSource).toContain('PTY create requires a known project path');
-    expect(ipcSource).toContain('PTY shell requires a known project path');
+    expect(ipcSource).toContain('registerPtyIpcHandlers({');
+    expect(ipcPtySource).toContain('PTY create requires a known project path');
+    expect(ipcPtySource).toContain('PTY shell requires a known project path');
   });
 
   it('sanitizes persisted state payloads before saving', () => {

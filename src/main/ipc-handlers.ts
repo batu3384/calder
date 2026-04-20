@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow, shell } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
+import { writePty } from './pty-manager';
 import { loadState, PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
@@ -18,6 +18,7 @@ import { registerMobileIpcHandlers } from './ipc-mobile';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 import { registerAppBrowserIpcHandlers, isAllowedGuestMessagePayload } from './ipc-app-browser';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
+import { registerPtyIpcHandlers } from './ipc-pty';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
 import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
@@ -702,24 +703,22 @@ export function registerIpcHandlers(): void {
     }
   };
 
-  ipcMain.handle('pty:create', (_event, sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs: string, providerId: ProviderId = 'claude', initialPrompt?: string) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    const resolvedCwd = path.resolve(cwd);
-    if (!isWithinKnownProject(resolvedCwd)) {
-      throw new Error('PTY create requires a known project path');
-    }
-
-    // Start hook status watcher on first PTY creation (window is guaranteed to exist)
-    if (!hookWatcherStarted) {
+  registerPtyIpcHandlers({
+    isWithinKnownProject,
+    ensureHookWatcherStarted: (win) => {
+      if (hookWatcherStarted) return;
       startWatching(win);
       hookWatcherStarted = true;
-    }
-    autoApprovalOrchestrator.registerSession(sessionId, providerId, resolvedCwd);
-
-    // Validate provider settings and warn renderer if missing/tampered
-    const provider = getProvider(providerId);
-    if (provider.meta.capabilities.hookStatus) {
+    },
+    registerAutoApprovalSession: (sessionId, providerId, cwd) => {
+      autoApprovalOrchestrator.registerSession(sessionId, providerId, cwd);
+    },
+    unregisterAutoApprovalSession: (sessionId) => {
+      autoApprovalOrchestrator.unregisterSession(sessionId);
+    },
+    validateProviderTrackingAndWarn: (win, sessionId, providerId) => {
+      const provider = getProvider(providerId);
+      if (!provider.meta.capabilities.hookStatus) return;
       let validation = provider.validateSettings();
       if (!isTrackingHealthy(provider.meta, validation)) {
         try {
@@ -729,96 +728,35 @@ export function registerIpcHandlers(): void {
           console.warn('Auto-heal settings reinstall failed:', error);
         }
       }
-      if (!isTrackingHealthy(provider.meta, validation)) {
-        win.webContents.send('settings:warning', {
-          sessionId,
-          providerId,
-          statusLine: validation.statusLine,
-          hooks: validation.hooks,
-        });
+      if (isTrackingHealthy(provider.meta, validation)) return;
+      win.webContents.send('settings:warning', {
+        sessionId,
+        providerId,
+        statusLine: validation.statusLine,
+        hooks: validation.hooks,
+      });
+    },
+    registerPendingProviderSessionWatchers: (providerId, cliSessionId, sessionId, win) => {
+      if (providerId === 'codex' && !cliSessionId) {
+        startCodexSessionWatcher(win);
+        registerPendingCodexSession(sessionId);
       }
-    }
 
-    // For Codex sessions without a cliSessionId, start watching history.jsonl
-    if (providerId === 'codex' && !cliSessionId) {
-      startCodexSessionWatcher(win);
-      registerPendingCodexSession(sessionId);
-    }
-
-    if (providerId === 'blackbox' && !cliSessionId) {
-      startBlackboxSessionWatcher(win);
-      registerPendingBlackboxSession(sessionId);
-    }
-
-    spawnPty(
-      sessionId,
-      resolvedCwd,
-      cliSessionId,
-      isResume,
-      extraArgs,
-      providerId,
-      initialPrompt,
-      (data) => {
-        mirrorPlaywrightFromPtyData(sessionId, resolvedCwd, data);
-        const w = BrowserWindow.getAllWindows()[0];
-        if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:data', sessionId, data);
-        }
-      },
-      (exitCode, signal) => {
-        cleanupSessionStatus(sessionId);
-        unregisterCodexSession(sessionId);
-        unregisterBlackboxSession(sessionId);
-        autoApprovalOrchestrator.unregisterSession(sessionId);
-        miniMaxToolCallRecoveryBySession.delete(sessionId);
-        playwrightMirrorBySession.delete(sessionId);
-        playwrightTranscriptBufferBySession.delete(sessionId);
-        if (isSilencedExit(sessionId)) return; // old PTY killed for re-spawn
-        const w = BrowserWindow.getAllWindows()[0];
-        if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:exit', sessionId, exitCode, signal);
-        }
+      if (providerId === 'blackbox' && !cliSessionId) {
+        startBlackboxSessionWatcher(win);
+        registerPendingBlackboxSession(sessionId);
       }
-    );
-  });
-
-  ipcMain.handle('pty:createShell', (_event, sessionId: string, cwd: string) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    const resolvedCwd = path.resolve(cwd);
-    if (!isWithinKnownProject(resolvedCwd)) {
-      throw new Error('PTY shell requires a known project path');
-    }
-
-    spawnShellPty(
-      sessionId,
-      resolvedCwd,
-      (data) => {
-        const w = BrowserWindow.getAllWindows()[0];
-        if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:data', sessionId, data);
-        }
-      },
-      (exitCode, signal) => {
-        const w = BrowserWindow.getAllWindows()[0];
-        if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:exit', sessionId, exitCode, signal);
-        }
-      }
-    );
-  });
-
-  ipcMain.on('pty:write', (_event, sessionId: string, data: string) => {
-    writePty(sessionId, data);
-  });
-
-  ipcMain.on('pty:resize', (_event, sessionId: string, cols: number, rows: number) => {
-    resizePty(sessionId, cols, rows);
-  });
-
-  ipcMain.handle('pty:kill', (_event, sessionId: string) => {
-    autoApprovalOrchestrator.unregisterSession(sessionId);
-    killPty(sessionId);
+    },
+    mirrorPlaywrightFromPtyData,
+    handlePtySessionExit: (sessionId) => {
+      cleanupSessionStatus(sessionId);
+      unregisterCodexSession(sessionId);
+      unregisterBlackboxSession(sessionId);
+      autoApprovalOrchestrator.unregisterSession(sessionId);
+      miniMaxToolCallRecoveryBySession.delete(sessionId);
+      playwrightMirrorBySession.delete(sessionId);
+      playwrightTranscriptBufferBySession.delete(sessionId);
+    },
   });
 
   registerCliSurfaceIpcHandlers(cliSurfaceRuntime);
