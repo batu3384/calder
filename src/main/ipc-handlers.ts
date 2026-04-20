@@ -13,14 +13,14 @@ import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, g
 import { startGitWatcher, notifyGitChanged } from './git-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
-import { checkForUpdates, quitAndInstall } from './auto-updater';
+import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
@@ -1048,6 +1048,7 @@ export function registerIpcHandlers(): void {
     isWithinKnownProject,
     sanitizePersistedStateForSave,
   });
+  registerMaintenanceIpcHandlers();
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
@@ -1547,36 +1548,6 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('pty:getCwd', (_event, sessionId: string) => getPtyCwd(sessionId));
-
-  ipcMain.handle('stats:getCache', () => {
-    try {
-      const statsPath = path.join(os.homedir(), '.claude', 'stats-cache.json');
-      const raw = fs.readFileSync(statsPath, 'utf-8');
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  });
-
-  ipcMain.handle('update:checkNow', () => checkForUpdates());
-  ipcMain.handle('update:install', () => quitAndInstall());
-
-  ipcMain.handle('settings:reinstall', (_event, providerId: ProviderId = 'claude') => {
-    try {
-      const provider = getProvider(providerId);
-      provider.reinstallSettings();
-      const validation = provider.validateSettings();
-      return { success: isTrackingHealthy(provider.meta, validation) };
-    } catch (err) {
-      console.error('settings:reinstall failed:', err);
-      return { success: false };
-    }
-  });
-
-  ipcMain.handle('settings:validate', (_event, providerId: ProviderId = 'claude'): SettingsValidationResult => {
-    const provider = getProvider(providerId);
-    return provider.validateSettings();
-  });
 
   ipcMain.handle('mcp:addServer', async (_event, name: string, config: McpServerConfig, scope: 'user' | 'project', projectPath?: string) => {
     try {
