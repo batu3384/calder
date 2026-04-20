@@ -3,8 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
-import { addMcpServer, removeMcpServer } from './claude-cli';
-import type { McpServerConfig } from './claude-cli';
 import { loadState, PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
@@ -14,6 +12,7 @@ import { startGitWatcher, notifyGitChanged } from './git-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
+import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
@@ -1049,6 +1048,10 @@ export function registerIpcHandlers(): void {
     sanitizePersistedStateForSave,
   });
   registerMaintenanceIpcHandlers();
+  registerMcpGovernanceIpcHandlers({
+    requireKnownProjectPath,
+    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+  });
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
@@ -1548,42 +1551,6 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('pty:getCwd', (_event, sessionId: string) => getPtyCwd(sessionId));
-
-  ipcMain.handle('mcp:addServer', async (_event, name: string, config: McpServerConfig, scope: 'user' | 'project', projectPath?: string) => {
-    try {
-      let validatedProjectPath: string | undefined;
-      if (scope === 'project') {
-        if (!projectPath) {
-          throw new Error('projectPath is required for project MCP scope');
-        }
-        validatedProjectPath = requireKnownProjectPath(projectPath, 'Add project MCP server');
-        await assertProjectGovernanceAllows(validatedProjectPath, { kind: 'mcp', label: 'Add project MCP server', target: name });
-      }
-      addMcpServer(name, config, scope, validatedProjectPath);
-      return { success: true };
-    } catch (err) {
-      console.error('mcp:addServer failed:', err);
-      return { success: false, error: String(err) };
-    }
-  });
-
-  ipcMain.handle('mcp:removeServer', async (_event, name: string, filePath: string, scope: 'user' | 'project', projectPath?: string) => {
-    try {
-      let validatedProjectPath: string | undefined;
-      if (scope === 'project') {
-        if (!projectPath) {
-          throw new Error('projectPath is required for project MCP scope');
-        }
-        validatedProjectPath = requireKnownProjectPath(projectPath, 'Remove project MCP server');
-        await assertProjectGovernanceAllows(validatedProjectPath, { kind: 'mcp', label: 'Remove project MCP server', target: name });
-      }
-      removeMcpServer(name, filePath, scope, validatedProjectPath);
-      return { success: true };
-    } catch (err) {
-      console.error('mcp:removeServer failed:', err);
-      return { success: false, error: String(err) };
-    }
-  });
 
   registerMcpHandlers();
 }
