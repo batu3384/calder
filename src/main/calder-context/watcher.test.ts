@@ -135,4 +135,26 @@ describe('project context watcher', () => {
 
     expect(seen).toEqual([]);
   });
+
+  it('tracks nested copilot instruction folders and safely handles duplicate unsubscribe calls', async () => {
+    const root = makeProject('context-nested-instructions');
+    roots.push(root);
+    writeFiles(root, {
+      '.github/instructions/team/copilot.md': '# Team guidance\nFollow local instructions.\n',
+    });
+
+    const seen: string[] = [];
+    const unsubscribe = startProjectContextWatcher(root, (state) => {
+      seen.push(state.sources[0]?.summary ?? '');
+    });
+
+    unsubscribe();
+    // Calling unsubscribe twice should stay a no-op after watcher teardown.
+    unsubscribe();
+
+    writeFileSync(join(root, '.github', 'instructions', 'team', 'copilot.md'), '# Updated guidance\nFollow local instructions.\n', 'utf8');
+    await new Promise((resolve) => setTimeout(resolve, 650));
+
+    expect(seen).toEqual([]);
+  });
 });
