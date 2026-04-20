@@ -17,13 +17,13 @@ import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
 import { registerMobileIpcHandlers } from './ipc-mobile';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 import { registerAppBrowserIpcHandlers, isAllowedGuestMessagePayload } from './ipc-app-browser';
+import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
 import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
-import { discoverCliSurface } from './cli-surface-discovery';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { POLICY_RELATIVE_PATH, discoverProjectGovernance } from './calder-governance/discovery';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
@@ -821,29 +821,7 @@ export function registerIpcHandlers(): void {
     killPty(sessionId);
   });
 
-  ipcMain.handle('cli-surface:start', async (_event, projectId: string, profile) => {
-    await cliSurfaceRuntime.start(projectId, profile);
-  });
-
-  ipcMain.handle('cli-surface:discover', (_event, projectPath: string) => {
-    return discoverCliSurface(projectPath);
-  });
-
-  ipcMain.handle('cli-surface:stop', (_event, projectId: string) => {
-    cliSurfaceRuntime.stop(projectId);
-  });
-
-  ipcMain.handle('cli-surface:restart', async (_event, projectId: string) => {
-    await cliSurfaceRuntime.restart(projectId);
-  });
-
-  ipcMain.on('cli-surface:write', (_event, projectId: string, data: string) => {
-    cliSurfaceRuntime.write(projectId, data);
-  });
-
-  ipcMain.on('cli-surface:resize', (_event, projectId: string, cols: number, rows: number) => {
-    cliSurfaceRuntime.resize(projectId, cols, rows);
-  });
+  registerCliSurfaceIpcHandlers(cliSurfaceRuntime);
 
   registerFsStoreIpcHandlers({
     isAllowedDirectoryLookupPath,
