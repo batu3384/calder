@@ -14,11 +14,10 @@ import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
 import { registerGitIpcHandlers } from './ipc-git';
 import { registerProviderIpcHandlers } from './ipc-provider';
 import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
+import { registerMobileIpcHandlers } from './ipc-mobile';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
-import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
-import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, BrowserCredentialSaveInput, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
@@ -32,12 +31,6 @@ import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { discoverCliSurface } from './cli-surface-discovery';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import { resolveShareRtcConfigFromEnv } from './share-rtc-config';
-import {
-  createMobileControlPairing,
-  consumeMobileControlPairingAnswer,
-  revokeMobileControlPairing,
-} from './mobile-control-bridge';
 import { discoverProjectContext } from './calder-context/discovery';
 import {
   createProjectContextStarterFiles,
@@ -1054,6 +1047,7 @@ export function registerIpcHandlers(): void {
   });
   registerProviderIpcHandlers();
   registerProviderUpdateIpcHandlers();
+  registerMobileIpcHandlers();
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
@@ -1235,48 +1229,6 @@ export function registerIpcHandlers(): void {
     bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
   });
 
-  ipcMain.handle('mobileSetup:checkDependencies', async () => {
-    return checkMobileDependencies();
-  });
-
-  ipcMain.handle('mobileSetup:installDependency', async (event, dependencyId: string, installId?: string) => {
-    const resolvedInstallId = typeof installId === 'string' && installId.trim().length > 0
-      ? installId.trim()
-      : `mobile-install-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    return installMobileDependency(dependencyId as MobileDependencyId, {
-      installId: resolvedInstallId,
-      onProgress: (progressEvent: MobileDependencyInstallProgressEvent) => {
-        if (!event.sender.isDestroyed()) {
-          event.sender.send('mobileSetup:installProgress', progressEvent);
-        }
-      },
-    });
-  });
-
-  ipcMain.handle('mobileInspect:launch', async (_event, platform: MobileInspectPlatform) => {
-    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
-    return launchMobileInspectSurface(resolvedPlatform);
-  });
-
-  ipcMain.handle('mobileInspect:captureScreenshot', async (_event, platform: MobileInspectPlatform) => {
-    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
-    return captureMobileInspectScreenshot(resolvedPlatform);
-  });
-
-  ipcMain.handle('mobileInspect:inspectPoint', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
-    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
-    const safeX = Number.isFinite(x) ? x : 0;
-    const safeY = Number.isFinite(y) ? y : 0;
-    return inspectMobilePoint(resolvedPlatform, safeX, safeY);
-  });
-
-  ipcMain.handle('mobileInspect:interact', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
-    const resolvedPlatform: MobileInspectPlatform = platform === 'android' ? 'android' : 'ios';
-    const safeX = Number.isFinite(x) ? x : 0;
-    const safeY = Number.isFinite(y) ? y : 0;
-    return interactMobileInspectPoint(resolvedPlatform, safeX, safeY);
-  });
-
   ipcMain.handle('fs:browseDirectory', async () => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return null;
@@ -1376,26 +1328,6 @@ export function registerIpcHandlers(): void {
     getBrowserCredentialForFill(url, id));
   ipcMain.handle('browserCredential:getAutoFillForUrl', async (_event, url: string) =>
     getBrowserAutoFillCredentialForUrl(url));
-  ipcMain.handle('sharing:getRtcConfig', () => resolveShareRtcConfigFromEnv());
-  ipcMain.handle(
-    'mobile:createControlPairing',
-    async (
-      _event,
-      sessionId: string,
-      offer: string,
-      passphrase: string,
-      mode: 'readonly' | 'readwrite',
-      language?: 'en' | 'tr',
-      offerDescription?: ShareConnectionDescription,
-    ) =>
-      createMobileControlPairing({ sessionId, offer, passphrase, mode, language, offerDescription }),
-  );
-  ipcMain.handle('mobile:consumeControlAnswer', (_event, pairingId: string) =>
-    consumeMobileControlPairingAnswer(pairingId));
-  ipcMain.handle('mobile:revokeControlPairing', (_event, pairingId: string) => {
-    revokeMobileControlPairing(pairingId);
-    return { ok: true };
-  });
   ipcMain.handle('app:openExternal', async (_event, url: string, cwd?: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {

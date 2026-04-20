@@ -2,19 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const ipcHandlersSource = readFileSync(new URL('./ipc-handlers.ts', import.meta.url), 'utf8');
+const ipcMobileSource = readFileSync(new URL('./ipc-mobile.ts', import.meta.url), 'utf8');
 const preloadSource = readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8');
 const rendererTypesSource = readFileSync(new URL('../renderer/types.ts', import.meta.url), 'utf8');
 
 describe('mobile inspect IPC contract', () => {
   it('registers launch and screenshot handlers in main process', () => {
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileInspect:launch'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileInspect:captureScreenshot'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileInspect:inspectPoint'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileInspect:interact'");
-    expect(ipcHandlersSource).toContain('launchMobileInspectSurface(');
-    expect(ipcHandlersSource).toContain('captureMobileInspectScreenshot(');
-    expect(ipcHandlersSource).toContain('inspectMobilePoint(');
-    expect(ipcHandlersSource).toContain('interactMobileInspectPoint(');
+    expect(ipcHandlersSource).toContain('registerMobileIpcHandlers();');
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileInspect:launch'");
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileInspect:captureScreenshot'");
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileInspect:inspectPoint'");
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileInspect:interact'");
+    expect(ipcMobileSource).toContain('launchMobileInspectSurface(');
+    expect(ipcMobileSource).toContain('captureMobileInspectScreenshot(');
+    expect(ipcMobileSource).toContain('inspectMobilePoint(');
+    expect(ipcMobileSource).toContain('interactMobileInspectPoint(');
   });
 
   it('exposes mobile inspect APIs on preload bridge', () => {

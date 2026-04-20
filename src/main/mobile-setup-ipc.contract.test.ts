@@ -2,16 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const ipcHandlersSource = readFileSync(new URL('./ipc-handlers.ts', import.meta.url), 'utf8');
+const ipcMobileSource = readFileSync(new URL('./ipc-mobile.ts', import.meta.url), 'utf8');
 const preloadSource = readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8');
 const rendererTypesSource = readFileSync(new URL('../renderer/types.ts', import.meta.url), 'utf8');
 
 describe('mobile setup IPC contract', () => {
   it('registers dependency check and install handlers in the main process', () => {
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileSetup:checkDependencies'");
-    expect(ipcHandlersSource).toContain("ipcMain.handle('mobileSetup:installDependency'");
-    expect(ipcHandlersSource).toContain('checkMobileDependencies()');
-    expect(ipcHandlersSource).toContain('installMobileDependency(');
-    expect(ipcHandlersSource).toContain("event.sender.send('mobileSetup:installProgress'");
+    expect(ipcHandlersSource).toContain('registerMobileIpcHandlers();');
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileSetup:checkDependencies'");
+    expect(ipcMobileSource).toContain("ipcMain.handle('mobileSetup:installDependency'");
+    expect(ipcMobileSource).toContain('checkMobileDependencies()');
+    expect(ipcMobileSource).toContain('installMobileDependency(');
+    expect(ipcMobileSource).toContain("event.sender.send('mobileSetup:installProgress'");
   });
 
   it('exposes mobile setup APIs on preload bridge', () => {
