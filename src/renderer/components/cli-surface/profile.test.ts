@@ -28,6 +28,8 @@ describe('cli surface profile helpers', () => {
       name: 'go run ./cmd/aegis',
       command: 'go',
       args: ['run', './cmd/aegis'],
+      portMode: 'auto',
+      allowPortFallback: true,
     });
   });
 

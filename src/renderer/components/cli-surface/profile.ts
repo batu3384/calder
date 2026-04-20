@@ -13,6 +13,8 @@ export function createDiscoveredCliSurfaceProfile(
     command: candidate.command,
     args: candidate.args,
     cwd: candidate.cwd,
+    portMode: 'auto',
+    allowPortFallback: true,
   };
 }
 

@@ -1,5 +1,11 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
-import type { CliSurfaceProfile, ProjectSurfaceRecord, ProviderId, ProviderUpdateSummary } from '../../shared/types.js';
+import type {
+  CliSurfacePortMode,
+  CliSurfaceProfile,
+  ProjectSurfaceRecord,
+  ProviderId,
+  ProviderUpdateSummary,
+} from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
@@ -400,6 +406,11 @@ function parseCliSurfaceArgs(raw: string): string[] | undefined {
   return args.length > 0 ? args : undefined;
 }
 
+function parseCliSurfacePortMode(raw: string | undefined, fallback: CliSurfacePortMode = 'auto'): CliSurfacePortMode {
+  if (raw === 'auto' || raw === 'fixed' || raw === 'off') return raw;
+  return fallback;
+}
+
 function updateProjectSurface(project: ProjectRecord, next: ProjectSurfaceRecord): void {
   appState.setProjectSurface(project.id, next);
 }
@@ -472,6 +483,29 @@ function promptCliSurfaceProfile(
         placeholder: project.path,
         defaultValue: existing?.cwd ?? project.path,
       },
+      {
+        label: 'Port mode',
+        id: 'cli-profile-port-mode',
+        type: 'select',
+        defaultValue: existing?.portMode ?? 'auto',
+        options: [
+          { value: 'auto', label: 'Auto (recommended)' },
+          { value: 'fixed', label: 'Fixed port' },
+          { value: 'off', label: 'Off (no orchestration)' },
+        ],
+      },
+      {
+        label: 'Preferred port (optional in auto mode)',
+        id: 'cli-profile-preferred-port',
+        placeholder: '5173',
+        defaultValue: existing?.preferredPort ? String(existing.preferredPort) : '',
+      },
+      {
+        label: 'Allow fallback to next free port',
+        id: 'cli-profile-port-fallback',
+        type: 'checkbox',
+        defaultValue: String(existing?.allowPortFallback ?? true),
+      },
     ],
     (values) => {
       const name = values['cli-profile-name']?.trim();
@@ -486,12 +520,32 @@ function promptCliSurfaceProfile(
         return;
       }
 
+      const portMode = parseCliSurfacePortMode(values['cli-profile-port-mode'], existing?.portMode ?? 'auto');
+      const preferredPortRaw = values['cli-profile-preferred-port']?.trim() ?? '';
+      let preferredPort: number | undefined;
+      if (preferredPortRaw.length > 0) {
+        const parsed = Number.parseInt(preferredPortRaw, 10);
+        if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+          setModalError('cli-profile-preferred-port', 'Port must be between 1 and 65535');
+          return;
+        }
+        preferredPort = parsed;
+      } else if (portMode === 'fixed') {
+        setModalError('cli-profile-preferred-port', 'Fixed mode requires a port');
+        return;
+      }
+
+      const allowPortFallback = values['cli-profile-port-fallback'] === 'true';
+
       const profile: CliSurfaceProfile = {
         id: existing?.id ?? crypto.randomUUID(),
         name,
         command,
         args: parseCliSurfaceArgs(values['cli-profile-args'] ?? ''),
         cwd,
+        portMode,
+        preferredPort,
+        allowPortFallback,
       };
 
       const surface = getProjectSurface(project);
