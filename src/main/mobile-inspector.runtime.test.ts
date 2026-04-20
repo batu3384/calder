@@ -21,6 +21,7 @@ type SpawnPlan = {
 const mockExecFile = vi.hoisted(() => vi.fn());
 const mockSpawn = vi.hoisted(() => vi.fn());
 const mockGetFullPath = vi.hoisted(() => vi.fn(() => '/mock/path'));
+const mockFetch = vi.hoisted(() => vi.fn());
 
 vi.mock('child_process', () => ({
   execFile: mockExecFile,
@@ -34,6 +35,8 @@ vi.mock('./pty-manager', () => ({
 vi.mock('./platform', () => ({
   whichCmd: 'which',
 }));
+
+vi.stubGlobal('fetch', mockFetch);
 
 import {
   captureMobileInspectScreenshot,
@@ -255,6 +258,199 @@ describe('mobile-inspector runtime android flows', () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('Permission denied');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('launches iOS inspect surface when a booted simulator is already ready', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-1',
+                name: 'iPhone 16 Pro',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-1', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    const result = await launchMobileInspectSurface('ios');
+
+    expect(result.success).toBe(true);
+    expect(result.alreadyRunning).toBe(true);
+    expect(result.deviceId).toBe('IOS-UDID-1');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Xcode setup guidance when iOS simctl listing command is missing', async () => {
+    execPlans.push({
+      command: 'xcrun',
+      args: ['simctl', 'list', 'devices', '--json'],
+      code: 1,
+      stderr: 'xcrun: command not found',
+    });
+
+    const result = await launchMobileInspectSurface('ios');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Install Xcode command line tools');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns iOS point inspection fallback message after simulator readiness', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-2',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-2', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    const result = await inspectMobilePoint('ios', 25, 40);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('not available yet');
+    expect(result.point).toEqual({ x: 25, y: 40 });
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns iOS Appium readiness failure when local Appium binary cannot be resolved', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-3',
+                name: 'iPhone 16 Pro',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-3', '-b'],
+        stdout: 'Booted',
+      },
+      {
+        command: 'which',
+        args: ['appium'],
+        code: 1,
+        stderr: 'appium not found',
+      },
+    );
+
+    mockFetch.mockImplementation(async () => {
+      throw new Error('connection refused');
+    });
+
+    const result = await interactMobileInspectPoint('ios', 12, 18);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Appium server did not become ready');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('dispatches iOS tap interaction through Appium actions endpoint', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-4',
+                name: 'iPhone 16 Pro',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-4', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-1' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-1/actions') && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-1') && method === 'DELETE') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 48, 72);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Tap dispatched to iOS simulator');
     expect(execPlans).toHaveLength(0);
   });
 });
