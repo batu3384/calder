@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
 const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');
+const ipcAppBrowserSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
@@ -33,13 +34,14 @@ describe('ipc filesystem contract', () => {
   });
 
   it('allows only explicit guest message channels from renderer to webview', () => {
-    expect(ipcSource).toContain('ALLOWED_GUEST_MESSAGE_CHANNELS');
-    expect(ipcSource).toContain('isAllowedGuestMessagePayload(channel, args)');
-    expect(ipcSource).toContain('blocked invalid payload for channel');
-    expect(ipcSource).toContain('app:sendToGuestWebContents blocked unknown channel');
-    expect(ipcSource).toContain("guest.getType() !== 'webview'");
-    expect(ipcSource).toContain('app:sendToGuestWebContents blocked non-webview target');
-    expect(ipcSource).toContain("'auth-fill-credentials'");
-    expect(ipcSource).toContain("'flow-do-click'");
+    expect(ipcSource).toContain('registerAppBrowserIpcHandlers({');
+    expect(ipcAppBrowserSource).toContain('ALLOWED_GUEST_MESSAGE_CHANNELS');
+    expect(ipcAppBrowserSource).toContain('isAllowedGuestMessagePayload(channel, args)');
+    expect(ipcAppBrowserSource).toContain('blocked invalid payload for channel');
+    expect(ipcAppBrowserSource).toContain('app:sendToGuestWebContents blocked unknown channel');
+    expect(ipcAppBrowserSource).toContain("guest.getType() !== 'webview'");
+    expect(ipcAppBrowserSource).toContain('app:sendToGuestWebContents blocked non-webview target');
+    expect(ipcAppBrowserSource).toContain("'auth-fill-credentials'");
+    expect(ipcAppBrowserSource).toContain("'flow-do-click'");
   });
 });

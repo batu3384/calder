@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('IPC governance contract', () => {
   const source = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
   const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
+  const appBrowserIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
   const mcpGovernanceSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-mcp-governance.ts'), 'utf8');
 
   it('guards Calder-controlled project writes through governance enforcement', () => {
@@ -28,11 +29,12 @@ describe('IPC governance contract', () => {
   });
 
   it('guards renderer-triggered external URL opens with network governance', () => {
-    expect(source).toContain("requireKnownProjectPath(cwd, 'Open external URL')");
-    expect(source).toContain('getActiveProjectPath()');
-    expect(source).toContain("kind: 'network'");
-    expect(source).toContain("label: 'Open external URL'");
-    expect(source).toContain('target: parsed.hostname');
+    expect(source).toContain('registerAppBrowserIpcHandlers({');
+    expect(appBrowserIpcSource).toContain("ops.requireKnownProjectPath(cwd, 'Open external URL')");
+    expect(appBrowserIpcSource).toContain('ops.getActiveProjectPath()');
+    expect(appBrowserIpcSource).toContain("kind: 'network'");
+    expect(appBrowserIpcSource).toContain("label: 'Open external URL'");
+    expect(appBrowserIpcSource).toContain('target: parsed.hostname');
   });
 
   it('exposes governance IPC handlers for auto-approval controls', () => {

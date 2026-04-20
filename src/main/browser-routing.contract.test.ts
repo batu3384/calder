@@ -10,6 +10,10 @@ const ipcHandlersSource = readFileSync(
   new URL('./ipc-handlers.ts', import.meta.url),
   'utf8',
 );
+const appBrowserIpcSource = readFileSync(
+  new URL('./ipc-app-browser.ts', import.meta.url),
+  'utf8',
+);
 
 describe('Calder browser routing contracts', () => {
   it('marks top-level Calder window browser opens as embedded-preferred', () => {
@@ -17,6 +21,7 @@ describe('Calder browser routing contracts', () => {
   });
 
   it('marks renderer-driven openExternal calls as embedded-preferred', () => {
-    expect(ipcHandlersSource).toContain("openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win");
+    expect(ipcHandlersSource).toContain('registerAppBrowserIpcHandlers({');
+    expect(appBrowserIpcSource).toContain("openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win");
   });
 });
