@@ -534,6 +534,203 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateAttempted).toBe(false);
   });
 
+  it('falls back to brew info for formula checks and keeps provider up to date when versions match', async () => {
+    const runner = new FakeRunner();
+    const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.38.1/bin/gemini';
+    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
+      code: 0,
+      stdout: '',
+    });
+    runner.enqueue('brew', ['info', '--json=v2', 'gemini-cli'], {
+      code: 0,
+      stdout: JSON.stringify({
+        formulae: [{ versions: { stable: '0.38.1' } }],
+      }),
+    });
+    runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
+
+    const summary = await updateProviders(
+      [createTarget('gemini', 'Gemini CLI', geminiBinary)],
+      { runner, now: (() => 4_900) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('gemini');
+    expect(summary.results[0].source).toBe('brew-formula');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].checkCommand).toBe('brew info --json=v2 gemini-cli');
+  });
+
+  it('falls back to brew info for cask checks and applies cask upgrade commands', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/opt/homebrew/Caskroom/codex/0.121.0/codex';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'codex'], {
+      code: 0,
+      stdout: '',
+    });
+    runner.enqueue('brew', ['info', '--json=v2', '--cask', 'codex'], {
+      code: 0,
+      stdout: JSON.stringify({
+        casks: [{ version: '0.122.0' }],
+      }),
+    });
+    runner.enqueue('brew', ['upgrade', '--cask', 'codex'], { code: 0, stdout: 'upgraded' });
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.122.0' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_925) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('codex');
+    expect(summary.results[0].source).toBe('brew-cask');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].updateCommand).toBe('brew upgrade --cask codex');
+  });
+
+  it('matches brew outdated entries that report names as arrays', async () => {
+    const runner = new FakeRunner();
+    const copilotBinary = '/opt/homebrew/Caskroom/copilot-cli/1.0.30/copilot';
+    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
+      code: 1,
+      stdout: JSON.stringify({
+        casks: [{
+          name: ['copilot', 'copilot-cli'],
+          current_version: '1.0.31',
+        }],
+      }),
+    });
+    runner.enqueue('brew', ['upgrade', '--cask', 'copilot-cli'], { code: 0, stdout: 'upgraded' });
+    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.31.' });
+
+    const summary = await updateProviders(
+      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
+      { runner, now: (() => 4_950) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('copilot');
+    expect(summary.results[0].source).toBe('brew-cask');
+    expect(summary.results[0].status).toBe('updated');
+    expect(summary.results[0].latestVersion).toBe('1.0.31');
+  });
+
+  it('returns error results when update command execution fails', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.120.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 1, stderr: 'permission denied' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_975) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('codex');
+    expect(summary.results[0].status).toBe('error');
+    expect(summary.results[0].message).toBe('permission denied');
+  });
+
+  it('marks provider as cancelled when aborted before checks complete', async () => {
+    const abortController = new AbortController();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    const runner: ProviderUpdaterRunner = {
+      async run(command, args) {
+        if (command === codexBinary && args[0] === '--version') {
+          abortController.abort();
+          return { code: 0, stdout: 'codex 0.120.0', stderr: '' };
+        }
+        return { code: 1, stdout: '', stderr: 'Unexpected command' };
+      },
+    };
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      {
+        runner,
+        signal: abortController.signal,
+      },
+    );
+
+    expect(summary.cancelled).toBe(true);
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].status).toBe('cancelled');
+    expect(summary.results[0].message).toContain('before checks completed');
+  });
+
+  it('marks provider as cancelled when aborted before update execution', async () => {
+    const abortController = new AbortController();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    const runner: ProviderUpdaterRunner = {
+      async run(command, args) {
+        if (command === codexBinary && args[0] === '--version') {
+          return { code: 0, stdout: 'codex 0.120.0', stderr: '' };
+        }
+        if (command === 'npm' && args[0] === 'view') {
+          abortController.abort();
+          return { code: 0, stdout: '0.121.0', stderr: '' };
+        }
+        return { code: 1, stdout: '', stderr: 'Unexpected command' };
+      },
+    };
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      {
+        runner,
+        signal: abortController.signal,
+      },
+    );
+
+    expect(summary.cancelled).toBe(true);
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].status).toBe('cancelled');
+    expect(summary.results[0].message).toContain('before execution');
+  });
+
+  it('marks provider as cancelled when aborted before version verification completes', async () => {
+    const abortController = new AbortController();
+    const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
+    let versionCallCount = 0;
+    const runner: ProviderUpdaterRunner = {
+      async run(command, args, options) {
+        if (command === codexBinary && args[0] === '--version') {
+          versionCallCount += 1;
+          if (versionCallCount === 2) {
+            abortController.abort();
+          }
+          return { code: options?.signal?.aborted ? 130 : 0, stdout: 'codex 0.120.0', stderr: '' };
+        }
+        if (command === 'npm' && args[0] === 'view') {
+          return { code: 0, stdout: '0.121.0', stderr: '' };
+        }
+        if (command === 'npm' && args[0] === 'install') {
+          return { code: 0, stdout: 'updated', stderr: '' };
+        }
+        return { code: 1, stdout: '', stderr: 'Unexpected command' };
+      },
+    };
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      {
+        runner,
+        signal: abortController.signal,
+      },
+    );
+
+    expect(summary.cancelled).toBe(true);
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].status).toBe('cancelled');
+    expect(summary.results[0].message).toContain('before version verification completed');
+  });
+
   it('emits provider update progress events from start to finish', async () => {
     const runner = new FakeRunner();
     const progressEvents: string[] = [];
