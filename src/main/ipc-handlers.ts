@@ -20,6 +20,11 @@ import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerPtyIpcHandlers } from './ipc-pty';
 import { sanitizePersistedStateForSave as sanitizePersistedStateForSavePayload } from './ipc-state-sanitizer';
 import {
+  applySessionOverrideToGovernanceState,
+  isAutoApprovalMode,
+  updateAutoApprovalMode,
+} from './ipc-auto-approval-governance';
+import {
   PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS,
   appendAutoApprovalAudit,
   extractPlaywrightNavigateUrlsFromTerminalChunk,
@@ -30,20 +35,15 @@ import {
 } from './ipc-playwright-mirror';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
-import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
+import type { ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
 import { isMac, isWin } from './platform';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import { POLICY_RELATIVE_PATH, discoverProjectGovernance } from './calder-governance/discovery';
+import { discoverProjectGovernance } from './calder-governance/discovery';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import { resolveAutoApprovalInput } from './calder-governance/auto-approval-dispatch';
-import {
-  GLOBAL_AUTO_APPROVAL_POLICY_PATH,
-  resolveEffectiveAutoApprovalMode,
-  setAutoApprovalModeInPolicyFile,
-} from './calder-governance/auto-approval-policy';
 import {
   buildMiniMaxToolCallRecoveryPrompt,
   shouldTriggerMiniMaxToolCallRecovery,
@@ -133,47 +133,6 @@ function isAllowedDirectoryLookupPath(resolvedPath: string): boolean {
 
 function sanitizePersistedStateForSave(state: unknown): PersistedState {
   return sanitizePersistedStateForSavePayload(state);
-}
-
-function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
-  return value === 'off'
-    || value === 'edit_only'
-    || value === 'edit_plus_safe_tools'
-    || value === 'full_auto'
-    || value === 'full_auto_unsafe';
-}
-
-function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null): void {
-  const targetPath = scope === 'global'
-    ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
-    : path.join(projectPath, POLICY_RELATIVE_PATH);
-  setAutoApprovalModeInPolicyFile(targetPath, mode);
-}
-
-async function applySessionOverrideToGovernanceState(
-  state: ProjectGovernanceState,
-  sessionMode: AutoApprovalMode | undefined,
-): Promise<ProjectGovernanceState> {
-  if (!state.autoApproval || sessionMode === undefined) return state;
-
-  const resolved = resolveEffectiveAutoApprovalMode({
-    globalMode: state.autoApproval.globalMode,
-    hasGlobalMode: true,
-    projectMode: state.autoApproval.projectMode,
-    hasProjectMode: state.autoApproval.projectMode !== undefined,
-    sessionMode,
-    hasSessionMode: true,
-  });
-
-  return {
-    ...state,
-    autoApproval: {
-      ...state.autoApproval,
-      sessionMode,
-      effectiveMode: resolved.effectiveMode,
-      policySource: resolved.policySource,
-    },
-  };
 }
 
 let hookWatcherStarted = false;
