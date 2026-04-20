@@ -11,6 +11,7 @@ const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'stat
 const STATUSLINE_PYTHON_PATH = path.join(STATUS_DIR, STATUSLINE_PYTHON_HELPER);
 
 const KNOWN_EXTENSIONS = ['.status', '.sessionid', '.cost', '.toolfailure', '.events'];
+const CLEANUP_SUFFIXES = [...KNOWN_EXTENSIONS, '.provider_sync.json'];
 
 let watcher: fs.FSWatcher | null = null;
 let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -260,6 +261,10 @@ function isStatuslineArtifact(filename: string): boolean {
   return filename.endsWith('.quota.json')
     || (filename.startsWith('statusline.refresh') && filename.endsWith('.lock'))
     || filename === 'statusline.log';
+}
+
+function isProviderSyncArtifact(filename: string): boolean {
+  return filename.endsWith('.provider_sync.json');
 }
 
 export function getStatusLineScriptPath(): string {
@@ -527,7 +532,7 @@ export function stopWatching(): void {
 }
 
 export function cleanupSessionStatus(sessionId: string): void {
-  for (const ext of KNOWN_EXTENSIONS) {
+  for (const ext of CLEANUP_SUFFIXES) {
     try {
       fs.unlinkSync(path.join(STATUS_DIR, `${sessionId}${ext}`));
     } catch {
@@ -545,7 +550,7 @@ export function cleanupAll(): void {
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
-      if (isKnownExtension(file) || isStatuslineArtifact(file)) {
+      if (isKnownExtension(file) || isStatuslineArtifact(file) || isProviderSyncArtifact(file)) {
         try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch { /* already gone */ }
       }
     }

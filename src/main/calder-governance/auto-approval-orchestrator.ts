@@ -87,6 +87,14 @@ function extractOperationInput(event: InspectorEvent): AutoApprovalOperationInpu
   };
 }
 
+function isPermissionRequestEvent(event: InspectorEvent): boolean {
+  if (event.type === 'permission_request') return true;
+  const normalizedHookEvent = typeof event.hookEvent === 'string'
+    ? event.hookEvent.replace(/[\s_-]/g, '').toLowerCase()
+    : '';
+  return normalizedHookEvent === 'permissionrequest';
+}
+
 async function resolveAutoApprovalStateFromProject(projectPath: string | null): Promise<ResolvedAutoApprovalState> {
   if (!projectPath) {
     return { effectiveMode: 'off', policySource: 'fallback' };
@@ -142,7 +150,7 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
       if (!Array.isArray(events) || events.length === 0) return;
 
       for (const event of events) {
-        if (event.type !== 'permission_request') continue;
+        if (!isPermissionRequestEvent(event)) continue;
 
         const session = sessions.get(sessionId);
         if (!session) continue;

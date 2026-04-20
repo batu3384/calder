@@ -97,7 +97,9 @@ export function statusCmd(
     const dir = STATUS_DIR.replace(/\\/g, '/');
     return `python "${py}" "${event}" "${status}" "${sessionIdVar}" "${dir}" "${hookMarker}"`;
   }
-  return `sh -c 'mkdir -p ${STATUS_DIR} && echo ${event}:${status} > ${STATUS_DIR}/$${sessionIdVar}.status ${hookMarker}'`;
+  // Guard against empty/missing session IDs to avoid creating `${STATUS_DIR}/.status`.
+  const sidExpr = `\${${sessionIdVar}:-}`;
+  return `sh -c 'sid="${sidExpr}"; if [ -n "$sid" ]; then mkdir -p ${STATUS_DIR} && echo ${event}:${status} > ${STATUS_DIR}/$sid.status; fi ${hookMarker}'`;
 }
 
 /**

@@ -5,11 +5,13 @@ import { createAutoApprovalOrchestrator } from './auto-approval-orchestrator.js'
 function permissionRequestEvent(input: {
   toolName: string;
   toolInput?: Record<string, unknown>;
+  type?: InspectorEvent['type'];
+  hookEvent?: string;
 }): InspectorEvent {
   return {
-    type: 'permission_request',
+    type: input.type ?? 'permission_request',
     timestamp: 1000,
-    hookEvent: 'PermissionRequest',
+    hookEvent: input.hookEvent ?? 'PermissionRequest',
     tool_name: input.toolName,
     tool_input: input.toolInput,
   };
@@ -63,6 +65,37 @@ describe('createAutoApprovalOrchestrator', () => {
       effective_mode: 'edit_plus_safe_tools',
       operation_class: 'edit',
       decision: 'allow',
+    });
+  });
+
+  it('treats PermissionRequest hook events as approval prompts even when event type differs', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState: async () => ({
+        effectiveMode: 'edit_plus_safe_tools',
+        policySource: 'project',
+      }),
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({
+        toolName: 'Edit',
+        type: 'notification',
+        hookEvent: 'PermissionRequest',
+      }),
+    ]);
+
+    expect(sendApproval).toHaveBeenCalledTimes(1);
+    expect(sendApproval).toHaveBeenCalledWith('session-1', 'codex');
+    expect(emitInspectorEvents).toHaveBeenCalledTimes(1);
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      decision: 'allow',
+      operation_class: 'edit',
     });
   });
 

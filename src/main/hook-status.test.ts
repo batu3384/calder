@@ -630,7 +630,7 @@ describe('hook-status', () => {
   });
 
   describe('cleanupSessionStatus', () => {
-    it('unlinks all 5 file types', () => {
+    it('unlinks all 6 file types', () => {
       cleanupSessionStatus('sess-1');
 
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.status'));
@@ -638,7 +638,8 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.cost'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.toolfailure'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.events'));
-      expect(fs.unlinkSync).toHaveBeenCalledTimes(5);
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.provider_sync.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledTimes(6);
     });
 
     it('handles errors when files do not exist', () => {
@@ -816,6 +817,7 @@ describe('hook-status', () => {
         'a.status',
         'b.sessionid',
         'c.cost',
+        'sess-1.provider_sync.json',
         'status_writer.py',
         'statusline.py',
         isWin ? 'statusline.cmd' : 'statusline.sh',
@@ -828,11 +830,12 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'a.status'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'b.sessionid'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'c.cost'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.provider_sync.json'));
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'status_writer.py'));
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.py'));
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(STATUSLINE_SCRIPT);
       expect(fs.rmSync).not.toHaveBeenCalled();
-      expect(fs.unlinkSync).toHaveBeenCalledTimes(3);
+      expect(fs.unlinkSync).toHaveBeenCalledTimes(4);
     });
 
     it('handles missing directory gracefully', () => {

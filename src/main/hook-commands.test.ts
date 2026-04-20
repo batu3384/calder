@@ -61,7 +61,7 @@ describe('hook-commands', () => {
     const module = await loadHookCommands();
 
     expect(module.statusCmd('pre_tool_use', 'pending', 'SESSION_ID', '# hook')).toBe(
-      `sh -c 'mkdir -p ${STATUS_DIR} && echo pre_tool_use:pending > ${STATUS_DIR}/$SESSION_ID.status # hook'`,
+      `sh -c 'sid="${'$'}{SESSION_ID:-}"; if [ -n "${'$'}sid" ]; then mkdir -p ${STATUS_DIR} && echo pre_tool_use:pending > ${STATUS_DIR}/${'$'}sid.status; fi # hook'`,
     );
   });
 
