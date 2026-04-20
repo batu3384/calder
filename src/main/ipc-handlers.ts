@@ -12,9 +12,9 @@ import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
 import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
 import { registerGitIpcHandlers } from './ipc-git';
+import { registerProviderIpcHandlers } from './ipc-provider';
 import { createAppMenu } from './menu';
-import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
-import { buildHandoffPrompt } from './providers/resume-handoff';
+import { getProvider } from './providers/registry';
 import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
@@ -1054,27 +1054,10 @@ export function registerIpcHandlers(): void {
   registerGitIpcHandlers({
     assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
   });
+  registerProviderIpcHandlers();
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
     createAppMenu(debugMode);
-  });
-
-  ipcMain.handle('provider:getConfig', async (_event, providerId: ProviderId, projectPath: string) => {
-    const provider = getProvider(providerId);
-    return provider.getConfig(projectPath);
-  });
-
-  // Backward compatibility alias
-  ipcMain.handle('claude:getConfig', async (_event, projectPath: string) => {
-    const provider = getProvider('claude');
-    return provider.getConfig(projectPath);
-  });
-
-  ipcMain.on('config:watchProject', (_event, providerId: ProviderId, projectPath: string) => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    const provider = getProvider(providerId);
-    provider.startConfigWatcher?.(win, projectPath);
   });
 
   ipcMain.handle('context:getProjectState', async (_event, projectPath: string) => {
@@ -1251,39 +1234,6 @@ export function registerIpcHandlers(): void {
     const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
     bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
-  });
-
-  ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {
-    return getProviderMeta(providerId);
-  });
-
-  ipcMain.handle('provider:listProviders', () => {
-    return getAllProviderMetas();
-  });
-
-  ipcMain.handle('session:buildResumeWithPrompt', async (
-    _event,
-    sourceProviderId: ProviderId,
-    sourceCliSessionId: string | null,
-    projectPath: string,
-    sessionName: string,
-  ) => {
-    const sourceProvider = getProvider(sourceProviderId);
-    const fromProviderLabel = sourceProvider.meta.displayName;
-    let transcriptPath: string | null = null;
-    if (sourceCliSessionId && sourceProvider.getTranscriptPath) {
-      try {
-        transcriptPath = sourceProvider.getTranscriptPath(sourceCliSessionId, projectPath);
-      } catch (err) {
-        console.warn('getTranscriptPath failed:', err);
-      }
-    }
-    return buildHandoffPrompt({ fromProviderLabel, sessionName, transcriptPath });
-  });
-
-  ipcMain.handle('provider:checkBinary', (_event, providerId: ProviderId = 'claude') => {
-    const provider = getProvider(providerId);
-    return provider.validatePrerequisites();
   });
 
   ipcMain.handle('provider:updateAll', async (event) => {
