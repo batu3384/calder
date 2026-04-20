@@ -7,11 +7,14 @@ const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-
 const ipcAppBrowserSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
 const ipcPtySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-pty.ts'), 'utf8');
 const ipcStateSanitizerSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-state-sanitizer.ts'), 'utf8');
+const ipcPathPolicySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-path-policy.ts'), 'utf8');
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
-    expect(ipcSource).toContain('function isAllowedDirectoryLookupPath');
+    expect(ipcSource).toContain("from './ipc-path-policy'");
     expect(ipcSource).toContain('registerFsStoreIpcHandlers({');
+    expect(ipcPathPolicySource).toContain('export function isAllowedDirectoryLookupPath');
+    expect(ipcPathPolicySource).toContain('export function isAllowedReadPath');
     expect(ipcFsStoreSource).toContain('fs:isDirectory blocked');
     expect(ipcFsStoreSource).toContain('fs:listDirs blocked');
   });

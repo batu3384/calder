@@ -1,8 +1,6 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
-import * as path from 'path';
-import * as os from 'os';
 import { writePty } from './pty-manager';
-import { loadState, PersistedState } from './store';
+import type { PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
 import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
@@ -20,6 +18,13 @@ import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerPtyIpcHandlers } from './ipc-pty';
 import { sanitizePersistedStateForSave as sanitizePersistedStateForSavePayload } from './ipc-state-sanitizer';
 import {
+  getActiveProjectPath,
+  isAllowedDirectoryLookupPath,
+  isAllowedReadPath,
+  isWithinKnownProject,
+  requireKnownProjectPath,
+} from './ipc-path-policy';
+import {
   applySessionOverrideToGovernanceState,
   isAutoApprovalMode,
   updateAutoApprovalMode,
@@ -36,7 +41,6 @@ import {
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
 import type { ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
-import { isMac, isWin } from './platform';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
@@ -49,87 +53,6 @@ import {
   shouldTriggerMiniMaxToolCallRecovery,
   type MiniMaxToolCallRecoveryState,
 } from './minimax-toolcall-recovery';
-
-/**
- * Check if a resolved path is within one of the known project directories.
- */
-function isWithinKnownProject(resolvedPath: string): boolean {
-  const state = loadState();
-  return state.projects.some(p => resolvedPath.startsWith(p.path + path.sep) || resolvedPath === p.path);
-}
-
-function requireKnownProjectPath(projectPath: string, contextLabel: string): string {
-  const resolvedPath = path.resolve(projectPath);
-  if (!isWithinKnownProject(resolvedPath)) {
-    throw new Error(`${contextLabel} requires a known project path`);
-  }
-  return resolvedPath;
-}
-
-function getActiveProjectPath(): string | undefined {
-  const state = loadState();
-  if (!state.activeProjectId) return undefined;
-  return state.projects.find((candidate) => candidate.id === state.activeProjectId)?.path;
-}
-
-function isWithinPrefix(resolvedPath: string, prefix: string): boolean {
-  return resolvedPath === prefix || resolvedPath.startsWith(prefix + path.sep);
-}
-
-/**
- * Check if a resolved path is allowed for reading:
- * within a known project directory OR a known config location.
- */
-function isAllowedReadPath(resolvedPath: string): boolean {
-  // Allow files within known project directories
-  if (isWithinKnownProject(resolvedPath)) {
-    return true;
-  }
-
-  // Allow known config files/directories used by supported CLIs
-  const home = os.homedir();
-  const allowedPaths = [
-    path.join(home, '.claude.json'),
-    path.join(home, '.mcp.json'),
-    path.join(home, '.claude') + path.sep,
-    path.join(home, '.codex') + path.sep,
-    path.join(home, '.copilot') + path.sep,
-    path.join(home, '.qwen') + path.sep,
-    path.join(home, '.mmx') + path.sep,
-    path.join(home, '.blackboxcli') + path.sep,
-  ];
-
-  if (isMac) {
-    allowedPaths.push('/Library/Application Support/ClaudeCode/');
-  } else if (isWin) {
-    allowedPaths.push('C:\\Program Files\\ClaudeCode\\');
-  } else {
-    allowedPaths.push('/etc/claude-code/');
-  }
-
-  return allowedPaths.some(allowed => resolvedPath === allowed || resolvedPath.startsWith(allowed));
-}
-
-function isAllowedDirectoryLookupPath(resolvedPath: string): boolean {
-  if (isAllowedReadPath(resolvedPath)) {
-    return true;
-  }
-
-  const homePath = path.resolve(os.homedir());
-  if (isWithinPrefix(resolvedPath, homePath)) {
-    return true;
-  }
-
-  if (isMac) {
-    return isWithinPrefix(resolvedPath, path.resolve('/Volumes'));
-  }
-
-  if (!isWin) {
-    return isWithinPrefix(resolvedPath, path.resolve('/mnt')) || isWithinPrefix(resolvedPath, path.resolve('/media'));
-  }
-
-  return false;
-}
 
 function sanitizePersistedStateForSave(state: unknown): PersistedState {
   return sanitizePersistedStateForSavePayload(state);
