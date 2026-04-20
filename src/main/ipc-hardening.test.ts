@@ -1,9 +1,7 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  _isAllowedGuestMessagePayloadForTesting,
-  _sanitizePersistedStateForSaveForTesting,
-} from './ipc-handlers';
+import { isAllowedGuestMessagePayload } from './ipc-app-browser';
+import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
 import type { PersistedState } from '../shared/types';
 
 function makeBaseState(): PersistedState {
@@ -56,7 +54,7 @@ function makeBaseState(): PersistedState {
 
 describe('ipc hardening helpers', () => {
   it('sanitizes and normalizes valid state payloads', () => {
-    const sanitized = _sanitizePersistedStateForSaveForTesting(makeBaseState());
+    const sanitized = sanitizePersistedStateForSave(makeBaseState());
     expect(path.isAbsolute(sanitized.projects[0].path)).toBe(true);
   });
 
@@ -67,48 +65,48 @@ describe('ipc hardening helpers', () => {
       path: './tmp/another-project',
     });
 
-    expect(() => _sanitizePersistedStateForSaveForTesting(state)).toThrow(/duplicate project.id/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(/duplicate project.id/i);
   });
 
   it('rejects dangling activeProjectId references', () => {
     const state = makeBaseState();
     state.activeProjectId = 'missing-project';
 
-    expect(() => _sanitizePersistedStateForSaveForTesting(state)).toThrow(/activeProjectId does not match/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(/activeProjectId does not match/i);
   });
 
   it('rejects dangling browser target session references', () => {
     const state = makeBaseState();
     state.projects[0].sessions[1].browserTargetSessionId = 'missing-session';
 
-    expect(() => _sanitizePersistedStateForSaveForTesting(state)).toThrow(/browserTargetSessionId is missing/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(/browserTargetSessionId is missing/i);
   });
 
   it('rejects unsupported provider ids in sessions', () => {
     const state = makeBaseState();
     state.projects[0].sessions[0].providerId = 'not-a-provider' as never;
 
-    expect(() => _sanitizePersistedStateForSaveForTesting(state)).toThrow(/unsupported session.providerId/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(/unsupported session.providerId/i);
   });
 
   it('allows no-arg webview control channels without args', () => {
-    expect(_isAllowedGuestMessagePayloadForTesting('enter-inspect-mode', [])).toBe(true);
-    expect(_isAllowedGuestMessagePayloadForTesting('draw-clear', [])).toBe(true);
+    expect(isAllowedGuestMessagePayload('enter-inspect-mode', [])).toBe(true);
+    expect(isAllowedGuestMessagePayload('draw-clear', [])).toBe(true);
   });
 
   it('rejects no-arg channels when args are provided', () => {
-    expect(_isAllowedGuestMessagePayloadForTesting('enter-inspect-mode', [{ bad: true }])).toBe(false);
+    expect(isAllowedGuestMessagePayload('enter-inspect-mode', [{ bad: true }])).toBe(false);
   });
 
   it('accepts auth-fill payloads with bounded string fields', () => {
-    expect(_isAllowedGuestMessagePayloadForTesting('auth-fill-credentials', [{
+    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
       username: 'demo@example.com',
       password: 'secret',
     }])).toBe(true);
   });
 
   it('rejects auth-fill payloads with non-string fields', () => {
-    expect(_isAllowedGuestMessagePayloadForTesting('auth-fill-credentials', [{
+    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
       username: 123,
       password: 'secret',
     }])).toBe(false);
@@ -118,6 +116,6 @@ describe('ipc hardening helpers', () => {
     const hugePayload = {
       selector: `#${'a'.repeat(1_500_000)}`,
     };
-    expect(_isAllowedGuestMessagePayloadForTesting('flow-do-click', [hugePayload])).toBe(false);
+    expect(isAllowedGuestMessagePayload('flow-do-click', [hugePayload])).toBe(false);
   });
 });

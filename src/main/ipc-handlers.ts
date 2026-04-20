@@ -1,5 +1,4 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
-import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { writePty } from './pty-manager';
@@ -16,10 +15,19 @@ import { registerProviderIpcHandlers } from './ipc-provider';
 import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
 import { registerMobileIpcHandlers } from './ipc-mobile';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
-import { registerAppBrowserIpcHandlers, isAllowedGuestMessagePayload } from './ipc-app-browser';
+import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerPtyIpcHandlers } from './ipc-pty';
 import { sanitizePersistedStateForSave as sanitizePersistedStateForSavePayload } from './ipc-state-sanitizer';
+import {
+  PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS,
+  appendAutoApprovalAudit,
+  extractPlaywrightNavigateUrlsFromTerminalChunk,
+  shouldMirrorPlaywrightNavigate,
+  shouldMirrorPlaywrightNavigateUrl,
+  type PlaywrightMirrorState,
+  type PlaywrightMirrorTarget,
+} from './ipc-playwright-mirror';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
 import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, InspectorEvent } from '../shared/types';
@@ -140,171 +148,6 @@ function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project'
     ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
     : path.join(projectPath, POLICY_RELATIVE_PATH);
   setAutoApprovalModeInPolicyFile(targetPath, mode);
-}
-
-const PLAYWRIGHT_NAVIGATE_TOOL = 'mcp__plugin_playwright_playwright__browser_navigate';
-const PLAYWRIGHT_MIRROR_COOLDOWN_MS = 1_500;
-const PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS = 8_192;
-
-interface PlaywrightMirrorState {
-  lastUrl: string;
-  lastMirroredAtMs: number;
-}
-
-interface PlaywrightMirrorTarget {
-  url: string;
-  cwd: string;
-  sessionId: string;
-}
-
-const AUTO_APPROVAL_AUDIT_EXTENSION = '.auto_approval.log';
-
-function appendAutoApprovalAudit(sessionId: string, events: InspectorEvent[]): void {
-  if (!events.length) return;
-  const auditEvents = events.filter((event) =>
-    event.type === 'approval_decision' && event.auto_approval !== undefined
-  );
-  if (!auditEvents.length) return;
-
-  const runtimeDir = path.join(os.homedir(), '.calder', 'runtime');
-  const auditPath = path.join(runtimeDir, `${sessionId}${AUTO_APPROVAL_AUDIT_EXTENSION}`);
-
-  try {
-    fs.mkdirSync(runtimeDir, { recursive: true });
-    const lines = auditEvents.map((event) => JSON.stringify({
-      emittedAt: new Date().toISOString(),
-      event,
-    }));
-    fs.appendFileSync(auditPath, `${lines.join('\n')}\n`, 'utf8');
-  } catch (error) {
-    console.warn('Failed to append auto-approval audit log:', error);
-  }
-}
-
-function isPlaywrightNavigateToolName(toolName: string | undefined): boolean {
-  if (!toolName) return false;
-  const normalized = toolName.trim().toLowerCase();
-  if (!normalized) return false;
-  if (normalized === PLAYWRIGHT_NAVIGATE_TOOL) return true;
-  if (normalized.includes('playwright') && normalized.endsWith('__browser_navigate')) return true;
-
-  // Some providers/tooling surfaces use human-readable tool names instead of
-  // canonical MCP IDs (for example: "plugin:playwright:playwright - Navigate to a URL").
-  const isPlaywrightTool = normalized.includes('playwright');
-  if (!isPlaywrightTool) return false;
-  if (/(^|[^a-z0-9])browser_navigate([^a-z0-9]|$)/.test(normalized)) return true;
-  if (normalized.includes('navigate to a url')) return true;
-  return /(?:^|[^a-z0-9])navigate([^a-z0-9]|$)/.test(normalized);
-}
-
-function extractPlaywrightNavigateUrl(toolInput: InspectorEvent['tool_input']): string | null {
-  if (!toolInput || typeof toolInput !== 'object') return null;
-  const urlCandidate = (toolInput as Record<string, unknown>).url;
-  return normalizePlaywrightNavigateUrl(typeof urlCandidate === 'string' ? urlCandidate : null);
-}
-
-function extractPlaywrightNavigateCwd(cwd: InspectorEvent['cwd']): string | null {
-  if (typeof cwd !== 'string') return null;
-  const normalized = cwd.trim();
-  return normalized ? normalized : null;
-}
-
-function normalizePlaywrightNavigateUrl(raw: string | null | undefined): string | null {
-  if (typeof raw !== 'string') return null;
-  const url = raw.trim();
-  if (!url) return null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
-    return parsed.toString();
-  } catch {
-    return null;
-  }
-}
-
-function shouldMirrorPlaywrightNavigateUrl(
-  sessionId: string,
-  url: string,
-  stateBySession: Map<string, PlaywrightMirrorState>,
-  nowMs = Date.now(),
-): boolean {
-  const previous = stateBySession.get(sessionId);
-  if (previous && previous.lastUrl === url && nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS) {
-    return false;
-  }
-  stateBySession.set(sessionId, { lastUrl: url, lastMirroredAtMs: nowMs });
-  return true;
-}
-
-function shouldMirrorPlaywrightNavigate(
-  sessionId: string,
-  event: InspectorEvent,
-  stateBySession: Map<string, PlaywrightMirrorState>,
-  nowMs = Date.now(),
-): PlaywrightMirrorTarget | null {
-  if (event.type !== 'tool_use') return null;
-  if (!isPlaywrightNavigateToolName(event.tool_name)) return null;
-  const url = extractPlaywrightNavigateUrl(event.tool_input);
-  const cwd = extractPlaywrightNavigateCwd(event.cwd);
-  if (!cwd) return null;
-  if (!url) return null;
-  if (!shouldMirrorPlaywrightNavigateUrl(sessionId, url, stateBySession, nowMs)) return null;
-  return { url, cwd, sessionId };
-}
-
-function extractPlaywrightNavigateUrlsFromTerminalChunk(text: string): string[] {
-  if (!text) return [];
-  const matches: string[] = [];
-  const patterns = [
-    /plugin:playwright:playwright[^\n\r]{0,160}navigate to a url[\s\S]{0,360}?\(mcp\)\(url:\s*"([^"\n\r]+)"/gi,
-    /playwright:[^\n\r]{0,160}browser_navigate[^\n\r]*[\s\S]{0,360}?\(mcp\)\(url:\s*"([^"\n\r]+)"/gi,
-  ];
-  for (const pattern of patterns) {
-    pattern.lastIndex = 0;
-    let result: RegExpExecArray | null;
-    while ((result = pattern.exec(text)) !== null) {
-      const normalized = normalizePlaywrightNavigateUrl(result[1]);
-      if (normalized) {
-        matches.push(normalized);
-      }
-    }
-  }
-  return Array.from(new Set(matches));
-}
-
-/** @internal test-only */
-export function _extractPlaywrightNavigateUrlForTesting(toolInput: InspectorEvent['tool_input']): string | null {
-  return extractPlaywrightNavigateUrl(toolInput);
-}
-
-/** @internal test-only */
-export function _extractPlaywrightNavigateCwdForTesting(cwd: InspectorEvent['cwd']): string | null {
-  return extractPlaywrightNavigateCwd(cwd);
-}
-
-/** @internal test-only */
-export function _extractPlaywrightNavigateUrlsFromTerminalChunkForTesting(text: string): string[] {
-  return extractPlaywrightNavigateUrlsFromTerminalChunk(text);
-}
-
-/** @internal test-only */
-export function _shouldMirrorPlaywrightNavigateForTesting(
-  sessionId: string,
-  event: InspectorEvent,
-  stateBySession: Map<string, PlaywrightMirrorState>,
-  nowMs = Date.now(),
-): PlaywrightMirrorTarget | null {
-  return shouldMirrorPlaywrightNavigate(sessionId, event, stateBySession, nowMs);
-}
-
-/** @internal test-only */
-export function _sanitizePersistedStateForSaveForTesting(state: unknown): PersistedState {
-  return sanitizePersistedStateForSave(state);
-}
-
-/** @internal test-only */
-export function _isAllowedGuestMessagePayloadForTesting(channel: string, args: unknown[]): boolean {
-  return isAllowedGuestMessagePayload(channel, args);
 }
 
 async function applySessionOverrideToGovernanceState(
