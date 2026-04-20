@@ -6,6 +6,7 @@ const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.t
 const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');
 const ipcAppBrowserSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
 const ipcPtySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-pty.ts'), 'utf8');
+const ipcStateSanitizerSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-state-sanitizer.ts'), 'utf8');
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
@@ -27,12 +28,12 @@ describe('ipc filesystem contract', () => {
   });
 
   it('sanitizes persisted state payloads before saving', () => {
-    expect(ipcSource).toContain('function sanitizePersistedStateForSave');
-    expect(ipcSource).toContain('function validatePersistedStateReferences');
-    expect(ipcSource).toContain('duplicate project.id detected');
-    expect(ipcSource).toContain('browserTargetSessionId is missing in project');
-    expect(ipcSource).toContain('Invalid state payload');
-    expect(ipcSource).toContain('MAX_PERSISTED_STATE_BYTES');
+    expect(ipcSource).toContain('sanitizePersistedStateForSavePayload');
+    expect(ipcStateSanitizerSource).toContain('function validatePersistedStateReferences');
+    expect(ipcStateSanitizerSource).toContain('duplicate project.id detected');
+    expect(ipcStateSanitizerSource).toContain('browserTargetSessionId is missing in project');
+    expect(ipcStateSanitizerSource).toContain('Invalid state payload');
+    expect(ipcStateSanitizerSource).toContain('MAX_PERSISTED_STATE_BYTES');
   });
 
   it('allows only explicit guest message channels from renderer to webview', () => {
