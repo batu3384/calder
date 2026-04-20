@@ -2,18 +2,17 @@ import { ipcMain, BrowserWindow, app, dialog, shell, webContents } from 'electro
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { execSync } from 'child_process';
 import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit, getPtyCwd } from './pty-manager';
 import { addMcpServer, removeMcpServer } from './claude-cli';
 import type { McpServerConfig } from './claude-cli';
-import { loadState, saveState, PersistedState } from './store';
+import { loadState, PersistedState } from './store';
 import { startWatching, cleanupSessionStatus, setInspectorEventsMiddleware, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
 import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
 import { getGitStatus, getGitFiles, getGitDiff, getGitWorktrees, gitStageFile, gitUnstageFile, gitDiscardFile, getGitRemoteUrl, listGitBranches, checkoutGitBranch, createGitBranch } from './git-status';
 import { startGitWatcher, notifyGitChanged } from './git-watcher';
-import { watchFile as watchFileForChanges, unwatchFile as unwatchFileForChanges, setFileWatcherWindow } from './file-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
+import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { checkForUpdates, quitAndInstall } from './auto-updater';
 import { createAppMenu } from './menu';
 import { getProvider, getProviderMeta, getAllProviderMetas } from './providers/registry';
@@ -22,7 +21,6 @@ import { updateAllProviders } from './provider-updater';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import { launchMobileInspectSurface, captureMobileInspectScreenshot, inspectMobilePoint, interactMobileInspectPoint } from './mobile-inspector';
 import type { AutoApprovalMode, ProjectGovernanceState, ProviderId, GitFileEntry, SettingsValidationResult, ProviderUpdateSummary, MobileDependencyId, BrowserCredentialSaveInput, MobileDependencyInstallProgressEvent, ShareConnectionDescription, MobileInspectPlatform, InspectorEvent } from '../shared/types';
-import { expandUserPath } from './fs-utils';
 import { isMac, isWin } from './platform';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
@@ -1044,53 +1042,11 @@ export function registerIpcHandlers(): void {
     cliSurfaceRuntime.resize(projectId, cols, rows);
   });
 
-  ipcMain.handle('fs:isDirectory', (_event, filePath: string) => {
-    try {
-      const resolved = path.resolve(expandUserPath(filePath));
-      if (!isAllowedDirectoryLookupPath(resolved)) {
-        console.warn(`fs:isDirectory blocked: ${resolved} is outside allowed lookup paths`);
-        return false;
-      }
-      return fs.statSync(resolved).isDirectory();
-    } catch {
-      return false;
-    }
-  });
-
-  ipcMain.handle('fs:expandPath', (_event, filePath: string): string => {
-    return expandUserPath(filePath);
-  });
-
-  ipcMain.handle('fs:listDirs', (_event, dirPath: string, prefix?: string) => {
-    try {
-      const resolved = path.resolve(expandUserPath(dirPath));
-      if (!isAllowedDirectoryLookupPath(resolved)) {
-        console.warn(`fs:listDirs blocked: ${resolved} is outside allowed lookup paths`);
-        return [];
-      }
-      const lowerPrefix = prefix?.toLowerCase().trim();
-      // Avoid broad directory enumeration outside known project roots.
-      if (!isWithinKnownProject(resolved) && !lowerPrefix) {
-        return [];
-      }
-      const entries = fs.readdirSync(resolved, { withFileTypes: true });
-      return entries
-        .filter(e => e.isDirectory() && !e.name.startsWith('.') && (!lowerPrefix || e.name.toLowerCase().startsWith(lowerPrefix)))
-        .map(e => path.join(resolved, e.name))
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, 20);
-    } catch {
-      return [];
-    }
-  });
-
-  ipcMain.handle('store:load', () => {
-    return loadState();
-  });
-
-  ipcMain.handle('store:save', (_event, state: unknown) => {
-    const sanitizedState = sanitizePersistedStateForSave(state);
-    saveState(sanitizedState);
+  registerFsStoreIpcHandlers({
+    isAllowedDirectoryLookupPath,
+    isAllowedReadPath,
+    isWithinKnownProject,
+    sanitizePersistedStateForSave,
   });
 
   ipcMain.handle('menu:rebuild', (_event, debugMode: boolean) => {
@@ -1591,95 +1547,6 @@ export function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('pty:getCwd', (_event, sessionId: string) => getPtyCwd(sessionId));
-
-  ipcMain.handle('fs:listFiles', (_event, cwd: string, query: string) => {
-    try {
-      const resolvedCwd = path.resolve(cwd);
-      if (!isWithinKnownProject(resolvedCwd)) {
-        return [];
-      }
-      let files: string[];
-      try {
-        const output = execSync('git ls-files --cached --others --exclude-standard', {
-          cwd: resolvedCwd,
-          encoding: 'utf-8',
-          timeout: 5000,
-          stdio: ['ignore', 'pipe', 'ignore'],
-        });
-        files = output.split('\n').filter(Boolean);
-      } catch {
-        // Not a git repo — fallback to recursive readdir with depth limit
-        files = [];
-        const IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '__pycache__']);
-        const MAX_DEPTH = 5;
-        const MAX_FILES = 5000;
-        function walk(dir: string, depth: number): void {
-          if (depth > MAX_DEPTH || files.length >= MAX_FILES) return;
-          let entries: fs.Dirent[];
-          try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-          for (const entry of entries) {
-            if (files.length >= MAX_FILES) return;
-            if (IGNORE.has(entry.name) || entry.name.startsWith('.')) continue;
-            const rel = path.relative(resolvedCwd, path.join(dir, entry.name));
-            if (entry.isDirectory()) {
-              walk(path.join(dir, entry.name), depth + 1);
-            } else {
-              files.push(rel);
-            }
-          }
-        }
-        walk(resolvedCwd, 0);
-      }
-
-      if (query) {
-        const lower = query.toLowerCase();
-        const exact: string[] = [];
-        const startsWith: string[] = [];
-        const nameContains: string[] = [];
-        const pathContains: string[] = [];
-        for (const f of files) {
-          const fileName = path.basename(f).toLowerCase();
-          if (fileName === lower) exact.push(f);
-          else if (fileName.startsWith(lower)) startsWith.push(f);
-          else if (fileName.includes(lower)) nameContains.push(f);
-          else if (f.toLowerCase().includes(lower)) pathContains.push(f);
-        }
-        files = [...exact, ...startsWith, ...nameContains, ...pathContains];
-      }
-      return files.slice(0, 50);
-    } catch (err) {
-      console.warn('fs:listFiles failed:', err);
-      return [];
-    }
-  });
-
-  ipcMain.handle('fs:readFile', (_event, filePath: string) => {
-    try {
-      // Security: resolve to absolute and check it's within a known project directory
-      const resolved = path.resolve(filePath);
-      if (!isAllowedReadPath(resolved)) {
-        console.warn(`fs:readFile blocked: ${resolved} is not within an allowed path`);
-        return '';
-      }
-      return fs.readFileSync(resolved, 'utf-8');
-    } catch (err) {
-      console.warn('fs:readFile failed:', err);
-      return '';
-    }
-  });
-
-  ipcMain.on('fs:watchFile', (event, filePath: string) => {
-    const resolved = path.resolve(filePath);
-    if (!isAllowedReadPath(resolved)) return;
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) setFileWatcherWindow(win);
-    watchFileForChanges(resolved);
-  });
-
-  ipcMain.on('fs:unwatchFile', (_event, filePath: string) => {
-    const resolved = path.resolve(filePath);
-    unwatchFileForChanges(resolved);
-  });
 
   ipcMain.handle('stats:getCache', () => {
     try {

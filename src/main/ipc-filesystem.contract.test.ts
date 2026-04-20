@@ -3,17 +3,19 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
+const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
     expect(ipcSource).toContain('function isAllowedDirectoryLookupPath');
-    expect(ipcSource).toContain('fs:isDirectory blocked');
-    expect(ipcSource).toContain('fs:listDirs blocked');
+    expect(ipcSource).toContain('registerFsStoreIpcHandlers({');
+    expect(ipcFsStoreSource).toContain('fs:isDirectory blocked');
+    expect(ipcFsStoreSource).toContain('fs:listDirs blocked');
   });
 
   it('requires prefix-based listing outside known projects to reduce enumeration', () => {
-    expect(ipcSource).toContain('if (!isWithinKnownProject(resolved) && !lowerPrefix)');
-    expect(ipcSource).toContain('Avoid broad directory enumeration outside known project roots.');
+    expect(ipcFsStoreSource).toContain('if (!policy.isWithinKnownProject(resolved) && !lowerPrefix)');
+    expect(ipcFsStoreSource).toContain('Avoid broad directory enumeration outside known project roots.');
   });
 
   it('requires known project cwd for PTY creation entry points', () => {
