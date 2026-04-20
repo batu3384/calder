@@ -194,6 +194,7 @@ describe('ipc app/browser runtime handlers', () => {
 
   it('saves browser screenshots with data-url validation and delegates utility handlers', async () => {
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     registerAppBrowserIpcHandlers({
       requireKnownProjectPath: vi.fn((value) => value),
       getActiveProjectPath: vi.fn(() => '/repo'),
@@ -202,14 +203,22 @@ describe('ipc app/browser runtime handlers', () => {
     const saveScreenshot = getHandleHandler('browser:saveScreenshot');
     const listTargets = getHandleHandler('browser:listLocalTargets');
     const getVersion = getHandleHandler('app:getVersion');
+    const getBrowserPreloadPath = getHandleHandler('app:getBrowserPreloadPath');
     const getPtyCwd = getHandleHandler('pty:getCwd');
 
     mockDiscoverLocalBrowserTargets.mockResolvedValue([{ url: 'http://localhost:3000' }]);
     mockGetPtyCwd.mockReturnValue('/repo');
+    mockReaddir.mockResolvedValueOnce(['stale.png', 'broken.png']);
+    mockStat
+      .mockResolvedValueOnce({ mtimeMs: 0 })
+      .mockRejectedValueOnce(new Error('stat failed'));
 
     const filePath = await saveScreenshot({}, 'session/1', 'data:image/png;base64,aGVsbG8=');
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockMkdir).toHaveBeenCalledWith('/tmp/calder-screenshots', { recursive: true });
     expect(mockWriteFile).toHaveBeenCalled();
+    expect(mockUnlink).toHaveBeenCalledWith('/tmp/calder-screenshots/stale.png');
+    expect(warnSpy).toHaveBeenCalledWith('Failed to prune screenshot', '/tmp/calder-screenshots/broken.png', expect.any(Error));
     expect(filePath).toContain('/tmp/calder-screenshots/draw-session_1-1700000000000.png');
     await expect(saveScreenshot({}, 's', 'data:text/plain;base64,abc')).rejects.toThrow(
       'Invalid screenshot data URL',
@@ -217,9 +226,33 @@ describe('ipc app/browser runtime handlers', () => {
 
     expect(await listTargets({})).toEqual([{ url: 'http://localhost:3000' }]);
     expect(getVersion({})).toBe('1.2.3');
+    expect(getBrowserPreloadPath({})).toContain('/preload/preload/browser-tab-preload.js');
     expect(getPtyCwd({}, 'session-1')).toBe('/repo');
 
+    warnSpy.mockRestore();
     nowSpy.mockRestore();
   });
-});
 
+  it('warns when screenshot prune cannot read the temporary directory', async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const dirError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+    mockReaddir.mockRejectedValueOnce(dirError);
+
+    const { registerAppBrowserIpcHandlers: registerHandlersFresh } = await import('./ipc-app-browser');
+    registerHandlersFresh({
+      requireKnownProjectPath: vi.fn((value) => value),
+      getActiveProjectPath: vi.fn(() => '/repo'),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    });
+
+    const saveScreenshot = getHandleHandler('browser:saveScreenshot');
+    await saveScreenshot({}, 'session-prune-error', 'data:image/png;base64,aGVsbG8=');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(warnSpy).toHaveBeenCalledWith('Failed to read screenshots dir for pruning', dirError);
+    warnSpy.mockRestore();
+  });
+});
