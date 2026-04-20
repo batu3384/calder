@@ -6,7 +6,7 @@ import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '
 import { getFullPath } from '../pty-manager';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getGeminiConfig } from '../gemini-config';
-import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks, SESSION_ID_VAR } from '../gemini-hooks';
+import { installGeminiHooks, validateGeminiHooks, SESSION_ID_VAR } from '../gemini-hooks';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 import type { BrowserWindow } from 'electron';
 
@@ -67,7 +67,6 @@ export class GeminiProvider implements CliProvider {
 
   cleanup(): void {
     stopConfigWatch();
-    cleanupGeminiHooks();
   }
 
   startConfigWatcher(win: BrowserWindow, projectPath: string): void {

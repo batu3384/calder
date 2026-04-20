@@ -13,7 +13,7 @@ const SETTINGS_PATH = path.join(GEMINI_DIR, 'settings.json');
 
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
 
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest'];
+const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'BeforeTool', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest'];
 
 interface HookHandler {
   type: string;
@@ -63,6 +63,7 @@ export function installGeminiHooks(): void {
 
   const statusCmd = (event: string, status: string) =>
     mkStatusCmd(event, status, SESSION_ID_VAR, GEMINI_HOOK_MARKER);
+  const rtkBeforeToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook gemini ${GEMINI_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: string) => {
     const pyCode = `import sys,json,os,time
@@ -108,6 +109,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
   const ideEvents: Record<string, string> = {
     SessionStart: 'waiting',
     BeforeAgent: 'working',
+    BeforeTool: 'working',
     AfterTool: 'working',
     AfterAgent: 'completed',
     SessionEnd: 'completed',
@@ -117,6 +119,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
   const eventTypeMap: Record<string, InspectorEventType> = {
     SessionStart: 'session_start',
     BeforeAgent: 'user_prompt',
+    BeforeTool: 'pre_tool_use',
     AfterTool: 'tool_use',
     AfterAgent: 'stop',
     SessionEnd: 'stop',
@@ -130,6 +133,9 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     ];
     if (event === 'SessionStart' || event === 'BeforeAgent') {
       hooks.push({ type: 'command', command: captureSessionIdCmd, name: 'calder-sessionid' });
+    }
+    if (event === 'BeforeTool') {
+      hooks.push({ type: 'command', command: rtkBeforeToolCmd, name: 'calder-rtk' });
     }
     hooks.push({ type: 'command', command: captureEventCmd(event, eventTypeMap[event]), name: 'calder-events' });
     existing.push({ matcher: '', hooks });

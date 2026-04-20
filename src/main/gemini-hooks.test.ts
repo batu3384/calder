@@ -61,6 +61,7 @@ describe('installGeminiHooks', () => {
 
     expect(hooks.SessionStart).toBeDefined();
     expect(hooks.BeforeAgent).toBeDefined();
+    expect(hooks.BeforeTool).toBeDefined();
     expect(hooks.AfterTool).toBeDefined();
     expect(hooks.AfterAgent).toBeDefined();
     expect(hooks.SessionEnd).toBeDefined();
@@ -97,6 +98,19 @@ describe('installGeminiHooks', () => {
         }
       }
     }
+  });
+
+  it('installs RTK pre-tool hook for Gemini BeforeTool events', () => {
+    mockFiles({});
+    installGeminiHooks();
+
+    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const hooks = JSON.parse(String(call![1])).hooks;
+    const beforeToolHooks = hooks.BeforeTool?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
+    const rtkHook = beforeToolHooks.find((hook: any) => String(hook.command).includes('rtk hook gemini'));
+
+    expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
   });
 
   it('preserves existing settings keys', () => {
@@ -152,7 +166,7 @@ describe('installGeminiHooks', () => {
     const secondOutput = JSON.parse(String(secondCall![1]));
     const firstParsed = JSON.parse(firstOutput);
 
-    for (const event of ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest']) {
+    for (const event of ['SessionStart', 'BeforeAgent', 'BeforeTool', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest']) {
       expect(secondOutput.hooks[event]?.length).toBe(firstParsed.hooks[event]?.length);
     }
   });
@@ -170,6 +184,7 @@ describe('installGeminiHooks', () => {
 
     expect(getStatusCmd('SessionStart')).toContain('SessionStart:waiting');
     expect(getStatusCmd('BeforeAgent')).toContain('BeforeAgent:working');
+    expect(getStatusCmd('BeforeTool')).toContain('BeforeTool:working');
     expect(getStatusCmd('AfterTool')).toContain('AfterTool:working');
     expect(getStatusCmd('AfterAgent')).toContain('AfterAgent:completed');
     expect(getStatusCmd('SessionEnd')).toContain('SessionEnd:completed');
@@ -190,6 +205,7 @@ describe('installGeminiHooks', () => {
 
     expect(hasSessionIdCapture('SessionStart')).toBe(true);
     expect(hasSessionIdCapture('BeforeAgent')).toBe(true);
+    expect(hasSessionIdCapture('BeforeTool')).toBe(false);
     expect(hasSessionIdCapture('AfterTool')).toBe(false);
     expect(hasSessionIdCapture('AfterAgent')).toBe(false);
     expect(hasSessionIdCapture('SessionEnd')).toBe(false);
@@ -224,6 +240,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hooks).toBe('complete');
     expect(result.hookDetails.SessionStart).toBe(true);
     expect(result.hookDetails.BeforeAgent).toBe(true);
+    expect(result.hookDetails.BeforeTool).toBe(true);
     expect(result.hookDetails.AfterTool).toBe(true);
     expect(result.hookDetails.AfterAgent).toBe(true);
     expect(result.hookDetails.SessionEnd).toBe(true);
@@ -258,6 +275,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hooks).toBe('partial');
     expect(result.hookDetails.SessionStart).toBe(true);
     expect(result.hookDetails.BeforeAgent).toBe(true);
+    expect(result.hookDetails.BeforeTool).toBe(false);
     expect(result.hookDetails.AfterTool).toBe(false);
     expect(result.hookDetails.SessionEnd).toBe(false);
     expect(result.hookDetails.PermissionRequest).toBe(false);
@@ -268,6 +286,7 @@ describe('validateGeminiHooks', () => {
       hooks: {
         SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         BeforeAgent: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
+        BeforeTool: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         AfterTool: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         AfterAgent: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
         SessionEnd: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
@@ -281,6 +300,7 @@ describe('validateGeminiHooks', () => {
     expect(result.hooks).toBe('missing');
     expect(result.hookDetails.SessionStart).toBe(false);
     expect(result.hookDetails.BeforeAgent).toBe(false);
+    expect(result.hookDetails.BeforeTool).toBe(false);
     expect(result.hookDetails.AfterTool).toBe(false);
     expect(result.hookDetails.AfterAgent).toBe(false);
     expect(result.hookDetails.SessionEnd).toBe(false);

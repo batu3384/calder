@@ -53,4 +53,17 @@ describe('sidebar rail stylesheet contract', () => {
       || sidebarCss.includes('border-radius: var(--radius-md);'),
     ).toBe(true);
   });
+
+  it('keeps project switching available in collapsed mode', () => {
+    expect(sidebarCss).toContain('#sidebar.collapsed #sidebar-content');
+    expect(sidebarCss).toContain('#sidebar.collapsed .project-collapsed-pill');
+    expect(sidebarCss).toContain('#sidebar.collapsed .project-item-main');
+  });
+
+  it('styles project state badges as semantic status chips', () => {
+    expect(sidebarCss).toContain('.project-status-chip.is-attention');
+    expect(sidebarCss).toContain('.project-status-chip.is-unread');
+    expect(sidebarCss).toContain('.project-status-chip.is-live');
+    expect(sidebarCss).toContain('.project-status-chip.is-queue');
+  });
 });

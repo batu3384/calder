@@ -187,10 +187,10 @@ describe('hooks and config integration', () => {
     expect(mockInstallStatusLineScript).toHaveBeenCalled();
   });
 
-  it('cleanup stops config watching and removes managed hooks', () => {
+  it('cleanup keeps hooks in place and only stops config watching', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
-    expect(mockCleanupQwenHooks).toHaveBeenCalled();
+    expect(mockCleanupQwenHooks).not.toHaveBeenCalled();
   });
 
   it('starts a qwen config watcher', () => {

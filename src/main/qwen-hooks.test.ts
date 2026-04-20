@@ -111,6 +111,19 @@ describe('installQwenHooks', () => {
       }
     }
   });
+
+  it('installs RTK pre-tool hook for PreToolUse events', () => {
+    mockFiles({});
+    installQwenHooks();
+
+    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const hooks = JSON.parse(String(call![1])).hooks;
+    const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
+    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook claude'));
+
+    expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
+  });
 });
 
 describe('validateQwenHooks', () => {

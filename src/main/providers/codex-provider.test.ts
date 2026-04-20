@@ -221,11 +221,11 @@ describe('hooks integration', () => {
     expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
   });
 
-  it('cleanup calls cleanupCodexHooks, stopConfigWatcher, and stopCodexSessionWatcher', () => {
+  it('cleanup keeps hooks in place and only stops watchers', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
     expect(mockStopCodexSessionWatcher).toHaveBeenCalled();
-    expect(mockCleanupCodexHooks).toHaveBeenCalled();
+    expect(mockCleanupCodexHooks).not.toHaveBeenCalled();
   });
 
   it('reinstallSettings delegates to installCodexHooks', () => {

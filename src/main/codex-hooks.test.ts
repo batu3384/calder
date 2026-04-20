@@ -214,6 +214,18 @@ describe('installCodexHooks', () => {
     expect(py).toContain('e["usage"]=usage');
   });
 
+  it('installs RTK pre-tool hook for Bash command rewrites', () => {
+    installCodexHooks();
+
+    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooks = JSON.parse(String(hooksCall![1])).hooks;
+    const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
+    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook claude'));
+
+    expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
+  });
+
   it('preserves existing user hooks', () => {
     const existingHooks = {
       hooks: {

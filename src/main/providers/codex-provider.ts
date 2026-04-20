@@ -6,7 +6,7 @@ import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '
 import { getFullPath } from '../pty-manager';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getCodexConfig } from '../codex-config';
-import { installCodexHooks, validateCodexHooks, cleanupCodexHooks, SESSION_ID_VAR } from '../codex-hooks';
+import { installCodexHooks, validateCodexHooks, SESSION_ID_VAR } from '../codex-hooks';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
 import type { BrowserWindow } from 'electron';
@@ -67,7 +67,6 @@ export class CodexProvider implements CliProvider {
   cleanup(): void {
     stopConfigWatch();
     stopCodexSessionWatcher();
-    cleanupCodexHooks();
   }
 
   startConfigWatcher(win: BrowserWindow, projectPath: string): void {

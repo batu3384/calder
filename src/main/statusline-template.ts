@@ -705,7 +705,15 @@ def render_statusline(payload):
     model_name = derive_model_name(payload)
     sync_provider, sync_model = read_provider_sync(sid)
     display_model_name = model_name or sync_model
-    provider = sync_provider or infer_provider_from_model_name(display_model_name)
+    direct_model_provider = infer_provider_from_model_name(model_name)
+    sync_model_provider = infer_provider_from_model_name(sync_model)
+    provider = sync_provider if sync_provider in ('anthropic', 'zai', 'minimax', 'qwen') else ''
+    if direct_model_provider and provider and direct_model_provider != provider:
+        # When model changes quickly, provider_sync can lag one render behind.
+        # Trust the explicit display model in that conflict window.
+        provider = direct_model_provider
+    if not provider:
+        provider = direct_model_provider or infer_provider_from_model_name(display_model_name) or sync_model_provider
     if provider not in ('anthropic', 'zai', 'minimax', 'qwen'):
         provider = 'anthropic'
     if provider == 'zai':
@@ -716,7 +724,12 @@ def render_statusline(payload):
         provider_label = 'Qwen'
     else:
         provider_label = 'Anthropic'
-    quota_model_name = sync_model if (provider == 'zai' or provider == 'minimax') and sync_model else display_model_name
+    quota_model_name = display_model_name
+    if provider == 'zai' or provider == 'minimax':
+        if model_name and infer_provider_from_model_name(model_name) == provider:
+            quota_model_name = model_name
+        elif sync_model and infer_provider_from_model_name(sync_model) == provider:
+            quota_model_name = sync_model
     cost = payload.get('cost', {})
     ctx = payload.get('context_window', {})
     if sid and (cost or ctx or display_model_name):

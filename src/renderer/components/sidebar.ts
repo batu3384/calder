@@ -1,7 +1,8 @@
 import { appState, ProjectRecord } from '../state.js';
 import { showModal, setModalError, closeModal } from './modal.js';
 import { showPreferencesModal } from './preferences-modal.js';
-import { hasUnreadInProject, onChange as onUnreadChange } from '../session-unread.js';
+import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from '../session-unread.js';
+import { getStatus, onChange as onSessionStatusChange } from '../session-activity.js';
 
 const projectListEl = document.getElementById('project-list')!;
 let activeProjectContextMenu: HTMLElement | null = null;
@@ -16,6 +17,14 @@ const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
 const SIDEBAR_DEFAULT = 236;
 const SIDEBAR_MIN = 176;
 const SIDEBAR_MAX = 540;
+
+type ProjectSignalTone = 'attention' | 'unread' | 'live' | 'queue';
+
+interface ProjectSignal {
+  label: string;
+  summary: string;
+  tone: ProjectSignalTone;
+}
 
 export function toggleSidebar(): void {
   appState.toggleSidebar();
@@ -46,6 +55,7 @@ export function initSidebar(): void {
   appState.on('session-removed', render);
 
   onUnreadChange(render);
+  onSessionStatusChange(() => render());
   appState.on('preferences-changed', () => applyCostFooterVisibility());
 
   document.addEventListener('click', hideProjectContextMenu);
@@ -60,13 +70,26 @@ function render(): void {
 
   for (const project of appState.projects) {
     const locationLabel = shortProjectPath(project.path);
+    const sessionCount = project.sessions.length;
+    const signal = buildProjectSignal(project);
+    const unread = hasUnreadInProject(project.id);
+    const titleParts = [
+      project.name,
+      `${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'}`,
+      signal?.summary,
+    ].filter(Boolean);
     const el = document.createElement('div');
     el.className = 'project-item sidebar-project-row' + (project.id === appState.activeProjectId ? ' active' : '');
+    el.setAttribute('title', titleParts.join(' • '));
     el.innerHTML = `
+      <div class="project-collapsed-pill" aria-hidden="true">
+        <span class="project-collapsed-initial">${esc(getProjectInitial(project.name))}</span>
+        ${signal ? `<span class="project-collapsed-dot is-${signal.tone}"></span>` : ''}
+      </div>
       <div class="project-item-main">
         <div class="project-item-row">
-          <div class="project-name${hasUnreadInProject(project.id) ? ' unread' : ''}">${esc(project.name)}</div>
-          ${project.sessions.length ? `<span class="project-session-count control-chip">${project.sessions.length}</span>` : ''}
+          <div class="project-name${unread ? ' unread' : ''}">${esc(project.name)}</div>
+          ${signal ? `<span class="project-session-count project-status-chip is-${signal.tone} control-chip" title="${esc(signal.summary)}">${esc(signal.label)}</span>` : ''}
         </div>
         <div class="project-path" title="${esc(project.path)}">${esc(locationLabel)}</div>
       </div>
@@ -93,6 +116,67 @@ function render(): void {
 
     projectListEl.appendChild(el);
   }
+}
+
+function buildProjectSignal(project: ProjectRecord): ProjectSignal | null {
+  let inputCount = 0;
+  let unreadCount = 0;
+  let workingCount = 0;
+
+  for (const session of project.sessions) {
+    const status = getStatus(session.id);
+    if (status === 'input') inputCount += 1;
+    if (status === 'working') workingCount += 1;
+    if (isUnread(session.id)) unreadCount += 1;
+  }
+
+  const runningTasks = project.projectBackgroundTasks?.runningCount ?? 0;
+  const queuedTasks = project.projectBackgroundTasks?.queuedCount ?? 0;
+  const liveCount = workingCount + runningTasks;
+
+  if (inputCount > 0) {
+    return {
+      label: `Input ${inputCount}`,
+      summary: `${inputCount} ${inputCount === 1 ? 'session needs input' : 'sessions need input'}`,
+      tone: 'attention',
+    };
+  }
+
+  if (unreadCount > 0) {
+    return {
+      label: `New ${unreadCount}`,
+      summary: `${unreadCount} ${unreadCount === 1 ? 'session has new output' : 'sessions have new output'}`,
+      tone: 'unread',
+    };
+  }
+
+  if (liveCount > 0) {
+    return {
+      label: `Live ${liveCount}`,
+      summary: `${liveCount} ${liveCount === 1 ? 'active run' : 'active runs'}`,
+      tone: 'live',
+    };
+  }
+
+  if (queuedTasks > 0) {
+    return {
+      label: `Queue ${queuedTasks}`,
+      summary: `${queuedTasks} ${queuedTasks === 1 ? 'queued task' : 'queued tasks'}`,
+      tone: 'queue',
+    };
+  }
+
+  return null;
+}
+
+function getProjectInitial(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '?';
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
 }
 
 function shortProjectPath(fullPath: string): string {

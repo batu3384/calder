@@ -7,6 +7,11 @@ const AUTO_APPROVAL_INPUT_BY_PROVIDER: Partial<Record<ProviderId, string>> = {
   qwen: 'y\n',
 };
 
+export function supportsAutoApprovalDispatch(providerId: ProviderId | null | undefined): providerId is ProviderId {
+  if (!providerId) return false;
+  return AUTO_APPROVAL_INPUT_BY_PROVIDER[providerId] !== undefined;
+}
+
 export function resolveAutoApprovalInput(providerId: ProviderId): string {
   const input = AUTO_APPROVAL_INPUT_BY_PROVIDER[providerId];
   if (!input) {

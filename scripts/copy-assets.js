@@ -11,18 +11,26 @@ function copyFile(src, dest) {
   fs.copyFileSync(src, dest);
 }
 
-function copyDir(src, dest) {
+function copyDir(src, dest, options = {}) {
+  const { filter } = options;
   fs.rmSync(dest, { recursive: true, force: true });
   mkdirp(dest);
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
+      copyDir(srcPath, destPath, options);
     } else {
+      if (typeof filter === 'function' && !filter(srcPath, destPath, entry)) {
+        continue;
+      }
       fs.copyFileSync(srcPath, destPath);
     }
   }
+}
+
+function isTestSourceFile(filePath) {
+  return /\.(test|spec)\.[cm]?[jt]sx?$/i.test(path.basename(filePath));
 }
 
 const root = path.resolve(__dirname, '..');
@@ -34,7 +42,9 @@ copyFile(path.join(root, 'src', 'renderer', 'index.html'), path.join(dist, 'inde
 copyFile(path.join(root, 'src', 'renderer', 'styles.css'), path.join(dist, 'styles.css'));
 
 // Remove old styles dir and copy fresh
-copyDir(path.join(root, 'src', 'renderer', 'styles'), path.join(dist, 'styles'));
+copyDir(path.join(root, 'src', 'renderer', 'styles'), path.join(dist, 'styles'), {
+  filter: (srcPath) => !isTestSourceFile(srcPath),
+});
 
 copyFile(
   path.join(root, 'node_modules', '@xterm', 'xterm', 'css', 'xterm.css'),

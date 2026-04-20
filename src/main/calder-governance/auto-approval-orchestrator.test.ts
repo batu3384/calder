@@ -7,6 +7,7 @@ function permissionRequestEvent(input: {
   toolInput?: Record<string, unknown>;
   type?: InspectorEvent['type'];
   hookEvent?: string;
+  cwd?: string;
 }): InspectorEvent {
   return {
     type: input.type ?? 'permission_request',
@@ -14,6 +15,7 @@ function permissionRequestEvent(input: {
     hookEvent: input.hookEvent ?? 'PermissionRequest',
     tool_name: input.toolName,
     tool_input: input.toolInput,
+    cwd: input.cwd,
   };
 }
 
@@ -324,6 +326,46 @@ describe('createAutoApprovalOrchestrator', () => {
       policy_source: 'fallback',
       effective_mode: 'off',
       decision: 'ask',
+    });
+    expect(emittedEvent.auto_approval?.reason).toContain('Policy resolution failed');
+  });
+
+  it('re-resolves policy from latest cwd reported by permission events', async () => {
+    const sendApproval = vi.fn();
+    const emitInspectorEvents = vi.fn();
+    const resolveAutoApprovalState = vi.fn(async (projectPath: string | null) => {
+      if (projectPath === '/workspace/next') {
+        return {
+          effectiveMode: 'full_auto',
+          policySource: 'project' as const,
+        };
+      }
+      return {
+        effectiveMode: 'off',
+        policySource: 'fallback' as const,
+      };
+    });
+    const orchestrator = createAutoApprovalOrchestrator({
+      sendApproval,
+      emitInspectorEvents,
+      resolveAutoApprovalState,
+    });
+
+    orchestrator.registerSession('session-1', 'codex', '/workspace/original');
+    await orchestrator.handleInspectorEvents('session-1', [
+      permissionRequestEvent({
+        toolName: 'Edit',
+        cwd: '/workspace/next',
+      }),
+    ]);
+
+    expect(resolveAutoApprovalState).toHaveBeenCalledWith('/workspace/next');
+    expect(sendApproval).toHaveBeenCalledWith('session-1', 'codex');
+    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
+    expect(emittedEvent.auto_approval).toMatchObject({
+      policy_source: 'project',
+      effective_mode: 'full_auto',
+      decision: 'allow',
     });
   });
 

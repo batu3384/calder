@@ -6,6 +6,7 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(),
   mkdirSync: vi.fn(),
   writeFileSync: vi.fn(),
+  lstatSync: vi.fn(),
 }));
 
 vi.mock('os', () => ({
@@ -26,12 +27,13 @@ vi.mock('./hook-commands', () => ({
 import * as fs from 'fs';
 import * as path from 'path';
 import * as hookCommands from './hook-commands';
-import { getClaudeConfig, installHooks } from './claude-cli';
+import { getClaudeConfig, installHooks, removeMcpServer } from './claude-cli';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
+const mockLstatSync = vi.mocked(fs.lstatSync);
 const mockInstallEventScript = vi.mocked(hookCommands.installEventScript);
 const mockReaddirSyncAny = mockReaddirSync as unknown as { mockImplementation: (fn: (...args: any[]) => any) => void };
 
@@ -43,6 +45,7 @@ beforeEach(() => {
   // Default: all reads/dirs fail (empty state)
   mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
   mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
+  mockLstatSync.mockImplementation(() => ({ isSymbolicLink: () => false }) as fs.Stats);
 });
 
 describe('getClaudeConfig', () => {
@@ -355,6 +358,67 @@ describe('getClaudeConfig', () => {
     expect(config.skills).toEqual([
       { name: 'MySkill', description: 'Does stuff', scope: 'user', filePath: path.join('/mock/home', '.claude', 'skills', 'my-skill', 'SKILL.md') },
     ]);
+  });
+});
+
+describe('removeMcpServer', () => {
+  it('rejects unknown MCP config paths', () => {
+    expect(() => removeMcpServer('server', '/tmp/evil.json', 'user')).toThrow(
+      /outside known locations/i,
+    );
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  it('removes project server from ~/.claude.json projects key', () => {
+    mockReadFileSync.mockImplementation((filePath) => {
+      if (n(String(filePath)) === '/mock/home/.claude.json') {
+        return JSON.stringify({
+          projects: {
+            '/project': {
+              mcpServers: {
+                keep: { url: 'http://keep' },
+                remove: { url: 'http://remove' },
+              },
+            },
+          },
+        });
+      }
+      throw new Error('ENOENT');
+    });
+
+    removeMcpServer('remove', '/mock/home/.claude.json', 'project', '/project');
+
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+    const [writtenPath, writtenValue] = mockWriteFileSync.mock.calls[0];
+    expect(n(String(writtenPath))).toBe('/mock/home/.claude.json');
+    const json = JSON.parse(String(writtenValue)) as {
+      projects: Record<string, { mcpServers: Record<string, unknown> }>;
+    };
+    expect(json.projects['/project'].mcpServers.remove).toBeUndefined();
+    expect(json.projects['/project'].mcpServers.keep).toBeDefined();
+  });
+
+  it('removes project server from project .mcp.json top-level mcpServers', () => {
+    mockReadFileSync.mockImplementation((filePath) => {
+      if (n(String(filePath)) === '/project/.mcp.json') {
+        return JSON.stringify({
+          mcpServers: {
+            keep: { command: 'npx keep' },
+            remove: { command: 'npx remove' },
+          },
+        });
+      }
+      throw new Error('ENOENT');
+    });
+
+    removeMcpServer('remove', '/project/.mcp.json', 'project', '/project');
+
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+    const [writtenPath, writtenValue] = mockWriteFileSync.mock.calls[0];
+    expect(n(String(writtenPath))).toBe('/project/.mcp.json');
+    const json = JSON.parse(String(writtenValue)) as { mcpServers: Record<string, unknown> };
+    expect(json.mcpServers.remove).toBeUndefined();
+    expect(json.mcpServers.keep).toBeDefined();
   });
 });
 

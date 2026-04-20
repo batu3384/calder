@@ -443,6 +443,53 @@ describe('generated renderer payload parsing', () => {
     expect(output).toContain('Ctx 25%  Cost $0.07  5h 88% left  Live');
   });
 
+  it('prefers explicit display model provider when provider_sync is stale', () => {
+    const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
+    const scriptPath = join(statusDir, 'statusline.py');
+    writeFileSync(scriptPath, buildStatusLinePython(statusDir), { mode: 0o755 });
+    chmodSync(scriptPath, 0o755);
+
+    writeFileSync(
+      join(statusDir, 'sess-provider-stale.provider_sync.json'),
+      JSON.stringify({
+        main_provider_family: 'zai',
+        main_model_exact: 'glm-5.1',
+      }),
+    );
+
+    writeFileSync(
+      join(statusDir, getProviderQuotaCacheFile('minimax')),
+      JSON.stringify({
+        provider: 'minimax',
+        model: 'MiniMax-M2.7',
+        fiveHour: '4496/4500 left',
+        fiveHourReset: '02:32',
+        weekly: '44982/45000 left',
+        weeklyLabel: 'Week',
+        status: 'unknown',
+        updatedAt: Date.now(),
+        source: 'minimax:remains',
+      }),
+    );
+
+    const output = execFileSync(pythonBin, [scriptPath, 'render'], {
+      input: JSON.stringify({
+        model: { display_name: 'MiniMax-M2.7' },
+        cost: { total_cost_usd: 1.87 },
+        context_window: { used_percentage: 18 },
+        cwd: '/Users/batuhanyuksel/Documents/deneme1',
+      }),
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CLAUDE_IDE_SESSION_ID: 'sess-provider-stale',
+      },
+    }).trim();
+
+    expect(output).toContain('MiniMax-M2.7  MiniMax  --  deneme1');
+    expect(output).toContain('Ctx 18%  Cost $1.87  5h 4496/4500 left · resets 02:32  Week 44982/45000 left  Live');
+  });
+
   it('labels short Z.ai secondary windows as Week', async () => {
     const statusDir = mkdtempSync(join(tmpdir(), 'calder-statusline-test-'));
     const scriptPath = join(statusDir, 'statusline.py');

@@ -53,6 +53,8 @@ export function initKeybindings(): void {
   }
   shortcutManager.registerHandler('next-session', () => appState.cycleSession(1));
   shortcutManager.registerHandler('prev-session', () => appState.cycleSession(-1));
+  shortcutManager.registerHandler('next-project', () => cycleProject(1));
+  shortcutManager.registerHandler('prev-project', () => cycleProject(-1));
   shortcutManager.registerHandler('tab-back', () => appState.navigateBack());
   shortcutManager.registerHandler('tab-forward', () => appState.navigateForward());
   shortcutManager.registerHandler('toggle-sidebar', () => toggleSidebar());
@@ -123,4 +125,18 @@ function promptNewMcpInspector(): void {
     closeModal();
     appState.addMcpInspectorSession(project.id, name);
   });
+}
+
+function cycleProject(direction: 1 | -1): void {
+  const projects = appState.projects;
+  if (!projects.length) return;
+
+  const currentIndex = appState.activeProjectId
+    ? projects.findIndex((project) => project.id === appState.activeProjectId)
+    : 0;
+  const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const nextIndex = (normalizedIndex + direction + projects.length) % projects.length;
+  const target = projects[nextIndex];
+  if (!target) return;
+  appState.setActiveProject(target.id);
 }

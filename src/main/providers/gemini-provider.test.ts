@@ -219,10 +219,10 @@ describe('hooks integration', () => {
     expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
   });
 
-  it('cleanup calls cleanupGeminiHooks and stopConfigWatcher', () => {
+  it('cleanup keeps hooks in place and only stops config watching', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
-    expect(mockCleanupGeminiHooks).toHaveBeenCalled();
+    expect(mockCleanupGeminiHooks).not.toHaveBeenCalled();
   });
 
   it('reinstallSettings delegates to installGeminiHooks', () => {

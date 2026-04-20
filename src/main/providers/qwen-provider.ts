@@ -4,7 +4,7 @@ import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '
 import { getFullPath } from '../pty-manager';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
-import { installQwenHooks, validateQwenHooks, cleanupQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';
+import { installQwenHooks, validateQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';
 import { installStatusLineScript } from '../hook-status';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 
@@ -69,7 +69,6 @@ export class QwenProvider implements CliProvider {
 
   cleanup(): void {
     stopConfigWatch();
-    cleanupQwenHooks();
   }
 
   startConfigWatcher(win: BrowserWindow, projectPath: string): void {

@@ -12,15 +12,20 @@ describe('IPC governance contract', () => {
     expect(source).toContain("label: 'Create workflow file'");
     expect(source).toContain("label: 'Create review findings file'");
     expect(source).toContain("label: 'Create checkpoint'");
+    expect(source).toContain("label: 'Create governance starter policy'");
   });
 
-  it('guards project MCP server additions with the governance allowlist', () => {
+  it('guards project MCP server additions and removals with governance enforcement', () => {
     expect(source).toContain("kind: 'mcp'");
     expect(source).toContain("label: 'Add project MCP server'");
+    expect(source).toContain("label: 'Remove project MCP server'");
     expect(source).toContain('target: name');
+    expect(source).toContain("projectPath is required for project MCP scope");
   });
 
   it('guards renderer-triggered external URL opens with network governance', () => {
+    expect(source).toContain("requireKnownProjectPath(cwd, 'Open external URL')");
+    expect(source).toContain('getActiveProjectPath()');
     expect(source).toContain("kind: 'network'");
     expect(source).toContain("label: 'Open external URL'");
     expect(source).toContain('target: parsed.hostname');

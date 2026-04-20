@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAutoApprovalInput } from './auto-approval-dispatch.js';
+import { resolveAutoApprovalInput, supportsAutoApprovalDispatch } from './auto-approval-dispatch.js';
 
 describe('resolveAutoApprovalInput', () => {
   it('returns provider-specific approval input', () => {
@@ -13,5 +13,17 @@ describe('resolveAutoApprovalInput', () => {
     expect(() => resolveAutoApprovalInput('minimax')).toThrow('Unsupported auto-approval provider');
     expect(() => resolveAutoApprovalInput('blackbox')).toThrow('Unsupported auto-approval provider');
     expect(() => resolveAutoApprovalInput('copilot')).toThrow('Unsupported auto-approval provider');
+  });
+
+  it('exposes provider support checks for orchestrator guards', () => {
+    expect(supportsAutoApprovalDispatch('claude')).toBe(true);
+    expect(supportsAutoApprovalDispatch('codex')).toBe(true);
+    expect(supportsAutoApprovalDispatch('gemini')).toBe(true);
+    expect(supportsAutoApprovalDispatch('qwen')).toBe(true);
+    expect(supportsAutoApprovalDispatch('minimax')).toBe(false);
+    expect(supportsAutoApprovalDispatch('blackbox')).toBe(false);
+    expect(supportsAutoApprovalDispatch('copilot')).toBe(false);
+    expect(supportsAutoApprovalDispatch(null)).toBe(false);
+    expect(supportsAutoApprovalDispatch(undefined)).toBe(false);
   });
 });

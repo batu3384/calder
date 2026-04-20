@@ -129,6 +129,7 @@ export function installCodexHooks(): void {
     mkStatusCmd(event, status, SESSION_ID_VAR, CODEX_HOOK_MARKER);
 
   const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, CODEX_HOOK_MARKER);
+  const rtkPreToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook claude ${CODEX_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: string) => {
     const pyCode = `import sys,json,os,time
@@ -205,7 +206,10 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     const existing = cleaned[event] ?? [];
     existing.push({
       matcher: '',
-      hooks: [{ type: 'command', command: captureEventCmd(event, eventType) }],
+      hooks: [
+        { type: 'command', command: rtkPreToolCmd },
+        { type: 'command', command: captureEventCmd(event, eventType) },
+      ],
     });
     cleaned[event] = existing;
   }

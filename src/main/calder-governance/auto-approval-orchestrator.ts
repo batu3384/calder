@@ -10,6 +10,7 @@ import {
   decideAutoApprovalAction,
   type AutoApprovalOperationInput,
 } from './auto-approval-classifier.js';
+import { supportsAutoApprovalDispatch } from './auto-approval-dispatch.js';
 import { discoverProjectGovernance } from './discovery.js';
 
 interface SessionRegistration {
@@ -44,12 +45,6 @@ interface AutoApprovalOrchestratorOptions {
 }
 
 const DEFAULT_RATE_LIMIT_MS = 1500;
-const SUPPORTED_PROVIDER_IDS = new Set<ProviderId>([
-  'claude',
-  'codex',
-  'gemini',
-  'qwen',
-]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -63,6 +58,13 @@ function asStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const items = value.filter((item): item is string => typeof item === 'string');
   return items.length > 0 ? items : undefined;
+}
+
+function asErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message.trim();
+  }
+  return String(error);
 }
 
 function buildApprovalFingerprint(event: InspectorEvent): string {
@@ -154,13 +156,20 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
 
         const session = sessions.get(sessionId);
         if (!session) continue;
+        const latestCwd = asString(event.cwd);
+        if (latestCwd && latestCwd !== session.projectPath) {
+          session.projectPath = latestCwd;
+          sessions.set(sessionId, session);
+        }
         const providerId = session?.providerId;
-        const providerSupported = providerId !== null && providerId !== undefined && SUPPORTED_PROVIDER_IDS.has(providerId);
+        const providerSupported = supportsAutoApprovalDispatch(providerId);
         let approvalState: ResolvedAutoApprovalState;
+        let policyResolutionFailure: string | null = null;
         try {
           approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
-        } catch {
+        } catch (error) {
           approvalState = { effectiveMode: 'off', policySource: 'fallback' };
+          policyResolutionFailure = asErrorMessage(error);
         }
         const sessionMode = sessionOverrides.get(sessionId);
         const effectiveMode = sessionMode ?? approvalState.effectiveMode;
@@ -174,6 +183,10 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
         if (finalDecision === 'allow' && !providerSupported) {
           finalDecision = 'ask';
           finalReason = 'Provider is missing or unsupported for auto-approval; manual approval required.';
+        }
+
+        if (policyResolutionFailure) {
+          finalReason = `${finalReason} Policy resolution failed (${policyResolutionFailure}); auto-approval fell back to off mode.`;
         }
 
         if (finalDecision === 'allow') {

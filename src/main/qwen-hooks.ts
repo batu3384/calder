@@ -79,6 +79,7 @@ export function installQwenHooks(): void {
     mkStatusCmd(event, status, SESSION_ID_VAR, QWEN_HOOK_MARKER);
   const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, QWEN_HOOK_MARKER);
   const captureToolFailureCmd = mkCaptureToolFailureCmd(SESSION_ID_VAR, QWEN_HOOK_MARKER);
+  const rtkPreToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook claude ${QWEN_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: InspectorEventType) => {
     const pyCode = `import sys,json,os,time
@@ -130,6 +131,9 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     ];
     if (event === 'SessionStart' || event === 'UserPromptSubmit') {
       hooks.push({ type: 'command', command: captureSessionIdCmd, name: 'calder-sessionid' });
+    }
+    if (event === 'PreToolUse') {
+      hooks.push({ type: 'command', command: rtkPreToolCmd, name: 'calder-rtk' });
     }
     if (event === 'PostToolUseFailure') {
       hooks.push({ type: 'command', command: captureToolFailureCmd, name: 'calder-toolfailure' });
