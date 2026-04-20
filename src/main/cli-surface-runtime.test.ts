@@ -1,10 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CliSurfaceProfile } from '../shared/types';
 
-const { mockSpawnCommandPty, mockWritePty, mockResizePty, mockKillPty } = vi.hoisted(() => ({
+const {
+  mockSpawnCommandPty,
+  mockWritePty,
+  mockResizePty,
+  mockKillPty,
+  mockResolveCliSurfaceLaunch,
+} = vi.hoisted(() => ({
   mockSpawnCommandPty: vi.fn(),
   mockWritePty: vi.fn(),
   mockResizePty: vi.fn(),
   mockKillPty: vi.fn(),
+  mockResolveCliSurfaceLaunch: vi.fn(),
 }));
 
 vi.mock('./pty-manager', () => ({
@@ -14,7 +22,38 @@ vi.mock('./pty-manager', () => ({
   killPty: mockKillPty,
 }));
 
+vi.mock('./cli-surface-port-orchestrator', () => ({
+  resolveCliSurfaceLaunch: mockResolveCliSurfaceLaunch,
+}));
+
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
+
+function mockResolvedLaunch(profile: CliSurfaceProfile, overrides?: {
+  portMode?: 'auto' | 'fixed' | 'off';
+  resolvedPort?: number;
+  resolvedUrl?: string;
+  portFallbackUsed?: boolean;
+  portReason?: string;
+}) {
+  const cwd = profile.cwd ?? process.cwd();
+  return {
+    launch: {
+      command: profile.command,
+      args: profile.args ? [...profile.args] : undefined,
+      cwd,
+      envPatch: profile.envPatch ? { ...profile.envPatch } : undefined,
+      cols: profile.cols,
+      rows: profile.rows,
+    },
+    metadata: {
+      portMode: overrides?.portMode ?? (profile.portMode ?? 'auto'),
+      resolvedPort: overrides?.resolvedPort,
+      resolvedUrl: overrides?.resolvedUrl,
+      portFallbackUsed: overrides?.portFallbackUsed,
+      portReason: overrides?.portReason ?? 'mock launch resolution',
+    },
+  };
+}
 
 describe('cli surface runtime manager', () => {
   const emit = {
@@ -27,12 +66,18 @@ describe('cli surface runtime manager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
+    mockResolveCliSurfaceLaunch.mockImplementation(async (_projectId: string, profile: CliSurfaceProfile) => {
+      return mockResolvedLaunch(profile, {
+        resolvedPort: 5173,
+        resolvedUrl: 'http://localhost:5173/',
+      });
+    });
   });
 
-  it('starts one runtime per project using a generic command PTY', () => {
+  it('starts one runtime per project using a generic command PTY', async () => {
     const manager = createCliSurfaceRuntimeManager(emit);
 
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'textual',
       name: 'Textual',
       command: 'python',
@@ -42,6 +87,13 @@ describe('cli surface runtime manager', () => {
       rows: 40,
     });
 
+    expect(mockResolveCliSurfaceLaunch).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({
+        command: 'python',
+      }),
+      expect.any(Set),
+    );
     expect(mockSpawnCommandPty).toHaveBeenCalledWith(
       'cli-surface:project-1',
       expect.objectContaining({
@@ -63,9 +115,9 @@ describe('cli surface runtime manager', () => {
     );
   });
 
-  it('proxies write, resize, and stop to the active runtime id', () => {
+  it('proxies write, resize, and stop to the active runtime id', async () => {
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -82,10 +134,10 @@ describe('cli surface runtime manager', () => {
     expect(mockKillPty).toHaveBeenCalledWith('cli-surface:project-1');
   });
 
-  it('batches bursty PTY data before emitting to the renderer', () => {
+  it('batches bursty PTY data before emitting to the renderer', async () => {
     vi.useFakeTimers();
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -106,10 +158,10 @@ describe('cli surface runtime manager', () => {
     expect(emit.data).toHaveBeenCalledWith('project-1', 'alphabetagamma');
   });
 
-  it('marks the runtime as running after the first PTY output', () => {
+  it('marks the runtime as running after the first PTY output', async () => {
     vi.useFakeTimers();
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -134,12 +186,14 @@ describe('cli surface runtime manager', () => {
         cwd: '/tmp/demo',
         cols: 132,
         rows: 40,
+        resolvedPort: 5173,
+        resolvedUrl: 'http://localhost:5173/',
       }),
     );
     expect(emit.status.mock.calls.filter(([, state]) => state.status === 'running')).toHaveLength(1);
   });
 
-  it('emits startup timing diagnostics across spawn, first output, and stop', () => {
+  it('emits startup timing diagnostics across spawn, first output, and stop', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(1_000));
     mockSpawnCommandPty.mockImplementationOnce(() => {
@@ -147,7 +201,7 @@ describe('cli surface runtime manager', () => {
     });
     const manager = createCliSurfaceRuntimeManager(emit);
 
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -198,10 +252,10 @@ describe('cli surface runtime manager', () => {
     );
   });
 
-  it('flushes pending output and emits stopped state details when runtime exits', () => {
+  it('flushes pending output and emits stopped state details when runtime exits', async () => {
     vi.useFakeTimers();
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -229,15 +283,15 @@ describe('cli surface runtime manager', () => {
     );
   });
 
-  it('reports restart errors when no profile has been started', () => {
+  it('reports restart errors when no profile has been started', async () => {
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.restart('project-1');
+    await manager.restart('project-1');
     expect(emit.error).toHaveBeenCalledWith('project-1', 'No CLI surface profile is selected.');
   });
 
-  it('restarts active runtimes by stopping and spawning again', () => {
+  it('restarts active runtimes by stopping and spawning again', async () => {
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', {
+    await manager.start('project-1', {
       id: 'bubbletea',
       name: 'Bubble Tea',
       command: 'go',
@@ -246,10 +300,39 @@ describe('cli surface runtime manager', () => {
     });
     expect(mockSpawnCommandPty).toHaveBeenCalledTimes(1);
 
-    manager.restart('project-1');
+    await manager.restart('project-1');
 
     expect(mockKillPty).toHaveBeenCalledWith('cli-surface:project-1');
     expect(mockSpawnCommandPty).toHaveBeenCalledTimes(2);
-    expect(emit.status.mock.calls.filter(([, state]) => state.status === 'starting').length).toBeGreaterThanOrEqual(2);
+    expect(
+      emit.status.mock.calls.filter(([, state]) => state.status === 'starting').length,
+    ).toBeGreaterThanOrEqual(2);
+  });
+
+  it('emits error status when launch orchestration fails before spawn', async () => {
+    mockResolveCliSurfaceLaunch.mockRejectedValueOnce(new Error('Port 5173 is already in use and fallback is disabled.'));
+    const manager = createCliSurfaceRuntimeManager(emit);
+
+    await manager.start('project-1', {
+      id: 'broken',
+      name: 'Broken',
+      command: 'npm',
+      args: ['run', 'dev'],
+      cwd: '/tmp/demo',
+      portMode: 'fixed',
+      preferredPort: 5173,
+      allowPortFallback: false,
+    });
+
+    expect(mockSpawnCommandPty).not.toHaveBeenCalled();
+    expect(emit.error).toHaveBeenCalledWith('project-1', 'Port 5173 is already in use and fallback is disabled.');
+    expect(emit.status).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({
+        status: 'error',
+        runtimeId: 'cli-surface:project-1',
+        lastError: 'Port 5173 is already in use and fallback is disabled.',
+      }),
+    );
   });
 });

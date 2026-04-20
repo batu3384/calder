@@ -1020,8 +1020,8 @@ export function registerIpcHandlers(): void {
     killPty(sessionId);
   });
 
-  ipcMain.handle('cli-surface:start', (_event, projectId: string, profile) => {
-    cliSurfaceRuntime.start(projectId, profile);
+  ipcMain.handle('cli-surface:start', async (_event, projectId: string, profile) => {
+    await cliSurfaceRuntime.start(projectId, profile);
   });
 
   ipcMain.handle('cli-surface:discover', (_event, projectPath: string) => {
@@ -1032,8 +1032,8 @@ export function registerIpcHandlers(): void {
     cliSurfaceRuntime.stop(projectId);
   });
 
-  ipcMain.handle('cli-surface:restart', (_event, projectId: string) => {
-    cliSurfaceRuntime.restart(projectId);
+  ipcMain.handle('cli-surface:restart', async (_event, projectId: string) => {
+    await cliSurfaceRuntime.restart(projectId);
   });
 
   ipcMain.on('cli-surface:write', (_event, projectId: string, data: string) => {

@@ -761,7 +761,12 @@ export interface CliSurfaceProfile {
   rows?: number;
   startupReadyPattern?: string;
   restartPolicy?: 'manual' | 'on-exit';
+  portMode?: CliSurfacePortMode;
+  preferredPort?: number;
+  allowPortFallback?: boolean;
 }
+
+export type CliSurfacePortMode = 'auto' | 'fixed' | 'off';
 
 export interface CliSurfaceStartupTiming {
   startedAtMs: number;
@@ -783,6 +788,11 @@ export interface CliSurfaceRuntimeState {
   cwd?: string;
   cols?: number;
   rows?: number;
+  resolvedPort?: number;
+  resolvedUrl?: string;
+  portMode?: CliSurfacePortMode;
+  portFallbackUsed?: boolean;
+  portReason?: string;
   lastExitCode?: number | null;
   lastError?: string | null;
   startupTiming?: CliSurfaceStartupTiming;

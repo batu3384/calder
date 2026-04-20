@@ -1,5 +1,6 @@
 import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types';
 import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
+import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 
 export function createCliSurfaceRuntimeManager(emit: {
   data(projectId: string, data: string): void;
@@ -12,6 +13,22 @@ export function createCliSurfaceRuntimeManager(emit: {
   const dataFlushTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const runningEmitted = new Set<string>();
   const startupTimings = new Map<string, CliSurfaceStartupTiming>();
+  const runtimeLaunches = new Map<
+    string,
+    {
+      selectedProfileId?: string;
+      command?: string;
+      args?: string[];
+      cwd?: string;
+      cols?: number;
+      rows?: number;
+      resolvedPort?: number;
+      resolvedUrl?: string;
+      portMode?: CliSurfaceRuntimeState['portMode'];
+      portFallbackUsed?: boolean;
+      portReason?: string;
+    }
+  >();
 
   function resolveLaunch(profile: CliSurfaceProfile): {
     command: string;
@@ -62,15 +79,21 @@ export function createCliSurfaceRuntimeManager(emit: {
     extra: Partial<CliSurfaceRuntimeState> = {},
   ): CliSurfaceRuntimeState {
     const timing = startupTimings.get(projectId);
+    const launch = runtimeLaunches.get(projectId);
     return {
       status,
       runtimeId: status === 'stopped' ? undefined : getRuntimeId(projectId),
-      selectedProfileId: profile?.id,
-      command: profile?.command,
-      args: profile?.args,
-      cwd: profile?.cwd,
-      cols: profile?.cols,
-      rows: profile?.rows,
+      selectedProfileId: launch?.selectedProfileId ?? profile?.id,
+      command: launch?.command ?? profile?.command,
+      args: launch?.args ?? profile?.args,
+      cwd: launch?.cwd ?? profile?.cwd,
+      cols: launch?.cols ?? profile?.cols,
+      rows: launch?.rows ?? profile?.rows,
+      resolvedPort: launch?.resolvedPort,
+      resolvedUrl: launch?.resolvedUrl,
+      portMode: launch?.portMode ?? profile?.portMode,
+      portFallbackUsed: launch?.portFallbackUsed,
+      portReason: launch?.portReason,
       ...(timing ? { startupTiming: { ...timing } } : {}),
       ...extra,
     };
@@ -85,15 +108,61 @@ export function createCliSurfaceRuntimeManager(emit: {
   }
 
   return {
-    start(projectId: string, profile: CliSurfaceProfile): void {
+    async start(projectId: string, profile: CliSurfaceProfile): Promise<void> {
       profiles.set(projectId, profile);
       runningEmitted.delete(projectId);
       startupTimings.set(projectId, { startedAtMs: Date.now() });
+      runtimeLaunches.set(projectId, {
+        selectedProfileId: profile.id,
+        command: profile.command,
+        args: profile.args ? [...profile.args] : undefined,
+        cwd: profile.cwd ?? process.cwd(),
+        cols: profile.cols,
+        rows: profile.rows,
+        portMode: profile.portMode,
+      });
       emit.status(projectId, buildRuntimeState(projectId, profile, 'starting'));
+
+      const reservedPorts = new Set<number>();
+      for (const [runtimeProjectId, launch] of runtimeLaunches.entries()) {
+        if (runtimeProjectId === projectId) continue;
+        if (typeof launch.resolvedPort === 'number') {
+          reservedPorts.add(launch.resolvedPort);
+        }
+      }
+
+      let launch = resolveLaunch(profile);
+      try {
+        const resolved = await resolveCliSurfaceLaunch(projectId, profile, reservedPorts);
+        launch = resolved.launch;
+        runtimeLaunches.set(projectId, {
+          selectedProfileId: profile.id,
+          command: resolved.launch.command,
+          args: resolved.launch.args ? [...resolved.launch.args] : undefined,
+          cwd: resolved.launch.cwd,
+          cols: resolved.launch.cols,
+          rows: resolved.launch.rows,
+          resolvedPort: resolved.metadata.resolvedPort,
+          resolvedUrl: resolved.metadata.resolvedUrl,
+          portMode: resolved.metadata.portMode,
+          portFallbackUsed: resolved.metadata.portFallbackUsed,
+          portReason: resolved.metadata.portReason,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to prepare CLI surface launch.';
+        runningEmitted.delete(projectId);
+        markStopped(projectId);
+        emit.error(projectId, message);
+        emit.status(
+          projectId,
+          buildRuntimeState(projectId, profile, 'error', { lastError: message }),
+        );
+        return;
+      }
 
       spawnCommandPty(
         getRuntimeId(projectId),
-        resolveLaunch(profile),
+        launch,
         (data) => {
           if (!runningEmitted.has(projectId)) {
             runningEmitted.add(projectId);
@@ -112,6 +181,7 @@ export function createCliSurfaceRuntimeManager(emit: {
           runningEmitted.delete(projectId);
           markStopped(projectId);
           flushData(projectId);
+          runtimeLaunches.delete(projectId);
           emit.exit(projectId, exitCode, signal);
           emit.status(projectId, buildRuntimeState(projectId, profile, 'stopped', { lastExitCode: exitCode }));
         },
@@ -139,18 +209,19 @@ export function createCliSurfaceRuntimeManager(emit: {
       markStopped(projectId);
       flushData(projectId);
       killPty(getRuntimeId(projectId));
+      runtimeLaunches.delete(projectId);
       const profile = profiles.get(projectId);
       emit.status(projectId, buildRuntimeState(projectId, profile, 'stopped'));
     },
 
-    restart(projectId: string): void {
+    async restart(projectId: string): Promise<void> {
       const profile = profiles.get(projectId);
       if (!profile) {
         emit.error(projectId, 'No CLI surface profile is selected.');
         return;
       }
       this.stop(projectId);
-      this.start(projectId, profile);
+      await this.start(projectId, profile);
     },
   };
 }
