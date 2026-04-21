@@ -3,13 +3,14 @@ import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import type {
+  AppliedContextSummary,
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
   CliSurfaceStartupTiming,
   SurfaceSelectionRange,
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
-import { buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
+import { buildAppliedContextSummary } from '../../project-context-prompt.js';
 import {
   getProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
@@ -29,6 +30,11 @@ import {
 import { createSelectionPayload } from './selection.js';
 import { inferCliRegions } from './heuristics.js';
 import { renderCliHoverOverlay } from './hover-overlay.js';
+import {
+  getContextModeForSelection as getContextModeForSelectionBehavior,
+  syncComposerContextControl as syncComposerContextControlBehavior,
+  syncComposerContextTrace as syncComposerContextTraceBehavior,
+} from './context-controls.js';
 import {
   sendCliSelectionToCustomSession,
   sendCliSelectionToNewSession,
@@ -205,45 +211,23 @@ function getFocusedSemanticNodeId(projectId: string): string | undefined {
   return semanticFocusNodes.get(projectId)?.values().next().value?.nodeId;
 }
 
-function getContextModeForSelection(
-  instance: CliSurfaceInstance,
-  selectionSource: 'exact' | 'inferred' | 'semantic',
-): CliSurfacePromptContextMode {
-  if (instance.contextModeOverride) {
-    return instance.contextModeOverride;
-  }
-  return selectionSource === 'exact' ? 'selection-only' : 'selection-nearby';
-}
-
-function describeContextMode(mode: CliSurfacePromptContextMode): string {
-  switch (mode) {
-    case 'selection-nearby':
-      return 'Selection + nearby lines';
-    case 'selection-nearby-viewport':
-      return 'Selection + visible viewport';
-    default:
-      return 'Selection only';
-  }
-}
-
 function syncComposerContextControl(
   instance: CliSurfaceInstance,
   mode: CliSurfacePromptContextMode,
 ): void {
-  instance.composerContextSelectEl.value = instance.contextModeOverride ?? 'auto';
-  instance.composerScopeEl.textContent = `Will send: ${describeContextMode(mode)}`;
+  syncComposerContextControlBehavior(
+    instance.contextModeOverride,
+    instance.composerContextSelectEl,
+    instance.composerScopeEl,
+    mode,
+  );
 }
 
 function syncComposerContextTrace(instance: CliSurfaceInstance): void {
-  const payload = instance.inspectState.payload;
-  if (!payload) {
-    instance.composerContextTraceEl.textContent = '';
-    instance.composerContextTraceEl.style.display = 'none';
-    return;
-  }
-  const lines = formatAppliedContextTrace(payload.appliedContext);
-  instance.composerContextTraceEl.textContent = `Applied context:\n${lines.join('\n')}`;
-  instance.composerContextTraceEl.style.display = 'block';
+  syncComposerContextTraceBehavior(
+    instance.composerContextTraceEl,
+    instance.inspectState.payload?.appliedContext as AppliedContextSummary | undefined,
+  );
 }
 
 function buildSemanticMeta(projectId: string, semanticNode?: CalderProtocolMessage): Record<string, unknown> | undefined {
@@ -644,7 +628,7 @@ function buildInspectPayload(
     : selectionHint && selectionsMatchBounds(selectionHint.selection, selection)
       ? 'inferred'
       : 'exact';
-  const contextMode = getContextModeForSelection(instance, selectionSource);
+  const contextMode = getContextModeForSelectionBehavior(instance.contextModeOverride, selectionSource);
   const targetProviderId = appState.resolveSurfaceTargetSession(instance.projectId)?.providerId
     ?? resolvePreferredProviderForLaunch(
       appState.preferences.defaultProvider,
