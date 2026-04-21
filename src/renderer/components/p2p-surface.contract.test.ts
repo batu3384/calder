@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 
 const remotePaneSource = readFileSync(new URL('./remote-terminal-pane.ts', import.meta.url), 'utf-8');
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const sessionTabFactorySource = readFileSync(new URL('./tab-bar-session-tab-factory.ts', import.meta.url), 'utf-8');
 const shareStyles = readFileSync(new URL('../styles/p2p-sharing.css', import.meta.url), 'utf-8');
 
 describe('p2p live surface contract', () => {
@@ -13,7 +14,8 @@ describe('p2p live surface contract', () => {
   });
 
   it('uses a richer tab share indicator shell instead of a raw dot only', () => {
-    expect(tabBarSource).toContain('tab-share-indicator calder-status-pill');
+    expect(tabBarSource).toContain("from './tab-bar-session-tab-factory.js'");
+    expect(sessionTabFactorySource).toContain('tab-share-indicator calder-status-pill');
     expect(shareStyles).toContain('.remote-status-shell');
     expect(shareStyles).toContain('.tab-share-indicator.calder-status-pill');
   });

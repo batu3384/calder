@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 
 const htmlSource = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const surfaceControlsSource = readFileSync(new URL('./tab-bar-surface-controls.ts', import.meta.url), 'utf-8');
 const tabsCss = readFileSync(new URL('../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar cli surface contract', () => {
@@ -12,6 +13,8 @@ describe('tab bar cli surface contract', () => {
   });
 
   it('renders a top-deck surface switcher and cli profile controls from the tab bar', () => {
+    expect(tabBarSource).toContain("from './tab-bar-surface-controls.js'");
+    expect(tabBarSource).toContain('createTabBarSurfaceControlsController({');
     expect(tabBarSource).toContain('renderSurfaceControls');
     expect(tabBarSource).toContain('focusCliSurfaceTab');
     expect(tabBarSource).toContain('focusMobileSurfaceTab');
@@ -22,9 +25,11 @@ describe('tab bar cli surface contract', () => {
     expect(tabBarSource).toContain('promptCliSurfaceProfile');
     expect(tabBarSource).toContain('openCliSurfaceWithSetup');
     expect(tabBarSource).toContain('showCliSurfaceQuickSetup');
-    expect(tabBarSource).toContain("label: 'Live View'");
-    expect(tabBarSource).toContain("label: 'CLI Surface'");
-    expect(tabBarSource).toContain("label: 'Mobile'");
+    expect(surfaceControlsSource).toContain("label: 'Live View'");
+    expect(surfaceControlsSource).toContain("label: 'CLI Surface'");
+    expect(surfaceControlsSource).toContain("label: 'Mobile'");
+    expect(surfaceControlsSource).toContain('command-deck-cli-profile');
+    expect(surfaceControlsSource).toContain('surface-profile-group');
     expect(tabBarSource).toContain('tab-cli-surface-badge');
   });
 

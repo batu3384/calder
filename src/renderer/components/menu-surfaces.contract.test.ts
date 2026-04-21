@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const menuSemanticsSource = readFileSync(new URL('./tab-bar-menu-semantics.ts', import.meta.url), 'utf-8');
+const sessionContextMenuSource = readFileSync(new URL('./tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
 const providerSelectorSource = readFileSync(
   new URL('./tab-bar-provider-selector-controller.ts', import.meta.url),
+  'utf-8',
+);
+const surfaceControlsSource = readFileSync(
+  new URL('./tab-bar-surface-controls.ts', import.meta.url),
   'utf-8',
 );
 const branchMenuSource = readFileSync(
@@ -24,10 +30,12 @@ const modalsCss = readFileSync(new URL('../styles/modals.css', import.meta.url),
 
 describe('menu surface contract', () => {
   it('routes context menus and dropdowns through the shared floating menu shell', () => {
-    expect(tabBarSource).toContain('tab-context-menu calder-floating-list');
-    expect(tabBarSource).toContain("menu.setAttribute('role', 'menu')");
-    expect(tabBarSource).toContain("item.setAttribute('role', 'menuitem')");
-    expect(tabBarSource).toContain('applyContextMenuSemantics(menu,');
+    expect(tabBarSource).toContain("from './tab-bar-session-context-menu.js'");
+    expect(tabBarSource).toContain('showSessionTabContextMenu({');
+    expect(sessionContextMenuSource).toContain('tab-context-menu calder-floating-list');
+    expect(menuSemanticsSource).toContain("menu.setAttribute('role', 'menu')");
+    expect(menuSemanticsSource).toContain("item.setAttribute('role', 'menuitem')");
+    expect(sessionContextMenuSource).toContain("applyContextMenuSemantics(menu, 'Session actions'");
     expect(tabBarSource).toContain('createTabBarBranchMenuController');
     expect(tabBarSource).toContain('createTabBarSessionMenuController');
     expect(providerSelectorSource).toContain("'command-deck-provider'");
@@ -37,8 +45,10 @@ describe('menu surface contract', () => {
     expect(sessionMenuSource).toContain('tab-context-menu calder-floating-list');
     expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
     expect(sessionMenuSource).toContain('Join Remote Session');
-    expect(tabBarSource).toContain("floating: {");
-    expect(tabBarSource).not.toContain('floating: false');
+    expect(providerSelectorSource).toContain("floating: {");
+    expect(surfaceControlsSource).toContain("floating: {");
+    expect(providerSelectorSource).not.toContain('floating: false');
+    expect(surfaceControlsSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');
     expect(historySource).toContain('tab-context-menu calder-floating-list');
     expect(gitSource).toContain('tab-context-menu calder-floating-list');

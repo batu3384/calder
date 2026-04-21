@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 
 const source = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
 const providerSelectorSource = readFileSync(new URL('./tab-bar-provider-selector-controller.ts', import.meta.url), 'utf-8');
+const surfaceControlsSource = readFileSync(new URL('./tab-bar-surface-controls.ts', import.meta.url), 'utf-8');
 const menuSource = readFileSync(new URL('../../main/menu.ts', import.meta.url), 'utf-8');
 const keybindingsSource = readFileSync(new URL('../keybindings.ts', import.meta.url), 'utf-8');
 
@@ -26,12 +27,15 @@ describe('tab bar command deck contract', () => {
   });
 
   it('pins launcher dropdowns to the right edge and stabilizes the launcher shell while they are open', () => {
-    expect(source).toContain("placement: 'bottom-end'");
-    expect(source).toContain("strategy: 'fixed'");
+    expect(providerSelectorSource).toContain("placement: 'bottom-end'");
+    expect(providerSelectorSource).toContain("strategy: 'fixed'");
+    expect(surfaceControlsSource).toContain("placement: 'bottom-end'");
+    expect(surfaceControlsSource).toContain("strategy: 'fixed'");
     expect(source).toContain("function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void");
     expect(source).toContain('const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;');
     expect(source).toContain("onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open)");
-    expect(source).toContain("onOpenChange: (open) => setSessionLauncherSelectOpen('profile', open)");
+    expect(source).toContain("onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open)");
+    expect(surfaceControlsSource).toContain('onOpenChange: (open) => onProfileSelectOpenChange(open)');
   });
 
   it('keeps the inline provider picker mounted instead of rebuilding it on every preference write', () => {
@@ -42,9 +46,11 @@ describe('tab bar command deck contract', () => {
   });
 
   it('keeps surface controls mounted when signatures have not changed to avoid dropdown flicker', () => {
-    expect(source).toContain('let surfaceControlsSignature =');
-    expect(source).toContain('function buildSurfaceControlsSignature(project: ProjectRecord): string');
-    expect(source).toContain('if (nextSignature === surfaceControlsSignature) return;');
+    expect(source).toContain('createTabBarSurfaceControlsController({');
+    expect(source).toContain('buildSurfaceControlsSignature: buildSurfaceControlsSignatureForProject');
+    expect(surfaceControlsSource).toContain('let surfaceControlsSignature =');
+    expect(surfaceControlsSource).toContain('buildSurfaceControlsSignature: (project: ProjectRecord) => string');
+    expect(surfaceControlsSource).toContain('if (nextSignature === surfaceControlsSignature) return;');
   });
 
   it('keeps former command deck tools reachable from the app menu', () => {
