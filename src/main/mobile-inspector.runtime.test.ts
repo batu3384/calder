@@ -453,4 +453,146 @@ describe('mobile-inspector runtime android flows', () => {
     expect(result.message).toContain('Tap dispatched to iOS simulator');
     expect(execPlans).toHaveLength(0);
   });
+
+  it('returns a simulator readiness error when iOS launch precondition fails', async () => {
+    execPlans.push({
+      command: 'xcrun',
+      args: ['simctl', 'list', 'devices', '--json'],
+      code: 1,
+      stderr: 'simctl list failed',
+    });
+
+    const result = await interactMobileInspectPoint('ios', 10, 20);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('simctl list failed');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns session creation errors when Appium rejects iOS session bootstrap', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-5',
+                name: 'iPhone 16 Pro',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-5', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return JSON.stringify({ value: { message: 'XCUITest driver is missing' } });
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 21, 34);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('XCUITest driver is missing');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Appium action errors after successful iOS session creation', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-6',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-6', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    const fetchCalls: Array<{ url: string; method: string }> = [];
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      fetchCalls.push({ url, method });
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-action-fail' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-action-fail/actions') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return JSON.stringify({ value: { message: 'tap denied by driver' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-action-fail') && method === 'DELETE') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 90, 120);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('tap denied by driver');
+    expect(fetchCalls.some((call) => call.method === 'DELETE')).toBe(true);
+    expect(execPlans).toHaveLength(0);
+  });
 });
