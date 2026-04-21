@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { PersistedState, CliProviderMeta, ProviderId } from '../shared/types';
 import type { CliProvider } from './providers/provider';
-import { analyzeProviderStartup, formatProviderStartupWarning, formatMissingProviderDialog } from './provider-startup';
+import {
+  analyzeProviderStartup,
+  formatProviderStartupWarning,
+  formatMissingProviderDialog,
+  installProviderStartupArtifacts,
+} from './provider-startup';
 
 function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
   return {
@@ -21,15 +26,20 @@ function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
   };
 }
 
-function makeProvider(id: ProviderId, ok: boolean, message = `${id} missing`): CliProvider {
+function makeProvider(
+  id: ProviderId,
+  ok: boolean,
+  message = `${id} missing`,
+  overrides?: Partial<Pick<CliProvider, 'installHooks' | 'installStatusScripts'>>,
+): CliProvider {
   return {
     meta: makeMeta(id, `${id.toUpperCase()} CLI`),
     resolveBinaryPath: () => id,
     validatePrerequisites: () => ({ ok, message: ok ? '' : message }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],
-    installHooks: async () => {},
-    installStatusScripts: () => {},
+    installHooks: overrides?.installHooks ?? (async () => {}),
+    installStatusScripts: overrides?.installStatusScripts ?? (() => {}),
     cleanup: () => {},
     getConfig: async () => ({ mcpServers: [], agents: [], skills: [], commands: [] }),
     getShiftEnterSequence: () => null,
@@ -61,7 +71,7 @@ describe('analyzeProviderStartup', () => {
     const state = makeState();
     const analysis = analyzeProviderStartup([
       makeProvider('codex', true),
-      makeProvider('blackbox', false, 'Blackbox CLI not found'),
+      makeProvider('gemini', false, 'Gemini CLI not found'),
     ], state);
 
     expect(analysis.blocking).toBe(false);
@@ -77,17 +87,17 @@ describe('analyzeProviderStartup', () => {
         sessionHistoryEnabled: true,
         insightsEnabled: true,
         autoTitleEnabled: true,
-        defaultProvider: 'blackbox',
+        defaultProvider: 'gemini',
       },
     });
 
     const analysis = analyzeProviderStartup([
       makeProvider('codex', true),
-      makeProvider('blackbox', false, 'Blackbox CLI not found'),
+      makeProvider('gemini', false, 'Gemini CLI not found'),
     ], state);
 
     expect(analysis.blocking).toBe(false);
-    expect(analysis.relevantUnavailable.map(result => result.provider.meta.id)).toEqual(['blackbox']);
+    expect(analysis.relevantUnavailable.map(result => result.provider.meta.id)).toEqual(['gemini']);
     expect(analysis.relevantUnavailable[0]?.reasons).toEqual(['default-provider']);
   });
 
@@ -132,7 +142,7 @@ describe('analyzeProviderStartup', () => {
 describe('formatters', () => {
   it('describes why an unavailable provider still matters', () => {
     const [result] = analyzeProviderStartup([
-      makeProvider('blackbox', false, 'Blackbox CLI not found'),
+      makeProvider('gemini', false, 'Gemini CLI not found'),
     ], makeState({
       preferences: {
         soundOnSessionWaiting: true,
@@ -141,12 +151,12 @@ describe('formatters', () => {
         sessionHistoryEnabled: true,
         insightsEnabled: true,
         autoTitleEnabled: true,
-        defaultProvider: 'blackbox',
+        defaultProvider: 'gemini',
       },
     })).relevantUnavailable;
 
     expect(formatProviderStartupWarning(result!)).toContain('your default provider');
-    expect(formatProviderStartupWarning(result!)).toContain('Blackbox CLI not found');
+    expect(formatProviderStartupWarning(result!)).toContain('Gemini CLI not found');
   });
 
   it('formats the blocking dialog details for all unavailable providers', () => {
@@ -158,5 +168,61 @@ describe('formatters', () => {
     const details = formatMissingProviderDialog(unavailable);
     expect(details).toContain('CLAUDE CLI');
     expect(details).toContain('CODEX CLI');
+  });
+});
+
+describe('installProviderStartupArtifacts', () => {
+  it('continues to install startup artifacts when one provider hook install fails', async () => {
+    const failHooks = vi.fn(async () => {
+      throw new Error('hook install failed');
+    });
+    const failStatus = vi.fn();
+    const nextHooks = vi.fn(async () => {});
+    const nextStatus = vi.fn();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      await expect(installProviderStartupArtifacts([
+        makeProvider('codex', true, '', { installHooks: failHooks, installStatusScripts: failStatus }),
+        makeProvider('claude', true, '', { installHooks: nextHooks, installStatusScripts: nextStatus }),
+      ])).resolves.toBeUndefined();
+
+      expect(failHooks).toHaveBeenCalledTimes(1);
+      expect(failStatus).not.toHaveBeenCalled();
+      expect(nextHooks).toHaveBeenCalledTimes(1);
+      expect(nextStatus).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('CODEX CLI');
+      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('codex');
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('continues to install startup artifacts when one provider status script install fails', async () => {
+    const failHooks = vi.fn(async () => {});
+    const failStatus = vi.fn(() => {
+      throw new Error('status script install failed');
+    });
+    const nextHooks = vi.fn(async () => {});
+    const nextStatus = vi.fn();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      await expect(installProviderStartupArtifacts([
+        makeProvider('qwen', true, '', { installHooks: failHooks, installStatusScripts: failStatus }),
+        makeProvider('claude', true, '', { installHooks: nextHooks, installStatusScripts: nextStatus }),
+      ])).resolves.toBeUndefined();
+
+      expect(failHooks).toHaveBeenCalledTimes(1);
+      expect(failStatus).toHaveBeenCalledTimes(1);
+      expect(nextHooks).toHaveBeenCalledTimes(1);
+      expect(nextStatus).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('QWEN CLI');
+      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('qwen');
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

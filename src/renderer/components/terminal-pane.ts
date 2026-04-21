@@ -13,7 +13,7 @@ import {
 } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
-import { getProviderCapabilities } from '../provider-availability.js';
+import { getProviderCapabilities, getProviderDisplayName } from '../provider-availability.js';
 import { FilePathLinkProvider, GithubLinkProvider } from './terminal-link-provider.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../link-routing.js';
@@ -97,19 +97,6 @@ function extractUrlFromEventTarget(event: MouseEvent): string | null {
   return typeof href === 'string' && href.trim().length > 0 ? href : null;
 }
 
-function providerDisplayName(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'codex': return 'Codex CLI';
-    case 'claude': return 'Claude Code';
-    case 'copilot': return 'GitHub Copilot';
-    case 'gemini': return 'Gemini CLI';
-    case 'qwen': return 'Qwen Code';
-    case 'minimax': return 'MiniMax CLI';
-    case 'blackbox': return 'Blackbox CLI';
-    default: return providerId;
-  }
-}
-
 function workspaceLabel(projectPath: string): string {
   const normalized = projectPath.replace(/\\/g, '/');
   const parts = normalized.split('/').filter(Boolean);
@@ -139,7 +126,7 @@ export function createTerminalPane(
   const providerBadge = document.createElement('div');
   providerBadge.className = 'terminal-pane-provider';
   providerBadge.dataset.provider = providerId;
-  providerBadge.textContent = providerDisplayName(providerId);
+  providerBadge.textContent = getProviderDisplayName(providerId);
 
   const headerCopy = document.createElement('div');
   headerCopy.className = 'terminal-pane-header-copy';

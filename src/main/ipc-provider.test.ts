@@ -46,12 +46,19 @@ function getOnHandler(channel: string): (...args: any[]) => any {
   return call[1] as (...args: any[]) => any;
 }
 
+function createOps() {
+  return {
+    requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+  };
+}
+
 describe('ipc provider handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('handles provider:getConfig and claude:getConfig alias', async () => {
+    const ops = createOps();
     const provider = {
       getConfig: vi.fn(async (projectPath: string) => ({ projectPath })),
       validatePrerequisites: vi.fn(() => ({ ok: true })),
@@ -59,7 +66,7 @@ describe('ipc provider handlers', () => {
     };
     mockGetProvider.mockReturnValue(provider);
 
-    registerProviderIpcHandlers();
+    registerProviderIpcHandlers(ops);
 
     const providerConfigHandler = getHandleHandler('provider:getConfig');
     const claudeConfigHandler = getHandleHandler('claude:getConfig');
@@ -71,11 +78,14 @@ describe('ipc provider handlers', () => {
     expect(mockGetProvider).toHaveBeenCalledWith('claude');
     expect(provider.getConfig).toHaveBeenCalledWith('/repo-a');
     expect(provider.getConfig).toHaveBeenCalledWith('/repo-b');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo-a', 'Load provider config');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo-b', 'Load Claude config');
     expect(providerResult).toEqual({ projectPath: '/repo-a' });
     expect(claudeResult).toEqual({ projectPath: '/repo-b' });
   });
 
   it('starts config watcher only when a browser window exists', () => {
+    const ops = createOps();
     const startConfigWatcher = vi.fn();
     const provider = {
       startConfigWatcher,
@@ -87,19 +97,23 @@ describe('ipc provider handlers', () => {
     mockGetProvider.mockReturnValue(provider);
     mockGetAllWindows.mockReturnValue([win]);
 
-    registerProviderIpcHandlers();
+    registerProviderIpcHandlers(ops);
 
     const watchHandler = getOnHandler('config:watchProject');
     watchHandler({}, 'codex', '/repo');
     expect(startConfigWatcher).toHaveBeenCalledWith(win, '/repo');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Watch provider config');
 
     startConfigWatcher.mockClear();
+    ops.requireKnownProjectPath.mockClear();
     mockGetAllWindows.mockReturnValue([]);
     watchHandler({}, 'codex', '/repo');
     expect(startConfigWatcher).not.toHaveBeenCalled();
+    expect(ops.requireKnownProjectPath).not.toHaveBeenCalled();
   });
 
   it('builds resume handoff prompt with transcript path when available', async () => {
+    const ops = createOps();
     const provider = {
       meta: { displayName: 'Claude' },
       getTranscriptPath: vi.fn(() => '/repo/.calder/transcripts/s1.md'),
@@ -109,12 +123,13 @@ describe('ipc provider handlers', () => {
     mockGetProvider.mockReturnValue(provider);
     mockBuildHandoffPrompt.mockReturnValue('handoff prompt');
 
-    registerProviderIpcHandlers();
+    registerProviderIpcHandlers(ops);
     const handler = getHandleHandler('session:buildResumeWithPrompt');
 
     const result = await handler({}, 'claude', 'cli-s1', '/repo', 'Session One');
 
     expect(provider.getTranscriptPath).toHaveBeenCalledWith('cli-s1', '/repo');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Build session handoff prompt');
     expect(mockBuildHandoffPrompt).toHaveBeenCalledWith({
       fromProviderLabel: 'Claude',
       sessionName: 'Session One',
@@ -124,6 +139,7 @@ describe('ipc provider handlers', () => {
   });
 
   it('falls back to null transcript path when provider.getTranscriptPath throws', async () => {
+    const ops = createOps();
     const provider = {
       meta: { displayName: 'Claude' },
       getTranscriptPath: vi.fn(() => {
@@ -136,7 +152,7 @@ describe('ipc provider handlers', () => {
     mockBuildHandoffPrompt.mockReturnValue('handoff prompt');
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    registerProviderIpcHandlers();
+    registerProviderIpcHandlers(ops);
     const handler = getHandleHandler('session:buildResumeWithPrompt');
     await handler({}, 'claude', 'cli-s2', '/repo', 'Session Two');
 
@@ -150,6 +166,7 @@ describe('ipc provider handlers', () => {
   });
 
   it('returns provider meta/list and defaults binary checks to claude', async () => {
+    const ops = createOps();
     const provider = {
       validatePrerequisites: vi.fn(() => ({ ok: true })),
       getConfig: vi.fn(),
@@ -159,7 +176,7 @@ describe('ipc provider handlers', () => {
     mockGetProviderMeta.mockReturnValue({ id: 'claude', displayName: 'Claude' });
     mockGetAllProviderMetas.mockReturnValue([{ id: 'claude', displayName: 'Claude' }]);
 
-    registerProviderIpcHandlers();
+    registerProviderIpcHandlers(ops);
 
     const metaHandler = getHandleHandler('provider:getMeta');
     const listHandler = getHandleHandler('provider:listProviders');
@@ -177,5 +194,25 @@ describe('ipc provider handlers', () => {
     expect(list).toEqual([{ id: 'claude', displayName: 'Claude' }]);
     expect(check).toEqual({ ok: true });
   });
-});
 
+  it('rejects project-path channels when project path is unknown', async () => {
+    const ops = {
+      requireKnownProjectPath: vi.fn(() => {
+        throw new Error('Load provider config requires a known project path');
+      }),
+    };
+    const provider = {
+      getConfig: vi.fn(async () => ({})),
+      validatePrerequisites: vi.fn(() => ({ ok: true })),
+      meta: { displayName: 'Claude' },
+    };
+    mockGetProvider.mockReturnValue(provider);
+
+    registerProviderIpcHandlers(ops);
+
+    await expect(getHandleHandler('provider:getConfig')({}, 'codex', '/outside')).rejects.toThrow(
+      'Load provider config requires a known project path',
+    );
+    expect(provider.getConfig).not.toHaveBeenCalled();
+  });
+});

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const source = readFileSync(new URL('./config-sections.ts', import.meta.url), 'utf-8');
+const source = [
+  readFileSync(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./config-toolchain-summary.ts', import.meta.url), 'utf-8'),
+].join('\n');
 const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', import.meta.url), 'utf-8');
 
 describe('config sections compact contract', () => {

@@ -221,11 +221,6 @@ body.debug-panel-open #app {
   --provider-accent-soft: rgba(255, 122, 89, 0.2);
 }
 
-[data-provider='blackbox'] {
-  --provider-accent: #b8c2d4;
-  --provider-accent-soft: rgba(184, 194, 212, 0.18);
-}
-
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-fast: 0ms;

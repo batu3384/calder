@@ -4,19 +4,17 @@ import type {
   CliSurfaceProfile,
   ProjectSurfaceRecord,
   ProviderId,
-  ProviderUpdateSummary,
 } from '../../shared/types.js';
 import { showModal, closeModal, setModalError, FieldDef } from './modal.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import { onChange as onStatusChange, getStatus, type SessionStatus } from '../session-activity.js';
-import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, refreshGitStatus } from '../git-status.js';
+import { onChange as onGitStatusChange, getGitStatus, refreshGitStatus } from '../git-status.js';
 
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
 import {
   buildShareDialogMobilePresence,
   showShareDialog,
 } from './share-dialog.js';
-import { showJoinDialog } from './join-dialog.js';
 import { isSharing, isConnected } from '../sharing/peer-host.js';
 import { endShare, onShareChange } from '../sharing/share-manager.js';
 import { openInspector, isInspectorOpen, getInspectedSessionId, closeInspector } from './session-inspector.js';
@@ -26,7 +24,6 @@ import {
   getProviderAvailabilitySnapshot,
   getProviderCapabilities,
   resolvePreferredProviderForLaunch,
-  shouldRenderInlineProviderSelector,
 } from '../provider-availability.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { buildProviderIconMarkup } from './tab-provider-icon.js';
@@ -42,9 +39,24 @@ import {
   onUpdateCenterChange,
   runCliProviderUpdates,
   initUpdateCenter,
-  type CliProviderProgressState,
   type CliUpdateCenterState,
 } from '../update-center.js';
+import {
+  createTabBarCliUpdatePanel,
+  type TabBarCliUpdatePanelController,
+} from './tab-bar-cli-update-panel.js';
+import {
+  createTabBarProviderSelectorController,
+  type TabBarProviderSelectorController,
+} from './tab-bar-provider-selector-controller.js';
+import {
+  createTabBarBranchMenuController,
+  type TabBarBranchMenuController,
+} from './tab-bar-branch-menu-controller.js';
+import {
+  createTabBarSessionMenuController,
+  type TabBarSessionMenuController,
+} from './tab-bar-session-menu-controller.js';
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -59,35 +71,20 @@ const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
 const sessionLauncherEl = document.getElementById('session-launcher')!;
 
 let activeContextMenu: HTMLElement | null = null;
-let sessionProviderSelect: CustomSelectInstance | null = null;
 let surfaceProfileSelect: CustomSelectInstance | null = null;
-let sessionProviderSelectorSignature = '';
 let surfaceControlsSignature = '';
 const prevStatus = new Map<string, SessionStatus>();
 let lastActiveTabRailKey = '';
-let cliUpdatePanelEl: HTMLElement | null = null;
-let cliUpdatePanelVisible = false;
-let cliUpdatePanelStatusEl: HTMLElement | null = null;
-let cliUpdatePanelMetaEl: HTMLElement | null = null;
-let cliUpdatePanelProgressFillEl: HTMLElement | null = null;
-let cliUpdatePanelProgressLabelEl: HTMLElement | null = null;
-let cliUpdatePanelTimestampEl: HTMLElement | null = null;
-let cliUpdatePanelListEl: HTMLElement | null = null;
-let cliUpdatePanelCancelBtnEl: HTMLButtonElement | null = null;
+let cliUpdatePanelController: TabBarCliUpdatePanelController | null = null;
+let sessionProviderSelectorController: TabBarProviderSelectorController | null = null;
+let branchMenuController: TabBarBranchMenuController | null = null;
+let sessionMenuController: TabBarSessionMenuController | null = null;
 let unsubscribeUpdateCenter: (() => void) | null = null;
 type LauncherSelectKey = 'profile' | 'provider';
 const launcherSelectOpenState: Record<LauncherSelectKey, boolean> = {
   profile: false,
   provider: false,
 };
-
-const CLI_UPDATE_BUTTON_GLYPHS = {
-  refresh: '↻',
-  warning: '⚠',
-  cancelled: '✕',
-  updated: '✓',
-  upToDate: '•',
-} as const;
 
 function buildTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
@@ -235,6 +232,58 @@ function syncMobileControlButton(): void {
   }
 }
 
+function getCliUpdatePanelController(): TabBarCliUpdatePanelController {
+  if (!cliUpdatePanelController) {
+    cliUpdatePanelController = createTabBarCliUpdatePanel({
+      tabActionsEl,
+      updateButtonEl: btnUpdateCliTools,
+      onCancelUpdate: cancelCliProviderUpdates,
+    });
+  }
+  return cliUpdatePanelController;
+}
+
+function getSessionProviderSelectorController(): TabBarProviderSelectorController {
+  if (!sessionProviderSelectorController) {
+    sessionProviderSelectorController = createTabBarProviderSelectorController({
+      addSessionButtonEl: btnAddSession,
+      sessionProviderSlotEl,
+      onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
+      onProviderSelected: (providerId) => appState.setPreference('defaultProvider', providerId),
+    });
+  }
+  return sessionProviderSelectorController;
+}
+
+function getBranchMenuController(): TabBarBranchMenuController {
+  if (!branchMenuController) {
+    branchMenuController = createTabBarBranchMenuController({
+      gitStatusEl,
+      hideTabContextMenu,
+      getActiveContextMenu: () => activeContextMenu,
+      setActiveContextMenu: (menu) => {
+        activeContextMenu = menu;
+      },
+      applyContextMenuSemantics,
+      refreshGitStatus,
+    });
+  }
+  return branchMenuController;
+}
+
+function getSessionMenuController(): TabBarSessionMenuController {
+  if (!sessionMenuController) {
+    sessionMenuController = createTabBarSessionMenuController({
+      hideTabContextMenu,
+      setActiveContextMenu: (menu) => {
+        activeContextMenu = menu;
+      },
+      applyContextMenuSemantics,
+    });
+  }
+  return sessionMenuController;
+}
+
 export function initTabBar(): void {
   initUpdateCenter();
   btnAddSession.classList.add('tab-action-primary');
@@ -246,7 +295,7 @@ export function initTabBar(): void {
   unsubscribeUpdateCenter = onUpdateCenterChange((snapshot) => {
     renderCliUpdateButton(snapshot.cli);
     renderCliUpdatePanel(snapshot.cli);
-    if (snapshot.cli.phase === 'running' && lastCliPhase !== 'running' && !cliUpdatePanelVisible) {
+    if (snapshot.cli.phase === 'running' && lastCliPhase !== 'running' && !isCliUpdatePanelVisible()) {
       toggleCliUpdatePanel(true);
     }
     lastCliPhase = snapshot.cli.phase;
@@ -332,10 +381,10 @@ export function initTabBar(): void {
 
   document.addEventListener('click', (event) => {
     hideTabContextMenu();
-    if (!cliUpdatePanelVisible) return;
+    if (!isCliUpdatePanelVisible()) return;
     const target = event.target as Node | null;
     if (!target) return;
-    if (cliUpdatePanelEl?.contains(target)) return;
+    if (doesCliUpdatePanelContain(target)) return;
     if (btnUpdateCliTools.contains(target)) return;
     toggleCliUpdatePanel(false);
   });
@@ -353,14 +402,7 @@ export function initTabBar(): void {
 }
 
 function destroySessionProviderSelector(): void {
-  if (sessionProviderSelect) {
-    sessionProviderSelect.destroy();
-    sessionProviderSelect = null;
-  }
-  sessionProviderSelectorSignature = '';
-  setSessionLauncherSelectOpen('provider', false);
-  sessionProviderSlotEl.innerHTML = '';
-  sessionProviderSlotEl.hidden = true;
+  getSessionProviderSelectorController().destroySessionProviderSelector();
 }
 
 function destroySurfaceProfileSelector(): void {
@@ -854,387 +896,39 @@ function renderSurfaceControls(): void {
 }
 
 function syncQuickSessionButtonMeta(providerId: ProviderId): void {
-  const snapshot = getProviderAvailabilitySnapshot();
-  const providerLabel = snapshot?.providers.find(provider => provider.id === providerId)?.displayName ?? providerId;
-  btnAddSession.title = `New ${providerLabel} Session (Ctrl+Shift+N)`;
-  btnAddSession.setAttribute('aria-label', `Create new ${providerLabel} session`);
+  getSessionProviderSelectorController().syncQuickSessionButtonMeta(providerId);
 }
 
 function buildSessionProviderSelectorSignature(snapshot: ReturnType<typeof getProviderAvailabilitySnapshot>): string {
-  if (!snapshot) return 'hidden';
-  return snapshot.providers
-    .map(provider => `${provider.id}:${provider.displayName}:${snapshot.availability.get(provider.id) ? '1' : '0'}`)
-    .join('|');
+  return getSessionProviderSelectorController().buildSessionProviderSelectorSignature(snapshot);
 }
 
 function syncSessionProviderSelector(): void {
-  const snapshot = getProviderAvailabilitySnapshot();
-  const selectedProvider = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, snapshot);
-  syncQuickSessionButtonMeta(selectedProvider);
-
-  if (!snapshot || !shouldRenderInlineProviderSelector(snapshot)) {
-    destroySessionProviderSelector();
-    return;
-  }
-
-  const signature = buildSessionProviderSelectorSignature(snapshot);
-  if (sessionProviderSelect && sessionProviderSelectorSignature === signature) {
-    sessionProviderSelect?.setValue(selectedProvider);
-    sessionProviderSlotEl.hidden = false;
-    return;
-  }
-
-  destroySessionProviderSelector();
-
-  const select = createCustomSelect(
-    'command-deck-provider',
-    snapshot.providers.map(provider => {
-      const available = snapshot.availability.get(provider.id);
-      return {
-        value: provider.id,
-        label: available ? provider.displayName : `${provider.displayName} (not installed)`,
-        disabled: !available,
-      };
-    }),
-    selectedProvider,
-    {
-      floating: {
-        placement: 'bottom-end',
-        offsetPx: 8,
-        maxWidthPx: 280,
-        maxHeightPx: 320,
-        strategy: 'fixed',
-      },
-      align: 'end',
-      onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
-    },
-  );
-  select.element.classList.add('command-deck-provider-select');
-
-  const hiddenInput = select.element.querySelector('#command-deck-provider') as HTMLInputElement | null;
-  hiddenInput?.addEventListener('change', () => {
-    const providerId = hiddenInput.value as ProviderId;
-    syncQuickSessionButtonMeta(providerId);
-    appState.setPreference('defaultProvider', providerId);
-  });
-
-  sessionProviderSlotEl.hidden = false;
-  sessionProviderSlotEl.appendChild(select.element);
-  sessionProviderSelect = select;
-  sessionProviderSelectorSignature = signature;
-}
-
-function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): {
-  updated: number;
-  upToDate: number;
-  syncPending: number;
-  skipped: number;
-  cancelled: number;
-  error: number;
-} {
-  let updated = 0;
-  let upToDate = 0;
-  let syncPending = 0;
-  let skipped = 0;
-  let cancelled = 0;
-  let error = 0;
-  for (const result of summary.results) {
-    if (result.status === 'updated') updated += 1;
-    else if (result.status === 'up_to_date') upToDate += 1;
-    else if (result.status === 'sync_pending') syncPending += 1;
-    else if (result.status === 'skipped') skipped += 1;
-    else if (result.status === 'cancelled') cancelled += 1;
-    else error += 1;
-  }
-  return { updated, upToDate, syncPending, skipped, cancelled, error };
-}
-
-function formatRelativeTimestamp(timestamp?: string): string {
-  if (!timestamp) return 'No updates yet';
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return 'No updates yet';
-  const diffMs = Date.now() - date.getTime();
-  if (diffMs < 60_000) return 'just now';
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}h ago`;
-  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function getCliProviderStatusLabel(status: CliProviderProgressState['status']): string {
-  if (status === 'up_to_date') return 'up to date';
-  if (status === 'sync_pending') return 'sync pending';
-  if (status === 'cancelled') return 'cancelled';
-  return status.replace(/_/g, ' ');
+  getSessionProviderSelectorController().syncSessionProviderSelector(appState.preferences.defaultProvider);
 }
 
 function setupCliUpdatePanel(): void {
-  if (cliUpdatePanelEl) return;
-  const panel = document.createElement('section');
-  panel.id = 'cli-update-panel';
-  panel.className = 'cli-update-panel hidden';
-  panel.innerHTML = `
-    <div class="cli-update-panel-header">
-      <div class="cli-update-panel-title">CLI Update Center</div>
-      <div class="cli-update-panel-header-actions">
-        <button type="button" class="cli-update-panel-cancel hidden" aria-label="Cancel CLI update">Cancel</button>
-        <button type="button" class="cli-update-panel-close" aria-label="Close update panel">&times;</button>
-      </div>
-    </div>
-    <div class="cli-update-panel-status">No update run yet.</div>
-    <div class="cli-update-panel-progress-track">
-      <div class="cli-update-panel-progress-fill" style="width: 0%"></div>
-    </div>
-    <div class="cli-update-panel-stats">
-      <span class="cli-update-panel-progress-label">Progress: 0/0 (0%)</span>
-      <span class="cli-update-panel-timestamp">Last run: No updates yet</span>
-    </div>
-    <div class="cli-update-panel-meta">Press the update button to start a provider refresh.</div>
-    <div class="cli-update-panel-list"></div>
-  `;
-  panel.addEventListener('click', (event) => event.stopPropagation());
+  getCliUpdatePanelController().setup();
+}
 
-  const closeBtn = panel.querySelector('.cli-update-panel-close') as HTMLButtonElement | null;
-  const cancelBtn = panel.querySelector('.cli-update-panel-cancel') as HTMLButtonElement | null;
-  closeBtn?.addEventListener('click', () => toggleCliUpdatePanel(false));
-  cancelBtn?.addEventListener('click', () => {
-    if (cancelBtn.disabled) return;
-    void cancelCliProviderUpdates().catch((error) => {
-      console.error('[tab-bar] Failed to cancel CLI update', error);
-    });
-  });
+function isCliUpdatePanelVisible(): boolean {
+  return getCliUpdatePanelController().isVisible();
+}
 
-  cliUpdatePanelStatusEl = panel.querySelector('.cli-update-panel-status');
-  cliUpdatePanelMetaEl = panel.querySelector('.cli-update-panel-meta');
-  cliUpdatePanelProgressFillEl = panel.querySelector('.cli-update-panel-progress-fill');
-  cliUpdatePanelProgressLabelEl = panel.querySelector('.cli-update-panel-progress-label');
-  cliUpdatePanelTimestampEl = panel.querySelector('.cli-update-panel-timestamp');
-  cliUpdatePanelListEl = panel.querySelector('.cli-update-panel-list');
-  cliUpdatePanelCancelBtnEl = cancelBtn;
-  if (cliUpdatePanelStatusEl) {
-    cliUpdatePanelStatusEl.setAttribute('role', 'status');
-    cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite');
-  }
-  if (cliUpdatePanelMetaEl) {
-    cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite');
-  }
-  panel.setAttribute('aria-busy', 'false');
-
-  tabActionsEl.appendChild(panel);
-  cliUpdatePanelEl = panel;
+function doesCliUpdatePanelContain(target: Node): boolean {
+  return getCliUpdatePanelController().containsTarget(target);
 }
 
 function toggleCliUpdatePanel(visible: boolean): void {
-  if (!cliUpdatePanelEl) return;
-  cliUpdatePanelVisible = visible;
-  cliUpdatePanelEl.classList.toggle('hidden', !visible);
-  btnUpdateCliTools.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  getCliUpdatePanelController().toggle(visible);
 }
 
 function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
-  btnUpdateCliTools.classList.remove('is-warning', 'is-success', 'is-cancelled', 'is-idle');
-
-  if (cliState.phase === 'running') {
-    btnUpdateCliTools.classList.add('is-updating');
-    btnUpdateCliTools.disabled = false;
-    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
-    const progressLabel = cliState.totalProviders > 0
-      ? `${cliState.completedProviders}/${cliState.totalProviders}`
-      : 'running';
-    btnUpdateCliTools.title = `Updating CLI tools... (${progressLabel})`;
-    btnUpdateCliTools.setAttribute('aria-label', 'Updating CLI tools');
-    return;
-  }
-
-  btnUpdateCliTools.classList.remove('is-updating');
-  btnUpdateCliTools.disabled = false;
-
-  if (cliState.phase === 'error') {
-    btnUpdateCliTools.classList.add('is-warning');
-    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-    btnUpdateCliTools.title = 'CLI update failed.';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI update failed');
-    return;
-  }
-
-  if (cliState.phase === 'cancelled') {
-    btnUpdateCliTools.classList.add('is-cancelled');
-    btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.cancelled;
-    btnUpdateCliTools.title = 'CLI update cancelled.';
-    btnUpdateCliTools.setAttribute('aria-label', 'CLI update cancelled');
-    return;
-  }
-
-  if (cliState.phase === 'completed' && cliState.lastSummary) {
-    const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
-    if (counters.error > 0) {
-      btnUpdateCliTools.classList.add('is-warning');
-      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-      btnUpdateCliTools.title = 'CLI update completed with errors';
-      btnUpdateCliTools.setAttribute('aria-label', 'CLI update completed with errors');
-    } else if (counters.syncPending > 0) {
-      btnUpdateCliTools.classList.add('is-warning');
-      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-      btnUpdateCliTools.title = 'CLI updates waiting for package sync';
-      btnUpdateCliTools.setAttribute('aria-label', 'CLI updates waiting for package sync');
-    } else if (counters.updated > 0) {
-      btnUpdateCliTools.classList.add('is-success');
-      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.updated;
-      btnUpdateCliTools.title = 'CLI tools updated';
-      btnUpdateCliTools.setAttribute('aria-label', 'CLI tools updated');
-    } else {
-      btnUpdateCliTools.classList.add('is-idle');
-      btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.upToDate;
-      btnUpdateCliTools.title = 'CLI tools are already up to date.';
-      btnUpdateCliTools.setAttribute('aria-label', 'CLI tools are already up to date');
-    }
-    return;
-  }
-
-  btnUpdateCliTools.classList.add('is-idle');
-  btnUpdateCliTools.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
-  btnUpdateCliTools.title = 'Update CLI Tools';
-  btnUpdateCliTools.setAttribute('aria-label', 'Update CLI tools');
+  getCliUpdatePanelController().renderButton(cliState);
 }
 
 function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
-  if (
-    !cliUpdatePanelStatusEl
-    || !cliUpdatePanelMetaEl
-    || !cliUpdatePanelProgressFillEl
-    || !cliUpdatePanelListEl
-    || !cliUpdatePanelProgressLabelEl
-    || !cliUpdatePanelTimestampEl
-  ) return;
-  if (cliUpdatePanelEl) {
-    cliUpdatePanelEl.setAttribute('aria-busy', cliState.phase === 'running' ? 'true' : 'false');
-  }
-
-  if (cliUpdatePanelCancelBtnEl) {
-    const running = cliState.phase === 'running';
-    cliUpdatePanelCancelBtnEl.classList.toggle('hidden', !running);
-    cliUpdatePanelCancelBtnEl.disabled = !running || cliState.cancelRequested;
-    cliUpdatePanelCancelBtnEl.textContent = cliState.cancelRequested ? 'Cancelling...' : 'Cancel';
-  }
-
-  const total = cliState.totalProviders > 0 ? cliState.totalProviders : Math.max(cliState.providers.length, 0);
-  const completed = Math.min(cliState.completedProviders, total || cliState.completedProviders);
-  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
-  const progressLabel = total > 0 ? `${completed}/${total}` : '0/0';
-  cliUpdatePanelProgressLabelEl.textContent = `Progress: ${progressLabel} (${progressPercent}%)`;
-
-  if (cliState.phase === 'running') {
-    cliUpdatePanelTimestampEl.textContent = cliState.startedAt
-      ? `Started: ${formatRelativeTimestamp(cliState.startedAt)}`
-      : 'Started: just now';
-  } else {
-    const reference = cliState.finishedAt ?? cliState.startedAt;
-    cliUpdatePanelTimestampEl.textContent = reference
-      ? `Last run: ${formatRelativeTimestamp(reference)}`
-      : 'Last run: No updates yet';
-  }
-
-  if (cliState.phase === 'running') {
-    const activeProvider = cliState.providers.find((provider) => provider.providerId === cliState.activeProviderId);
-    const activeLabel = cliState.cancelRequested
-      ? 'Cancellation requested. Waiting for the active command to stop...'
-      : activeProvider
-        ? activeProvider.message
-          ? `${activeProvider.providerName}: ${activeProvider.message}`
-          : `${activeProvider.providerName} in progress.`
-        : 'Waiting for provider progress...';
-    cliUpdatePanelStatusEl.textContent = total > 0
-      ? `${cliState.cancelRequested ? 'Cancelling CLI update' : 'Updating CLI tools'} (${completed}/${total})`
-      : 'Updating CLI tools...';
-    cliUpdatePanelMetaEl.textContent = activeLabel;
-  } else if (cliState.phase === 'cancelled') {
-    const processedLabel = total > 0
-      ? `${completed}/${total} providers finished before cancellation.`
-      : `${completed} provider${completed === 1 ? '' : 's'} finished before cancellation.`;
-    cliUpdatePanelStatusEl.textContent = 'CLI update cancelled.';
-    cliUpdatePanelMetaEl.textContent = `Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`;
-  } else if (cliState.phase === 'completed' && cliState.lastSummary) {
-    const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
-    if (counters.error > 0) {
-      cliUpdatePanelStatusEl.textContent = `Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`;
-    } else if (counters.syncPending > 0) {
-      cliUpdatePanelStatusEl.textContent = `${counters.syncPending} provider${counters.syncPending === 1 ? '' : 's'} waiting for package sync.`;
-    } else if (counters.updated > 0) {
-      cliUpdatePanelStatusEl.textContent = `${counters.updated} provider${counters.updated === 1 ? '' : 's'} updated.`;
-    } else {
-      cliUpdatePanelStatusEl.textContent = 'All providers are already up to date.';
-    }
-    const summaryParts = [
-      `Updated ${counters.updated}`,
-      `Up to date ${counters.upToDate}`,
-      `Sync pending ${counters.syncPending}`,
-      `Skipped ${counters.skipped}`,
-      `Cancelled ${counters.cancelled}`,
-    ];
-    if (counters.error > 0) summaryParts.push(`Errors ${counters.error}`);
-    cliUpdatePanelMetaEl.textContent = `Finished ${formatRelativeTimestamp(cliState.finishedAt)}. ${summaryParts.join(' · ')}`;
-  } else if (cliState.phase === 'error') {
-    cliUpdatePanelStatusEl.textContent = 'CLI update failed.';
-    cliUpdatePanelMetaEl.textContent = cliState.errorMessage ?? 'An unknown error occurred.';
-  } else {
-    cliUpdatePanelStatusEl.textContent = 'No update run yet.';
-    cliUpdatePanelMetaEl.textContent = 'Press the update button to start a provider refresh.';
-  }
-
-  cliUpdatePanelProgressFillEl.style.width = `${Math.max(progressPercent, cliState.phase === 'running' ? 8 : 0)}%`;
-  cliUpdatePanelProgressFillEl.classList.toggle('is-running', cliState.phase === 'running');
-
-  cliUpdatePanelListEl.innerHTML = '';
-  const providers = cliState.providers;
-  if (providers.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'cli-update-panel-empty';
-    empty.textContent = 'Provider status will appear here as checks complete.';
-    cliUpdatePanelListEl.appendChild(empty);
-    return;
-  }
-
-  for (const provider of providers) {
-    const row = document.createElement('div');
-    row.className = 'cli-update-provider-row';
-    row.classList.toggle('is-active', cliState.phase === 'running' && provider.providerId === cliState.activeProviderId);
-
-    const top = document.createElement('div');
-    top.className = 'cli-update-provider-head';
-
-    const name = document.createElement('div');
-    name.className = 'cli-update-provider-name';
-    name.textContent = provider.providerName;
-
-    const status = document.createElement('div');
-    status.className = `cli-update-provider-status ${provider.status}`;
-    status.textContent = getCliProviderStatusLabel(provider.status);
-
-    top.appendChild(name);
-    top.appendChild(status);
-
-    const detail = document.createElement('div');
-    detail.className = 'cli-update-provider-detail';
-    const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
-    if (provider.status === 'running' && provider.message) {
-      detail.textContent = provider.message;
-    } else if (provider.status === 'sync_pending' && provider.message) {
-      detail.textContent = provider.message;
-    } else if (versionParts.length === 2) {
-      detail.textContent = `${versionParts[0]} → ${versionParts[1]}`;
-    } else if (provider.latestVersion) {
-      detail.textContent = `Latest: ${provider.latestVersion}`;
-    } else if (provider.message) {
-      detail.textContent = provider.message;
-    } else {
-      detail.textContent = provider.status === 'running' ? 'Running...' : 'Waiting...';
-    }
-
-    row.appendChild(top);
-    row.appendChild(detail);
-    cliUpdatePanelListEl.appendChild(row);
-  }
+  getCliUpdatePanelController().renderPanel(cliState);
 }
 
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {
@@ -1996,369 +1690,20 @@ function renderGitStatus(): void {
   gitStatusEl.dataset.state = dirtyCount > 0 ? 'dirty' : 'clean';
 }
 
-async function showBranchContextMenu(e: MouseEvent): Promise<void> {
-  e.stopPropagation();
-  hideTabContextMenu();
-
-  const project = appState.activeProject;
-  if (!project) return;
-
-  const status = getGitStatus(project.id);
-  if (!status || !status.isGitRepo) return;
-
-  const gitPath = getActiveGitPath(project.id);
-
-  const menu = document.createElement('div');
-  menu.className = 'tab-context-menu calder-floating-list';
-  menu.addEventListener('click', (event) => event.stopPropagation());
-  menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', 'Branch actions');
-
-  // Position below the git status element
-  const elRect = gitStatusEl.getBoundingClientRect();
-  menu.style.left = `${elRect.left}px`;
-  menu.style.top = `${elRect.bottom + 4}px`;
-
-  // Show loading
-  const loadingItem = document.createElement('div');
-  loadingItem.className = 'tab-context-menu-item disabled';
-  loadingItem.textContent = 'Loading branches\u2026';
-  menu.appendChild(loadingItem);
-
-  document.body.appendChild(menu);
-  activeContextMenu = menu;
-
-  try {
-    const branches = await window.calder.git.listBranches(gitPath);
-
-    // Menu was dismissed during loading
-    if (activeContextMenu !== menu) return;
-
-    menu.innerHTML = '';
-    menu.addEventListener('click', (ev) => ev.stopPropagation());
-
-    const searchInput = document.createElement('input');
-    searchInput.className = 'branch-search-input';
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Filter branches\u2026';
-    searchInput.setAttribute('aria-label', 'Filter branches');
-    menu.appendChild(searchInput);
-
-    const container = document.createElement('div');
-    container.className = 'branch-list-container';
-    menu.appendChild(container);
-
-    let filteredBranches = branches;
-    let activeIndex = 0;
-    let itemElements: HTMLElement[] = [];
-
-    function renderBranchItems(query: string): void {
-      const lowerQuery = query.toLowerCase();
-      filteredBranches = lowerQuery
-        ? branches.filter(b => b.name.toLowerCase().includes(lowerQuery))
-        : branches;
-      activeIndex = 0;
-      itemElements = [];
-      container.innerHTML = '';
-
-      if (filteredBranches.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'tab-context-menu-item disabled';
-        empty.textContent = 'No matching branches';
-        empty.setAttribute('role', 'menuitem');
-        empty.setAttribute('aria-disabled', 'true');
-        empty.tabIndex = -1;
-        container.appendChild(empty);
-        return;
-      }
-
-      for (let i = 0; i < filteredBranches.length; i++) {
-        const branch = filteredBranches[i];
-        const item = document.createElement('div');
-        item.className = 'tab-context-menu-item'
-          + (branch.current ? ' active' : '')
-          + (i === activeIndex ? ' keyboard-active' : '');
-        item.textContent = (branch.current ? '\u2713 ' : '  ') + branch.name;
-        item.setAttribute('role', 'menuitem');
-        item.setAttribute('aria-disabled', branch.current ? 'true' : 'false');
-        item.tabIndex = -1;
-
-        item.addEventListener('mouseenter', () => {
-          activeIndex = i;
-          setActiveHighlight();
-        });
-
-        if (!branch.current) {
-          item.addEventListener('click', () => {
-            hideTabContextMenu();
-            switchBranch(gitPath, branch.name);
-          });
-        }
-        itemElements.push(item);
-        container.appendChild(item);
-      }
-    }
-
-    function setActiveHighlight(): void {
-      itemElements.forEach((el, i) => {
-        el.classList.toggle('keyboard-active', i === activeIndex);
-      });
-    }
-
-    function setActiveAndScroll(): void {
-      setActiveHighlight();
-      itemElements[activeIndex]?.scrollIntoView({ block: 'nearest' });
-    }
-
-    searchInput.addEventListener('input', () => renderBranchItems(searchInput.value));
-
-    searchInput.addEventListener('keydown', (ev) => {
-      ev.stopPropagation();
-      switch (ev.key) {
-        case 'ArrowDown':
-          ev.preventDefault();
-          if (filteredBranches.length > 0) {
-            activeIndex = (activeIndex + 1) % filteredBranches.length;
-            setActiveAndScroll();
-          }
-          break;
-        case 'ArrowUp':
-          ev.preventDefault();
-          if (filteredBranches.length > 0) {
-            activeIndex = (activeIndex - 1 + filteredBranches.length) % filteredBranches.length;
-            setActiveAndScroll();
-          }
-          break;
-        case 'Enter':
-          ev.preventDefault();
-          if (activeIndex < filteredBranches.length) {
-            const selected = filteredBranches[activeIndex];
-            if (!selected.current) {
-              hideTabContextMenu();
-              switchBranch(gitPath, selected.name);
-            }
-          }
-          break;
-        case 'Escape':
-          ev.preventDefault();
-          hideTabContextMenu();
-          break;
-      }
-    });
-
-    renderBranchItems('');
-
-    // Separator + Create New Branch
-    const separator = document.createElement('div');
-    separator.className = 'tab-context-menu-separator';
-    menu.appendChild(separator);
-
-    const createItem = document.createElement('div');
-    createItem.className = 'tab-context-menu-item';
-    createItem.textContent = 'Create New Branch\u2026';
-    createItem.addEventListener('click', () => {
-      hideTabContextMenu();
-      promptCreateBranch(gitPath);
-    });
-    menu.appendChild(createItem);
-
-    // Adjust if off-screen
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-    if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-
-    applyContextMenuSemantics(menu, 'Branch actions', false);
-    searchInput.focus();
-  } catch {
-    if (activeContextMenu !== menu) return;
-    menu.innerHTML = '';
-    const errItem = document.createElement('div');
-    errItem.className = 'tab-context-menu-item disabled';
-    errItem.textContent = 'Failed to load branches';
-    menu.appendChild(errItem);
-    applyContextMenuSemantics(menu, 'Branch actions', false);
-  }
-}
-
-async function switchBranch(gitPath: string, branchName: string): Promise<void> {
-  const project = appState.activeProject;
-  const freshStatus = project ? getGitStatus(project.id) : null;
-  const dirty = freshStatus ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted : 0;
-  if (dirty > 0) {
-    const confirmed = confirm(`You have uncommitted changes. Switch to "${branchName}" anyway?`);
-    if (!confirmed) return;
-  }
-
-  try {
-    await window.calder.git.checkoutBranch(gitPath, branchName);
-    refreshGitStatus();
-  } catch (err) {
-    alert(`Failed to switch branch: ${err instanceof Error ? err.message : err}`);
-  }
-}
-
-function promptCreateBranch(gitPath: string): void {
-  showModal('Create New Branch', [
-    { label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' },
-  ], async (values) => {
-    const name = values['branch-name']?.trim();
-    if (!name) {
-      setModalError('branch-name', 'Branch name is required');
-      return;
-    }
-    if (/\s/.test(name)) {
-      setModalError('branch-name', 'Branch name cannot contain spaces');
-      return;
-    }
-    try {
-      await window.calder.git.createBranch(gitPath, name);
-      closeModal();
-      refreshGitStatus();
-    } catch (err) {
-      setModalError('branch-name', err instanceof Error ? err.message : 'Failed to create branch');
-    }
-  });
+async function showBranchContextMenu(event: MouseEvent): Promise<void> {
+  await getBranchMenuController().showBranchContextMenu(event);
 }
 
 export function quickNewSession(): void {
-  const project = appState.activeProject;
-  if (!project) return;
-  (document.activeElement as HTMLElement)?.blur?.();
-  void (async () => {
-    let providerSnapshot = getProviderAvailabilitySnapshot();
-    if (!providerSnapshot) {
-      try {
-        await loadProviderAvailability();
-        providerSnapshot = getProviderAvailabilitySnapshot();
-      } catch (error) {
-        console.warn('[tab-bar] Failed to refresh provider availability for quick session launch', error);
-      }
-    }
-    const refreshedProject = appState.projects.find((entry) => entry.id === project.id);
-    if (!refreshedProject) return;
-    const sessionNum = refreshedProject.sessions.length + 1;
-    const providerId = resolvePreferredProviderForLaunch(
-      appState.preferences.defaultProvider,
-      providerSnapshot,
-    );
-    appState.addSession(refreshedProject.id, `Session ${sessionNum}`, undefined, providerId);
-  })();
+  getSessionMenuController().quickNewSession();
 }
 
 function showAddSessionContextMenu(x: number, y: number): void {
-  hideTabContextMenu();
-
-  const menu = document.createElement('div');
-  menu.className = 'tab-context-menu calder-floating-list';
-  menu.style.left = `${x}px`;
-  menu.style.top = `${y}px`;
-  menu.addEventListener('click', (event) => event.stopPropagation());
-
-  const quickItem = document.createElement('div');
-  quickItem.className = 'tab-context-menu-item';
-  quickItem.textContent = 'New Session';
-  quickItem.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideTabContextMenu();
-    quickNewSession();
-  });
-
-  const customItem = document.createElement('div');
-  customItem.className = 'tab-context-menu-item';
-  customItem.textContent = 'New Custom Session\u2026';
-  customItem.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideTabContextMenu();
-    promptNewSession();
-  });
-
-  const joinSeparator = document.createElement('div');
-  joinSeparator.className = 'tab-context-menu-separator';
-
-  const joinItem = document.createElement('div');
-  joinItem.className = 'tab-context-menu-item';
-  joinItem.textContent = 'Join Remote Session\u2026';
-  joinItem.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideTabContextMenu();
-    showJoinDialog();
-  });
-
-  const browserItem = document.createElement('div');
-  browserItem.className = 'tab-context-menu-item';
-  browserItem.textContent = 'New Browser Tab';
-  browserItem.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideTabContextMenu();
-    const project = appState.activeProject;
-    if (project) appState.addBrowserTabSession(project.id);
-  });
-
-  menu.appendChild(quickItem);
-  menu.appendChild(customItem);
-  menu.appendChild(browserItem);
-  menu.appendChild(joinSeparator);
-  menu.appendChild(joinItem);
-  document.body.appendChild(menu);
-  activeContextMenu = menu;
-
-  const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-  applyContextMenuSemantics(menu, 'New session actions');
+  getSessionMenuController().showAddSessionContextMenu(x, y);
 }
 
 export async function promptNewSession(onCreated?: (session: SessionRecord) => void): Promise<void> {
-  const project = appState.activeProject;
-  if (!project) return;
-
-  const sessionNum = project.sessions.length + 1;
-
-  let providerSnapshot = getProviderAvailabilitySnapshot();
-  if (!providerSnapshot) {
-    await loadProviderAvailability();
-    providerSnapshot = getProviderAvailabilitySnapshot();
-  }
-  const providers = providerSnapshot?.providers ?? [];
-  const availabilityMap = providerSnapshot?.availability ?? new Map();
-
-  const fields: FieldDef[] = [
-    { label: 'Name', id: 'session-name', placeholder: `Session ${sessionNum}`, defaultValue: `Session ${sessionNum}` },
-    { label: 'Arguments', id: 'session-args', placeholder: 'e.g. --model sonnet', defaultValue: project.defaultArgs ?? '' },
-    {
-      label: 'Keep args for future sessions',
-      id: 'keep-args',
-      type: 'checkbox',
-      defaultValue: project.defaultArgs ? 'true' : undefined,
-    },
-  ];
-
-  if (providers.length > 1) {
-    const preferred = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, providerSnapshot);
-    fields.unshift({
-      label: 'Provider',
-      id: 'provider',
-      type: 'select',
-      defaultValue: preferred,
-      options: providers.map(p => {
-        const available = availabilityMap.get(p.id);
-        return { value: p.id, label: available ? p.displayName : `${p.displayName} (not installed)`, disabled: !available };
-      }),
-    });
-  }
-
-  showModal('New Session', fields, (values) => {
-    const name = values['session-name']?.trim();
-    if (name) {
-      closeModal();
-      const args = values['session-args']?.trim() || undefined;
-      const keepArgs = values['keep-args'] === 'true';
-      project.defaultArgs = keepArgs ? (args || undefined) : undefined;
-      const providerId = (values['provider'] || 'claude') as ProviderId;
-      const session = appState.addSession(project.id, name, args, providerId);
-      if (session && onCreated) onCreated(session);
-    }
-  });
+  await getSessionMenuController().promptNewSession(onCreated);
 }
 
 function esc(s: string): string {

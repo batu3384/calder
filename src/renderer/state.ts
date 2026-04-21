@@ -210,6 +210,8 @@ class AppState {
   private navHistory: string[] = [];
   private navIndex = -1;
   private navSuppressPush = false;
+  private persistInFlight = false;
+  private pendingPersistSnapshot: PersistedState | null = null;
 
   private isCliSession(session: SessionRecord): boolean {
     return !session.type || session.type === 'claude';
@@ -431,9 +433,9 @@ class AppState {
     this.emit('state-loaded');
   }
 
-  private persist(): void {
+  private buildPersistSnapshot(): PersistedState {
     // Strip transient fields before saving
-    const toSave = {
+    return {
       ...this.state,
       projects: this.state.projects.map((p) => ({
         ...p,
@@ -460,7 +462,37 @@ class AppState {
         sessions: p.sessions.map(({ pendingInitialPrompt: _pendingInitialPrompt, ...rest }) => rest),
       })),
     };
-    window.calder.store.save(toSave);
+  }
+
+  private async flushPersistQueue(): Promise<void> {
+    if (this.persistInFlight) return;
+    this.persistInFlight = true;
+
+    try {
+      while (this.pendingPersistSnapshot) {
+        const nextSnapshot = this.pendingPersistSnapshot;
+        this.pendingPersistSnapshot = null;
+        try {
+          const saveResult = window.calder.store.save(nextSnapshot) as unknown;
+          if (saveResult && typeof (saveResult as Promise<void>).then === 'function') {
+            await (saveResult as Promise<void>);
+          }
+        } catch (error) {
+          console.warn('Failed to persist renderer state:', error);
+        }
+      }
+    } finally {
+      this.persistInFlight = false;
+      if (this.pendingPersistSnapshot) {
+        void this.flushPersistQueue();
+      }
+    }
+  }
+
+  private persist(): void {
+    this.pendingPersistSnapshot = this.buildPersistSnapshot();
+    if (this.persistInFlight) return;
+    void this.flushPersistQueue();
   }
 
   get projects(): ProjectRecord[] {
@@ -1867,6 +1899,8 @@ export function _resetForTesting(): void {
   (appState as any)['navHistory'] = [];
   (appState as any)['navIndex'] = -1;
   (appState as any)['navSuppressPush'] = false;
+  (appState as any)['persistInFlight'] = false;
+  (appState as any)['pendingPersistSnapshot'] = null;
 }
 
 export const appState = new AppState();

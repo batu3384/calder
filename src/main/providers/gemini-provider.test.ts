@@ -17,7 +17,7 @@ vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-vi.mock('../pty-manager', () => ({
+vi.mock('../full-path', () => ({
   getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
 }));
 

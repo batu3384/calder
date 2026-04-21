@@ -8,9 +8,15 @@ A terminal-centric IDE desktop app built on Electron that wraps CLI tool session
 
 ## Build & Run
 
+Use the canonical workflow doc for all local commands:
+
+- `docs/development-workflow.md`
+
+Common entrypoints:
+
 ```bash
-npm run build    # Compile all three targets (main, preload, renderer) + copy assets
-npm start        # Build then launch Electron app (alias: npm run dev)
+npm run build
+npm run dev
 ```
 
 No hot reload — changes require rebuild + app restart.
@@ -21,11 +27,7 @@ Cross-platform: builds and runs on macOS, Linux, and Windows. Release artifacts 
 
 ## Testing
 
-```bash
-npm test             # Run all tests once
-npm run test:watch   # Watch mode (re-runs on file changes)
-npm run test:coverage # Run with coverage report (terminal + HTML)
-```
+Use `docs/development-workflow.md` for the full validation matrix (`test`, `test:coverage`, `test:critical-stability`, `audit:deep`).
 
 Uses **Vitest** with v8 coverage. Tests are co-located with source files as `*.test.ts`. Coverage HTML report outputs to `coverage/index.html`.
 

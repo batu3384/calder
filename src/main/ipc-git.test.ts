@@ -77,7 +77,10 @@ describe('ipc git handlers', () => {
   });
 
   it('delegates read-only git handlers and openInEditor path resolution', async () => {
-    const ops = { assertProjectGovernanceAllows: vi.fn(async () => {}) };
+    const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    };
     mockGetGitStatus.mockReturnValue({ branch: 'main' });
     mockGetGitRemoteUrl.mockReturnValue('git@github.com:owner/repo.git');
     mockGetGitFiles.mockReturnValue([{ filePath: 'src/app.ts' }]);
@@ -114,7 +117,10 @@ describe('ipc git handlers', () => {
   });
 
   it('enforces governance on mutating git operations and notifies after changes', async () => {
-    const ops = { assertProjectGovernanceAllows: vi.fn(async () => {}) };
+    const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    };
     registerGitIpcHandlers(ops);
 
     const stageFile = getHandleHandler('git:stageFile');
@@ -134,6 +140,8 @@ describe('ipc git handlers', () => {
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Discard git file changes' });
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Checkout git branch' });
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Create git branch' });
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Stage git file');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Create git branch');
     expect(mockGitStageFile).toHaveBeenCalledWith('/repo', 'src/a.ts');
     expect(mockGitUnstageFile).toHaveBeenCalledWith('/repo', 'src/a.ts');
     expect(mockGitDiscardFile).toHaveBeenCalledWith('/repo', 'src/a.ts', 'working');
@@ -143,7 +151,10 @@ describe('ipc git handlers', () => {
   });
 
   it('starts git project watcher only when a window exists', () => {
-    const ops = { assertProjectGovernanceAllows: vi.fn(async () => {}) };
+    const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    };
     registerGitIpcHandlers(ops);
 
     const watchProject = getOnHandler('git:watchProject');
@@ -158,5 +169,21 @@ describe('ipc git handlers', () => {
     watchProject({}, '/repo');
     expect(mockStartGitWatcher).not.toHaveBeenCalled();
   });
-});
 
+  it('rejects mutating git operations when project path is unknown', async () => {
+    const ops = {
+      requireKnownProjectPath: vi.fn(() => {
+        throw new Error('Stage git file requires a known project path');
+      }),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    };
+    registerGitIpcHandlers(ops);
+
+    await expect(getHandleHandler('git:stageFile')({}, '/outside', 'src/a.ts')).rejects.toThrow(
+      'Stage git file requires a known project path',
+    );
+    expect(ops.assertProjectGovernanceAllows).not.toHaveBeenCalled();
+    expect(mockGitStageFile).not.toHaveBeenCalled();
+    expect(mockNotifyGitChanged).not.toHaveBeenCalled();
+  });
+});

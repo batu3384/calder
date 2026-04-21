@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
-import { getFullPath } from '../pty-manager';
+import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
 import { installQwenHooks, validateQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';

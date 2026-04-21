@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
-import { getFullPath } from '../pty-manager';
+import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getCopilotConfig } from '../copilot-config';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';

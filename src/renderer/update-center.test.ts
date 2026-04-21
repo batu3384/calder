@@ -214,7 +214,7 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [
         { providerId: 'claude', providerName: 'Claude Code' },
-        { providerId: 'minimax', providerName: 'MiniMax CLI' },
+        { providerId: 'qwen', providerName: 'Qwen Code' },
       ],
     });
     expect(getUpdateCenterState().cli.providers).toHaveLength(2);
@@ -393,13 +393,13 @@ describe('update center cli updates', () => {
     ]);
     const secondRunSummary = buildSummary([
       {
-        providerId: 'minimax',
-        providerName: 'MiniMax CLI',
+        providerId: 'qwen',
+        providerName: 'Qwen Code',
         source: 'self',
         status: 'updated',
         checked: true,
         updateAttempted: true,
-        message: 'MiniMax CLI was updated successfully.',
+        message: 'Qwen Code was updated successfully.',
         durationMs: 95,
       },
     ]);
@@ -417,7 +417,7 @@ describe('update center cli updates', () => {
     // Second run intentionally emits no provider progress events; final state should be derived from summary only.
     await runCliProviderUpdates();
     const secondState = getUpdateCenterState().cli;
-    expect(secondState.providers.map((provider) => provider.providerId)).toEqual(['minimax']);
+    expect(secondState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
     expect(secondState.totalProviders).toBe(1);
     expect(secondState.completedProviders).toBe(1);
   });
@@ -483,7 +483,7 @@ describe('update center cli updates', () => {
       startedAt: '2026-04-16T09:10:00.000Z',
       totalProviders: 1,
       completedProviders: 0,
-      providers: [{ providerId: 'minimax', providerName: 'MiniMax CLI' }],
+      providers: [{ providerId: 'qwen', providerName: 'Qwen Code' }],
     });
 
     // Simulate a delayed progress event from run one. This must not pollute run two state.
@@ -507,18 +507,18 @@ describe('update center cli updates', () => {
     });
 
     const midState = getUpdateCenterState().cli;
-    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['minimax']);
+    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
     expect(midState.activeProviderId).toBeUndefined();
 
     resolvers[1]?.(buildSummary([
       {
-        providerId: 'minimax',
-        providerName: 'MiniMax CLI',
+        providerId: 'qwen',
+        providerName: 'Qwen Code',
         source: 'self',
         status: 'updated',
         checked: true,
         updateAttempted: true,
-        message: 'MiniMax CLI was updated successfully.',
+        message: 'Qwen Code was updated successfully.',
         durationMs: 60,
       },
     ]));
@@ -581,13 +581,13 @@ describe('update center cli updates', () => {
 
     resolvers[1]?.(buildSummary([
       {
-        providerId: 'minimax',
-        providerName: 'MiniMax CLI',
+        providerId: 'qwen',
+        providerName: 'Qwen Code',
         source: 'self',
         status: 'updated',
         checked: true,
         updateAttempted: true,
-        message: 'MiniMax CLI was updated successfully.',
+        message: 'Qwen Code was updated successfully.',
         durationMs: 60,
       },
     ]));

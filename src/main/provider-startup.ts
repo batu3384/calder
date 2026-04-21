@@ -1,4 +1,5 @@
 import type { PersistedState, ProviderId } from '../shared/types';
+import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './providers/provider';
 
 type ProviderPrereq = ReturnType<CliProvider['validatePrerequisites']>;
@@ -14,6 +15,10 @@ export interface ProviderStartupAnalysis {
   unavailable: ProviderStartupStatus[];
   relevantUnavailable: ProviderStartupStatus[];
   blocking: boolean;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function collectReferencedProviders(state: PersistedState): Map<ProviderId, Set<'default-provider' | 'saved-session'>> {
@@ -56,6 +61,23 @@ export function analyzeProviderStartup(providers: CliProvider[], state: Persiste
       : unavailable.filter(result => result.reasons.length > 0),
     blocking: available.length === 0,
   };
+}
+
+export async function installProviderStartupArtifacts(
+  providers: CliProvider[],
+  win?: BrowserWindow | null,
+): Promise<void> {
+  for (const provider of providers) {
+    if (!provider.validatePrerequisites().ok) continue;
+    try {
+      await provider.installHooks(win);
+      provider.installStatusScripts();
+    } catch (error) {
+      console.warn(
+        `Failed to install startup artifacts for provider ${provider.meta.displayName} (${provider.meta.id}): ${getErrorMessage(error)}`,
+      );
+    }
+  }
 }
 
 function formatReason(reason: 'default-provider' | 'saved-session'): string {

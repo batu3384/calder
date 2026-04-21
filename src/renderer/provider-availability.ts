@@ -5,6 +5,14 @@ export interface ProviderAvailabilitySnapshot {
   availability: Map<ProviderId, boolean>;
 }
 
+const DEFAULT_PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
+  claude: 'Claude Code',
+  codex: 'Codex CLI',
+  copilot: 'GitHub Copilot',
+  gemini: 'Gemini CLI',
+  qwen: 'Qwen Code',
+};
+
 let cachedProviders: CliProviderMeta[] | null = null;
 let cachedAvailability: Map<ProviderId, boolean> | null = null;
 
@@ -105,6 +113,6 @@ export function getProviderCapabilities(providerId: ProviderId): CliProviderCapa
 }
 
 export function getProviderDisplayName(providerId: ProviderId): string {
-  if (!cachedProviders) return providerId;
-  return cachedProviders.find(provider => provider.id === providerId)?.displayName ?? providerId;
+  return cachedProviders?.find((provider) => provider.id === providerId)?.displayName
+    ?? DEFAULT_PROVIDER_DISPLAY_NAMES[providerId];
 }

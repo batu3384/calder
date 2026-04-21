@@ -9,6 +9,7 @@ const STATE_DIR = path.join(os.homedir(), '.calder');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+const SUPPORTED_PROVIDER_IDS = new Set(['claude', 'codex', 'copilot', 'gemini', 'qwen']);
 
 function defaultState(): PersistedState {
   return {
@@ -45,16 +46,23 @@ export function loadState(): PersistedState {
 
 /** Migrate legacy claudeSessionId fields to cliSessionId */
 function migrateSessionIds(state: PersistedState): void {
+  const normalizeProviderId = (value: unknown): string => {
+    if (typeof value !== 'string') return 'claude';
+    return SUPPORTED_PROVIDER_IDS.has(value) ? value : 'claude';
+  };
+
   for (const project of state.projects) {
     for (const session of project.sessions) {
       const s = session as unknown as Record<string, unknown>;
       if (s.claudeSessionId !== undefined && s.cliSessionId === undefined) {
         s.cliSessionId = s.claudeSessionId;
       }
-      if (!s.providerId) {
-        s.providerId = 'claude';
-      }
+      s.providerId = normalizeProviderId(s.providerId);
     }
+  }
+
+  if (state.preferences.defaultProvider !== undefined) {
+    state.preferences.defaultProvider = normalizeProviderId(state.preferences.defaultProvider) as PersistedState['preferences']['defaultProvider'];
   }
 }
 

@@ -39,7 +39,7 @@ describe('tracking health helpers', () => {
   });
 
   it('allows providers without a managed status line requirement to stay healthy', () => {
-    const meta = createProvider('blackbox', {
+    const meta = createProvider('copilot', {
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
@@ -56,4 +56,3 @@ describe('tracking health helpers', () => {
     expect(isTrackingHealthy(meta, createValidation({ statusLine: 'calder', hooks: 'partial' }))).toBe(false);
   });
 });
-

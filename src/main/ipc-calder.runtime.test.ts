@@ -211,6 +211,7 @@ function createWindow(id: number, supportsOff = true): any {
 
 function createOps() {
   return {
+    requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
     assertProjectGovernanceAllows: vi.fn(async () => {}),
     getGovernanceState: vi.fn(async () => ({
       autoApproval: {
@@ -323,12 +324,27 @@ describe('ipc calder runtime handlers', () => {
       kind: 'write',
       label: 'Create context starter files',
     });
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Create context starter files');
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
       kind: 'write',
       label: 'Create workflow file',
     });
     expect(ops.updateAutoApprovalMode).toHaveBeenCalledWith('/repo', 'global', 'off');
     expect(ops.setSessionAutoApprovalOverride).toHaveBeenCalledWith('session-3', 'off');
+  });
+
+  it('rejects mutating handlers when project path is unknown', async () => {
+    const ops = createOps();
+    ops.requireKnownProjectPath.mockImplementation((_: string, label: string) => {
+      throw new Error(`${label} requires a known project path`);
+    });
+    registerCalderIpcHandlers(ops);
+
+    await expect(getHandleHandler('workflow:createFile')({}, '/outside', 'WF')).rejects.toThrow(
+      'Create workflow file requires a known project path',
+    );
+    expect(ops.assertProjectGovernanceAllows).not.toHaveBeenCalled();
+    expect(mockCreateProjectWorkflowFile).not.toHaveBeenCalled();
   });
 
   it('binds watchers, emits changed events, handles rebind/close, and resets bindings', () => {

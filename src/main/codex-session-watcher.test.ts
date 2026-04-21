@@ -257,6 +257,120 @@ describe('session ID assignment via polling', () => {
     expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
   });
 
+  it('prefers matching by session token over FIFO ordering', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    mockStatSync.mockReturnValue({ size: 0 } as fs.Stats);
+    registerPendingCodexSession('ui-older', { sessionToken: 'token-older' });
+    vi.advanceTimersByTime(10);
+    registerPendingCodexSession('ui-newer', { sessionToken: 'token-newer' });
+
+    const payload = [
+      '{"session_id":"codex-newer","session_token":"token-newer","ts":1774904000}',
+      '{"session_id":"codex-older","session_token":"token-older","ts":1774904001}',
+      '',
+    ].join('\n');
+    const buf = Buffer.from(payload);
+    mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
+    mockOpenSync.mockReturnValue(45);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
+      return buf.length;
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-newer.sessionid'),
+      'codex-newer',
+    );
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-older.sessionid'),
+      'codex-older',
+    );
+  });
+
+  it('matches by cwd/path hints when history order differs from registration order', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    mockStatSync.mockReturnValue({ size: 0 } as fs.Stats);
+    registerPendingCodexSession('ui-alpha', { cwd: '/workspace/alpha' });
+    vi.advanceTimersByTime(10);
+    registerPendingCodexSession('ui-beta', { cwd: '/workspace/beta' });
+
+    const payload = [
+      '{"session_id":"codex-beta","path":"/workspace/beta","ts":1774905000}',
+      '{"session_id":"codex-alpha","metadata":{"cwd":"/workspace/alpha"},"ts":1774905001}',
+      '',
+    ].join('\n');
+    const buf = Buffer.from(payload);
+    mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
+    mockOpenSync.mockReturnValue(46);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
+      return buf.length;
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-beta.sessionid'),
+      'codex-beta',
+    );
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-alpha.sessionid'),
+      'codex-alpha',
+    );
+  });
+
+  it('uses timestamp proximity to map near-simultaneous pending sessions deterministically', () => {
+    const mockWatcher = { close: vi.fn() };
+    mockWatch.mockReturnValue(mockWatcher as any);
+
+    const win = createMockWin();
+    startCodexSessionWatcher(win);
+
+    const baseTime = Date.parse('2026-04-20T10:00:00.000Z');
+    vi.setSystemTime(baseTime);
+
+    mockStatSync.mockReturnValue({ size: 0 } as fs.Stats);
+    registerPendingCodexSession('ui-first');
+    vi.advanceTimersByTime(7000);
+    registerPendingCodexSession('ui-second');
+
+    const payload = [
+      `{"session_id":"codex-second","ts":${Math.floor((baseTime + 7000) / 1000)}}`,
+      `{"session_id":"codex-first","ts":${Math.floor(baseTime / 1000)}}`,
+      '',
+    ].join('\n');
+    const buf = Buffer.from(payload);
+    mockStatSync.mockReturnValue({ size: buf.length } as fs.Stats);
+    mockOpenSync.mockReturnValue(47);
+    mockReadSync.mockImplementation((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
+      buf.copy(target as Uint8Array);
+      return buf.length;
+    });
+
+    vi.advanceTimersByTime(2000);
+
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-second.sessionid'),
+      'codex-second',
+    );
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      path.join(MOCK_STATUS_DIR, 'ui-first.sessionid'),
+      'codex-first',
+    );
+  });
+
   it('buffers trailing partial JSONL entry until it is completed', () => {
     const mockWatcher = { close: vi.fn() };
     mockWatch.mockReturnValue(mockWatcher as any);

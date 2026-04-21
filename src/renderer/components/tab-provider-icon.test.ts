@@ -14,11 +14,11 @@ describe('buildProviderIconMarkup', () => {
     expect(markup).toContain('QW');
   });
 
-  it('renders a visible fallback badge for minimax when no asset exists', () => {
-    const markup = buildProviderIconMarkup('minimax' as any, true);
+  it('renders a visible fallback badge for copilot when no asset exists', () => {
+    const markup = buildProviderIconMarkup('copilot', true);
     expect(markup).toContain('tab-provider-fallback');
-    expect(markup).toContain('tab-provider-fallback-minimax');
-    expect(markup).toContain('MM');
+    expect(markup).toContain('tab-provider-fallback-copilot');
+    expect(markup).toContain('CP');
   });
 
   it('returns an empty string when provider icons are disabled', () => {

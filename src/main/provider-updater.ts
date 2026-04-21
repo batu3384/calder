@@ -63,13 +63,6 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
     npmPackage: '@qwen-code/qwen-code',
     brewFormula: 'qwen-code',
   },
-  minimax: {
-    npmPackage: 'mmx-cli',
-    selfUpdateArgs: ['update'],
-  },
-  blackbox: {
-    selfUpdateArgs: ['update'],
-  },
 };
 
 const defaultRunner: ProviderUpdaterRunner = {

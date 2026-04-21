@@ -20,8 +20,8 @@ import { startConfigWatcher, stopConfigWatcher } from './config-watcher';
 const n = (p: string) => p.replace(/\\/g, '/');
 
 const mockSend = vi.fn();
-function createMockWin(destroyed = false) {
-  return { isDestroyed: () => destroyed, webContents: { send: mockSend } } as any;
+function createMockWin(destroyed = false, id?: number) {
+  return { id, isDestroyed: () => destroyed, webContents: { send: mockSend } } as any;
 }
 
 let watchFileCallbacks: Map<string, () => void>;
@@ -134,7 +134,7 @@ describe('config-watcher', () => {
     expect(mockClose).toHaveBeenCalledTimes(6);
   });
 
-  it('skips restart if same project', () => {
+  it('skips restart when context key is unchanged', () => {
     const win = createMockWin();
     startConfigWatcher(win, '/projects/test');
 
@@ -148,14 +148,25 @@ describe('config-watcher', () => {
     expect(fs.watch).not.toHaveBeenCalled();
   });
 
-  it('updates notification window when restart is skipped for same project/provider', () => {
+  it('restarts watcher topology when window identity changes for same project/provider', () => {
     const firstSend = vi.fn();
     const secondSend = vi.fn();
-    const firstWin = { isDestroyed: () => false, webContents: { send: firstSend } } as any;
-    const secondWin = { isDestroyed: () => false, webContents: { send: secondSend } } as any;
+    const firstWin = { id: 1, isDestroyed: () => false, webContents: { send: firstSend } } as any;
+    const secondWin = { id: 2, isDestroyed: () => false, webContents: { send: secondSend } } as any;
 
     startConfigWatcher(firstWin, '/projects/test');
+
+    vi.mocked(fs.unwatchFile).mockClear();
+    mockClose.mockClear();
+    vi.mocked(fs.watchFile).mockClear();
+    vi.mocked(fs.watch).mockClear();
+
     startConfigWatcher(secondWin, '/projects/test');
+
+    expect(fs.unwatchFile).toHaveBeenCalledTimes(5);
+    expect(mockClose).toHaveBeenCalledTimes(6);
+    expect(fs.watchFile).toHaveBeenCalledTimes(5);
+    expect(fs.watch).toHaveBeenCalledTimes(6);
 
     watchFileCallbacks.get('/home/testuser/.claude.json')!();
     vi.advanceTimersByTime(500);
@@ -165,15 +176,39 @@ describe('config-watcher', () => {
     expect(secondSend).toHaveBeenCalledWith('config:changed');
   });
 
+  it('clears pending debounce when switching contexts', () => {
+    const firstSend = vi.fn();
+    const secondSend = vi.fn();
+    const firstWin = { id: 11, isDestroyed: () => false, webContents: { send: firstSend } } as any;
+    const secondWin = { id: 12, isDestroyed: () => false, webContents: { send: secondSend } } as any;
+
+    startConfigWatcher(firstWin, '/projects/test');
+    watchFileCallbacks.get('/home/testuser/.claude.json')!();
+
+    startConfigWatcher(secondWin, '/projects/test');
+    vi.advanceTimersByTime(500);
+    expect(firstSend).not.toHaveBeenCalled();
+    expect(secondSend).not.toHaveBeenCalled();
+
+    watchFileCallbacks.get('/home/testuser/.claude.json')!();
+    vi.advanceTimersByTime(500);
+    expect(firstSend).not.toHaveBeenCalled();
+    expect(secondSend).toHaveBeenCalledTimes(1);
+  });
+
   it('restarts watchers for new project', () => {
     const win = createMockWin();
     startConfigWatcher(win, '/projects/test');
 
+    vi.mocked(fs.unwatchFile).mockClear();
+    mockClose.mockClear();
     vi.mocked(fs.watchFile).mockClear();
     vi.mocked(fs.watch).mockClear();
 
     startConfigWatcher(win, '/projects/other');
 
+    expect(fs.unwatchFile).toHaveBeenCalledTimes(5);
+    expect(mockClose).toHaveBeenCalledTimes(6);
     // Should set up new watchers with the new project path
     expect(fs.watchFile).toHaveBeenCalledTimes(5);
     expect(watchFileCallbacks.has('/projects/other/.claude/settings.json')).toBe(true);
@@ -232,11 +267,15 @@ describe('config-watcher', () => {
     const win = createMockWin();
     startConfigWatcher(win, '/projects/test');
 
+    vi.mocked(fs.unwatchFile).mockClear();
+    mockClose.mockClear();
     vi.mocked(fs.watchFile).mockClear();
     vi.mocked(fs.watch).mockClear();
 
     startConfigWatcher(win, '/projects/test', 'codex');
 
+    expect(fs.unwatchFile).toHaveBeenCalledTimes(5);
+    expect(mockClose).toHaveBeenCalledTimes(6);
     expect(fs.watchFile).toHaveBeenCalledTimes(2);
     expect(fs.watch).toHaveBeenCalledTimes(5);
     expect(watchFileCallbacks.has('/home/testuser/.codex/config.toml')).toBe(true);
@@ -261,20 +300,6 @@ describe('config-watcher', () => {
     expect(watchDirCallbacks.has('/projects/test/.qwen/commands')).toBe(true);
   });
 
-  it('watches blackbox settings for a project', () => {
-    const win = createMockWin();
-    vi.mocked(fs.watchFile).mockClear();
-    vi.mocked(fs.watch).mockClear();
-    startConfigWatcher(win, '/projects/test', 'blackbox');
-
-    expect(fs.watchFile).toHaveBeenCalledTimes(2);
-    expect(watchFileCallbacks.has('/home/testuser/.blackboxcli/settings.json')).toBe(true);
-    expect(watchFileCallbacks.has('/projects/test/.blackboxcli/settings.json')).toBe(true);
-    expect(fs.watch).toHaveBeenCalledTimes(2);
-    expect(watchDirCallbacks.has('/home/testuser/.blackboxcli/skills')).toBe(true);
-    expect(watchDirCallbacks.has('/projects/test/.blackboxcli/skills')).toBe(true);
-  });
-
   it('watches copilot config, mcp, and skills for a project', () => {
     const win = createMockWin();
     vi.mocked(fs.watchFile).mockClear();
@@ -291,20 +316,6 @@ describe('config-watcher', () => {
     expect(fs.watch).toHaveBeenCalledTimes(2);
     expect(watchDirCallbacks.has('/home/testuser/.copilot/skills')).toBe(true);
     expect(watchDirCallbacks.has('/projects/test/.github/skills')).toBe(true);
-  });
-
-  it('watches minimax config files for a project', () => {
-    const win = createMockWin();
-    vi.mocked(fs.watchFile).mockClear();
-    vi.mocked(fs.watch).mockClear();
-    startConfigWatcher(win, '/projects/test', 'minimax' as any);
-
-    expect(fs.watchFile).toHaveBeenCalledTimes(2);
-    expect(watchFileCallbacks.has('/home/testuser/.mmx/config.json')).toBe(true);
-    expect(watchFileCallbacks.has('/home/testuser/.mmx/credentials.json')).toBe(true);
-    expect(fs.watch).toHaveBeenCalledTimes(2);
-    expect(watchDirCallbacks.has('/home/testuser/.mmx/skills')).toBe(true);
-    expect(watchDirCallbacks.has('/projects/test/.mmx/skills')).toBe(true);
   });
 
   it('watches gemini settings and skills for a project', () => {

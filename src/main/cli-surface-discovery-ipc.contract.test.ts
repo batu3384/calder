@@ -3,7 +3,10 @@ import { readFileSync } from 'fs';
 
 const ipcHandlersSource = readFileSync(new URL('./ipc-handlers.ts', import.meta.url), 'utf8');
 const cliSurfaceIpcSource = readFileSync(new URL('./ipc-cli-surface.ts', import.meta.url), 'utf8');
-const preloadSource = readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8');
+const preloadSource = [
+  readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8'),
+  readFileSync(new URL('../preload/preload-api-cli-surface.ts', import.meta.url), 'utf8'),
+].join('\n');
 
 describe('cli surface discovery IPC contract', () => {
   it('registers a discover handler in the main process', () => {

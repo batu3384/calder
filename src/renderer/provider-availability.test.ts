@@ -72,6 +72,13 @@ afterEach(() => {
 });
 
 describe('provider-availability', () => {
+  it('returns built-in display labels before metadata is loaded', async () => {
+    const { module } = await loadModule();
+
+    expect(module.getProviderDisplayName('claude')).toBe('Claude Code');
+    expect(module.getProviderDisplayName('qwen')).toBe('Qwen Code');
+  });
+
   it('loads provider metadata once and exposes cached display details', async () => {
     const { module, listProviders } = await loadModule();
 
@@ -81,9 +88,9 @@ describe('provider-availability', () => {
     expect(listProviders).toHaveBeenCalledTimes(1);
     expect(module.getCachedProviderMetas()).toEqual(providers);
     expect(module.getProviderCapabilities('codex')).toEqual(providers[1].capabilities);
-    expect(module.getProviderCapabilities('blackbox')).toBeNull();
+    expect(module.getProviderCapabilities('qwen')).toBeNull();
     expect(module.getProviderDisplayName('gemini')).toBe('Gemini CLI');
-    expect(module.getProviderDisplayName('blackbox')).toBe('blackbox');
+    expect(module.getProviderDisplayName('qwen')).toBe('Qwen Code');
   });
 
   it('builds an availability snapshot and resolves inline selector visibility', async () => {

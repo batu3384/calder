@@ -3,7 +3,10 @@ import { readFileSync } from 'fs';
 
 const ipcHandlersSource = readFileSync(new URL('./ipc-handlers.ts', import.meta.url), 'utf8');
 const ipcMobileSource = readFileSync(new URL('./ipc-mobile.ts', import.meta.url), 'utf8');
-const preloadSource = readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8');
+const preloadSource = [
+  readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf8'),
+  readFileSync(new URL('../preload/preload-api-mobile.ts', import.meta.url), 'utf8'),
+].join('\n');
 const rendererTypesSource = readFileSync(new URL('../renderer/types.ts', import.meta.url), 'utf8');
 
 describe('mobile inspect IPC contract', () => {

@@ -24,8 +24,6 @@ const VALID_PROVIDER_IDS: ProviderId[] = [
   'copilot',
   'gemini',
   'qwen',
-  'minimax',
-  'blackbox',
 ];
 
 const VALID_SESSION_TYPES = new Set([

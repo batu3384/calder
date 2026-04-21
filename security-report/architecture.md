@@ -121,7 +121,7 @@ Approximate visible IPC handler count: ~65
 - Resume-on-power events: `src/main/main.ts`
 - Git watcher: `src/main/git-watcher.ts`
 - File watcher: `src/main/file-watcher.ts`
-- Session watchers: `src/main/codex-session-watcher.ts`, `src/main/blackbox-session-watcher.ts`
+- Session watchers: `src/main/codex-session-watcher.ts`
 
 ## Data Flow (Source -> Process -> Sink)
 
@@ -194,6 +194,15 @@ Approximate visible IPC handler count: ~65
 - DOMPurify usage on markdown rendering paths
 - Token-protected localhost browser bridge
 - Screenshot size/age pruning in temporary storage paths
+
+## Recent Hardening Updates (2026-04-21)
+
+- Centralized project-path trust boundary enforcement was applied to sensitive IPC write/scaffold paths in main process handlers.
+- MCP runtime governance now covers live runtime operations (`connect`, `callTool`, `readResource`, `getPrompt`) in addition to add/remove flows.
+- Provider startup initialization was made provider-scoped fail-soft to reduce startup blast radius on single-provider failures.
+- Auto-heal consent flow now preserves declined foreign-statusline consent as authoritative (no silent escalation).
+- Deep audit pipeline was hardened with deterministic dead-code scanning and an additional full-boundary coverage lane.
+- Preload bridge surface was modularized by domain (including `mcp`, `cliSurface`, `mobile`, `provider`, `git`, `pty`, and project-context families) while preserving exposed API shape.
 
 ## Phase-2 Priority Review Notes
 

@@ -2,25 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const cliUpdatePanelSource = readFileSync(new URL('./tab-bar-cli-update-panel.ts', import.meta.url), 'utf-8');
+const updateCenterSource = `${tabBarSource}\n${cliUpdatePanelSource}`;
 const tabsCss = readFileSync(new URL('../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar update center contract', () => {
   it('renders explicit progress and timestamp rows in the CLI update panel', () => {
-    expect(tabBarSource).toContain('cli-update-panel-progress-label');
-    expect(tabBarSource).toContain('cli-update-panel-timestamp');
-    expect(tabBarSource).toContain('Progress: 0/0 (0%)');
-    expect(tabBarSource).toContain('Last run: No updates yet');
+    expect(updateCenterSource).toContain('cli-update-panel-progress-label');
+    expect(updateCenterSource).toContain('cli-update-panel-timestamp');
+    expect(updateCenterSource).toContain('Progress: 0/0 (0%)');
+    expect(updateCenterSource).toContain('Last run: No updates yet');
   });
 
   it('auto-opens the update panel when a new update run starts', () => {
-    expect(tabBarSource).toContain("snapshot.cli.phase === 'running' && lastCliPhase !== 'running' && !cliUpdatePanelVisible");
+    expect(tabBarSource).toContain("snapshot.cli.phase === 'running' && lastCliPhase !== 'running'");
+    expect(tabBarSource).toContain('!isCliUpdatePanelVisible()');
     expect(tabBarSource).toContain('toggleCliUpdatePanel(true)');
   });
 
   it('formats runtime progress and run timing labels', () => {
-    expect(tabBarSource).toContain('Progress: ${progressLabel} (${progressPercent}%)');
-    expect(tabBarSource).toContain('Started:');
-    expect(tabBarSource).toContain('Last run:');
+    expect(updateCenterSource).toContain('Progress: ${progressLabel} (${progressPercent}%)');
+    expect(updateCenterSource).toContain('Started:');
+    expect(updateCenterSource).toContain('Last run:');
   });
 
   it('styles the new update panel status rows', () => {
@@ -31,14 +34,14 @@ describe('tab bar update center contract', () => {
   });
 
   it('renders active provider stage details while updates are running', () => {
-    expect(tabBarSource).toContain("row.classList.toggle('is-active'");
-    expect(tabBarSource).toContain("provider.status === 'running' && provider.message");
+    expect(updateCenterSource).toContain("row.classList.toggle('is-active'");
+    expect(updateCenterSource).toContain("provider.status === 'running' && provider.message");
   });
 
   it('announces update status changes for assistive technologies', () => {
-    expect(tabBarSource).toContain("cliUpdatePanelStatusEl.setAttribute('role', 'status')");
-    expect(tabBarSource).toContain("cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite')");
-    expect(tabBarSource).toContain("cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite')");
-    expect(tabBarSource).toContain("cliUpdatePanelEl.setAttribute('aria-busy'");
+    expect(updateCenterSource).toContain("cliUpdatePanelStatusEl.setAttribute('role', 'status')");
+    expect(updateCenterSource).toContain("cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite')");
+    expect(updateCenterSource).toContain("cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite')");
+    expect(updateCenterSource).toContain("cliUpdatePanelEl.setAttribute('aria-busy'");
   });
 });

@@ -1174,8 +1174,8 @@ describe('cli surface pane', () => {
 
     const badges = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
       .map((entry) => entry.textContent);
-    expect(badges).toContain('Codex');
-    expect(badges).toContain('Gemini');
+    expect(badges).toContain('Codex CLI');
+    expect(badges).toContain('Gemini CLI');
     expect(badges).toContain('Active');
 
     const providerBadgeTokens = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')

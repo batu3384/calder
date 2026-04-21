@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { getFullPath } from '../pty-manager';
+import { getFullPath } from '../full-path';
 import { isWin, whichCmd } from '../platform';
 
 const COMMON_BIN_DIRS = isWin

@@ -81,7 +81,13 @@ describe('getConfigProviderId', () => {
 
   it('includes an auto-approval control block wired to governance APIs', async () => {
     const source = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+      .then(async (fs) => {
+        const [configSections, autoApprovalSection] = await Promise.all([
+          fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+          fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+        ]);
+        return `${configSections}\n${autoApprovalSection}`;
+      });
 
     expect(source).toContain("'Auto Approval'");
     expect(source).toContain('setAutoApprovalMode');
@@ -95,7 +101,13 @@ describe('getConfigProviderId', () => {
 
   it('shows inherit state for project scope instead of mirroring global mode', async () => {
     const source = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+      .then(async (fs) => {
+        const [configSections, autoApprovalSection] = await Promise.all([
+          fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+          fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+        ]);
+        return `${configSections}\n${autoApprovalSection}`;
+      });
 
     expect(source).toContain('Use Global Default');
     expect(source).toContain('Use Project / Global Default');

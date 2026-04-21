@@ -35,6 +35,9 @@ const mockRestoreContext = vi.mocked(restoreContext);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockLoad.mockReset();
+  mockSave.mockReset();
+  mockBuildResumeWithPrompt.mockReset();
   uuidCounter = 0;
   mockGetCost.mockReturnValue(null);
   mockBuildResumeWithPrompt.mockResolvedValue('Resume prompt');
@@ -360,6 +363,63 @@ describe('persist()', () => {
 
     const persisted = mockSave.mock.calls.at(-1)?.[0];
     expect(persisted.projects[0].surface.cli.runtime.runtimeId).toBeUndefined();
+  });
+
+  it('serializes saves and coalesces rapid persists to the latest snapshot', async () => {
+    const completions: Array<() => void> = [];
+    let inFlight = 0;
+    let maxInFlight = 0;
+
+    mockSave.mockImplementation(() => new Promise<void>((resolve) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      completions.push(() => {
+        inFlight -= 1;
+        resolve();
+      });
+    }));
+
+    addProject();
+    appState.setSidebarWidth(100);
+    appState.setSidebarWidth(200);
+    appState.setSidebarWidth(300);
+
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(completions).toHaveLength(1);
+
+    completions[0]();
+    await Promise.resolve();
+
+    expect(mockSave).toHaveBeenCalledTimes(2);
+    expect(maxInFlight).toBe(1);
+    expect(mockSave.mock.calls[1][0].sidebarWidth).toBe(300);
+  });
+
+  it('logs save errors and continues future persists', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let rejectFirstSave: ((reason?: unknown) => void) | null = null;
+
+    mockSave
+      .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+        rejectFirstSave = reject;
+      }))
+      .mockResolvedValue(undefined);
+
+    addProject();
+    appState.setSidebarWidth(42);
+
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(rejectFirstSave).not.toBeNull();
+
+    rejectFirstSave!(new Error('boom'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(warnSpy).toHaveBeenCalledWith('Failed to persist renderer state:', expect.any(Error));
+    expect(mockSave).toHaveBeenCalledTimes(2);
+    expect(mockSave.mock.calls[1][0].sidebarWidth).toBe(42);
+
+    warnSpy.mockRestore();
   });
 });
 

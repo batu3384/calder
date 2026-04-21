@@ -15,7 +15,7 @@ vi.mock('./claude-cli', () => ({
   removeMcpServer: mockRemoveMcpServer,
 }));
 
-import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
+import { MCP_GOVERNANCE_ERROR_CODES, registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
 
 function getHandleHandler(channel: string): (...args: any[]) => any {
   const call = mockIpcHandle.mock.calls.find(([name]) => name === channel);
@@ -45,6 +45,8 @@ describe('ipc MCP governance handlers', () => {
 
     expect(addResult.success).toBe(false);
     expect(removeResult.success).toBe(false);
+    expect(String(addResult.error)).toContain(`${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`);
+    expect(String(removeResult.error)).toContain(`${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`);
     expect(String(addResult.error)).toContain('projectPath is required');
     expect(String(removeResult.error)).toContain('projectPath is required');
     expect(mockAddMcpServer).not.toHaveBeenCalled();
@@ -98,5 +100,31 @@ describe('ipc MCP governance handlers', () => {
     expect(mockAddMcpServer).toHaveBeenCalledWith('docs', { command: 'npx' }, 'user', undefined);
     expect(mockRemoveMcpServer).toHaveBeenCalledWith('docs', '/home/test/.mcp.json', 'user', undefined);
   });
-});
 
+  it('returns deterministic typed denial errors when project governance blocks add/remove', async () => {
+    const ops = {
+      requireKnownProjectPath: vi.fn(() => '/repo'),
+      assertProjectGovernanceAllows: vi.fn(async () => {
+        throw new Error('Governance policy blocked Add project MCP server: blocked');
+      }),
+    };
+    registerMcpGovernanceIpcHandlers(ops);
+
+    const addServer = getHandleHandler('mcp:addServer');
+    const removeServer = getHandleHandler('mcp:removeServer');
+
+    const addResult = await addServer({}, 'docs', { command: 'npx' }, 'project', '/repo');
+    const removeResult = await removeServer({}, 'docs', '/repo/.mcp.json', 'project', '/repo');
+
+    expect(addResult).toEqual({
+      success: false,
+      error: `${MCP_GOVERNANCE_ERROR_CODES.DENIED}: Add project MCP server is blocked by project governance policy.`,
+    });
+    expect(removeResult).toEqual({
+      success: false,
+      error: `${MCP_GOVERNANCE_ERROR_CODES.DENIED}: Remove project MCP server is blocked by project governance policy.`,
+    });
+    expect(mockAddMcpServer).not.toHaveBeenCalled();
+    expect(mockRemoveMcpServer).not.toHaveBeenCalled();
+  });
+});

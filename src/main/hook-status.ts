@@ -43,8 +43,6 @@ const PROVIDER_CONTEXT_WINDOW_DEFAULT: Record<ProviderId, number> = {
   copilot: 200_000,
   gemini: 1_000_000,
   qwen: 1_000_000,
-  minimax: 200_000,
-  blackbox: 200_000,
 };
 
 function toNumber(value: unknown): number | null {

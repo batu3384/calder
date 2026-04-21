@@ -3,7 +3,7 @@ import type { ShareIceServer } from './sharing-types';
 
 // --- Provider ---
 
-export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen' | 'minimax' | 'blackbox';
+export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 export type UiLanguage = 'en' | 'tr';
 

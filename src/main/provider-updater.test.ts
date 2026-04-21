@@ -90,12 +90,12 @@ describe('updateProviders', () => {
   it('skips providers that are not installed', async () => {
     const runner = new FakeRunner();
     const summary = await updateProviders(
-      [createTarget('blackbox', 'Blackbox CLI', '/usr/local/bin/blackbox', false)],
+      [createTarget('qwen', 'Qwen Code', '/usr/local/bin/qwen', false)],
       { runner, now: (() => 2_000) as () => number },
     );
 
     expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('blackbox');
+    expect(summary.results[0].providerId).toBe('qwen');
     expect(summary.results[0].status).toBe('skipped');
     expect(summary.results[0].message).toContain('not installed');
     expect(runner.calls).toHaveLength(0);
@@ -736,7 +736,7 @@ describe('updateProviders', () => {
     const progressEvents: string[] = [];
 
     const summary = await updateProviders(
-      [createTarget('blackbox', 'Blackbox CLI', '/usr/local/bin/blackbox', false)],
+      [createTarget('qwen', 'Qwen Code', '/usr/local/bin/qwen', false)],
       {
         runner,
         now: (() => 5_000) as () => number,

@@ -57,6 +57,8 @@ describe('ipc path policy helpers', () => {
     expect(isAllowedReadPath('/home/test/.codex/config.toml')).toBe(true);
     expect(isAllowedReadPath('/home/test/.mcp.json')).toBe(true);
     expect(isAllowedReadPath('/etc/claude-code/settings.json')).toBe(true);
+    expect(isAllowedReadPath('/home/test/.claude.json.bak')).toBe(false);
+    expect(isAllowedReadPath('/home/test/.mcp.json.old')).toBe(false);
     expect(isAllowedReadPath('/tmp/unknown.txt')).toBe(false);
   });
 
@@ -67,4 +69,3 @@ describe('ipc path policy helpers', () => {
     expect(isAllowedDirectoryLookupPath('/opt/random')).toBe(false);
   });
 });
-

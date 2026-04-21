@@ -9,10 +9,10 @@ const calderIpcSource = readFileSync(
   new URL('../ipc-calder.ts', import.meta.url),
   'utf8',
 );
-const preloadSource = readFileSync(
-  new URL('../../preload/preload.ts', import.meta.url),
-  'utf8',
-);
+const preloadSource = [
+  readFileSync(new URL('../../preload/preload.ts', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../preload/preload-api-project-domains.ts', import.meta.url), 'utf8'),
+].join('\n');
 const rendererTypesSource = readFileSync(
   new URL('../../renderer/types.ts', import.meta.url),
   'utf8',

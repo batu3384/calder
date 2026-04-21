@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const source = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const providerSelectorSource = readFileSync(new URL('./tab-bar-provider-selector-controller.ts', import.meta.url), 'utf-8');
 const menuSource = readFileSync(new URL('../../main/menu.ts', import.meta.url), 'utf-8');
 const keybindingsSource = readFileSync(new URL('../keybindings.ts', import.meta.url), 'utf-8');
 
@@ -15,9 +16,10 @@ describe('tab bar command deck contract', () => {
   it('renders an inline provider selector beside new session', () => {
     expect(source).toContain('session-provider-slot');
     expect(source).toContain('syncSessionProviderSelector');
+    expect(source).toContain('createTabBarProviderSelectorController');
     expect(source).toContain('resolvePreferredProviderForLaunch');
     expect(source).toContain('syncQuickSessionButtonMeta');
-    expect(source).toContain('command-deck-provider-select');
+    expect(providerSelectorSource).toContain('command-deck-provider-select');
     expect(source).not.toContain('session-provider-chipbar');
     expect(source).not.toContain('session-provider-chip');
     expect(source).not.toContain('SESSION_PROVIDER_SHORT_LABELS');
@@ -34,8 +36,8 @@ describe('tab bar command deck contract', () => {
 
   it('keeps the inline provider picker mounted instead of rebuilding it on every preference write', () => {
     expect(source).toContain('function syncSessionProviderSelector(): void');
-    expect(source).toContain('let sessionProviderSelectorSignature =');
-    expect(source).toContain('sessionProviderSelect?.setValue(selectedProvider);');
+    expect(providerSelectorSource).toContain('let sessionProviderSelectorSignature =');
+    expect(providerSelectorSource).toContain('sessionProviderSelect?.setValue(selectedProvider);');
     expect(source).not.toContain("appState.on('preferences-changed', renderSessionProviderSelector);");
   });
 

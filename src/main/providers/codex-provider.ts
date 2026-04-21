@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
-import { getFullPath } from '../pty-manager';
+import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getCodexConfig } from '../codex-config';
 import { installCodexHooks, validateCodexHooks, SESSION_ID_VAR } from '../codex-hooks';

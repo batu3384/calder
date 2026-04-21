@@ -29,6 +29,11 @@ function isWithinPrefix(resolvedPath: string, prefix: string): boolean {
   return resolvedPath === prefix || resolvedPath.startsWith(prefix + path.sep);
 }
 
+type AllowedReadPathRule = {
+  value: string;
+  kind: 'file' | 'dir';
+};
+
 /**
  * Check if a resolved path is allowed for reading:
  * within a known project directory OR a known config location.
@@ -41,26 +46,29 @@ export function isAllowedReadPath(resolvedPath: string): boolean {
 
   // Allow known config files/directories used by supported CLIs
   const home = os.homedir();
-  const allowedPaths = [
-    path.join(home, '.claude.json'),
-    path.join(home, '.mcp.json'),
-    path.join(home, '.claude') + path.sep,
-    path.join(home, '.codex') + path.sep,
-    path.join(home, '.copilot') + path.sep,
-    path.join(home, '.qwen') + path.sep,
-    path.join(home, '.mmx') + path.sep,
-    path.join(home, '.blackboxcli') + path.sep,
+  const allowedPaths: AllowedReadPathRule[] = [
+    { value: path.join(home, '.claude.json'), kind: 'file' },
+    { value: path.join(home, '.mcp.json'), kind: 'file' },
+    { value: path.join(home, '.claude'), kind: 'dir' },
+    { value: path.join(home, '.codex'), kind: 'dir' },
+    { value: path.join(home, '.copilot'), kind: 'dir' },
+    { value: path.join(home, '.qwen'), kind: 'dir' },
   ];
 
   if (isMac) {
-    allowedPaths.push('/Library/Application Support/ClaudeCode/');
+    allowedPaths.push({ value: '/Library/Application Support/ClaudeCode', kind: 'dir' });
   } else if (isWin) {
-    allowedPaths.push('C:\\Program Files\\ClaudeCode\\');
+    allowedPaths.push({ value: 'C:\\Program Files\\ClaudeCode', kind: 'dir' });
   } else {
-    allowedPaths.push('/etc/claude-code/');
+    allowedPaths.push({ value: '/etc/claude-code', kind: 'dir' });
   }
 
-  return allowedPaths.some(allowed => resolvedPath === allowed || resolvedPath.startsWith(allowed));
+  return allowedPaths.some((rule) => {
+    if (rule.kind === 'file') {
+      return resolvedPath === rule.value;
+    }
+    return isWithinPrefix(resolvedPath, rule.value);
+  });
 }
 
 export function isAllowedDirectoryLookupPath(resolvedPath: string): boolean {

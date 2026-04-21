@@ -50,7 +50,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/cli-surface/quick-setup.test.ts src/renderer/components/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts",
+    "test:coverage:full": "CALDER_COVERAGE_PROFILE=full vitest run --coverage",
+    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/cli-surface/quick-setup.test.ts src/renderer/components/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts src/main/ipc-path-policy.test.ts",
+    "audit:knip": "npx --yes --package=knip@6.6.0 knip --config knip.jsonc --reporter compact",
     "audit:deep": "node scripts/deep-system-audit.mjs"
   },
   "build": {

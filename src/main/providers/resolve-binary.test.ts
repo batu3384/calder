@@ -11,7 +11,7 @@ async function loadResolveBinaryModule(isWindows: boolean) {
   vi.doMock('os', () => ({
     homedir: () => '/mock/home',
   }));
-  vi.doMock('../pty-manager', () => ({
+  vi.doMock('../full-path', () => ({
     getFullPath: vi.fn(() => (isWindows ? 'C:\\Tools;C:\\Bin' : '/usr/local/bin:/usr/bin')),
   }));
   vi.doMock('fs', () => ({
@@ -64,12 +64,12 @@ describe('resolve-binary', () => {
     const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(true);
 
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockReturnValue('C:\\Users\\me\\AppData\\Roaming\\npm\\mmx.cmd\r\nC:\\alt\\mmx.cmd\r\n' as any);
+    mockExecSync.mockReturnValue('C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd\r\nC:\\alt\\qwen.cmd\r\n' as any);
 
-    const resolved = resolveBinary('mmx', { path: null });
-    expect(resolved).toBe('C:\\Users\\me\\AppData\\Roaming\\npm\\mmx.cmd');
+    const resolved = resolveBinary('qwen', { path: null });
+    expect(resolved).toBe('C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd');
     expect(mockExecSync).toHaveBeenCalledWith(
-      'where "mmx"',
+      'where "qwen"',
       expect.objectContaining({
         env: expect.objectContaining({ PATH: 'C:\\Tools;C:\\Bin' }),
         encoding: 'utf-8',

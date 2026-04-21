@@ -4,7 +4,10 @@ import path from 'node:path';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
 const calderIpcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-calder.ts'), 'utf8');
-const preloadSource = readFileSync(path.join(process.cwd(), 'src/preload/preload.ts'), 'utf8');
+const preloadSource = [
+  readFileSync(path.join(process.cwd(), 'src/preload/preload.ts'), 'utf8'),
+  readFileSync(path.join(process.cwd(), 'src/preload/preload-api-project-domains.ts'), 'utf8'),
+].join('\n');
 const rendererTypesSource = readFileSync(path.join(process.cwd(), 'src/renderer/types.ts'), 'utf8');
 
 describe('project checkpoint IPC contract', () => {

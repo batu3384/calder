@@ -1,10 +1,16 @@
 import { appState } from '../state.js';
+import { getProviderDisplayName } from '../provider-availability.js';
 import { showMcpAddModal } from './mcp-add-modal.js';
+import { localizeConfigMetadataSummary, type ConfigMetadataKind } from './config-metadata-localization.js';
+import { getVisibleToolchainSections, sectionSummaryText, type ToolchainSummarySection } from './config-toolchain-summary.js';
+import { createConfigSectionsRefreshController } from './config-sections-refresh-controller.js';
+import {
+  describeAutoApprovalScopes as describeAutoApprovalScopesCore,
+  renderAutoApprovalSection as renderAutoApprovalSectionCore,
+} from './config-sections-auto-approval.js';
 import { isTrackingHealthy } from '../../shared/tracking-health.js';
 import type { UiLanguage } from '../../shared/types.js';
 import type {
-  AutoApprovalMode,
-  AutoApprovalPolicySource,
   ProviderConfig,
   ProviderId,
   McpServer,
@@ -12,127 +18,16 @@ import type {
   Skill,
   Command,
   CliProviderMeta,
-  ProjectGovernanceAutoApprovalState,
-  ProjectGovernanceState,
   SettingsValidationResult,
 } from '../types.js';
 
 const collapsed: Record<string, boolean> = {};
-let refreshGeneration = 0;
-let refreshQueued = false;
 
-type ToolchainSection = {
-  id: string;
+type ToolchainSection = ToolchainSummarySection & {
   title: string;
   items: HTMLElement[];
-  count: number;
-  onAdd?: () => void;
   emptyText?: string;
 };
-
-type ConfigMetadataKind = 'skill' | 'command';
-
-const TURKISH_SKILL_SUMMARIES = new Map<string, string>([
-  ['skill-creator', 'Yeni beceri oluşturma, mevcut becerileri geliştirme ve performans ölçümü için kullanılır.'],
-  ['claude-md-improver', 'Repodaki CLAUDE.md dosyalarını denetler ve hedefli iyileştirmeler yapar.'],
-  ['claude-automation-recommender', 'Kod tabanı için Claude Code otomasyonları ve kurulum önerileri üretir.'],
-  ['hf-cli', 'Hugging Face Hub CLI ile model, veri kümesi ve Space yönetimi yapar.'],
-  ['huggingface-community-evals', 'Hugging Face modellerini yerel donanımda değerlendirme akışını yürütür.'],
-  ['huggingface-datasets', 'Dataset Viewer API ile metadata, satır ve parquet verisini inceler.'],
-  ['huggingface-gradio', 'Python ile Gradio arayüzleri ve demoları oluşturur.'],
-  ['huggingface-jobs', 'Hugging Face Jobs üzerinde genel amaçlı iş yüklerini çalıştırmayı yönlendirir.'],
-  ['huggingface-llm-trainer', 'LLM eğitim ve ince ayar işlerini Hugging Face Jobs üzerinde kurar.'],
-  ['huggingface-paper-publisher', 'Araştırma makalelerini Hugging Face Hub üzerinde yayınlar ve yönetir.'],
-  ['huggingface-papers', 'Hugging Face paper sayfalarını okur ve araştırma makalelerini özetler.'],
-  ['huggingface-trackio', 'Trackio ile eğitim deneylerini izler ve görselleştirir.'],
-  ['huggingface-vision-trainer', 'Görüntü modellerinin eğitim ve ince ayar akışını Hugging Face Jobs üzerinde kurar.'],
-  ['transformers-js', 'Transformers.js ile tarayıcıda veya Node.js içinde model çalıştırmayı yönlendirir.'],
-  ['playground', 'Canlı önizlemeli etkileşimli HTML playgroundları oluşturur.'],
-  ['frontend-design', 'Yüksek tasarım kalitesine sahip üretim seviyesi frontend arayüzleri üretir.'],
-  ['writing-hookify-rules', 'Hookify kuralları yazma ve yapılandırma konusunda yönlendirir.'],
-  ['agent-development', 'Claude Code için ajan yapısı, frontmatter ve tetikleme kurallarını tasarlar.'],
-  ['command-development', 'Slash komut yapısı, argümanlar ve etkileşimli komut akışlarını kurar.'],
-  ['hook-development', 'Claude Code hooklarını güvenli ve gelişmiş biçimde tasarlar.'],
-  ['mcp-integration', 'Claude Code eklentilerine MCP sunucusu entegrasyonu kurar.'],
-  ['plugin-settings', 'Eklenti ayarlarını, yerel durum dosyalarını ve yapılandırma akışını düzenler.'],
-  ['plugin-structure', 'Claude Code eklenti klasör yapısını ve manifest düzenini kurar.'],
-  ['skill-development', 'Yeni beceri yazımı ve beceri içeriğinin düzenlenmesi için yönlendirir.'],
-  ['pinecone:assistant', 'Pinecone Assistant oluşturma, belge yükleme ve soru-cevap akışlarını yönetir.'],
-  ['pinecone:cli', 'Pinecone CLI ile index, namespace ve vektör yönetimini yönlendirir.'],
-  ['pinecone:docs', 'Pinecone API ve veri formatları için derlenmiş dokümantasyon rehberi sunar.'],
-  ['pinecone:help', 'Pinecone becerilerinin ne işe yaradığını ve başlangıç kurulumunu açıklar.'],
-  ['pinecone:mcp', 'Pinecone MCP sunucusundaki araçları ve parametrelerini açıklar.'],
-  ['pinecone:query', 'Entegre Pinecone indexlerinde metin tabanlı sorgu akışını kurar.'],
-  ['pinecone:quickstart', 'Yeni başlayanlar için adım adım Pinecone başlangıç akışı sunar.'],
-  ['brainstorming', 'Uygulamaya geçmeden önce fikirleri tasarım ve kapsam kararlarına dönüştürür.'],
-  ['dispatching-parallel-agents', 'Bağımsız işleri paralel alt ajanlara bölerek hızlandırır.'],
-  ['executing-plans', 'Yazılmış uygulama planlarını kontrollü adımlarla uygular.'],
-  ['finishing-a-development-branch', 'Geliştirme bitince birleşme, PR ve kapanış akışını düzenler.'],
-  ['receiving-code-review', 'Gelen code review yorumlarını teknik doğrulukla değerlendirir.'],
-  ['requesting-code-review', 'İş bitiminde kapsamlı code review isteme akışını başlatır.'],
-  ['subagent-driven-development', 'Plan uygulanırken bağımsız işleri alt ajanlara dağıtır.'],
-  ['systematic-debugging', 'Hata kök nedenini sistematik biçimde buldurur.'],
-  ['test-driven-development', 'Önce testi yazıp sonra minimal çözüm üretme akışını uygular.'],
-  ['using-git-worktrees', 'İzolasyon gereken işlerde güvenli git worktree akışı kurar.'],
-  ['using-superpowers', 'Konuşma başında doğru beceri ve süper güç akışını başlatır.'],
-  ['verification-before-completion', 'Tamamlandı demeden önce test, build ve kanıt kontrolü yaptırır.'],
-  ['writing-plans', 'Spec veya gereksinimlerden ayrıntılı uygulama planı çıkarır.'],
-  ['writing-skills', 'Yeni beceri oluşturma ve mevcut becerileri iyileştirme akışını yönetir.'],
-  ['autofix', 'CodeRabbit yorumlarını toplayıp toplu veya etkileşimli düzeltme akışı sunar.'],
-  ['code-review', 'CodeRabbit destekli kod incelemesi yapar.'],
-  ['algorithmic-art', 'p5.js ile özgün algoritmik sanat üretimi yönlendirir.'],
-  ['brand-guidelines', 'Anthropic marka dili ve görsel standartlarını uygular.'],
-  ['canvas-design', 'Statik poster ve görsel tasarımlar üretir.'],
-  ['doc-coauthoring', 'Belgeleri birlikte yazma ve iteratif iyileştirme akışını yönlendirir.'],
-  ['docx', 'Word belgeleri oluşturma, düzenleme ve dönüştürme işlerini yönetir.'],
-  ['internal-comms', 'İç iletişim metinlerini şirket formatlarına uygun hazırlar.'],
-  ['mcp-builder', 'Yüksek kaliteli MCP sunucuları tasarlama ve oluşturma rehberi sunar.'],
-  ['pdf', 'PDF okuma, birleştirme, oluşturma ve OCR akışlarını yönetir.'],
-  ['pptx', 'Sunum dosyalarını oluşturma, okuma ve düzenleme akışını yürütür.'],
-  ['slack-gif-creator', 'Slack için optimize edilmiş animasyonlu GIF üretimi sağlar.'],
-  ['theme-factory', 'Farklı artefaktlara hazır veya özel tema uygular.'],
-  ['web-artifacts-builder', 'React, Tailwind ve shadcn ile zengin HTML artefaktlar kurar.'],
-  ['webapp-testing', 'Playwright ile yerel web uygulamalarını test eder ve doğrular.'],
-  ['xlsx', 'Spreadsheet dosyalarını oluşturur, temizler ve dönüştürür.'],
-  ['qodo-get-rules', 'Göreve en uygun Qodo kurallarını yükler.'],
-  ['qodo-pr-resolver', 'Qodo PR geri bildirimlerini inceleyip çözüm akışı sunar.'],
-  ['app-icon-design', 'Mobil uygulama ikonları ve logo varyasyonları tasarlar.'],
-  ['mmx-cli', 'MiniMax CLI ile metin, görsel, video ve ses üretimini yönlendirir.'],
-  ['mobile-logo-iteration', 'Logo ve ikon tasarımlarını geri bildirime göre rafine eder.'],
-]);
-
-const TURKISH_COMMAND_SUMMARIES = new Map<string, string>([
-  ['commit', 'Düzenli commit mesajlarıyla temiz commit oluşturur.'],
-]);
-
-const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, string> = {
-  off: 'Off',
-  edit_only: 'Edit Only',
-  edit_plus_safe_tools: 'Edit + Safe Tools',
-  full_auto: 'Full Auto',
-  full_auto_unsafe: 'Full Auto (Unsafe)',
-};
-
-const AUTO_APPROVAL_MODE_LABELS_TR: Record<AutoApprovalMode, string> = {
-  off: 'Kapalı',
-  edit_only: 'Sadece Düzenleme',
-  edit_plus_safe_tools: 'Düzenleme + Güvenli Komutlar',
-  full_auto: 'Tam Otomatik',
-  full_auto_unsafe: 'Tam Otomatik (Tehlikeli)',
-};
-
-const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string }> = [
-  { value: 'off', label: AUTO_APPROVAL_MODE_LABELS.off },
-  { value: 'edit_only', label: AUTO_APPROVAL_MODE_LABELS.edit_only },
-  { value: 'edit_plus_safe_tools', label: AUTO_APPROVAL_MODE_LABELS.edit_plus_safe_tools },
-  { value: 'full_auto', label: AUTO_APPROVAL_MODE_LABELS.full_auto },
-  { value: 'full_auto_unsafe', label: AUTO_APPROVAL_MODE_LABELS.full_auto_unsafe },
-];
-const PROJECT_INHERIT_VALUE = '__inherit_global__';
-const SESSION_INHERIT_VALUE = '';
-const queueFrame = typeof requestAnimationFrame === 'function'
-  ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 function isTurkishUiLanguage(): boolean {
   return appState.preferences.language === 'tr';
@@ -141,170 +36,7 @@ function isTurkishUiLanguage(): boolean {
 function localizedText(english: string, turkish: string): string {
   return isTurkishUiLanguage() ? turkish : english;
 }
-
-function autoApprovalModeLabel(mode: AutoApprovalMode): string {
-  return isTurkishUiLanguage()
-    ? AUTO_APPROVAL_MODE_LABELS_TR[mode]
-    : AUTO_APPROVAL_MODE_LABELS[mode];
-}
-
-function projectInheritLabel(): string {
-  return localizedText('Use Global Default', 'Global varsayılanını kullan');
-}
-
-function sessionInheritLabel(): string {
-  return localizedText('Use Project / Global Default', 'Proje / Global varsayılanını kullan');
-}
-
-function autoApprovalScopeHelp(): { global: string; project: string; session: string } {
-  return {
-    global: localizedText('Default policy for this Mac.', 'Bu Mac için varsayılan politika.'),
-    project: localizedText('Repository-level policy.', 'Depo düzeyinde politika.'),
-    session: localizedText('Temporary policy for the active session.', 'Aktif oturum için geçici politika.'),
-  };
-}
-
-function autoApprovalSourceLabel(source: AutoApprovalPolicySource): string {
-  const tr = isTurkishUiLanguage();
-  switch (source) {
-    case 'session':
-      return tr ? 'Oturum geçersiz kılması' : 'Session override';
-    case 'project':
-      return tr ? 'Proje politikası' : 'Project policy';
-    case 'global':
-      return tr ? 'Global varsayılan' : 'Global default';
-    case 'fallback':
-    default:
-      return tr ? 'Yedek varsayılan' : 'Fallback default';
-  }
-}
-
-function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
-  const tr = isTurkishUiLanguage();
-  if (mode === 'off') {
-    return tr
-      ? 'Her işlemden önce onay ister.'
-      : 'Always asks for approval before actions.';
-  }
-  if (mode === 'edit_only') {
-    return tr
-      ? 'Yalnızca dosya düzenlemelerini otomatik onaylar.'
-      : 'Auto-approves file edits only.';
-  }
-  if (mode === 'edit_plus_safe_tools') {
-    return tr
-      ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
-      : 'Auto-approves file edits and safe read-only commands.';
-  }
-  if (mode === 'full_auto') {
-    return tr
-      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemler manuel onay gerektirir.'
-      : 'Auto-approves non-destructive operations; destructive actions still require manual approval.';
-  }
-  return tr
-    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation, including destructive actions.';
-}
-
-function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
-  const tr = isTurkishUiLanguage();
-  if (mode === 'off') {
-    return tr ? 'İşlemleri onaylamadan önce sorar.' : 'Asks before approving operations.';
-  }
-  if (mode === 'edit_only') {
-    return tr ? 'Dosya düzenlemelerini otomatik onaylar.' : 'Auto-approves file edits.';
-  }
-  if (mode === 'edit_plus_safe_tools') {
-    return tr
-      ? 'Düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
-      : 'Auto-approves edits and read-only safe commands.';
-  }
-  if (mode === 'full_auto') {
-    return tr
-      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemlerde sorar.'
-      : 'Auto-approves non-destructive operations; asks before destructive actions.';
-  }
-  return tr
-    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation, including destructive actions.';
-}
-
-export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoApprovalState): {
-  global: string;
-  project: string;
-  session: string;
-  effectiveSource: string;
-  effectiveExplanation: string;
-  effectiveBehavior: string;
-} {
-  let effectiveExplanation = 'No explicit setting found; fallback Off applies.';
-  if (autoApproval.policySource === 'session') {
-    effectiveExplanation = localizedText(
-      'Session override is active, so Session setting applies.',
-      'Oturum geçersiz kılması aktif, bu yüzden Oturum ayarı uygulanır.',
-    );
-  } else if (autoApproval.policySource === 'project') {
-    effectiveExplanation = localizedText(
-      'Session follows Project, so Project setting applies.',
-      'Oturum Projeyi izlediği için Proje ayarı uygulanır.',
-    );
-  } else if (autoApproval.policySource === 'global') {
-    effectiveExplanation = localizedText(
-      'Project and Session follow higher scope, so Global setting applies.',
-      'Proje ve Oturum üst kapsamı izlediği için Global ayar uygulanır.',
-    );
-  }
-  if (autoApproval.policySource === 'fallback') {
-    effectiveExplanation = localizedText(
-      'No explicit setting found; fallback Off applies.',
-      'Açık bir ayar bulunamadı; yedek Kapalı modu uygulanır.',
-    );
-  }
-
-  return {
-    global: autoApprovalModeLabel(autoApproval.globalMode),
-    project: autoApproval.projectMode
-      ? autoApprovalModeLabel(autoApproval.projectMode)
-      : projectInheritLabel(),
-    session: autoApproval.sessionMode
-      ? autoApprovalModeLabel(autoApproval.sessionMode)
-      : sessionInheritLabel(),
-    effectiveSource: autoApprovalSourceLabel(autoApproval.policySource),
-    effectiveExplanation,
-    effectiveBehavior: autoApprovalModeBehavior(autoApproval.effectiveMode),
-  };
-}
-
-function createAutoApprovalScopeCard(
-  title: string,
-  helperText: string,
-  select: HTMLSelectElement,
-): HTMLDivElement {
-  const card = document.createElement('div');
-  card.className = 'auto-approval-control auto-approval-scope-card';
-  card.title = helperText;
-
-  const row = document.createElement('div');
-  row.className = 'auto-approval-scope-row';
-
-  const titleEl = document.createElement('div');
-  titleEl.className = 'auto-approval-scope-title';
-  titleEl.textContent = title;
-
-  const control = document.createElement('div');
-  control.className = 'auto-approval-scope-control';
-  control.appendChild(select);
-  row.appendChild(titleEl);
-  row.appendChild(control);
-
-  const helper = document.createElement('div');
-  helper.className = 'auto-approval-scope-helper';
-  helper.textContent = helperText;
-
-  card.appendChild(row);
-  card.appendChild(helper);
-  return card;
-}
+export const describeAutoApprovalScopes = describeAutoApprovalScopesCore;
 
 export function scopeBadge(scope: 'user' | 'project'): string {
   return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
@@ -453,12 +185,7 @@ export function localizeConfigMetadataDetail(
   description: string,
   language: UiLanguage = getMetadataLanguage(),
 ): string {
-  if (language !== 'tr') return description;
-  const normalizedName = kind === 'command'
-    ? name.replace(/^\//u, '').trim()
-    : name.trim();
-  const summaries = kind === 'skill' ? TURKISH_SKILL_SUMMARIES : TURKISH_COMMAND_SUMMARIES;
-  return summaries.get(normalizedName) ?? description;
+  return localizeConfigMetadataSummary(kind, name, description, language);
 }
 
 function skillItem(skill: Skill): HTMLElement {
@@ -485,46 +212,6 @@ function esc(s: string): string {
   return d.innerHTML;
 }
 
-function providerLabel(providerId: ProviderId): string {
-  switch (providerId) {
-    case 'codex': return 'Codex CLI';
-    case 'claude': return 'Claude Code';
-    case 'copilot': return 'GitHub Copilot';
-    case 'gemini': return 'Gemini CLI';
-    case 'qwen': return 'Qwen Code';
-    case 'minimax': return 'MiniMax CLI';
-    case 'blackbox': return 'Blackbox CLI';
-    default: return providerId;
-  }
-}
-
-function pluralize(count: number, singular: string, plural = `${singular}s`): string {
-  return count === 1 ? singular : plural;
-}
-
-function sectionSummaryText(section: ToolchainSection): string {
-  switch (section.id) {
-    case 'mcp':
-      return section.count === 1
-        ? '1 MCP server connected'
-        : `${section.count} MCP servers connected`;
-    case 'agents':
-      return `${section.count} ${pluralize(section.count, 'agent')} available`;
-    case 'skills':
-      return `${section.count} ${pluralize(section.count, 'skill')} ready`;
-    case 'commands':
-      return section.count === 1
-        ? '1 custom command available'
-        : `${section.count} custom commands available`;
-    default:
-      return `${section.count} configured`;
-  }
-}
-
-function getVisibleToolchainSections(sections: ToolchainSection[]): ToolchainSection[] {
-  return sections.filter((section) => section.count > 0 || !!section.onAdd);
-}
-
 function renderToolchainSummary(
   providerId: ProviderId,
   sections: ToolchainSection[],
@@ -537,7 +224,7 @@ function renderToolchainSummary(
   provider.className = 'toolchain-provider';
   provider.innerHTML = `
     <span class="toolchain-provider-kicker">Toolkit</span>
-    <span class="toolchain-provider-value">Configured for ${esc(providerLabel(providerId))}</span>
+    <span class="toolchain-provider-value">Configured for ${esc(getProviderDisplayName(providerId))}</span>
   `;
   wrap.appendChild(provider);
 
@@ -576,346 +263,6 @@ function renderToolchainSummary(
   return wrap;
 }
 
-function renderAutoApprovalSection(
-  projectId: string,
-  projectPath: string,
-  providerId: ProviderId,
-  governanceState: ProjectGovernanceState | undefined,
-  supportsPermissionHooks: boolean,
-): HTMLElement | null {
-  const autoApproval = governanceState?.autoApproval;
-  if (!autoApproval) return null;
-
-  const sessionId = getActiveCliSessionId();
-  const item = document.createElement('div');
-  item.className = 'config-item auto-approval-item';
-
-  const summary = document.createElement('div');
-  summary.className = 'auto-approval-summary';
-  const scopeSummary = describeAutoApprovalScopes(autoApproval);
-  const providerName = providerLabel(providerId);
-  const priorityRule = localizedText(
-    'Priority: Session > Project > Global.',
-    'Öncelik sırası: Oturum > Proje > Global.',
-  );
-  const effectiveModeLabel = localizedText('Effective Mode', 'Etkin Mod');
-  const effectiveSourceLabel = localizedText('Effective Source', 'Etkin Kaynak');
-  const currentBehaviorLabel = localizedText('Current Behavior', 'Mevcut Davranış');
-  const providerLabelText = localizedText('Provider', 'Sağlayıcı');
-  const policyStackLabel = localizedText('Policy Stack', 'Politika Katmanı');
-  const globalPolicyLabel = localizedText('Global Default', 'Global Varsayılan');
-  const projectPolicyLabel = localizedText('Project Policy', 'Proje Politikası');
-  const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
-  const effectiveShortLabel = localizedText('Effective', 'Etkin');
-  const fullAutoWarning = localizedText(
-    'Note: Full Auto still requires manual approval for destructive operations.',
-    'Not: Tam Otomatik modda yıkıcı işlemler için manuel onay gerekir.',
-  );
-  const fullAutoUnsafeWarning = localizedText(
-    'Warning: Full Auto (Unsafe) auto-approves destructive operations.',
-    'Uyarı: Tam Otomatik (Tehlikeli) modu yıkıcı işlemleri otomatik onaylar.',
-  );
-  const priorityMapLabel = localizedText(
-    'Applied order: Global -> Project -> Session -> Effective.',
-    'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
-  );
-  const showPolicyDetailsLabel = localizedText('Show policy details', 'Politika detaylarını göster');
-  const hidePolicyDetailsLabel = localizedText('Hide policy details', 'Politika detaylarını gizle');
-  const quickSummaryLabel = localizedText('Quick summary', 'Hızlı özet');
-  const modeRiskNote = autoApproval.effectiveMode === 'full_auto_unsafe'
-    ? fullAutoUnsafeWarning
-    : (autoApproval.effectiveMode === 'full_auto' ? fullAutoWarning : null);
-
-  summary.innerHTML = `
-    <div class="auto-approval-summary-header auto-approval-current-card">
-      <span class="config-item-name">${esc(effectiveModeLabel)}</span>
-      <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
-    </div>
-    <div class="auto-approval-priority-note ops-rail-note" data-tone="default">
-      ${esc(priorityRule)}
-    </div>
-    <div class="auto-approval-meta-inline" aria-label="${esc(quickSummaryLabel)}">
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(effectiveSourceLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveSource)}</span>
-      </div>
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(currentBehaviorLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveBehavior)}</span>
-      </div>
-    </div>
-  `;
-  item.appendChild(summary);
-
-  const detailsToggle = document.createElement('button');
-  detailsToggle.type = 'button';
-  detailsToggle.className = 'auto-approval-details-toggle';
-  detailsToggle.textContent = showPolicyDetailsLabel;
-  detailsToggle.setAttribute('aria-expanded', 'false');
-
-  const details = document.createElement('div');
-  details.className = 'auto-approval-details hidden';
-  details.id = `auto-approval-details-${projectId}`;
-  detailsToggle.setAttribute('aria-controls', details.id);
-  details.innerHTML = `
-    <div class="auto-approval-priority-map">${esc(priorityMapLabel)}</div>
-    <div class="auto-approval-meta-card">
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(providerLabelText)}</span>
-        <span class="auto-approval-meta-value">${esc(providerName)}</span>
-      </div>
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(localizedText('Why this applies', 'Neden bu uygulanıyor'))}</span>
-        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveExplanation)}</span>
-      </div>
-    </div>
-    <div class="auto-approval-policy-stack" aria-label="${esc(policyStackLabel)}">
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(globalPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.global)}</span>
-      </div>
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(projectPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.project)}</span>
-      </div>
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(sessionPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.session)}</span>
-      </div>
-      <div class="auto-approval-policy-row is-effective">
-        <span class="auto-approval-policy-name">${esc(effectiveShortLabel)}</span>
-        <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
-      </div>
-    </div>
-    ${modeRiskNote
-      ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>`
-      : ''}
-  `;
-
-  detailsToggle.addEventListener('click', () => {
-    const expanded = detailsToggle.getAttribute('aria-expanded') === 'true';
-    detailsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    detailsToggle.textContent = expanded ? showPolicyDetailsLabel : hidePolicyDetailsLabel;
-    details.classList.toggle('hidden', expanded);
-  });
-
-  item.appendChild(detailsToggle);
-  item.appendChild(details);
-
-  const controls = document.createElement('div');
-  controls.className = 'auto-approval-controls';
-
-  const createModeSelect = (
-    currentMode: AutoApprovalMode,
-    helperText: string,
-    onChange: (nextMode: AutoApprovalMode) => Promise<void>,
-  ): HTMLSelectElement => {
-    const select = document.createElement('select');
-    select.className = 'auto-approval-select';
-    select.title = helperText;
-    for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
-      const el = document.createElement('option');
-      el.value = option.value;
-      el.textContent = autoApprovalModeLabel(option.value);
-      if (option.value === currentMode) {
-        el.selected = true;
-      }
-      select.appendChild(el);
-    }
-
-    select.addEventListener('change', async () => {
-      const nextMode = select.value as AutoApprovalMode;
-      select.disabled = true;
-      try {
-        await onChange(nextMode);
-      } finally {
-        select.disabled = false;
-      }
-    });
-
-    return select;
-  };
-
-  const controlsIntro = document.createElement('div');
-  controlsIntro.className = 'auto-approval-controls-intro';
-  controlsIntro.textContent = localizedText(
-    'Session policy is temporary and takes priority (Session > Project > Global).',
-    'Oturum politikası geçicidir ve en yüksek önceliğe sahiptir (Oturum > Proje > Global).',
-  );
-  controls.appendChild(controlsIntro);
-
-  const controlsHint = document.createElement('div');
-  controlsHint.className = 'auto-approval-controls-hint';
-  controlsHint.textContent = localizedText(
-    'Recommended: set Global once, keep Project for repo defaults, then use Session only when needed.',
-    'Öneri: Globali bir kez ayarlayın, Projeyi depo varsayılanı için kullanın, Oturumu yalnızca gerektiğinde açın.',
-  );
-  controls.appendChild(controlsHint);
-
-  const scopeHelp = autoApprovalScopeHelp();
-
-  const globalSelect = createModeSelect(autoApproval.globalMode, scopeHelp.global, async (nextMode) => {
-    const nextState = await window.calder.governance.setAutoApprovalMode(
-      projectPath,
-      'global',
-      nextMode,
-      sessionId,
-    );
-    appState.setProjectGovernance(projectId, nextState);
-    void refresh();
-  });
-  controls.appendChild(createAutoApprovalScopeCard(
-    globalPolicyLabel,
-    localizedText(
-      `${scopeHelp.global} Current: ${scopeSummary.global}.`,
-      `${scopeHelp.global} Şu an: ${scopeSummary.global}.`,
-    ),
-    globalSelect,
-  ));
-
-  const projectSelect = document.createElement('select');
-  projectSelect.className = 'auto-approval-select';
-  projectSelect.title = scopeHelp.project;
-  const projectInheritOption = document.createElement('option');
-  projectInheritOption.value = PROJECT_INHERIT_VALUE;
-  projectInheritOption.textContent = projectInheritLabel();
-  if (autoApproval.projectMode === undefined) {
-    projectInheritOption.selected = true;
-  }
-  projectSelect.appendChild(projectInheritOption);
-  for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
-    const el = document.createElement('option');
-    el.value = option.value;
-    el.textContent = autoApprovalModeLabel(option.value);
-    if (autoApproval.projectMode === option.value) {
-      el.selected = true;
-    }
-    projectSelect.appendChild(el);
-  }
-  projectSelect.addEventListener('change', async () => {
-    const selectedMode = projectSelect.value === PROJECT_INHERIT_VALUE
-      ? null
-      : (projectSelect.value as AutoApprovalMode);
-    projectSelect.disabled = true;
-    try {
-      const nextState = await window.calder.governance.setAutoApprovalMode(
-        projectPath,
-        'project',
-        selectedMode,
-        sessionId,
-      );
-      appState.setProjectGovernance(projectId, nextState);
-      void refresh();
-    } finally {
-      projectSelect.disabled = false;
-    }
-  });
-  controls.appendChild(createAutoApprovalScopeCard(
-    projectPolicyLabel,
-    localizedText(
-      `${scopeHelp.project} Current: ${scopeSummary.project}.`,
-      `${scopeHelp.project} Şu an: ${scopeSummary.project}.`,
-    ),
-    projectSelect,
-  ));
-
-  const sessionSelect = document.createElement('select');
-  sessionSelect.className = 'auto-approval-select';
-  sessionSelect.title = supportsPermissionHooks
-    ? scopeHelp.session
-    : localizedText('Auto approval unavailable', 'Otomatik onay kullanılamıyor');
-  const inheritOption = document.createElement('option');
-  inheritOption.value = SESSION_INHERIT_VALUE;
-  inheritOption.textContent = sessionInheritLabel();
-  sessionSelect.appendChild(inheritOption);
-  for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
-    const el = document.createElement('option');
-    el.value = option.value;
-    el.textContent = autoApprovalModeLabel(option.value);
-    if (autoApproval.sessionMode === option.value) {
-      el.selected = true;
-    }
-    sessionSelect.appendChild(el);
-  }
-  if (autoApproval.sessionMode === undefined) {
-    inheritOption.selected = true;
-  }
-  sessionSelect.disabled = !sessionId || !supportsPermissionHooks;
-  sessionSelect.addEventListener('change', async () => {
-    if (!sessionId) return;
-    const selectedMode = sessionSelect.value === SESSION_INHERIT_VALUE
-      ? null
-      : (sessionSelect.value as AutoApprovalMode);
-    sessionSelect.disabled = true;
-    try {
-      await window.calder.governance.setSessionAutoApprovalOverride(sessionId, selectedMode);
-      const nextState = await window.calder.governance.getProjectState(projectPath, sessionId);
-      appState.setProjectGovernance(projectId, nextState);
-      void refresh();
-    } finally {
-      sessionSelect.disabled = false;
-    }
-  });
-  controls.appendChild(createAutoApprovalScopeCard(
-    sessionPolicyLabel,
-    !supportsPermissionHooks
-      ? localizedText(
-        'Active provider does not support permission hooks, so session auto-approval cannot run.',
-        'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
-      )
-      : (sessionId
-        ? localizedText(
-          `${scopeHelp.session} Current: ${scopeSummary.session}.`,
-          `${scopeHelp.session} Şu an: ${scopeSummary.session}.`,
-        )
-        : localizedText(
-          'Open a CLI session to apply a temporary session override.',
-          'Geçici oturum politikası uygulamak için bir CLI oturumu açın.',
-        )),
-    sessionSelect,
-  ));
-
-  const modeGuide = document.createElement('div');
-  modeGuide.className = 'auto-approval-mode-guide';
-  const modeGuideToggle = document.createElement('button');
-  modeGuideToggle.type = 'button';
-  modeGuideToggle.className = 'auto-approval-mode-guide-toggle';
-  modeGuideToggle.textContent = localizedText('Mode Guide', 'Mod Rehberi');
-  modeGuideToggle.setAttribute('aria-expanded', 'false');
-
-  const modeGuideBody = document.createElement('div');
-  modeGuideBody.className = 'auto-approval-mode-guide-body hidden';
-  for (const option of AUTO_APPROVAL_MODE_OPTIONS) {
-    const row = document.createElement('div');
-    row.className = 'auto-approval-mode-guide-row';
-    row.innerHTML = `
-      <span class="auto-approval-mode-guide-row-label">${esc(option.label)}</span>
-      <span class="auto-approval-mode-guide-row-detail">${esc(autoApprovalModeGuideSummary(option.value))}</span>
-    `;
-    modeGuideBody.appendChild(row);
-  }
-
-  modeGuideToggle.addEventListener('click', () => {
-    const expanded = modeGuideToggle.getAttribute('aria-expanded') === 'true';
-    modeGuideToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    modeGuideBody.classList.toggle('hidden', expanded);
-  });
-
-  modeGuide.appendChild(modeGuideToggle);
-  modeGuide.appendChild(modeGuideBody);
-  controls.appendChild(modeGuide);
-
-  details.appendChild(controls);
-  return renderSection(
-    'auto-approval',
-    localizedText('Auto Approval', 'Otomatik Onay'),
-    [item],
-    1,
-    undefined,
-    localizedText('Auto approval unavailable', 'Otomatik onay kullanılamıyor'),
-  );
-}
-
 function applyVisibility(): void {
   const container = document.getElementById('config-sections');
   if (!container) return;
@@ -944,10 +291,23 @@ function getActiveCliSessionId(): string | undefined {
   return undefined;
 }
 
+// refreshGeneration and queueing state now live in the extracted controller.
+const refreshController = createConfigSectionsRefreshController({
+  refresh,
+  applyVisibility,
+  getActiveProjectPath: () => appState.activeProject?.path,
+  getProviderId: getConfigProviderId,
+  watchProject: (providerId, projectPath) => window.calder.provider.watchProject(providerId, projectPath),
+  onConfigChanged: (listener) => window.calder.provider.onConfigChanged(listener),
+  onAppStateEvent: (event, listener) => {
+    appState.on(event, listener);
+  },
+});
+
 async function refresh(): Promise<void> {
   const container = document.getElementById('config-sections');
   if (!container) return;
-  const generation = ++refreshGeneration;
+  const generation = refreshController.beginRefresh();
 
   applyVisibility();
 
@@ -974,12 +334,12 @@ async function refresh(): Promise<void> {
       window.calder.settings.validate(providerId).catch(() => null),
     ]);
   } catch {
-    if (generation !== refreshGeneration) return;
+    if (!refreshController.isCurrentGeneration(generation)) return;
     container.innerHTML = '';
     return;
   }
 
-  if (generation !== refreshGeneration) return;
+  if (!refreshController.isCurrentGeneration(generation)) return;
 
   const trackingHealthy = Boolean(meta && validation && isTrackingHealthy(meta, validation));
 
@@ -1016,13 +376,17 @@ async function refresh(): Promise<void> {
     });
   }
 
-  const autoApprovalSection = renderAutoApprovalSection(
-    project.id,
-    project.path,
+  const autoApprovalSection = renderAutoApprovalSectionCore({
+    projectId: project.id,
+    projectPath: project.path,
     providerId,
-    project.projectGovernance,
-    Boolean(meta?.capabilities.hookStatus),
-  );
+    governanceState: project.projectGovernance,
+    supportsPermissionHooks: Boolean(meta?.capabilities.hookStatus),
+    sessionId: getActiveCliSessionId(),
+    esc,
+    refresh,
+    renderSection,
+  });
   if (autoApprovalSection) {
     container.appendChild(autoApprovalSection);
   }
@@ -1041,31 +405,6 @@ async function refresh(): Promise<void> {
   }
 }
 
-function scheduleRefresh(): void {
-  if (refreshQueued) {
-    return;
-  }
-  refreshQueued = true;
-  queueFrame(() => {
-    refreshQueued = false;
-    void refresh();
-  });
-}
-
-function watchActiveProject(): void {
-  const project = appState.activeProject;
-  if (project) {
-    window.calder.provider.watchProject(getConfigProviderId(), project.path);
-  }
-}
-
 export function initConfigSections(): void {
-  appState.on('project-changed', () => { watchActiveProject(); scheduleRefresh(); });
-  appState.on('state-loaded', () => { watchActiveProject(); scheduleRefresh(); });
-  appState.on('session-changed', () => { watchActiveProject(); scheduleRefresh(); });
-  appState.on('preferences-changed', () => {
-    applyVisibility();
-    scheduleRefresh();
-  });
-  window.calder.provider.onConfigChanged(() => scheduleRefresh());
+  refreshController.init();
 }

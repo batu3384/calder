@@ -11,7 +11,12 @@ import { stopGitWatcher } from './git-watcher';
 import { checkPythonAvailable } from './prerequisites';
 import { isMac } from './platform';
 import { attachBrowserWebviewRouting } from './browser-webview-routing';
-import { analyzeProviderStartup, formatMissingProviderDialog, formatProviderStartupWarning } from './provider-startup';
+import {
+  analyzeProviderStartup,
+  formatMissingProviderDialog,
+  formatProviderStartupWarning,
+  installProviderStartupArtifacts,
+} from './provider-startup';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
 import { prepareBrowserSessionStorage } from './browser-session-storage';
@@ -120,12 +125,7 @@ app.whenReady().then(async () => {
   }
 
   // Install hooks and status scripts for available providers (after window creation so dialogs can attach)
-  for (const provider of getAllProviders()) {
-    if (provider.validatePrerequisites().ok) {
-      await provider.installHooks(mainWindow);
-      provider.installStatusScripts();
-    }
-  }
+  await installProviderStartupArtifacts(getAllProviders(), mainWindow);
 
   initAutoUpdater();
 

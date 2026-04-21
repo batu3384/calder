@@ -220,4 +220,49 @@ describe('migrateSessionIds', () => {
     const loaded = loadState();
     expect(loaded.projects[0].sessions[0]).toBeDefined();
   });
+
+  it('normalizes removed provider ids to claude for legacy sessions', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(makeState([
+      { id: 's1', name: 'S1', providerId: 'minimax', createdAt: '2025-01-01' },
+      { id: 's2', name: 'S2', providerId: 'blackbox', createdAt: '2025-01-01' },
+      { id: 's3', name: 'S3', providerId: 'codex', createdAt: '2025-01-01' },
+    ]));
+
+    const loaded = loadState();
+    const sessions = loaded.projects[0].sessions as any[];
+    expect(sessions[0].providerId).toBe('claude');
+    expect(sessions[1].providerId).toBe('claude');
+    expect(sessions[2].providerId).toBe('codex');
+  });
+
+  it('normalizes unsupported defaultProvider to claude', () => {
+    const state: PersistedState = {
+      version: 1,
+      projects: [{
+        id: 'p1',
+        name: 'Test',
+        path: '/test',
+        sessions: [{ id: 's1', name: 'S1', cliSessionId: null, createdAt: '2025-01-01', providerId: 'claude' } as any],
+        activeSessionId: null,
+        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+      }],
+      activeProjectId: 'p1',
+      preferences: {
+        soundOnSessionWaiting: true,
+        notificationsDesktop: true,
+        debugMode: false,
+        sessionHistoryEnabled: true,
+        insightsEnabled: true,
+        autoTitleEnabled: true,
+        defaultProvider: 'minimax' as any,
+      },
+    };
+
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify(state));
+
+    const loaded = loadState();
+    expect(loaded.preferences.defaultProvider).toBe('claude');
+  });
 });

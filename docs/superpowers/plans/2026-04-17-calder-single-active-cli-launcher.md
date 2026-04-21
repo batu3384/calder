@@ -220,7 +220,7 @@ Retain:
 providerBadge.dataset.provider = providerId;
 ```
 
-but make the text source align with shared provider display names so `Codex CLI`, `Claude Code`, and `MiniMax CLI` stay identical across surfaces.
+but make the text source align with shared provider display names so `Codex CLI`, `Claude Code`, and `Qwen Code` stay identical across surfaces.
 
 - [ ] **Step 3: Verify the right rail reflects the actual active provider**
 

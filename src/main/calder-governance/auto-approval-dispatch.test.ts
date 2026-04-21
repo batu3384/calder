@@ -10,8 +10,7 @@ describe('resolveAutoApprovalInput', () => {
   });
 
   it('throws for unsupported providers', () => {
-    expect(() => resolveAutoApprovalInput('minimax')).toThrow('Unsupported auto-approval provider');
-    expect(() => resolveAutoApprovalInput('blackbox')).toThrow('Unsupported auto-approval provider');
+    expect(() => resolveAutoApprovalInput('minimax' as any)).toThrow('Unsupported auto-approval provider');
     expect(() => resolveAutoApprovalInput('copilot')).toThrow('Unsupported auto-approval provider');
   });
 
@@ -20,8 +19,7 @@ describe('resolveAutoApprovalInput', () => {
     expect(supportsAutoApprovalDispatch('codex')).toBe(true);
     expect(supportsAutoApprovalDispatch('gemini')).toBe(true);
     expect(supportsAutoApprovalDispatch('qwen')).toBe(true);
-    expect(supportsAutoApprovalDispatch('minimax')).toBe(false);
-    expect(supportsAutoApprovalDispatch('blackbox')).toBe(false);
+    expect(supportsAutoApprovalDispatch('minimax' as any)).toBe(false);
     expect(supportsAutoApprovalDispatch('copilot')).toBe(false);
     expect(supportsAutoApprovalDispatch(null)).toBe(false);
     expect(supportsAutoApprovalDispatch(undefined)).toBe(false);

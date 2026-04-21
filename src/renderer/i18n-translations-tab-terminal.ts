@@ -1,0 +1,16 @@
+export const TAB_AND_TERMINAL_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> = [
+  ['Session actions', 'Oturum eylemleri'],
+  ['Branch actions', 'Dal eylemleri'],
+  ['New session actions', 'Yeni oturum eylemleri'],
+  ['configured', 'yapılandırıldı'],
+  ['inherit', 'devral'],
+  ['Drag to reorder', 'Yeniden sıralamak için sürükle'],
+  ['Drag to reorder pane', 'Paneli yeniden sıralamak için sürükle'],
+  ['Drag to resize Live View and sessions', 'Canlı Görünüm ve oturumları yeniden boyutlandırmak için sürükle'],
+  ['Quick Terminal', 'Hızlı Terminal'],
+  ['Close Terminal', 'Terminali Kapat'],
+  ['Restored terminal surface', 'Geri yüklenen terminal yüzeyi'],
+  ['Live terminal surface', 'Canlı terminal yüzeyi'],
+  ['linked run', 'bağlı çalışma'],
+  ['active run', 'aktif çalışma'],
+];

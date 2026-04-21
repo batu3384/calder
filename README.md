@@ -38,8 +38,6 @@ Calder currently supports these provider IDs in the codebase:
 - `copilot` (GitHub Copilot CLI)
 - `gemini` (Gemini CLI)
 - `qwen` (Qwen Code)
-- `minimax` (MiniMax CLI)
-- `blackbox` (Blackbox CLI)
 
 You can set defaults per project and run mixed-provider sessions side-by-side.
 
@@ -107,25 +105,16 @@ npm start
 
 ## Development
 
-### Common Commands
+Canonical setup/build/test commands are maintained in:
+
+- [docs/development-workflow.md](docs/development-workflow.md)
+
+Quick local path:
 
 ```bash
-npm run dev                # Build and run Electron
-npm run build              # Compile main/preload + bundle renderer
-npm test                   # Run full test suite (Vitest)
-npm run test:coverage      # Run tests with coverage
-npm run test:critical-stability
-npm run audit:deep         # Deep project audit script
+npm install
+npm run dev
 ```
-
-### Packaging Commands
-
-```bash
-npm run pack               # Build unpacked app
-npm run dist               # Build distributables via electron-builder
-```
-
-Electron Builder targets are configured in `package.json` (`mac`, `linux`, `win`).
 
 ## Architecture Snapshot
 
@@ -173,5 +162,5 @@ Contributions are welcome.
 ---
 
 <p align="center">
-  <sub>Calder is an independent project and is not affiliated with or endorsed by Anthropic, OpenAI, Google, GitHub, Alibaba, MiniMax, or Blackbox.</sub>
+  <sub>Calder is an independent project and is not affiliated with or endorsed by Anthropic, OpenAI, Google, GitHub, Alibaba, or MiniMax.</sub>
 </p>

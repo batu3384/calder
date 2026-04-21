@@ -82,6 +82,7 @@ describe('ipc calder lifecycle + governance handlers', () => {
 
   it('rejects invalid governance auto-approval payloads and accepts project null mode', async () => {
     const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
       assertProjectGovernanceAllows: vi.fn(async () => {}),
       getGovernanceState: vi.fn(async () => ({ autoApproval: { effectiveMode: 'off' } })),
       isAutoApprovalMode: vi.fn((value: unknown) =>
@@ -119,6 +120,7 @@ describe('ipc calder lifecycle + governance handlers', () => {
 
   it('rejects invalid governance session override modes', async () => {
     const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
       assertProjectGovernanceAllows: vi.fn(async () => {}),
       getGovernanceState: vi.fn(async () => ({ autoApproval: { effectiveMode: 'off' } })),
       isAutoApprovalMode: vi.fn((value: unknown) => value === 'off'),
@@ -143,4 +145,3 @@ describe('ipc calder lifecycle + governance handlers', () => {
     );
   });
 });
-

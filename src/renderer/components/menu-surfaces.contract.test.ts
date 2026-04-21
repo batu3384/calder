@@ -2,6 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const providerSelectorSource = readFileSync(
+  new URL('./tab-bar-provider-selector-controller.ts', import.meta.url),
+  'utf-8',
+);
+const branchMenuSource = readFileSync(
+  new URL('./tab-bar-branch-menu-controller.ts', import.meta.url),
+  'utf-8',
+);
+const sessionMenuSource = readFileSync(
+  new URL('./tab-bar-session-menu-controller.ts', import.meta.url),
+  'utf-8',
+);
 const sidebarSource = readFileSync(new URL('./sidebar.ts', import.meta.url), 'utf-8');
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');
 const gitSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
@@ -16,7 +28,15 @@ describe('menu surface contract', () => {
     expect(tabBarSource).toContain("menu.setAttribute('role', 'menu')");
     expect(tabBarSource).toContain("item.setAttribute('role', 'menuitem')");
     expect(tabBarSource).toContain('applyContextMenuSemantics(menu,');
-    expect(tabBarSource).toContain("'command-deck-provider'");
+    expect(tabBarSource).toContain('createTabBarBranchMenuController');
+    expect(tabBarSource).toContain('createTabBarSessionMenuController');
+    expect(providerSelectorSource).toContain("'command-deck-provider'");
+    expect(branchMenuSource).toContain('tab-context-menu calder-floating-list');
+    expect(branchMenuSource).toContain('branch-search-input');
+    expect(branchMenuSource).toContain("applyContextMenuSemantics(menu, 'Branch actions', false)");
+    expect(sessionMenuSource).toContain('tab-context-menu calder-floating-list');
+    expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
+    expect(sessionMenuSource).toContain('Join Remote Session');
     expect(tabBarSource).toContain("floating: {");
     expect(tabBarSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');

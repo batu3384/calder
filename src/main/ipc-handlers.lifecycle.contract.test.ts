@@ -10,7 +10,6 @@ describe('ipc handlers lifecycle contract', () => {
     expect(ipcSource).toContain('export function resetHookWatcher(): void {');
     expect(ipcSource).toContain('stopHookWatching();');
     expect(ipcSource).toContain('stopCodexSessionWatcher();');
-    expect(ipcSource).toContain('stopBlackboxSessionWatcher();');
     expect(ipcSource).toContain('resetCalderProjectWatchers();');
     expect(calderIpcSource).toContain('stopProjectContextWatcher();');
     expect(calderIpcSource).toContain('stopProjectWorkflowWatcher();');

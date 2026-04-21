@@ -2,28 +2,18 @@
 
 Thanks for your interest in contributing! Here's how to get started.
 
+Canonical local workflow commands live in:
+
+- [docs/development-workflow.md](docs/development-workflow.md)
+
 ## Development Setup
 
 1. **Node v24** is required — see `.nvmrc`. Use `nvm use` to switch.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Build and run:
-   ```bash
-   npm run build
-   npm start
-   ```
-
-There is **no hot reload** — changes require a full rebuild and app restart.
+2. Follow the setup and run steps in `docs/development-workflow.md`.
 
 ## Testing
 
-```bash
-npm test              # Run all tests once
-npm run test:watch    # Watch mode (re-runs on file changes)
-npm run test:coverage # Coverage report (terminal + HTML at coverage/index.html)
-```
+Run the testing and validation commands from `docs/development-workflow.md`.
 
 Tests use [Vitest](https://vitest.dev/) and are co-located with source files as `*.test.ts`.
 

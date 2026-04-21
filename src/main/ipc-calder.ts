@@ -35,8 +35,10 @@ import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } f
 import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
 import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
 import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './calder-checkpoints/watcher';
+import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
 
 export interface CalderIpcOps {
+  requireKnownProjectPath?: (projectPath: string, contextLabel: string) => string;
   assertProjectGovernanceAllows: (projectPath: string, operation: ProjectGovernanceOperation) => Promise<void>;
   getGovernanceState: (projectPath: string, sessionId?: string) => Promise<ProjectGovernanceState>;
   isAutoApprovalMode: (value: unknown) => value is AutoApprovalMode;
@@ -126,28 +128,34 @@ export function resetCalderProjectWatchers(): void {
 }
 
 export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
+  const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
+
   ipcMain.handle('context:getProjectState', async (_event, projectPath: string) => {
     return discoverProjectContext(projectPath);
   });
 
   ipcMain.handle('context:createStarterFiles', async (_event, projectPath: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create context starter files' });
-    return createProjectContextStarterFiles(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create context starter files');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create context starter files' });
+    return createProjectContextStarterFiles(validatedProjectPath);
   });
 
   ipcMain.handle('context:createSharedRule', async (_event, projectPath: string, title: string, priority: 'hard' | 'soft') => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create shared context rule' });
-    return createProjectContextRuleFile(projectPath, title, priority);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create shared context rule');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create shared context rule' });
+    return createProjectContextRuleFile(validatedProjectPath, title, priority);
   });
 
   ipcMain.handle('context:renameSharedRule', async (_event, projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft') => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Rename shared context rule' });
-    return renameProjectContextRuleFile(projectPath, relativePath, title, priority);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Rename shared context rule');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Rename shared context rule' });
+    return renameProjectContextRuleFile(validatedProjectPath, relativePath, title, priority);
   });
 
   ipcMain.handle('context:deleteSharedRule', async (_event, projectPath: string, relativePath: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Delete shared context rule' });
-    return deleteProjectContextRuleFile(projectPath, relativePath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Delete shared context rule');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Delete shared context rule' });
+    return deleteProjectContextRuleFile(validatedProjectPath, relativePath);
   });
 
   ipcMain.handle('workflow:getProjectState', async (_event, projectPath: string) => {
@@ -155,13 +163,15 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('workflow:createStarterFiles', async (_event, projectPath: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create workflow starter files' });
-    return createProjectWorkflowStarterFiles(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create workflow starter files');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create workflow starter files' });
+    return createProjectWorkflowStarterFiles(validatedProjectPath);
   });
 
   ipcMain.handle('workflow:createFile', async (_event, projectPath: string, title: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create workflow file' });
-    return createProjectWorkflowFile(projectPath, title);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create workflow file');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create workflow file' });
+    return createProjectWorkflowFile(validatedProjectPath, title);
   });
 
   ipcMain.handle('workflow:readFile', async (_event, projectPath: string, workflowPath: string) => {
@@ -173,13 +183,15 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('teamContext:createStarterFiles', async (_event, projectPath: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create team context starter spaces' });
-    return createProjectTeamContextStarterFiles(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create team context starter spaces');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create team context starter spaces' });
+    return createProjectTeamContextStarterFiles(validatedProjectPath);
   });
 
   ipcMain.handle('teamContext:createSpace', async (_event, projectPath: string, title: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create team context space' });
-    return createProjectTeamContextSpaceFile(projectPath, title);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create team context space');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create team context space' });
+    return createProjectTeamContextSpaceFile(validatedProjectPath, title);
   });
 
   ipcMain.handle('review:getProjectState', async (_event, projectPath: string) => {
@@ -187,8 +199,9 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('review:createFile', async (_event, projectPath: string, title: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create review findings file' });
-    return createProjectReviewFile(projectPath, title);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create review findings file');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create review findings file' });
+    return createProjectReviewFile(validatedProjectPath, title);
   });
 
   ipcMain.handle('review:readFile', async (_event, projectPath: string, reviewPath: string) => {
@@ -200,8 +213,9 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('governance:createStarterPolicy', async (_event, projectPath: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create governance starter policy' });
-    return createProjectGovernanceStarterPolicy(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create governance starter policy');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create governance starter policy' });
+    return createProjectGovernanceStarterPolicy(validatedProjectPath);
   });
 
   ipcMain.handle(
@@ -218,8 +232,11 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
       if (!validGlobalPayload && !validProjectPayload) {
         throw new Error('Invalid auto-approval update payload.');
       }
-      ops.updateAutoApprovalMode(projectPath, scope, mode);
-      return ops.getGovernanceState(projectPath, sessionId);
+      const validatedProjectPath = scope === 'project'
+        ? requireKnownProjectPath(projectPath, 'Set project auto-approval mode')
+        : projectPath;
+      ops.updateAutoApprovalMode(validatedProjectPath, scope, mode);
+      return ops.getGovernanceState(validatedProjectPath, sessionId);
     },
   );
 
@@ -239,8 +256,9 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('task:create', async (_event, projectPath: string, title: string, prompt: string) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create background task' });
-    return createProjectBackgroundTaskFile(projectPath, title, prompt);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create background task');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create background task' });
+    return createProjectBackgroundTaskFile(validatedProjectPath, title, prompt);
   });
 
   ipcMain.handle('task:read', async (_event, projectPath: string, taskPath: string) => {
@@ -252,8 +270,9 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('checkpoint:create', async (_event, projectPath: string, snapshot) => {
-    await ops.assertProjectGovernanceAllows(projectPath, { kind: 'write', label: 'Create checkpoint' });
-    return createProjectCheckpointFile(projectPath, snapshot);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Create checkpoint');
+    await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'write', label: 'Create checkpoint' });
+    return createProjectCheckpointFile(validatedProjectPath, snapshot);
   });
 
   ipcMain.handle('checkpoint:read', async (_event, projectPath: string, checkpointPath: string) => {

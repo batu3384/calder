@@ -1,7 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
-import { startBlackboxSessionWatcher, registerPendingBlackboxSession, unregisterBlackboxSession, stopBlackboxSessionWatcher } from './blackbox-session-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
@@ -37,6 +36,7 @@ import type { ProviderId } from '../shared/types';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
+import { loadState } from './store';
 
 let hookWatcherStarted = false;
 
@@ -51,7 +51,6 @@ export function resetHookWatcher(): void {
   hookWatcherStarted = false;
   stopHookWatching();
   stopCodexSessionWatcher();
-  stopBlackboxSessionWatcher();
   resetCalderProjectWatchers();
   resetInspectorOrchestrationCaches();
 }
@@ -80,15 +79,32 @@ export function registerIpcHandlers(): void {
       const provider = getProvider(providerId);
       if (!provider.meta.capabilities.hookStatus) return;
       let validation = provider.validateSettings();
-      if (!isTrackingHealthy(provider.meta, validation)) {
+      let trackingHealthy = isTrackingHealthy(provider.meta, validation);
+      if (!trackingHealthy) {
+        const shouldSkipClaudeForeignStatuslineAutoHeal =
+          providerId === 'claude'
+          && validation.statusLine === 'foreign'
+          && loadState().preferences.statusLineConsent === 'declined';
+
+        if (shouldSkipClaudeForeignStatuslineAutoHeal) {
+          win.webContents.send('settings:warning', {
+            sessionId,
+            providerId,
+            statusLine: validation.statusLine,
+            hooks: validation.hooks,
+          });
+          return;
+        }
+
         try {
           provider.reinstallSettings();
           validation = provider.validateSettings();
+          trackingHealthy = isTrackingHealthy(provider.meta, validation);
         } catch (error) {
           console.warn('Auto-heal settings reinstall failed:', error);
         }
       }
-      if (isTrackingHealthy(provider.meta, validation)) return;
+      if (trackingHealthy) return;
       win.webContents.send('settings:warning', {
         sessionId,
         providerId,
@@ -101,17 +117,11 @@ export function registerIpcHandlers(): void {
         startCodexSessionWatcher(win);
         registerPendingCodexSession(sessionId);
       }
-
-      if (providerId === 'blackbox' && !cliSessionId) {
-        startBlackboxSessionWatcher(win);
-        registerPendingBlackboxSession(sessionId);
-      }
     },
     mirrorPlaywrightFromPtyData,
     handlePtySessionExit: (sessionId) => {
       cleanupSessionStatus(sessionId);
       unregisterCodexSession(sessionId);
-      unregisterBlackboxSession(sessionId);
       autoApprovalOrchestrator.unregisterSession(sessionId);
       clearInspectorOrchestrationSession(sessionId);
     },

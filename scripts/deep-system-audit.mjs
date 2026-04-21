@@ -33,9 +33,10 @@ const steps = [
   { name: 'Shuffle seed 42', cmd: NPX, args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '42'] },
   { name: 'Shuffle seed 2026', cmd: NPX, args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '2026'] },
   { name: 'Coverage suite', cmd: NPM, args: ['run', 'test:coverage'] },
+  { name: 'Coverage suite (full boundaries)', cmd: NPM, args: ['run', 'test:coverage:full'] },
   { name: 'Build', cmd: NPM, args: ['run', 'build'] },
   { name: 'Production dependency audit', cmd: NPM, args: ['audit', '--omit=dev'] },
-  { name: 'Dead code scan (Knip)', cmd: NPX, args: ['knip', '--reporter', 'compact'] },
+  { name: 'Dead code scan (Knip, pinned)', cmd: NPM, args: ['run', 'audit:knip'] },
 ];
 
 let failed = false;

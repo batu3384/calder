@@ -894,12 +894,6 @@
   --provider-accent-soft: rgba(255, 122, 89, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='blackbox']::before,
-.command-deck-provider-select[data-provider='blackbox'] .custom-select-trigger {
-  --provider-accent: #b8c2d4;
-  --provider-accent-soft: rgba(184, 194, 212, 0.18);
-}
-
 .command-deck-provider-select[data-floating='inline'] .custom-select-dropdown {
   top: calc(100% + 6px);
   left: auto;
@@ -1425,10 +1419,6 @@
 
 .tab-provider-fallback-qwen {
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.96), rgba(15, 118, 110, 0.96));
-}
-
-.tab-provider-fallback-blackbox {
-  background: linear-gradient(135deg, rgba(55, 65, 81, 0.98), rgba(17, 24, 39, 0.98));
 }
 
 .tab-provider-fallback-copilot {

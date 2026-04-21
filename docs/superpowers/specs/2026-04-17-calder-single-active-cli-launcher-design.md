@@ -28,7 +28,7 @@ Replace the visible multi-chip provider strip with a **single active CLI capsule
 Behavior:
 
 - the launcher shows only the active CLI
-- the label uses the provider’s full display name, for example `Claude Code`, `Codex CLI`, `GitHub Copilot`, `Gemini CLI`, `MiniMax CLI`
+- the label uses the provider’s full display name, for example `Claude Code`, `Codex CLI`, `GitHub Copilot`, `Gemini CLI`, `Qwen Code`
 - the active CLI capsule opens a switcher popover listing all installed providers
 - choosing a provider updates the next quick-launch target through the existing `preferences.defaultProvider`
 - the update button and new-session button remain separate actions, not part of the provider label

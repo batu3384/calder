@@ -67,12 +67,6 @@ describe('initProviders', () => {
     expect(provider).toBeDefined();
     expect(provider.meta.id).toBe('copilot');
   });
-
-  it('registers the MiniMax provider', () => {
-    const provider = getProvider('minimax' as any);
-    expect(provider).toBeDefined();
-    expect(provider.meta.id).toBe('minimax');
-  });
 });
 
 describe('getProvider', () => {
@@ -86,12 +80,6 @@ describe('getProvider', () => {
     const provider = getProvider('qwen');
     expect(provider).toBeDefined();
     expect(provider.meta.id).toBe('qwen');
-  });
-
-  it('registers the Blackbox provider', () => {
-    const provider = getProvider('blackbox');
-    expect(provider).toBeDefined();
-    expect(provider.meta.id).toBe('blackbox');
   });
 
   it('throws for unknown provider ID', () => {
@@ -111,15 +99,13 @@ describe('getAllProviders', () => {
   it('returns all registered providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const all = getAllProviders();
-    expect(all.length).toBe(7);
+    expect(all.length).toBe(5);
     const ids = all.map(p => p.meta.id);
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
     expect(ids).toContain('copilot');
     expect(ids).toContain('gemini');
     expect(ids).toContain('qwen');
-    expect(ids).toContain('minimax');
-    expect(ids).toContain('blackbox');
   });
 });
 
@@ -135,13 +121,11 @@ describe('getAllProviderMetas', () => {
   it('returns meta array for all providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const metas = getAllProviderMetas();
-    expect(metas.length).toBe(7);
+    expect(metas.length).toBe(5);
     expect(metas.map(m => m.id)).toContain('codex');
     expect(metas.map(m => m.id)).toContain('copilot');
     expect(metas.map(m => m.id)).toContain('gemini');
     expect(metas.map(m => m.id)).toContain('qwen');
-    expect(metas.map(m => m.id)).toContain('minimax');
-    expect(metas.map(m => m.id)).toContain('blackbox');
   });
 });
 
@@ -154,8 +138,8 @@ describe('getAvailableProviderIds', () => {
     }, true);
     const unavailable = makeFakeProvider({
       ...fakeMeta,
-      id: 'blackbox',
-      displayName: 'Blackbox Missing',
+      id: 'gemini',
+      displayName: 'Gemini Missing',
     }, false);
 
     registerProvider(available);
@@ -163,7 +147,7 @@ describe('getAvailableProviderIds', () => {
 
     const ids = getAvailableProviderIds();
     expect(ids).toContain('copilot');
-    expect(ids).not.toContain('blackbox');
+    expect(ids).not.toContain('gemini');
   });
 
   it('skips providers whose prerequisite check throws unexpectedly', () => {

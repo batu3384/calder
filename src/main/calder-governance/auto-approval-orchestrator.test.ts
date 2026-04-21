@@ -200,7 +200,7 @@ describe('createAutoApprovalOrchestrator', () => {
       }),
     });
 
-    orchestrator.registerSession('session-1', 'minimax', '/tmp/project');
+    orchestrator.registerSession('session-1', 'minimax' as any, '/tmp/project');
     await orchestrator.handleInspectorEvents('session-1', [
       permissionRequestEvent({ toolName: 'Edit' }),
     ]);

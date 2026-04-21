@@ -1,5 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { AutoApprovalMode, CostData, ProviderId, UiLanguage, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, MobileDependencyInstallProgressEvent, MobileInspectPlatform, MobileInspectLaunchResult, MobileInspectScreenshotResult, MobileInspectPointInspectionResult, MobileInspectInteractionResult, StatsCache, ToolFailureData, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, InspectorEvent, ProviderConfig, CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, ShareConnectionDescription, MobileControlPairingResult, MobileControlAnswerResult, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types';
+import { createPreloadMcpApi } from './preload-api-mcp.js';
+import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
+import {
+  createPreloadMobileApi,
+  createPreloadMobileInspectApi,
+  createPreloadMobileSetupApi,
+} from './preload-api-mobile.js';
+import { createPreloadProviderApi } from './preload-api-provider.js';
+import { createPreloadGitApi } from './preload-api-git.js';
+import { createPreloadPtyApi } from './preload-api-pty.js';
+import { createPreloadProjectDomainApi } from './preload-api-project-domains.js';
 
 export type { CostData } from '../shared/types';
 
@@ -237,25 +248,7 @@ function onChannel(channel: string, callback: (...args: unknown[]) => void): () 
 }
 
 const api: CalderApi = {
-  pty: {
-    create: (sessionId, cwd, cliSessionId, isResume, extraArgs, providerId, initialPrompt) =>
-      ipcRenderer.invoke('pty:create', sessionId, cwd, cliSessionId, isResume, extraArgs || '', providerId || 'claude', initialPrompt),
-    createShell: (sessionId, cwd) =>
-      ipcRenderer.invoke('pty:createShell', sessionId, cwd),
-    write: (sessionId, data) =>
-      ipcRenderer.send('pty:write', sessionId, data),
-    resize: (sessionId, cols, rows) =>
-      ipcRenderer.send('pty:resize', sessionId, cols, rows),
-    kill: (sessionId) =>
-      ipcRenderer.invoke('pty:kill', sessionId),
-    getCwd: (sessionId: string) =>
-      ipcRenderer.invoke('pty:getCwd', sessionId),
-    onData: (callback) =>
-      onChannel('pty:data', (sessionId, data) => callback(sessionId as string, data as string)),
-    onExit: (callback) =>
-      onChannel('pty:exit', (sessionId, exitCode, signal) =>
-        callback(sessionId as string, exitCode as number, signal as number | undefined)),
-  },
+  pty: createPreloadPtyApi(ipcRenderer, onChannel),
   session: {
     buildResumeWithPrompt: (sourceProviderId, sourceCliSessionId, projectPath, sessionName) =>
       ipcRenderer.invoke('session:buildResumeWithPrompt', sourceProviderId, sourceCliSessionId, projectPath, sessionName),
@@ -289,82 +282,8 @@ const api: CalderApi = {
     unwatchFile: (filePath: string) => ipcRenderer.send('fs:unwatchFile', filePath),
     onFileChanged: (callback: (filePath: string) => void) => onChannel('fs:fileChanged', (filePath) => callback(filePath as string)),
   },
-  provider: {
-    getConfig: (providerId, projectPath) => ipcRenderer.invoke('provider:getConfig', providerId, projectPath),
-    getMeta: (providerId) => ipcRenderer.invoke('provider:getMeta', providerId),
-    listProviders: () => ipcRenderer.invoke('provider:listProviders'),
-    checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
-    updateAll: () => ipcRenderer.invoke('provider:updateAll'),
-    cancelUpdateAll: () => ipcRenderer.invoke('provider:cancelUpdateAll'),
-    onUpdateProgress: (callback) => onChannel('provider:update-progress', (event) => callback(event as ProviderUpdateProgressEvent)),
-    watchProject: (providerId, projectPath) => ipcRenderer.send('config:watchProject', providerId, projectPath),
-    onConfigChanged: (callback) => onChannel('config:changed', callback),
-  },
-  context: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('context:getProjectState', projectPath),
-    createStarterFiles: (projectPath: string) => ipcRenderer.invoke('context:createStarterFiles', projectPath),
-    createSharedRule: (projectPath: string, title: string, priority: 'hard' | 'soft') =>
-      ipcRenderer.invoke('context:createSharedRule', projectPath, title, priority),
-    renameSharedRule: (projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft') =>
-      ipcRenderer.invoke('context:renameSharedRule', projectPath, relativePath, title, priority),
-    deleteSharedRule: (projectPath: string, relativePath: string) =>
-      ipcRenderer.invoke('context:deleteSharedRule', projectPath, relativePath),
-    watchProject: (projectPath: string) => ipcRenderer.send('context:watchProject', projectPath),
-    onChanged: (callback) => onChannel('context:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectContextState)),
-  },
-  workflow: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('workflow:getProjectState', projectPath),
-    createStarterFiles: (projectPath: string) => ipcRenderer.invoke('workflow:createStarterFiles', projectPath),
-    createFile: (projectPath: string, title: string) => ipcRenderer.invoke('workflow:createFile', projectPath, title),
-    readFile: (projectPath: string, workflowPath: string) => ipcRenderer.invoke('workflow:readFile', projectPath, workflowPath),
-    watchProject: (projectPath: string) => ipcRenderer.send('workflow:watchProject', projectPath),
-    onChanged: (callback) => onChannel('workflow:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectWorkflowState)),
-  },
-  teamContext: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('teamContext:getProjectState', projectPath),
-    createStarterFiles: (projectPath: string) => ipcRenderer.invoke('teamContext:createStarterFiles', projectPath),
-    createSpace: (projectPath: string, title: string) => ipcRenderer.invoke('teamContext:createSpace', projectPath, title),
-    watchProject: (projectPath: string) => ipcRenderer.send('teamContext:watchProject', projectPath),
-    onChanged: (callback) => onChannel('teamContext:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectTeamContextState)),
-  },
-  review: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('review:getProjectState', projectPath),
-    createFile: (projectPath: string, title: string) => ipcRenderer.invoke('review:createFile', projectPath, title),
-    readFile: (projectPath: string, reviewPath: string) => ipcRenderer.invoke('review:readFile', projectPath, reviewPath),
-    watchProject: (projectPath: string) => ipcRenderer.send('review:watchProject', projectPath),
-    onChanged: (callback) => onChannel('review:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectReviewState)),
-  },
-  governance: {
-    getProjectState: (projectPath: string, sessionId?: string) => ipcRenderer.invoke('governance:getProjectState', projectPath, sessionId),
-    setAutoApprovalMode: (projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null, sessionId?: string) =>
-      ipcRenderer.invoke('governance:setAutoApprovalMode', projectPath, scope, mode, sessionId),
-    setSessionAutoApprovalOverride: (sessionId: string, mode: AutoApprovalMode | null) =>
-      ipcRenderer.invoke('governance:setSessionAutoApprovalOverride', sessionId, mode),
-    createStarterPolicy: (projectPath: string) => ipcRenderer.invoke('governance:createStarterPolicy', projectPath),
-    watchProject: (projectPath: string) => ipcRenderer.send('governance:watchProject', projectPath),
-    onChanged: (callback) => onChannel('governance:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectGovernanceState)),
-  },
-  task: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('task:getProjectState', projectPath),
-    create: (projectPath: string, title: string, prompt: string) => ipcRenderer.invoke('task:create', projectPath, title, prompt),
-    read: (projectPath: string, taskPath: string) => ipcRenderer.invoke('task:read', projectPath, taskPath),
-    watchProject: (projectPath: string) => ipcRenderer.send('task:watchProject', projectPath),
-    onChanged: (callback) => onChannel('task:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectBackgroundTaskState)),
-  },
-  checkpoint: {
-    getProjectState: (projectPath: string) => ipcRenderer.invoke('checkpoint:getProjectState', projectPath),
-    create: (projectPath: string, snapshot: ProjectCheckpointSnapshotInput) => ipcRenderer.invoke('checkpoint:create', projectPath, snapshot),
-    read: (projectPath: string, checkpointPath: string) => ipcRenderer.invoke('checkpoint:read', projectPath, checkpointPath),
-    watchProject: (projectPath: string) => ipcRenderer.send('checkpoint:watchProject', projectPath),
-    onChanged: (callback) => onChannel('checkpoint:changed', (projectPath, state) =>
-      callback(projectPath as string, state as ProjectCheckpointState)),
-  },
+  provider: createPreloadProviderApi(ipcRenderer, onChannel),
+  ...createPreloadProjectDomainApi(ipcRenderer, onChannel),
   claude: {
     getConfig: (projectPath) => ipcRenderer.invoke('claude:getConfig', projectPath),
   },
@@ -372,22 +291,7 @@ const api: CalderApi = {
     load: () => ipcRenderer.invoke('store:load'),
     save: (state) => ipcRenderer.invoke('store:save', state),
   },
-  git: {
-    getStatus: (path) => ipcRenderer.invoke('git:getStatus', path),
-    getFiles: (path) => ipcRenderer.invoke('git:getFiles', path),
-    getDiff: (path: string, file: string, area: string) => ipcRenderer.invoke('git:getDiff', path, file, area),
-    getWorktrees: (path: string) => ipcRenderer.invoke('git:getWorktrees', path),
-    getRemoteUrl: (path: string) => ipcRenderer.invoke('git:getRemoteUrl', path),
-    stageFile: (path: string, file: string) => ipcRenderer.invoke('git:stageFile', path, file),
-    unstageFile: (path: string, file: string) => ipcRenderer.invoke('git:unstageFile', path, file),
-    discardFile: (path: string, file: string, area: string) => ipcRenderer.invoke('git:discardFile', path, file, area),
-    openInEditor: (path: string, file: string) => ipcRenderer.invoke('git:openInEditor', path, file),
-    listBranches: (path: string) => ipcRenderer.invoke('git:listBranches', path),
-    checkoutBranch: (path: string, branch: string) => ipcRenderer.invoke('git:checkoutBranch', path, branch),
-    createBranch: (path: string, branch: string) => ipcRenderer.invoke('git:createBranch', path, branch),
-    watchProject: (path: string) => ipcRenderer.send('git:watchProject', path),
-    onChanged: (callback: () => void) => onChannel('git:changed', callback),
-  },
+  git: createPreloadGitApi(ipcRenderer, onChannel),
   update: {
     checkNow: () => ipcRenderer.invoke('update:checkNow'),
     install: () => ipcRenderer.invoke('update:install'),
@@ -422,74 +326,11 @@ const api: CalderApi = {
   sharing: {
     getRtcConfig: () => ipcRenderer.invoke('sharing:getRtcConfig'),
   },
-  mobile: {
-    createControlPairing: (
-      sessionId: string,
-      offer: string,
-      passphrase: string,
-      mode: 'readonly' | 'readwrite',
-      language?: UiLanguage,
-      offerDescription?: ShareConnectionDescription,
-    ) => ipcRenderer.invoke('mobile:createControlPairing', sessionId, offer, passphrase, mode, language, offerDescription),
-    consumeControlAnswer: (pairingId: string) => ipcRenderer.invoke('mobile:consumeControlAnswer', pairingId),
-    revokeControlPairing: (pairingId: string) => ipcRenderer.invoke('mobile:revokeControlPairing', pairingId),
-  },
-  mobileSetup: {
-    checkDependencies: () => ipcRenderer.invoke('mobileSetup:checkDependencies'),
-    installDependency: (dependencyId: MobileDependencyId, installId?: string) =>
-      ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId),
-    onInstallProgress: (callback) =>
-      onChannel('mobileSetup:installProgress', (event) =>
-        callback(event as MobileDependencyInstallProgressEvent)),
-  },
-  mobileInspect: {
-    launch: (platform: MobileInspectPlatform) =>
-      ipcRenderer.invoke('mobileInspect:launch', platform),
-    captureScreenshot: (platform: MobileInspectPlatform) =>
-      ipcRenderer.invoke('mobileInspect:captureScreenshot', platform),
-    inspectPoint: (platform: MobileInspectPlatform, x: number, y: number) =>
-      ipcRenderer.invoke('mobileInspect:inspectPoint', platform, x, y),
-    interact: (platform: MobileInspectPlatform, x: number, y: number) =>
-      ipcRenderer.invoke('mobileInspect:interact', platform, x, y),
-  },
-  cliSurface: {
-    discover: (projectPath: string) =>
-      ipcRenderer.invoke('cli-surface:discover', projectPath),
-    start: (projectId: string, profile: CliSurfaceProfile) =>
-      ipcRenderer.invoke('cli-surface:start', projectId, profile),
-    stop: (projectId: string) =>
-      ipcRenderer.invoke('cli-surface:stop', projectId),
-    restart: (projectId: string) =>
-      ipcRenderer.invoke('cli-surface:restart', projectId),
-    write: (projectId: string, data: string) =>
-      ipcRenderer.send('cli-surface:write', projectId, data),
-    resize: (projectId: string, cols: number, rows: number) =>
-      ipcRenderer.send('cli-surface:resize', projectId, cols, rows),
-    onData: (callback) =>
-      onChannel('cli-surface:data', (projectId, data) =>
-        callback(projectId as string, data as string)),
-    onExit: (callback) =>
-      onChannel('cli-surface:exit', (projectId, exitCode, signal) =>
-        callback(projectId as string, exitCode as number, signal as number | undefined)),
-    onStatus: (callback) =>
-      onChannel('cli-surface:status', (projectId, state) =>
-        callback(projectId as string, state as CliSurfaceRuntimeState)),
-    onError: (callback) =>
-      onChannel('cli-surface:error', (projectId, message) =>
-        callback(projectId as string, message as string)),
-  },
-  mcp: {
-    connect: (id: string, url: string) => ipcRenderer.invoke('mcp:connect', id, url),
-    disconnect: (id: string) => ipcRenderer.invoke('mcp:disconnect', id),
-    listTools: (id: string) => ipcRenderer.invoke('mcp:listTools', id),
-    listResources: (id: string) => ipcRenderer.invoke('mcp:listResources', id),
-    listPrompts: (id: string) => ipcRenderer.invoke('mcp:listPrompts', id),
-    callTool: (id: string, name: string, args: Record<string, unknown>) => ipcRenderer.invoke('mcp:callTool', id, name, args),
-    readResource: (id: string, uri: string) => ipcRenderer.invoke('mcp:readResource', id, uri),
-    getPrompt: (id: string, name: string, args: Record<string, string>) => ipcRenderer.invoke('mcp:getPrompt', id, name, args),
-    addServer: (name: string, config: unknown, scope: 'user' | 'project', projectPath?: string) => ipcRenderer.invoke('mcp:addServer', name, config, scope, projectPath),
-    removeServer: (name: string, filePath: string, scope: 'user' | 'project', projectPath?: string) => ipcRenderer.invoke('mcp:removeServer', name, filePath, scope, projectPath),
-  },
+  mobile: createPreloadMobileApi(ipcRenderer),
+  mobileSetup: createPreloadMobileSetupApi(ipcRenderer, onChannel),
+  mobileInspect: createPreloadMobileInspectApi(ipcRenderer),
+  cliSurface: createPreloadCliSurfaceApi(ipcRenderer, onChannel),
+  mcp: createPreloadMcpApi(ipcRenderer),
   stats: {
     getCache: () => ipcRenderer.invoke('stats:getCache'),
   },

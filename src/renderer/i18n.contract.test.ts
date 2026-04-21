@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const source = readFileSync(new URL('./i18n.ts', import.meta.url), 'utf-8');
+const source = [
+  readFileSync(new URL('./i18n.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-tab-terminal.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-preferences.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-mobile.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-errors.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-pattern-translations.ts', import.meta.url), 'utf-8'),
+].join('\n');
 
 describe('i18n contract', () => {
   it('covers key workspace Turkish translations for rail and settings copy', () => {
