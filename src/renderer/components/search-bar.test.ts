@@ -5,7 +5,7 @@ vi.mock('./terminal-pane.js', () => ({
   getTerminalInstance: vi.fn(),
 }));
 
-vi.mock('./project-terminal.js', () => ({
+vi.mock('./shell-terminal-registry.js', () => ({
   getShellTerminalInstance: vi.fn(),
 }));
 

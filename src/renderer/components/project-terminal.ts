@@ -5,6 +5,7 @@ import { SearchAddon } from '@xterm/addon-search';
 import { appState } from '../state.js';
 import { fitAllVisible } from './terminal-pane.js';
 import { destroySearchBar, hideSearchBar } from './search-bar.js';
+import { registerShellTerminalInstance, unregisterShellTerminalInstance } from './shell-terminal-registry.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 interface ShellTerminalInstance {
@@ -85,6 +86,7 @@ function ensureShell(projectId: string, _projectPath: string): ShellTerminalInst
   });
 
   shells.set(projectId, instance);
+  registerShellTerminalInstance(projectId, instance);
   return instance;
 }
 
@@ -228,6 +230,7 @@ function destroyShell(projectId: string): void {
   const instance = shells.get(projectId);
   if (!instance) return;
   destroySearchBar(instance.sessionId);
+  unregisterShellTerminalInstance(projectId);
   window.calder.pty.kill(instance.sessionId);
   instance.terminal.dispose();
   instance.element.remove();
