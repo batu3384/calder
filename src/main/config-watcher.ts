@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import type { BrowserWindow } from 'electron';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 
 const DEBOUNCE_MS = 500;
 

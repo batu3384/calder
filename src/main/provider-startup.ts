@@ -1,4 +1,5 @@
-import type { PersistedState, ProviderId } from '../shared/types';
+import type { PersistedState } from '../shared/types/project';
+import type { ProviderId } from '../shared/types/provider';
 import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './providers/provider';
 

@@ -1,6 +1,6 @@
 import * as pty from 'node-pty';
 import { execFile, execFileSync } from 'child_process';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 import { getProvider } from './providers/registry';
 import { registerSession } from './hook-status';
 import { buildProviderBaseEnv } from './provider-env';

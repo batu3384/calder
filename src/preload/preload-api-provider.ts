@@ -6,7 +6,7 @@ import type {
   ProviderUpdateCancelResult,
   ProviderUpdateProgressEvent,
   ProviderUpdateSummary,
-} from '../shared/types';
+} from '../shared/types/provider';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 

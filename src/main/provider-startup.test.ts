@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PersistedState, CliProviderMeta, ProviderId } from '../shared/types';
+import type { PersistedState } from '../shared/types/project';
+import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 import type { CliProvider } from './providers/provider';
 import {
   analyzeProviderStartup,

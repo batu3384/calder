@@ -1,4 +1,4 @@
-import type { ProviderId, CliProviderMeta, CliProviderCapabilities } from '../shared/types.js';
+import type { ProviderId, CliProviderMeta, CliProviderCapabilities } from '../shared/types/provider.js';
 
 export interface ProviderAvailabilitySnapshot {
   providers: CliProviderMeta[];

@@ -10,7 +10,7 @@ import type {
   MobileInspectLaunchResult,
   MobileInspectPlatform,
   MobileInspectScreenshotResult,
-} from '../shared/types';
+} from '../shared/types/mobile';
 
 const COMMAND_TIMEOUT_MS = 20_000;
 const IOS_BOOT_TIMEOUT_MS = 120_000;

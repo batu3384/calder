@@ -1,5 +1,5 @@
 import * as path from 'path';
-import type { AutoApprovalMode, ProjectGovernanceState } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState } from '../shared/types/governance';
 import { POLICY_RELATIVE_PATH } from './calder-governance/discovery';
 import {
   GLOBAL_AUTO_APPROVAL_POLICY_PATH,

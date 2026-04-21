@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CliProviderMeta, ProviderId } from '../shared/types';
+import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 import { updateProviders, type ProviderUpdaterRunner, type ProviderUpdaterTarget } from './provider-updater';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {

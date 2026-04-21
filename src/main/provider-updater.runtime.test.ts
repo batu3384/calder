@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CliProviderMeta, ProviderId } from '../shared/types';
+import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 
 const mockExecFile = vi.hoisted(() => vi.fn());
 const mockGetAllProviders = vi.hoisted(() => vi.fn());

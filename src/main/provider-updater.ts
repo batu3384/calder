@@ -9,7 +9,7 @@ import type {
   ProviderUpdateResult,
   ProviderUpdateSource,
   ProviderUpdateSummary,
-} from '../shared/types';
+} from '../shared/types/provider';
 
 export interface ProviderUpdaterTarget {
   meta: Pick<CliProvider['meta'], 'id' | 'displayName'>;

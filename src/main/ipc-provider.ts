@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 import { getAllProviderMetas, getProvider, getProviderMeta } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';

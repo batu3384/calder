@@ -9,7 +9,7 @@ import type {
   MobileDependencyInstallProgressEvent,
   MobileDependencyInstallResult,
   MobileDependencyReport,
-} from '../shared/types';
+} from '../shared/types/mobile';
 
 const CHECK_TIMEOUT_MS = 20_000;
 const INSTALL_TIMEOUT_MS = 12 * 60_000;

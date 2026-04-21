@@ -1,6 +1,6 @@
 import { execFileSync } from 'child_process';
 import { homedir } from 'os';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 import { isWin } from './platform';
 
 const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {

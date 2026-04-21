@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CliProviderMeta } from '../shared/types.js';
+import type { CliProviderMeta } from '../shared/types/provider.js';
 
 const providers: CliProviderMeta[] = [
   {

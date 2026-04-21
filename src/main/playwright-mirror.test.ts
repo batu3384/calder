@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { InspectorEvent } from '../shared/types';
+import type { InspectorEvent } from '../shared/types/session';
 import {
   extractPlaywrightNavigateCwd,
   extractPlaywrightNavigateUrlsFromTerminalChunk,

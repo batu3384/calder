@@ -1,5 +1,5 @@
 import type { IpcRenderer } from 'electron';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 

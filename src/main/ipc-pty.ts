@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { spawnPty, spawnShellPty, writePty, resizePty, killPty, isSilencedExit } from './pty-manager';
-import type { ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
 
 export interface PtyIpcOps {
   isWithinKnownProject: (resolvedPath: string) => boolean;

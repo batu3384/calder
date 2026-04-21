@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron';
-import type { AutoApprovalMode, ProjectGovernanceState } from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceState } from '../shared/types/governance';
 import { discoverProjectContext } from './calder-context/discovery';
 import {
   createProjectContextStarterFiles,

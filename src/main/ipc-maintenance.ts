@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
-import type { ProviderId, SettingsValidationResult } from '../shared/types';
+import type { ProviderId, SettingsValidationResult } from '../shared/types/provider';
 import { checkForUpdates, quitAndInstall } from './auto-updater';
 import { getProvider } from './providers/registry';
 import { isTrackingHealthy } from '../shared/tracking-health';
