@@ -6,6 +6,14 @@ import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './prov
 import { clampRatio } from './components/mosaic-layout-model.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
+import { RendererPersistQueue } from './state-persistence.js';
+import { RendererStateNavigation } from './state-navigation.js';
+import {
+  addInsightSnapshotToProject,
+  dismissInsightForProject,
+  isInsightDismissedForProject,
+  reorderProjectSession,
+} from './state-session-mutators.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 
@@ -207,38 +215,22 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
   private listeners = new Map<EventType, Set<EventCallback>>();
-  private navHistory: string[] = [];
-  private navIndex = -1;
-  private navSuppressPush = false;
-  private persistInFlight = false;
-  private pendingPersistSnapshot: PersistedState | null = null;
+  private navigation = new RendererStateNavigation(NAV_HISTORY_MAX);
+  private persistQueue = new RendererPersistQueue(
+    (snapshot) => window.calder.store.save(snapshot),
+    (error) => { console.warn('Failed to persist renderer state:', error); },
+  );
 
   private isCliSession(session: SessionRecord): boolean {
     return !session.type || session.type === 'claude';
   }
 
   private pushNav(sessionId: string | null | undefined): void {
-    if (!sessionId || this.navSuppressPush) return;
-    if (this.navHistory[this.navIndex] === sessionId) return;
-    this.navHistory.length = this.navIndex + 1;
-    this.navHistory.push(sessionId);
-    if (this.navHistory.length > NAV_HISTORY_MAX) {
-      const drop = this.navHistory.length - NAV_HISTORY_MAX;
-      this.navHistory.splice(0, drop);
-    }
-    this.navIndex = this.navHistory.length - 1;
+    this.navigation.push(sessionId);
   }
 
   private pruneNav(sessionId: string): void {
-    let i = 0;
-    while (i < this.navHistory.length) {
-      if (this.navHistory[i] === sessionId) {
-        this.navHistory.splice(i, 1);
-        if (i <= this.navIndex) this.navIndex--;
-      } else {
-        i++;
-      }
-    }
+    this.navigation.prune(sessionId);
   }
 
   private findProjectBySession(sessionId: string): ProjectRecord | undefined {
@@ -342,31 +334,18 @@ class AppState {
   }
 
   private stepNav(direction: 1 | -1): void {
-    let i = this.navIndex + direction;
-    while (i >= 0 && i < this.navHistory.length) {
-      const id = this.navHistory[i];
-      const project = this.findProjectBySession(id);
-      if (project) {
-        this.navIndex = i;
-        this.navSuppressPush = true;
-        try {
-          const projectChanged = this.state.activeProjectId !== project.id;
-          this.state.activeProjectId = project.id;
-          project.activeSessionId = id;
-          this.persist();
-          if (projectChanged) this.emit('project-changed');
-          this.emit('session-changed');
-        } finally {
-          this.navSuppressPush = false;
-        }
-        return;
-      }
-      // Stale entry — drop and continue in same direction
-      this.navHistory.splice(i, 1);
-      if (direction === -1) i--;
-      // If we removed an entry before navIndex, shift it
-      if (i < this.navIndex) this.navIndex--;
-    }
+    this.navigation.step(
+      direction,
+      (sessionId) => this.findProjectBySession(sessionId),
+      (project, sessionId) => {
+        const projectChanged = this.state.activeProjectId !== project.id;
+        this.state.activeProjectId = project.id;
+        project.activeSessionId = sessionId;
+        this.persist();
+        if (projectChanged) this.emit('project-changed');
+        this.emit('session-changed');
+      },
+    );
   }
 
   on(event: EventType, cb: EventCallback): () => void {
@@ -464,35 +443,8 @@ class AppState {
     };
   }
 
-  private async flushPersistQueue(): Promise<void> {
-    if (this.persistInFlight) return;
-    this.persistInFlight = true;
-
-    try {
-      while (this.pendingPersistSnapshot) {
-        const nextSnapshot = this.pendingPersistSnapshot;
-        this.pendingPersistSnapshot = null;
-        try {
-          const saveResult = window.calder.store.save(nextSnapshot) as unknown;
-          if (saveResult && typeof (saveResult as Promise<void>).then === 'function') {
-            await (saveResult as Promise<void>);
-          }
-        } catch (error) {
-          console.warn('Failed to persist renderer state:', error);
-        }
-      }
-    } finally {
-      this.persistInFlight = false;
-      if (this.pendingPersistSnapshot) {
-        void this.flushPersistQueue();
-      }
-    }
-  }
-
   private persist(): void {
-    this.pendingPersistSnapshot = this.buildPersistSnapshot();
-    if (this.persistInFlight) return;
-    void this.flushPersistQueue();
+    this.persistQueue.enqueue(this.buildPersistSnapshot());
   }
 
   get projects(): ProjectRecord[] {
@@ -1848,12 +1800,7 @@ class AppState {
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    if (!project.insights) project.insights = { initialContextSnapshots: [], dismissed: [] };
-    project.insights.initialContextSnapshots.push(snapshot);
-    // Cap at 50 snapshots
-    if (project.insights.initialContextSnapshots.length > 50) {
-      project.insights.initialContextSnapshots = project.insights.initialContextSnapshots.slice(-50);
-    }
+    addInsightSnapshotToProject(project, snapshot);
     this.persist();
     this.emit('insights-changed', projectId);
   }
@@ -1861,46 +1808,37 @@ class AppState {
   dismissInsight(projectId: string, insightId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    if (!project.insights) project.insights = { initialContextSnapshots: [], dismissed: [] };
-    if (!project.insights.dismissed.includes(insightId)) {
-      project.insights.dismissed.push(insightId);
-    }
+    dismissInsightForProject(project, insightId);
     this.persist();
     this.emit('insights-changed', projectId);
   }
 
   isInsightDismissed(projectId: string, insightId: string): boolean {
     const project = this.state.projects.find((p) => p.id === projectId);
-    return project?.insights?.dismissed.includes(insightId) ?? false;
+    if (!project) return false;
+    return isInsightDismissedForProject(project, insightId);
   }
 
   reorderSession(projectId: string, sessionId: string, toIndex: number): void {
-    const project = this.state.projects.find(p => p.id === projectId);
+    const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    const fromIndex = project.sessions.findIndex(s => s.id === sessionId);
-    if (fromIndex === -1 || fromIndex === toIndex) return;
-    const [session] = project.sessions.splice(fromIndex, 1);
-    project.sessions.splice(toIndex, 0, session);
-    // Keep splitPanes in sync with sessions order
-    if (project.layout.splitPanes.length > 0) {
-      project.layout.splitPanes = project.sessions
-        .filter(s => project.layout.splitPanes.includes(s.id))
-        .map(s => s.id);
-    }
+    if (!reorderProjectSession(project, sessionId, toIndex)) return;
     this.persist();
     this.emit('session-changed');
+  }
+
+  /** @internal Test-only: reset all state containers */
+  resetForTesting(): void {
+    this.state = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
+    this.listeners = new Map();
+    this.navigation.resetForTesting();
+    this.persistQueue.resetForTesting();
   }
 }
 
 /** @internal Test-only: reset all module state */
 export function _resetForTesting(): void {
-  (appState as any)['state'] = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
-  (appState as any)['listeners'] = new Map();
-  (appState as any)['navHistory'] = [];
-  (appState as any)['navIndex'] = -1;
-  (appState as any)['navSuppressPush'] = false;
-  (appState as any)['persistInFlight'] = false;
-  (appState as any)['pendingPersistSnapshot'] = null;
+  appState.resetForTesting();
 }
 
 export const appState = new AppState();

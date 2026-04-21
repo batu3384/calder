@@ -59,6 +59,35 @@ function addProjectWithSessions(count: number) {
   return { project, sessions };
 }
 
+describe('_resetForTesting()', () => {
+  it('restores default state and drops prior listeners', () => {
+    const project = addProject('Dirty', '/dirty');
+    appState.addSession(project.id, 'S1');
+    appState.setPreference('debugMode', true);
+
+    const prefsListener = vi.fn();
+    appState.on('preferences-changed', prefsListener);
+    appState.setPreference('notificationsDesktop', false);
+    expect(prefsListener).toHaveBeenCalledTimes(1);
+
+    _resetForTesting();
+
+    expect(appState.projects).toEqual([]);
+    expect(appState.activeProjectId).toBeNull();
+    expect(appState.preferences).toMatchObject({
+      soundOnSessionWaiting: true,
+      notificationsDesktop: true,
+      debugMode: false,
+      sessionHistoryEnabled: true,
+      insightsEnabled: true,
+      autoTitleEnabled: true,
+    });
+
+    appState.setPreference('debugMode', true);
+    expect(prefsListener).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('load()', () => {
   it('loads persisted state from store', async () => {
     const persisted = {
