@@ -8,6 +8,7 @@ import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js'
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
+import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import {
   addInsightSnapshotToProject,
   dismissInsightForProject,
@@ -271,39 +272,8 @@ class AppState {
     this.emit('state-loaded');
   }
 
-  private buildPersistSnapshot(): PersistedState {
-    // Strip transient fields before saving
-    return {
-      ...this.state,
-      projects: this.state.projects.map((p) => ({
-        ...p,
-        surface: p.surface
-          ? {
-              ...p.surface,
-              web: p.surface.web
-                ? {
-                    ...p.surface.web,
-                    history: p.surface.web.history ? [...p.surface.web.history] : [],
-                  }
-                : p.surface.web,
-              cli: p.surface.cli
-                ? {
-                    ...p.surface.cli,
-                    profiles: [...p.surface.cli.profiles],
-                    runtime: p.surface.cli.runtime
-                      ? stripTransientRuntimeFields(p.surface.cli.runtime)
-                      : undefined,
-                  }
-                : p.surface.cli,
-            }
-          : undefined,
-        sessions: p.sessions.map(({ pendingInitialPrompt: _pendingInitialPrompt, ...rest }) => rest),
-      })),
-    };
-  }
-
   private persist(): void {
-    this.persistQueue.enqueue(this.buildPersistSnapshot());
+    this.persistQueue.enqueue(buildRendererPersistSnapshot(this.state));
   }
 
   get projects(): ProjectRecord[] {

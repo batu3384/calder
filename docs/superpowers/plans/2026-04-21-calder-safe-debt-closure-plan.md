@@ -205,6 +205,8 @@ Execution rule:
 - [x] Add direct unit coverage for state normalizers.
 - [x] Extract repeated project domain state setter compare/assign flow into `state-project-domain-updater.ts`.
 - [x] Add direct unit coverage for project domain updater.
+- [x] Extract persist snapshot serialization into `state-persist-snapshot.ts`.
+- [x] Add direct unit coverage for persist snapshot transient-field stripping and collection cloning.
 - [ ] Continue extraction until `state.ts` becomes orchestrator, not storage of all logic.
 
 ### Slice 4.3 - `browser-tab/pane.ts`

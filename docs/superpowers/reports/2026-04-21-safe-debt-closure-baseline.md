@@ -234,3 +234,23 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`328` files / `2418` tests)
   - `npm run audit:deep`: PASS
+
+## Phase 4.2 Persist Snapshot Note (In Progress)
+
+- Continued `state.ts` decomposition with a low-risk persist-boundary extraction:
+  - `src/renderer/state-persist-snapshot.ts`
+  - `src/renderer/state-persist-snapshot.test.ts`
+- Moved renderer persist snapshot serialization out of `state.ts`:
+  - clone surface web history before saving
+  - clone CLI surface profiles before saving
+  - strip transient CLI runtime fields before saving
+  - strip transient `pendingInitialPrompt` from persisted sessions
+- `state.ts` size snapshot:
+  - Phase 0 baseline: `1906` lines
+  - After project-domain updater extraction: `1632` lines
+  - After persist snapshot extraction: `1602` lines
+- Validation:
+  - Targeted `state-persist-snapshot.test.ts` + `state.test.ts`: PASS (`2` files / `196` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`329` files / `2420` tests)
+  - `npm run audit:deep`: PASS (`329` files / `2420` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)
