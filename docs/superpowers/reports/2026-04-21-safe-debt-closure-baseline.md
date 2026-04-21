@@ -213,3 +213,24 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`327` files / `2416` tests)
   - `npm run audit:deep`: PASS
+
+## Phase 4.2 Follow-up Note (In Progress)
+
+- Continued `state.ts` decomposition with another behavior-preserving extraction:
+  - `src/renderer/state-project-domain-updater.ts`
+  - `src/renderer/state-project-domain-updater.test.ts`
+- Moved the repeated project-domain setter flow out of `state.ts`:
+  - normalize incoming domain state
+  - compare serialized previous/next values
+  - assign only when changed
+  - preserve no-op behavior when state is unchanged
+- Added a private `emitProjectChangedIfActive()` helper so extracted setter call sites keep the same active-project event semantics.
+- `state.ts` size snapshot:
+  - Phase 0 baseline: `1906` lines
+  - After normalizer extraction: `1701` lines
+  - After project-domain updater extraction: `1632` lines
+- Validation:
+  - Targeted state/domain/sync tests: PASS (`7` files / `223` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`328` files / `2418` tests)
+  - `npm run audit:deep`: PASS

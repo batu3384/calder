@@ -203,6 +203,8 @@ Execution rule:
 
 - [x] Extract pure project/layout/surface/domain-state normalizers into `state-normalizers.ts`.
 - [x] Add direct unit coverage for state normalizers.
+- [x] Extract repeated project domain state setter compare/assign flow into `state-project-domain-updater.ts`.
+- [x] Add direct unit coverage for project domain updater.
 - [ ] Continue extraction until `state.ts` becomes orchestrator, not storage of all logic.
 
 ### Slice 4.3 - `browser-tab/pane.ts`

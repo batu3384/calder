@@ -14,6 +14,7 @@ import {
   isInsightDismissedForProject,
   reorderProjectSession,
 } from './state-session-mutators.js';
+import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
   buildWorkflowLaunchPrompt,
   DEFAULT_BROWSER_WIDTH_RATIO,
@@ -397,137 +398,66 @@ class AppState {
     this.emit('project-changed');
   }
 
-  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-
-    const nextProjectContext = projectContext
-      ? normalizeProjectContextState(projectContext, project.projectContext)
-      : undefined;
-
-    const before = JSON.stringify(project.projectContext ?? null);
-    const after = JSON.stringify(nextProjectContext ?? null);
-    if (before === after) return;
-
-    project.projectContext = nextProjectContext;
-    this.persist();
+  private emitProjectChangedIfActive(project: ProjectRecord): void {
     if (project.id === this.state.activeProjectId) {
       this.emit('project-changed');
     }
+  }
+
+  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return;
+    if (!setProjectDomainState(project, 'projectContext', projectContext, normalizeProjectContextState)) return;
+    this.persist();
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectWorkflows(projectId: string, projectWorkflows: ProjectWorkflowState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectWorkflows = projectWorkflows
-      ? normalizeProjectWorkflowState(projectWorkflows)
-      : undefined;
-
-    const before = JSON.stringify(project.projectWorkflows ?? null);
-    const after = JSON.stringify(nextProjectWorkflows ?? null);
-    if (before === after) return;
-
-    project.projectWorkflows = nextProjectWorkflows;
+    if (!setProjectDomainState(project, 'projectWorkflows', projectWorkflows, normalizeProjectWorkflowState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectTeamContext(projectId: string, projectTeamContext: ProjectTeamContextState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectTeamContext = projectTeamContext
-      ? normalizeProjectTeamContextState(projectTeamContext)
-      : undefined;
-
-    const before = JSON.stringify(project.projectTeamContext ?? null);
-    const after = JSON.stringify(nextProjectTeamContext ?? null);
-    if (before === after) return;
-
-    project.projectTeamContext = nextProjectTeamContext;
+    if (!setProjectDomainState(project, 'projectTeamContext', projectTeamContext, normalizeProjectTeamContextState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectReviews(projectId: string, projectReviews: ProjectReviewState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectReviews = projectReviews
-      ? normalizeProjectReviewState(projectReviews)
-      : undefined;
-
-    const before = JSON.stringify(project.projectReviews ?? null);
-    const after = JSON.stringify(nextProjectReviews ?? null);
-    if (before === after) return;
-
-    project.projectReviews = nextProjectReviews;
+    if (!setProjectDomainState(project, 'projectReviews', projectReviews, normalizeProjectReviewState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectGovernance(projectId: string, projectGovernance: ProjectGovernanceState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectGovernance = projectGovernance
-      ? normalizeProjectGovernanceState(projectGovernance)
-      : undefined;
-
-    const before = JSON.stringify(project.projectGovernance ?? null);
-    const after = JSON.stringify(nextProjectGovernance ?? null);
-    if (before === after) return;
-
-    project.projectGovernance = nextProjectGovernance;
+    if (!setProjectDomainState(project, 'projectGovernance', projectGovernance, normalizeProjectGovernanceState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectBackgroundTasks(projectId: string, projectBackgroundTasks: ProjectBackgroundTaskState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectBackgroundTasks = projectBackgroundTasks
-      ? normalizeProjectBackgroundTaskState(projectBackgroundTasks)
-      : undefined;
-
-    const before = JSON.stringify(project.projectBackgroundTasks ?? null);
-    const after = JSON.stringify(nextProjectBackgroundTasks ?? null);
-    if (before === after) return;
-
-    project.projectBackgroundTasks = nextProjectBackgroundTasks;
+    if (!setProjectDomainState(project, 'projectBackgroundTasks', projectBackgroundTasks, normalizeProjectBackgroundTaskState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   setProjectCheckpoints(projectId: string, projectCheckpoints: ProjectCheckpointState | undefined): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const nextProjectCheckpoints = projectCheckpoints
-      ? normalizeProjectCheckpointState(projectCheckpoints)
-      : undefined;
-
-    const before = JSON.stringify(project.projectCheckpoints ?? null);
-    const after = JSON.stringify(nextProjectCheckpoints ?? null);
-    if (before === after) return;
-
-    project.projectCheckpoints = nextProjectCheckpoints;
+    if (!setProjectDomainState(project, 'projectCheckpoints', projectCheckpoints, normalizeProjectCheckpointState)) return;
     this.persist();
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    this.emitProjectChangedIfActive(project);
   }
 
   restoreProjectCheckpoint(
