@@ -22,6 +22,47 @@ let restoreFocusAfterClose: HTMLElement | null = null;
 let modalCleanupHandler: (() => void) | null = null;
 let selectCleanupHandlers: Array<() => void> = [];
 
+type InertCapableElement = HTMLElement & { inert?: boolean };
+
+function getAppShell(): InertCapableElement | null {
+  return document.getElementById('app') as InertCapableElement | null;
+}
+
+function setAppShellModalState(active: boolean): void {
+  const appShell = getAppShell();
+  if (!appShell) return;
+  appShell.inert = active;
+  if (active) {
+    appShell.setAttribute('aria-hidden', 'true');
+  } else {
+    appShell.removeAttribute('aria-hidden');
+  }
+}
+
+function getFocusableModalElements(): HTMLElement[] {
+  return Array.from(
+    modal.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+}
+
+function focusInitialModalTarget(): void {
+  const firstTextInput = bodyEl.querySelector('input[type="text"]') as HTMLInputElement | null;
+  if (firstTextInput) {
+    requestAnimationFrame(() => {
+      firstTextInput.focus();
+      firstTextInput.select();
+    });
+    return;
+  }
+
+  const [firstFocusable] = getFocusableModalElements();
+  requestAnimationFrame(() => {
+    (firstFocusable ?? modal).focus();
+  });
+}
+
 export function runModalCleanup(): void {
   if (modalCleanupHandler) {
     const handler = modalCleanupHandler;
@@ -59,6 +100,8 @@ export function prepareModalSurface(): void {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'modal-title');
+  modal.tabIndex = -1;
+  setAppShellModalState(true);
 }
 
 export function setModalError(fieldId: string, message: string): void {
@@ -82,6 +125,7 @@ export function closeModal(): void {
   delete overlay.dataset.modalView;
   runModalCleanup();
   modal.classList.remove('modal-surface');
+  setAppShellModalState(false);
   restoreFocusAfterClose?.focus?.();
   restoreFocusAfterClose = null;
 }
@@ -149,15 +193,7 @@ export function showModal(
   }
 
   overlay.classList.remove('hidden');
-
-  // Focus first text input
-  const firstInput = bodyEl.querySelector('input[type="text"]') as HTMLInputElement | null;
-  if (firstInput) {
-    requestAnimationFrame(() => {
-      firstInput.focus();
-      firstInput.select();
-    });
-  }
+  focusInitialModalTarget();
 
   const handleConfirm = async () => {
     const values: Record<string, string> = {};
@@ -177,7 +213,26 @@ export function showModal(
   };
 
   const handleKeydown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Tab') {
+      const focusable = getFocusableModalElements();
+      if (focusable.length === 0) {
+        e.preventDefault();
+        modal.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      if (e.shiftKey) {
+        if (!active || active === first || active === modal) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (!active || active === last || active === modal) {
+        e.preventDefault();
+        first.focus();
+      }
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       handleConfirm();
     } else if (e.key === 'Escape') {

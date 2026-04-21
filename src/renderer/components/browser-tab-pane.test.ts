@@ -130,6 +130,13 @@ describe('browser tab pane contract', () => {
 
   it('anchors the viewport picker with floating placement and cleans it up', () => {
     expect(viewportSource).toContain("import { anchorFloatingSurface } from '../floating-surface.js';");
+    expect(source).toContain("viewportBtn.setAttribute('aria-haspopup', 'menu')");
+    expect(source).toContain("viewportBtn.setAttribute('aria-expanded', 'false')");
+    expect(source).toContain("viewportDropdown.setAttribute('role', 'menu')");
+    expect(source).toContain("item.setAttribute('role', 'menuitemradio')");
+    expect(source).toContain("customItem.setAttribute('role', 'menuitemradio')");
+    expect(source).toContain("viewportBtn.addEventListener('keydown'");
+    expect(source).toContain("viewportDropdown.addEventListener('keydown'");
     expect(viewportSource).toContain('anchorFloatingSurface(');
     expect(viewportSource).toContain('instance.viewportBtn,');
     expect(viewportSource).toContain('instance.viewportDropdown,');
@@ -140,6 +147,9 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);');
     expect(viewportSource).toContain("openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
     expect(viewportSource).toContain("closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
+    expect(viewportSource).toContain("instance.viewportBtn.setAttribute('aria-expanded', 'true')");
+    expect(viewportSource).toContain("instance.viewportBtn.setAttribute('aria-expanded', 'false')");
+    expect(viewportSource).toContain("item.setAttribute('aria-checked', String(isSelected))");
     expect(viewportSource).toContain("logDebugEvent('browserMenu', instance.sessionId");
     expect(source).toContain("logDebugEvent('browserMenu', instance.sessionId");
     expect(viewportSource).toContain('instance.viewportDropdownFloatingCleanup?.();');

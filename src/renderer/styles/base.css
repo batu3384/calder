@@ -18,7 +18,7 @@
   --text-primary: #f2f6fb;
   --text-secondary: #cdd8e6;
   --text-muted: #96a5b8;
-  --text-dim: #5d6b7d;
+  --text-dim: #6c7f94;
   --accent-warm: #d5a94f;
   --accent-cool: #7fd4ff;
   --accent-aurora: #7fd4ff;
@@ -108,7 +108,7 @@
   --type-2xs: 10px;
   --type-xs: 11px;
   --type-sm: 12px;
-  --type-md: 13px;
+  --type-md: 14px;
   --type-lg: 15px;
   --type-xl: 18px;
   --type-2xl: 20px;
@@ -168,6 +168,39 @@ html, body {
 ::selection {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
   color: var(--text-primary);
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 240;
+  min-height: 40px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 92%, black);
+  color: var(--text-primary);
+  font-size: var(--type-sm);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 18px));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    opacity var(--motion-fast) var(--ease-standard);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 :focus-visible {

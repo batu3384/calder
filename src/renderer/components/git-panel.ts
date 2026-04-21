@@ -3,6 +3,7 @@ import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, getWorkt
 import { onChange as onStatusChange } from '../session-activity.js';
 import { showFileViewer } from './file-viewer.js';
 import { areaLabel } from '../dom-utils.js';
+import { applyTabContextMenuSemantics } from './tab-bar-menu-semantics.js';
 import type { GitFileEntry } from '../types.js';
 
 const MAX_FILES = 100;
@@ -57,6 +58,7 @@ function showGitFileContextMenu(x: number, y: number, entry: GitFileEntry, gitPa
   menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
+  menu.addEventListener('click', (event) => event.stopPropagation());
 
   if (entry.area === 'staged') {
     menu.appendChild(createMenuItem('Unstage', async () => {
@@ -99,6 +101,7 @@ function showGitFileContextMenu(x: number, y: number, entry: GitFileEntry, gitPa
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  applyTabContextMenuSemantics(menu, 'Git file actions', hideGitContextMenu);
 }
 
 

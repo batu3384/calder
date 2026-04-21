@@ -2,6 +2,7 @@ import { appState, ArchivedSession } from '../state.js';
 import { loadProviderAvailability } from '../provider-availability.js';
 import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
+import { applyTabContextMenuSemantics } from './tab-bar-menu-semantics.js';
 import type { ProviderId } from '../../shared/types.js';
 type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 
@@ -22,6 +23,7 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
+  menu.addEventListener('click', (event) => event.stopPropagation());
 
   if (archived.cliSessionId) {
     const resumeItem = document.createElement('div');
@@ -50,6 +52,7 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  applyTabContextMenuSemantics(menu, 'History actions', hideHistoryContextMenu);
 }
 
 const MAX_VISIBLE = 50;

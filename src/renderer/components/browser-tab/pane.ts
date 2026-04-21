@@ -465,34 +465,104 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportWrapper.className = 'browser-viewport-wrapper';
 
   const viewportBtn = document.createElement('button');
+  viewportBtn.type = 'button';
   viewportBtn.className = 'browser-viewport-btn';
-  viewportBtn.textContent = 'Viewport';
+  viewportBtn.textContent = 'Responsive';
   viewportBtn.title = 'Change viewport size';
   viewportBtn.ariaLabel = 'Change viewport size';
+  viewportBtn.setAttribute('aria-haspopup', 'menu');
+  viewportBtn.setAttribute('aria-expanded', 'false');
 
   const viewportDropdown = document.createElement('div');
   viewportDropdown.className = 'browser-viewport-dropdown';
+  viewportDropdown.id = `browser-viewport-menu-${sessionId}`;
+  viewportDropdown.setAttribute('role', 'menu');
+  viewportDropdown.setAttribute('aria-label', 'Viewport presets');
+  viewportBtn.setAttribute('aria-controls', viewportDropdown.id);
+
+  const viewportMenuItems: HTMLButtonElement[] = [];
+
+  const focusViewportMenuItem = (index: number): void => {
+    if (viewportMenuItems.length === 0) return;
+    const normalized = ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
+    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
+    const nextItem = viewportMenuItems[normalized];
+    nextItem.tabIndex = 0;
+    nextItem.focus();
+  };
+
+  const focusSelectedViewportMenuItem = (): void => {
+    const selectedIndex = viewportMenuItems.findIndex((item) => item.getAttribute('aria-checked') === 'true');
+    focusViewportMenuItem(selectedIndex >= 0 ? selectedIndex : 0);
+  };
+
+  function openViewportMenu(
+    reason = 'programmatic',
+    focusMode: 'selected' | 'first' | 'last' | 'none' = 'selected',
+  ): void {
+    const showCustomForm = instance.currentViewport.label === 'Custom';
+    customForm.style.display = showCustomForm ? 'flex' : 'none';
+    customItem.setAttribute('aria-expanded', String(showCustomForm));
+    openViewportDropdown(instance, reason);
+    if (focusMode === 'none') return;
+    requestAnimationFrame(() => {
+      if (focusMode === 'first') {
+        focusViewportMenuItem(0);
+        return;
+      }
+      if (focusMode === 'last') {
+        focusViewportMenuItem(viewportMenuItems.length - 1);
+        return;
+      }
+      focusSelectedViewportMenuItem();
+    });
+  }
+
+  function closeViewportMenu(reason = 'programmatic', returnFocus = false): void {
+    closeViewportDropdown(instance, reason);
+    customForm.style.display = 'none';
+    customItem.setAttribute('aria-expanded', 'false');
+    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
+    if (returnFocus) {
+      requestAnimationFrame(() => viewportBtn.focus());
+    }
+  }
 
   for (const preset of VIEWPORT_PRESETS) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'browser-viewport-item';
+    item.dataset.viewportKey = preset.label;
     item.textContent = preset.width !== null
       ? `${preset.label} — ${preset.width}×${preset.height}`
       : preset.label;
+    item.setAttribute('role', 'menuitemradio');
+    item.setAttribute('aria-checked', 'false');
+    item.tabIndex = -1;
     item.addEventListener('click', () => {
       applyViewport(instance, preset);
-      closeViewportDropdown(instance, 'preset-select');
+      closeViewportMenu('preset-select');
     });
+    viewportMenuItems.push(item);
     viewportDropdown.appendChild(item);
   }
 
-  const customItem = document.createElement('div');
+  const customItem = document.createElement('button');
+  customItem.type = 'button';
   customItem.className = 'browser-viewport-item browser-viewport-item-custom';
+  customItem.dataset.viewportKey = 'Custom';
   customItem.textContent = 'Custom\u2026';
+  customItem.setAttribute('role', 'menuitemradio');
+  customItem.setAttribute('aria-checked', 'false');
+  customItem.setAttribute('aria-expanded', 'false');
+  customItem.tabIndex = -1;
+  viewportMenuItems.push(customItem);
   viewportDropdown.appendChild(customItem);
 
   const customForm = document.createElement('div');
   customForm.className = 'browser-viewport-custom';
+  customForm.setAttribute('role', 'group');
+  customForm.setAttribute('aria-label', 'Custom viewport size');
 
   const customWInput = document.createElement('input');
   customWInput.type = 'number';
@@ -511,6 +581,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   customHInput.min = '1';
 
   const customApplyBtn = document.createElement('button');
+  customApplyBtn.type = 'button';
   customApplyBtn.className = 'browser-viewport-custom-apply';
   customApplyBtn.textContent = 'Apply';
 
@@ -1313,6 +1384,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     cleanupFns: [],
   };
   instances.set(sessionId, instance);
+  applyViewport(instance, VIEWPORT_PRESETS[0]);
   instance.syncSurfaceVisibility = syncSurfaceVisibility;
   instance.syncToolbarState = () => {
     const mode = resolveCaptureModeState(instance);
@@ -1779,10 +1851,29 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   viewportBtn.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
     if (viewportDropdown.classList.contains('visible')) {
-      closeViewportDropdown(instance, 'trigger-toggle');
+      closeViewportMenu('trigger-toggle');
     } else {
-      customForm.style.display = 'none';
-      openViewportDropdown(instance, 'trigger-toggle');
+      openViewportMenu('trigger-toggle', 'selected');
+    }
+  });
+
+  viewportBtn.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      openViewportMenu('keyboard-arrow-down', 'selected');
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      openViewportMenu('keyboard-arrow-up', 'last');
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (viewportDropdown.classList.contains('visible')) {
+        closeViewportMenu('keyboard-toggle', true);
+      } else {
+        openViewportMenu('keyboard-toggle', 'selected');
+      }
+    } else if (event.key === 'Escape' && viewportDropdown.classList.contains('visible')) {
+      event.preventDefault();
+      closeViewportMenu('keyboard-escape', true);
     }
   });
 
@@ -1799,7 +1890,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       && !eventPathContains(e, viewportBtn)
       && !eventPathContains(e, viewportDropdown)
     ) {
-      closeViewportDropdown(instance, 'outside-press');
+      closeViewportMenu('outside-press');
     }
   };
   const outsidePressEventName: 'pointerdown' | 'mousedown' = (
@@ -1819,8 +1910,42 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   };
   document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);
 
+  viewportDropdown.addEventListener('keydown', (event: KeyboardEvent) => {
+    const target = event.target as HTMLElement | null;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeViewportMenu('keyboard-escape', true);
+      return;
+    }
+
+    if (target instanceof HTMLInputElement) return;
+
+    const focusedIndex = viewportMenuItems.findIndex((item) => item === document.activeElement);
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      focusViewportMenuItem(focusedIndex < 0 ? 0 : focusedIndex + 1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      focusViewportMenuItem(focusedIndex < 0 ? viewportMenuItems.length - 1 : focusedIndex - 1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      focusViewportMenuItem(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      focusViewportMenuItem(viewportMenuItems.length - 1);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      if (document.activeElement instanceof HTMLButtonElement) {
+        event.preventDefault();
+        document.activeElement.click();
+      }
+    } else if (event.key === 'Tab') {
+      closeViewportMenu('keyboard-tab');
+    }
+  });
+
   customItem.addEventListener('click', () => {
     customForm.style.display = 'flex';
+    customItem.setAttribute('aria-expanded', 'true');
     customWInput.focus();
   });
 
@@ -1829,13 +1954,25 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     const h = parseInt(customHInput.value, 10);
     if (w > 0 && h > 0) {
       applyViewport(instance, { label: 'Custom', width: w, height: h });
-      closeViewportDropdown(instance, 'custom-apply');
+      closeViewportMenu('custom-apply');
     }
   }
 
   customApplyBtn.addEventListener('click', applyCustomSize);
-  customWInput.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') applyCustomSize(); });
-  customHInput.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') applyCustomSize(); });
+  customWInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') applyCustomSize();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeViewportMenu('keyboard-escape', true);
+    }
+  });
+  customHInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter') applyCustomSize();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeViewportMenu('keyboard-escape', true);
+    }
+  });
 
   inspectBtn.addEventListener('click', () => toggleInspectMode(instance));
   recordBtn.addEventListener('click', () => toggleFlowMode(instance));

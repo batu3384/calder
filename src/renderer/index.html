@@ -10,8 +10,9 @@
   <link rel="stylesheet" href="xterm.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-area">Skip to workspace</a>
   <div id="app">
-    <div id="sidebar" class="sidebar-surface project-rail">
+    <nav id="sidebar" class="sidebar-surface project-rail" aria-label="Projects">
       <div id="sidebar-header">
         <div class="sidebar-title-group">
           <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar">
@@ -41,12 +42,12 @@
         </div>
       </div>
       <div id="sidebar-content">
-        <div id="project-list"></div>
+        <div id="project-list" role="list" aria-label="Projects"></div>
       </div>
       <div id="sidebar-footer"></div>
-    </div>
+    </nav>
     <div id="sidebar-resize-handle"></div>
-    <div id="main-area">
+    <main id="main-area" tabindex="-1" aria-label="Workspace">
       <div id="workspace-shell" class="workspace-shell-surface">
         <div id="workspace-stack" class="session-deck session-deck-surface">
           <div id="tab-bar" class="tab-bar-surface session-deck-surface">
@@ -148,7 +149,7 @@
         </aside>
         <button id="btn-open-context-inspector" class="context-inspector-reopen hidden" type="button" title="Open control panel" aria-label="Open context inspector">Overview</button>
       </div>
-    </div>
+    </main>
   </div>
 
   <div id="modal-overlay" class="hidden">

@@ -50,6 +50,9 @@ describe('native-first UI system contract', () => {
   it('keeps modal and custom-select surfaces accessible to assistive tech', () => {
     expect(modalSource).toContain("role', 'dialog'");
     expect(modalSource).toContain("aria-modal', 'true'");
+    expect(modalSource).toContain('setAppShellModalState');
+    expect(modalSource).toContain('getFocusableModalElements');
+    expect(modalSource).toContain("if (e.key === 'Tab')");
     expect(selectSource).toContain("role', 'listbox'");
     expect(selectSource).toContain("role', 'option'");
   });

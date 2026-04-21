@@ -50,8 +50,11 @@ describe('menu surface contract', () => {
     expect(providerSelectorSource).not.toContain('floating: false');
     expect(surfaceControlsSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');
+    expect(sidebarSource).toContain("applyTabContextMenuSemantics(menu, 'Project actions'");
     expect(historySource).toContain('tab-context-menu calder-floating-list');
+    expect(historySource).toContain("applyTabContextMenuSemantics(menu, 'History actions'");
     expect(gitSource).toContain('tab-context-menu calder-floating-list');
+    expect(gitSource).toContain("applyTabContextMenuSemantics(menu, 'Git file actions'");
     expect(sidebarSource).toContain('path-autocomplete-dropdown calder-floating-list');
     expect(selectSource).toContain('custom-select-dropdown calder-floating-list');
   });

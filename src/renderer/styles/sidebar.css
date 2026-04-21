@@ -205,8 +205,9 @@
 
 .project-item {
   position: relative;
+  width: 100%;
   min-height: 52px;
-  padding: 10px 10px 10px 14px;
+  padding: 10px 44px 10px 14px;
   cursor: pointer;
   display: flex;
   align-items: flex-start;
@@ -217,12 +218,24 @@
   border: 1px solid transparent;
   border-radius: 14px;
   background: transparent;
+  text-align: left;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
     box-shadow 0.15s ease,
     opacity 0.15s ease;
+}
+
+.project-item-shell {
+  position: relative;
+}
+
+.project-item:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-hover) 84%, transparent);
 }
 
 .project-item::before {
@@ -425,26 +438,44 @@
   color: var(--text-primary);
 }
 
-.project-item .project-delete {
+.project-delete {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
   opacity: 0;
-  cursor: pointer;
+  visibility: hidden;
+  pointer-events: none;
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1;
-  align-self: center;
-  margin-top: 0;
+  transform: translateY(-50%);
   transition:
     opacity 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.project-item:hover .project-delete,
-.project-item.active .project-delete {
-  opacity: 0.86;
+.project-item-shell:hover .project-delete,
+.project-item-shell:focus-within .project-delete,
+.project-item.active + .project-delete {
+  opacity: 0.9;
+  visibility: visible;
+  pointer-events: auto;
 }
 
-.project-item .project-delete:hover {
-  color: var(--accent);
+.project-delete:hover,
+.project-delete:focus-visible {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent-soft) 26%, transparent);
 }
 
 /* Update banner */
@@ -594,7 +625,7 @@
 
 .project-item {
   min-height: 56px;
-  padding: 11px 11px 11px 15px;
+  padding: 11px 44px 11px 15px;
   border-radius: 14px;
 }
 

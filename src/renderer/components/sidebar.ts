@@ -3,6 +3,7 @@ import { showModal, setModalError, closeModal } from './modal.js';
 import { showPreferencesModal } from './preferences-modal.js';
 import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from '../session-unread.js';
 import { getStatus, onChange as onSessionStatusChange } from '../session-activity.js';
+import { applyTabContextMenuSemantics } from './tab-bar-menu-semantics.js';
 
 const projectListEl = document.getElementById('project-list')!;
 let activeProjectContextMenu: HTMLElement | null = null;
@@ -67,6 +68,8 @@ export function initSidebar(): void {
 function render(): void {
   hideProjectContextMenu();
   projectListEl.innerHTML = '';
+  projectListEl.setAttribute('role', 'list');
+  projectListEl.setAttribute('aria-label', 'Projects');
 
   for (const project of appState.projects) {
     const locationLabel = shortProjectPath(project.path);
@@ -78,10 +81,19 @@ function render(): void {
       `${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'}`,
       signal?.summary,
     ].filter(Boolean);
-    const el = document.createElement('div');
-    el.className = 'project-item sidebar-project-row' + (project.id === appState.activeProjectId ? ' active' : '');
-    el.setAttribute('title', titleParts.join(' • '));
-    el.innerHTML = `
+    const shell = document.createElement('div');
+    shell.className = 'project-item-shell';
+    shell.setAttribute('role', 'listitem');
+
+    const selectBtn = document.createElement('button');
+    selectBtn.type = 'button';
+    selectBtn.className = 'project-item sidebar-project-row' + (project.id === appState.activeProjectId ? ' active' : '');
+    selectBtn.setAttribute('title', titleParts.join(' • '));
+    selectBtn.setAttribute('aria-label', titleParts.join(' • '));
+    if (project.id === appState.activeProjectId) {
+      selectBtn.setAttribute('aria-current', 'page');
+    }
+    selectBtn.innerHTML = `
       <div class="project-collapsed-pill" aria-hidden="true">
         <span class="project-collapsed-initial">${esc(getProjectInitial(project.name))}</span>
         ${signal ? `<span class="project-collapsed-dot is-${signal.tone}"></span>` : ''}
@@ -93,11 +105,16 @@ function render(): void {
         </div>
         <div class="project-path" title="${esc(project.path)}">${esc(locationLabel)}</div>
       </div>
-      <span class="project-delete" title="Remove project">&times;</span>
     `;
 
-    el.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).classList.contains('project-delete')) return;
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'project-delete';
+    deleteBtn.title = `Remove ${project.name}`;
+    deleteBtn.setAttribute('aria-label', `Remove project ${project.name}`);
+    deleteBtn.textContent = '×';
+
+    selectBtn.addEventListener('click', () => {
       if (project.id === appState.activeProjectId) {
         appState.toggleSidebar();
       } else {
@@ -105,16 +122,19 @@ function render(): void {
       }
     });
 
-    el.querySelector('.project-delete')!.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
       confirmRemoveProject(project);
     });
 
-    el.addEventListener('contextmenu', (e) => {
+    shell.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       showProjectContextMenu(e.clientX, e.clientY, project);
     });
 
-    projectListEl.appendChild(el);
+    shell.appendChild(selectBtn);
+    shell.appendChild(deleteBtn);
+    projectListEl.appendChild(shell);
   }
 }
 
@@ -378,6 +398,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
   menu.className = 'tab-context-menu calder-floating-list';
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
+  menu.addEventListener('click', (event) => event.stopPropagation());
 
   const hasSessions = project.sessions.length > 0;
 
@@ -413,6 +434,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  applyTabContextMenuSemantics(menu, 'Project actions', hideProjectContextMenu);
 }
 
 function hideProjectContextMenu(): void {

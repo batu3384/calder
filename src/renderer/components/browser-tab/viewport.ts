@@ -9,6 +9,15 @@ export function applyViewport(instance: BrowserTabInstance, preset: ViewportPres
   instance.viewportBtn.textContent = label;
   instance.viewportBtn.classList.toggle('active', preset.width !== null);
 
+  const viewportItems = Array.from(
+    instance.viewportDropdown.querySelectorAll<HTMLElement>('[data-viewport-key]'),
+  );
+  for (const item of viewportItems) {
+    const isSelected = item.dataset.viewportKey === preset.label;
+    item.classList.toggle('active', isSelected);
+    item.setAttribute('aria-checked', String(isSelected));
+  }
+
   const webviewEl = instance.webview as unknown as HTMLElement;
   if (preset.width !== null) {
     instance.viewportContainer.classList.remove('responsive');
@@ -26,6 +35,7 @@ export function applyViewport(instance: BrowserTabInstance, preset: ViewportPres
 export function openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic'): void {
   if (instance.viewportDropdown.classList.contains('visible')) return;
   instance.viewportDropdown.classList.add('visible');
+  instance.viewportBtn.setAttribute('aria-expanded', 'true');
   instance.viewportDropdownFloatingCleanup?.();
   instance.viewportDropdownFloatingCleanup = anchorFloatingSurface(
     instance.viewportBtn,
@@ -48,6 +58,7 @@ export function openViewportDropdown(instance: BrowserTabInstance, reason = 'pro
 export function closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic'): void {
   const wasOpen = instance.viewportDropdown.classList.contains('visible');
   instance.viewportDropdown.classList.remove('visible');
+  instance.viewportBtn.setAttribute('aria-expanded', 'false');
   instance.viewportDropdownFloatingCleanup?.();
   instance.viewportDropdownFloatingCleanup = null;
   if (wasOpen) {
