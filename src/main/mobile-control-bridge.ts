@@ -586,10 +586,6 @@ function listLanHosts(nets: NodeJS.Dict<os.NetworkInterfaceInfo[]> = os.networkI
   return ordered;
 }
 
-function pickLanHost(): string {
-  return listLanHosts()[0] ?? '127.0.0.1';
-}
-
 function sendJson(res: http.ServerResponse, status: number, payload: unknown): void {
   const body = JSON.stringify(payload);
   res.writeHead(status, {
@@ -3170,7 +3166,7 @@ async function ensureBridgeStarted(): Promise<MobileBridgeState> {
   if (bridgeState) return bridgeState;
 
   const hosts = listLanHosts();
-  const host = hosts[0] ?? pickLanHost();
+  const host = hosts[0] ?? '127.0.0.1';
   const server = http.createServer((req, res) => ensureServerHandler(req, res));
   const address = await new Promise<AddressInfo>((resolve, reject) => {
     server.once('error', reject);
@@ -3238,26 +3234,25 @@ export async function createMobileControlPairing(
   };
   pairings.set(record.id, record);
 
-  const localPairingUrls = Array.from(
-    new Set(
-      (state.hosts.length > 0 ? state.hosts : [state.host]).map((host) => {
-        const localUrl = new URL(`http://${host}:${state.port}/m/${record.id}`);
-        localUrl.searchParams.set('t', record.token);
-        if (record.language === 'tr') {
-          localUrl.searchParams.set('lang', 'tr');
-        }
-        return localUrl.toString();
-      }),
-    ),
-  );
-  const localPairingUrl = localPairingUrls[0] ?? (() => {
-    const fallback = new URL(`http://${state.host}:${state.port}/m/${record.id}`);
-    fallback.searchParams.set('t', record.token);
+  const localPairingUrl = (() => {
+    const local = new URL(`http://${state.host}:${state.port}/m/${record.id}`);
+    local.searchParams.set('t', record.token);
     if (record.language === 'tr') {
-      fallback.searchParams.set('lang', 'tr');
+      local.searchParams.set('lang', 'tr');
     }
-    return fallback.toString();
+    return local.toString();
   })();
+  const localPairingUrls = Array.from(new Set([
+    localPairingUrl,
+    ...state.hosts.map((host) => {
+      const local = new URL(`http://${host}:${state.port}/m/${record.id}`);
+      local.searchParams.set('t', record.token);
+      if (record.language === 'tr') {
+        local.searchParams.set('lang', 'tr');
+      }
+      return local.toString();
+    }),
+  ]));
   const pairingUrl = publicBaseUrl
     ? buildPairingUrl(publicBaseUrl, record.id, record.token, 'fragment', true, record.language)
     : localPairingUrl;
