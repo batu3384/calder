@@ -507,6 +507,30 @@ describe('installMobileDependency', () => {
     expect(progressEvent?.remainingBytes).toBe(116 * 1024 * 1024);
   });
 
+  it('flushes trailing progress chunks and computes overall percent from byte telemetry without explicit percent', async () => {
+    const runner = new StubRunner();
+    runner.set('npm', ['install', '-g', 'appium'], {
+      code: 0,
+      stdout: 'Downloading package (84 MB/200 MB)',
+    });
+
+    const events: Array<Record<string, unknown>> = [];
+    const result = await installMobileDependency('appium', {
+      runner,
+      hostPlatform: 'darwin',
+      installId: 'install-byte-only',
+      onProgress: (event: Record<string, unknown>) => events.push(event),
+    } as never);
+
+    expect(result.success).toBe(true);
+    const progressEvent = events.find((event) => event.phase === 'step_progress');
+    expect(progressEvent).toBeDefined();
+    expect(progressEvent?.stepPercent).toBeUndefined();
+    expect(progressEvent?.downloadedBytes).toBe(84 * 1024 * 1024);
+    expect(progressEvent?.totalBytes).toBe(200 * 1024 * 1024);
+    expect(progressEvent?.percent).toBe(42);
+  });
+
   it('emits a failed progress event with command and reason when a step fails', async () => {
     const runner = new StubRunner();
     runner.set('brew', ['tap', 'mobile-dev-inc/tap'], { code: 0, stdout: 'tapped\n' });
