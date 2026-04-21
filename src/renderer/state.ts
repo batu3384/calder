@@ -1,5 +1,5 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectLayoutState, ProjectSurfaceRecord, CliSurfaceRuntimeState, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectGovernanceState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types.js';
+import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectGovernanceState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -14,6 +14,21 @@ import {
   isInsightDismissedForProject,
   reorderProjectSession,
 } from './state-session-mutators.js';
+import {
+  buildWorkflowLaunchPrompt,
+  DEFAULT_BROWSER_WIDTH_RATIO,
+  deriveBrowserSessionName,
+  normalizeProjectBackgroundTaskState,
+  normalizeProjectCheckpointState,
+  normalizeProjectContextState,
+  normalizeProjectGovernanceState,
+  normalizeProjectLayout,
+  normalizeProjectReviewState,
+  normalizeProjectSurface,
+  normalizeProjectTeamContextState,
+  normalizeProjectWorkflowState,
+  stripTransientRuntimeFields,
+} from './state-normalizers.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 
@@ -54,163 +69,6 @@ const defaultPreferences: Preferences = {
 };
 
 const NAV_HISTORY_MAX = 50;
-const DEFAULT_BROWSER_WIDTH_RATIO = 0.38;
-
-function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): ProjectLayoutState {
-  const rawMode = layout?.mode;
-  const mode = rawMode === 'tabs' ? rawMode : 'mosaic';
-  return {
-    mode,
-    splitPanes: Array.isArray(layout?.splitPanes) ? [...layout.splitPanes] : [],
-    splitDirection: layout?.splitDirection === 'vertical' ? 'vertical' : 'horizontal',
-    browserWidthRatio: typeof layout?.browserWidthRatio === 'number' ? layout.browserWidthRatio : DEFAULT_BROWSER_WIDTH_RATIO,
-    mosaicPreset: layout?.mosaicPreset,
-    mosaicRatios: layout?.mosaicRatios ? { ...layout.mosaicRatios } : {},
-  };
-}
-
-function stripTransientRuntimeFields(runtime: CliSurfaceRuntimeState): CliSurfaceRuntimeState {
-  const next = { ...runtime };
-  delete next.runtimeId;
-  delete next.startupTiming;
-  return next;
-}
-
-function normalizeProjectContextState(
-  incoming: ProjectContextState,
-  previous?: ProjectContextState,
-): ProjectContextState {
-  const previousEnabledById = new Map(
-    (previous?.sources ?? []).map((source) => [source.id, source.enabled]),
-  );
-
-  const sources = incoming.sources.map((source) => ({
-    ...source,
-    enabled: source.enabled ?? previousEnabledById.get(source.id),
-  }));
-
-  return {
-    ...incoming,
-    sources,
-    sharedRuleCount: sources.filter((source) => source.provider === 'shared' && source.kind === 'rules' && source.enabled !== false).length,
-    providerSourceCount: sources.filter((source) => source.provider !== 'shared' && source.enabled !== false).length,
-  };
-}
-
-function normalizeProjectWorkflowState(
-  incoming: ProjectWorkflowState,
-): ProjectWorkflowState {
-  return {
-    ...incoming,
-    workflows: [...incoming.workflows],
-  };
-}
-
-function normalizeProjectTeamContextState(
-  incoming: ProjectTeamContextState,
-): ProjectTeamContextState {
-  return {
-    ...incoming,
-    spaces: [...incoming.spaces],
-  };
-}
-
-function normalizeProjectReviewState(
-  incoming: ProjectReviewState,
-): ProjectReviewState {
-  return {
-    ...incoming,
-    reviews: [...incoming.reviews],
-  };
-}
-
-function normalizeProjectGovernanceState(
-  incoming: ProjectGovernanceState,
-): ProjectGovernanceState {
-  return {
-    ...incoming,
-    policy: incoming.policy ? { ...incoming.policy } : undefined,
-  };
-}
-
-function normalizeProjectBackgroundTaskState(
-  incoming: ProjectBackgroundTaskState,
-): ProjectBackgroundTaskState {
-  return {
-    ...incoming,
-    tasks: [...incoming.tasks],
-  };
-}
-
-function normalizeProjectCheckpointState(
-  incoming: ProjectCheckpointState,
-): ProjectCheckpointState {
-  return {
-    ...incoming,
-    checkpoints: [...incoming.checkpoints],
-  };
-}
-
-function deriveBrowserSessionName(url?: string, fallbackName = 'Browser'): string {
-  if (!url) return fallbackName;
-  try {
-    return new URL(url).hostname || fallbackName;
-  } catch {
-    return fallbackName;
-  }
-}
-
-function buildWorkflowLaunchPrompt(workflow: ProjectWorkflowDocument): string {
-  const body = workflow.contents.trim();
-  return [
-    'Follow this reusable project workflow for the current task.',
-    `Workflow: ${workflow.title}`,
-    `Source: ${workflow.relativePath}`,
-    body,
-  ].filter(Boolean).join('\n\n');
-}
-
-function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
-  const browserSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
-  const existing = project.surface;
-  const history = existing?.web?.history
-    ?? (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []);
-  const kind = existing?.kind ?? (browserSession ? 'web' : 'cli');
-  const active = existing?.active ?? Boolean(browserSession);
-  const tabFocus = kind === 'cli'
-    ? (existing?.tabFocus ?? (active ? 'cli' : 'session'))
-    : kind === 'mobile'
-      ? (existing?.tabFocus ?? (active ? 'mobile' : 'session'))
-      : 'session';
-  const tabPlacement = existing?.tabPlacement === 'start' ? 'start' : 'end';
-  const tabOrder = Array.isArray(existing?.tabOrder)
-    ? existing.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
-    : [];
-  const normalizedTabOrder = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
-    ? tabOrder
-    : ['cli', 'mobile'];
-
-  return {
-    kind,
-    active,
-    tabFocus,
-    tabPlacement,
-    tabOrder: normalizedTabOrder,
-    targetSessionId: existing?.targetSessionId ?? browserSession?.browserTargetSessionId,
-    web: {
-      sessionId: existing?.web?.sessionId ?? browserSession?.id,
-      url: existing?.web?.url ?? browserSession?.browserTabUrl,
-      history: [...history],
-    },
-    cli: {
-      selectedProfileId: existing?.cli?.selectedProfileId,
-      profiles: existing?.cli?.profiles ? [...existing.cli.profiles] : [],
-      runtime: existing?.cli?.runtime
-        ? stripTransientRuntimeFields(existing.cli.runtime)
-        : { status: 'idle' },
-    },
-  };
-}
 
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };

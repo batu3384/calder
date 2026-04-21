@@ -192,3 +192,24 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`326` files / `2412` tests)
   - `npm run audit:deep`: PASS
+
+## Phase 4.2 Progress Note (In Progress)
+
+- Continued `state.ts` decomposition with a behavior-preserving extraction:
+  - `src/renderer/state-normalizers.ts`
+  - `src/renderer/state-normalizers.test.ts`
+- Moved pure normalization/helper logic out of `state.ts`:
+  - project layout normalization
+  - project context/workflow/team/review/governance/background-task/checkpoint state normalization
+  - project surface normalization and transient CLI runtime stripping
+  - browser session name derivation
+  - workflow launch prompt formatting
+- `state.ts` size snapshot:
+  - Phase 0 baseline: `1906` lines
+  - Before this slice: `1844` lines
+  - After this slice: `1701` lines
+- Validation:
+  - Targeted `state-normalizers.test.ts` + `state.test.ts`: PASS (`2` files / `198` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`327` files / `2416` tests)
+  - `npm run audit:deep`: PASS

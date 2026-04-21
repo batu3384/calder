@@ -201,6 +201,8 @@ Execution rule:
 
 ### Slice 4.2 - `state.ts` (post Phase 2 continuation)
 
+- [x] Extract pure project/layout/surface/domain-state normalizers into `state-normalizers.ts`.
+- [x] Add direct unit coverage for state normalizers.
 - [ ] Continue extraction until `state.ts` becomes orchestrator, not storage of all logic.
 
 ### Slice 4.3 - `browser-tab/pane.ts`
@@ -307,6 +309,6 @@ No phase jumping unless blocker documented in the report with mitigation.
 | Phase 1 Cycle removal | Done | Main agent | 2026-04-21 | Move to Phase 2 coupling reduction |
 | Phase 2 Coupling reduction | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
 | Phase 3 Test reset safety | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
-| Phase 4 Monolith decomposition | In Progress | Main agent | 2026-04-21 | Continue residual monolith cleanup after tab-bar surface-control split (`1713 -> 611` lines) |
+| Phase 4 Monolith decomposition | In Progress | Main agent | 2026-04-21 | Continue residual monolith cleanup after state normalizer split (`state.ts` `1906 -> 1701` lines) |
 | Phase 5 Coverage gates | Done | Main agent | 2026-04-21 | Move to Phase 6 final sign-off after remaining monolith work |
 | Phase 6 Final sign-off | Planned | Main agent | 2026-04-21 | Run full comparison report |
