@@ -20,6 +20,16 @@ afterEach(() => {
 });
 
 describe('project background task files', () => {
+  it('rejects blank task title', async () => {
+    const root = makeProject('background-task-empty-title');
+    await expect(createProjectBackgroundTaskFile(root, '   ', 'prompt')).rejects.toThrow('Task title is required');
+  });
+
+  it('rejects blank task prompt', async () => {
+    const root = makeProject('background-task-empty-prompt');
+    await expect(createProjectBackgroundTaskFile(root, 'Task title', '   ')).rejects.toThrow('Task prompt is required');
+  });
+
   it('creates and reads queued task documents', async () => {
     const root = makeProject('background-task-create');
 
@@ -33,5 +43,15 @@ describe('project background task files', () => {
     expect(document.title).toBe('Review UI');
     expect(document.prompt).toBe('Check the preferences modal.');
     expect(document.status).toBe('queued');
+  });
+
+  it('uses fallback slug when task title has no alphanumeric characters', async () => {
+    const root = makeProject('background-task-fallback-slug');
+
+    const result = await createProjectBackgroundTaskFile(root, '!!!', 'run fallback check');
+
+    expect(result.created).toBe(true);
+    expect(result.relativePath).toBe('.calder/tasks/background-task.json');
+    expect(readFileSync(join(root, result.relativePath), 'utf8')).toContain('"title": "!!!"');
   });
 });
