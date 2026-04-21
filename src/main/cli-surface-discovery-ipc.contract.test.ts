@@ -10,7 +10,8 @@ const preloadSource = [
 
 describe('cli surface discovery IPC contract', () => {
   it('registers a discover handler in the main process', () => {
-    expect(ipcHandlersSource).toContain('registerCliSurfaceIpcHandlers(cliSurfaceRuntime);');
+    expect(ipcHandlersSource).toContain('registerCliSurfaceIpcHandlers(cliSurfaceRuntime, {');
+    expect(ipcHandlersSource).toContain('isWithinKnownProject,');
     expect(cliSurfaceIpcSource).toContain("ipcMain.handle('cli-surface:discover'");
     expect(cliSurfaceIpcSource).toContain('discoverCliSurface(');
   });

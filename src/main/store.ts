@@ -7,6 +7,8 @@ export type { SessionRecord, ProjectRecord, Preferences, PersistedState } from '
 
 const STATE_DIR = path.join(os.homedir(), '.calder');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
+const COPILOT_SESSION_STATE_DIR = path.join(os.homedir(), '.copilot', 'session-state');
+const COPILOT_BACKFILL_WINDOW_MS = 2 * 60 * 1000;
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 const SUPPORTED_PROVIDER_IDS = new Set(['claude', 'codex', 'copilot', 'gemini', 'qwen']);
@@ -52,17 +54,79 @@ function migrateSessionIds(state: PersistedState): void {
   };
 
   for (const project of state.projects) {
+    const usedCliSessionIds = new Set(
+      project.sessions
+        .map((session) => session.cliSessionId)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    );
+
     for (const session of project.sessions) {
       const s = session as unknown as Record<string, unknown>;
       if (s.claudeSessionId !== undefined && s.cliSessionId === undefined) {
         s.cliSessionId = s.claudeSessionId;
       }
       s.providerId = normalizeProviderId(s.providerId);
+      if (
+        s.providerId === 'copilot'
+        && (s.cliSessionId === undefined || s.cliSessionId === null || s.cliSessionId === '')
+        && typeof s.createdAt === 'string'
+      ) {
+        const inferredId = inferCopilotSessionId(project.path, s.createdAt, usedCliSessionIds);
+        if (inferredId) {
+          s.cliSessionId = inferredId;
+          usedCliSessionIds.add(inferredId);
+        }
+      }
     }
   }
 
   if (state.preferences.defaultProvider !== undefined) {
     state.preferences.defaultProvider = normalizeProviderId(state.preferences.defaultProvider) as PersistedState['preferences']['defaultProvider'];
+  }
+}
+
+function normalizePathHint(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return path.normalize(trimmed).replace(/[\\/]+$/, '').toLowerCase();
+}
+
+function parseYamlScalar(contents: string, key: string): string | null {
+  const pattern = new RegExp(`^${key}:\\s*(.*)$`, 'm');
+  const match = contents.match(pattern);
+  if (!match) return null;
+  const raw = match[1]?.trim() ?? '';
+  if (!raw) return null;
+  return raw.replace(/^['"]|['"]$/g, '');
+}
+
+function inferCopilotSessionId(projectPath: string, createdAt: string, usedIds: Set<string>): string | null {
+  const sessionCreatedAtMs = Date.parse(createdAt);
+  if (!Number.isFinite(sessionCreatedAtMs)) return null;
+  const projectPathHint = normalizePathHint(projectPath);
+  if (!projectPathHint) return null;
+
+  try {
+    if (!fs.existsSync(COPILOT_SESSION_STATE_DIR)) return null;
+    let best: { id: string; delta: number } | null = null;
+    for (const entry of fs.readdirSync(COPILOT_SESSION_STATE_DIR, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const workspacePath = path.join(COPILOT_SESSION_STATE_DIR, entry.name, 'workspace.yaml');
+      if (!fs.existsSync(workspacePath)) continue;
+      const contents = fs.readFileSync(workspacePath, 'utf-8');
+      const id = parseYamlScalar(contents, 'id') ?? entry.name;
+      if (usedIds.has(id)) continue;
+      const cwd = parseYamlScalar(contents, 'cwd');
+      if (!cwd || normalizePathHint(cwd) !== projectPathHint) continue;
+      const copilotCreatedAtMs = Date.parse(parseYamlScalar(contents, 'created_at') ?? '');
+      if (!Number.isFinite(copilotCreatedAtMs)) continue;
+      const delta = Math.abs(copilotCreatedAtMs - sessionCreatedAtMs);
+      if (delta > COPILOT_BACKFILL_WINDOW_MS) continue;
+      if (!best || delta < best.delta) best = { id, delta };
+    }
+    return best?.id ?? null;
+  } catch {
+    return null;
   }
 }
 

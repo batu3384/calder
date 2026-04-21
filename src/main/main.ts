@@ -124,8 +124,10 @@ app.whenReady().then(async () => {
     });
   }
 
-  // Install hooks and status scripts for available providers (after window creation so dialogs can attach)
-  await installProviderStartupArtifacts(getAllProviders(), mainWindow);
+  // Install hooks and status scripts after first paint without blocking app startup.
+  void installProviderStartupArtifacts(getAllProviders(), mainWindow).catch((error) => {
+    console.warn('Failed to complete provider startup artifact installation:', error);
+  });
 
   initAutoUpdater();
 

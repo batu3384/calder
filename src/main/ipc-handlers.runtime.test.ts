@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => {
     registerPendingCodexSession: vi.fn(),
     unregisterCodexSession: vi.fn(),
     stopCodexSessionWatcher: vi.fn(),
+    startCopilotSessionWatcher: vi.fn(),
+    registerPendingCopilotSession: vi.fn(),
+    unregisterCopilotSession: vi.fn(),
+    stopCopilotSessionWatcher: vi.fn(),
     registerMcpHandlers: vi.fn(),
     registerFsStoreIpcHandlers: vi.fn(),
     registerMaintenanceIpcHandlers: vi.fn(),
@@ -77,6 +81,13 @@ vi.mock('./codex-session-watcher', () => ({
   stopCodexSessionWatcher: mocks.stopCodexSessionWatcher,
 }));
 
+vi.mock('./copilot-session-watcher', () => ({
+  startCopilotSessionWatcher: mocks.startCopilotSessionWatcher,
+  registerPendingCopilotSession: mocks.registerPendingCopilotSession,
+  unregisterCopilotSession: mocks.unregisterCopilotSession,
+  stopCopilotSessionWatcher: mocks.stopCopilotSessionWatcher,
+}));
+
 vi.mock('./mcp-ipc-handlers', () => ({ registerMcpHandlers: mocks.registerMcpHandlers }));
 vi.mock('./ipc-fs-store', () => ({ registerFsStoreIpcHandlers: mocks.registerFsStoreIpcHandlers }));
 vi.mock('./ipc-maintenance', () => ({ registerMaintenanceIpcHandlers: mocks.registerMaintenanceIpcHandlers }));
@@ -135,6 +146,7 @@ describe('ipc-handlers runtime', () => {
 
     expect(mocks.stopHookWatching).toHaveBeenCalled();
     expect(mocks.stopCodexSessionWatcher).toHaveBeenCalled();
+    expect(mocks.stopCopilotSessionWatcher).toHaveBeenCalled();
     expect(mocks.resetCalderProjectWatchers).toHaveBeenCalled();
     expect(mocks.resetInspectorOrchestrationCaches).toHaveBeenCalled();
   });
@@ -145,7 +157,7 @@ describe('ipc-handlers runtime', () => {
     expect(mocks.registerPtyIpcHandlers).toHaveBeenCalledTimes(1);
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
       ensureHookWatcherStarted(win: unknown): void;
-      registerPendingProviderSessionWatchers(providerId: string, cliSessionId: string | null, sessionId: string, win: unknown): void;
+      registerPendingProviderSessionWatchers(providerId: string, cliSessionId: string | null, sessionId: string, cwd: string, win: unknown): void;
       handlePtySessionExit(sessionId: string): void;
     };
     expect(ptyOps).toBeTruthy();
@@ -155,17 +167,24 @@ describe('ipc-handlers runtime', () => {
     ptyOps.ensureHookWatcherStarted(win);
     expect(mocks.startWatching).toHaveBeenCalledTimes(1);
 
-    ptyOps.registerPendingProviderSessionWatchers('codex', null, 's1', win);
+    ptyOps.registerPendingProviderSessionWatchers('codex', null, 's1', '/repo/project', win);
     expect(mocks.startCodexSessionWatcher).toHaveBeenCalledWith(win);
-    expect(mocks.registerPendingCodexSession).toHaveBeenCalledWith('s1');
+    expect(mocks.registerPendingCodexSession).toHaveBeenCalledWith('s1', { cwd: '/repo/project' });
 
-    ptyOps.registerPendingProviderSessionWatchers('codex', 'cli-1', 's1', win);
-    ptyOps.registerPendingProviderSessionWatchers('claude', null, 's1', win);
+    ptyOps.registerPendingProviderSessionWatchers('copilot', null, 's2', '/repo/project', win);
+    expect(mocks.startCopilotSessionWatcher).toHaveBeenCalledWith(win);
+    expect(mocks.registerPendingCopilotSession).toHaveBeenCalledWith('s2', { cwd: '/repo/project' });
+
+    ptyOps.registerPendingProviderSessionWatchers('codex', 'cli-1', 's1', '/repo/project', win);
+    ptyOps.registerPendingProviderSessionWatchers('copilot', 'cli-2', 's2', '/repo/project', win);
+    ptyOps.registerPendingProviderSessionWatchers('claude', null, 's1', '/repo/project', win);
     expect(mocks.startCodexSessionWatcher).toHaveBeenCalledTimes(1);
+    expect(mocks.startCopilotSessionWatcher).toHaveBeenCalledTimes(1);
 
     ptyOps.handlePtySessionExit('session-17');
     expect(mocks.cleanupSessionStatus).toHaveBeenCalledWith('session-17');
     expect(mocks.unregisterCodexSession).toHaveBeenCalledWith('session-17');
+    expect(mocks.unregisterCopilotSession).toHaveBeenCalledWith('session-17');
     expect(mocks.orchestrator.unregisterSession).toHaveBeenCalledWith('session-17');
     expect(mocks.clearInspectorOrchestrationSession).toHaveBeenCalledWith('session-17');
 

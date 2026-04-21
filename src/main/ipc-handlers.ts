@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
+import { startCopilotSessionWatcher, registerPendingCopilotSession, unregisterCopilotSession, stopCopilotSessionWatcher } from './copilot-session-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
@@ -50,6 +51,7 @@ export function resetHookWatcher(): void {
   hookWatcherStarted = false;
   stopHookWatching();
   stopCodexSessionWatcher();
+  stopCopilotSessionWatcher();
   resetCalderProjectWatchers();
   resetInspectorOrchestrationCaches();
 }
@@ -111,22 +113,30 @@ export function registerIpcHandlers(): void {
         hooks: validation.hooks,
       });
     },
-    registerPendingProviderSessionWatchers: (providerId, cliSessionId, sessionId, win) => {
+    registerPendingProviderSessionWatchers: (providerId, cliSessionId, sessionId, cwd, win) => {
       if (providerId === 'codex' && !cliSessionId) {
         startCodexSessionWatcher(win);
-        registerPendingCodexSession(sessionId);
+        registerPendingCodexSession(sessionId, { cwd });
+      }
+      if (providerId === 'copilot' && !cliSessionId) {
+        startCopilotSessionWatcher(win);
+        registerPendingCopilotSession(sessionId, { cwd });
       }
     },
     mirrorPlaywrightFromPtyData,
     handlePtySessionExit: (sessionId) => {
       cleanupSessionStatus(sessionId);
       unregisterCodexSession(sessionId);
+      unregisterCopilotSession(sessionId);
       autoApprovalOrchestrator.unregisterSession(sessionId);
       clearInspectorOrchestrationSession(sessionId);
     },
   });
 
-  registerCliSurfaceIpcHandlers(cliSurfaceRuntime);
+  registerCliSurfaceIpcHandlers(cliSurfaceRuntime, {
+    resolveProjectPath: (projectId) => loadState().projects.find((project) => project.id === projectId)?.path,
+    isWithinKnownProject,
+  });
 
   registerFsStoreIpcHandlers({
     isAllowedDirectoryLookupPath,

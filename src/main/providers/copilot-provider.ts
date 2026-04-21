@@ -5,6 +5,7 @@ import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getCopilotConfig } from '../copilot-config';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
 
 const binaryCache = { path: null as string | null };
 const INERT_SETTINGS: SettingsValidationResult = { statusLine: 'missing', hooks: 'missing', hookDetails: {} };
@@ -58,6 +59,7 @@ export class CopilotProvider implements CliProvider {
 
   cleanup(): void {
     stopConfigWatch();
+    stopCopilotSessionWatcher();
   }
 
   startConfigWatcher(win: BrowserWindow, projectPath: string): void {

@@ -27,18 +27,24 @@ vi.mock('../config-watcher', () => ({
   stopConfigWatcher: vi.fn(),
 }));
 
+vi.mock('../copilot-session-watcher', () => ({
+  stopCopilotSessionWatcher: vi.fn(),
+}));
+
 import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { CopilotProvider, _resetCachedPath } from './copilot-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 import { getCopilotConfig } from '../copilot-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
 const mockGetCopilotConfig = vi.mocked(getCopilotConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
 const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
+const mockStopCopilotSessionWatcher = vi.mocked(stopCopilotSessionWatcher);
 
 let provider: CopilotProvider;
 
@@ -160,9 +166,10 @@ describe('watchers and cleanup', () => {
     expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'copilot');
   });
 
-  it('cleanup stops config watching', () => {
+  it('cleanup stops config and session watching', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
+    expect(mockStopCopilotSessionWatcher).toHaveBeenCalled();
   });
 
   it('reinstallSettings remains a safe no-op', () => {

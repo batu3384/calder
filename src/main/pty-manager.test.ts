@@ -159,6 +159,29 @@ describe('spawnPty', () => {
     expect(onExit).toHaveBeenCalledWith(0, 0);
   });
 
+  it('falls back when Claude Code splits the missing conversation message across lines', () => {
+    const firstProc = createMockPtyProcess();
+    const secondProc = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(firstProc).mockReturnValueOnce(secondProc);
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    spawnPty('s1', '/project', '01fd5576-db97-4939-b722-41c11acb22da', true, '', 'claude', undefined, onData, onExit);
+
+    firstProc._emitData('No conversation found with\n session ID: 01fd5576-db97\n-4939-b722-41c11acb22da');
+    expect(onData).toHaveBeenCalledWith(
+      'No conversation found with\n session ID: 01fd5576-db97\n-4939-b722-41c11acb22da',
+    );
+    expect(onData).toHaveBeenCalledWith(
+      '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
+    );
+    expect(mockKill).toHaveBeenCalledTimes(1);
+
+    firstProc._emitExit(1, 0);
+    expect(onExit).not.toHaveBeenCalled();
+    expect(mockSpawn).toHaveBeenNthCalledWith(2, 'claude', [], expect.any(Object));
+  });
+
   it('adds --session-id flag when not resuming', () => {
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);

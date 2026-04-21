@@ -2,6 +2,8 @@ import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming
 import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
 import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 
+const MAX_STARTUP_READY_BUFFER = 8192;
+
 export function createCliSurfaceRuntimeManager(emit: {
   data(projectId: string, data: string): void;
   exit(projectId: string, exitCode: number, signal?: number): void;
@@ -12,6 +14,7 @@ export function createCliSurfaceRuntimeManager(emit: {
   const pendingData = new Map<string, string[]>();
   const dataFlushTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const runningEmitted = new Set<string>();
+  const startupReadyBuffers = new Map<string, string>();
   const startupTimings = new Map<string, CliSurfaceStartupTiming>();
   const runtimeLaunches = new Map<
     string,
@@ -107,10 +110,47 @@ export function createCliSurfaceRuntimeManager(emit: {
     timing.totalRuntimeMs = Math.max(0, stoppedAtMs - timing.startedAtMs);
   }
 
+  function recordFirstOutput(projectId: string): void {
+    const timing = startupTimings.get(projectId);
+    if (!timing || timing.firstOutputAtMs !== undefined) return;
+    const firstOutputAtMs = Date.now();
+    timing.firstOutputAtMs = firstOutputAtMs;
+    timing.firstOutputLatencyMs = Math.max(0, firstOutputAtMs - timing.startedAtMs);
+  }
+
+  function markRunning(projectId: string, profile: CliSurfaceProfile): void {
+    if (runningEmitted.has(projectId)) return;
+    runningEmitted.add(projectId);
+    const timing = startupTimings.get(projectId);
+    if (timing) {
+      timing.runningAtMs = Date.now();
+    }
+    emit.status(projectId, buildRuntimeState(projectId, profile, 'running'));
+  }
+
+  function compileStartupReadyPattern(projectId: string, pattern?: string): RegExp | undefined {
+    if (!pattern) return undefined;
+    try {
+      return new RegExp(pattern, 'm');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Invalid regular expression.';
+      emit.error(projectId, `Invalid CLI surface startup ready pattern: ${message}`);
+      return undefined;
+    }
+  }
+
+  function appendStartupReadyOutput(projectId: string, data: string): string {
+    const current = startupReadyBuffers.get(projectId) ?? '';
+    const next = `${current}${data}`.slice(-MAX_STARTUP_READY_BUFFER);
+    startupReadyBuffers.set(projectId, next);
+    return next;
+  }
+
   return {
     async start(projectId: string, profile: CliSurfaceProfile): Promise<void> {
       profiles.set(projectId, profile);
       runningEmitted.delete(projectId);
+      startupReadyBuffers.delete(projectId);
       startupTimings.set(projectId, { startedAtMs: Date.now() });
       runtimeLaunches.set(projectId, {
         selectedProfileId: profile.id,
@@ -160,25 +200,23 @@ export function createCliSurfaceRuntimeManager(emit: {
         return;
       }
 
+      const startupReadyPattern = compileStartupReadyPattern(projectId, profile.startupReadyPattern);
       spawnCommandPty(
         getRuntimeId(projectId),
         launch,
         (data) => {
-          if (!runningEmitted.has(projectId)) {
-            runningEmitted.add(projectId);
-            const timing = startupTimings.get(projectId);
-            if (timing && timing.firstOutputAtMs === undefined) {
-              const firstOutputAtMs = Date.now();
-              timing.firstOutputAtMs = firstOutputAtMs;
-              timing.firstOutputLatencyMs = Math.max(0, firstOutputAtMs - timing.startedAtMs);
-              timing.runningAtMs = firstOutputAtMs;
+          recordFirstOutput(projectId);
+          if (startupReadyPattern && !runningEmitted.has(projectId)) {
+            const readyOutput = appendStartupReadyOutput(projectId, data);
+            if (startupReadyPattern.test(readyOutput)) {
+              markRunning(projectId, profile);
             }
-            emit.status(projectId, buildRuntimeState(projectId, profile, 'running'));
           }
           queueData(projectId, data);
         },
         (exitCode, signal) => {
           runningEmitted.delete(projectId);
+          startupReadyBuffers.delete(projectId);
           markStopped(projectId);
           flushData(projectId);
           runtimeLaunches.delete(projectId);
@@ -194,6 +232,10 @@ export function createCliSurfaceRuntimeManager(emit: {
         timing.spawnLatencyMs = Math.max(0, ptySpawnedAtMs - timing.startedAtMs);
         emit.status(projectId, buildRuntimeState(projectId, profile, 'starting'));
       }
+
+      if (!startupReadyPattern) {
+        markRunning(projectId, profile);
+      }
     },
 
     write(projectId: string, data: string): void {
@@ -206,6 +248,7 @@ export function createCliSurfaceRuntimeManager(emit: {
 
     stop(projectId: string): void {
       runningEmitted.delete(projectId);
+      startupReadyBuffers.delete(projectId);
       markStopped(projectId);
       flushData(projectId);
       killPty(getRuntimeId(projectId));

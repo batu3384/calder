@@ -290,6 +290,61 @@ function getInspectInteractionHint(): string {
     : 'This panel is snapshot-based: click to inspect elements, not to drive simulator UI.';
 }
 
+type MobileInspectCapabilityTone = 'ready' | 'limited' | 'external';
+
+interface MobileInspectCapability {
+  label: string;
+  status: string;
+  detail: string;
+  tone: MobileInspectCapabilityTone;
+}
+
+function getMobileInspectCapabilities(platform: MobileInspectPlatform): MobileInspectCapability[] {
+  if (platform === 'android') {
+    return [
+      {
+        label: 'Launch and capture',
+        status: 'Ready',
+        detail: 'Uses Android Emulator plus adb screencap for still frames and live polling.',
+        tone: 'ready',
+      },
+      {
+        label: 'Element match',
+        status: 'Ready',
+        detail: 'Uses adb uiautomator dump to resolve the selected screenshot point to a native node.',
+        tone: 'ready',
+      },
+      {
+        label: 'Tap selected',
+        status: 'Ready',
+        detail: 'Uses adb input tap against the selected emulator coordinate.',
+        tone: 'ready',
+      },
+    ];
+  }
+
+  return [
+    {
+      label: 'Launch and capture',
+      status: 'Ready',
+      detail: 'Uses xcrun simctl to boot the simulator and capture PNG screenshots.',
+      tone: 'ready',
+    },
+    {
+      label: 'Element match',
+      status: 'Limited',
+      detail: 'iOS native hierarchy inspection is not wired yet; selected point and screenshot context are still sent.',
+      tone: 'limited',
+    },
+    {
+      label: 'Tap selected',
+      status: 'Appium',
+      detail: 'Requires a local Appium server with the XCUITest driver for coordinate taps.',
+      tone: 'external',
+    },
+  ];
+}
+
 function createInstallId(projectId: string, dependencyId: MobileDependencyId): string {
   return `mobile-surface-${projectId}-${dependencyId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -720,6 +775,45 @@ async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance)
   rerenderFromState(instance);
 }
 
+function renderInspectCapabilityPanel(platform: MobileInspectPlatform): HTMLElement {
+  const panel = document.createElement('div');
+  panel.className = 'mobile-surface-inspect-capabilities';
+
+  const title = document.createElement('div');
+  title.className = 'mobile-surface-inspect-capabilities-title';
+  title.textContent = `${MOBILE_PLATFORM_LABEL[platform]} capabilities`;
+
+  const list = document.createElement('div');
+  list.className = 'mobile-surface-inspect-capabilities-list';
+
+  for (const capability of getMobileInspectCapabilities(platform)) {
+    const row = document.createElement('div');
+    row.className = `mobile-surface-inspect-capability is-${capability.tone}`;
+
+    const main = document.createElement('div');
+    main.className = 'mobile-surface-inspect-capability-main';
+
+    const label = document.createElement('span');
+    label.className = 'mobile-surface-inspect-capability-label';
+    label.textContent = capability.label;
+
+    const detail = document.createElement('span');
+    detail.className = 'mobile-surface-inspect-capability-detail';
+    detail.textContent = capability.detail;
+
+    const status = document.createElement('span');
+    status.className = 'mobile-surface-inspect-capability-status';
+    status.textContent = capability.status;
+
+    main.append(label, detail);
+    row.append(main, status);
+    list.appendChild(row);
+  }
+
+  panel.append(title, list);
+  return panel;
+}
+
 function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
   const inspect = instance.inspectState;
   const blockingChecks = getBlockingChecks(report, inspect.platform);
@@ -891,6 +985,8 @@ function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: Mob
   interactionHint.className = 'mobile-surface-inspect-hint';
   interactionHint.textContent = getInspectInteractionHint();
   section.appendChild(interactionHint);
+
+  section.appendChild(renderInspectCapabilityPanel(inspect.platform));
 
   if (blockingChecks.length > 0) {
     const blockerPanel = document.createElement('div');

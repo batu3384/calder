@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const providerCaps = new Map([
-  ['claude', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['copilot', { costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['gemini', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['codex', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['qwen', { costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['claude', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['copilot', { sessionResume: true, costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
+  ['gemini', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['codex', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['qwen', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
 ]);
 const providerNames = new Map([
   ['claude', 'Claude Code'],
@@ -305,6 +305,24 @@ describe('terminal pending prompt injection', () => {
     await spawnTerminal('claude-2');
 
     expect(mockPtyCreate).toHaveBeenCalledWith('claude-2', '/project', null, false, '', 'claude', undefined);
+  });
+
+  it('launches restored Copilot sessions in native resume mode once a cliSessionId exists', async () => {
+    const { createTerminalPane, spawnTerminal } = await import('./terminal-pane.js');
+    const mockPtyCreate = (window as any).calder.pty.create;
+
+    createTerminalPane('copilot-restored', '/project', 'copilot-old-id', true, '', 'copilot');
+    await spawnTerminal('copilot-restored');
+
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'copilot-restored',
+      '/project',
+      'copilot-old-id',
+      true,
+      '',
+      'copilot',
+      undefined,
+    );
   });
 
   it('recovers from spawn failures without leaving the session stuck', async () => {

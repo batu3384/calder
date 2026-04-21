@@ -134,6 +134,34 @@ describe('cli surface runtime manager', () => {
     expect(mockKillPty).toHaveBeenCalledWith('cli-surface:project-1');
   });
 
+  it('marks runtimes without an explicit ready pattern as running after PTY spawn', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2_000));
+    mockSpawnCommandPty.mockImplementationOnce(() => {
+      vi.setSystemTime(new Date(2_025));
+    });
+    const manager = createCliSurfaceRuntimeManager(emit);
+
+    await manager.start('project-1', {
+      id: 'silent',
+      name: 'Silent CLI',
+      command: 'node',
+      args: ['server.js'],
+      cwd: '/tmp/demo',
+    });
+
+    expect(emit.status).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({
+        status: 'running',
+        startupTiming: expect.objectContaining({
+          ptySpawnedAtMs: 2_025,
+          runningAtMs: 2_025,
+        }),
+      }),
+    );
+  });
+
   it('batches bursty PTY data before emitting to the renderer', async () => {
     vi.useFakeTimers();
     const manager = createCliSurfaceRuntimeManager(emit);
@@ -207,6 +235,7 @@ describe('cli surface runtime manager', () => {
       command: 'go',
       args: ['run', './cmd/app'],
       cwd: '/tmp/demo',
+      startupReadyPattern: 'ready',
     });
 
     expect(emit.status).toHaveBeenCalledWith(
@@ -220,6 +249,7 @@ describe('cli surface runtime manager', () => {
         }),
       }),
     );
+    expect(emit.status.mock.calls.some(([, state]) => state.status === 'running')).toBe(false);
 
     const onData = mockSpawnCommandPty.mock.calls[0][2] as (data: string) => void;
     vi.setSystemTime(new Date(4_400));

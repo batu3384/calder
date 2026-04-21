@@ -108,7 +108,7 @@ describe('ipc pty handlers', () => {
     expect(ops.ensureHookWatcherStarted).toHaveBeenCalledWith(win);
     expect(ops.registerAutoApprovalSession).toHaveBeenCalledWith('s2', 'codex', resolved);
     expect(ops.validateProviderTrackingAndWarn).toHaveBeenCalledWith(win, 's2', 'codex');
-    expect(ops.registerPendingProviderSessionWatchers).toHaveBeenCalledWith('codex', 'cli-s2', 's2', win);
+    expect(ops.registerPendingProviderSessionWatchers).toHaveBeenCalledWith('codex', 'cli-s2', 's2', resolved, win);
     expect(ops.mirrorPlaywrightFromPtyData).toHaveBeenCalledWith('s2', resolved, 'stdout-chunk');
     expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s2');
     expect(send).toHaveBeenCalledWith('pty:data', 's2', 'stdout-chunk');
@@ -191,4 +191,3 @@ describe('ipc pty handlers', () => {
     expect(mockKillPty).toHaveBeenCalledWith('s4');
   });
 });
-

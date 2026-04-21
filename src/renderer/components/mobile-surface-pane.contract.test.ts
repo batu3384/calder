@@ -58,4 +58,11 @@ describe('mobile surface inspect workbench contract', () => {
     expect(paneSource).toContain('snapshot-based');
     expect(paneSource).toContain('anlık görüntü tabanlıdır');
   });
+
+  it('renders platform capability clarity for iOS and Android inspect paths', () => {
+    expect(paneSource).toContain('getMobileInspectCapabilities');
+    expect(paneSource).toContain('iOS native hierarchy inspection is not wired yet');
+    expect(paneSource).toContain('adb uiautomator dump');
+    expect(paneSource).toContain('Requires a local Appium server with the XCUITest driver');
+  });
 });

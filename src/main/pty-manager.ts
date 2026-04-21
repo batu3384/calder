@@ -17,7 +17,7 @@ interface PtyInstance {
 
 const ptys = new Map<string, PtyInstance>();
 const silencedExits = new Set<string>();
-const RESUME_SESSION_MISSING_PATTERN = /no conversation found with session id|session(?:\s+id)?[^.\n]*not found/i;
+const RESUME_SESSION_MISSING_PATTERN = /no\s+conversation\s+found\s+with\s+session\s+id|session(?:\s+id)?[\s\S]{0,160}?not\s+found/i;
 
 export function spawnPty(
   sessionId: string,

@@ -115,6 +115,8 @@ export function createTerminalPane(
   if (instances.has(sessionId)) {
     return instances.get(sessionId)!;
   }
+  const caps = getProviderCapabilities(providerId);
+  const effectiveIsResume = isResume && !!cliSessionId && caps?.sessionResume !== false;
 
   const element = document.createElement('div');
   element.className = 'terminal-pane hidden';
@@ -137,14 +139,14 @@ export function createTerminalPane(
 
   const meta = document.createElement('div');
   meta.className = 'terminal-pane-meta';
-  meta.textContent = isResume ? 'Restored terminal surface' : 'Live terminal surface';
+  meta.textContent = effectiveIsResume ? 'Restored terminal surface' : 'Live terminal surface';
 
   headerCopy.appendChild(workspace);
   headerCopy.appendChild(meta);
 
   const sessionState = document.createElement('div');
   sessionState.className = 'terminal-pane-session';
-  sessionState.textContent = isResume ? 'linked run' : 'active run';
+  sessionState.textContent = effectiveIsResume ? 'linked run' : 'active run';
 
   chrome.appendChild(providerBadge);
   chrome.appendChild(headerCopy);
@@ -161,7 +163,6 @@ export function createTerminalPane(
   contextIndicator.className = 'context-indicator';
   const costDisplay = document.createElement('div');
   costDisplay.className = 'cost-display';
-  const caps = getProviderCapabilities(providerId);
   if (caps?.costTracking !== false) {
     costDisplay.textContent = '$0.0000';
   } else {
@@ -281,8 +282,8 @@ export function createTerminalPane(
     cliSessionId,
     providerId,
     args,
-    isResume,
-    wasResumed: isResume,
+    isResume: effectiveIsResume,
+    wasResumed: effectiveIsResume,
     spawned: false,
     exited: false,
     pendingPrompt: null,

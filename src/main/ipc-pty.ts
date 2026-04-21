@@ -13,6 +13,7 @@ export interface PtyIpcOps {
     providerId: ProviderId,
     cliSessionId: string | null,
     sessionId: string,
+    cwd: string,
     win: BrowserWindow,
   ) => void;
   mirrorPlaywrightFromPtyData: (sessionId: string, cwd: string, chunk: string) => void;
@@ -31,7 +32,7 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
     ops.ensureHookWatcherStarted(win);
     ops.registerAutoApprovalSession(sessionId, providerId, resolvedCwd);
     ops.validateProviderTrackingAndWarn(win, sessionId, providerId);
-    ops.registerPendingProviderSessionWatchers(providerId, cliSessionId, sessionId, win);
+    ops.registerPendingProviderSessionWatchers(providerId, cliSessionId, sessionId, resolvedCwd, win);
 
     spawnPty(
       sessionId,

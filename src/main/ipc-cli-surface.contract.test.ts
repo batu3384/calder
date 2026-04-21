@@ -7,7 +7,9 @@ describe('cli-surface IPC delegation contract', () => {
   const cliSurfaceSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-cli-surface.ts'), 'utf8');
 
   it('delegates cli-surface channel registration from ipc-handlers', () => {
-    expect(ipcHandlersSource).toContain('registerCliSurfaceIpcHandlers(cliSurfaceRuntime);');
+    expect(ipcHandlersSource).toContain('registerCliSurfaceIpcHandlers(cliSurfaceRuntime, {');
+    expect(ipcHandlersSource).toContain('resolveProjectPath:');
+    expect(ipcHandlersSource).toContain('isWithinKnownProject,');
     expect(cliSurfaceSource).toContain("ipcMain.handle('cli-surface:start'");
     expect(cliSurfaceSource).toContain("ipcMain.handle('cli-surface:discover'");
     expect(cliSurfaceSource).toContain("ipcMain.handle('cli-surface:stop'");

@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 vi.mock('fs', () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
+  readdirSync: vi.fn(),
   writeFileSync: vi.fn(),
   renameSync: vi.fn(),
   mkdirSync: vi.fn(),
@@ -19,6 +20,7 @@ import type { PersistedState } from './store';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
+const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockRenameSync = vi.mocked(fs.renameSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
@@ -34,6 +36,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
   mockRenameSync.mockReset();
+  mockReaddirSync.mockReturnValue([]);
 });
 
 afterEach(() => {
@@ -234,6 +237,58 @@ describe('migrateSessionIds', () => {
     expect(sessions[0].providerId).toBe('claude');
     expect(sessions[1].providerId).toBe('claude');
     expect(sessions[2].providerId).toBe('codex');
+  });
+
+  it('backfills missing Copilot cliSessionId from matching session-state metadata', () => {
+    const stateFile = '/mock/home/.calder/state.json';
+    const sessionStateDir = '/mock/home/.copilot/session-state';
+    const workspaceFile = path.join(sessionStateDir, 'copilot-id-1', 'workspace.yaml');
+    const state: PersistedState = {
+      version: 1,
+      projects: [{
+        id: 'p1',
+        name: 'Test',
+        path: '/repo/project',
+        sessions: [{
+          id: 's1',
+          name: 'Copilot Session',
+          cliSessionId: null,
+          createdAt: '2026-04-21T10:00:00.000Z',
+          providerId: 'copilot',
+        } as any],
+        activeSessionId: null,
+        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+      }],
+      activeProjectId: 'p1',
+      preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+    };
+
+    mockExistsSync.mockImplementation((file) => (
+      String(file) === stateFile
+      || String(file) === sessionStateDir
+      || String(file) === workspaceFile
+    ));
+    mockReaddirSync.mockImplementation((file) => {
+      if (String(file) === sessionStateDir) {
+        return [{ name: 'copilot-id-1', isDirectory: () => true }] as any;
+      }
+      return [] as any;
+    });
+    mockReadFileSync.mockImplementation((file) => {
+      if (String(file) === stateFile) return JSON.stringify(state);
+      if (String(file) === workspaceFile) {
+        return [
+          'id: copilot-id-1',
+          'cwd: /repo/project',
+          'created_at: 2026-04-21T10:00:01.000Z',
+          '',
+        ].join('\n');
+      }
+      throw new Error(`Unexpected read: ${String(file)}`);
+    });
+
+    const loaded = loadState();
+    expect(loaded.projects[0].sessions[0].cliSessionId).toBe('copilot-id-1');
   });
 
   it('normalizes unsupported defaultProvider to claude', () => {
