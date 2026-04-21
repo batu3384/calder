@@ -1001,4 +1001,390 @@ describe('mobile-inspector runtime android flows', () => {
     expect(result.message).toContain('rejected by Appium');
     expect(execPlans).toHaveLength(0);
   });
+
+  it('creates iOS Appium session via /wd/hub fallback when root session endpoint fails', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-9',
+                name: 'iPhone 16 Pro',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-9', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        throw new Error('root endpoint refused');
+      }
+      if (url === 'http://127.0.0.1:4723/wd/hub/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-wd-hub' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wd-hub/actions') && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wd-hub') && method === 'DELETE') {
+        return {
+          ok: true,
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 30, 45);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Tap dispatched to iOS simulator');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns /wd/hub Appium bootstrap error message when fallback session creation is rejected', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-10',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-10', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/wd/hub/session' && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return JSON.stringify({ value: { message: 'wd/hub session rejected' } });
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 40, 60);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('wd/hub session rejected');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns a session request transport error when both iOS Appium session endpoints fail before response', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-11',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-11', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        throw new Error('root session connection dropped');
+      }
+      if (url === 'http://127.0.0.1:4723/wd/hub/session' && method === 'POST') {
+        throw new Error('wd/hub connection dropped');
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 40, 61);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('failed before server response');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns generic iOS Appium session bootstrap guidance when both endpoints return undecodable failures', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-12',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-12', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{"value":{}}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/wd/hub/session' && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{"value":{}}';
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 44, 67);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Failed to create iOS Appium session');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns wda fallback error details when iOS action endpoint has no details but wda does', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-13',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-13', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-wda-message' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-message/actions') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-message/wda/tap/0') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return JSON.stringify({ value: { message: 'wda tap rejected' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-message') && method === 'DELETE') {
+        return {
+          ok: true,
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 45, 70);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('wda tap rejected');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns transport failure when both iOS action endpoints fail before response', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-14',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-14', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-wda-transport' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-transport/actions') && method === 'POST') {
+        throw new Error('actions transport failure');
+      }
+      if (url.endsWith('/session/session-wda-transport/wda/tap/0') && method === 'POST') {
+        throw new Error('wda transport failure');
+      }
+      if (url.endsWith('/session/session-wda-transport') && method === 'DELETE') {
+        return {
+          ok: true,
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 46, 71);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('failed before Appium returned');
+    expect(execPlans).toHaveLength(0);
+  });
 });
