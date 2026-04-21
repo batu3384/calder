@@ -1,0 +1,5 @@
+import { MOBILE_PAGE_SCRIPT_RUNTIME_BOOTSTRAP } from './page-script-runtime-bootstrap';
+import { MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL } from './page-script-runtime-channel';
+import { MOBILE_PAGE_SCRIPT_RUNTIME_CONNECTION } from './page-script-runtime-connection';
+
+export const MOBILE_PAGE_SCRIPT_RUNTIME = `${MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL}${MOBILE_PAGE_SCRIPT_RUNTIME_CONNECTION}${MOBILE_PAGE_SCRIPT_RUNTIME_BOOTSTRAP}`;

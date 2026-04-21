@@ -29,8 +29,6 @@ import {
   clearDrawing,
   dismissDraw,
   sendDrawToSelectedSession,
-  sendDrawToNewSession,
-  sendDrawToCustomSession,
   positionDrawPopover,
 } from './draw-mode.js';
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
@@ -38,23 +36,26 @@ import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import { buildBrowserSessionPartition } from '../../../shared/constants.js';
 import type {
-  BrowserCredentialFillData,
-  BrowserCredentialSaveInput,
-  BrowserCredentialSummary,
   BrowserGuestOpenPayload,
-  ProviderId,
 } from '../../../shared/types.js';
 import {
-  sendFlowToCustomSession,
   sendFlowToSelectedSession,
-  sendFlowToNewSession,
-  sendToCustomSession,
   sendToSelectedSession,
-  sendToNewSession,
 } from './session-integration.js';
-import { anchorFloatingSurface } from '../floating-surface.js';
-import { logDebugEvent } from '../debug-panel.js';
 import { handleBrowserGuestOpenRequest } from './popup-routing.js';
+import { createBrowserAuthPanel } from './auth-panel.js';
+import { createBrowserAuthController } from './auth-controller.js';
+import { populateLocalTargets } from './local-targets.js';
+import {
+  closeBrowserTargetMenu,
+  openBrowserTargetMenu,
+  syncBrowserTargetControls,
+} from './target-menu.js';
+import { createNewTabStateController } from './new-tab-state.js';
+import {
+  syncAddressBarState as syncBrowserAddressBarState,
+  syncNavigationControls as syncBrowserNavigationControls,
+} from './navigation-chrome.js';
 
 function createBrowserToolbarCluster(labelText: string): {
   element: HTMLDivElement;
@@ -94,20 +95,6 @@ function resolveCredentialOrigin(url: string | undefined): string | null {
   }
 }
 
-function browserTargetButtonLabel(instance: BrowserTabInstance): string {
-  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-  const label = selectedTarget?.name ?? 'Select Session';
-  return label.length > 22 ? `${label.slice(0, 21)}…` : label;
-}
-
-function setProviderAccentTarget(element: HTMLElement, providerId?: ProviderId): void {
-  if (providerId) {
-    element.dataset.provider = providerId;
-    return;
-  }
-  delete element.dataset.provider;
-}
-
 function resolveCaptureModeState(instance: BrowserTabInstance): 'inspect' | 'draw' | 'flow' | 'idle' {
   if (instance.inspectMode) return 'inspect';
   if (instance.drawMode) return 'draw';
@@ -141,227 +128,6 @@ function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {
   }
 
   navigateTo(instance, nextUrl);
-}
-
-function closeBrowserTargetMenu(instance: BrowserTabInstance, reason = 'programmatic'): void {
-  const wasOpen = instance.targetMenu.style.display !== 'none';
-  instance.targetMenuFloatingCleanup?.();
-  instance.targetMenuFloatingCleanup = null;
-  instance.targetMenu.style.display = 'none';
-  instance.activeTargetTrigger = null;
-  instance.activeTargetMode = null;
-  if (wasOpen) {
-    logDebugEvent('browserMenu', instance.sessionId, {
-      menu: 'session-target',
-      state: 'close',
-      reason,
-    });
-  }
-}
-
-function runTargetMenuAction(instance: BrowserTabInstance, action: 'new' | 'custom'): void {
-  const mode = instance.activeTargetMode;
-  closeBrowserTargetMenu(instance, `menu-action:${action}`);
-  if (!mode) return;
-
-  if (mode === 'inspect') {
-    if (action === 'new') sendToNewSession(instance);
-    else sendToCustomSession(instance);
-    return;
-  }
-
-  if (mode === 'draw') {
-    if (action === 'new') {
-      void sendDrawToNewSession(instance);
-    } else {
-      void sendDrawToCustomSession(instance);
-    }
-    return;
-  }
-
-  if (action === 'new') {
-    sendFlowToNewSession(instance);
-  } else {
-    sendFlowToCustomSession(instance);
-  }
-}
-
-function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
-  const targetSessions = appState.listBrowserTargetSessions(instance.sessionId);
-  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-  instance.targetMenuList.innerHTML = '';
-
-  const header = document.createElement('div');
-  header.className = 'browser-target-menu-header';
-  header.textContent = 'Open Sessions';
-  instance.targetMenuList.appendChild(header);
-
-  if (targetSessions.length === 0) {
-    const emptyState = document.createElement('div');
-    emptyState.className = 'browser-target-menu-empty';
-    emptyState.textContent = 'Open a CLI session to route browser prompts here.';
-    instance.targetMenuList.appendChild(emptyState);
-  } else {
-    for (const session of targetSessions) {
-      const providerId = session.providerId ?? 'claude';
-      const button = document.createElement('button');
-      button.className = 'browser-target-menu-item';
-      setProviderAccentTarget(button, providerId);
-      if (selectedTarget?.id === session.id) {
-        button.classList.add('active');
-      }
-
-      const label = document.createElement('span');
-      label.className = 'browser-target-session-name';
-      label.textContent = session.name;
-
-      const meta = document.createElement('span');
-      meta.className = 'browser-target-session-meta';
-      setProviderAccentTarget(meta, providerId);
-      const parts = [getProviderDisplayName(providerId)];
-      if (appState.activeProject?.activeSessionId === session.id) {
-        parts.unshift('Active');
-      }
-      meta.textContent = parts.join(' · ');
-
-      button.appendChild(label);
-      button.appendChild(meta);
-      button.addEventListener('click', () => {
-        appState.setBrowserTargetSession(instance.sessionId, session.id);
-        closeBrowserTargetMenu(instance, 'select-target');
-      });
-      instance.targetMenuList.appendChild(button);
-    }
-  }
-
-  const separator = document.createElement('div');
-  separator.className = 'browser-target-menu-separator';
-  instance.targetMenuList.appendChild(separator);
-
-  const newSessionBtn = document.createElement('button');
-  newSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
-  newSessionBtn.textContent = 'Send to New Session';
-  newSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'new'));
-  instance.targetMenuList.appendChild(newSessionBtn);
-
-  const customSessionBtn = document.createElement('button');
-  customSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
-  customSessionBtn.textContent = 'Send to Custom Session…';
-  customSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'custom'));
-  instance.targetMenuList.appendChild(customSessionBtn);
-}
-
-function syncBrowserTargetControls(instance: BrowserTabInstance): void {
-  const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-  const selectedProviderId: ProviderId | undefined = selectedTarget
-    ? selectedTarget.providerId ?? 'claude'
-    : undefined;
-  const hasTarget = !!selectedTarget;
-  const primaryButtons = [instance.submitBtn, instance.drawSubmitBtn, instance.flowSubmitBtn];
-  for (const button of primaryButtons) {
-    button.disabled = !hasTarget;
-    setProviderAccentTarget(button, selectedProviderId);
-    button.title = hasTarget
-      ? `Send to ${selectedTarget.name}`
-      : 'Select an open session target first';
-  }
-
-  const targetButtons = [instance.inspectTargetBtn, instance.drawTargetBtn, instance.flowTargetBtn];
-  const label = `${browserTargetButtonLabel(instance)} ▾`;
-  for (const button of targetButtons) {
-    setProviderAccentTarget(button, selectedProviderId);
-    button.textContent = label;
-    button.title = selectedTarget
-      ? `Current target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
-      : 'Choose which open session receives the browser prompt';
-  }
-
-  if (instance.targetMenu.style.display !== 'none') {
-    renderBrowserTargetMenu(instance);
-  }
-
-  instance.syncToolbarState();
-}
-
-function openBrowserTargetMenu(
-  instance: BrowserTabInstance,
-  trigger: HTMLButtonElement,
-  mode: 'inspect' | 'draw' | 'flow',
-): void {
-  if (instance.activeTargetTrigger === trigger && instance.targetMenu.style.display !== 'none') {
-    closeBrowserTargetMenu(instance, 'trigger-toggle');
-    return;
-  }
-
-  instance.activeTargetTrigger = trigger;
-  instance.activeTargetMode = mode;
-  renderBrowserTargetMenu(instance);
-  instance.targetMenu.style.display = 'flex';
-  instance.targetMenuFloatingCleanup?.();
-  instance.targetMenuFloatingCleanup = anchorFloatingSurface(trigger, instance.targetMenu, {
-    placement: 'bottom-end',
-    offsetPx: 6,
-    maxWidthPx: 300,
-    maxHeightPx: 360,
-  });
-  logDebugEvent('browserMenu', instance.sessionId, {
-    menu: 'session-target',
-    state: 'open',
-    reason: `trigger:${mode}`,
-  });
-}
-
-async function populateLocalTargets(
-  instance: BrowserTabInstance,
-  grid: HTMLDivElement,
-  copy: HTMLDivElement,
-  meta: HTMLDivElement,
-): Promise<void> {
-  grid.innerHTML = '';
-  copy.textContent = 'Scanning for active localhost targets…';
-  meta.textContent = 'Scanning…';
-
-  try {
-    const targets = await window.calder.browser.listLocalTargets();
-    if (!instances.has(instance.sessionId)) return;
-
-    if (targets.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'browser-ntp-empty';
-      empty.textContent = 'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
-      grid.appendChild(empty);
-      copy.textContent = 'Only running localhost surfaces are listed here.';
-      meta.textContent = '0 running';
-      return;
-    }
-
-    copy.textContent = 'Only running localhost surfaces appear here. Pick one or paste any URL above.';
-    meta.textContent = `${targets.length} running`;
-    for (const target of targets) {
-      const btn = document.createElement('button');
-      btn.className = 'browser-ntp-link';
-      const label = document.createElement('span');
-      label.className = 'browser-ntp-link-label';
-      label.textContent = target.label;
-
-      const meta = document.createElement('span');
-      meta.className = 'browser-ntp-link-meta';
-      meta.textContent = target.meta;
-
-      btn.appendChild(label);
-      btn.appendChild(meta);
-      btn.addEventListener('click', () => navigateTo(instance, target.url));
-      grid.appendChild(btn);
-    }
-  } catch {
-    if (!instances.has(instance.sessionId)) return;
-    const empty = document.createElement('div');
-    empty.className = 'browser-ntp-empty';
-    empty.textContent = 'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
-    grid.appendChild(empty);
-    copy.textContent = 'Only running localhost surfaces are listed here.';
-    meta.textContent = 'Unavailable';
-  }
 }
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
@@ -738,16 +504,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   ntpGrid.className = 'browser-ntp-grid';
   ntpTargets.appendChild(ntpGrid);
 
-  function resetNewTabCopy(): void {
-    newTabPage.dataset.mode = 'default';
-    ntpState.dataset.state = 'default';
-    ntpState.textContent = 'Ready to capture';
-    ntpTitle.textContent = 'Open a running surface';
-    ntpSubtitle.textContent = 'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
-    ntpTargetsText.textContent = 'Scanning for active localhost targets…';
-    ntpTargetsMeta.textContent = 'Scanning…';
-  }
-
   function syncBrowserStatus(state: BrowserPageState): void {
     statusBadge.dataset.state = state;
     statusBadge.textContent = describeBrowserPageState(state);
@@ -763,31 +519,6 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     goBtn.textContent = state === 'loading' ? 'Stop' : 'Go';
     goBtn.classList.toggle('loading', state === 'loading');
     goBtn.ariaLabel = state === 'loading' ? 'Stop page load' : 'Open address';
-  }
-
-  function showOfflineState(failedUrl: string): void {
-    const isLocalSurface = isLocalBrowserUrl(failedUrl);
-
-    ntpState.dataset.state = isLocalSurface ? 'offline' : 'unavailable';
-    ntpState.textContent = 'Offline';
-    ntpTitle.textContent = 'Surface offline';
-    ntpSubtitle.textContent = isLocalSurface
-      ? `${failedUrl} is not reachable right now. Start the local app again, then reload or rescan localhost.`
-      : `${failedUrl} could not be opened right now. Try reloading, pasting a different URL, or choosing another local surface.`;
-    ntpTargetsText.textContent = isLocalSurface
-      ? 'Start the local app again, then rescan localhost or paste a different URL above.'
-      : 'Paste a different URL above, or choose another running localhost surface.';
-    ntpTargetsMeta.textContent = isLocalSurface ? 'Offline' : 'Unavailable';
-    ntpGrid.innerHTML = '';
-
-    const offlineCard = document.createElement('div');
-    offlineCard.className = 'browser-ntp-empty';
-    offlineCard.textContent = isLocalSurface
-      ? 'Start the local app again, then choose another running localhost surface or paste a new URL.'
-      : 'This page could not be opened right now. Choose another running surface or paste a different URL.';
-    ntpGrid.appendChild(offlineCard);
-    newTabPage.dataset.mode = 'offline';
-    syncSurfaceVisibility(true);
   }
 
   const ntpWorkflow = document.createElement('section');
@@ -835,6 +566,20 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     webview.hidden = showEmptySurface;
     webview.setAttribute('aria-hidden', showEmptySurface ? 'true' : 'false');
   }
+
+  const newTabStateController = createNewTabStateController({
+    elements: {
+      newTabPage,
+      ntpState,
+      ntpTitle,
+      ntpSubtitle,
+      ntpTargetsText,
+      ntpTargetsMeta,
+      ntpGrid,
+    },
+    syncSurfaceVisibility,
+    isLocalSurfaceUrl: isLocalBrowserUrl,
+  });
 
   syncSurfaceVisibility(!url || url === 'about:blank');
 
@@ -1164,157 +909,21 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   targetMenu.appendChild(targetMenuList);
   el.appendChild(targetMenu);
 
-  const authPanel = document.createElement('div');
-  authPanel.className = 'browser-capture-panel browser-auth-panel';
-  authPanel.classList.add('calder-popover');
-  authPanel.style.display = 'none';
-
-  const authHeader = document.createElement('div');
-  authHeader.className = 'browser-capture-header';
-
-  const authCopy = document.createElement('div');
-  authCopy.className = 'browser-capture-copy';
-
-  const authKicker = document.createElement('div');
-  authKicker.className = 'browser-capture-kicker';
-  authKicker.textContent = 'Saved login';
-
-  const authTitle = document.createElement('div');
-  authTitle.className = 'browser-capture-title';
-  authTitle.textContent = 'Credential vault';
-
-  const authSubtitle = document.createElement('div');
-  authSubtitle.className = 'browser-capture-subtitle';
-  authSubtitle.textContent = 'Save credentials securely, fill them in one click, and remove them whenever you want.';
-
-  const authOriginEl = document.createElement('div');
-  authOriginEl.className = 'browser-auth-origin';
-  authOriginEl.textContent = 'No page origin';
-
-  authCopy.appendChild(authKicker);
-  authCopy.appendChild(authTitle);
-  authCopy.appendChild(authSubtitle);
-  authCopy.appendChild(authOriginEl);
-
-  const authChip = document.createElement('span');
-  authChip.className = 'browser-capture-chip';
-  authChip.textContent = 'Login';
-
-  const authHeaderMeta = document.createElement('div');
-  authHeaderMeta.className = 'browser-auth-header-meta';
-
-  const authCloseBtn = document.createElement('button');
-  authCloseBtn.className = 'browser-auth-close-btn';
-  authCloseBtn.type = 'button';
-  authCloseBtn.textContent = 'Close';
-  authCloseBtn.title = 'Close login panel';
-  authCloseBtn.ariaLabel = 'Close login panel';
-
-  authHeaderMeta.appendChild(authChip);
-  authHeaderMeta.appendChild(authCloseBtn);
-  authHeader.appendChild(authCopy);
-  authHeader.appendChild(authHeaderMeta);
-  authPanel.appendChild(authHeader);
-
-  const authForm = document.createElement('div');
-  authForm.className = 'browser-auth-form';
-
-  const authProfileField = document.createElement('label');
-  authProfileField.className = 'browser-auth-field';
-  const authProfileLabel = document.createElement('span');
-  authProfileLabel.className = 'browser-auth-field-label';
-  authProfileLabel.textContent = 'Saved profiles';
-  const authProfileSelect = document.createElement('select');
-  authProfileSelect.className = 'browser-auth-select';
-  authProfileField.appendChild(authProfileLabel);
-  authProfileField.appendChild(authProfileSelect);
-  authForm.appendChild(authProfileField);
-
-  const authLabelField = document.createElement('label');
-  authLabelField.className = 'browser-auth-field';
-  const authLabelText = document.createElement('span');
-  authLabelText.className = 'browser-auth-field-label';
-  authLabelText.textContent = 'Profile name';
-  const authLabelInput = document.createElement('input');
-  authLabelInput.className = 'browser-auth-input';
-  authLabelInput.type = 'text';
-  authLabelInput.placeholder = 'Work account';
-  authLabelField.appendChild(authLabelText);
-  authLabelField.appendChild(authLabelInput);
-  authForm.appendChild(authLabelField);
-
-  const authUsernameField = document.createElement('label');
-  authUsernameField.className = 'browser-auth-field';
-  const authUsernameText = document.createElement('span');
-  authUsernameText.className = 'browser-auth-field-label';
-  authUsernameText.textContent = 'Username / email';
-  const authUsernameInput = document.createElement('input');
-  authUsernameInput.className = 'browser-auth-input';
-  authUsernameInput.type = 'text';
-  authUsernameInput.autocomplete = 'username';
-  authUsernameInput.placeholder = 'name@example.com';
-  authUsernameField.appendChild(authUsernameText);
-  authUsernameField.appendChild(authUsernameInput);
-  authForm.appendChild(authUsernameField);
-
-  const authPasswordField = document.createElement('label');
-  authPasswordField.className = 'browser-auth-field';
-  const authPasswordText = document.createElement('span');
-  authPasswordText.className = 'browser-auth-field-label';
-  authPasswordText.textContent = 'Password';
-  const authPasswordInput = document.createElement('input');
-  authPasswordInput.className = 'browser-auth-input';
-  authPasswordInput.type = 'password';
-  authPasswordInput.autocomplete = 'current-password';
-  authPasswordInput.placeholder = '••••••••';
-  authPasswordField.appendChild(authPasswordText);
-  authPasswordField.appendChild(authPasswordInput);
-  authForm.appendChild(authPasswordField);
-
-  const authAutoFillRow = document.createElement('label');
-  authAutoFillRow.className = 'browser-auth-autofill-row';
-  const authAutoFillCheckbox = document.createElement('input');
-  authAutoFillCheckbox.type = 'checkbox';
-  const authAutoFillText = document.createElement('span');
-  authAutoFillText.textContent = 'Auto-fill this profile on page load';
-  authAutoFillRow.appendChild(authAutoFillCheckbox);
-  authAutoFillRow.appendChild(authAutoFillText);
-  authForm.appendChild(authAutoFillRow);
-
-  authPanel.appendChild(authForm);
-
-  const authStatusEl = document.createElement('div');
-  authStatusEl.className = 'browser-auth-status';
-  authPanel.appendChild(authStatusEl);
-
-  const authActions = document.createElement('div');
-  authActions.className = 'browser-auth-actions';
-
-  const authDeleteBtn = document.createElement('button');
-  authDeleteBtn.className = 'browser-auth-btn-secondary';
-  authDeleteBtn.textContent = 'Delete';
-  authDeleteBtn.type = 'button';
-
-  const authSaveBtn = document.createElement('button');
-  authSaveBtn.className = 'browser-auth-btn-secondary';
-  authSaveBtn.textContent = 'Save';
-  authSaveBtn.type = 'button';
-
-  const authFillBtn = document.createElement('button');
-  authFillBtn.className = 'browser-auth-btn-primary';
-  authFillBtn.textContent = 'Fill now';
-  authFillBtn.type = 'button';
-
-  authActions.appendChild(authDeleteBtn);
-  authActions.appendChild(authSaveBtn);
-  authActions.appendChild(authFillBtn);
-  authPanel.appendChild(authActions);
+  const {
+    authPanel,
+    authOriginEl,
+    authProfileSelect,
+    authLabelInput,
+    authUsernameInput,
+    authPasswordInput,
+    authAutoFillCheckbox,
+    authStatusEl,
+    authDeleteBtn,
+    authSaveBtn,
+    authFillBtn,
+    authCloseBtn,
+  } = createBrowserAuthPanel();
   el.appendChild(authPanel);
-
-  let authPanelFloatingCleanup: (() => void) | null = null;
-  let authSelectedCredentialId: string | null = null;
-  let authCredentialList: BrowserCredentialSummary[] = [];
-  let closeAuthPanelAfterFill = false;
 
   const instance: BrowserTabInstance = {
     sessionId,
@@ -1422,260 +1031,28 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       : 'Record browser flow';
     recordBtn.ariaLabel = recordBtn.title;
   };
-
-  function syncAuthActionsEnabledState(): void {
-    const hasOrigin = Boolean(resolveCredentialOrigin(instance.committedUrl || urlInput.value || webview.src));
-    const hasManualCredentials = authUsernameInput.value.trim().length > 0 && authPasswordInput.value.length > 0;
-    authSaveBtn.disabled = !hasOrigin || !hasManualCredentials;
-    authFillBtn.disabled = !hasOrigin || (!authSelectedCredentialId && !hasManualCredentials);
-    authDeleteBtn.disabled = !authSelectedCredentialId;
-  }
-
-  function setAuthStatus(message: string, tone: 'neutral' | 'success' | 'error' = 'neutral'): void {
-    authStatusEl.textContent = message;
-    authStatusEl.dataset.tone = tone;
-  }
-
-  function applyAuthSelectionToInputs(summary: BrowserCredentialSummary | null): void {
-    if (!summary) {
-      authLabelInput.value = '';
-      authUsernameInput.value = '';
-      authAutoFillCheckbox.checked = false;
-      syncAuthActionsEnabledState();
-      return;
-    }
-    authLabelInput.value = summary.label;
-    authUsernameInput.value = summary.username;
-    authPasswordInput.value = '';
-    authAutoFillCheckbox.checked = summary.autoFill;
-    syncAuthActionsEnabledState();
-  }
-
-  function getCredentialTargetUrl(): string | null {
-    const candidate = instance.committedUrl || urlInput.value || webview.src;
-    return resolveCredentialOrigin(candidate) ? candidate : null;
-  }
-
-  function currentCredentialOriginLabel(): string {
-    const url = getCredentialTargetUrl();
-    if (!url) return 'No HTTP(S) page selected';
-    try {
-      return new URL(url).origin;
-    } catch {
-      return 'No HTTP(S) page selected';
-    }
-  }
-
-  function closeAuthPanel(): void {
-    closeAuthPanelAfterFill = false;
-    authPanel.style.display = 'none';
-    authPanelFloatingCleanup?.();
-    authPanelFloatingCleanup = null;
-    authBtn.dataset.state = 'idle';
-  }
-
-  async function refreshCredentialProfiles(preferredId?: string | null): Promise<void> {
-    const targetUrl = getCredentialTargetUrl();
-    authProfileSelect.innerHTML = '';
-    authCredentialList = [];
-    authSelectedCredentialId = null;
-    authOriginEl.textContent = currentCredentialOriginLabel();
-
-    if (!targetUrl) {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = 'Open an HTTP(S) page first';
-      authProfileSelect.appendChild(option);
-      applyAuthSelectionToInputs(null);
-      return;
-    }
-
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Select a saved profile';
-    authProfileSelect.appendChild(defaultOption);
-
-    authCredentialList = await window.calder.browserCredential.listForUrl(targetUrl);
-    for (const summary of authCredentialList) {
-      const option = document.createElement('option');
-      option.value = summary.id;
-      option.textContent = `${summary.label} · ${summary.username}`;
-      authProfileSelect.appendChild(option);
-    }
-
-    const nextSelectedId = preferredId
-      ?? authCredentialList.find((entry) => entry.autoFill)?.id
-      ?? null;
-    if (nextSelectedId && authCredentialList.some((entry) => entry.id === nextSelectedId)) {
-      authProfileSelect.value = nextSelectedId;
-      authSelectedCredentialId = nextSelectedId;
-      applyAuthSelectionToInputs(authCredentialList.find((entry) => entry.id === nextSelectedId) ?? null);
-      return;
-    }
-
-    authProfileSelect.value = '';
-    applyAuthSelectionToInputs(null);
-  }
-
-  async function fillCredentialPayload(payload: BrowserCredentialFillData): Promise<void> {
-    if (!payload.username || !payload.password) {
-      setAuthStatus('Selected profile is missing username or password.', 'error');
-      return;
-    }
-    await sendGuestMessage(instance.webview, 'auth-fill-credentials', {
-      username: payload.username,
-      password: payload.password,
-    });
-  }
-
-  async function maybeAutoFillCredentials(): Promise<void> {
-    const targetUrl = getCredentialTargetUrl();
-    if (!targetUrl) return;
-    const payload = await window.calder.browserCredential.getAutoFillForUrl(targetUrl);
-    if (!payload) return;
-    await fillCredentialPayload(payload);
-    setAuthStatus(`Auto-filled ${payload.label}.`, 'success');
-  }
-
-  async function saveCredentialFromForm(): Promise<void> {
-    const targetUrl = getCredentialTargetUrl();
-    if (!targetUrl) {
-      setAuthStatus('Open an HTTP(S) page before saving credentials.', 'error');
-      return;
-    }
-    const input: BrowserCredentialSaveInput = {
-      id: authSelectedCredentialId ?? undefined,
-      url: targetUrl,
-      label: authLabelInput.value,
-      username: authUsernameInput.value,
-      password: authPasswordInput.value,
-      autoFill: authAutoFillCheckbox.checked,
-    };
-    const saved = await window.calder.browserCredential.saveForUrl(input);
-    authPasswordInput.value = '';
-    setAuthStatus(`Saved profile: ${saved.label}.`, 'success');
-    await refreshCredentialProfiles(saved.id);
-  }
-
-  async function deleteSelectedCredential(): Promise<void> {
-    if (!authSelectedCredentialId) {
-      setAuthStatus('Select a saved profile first.', 'error');
-      return;
-    }
-    const result = await window.calder.browserCredential.deleteById(authSelectedCredentialId);
-    if (!result.deleted) {
-      setAuthStatus('Selected profile could not be deleted.', 'error');
-      return;
-    }
-    authSelectedCredentialId = null;
-    authPasswordInput.value = '';
-    setAuthStatus('Saved profile deleted.', 'success');
-    await refreshCredentialProfiles();
-  }
-
-  async function fillFromProfileOrForm(): Promise<void> {
-    const targetUrl = getCredentialTargetUrl();
-    if (!targetUrl) {
-      setAuthStatus('Open an HTTP(S) page before filling credentials.', 'error');
-      return;
-    }
-
-    if (authSelectedCredentialId) {
-      const payload = await window.calder.browserCredential.getForFill(targetUrl, authSelectedCredentialId);
-      if (!payload) {
-        setAuthStatus('Selected profile is unavailable for this page.', 'error');
-        return;
-      }
-      closeAuthPanelAfterFill = true;
-      await fillCredentialPayload(payload);
-      setAuthStatus(`Filled profile: ${payload.label}.`, 'success');
-      return;
-    }
-
-    const manualUsername = authUsernameInput.value.trim();
-    const manualPassword = authPasswordInput.value;
-    if (!manualUsername || !manualPassword) {
-      setAuthStatus('Enter username and password, or choose a saved profile.', 'error');
-      return;
-    }
-    closeAuthPanelAfterFill = true;
-    await sendGuestMessage(instance.webview, 'auth-fill-credentials', {
-      username: manualUsername,
-      password: manualPassword,
-    });
-    setAuthStatus('Filled credentials from the form.', 'success');
-  }
-
-  authProfileSelect.addEventListener('change', () => {
-    authSelectedCredentialId = authProfileSelect.value || null;
-    const selected = authCredentialList.find((entry) => entry.id === authSelectedCredentialId) ?? null;
-    applyAuthSelectionToInputs(selected);
-    setAuthStatus(selected ? `Selected profile: ${selected.label}.` : 'Create a new profile or choose an existing one.');
+  const authController = createBrowserAuthController({
+    instance,
+    authBtn,
+    authElements: {
+      authPanel,
+      authOriginEl,
+      authProfileSelect,
+      authLabelInput,
+      authUsernameInput,
+      authPasswordInput,
+      authAutoFillCheckbox,
+      authStatusEl,
+      authDeleteBtn,
+      authSaveBtn,
+      authFillBtn,
+      authCloseBtn,
+    },
+    getUrlInputValue: () => urlInput.value,
+    getWebviewSrc: () => webview.src,
+    resolveCredentialOrigin,
   });
-
-  authLabelInput.addEventListener('input', () => syncAuthActionsEnabledState());
-  authUsernameInput.addEventListener('input', () => syncAuthActionsEnabledState());
-  authPasswordInput.addEventListener('input', () => syncAuthActionsEnabledState());
-  authAutoFillCheckbox.addEventListener('change', () => syncAuthActionsEnabledState());
-
-  authSaveBtn.addEventListener('click', () => {
-    void saveCredentialFromForm().catch((error) => {
-      setAuthStatus(error instanceof Error ? error.message : 'Failed to save credentials.', 'error');
-    });
-  });
-  authDeleteBtn.addEventListener('click', () => {
-    void deleteSelectedCredential().catch((error) => {
-      setAuthStatus(error instanceof Error ? error.message : 'Failed to delete credentials.', 'error');
-    });
-  });
-  authFillBtn.addEventListener('click', () => {
-    void fillFromProfileOrForm().catch((error) => {
-      closeAuthPanelAfterFill = false;
-      setAuthStatus(error instanceof Error ? error.message : 'Failed to fill credentials.', 'error');
-    });
-  });
-  authCloseBtn.addEventListener('click', () => closeAuthPanel());
-
-  authBtn.addEventListener('click', () => {
-    if (authPanel.style.display !== 'none') {
-      closeAuthPanel();
-      return;
-    }
-
-    setAuthStatus('Loading saved profiles…');
-    authPanel.style.display = 'flex';
-    authBtn.dataset.state = 'active';
-    authPanelFloatingCleanup?.();
-    authPanelFloatingCleanup = anchorFloatingSurface(authBtn, authPanel, {
-      placement: 'bottom-end',
-      offsetPx: 6,
-      maxWidthPx: 360,
-      maxHeightPx: 440,
-    });
-
-    void refreshCredentialProfiles()
-      .then(() => {
-        setAuthStatus(authCredentialList.length > 0
-          ? 'Saved profiles ready.'
-          : 'No saved profiles for this page yet.');
-      })
-      .catch((error) => {
-        setAuthStatus(error instanceof Error ? error.message : 'Failed to load saved profiles.', 'error');
-      });
-  });
-
-  const authPanelOutsideClickHandler = (e: MouseEvent) => {
-    const target = e.target as Node;
-    if (!authPanel.contains(target) && !authBtn.contains(target)) {
-      closeAuthPanel();
-    }
-  };
-  document.addEventListener('mousedown', authPanelOutsideClickHandler);
-  instance.cleanupFns.push(() => {
-    document.removeEventListener('mousedown', authPanelOutsideClickHandler);
-    authPanelFloatingCleanup?.();
-    authPanelFloatingCleanup = null;
-  });
+  instance.cleanupFns.push(() => authController.cleanup());
 
   instance.cleanupFns.push(enablePopoverDragging(instance, inspectPanel, inspectHandle));
   focusAddressBtn.addEventListener('click', () => {
@@ -1683,7 +1060,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     urlInput.select();
   });
   refreshTargetsBtn.addEventListener('click', () => {
-    resetNewTabCopy();
+    newTabStateController.resetNewTabCopy();
     void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
   });
   void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
@@ -1697,54 +1074,21 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   instance.syncToolbarState();
 
   function syncNavigationControls(instance: BrowserTabInstance): void {
-    if (!instance.webviewReady) {
-      backBtn.disabled = true;
-      fwdBtn.disabled = true;
-      backBtn.title = 'Open a page before navigating back';
-      fwdBtn.title = 'Open a page before navigating forward';
-      return;
-    }
-
-    backBtn.disabled = !instance.webview.canGoBack();
-    fwdBtn.disabled = !instance.webview.canGoForward();
-    backBtn.title = backBtn.disabled ? 'No page behind this one yet' : 'Back';
-    fwdBtn.title = fwdBtn.disabled ? 'No forward page yet' : 'Forward';
+    syncBrowserNavigationControls({
+      instance,
+      backBtn,
+      fwdBtn,
+    });
   }
 
   function syncAddressBarState(instance: BrowserTabInstance): void {
-    const normalizedDraft = normalizeUrl(urlInput.value);
-    const hasUnappliedAddressChange = normalizedDraft !== instance.committedUrl;
-    urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false';
-    toolbarAddressShell.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false';
-
-    if (instance.isLoading) {
-      goBtn.dataset.state = 'stop';
-      goBtn.textContent = 'Stop';
-      goBtn.title = 'Stop the current page load';
-      goBtn.ariaLabel = 'Stop page load';
-    } else if (!hasUnappliedAddressChange && instance.committedUrl && instance.committedUrl !== 'about:blank') {
-      goBtn.dataset.state = 'reload';
-      goBtn.textContent = 'Reload';
-      goBtn.title = 'Reload current page';
-      goBtn.ariaLabel = 'Reload current page';
-    } else {
-      goBtn.dataset.state = 'open';
-      goBtn.textContent = 'Open';
-      goBtn.title = normalizedDraft ? 'Open typed address' : 'Open address';
-      goBtn.ariaLabel = 'Open address';
-    }
-
-    reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange;
-    if (instance.committedUrl === 'about:blank') {
-      reloadBtn.disabled = true;
-    }
-    reloadBtn.title = instance.isLoading
-      ? 'Wait for the current page to finish loading'
-      : hasUnappliedAddressChange
-        ? 'Apply the typed address before reloading'
-        : instance.committedUrl === 'about:blank'
-          ? 'Open a page before reloading'
-          : 'Reload';
+    syncBrowserAddressBarState({
+      instance,
+      urlInput,
+      toolbarAddressShell,
+      goBtn,
+      reloadBtn,
+    });
   }
   instance.syncAddressBarState = () => syncAddressBarState(instance);
 
@@ -1754,7 +1098,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   }
 
   function openBrowserHome(): void {
-    resetNewTabCopy();
+    newTabStateController.resetNewTabCopy();
     navigateTo(instance, 'about:blank');
     void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);
   }
@@ -2055,8 +1399,8 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     if (instance.inspectMode) void sendGuestMessage(instance.webview, 'enter-inspect-mode');
     if (instance.flowMode) void sendGuestMessage(instance.webview, 'enter-flow-mode');
     if (instance.drawMode) void sendGuestMessage(instance.webview, 'enter-draw-mode');
-    void maybeAutoFillCredentials().catch((error) => {
-      setAuthStatus(error instanceof Error ? error.message : 'Auto-fill failed.', 'error');
+    void authController.maybeAutoFillCredentials().catch((error) => {
+      authController.setStatus(error instanceof Error ? error.message : 'Auto-fill failed.', 'error');
     });
     syncNavigationControls(instance);
     syncAddressBarState(instance);
@@ -2069,55 +1413,34 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     syncAddressBarState(instance);
   }) as EventListener);
 
-  webview.addEventListener('did-navigate', ((e: Event & { url: string }) => {
-    if (isStaleNavigationRevert(instance, e.url)) return;
-    if (e.url === 'about:blank') {
+  function handleCommittedNavigation(url: string): void {
+    if (url === 'about:blank') {
       if (newTabPage.dataset.mode !== 'offline') {
-        resetNewTabCopy();
+        newTabStateController.resetNewTabCopy();
       }
       syncSurfaceVisibility(true);
     } else {
-      resetNewTabCopy();
+      newTabStateController.resetNewTabCopy();
       syncSurfaceVisibility(false);
     }
-    instance.committedUrl = e.url;
-    urlInput.value = e.url;
-    syncBrowserStatus(resolveBrowserPageState(e.url, instance.isLoading, false));
+    instance.committedUrl = url;
+    urlInput.value = url;
+    syncBrowserStatus(resolveBrowserPageState(url, instance.isLoading, false));
     syncNavigationControls(instance);
     syncAddressBarState(instance);
-    appState.updateSessionBrowserTabUrl(sessionId, e.url);
+    appState.updateSessionBrowserTabUrl(sessionId, url);
     clearPendingNavigation(instance);
-    if (instance.flowMode) recordNavigationStep(e.url);
-    if (authPanel.style.display !== 'none') {
-      void refreshCredentialProfiles(authSelectedCredentialId).catch((error) => {
-        setAuthStatus(error instanceof Error ? error.message : 'Failed to refresh saved profiles.', 'error');
-      });
-    }
+    if (instance.flowMode) recordNavigationStep(url);
+    authController.refreshProfilesIfPanelOpen();
+  }
+
+  webview.addEventListener('did-navigate', ((e: Event & { url: string }) => {
+    if (isStaleNavigationRevert(instance, e.url)) return;
+    handleCommittedNavigation(e.url);
   }) as EventListener);
   webview.addEventListener('did-navigate-in-page', ((e: Event & { url: string }) => {
     if (isStaleNavigationRevert(instance, e.url)) return;
-    if (e.url === 'about:blank') {
-      if (newTabPage.dataset.mode !== 'offline') {
-        resetNewTabCopy();
-      }
-      syncSurfaceVisibility(true);
-    } else {
-      resetNewTabCopy();
-      syncSurfaceVisibility(false);
-    }
-    instance.committedUrl = e.url;
-    urlInput.value = e.url;
-    syncBrowserStatus(resolveBrowserPageState(e.url, instance.isLoading, false));
-    syncNavigationControls(instance);
-    syncAddressBarState(instance);
-    appState.updateSessionBrowserTabUrl(sessionId, e.url);
-    clearPendingNavigation(instance);
-    if (instance.flowMode) recordNavigationStep(e.url);
-    if (authPanel.style.display !== 'none') {
-      void refreshCredentialProfiles(authSelectedCredentialId).catch((error) => {
-        setAuthStatus(error instanceof Error ? error.message : 'Failed to refresh saved profiles.', 'error');
-      });
-    }
+    handleCommittedNavigation(e.url);
   }) as EventListener);
   webview.addEventListener('did-fail-load', ((e: Event & {
     isMainFrame?: boolean;
@@ -2136,7 +1459,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
     syncBrowserStatus(resolveBrowserPageState(failedUrl, false, true));
     syncNavigationControls(instance);
     syncAddressBarState(instance);
-    showOfflineState(failedUrl);
+    newTabStateController.showOfflineState(failedUrl);
     if (isLocalBrowserUrl(failedUrl)) {
       appState.passivateBrowserTabSession(sessionId, failedUrl);
     }
@@ -2152,7 +1475,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
   syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
   syncNavigationControls(instance);
   syncAddressBarState(instance);
-  syncAuthActionsEnabledState();
+  authController.syncActionsEnabledState();
 
   webview.addEventListener('ipc-message', ((e: Event & { channel: string; args: unknown[] }) => {
     if (e.channel === 'element-selected') {
@@ -2182,23 +1505,7 @@ export function createBrowserTabPane(sessionId: string, url?: string): void {
       });
     } else if (e.channel === 'auth-fill-result') {
       const payload = e.args[0] as { filledUsername?: boolean; filledPassword?: boolean };
-      const filledUsername = Boolean(payload?.filledUsername);
-      const filledPassword = Boolean(payload?.filledPassword);
-      const filledAnyField = filledUsername || filledPassword;
-      if (filledUsername && filledPassword) {
-        setAuthStatus('Credentials were filled on the page.', 'success');
-      } else if (filledPassword) {
-        setAuthStatus('Password field was filled.', 'success');
-      } else if (filledUsername) {
-        setAuthStatus('Username field was filled.', 'success');
-      } else {
-        setAuthStatus('No login inputs were found on this page.', 'error');
-      }
-      if (filledAnyField && closeAuthPanelAfterFill) {
-        closeAuthPanel();
-      } else if (!filledAnyField) {
-        closeAuthPanelAfterFill = false;
-      }
+      authController.handleFillResult(payload);
     }
   }) as EventListener);
 }

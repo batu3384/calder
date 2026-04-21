@@ -1,0 +1,4 @@
+import { MOBILE_PAGE_SCRIPT_UI_CORE_INPUT_HISTORY } from './page-script-ui-core-input-history';
+import { MOBILE_PAGE_SCRIPT_UI_CORE_INPUT_INTERACTIVITY } from './page-script-ui-core-input-interactivity';
+
+export const MOBILE_PAGE_SCRIPT_UI_CORE_INPUT = `${MOBILE_PAGE_SCRIPT_UI_CORE_INPUT_INTERACTIVITY}${MOBILE_PAGE_SCRIPT_UI_CORE_INPUT_HISTORY}`;

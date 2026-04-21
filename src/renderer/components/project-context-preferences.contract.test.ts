@@ -1,33 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const source = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf8');
+const modalSource = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf8');
+const contextSource = readFileSync(new URL('./preferences-context-discovery.ts', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles/preferences.css', import.meta.url), 'utf8');
 
 describe('project context preferences contract', () => {
   it('surfaces discovered project context inside the integrations section', () => {
-    expect(source).toContain('Project context');
-    expect(source).toContain('provider-native memory');
-    expect(source).toContain('shared project rules');
-    expect(source).toContain('Create starter files');
-    expect(source).toContain('New shared rule');
-    expect(source).toContain('context.createStarterFiles');
-    expect(source).toContain('context.createSharedRule');
-    expect(source).toContain('context.renameSharedRule');
-    expect(source).toContain('context.deleteSharedRule');
-    expect(source).toContain("showModal('New Shared Rule'");
-    expect(source).toContain("showModal('Rename Shared Rule'");
-    expect(source).toContain('Rename');
-    expect(source).toContain('Delete');
-    expect(source).toContain('confirm(');
-    expect(source).toContain('Preview');
-    expect(source).toContain('appState.addFileReaderSession');
-    expect(source).toContain('closeModal()');
-    expect(source).toContain('window.calder.git.openInEditor');
-    expect(source).toContain('Open');
-    expect(source).toContain('context-discovery-toggle');
-    expect(source).toContain("source.enabled !== false");
-    expect(source).toContain('context-discovery-shell');
+    expect(modalSource).toContain("import { renderProjectContextSection } from './preferences-context-discovery.js';");
+    expect(modalSource).toContain('renderProjectContextSection({');
+    expect(modalSource).toContain('container: trackingGroup');
+    expect(modalSource).toContain('onRefreshProviders: () => renderSection(\'providers\')');
+    expect(modalSource).toContain('onCloseModalWide: () => {');
+
+    expect(contextSource).toContain('Project context');
+    expect(contextSource).toContain('provider-native memory');
+    expect(contextSource).toContain('shared project rules');
+    expect(contextSource).toContain('Create starter files');
+    expect(contextSource).toContain('New shared rule');
+    expect(contextSource).toContain('context.createStarterFiles');
+    expect(contextSource).toContain('context.createSharedRule');
+    expect(contextSource).toContain('context.renameSharedRule');
+    expect(contextSource).toContain('context.deleteSharedRule');
+    expect(contextSource).toContain("showModal('New Shared Rule'");
+    expect(contextSource).toContain("showModal('Rename Shared Rule'");
+    expect(contextSource).toContain('Rename');
+    expect(contextSource).toContain('Delete');
+    expect(contextSource).toContain('confirm(');
+    expect(contextSource).toContain('Preview');
+    expect(contextSource).toContain('appState.addFileReaderSession');
+    expect(contextSource).toContain('window.calder.git.openInEditor');
+    expect(contextSource).toContain('Open');
+    expect(contextSource).toContain('context-discovery-toggle');
+    expect(contextSource).toContain("source.enabled !== false");
+    expect(contextSource).toContain('context-discovery-shell');
   });
 
   it('styles the project context discovery card with dedicated source rows', () => {

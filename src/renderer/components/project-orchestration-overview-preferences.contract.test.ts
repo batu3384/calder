@@ -2,27 +2,33 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const source = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const orchestrationSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences-orchestration-overview.ts'),
+  'utf8',
+);
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project orchestration overview preferences contract', () => {
   it('surfaces a compact phase map inside integrations', () => {
-    expect(source).toContain('Calder orchestration map');
-    expect(source).toContain('Orchestration phases');
-    expect(source).toContain('renderOrchestrationOverviewSection(orchestrationGroup)');
-    expect(source).toContain('buildOrchestrationPhaseStates');
-    expect(source).toContain('Phase 0-1');
-    expect(source).toContain('Phase 2');
-    expect(source).toContain('Phase 3');
-    expect(source).toContain('Phase 4');
-    expect(source).toContain('Phase 5');
-    expect(source).toContain('Phase 6');
-    expect(source).toContain('Show phase details');
-    expect(source).toContain('Bootstrap phase starters');
-    expect(source).toContain('context.createStarterFiles');
-    expect(source).toContain('workflow.createStarterFiles');
-    expect(source).toContain('teamContext.createStarterFiles');
-    expect(source).toContain('governance.createStarterPolicy');
+    expect(modalSource).toContain("import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';");
+    expect(modalSource).toContain('renderOrchestrationOverviewSection({');
+    expect(modalSource).toContain('container: orchestrationGroup');
+    expect(modalSource).toContain('context.createStarterFiles');
+    expect(modalSource).toContain('workflow.createStarterFiles');
+    expect(modalSource).toContain('teamContext.createStarterFiles');
+    expect(modalSource).toContain('governance.createStarterPolicy');
+
+    expect(orchestrationSource).toContain('Calder orchestration map');
+    expect(orchestrationSource).toContain('buildOrchestrationPhaseStates');
+    expect(orchestrationSource).toContain('Phase 0-1');
+    expect(orchestrationSource).toContain('Phase 2');
+    expect(orchestrationSource).toContain('Phase 3');
+    expect(orchestrationSource).toContain('Phase 4');
+    expect(orchestrationSource).toContain('Phase 5');
+    expect(orchestrationSource).toContain('Phase 6');
+    expect(orchestrationSource).toContain('Show phase details');
+    expect(orchestrationSource).toContain('Bootstrap phase starters');
   });
 
   it('styles the orchestration overview to stay compact and readable', () => {

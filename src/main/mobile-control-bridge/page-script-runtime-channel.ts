@@ -1,0 +1,5 @@
+import { MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_CORE } from './page-script-runtime-channel-core';
+import { MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_EVENTS } from './page-script-runtime-channel-events';
+import { MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_SESSION } from './page-script-runtime-channel-session';
+
+export const MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL = `${MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_CORE}${MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_EVENTS}${MOBILE_PAGE_SCRIPT_RUNTIME_CHANNEL_SESSION}`;

@@ -4,6 +4,12 @@ import { readFileSync } from 'fs';
 const source = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
 const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
 const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
+const authPanelSource = readFileSync(new URL('./browser-tab/auth-panel.ts', import.meta.url), 'utf-8');
+const authControllerSource = readFileSync(new URL('./browser-tab/auth-controller.ts', import.meta.url), 'utf-8');
+const localTargetsSource = readFileSync(new URL('./browser-tab/local-targets.ts', import.meta.url), 'utf-8');
+const targetMenuSource = readFileSync(new URL('./browser-tab/target-menu.ts', import.meta.url), 'utf-8');
+const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
+const navigationChromeSource = readFileSync(new URL('./browser-tab/navigation-chrome.ts', import.meta.url), 'utf-8');
 
 describe('browser tab pane contract', () => {
   it('groups the toolbar into nav, address, and tools regions', () => {
@@ -46,10 +52,11 @@ describe('browser tab pane contract', () => {
   });
 
   it('keeps nav controls honest and makes the address field easier to recover', () => {
+    expect(source).toContain("import {\n  syncAddressBarState as syncBrowserAddressBarState,\n  syncNavigationControls as syncBrowserNavigationControls,\n} from './navigation-chrome.js';");
     expect(source).toContain('syncNavigationControls(instance)');
-    expect(source).toContain('if (!instance.webviewReady) {');
-    expect(source).toContain('backBtn.disabled = !instance.webview.canGoBack()');
-    expect(source).toContain('fwdBtn.disabled = !instance.webview.canGoForward()');
+    expect(navigationChromeSource).toContain('if (!instance.webviewReady) {');
+    expect(navigationChromeSource).toContain('backBtn.disabled = !instance.webview.canGoBack()');
+    expect(navigationChromeSource).toContain('fwdBtn.disabled = !instance.webview.canGoForward()');
     expect(source).toContain("webview.addEventListener('dom-ready'");
     expect(source).toContain('sendGuestMessage(instance.webview, \'enter-inspect-mode\')');
     expect(source).toContain('sendGuestMessage(instance.webview, \'enter-flow-mode\')');
@@ -61,13 +68,13 @@ describe('browser tab pane contract', () => {
 
   it('adapts go and reload actions to unapplied address changes', () => {
     expect(source).toContain('syncAddressBarState(instance)');
-    expect(source).toContain("urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false'");
-    expect(source).toContain("goBtn.dataset.state = 'reload'");
-    expect(source).toContain("goBtn.dataset.state = 'open'");
-    expect(source).toContain("goBtn.dataset.state = 'stop'");
+    expect(navigationChromeSource).toContain("urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false'");
+    expect(navigationChromeSource).toContain("goBtn.dataset.state = 'reload'");
+    expect(navigationChromeSource).toContain("goBtn.dataset.state = 'open'");
+    expect(navigationChromeSource).toContain("goBtn.dataset.state = 'stop'");
     expect(source).toContain('function reloadCurrentPage(): void {');
     expect(source).toContain('if (!instance.webviewReady) return;');
-    expect(source).toContain('reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange');
+    expect(navigationChromeSource).toContain('reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange');
     expect(source).toContain('urlInput.addEventListener(\'input\'');
   });
 
@@ -151,7 +158,7 @@ describe('browser tab pane contract', () => {
     expect(viewportSource).toContain("instance.viewportBtn.setAttribute('aria-expanded', 'false')");
     expect(viewportSource).toContain("item.setAttribute('aria-checked', String(isSelected))");
     expect(viewportSource).toContain("logDebugEvent('browserMenu', instance.sessionId");
-    expect(source).toContain("logDebugEvent('browserMenu', instance.sessionId");
+    expect(targetMenuSource).toContain("logDebugEvent('browserMenu', instance.sessionId");
     expect(viewportSource).toContain('instance.viewportDropdownFloatingCleanup?.();');
     expect(source).toContain('viewportDropdownFloatingCleanup: null');
     expect(source).toContain('instance.viewportDropdownFloatingCleanup?.();');
@@ -186,22 +193,24 @@ describe('browser tab pane contract', () => {
   });
 
   it('discovers active localhost targets instead of shipping hardcoded common ports', () => {
-    expect(source).toContain('window.calder.browser.listLocalTargets');
+    expect(source).toContain("import { populateLocalTargets } from './local-targets.js';");
+    expect(localTargetsSource).toContain('window.calder.browser.listLocalTargets');
     expect(source).not.toContain("localhost:3000', meta: 'Primary app'");
     expect(source).not.toContain("localhost:5173', meta: 'Vite dev server'");
   });
 
   it('renders localhost target labels as text nodes instead of HTML interpolation', () => {
-    expect(source).toContain('label.textContent = target.label');
-    expect(source).toContain('meta.textContent = target.meta');
+    expect(localTargetsSource).toContain('label.textContent = target.label');
+    expect(localTargetsSource).toContain('targetMeta.textContent = target.meta');
     expect(source).not.toContain('<span class="browser-ntp-link-label">${target.label}</span>');
     expect(source).not.toContain('<span class="browser-ntp-link-meta">${target.meta}</span>');
   });
 
   it('falls back to a helpful offline state when a remembered localhost target is unavailable', () => {
     expect(source).toContain('did-fail-load');
-    expect(source).toContain('Surface offline');
-    expect(source).toContain('Start the local app again');
+    expect(source).toContain("import { createNewTabStateController } from './new-tab-state.js';");
+    expect(newTabStateSource).toContain('Surface offline');
+    expect(newTabStateSource).toContain('Start the local app again');
     expect(source).toContain('webview.stop()');
     expect(source).toContain('appState.passivateBrowserTabSession(sessionId, failedUrl);');
   });
@@ -213,7 +222,8 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('webview.hidden = showEmptySurface');
     expect(source).toContain('contentShell.appendChild(newTabPage);');
     expect(source).not.toContain('viewportContainer.appendChild(newTabPage);');
-    expect(source).toContain("if (e.url === 'about:blank')");
+    expect(source).toContain('function handleCommittedNavigation(url: string): void {');
+    expect(source).toContain("if (url === 'about:blank')");
     expect(navigationSource).toContain("instance.newTabPage.dataset.mode = normalizedUrl === 'about:blank' ? 'default' : 'hidden'");
     expect(navigationSource).toContain("instance.syncSurfaceVisibility(normalizedUrl === 'about:blank');");
   });
@@ -221,12 +231,12 @@ describe('browser tab pane contract', () => {
   it('renders a compact session picker beside browser send actions', () => {
     expect(source).toContain('browser-target-trigger');
     expect(source).toContain('browser-target-menu');
-    expect(source).toContain("import { anchorFloatingSurface } from '../floating-surface.js';");
+    expect(source).toContain("import {\n  closeBrowserTargetMenu,\n  openBrowserTargetMenu,\n  syncBrowserTargetControls,\n} from './target-menu.js';");
     expect(source).toContain("import { sendGuestMessage } from './guest-messaging.js';");
     expect(source).toContain('targetMenuFloatingCleanup');
-    expect(source).toContain('anchorFloatingSurface(trigger, instance.targetMenu');
-    expect(source).toContain('Open Sessions');
-    expect(source).toContain('Select Session');
+    expect(targetMenuSource).toContain('anchorFloatingSurface(trigger, instance.targetMenu');
+    expect(targetMenuSource).toContain('Open Sessions');
+    expect(targetMenuSource).toContain('Select Session');
     expect(source).toContain('Send to selected');
     expect(source).not.toContain('browser-target-rail');
     expect(source).not.toContain('Send to Session');
@@ -235,21 +245,26 @@ describe('browser tab pane contract', () => {
 
   it('adds a secure login vault panel with fill, save, and delete actions', () => {
     expect(source).toContain("authBtn.className = 'browser-auth-btn'");
-    expect(source).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
-    expect(source).toContain("authCloseBtn.className = 'browser-auth-close-btn'");
-    expect(source).toContain("authCloseBtn.textContent = 'Close'");
-    expect(source).toContain("authFillBtn.textContent = 'Fill now'");
-    expect(source).toContain("authSaveBtn.textContent = 'Save'");
-    expect(source).toContain("authDeleteBtn.textContent = 'Delete'");
-    expect(source).toContain('let closeAuthPanelAfterFill = false;');
-    expect(source).toContain('if (filledAnyField && closeAuthPanelAfterFill) {');
-    expect(source).toContain('closeAuthPanel();');
-    expect(source).toContain('window.calder.browserCredential.listForUrl');
-    expect(source).toContain('window.calder.browserCredential.saveForUrl');
-    expect(source).toContain('window.calder.browserCredential.deleteById');
-    expect(source).toContain('window.calder.browserCredential.getForFill');
-    expect(source).toContain('window.calder.browserCredential.getAutoFillForUrl');
-    expect(source).toContain("sendGuestMessage(instance.webview, 'auth-fill-credentials'");
+    expect(source).toContain("import { createBrowserAuthPanel } from './auth-panel.js';");
+    expect(source).toContain("import { createBrowserAuthController } from './auth-controller.js';");
+    expect(source).toContain('} = createBrowserAuthPanel();');
+    expect(source).toContain('const authController = createBrowserAuthController({');
+    expect(authPanelSource).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
+    expect(authPanelSource).toContain("authCloseBtn.className = 'browser-auth-close-btn'");
+    expect(authPanelSource).toContain("authCloseBtn.textContent = 'Close'");
+    expect(authPanelSource).toContain("authFillBtn.textContent = 'Fill now'");
+    expect(authPanelSource).toContain("authSaveBtn.textContent = 'Save'");
+    expect(authPanelSource).toContain("authDeleteBtn.textContent = 'Delete'");
+    expect(authControllerSource).toContain('let closeAuthPanelAfterFill = false;');
+    expect(authControllerSource).toContain('if (filledAnyField && closeAuthPanelAfterFill) {');
+    expect(authControllerSource).toContain('closePanel();');
+    expect(authControllerSource).toContain('window.calder.browserCredential.listForUrl');
+    expect(authControllerSource).toContain('window.calder.browserCredential.saveForUrl');
+    expect(authControllerSource).toContain('window.calder.browserCredential.deleteById');
+    expect(authControllerSource).toContain('window.calder.browserCredential.getForFill');
+    expect(authControllerSource).toContain('window.calder.browserCredential.getAutoFillForUrl');
+    expect(authControllerSource).toContain("sendGuestMessage(instance.webview, 'auth-fill-credentials'");
+    expect(source).toContain('authController.handleFillResult(payload);');
   });
 
   it('adds a drag handle to the inspect panel instead of locking it in place', () => {

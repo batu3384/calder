@@ -1,0 +1,5 @@
+import { MOBILE_PAGE_STYLES_CONTROLS_COMPOSER } from './page-styles-controls-composer';
+import { MOBILE_PAGE_STYLES_CONTROLS_QUICK } from './page-styles-controls-quick';
+import { MOBILE_PAGE_STYLES_CONTROLS_SHORTCUTS } from './page-styles-controls-shortcuts';
+
+export const MOBILE_PAGE_STYLES_CONTROLS = `${MOBILE_PAGE_STYLES_CONTROLS_COMPOSER}${MOBILE_PAGE_STYLES_CONTROLS_SHORTCUTS}${MOBILE_PAGE_STYLES_CONTROLS_QUICK}`;

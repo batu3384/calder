@@ -1,0 +1,81 @@
+import type { MobilePageCopy } from './copy';
+import { MOBILE_PAGE_SCRIPT_BROWSER } from './page-script-browser';
+import { MOBILE_PAGE_SCRIPT_CRYPTO } from './page-script-crypto';
+import { MOBILE_PAGE_SCRIPT_RUNTIME } from './page-script-runtime';
+import { MOBILE_PAGE_SCRIPT_UI } from './page-script-ui';
+
+export function renderMobilePageScript(pairingId: string, copy: MobilePageCopy): string {
+  return `    (function () {
+      const pairingId = ${JSON.stringify(pairingId)};
+      const ui = ${JSON.stringify(copy)};
+      const PBKDF2_ITERATIONS = 100000;
+      const SALT_LENGTH = 16;
+      const IV_LENGTH = 12;
+      const CHALLENGE_SALT = new TextEncoder().encode('calder-challenge-v1');
+
+      const otpInput = document.getElementById('otp');
+      const connectButton = document.getElementById('connect');
+      const statusEl = document.getElementById('status');
+      const terminalEl = document.getElementById('terminal');
+      const modeBadge = document.getElementById('modeBadge');
+      const connBadge = document.getElementById('connBadge');
+      const terminalView = document.getElementById('terminalView');
+      const browserView = document.getElementById('browserView');
+      const controlsView = document.getElementById('controlsView');
+      const composer = document.getElementById('composer');
+      const commandInput = document.getElementById('commandInput');
+      const sendButton = document.getElementById('send');
+      const historyPrevButton = document.getElementById('historyPrevButton');
+      const historyNextButton = document.getElementById('historyNextButton');
+      const commandChipList = document.getElementById('commandChipList');
+      const quickControls = document.getElementById('quickControls');
+      const browserControls = document.getElementById('browserControls');
+      const browserSessionSelect = document.getElementById('browserSessionSelect');
+      const browserControlStatus = document.getElementById('browserControlStatus');
+      const browserInspectSelection = document.getElementById('browserInspectSelection');
+      const browserInspectComposer = document.getElementById('browserInspectComposer');
+      const browserInspectInput = document.getElementById('browserInspectInput');
+      const browserInspectSendButton = document.getElementById('browserInspectSendButton');
+      const terminalClearButton = document.getElementById('terminalClearButton');
+      const terminalCopyButton = document.getElementById('terminalCopyButton');
+      const terminalFollowButton = document.getElementById('terminalFollowButton');
+      const sessionSelect = document.getElementById('sessionSelect');
+      const sessionSwitchButton = document.getElementById('sessionSwitchButton');
+      const sessionSwitchNote = document.getElementById('sessionSwitchNote');
+      const stageChips = Array.from(document.querySelectorAll('[data-mobile-stage-chip]'));
+      const shortcutToggleRow = document.getElementById('shortcutToggleRow');
+      const shortcutToggleButton = document.getElementById('shortcutToggleButton');
+      const shortcutHint = document.getElementById('shortcutHint');
+      const viewTabs = Array.from(document.querySelectorAll('[data-mobile-view-tab]'));
+      const browserViewTab = document.querySelector('[data-mobile-view-tab="browser"]');
+      const controlsViewTab = document.querySelector('[data-mobile-view-tab="controls"]');
+
+      let dataChannel = null;
+      let currentMode = 'readonly';
+      let authenticated = false;
+      let passphrase = '';
+      let pairingToken = '';
+      let quickControlRepeatTimer = null;
+      let quickControlRepeatInterval = null;
+      let quickControlRepeatControl = null;
+      let suppressQuickControlClickUntilMs = 0;
+      let activeView = 'terminal';
+      let availableSessions = [];
+      let activeSessionId = '';
+      let switchInFlight = false;
+      let availableBrowserSessions = [];
+      let activeBrowserSessionId = '';
+      let browserControlInFlight = false;
+      let browserInspectInFlight = false;
+      let liveSyncTimer = null;
+      let followTerminal = true;
+      let commandHistory = [];
+      let commandHistoryIndex = -1;
+      let otpVerified = false;
+      let streamReady = false;
+      let controlsUnlocked = false;
+      let shortcutsExpanded = false;
+      const MAX_COMMAND_HISTORY = 40;
+
+${MOBILE_PAGE_SCRIPT_UI}${MOBILE_PAGE_SCRIPT_BROWSER}${MOBILE_PAGE_SCRIPT_CRYPTO}${MOBILE_PAGE_SCRIPT_RUNTIME}`;
+}

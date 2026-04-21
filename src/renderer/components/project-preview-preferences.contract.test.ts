@@ -2,22 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const source = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const previewSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences-preview-discovery.ts'),
+  'utf8',
+);
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project preview preferences contract', () => {
   it('surfaces a preview center inside the integrations section', () => {
-    expect(source).toContain('Preview center');
-    expect(source).toContain('window.calder.browser.listLocalTargets');
-    expect(source).toContain('Open in Live View');
-    expect(source).toContain('Focus CLI Surface');
-    expect(source).toContain('Open workspace shell');
-    expect(source).toContain('Restart preview runtime');
-    expect(source).toContain('describePreviewRuntimeHealth');
-    expect(source).toContain('Runtime health');
-    expect(source).toContain('Last exit');
-    expect(source).toContain('Last error');
-    expect(source).toContain('preview-discovery-shell');
+    expect(modalSource).toContain("import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';");
+    expect(modalSource).toContain('renderProjectPreviewCenterSection({');
+    expect(modalSource).toContain('container: orchestrationGroup');
+    expect(modalSource).toContain('onCloseModalWide: () => {');
+
+    expect(previewSource).toContain('Preview center');
+    expect(previewSource).toContain('window.calder.browser');
+    expect(previewSource).toContain('.listLocalTargets()');
+    expect(previewSource).toContain('Open in Live View');
+    expect(previewSource).toContain('Focus CLI Surface');
+    expect(previewSource).toContain('Open workspace shell');
+    expect(previewSource).toContain('Restart preview runtime');
+    expect(previewSource).toContain('describePreviewRuntimeHealth');
+    expect(previewSource).toContain('Runtime health');
+    expect(previewSource).toContain('Last exit');
+    expect(previewSource).toContain('Last error');
+    expect(previewSource).toContain('preview-discovery-shell');
   });
 
   it('styles preview center cards with dedicated rows and actions', () => {

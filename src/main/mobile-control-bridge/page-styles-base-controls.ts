@@ -1,0 +1,5 @@
+import { MOBILE_PAGE_STYLES_BASE_CONTROLS_BUTTONS } from './page-styles-base-controls-buttons';
+import { MOBILE_PAGE_STYLES_BASE_CONTROLS_SESSION } from './page-styles-base-controls-session';
+import { MOBILE_PAGE_STYLES_BASE_CONTROLS_STATUS } from './page-styles-base-controls-status';
+
+export const MOBILE_PAGE_STYLES_BASE_CONTROLS = `${MOBILE_PAGE_STYLES_BASE_CONTROLS_BUTTONS}${MOBILE_PAGE_STYLES_BASE_CONTROLS_STATUS}${MOBILE_PAGE_STYLES_BASE_CONTROLS_SESSION}`;

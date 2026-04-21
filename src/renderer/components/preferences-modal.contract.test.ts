@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const source = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
+const providerSetupSource = readFileSync(new URL('./preferences-provider-setup.ts', import.meta.url), 'utf-8');
+const shortcutsSource = readFileSync(new URL('./preferences-shortcuts-section.ts', import.meta.url), 'utf-8');
 const modalSource = readFileSync(new URL('./modal.ts', import.meta.url), 'utf-8');
 const styles = readFileSync(new URL('../styles/preferences.css', import.meta.url), 'utf-8');
 const modalStyles = readFileSync(new URL('../styles/modals.css', import.meta.url), 'utf-8');
@@ -56,8 +58,8 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('.preferences-overview-grid');
     expect(styles).toContain('.preferences-section-card');
     expect(source).toContain('preferences-content-shell');
-    expect(source).toContain('setup-provider-shell');
-    expect(source).toContain('shortcut-group-shell');
+    expect(providerSetupSource).toContain('setup-provider-shell');
+    expect(shortcutsSource).toContain('shortcut-group-shell');
     expect(source).toContain('about-hero');
     expect(source).toContain('about-link-grid');
     expect(styles).toContain('#modal-body.preferences-body');
@@ -106,12 +108,12 @@ describe('preferences modal contract', () => {
     expect(source).toContain('Mobile automation readiness');
     expect(source).toContain('Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
     expect(source).toContain('renderMobileSetupSection');
-    expect(source).toContain('Mobile Dependency Doctor');
-    expect(source).toContain('iOS simulator inspect');
-    expect(source).toContain('Android emulator inspect');
-    expect(source).toContain('Optional tools');
-    expect(source).toContain("opts.actionLabel ? 'Installing");
-    expect(source).toContain("actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined");
+    expect(providerSetupSource).toContain('Mobile Dependency Doctor');
+    expect(providerSetupSource).toContain('iOS simulator inspect');
+    expect(providerSetupSource).toContain('Android emulator inspect');
+    expect(providerSetupSource).toContain('Optional tools');
+    expect(providerSetupSource).toContain("opts.actionLabel ? 'Installing");
+    expect(providerSetupSource).toContain("actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined");
   });
 
   it('stages shortcut overrides until Done and applies modal cleanup extensions safely', () => {

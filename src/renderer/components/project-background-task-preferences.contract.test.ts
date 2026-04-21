@@ -2,21 +2,33 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const backgroundTaskSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences-background-task-discovery.ts'),
+  'utf8',
+);
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project background task preferences contract', () => {
   it('surfaces the local background task queue in integrations', () => {
-    expect(source).toContain('Background agents');
-    expect(source).toContain('New queued task');
-    expect(source).toContain('task.create');
-    expect(source).toContain('task-discovery-shell');
-    expect(source).toContain('Take over');
-    expect(source).toContain('Resume');
-    expect(source).toContain('Artifacts');
-    expect(source).toContain('Queued');
-    expect(source).toContain('Running');
-    expect(source).toContain('Completed');
+    expect(modalSource).toContain("import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';");
+    expect(modalSource).toContain('renderProjectBackgroundTaskSection({');
+    expect(modalSource).toContain('container: trackingGroup');
+    expect(modalSource).toContain('modalBody: bodyEl');
+    expect(modalSource).toContain('confirmButton: btnConfirm');
+    expect(modalSource).toContain('cancelButton: btnCancel');
+    expect(modalSource).toContain('registerModalCleanup: extendModalCleanup');
+
+    expect(backgroundTaskSource).toContain('Background agents');
+    expect(backgroundTaskSource).toContain('New queued task');
+    expect(backgroundTaskSource).toContain('task.create');
+    expect(backgroundTaskSource).toContain('task-discovery-shell');
+    expect(backgroundTaskSource).toContain('Take over');
+    expect(backgroundTaskSource).toContain('Resume');
+    expect(backgroundTaskSource).toContain('Artifacts');
+    expect(backgroundTaskSource).toContain('Queued');
+    expect(backgroundTaskSource).toContain('Running');
+    expect(backgroundTaskSource).toContain('Completed');
   });
 
   it('styles task discovery cards with dedicated rows and actions', () => {
