@@ -166,4 +166,96 @@ describe('peer-guest', () => {
     expect(disconnectedSpy).toHaveBeenCalledTimes(1);
     expect(pc?.close).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores malformed or pre-auth messages and uses default auth failure reason', () => {
+    const { handle } = joinShare('offer-code', 'secret-1234');
+    const authFailedSpy = vi.fn();
+    const disconnectedSpy = vi.fn();
+    const dataSpy = vi.fn();
+    handle.onAuthFailed(authFailedSpy);
+    handle.onDisconnected(disconnectedSpy);
+    handle.onData(dataSpy);
+
+    const pc = FakePeerConnection.instances[0];
+    const dc = new FakeDataChannel();
+    pc?.ondatachannel?.({ channel: dc } as unknown as RTCDataChannelEvent);
+    dc.onopen?.();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: '{invalid-json' } as MessageEvent);
+    dc.onmessage?.({ data: JSON.stringify({ type: 'data', payload: 'ignored-pre-auth' }) } as MessageEvent);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    expect(dataSpy).not.toHaveBeenCalled();
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-result', ok: false }) } as MessageEvent);
+    expect(authFailedSpy).toHaveBeenCalledWith('Authentication failed');
+    expect(disconnectedSpy).toHaveBeenCalledTimes(1);
+    expect(pc?.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends input only when authenticated, connected, and in readwrite mode', () => {
+    const { handle } = joinShare('offer-code', 'secret-1234');
+    const pc = FakePeerConnection.instances[0];
+    const dc = new FakeDataChannel();
+
+    handle.sendInput('before-channel');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    pc?.ondatachannel?.({ channel: dc } as unknown as RTCDataChannelEvent);
+    handle.sendInput('before-open');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    dc.onopen?.();
+    handle.sendInput('before-auth');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-result', ok: true }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'init',
+        scrollback: '',
+        mode: 'readonly',
+        cols: 120,
+        rows: 40,
+        sessionName: 'Readonly shell',
+      }),
+    } as MessageEvent);
+    handle.sendInput('readonly-ignored');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'init',
+        scrollback: '',
+        mode: 'readwrite',
+        cols: 120,
+        rows: 40,
+        sessionName: 'Readwrite shell',
+      }),
+    } as MessageEvent);
+    handle.sendInput('allowed-input');
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'input', payload: 'allowed-input' });
+  });
+
+  it('handles disconnect idempotently across ICE transitions and explicit disconnect', () => {
+    const firstJoin = joinShare('offer-code', 'secret-1234');
+    const firstPc = FakePeerConnection.instances[0];
+    const firstDc = new FakeDataChannel();
+    const firstDisconnectedSpy = vi.fn();
+    firstJoin.handle.onDisconnected(firstDisconnectedSpy);
+    firstPc?.ondatachannel?.({ channel: firstDc } as unknown as RTCDataChannelEvent);
+    firstDc.onopen?.();
+
+    firstPc!.iceConnectionState = 'disconnected';
+    firstPc?.oniceconnectionstatechange?.();
+    firstDc.onclose?.();
+    expect(firstDisconnectedSpy).toHaveBeenCalledTimes(1);
+    expect(firstPc?.close).not.toHaveBeenCalled();
+
+    const secondJoin = joinShare('offer-code', 'secret-1234');
+    const secondPc = FakePeerConnection.instances[1];
+    secondJoin.handle.disconnect();
+    secondJoin.handle.disconnect();
+    expect(secondPc?.close).toHaveBeenCalledTimes(1);
+  });
 });
