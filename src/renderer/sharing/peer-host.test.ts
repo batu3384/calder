@@ -736,4 +736,728 @@ describe('peer-host', () => {
     expect(disconnectedSpy).toHaveBeenCalledTimes(1);
     expect(isConnected('session-2')).toBe(false);
   });
+
+  it('falls back to an empty catalog when session snapshots disappear', async () => {
+    const handle = startShare('session-1', 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    mockGetTerminalInstance.mockReturnValue(undefined);
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-result', ok: true });
+    expect(
+      mockSendMessage.mock.calls.some(([, payload]) => payload.type === 'init'),
+    ).toBe(false);
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'session-catalog-request' }) } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, {
+      type: 'session-catalog',
+      activeSessionId: 'session-1',
+      sessions: [],
+    });
+
+    handle.stop();
+  });
+
+  it('moves active session to the first available terminal in session catalog', async () => {
+    const project = appState.addProject('Catalog Repair', '/tmp/catalog-repair');
+    const sessionA = appState.addSession(project.id, 'Session A', undefined, 'claude')!;
+    const sessionB = appState.addSession(project.id, 'Session B', undefined, 'claude')!;
+    appState.setActiveSession(project.id, sessionA.id);
+
+    const terminalA = {
+      sessionId: 'Session A',
+      terminal: {
+        cols: 120,
+        rows: 40,
+        loadAddon: vi.fn(),
+      },
+    };
+    const terminalB = {
+      sessionId: 'Session B',
+      terminal: {
+        cols: 100,
+        rows: 30,
+        loadAddon: vi.fn(),
+      },
+    };
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id === sessionA.id) return terminalA;
+      if (id === sessionB.id) return terminalB;
+      return undefined;
+    });
+
+    const handle = startShare(sessionA.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id === sessionA.id) return undefined;
+      if (id === sessionB.id) return terminalB;
+      return undefined;
+    });
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'session-catalog-request' }) } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-catalog',
+        activeSessionId: sessionB.id,
+        sessions: [{ id: sessionB.id, name: sessionB.name }],
+      }),
+    );
+    expect(getShareConnectionSnapshot(sessionB.id)?.activeSessionId).toBe(sessionB.id);
+
+    handle.stop();
+  });
+
+  it('builds browser state using available sessions and survives webview history probe errors', async () => {
+    const project = appState.addProject('Browser Catalog Repair', '/tmp/browser-catalog-repair');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const staleBrowserSession = appState.addBrowserTabSession(project.id, 'https://stale.example.com/')!;
+    const readyBrowserSession = appState.addBrowserTabSession(project.id, 'https://ready.example.com/')!;
+    appState.setActiveSession(project.id, staleBrowserSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+    mockGetBrowserTabInstance.mockImplementation((id: string) => {
+      if (id === staleBrowserSession.id) return undefined;
+      if (id !== readyBrowserSession.id) return undefined;
+      return {
+        webview: {
+          canGoBack: vi.fn(() => {
+            throw new Error('webview not ready');
+          }),
+          canGoForward: vi.fn(() => true),
+          goBack: vi.fn(),
+          goForward: vi.fn(),
+          reload: vi.fn(),
+          src: 'https://ready.example.com/',
+        },
+        committedUrl: 'https://ready.example.com/',
+        inspectMode: false,
+        currentViewport: { label: 'Responsive' },
+        selectedElement: undefined,
+      };
+    });
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'browser-state-request' }) } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-state',
+        activeBrowserSessionId: readyBrowserSession.id,
+        sessions: expect.arrayContaining([
+          expect.objectContaining({
+            id: readyBrowserSession.id,
+            canGoBack: false,
+            canGoForward: false,
+          }),
+        ]),
+      }),
+    );
+
+    handle.stop();
+  });
+
+  it('reports browser-control failures for unavailable targets and runtime errors', async () => {
+    const project = appState.addProject('Browser Errors', '/tmp/browser-errors');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const browserSession = appState.addBrowserTabSession(project.id, 'https://example.com/')!;
+    appState.setActiveSession(project.id, cliSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+
+    const browserInstance = {
+      webview: {
+        canGoBack: vi.fn(() => true),
+        canGoForward: vi.fn(() => true),
+        goBack: vi.fn(),
+        goForward: vi.fn(),
+        reload: vi.fn(() => {
+          throw new Error('reload failed');
+        }),
+        src: 'https://example.com/',
+      },
+      committedUrl: 'https://example.com/',
+      inspectMode: false,
+      currentViewport: { label: 'Responsive' },
+      selectedElement: undefined,
+    };
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockGetBrowserTabInstance.mockReturnValue(undefined);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'reload',
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        reason: 'No browser session is currently available.',
+      }),
+    );
+
+    let browserLookups = 0;
+    mockGetBrowserTabInstance.mockImplementation((id: string) => {
+      if (id !== browserSession.id) return undefined;
+      browserLookups++;
+      return browserLookups === 1 ? browserInstance : undefined;
+    });
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'reload',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'Browser surface is not ready.',
+      }),
+    );
+
+    mockGetBrowserTabInstance.mockReturnValue(browserInstance);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'unknown-action',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'Browser action is not supported.',
+      }),
+    );
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'reload',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'reload failed',
+      }),
+    );
+
+    handle.stop();
+  });
+
+  it('handles browser-control actions for back/forward/toggle and invalid viewport presets', async () => {
+    const project = appState.addProject('Browser Controls Matrix', '/tmp/browser-controls-matrix');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const browserSession = appState.addBrowserTabSession(project.id, 'https://example.com/')!;
+    appState.setActiveSession(project.id, cliSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+
+    const browserInstance = {
+      webview: {
+        canGoBack: vi.fn(() => false),
+        canGoForward: vi.fn(() => false),
+        goBack: vi.fn(),
+        goForward: vi.fn(),
+        reload: vi.fn(),
+        src: 'https://example.com/',
+      },
+      committedUrl: 'https://example.com/',
+      inspectMode: false,
+      currentViewport: { label: 'Responsive' },
+      selectedElement: undefined,
+    };
+    mockGetBrowserTabInstance.mockReturnValue(browserInstance);
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'back',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        action: 'back',
+        reason: 'No page behind this one yet.',
+      }),
+    );
+
+    browserInstance.webview.canGoBack.mockImplementation(() => true);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'back',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(browserInstance.webview.goBack).toHaveBeenCalledTimes(1);
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'forward',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        action: 'forward',
+        reason: 'No forward page yet.',
+      }),
+    );
+
+    browserInstance.webview.canGoForward.mockImplementation(() => true);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'forward',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(browserInstance.webview.goForward).toHaveBeenCalledTimes(1);
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'toggle-inspect',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockToggleInspectMode).toHaveBeenCalledWith(browserInstance);
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'set-viewport',
+        sessionId: browserSession.id,
+        viewportLabel: 'NotARealPreset',
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        action: 'set-viewport',
+        reason: 'Viewport preset is not recognized.',
+      }),
+    );
+
+    handle.stop();
+  });
+
+  it('reports browser inspect-submit validation and routing failures', async () => {
+    const project = appState.addProject('Browser Inspect Errors', '/tmp/browser-inspect-errors');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const browserSession = appState.addBrowserTabSession(project.id, 'https://example.com/')!;
+    appState.setActiveSession(project.id, cliSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+
+    const selectedElement = {
+      tagName: 'button',
+      id: 'continue',
+      classes: ['cta-primary'],
+      textContent: 'Continue',
+      selectors: [],
+      activeSelector: {
+        type: 'css',
+        label: 'CSS',
+        value: 'button.cta-primary',
+      },
+      pageUrl: 'https://example.com/',
+    };
+
+    const browserInstance = {
+      webview: {
+        canGoBack: vi.fn(() => true),
+        canGoForward: vi.fn(() => true),
+        goBack: vi.fn(),
+        goForward: vi.fn(),
+        reload: vi.fn(),
+        src: 'https://example.com/',
+      },
+      committedUrl: 'https://example.com/',
+      inspectMode: true,
+      currentViewport: { label: 'Responsive' },
+      selectedElement: undefined as typeof selectedElement | undefined,
+    };
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockGetBrowserTabInstance.mockReturnValue(browserInstance);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: '   ',
+      }),
+    } as MessageEvent);
+    await Promise.resolve();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        reason: 'Inspect instruction is required.',
+      }),
+    );
+
+    mockGetBrowserTabInstance.mockReturnValue(undefined);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: 'Inspect this element',
+      }),
+    } as MessageEvent);
+    await Promise.resolve();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        reason: 'No browser session is currently available.',
+      }),
+    );
+
+    let browserLookups = 0;
+    mockGetBrowserTabInstance.mockImplementation((id: string) => {
+      if (id !== browserSession.id) return undefined;
+      browserLookups++;
+      return browserLookups === 1 ? browserInstance : undefined;
+    });
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: 'Inspect this element',
+      }),
+    } as MessageEvent);
+    await Promise.resolve();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'Browser surface is not ready.',
+      }),
+    );
+
+    mockGetBrowserTabInstance.mockReturnValue(browserInstance);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: 'Inspect this element',
+      }),
+    } as MessageEvent);
+    await Promise.resolve();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'Select an element in inspect mode first.',
+      }),
+    );
+
+    browserInstance.selectedElement = selectedElement;
+    mockDeliverPromptToTerminalSession.mockResolvedValue(false);
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: 'Inspect this element',
+      }),
+    } as MessageEvent);
+    await Promise.resolve();
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        sessionId: browserSession.id,
+        reason: 'Target CLI session is not available.',
+      }),
+    );
+
+    handle.stop();
+  });
+
+  it('chunks large init scrollback and stops on auth timeout or too many missed pongs', async () => {
+    vi.useFakeTimers();
+    try {
+      const longScrollback = 'x'.repeat(70_000);
+      const timeoutHandle = startShare('session-1', 'readwrite', 'secret-1234');
+      const timeoutAuthFailed = vi.fn();
+      timeoutHandle.onAuthFailed(timeoutAuthFailed);
+      const timeoutDc = FakePeerConnection.instances[0]!.dc;
+      timeoutDc.onopen?.();
+
+      vi.advanceTimersByTime(10_000);
+      expect(timeoutAuthFailed).toHaveBeenCalledWith('Authentication timed out');
+      expect(isSharing('session-1')).toBe(false);
+
+      const keepaliveHandle = startShare('session-2', 'readwrite', 'secret-1234');
+      serializeAddonInstances[serializeAddonInstances.length - 1]!.serialize.mockReturnValue(longScrollback);
+      const keepaliveDc = FakePeerConnection.instances[1]!.dc;
+      keepaliveDc.onopen?.();
+      keepaliveDc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+      await Promise.resolve();
+
+      const initCalls = mockSendMessage.mock.calls.filter(([, payload]) => payload.type === 'init');
+      expect(initCalls).toHaveLength(1);
+      expect(initCalls[0]?.[1]).toEqual(expect.objectContaining({ scrollback: '' }));
+
+      const dataCalls = mockSendMessage.mock.calls
+        .filter(([, payload]) => payload.type === 'data')
+        .map(([, payload]) => payload.payload);
+      expect(dataCalls.length).toBeGreaterThan(1);
+      expect(dataCalls.join('')).toBe(longScrollback);
+
+      vi.advanceTimersByTime(30_000 * 4);
+      expect(isSharing('session-2')).toBe(false);
+
+      keepaliveHandle.stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('returns session-switch error when terminal disappears after catalog resolution', async () => {
+    const project = appState.addProject('Switch Snapshot Guard', '/tmp/switch-snapshot-guard');
+    const sessionA = appState.addSession(project.id, 'Session A', undefined, 'claude')!;
+    const sessionB = appState.addSession(project.id, 'Session B', undefined, 'claude')!;
+    appState.setActiveSession(project.id, sessionA.id);
+
+    const terminalA = {
+      sessionId: 'Session A',
+      terminal: {
+        cols: 120,
+        rows: 40,
+        loadAddon: vi.fn(),
+      },
+    };
+    const terminalB = {
+      sessionId: 'Session B',
+      terminal: {
+        cols: 100,
+        rows: 30,
+        loadAddon: vi.fn(),
+      },
+    };
+
+    let simulateVanishedTerminal = false;
+    let sessionBLookups = 0;
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id === sessionA.id) return terminalA;
+      if (id !== sessionB.id) return undefined;
+      if (!simulateVanishedTerminal) return terminalB;
+      sessionBLookups++;
+      return sessionBLookups === 1 ? terminalB : undefined;
+    });
+
+    const handle = startShare(sessionA.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    simulateVanishedTerminal = true;
+    sessionBLookups = 0;
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'session-switch',
+        sessionId: sessionB.id,
+      }),
+    } as MessageEvent);
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-switch-result',
+        ok: false,
+        reason: 'Session terminal is not available.',
+      }),
+    );
+
+    handle.stop();
+  });
+
+  it('falls back to active browser session when requested browser session id is invalid', async () => {
+    const project = appState.addProject('Browser Target Fallback', '/tmp/browser-target-fallback');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const browserSession = appState.addBrowserTabSession(project.id, 'https://example.com/')!;
+    appState.setActiveSession(project.id, browserSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+
+    const browserInstance = {
+      webview: {
+        canGoBack: vi.fn(() => false),
+        canGoForward: vi.fn(() => false),
+        goBack: vi.fn(),
+        goForward: vi.fn(),
+        reload: vi.fn(),
+        src: 'https://example.com/',
+      },
+      committedUrl: 'https://example.com/',
+      inspectMode: false,
+      currentViewport: { label: 'Responsive' },
+      selectedElement: undefined,
+    };
+    mockGetBrowserTabInstance.mockImplementation((id: string) => {
+      if (id !== browserSession.id) return undefined;
+      return browserInstance;
+    });
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'reload',
+        sessionId: 'invalid-browser-id',
+      }),
+    } as MessageEvent);
+    expect(browserInstance.webview.reload).toHaveBeenCalledTimes(1);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: true,
+        sessionId: browserSession.id,
+      }),
+    );
+
+    handle.stop();
+  });
 });
