@@ -13,6 +13,13 @@ afterEach(() => {
 });
 
 describe('createProjectReviewFile', () => {
+  it('rejects blank review titles', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'review-scaffold-empty-title-'));
+    roots.push(root);
+
+    await expect(createProjectReviewFile(root, '   ')).rejects.toThrow('Review title is required');
+  });
+
   it('creates a new review findings markdown file under .calder/reviews', async () => {
     const root = mkdtempSync(join(tmpdir(), 'review-scaffold-'));
     roots.push(root);
@@ -35,5 +42,16 @@ describe('createProjectReviewFile', () => {
     expect(result.created).toBe(false);
     expect(result.relativePath).toBe('.calder/reviews/pr-42-findings.md');
     expect(result.state.reviews).toHaveLength(1);
+  });
+
+  it('falls back to the default slug when title has no alphanumeric characters', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'review-scaffold-fallback-slug-'));
+    roots.push(root);
+
+    const result = await createProjectReviewFile(root, '!!!');
+
+    expect(result.created).toBe(true);
+    expect(result.relativePath).toBe('.calder/reviews/review-findings.md');
+    expect(readFileSync(join(root, '.calder/reviews/review-findings.md'), 'utf8')).toContain('# !!!');
   });
 });
