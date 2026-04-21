@@ -1,7 +1,6 @@
 import type {
   MobileDependencyCheck,
   MobileDependencyId,
-  MobileDependencyInstallProgressEvent,
   MobileDependencyReport,
   MobileInspectInteractionResult,
   MobileInspectLaunchResult,
@@ -13,26 +12,14 @@ import { appState } from '../../state.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
 import { deliverSurfacePrompt } from '../surface-routing.js';
 import type { ProviderId } from '../../types.js';
-
-interface MobileSurfaceInstallState {
-  installId: string;
-  dependencyId: MobileDependencyId;
-  dependencyLabel: string;
-  phase: 'running' | 'success' | 'failed';
-  startedAt: string;
-  finishedAt?: string;
-  percent: number;
-  stepIndex?: number;
-  totalSteps?: number;
-  stepPercent?: number;
-  downloadedBytes?: number;
-  totalBytes?: number;
-  remainingBytes?: number;
-  command?: string;
-  message?: string;
-  detail?: string;
-  logs: string[];
-}
+import {
+  applyInstallProgressEvent,
+  createInstallId,
+  isInstallRunning,
+  pushInstallLog,
+  renderInstallProgress,
+  type MobileSurfaceInstallState,
+} from './install-progress.js';
 
 interface MobileSurfaceInspectPoint {
   x: number;
@@ -84,7 +71,6 @@ interface MobileSurfacePaneInstance {
 }
 
 const panes = new Map<string, MobileSurfacePaneInstance>();
-const MAX_INSTALL_LOG_LINES = 8;
 const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
   ios: 'iOS Simulator',
   android: 'Android Emulator',
@@ -345,23 +331,6 @@ function getMobileInspectCapabilities(platform: MobileInspectPlatform): MobileIn
   ];
 }
 
-function createInstallId(projectId: string, dependencyId: MobileDependencyId): string {
-  return `mobile-surface-${projectId}-${dependencyId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function clampPercent(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(100, value));
-}
-
-function formatPercent(value: number): string {
-  return `${Math.round(clampPercent(value))}%`;
-}
-
-function formatMegabytes(bytes: number): string {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function getStatusLabel(check: MobileDependencyCheck): string {
   if (check.status === 'ready') return 'Ready';
   if (check.status === 'warning') return 'Needs attention';
@@ -373,10 +342,6 @@ function isInstallable(check: MobileDependencyCheck): boolean {
   return Boolean(check.autoFixAvailable) && check.status !== 'ready' && check.status !== 'unsupported';
 }
 
-function isInstallRunning(instance: MobileSurfacePaneInstance): boolean {
-  return instance.installState?.phase === 'running';
-}
-
 function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
   return instance.inspectState.launching
     || instance.inspectState.capturing
@@ -385,173 +350,12 @@ function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
 }
 
 function setActionAvailability(instance: MobileSurfacePaneInstance): void {
-  instance.refreshBtn.disabled = instance.loading || isInstallRunning(instance) || isInspectBusy(instance);
+  instance.refreshBtn.disabled = instance.loading || isInstallRunning(instance.installState) || isInspectBusy(instance);
 }
 
 function setPaneStatus(instance: MobileSurfacePaneInstance, text: string, tone: 'default' | 'success' | 'error' = 'default'): void {
   instance.statusEl.textContent = text;
   instance.statusEl.dataset.tone = tone;
-}
-
-function pushInstallLog(state: MobileSurfaceInstallState, line: string): void {
-  const trimmed = line.trim();
-  if (!trimmed) return;
-  if (state.logs[state.logs.length - 1] === trimmed) return;
-  state.logs.push(trimmed);
-  while (state.logs.length > MAX_INSTALL_LOG_LINES) {
-    state.logs.shift();
-  }
-}
-
-function renderInstallProgress(instance: MobileSurfacePaneInstance): void {
-  const state = instance.installState;
-  instance.progressEl.innerHTML = '';
-  if (!state) {
-    instance.progressEl.classList.add('hidden');
-    return;
-  }
-  instance.progressEl.classList.remove('hidden');
-
-  const panel = document.createElement('section');
-  panel.className = `mobile-surface-install-panel phase-${state.phase}`;
-
-  const header = document.createElement('div');
-  header.className = 'mobile-surface-install-header';
-
-  const titleWrap = document.createElement('div');
-  titleWrap.className = 'mobile-surface-install-title-wrap';
-  const title = document.createElement('div');
-  title.className = 'mobile-surface-install-title';
-  title.textContent = `${state.dependencyLabel} · Install progress`;
-  const subtitle = document.createElement('div');
-  subtitle.className = 'mobile-surface-install-subtitle';
-  subtitle.textContent = state.phase === 'running'
-    ? 'Installing dependency and collecting diagnostics…'
-    : state.phase === 'success'
-      ? 'Install completed.'
-      : 'Install failed.';
-  titleWrap.append(title, subtitle);
-
-  const phasePill = document.createElement('span');
-  phasePill.className = `mobile-surface-install-phase is-${state.phase}`;
-  phasePill.textContent = state.phase === 'running' ? 'RUNNING' : state.phase === 'success' ? 'DONE' : 'FAILED';
-
-  header.append(titleWrap, phasePill);
-  panel.appendChild(header);
-
-  const barWrap = document.createElement('div');
-  barWrap.className = 'mobile-surface-install-bar';
-  const barFill = document.createElement('span');
-  barFill.className = 'mobile-surface-install-bar-fill';
-  barFill.style.width = `${clampPercent(state.percent)}%`;
-  barWrap.appendChild(barFill);
-  panel.appendChild(barWrap);
-
-  const metrics = document.createElement('div');
-  metrics.className = 'mobile-surface-install-metrics';
-
-  const progressPill = document.createElement('span');
-  progressPill.className = 'mobile-surface-install-metric';
-  progressPill.textContent = `Progress: ${formatPercent(state.percent)}`;
-  metrics.appendChild(progressPill);
-
-  if (typeof state.stepIndex === 'number' && typeof state.totalSteps === 'number') {
-    const stepPill = document.createElement('span');
-    stepPill.className = 'mobile-surface-install-metric';
-    stepPill.textContent = `Step: ${state.stepIndex}/${state.totalSteps}`;
-    metrics.appendChild(stepPill);
-  }
-
-  if (typeof state.downloadedBytes === 'number') {
-    const downloaded = document.createElement('span');
-    downloaded.className = 'mobile-surface-install-metric';
-    downloaded.textContent = `Downloaded: ${formatMegabytes(state.downloadedBytes)}`;
-    metrics.appendChild(downloaded);
-  }
-
-  if (typeof state.remainingBytes === 'number') {
-    const remaining = document.createElement('span');
-    remaining.className = 'mobile-surface-install-metric';
-    remaining.textContent = `Remaining: ${formatMegabytes(state.remainingBytes)}`;
-    metrics.appendChild(remaining);
-  }
-
-  if (typeof state.stepPercent === 'number') {
-    const stepPercent = document.createElement('span');
-    stepPercent.className = 'mobile-surface-install-metric';
-    stepPercent.textContent = `Step progress: ${formatPercent(state.stepPercent)}`;
-    metrics.appendChild(stepPercent);
-  }
-
-  panel.appendChild(metrics);
-
-  if (state.command) {
-    const command = document.createElement('div');
-    command.className = 'mobile-surface-install-command';
-    command.textContent = `Command: ${state.command}`;
-    panel.appendChild(command);
-  }
-
-  if (state.message) {
-    const message = document.createElement('div');
-    message.className = 'mobile-surface-install-message';
-    message.textContent = state.message;
-    panel.appendChild(message);
-  }
-
-  if (state.detail && state.detail.trim().length > 0) {
-    const detail = document.createElement('div');
-    detail.className = 'mobile-surface-install-detail';
-    detail.textContent = state.detail;
-    panel.appendChild(detail);
-  }
-
-  if (state.logs.length > 0) {
-    const logList = document.createElement('ul');
-    logList.className = 'mobile-surface-install-log-list';
-    for (const logLine of state.logs) {
-      const item = document.createElement('li');
-      item.className = 'mobile-surface-install-log-item';
-      item.textContent = logLine;
-      logList.appendChild(item);
-    }
-    panel.appendChild(logList);
-  }
-
-  instance.progressEl.appendChild(panel);
-}
-
-function applyInstallProgressEvent(instance: MobileSurfacePaneInstance, event: MobileDependencyInstallProgressEvent): void {
-  const state = instance.installState;
-  if (!state || state.installId !== event.installId) return;
-
-  if (typeof event.percent === 'number') state.percent = clampPercent(event.percent);
-  if (typeof event.stepIndex === 'number') state.stepIndex = event.stepIndex;
-  if (typeof event.totalSteps === 'number') state.totalSteps = event.totalSteps;
-  if (typeof event.stepPercent === 'number') state.stepPercent = clampPercent(event.stepPercent);
-  if (typeof event.downloadedBytes === 'number') state.downloadedBytes = Math.max(0, event.downloadedBytes);
-  if (typeof event.totalBytes === 'number') state.totalBytes = Math.max(0, event.totalBytes);
-  if (typeof event.remainingBytes === 'number') state.remainingBytes = Math.max(0, event.remainingBytes);
-  if (event.command) state.command = event.command;
-  if (event.message) state.message = event.message;
-  if (event.detail) {
-    state.detail = event.detail;
-    pushInstallLog(state, event.detail);
-  }
-
-  if (event.phase === 'finished') {
-    state.phase = 'success';
-    state.percent = 100;
-    state.finishedAt = event.finishedAt || new Date().toISOString();
-  } else if (event.phase === 'failed') {
-    state.phase = 'failed';
-    state.finishedAt = event.finishedAt || new Date().toISOString();
-  } else if (event.phase === 'started' || event.phase === 'step_started' || event.phase === 'step_progress' || event.phase === 'step_finished') {
-    state.phase = 'running';
-  }
-
-  renderInstallProgress(instance);
-  setActionAvailability(instance);
 }
 
 function rerenderFromState(instance: MobileSurfacePaneInstance): void {
@@ -654,7 +458,7 @@ function scheduleInspectLiveLoop(instance: MobileSurfacePaneInstance): void {
     if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
     if (
       instance.loading
-      || isInstallRunning(instance)
+      || isInstallRunning(instance.installState)
       || inspect.launching
       || inspect.inspectingPoint
       || inspect.interacting
@@ -1265,9 +1069,9 @@ function buildCheckRow(instance: MobileSurfacePaneInstance, check: MobileDepende
     const runningState = instance.installState;
     const isActive = runningState?.phase === 'running' && runningState.dependencyId === check.id;
     installBtn.textContent = isActive ? 'Installing…' : 'Install';
-    installBtn.disabled = isInstallRunning(instance) || isInspectBusy(instance);
+    installBtn.disabled = isInstallRunning(instance.installState) || isInspectBusy(instance);
     installBtn.addEventListener('click', async () => {
-      if (isInstallRunning(instance) || isInspectBusy(instance)) return;
+      if (isInstallRunning(instance.installState) || isInspectBusy(instance)) return;
       const api = window.calder?.mobileSetup;
       if (!api) {
         setPaneStatus(instance, 'Mobile setup API is unavailable in this build.', 'error');
@@ -1286,13 +1090,15 @@ function buildCheckRow(instance: MobileSurfacePaneInstance, check: MobileDepende
         stepPercent: 0,
         logs: [],
       };
-      renderInstallProgress(instance);
+      renderInstallProgress(instance.progressEl, instance.installState);
       setActionAvailability(instance);
       setPaneStatus(instance, `${check.label} installation started…`);
 
       instance.installProgressCleanup = api.onInstallProgress((event) => {
         if (event.installId !== installId) return;
-        applyInstallProgressEvent(instance, event);
+        if (!applyInstallProgressEvent(instance.installState, event)) return;
+        renderInstallProgress(instance.progressEl, instance.installState);
+        setActionAvailability(instance);
       });
 
       try {
@@ -1308,7 +1114,7 @@ function buildCheckRow(instance: MobileSurfacePaneInstance, check: MobileDepende
             if (result.stderr) pushInstallLog(installState, result.stderr);
             if (result.stdout) pushInstallLog(installState, result.stdout);
             installState.percent = Math.min(99, installState.percent);
-            renderInstallProgress(instance);
+            renderInstallProgress(instance.progressEl, instance.installState);
           }
           setPaneStatus(instance, result.message || 'Install command failed.', 'error');
         } else {
@@ -1318,7 +1124,7 @@ function buildCheckRow(instance: MobileSurfacePaneInstance, check: MobileDepende
             installState.percent = 100;
             installState.message = result.message || `${check.label} installed successfully.`;
             if (result.command) installState.command = result.command;
-            renderInstallProgress(instance);
+            renderInstallProgress(instance.progressEl, instance.installState);
           }
           setPaneStatus(instance, result.message || `${check.label} installed successfully.`, 'success');
         }
@@ -1332,7 +1138,7 @@ function buildCheckRow(instance: MobileSurfacePaneInstance, check: MobileDepende
           installState.detail = message;
           pushInstallLog(installState, message);
           installState.percent = Math.min(99, installState.percent);
-          renderInstallProgress(instance);
+          renderInstallProgress(instance.progressEl, instance.installState);
         }
         setPaneStatus(instance, message, 'error');
       } finally {
