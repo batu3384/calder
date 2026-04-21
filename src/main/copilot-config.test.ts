@@ -155,4 +155,142 @@ describe('getCopilotConfig', () => {
       },
     ]);
   });
+
+  it('skips malformed MCP entries and tolerates non-object MCP config payloads', async () => {
+    mockReadFileSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (filePath === '/mock/home/.copilot/mcp-config.json') {
+        return JSON.stringify({
+          mcpServers: {
+            ok: { command: 'docker run ok' },
+            empty: { args: ['--verbose'] },
+          },
+        }) as any;
+      }
+      if (filePath === '/project/.mcp.json') {
+        return JSON.stringify('not-an-object') as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    const config = await getCopilotConfig('/project');
+    expect(config.mcpServers).toEqual([
+      {
+        name: 'ok',
+        url: 'docker run ok',
+        status: 'configured',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.copilot', 'mcp-config.json'),
+      },
+    ]);
+  });
+
+  it('handles hidden/missing skills and deduplicates configured skill roots from config + env', async () => {
+    vi.stubEnv('COPILOT_CUSTOM_INSTRUCTIONS_DIRS', [
+      '/shared/a',
+      '/shared/c',
+      '/shared/a',
+      '',
+    ].join(path.delimiter));
+
+    try {
+      mockReadFileSync.mockImplementation((inputPath) => {
+        const filePath = n(String(inputPath));
+        if (filePath === '/mock/home/.copilot/config.json') {
+          return JSON.stringify({
+            skillDirectories: [
+              '/shared/a',
+              '/shared/b',
+              '/shared/b',
+              '',
+              '   ',
+              42,
+            ],
+          }) as any;
+        }
+        if (filePath === '/mock/home/.copilot/skills/nofm/SKILL.md') {
+          return '# no frontmatter\n' as any;
+        }
+        if (filePath === '/mock/home/.copilot/skills/empty/SKILL.md') {
+          return '' as any;
+        }
+        if (filePath === '/mock/home/.copilot/skills/invalid/SKILL.md') {
+          return '---\nname: invalid\nline without colon\n---\n' as any;
+        }
+        if (filePath === '/project/.github/skills/shared/SKILL.md') {
+          return '---\nname: Shared\ndescription: Project shared\n---\n' as any;
+        }
+        if (filePath === '/shared/a/shared/SKILL.md') {
+          return '---\nname: Shared\ndescription: External shared\n---\n' as any;
+        }
+        if (filePath === '/shared/b/fallback/SKILL.md') {
+          return '---\ndescription: fallback desc\n---\n' as any;
+        }
+        throw new Error('ENOENT');
+      });
+
+      mockReaddirSync.mockImplementation((inputPath) => {
+        const dirPath = n(String(inputPath));
+        if (dirPath === '/mock/home/.copilot/skills') {
+          return ['.hidden', 'missing', 'nofm', 'empty', 'invalid'] as any;
+        }
+        if (dirPath === '/project/.github/skills') return ['shared'] as any;
+        if (dirPath === '/shared/a') return ['shared'] as any;
+        if (dirPath === '/shared/b') return ['fallback'] as any;
+        if (dirPath === '/shared/c') return [] as any;
+        throw new Error('ENOENT');
+      });
+
+      mockStatSync.mockImplementation((inputPath) => {
+        const filePath = n(String(inputPath));
+        if (
+          filePath === '/mock/home/.copilot/skills/nofm/SKILL.md'
+          || filePath === '/mock/home/.copilot/skills/empty/SKILL.md'
+          || filePath === '/mock/home/.copilot/skills/invalid/SKILL.md'
+          || filePath === '/project/.github/skills/shared/SKILL.md'
+          || filePath === '/shared/a/shared/SKILL.md'
+          || filePath === '/shared/b/fallback/SKILL.md'
+        ) {
+          return { isFile: () => true } as any;
+        }
+        throw new Error('ENOENT');
+      });
+
+      const config = await getCopilotConfig('/project');
+      expect(config.skills).toEqual([
+        {
+          name: 'nofm',
+          description: '',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.copilot', 'skills', 'nofm', 'SKILL.md'),
+        },
+        {
+          name: 'empty',
+          description: '',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.copilot', 'skills', 'empty', 'SKILL.md'),
+        },
+        {
+          name: 'invalid',
+          description: '',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.copilot', 'skills', 'invalid', 'SKILL.md'),
+        },
+        {
+          name: 'Shared',
+          description: 'Project shared',
+          scope: 'project',
+          filePath: path.join('/project', '.github', 'skills', 'shared', 'SKILL.md'),
+        },
+        {
+          name: 'fallback',
+          description: 'fallback desc',
+          scope: 'user',
+          filePath: path.join('/shared/b', 'fallback', 'SKILL.md'),
+        },
+      ]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });
