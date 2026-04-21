@@ -20,6 +20,18 @@ import {
   renderInstallProgress,
   type MobileSurfaceInstallState,
 } from './install-progress.js';
+import {
+  detectProjectProfile,
+  formatCaptureMeta,
+  formatPointLabel,
+  getBlockingChecks,
+  getProfileScopedChecks,
+  getScopedSummary,
+  getStatusLabel,
+  hasBlockingChecks,
+  isInstallable,
+  type MobileProjectProfile,
+} from './dependency-scoping.js';
 
 interface MobileSurfaceInspectPoint {
   x: number;
@@ -75,7 +87,6 @@ const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
   ios: 'iOS Simulator',
   android: 'Android Emulator',
 };
-type MobileProjectProfile = 'ios' | 'android' | 'cross' | 'unknown';
 
 function defaultInspectState(): MobileSurfaceInspectState {
   return {
@@ -102,125 +113,6 @@ function defaultInspectState(): MobileSurfaceInspectState {
   };
 }
 
-function normalizePathEntry(entry: string): string {
-  return entry.replace(/\\/g, '/').toLowerCase();
-}
-
-function includesAnyPath(entries: string[], patterns: string[]): boolean {
-  return entries.some((entry) => {
-    const normalized = normalizePathEntry(entry);
-    return patterns.some((pattern) => normalized.includes(pattern));
-  });
-}
-
-function deriveProjectProfileFromFileMatches(matches: Record<string, string[]>): MobileProjectProfile {
-  const iosEntries = [
-    ...matches.xcodeproj,
-    ...matches.xcworkspace,
-    ...matches.pbxproj,
-    ...matches.swiftPackage,
-  ];
-  const androidEntries = [
-    ...matches.androidManifest,
-    ...matches.gradleBuild,
-    ...matches.gradleSettings,
-    ...matches.androidDir,
-  ];
-
-  const hasIosSignals = includesAnyPath(iosEntries, [
-    '.xcodeproj',
-    '.xcworkspace',
-    'project.pbxproj',
-    'package.swift',
-    '/ios/',
-  ]);
-  const hasAndroidSignals = includesAnyPath(androidEntries, [
-    'androidmanifest.xml',
-    'build.gradle',
-    'build.gradle.kts',
-    'settings.gradle',
-    'settings.gradle.kts',
-    '/android/',
-  ]);
-
-  if (hasIosSignals && hasAndroidSignals) return 'cross';
-  if (hasIosSignals) return 'ios';
-  if (hasAndroidSignals) return 'android';
-  return 'unknown';
-}
-
-async function detectProjectProfile(projectId: string): Promise<MobileProjectProfile> {
-  const project = appState.projects.find((entry) => entry.id === projectId);
-  if (!project) return 'unknown';
-  const fsApi = window.calder?.fs;
-  if (!fsApi) return 'unknown';
-
-  const safeList = async (query: string): Promise<string[]> => {
-    try {
-      return await fsApi.listFiles(project.path, query);
-    } catch {
-      return [];
-    }
-  };
-
-  const [
-    xcodeproj,
-    xcworkspace,
-    pbxproj,
-    swiftPackage,
-    androidManifest,
-    gradleBuild,
-    gradleSettings,
-    androidDir,
-  ] = await Promise.all([
-    safeList('.xcodeproj'),
-    safeList('.xcworkspace'),
-    safeList('project.pbxproj'),
-    safeList('Package.swift'),
-    safeList('AndroidManifest.xml'),
-    safeList('build.gradle'),
-    safeList('settings.gradle'),
-    safeList('android'),
-  ]);
-
-  return deriveProjectProfileFromFileMatches({
-    xcodeproj,
-    xcworkspace,
-    pbxproj,
-    swiftPackage,
-    androidManifest,
-    gradleBuild,
-    gradleSettings,
-    androidDir,
-  });
-}
-
-function getProfileScopedChecks(report: MobileDependencyReport, profile: MobileProjectProfile): MobileDependencyCheck[] {
-  if (profile === 'ios') {
-    return report.checks.filter((check) => check.requiredFor.includes('ios'));
-  }
-  if (profile === 'android') {
-    return report.checks.filter((check) => check.requiredFor.includes('android'));
-  }
-  return report.checks;
-}
-
-function getScopedSummary(report: MobileDependencyReport, profile: MobileProjectProfile): {
-  ready: number;
-  warnings: number;
-  requiredMissing: number;
-} {
-  const scopedChecks = getProfileScopedChecks(report, profile);
-  return {
-    ready: scopedChecks.filter((check) => check.status === 'ready').length,
-    warnings: scopedChecks.filter((check) => check.status === 'warning').length,
-    requiredMissing: scopedChecks.filter((check) => (
-      check.requiredFor.length > 0
-      && (check.status === 'missing' || check.status === 'unsupported')
-    )).length,
-  };
-}
-
 function getProjectProfileLabel(profile: MobileProjectProfile): string {
   if (profile === 'ios') return 'Project profile: iOS app';
   if (profile === 'android') return 'Project profile: Android app';
@@ -237,37 +129,6 @@ function getProjectProfileStatusPrefix(profile: MobileProjectProfile): string {
 
 function buildMobileAppliedContext(projectId: string, providerId?: ProviderId) {
   return buildAppliedContextSummary(projectId, providerId);
-}
-
-function hasBlockingChecks(report: MobileDependencyReport, platform: MobileInspectPlatform): boolean {
-  return report.checks.some((entry) => (
-    entry.requiredFor.includes(platform)
-    && (entry.status === 'missing' || entry.status === 'unsupported')
-  ));
-}
-
-function getBlockingChecks(report: MobileDependencyReport, platform: MobileInspectPlatform): MobileDependencyCheck[] {
-  return report.checks.filter((entry) => (
-    entry.requiredFor.includes(platform)
-    && (entry.status === 'missing' || entry.status === 'unsupported')
-  ));
-}
-
-function formatPointLabel(point: MobileSurfaceInspectPoint): string {
-  return `x=${point.x}, y=${point.y} (${Math.round(point.normalizedX * 100)}% × ${Math.round(point.normalizedY * 100)}%)`;
-}
-
-function formatCaptureMeta(result: MobileInspectScreenshotResult): string {
-  const parts: string[] = [];
-  if (typeof result.width === 'number' && typeof result.height === 'number') {
-    parts.push(`${result.width}×${result.height}`);
-  }
-  if (result.deviceName) {
-    parts.push(result.deviceName);
-  } else if (result.deviceId) {
-    parts.push(result.deviceId);
-  }
-  return parts.join(' · ');
 }
 
 function getInspectInteractionHint(): string {
@@ -329,17 +190,6 @@ function getMobileInspectCapabilities(platform: MobileInspectPlatform): MobileIn
       tone: 'external',
     },
   ];
-}
-
-function getStatusLabel(check: MobileDependencyCheck): string {
-  if (check.status === 'ready') return 'Ready';
-  if (check.status === 'warning') return 'Needs attention';
-  if (check.status === 'unsupported') return 'Unsupported';
-  return 'Not found';
-}
-
-function isInstallable(check: MobileDependencyCheck): boolean {
-  return Boolean(check.autoFixAvailable) && check.status !== 'ready' && check.status !== 'unsupported';
 }
 
 function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
