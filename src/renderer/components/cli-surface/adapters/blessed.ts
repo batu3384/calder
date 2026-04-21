@@ -1,4 +1,4 @@
-import type { CliSurfaceAdapter } from './registry.js';
+import type { CliSurfaceAdapter } from './adapter-contract.js';
 
 export const blessedAdapter: CliSurfaceAdapter = {
   id: 'blessed',

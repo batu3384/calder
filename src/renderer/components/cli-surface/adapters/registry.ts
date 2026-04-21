@@ -1,21 +1,7 @@
 import { blessedAdapter } from './blessed.js';
 import { inkAdapter } from './ink.js';
 import { textualAdapter } from './textual.js';
-
-export interface CliAdapterDetectionInput {
-  command?: string;
-  args?: string[];
-  title?: string;
-  adapterHint?: string;
-}
-
-export interface CliSurfaceAdapter {
-  id: 'textual' | 'ink' | 'blessed';
-  displayName: string;
-  capabilityBadges: string[];
-  detect(input: CliAdapterDetectionInput): boolean;
-  enrich(meta: Record<string, unknown>): Record<string, unknown>;
-}
+import type { CliAdapterDetectionInput, CliSurfaceAdapter } from './adapter-contract.js';
 
 const adapters: CliSurfaceAdapter[] = [textualAdapter, inkAdapter, blessedAdapter];
 

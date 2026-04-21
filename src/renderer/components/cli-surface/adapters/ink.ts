@@ -1,4 +1,4 @@
-import type { CliSurfaceAdapter } from './registry.js';
+import type { CliSurfaceAdapter } from './adapter-contract.js';
 
 export const inkAdapter: CliSurfaceAdapter = {
   id: 'ink',
