@@ -1,4 +1,7 @@
 import { EventEmitter } from 'node:events';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type ExecPlan = {
@@ -165,6 +168,36 @@ describe('mobile-inspector runtime android flows', () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('adb server unavailable');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Android setup guidance when no AVD is configured', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\n' },
+      { command: '/usr/local/bin/emulator', args: ['-list-avds'], stdout: '\n' },
+    );
+
+    const result = await launchMobileInspectSurface('android');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('No Android Virtual Device');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Android AVD listing error when emulator listing fails', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\n' },
+      { command: '/usr/local/bin/emulator', args: ['-list-avds'], code: 1, stderr: 'emulator list failed' },
+    );
+
+    const result = await launchMobileInspectSurface('android');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('emulator list failed');
     expect(execPlans).toHaveLength(0);
   });
 
@@ -393,6 +426,173 @@ describe('mobile-inspector runtime android flows', () => {
     expect(result.message).toContain('not available yet');
     expect(result.point).toEqual({ x: 25, y: 40 });
     expect(execPlans).toHaveLength(0);
+  });
+
+  it('boots a shutdown iOS simulator when no booted device is running', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-SHUTDOWN',
+                name: 'iPhone 16 Pro',
+                state: 'Shutdown',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'boot', 'IOS-UDID-SHUTDOWN'],
+        stdout: '',
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-SHUTDOWN', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    const result = await launchMobileInspectSurface('ios');
+
+    expect(result.success).toBe(true);
+    expect(result.started).toBe(true);
+    expect(result.deviceId).toBe('IOS-UDID-SHUTDOWN');
+    expect(result.message).toContain('booted successfully');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns an iOS setup error when no simulator device is available', async () => {
+    execPlans.push({
+      command: 'xcrun',
+      args: ['simctl', 'list', 'devices', '--json'],
+      stdout: JSON.stringify({ devices: {} }),
+    });
+
+    const result = await launchMobileInspectSurface('ios');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('No iOS simulator device is available');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('captures iOS screenshot successfully from a deterministic temp path', async () => {
+    const fixedNow = 1_700_000_000_000;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    fs.writeFileSync(screenshotPath, createPngBuffer(1179, 2556));
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-CAPTURE',
+                  name: 'iPhone 16 Pro',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-CAPTURE', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-CAPTURE', 'screenshot', screenshotPath],
+          stdout: `Wrote screenshot to: ${screenshotPath}`,
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(true);
+      expect(result.width).toBe(1179);
+      expect(result.height).toBe(2556);
+      expect(result.dataUrl).toContain('data:image/png;base64,');
+      expect(fs.existsSync(screenshotPath)).toBe(false);
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+      try {
+        fs.unlinkSync(screenshotPath);
+      } catch {
+        // noop
+      }
+    }
+  });
+
+  it('retries iOS screenshot once when simctl reports read-only dash output', async () => {
+    const fixedNow = 1_700_000_000_001;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    fs.writeFileSync(screenshotPath, createPngBuffer(1290, 2796));
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-CAPTURE-FALLBACK',
+                  name: 'iPhone 16',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-CAPTURE-FALLBACK', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-CAPTURE-FALLBACK', 'screenshot', screenshotPath],
+          code: 1,
+          stderr: 'You can\'t save the file "-" because the volume is read only.',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-CAPTURE-FALLBACK', 'screenshot', screenshotPath],
+          stdout: `Wrote screenshot to: ${screenshotPath}`,
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(true);
+      expect(result.width).toBe(1290);
+      expect(result.height).toBe(2796);
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+      try {
+        fs.unlinkSync(screenshotPath);
+      } catch {
+        // noop
+      }
+    }
   });
 
   it('returns iOS Appium readiness failure when local Appium binary cannot be resolved', async () => {
