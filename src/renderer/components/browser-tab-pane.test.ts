@@ -10,6 +10,7 @@ const localTargetsSource = readFileSync(new URL('./browser-tab/local-targets.ts'
 const targetMenuSource = readFileSync(new URL('./browser-tab/target-menu.ts', import.meta.url), 'utf-8');
 const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
 const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
+const paneHelpersSource = readFileSync(new URL('./browser-tab/pane-helpers.ts', import.meta.url), 'utf-8');
 const navigationChromeSource = readFileSync(new URL('./browser-tab/navigation-chrome.ts', import.meta.url), 'utf-8');
 
 describe('browser tab pane contract', () => {
@@ -17,8 +18,8 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-toolbar-nav');
     expect(source).toContain('browser-toolbar-address');
     expect(source).toContain('browser-toolbar-tools');
-    expect(source).toContain('browser-toolbar-cluster');
-    expect(source).toContain('browser-toolbar-cluster-label');
+    expect(paneHelpersSource).toContain('browser-toolbar-cluster');
+    expect(paneHelpersSource).toContain('browser-toolbar-cluster-label');
     expect(source).toContain('browser-pane-status');
     expect(source).not.toContain('browser-toolbar-route');
     expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
@@ -100,9 +101,11 @@ describe('browser tab pane contract', () => {
   });
 
   it('isolates browser guests into a dedicated live-view partition', () => {
-    expect(source).toContain("import { buildBrowserSessionPartition } from '../../../shared/constants.js';");
-    expect(source).toContain('function resolveBrowserPartitionForSession(sessionId: string): string {');
-    expect(source).toContain('return buildBrowserSessionPartition(owningProject?.id);');
+    expect(source).toContain("from './pane-helpers.js';");
+    expect(source).toContain('resolveBrowserPartitionForSession,');
+    expect(paneHelpersSource).toContain("import { buildBrowserSessionPartition } from '../../../shared/constants.js';");
+    expect(paneHelpersSource).toContain('function resolveBrowserPartitionForSession(sessionId: string): string {');
+    expect(paneHelpersSource).toContain('return buildBrowserSessionPartition(owningProject?.id);');
     expect(source).toContain("webview.setAttribute('partition', resolveBrowserPartitionForSession(sessionId));");
     expect(source).not.toContain("webview.setAttribute('allowpopups', '');");
   });
@@ -119,7 +122,7 @@ describe('browser tab pane contract', () => {
   });
 
   it('re-synchronizes a browser pane with the latest stored url when it is reattached and shown', () => {
-    expect(source).toContain('function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {');
+    expect(paneHelpersSource).toContain('function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {');
     expect(source).toContain('attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void');
     expect(source).toContain('syncBrowserTabToSessionState(instance);');
     expect(source).toContain('requestAnimationFrame(() => syncBrowserTabToSessionState(instance));');
