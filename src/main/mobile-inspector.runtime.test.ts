@@ -648,4 +648,160 @@ describe('mobile-inspector runtime android flows', () => {
     expect(fetchCalls.some((call) => call.method === 'DELETE')).toBe(true);
     expect(execPlans).toHaveLength(0);
   });
+
+  it('falls back to WDA tap endpoint when actions endpoint fails but fallback succeeds', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-7',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-7', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-wda-fallback' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fallback/actions') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fallback/wda/tap/0') && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fallback') && method === 'DELETE') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 55, 77);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Tap dispatched to iOS simulator');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns a generic Appium rejection when both actions and WDA fallback fail without details', async () => {
+    execPlans.push(
+      {
+        command: 'xcrun',
+        args: ['simctl', 'list', 'devices', '--json'],
+        stdout: JSON.stringify({
+          devices: {
+            'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+              {
+                udid: 'IOS-UDID-8',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      },
+      {
+        command: 'xcrun',
+        args: ['simctl', 'bootstatus', 'IOS-UDID-8', '-b'],
+        stdout: 'Booted',
+      },
+    );
+
+    mockFetch.mockImplementation(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      const method = init?.method ?? 'GET';
+      if (url.endsWith('/status') && method === 'GET') {
+        return {
+          ok: true,
+          async text() {
+            return '{"ready":true}';
+          },
+        };
+      }
+      if (url === 'http://127.0.0.1:4723/session' && method === 'POST') {
+        return {
+          ok: true,
+          async text() {
+            return JSON.stringify({ value: { sessionId: 'session-wda-fail' } });
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fail/actions') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fail/wda/tap/0') && method === 'POST') {
+        return {
+          ok: false,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      if (url.endsWith('/session/session-wda-fail') && method === 'DELETE') {
+        return {
+          ok: true,
+          async text() {
+            return '{}';
+          },
+        };
+      }
+      throw new Error(`Unexpected fetch: ${method} ${url}`);
+    });
+
+    const result = await interactMobileInspectPoint('ios', 65, 88);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('rejected by Appium');
+    expect(execPlans).toHaveLength(0);
+  });
 });
