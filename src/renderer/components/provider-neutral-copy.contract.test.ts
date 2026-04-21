@@ -5,6 +5,7 @@ const preferencesSource = readFileSync(new URL('./preferences-modal.ts', import.
 const settingsGuardSource = readFileSync(new URL('./settings-guard-ui.ts', import.meta.url), 'utf-8');
 const conflictModalSource = readFileSync(new URL('./statusline-conflict-modal.ts', import.meta.url), 'utf-8');
 const browserStageSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const browserNewTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const contributing = readFileSync(new URL('../../../CONTRIBUTING.md', import.meta.url), 'utf-8');
 const readme = readFileSync(new URL('../../../README.md', import.meta.url), 'utf-8');
 const pkg = readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8');
@@ -27,7 +28,7 @@ describe('provider-neutral copy contract', () => {
   });
 
   it('uses session-oriented language in the browser workspace', () => {
-    expect(browserStageSource).toContain('Hand off to session');
+    expect(browserNewTabUiSource).toContain('Hand off to session');
     expect(browserStageSource).toContain('Send to selected');
   });
 

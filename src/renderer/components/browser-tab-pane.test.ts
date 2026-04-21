@@ -9,6 +9,7 @@ const authControllerSource = readFileSync(new URL('./browser-tab/auth-controller
 const localTargetsSource = readFileSync(new URL('./browser-tab/local-targets.ts', import.meta.url), 'utf-8');
 const targetMenuSource = readFileSync(new URL('./browser-tab/target-menu.ts', import.meta.url), 'utf-8');
 const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
+const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const navigationChromeSource = readFileSync(new URL('./browser-tab/navigation-chrome.ts', import.meta.url), 'utf-8');
 
 describe('browser tab pane contract', () => {
@@ -175,21 +176,22 @@ describe('browser tab pane contract', () => {
   });
 
   it('renders the Calder new tab composition', () => {
-    expect(source).toContain('browser-ntp-eyebrow');
-    expect(source).toContain('browser-ntp-title');
-    expect(source).toContain('browser-ntp-actions');
-    expect(source).toContain('browser-ntp-grid');
-    expect(source).toContain('browser-ntp-section-header');
-    expect(source).toContain('browser-ntp-section-meta');
+    expect(source).toContain("import { createBrowserNewTabUi } from './new-tab-ui.js';");
+    expect(newTabUiSource).toContain('browser-ntp-eyebrow');
+    expect(newTabUiSource).toContain('browser-ntp-title');
+    expect(newTabUiSource).toContain('browser-ntp-actions');
+    expect(newTabUiSource).toContain('browser-ntp-grid');
+    expect(newTabUiSource).toContain('browser-ntp-section-header');
+    expect(newTabUiSource).toContain('browser-ntp-section-meta');
     expect(source).toContain("chromeLabel.textContent = 'Live View'");
     expect(source).toContain("chromeHint.textContent = 'Capture context'");
-    expect(source).toContain("ntpEyebrow.textContent = 'Live View'");
-    expect(source).toContain("ntpTitle.textContent = 'Open a running surface'");
-    expect(source).toContain("ntpTargetsMeta.textContent = 'Scanning…'");
-    expect(source).toContain("focusAddressBtn.textContent = 'Focus address bar'");
-    expect(source).toContain("refreshTargetsBtn.textContent = 'Rescan localhost'");
+    expect(newTabUiSource).toContain("ntpEyebrow.textContent = 'Live View'");
+    expect(newTabUiSource).toContain("ntpTitle.textContent = 'Open a running surface'");
+    expect(newTabUiSource).toContain("ntpTargetsMeta.textContent = 'Scanning…'");
+    expect(newTabUiSource).toContain("focusAddressBtn.textContent = 'Focus address bar'");
+    expect(newTabUiSource).toContain("refreshTargetsBtn.textContent = 'Rescan localhost'");
     expect(source).not.toContain("chromeLabel.textContent = 'Browser surface'");
-    expect(source).not.toContain("ntpEyebrow.textContent = 'Calder Workspace'");
+    expect(newTabUiSource).not.toContain("ntpEyebrow.textContent = 'Calder Workspace'");
   });
 
   it('discovers active localhost targets instead of shipping hardcoded common ports', () => {
@@ -216,7 +218,7 @@ describe('browser tab pane contract', () => {
   });
 
   it('treats about:blank as an empty surface instead of a white content area', () => {
-    expect(source).toContain("newTabPage.dataset.mode = url === 'about:blank' ? 'default' : 'hidden'");
+    expect(source).toContain("createBrowserNewTabUi(url === 'about:blank' ? 'default' : 'hidden')");
     expect(source).toContain("syncSurfaceVisibility(!url || url === 'about:blank');");
     expect(source).toContain("webview.dataset.surface = showEmptySurface ? 'hidden' : 'live'");
     expect(source).toContain('webview.hidden = showEmptySurface');

@@ -21,8 +21,9 @@ import {
   setInspectPayload,
   type CliInspectState,
 } from './inspect-mode.js';
-import { buildSelectionText, createSelectionPayload } from './selection.js';
+import { createSelectionPayload } from './selection.js';
 import { inferCliRegions } from './heuristics.js';
+import { renderCliHoverOverlay } from './hover-overlay.js';
 import {
   sendCliSelectionToCustomSession,
   sendCliSelectionToNewSession,
@@ -197,80 +198,6 @@ function getSemanticNodeForSelection(
 
 function getFocusedSemanticNodeId(projectId: string): string | undefined {
   return semanticFocusNodes.get(projectId)?.values().next().value?.nodeId;
-}
-
-function getHoverRegionMeta(instance: CliSurfaceInstance, region: SelectableCliRegion): {
-  detail: string;
-  focused: boolean;
-} {
-  if (region.kind === 'inferred') {
-    return {
-      detail: 'Inferred panel',
-      focused: false,
-    };
-  }
-
-  const focused = region.semanticNodeId === getFocusedSemanticNodeId(instance.projectId);
-  const nodeMessage = region.semanticNodeId
-    ? semanticNodes.get(instance.projectId)?.get(region.semanticNodeId)
-    : undefined;
-  const focusMessage = region.semanticNodeId
-    ? semanticFocusNodes.get(instance.projectId)?.get(region.semanticNodeId)
-    : undefined;
-  const meta = {
-    ...(nodeMessage?.meta ?? {}),
-    ...(focusMessage?.meta ?? {}),
-  } as Record<string, unknown>;
-
-  const framework = typeof meta.framework === 'string' ? meta.framework : null;
-  const widget = typeof meta.widgetName === 'string'
-    ? meta.widgetName
-    : typeof meta.widgetType === 'string'
-      ? meta.widgetType
-      : typeof meta.componentName === 'string'
-        ? meta.componentName
-        : typeof meta.componentType === 'string'
-          ? meta.componentType
-          : null;
-
-  return {
-    detail: [
-      'Semantic target',
-      focused ? 'Focused' : null,
-      framework,
-      widget,
-    ]
-      .filter((part): part is string => Boolean(part))
-      .join(' · '),
-    focused,
-  };
-}
-
-function getHoverPlacementClass(
-  instance: CliSurfaceInstance,
-  region: SelectableCliRegion,
-): 'floating-above' | 'floating-below' | 'inline' {
-  const viewportRect = instance.viewport.getBoundingClientRect();
-  const rowHeight = viewportRect.height > 0 && instance.terminal.rows > 0
-    ? viewportRect.height / instance.terminal.rows
-    : 0;
-  const regionTop = Math.max(0, region.selection.startRow * rowHeight);
-  const regionHeight = Math.max(rowHeight, (region.selection.endRow - region.selection.startRow + 1) * rowHeight);
-  const regionBottom = regionTop + regionHeight;
-  const availableAbove = regionTop;
-  const availableBelow = Math.max(0, viewportRect.height - regionBottom);
-  const preferredCardHeight = 116;
-
-  if (regionHeight < preferredCardHeight) {
-    if (availableBelow >= Math.min(72, preferredCardHeight)) {
-      return 'floating-below';
-    }
-    if (availableAbove >= Math.min(72, preferredCardHeight)) {
-      return 'floating-above';
-    }
-  }
-
-  return 'inline';
 }
 
 function getContextModeForSelection(
@@ -850,45 +777,22 @@ function getInferredRegions(instance: CliSurfaceInstance): InferredCliRegion[] {
 }
 
 function showHoverRegion(instance: CliSurfaceInstance, region: SelectableCliRegion | null): void {
-  const shouldShow = Boolean(instance.inspectState.active && !instance.inspectState.payload && region);
-  showElement(instance.hoverOverlayEl, shouldShow);
-  if (!shouldShow || !region) {
-    instance.hoverLabelEl.textContent = '';
-    instance.hoverMetaEl.textContent = '';
-    instance.hoverPreviewEl.textContent = '';
-    instance.hoverOverlayEl.classList.remove('semantic', 'inferred', 'focused', 'floating-above', 'floating-below');
-    instance.hoverOverlayEl.dataset.kind = '';
-    instance.hoverOverlayEl.dataset.placement = '';
-    instance.hoverOverlayEl.dataset.focused = 'false';
-    return;
-  }
-
-  const hoverMeta = getHoverRegionMeta(instance, region);
-  const placement = getHoverPlacementClass(instance, region);
-  instance.hoverOverlayEl.classList.toggle('semantic', region.kind === 'semantic');
-  instance.hoverOverlayEl.classList.toggle('inferred', region.kind === 'inferred');
-  instance.hoverOverlayEl.classList.toggle('focused', hoverMeta.focused);
-  instance.hoverOverlayEl.classList.toggle('floating-above', placement === 'floating-above');
-  instance.hoverOverlayEl.classList.toggle('floating-below', placement === 'floating-below');
-  instance.hoverOverlayEl.dataset.kind = region.kind;
-  instance.hoverOverlayEl.dataset.placement = placement === 'inline' ? 'inline' : placement === 'floating-below' ? 'below' : 'above';
-  instance.hoverOverlayEl.dataset.focused = hoverMeta.focused ? 'true' : 'false';
-
-  const viewportRect = instance.viewport.getBoundingClientRect();
-  const rowHeight = viewportRect.height > 0 && instance.terminal.rows > 0
-    ? viewportRect.height / instance.terminal.rows
-    : 0;
-  const colWidth = viewportRect.width > 0 && instance.terminal.cols > 0
-    ? viewportRect.width / instance.terminal.cols
-    : 0;
-
-  instance.hoverOverlayEl.style.left = `${Math.max(0, region.selection.startCol * colWidth)}px`;
-  instance.hoverOverlayEl.style.top = `${Math.max(0, region.selection.startRow * rowHeight)}px`;
-  instance.hoverOverlayEl.style.width = `${Math.max(colWidth, (region.selection.endCol - region.selection.startCol) * colWidth)}px`;
-  instance.hoverOverlayEl.style.height = `${Math.max(rowHeight, (region.selection.endRow - region.selection.startRow + 1) * rowHeight)}px`;
-  instance.hoverLabelEl.textContent = region.label;
-  instance.hoverMetaEl.textContent = hoverMeta.detail;
-  instance.hoverPreviewEl.textContent = buildSelectionText(instance.viewportLines, region.selection);
+  renderCliHoverOverlay({
+    projectId: instance.projectId,
+    inspectActive: instance.inspectState.active,
+    hasPayload: Boolean(instance.inspectState.payload),
+    region,
+    viewportLines: instance.viewportLines,
+    viewportEl: instance.viewport,
+    terminalRows: instance.terminal.rows,
+    terminalCols: instance.terminal.cols,
+    overlayEl: instance.hoverOverlayEl,
+    labelEl: instance.hoverLabelEl,
+    metaEl: instance.hoverMetaEl,
+    previewEl: instance.hoverPreviewEl,
+    semanticNodes: semanticNodes.get(instance.projectId),
+    semanticFocusNodes: semanticFocusNodes.get(instance.projectId),
+  });
 }
 
 function getSendPayload(instance: CliSurfaceInstance) {

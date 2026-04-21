@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 
 const source = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
 const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
+const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const css = readFileSync(new URL('../styles/browser-tab.css', import.meta.url), 'utf-8');
 
 describe('browser stage contract', () => {
@@ -76,10 +77,11 @@ describe('browser stage contract', () => {
   });
 
   it('treats the new-tab and offline surface like a real hero state', () => {
-    expect(source).toContain('browser-ntp-hero');
-    expect(source).toContain('browser-ntp-state');
+    expect(source).toContain("import { createBrowserNewTabUi } from './new-tab-ui.js';");
+    expect(newTabUiSource).toContain('browser-ntp-hero');
+    expect(newTabUiSource).toContain('browser-ntp-state');
     expect(source).toContain('browser-content-shell');
-    expect(source).toContain("ntpState.textContent = 'Ready to capture'");
+    expect(newTabUiSource).toContain("ntpState.textContent = 'Ready to capture'");
     expect(source).toContain("import { createNewTabStateController } from './new-tab-state.js';");
     expect(newTabStateSource).toContain("ntpState.textContent = 'Offline'");
     expect(css).toContain('.browser-ntp-hero');
