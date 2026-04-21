@@ -295,3 +295,24 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`331` files / `2427` tests)
   - `npm run audit:deep`: PASS (`331` files / `2427` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)
+
+## Phase 4.3 Browser Navigation Note (In Progress)
+
+- Started `browser-tab/pane.ts` decomposition with a low-risk navigation extraction:
+  - `src/renderer/components/browser-tab/navigation.ts`
+  - `src/renderer/components/browser-tab/navigation.test.ts`
+- Moved browser navigation helper logic out of `pane.ts`:
+  - navigation URL canonicalization
+  - localhost/local surface detection
+  - ready/loading/local/remote/offline page-state classification
+  - browser page-state labels
+  - stale navigation revert detection and pending-navigation cleanup
+- Preserved existing pane behavior and updated source-contract tests to assert the new modular boundary.
+- File size snapshot:
+  - `browser-tab/pane.ts`: `2190 -> 2115` lines
+  - `browser-tab/navigation.ts`: `25 -> 116` lines
+- Validation:
+  - Targeted browser navigation/pane/stage tests: PASS (`3` files / `50` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`331` files / `2431` tests)
+  - `npm run audit:deep`: PASS (`331` files / `2431` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)

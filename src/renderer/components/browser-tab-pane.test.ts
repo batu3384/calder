@@ -122,8 +122,8 @@ describe('browser tab pane contract', () => {
   });
 
   it('ignores stale navigation events that try to revert to the previous url', () => {
-    expect(source).toContain('function isStaleNavigationRevert(instance: BrowserTabInstance, nextUrl: string): boolean {');
-    expect(source).toContain('function canonicalizeNavigationUrl(value: string | undefined): string {');
+    expect(navigationSource).toContain('isStaleNavigationRevert(');
+    expect(navigationSource).toContain('canonicalizeNavigationUrl(value: string | undefined): string');
     expect(source).toContain('if (isStaleNavigationRevert(instance, e.url)) return;');
     expect(source).toContain('if (isStaleNavigationRevert(instance, failedUrl)) return;');
   });

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeUrl } from './navigation.js';
+import {
+  canonicalizeNavigationUrl,
+  describeBrowserPageState,
+  isLocalBrowserUrl,
+  isStaleNavigationRevert,
+  normalizeUrl,
+  resolveBrowserPageState,
+  STALE_NAVIGATION_REVERT_WINDOW_MS,
+} from './navigation.js';
 
 describe('normalizeUrl', () => {
   it('prepends http:// to bare hostnames', () => {
@@ -40,5 +48,49 @@ describe('normalizeUrl', () => {
 
   it('preserves view-source: URLs', () => {
     expect(normalizeUrl('view-source:https://example.com')).toBe('view-source:https://example.com');
+  });
+});
+
+describe('browser navigation state helpers', () => {
+  it('canonicalizes http urls before stale navigation comparison', () => {
+    expect(canonicalizeNavigationUrl(' https://example.com/path/// ')).toBe('https://example.com/path');
+    expect(canonicalizeNavigationUrl('not a url')).toBe('not a url');
+  });
+
+  it('classifies local, remote, loading, offline, and ready page states', () => {
+    expect(isLocalBrowserUrl('http://localhost:3000')).toBe(true);
+    expect(isLocalBrowserUrl('https://example.com')).toBe(false);
+    expect(resolveBrowserPageState('http://localhost:3000', false, false)).toBe('local');
+    expect(resolveBrowserPageState('https://example.com', false, false)).toBe('remote');
+    expect(resolveBrowserPageState('not a url', false, false)).toBe('ready');
+    expect(resolveBrowserPageState('https://example.com', true, false)).toBe('loading');
+    expect(resolveBrowserPageState('https://example.com', false, true)).toBe('offline');
+    expect(describeBrowserPageState('offline')).toBe('Offline');
+  });
+
+  it('detects stale navigation events that revert to the previous committed url', () => {
+    const navigation = {
+      pendingNavigationUrl: 'http://localhost:3001',
+      pendingNavigationPreviousUrl: 'http://localhost:3000/',
+      pendingNavigationAt: 1_000,
+    };
+
+    expect(isStaleNavigationRevert(navigation, 'http://localhost:3000', 1_100)).toBe(true);
+    expect(navigation.pendingNavigationUrl).toBe('http://localhost:3001');
+  });
+
+  it('clears expired pending navigation markers', () => {
+    const navigation = {
+      pendingNavigationUrl: 'http://localhost:3001',
+      pendingNavigationPreviousUrl: 'http://localhost:3000',
+      pendingNavigationAt: 1_000,
+    };
+
+    expect(isStaleNavigationRevert(
+      navigation,
+      'http://localhost:3000',
+      1_000 + STALE_NAVIGATION_REVERT_WINDOW_MS + 1,
+    )).toBe(false);
+    expect(navigation).toEqual({});
   });
 });

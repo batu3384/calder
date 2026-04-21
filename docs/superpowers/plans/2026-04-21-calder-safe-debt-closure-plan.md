@@ -215,6 +215,8 @@ Execution rule:
 
 ### Slice 4.3 - `browser-tab/pane.ts`
 
+- [x] Extract navigation/page-state/stale-revert helpers into `browser-tab/navigation.ts`.
+- [x] Add direct unit coverage for browser navigation/page-state/stale-revert helpers.
 - [ ] Split inspect/navigation/overlay behaviors into dedicated modules.
 - [ ] Preserve browser tab interaction semantics exactly.
 
