@@ -23,4 +23,17 @@ describe('ipc app/browser guest payload guard', () => {
     const hugePayload = { selector: `#${'a'.repeat(1_500_000)}` };
     expect(isAllowedGuestMessagePayload('flow-do-click', [hugePayload])).toBe(false);
   });
+
+  it('accepts valid flow click payload shapes and rejects invalid shapes', () => {
+    expect(isAllowedGuestMessagePayload('flow-do-click', [{ selector: '#cta' }])).toBe(true);
+    expect(isAllowedGuestMessagePayload('flow-do-click', ['#cta'])).toBe(true);
+    expect(isAllowedGuestMessagePayload('flow-do-click', [['#cta', '#submit']])).toBe(true);
+    expect(isAllowedGuestMessagePayload('flow-do-click', [123])).toBe(false);
+    expect(isAllowedGuestMessagePayload('flow-do-click', [{ selector: '#cta' }, { extra: true }])).toBe(false);
+  });
+
+  it('rejects unknown channels and non-serializable payloads', () => {
+    expect(isAllowedGuestMessagePayload('unknown-channel', [])).toBe(false);
+    expect(isAllowedGuestMessagePayload('flow-do-click', [1n as unknown as never])).toBe(false);
+  });
 });

@@ -255,4 +255,19 @@ describe('ipc app/browser runtime handlers', () => {
     expect(warnSpy).toHaveBeenCalledWith('Failed to read screenshots dir for pruning', dirError);
     warnSpy.mockRestore();
   });
+
+  it('rejects screenshots that exceed the configured base64 payload size limit', async () => {
+    registerAppBrowserIpcHandlers({
+      requireKnownProjectPath: vi.fn((value) => value),
+      getActiveProjectPath: vi.fn(() => '/repo'),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    });
+
+    const saveScreenshot = getHandleHandler('browser:saveScreenshot');
+    const hugeDataUrl = `data:image/png;base64,${'a'.repeat(70_000_000)}`;
+
+    await expect(saveScreenshot({}, 'too-large', hugeDataUrl)).rejects.toThrow(
+      'Screenshot data exceeds size limit',
+    );
+  });
 });
