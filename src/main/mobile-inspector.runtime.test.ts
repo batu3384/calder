@@ -39,6 +39,7 @@ vi.mock('./platform', () => ({
 vi.stubGlobal('fetch', mockFetch);
 
 import {
+  _internal,
   captureMobileInspectScreenshot,
   inspectMobilePoint,
   interactMobileInspectPoint,
@@ -258,6 +259,58 @@ describe('mobile-inspector runtime android flows', () => {
 
     expect(result.success).toBe(false);
     expect(result.message).toContain('Permission denied');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Android toolchain error when emulator binary cannot be resolved', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], code: 1, stderr: 'emulator not found' },
+    );
+    const emulatorFallbacks = _internal.getAndroidBinaryCandidates('emulator', process.env, process.platform);
+    for (const candidate of emulatorFallbacks) {
+      execPlans.push({
+        command: candidate,
+        args: ['-version'],
+        code: 1,
+        stderr: 'missing emulator binary',
+      });
+    }
+
+    const result = await interactMobileInspectPoint('android', 1, 2);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Android emulator binary was not found');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Android readiness error when adb device probe fails before interaction', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], code: 1, stderr: 'adb daemon is down' },
+    );
+
+    const result = await interactMobileInspectPoint('android', 10, 20);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('adb daemon is down');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('dispatches tap interaction successfully on Android when emulator is ready', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'input', 'tap', '48', '72'], stdout: '' },
+    );
+
+    const result = await interactMobileInspectPoint('android', 48, 72);
+
+    expect(result.success).toBe(true);
+    expect(result.message).toContain('Tap dispatched to Android emulator');
     expect(execPlans).toHaveLength(0);
   });
 
