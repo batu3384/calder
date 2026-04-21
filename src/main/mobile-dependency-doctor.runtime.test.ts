@@ -59,7 +59,7 @@ describe('mobile-dependency-doctor runtime default runner paths', () => {
       command: string,
       args: string[],
       _options: Record<string, unknown>,
-      callback: (error: (NodeJS.ErrnoException & { code?: number | string; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
+      callback: (error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
     ) => {
       const index = execPlans.findIndex((plan) => plan.command === command && JSON.stringify(plan.args) === JSON.stringify(args));
       const plan = index >= 0 ? execPlans.splice(index, 1)[0] : undefined;

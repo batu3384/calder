@@ -7,5 +7,5 @@
     "module": "ES2022",
     "moduleResolution": "bundler"
   },
-  "include": ["src/**/*.test.ts"]
+  "include": ["src/**/*.test.ts", "src/**/*.d.ts"]
 }

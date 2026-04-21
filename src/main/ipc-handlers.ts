@@ -32,7 +32,6 @@ import {
 } from './ipc-auto-approval-governance';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
-import type { ProviderId } from '../shared/types';
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';

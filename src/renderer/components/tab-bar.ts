@@ -1,7 +1,6 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
 import type {
   CliSurfaceProfile,
-  ProviderId,
 } from '../../shared/types.js';
 import { onChange as onStatusChange, type SessionStatus } from '../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, refreshGitStatus } from '../git-status.js';
@@ -14,8 +13,6 @@ import { onShareChange } from '../sharing/share-manager.js';
 import {
   loadProviderAvailability,
   hasMultipleAvailableProviders,
-  getProviderAvailabilitySnapshot,
-  resolvePreferredProviderForLaunch,
 } from '../provider-availability.js';
 import { openCliSurfaceWithSetup } from './cli-surface/setup.js';
 import { showCliSurfaceQuickSetup } from './cli-surface/quick-setup.js';
@@ -24,7 +21,6 @@ import {
   getCliSurfaceProfileLabel,
 } from './cli-surface/profile.js';
 import {
-  createDefaultProjectSurface,
   getProjectSurface,
   persistAndLaunchCliSurfaceProfile,
   selectCliSurfaceProfile,
@@ -380,14 +376,6 @@ function renderSurfaceControls(): void {
   getSurfaceControlsController().renderSurfaceControls();
 }
 
-function syncQuickSessionButtonMeta(providerId: ProviderId): void {
-  getSessionProviderSelectorController().syncQuickSessionButtonMeta(providerId);
-}
-
-function buildSessionProviderSelectorSignature(snapshot: ReturnType<typeof getProviderAvailabilitySnapshot>): string {
-  return getSessionProviderSelectorController().buildSessionProviderSelectorSignature(snapshot);
-}
-
 function syncSessionProviderSelector(): void {
   getSessionProviderSelectorController().syncSessionProviderSelector(appState.preferences.defaultProvider);
 }
@@ -477,7 +465,7 @@ function render(): void {
   const cliSurfaceTabActive = surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli';
   const mobileSurfaceTabActive = surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile';
   const surfaceTabPlacement = surfaceState.tabPlacement === 'start' ? 'start' : 'end';
-  const surfaceTabOrder = Array.isArray(surfaceState.tabOrder)
+  const surfaceTabOrder: Array<'cli' | 'mobile'> = Array.isArray(surfaceState.tabOrder)
     && surfaceState.tabOrder.length === 2
     && surfaceState.tabOrder.includes('cli')
     && surfaceState.tabOrder.includes('mobile')

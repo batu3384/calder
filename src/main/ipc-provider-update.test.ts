@@ -21,6 +21,13 @@ function getHandleHandler(channel: string): (...args: any[]) => any {
   return call[1] as (...args: any[]) => any;
 }
 
+function requireValue<T>(value: T | null | undefined, message: string): NonNullable<T> {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value as NonNullable<T>;
+}
+
 describe('ipc provider-update handlers', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -28,10 +35,10 @@ describe('ipc provider-update handlers', () => {
   });
 
   it('deduplicates in-flight updateAll requests and emits progress events', async () => {
-    let resolveUpdate: ((value: unknown) => void) | null = null;
+    let resolveUpdate: ((value: { ok: boolean } | PromiseLike<{ ok: boolean }>) => void) | null = null;
     mockUpdateAllProviders.mockImplementation(({ onProgress }: { onProgress: (event: unknown) => void }) => {
       onProgress({ stage: 'starting' });
-      return new Promise((resolve) => {
+      return new Promise<{ ok: boolean }>((resolve) => {
         resolveUpdate = resolve;
       });
     });
@@ -48,13 +55,19 @@ describe('ipc provider-update handlers', () => {
     expect(mockUpdateAllProviders).toHaveBeenCalledTimes(1);
     expect(sender.send).toHaveBeenCalledWith('provider:update-progress', { stage: 'starting' });
 
-    resolveUpdate?.({ ok: true });
+    requireValue<(value: { ok: boolean } | PromiseLike<{ ok: boolean }>) => void>(
+      resolveUpdate,
+      'Expected update promise resolver to be registered',
+    )({ ok: true });
     await expect(first).resolves.toEqual({ ok: true });
     await expect(second).resolves.toEqual({ ok: true });
 
     const third = updateAllHandler(event);
     expect(mockUpdateAllProviders).toHaveBeenCalledTimes(2);
-    resolveUpdate?.({ ok: true });
+    requireValue<(value: { ok: boolean } | PromiseLike<{ ok: boolean }>) => void>(
+      resolveUpdate,
+      'Expected update promise resolver to be registered',
+    )({ ok: true });
     await third;
   });
 
@@ -62,7 +75,7 @@ describe('ipc provider-update handlers', () => {
     let capturedSignal: AbortSignal | null = null;
     mockUpdateAllProviders.mockImplementation(({ signal }: { signal: AbortSignal }) => {
       capturedSignal = signal;
-      return new Promise(() => {});
+      return new Promise<never>(() => {});
     });
     const { registerProviderUpdateIpcHandlers } = await import('./ipc-provider-update');
     registerProviderUpdateIpcHandlers();
@@ -78,6 +91,6 @@ describe('ipc provider-update handlers', () => {
 
     expect(cancelled).toEqual({ cancelled: true });
     expect(cancelledAgain).toEqual({ cancelled: false });
-    expect(capturedSignal?.aborted).toBe(true);
+    expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(true);
   });
 });

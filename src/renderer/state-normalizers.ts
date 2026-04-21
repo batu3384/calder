@@ -166,7 +166,7 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
   const tabOrder = Array.isArray(existing?.tabOrder)
     ? existing.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
     : [];
-  const normalizedTabOrder = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
+  const normalizedTabOrder: Array<'cli' | 'mobile'> = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
     ? tabOrder
     : ['cli', 'mobile'];
   const storedTarget = existing?.targetSessionId

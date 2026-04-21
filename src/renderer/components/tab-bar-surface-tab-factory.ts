@@ -87,7 +87,7 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
       if (draggedId.startsWith('__surface:')) {
         const draggedKind = draggedId.replace('__surface:', '') as 'cli' | 'mobile';
         if (draggedKind === options.kind) return;
-        const baseOrder = Array.isArray(currentSurface.tabOrder)
+        const baseOrder: Array<'cli' | 'mobile'> = Array.isArray(currentSurface.tabOrder)
           && currentSurface.tabOrder.length === 2
           && currentSurface.tabOrder.includes('cli')
           && currentSurface.tabOrder.includes('mobile')

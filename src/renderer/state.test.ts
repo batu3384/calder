@@ -1277,7 +1277,7 @@ describe('setSurfaceTargetSession()', () => {
     appState.setSurfaceTargetSession(project.id, first.id);
 
     const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
-    expect(updatedProject.surface.targetSessionId).toBe(first.id);
+    expect(updatedProject.surface?.targetSessionId).toBe(first.id);
     expect(updatedProject.sessions.find((entry) => entry.id === browserA.id)?.browserTargetSessionId).toBe(first.id);
     expect(updatedProject.sessions.find((entry) => entry.id === browserB.id)?.browserTargetSessionId).toBe(first.id);
     expect(updatedProject.sessions.find((entry) => entry.id === second.id)?.browserTargetSessionId).toBeUndefined();
@@ -1296,7 +1296,7 @@ describe('setSurfaceTargetSession()', () => {
     appState.setSurfaceTargetSession(project.id, null);
 
     const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
-    expect(updatedProject.surface.targetSessionId).toBeUndefined();
+    expect(updatedProject.surface?.targetSessionId).toBeUndefined();
     expect(updatedProject.sessions.find((entry) => entry.id === browser.id)?.browserTargetSessionId).toBeUndefined();
     expect(sessionChanged).toHaveBeenCalled();
   });

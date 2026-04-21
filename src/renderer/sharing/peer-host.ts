@@ -151,7 +151,7 @@ function buildBrowserSessionCatalog(hostPeer: HostPeer): {
 
   const sessions = project.sessions
     .filter((session) => isShareableBrowserSession(session))
-    .map((session) => {
+    .map((session): BrowserSessionSnapshot | null => {
       const instance = getBrowserTabInstance(session.id);
       if (!instance) return null;
       let canGoBack = false;
@@ -174,16 +174,19 @@ function buildBrowserSessionCatalog(hostPeer: HostPeer): {
         selectedElementSummary: instance.selectedElement
           ? `<${instance.selectedElement.tagName}> ${instance.selectedElement.activeSelector.value}`
           : undefined,
-      } satisfies BrowserSessionSnapshot;
+      };
     })
-    .filter((entry): entry is BrowserSessionSnapshot => Boolean(entry));
+    .filter((entry): entry is BrowserSessionSnapshot => entry !== null);
 
   let activeBrowserSessionId = '';
   const activeProjectSession = project.sessions.find((session) => session.id === project.activeSessionId);
   if (activeProjectSession && isShareableBrowserSession(activeProjectSession)) {
-    activeBrowserSessionId = project.activeSessionId;
-  } else if (sessions.length > 0) {
-    activeBrowserSessionId = sessions[0].id;
+    activeBrowserSessionId = activeProjectSession.id;
+  } else {
+    const firstSession = sessions[0];
+    if (firstSession) {
+      activeBrowserSessionId = firstSession.id;
+    }
   }
   if (activeBrowserSessionId && !sessions.some((session) => session.id === activeBrowserSessionId)) {
     activeBrowserSessionId = sessions[0]?.id ?? '';

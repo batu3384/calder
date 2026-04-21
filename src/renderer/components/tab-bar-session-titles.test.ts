@@ -15,12 +15,12 @@ function makeCliSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
 describe('tab-bar-session-titles', () => {
   it('builds CLI tooltip with and without session id', () => {
     expect(buildSessionTooltip('idle', null)).toBe('Status: idle');
-    expect(buildSessionTooltip('running', 'cli-123')).toBe('Status: running\nSession: cli-123');
+    expect(buildSessionTooltip('working', 'cli-123')).toBe('Status: working\nSession: cli-123');
   });
 
   it('builds CLI tab title from status tooltip', () => {
     const session = makeCliSession({ name: 'Chat', cliSessionId: 'cli-1' });
-    expect(buildSessionTabTitle(session, 'running')).toBe('Status: running\nSession: cli-1\nDrag to reorder');
+    expect(buildSessionTabTitle(session, 'working')).toBe('Status: working\nSession: cli-1\nDrag to reorder');
   });
 
   it('builds browser and remote titles', () => {

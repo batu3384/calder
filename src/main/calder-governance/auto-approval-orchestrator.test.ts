@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { InspectorEvent } from '../../shared/types.js';
+import type { AutoApprovalMode, AutoApprovalPolicySource, InspectorEvent } from '../../shared/types.js';
 import { createAutoApprovalOrchestrator } from './auto-approval-orchestrator.js';
 
 function permissionRequestEvent(input: {
@@ -333,7 +333,12 @@ describe('createAutoApprovalOrchestrator', () => {
   it('re-resolves policy from latest cwd reported by permission events', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
-    const resolveAutoApprovalState = vi.fn(async (projectPath: string | null) => {
+    const resolveAutoApprovalState = vi.fn<
+      (projectPath: string | null) => Promise<{
+        effectiveMode: AutoApprovalMode;
+        policySource: AutoApprovalPolicySource;
+      }>
+    >(async (projectPath: string | null) => {
       if (projectPath === '/workspace/next') {
         return {
           effectiveMode: 'full_auto',

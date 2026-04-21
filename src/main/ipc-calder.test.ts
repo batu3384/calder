@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ProjectGovernanceState } from '../shared/types/governance';
+import type { CalderIpcOps } from './ipc-calder';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockIpcOn = vi.hoisted(() => vi.fn());
@@ -63,6 +65,28 @@ vi.mock('./calder-checkpoints/watcher', () => ({
 
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 
+function createGovernanceState(): ProjectGovernanceState {
+  return {
+    autoApproval: {
+      globalMode: 'off',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'off',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    },
+  };
+}
+
+function isAutoApprovalMode(value: unknown): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
+  return value === 'off'
+    || value === 'edit_only'
+    || value === 'edit_plus_safe_tools'
+    || value === 'full_auto'
+    || value === 'full_auto_unsafe';
+}
+
 describe('ipc calder lifecycle + governance handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -82,18 +106,13 @@ describe('ipc calder lifecycle + governance handlers', () => {
 
   it('rejects invalid governance auto-approval payloads and accepts project null mode', async () => {
     const ops = {
-      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+      requireKnownProjectPath: vi.fn((projectPath: string, _contextLabel: string) => projectPath),
       assertProjectGovernanceAllows: vi.fn(async () => {}),
-      getGovernanceState: vi.fn(async () => ({ autoApproval: { effectiveMode: 'off' } })),
-      isAutoApprovalMode: vi.fn((value: unknown) =>
-        value === 'off'
-        || value === 'edit_only'
-        || value === 'edit_plus_safe_tools'
-        || value === 'full_auto'
-        || value === 'full_auto_unsafe'),
+      getGovernanceState: vi.fn(async () => createGovernanceState()),
+      isAutoApprovalMode,
       updateAutoApprovalMode: vi.fn(),
       setSessionAutoApprovalOverride: vi.fn(),
-    };
+    } satisfies CalderIpcOps;
 
     registerCalderIpcHandlers(ops);
 
@@ -120,13 +139,13 @@ describe('ipc calder lifecycle + governance handlers', () => {
 
   it('rejects invalid governance session override modes', async () => {
     const ops = {
-      requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+      requireKnownProjectPath: vi.fn((projectPath: string, _contextLabel: string) => projectPath),
       assertProjectGovernanceAllows: vi.fn(async () => {}),
-      getGovernanceState: vi.fn(async () => ({ autoApproval: { effectiveMode: 'off' } })),
-      isAutoApprovalMode: vi.fn((value: unknown) => value === 'off'),
+      getGovernanceState: vi.fn(async () => createGovernanceState()),
+      isAutoApprovalMode,
       updateAutoApprovalMode: vi.fn(),
       setSessionAutoApprovalOverride: vi.fn(),
-    };
+    } satisfies CalderIpcOps;
 
     registerCalderIpcHandlers(ops);
 

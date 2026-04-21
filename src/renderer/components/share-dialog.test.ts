@@ -20,8 +20,8 @@ vi.mock('../sharing/share-manager.js', () => ({
 }));
 
 // Mock share-crypto
-const mockValidateSharePassphrase = vi.fn(() => null);
-const mockGeneratePassphrase = vi.fn(() => 'ABCD-EF12-GH34-JK56');
+const mockValidateSharePassphrase = vi.fn<(passphrase: string) => string | null>(() => null);
+const mockGeneratePassphrase = vi.fn<() => string>(() => 'ABCD-EF12-GH34-JK56');
 vi.mock('../sharing/share-crypto.js', () => ({
   validateSharePassphrase: (passphrase: string) => mockValidateSharePassphrase(passphrase),
   generatePassphrase: () => mockGeneratePassphrase(),

@@ -147,7 +147,7 @@ describe('provider updater default runner runtime', () => {
         error: {
           name: 'Error',
           message: 'install failed',
-          code: 17,
+          code: '17',
           stderr: 'permission denied',
         },
         stderr: 'permission denied',
@@ -180,7 +180,7 @@ describe('provider updater default runner runtime', () => {
       error: {
         name: 'Error',
         message: 'aborted',
-        code: 1,
+        code: '1',
         stdout: '',
         stderr: 'aborted',
       },
@@ -196,8 +196,11 @@ describe('provider updater default runner runtime', () => {
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].status).toBe('cancelled');
-    expect(capturedChild).not.toBeNull();
-    expect(capturedChild?.kill).toHaveBeenCalledWith('SIGTERM');
+    if (!capturedChild) {
+      throw new Error('Expected child process handle to be captured');
+    }
+    const child = capturedChild as { killed: boolean; kill: ReturnType<typeof vi.fn> };
+    expect(child.kill).toHaveBeenCalledWith('SIGTERM');
   });
 
   it('handles already-aborted signals when default runner starts a command', async () => {

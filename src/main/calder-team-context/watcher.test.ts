@@ -25,6 +25,13 @@ const teamDir = path.join('/repo', '.calder', 'team');
 const rulesDir = path.join('/repo', '.calder', 'rules');
 const workflowsDir = path.join('/repo', '.calder', 'workflows');
 
+function requireValue<T>(value: T | null | undefined, message: string): NonNullable<T> {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value as NonNullable<T>;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
@@ -113,7 +120,7 @@ describe('project team context watcher', () => {
 
   it('ignores in-flight discovery results after disposer is called', async () => {
     let resolveDiscovery: ((value: unknown) => void) | null = null;
-    mockDiscoverProjectTeamContext.mockImplementation(() => new Promise((resolve) => {
+    mockDiscoverProjectTeamContext.mockImplementation(() => new Promise<unknown>((resolve) => {
       resolveDiscovery = resolve;
     }));
     const onChange = vi.fn();
@@ -125,7 +132,7 @@ describe('project team context watcher', () => {
     expect(mockDiscoverProjectTeamContext).toHaveBeenCalledWith('/repo');
 
     cleanup();
-    resolveDiscovery?.({
+    requireValue<(value: unknown) => void>(resolveDiscovery, 'Expected discovery resolver to be registered')({
       spaces: [],
       sharedRuleCount: 0,
       workflowCount: 0,

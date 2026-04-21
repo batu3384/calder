@@ -18,8 +18,6 @@ describe('tab bar command deck contract', () => {
     expect(source).toContain('session-provider-slot');
     expect(source).toContain('syncSessionProviderSelector');
     expect(source).toContain('createTabBarProviderSelectorController');
-    expect(source).toContain('resolvePreferredProviderForLaunch');
-    expect(source).toContain('syncQuickSessionButtonMeta');
     expect(providerSelectorSource).toContain('command-deck-provider-select');
     expect(source).not.toContain('session-provider-chipbar');
     expect(source).not.toContain('session-provider-chip');

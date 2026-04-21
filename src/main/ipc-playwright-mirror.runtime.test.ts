@@ -16,6 +16,21 @@ vi.mock('os', () => ({
 
 import { appendAutoApprovalAudit } from './ipc-playwright-mirror';
 
+function makeApprovalDecisionEvent(timestamp: number, decision: 'allow' | 'block', reason?: string): InspectorEvent {
+  return {
+    type: 'approval_decision',
+    timestamp,
+    hookEvent: 'ApprovalDecision',
+    auto_approval: {
+      policy_source: 'project',
+      effective_mode: 'edit_only',
+      operation_class: 'edit',
+      decision,
+      reason,
+    },
+  };
+}
+
 describe('ipc playwright mirror runtime helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,19 +41,13 @@ describe('ipc playwright mirror runtime helpers', () => {
       {
         type: 'status_update',
         timestamp: 1,
+        hookEvent: 'StatusUpdate',
       } as InspectorEvent,
-      {
-        type: 'approval_decision',
-        timestamp: 2,
-        auto_approval: {
-          mode: 'edit_only',
-          approved: true,
-          reason: 'auto',
-        },
-      } as InspectorEvent,
+      makeApprovalDecisionEvent(2, 'allow', 'auto'),
       {
         type: 'approval_decision',
         timestamp: 3,
+        hookEvent: 'ApprovalDecision',
       } as InspectorEvent,
     ]);
 
@@ -57,6 +66,7 @@ describe('ipc playwright mirror runtime helpers', () => {
       {
         type: 'approval_decision',
         timestamp: 4,
+        hookEvent: 'ApprovalDecision',
       } as InspectorEvent,
     ]);
 
@@ -71,15 +81,7 @@ describe('ipc playwright mirror runtime helpers', () => {
     });
 
     expect(() => appendAutoApprovalAudit('session-3', [
-      {
-        type: 'approval_decision',
-        timestamp: 5,
-        auto_approval: {
-          mode: 'edit_only',
-          approved: false,
-          reason: 'denied',
-        },
-      } as InspectorEvent,
+      makeApprovalDecisionEvent(5, 'block', 'denied'),
     ])).not.toThrow();
 
     expect(warnSpy).toHaveBeenCalled();

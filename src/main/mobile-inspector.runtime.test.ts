@@ -77,7 +77,7 @@ describe('mobile-inspector runtime android flows', () => {
       command: string,
       args: string[],
       _options: Record<string, unknown>,
-      callback: (error: (NodeJS.ErrnoException & { code?: number; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
+      callback: (error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
     ) => {
       const next = execPlans[0];
       if (!next) {

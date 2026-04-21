@@ -62,6 +62,13 @@ const RACE_CASES: WatcherRaceCase[] = [
   },
 ];
 
+function requireValue<T>(value: T | null | undefined, message: string): NonNullable<T> {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value as NonNullable<T>;
+}
+
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
@@ -102,7 +109,7 @@ describe('calder watchers race safety', () => {
       }));
 
       let resolveDiscovery: ((value: unknown) => void) | null = null;
-      const discoverySpy = vi.fn(async () => new Promise((resolve) => {
+      const discoverySpy = vi.fn(async () => new Promise<unknown>((resolve) => {
         resolveDiscovery = resolve;
       }));
       vi.doMock(testCase.discoveryModule, () => ({
@@ -135,7 +142,7 @@ describe('calder watchers race safety', () => {
 
         // Stop while discovery promise is still unresolved.
         stopWatcher();
-        resolveDiscovery?.({});
+        requireValue<(value: unknown) => void>(resolveDiscovery, 'Expected discovery resolver to be registered')({});
         await Promise.resolve();
 
         expect(seen).toEqual([]);

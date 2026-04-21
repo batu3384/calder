@@ -23,12 +23,21 @@ describe('session-permission-policy', () => {
   });
 
   it('installs both request and check handlers and denies remote requests', () => {
-    let requestHandler:
-      | ((webContents: { getURL?: () => string }, permission: string, callback: (granted: boolean) => void, details?: { requestingUrl?: string }) => void)
-      | null = null;
-    let checkHandler:
-      | ((webContents: { getURL?: () => string }, permission: string, requestingOrigin?: string, details?: { requestingUrl?: string }) => boolean)
-      | null = null;
+    type RequestHandler = (
+      webContents: { getURL?: () => string },
+      permission: string,
+      callback: (granted: boolean) => void,
+      details?: { requestingUrl?: string },
+    ) => void;
+    type CheckHandler = (
+      webContents: { getURL?: () => string },
+      permission: string,
+      requestingOrigin?: string,
+      details?: { requestingUrl?: string },
+    ) => boolean;
+
+    let requestHandler: RequestHandler | null = null;
+    let checkHandler: CheckHandler | null = null;
 
     const fakeSession = {
       setPermissionRequestHandler: vi.fn((handler) => {
@@ -44,14 +53,19 @@ describe('session-permission-policy', () => {
     expect(fakeSession.setPermissionCheckHandler).toHaveBeenCalledTimes(1);
     expect(requestHandler).toBeTypeOf('function');
     expect(checkHandler).toBeTypeOf('function');
+    if (!requestHandler || !checkHandler) {
+      throw new Error('Expected permission handlers to be installed');
+    }
 
     let granted = true;
-    requestHandler?.({ getURL: () => 'https://example.com' }, 'fullscreen', (ok) => {
+    const invokeRequest = requestHandler as RequestHandler;
+    invokeRequest({ getURL: () => 'https://example.com' }, 'fullscreen', (ok: boolean) => {
       granted = ok;
     }, { requestingUrl: 'https://example.com' });
     expect(granted).toBe(false);
 
-    const localAllowed = checkHandler?.(
+    const invokeCheck = checkHandler as CheckHandler;
+    const localAllowed = invokeCheck(
       { getURL: () => 'file:///Users/test/index.html' },
       'fullscreen',
       undefined,

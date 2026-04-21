@@ -351,7 +351,7 @@ export interface ArchivedSession {
     totalInputTokens: number;
     totalOutputTokens: number;
     totalDurationMs: number;
-    source?: 'structured' | 'fallback';
+    source?: 'structured' | 'fallback' | 'derived';
   } | null;
 }
 

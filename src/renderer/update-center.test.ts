@@ -15,6 +15,14 @@ import {
 } from './update-center';
 
 type UpdateCallback<T> = (payload: T) => void;
+type SummaryResolver = (value: ProviderUpdateSummary | PromiseLike<ProviderUpdateSummary>) => void;
+
+function requireValue<T>(value: T | null | undefined, message: string): NonNullable<T> {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value as NonNullable<T>;
+}
 
 interface MockApi {
   update: {
@@ -186,7 +194,7 @@ describe('update center app updates', () => {
 
 describe('update center cli updates', () => {
   it('tracks provider progress while provider updates run', async () => {
-    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    let resolveSummary: SummaryResolver | null = null;
     const summary = buildSummary([
       {
         providerId: 'claude',
@@ -200,7 +208,7 @@ describe('update center cli updates', () => {
       },
     ]);
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -268,7 +276,7 @@ describe('update center cli updates', () => {
     expect(getUpdateCenterState().cli.providers[0].status).toBe('updated');
     expect(getUpdateCenterState().cli.completedProviders).toBe(1);
 
-    resolveSummary?.(summary);
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(summary);
     await updatePromise;
 
     expect(getUpdateCenterState().cli.phase).toBe('completed');
@@ -289,9 +297,9 @@ describe('update center cli updates', () => {
         durationMs: 10,
       },
     ]);
-    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -300,14 +308,14 @@ describe('update center cli updates', () => {
 
     expect(second).toBe(first);
 
-    resolveSummary?.(summary);
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(summary);
     await first;
   });
 
   it('requests cancellation and transitions to cancelled phase when updater reports cancellation', async () => {
-    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
       cancelUpdateAll: async () => ({ cancelled: true }),
     });
     initUpdateCenter(mockApi as any);
@@ -328,7 +336,7 @@ describe('update center cli updates', () => {
     expect(cancelResult).toEqual({ cancelled: true });
     expect(getUpdateCenterState().cli.cancelRequested).toBe(true);
 
-    resolveSummary?.({
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')({
       startedAt: '2026-04-16T09:00:00.000Z',
       finishedAt: '2026-04-16T09:00:05.000Z',
       cancelled: true,
@@ -432,7 +440,7 @@ describe('update center cli updates', () => {
   });
 
   it('clears cancelRequested when provider cancel endpoint declines cancellation', async () => {
-    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
       updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
       cancelUpdateAll: async () => ({ cancelled: false }),
@@ -444,14 +452,14 @@ describe('update center cli updates', () => {
     expect(cancelResult).toEqual({ cancelled: false });
     expect(getUpdateCenterState().cli.cancelRequested).toBe(false);
 
-    resolveSummary?.(buildSummary([]));
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([]));
     await updatePromise;
   });
 
   it('ignores stale progress events from a previous run after a new run starts', async () => {
-    const resolvers: Array<(value: ProviderUpdateSummary) => void> = [];
+    const resolvers: SummaryResolver[] = [];
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolvers.push(resolve); }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolvers.push(resolve); }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -463,7 +471,7 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
     });
-    resolvers[0]?.(buildSummary([
+    requireValue(resolvers[0], 'Expected first resolver to be registered')(buildSummary([
       {
         providerId: 'claude',
         providerName: 'Claude Code',
@@ -510,7 +518,7 @@ describe('update center cli updates', () => {
     expect(midState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
     expect(midState.activeProviderId).toBeUndefined();
 
-    resolvers[1]?.(buildSummary([
+    requireValue(resolvers[1], 'Expected second resolver to be registered')(buildSummary([
       {
         providerId: 'qwen',
         providerName: 'Qwen Code',
@@ -526,9 +534,9 @@ describe('update center cli updates', () => {
   });
 
   it('ignores provider events until current run emits started', async () => {
-    const resolvers: Array<(value: ProviderUpdateSummary) => void> = [];
+    const resolvers: SummaryResolver[] = [];
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolvers.push(resolve); }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolvers.push(resolve); }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -540,7 +548,7 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
     });
-    resolvers[0]?.(buildSummary([
+    requireValue(resolvers[0], 'Expected first resolver to be registered')(buildSummary([
       {
         providerId: 'claude',
         providerName: 'Claude Code',
@@ -579,7 +587,7 @@ describe('update center cli updates', () => {
     expect(midState.providers).toEqual([]);
     expect(midState.completedProviders).toBe(0);
 
-    resolvers[1]?.(buildSummary([
+    requireValue(resolvers[1], 'Expected second resolver to be registered')(buildSummary([
       {
         providerId: 'qwen',
         providerName: 'Qwen Code',
@@ -595,9 +603,9 @@ describe('update center cli updates', () => {
   });
 
   it('resets cancelRequested and surfaces errors when cancel request fails', async () => {
-    let resolveSummary: ((value: ProviderUpdateSummary) => void) | null = null;
+    let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
       cancelUpdateAll: async () => {
         throw new Error('cancel endpoint unavailable');
       },
@@ -610,7 +618,7 @@ describe('update center cli updates', () => {
     expect(cli.cancelRequested).toBe(false);
     expect(cli.errorMessage).toBe('cancel endpoint unavailable');
 
-    resolveSummary?.(buildSummary([]));
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([]));
     await updatePromise;
   });
 });

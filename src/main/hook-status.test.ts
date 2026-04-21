@@ -469,13 +469,16 @@ describe('hook-status', () => {
       watchCallback!('change', 'abc123.events');
       watchCallback!('change', 'abc123.events');
 
+      const secondReadCall = vi.mocked(fs.readSync).mock.calls[1];
+
       expect(mockSend).toHaveBeenNthCalledWith(1, 'session:inspectorEvents', 'abc123', [
         { type: 'first' },
       ]);
       expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
         { type: 'r' },
       ]);
-      expect(vi.mocked(fs.readSync).mock.calls[1][4]).toBe(0);
+      expect(secondReadCall).toHaveLength(5);
+      expect((secondReadCall as unknown as [number, Buffer, number, number, number])[4]).toBe(0);
     });
 
     it('.events derives codex token snapshots into session:costData updates', () => {

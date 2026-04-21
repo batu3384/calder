@@ -51,7 +51,6 @@ describe('share-rtc-config', () => {
 
     expect(config.iceServers).toEqual([{ urls: 'stun:stun.l.google.com:19302' }]);
     expect(config.iceTransportPolicy).toBeUndefined();
-    expect(config.issues.length).toBeGreaterThan(0);
+    expect(config.issues?.length ?? 0).toBeGreaterThan(0);
   });
 });
-

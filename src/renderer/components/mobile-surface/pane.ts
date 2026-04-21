@@ -315,7 +315,7 @@ function getStatusLabel(check: MobileDependencyCheck): string {
 }
 
 function isInstallable(check: MobileDependencyCheck): boolean {
-  return check.autoFixAvailable && check.status !== 'ready' && check.status !== 'unsupported';
+  return Boolean(check.autoFixAvailable) && check.status !== 'ready' && check.status !== 'unsupported';
 }
 
 function isInstallRunning(instance: MobileSurfacePaneInstance): boolean {

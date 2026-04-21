@@ -32,6 +32,8 @@ vi.mock('./mcp-client', () => ({
 
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 
+type McpGovernanceOps = NonNullable<Parameters<typeof registerMcpHandlers>[0]>;
+
 function getHandleHandler(channel: string): (...args: any[]) => any {
   const call = mockIpcHandle.mock.calls.find(([name]) => name === channel);
   if (!call) {
@@ -41,11 +43,13 @@ function getHandleHandler(channel: string): (...args: any[]) => any {
 }
 
 function createGovernanceOps() {
-  return {
-    getActiveProjectPath: vi.fn(() => '/repo'),
-    requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+  const ops = {
+    getActiveProjectPath: vi.fn<() => string | undefined>(() => '/repo'),
+    requireKnownProjectPath: vi.fn((projectPath: string, _contextLabel: string) => projectPath),
     assertProjectGovernanceAllows: vi.fn(async () => {}),
-  };
+  } satisfies McpGovernanceOps;
+
+  return ops;
 }
 
 const runtimeCases = [

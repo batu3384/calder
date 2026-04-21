@@ -66,7 +66,7 @@ describe('state project surface helpers', () => {
     expect(resolveSurfaceTargetFromProject(project)?.id).toBe(second.id);
     expect(resolveSurfaceTargetFromProject({
       ...project,
-      surface: { ...project.surface, targetSessionId: undefined },
+      surface: { ...project.surface!, targetSessionId: undefined },
     }, { allowActiveFallback: false })).toBeUndefined();
   });
 

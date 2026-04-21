@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ProjectGovernanceState } from '../shared/types/governance';
+import type { CalderIpcOps } from './ipc-calder';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockIpcOn = vi.hoisted(() => vi.fn());
@@ -209,31 +211,37 @@ function createWindow(id: number, supportsOff = true): any {
   return win;
 }
 
+function isAutoApprovalMode(value: unknown): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
+  return value === 'off'
+    || value === 'edit_only'
+    || value === 'edit_plus_safe_tools'
+    || value === 'full_auto'
+    || value === 'full_auto_unsafe';
+}
+
 function createOps() {
-  return {
-    requireKnownProjectPath: vi.fn((projectPath: string) => projectPath),
+  const governanceState: ProjectGovernanceState = {
+    autoApproval: {
+      globalMode: 'off',
+      projectMode: undefined,
+      sessionMode: undefined,
+      effectiveMode: 'off',
+      policySource: 'global',
+      safeToolProfile: 'default-read-only',
+      recentDecisions: [],
+    },
+  };
+
+  const ops = {
+    requireKnownProjectPath: vi.fn((projectPath: string, _contextLabel: string) => projectPath),
     assertProjectGovernanceAllows: vi.fn(async () => {}),
-    getGovernanceState: vi.fn(async () => ({
-      autoApproval: {
-        globalMode: 'off',
-        projectMode: null,
-        effectiveMode: 'off',
-        policySource: 'global',
-        safeToolProfile: 'default-read-only',
-        recentDecisions: [],
-      },
-    })),
-    isAutoApprovalMode: vi.fn(
-      (value: unknown) =>
-        value === 'off'
-        || value === 'edit_only'
-        || value === 'edit_plus_safe_tools'
-        || value === 'full_auto'
-        || value === 'full_auto_unsafe',
-    ),
+    getGovernanceState: vi.fn(async () => governanceState),
+    isAutoApprovalMode,
     updateAutoApprovalMode: vi.fn(),
     setSessionAutoApprovalOverride: vi.fn(),
-  };
+  } satisfies CalderIpcOps;
+
+  return ops;
 }
 
 describe('ipc calder runtime handlers', () => {
