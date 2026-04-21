@@ -30,6 +30,23 @@ describe('inferStatuslineProvider', () => {
 });
 
 describe('deriveQuotaFreshness', () => {
+  it('returns syncing when snapshot is absent', () => {
+    expect(deriveQuotaFreshness(null, 1_500, 60_000)).toBe('syncing');
+  });
+
+  it('returns syncing when snapshot status is syncing', () => {
+    const snapshot: ProviderQuotaSnapshot = {
+      provider: 'zai',
+      model: 'glm-5.1',
+      fiveHour: null,
+      weekly: null,
+      status: 'syncing',
+      updatedAt: 1_000,
+      source: 'zai:pending',
+    };
+    expect(deriveQuotaFreshness(snapshot, 120_000, 60_000)).toBe('syncing');
+  });
+
   it('marks a recent unknown snapshot as live', () => {
     const snapshot: ProviderQuotaSnapshot = {
       provider: 'anthropic',
@@ -58,6 +75,24 @@ describe('deriveQuotaFreshness', () => {
 });
 
 describe('formatHybridStatusLine', () => {
+  it('falls back to safe defaults when labels and quota data are missing', () => {
+    const out = formatHybridStatusLine({
+      modelDisplayName: '',
+      provider: 'qwen',
+      effortLabel: '   ',
+      cwdLabel: '',
+      contextPercent: null,
+      costLabel: '   ',
+      quota: null,
+      nowMs: 1_500,
+    });
+
+    expect(out).toBe([
+      'Unknown Model  Qwen  --  project',
+      'Ctx --%  Cost --  5h unsupported  Week unsupported  Syncing',
+    ].join('\n'));
+  });
+
   it('renders honest unknown quota values with a live freshness badge', () => {
     const out = formatHybridStatusLine({
       modelDisplayName: 'Claude Sonnet 4.6',
