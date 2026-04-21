@@ -275,3 +275,23 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`330` files / `2424` tests)
   - `npm run audit:deep`: PASS (`330` files / `2424` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)
+
+## Phase 4.2 Project Lookup Note (In Progress)
+
+- Continued `state.ts` decomposition by extracting project path matching:
+  - `src/renderer/state-project-lookup.ts`
+  - `src/renderer/state-project-lookup.test.ts`
+- Preserved the public `appState.findProjectForPath()` API used by embedded browser routing.
+- Added direct coverage for:
+  - deepest matching project path
+  - backslash/trailing-slash normalization
+  - unrelated/empty path no-match behavior
+- `state.ts` size snapshot:
+  - Phase 0 baseline: `1906` lines
+  - After project surface extraction: `1538` lines
+  - After project lookup extraction: `1522` lines
+- Validation:
+  - Targeted lookup/state/browser-routing contract tests: PASS (`3` files / `198` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`331` files / `2427` tests)
+  - `npm run audit:deep`: PASS (`331` files / `2427` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)

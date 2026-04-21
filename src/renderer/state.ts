@@ -22,6 +22,7 @@ import {
   repairProjectSurface,
   resolveSurfaceTargetFromProject,
 } from './state-project-surface.js';
+import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
   buildWorkflowLaunchPrompt,
@@ -101,24 +102,7 @@ class AppState {
   }
 
   findProjectForPath(inputPath: string | null | undefined): ProjectRecord | undefined {
-    if (!inputPath) return undefined;
-    const normalize = (value: string) => value.replace(/\\/g, '/').replace(/\/+$/, '') || '/';
-    const target = normalize(inputPath);
-    let bestMatch: ProjectRecord | undefined;
-    let bestLength = -1;
-
-    for (const project of this.state.projects) {
-      const projectPath = normalize(project.path);
-      if (target !== projectPath && !target.startsWith(`${projectPath}/`)) {
-        continue;
-      }
-      if (projectPath.length > bestLength) {
-        bestMatch = project;
-        bestLength = projectPath.length;
-      }
-    }
-
-    return bestMatch;
+    return findProjectRecordForPath(this.state.projects, inputPath);
   }
 
   navigateBack(): void {

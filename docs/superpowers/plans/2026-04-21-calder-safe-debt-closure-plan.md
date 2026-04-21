@@ -209,6 +209,8 @@ Execution rule:
 - [x] Add direct unit coverage for persist snapshot transient-field stripping and collection cloning.
 - [x] Extract project surface target/repair helpers into `state-project-surface.ts`.
 - [x] Add direct unit coverage for project surface target resolution and repair behavior.
+- [x] Extract project path lookup into `state-project-lookup.ts`.
+- [x] Add direct unit coverage for deepest project path matching and path normalization.
 - [ ] Continue extraction until `state.ts` becomes orchestrator, not storage of all logic.
 
 ### Slice 4.3 - `browser-tab/pane.ts`
