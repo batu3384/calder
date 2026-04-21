@@ -15,6 +15,11 @@ import {
   resolvePreferredProviderForLaunch,
 } from '../../provider-availability.js';
 import {
+  enableComposerDragging as enableComposerDraggingBehavior,
+  positionComposerNearPointer as positionComposerNearPointerBehavior,
+  setComposerPosition as setComposerPositionBehavior,
+} from './composer-position.js';
+import {
   closeInspect,
   createInitialInspectState,
   openInspect,
@@ -300,66 +305,6 @@ function showComposerError(instance: CliSurfaceInstance, message: string): void 
   showElement(instance.composerEl, true);
   instance.composerErrorEl.textContent = message;
   instance.composerErrorEl.style.display = 'block';
-}
-
-function setComposerPosition(instance: CliSurfaceInstance, left: number, top: number): void {
-  const paneRect = instance.element.getBoundingClientRect();
-  const composerRect = instance.composerEl.getBoundingClientRect();
-  const maxLeft = Math.max(8, paneRect.width - composerRect.width - 8);
-  const maxTop = Math.max(8, paneRect.height - composerRect.height - 8);
-  instance.composerEl.style.left = `${clampNumber(left, 8, maxLeft)}px`;
-  instance.composerEl.style.top = `${clampNumber(top, 8, maxTop)}px`;
-}
-
-function positionComposerNearPointer(
-  instance: CliSurfaceInstance,
-  event: Pick<PointerEvent, 'clientX' | 'clientY'>,
-): void {
-  const paneRect = instance.element.getBoundingClientRect();
-  setComposerPosition(instance, event.clientX - paneRect.left + 12, event.clientY - paneRect.top + 12);
-}
-
-function enableComposerDragging(instance: CliSurfaceInstance): () => void {
-  let dragging = false;
-  let offsetX = 0;
-  let offsetY = 0;
-
-  const stopDragging = () => {
-    if (!dragging) return;
-    dragging = false;
-    instance.composerEl.classList.remove('dragging');
-    instance.composerHandleEl.classList.remove('dragging');
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', stopDragging);
-  };
-
-  const onMouseMove = (event: MouseEvent) => {
-    if (!dragging) return;
-    const paneRect = instance.element.getBoundingClientRect();
-    setComposerPosition(instance, event.clientX - paneRect.left - offsetX, event.clientY - paneRect.top - offsetY);
-    event.preventDefault?.();
-  };
-
-  const onMouseDown = (event: MouseEvent) => {
-    if (event.button !== 0) return;
-    const composerRect = instance.composerEl.getBoundingClientRect();
-    offsetX = event.clientX - composerRect.left;
-    offsetY = event.clientY - composerRect.top;
-    dragging = true;
-    instance.composerEl.classList.add('dragging');
-    instance.composerHandleEl.classList.add('dragging');
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', stopDragging);
-    event.preventDefault?.();
-  };
-
-  instance.composerHandleEl.addEventListener('mousedown', onMouseDown);
-  return () => {
-    stopDragging();
-    (instance.composerHandleEl as unknown as {
-      removeEventListener?: (type: string, listener: (event: MouseEvent) => void) => void;
-    }).removeEventListener?.('mousedown', onMouseDown);
-  };
 }
 
 function updateProjectRuntime(projectId: string, runtime: CliSurfaceRuntimeState): void {
@@ -1355,7 +1300,12 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     clearComposerError(instance);
     renderInspectState(instance);
     setInspectPayloadFromSelection(instance, selectionFromViewport(instance));
-    setComposerPosition(instance, 16, 72);
+    setComposerPositionBehavior({
+      paneEl: instance.element,
+      composerEl: instance.composerEl,
+      left: 16,
+      top: 72,
+    });
   });
 
   selectedButton.addEventListener('click', async () => {
@@ -1445,7 +1395,11 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     } else {
       setInspectPayloadFromPointer(instance, event);
     }
-    positionComposerNearPointer(instance, event);
+    positionComposerNearPointerBehavior({
+      paneEl: instance.element,
+      composerEl: instance.composerEl,
+      event,
+    });
     instance.selectionAnchor = null;
     setHoverRegion(instance, null);
   });
@@ -1460,7 +1414,11 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   });
 
   instances.set(projectId, instance);
-  instance.cleanupFns.push(enableComposerDragging(instance));
+  instance.cleanupFns.push(enableComposerDraggingBehavior({
+    paneEl: instance.element,
+    composerEl: instance.composerEl,
+    handleEl: instance.composerHandleEl,
+  }));
   syncViewportLines(instance);
   renderRuntimeMeta(instance);
   renderInspectState(instance);
