@@ -15,6 +15,13 @@ import {
   isInsightDismissedForProject,
   reorderProjectSession,
 } from './state-session-mutators.js';
+import {
+  findActiveCliSession,
+  findProjectSession,
+  isCliSessionRecord,
+  repairProjectSurface,
+  resolveSurfaceTargetFromProject,
+} from './state-project-surface.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
   buildWorkflowLaunchPrompt,
@@ -81,10 +88,6 @@ class AppState {
     (error) => { console.warn('Failed to persist renderer state:', error); },
   );
 
-  private isCliSession(session: SessionRecord): boolean {
-    return !session.type || session.type === 'claude';
-  }
-
   private pushNav(sessionId: string | null | undefined): void {
     this.navigation.push(sessionId);
   }
@@ -116,73 +119,6 @@ class AppState {
     }
 
     return bestMatch;
-  }
-
-  private findSessionInProject(project: ProjectRecord, sessionId: string): SessionRecord | undefined {
-    return project.sessions.find((session) => session.id === sessionId);
-  }
-
-  private findActiveCliSession(project: ProjectRecord, excludingSessionId?: string): SessionRecord | undefined {
-    const activeSession = project.activeSessionId
-      ? this.findSessionInProject(project, project.activeSessionId)
-      : undefined;
-    if (activeSession && activeSession.id !== excludingSessionId && this.isCliSession(activeSession)) {
-      return activeSession;
-    }
-    return undefined;
-  }
-
-  private resolveSurfaceTargetFromProject(
-    project: ProjectRecord,
-    options?: { allowActiveFallback?: boolean },
-  ): SessionRecord | undefined {
-    const allowActiveFallback = options?.allowActiveFallback ?? true;
-    const storedTargetId = project.surface?.targetSessionId;
-    if (storedTargetId) {
-      const storedTarget = this.findSessionInProject(project, storedTargetId);
-      if (storedTarget && this.isCliSession(storedTarget)) {
-        return storedTarget;
-      }
-    }
-
-    if (!allowActiveFallback) {
-      return undefined;
-    }
-
-    return this.findActiveCliSession(project);
-  }
-
-  private repairProjectSurface(project: ProjectRecord): boolean {
-    const nextSurface = normalizeProjectSurface(project);
-    const resolvedTarget = this.resolveSurfaceTargetFromProject({ ...project, surface: nextSurface });
-
-    if (resolvedTarget) {
-      nextSurface.targetSessionId = resolvedTarget.id;
-    } else {
-      delete nextSurface.targetSessionId;
-    }
-
-    for (const session of project.sessions) {
-      if (session.type !== 'browser-tab') continue;
-      if (resolvedTarget?.id !== session.browserTargetSessionId) {
-        if (resolvedTarget) {
-          session.browserTargetSessionId = resolvedTarget.id;
-        } else {
-          delete session.browserTargetSessionId;
-        }
-      }
-      if (session.id === nextSurface.web?.sessionId) {
-        nextSurface.web = {
-          sessionId: session.id,
-          url: session.browserTabUrl,
-          history: nextSurface.web?.history ?? [],
-        };
-      }
-    }
-
-    const changed = JSON.stringify(project.surface ?? null) !== JSON.stringify(nextSurface);
-    project.surface = nextSurface;
-    return changed;
   }
 
   navigateBack(): void {
@@ -243,7 +179,7 @@ class AppState {
       });
       // Restore persisted cost data into the in-memory cost tracker
       for (const project of this.state.projects) {
-        this.repairProjectSurface(project);
+        repairProjectSurface(project);
         for (const session of project.sessions) {
           if (session.cost) {
             restoreCost(session.id, session.cost);
@@ -540,9 +476,9 @@ class AppState {
       }
 
       const existingCli = snapshot.cliSessionId
-        ? project.sessions.find((session) => this.isCliSession(session) && session.cliSessionId === snapshot.cliSessionId)
+        ? project.sessions.find((session) => isCliSessionRecord(session) && session.cliSessionId === snapshot.cliSessionId)
         : project.sessions.find((session) =>
-          this.isCliSession(session)
+          isCliSessionRecord(session)
           && session.cliSessionId === null
           && session.name === snapshot.name
           && (session.providerId ?? this.state.preferences.defaultProvider ?? 'claude') === (snapshot.providerId ?? this.state.preferences.defaultProvider ?? 'claude'));
@@ -572,7 +508,7 @@ class AppState {
       if (snapshot.type !== 'browser-tab') continue;
       const restoredBrowserId = restoredIdMap.get(snapshot.id);
       if (!restoredBrowserId) continue;
-      const restoredBrowser = this.findSessionInProject(project, restoredBrowserId);
+      const restoredBrowser = findProjectSession(project, restoredBrowserId);
       if (!restoredBrowser || restoredBrowser.type !== 'browser-tab') continue;
       const restoredTargetId = snapshot.browserTargetSessionId
         ? restoredIdMap.get(snapshot.browserTargetSessionId)
@@ -601,7 +537,7 @@ class AppState {
           ? restoredIdMap.get(checkpointSurface.webSessionId)
           : undefined;
         const webUrl = checkpointSurface.webUrl
-          ?? (mappedWebSessionId ? this.findSessionInProject(project, mappedWebSessionId)?.browserTabUrl : undefined);
+          ?? (mappedWebSessionId ? findProjectSession(project, mappedWebSessionId)?.browserTabUrl : undefined);
         project.surface.web = {
           sessionId: mappedWebSessionId,
           url: webUrl,
@@ -631,7 +567,7 @@ class AppState {
       this.pushNav(nextActiveId);
     }
 
-    this.repairProjectSurface(project);
+    repairProjectSurface(project);
     this.persist();
 
     for (const session of removedSessions) {
@@ -820,7 +756,7 @@ class AppState {
   ): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-    const initialTargetSession = this.findActiveCliSession(project);
+    const initialTargetSession = findActiveCliSession(project);
     const dedupeByUrl = options?.dedupeByUrl ?? true;
 
     // If a browser-tab with the same URL already exists, switch to it
@@ -990,7 +926,7 @@ class AppState {
       project.activeSessionId = project.sessions[newIndex]?.id ?? null;
       if (project.activeSessionId) this.pushNav(project.activeSessionId);
     }
-    this.repairProjectSurface(project);
+    repairProjectSurface(project);
     // Keep the mosaic pane list in sync with removed sessions.
     project.layout.splitPanes = project.layout.splitPanes.filter((id) => id !== sessionId);
     this.persist();
@@ -1279,7 +1215,7 @@ class AppState {
           }
         : { profiles: [], runtime: { status: 'idle' } },
     };
-    this.repairProjectSurface(project);
+    repairProjectSurface(project);
     this.persist();
     this.emit('project-changed');
   }
@@ -1336,7 +1272,7 @@ class AppState {
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return [];
-    return project.sessions.filter((session) => this.isCliSession(session));
+    return project.sessions.filter((session) => isCliSessionRecord(session));
   }
 
   resolveSurfaceTargetSession(
@@ -1345,7 +1281,7 @@ class AppState {
   ): SessionRecord | undefined {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return undefined;
-    return this.resolveSurfaceTargetFromProject(project, {
+    return resolveSurfaceTargetFromProject(project, {
       allowActiveFallback: options?.requireExplicitTarget ? false : true,
     });
   }
@@ -1365,8 +1301,8 @@ class AppState {
       return;
     }
 
-    const targetSession = this.findSessionInProject(project, targetSessionId);
-    if (!targetSession || !this.isCliSession(targetSession)) return;
+    const targetSession = findProjectSession(project, targetSessionId);
+    if (!targetSession || !isCliSessionRecord(targetSession)) return;
     if (project.surface.targetSessionId === targetSessionId) return;
     project.surface.targetSessionId = targetSessionId;
     for (const session of project.sessions) {

@@ -254,3 +254,24 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`329` files / `2420` tests)
   - `npm run audit:deep`: PASS (`329` files / `2420` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)
+
+## Phase 4.2 Project Surface Note (In Progress)
+
+- Continued `state.ts` decomposition by extracting project surface target/repair helpers:
+  - `src/renderer/state-project-surface.ts`
+  - `src/renderer/state-project-surface.test.ts`
+- Moved surface helper logic out of `state.ts`:
+  - CLI session target classification
+  - active CLI fallback resolution
+  - explicit surface target resolution
+  - browser target link repair
+  - stale/missing target cleanup
+- `state.ts` size snapshot:
+  - Phase 0 baseline: `1906` lines
+  - After persist snapshot extraction: `1602` lines
+  - After project surface extraction: `1538` lines
+- Validation:
+  - Targeted state/surface/checkpoint/action tests: PASS (`5` files / `214` tests)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`330` files / `2424` tests)
+  - `npm run audit:deep`: PASS (`330` files / `2424` tests, shuffled seeds `1`, `42`, `2026`, coverage gates, build, dependency audit, knip)
