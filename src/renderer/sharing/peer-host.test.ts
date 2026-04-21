@@ -556,4 +556,184 @@ describe('peer-host', () => {
 
     handle.stop();
   });
+
+  it('ignores malformed or non-auth channel traffic before verification', () => {
+    const handle = startShare('session-2', 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: '{invalid-json' } as MessageEvent);
+    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'ls\r' }) } as MessageEvent);
+
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    expect(mockPtyWrite).not.toHaveBeenCalled();
+    handle.stop();
+  });
+
+  it('returns session-switch error when requested session is not shareable in current catalog', async () => {
+    const project = appState.addProject('Switch Guard', '/tmp/switch-guard');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    appState.setActiveSession(project.id, cliSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+
+    const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'session-switch',
+        sessionId: 'missing-session-id',
+      }),
+    } as MessageEvent);
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-switch-result',
+        ok: false,
+        reason: 'Session not available.',
+      }),
+    );
+    handle.stop();
+  });
+
+  it('rejects browser controls and inspect submit requests in readonly mode', async () => {
+    const project = appState.addProject('Readonly Browser Guard', '/tmp/readonly-browser-guard');
+    const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
+    const browserSession = appState.addBrowserTabSession(project.id, 'https://example.com/')!;
+    appState.setActiveSession(project.id, cliSession.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id !== cliSession.id) return undefined;
+      return {
+        sessionId: 'CLI Session',
+        terminal: {
+          cols: 120,
+          rows: 40,
+          loadAddon: vi.fn(),
+        },
+      };
+    });
+    mockGetBrowserTabInstance.mockImplementation((id: string) => {
+      if (id !== browserSession.id) return undefined;
+      return {
+        webview: {
+          canGoBack: vi.fn(() => false),
+          canGoForward: vi.fn(() => false),
+          goBack: vi.fn(),
+          goForward: vi.fn(),
+          reload: vi.fn(),
+          src: 'https://example.com/',
+        },
+        committedUrl: 'https://example.com/',
+        inspectMode: false,
+        currentViewport: { label: 'Responsive' },
+        selectedElement: undefined,
+      };
+    });
+
+    const handle = startShare(cliSession.id, 'readonly', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-control',
+        action: 'reload',
+        sessionId: browserSession.id,
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-control-result',
+        ok: false,
+        action: 'reload',
+        sessionId: browserSession.id,
+      }),
+    );
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({
+      data: JSON.stringify({
+        type: 'browser-inspect-submit',
+        sessionId: browserSession.id,
+        instruction: 'Try to inspect this element.',
+      }),
+    } as MessageEvent);
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'browser-inspect-result',
+        ok: false,
+        sessionId: browserSession.id,
+      }),
+    );
+    expect(mockDeliverPromptToTerminalSession).not.toHaveBeenCalled();
+    handle.stop();
+  });
+
+  it('updates keepalive snapshot fields after ping and pong exchange', async () => {
+    vi.useFakeTimers();
+    try {
+      const handle = startShare('session-2', 'readwrite', 'secret-1234');
+      const dc = FakePeerConnection.instances[0]!.dc;
+
+      dc.onopen?.();
+      dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+      await Promise.resolve();
+
+      vi.advanceTimersByTime(30_000);
+      const afterPing = getShareConnectionSnapshot('session-2');
+      expect(afterPing?.missedPongs).toBe(1);
+      expect(afterPing?.lastPingAtMs).toBeTypeOf('number');
+
+      dc.onmessage?.({ data: JSON.stringify({ type: 'pong' }) } as MessageEvent);
+      const afterPong = getShareConnectionSnapshot('session-2');
+      expect(afterPong?.missedPongs).toBe(0);
+      expect(afterPong?.lastPongAtMs).toBeTypeOf('number');
+
+      handle.stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('fires disconnect callback only once across channel close and ICE failure', () => {
+    const handle = startShare('session-2', 'readonly', 'secret-1234');
+    const disconnectedSpy = vi.fn();
+    handle.onDisconnected(disconnectedSpy);
+
+    const pc = FakePeerConnection.instances[0]!;
+    const dc = pc.dc;
+
+    dc.onopen?.();
+    dc.onclose?.();
+    pc.iceConnectionState = 'failed';
+    pc.oniceconnectionstatechange?.();
+
+    expect(disconnectedSpy).toHaveBeenCalledTimes(1);
+    expect(isConnected('session-2')).toBe(false);
+  });
 });
