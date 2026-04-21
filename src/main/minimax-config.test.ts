@@ -115,4 +115,94 @@ describe('getMiniMaxConfig', () => {
       commands: [],
     });
   });
+
+  it('skips hidden or missing entries and falls back when SKILL frontmatter is partial', async () => {
+    mockReadFileSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (filePath === '/mock/home/.mmx/config.json') {
+        return JSON.stringify({ region: 'global' }) as any;
+      }
+      if (filePath === '/mock/home/.mmx/skills/shared/SKILL.md') {
+        return '---\nname: shared\ndescription: User shared\n---\n' as any;
+      }
+      if (filePath === '/mock/home/.mmx/skills/nameless/SKILL.md') {
+        return '---\ndescription: Missing explicit name\n---\n' as any;
+      }
+      if (filePath === '/mock/home/.mmx/skills/nofm/SKILL.md') {
+        return '# skill without frontmatter\n' as any;
+      }
+      if (filePath === '/mock/home/.mmx/skills/invalidfm/SKILL.md') {
+        return '---\nname: invalidfm\nthis line has no colon\n---\n' as any;
+      }
+      if (filePath === '/project/.mmx/skills/shared/SKILL.md') {
+        return '---\nname: shared\ndescription: Project shared\n---\n' as any;
+      }
+      if (filePath === '/project/.mmx/skills/project-only/SKILL.md') {
+        return '' as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    mockReaddirSync.mockImplementation((inputPath) => {
+      const dirPath = n(String(inputPath));
+      if (dirPath === '/mock/home/.mmx/skills') {
+        return ['.hidden', 'shared', 'ghost', 'nameless', 'nofm', 'invalidfm'] as any;
+      }
+      if (dirPath === '/project/.mmx/skills') return ['shared', 'project-only'] as any;
+      throw new Error('ENOENT');
+    });
+
+    mockStatSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (
+        filePath === '/mock/home/.mmx/skills/shared/SKILL.md'
+        || filePath === '/mock/home/.mmx/skills/nameless/SKILL.md'
+        || filePath === '/mock/home/.mmx/skills/nofm/SKILL.md'
+        || filePath === '/mock/home/.mmx/skills/invalidfm/SKILL.md'
+        || filePath === '/project/.mmx/skills/shared/SKILL.md'
+        || filePath === '/project/.mmx/skills/project-only/SKILL.md'
+      ) {
+        return { isFile: () => true } as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    await expect(getMiniMaxConfig('/project')).resolves.toEqual({
+      mcpServers: [],
+      agents: [],
+      skills: [
+        {
+          name: 'shared',
+          description: 'User shared',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.mmx', 'skills', 'shared', 'SKILL.md'),
+        },
+        {
+          name: 'nameless',
+          description: 'Missing explicit name',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.mmx', 'skills', 'nameless', 'SKILL.md'),
+        },
+        {
+          name: 'nofm',
+          description: '',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.mmx', 'skills', 'nofm', 'SKILL.md'),
+        },
+        {
+          name: 'invalidfm',
+          description: '',
+          scope: 'user',
+          filePath: path.join('/mock/home', '.mmx', 'skills', 'invalidfm', 'SKILL.md'),
+        },
+        {
+          name: 'project-only',
+          description: '',
+          scope: 'project',
+          filePath: path.join('/project', '.mmx', 'skills', 'project-only', 'SKILL.md'),
+        },
+      ],
+      commands: [],
+    });
+  });
 });
