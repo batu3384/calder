@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createProjectTeamContextSpaceFile, createProjectTeamContextStarterFiles } from './scaffold.js';
@@ -20,10 +20,15 @@ describe('project team context scaffold', () => {
   it('creates starter team context spaces without overwriting existing files', async () => {
     const root = makeProject('team-context-starters');
     roots.push(root);
+    const preexisting = join(root, '.calder/team/spaces/team-charter.md');
+    mkdirSync(join(root, '.calder/team/spaces'), { recursive: true });
+    writeFileSync(preexisting, '# Existing charter\n', 'utf8');
 
     const result = await createProjectTeamContextStarterFiles(root);
 
-    expect(result.created).toContain('.calder/team/spaces/team-charter.md');
+    expect(result.created).not.toContain('.calder/team/spaces/team-charter.md');
+    expect(result.skipped).toContain('.calder/team/spaces/team-charter.md');
+    expect(readFileSync(preexisting, 'utf8')).toContain('Existing charter');
     expect(result.state.spaces.length).toBeGreaterThan(0);
   });
 
@@ -63,5 +68,16 @@ describe('project team context scaffold', () => {
     roots.push(root);
 
     await expect(createProjectTeamContextSpaceFile(root, '   ')).rejects.toThrow('Team context title is required');
+  });
+
+  it('uses fallback slug when the team context title has no alphanumeric characters', async () => {
+    const root = makeProject('team-context-fallback-slug');
+    roots.push(root);
+
+    const result = await createProjectTeamContextSpaceFile(root, '!!!');
+
+    expect(result.created).toBe(true);
+    expect(result.relativePath).toBe('.calder/team/spaces/team-context.md');
+    expect(readFileSync(join(root, result.relativePath), 'utf8')).toContain('# !!!');
   });
 });
