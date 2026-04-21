@@ -36,6 +36,13 @@ import {
   syncComposerContextTrace as syncComposerContextTraceBehavior,
 } from './context-controls.js';
 import {
+  buildSemanticMeta as buildSemanticMetaBehavior,
+  getFocusedSemanticNodeId as getFocusedSemanticNodeIdBehavior,
+  getSemanticBucket as getSemanticBucketBehavior,
+  getSemanticNodeForSelection as getSemanticNodeForSelectionBehavior,
+  normalizeSemanticAdapterHint as normalizeSemanticAdapterHintBehavior,
+} from './semantic-state.js';
+import {
   sendCliSelectionToCustomSession,
   sendCliSelectionToNewSession,
   sendCliSelectionToSelectedSession,
@@ -176,41 +183,6 @@ function showElement(element: HTMLElement, visible: boolean): void {
   }
 }
 
-function normalizeSemanticAdapterHint(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'textual' || normalized === 'ink' || normalized === 'blessed') {
-    return normalized;
-  }
-  return undefined;
-}
-
-function getSemanticBucket(
-  store: Map<string, Map<string, CalderProtocolMessage>>,
-  projectId: string,
-): Map<string, CalderProtocolMessage> {
-  const existing = store.get(projectId);
-  if (existing) return existing;
-  const bucket = new Map<string, CalderProtocolMessage>();
-  store.set(projectId, bucket);
-  return bucket;
-}
-
-function getSemanticNodeForSelection(
-  projectId: string,
-  selection: SurfaceSelectionRange,
-): CalderProtocolMessage | undefined {
-  return [...(semanticNodes.get(projectId)?.values() ?? [])].find((node) =>
-    node.bounds
-    && node.bounds.startRow <= selection.startRow
-    && node.bounds.endRow >= selection.endRow,
-  );
-}
-
-function getFocusedSemanticNodeId(projectId: string): string | undefined {
-  return semanticFocusNodes.get(projectId)?.values().next().value?.nodeId;
-}
-
 function syncComposerContextControl(
   instance: CliSurfaceInstance,
   mode: CliSurfacePromptContextMode,
@@ -228,17 +200,6 @@ function syncComposerContextTrace(instance: CliSurfaceInstance): void {
     instance.composerContextTraceEl,
     instance.inspectState.payload?.appliedContext as AppliedContextSummary | undefined,
   );
-}
-
-function buildSemanticMeta(projectId: string, semanticNode?: CalderProtocolMessage): Record<string, unknown> | undefined {
-  if (!semanticNode) return undefined;
-  const focusMessage = semanticFocusNodes.get(projectId)?.get(semanticNode.nodeId);
-  const stateMessage = semanticStateNodes.get(projectId)?.get(semanticNode.nodeId);
-  return {
-    ...(semanticNode.meta ?? {}),
-    ...(focusMessage?.meta ?? {}),
-    ...(stateMessage?.meta ?? {}),
-  };
 }
 
 function formatDurationMs(value: number): string {
@@ -532,7 +493,7 @@ function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[]
     return instance.semanticRegions;
   }
 
-  const focusedNodeId = getFocusedSemanticNodeId(instance.projectId);
+  const focusedNodeId = getFocusedSemanticNodeIdBehavior(semanticFocusNodes, instance.projectId);
 
   instance.semanticRegions = [...(semanticNodes.get(instance.projectId)?.values() ?? [])]
     .filter((message): message is CalderProtocolMessage & { bounds: SurfaceSelectionRange } => Boolean(message.bounds))
@@ -611,8 +572,8 @@ function buildInspectPayload(
   });
   const semanticNode = semanticRegion?.semanticNodeId
     ? semanticNodes.get(instance.projectId)?.get(semanticRegion.semanticNodeId)
-    : getSemanticNodeForSelection(instance.projectId, selection);
-  const semanticMeta = buildSemanticMeta(instance.projectId, semanticNode);
+    : getSemanticNodeForSelectionBehavior(semanticNodes, instance.projectId, selection);
+  const semanticMeta = buildSemanticMetaBehavior(semanticFocusNodes, semanticStateNodes, instance.projectId, semanticNode);
   const adapterMeta = adapter?.enrich({
     ...(selectionHint?.label ? { inferredLabel: selectionHint.label } : {}),
     ...(semanticNode
@@ -794,9 +755,9 @@ function attachRuntimeBindings(): void {
           semanticFocusNodes.set(projectId, bucket);
         } else {
           const store = message.type === 'state' ? semanticStateNodes : semanticNodes;
-          getSemanticBucket(store, projectId).set(message.nodeId, message);
+          getSemanticBucketBehavior(store, projectId).set(message.nodeId, message);
         }
-        const adapterHint = normalizeSemanticAdapterHint(message.meta?.framework);
+        const adapterHint = normalizeSemanticAdapterHintBehavior(message.meta?.framework);
         if (adapterHint) {
           semanticAdapterHints.set(projectId, adapterHint);
         }
