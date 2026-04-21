@@ -79,12 +79,20 @@ describe('mobile-inspector runtime android flows', () => {
       _options: Record<string, unknown>,
       callback: (error: (NodeJS.ErrnoException & { code?: number; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
     ) => {
-      const next = execPlans.shift();
+      const next = execPlans[0];
       if (!next) {
-        throw new Error(`Unexpected execFile call: ${command} ${args.join(' ')}`);
+        callback({
+          name: 'Error',
+          message: `${command} failed`,
+          code: 1,
+          stdout: '',
+          stderr: `${command} failed`,
+        }, '', `${command} failed`);
+        return;
       }
       expect(command).toBe(next.command);
       expect(args).toEqual(next.args);
+      execPlans.shift();
       const stdout = next.stdout ?? '';
       const stderr = next.stderr ?? '';
       const code = next.code ?? 0;
@@ -593,6 +601,332 @@ describe('mobile-inspector runtime android flows', () => {
         // noop
       }
     }
+  });
+
+  it('returns iOS screenshot readiness error when simulator launch precondition fails', async () => {
+    execPlans.push({
+      command: 'xcrun',
+      args: ['simctl', 'list', 'devices', '--json'],
+      code: 1,
+      stderr: 'simctl list failed',
+    });
+
+    const result = await captureMobileInspectScreenshot('ios');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('simctl list failed');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('retries iOS screenshot capture with refreshed booted device when simctl reports no booted device', async () => {
+    const fixedNow = 1_700_000_000_002;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    fs.writeFileSync(screenshotPath, createPngBuffer(1170, 2532));
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-RETRY-1',
+                  name: 'iPhone 16 Pro',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-RETRY-1', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-RETRY-1', 'screenshot', screenshotPath],
+          code: 1,
+          stderr: 'Unable to locate a booted simulator. No devices are booted.',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-RETRY-2',
+                  name: 'iPhone 16',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-RETRY-2', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-RETRY-2', 'screenshot', screenshotPath],
+          stdout: `Wrote screenshot to: ${screenshotPath}`,
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(true);
+      expect(result.width).toBe(1170);
+      expect(result.height).toBe(2532);
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+      try {
+        fs.unlinkSync(screenshotPath);
+      } catch {
+        // noop
+      }
+    }
+  });
+
+  it('returns iOS screenshot command failure and cleans up temp file when capture still fails', async () => {
+    const fixedNow = 1_700_000_000_003;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    fs.writeFileSync(screenshotPath, Buffer.from('stale', 'utf8'));
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-CAPTURE-FAIL',
+                  name: 'iPhone 16 Pro',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-CAPTURE-FAIL', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-CAPTURE-FAIL', 'screenshot', screenshotPath],
+          code: 1,
+          stderr: 'simctl screenshot failed',
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('simctl screenshot failed');
+      expect(fs.existsSync(screenshotPath)).toBe(false);
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+      try {
+        fs.unlinkSync(screenshotPath);
+      } catch {
+        // noop
+      }
+    }
+  });
+
+  it('returns iOS screenshot file read failure when capture command reports success but file is missing', async () => {
+    const fixedNow = 1_700_000_000_004;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-MISSING-FILE',
+                  name: 'iPhone 16 Pro',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-MISSING-FILE', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-MISSING-FILE', 'screenshot', screenshotPath],
+          stdout: `Wrote screenshot to: ${screenshotPath}`,
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('could not be read');
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+    }
+  });
+
+  it('returns iOS invalid PNG error when screenshot file payload is corrupt', async () => {
+    const fixedNow = 1_700_000_000_005;
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(fixedNow);
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const screenshotPath = path.join(os.tmpdir(), `calder-ios-inspect-${fixedNow}-i.png`);
+    fs.writeFileSync(screenshotPath, Buffer.from('invalid-png', 'utf8'));
+    try {
+      execPlans.push(
+        {
+          command: 'xcrun',
+          args: ['simctl', 'list', 'devices', '--json'],
+          stdout: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-2': [
+                {
+                  udid: 'IOS-UDID-BAD-PNG',
+                  name: 'iPhone 16 Pro',
+                  state: 'Booted',
+                  isAvailable: true,
+                },
+              ],
+            },
+          }),
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'bootstatus', 'IOS-UDID-BAD-PNG', '-b'],
+          stdout: 'Booted',
+        },
+        {
+          command: 'xcrun',
+          args: ['simctl', 'io', 'IOS-UDID-BAD-PNG', 'screenshot', screenshotPath],
+          stdout: `Wrote screenshot to: ${screenshotPath}`,
+        },
+      );
+
+      const result = await captureMobileInspectScreenshot('ios');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not a valid PNG');
+      expect(execPlans).toHaveLength(0);
+    } finally {
+      nowSpy.mockRestore();
+      randomSpy.mockRestore();
+      try {
+        fs.unlinkSync(screenshotPath);
+      } catch {
+        // noop
+      }
+    }
+  });
+
+  it('returns Android inspect command-availability error when command set cannot be resolved', async () => {
+    execPlans.push({
+      command: 'which',
+      args: ['adb'],
+      code: 1,
+      stderr: 'adb not found',
+    });
+
+    const result = await inspectMobilePoint('android', 10, 20);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('adb was not found');
+    expect(execPlans).toHaveLength(0);
+  });
+
+  it('returns Android inspect readiness and hierarchy errors for dump/read/empty/no-match paths', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], code: 1, stderr: 'adb daemon unavailable' },
+    );
+    const readinessFail = await inspectMobilePoint('android', 10, 20);
+    expect(readinessFail.success).toBe(false);
+    expect(readinessFail.message).toContain('adb daemon unavailable');
+
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], code: 1, stderr: 'uiautomator dump failed' },
+    );
+    const dumpFail = await inspectMobilePoint('android', 10, 20);
+    expect(dumpFail.success).toBe(false);
+    expect(dumpFail.message).toContain('uiautomator dump failed');
+
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'], code: 1, stderr: 'cat failed' },
+    );
+    const readFail = await inspectMobilePoint('android', 10, 20);
+    expect(readFail.success).toBe(false);
+    expect(readFail.message).toContain('cat failed');
+
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'], stdout: '<hierarchy></hierarchy>' },
+    );
+    const emptyHierarchy = await inspectMobilePoint('android', 10, 20);
+    expect(emptyHierarchy.success).toBe(false);
+    expect(emptyHierarchy.message).toContain('UI hierarchy is empty');
+
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'],
+        stdout: '<hierarchy><node class="android.widget.TextView" text="Header" bounds="[0,0][100,100]"/></hierarchy>',
+      },
+    );
+    const noMatch = await inspectMobilePoint('android', 1000, 1800);
+    expect(noMatch.success).toBe(false);
+    expect(noMatch.message).toContain('No Android UI element matched');
+
+    expect(execPlans).toHaveLength(0);
   });
 
   it('returns iOS Appium readiness failure when local Appium binary cannot be resolved', async () => {
