@@ -78,6 +78,35 @@ describe('mobile-dependency-doctor helpers', () => {
       version: '4.1.0',
     });
   });
+
+  it('parses array-form driver metadata and supports installSpec aliases', () => {
+    const jsonOutput = JSON.stringify([
+      {
+        name: 'random-driver',
+        installed: true,
+        version: '1.0.0',
+      },
+      {
+        driver: 'not-this-one',
+        installSpec: 'appium-uiautomator2-driver',
+        installed: true,
+        version: 4.2,
+      },
+    ]);
+
+    expect(_internal.parseInstalledDriverFromJson(jsonOutput, 'uiautomator2')).toEqual({
+      installed: true,
+      version: '4.2',
+    });
+  });
+
+  it('returns not-installed from valid JSON when requested driver is absent', () => {
+    const asArray = JSON.stringify([{ name: 'other-driver', installed: true, version: '1.0.0' }]);
+    const asObject = JSON.stringify({ other: { pkgName: 'appium-other-driver', installed: true } });
+
+    expect(_internal.parseInstalledDriverFromJson(asArray, 'xcuitest')).toEqual({ installed: false });
+    expect(_internal.parseInstalledDriverFromJson(asObject, 'uiautomator2')).toEqual({ installed: false });
+  });
 });
 
 describe('checkMobileDependencies', () => {
