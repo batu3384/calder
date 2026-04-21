@@ -25,7 +25,11 @@ import {
   formatCaptureMeta,
   formatPointLabel,
   getBlockingChecks,
+  getInspectInteractionHint,
+  getMobileInspectCapabilities,
   getProfileScopedChecks,
+  getProjectProfileLabel,
+  getProjectProfileStatusPrefix,
   getScopedSummary,
   getStatusLabel,
   hasBlockingChecks,
@@ -113,83 +117,8 @@ function defaultInspectState(): MobileSurfaceInspectState {
   };
 }
 
-function getProjectProfileLabel(profile: MobileProjectProfile): string {
-  if (profile === 'ios') return 'Project profile: iOS app';
-  if (profile === 'android') return 'Project profile: Android app';
-  if (profile === 'cross') return 'Project profile: iOS + Android';
-  return 'Project profile: unknown';
-}
-
-function getProjectProfileStatusPrefix(profile: MobileProjectProfile): string {
-  if (profile === 'ios') return 'iOS mobile surface';
-  if (profile === 'android') return 'Android mobile surface';
-  if (profile === 'cross') return 'Cross-platform mobile surface';
-  return 'Mobile surface';
-}
-
 function buildMobileAppliedContext(projectId: string, providerId?: ProviderId) {
   return buildAppliedContextSummary(projectId, providerId);
-}
-
-function getInspectInteractionHint(): string {
-  return appState.preferences.language === 'tr'
-    ? 'Bu panel anlık görüntü tabanlıdır: tıklama, simülatörü sürmek yerine eleman tespiti yapar.'
-    : 'This panel is snapshot-based: click to inspect elements, not to drive simulator UI.';
-}
-
-type MobileInspectCapabilityTone = 'ready' | 'limited' | 'external';
-
-interface MobileInspectCapability {
-  label: string;
-  status: string;
-  detail: string;
-  tone: MobileInspectCapabilityTone;
-}
-
-function getMobileInspectCapabilities(platform: MobileInspectPlatform): MobileInspectCapability[] {
-  if (platform === 'android') {
-    return [
-      {
-        label: 'Launch and capture',
-        status: 'Ready',
-        detail: 'Uses Android Emulator plus adb screencap for still frames and live polling.',
-        tone: 'ready',
-      },
-      {
-        label: 'Element match',
-        status: 'Ready',
-        detail: 'Uses adb uiautomator dump to resolve the selected screenshot point to a native node.',
-        tone: 'ready',
-      },
-      {
-        label: 'Tap selected',
-        status: 'Ready',
-        detail: 'Uses adb input tap against the selected emulator coordinate.',
-        tone: 'ready',
-      },
-    ];
-  }
-
-  return [
-    {
-      label: 'Launch and capture',
-      status: 'Ready',
-      detail: 'Uses xcrun simctl to boot the simulator and capture PNG screenshots.',
-      tone: 'ready',
-    },
-    {
-      label: 'Element match',
-      status: 'Limited',
-      detail: 'iOS native hierarchy inspection is not wired yet; selected point and screenshot context are still sent.',
-      tone: 'limited',
-    },
-    {
-      label: 'Tap selected',
-      status: 'Appium',
-      detail: 'Requires a local Appium server with the XCUITest driver for coordinate taps.',
-      tone: 'external',
-    },
-  ];
 }
 
 function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {

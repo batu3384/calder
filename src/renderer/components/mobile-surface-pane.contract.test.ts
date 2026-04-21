@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const paneSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
+const scopingSource = readFileSync(new URL('./mobile-surface/dependency-scoping.ts', import.meta.url), 'utf8');
 
 describe('mobile surface inspect workbench contract', () => {
   it('wires simulator launch and screenshot capture through mobileInspect bridge', () => {
@@ -39,7 +40,7 @@ describe('mobile surface inspect workbench contract', () => {
 
   it('auto-detects project profile and scopes mobile readiness messaging', () => {
     expect(paneSource).toContain('detectProjectProfile(');
-    expect(paneSource).toContain('Project profile: iOS app');
+    expect(scopingSource).toContain('Project profile: iOS app');
     expect(paneSource).toContain('Platform auto-selected from project profile');
   });
 
@@ -55,14 +56,14 @@ describe('mobile surface inspect workbench contract', () => {
   });
 
   it('clarifies snapshot-based inspect behavior to avoid control confusion', () => {
-    expect(paneSource).toContain('snapshot-based');
-    expect(paneSource).toContain('anlık görüntü tabanlıdır');
+    expect(scopingSource).toContain('snapshot-based');
+    expect(scopingSource).toContain('anlık görüntü tabanlıdır');
   });
 
   it('renders platform capability clarity for iOS and Android inspect paths', () => {
     expect(paneSource).toContain('getMobileInspectCapabilities');
-    expect(paneSource).toContain('iOS native hierarchy inspection is not wired yet');
-    expect(paneSource).toContain('adb uiautomator dump');
-    expect(paneSource).toContain('Requires a local Appium server with the XCUITest driver');
+    expect(scopingSource).toContain('iOS native hierarchy inspection is not wired yet');
+    expect(scopingSource).toContain('adb uiautomator dump');
+    expect(scopingSource).toContain('Requires a local Appium server with the XCUITest driver');
   });
 });
