@@ -185,4 +185,54 @@ describe('getGeminiConfig', () => {
       },
     ]);
   });
+
+  it('skips hidden or missing skill entries and falls back for empty/invalid frontmatter', async () => {
+    mockFiles({
+      '/mock/home/.gemini/skills/nofm/SKILL.md': '# no frontmatter\n',
+      '/mock/home/.gemini/skills/empty/SKILL.md': '',
+      '/mock/home/.gemini/skills/invalid/SKILL.md': '---\nname: invalid\nline without colon\n---\n',
+    });
+
+    mockReaddirSync.mockImplementation((inputPath) => {
+      const dirPath = n(String(inputPath));
+      if (dirPath === '/mock/home/.gemini/skills') {
+        return ['.hidden', 'missing', 'nofm', 'empty', 'invalid'] as any;
+      }
+      if (dirPath === '/project/.gemini/skills') return [] as any;
+      throw new Error('ENOENT');
+    });
+    mockStatSync.mockImplementation((inputPath) => {
+      const filePath = n(String(inputPath));
+      if (
+        filePath === '/mock/home/.gemini/skills/nofm/SKILL.md'
+        || filePath === '/mock/home/.gemini/skills/empty/SKILL.md'
+        || filePath === '/mock/home/.gemini/skills/invalid/SKILL.md'
+      ) {
+        return { isFile: () => true } as any;
+      }
+      throw new Error('ENOENT');
+    });
+
+    const config = await getGeminiConfig('/project');
+    expect(config.skills).toEqual([
+      {
+        name: 'nofm',
+        description: '',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.gemini', 'skills', 'nofm', 'SKILL.md'),
+      },
+      {
+        name: 'empty',
+        description: '',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.gemini', 'skills', 'empty', 'SKILL.md'),
+      },
+      {
+        name: 'invalid',
+        description: '',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.gemini', 'skills', 'invalid', 'SKILL.md'),
+      },
+    ]);
+  });
 });
