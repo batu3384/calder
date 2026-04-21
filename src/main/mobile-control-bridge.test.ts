@@ -418,6 +418,18 @@ describe('mobile-control-bridge', () => {
     expect(pairing.localPairingUrls).toContain(pairing.localPairingUrl);
   });
 
+  it('keeps the primary local URL first and deduplicated across local pairing candidates', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-lan-primary-order',
+      offer: 'offer-code-lan-primary-order',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+
+    expect(pairing.localPairingUrls[0]).toBe(pairing.localPairingUrl);
+    expect(new Set(pairing.localPairingUrls).size).toBe(pairing.localPairingUrls.length);
+  });
+
   it('filters unusable tunnel and network-address LAN candidates from pairing links', async () => {
     const hosts = _internal.listLanHosts({
       lo0: [
