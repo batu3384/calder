@@ -355,6 +355,59 @@ describe('load()', () => {
       }),
     );
   });
+
+  it('repairs stale persisted surface refs and persists the migrated state', async () => {
+    mockLoad.mockResolvedValue({
+      version: 1,
+      activeProjectId: 'project-1',
+      starPromptDismissed: true,
+      preferences: {},
+      projects: [
+        {
+          id: 'project-1',
+          name: 'Demo',
+          path: '/tmp/demo',
+          activeSessionId: null,
+          layout: { mode: 'mosaic' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+          sessions: [],
+          surface: {
+            kind: 'web' as const,
+            active: true,
+            targetSessionId: 'missing-cli',
+            web: {
+              sessionId: 'missing-browser',
+              url: 'about:blank',
+              history: ['about:blank'],
+            },
+          },
+        },
+      ],
+    });
+
+    await appState.load();
+
+    expect(appState.activeProject?.surface).toMatchObject({
+      kind: 'web',
+      active: false,
+      web: {
+        sessionId: undefined,
+        url: undefined,
+        history: ['about:blank'],
+      },
+    });
+    expect(appState.activeProject?.surface?.targetSessionId).toBeUndefined();
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSave.mock.calls[0][0].projects[0].surface).toMatchObject({
+      kind: 'web',
+      active: false,
+      web: {
+        sessionId: undefined,
+        url: undefined,
+        history: ['about:blank'],
+      },
+    });
+    expect(mockSave.mock.calls[0][0].projects[0].surface.targetSessionId).toBeUndefined();
+  });
 });
 
 describe('persist()', () => {

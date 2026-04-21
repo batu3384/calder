@@ -8,6 +8,7 @@ import type {
   ProjectRecord,
   ProjectReviewState,
   ProjectSurfaceRecord,
+  SessionRecord,
   ProjectTeamContextState,
   ProjectWorkflowDocument,
   ProjectWorkflowState,
@@ -129,13 +130,33 @@ export function buildWorkflowLaunchPrompt(workflow: ProjectWorkflowDocument): st
   ].filter(Boolean).join('\n\n');
 }
 
+function isCliSurfaceTargetSession(session: SessionRecord | undefined): session is SessionRecord {
+  return Boolean(session && (!session.type || session.type === 'claude'));
+}
+
+function resolveBrowserSurfaceSession(
+  project: ProjectRecord,
+  requestedSessionId?: string,
+): SessionRecord | undefined {
+  const requestedSession = requestedSessionId
+    ? project.sessions.find((session) => session.id === requestedSessionId && session.type === 'browser-tab')
+    : undefined;
+  if (requestedSession) return requestedSession;
+  return [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+}
+
 export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
-  const browserSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
   const existing = project.surface;
-  const history = existing?.web?.history
-    ?? (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []);
+  const browserSession = resolveBrowserSurfaceSession(project, existing?.web?.sessionId);
+  const history = Array.isArray(existing?.web?.history)
+    ? [...existing.web.history]
+    : existing?.web?.url
+      ? [existing.web.url]
+      : (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []);
   const kind = existing?.kind ?? (browserSession ? 'web' : 'cli');
-  const active = existing?.active ?? Boolean(browserSession);
+  const active = kind === 'web' && !browserSession
+    ? false
+    : (existing?.active ?? Boolean(browserSession));
   const tabFocus = kind === 'cli'
     ? (existing?.tabFocus ?? (active ? 'cli' : 'session'))
     : kind === 'mobile'
@@ -148,6 +169,19 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
   const normalizedTabOrder = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
     ? tabOrder
     : ['cli', 'mobile'];
+  const storedTarget = existing?.targetSessionId
+    ? project.sessions.find((session) => session.id === existing.targetSessionId)
+    : undefined;
+  const browserTarget = browserSession?.browserTargetSessionId
+    ? project.sessions.find((session) => session.id === browserSession.browserTargetSessionId)
+    : undefined;
+  const targetSessionId = isCliSurfaceTargetSession(storedTarget)
+    ? storedTarget.id
+    : isCliSurfaceTargetSession(browserTarget)
+      ? browserTarget.id
+      : undefined;
+  const url = browserSession?.browserTabUrl
+    ?? (browserSession && existing?.web?.sessionId === browserSession.id ? existing?.web?.url : undefined);
 
   return {
     kind,
@@ -155,10 +189,10 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
     tabFocus,
     tabPlacement,
     tabOrder: normalizedTabOrder,
-    targetSessionId: existing?.targetSessionId ?? browserSession?.browserTargetSessionId,
+    targetSessionId,
     web: {
-      sessionId: existing?.web?.sessionId ?? browserSession?.id,
-      url: existing?.web?.url ?? browserSession?.browserTabUrl,
+      sessionId: browserSession?.id,
+      url,
       history: [...history],
     },
     cli: {

@@ -142,17 +142,22 @@ class AppState {
 
   async load(): Promise<void> {
     const loaded = (await window.calder.store.load()) as PersistedState | null;
+    let didMigrateState = false;
     if (loaded && loaded.version === 1) {
       this.state = loaded;
       // Merge defaults for forward compatibility with old state files
-      this.state.preferences = { ...defaultPreferences, ...this.state.preferences };
+      const normalizedPreferences = { ...defaultPreferences, ...this.state.preferences };
+      if (JSON.stringify(this.state.preferences) !== JSON.stringify(normalizedPreferences)) {
+        didMigrateState = true;
+      }
+      this.state.preferences = normalizedPreferences;
       delete (this.state.preferences as Preferences & { readinessExcludedProviders?: ProviderId[] }).readinessExcludedProviders;
       if (this.state.preferences.sidebarViews) {
         delete (
           this.state.preferences.sidebarViews as Preferences['sidebarViews'] & { readinessSection?: boolean }
         ).readinessSection;
       }
-      this.state.projects = this.state.projects.map((project) => {
+      const normalizedProjects = this.state.projects.map((project) => {
         const nextProject = {
           ...(project as ProjectRecord & { readiness?: unknown }),
           layout: normalizeProjectLayout(project.layout),
@@ -161,9 +166,15 @@ class AppState {
         delete (nextProject as ProjectRecord & { readiness?: unknown }).readiness;
         return nextProject;
       });
+      if (JSON.stringify(this.state.projects) !== JSON.stringify(normalizedProjects)) {
+        didMigrateState = true;
+      }
+      this.state.projects = normalizedProjects;
       // Restore persisted cost data into the in-memory cost tracker
       for (const project of this.state.projects) {
-        repairProjectSurface(project);
+        if (repairProjectSurface(project)) {
+          didMigrateState = true;
+        }
         for (const session of project.sessions) {
           if (session.cost) {
             restoreCost(session.id, session.cost);
@@ -178,6 +189,7 @@ class AppState {
           for (const entry of project.sessionHistory) {
             if (seenIds.has(entry.id)) {
               entry.id = crypto.randomUUID();
+              didMigrateState = true;
             }
             seenIds.add(entry.id);
           }
@@ -186,6 +198,8 @@ class AppState {
     }
     if (!this.state.starPromptDismissed) {
       this.state.appLaunchCount = (this.state.appLaunchCount ?? 0) + 1;
+      this.persist();
+    } else if (didMigrateState) {
       this.persist();
     }
 

@@ -121,7 +121,7 @@ describe('state normalizers', () => {
       tabFocus: 'cli',
       tabPlacement: 'end',
       tabOrder: ['mobile', 'cli'],
-      targetSessionId: 'cli-1',
+      targetSessionId: undefined,
       web: {
         sessionId: 'browser-1',
         url: 'http://localhost:3000',
@@ -131,6 +131,59 @@ describe('state normalizers', () => {
         selectedProfileId: 'profile-1',
         profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
         runtime: { status: 'running' },
+      },
+    });
+  });
+
+  it('drops stale browser session refs while preserving useful history', () => {
+    const project = makeProject({
+      sessions: [
+        {
+          id: 'cli-1',
+          name: 'Claude',
+          type: 'claude',
+          providerId: 'claude',
+          cliSessionId: 'cli-1',
+          createdAt: '2026-04-21T00:00:00Z',
+        },
+        {
+          id: 'browser-1',
+          name: 'Browser',
+          type: 'browser-tab',
+          browserTabUrl: 'http://localhost:3000',
+          browserTargetSessionId: 'cli-1',
+          cliSessionId: null,
+          createdAt: '2026-04-21T00:01:00Z',
+        },
+      ],
+      surface: {
+        kind: 'web',
+        active: true,
+        targetSessionId: 'missing-cli',
+        web: {
+          sessionId: 'missing-browser',
+          url: 'http://stale.local',
+          history: ['http://stale.local'],
+        },
+      },
+    });
+
+    expect(normalizeProjectSurface(project)).toEqual({
+      kind: 'web',
+      active: true,
+      tabFocus: 'session',
+      tabPlacement: 'end',
+      tabOrder: ['cli', 'mobile'],
+      targetSessionId: 'cli-1',
+      web: {
+        sessionId: 'browser-1',
+        url: 'http://localhost:3000',
+        history: ['http://stale.local'],
+      },
+      cli: {
+        selectedProfileId: undefined,
+        profiles: [],
+        runtime: { status: 'idle' },
       },
     });
   });

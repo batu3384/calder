@@ -121,4 +121,40 @@ describe('state project surface helpers', () => {
     expect(project.surface?.targetSessionId).toBeUndefined();
     expect(browser.browserTargetSessionId).toBeUndefined();
   });
+
+  it('passivates stale web surface references when no browser session remains', () => {
+    const project = makeProject({
+      sessions: [],
+      activeSessionId: null,
+      surface: {
+        kind: 'web',
+        active: true,
+        targetSessionId: 'missing-cli',
+        web: {
+          sessionId: 'missing-browser',
+          url: 'about:blank',
+          history: ['about:blank'],
+        },
+      },
+    });
+
+    expect(repairProjectSurface(project)).toBe(true);
+    expect(project.surface).toEqual({
+      kind: 'web',
+      active: false,
+      tabFocus: 'session',
+      tabPlacement: 'end',
+      tabOrder: ['cli', 'mobile'],
+      web: {
+        sessionId: undefined,
+        url: undefined,
+        history: ['about:blank'],
+      },
+      cli: {
+        selectedProfileId: undefined,
+        profiles: [],
+        runtime: { status: 'idle' },
+      },
+    });
+  });
 });
