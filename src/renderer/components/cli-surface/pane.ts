@@ -6,18 +6,14 @@ import type {
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
   CliSurfaceStartupTiming,
-  ProviderId,
   SurfaceSelectionRange,
 } from '../../../shared/types.js';
 import { appState } from '../../state.js';
 import { buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
 import {
   getProviderAvailabilitySnapshot,
-  getProviderDisplayName,
   resolvePreferredProviderForLaunch,
 } from '../../provider-availability.js';
-import { getStatus } from '../../session-activity.js';
-import { anchorFloatingSurface } from '../floating-surface.js';
 import {
   closeInspect,
   createInitialInspectState,
@@ -35,6 +31,7 @@ import {
 import { detectCliAdapter } from './adapters/registry.js';
 import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol.js';
 import { getCliSurfaceProfileLabel } from './profile.js';
+import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../../link-routing.js';
 
@@ -89,7 +86,7 @@ interface CliSurfaceInstance {
   pendingDataChunks: string[];
   selectionAnchor: { row: number; col: number } | null;
   contextModeOverride: CliSurfacePromptContextMode | null;
-  targetMenuCleanup?: () => void;
+  targetMenuController?: CliTargetMenuController;
   targetMenuOutsideClickHandler?: (event: MouseEvent) => void;
   cleanupFns: Array<() => void>;
 }
@@ -420,213 +417,6 @@ function buildSurfaceRouteCopy(projectId: string): string {
   return targetSession ? `Routing to ${targetSession.name}` : 'Routing is not set';
 }
 
-function buildCliTargetButtonLabel(projectId: string): string {
-  const selectedTarget = appState.resolveSurfaceTargetSession(projectId);
-  const label = selectedTarget?.name ?? 'Select Session';
-  return label.length > 22 ? `${label.slice(0, 21)}…` : label;
-}
-
-function getCliProviderLabel(providerId: string): string {
-  const displayName = getProviderDisplayName(providerId as Parameters<typeof getProviderDisplayName>[0]);
-  if (displayName !== providerId) return displayName;
-  return providerId.charAt(0).toUpperCase() + providerId.slice(1);
-}
-
-function setProviderAccentTarget(element: HTMLElement, providerId?: ProviderId): void {
-  if (providerId) {
-    element.dataset.provider = providerId;
-    return;
-  }
-  delete element.dataset.provider;
-}
-
-function formatCliSessionStatus(status: ReturnType<typeof getStatus>): string {
-  switch (status) {
-    case 'working':
-      return 'Working';
-    case 'waiting':
-      return 'Waiting';
-    case 'completed':
-      return 'Completed';
-    case 'input':
-      return 'Needs input';
-    default:
-      return 'Idle';
-  }
-}
-
-function closeCliTargetMenu(instance: CliSurfaceInstance): void {
-  instance.targetMenuCleanup?.();
-  instance.targetMenuCleanup = undefined;
-  instance.targetMenuEl.style.display = 'none';
-}
-
-function runCliTargetMenuAction(instance: CliSurfaceInstance, action: 'new' | 'custom'): void {
-  const payload = getSendPayload(instance);
-  closeCliTargetMenu(instance);
-  if (!payload) return;
-
-  if (action === 'new') {
-    clearComposerError(instance);
-    sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
-    closeInspectComposer(instance);
-    return;
-  }
-
-  sendCliSelectionToCustomSession(payload, () => {
-    clearComposerError(instance);
-    closeInspectComposer(instance);
-  });
-}
-
-function renderCliTargetMenu(instance: CliSurfaceInstance): void {
-  const targetSessions = appState.listSurfaceTargetSessions(instance.projectId);
-  const selectedTarget = appState.resolveSurfaceTargetSession(instance.projectId);
-  const hasPayload = Boolean(instance.inspectState.payload);
-  instance.targetMenuListEl.innerHTML = '';
-
-  const header = document.createElement('div');
-  header.className = 'cli-surface-target-menu-header';
-  header.textContent = 'Open Sessions';
-  instance.targetMenuListEl.appendChild(header);
-
-  if (targetSessions.length === 0) {
-    const emptyState = document.createElement('div');
-    emptyState.className = 'cli-surface-target-menu-empty';
-    emptyState.textContent = 'Open a CLI session to route this terminal capture.';
-    instance.targetMenuListEl.appendChild(emptyState);
-  } else {
-    for (const session of targetSessions) {
-      const providerId = session.providerId ?? 'claude';
-      const button = document.createElement('button');
-      button.className = 'cli-surface-target-menu-item';
-      setProviderAccentTarget(button, providerId);
-      if (selectedTarget?.id === session.id) {
-        button.classList.add('active');
-      }
-
-      const label = document.createElement('span');
-      label.className = 'cli-surface-target-session-name';
-      label.textContent = session.name;
-
-      const meta = document.createElement('span');
-      meta.className = 'cli-surface-target-session-meta';
-      const badges = document.createElement('span');
-      badges.className = 'cli-surface-target-session-badges';
-      const status = getStatus(session.id);
-
-      const statusBadge = document.createElement('span');
-      statusBadge.className = 'cli-surface-target-session-status';
-
-      const statusDot = document.createElement('span');
-      statusDot.className = `tab-status ${status}`;
-
-      const statusLabel = document.createElement('span');
-      statusLabel.textContent = formatCliSessionStatus(status);
-
-      statusBadge.appendChild(statusDot);
-      statusBadge.appendChild(statusLabel);
-      badges.appendChild(statusBadge);
-
-      if (appState.activeProject?.activeSessionId === session.id) {
-        const activeBadge = document.createElement('span');
-        activeBadge.className = 'cli-surface-target-session-badge cli-surface-target-session-badge-active';
-        activeBadge.textContent = 'Active';
-        badges.appendChild(activeBadge);
-      }
-
-      const providerBadge = document.createElement('span');
-      providerBadge.className = 'cli-surface-target-session-badge';
-      setProviderAccentTarget(providerBadge, providerId);
-      providerBadge.textContent = getCliProviderLabel(providerId);
-      badges.appendChild(providerBadge);
-      meta.appendChild(badges);
-
-      button.appendChild(label);
-      button.appendChild(meta);
-      button.addEventListener('click', () => {
-        appState.setSurfaceTargetSession(instance.projectId, session.id);
-        syncCliTargetControls(instance);
-        closeCliTargetMenu(instance);
-      });
-      instance.targetMenuListEl.appendChild(button);
-    }
-  }
-
-  const separator = document.createElement('div');
-  separator.className = 'cli-surface-target-menu-separator';
-  instance.targetMenuListEl.appendChild(separator);
-
-  const newSessionBtn = document.createElement('button');
-  newSessionBtn.className = 'cli-surface-target-menu-item cli-surface-target-menu-action';
-  newSessionBtn.textContent = 'Send to New Session';
-  newSessionBtn.disabled = !hasPayload;
-  newSessionBtn.title = hasPayload ? 'Open a new session with this captured terminal context' : 'Capture terminal output first to send it.';
-  newSessionBtn.addEventListener('click', () => runCliTargetMenuAction(instance, 'new'));
-  instance.targetMenuListEl.appendChild(newSessionBtn);
-
-  const customSessionBtn = document.createElement('button');
-  customSessionBtn.className = 'cli-surface-target-menu-item cli-surface-target-menu-action';
-  customSessionBtn.textContent = 'Send to Custom Session…';
-  customSessionBtn.disabled = !hasPayload;
-  customSessionBtn.title = hasPayload ? 'Choose a custom session for this captured terminal context' : 'Capture terminal output first to send it.';
-  customSessionBtn.addEventListener('click', () => runCliTargetMenuAction(instance, 'custom'));
-  instance.targetMenuListEl.appendChild(customSessionBtn);
-}
-
-function openCliTargetMenu(instance: CliSurfaceInstance): void {
-  if (instance.targetMenuEl.style.display !== 'none') {
-    closeCliTargetMenu(instance);
-    return;
-  }
-
-  renderCliTargetMenu(instance);
-  instance.targetMenuEl.style.display = 'flex';
-  instance.targetMenuCleanup?.();
-  try {
-    instance.targetMenuCleanup = anchorFloatingSurface(instance.customButton, instance.targetMenuEl, {
-      placement: 'bottom-end',
-      offsetPx: 6,
-      maxWidthPx: 300,
-      maxHeightPx: 360,
-    });
-  } catch {
-    instance.targetMenuCleanup = undefined;
-  }
-}
-
-function syncCliTargetControls(instance: CliSurfaceInstance): void {
-  const selectedTarget = appState.resolveSurfaceTargetSession(instance.projectId);
-  const selectedProviderId: ProviderId | undefined = selectedTarget
-    ? selectedTarget.providerId ?? 'claude'
-    : undefined;
-  const hasPayload = Boolean(instance.inspectState.payload);
-  const hasTarget = Boolean(selectedTarget);
-
-  instance.selectedButton.disabled = !hasPayload || !hasTarget;
-  instance.newButton.disabled = !hasPayload;
-  instance.customButton.disabled = false;
-  setProviderAccentTarget(instance.composerEl, selectedProviderId);
-  setProviderAccentTarget(instance.selectedButton, selectedProviderId);
-  setProviderAccentTarget(instance.newButton, selectedProviderId);
-  setProviderAccentTarget(instance.customButton, selectedProviderId);
-
-  instance.selectedButton.title = hasTarget
-    ? `Send to ${selectedTarget?.name}`
-    : 'Select an open session target first';
-
-  instance.customButton.textContent = `${buildCliTargetButtonLabel(instance.projectId)} ▾`;
-  instance.customButton.title = hasTarget
-    ? `Current target: ${getCliProviderLabel(selectedTarget?.providerId ?? 'claude')} / ${selectedTarget?.name}`
-    : hasPayload
-      ? 'Choose which open session receives this terminal capture'
-      : 'Choose the default open session before capturing terminal output';
-
-  if (instance.targetMenuEl.style.display !== 'none') {
-    renderCliTargetMenu(instance);
-  }
-}
-
 function clearComposerError(instance: CliSurfaceInstance): void {
   instance.composerErrorEl.textContent = '';
   instance.composerErrorEl.style.display = 'none';
@@ -748,7 +538,7 @@ function renderRuntimeMeta(instance: CliSurfaceInstance): void {
   instance.metaEl.textContent = `${label} · ${status}${timingLabel ? ` · ${timingLabel}` : ''}`;
   renderRouteMeta(instance);
   renderAdapterMeta(instance);
-  syncCliTargetControls(instance);
+  instance.targetMenuController?.syncControls();
 
   if (runtime?.status === 'running') {
     instance.emptyEl.textContent = 'Runtime is live. Select text or capture the viewport to send context.';
@@ -789,7 +579,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
     instance.composerPreviewEl.textContent = '';
     syncComposerContextControl(instance, 'selection-only');
     syncComposerContextTrace(instance);
-    syncCliTargetControls(instance);
+    instance.targetMenuController?.syncControls();
     clearComposerError(instance);
     return;
   }
@@ -801,7 +591,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
     instance.composerPreviewEl.textContent = '';
     syncComposerContextControl(instance, 'selection-only');
     syncComposerContextTrace(instance);
-    syncCliTargetControls(instance);
+    instance.targetMenuController?.syncControls();
     return;
   }
 
@@ -827,7 +617,7 @@ function renderInspectState(instance: CliSurfaceInstance): void {
   instance.composerPreviewEl.textContent = payload.selectedText || payload.viewportText;
   syncComposerContextControl(instance, payload.contextMode ?? 'selection-only');
   syncComposerContextTrace(instance);
-  syncCliTargetControls(instance);
+  instance.targetMenuController?.syncControls();
 }
 
 function selectionFromViewport(instance: CliSurfaceInstance): SurfaceSelectionRange | null {
@@ -1629,9 +1419,38 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     pendingDataChunks: [],
     selectionAnchor: null,
     contextModeOverride: null,
+    targetMenuController: undefined,
     targetMenuOutsideClickHandler: undefined,
     cleanupFns: [],
   };
+
+  instance.targetMenuController = createCliTargetMenuController({
+    projectId,
+    elements: {
+      composerEl: instance.composerEl,
+      selectedButton: instance.selectedButton,
+      newButton: instance.newButton,
+      customButton: instance.customButton,
+      targetMenuEl: instance.targetMenuEl,
+      targetMenuListEl: instance.targetMenuListEl,
+    },
+    hasPayload: () => Boolean(instance.inspectState.payload),
+    onSendToNew: () => {
+      const payload = getSendPayload(instance);
+      if (!payload) return;
+      clearComposerError(instance);
+      sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
+      closeInspectComposer(instance);
+    },
+    onSendToCustom: () => {
+      const payload = getSendPayload(instance);
+      if (!payload) return;
+      sendCliSelectionToCustomSession(payload, () => {
+        clearComposerError(instance);
+        closeInspectComposer(instance);
+      });
+    },
+  });
 
   startButton.addEventListener('click', async () => {
     const profile = resolveSelectedProfile(projectId);
@@ -1690,14 +1509,14 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   });
 
   customButton.addEventListener('click', () => {
-    openCliTargetMenu(instance);
+    instance.targetMenuController?.openMenu();
   });
 
   instance.targetMenuOutsideClickHandler = (event: MouseEvent) => {
     const target = event.target as Node | null;
     if (!target) return;
     if (!instance.targetMenuEl.contains(target) && !instance.customButton.contains(target)) {
-      closeCliTargetMenu(instance);
+      instance.targetMenuController?.closeMenu();
     }
   };
   document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
@@ -1812,7 +1631,7 @@ export function destroyCliSurfacePane(projectId: string): void {
   if (instance.targetMenuOutsideClickHandler) {
     document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);
   }
-  instance.targetMenuCleanup?.();
+  instance.targetMenuController?.closeMenu();
   for (const cleanup of instance.cleanupFns) {
     try {
       cleanup();
