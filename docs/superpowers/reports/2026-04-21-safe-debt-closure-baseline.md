@@ -173,3 +173,22 @@ Any refactor in this plan must preserve:
   - `npm run build`: PASS
   - `npm test`: PASS (`326` files / `2412` tests)
   - `npm run audit:deep`: PASS
+
+## Phase 5 Verification Note (Completed)
+
+- Added conservative global coverage thresholds to `vitest.config.ts`:
+  - Statements: `45`
+  - Branches: `45`
+  - Functions: `50`
+  - Lines: `45`
+- Documented the threshold rationale and ratchet rule in:
+  - `docs/superpowers/reports/2026-04-21-coverage-threshold-ratchet.md`
+- Rationale:
+  - The gate is intentionally below both the standard coverage lane and the full-boundary lane.
+  - Thresholds prevent accidental large regressions while keeping monolith decomposition work low-noise.
+- Validation:
+  - `npm run test:coverage`: PASS (`326` files / `2412` tests, statements `89.92%`, branches `79.23%`, functions `89.45%`, lines `92.57%`)
+  - `npm run test:coverage:full`: PASS (`326` files / `2412` tests, statements `50.18%`, branches `51.19%`, functions `55.85%`, lines `51.02%`)
+  - `npm run build`: PASS
+  - `npm test`: PASS (`326` files / `2412` tests)
+  - `npm run audit:deep`: PASS

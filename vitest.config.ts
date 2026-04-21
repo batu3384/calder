@@ -26,6 +26,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'text-summary', 'html', 'lcov'],
       reportsDirectory: 'coverage',
+      thresholds: {
+        statements: 45,
+        branches: 45,
+        functions: 50,
+        lines: 45,
+      },
       include: [
         'src/main/**/*.ts',
         'src/renderer/**/*.ts',

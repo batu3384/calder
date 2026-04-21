@@ -237,10 +237,10 @@ Add minimum coverage thresholds safely, without causing noisy false failures.
 
 ### Tasks
 
-- [ ] Define initial conservative thresholds in `vitest.config.ts` from current baseline.
-- [ ] Apply global threshold with explicit per-surface exclusions only when justified.
-- [ ] Add ratchet rule in docs: thresholds only go up, never down, unless explicit incident review.
-- [ ] Document threshold rationale in `docs/superpowers/reports/`.
+- [x] Define initial conservative thresholds in `vitest.config.ts` from current baseline.
+- [x] Apply global threshold with explicit per-surface exclusions only when justified.
+- [x] Add ratchet rule in docs: thresholds only go up, never down, unless explicit incident review.
+- [x] Document threshold rationale in `docs/superpowers/reports/`.
 
 ### Recommended initial gate (baseline-safe)
 
@@ -251,11 +251,11 @@ Add minimum coverage thresholds safely, without causing noisy false failures.
 
 ### Validation
 
-- [ ] `npm run test:coverage`
-- [ ] `npm run test:coverage:full`
-- [ ] `npm run build`
-- [ ] `npm test`
-- [ ] `npm run audit:deep` (phase exit)
+- [x] `npm run test:coverage`
+- [x] `npm run test:coverage:full`
+- [x] `npm run build`
+- [x] `npm test`
+- [x] `npm run audit:deep` (phase exit)
 
 ---
 
@@ -308,5 +308,5 @@ No phase jumping unless blocker documented in the report with mitigation.
 | Phase 2 Coupling reduction | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
 | Phase 3 Test reset safety | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
 | Phase 4 Monolith decomposition | In Progress | Main agent | 2026-04-21 | Continue residual monolith cleanup after tab-bar surface-control split (`1713 -> 611` lines) |
-| Phase 5 Coverage gates | Planned | Main agent | 2026-04-21 | Set conservative thresholds |
+| Phase 5 Coverage gates | Done | Main agent | 2026-04-21 | Move to Phase 6 final sign-off after remaining monolith work |
 | Phase 6 Final sign-off | Planned | Main agent | 2026-04-21 | Run full comparison report |
