@@ -790,9 +790,6 @@ describe('mobile-inspector runtime android flows', () => {
       if (url.endsWith('/session/session-wda-fail') && method === 'DELETE') {
         return {
           ok: true,
-          async text() {
-            return '{}';
-          },
         };
       }
       throw new Error(`Unexpected fetch: ${method} ${url}`);

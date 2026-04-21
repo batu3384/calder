@@ -605,6 +605,164 @@ describe('mobile-control-bridge', () => {
     expect(status).toBe(429);
   });
 
+  it('rejects malformed bootstrap JSON and locks pairing after max OTP failures', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-bootstrap-guards',
+      offer: 'offer-code-bootstrap-guards',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const malformed = await fetch(bootstrapPath, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    });
+    expect(malformed.status).toBe(400);
+    expect(await malformed.text()).toContain('Invalid JSON payload');
+
+    for (let i = 0; i < 5; i += 1) {
+      const wrongOtp = await postJson(bootstrapPath, {
+        token,
+        otp: '111111',
+      });
+      expect(wrongOtp.status).toBe(401);
+    }
+
+    const locked = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(locked.status).toBe(429);
+    expect(locked.text).toContain('Too many OTP attempts');
+  });
+
+  it('enforces answer endpoint token and OTP sequencing with malformed and missing payload checks', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-answer-guards',
+      offer: 'offer-code-answer-guards',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const answerPath = `${local.origin}/api/pair/${pairing.pairingId}/answer`;
+    const invalidToken = await postJson(answerPath, {
+      token: 'bad-token',
+      submitToken: 'unused',
+      answer: 'unused',
+    });
+    expect(invalidToken.status).toBe(403);
+    expect(invalidToken.text).toContain('Pairing token is invalid');
+
+    const otpRequired = await postJson(answerPath, {
+      token,
+      submitToken: 'unused',
+      answer: 'unused',
+    });
+    expect(otpRequired.status).toBe(403);
+    expect(otpRequired.text).toContain('OTP verification is required first');
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+    const submitToken = (bootstrap.json as { submitToken: string }).submitToken;
+
+    const malformed = await fetch(answerPath, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    });
+    expect(malformed.status).toBe(400);
+    expect(await malformed.text()).toContain('Invalid JSON payload');
+
+    const missingPayload = await postJson(answerPath, {
+      token,
+      submitToken,
+    });
+    expect(missingPayload.status).toBe(400);
+    expect(missingPayload.text).toContain('Missing answer payload');
+  });
+
+  it('enforces challenge endpoint token and OTP sequencing with malformed and missing payload checks', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-challenge-guards',
+      offer: 'offer-code-challenge-guards',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+    const token = local.searchParams.get('t');
+    expect(token).toBeTruthy();
+
+    const challengePath = `${local.origin}/api/pair/${pairing.pairingId}/challenge`;
+    const invalidToken = await postJson(challengePath, {
+      token: 'bad-token',
+      challenge: 'ab'.repeat(32),
+    });
+    expect(invalidToken.status).toBe(403);
+    expect(invalidToken.text).toContain('Pairing token is invalid');
+
+    const otpRequired = await postJson(challengePath, {
+      token,
+      challenge: 'ab'.repeat(32),
+    });
+    expect(otpRequired.status).toBe(403);
+    expect(otpRequired.text).toContain('OTP verification is required first');
+
+    const bootstrapPath = `${local.origin}/api/pair/${pairing.pairingId}/bootstrap`;
+    const bootstrap = await postJson(bootstrapPath, {
+      token,
+      otp: pairing.otpCode,
+    });
+    expect(bootstrap.status).toBe(200);
+
+    const malformed = await fetch(challengePath, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{',
+    });
+    expect(malformed.status).toBe(400);
+    expect(await malformed.text()).toContain('Invalid JSON payload');
+
+    const missingPayload = await postJson(challengePath, { token });
+    expect(missingPayload.status).toBe(400);
+    expect(missingPayload.text).toContain('Missing auth challenge payload');
+  });
+
+  it('serves health checks, expires stale pair pages, and returns 404 for unknown POST routes', async () => {
+    const pairing = await createMobileControlPairing({
+      sessionId: 'session-health-expiry-routes',
+      offer: 'offer-code-health-expiry-routes',
+      passphrase: 'ABCD-EF12-GH34-JK56',
+      mode: 'readonly',
+      ttlMs: 45,
+    });
+    const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
+
+    const health = await getRequest(`${local.origin}/health`);
+    expect(health.status).toBe(200);
+    expect(health.json).toEqual({ ok: true });
+
+    await new Promise((resolve) => setTimeout(resolve, 90));
+    const expiredPage = await getRequest(`${local.origin}/m/${pairing.pairingId}?t=${local.searchParams.get('t') ?? ''}`);
+    expect(expiredPage.status).toBe(404);
+    expect(expiredPage.text).toContain('Pairing not found');
+
+    const unknownPost = await postJson(`${local.origin}/api/pair/${pairing.pairingId}/unknown`, { token: 'x' });
+    expect(unknownPost.status).toBe(404);
+    expect(unknownPost.text).toContain('Route not found');
+  });
+
   it('falls back to LAN mode when public base URL contains credentials', async () => {
     process.env.CALDER_MOBILE_PUBLIC_BASE_URL = 'https://user:pass@remote.example.com/calder';
     const pairing = await createMobileControlPairing({
