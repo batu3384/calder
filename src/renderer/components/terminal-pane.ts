@@ -103,20 +103,21 @@ function workspaceLabel(projectPath: string): string {
   return parts[parts.length - 1] || projectPath;
 }
 
-export function createTerminalPane(
-  sessionId: string,
-  projectPath: string,
-  cliSessionId: string | null,
-  isResume: boolean = false,
-  args: string = '',
-  providerId: ProviderId = 'claude',
-  projectId?: string
-): TerminalInstance {
-  if (instances.has(sessionId)) {
-    return instances.get(sessionId)!;
-  }
-  const caps = getProviderCapabilities(providerId);
-  const effectiveIsResume = isResume && !!cliSessionId && caps?.sessionResume !== false;
+interface CreateTerminalShellParams {
+  sessionId: string;
+  projectPath: string;
+  providerId: ProviderId;
+  effectiveIsResume: boolean;
+  caps: ReturnType<typeof getProviderCapabilities>;
+}
+
+interface TerminalShellElements {
+  element: HTMLDivElement;
+  xtermWrap: HTMLDivElement;
+}
+
+function createTerminalShell(params: CreateTerminalShellParams): TerminalShellElements {
+  const { sessionId, projectPath, providerId, effectiveIsResume, caps } = params;
 
   const element = document.createElement('div');
   element.className = 'terminal-pane hidden';
@@ -173,6 +174,23 @@ export function createTerminalPane(
   statusBar.appendChild(costDisplay);
   element.appendChild(statusBar);
 
+  return { element, xtermWrap };
+}
+
+interface TerminalCore {
+  terminal: Terminal;
+  fitAddon: FitAddon;
+  searchAddon: SearchAddon;
+}
+
+function clearDomSelection(terminal: Terminal): void {
+  try {
+    terminal.clearSelection();
+  } catch {}
+  window.getSelection?.()?.removeAllRanges?.();
+}
+
+function createTerminalCore(sessionId: string, projectPath: string): TerminalCore {
   const terminal = new Terminal({
     theme: {
       background: '#000000',
@@ -196,8 +214,7 @@ export function createTerminalPane(
       activate: (event, uri) => {
         event.preventDefault?.();
         event.stopPropagation?.();
-        try { terminal.clearSelection(); } catch {}
-        window.getSelection?.()?.removeAllRanges?.();
+        clearDomSelection(terminal);
         openTerminalWebLink(sessionId, uri, 'osc-link', projectPath);
       },
     },
@@ -212,16 +229,20 @@ export function createTerminalPane(
   terminal.loadAddon(new WebLinksAddon((event, url) => {
     event.preventDefault?.();
     event.stopPropagation?.();
-    try { terminal.clearSelection(); } catch {}
-    window.getSelection?.()?.removeAllRanges?.();
+    clearDomSelection(terminal);
     openTerminalWebLink(sessionId, url, 'web-link', projectPath);
   }));
 
+  return { terminal, fitAddon, searchAddon };
+}
+
+function bindTerminalLinkPointerHandlers(
+  terminal: Terminal,
+  xtermWrap: HTMLDivElement,
+  sessionId: string,
+  projectPath: string,
+): void {
   let suppressLinkDragSelection = false;
-  const clearPointerSelection = (): void => {
-    try { terminal.clearSelection(); } catch {}
-    window.getSelection?.()?.removeAllRanges?.();
-  };
   const suppressPointerEvent = (event: MouseEvent): void => {
     event.preventDefault();
     event.stopPropagation();
@@ -237,8 +258,9 @@ export function createTerminalPane(
     if (!candidate) return;
     suppressLinkDragSelection = true;
     suppressPointerEvent(event);
-    clearPointerSelection();
+    clearDomSelection(terminal);
   }, { capture: true });
+
   xtermWrap.addEventListener('mousemove', (event: MouseEvent) => {
     if (!suppressLinkDragSelection) return;
     if ((event.buttons & 1) !== 1) {
@@ -246,23 +268,32 @@ export function createTerminalPane(
       return;
     }
     suppressPointerEvent(event);
-    clearPointerSelection();
+    clearDomSelection(terminal);
   }, { capture: true });
+
   xtermWrap.addEventListener('mouseup', () => {
     suppressLinkDragSelection = false;
   }, { capture: true });
+
   xtermWrap.addEventListener('mouseleave', () => {
     suppressLinkDragSelection = false;
   }, { capture: true });
+
   xtermWrap.addEventListener('click', (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0) return;
     const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
     if (!candidate) return;
     suppressPointerEvent(event);
-    clearPointerSelection();
+    clearDomSelection(terminal);
     openTerminalWebLink(sessionId, candidate, 'web-link', projectPath);
   }, { capture: true });
+}
 
+function bindTerminalInputAndFocusHandlers(
+  terminal: Terminal,
+  element: HTMLDivElement,
+  sessionId: string,
+): void {
   // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline
   attachClipboardCopyHandler(terminal, (e) => {
     if (e.shiftKey && e.key === 'Enter') {
@@ -271,6 +302,62 @@ export function createTerminalPane(
       return false;
     }
   });
+
+  // Handle user input → PTY
+  terminal.onData((data) => {
+    window.calder.pty.write(sessionId, data);
+  });
+
+  // Focus tracking
+  element.addEventListener('mousedown', () => {
+    setFocused(sessionId);
+  });
+  terminal.onData(() => {
+    if (focusedSessionId !== sessionId) {
+      setFocused(sessionId);
+    }
+  });
+}
+
+function registerTerminalLinkProviders(terminal: Terminal, projectPath: string, projectId?: string): void {
+  // Register file path link provider for Cmd+Click
+  if (projectId) {
+    terminal.registerLinkProvider(new FilePathLinkProvider(projectId, terminal));
+  }
+
+  // Register GitHub #123 link provider
+  window.calder.git.getRemoteUrl(projectPath).then((repoUrl) => {
+    if (repoUrl) {
+      terminal.registerLinkProvider(new GithubLinkProvider(repoUrl, terminal));
+    }
+  });
+}
+
+export function createTerminalPane(
+  sessionId: string,
+  projectPath: string,
+  cliSessionId: string | null,
+  isResume: boolean = false,
+  args: string = '',
+  providerId: ProviderId = 'claude',
+  projectId?: string
+): TerminalInstance {
+  if (instances.has(sessionId)) {
+    return instances.get(sessionId)!;
+  }
+
+  const caps = getProviderCapabilities(providerId);
+  const effectiveIsResume = isResume && !!cliSessionId && caps?.sessionResume !== false;
+  const { element, xtermWrap } = createTerminalShell({
+    sessionId,
+    projectPath,
+    providerId,
+    effectiveIsResume,
+    caps,
+  });
+  const { terminal, fitAddon, searchAddon } = createTerminalCore(sessionId, projectPath);
+  bindTerminalLinkPointerHandlers(terminal, xtermWrap, sessionId, projectPath);
+  bindTerminalInputAndFocusHandlers(terminal, element, sessionId);
 
   const instance: TerminalInstance = {
     terminal,
@@ -291,34 +378,7 @@ export function createTerminalPane(
   };
 
   instances.set(sessionId, instance);
-
-  // Register file path link provider for Cmd+Click
-  if (projectId) {
-    terminal.registerLinkProvider(new FilePathLinkProvider(projectId, terminal));
-  }
-
-  // Register GitHub #123 link provider
-  window.calder.git.getRemoteUrl(projectPath).then((repoUrl) => {
-    if (repoUrl) {
-      terminal.registerLinkProvider(new GithubLinkProvider(repoUrl, terminal));
-    }
-  });
-
-  // Handle user input → PTY
-  terminal.onData((data) => {
-    window.calder.pty.write(sessionId, data);
-  });
-
-  // Focus tracking
-  element.addEventListener('mousedown', () => {
-    setFocused(sessionId);
-  });
-  terminal.onData(() => {
-    if (focusedSessionId !== sessionId) {
-      setFocused(sessionId);
-    }
-  });
-
+  registerTerminalLinkProviders(terminal, projectPath, projectId);
   return instance;
 }
 

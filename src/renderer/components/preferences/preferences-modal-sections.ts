@@ -119,6 +119,59 @@ interface RenderProvidersSectionArgs {
   onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
 }
 
+interface ProviderAvailabilitySnapshot {
+  providers: CliProviderMeta[];
+  availability: Map<ProviderId, boolean>;
+}
+
+function buildProviderOptions(snapshot: ProviderAvailabilitySnapshot): Array<{
+  value: ProviderId;
+  label: string;
+  disabled: boolean;
+}> {
+  return snapshot.providers.map(provider => {
+    const available = snapshot.availability.get(provider.id) ?? true;
+    return {
+      value: provider.id,
+      label: available ? provider.displayName : `${provider.displayName} (not installed)`,
+      disabled: !available,
+    };
+  });
+}
+
+function buildProviderNote(snapshot: ProviderAvailabilitySnapshot | null, providerId: ProviderId): string {
+  if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
+  if (snapshot.availability.get(providerId)) {
+    return 'New sessions use this tool unless a workflow picks a different one.';
+  }
+  return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
+}
+
+function appendGeneralToggleField(
+  container: HTMLElement,
+  id: string,
+  labelText: string,
+  checked: boolean,
+  onChange: (checkedState: boolean) => void,
+): void {
+  const row = document.createElement('div');
+  row.className = 'modal-toggle-field';
+
+  const label = document.createElement('label');
+  label.htmlFor = id;
+  label.textContent = labelText;
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = id;
+  checkbox.checked = checked;
+  checkbox.addEventListener('change', () => onChange(checkbox.checked));
+
+  row.appendChild(label);
+  row.appendChild(checkbox);
+  container.appendChild(row);
+}
+
 export function renderGeneralPreferencesSection({
   content,
   preferenceDraft,
@@ -165,24 +218,6 @@ export function renderGeneralPreferencesSection({
   providerLabel.textContent = 'Default coding tool';
 
   const currentDefault = preferenceDraft.defaultProvider;
-
-  const buildProviderOptions = (snapshot: { providers: CliProviderMeta[]; availability: Map<ProviderId, boolean> }) =>
-    snapshot.providers.map(provider => {
-      const available = snapshot.availability.get(provider.id) ?? true;
-      return {
-        value: provider.id,
-        label: available ? provider.displayName : `${provider.displayName} (not installed)`,
-        disabled: !available,
-      };
-    });
-
-  const buildProviderNote = (snapshot: { availability: Map<ProviderId, boolean> } | null, providerId: ProviderId): string => {
-    if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
-    if (snapshot.availability.get(providerId)) {
-      return 'New sessions use this tool unless a workflow picks a different one.';
-    }
-    return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
-  };
 
   let snapshot = getProviderAvailabilitySnapshot();
   if (snapshot) {
@@ -262,26 +297,8 @@ export function renderGeneralPreferencesSection({
     preferenceDraft.language = languageSelect.getValue() as UiLanguage;
   });
 
-  const appendToggleField = (id: string, labelText: string, checked: boolean, onChange: (checkedState: boolean) => void) => {
-    const row = document.createElement('div');
-    row.className = 'modal-toggle-field';
-
-    const label = document.createElement('label');
-    label.htmlFor = id;
-    label.textContent = labelText;
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = id;
-    checkbox.checked = checked;
-    checkbox.addEventListener('change', () => onChange(checkbox.checked));
-
-    row.appendChild(label);
-    row.appendChild(checkbox);
-    content.appendChild(row);
-  };
-
-  appendToggleField(
+  appendGeneralToggleField(
+    content,
     'pref-sound-on-waiting',
     'Play sound when session finishes work',
     preferenceDraft.soundOnSessionWaiting,
@@ -289,7 +306,8 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.soundOnSessionWaiting = checked;
     },
   );
-  appendToggleField(
+  appendGeneralToggleField(
+    content,
     'pref-notifications-desktop',
     'Desktop notifications when sessions need attention',
     preferenceDraft.notificationsDesktop,
@@ -297,7 +315,8 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.notificationsDesktop = checked;
     },
   );
-  appendToggleField(
+  appendGeneralToggleField(
+    content,
     'pref-session-history',
     'Record session history when sessions close',
     preferenceDraft.sessionHistoryEnabled,
@@ -305,7 +324,8 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.sessionHistoryEnabled = checked;
     },
   );
-  appendToggleField(
+  appendGeneralToggleField(
+    content,
     'pref-insights-enabled',
     'Show insight alerts',
     preferenceDraft.insightsEnabled,
@@ -313,7 +333,8 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.insightsEnabled = checked;
     },
   );
-  appendToggleField(
+  appendGeneralToggleField(
+    content,
     'pref-auto-title',
     'Auto-name sessions from conversation title',
     preferenceDraft.autoTitleEnabled,

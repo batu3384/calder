@@ -109,6 +109,54 @@ function bindProjectWatcher<State>(
   win.once('closed', onWindowClosed);
 }
 
+function registerCalderProjectWatchIpcHandlers(): void {
+  ipcMain.on('context:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectContextBindings, win, projectPath, startProjectContextWatcher, 'context:changed');
+  });
+  ipcMain.on('workflow:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectWorkflowBindings, win, projectPath, startProjectWorkflowWatcher, 'workflow:changed');
+  });
+  ipcMain.on('teamContext:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectTeamContextBindings, win, projectPath, startProjectTeamContextWatcher, 'teamContext:changed');
+  });
+  ipcMain.on('review:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectReviewBindings, win, projectPath, startProjectReviewWatcher, 'review:changed');
+  });
+  ipcMain.on('governance:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectGovernanceBindings, win, projectPath, startProjectGovernanceWatcher, 'governance:changed');
+  });
+  ipcMain.on('task:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectTaskBindings, win, projectPath, startProjectBackgroundTaskWatcher, 'task:changed');
+  });
+  ipcMain.on('checkpoint:watchProject', (event, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
+  });
+}
+
+function registerBrowseDirectoryIpcHandler(): void {
+  ipcMain.handle('fs:browseDirectory', async () => {
+    const win = BrowserWindow.getAllWindows()[0];
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+  });
+}
+
 export function resetCalderProjectWatchers(): void {
   stopProjectContextWatcher();
   stopProjectWorkflowWatcher();
@@ -279,53 +327,6 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
     return readProjectCheckpointFile(projectPath, checkpointPath);
   });
 
-  ipcMain.on('context:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectContextBindings, win, projectPath, startProjectContextWatcher, 'context:changed');
-  });
-
-  ipcMain.on('workflow:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectWorkflowBindings, win, projectPath, startProjectWorkflowWatcher, 'workflow:changed');
-  });
-
-  ipcMain.on('teamContext:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectTeamContextBindings, win, projectPath, startProjectTeamContextWatcher, 'teamContext:changed');
-  });
-
-  ipcMain.on('review:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectReviewBindings, win, projectPath, startProjectReviewWatcher, 'review:changed');
-  });
-
-  ipcMain.on('governance:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectGovernanceBindings, win, projectPath, startProjectGovernanceWatcher, 'governance:changed');
-  });
-
-  ipcMain.on('task:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectTaskBindings, win, projectPath, startProjectBackgroundTaskWatcher, 'task:changed');
-  });
-
-  ipcMain.on('checkpoint:watchProject', (event, projectPath: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
-    if (!win) return;
-    bindProjectWatcher(projectCheckpointBindings, win, projectPath, startProjectCheckpointWatcher, 'checkpoint:changed');
-  });
-
-  ipcMain.handle('fs:browseDirectory', async () => {
-    const win = BrowserWindow.getAllWindows()[0];
-    if (!win) return null;
-    const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
-    if (result.canceled || result.filePaths.length === 0) return null;
-    return result.filePaths[0];
-  });
+  registerCalderProjectWatchIpcHandlers();
+  registerBrowseDirectoryIpcHandler();
 }

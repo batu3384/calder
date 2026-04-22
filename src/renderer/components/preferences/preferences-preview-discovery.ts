@@ -14,26 +14,14 @@ export interface RenderProjectPreviewCenterSectionArgs {
   onCloseModalWide: () => void;
 }
 
-export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCenterSectionArgs): void {
-  const card = args.appendSectionCard(
-    args.container,
-    'Preview center',
-    'Spot local preview targets, open them in Live View, and jump straight to the CLI or workspace shell when you need logs.',
-  );
+function renderPreviewDiscoveryEmpty(shell: HTMLElement, message: string): void {
+  const empty = document.createElement('div');
+  empty.className = 'preview-discovery-empty';
+  empty.textContent = message;
+  shell.appendChild(empty);
+}
 
-  const shell = document.createElement('div');
-  shell.className = 'preview-discovery-shell';
-  card.appendChild(shell);
-
-  if (!args.project) {
-    const empty = document.createElement('div');
-    empty.className = 'preview-discovery-empty';
-    empty.textContent = 'Open a project to inspect local preview targets and connect them to Live View.';
-    shell.appendChild(empty);
-    return;
-  }
-  const project = args.project;
-
+function createPreviewDiscoveryActions(projectId: string, onCloseModalWide: () => void): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'preview-discovery-actions';
 
@@ -42,8 +30,8 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
   focusCliBtn.type = 'button';
   focusCliBtn.textContent = 'Focus CLI Surface';
   focusCliBtn.addEventListener('click', () => {
-    focusCliPreviewSurface(project.id);
-    args.onCloseModalWide();
+    focusCliPreviewSurface(projectId);
+    onCloseModalWide();
   });
   actions.appendChild(focusCliBtn);
 
@@ -52,8 +40,8 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
   openShellBtn.type = 'button';
   openShellBtn.textContent = 'Open workspace shell';
   openShellBtn.addEventListener('click', () => {
-    openWorkspaceShellLogs(project.id);
-    args.onCloseModalWide();
+    openWorkspaceShellLogs(projectId);
+    onCloseModalWide();
   });
   actions.appendChild(openShellBtn);
 
@@ -64,25 +52,25 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
   restartRuntimeBtn.addEventListener('click', async () => {
     restartRuntimeBtn.disabled = true;
     restartRuntimeBtn.textContent = 'Restarting…';
-    const result = await restartPreviewRuntime(project.id);
+    const result = await restartPreviewRuntime(projectId);
     if (result.ok) {
-      focusCliPreviewSurface(project.id);
-      openWorkspaceShellLogs(project.id);
-      args.onCloseModalWide();
+      focusCliPreviewSurface(projectId);
+      openWorkspaceShellLogs(projectId);
+      onCloseModalWide();
     } else {
       restartRuntimeBtn.disabled = false;
       restartRuntimeBtn.textContent = 'Restart failed';
     }
   });
   actions.appendChild(restartRuntimeBtn);
+  return actions;
+}
 
-  shell.appendChild(actions);
-
+function createPreviewSummary(project: ProjectRecord): HTMLDivElement {
   const surface = project.surface;
-  const cliRuntime = surface?.cli?.runtime;
-  const runtimeHealth = describePreviewRuntimeHealth(project.id);
   const activeSurfaceLabel =
     surface?.kind === 'cli' ? 'CLI Surface' : surface?.kind === 'mobile' ? 'Mobile Surface' : 'Live View';
+  const runtimeHealth = describePreviewRuntimeHealth(project.id);
 
   const summary = document.createElement('div');
   summary.className = 'preview-discovery-summary';
@@ -100,8 +88,12 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
         <span class="preview-discovery-stat-value">${runtimeHealth.statusLabel}</span>
       </div>
     `;
-  shell.appendChild(summary);
+  return summary;
+}
 
+function createPreviewHealth(project: ProjectRecord): HTMLDivElement {
+  const cliRuntime = project.surface?.cli?.runtime;
+  const runtimeHealth = describePreviewRuntimeHealth(project.id);
   const health = document.createElement('div');
   health.className = 'preview-discovery-health';
   health.dataset.tone = runtimeHealth.tone;
@@ -146,18 +138,57 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
     cwd.textContent = `Runtime cwd: ${cliRuntime.cwd}`;
     health.appendChild(cwd);
   }
+  return health;
+}
 
-  shell.appendChild(health);
+function createPreviewTargetItem(
+  projectId: string,
+  target: Awaited<ReturnType<typeof window.calder.browser.listLocalTargets>>[number],
+  onCloseModalWide: () => void,
+): HTMLDivElement {
+  const item = document.createElement('div');
+  item.className = 'preview-discovery-item';
 
-  const list = document.createElement('div');
-  list.className = 'preview-discovery-list';
-  shell.appendChild(list);
+  const header = document.createElement('div');
+  header.className = 'preview-discovery-item-header';
 
-  const loading = document.createElement('div');
-  loading.className = 'preview-discovery-empty';
-  loading.textContent = 'Scanning local preview targets…';
-  list.appendChild(loading);
+  const copy = document.createElement('div');
+  copy.className = 'preview-discovery-item-copy';
 
+  const title = document.createElement('div');
+  title.className = 'preview-discovery-item-title';
+  title.textContent = target.label;
+
+  const meta = document.createElement('div');
+  meta.className = 'preview-discovery-item-meta';
+  meta.textContent = target.meta ? `${target.meta} · ${target.url}` : target.url;
+
+  copy.appendChild(title);
+  copy.appendChild(meta);
+  header.appendChild(copy);
+
+  const itemActions = document.createElement('div');
+  itemActions.className = 'preview-discovery-item-actions';
+
+  const openLiveViewBtn = document.createElement('button');
+  openLiveViewBtn.className = 'preview-discovery-item-btn';
+  openLiveViewBtn.type = 'button';
+  openLiveViewBtn.textContent = 'Open in Live View';
+  openLiveViewBtn.addEventListener('click', () => {
+    openPreviewTargetInLiveView(projectId, target.url);
+    onCloseModalWide();
+  });
+  itemActions.appendChild(openLiveViewBtn);
+  header.appendChild(itemActions);
+  item.appendChild(header);
+  return item;
+}
+
+function loadPreviewTargets(
+  list: HTMLElement,
+  projectId: string,
+  onCloseModalWide: () => void,
+): void {
   void window.calder.browser
     .listLocalTargets()
     .then((targets) => {
@@ -165,59 +196,51 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
       list.innerHTML = '';
 
       if (targets.length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'preview-discovery-empty';
-        empty.textContent = 'No local preview targets are responding right now. Start a dev server and it will show up here.';
-        list.appendChild(empty);
+        renderPreviewDiscoveryEmpty(
+          list,
+          'No local preview targets are responding right now. Start a dev server and it will show up here.',
+        );
         return;
       }
 
       for (const target of targets) {
-        const item = document.createElement('div');
-        item.className = 'preview-discovery-item';
-
-        const header = document.createElement('div');
-        header.className = 'preview-discovery-item-header';
-
-        const copy = document.createElement('div');
-        copy.className = 'preview-discovery-item-copy';
-
-        const title = document.createElement('div');
-        title.className = 'preview-discovery-item-title';
-        title.textContent = target.label;
-
-        const meta = document.createElement('div');
-        meta.className = 'preview-discovery-item-meta';
-        meta.textContent = target.meta ? `${target.meta} · ${target.url}` : target.url;
-
-        copy.appendChild(title);
-        copy.appendChild(meta);
-        header.appendChild(copy);
-
-        const itemActions = document.createElement('div');
-        itemActions.className = 'preview-discovery-item-actions';
-
-        const openLiveViewBtn = document.createElement('button');
-        openLiveViewBtn.className = 'preview-discovery-item-btn';
-        openLiveViewBtn.type = 'button';
-        openLiveViewBtn.textContent = 'Open in Live View';
-        openLiveViewBtn.addEventListener('click', () => {
-          openPreviewTargetInLiveView(project.id, target.url);
-          args.onCloseModalWide();
-        });
-        itemActions.appendChild(openLiveViewBtn);
-
-        header.appendChild(itemActions);
-        item.appendChild(header);
-        list.appendChild(item);
+        list.appendChild(createPreviewTargetItem(projectId, target, onCloseModalWide));
       }
     })
     .catch(() => {
       if (!list.isConnected) return;
       list.innerHTML = '';
-      const empty = document.createElement('div');
-      empty.className = 'preview-discovery-empty';
-      empty.textContent = 'Preview discovery is unavailable right now. You can still open the workspace shell and check logs manually.';
-      list.appendChild(empty);
+      renderPreviewDiscoveryEmpty(
+        list,
+        'Preview discovery is unavailable right now. You can still open the workspace shell and check logs manually.',
+      );
     });
+}
+
+export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCenterSectionArgs): void {
+  const card = args.appendSectionCard(
+    args.container,
+    'Preview center',
+    'Spot local preview targets, open them in Live View, and jump straight to the CLI or workspace shell when you need logs.',
+  );
+
+  const shell = document.createElement('div');
+  shell.className = 'preview-discovery-shell';
+  card.appendChild(shell);
+
+  if (!args.project) {
+    renderPreviewDiscoveryEmpty(shell, 'Open a project to inspect local preview targets and connect them to Live View.');
+    return;
+  }
+  const project = args.project;
+
+  shell.appendChild(createPreviewDiscoveryActions(project.id, args.onCloseModalWide));
+  shell.appendChild(createPreviewSummary(project));
+  shell.appendChild(createPreviewHealth(project));
+
+  const list = document.createElement('div');
+  list.className = 'preview-discovery-list';
+  shell.appendChild(list);
+  renderPreviewDiscoveryEmpty(list, 'Scanning local preview targets…');
+  loadPreviewTargets(list, project.id, args.onCloseModalWide);
 }

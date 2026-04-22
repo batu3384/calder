@@ -11,6 +11,43 @@ interface BrowserPaneChromeElements {
   statusBadge: HTMLSpanElement;
 }
 
+interface BrowserToolbarStructure {
+  toolbar: HTMLDivElement;
+  toolbarAddressShell: HTMLDivElement;
+  captureCluster: BrowserCaptureToolbarCluster;
+}
+
+interface BrowserNavControls {
+  backBtn: HTMLButtonElement;
+  fwdBtn: HTMLButtonElement;
+  reloadBtn: HTMLButtonElement;
+  homeBtn: HTMLButtonElement;
+}
+
+interface BrowserAddressControls {
+  toolbarAddressShell: HTMLDivElement;
+  urlInput: HTMLInputElement;
+  goBtn: HTMLButtonElement;
+}
+
+interface BrowserViewportControls {
+  viewportWrapper: HTMLDivElement;
+  viewportBtn: HTMLButtonElement;
+  viewportDropdown: HTMLDivElement;
+  customItem: HTMLButtonElement;
+  customForm: HTMLDivElement;
+  customWInput: HTMLInputElement;
+  customHInput: HTMLInputElement;
+  customApplyBtn: HTMLButtonElement;
+}
+
+interface BrowserActionButtons {
+  inspectBtn: HTMLButtonElement;
+  recordBtn: HTMLButtonElement;
+  drawBtn: HTMLButtonElement;
+  authBtn: HTMLButtonElement;
+}
+
 export interface BrowserTabPaneLayoutElements {
   el: HTMLDivElement;
   chromeHint: HTMLDivElement;
@@ -69,42 +106,7 @@ function createBrowserPaneChrome(): BrowserPaneChromeElements {
   };
 }
 
-export function createBrowserTabPaneLayout(sessionId: string, url?: string): BrowserTabPaneLayoutElements {
-  const el = document.createElement('div');
-  el.className = 'browser-tab-pane hidden';
-  el.dataset.sessionId = sessionId;
-
-  const { chrome, chromeHint, statusBadge } = createBrowserPaneChrome();
-  el.appendChild(chrome);
-
-  const toolbar = document.createElement('div');
-  toolbar.className = 'browser-tab-toolbar';
-
-  const toolbarNav = document.createElement('div');
-  toolbarNav.className = 'browser-toolbar-nav';
-
-  const toolbarAddress = document.createElement('div');
-  toolbarAddress.className = 'browser-toolbar-address browser-toolbar-primary';
-
-  const toolbarNavShell = document.createElement('div');
-  toolbarNavShell.className = 'browser-toolbar-nav-shell';
-
-  const toolbarAddressShell = document.createElement('div');
-  toolbarAddressShell.className = 'browser-toolbar-address-shell';
-
-  const toolbarTools = document.createElement('div');
-  toolbarTools.className = 'browser-toolbar-tools';
-  toolbarTools.setAttribute('aria-label', 'Live View tools');
-
-  const toolbarToolsShell = document.createElement('div');
-  toolbarToolsShell.className = 'browser-toolbar-tools-shell';
-
-  const viewCluster = createBrowserToolbarCluster('View');
-  viewCluster.element.dataset.kind = 'view';
-
-  const captureCluster = createBrowserToolbarCluster('Capture');
-  captureCluster.element.dataset.kind = 'capture';
-
+function createBrowserNavControls(): BrowserNavControls {
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';
   backBtn.textContent = '\u25C0';
@@ -129,6 +131,13 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   homeBtn.title = 'Home';
   homeBtn.ariaLabel = 'Open Live View home';
 
+  return { backBtn, fwdBtn, reloadBtn, homeBtn };
+}
+
+function createBrowserAddressControls(url?: string): BrowserAddressControls {
+  const toolbarAddressShell = document.createElement('div');
+  toolbarAddressShell.className = 'browser-toolbar-address-shell';
+
   const urlInput = document.createElement('input');
   urlInput.className = 'browser-url-input';
   urlInput.type = 'text';
@@ -141,6 +150,12 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   goBtn.textContent = 'Go';
   goBtn.ariaLabel = 'Open address';
 
+  toolbarAddressShell.appendChild(urlInput);
+  toolbarAddressShell.appendChild(goBtn);
+  return { toolbarAddressShell, urlInput, goBtn };
+}
+
+function createBrowserViewportControls(sessionId: string): BrowserViewportControls {
   const viewportWrapper = document.createElement('div');
   viewportWrapper.className = 'browser-viewport-wrapper';
 
@@ -200,10 +215,22 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   customForm.appendChild(customSep);
   customForm.appendChild(customHInput);
   customForm.appendChild(customApplyBtn);
-
   viewportWrapper.appendChild(viewportBtn);
   viewportWrapper.appendChild(viewportDropdown);
 
+  return {
+    viewportWrapper,
+    viewportBtn,
+    viewportDropdown,
+    customItem,
+    customForm,
+    customWInput,
+    customHInput,
+    customApplyBtn,
+  };
+}
+
+function createBrowserActionButtons(): BrowserActionButtons {
   const inspectBtn = document.createElement('button');
   inspectBtn.className = 'browser-inspect-btn';
   inspectBtn.textContent = 'Inspect';
@@ -227,21 +254,48 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   authBtn.title = 'Manage saved login credentials';
   authBtn.ariaLabel = 'Manage saved login credentials';
 
-  toolbarNavShell.appendChild(backBtn);
-  toolbarNavShell.appendChild(fwdBtn);
-  toolbarNavShell.appendChild(reloadBtn);
-  toolbarNavShell.appendChild(homeBtn);
+  return { inspectBtn, recordBtn, drawBtn, authBtn };
+}
+
+function createBrowserToolbar(
+  address: BrowserAddressControls,
+  nav: BrowserNavControls,
+  viewport: BrowserViewportControls,
+  actions: BrowserActionButtons,
+): BrowserToolbarStructure {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'browser-tab-toolbar';
+
+  const toolbarNav = document.createElement('div');
+  toolbarNav.className = 'browser-toolbar-nav';
+  const toolbarNavShell = document.createElement('div');
+  toolbarNavShell.className = 'browser-toolbar-nav-shell';
+  toolbarNavShell.appendChild(nav.backBtn);
+  toolbarNavShell.appendChild(nav.fwdBtn);
+  toolbarNavShell.appendChild(nav.reloadBtn);
+  toolbarNavShell.appendChild(nav.homeBtn);
   toolbarNav.appendChild(toolbarNavShell);
 
-  toolbarAddressShell.appendChild(urlInput);
-  toolbarAddressShell.appendChild(goBtn);
-  toolbarAddress.appendChild(toolbarAddressShell);
+  const toolbarAddress = document.createElement('div');
+  toolbarAddress.className = 'browser-toolbar-address browser-toolbar-primary';
+  toolbarAddress.appendChild(address.toolbarAddressShell);
 
-  viewCluster.controls.appendChild(viewportWrapper);
-  viewCluster.controls.appendChild(authBtn);
-  captureCluster.controls.appendChild(inspectBtn);
-  captureCluster.controls.appendChild(recordBtn);
-  captureCluster.controls.appendChild(drawBtn);
+  const toolbarTools = document.createElement('div');
+  toolbarTools.className = 'browser-toolbar-tools';
+  toolbarTools.setAttribute('aria-label', 'Live View tools');
+  const toolbarToolsShell = document.createElement('div');
+  toolbarToolsShell.className = 'browser-toolbar-tools-shell';
+
+  const viewCluster = createBrowserToolbarCluster('View');
+  viewCluster.element.dataset.kind = 'view';
+  viewCluster.controls.appendChild(viewport.viewportWrapper);
+  viewCluster.controls.appendChild(actions.authBtn);
+
+  const captureCluster = createBrowserToolbarCluster('Capture');
+  captureCluster.element.dataset.kind = 'capture';
+  captureCluster.controls.appendChild(actions.inspectBtn);
+  captureCluster.controls.appendChild(actions.recordBtn);
+  captureCluster.controls.appendChild(actions.drawBtn);
 
   toolbarToolsShell.appendChild(viewCluster.element);
   toolbarToolsShell.appendChild(captureCluster.element);
@@ -250,6 +304,22 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   toolbar.appendChild(toolbarNav);
   toolbar.appendChild(toolbarAddress);
   toolbar.appendChild(toolbarTools);
+
+  return { toolbar, toolbarAddressShell: address.toolbarAddressShell, captureCluster };
+}
+
+export function createBrowserTabPaneLayout(sessionId: string, url?: string): BrowserTabPaneLayoutElements {
+  const el = document.createElement('div');
+  el.className = 'browser-tab-pane hidden';
+  el.dataset.sessionId = sessionId;
+
+  const { chrome, chromeHint, statusBadge } = createBrowserPaneChrome();
+  el.appendChild(chrome);
+  const nav = createBrowserNavControls();
+  const address = createBrowserAddressControls(url);
+  const viewport = createBrowserViewportControls(sessionId);
+  const actions = createBrowserActionButtons();
+  const { toolbar, toolbarAddressShell, captureCluster } = createBrowserToolbar(address, nav, viewport, actions);
   el.appendChild(toolbar);
 
   const viewportContainer = document.createElement('div');
@@ -265,24 +335,24 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
     statusBadge,
     toolbarAddressShell,
     captureCluster,
-    backBtn,
-    fwdBtn,
-    reloadBtn,
-    homeBtn,
-    urlInput,
-    goBtn,
-    viewportWrapper,
-    viewportBtn,
-    viewportDropdown,
-    customItem,
-    customForm,
-    customWInput,
-    customHInput,
-    customApplyBtn,
-    inspectBtn,
-    recordBtn,
-    drawBtn,
-    authBtn,
+    backBtn: nav.backBtn,
+    fwdBtn: nav.fwdBtn,
+    reloadBtn: nav.reloadBtn,
+    homeBtn: nav.homeBtn,
+    urlInput: address.urlInput,
+    goBtn: address.goBtn,
+    viewportWrapper: viewport.viewportWrapper,
+    viewportBtn: viewport.viewportBtn,
+    viewportDropdown: viewport.viewportDropdown,
+    customItem: viewport.customItem,
+    customForm: viewport.customForm,
+    customWInput: viewport.customWInput,
+    customHInput: viewport.customHInput,
+    customApplyBtn: viewport.customApplyBtn,
+    inspectBtn: actions.inspectBtn,
+    recordBtn: actions.recordBtn,
+    drawBtn: actions.drawBtn,
+    authBtn: actions.authBtn,
     viewportContainer,
   };
 }

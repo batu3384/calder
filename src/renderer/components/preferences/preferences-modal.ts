@@ -137,6 +137,82 @@ function appendOverviewGrid(
   appendOverviewGridLayout(container, items);
 }
 
+function renderShortcutPreferencesContent(args: {
+  content: HTMLElement;
+  shortcutOverridesDraft: Record<string, string>;
+  cleanupRecorder: () => void;
+  setActiveRecorder: (cleanup: () => void) => void;
+  clearActiveRecorder: () => void;
+  rerenderShortcuts: () => void;
+}): void {
+  appendSectionIntro(
+    args.content,
+    'Keyboard',
+    'Working keys',
+    'Keep the shortcuts you use every day close to hand and override only the ones that really help.',
+  );
+  appendOverviewGrid(args.content, [
+    {
+      label: 'Customized',
+      value: `${countCustomizedShortcuts(args.shortcutOverridesDraft)}`,
+      note: 'Only explicit overrides are tracked here.',
+    },
+    {
+      label: 'Focus',
+      value: 'Session + surface',
+      note: 'Bindings cover sessions, the left stage, and shell navigation.',
+    },
+    {
+      label: 'Style',
+      value: 'Command-first',
+      note: 'Record a new combo directly from the keyboard when you need one.',
+    },
+  ]);
+  renderShortcutsSection({
+    container: args.content,
+    shortcutOverridesDraft: args.shortcutOverridesDraft,
+    cleanupRecorder: args.cleanupRecorder,
+    setActiveRecorder: args.setActiveRecorder,
+    clearActiveRecorder: args.clearActiveRecorder,
+    rerenderShortcuts: args.rerenderShortcuts,
+  });
+}
+
+function renderProvidersPreferencesContent(args: {
+  content: HTMLElement;
+  modalBody: HTMLElement;
+  confirmButton: HTMLButtonElement;
+  cancelButton: HTMLButtonElement;
+  registerModalCleanup: (cleanup: () => void) => void;
+  currentSection: () => Section;
+  rerenderProviders: () => void;
+  applySetupBadge: (hasIssue: boolean) => void;
+  onFixProvider: (providerId?: ProviderId) => Promise<void>;
+  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+}): void {
+  renderProvidersPreferencesSection({
+    content: args.content,
+    appendSectionIntro,
+    appendOverviewGrid,
+    appendSectionGroup,
+    appendSectionCard,
+    closeWideModal: () => {
+      closeModal();
+      modal.classList.remove('modal-wide');
+    },
+    rerenderProviders: args.rerenderProviders,
+    modalBody: args.modalBody,
+    confirmButton: args.confirmButton,
+    cancelButton: args.cancelButton,
+    registerModalCleanup: args.registerModalCleanup,
+    buildCheckpointRestoreConfirm,
+    isProvidersSectionActive: () => args.currentSection() === 'providers',
+    onApplySetupBadge: args.applySetupBadge,
+    onFixProvider: args.onFixProvider,
+    onInstallMobileDependency: args.onInstallMobileDependency,
+  });
+}
+
 export function showPreferencesModal(): void {
   renderPreferencesModalContent();
 }
@@ -228,31 +304,8 @@ function renderPreferencesModalContent(): void {
       });
 
     } else if (section === 'shortcuts') {
-      appendSectionIntro(
+      renderShortcutPreferencesContent({
         content,
-        'Keyboard',
-        'Working keys',
-        'Keep the shortcuts you use every day close to hand and override only the ones that really help.',
-      );
-      appendOverviewGrid(content, [
-        {
-          label: 'Customized',
-          value: `${countCustomizedShortcuts(shortcutOverridesDraft)}`,
-          note: 'Only explicit overrides are tracked here.',
-        },
-        {
-          label: 'Focus',
-          value: 'Session + surface',
-          note: 'Bindings cover sessions, the left stage, and shell navigation.',
-        },
-        {
-          label: 'Style',
-          value: 'Command-first',
-          note: 'Record a new combo directly from the keyboard when you need one.',
-        },
-      ]);
-      renderShortcutsSection({
-        container: content,
         shortcutOverridesDraft,
         cleanupRecorder,
         setActiveRecorder: (cleanup) => {
@@ -265,24 +318,15 @@ function renderPreferencesModalContent(): void {
       });
 
     } else if (section === 'providers') {
-      renderProvidersPreferencesSection({
+      renderProvidersPreferencesContent({
         content,
-        appendSectionIntro,
-        appendOverviewGrid,
-        appendSectionGroup,
-        appendSectionCard,
-        closeWideModal: () => {
-          closeModal();
-          modal.classList.remove('modal-wide');
-        },
-        rerenderProviders: () => renderSection('providers'),
         modalBody: bodyEl,
         confirmButton: btnConfirm,
         cancelButton: btnCancel,
         registerModalCleanup: extendModalCleanup,
-        buildCheckpointRestoreConfirm,
-        isProvidersSectionActive: () => currentSection === 'providers',
-        onApplySetupBadge: applySetupBadge,
+        currentSection: () => currentSection,
+        rerenderProviders: () => renderSection('providers'),
+        applySetupBadge,
         onFixProvider: fixAndRerender,
         onInstallMobileDependency: installMobileDependencyAndRerender,
       });
