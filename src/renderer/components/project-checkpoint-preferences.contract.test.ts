@@ -4,7 +4,11 @@ import path from 'node:path';
 
 const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
 const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
-const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
+const checkpointConfirmSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences-checkpoint-confirm.ts'),
+  'utf8',
+);
+const modalSource = [modalPrimarySource, modalSectionsSource, checkpointConfirmSource].join('\n');
 const checkpointSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-checkpoint-discovery.ts'),
   'utf8',
