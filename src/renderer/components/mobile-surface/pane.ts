@@ -579,14 +579,14 @@ function appendInspectSendControls(instance: MobileSurfacePaneInstance, section:
   }
 }
 
-function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
+function renderInspectWorkbenchHeader(
+  instance: MobileSurfacePaneInstance,
+  report: MobileDependencyReport,
+): HTMLDivElement {
   const inspect = instance.inspectState;
-  const blockingChecks = getBlockingChecks(report, inspect.platform);
-  const section = document.createElement('section');
-  section.className = 'mobile-surface-group mobile-surface-inspect-group';
-
   const header = document.createElement('div');
   header.className = 'mobile-surface-inspect-header';
+
   const titleWrap = document.createElement('div');
   titleWrap.className = 'mobile-surface-inspect-title-wrap';
   const title = document.createElement('h3');
@@ -628,8 +628,15 @@ function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, repo
   });
 
   header.append(titleWrap, platformToggle);
-  section.appendChild(header);
+  return header;
+}
 
+function appendInspectActionControls(
+  instance: MobileSurfacePaneInstance,
+  report: MobileDependencyReport,
+  section: HTMLElement,
+): void {
+  const inspect = instance.inspectState;
   const actionRow = document.createElement('div');
   actionRow.className = 'mobile-surface-inspect-actions';
 
@@ -739,6 +746,15 @@ function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, repo
 
   actionRow.append(launchBtn, captureBtn, liveBtn, tapSelectedBtn);
   section.appendChild(actionRow);
+}
+
+function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
+  const inspect = instance.inspectState;
+  const blockingChecks = getBlockingChecks(report, inspect.platform);
+  const section = document.createElement('section');
+  section.className = 'mobile-surface-group mobile-surface-inspect-group';
+  section.appendChild(renderInspectWorkbenchHeader(instance, report));
+  appendInspectActionControls(instance, report, section);
 
   const status = document.createElement('div');
   status.className = 'mobile-surface-inspect-status';
