@@ -3,8 +3,7 @@ import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord, ArchivedSession, CostInfo, ContextWindowInfo, InitialContextSnapshot } from '../shared/types/session.js';
 import type { ProjectGovernanceState } from '../shared/types/governance.js';
 import type { ProjectRecord, Preferences, PersistedState, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types/project.js';
-import { getCost, restoreCost } from './session-cost.js';
-import { restoreContext } from './session-context.js';
+import { getCost } from './session-cost.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
 import { clampRatio } from './components/mosaic-layout-model.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
@@ -12,6 +11,7 @@ import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.
 import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
+import { migrateLoadedRendererState } from './state-load-migration.js';
 import { resumeProjectWithProvider } from './state-resume-with-provider.js';
 import {
   archiveSessionToHistory,
@@ -48,6 +48,15 @@ import {
 } from './state-project-surface.js';
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
+import {
+  createBrowserTabSessionRecord,
+  createDiffViewerSessionRecord,
+  createFileReaderSessionRecord,
+  createMcpInspectorSessionRecord,
+  createRemoteSessionRecord,
+  createStandardSessionRecord,
+  createWorkflowLaunchSessionRecord,
+} from './state-session-factory.js';
 import {
   buildWorkflowLaunchPrompt,
   DEFAULT_BROWSER_WIDTH_RATIO,
@@ -168,57 +177,9 @@ class AppState {
     const loaded = (await window.calder.store.load()) as PersistedState | null;
     let didMigrateState = false;
     if (loaded && loaded.version === 1) {
-      this.state = loaded;
-      // Merge defaults for forward compatibility with old state files
-      const normalizedPreferences = { ...defaultPreferences, ...this.state.preferences };
-      if (JSON.stringify(this.state.preferences) !== JSON.stringify(normalizedPreferences)) {
-        didMigrateState = true;
-      }
-      this.state.preferences = normalizedPreferences;
-      delete (this.state.preferences as Preferences & { readinessExcludedProviders?: ProviderId[] }).readinessExcludedProviders;
-      if (this.state.preferences.sidebarViews) {
-        delete (
-          this.state.preferences.sidebarViews as Preferences['sidebarViews'] & { readinessSection?: boolean }
-        ).readinessSection;
-      }
-      const normalizedProjects = this.state.projects.map((project) => {
-        const nextProject = {
-          ...(project as ProjectRecord & { readiness?: unknown }),
-          layout: normalizeProjectLayout(project.layout),
-          surface: normalizeProjectSurface(project),
-        };
-        delete (nextProject as ProjectRecord & { readiness?: unknown }).readiness;
-        return nextProject;
-      });
-      if (JSON.stringify(this.state.projects) !== JSON.stringify(normalizedProjects)) {
-        didMigrateState = true;
-      }
-      this.state.projects = normalizedProjects;
-      // Restore persisted cost data into the in-memory cost tracker
-      for (const project of this.state.projects) {
-        if (repairProjectSurface(project)) {
-          didMigrateState = true;
-        }
-        for (const session of project.sessions) {
-          if (session.cost) {
-            restoreCost(session.id, session.cost);
-          }
-          if (session.contextWindow) {
-            restoreContext(session.id, session.contextWindow);
-          }
-        }
-        // Migrate duplicate archived session IDs (caused by /clear creating two entries with same id)
-        if (project.sessionHistory) {
-          const seenIds = new Set<string>();
-          for (const entry of project.sessionHistory) {
-            if (seenIds.has(entry.id)) {
-              entry.id = crypto.randomUUID();
-              didMigrateState = true;
-            }
-            seenIds.add(entry.id);
-          }
-        }
-      }
+      const migration = migrateLoadedRendererState(loaded, defaultPreferences);
+      this.state = migration.state;
+      didMigrateState = migration.didMigrateState;
     }
     if (!this.state.starPromptDismissed) {
       this.state.appLaunchCount = (this.state.appLaunchCount ?? 0) + 1;
@@ -463,18 +424,15 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
+    const session = createWorkflowLaunchSessionRecord({
       name: workflow.title,
       providerId: providerOverride ?? this.state.preferences.defaultProvider ?? 'claude',
-      ...(project.defaultArgs ? { args: project.defaultArgs } : {}),
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
+      args: project.defaultArgs,
       pendingInitialPrompt: appendProjectGovernanceToPrompt(
         appendProjectTeamContextToPrompt(buildWorkflowLaunchPrompt(workflow), project.projectTeamContext),
         project.projectGovernance,
       ),
-    };
+    });
 
     project.sessions.push(session);
     project.activeSessionId = session.id;
@@ -493,14 +451,11 @@ class AppState {
     if (!project) return undefined;
 
     const effectiveArgs = args ?? project.defaultArgs;
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
+    const session = createStandardSessionRecord({
       name,
       providerId: providerId ?? this.state.preferences.defaultProvider ?? 'claude',
-      ...(effectiveArgs ? { args: effectiveArgs } : {}),
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+      args: effectiveArgs,
+    });
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
@@ -530,17 +485,7 @@ class AppState {
       return existing;
     }
 
-    const name = filePath.split('/').pop() || filePath;
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'diff-viewer',
-      diffFilePath: filePath,
-      diffArea: area,
-      ...(worktreePath ? { worktreePath } : {}),
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+    const session = createDiffViewerSessionRecord({ filePath, area, worktreePath });
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
@@ -554,15 +499,7 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    const session: SessionRecord = {
-      id: sessionId,
-      name: `Remote: ${hostSessionName}`,
-      type: 'remote-terminal',
-      remoteHostName: hostSessionName,
-      shareMode,
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+    const session = createRemoteSessionRecord({ sessionId, hostSessionName, shareMode });
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
@@ -596,19 +533,10 @@ class AppState {
       }
     }
 
-    let name = 'Browser';
-    if (url) {
-      try { name = new URL(url).hostname || url; } catch { name = url; }
-    }
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'browser-tab',
-      browserTabUrl: url,
-      ...(initialTargetSession ? { browserTargetSessionId: initialTargetSession.id } : {}),
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+    const session = createBrowserTabSessionRecord({
+      url,
+      targetSessionId: initialTargetSession?.id,
+    });
     project.sessions.push(session);
     project.activeSessionId = session.id;
     project.surface = normalizeProjectSurface(project);
@@ -689,16 +617,7 @@ class AppState {
       return existing;
     }
 
-    const name = filePath.split('/').pop() || filePath;
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'file-reader',
-      fileReaderPath: filePath,
-      ...(lineNumber !== undefined ? { fileReaderLine: lineNumber } : {}),
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+    const session = createFileReaderSessionRecord({ filePath, lineNumber });
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);
@@ -712,13 +631,7 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name,
-      type: 'mcp-inspector',
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-    };
+    const session = createMcpInspectorSessionRecord(name);
     project.sessions.push(session);
     project.activeSessionId = session.id;
     this.pushNav(session.id);

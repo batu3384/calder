@@ -61,7 +61,15 @@ import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
 import { quickNewSession } from './tab-bar/tab-bar.js';
 import { promptNewProject } from './sidebar.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
-import { attachRatioHandle } from './mosaic-resize.js';
+import {
+  bindMosaicDivider,
+  createMosaicDivider,
+  formatInverseRatio,
+  formatRatio,
+  renderSwarmMosaicPreset,
+} from './split-layout-mosaic.js';
+import { getLayoutRenderSignature } from './split-layout-signature.js';
+import { removeEmptyState, showEmptyState } from './split-layout-empty-state.js';
 
 const container = document.getElementById('terminal-container')!;
 const SWARM_PANE_SELECTOR = '.terminal-pane, .browser-tab-pane, .file-viewer-pane, .file-reader-pane, .mcp-inspector-pane';
@@ -76,56 +84,6 @@ let draggingSwarmSessionId: string | null = null;
 const lastSwarmBrowserSessionIds = new Map<string, string>();
 let mosaicResizeCleanups: Array<() => void> = [];
 let lastLayoutRenderSignature: string | null = null;
-
-function getMosaicActiveLayoutKey(project: ProjectRecord): string {
-  const activeSession = project.activeSessionId
-    ? project.sessions.find((session) => session.id === project.activeSessionId)
-    : undefined;
-  if (!activeSession) return 'none';
-  const activeType = activeSession.type ?? 'claude';
-  if (activeType === 'claude') return 'cli';
-  if (activeType === 'browser-tab') return `browser:${activeSession.id}`;
-  return `non-cli:${activeSession.id}:${activeType}`;
-}
-
-function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
-  if (!project) return 'no-project';
-  return JSON.stringify({
-    projectId: project.id,
-    activeLayoutKey: project.layout.mode === 'mosaic'
-      ? getMosaicActiveLayoutKey(project)
-      : `tab:${project.activeSessionId ?? 'none'}`,
-    layout: {
-      mode: project.layout.mode,
-      splitPanes: project.layout.splitPanes,
-      splitDirection: project.layout.splitDirection,
-      browserWidthRatio: project.layout.browserWidthRatio,
-      mosaicPreset: project.layout.mosaicPreset,
-      mosaicRatios: project.layout.mosaicRatios ?? {},
-    },
-    surface: project.surface
-      ? {
-          kind: project.surface.kind,
-          active: project.surface.active,
-          tabFocus: project.surface.tabFocus ?? 'session',
-          webSessionId: project.surface.web?.sessionId ?? null,
-          cliProfileId: project.surface.cli?.selectedProfileId ?? null,
-        }
-      : null,
-    sessions: project.sessions.map((session) => ({
-      id: session.id,
-      type: session.type ?? 'claude',
-      cliSessionId: session.cliSessionId ?? null,
-      mcpServerUrl: session.mcpServerUrl ?? null,
-      diffFilePath: session.diffFilePath ?? null,
-      diffArea: session.diffArea ?? null,
-      worktreePath: session.worktreePath ?? null,
-      fileReaderPath: session.fileReaderPath ?? null,
-      fileReaderLine: session.fileReaderLine ?? null,
-      remoteHostName: session.remoteHostName ?? null,
-    })),
-  });
-}
 
 function isMosaicMode(project: ProjectRecord | undefined): boolean {
   return !!project && project.layout.mode === 'mosaic';
@@ -205,55 +163,8 @@ function clearMosaicResizeBindings(): void {
   mosaicResizeCleanups = [];
 }
 
-function formatRatio(value: number): string {
-  return Number(value.toFixed(2)).toString();
-}
-
-function formatInverseRatio(value: number): string {
-  return formatRatio(1 - value);
-}
-
-function readMosaicRatio(project: ProjectRecord, key: string, fallback = 0.5): number {
-  return clampRatio(project.layout.mosaicRatios?.[key], 0.2, 0.8, fallback);
-}
-
-function createMosaicSlot(className = 'mosaic-slot'): HTMLElement {
-  const slot = document.createElement('div');
-  slot.className = className;
-  return slot;
-}
-
-function appendMosaicSlot(
-  project: ProjectRecord,
-  target: HTMLElement,
-  paneIds: string[],
-  className = 'mosaic-slot',
-): HTMLElement {
-  const slot = createMosaicSlot(className);
-  target.appendChild(slot);
-  showPanes(project, slot, paneIds);
-  return slot;
-}
-
-function createMosaicDivider(axis: 'x' | 'y', className: string): HTMLElement {
-  const divider = document.createElement('div');
-  divider.className = `mosaic-divider ${className}`;
-  divider.dataset.axis = axis;
-  return divider;
-}
-
-function bindMosaicDivider(
-  handle: HTMLElement,
-  boundsTarget: HTMLElement | (() => DOMRect),
-  callbacks: { onPreview?: (ratio: number) => void; onCommit?: (ratio: number) => void },
-  options: { axis: 'x' | 'y'; min: number; max: number; fallback: number },
-): void {
-  const getBounds = typeof boundsTarget === 'function'
-    ? boundsTarget
-    : () => boundsTarget.getBoundingClientRect();
-  mosaicResizeCleanups.push(
-    attachRatioHandle(handle, getBounds, callbacks, options),
-  );
+function registerMosaicResizeCleanup(cleanup: () => void): void {
+  mosaicResizeCleanups.push(cleanup);
 }
 
 function readInspectorWidth(target: HTMLElement): number {
@@ -505,11 +416,11 @@ export function renderLayout(): void {
     hideAllCliSurfacePanes();
     hideAllMobileSurfacePanes();
     setContainerClass('');
-    showEmptyState(project);
+    showEmptyState(container, project, promptNewProject, quickNewSession);
     return;
   }
 
-  removeEmptyState();
+  removeEmptyState(container);
   container.querySelectorAll('.swarm-grid-wrapper').forEach(el => el.remove());
   container.querySelectorAll('.swarm-browser-column').forEach(el => el.remove());
   container.querySelectorAll('.swarm-empty-cell').forEach(el => el.remove());
@@ -667,200 +578,6 @@ function focusActivePane(project: ProjectRecord): void {
   }
 }
 
-function renderSingleMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  canvas.style.gap = '10px';
-  canvas.style.gridTemplateColumns = '1fr';
-  canvas.style.gridTemplateRows = '1fr';
-  showPanes(project, canvas, paneIds);
-}
-
-function renderColumns2MosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  const primaryRatio = readMosaicRatio(project, 'columns-2-primary', 0.5);
-  const applyColumns2 = (ratio: number) => {
-    canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    canvas.style.gridTemplateRows = '1fr';
-  };
-  canvas.style.gap = '0';
-  applyColumns2(primaryRatio);
-
-  appendMosaicSlot(project, canvas, [paneIds[0]]);
-  const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
-  canvas.appendChild(primaryDivider);
-  appendMosaicSlot(project, canvas, [paneIds[1]]);
-
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyColumns2(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'columns-2-primary', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  });
-}
-
-function renderRows2MosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  const primaryRatio = readMosaicRatio(project, 'rows-2-primary', 0.5);
-  const applyRows2 = (ratio: number) => {
-    canvas.style.gridTemplateColumns = '1fr';
-    canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-  };
-  canvas.style.gap = '0';
-  applyRows2(primaryRatio);
-
-  appendMosaicSlot(project, canvas, [paneIds[0]]);
-  const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
-  canvas.appendChild(primaryDivider);
-  appendMosaicSlot(project, canvas, [paneIds[1]]);
-
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyRows2(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'rows-2-primary', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  });
-}
-
-function renderFocusLeftMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  const mainRatio = readMosaicRatio(project, 'focus-left-main', 0.58);
-  const stackRatio = readMosaicRatio(project, 'focus-left-stack', 0.5);
-  const applyFocusLeftMain = (ratio: number) => {
-    canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    canvas.style.gridTemplateRows = '1fr';
-  };
-  canvas.classList.add('mosaic-focus-left');
-  canvas.style.gap = '0';
-  applyFocusLeftMain(mainRatio);
-
-  appendMosaicSlot(project, canvas, [paneIds[0]], 'mosaic-focus-left-main');
-  const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
-  canvas.appendChild(primaryDivider);
-
-  const stack = document.createElement('div');
-  stack.className = 'mosaic-focus-left-stack';
-  stack.style.gap = '0';
-  const applyFocusLeftStack = (ratio: number) => {
-    stack.style.gridTemplateColumns = '1fr';
-    stack.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-  };
-  applyFocusLeftStack(stackRatio);
-  canvas.appendChild(stack);
-
-  appendMosaicSlot(project, stack, [paneIds[1]]);
-  const secondaryDivider = createMosaicDivider('y', 'mosaic-divider-secondary');
-  stack.appendChild(secondaryDivider);
-  appendMosaicSlot(project, stack, [paneIds[2]]);
-
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyFocusLeftMain(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-main', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.58,
-  });
-  bindMosaicDivider(secondaryDivider, stack, {
-    onPreview: (ratio) => applyFocusLeftStack(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-stack', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  });
-}
-
-function renderFocusTopMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  const mainRatio = readMosaicRatio(project, 'focus-top-main', 0.58);
-  const rowRatio = readMosaicRatio(project, 'focus-top-row', 0.5);
-  const applyFocusTopMain = (ratio: number) => {
-    canvas.style.gridTemplateColumns = '1fr';
-    canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-  };
-  canvas.classList.add('mosaic-focus-top');
-  canvas.style.gap = '0';
-  applyFocusTopMain(mainRatio);
-
-  appendMosaicSlot(project, canvas, [paneIds[0]], 'mosaic-focus-top-main');
-  const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
-  canvas.appendChild(primaryDivider);
-
-  const row = document.createElement('div');
-  row.className = 'mosaic-focus-top-row';
-  row.style.gap = '0';
-  const applyFocusTopRow = (ratio: number) => {
-    row.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    row.style.gridTemplateRows = '1fr';
-  };
-  applyFocusTopRow(rowRatio);
-  canvas.appendChild(row);
-
-  appendMosaicSlot(project, row, [paneIds[1]]);
-  const secondaryDivider = createMosaicDivider('x', 'mosaic-divider-secondary');
-  row.appendChild(secondaryDivider);
-  appendMosaicSlot(project, row, [paneIds[2]]);
-
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyFocusTopMain(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-main', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.58,
-  });
-  bindMosaicDivider(secondaryDivider, row, {
-    onPreview: (ratio) => applyFocusTopRow(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-row', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  });
-}
-
-function renderGridMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
-  canvas.classList.add('mosaic-grid-2x2');
-  canvas.style.gap = '10px';
-  canvas.style.gridTemplateColumns = 'repeat(2, 1fr)';
-  canvas.style.gridTemplateRows = `repeat(${Math.max(2, Math.ceil(paneIds.length / 2))}, 1fr)`;
-  showPanes(project, canvas, paneIds);
-}
-
-function renderSwarmMosaicPreset(
-  project: ProjectRecord,
-  canvas: HTMLElement,
-  preset: string,
-  paneIds: string[],
-): void {
-  if (preset === 'single') {
-    renderSingleMosaicPreset(project, canvas, paneIds);
-    return;
-  }
-  if (preset === 'columns-2') {
-    renderColumns2MosaicPreset(project, canvas, paneIds);
-    return;
-  }
-  if (preset === 'rows-2') {
-    renderRows2MosaicPreset(project, canvas, paneIds);
-    return;
-  }
-  if (preset === 'focus-left' && paneIds.length >= 3) {
-    renderFocusLeftMosaicPreset(project, canvas, paneIds);
-    return;
-  }
-  if (preset === 'focus-top' && paneIds.length >= 3) {
-    renderFocusTopMosaicPreset(project, canvas, paneIds);
-    return;
-  }
-  renderGridMosaicPreset(project, canvas, paneIds);
-}
-
 function renderSwarmMode(project: ProjectRecord): void {
   const visibleSessions = getVisibleSwarmSessions(project);
   const visiblePaneIds = visibleSessions.map((session) => session.id);
@@ -914,13 +631,21 @@ function renderSwarmMode(project: ProjectRecord): void {
       min: SURFACE_RATIO_MIN,
       max: SURFACE_RATIO_MAX,
       fallback: surfaceRatio,
-    });
+    }, registerMosaicResizeCleanup);
   }
 
   const canvas = document.createElement('div');
   canvas.className = `swarm-grid-wrapper mosaic-session-canvas mosaic-${resolvedPreset}`;
   container.appendChild(canvas);
-  renderSwarmMosaicPreset(project, canvas, resolvedPreset, visiblePaneIds);
+  renderSwarmMosaicPreset({
+    project,
+    canvas,
+    preset: resolvedPreset,
+    paneIds: visiblePaneIds,
+    dividerTrack: MOSAIC_DIVIDER_TRACK,
+    showPanes,
+    registerResizeCleanup: registerMosaicResizeCleanup,
+  });
 
   decorateSwarmReorderHandles(project, canvas);
 
@@ -944,61 +669,4 @@ function updateSwarmPaneStyles(project: ProjectRecord): void {
       instance.element.classList.toggle('swarm-unread', !isActive && isUnread(paneId));
     }
   }
-}
-
-function showEmptyState(project: ProjectRecord | undefined): void {
-  removeEmptyState();
-  const el = document.createElement('div');
-  el.className = 'empty-state';
-
-  const card = document.createElement('div');
-  card.className = 'empty-state-card';
-
-  const eyebrow = document.createElement('div');
-  eyebrow.className = 'empty-state-eyebrow';
-
-  const title = document.createElement('div');
-  title.className = 'empty-state-title';
-
-  const copy = document.createElement('div');
-  copy.className = 'empty-state-copy';
-
-  const detail = document.createElement('div');
-  detail.className = 'empty-state-detail';
-
-  const actions = document.createElement('div');
-  actions.className = 'empty-state-actions';
-
-  const primary = document.createElement('button');
-  primary.id = 'empty-state-primary-action';
-  primary.className = 'empty-state-primary-action';
-
-  if (!project) {
-    eyebrow.textContent = 'Launchpad';
-    title.textContent = 'Open a project or start a live run';
-    copy.textContent = 'Pick a coding tool, open Live View, or resume recent sessions from one desk.';
-    detail.textContent = 'Browser context stays on the left. Sessions and project signals stack on the right.';
-    primary.textContent = 'Create Project';
-    primary.addEventListener('click', () => promptNewProject());
-  } else {
-    eyebrow.textContent = 'Project ready';
-    title.textContent = 'Start a run or open Live View';
-    copy.textContent = 'Bring up a coding tool, inspect a page, or continue recent work from this project.';
-    detail.textContent = `${project.path} · Live View stays pinned while sessions share the same project context.`;
-    primary.textContent = 'Start First Session';
-    primary.addEventListener('click', () => quickNewSession());
-  }
-
-  actions.appendChild(primary);
-  card.appendChild(eyebrow);
-  card.appendChild(title);
-  card.appendChild(copy);
-  card.appendChild(detail);
-  card.appendChild(actions);
-  el.appendChild(card);
-  container.appendChild(el);
-}
-
-function removeEmptyState(): void {
-  container.querySelector('.empty-state')?.remove();
 }

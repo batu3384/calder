@@ -1,10 +1,5 @@
-import {
-  checkForAppUpdates,
-  getUpdateCenterState,
-  onUpdateCenterChange,
-} from '../../update-center.js';
 import { appState } from '../../state.js';
-import { createCustomSelect, type CustomSelectInstance } from '../custom-select.js';
+import { createCustomSelect } from '../custom-select.js';
 import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../../provider-availability.js';
 import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';
 import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
@@ -19,158 +14,25 @@ import {
 import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
-import type { MobileDependencyId } from '../../../shared/types/mobile.js';
-import type { CliProviderMeta, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
-import type { ProjectCheckpointDocument } from '../../../shared/types/project.js';
+import {
+  appendPreferencesToggleField,
+  buildProviderNote,
+  buildProviderOptions,
+} from './preferences-modal-general-helpers.js';
+import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
+import type {
+  LayoutSidebarViews,
+  RenderGeneralSectionArgs,
+  RenderLayoutSectionArgs,
+  RenderProvidersSectionArgs,
+} from './preferences-modal-sections-types.js';
 
-type AppendSectionIntro = (
-  container: HTMLElement,
-  eyebrow: string,
-  title: string,
-  description: string,
-) => void;
+const PROVIDER_UNAVAILABLE_SUFFIX = ' (not installed)';
+const PROVIDER_DEFAULT_MISSING_MESSAGE = 'Calder falls back to the next installed tool if this one is missing.';
+const PROVIDER_DEFAULT_INSTALLED_MESSAGE = 'New sessions use this tool unless a workflow picks a different one.';
+const PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE = 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
 
-type AppendOverviewGrid = (
-  container: HTMLElement,
-  items: Array<{ label: string; value: string; note?: string }>,
-) => void;
-
-type AppendSectionCard = (container: HTMLElement, title: string, description?: string) => HTMLElement;
-type AppendSectionGroup = (
-  container: HTMLElement,
-  eyebrow: string,
-  title: string,
-  description: string,
-) => HTMLElement;
-
-interface LayoutSidebarViews {
-  configSections: boolean;
-  gitPanel: boolean;
-  sessionHistory: boolean;
-  costFooter: boolean;
-}
-
-interface LayoutDraft {
-  sidebarViews: LayoutSidebarViews;
-}
-
-interface AboutDraft {
-  debugMode: boolean;
-}
-
-interface GeneralDraft {
-  soundOnSessionWaiting: boolean;
-  notificationsDesktop: boolean;
-  sessionHistoryEnabled: boolean;
-  insightsEnabled: boolean;
-  autoTitleEnabled: boolean;
-  defaultProvider: ProviderId;
-  language: UiLanguage;
-}
-
-interface RenderLayoutSectionArgs {
-  content: HTMLElement;
-  preferenceDraft: LayoutDraft;
-  appendSectionIntro: AppendSectionIntro;
-  appendOverviewGrid: AppendOverviewGrid;
-  appendSectionCard: AppendSectionCard;
-}
-
-interface RenderAboutSectionArgs {
-  content: HTMLElement;
-  preferenceDraft: AboutDraft;
-  appendSectionIntro: AppendSectionIntro;
-  appendOverviewGrid: AppendOverviewGrid;
-  formatRelativeTimestamp: (timestamp?: string) => string;
-}
-
-interface RenderGeneralSectionArgs {
-  content: HTMLElement;
-  preferenceDraft: GeneralDraft;
-  appendSectionIntro: AppendSectionIntro;
-  appendOverviewGrid: AppendOverviewGrid;
-  isGeneralSectionActive: () => boolean;
-  getDefaultProviderSelect: () => CustomSelectInstance | null;
-  replaceDefaultProviderSelect: (select: CustomSelectInstance) => void;
-  replaceLanguageSelect: (select: CustomSelectInstance) => void;
-}
-
-interface RenderProvidersSectionArgs {
-  content: HTMLElement;
-  appendSectionIntro: AppendSectionIntro;
-  appendOverviewGrid: AppendOverviewGrid;
-  appendSectionGroup: AppendSectionGroup;
-  appendSectionCard: AppendSectionCard;
-  closeWideModal: () => void;
-  rerenderProviders: () => void;
-  modalBody: HTMLElement;
-  confirmButton: HTMLButtonElement;
-  cancelButton: HTMLButtonElement;
-  registerModalCleanup: (cleanup: () => void) => void;
-  buildCheckpointRestoreConfirm: (
-    projectId: string,
-    projectPath: string,
-    checkpointDocument: ProjectCheckpointDocument,
-    restoreSummaryText: string,
-  ) => HTMLElement;
-  isProvidersSectionActive: () => boolean;
-  onApplySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
-}
-
-interface ProviderAvailabilitySnapshot {
-  providers: CliProviderMeta[];
-  availability: Map<ProviderId, boolean>;
-}
-
-function buildProviderOptions(snapshot: ProviderAvailabilitySnapshot): Array<{
-  value: ProviderId;
-  label: string;
-  disabled: boolean;
-}> {
-  return snapshot.providers.map(provider => {
-    const available = snapshot.availability.get(provider.id) ?? true;
-    return {
-      value: provider.id,
-      label: available ? provider.displayName : `${provider.displayName} (not installed)`,
-      disabled: !available,
-    };
-  });
-}
-
-function buildProviderNote(snapshot: ProviderAvailabilitySnapshot | null, providerId: ProviderId): string {
-  if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
-  if (snapshot.availability.get(providerId)) {
-    return 'New sessions use this tool unless a workflow picks a different one.';
-  }
-  return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
-}
-
-function appendGeneralToggleField(
-  container: HTMLElement,
-  id: string,
-  labelText: string,
-  checked: boolean,
-  onChange: (checkedState: boolean) => void,
-): void {
-  const row = document.createElement('div');
-  row.className = 'modal-toggle-field';
-
-  const label = document.createElement('label');
-  label.htmlFor = id;
-  label.textContent = labelText;
-
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.id = id;
-  checkbox.checked = checked;
-  checkbox.addEventListener('change', () => onChange(checkbox.checked));
-
-  row.appendChild(label);
-  row.appendChild(checkbox);
-  container.appendChild(row);
-}
+export { renderAboutPreferencesSection } from './preferences-modal-sections-about.js';
 
 export function renderGeneralPreferencesSection({
   content,
@@ -221,7 +83,11 @@ export function renderGeneralPreferencesSection({
 
   let snapshot = getProviderAvailabilitySnapshot();
   if (snapshot) {
-    const defaultSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
+    const defaultSelect = createCustomSelect(
+      'pref-default-provider',
+      buildProviderOptions(snapshot, PROVIDER_UNAVAILABLE_SUFFIX),
+      currentDefault,
+    );
     replaceDefaultProviderSelect(defaultSelect);
     preferenceDraft.defaultProvider = defaultSelect.getValue() as ProviderId;
   } else {
@@ -234,26 +100,44 @@ export function renderGeneralPreferencesSection({
 
       const refreshedSelect = createCustomSelect(
         'pref-default-provider',
-        buildProviderOptions(snapshot),
+        buildProviderOptions(snapshot, PROVIDER_UNAVAILABLE_SUFFIX),
         preferenceDraft.defaultProvider,
       );
       replaceDefaultProviderSelect(refreshedSelect);
       providerRow.querySelector('.custom-select')?.remove();
       providerRow.appendChild(refreshedSelect.element);
       preferenceDraft.defaultProvider = refreshedSelect.getValue() as ProviderId;
-      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+      providerNote.textContent = buildProviderNote(
+        snapshot,
+        preferenceDraft.defaultProvider,
+        PROVIDER_DEFAULT_MISSING_MESSAGE,
+        PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+        PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+      );
       refreshedSelect.element.addEventListener('change', () => {
         const select = getDefaultProviderSelect();
         if (!select) return;
         preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-        providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+        providerNote.textContent = buildProviderNote(
+          snapshot,
+          preferenceDraft.defaultProvider,
+          PROVIDER_DEFAULT_MISSING_MESSAGE,
+          PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+          PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+        );
       });
     });
   }
 
   const providerNote = document.createElement('div');
   providerNote.className = 'preferences-control-note';
-  providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+  providerNote.textContent = buildProviderNote(
+    snapshot,
+    preferenceDraft.defaultProvider,
+    PROVIDER_DEFAULT_MISSING_MESSAGE,
+    PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+    PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+  );
 
   const providerSelect = getDefaultProviderSelect();
   if (providerSelect) {
@@ -261,7 +145,13 @@ export function renderGeneralPreferencesSection({
       const select = getDefaultProviderSelect();
       if (!select) return;
       preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+      providerNote.textContent = buildProviderNote(
+        snapshot,
+        preferenceDraft.defaultProvider,
+        PROVIDER_DEFAULT_MISSING_MESSAGE,
+        PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+        PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+      );
     });
     providerRow.appendChild(providerLabel);
     providerRow.appendChild(providerSelect.element);
@@ -297,7 +187,7 @@ export function renderGeneralPreferencesSection({
     preferenceDraft.language = languageSelect.getValue() as UiLanguage;
   });
 
-  appendGeneralToggleField(
+  appendPreferencesToggleField(
     content,
     'pref-sound-on-waiting',
     'Play sound when session finishes work',
@@ -306,7 +196,7 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.soundOnSessionWaiting = checked;
     },
   );
-  appendGeneralToggleField(
+  appendPreferencesToggleField(
     content,
     'pref-notifications-desktop',
     'Desktop notifications when sessions need attention',
@@ -315,7 +205,7 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.notificationsDesktop = checked;
     },
   );
-  appendGeneralToggleField(
+  appendPreferencesToggleField(
     content,
     'pref-session-history',
     'Record session history when sessions close',
@@ -324,7 +214,7 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.sessionHistoryEnabled = checked;
     },
   );
-  appendGeneralToggleField(
+  appendPreferencesToggleField(
     content,
     'pref-insights-enabled',
     'Show insight alerts',
@@ -333,7 +223,7 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.insightsEnabled = checked;
     },
   );
-  appendGeneralToggleField(
+  appendPreferencesToggleField(
     content,
     'pref-auto-title',
     'Auto-name sessions from conversation title',
@@ -431,290 +321,7 @@ export function renderLayoutPreferencesSection({
   liveViewCard.appendChild(pinnedNote);
 }
 
-interface AboutHeroElements {
-  hero: HTMLElement;
-  versionLine: HTMLElement;
-}
-
-interface AboutUpdateElements {
-  row: HTMLElement;
-  cleanup: () => void;
-}
-
-interface AboutUpdateRendererArgs {
-  appUpdateState: ReturnType<typeof getUpdateCenterState>['app'];
-  formatRelativeTimestamp: (timestamp?: string) => string;
-  updateBtn: HTMLButtonElement;
-  updateStatus: HTMLElement;
-  updateMeta: HTMLElement;
-  updateActivity: HTMLElement;
-  updateProgress: HTMLElement;
-  updateProgressFill: HTMLElement;
-}
-
-function renderAboutUpdateState({
-  appUpdateState,
-  formatRelativeTimestamp,
-  updateBtn,
-  updateStatus,
-  updateMeta,
-  updateActivity,
-  updateProgress,
-  updateProgressFill,
-}: AboutUpdateRendererArgs): void {
-  if (appUpdateState.phase === 'checking') {
-    updateBtn.disabled = true;
-    updateBtn.textContent = 'Checking...';
-    updateStatus.textContent = 'Checking for updates...';
-    updateMeta.textContent = 'Contacting update server.';
-    updateActivity.textContent = 'Status: request sent to release channel.';
-    updateProgress.classList.add('hidden');
-    return;
-  }
-  if (appUpdateState.phase === 'downloading') {
-    updateBtn.disabled = true;
-    updateBtn.textContent = 'Downloading...';
-    const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new version';
-    const percent = typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
-    updateStatus.textContent = `Downloading ${versionLabel}...`;
-    updateMeta.textContent = `${percent}% completed`;
-    updateActivity.textContent = 'Status: package download is in progress.';
-    updateProgress.classList.remove('hidden');
-    updateProgressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
-    return;
-  }
-  if (appUpdateState.phase === 'ready_to_restart') {
-    updateBtn.disabled = false;
-    updateBtn.textContent = 'Restart to Apply';
-    const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new update';
-    updateStatus.textContent = `${versionLabel} is ready. Restart to apply.`;
-    updateMeta.textContent = 'The update is downloaded.';
-    updateActivity.textContent = 'Status: restart is required to finish update.';
-    updateProgress.classList.remove('hidden');
-    updateProgressFill.style.width = '100%';
-    return;
-  }
-  if (appUpdateState.phase === 'up_to_date') {
-    updateBtn.disabled = false;
-    updateBtn.textContent = 'Check for Updates';
-    updateStatus.textContent = 'You’re up to date.';
-    updateMeta.textContent = appUpdateState.lastCheckedAt
-      ? `Checked ${formatRelativeTimestamp(appUpdateState.lastCheckedAt)}`
-      : 'No recent check.';
-    updateActivity.textContent = 'Status: no newer build found.';
-    updateProgress.classList.add('hidden');
-    return;
-  }
-  if (appUpdateState.phase === 'error') {
-    updateBtn.disabled = false;
-    updateBtn.textContent = 'Retry Check';
-    updateStatus.textContent = 'Update check failed.';
-    updateMeta.textContent = appUpdateState.errorMessage ?? 'Try again in a moment.';
-    updateActivity.textContent = 'Status: check failed, retry is available.';
-    updateProgress.classList.add('hidden');
-    return;
-  }
-  updateBtn.disabled = false;
-  updateBtn.textContent = 'Check for Updates';
-  updateStatus.textContent = 'No check yet.';
-  updateMeta.textContent = 'Use this to check for a newer Calder build.';
-  updateActivity.textContent = 'Status: update check has not run in this session.';
-  updateProgress.classList.add('hidden');
-}
-
-function createAboutHero(): AboutHeroElements {
-  const aboutHero = document.createElement('div');
-  aboutHero.className = 'about-hero';
-
-  const appName = document.createElement('div');
-  appName.className = 'about-app-name';
-  appName.textContent = 'Calder';
-
-  const versionLine = document.createElement('div');
-  versionLine.className = 'about-version';
-  versionLine.textContent = 'Version: loading...';
-
-  const aboutLead = document.createElement('div');
-  aboutLead.className = 'about-lead';
-  aboutLead.textContent = 'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.';
-
-  aboutHero.appendChild(appName);
-  aboutHero.appendChild(versionLine);
-  aboutHero.appendChild(aboutLead);
-  return { hero: aboutHero, versionLine };
-}
-
-function createAboutUpdateRow(
-  formatRelativeTimestamp: (timestamp?: string) => string,
-): AboutUpdateElements {
-  const updateRow = document.createElement('div');
-  updateRow.className = 'about-update-row';
-
-  const updateBtn = document.createElement('button');
-  updateBtn.className = 'about-update-btn';
-  updateBtn.textContent = 'Check for Updates';
-
-  const updateInfo = document.createElement('div');
-  updateInfo.className = 'about-update-info';
-
-  const updateStatus = document.createElement('div');
-  updateStatus.className = 'about-update-status';
-
-  const updateMeta = document.createElement('div');
-  updateMeta.className = 'about-update-meta';
-
-  const updateActivity = document.createElement('div');
-  updateActivity.className = 'about-update-activity';
-
-  const updateProgress = document.createElement('div');
-  updateProgress.className = 'about-update-progress hidden';
-
-  const updateProgressFill = document.createElement('div');
-  updateProgressFill.className = 'about-update-progress-fill';
-  updateProgress.appendChild(updateProgressFill);
-
-  updateBtn.addEventListener('click', () => {
-    const appStateSnapshot = getUpdateCenterState().app;
-    if (appStateSnapshot.phase === 'ready_to_restart') {
-      void window.calder.update.install();
-      return;
-    }
-    void checkForAppUpdates();
-  });
-
-  updateInfo.appendChild(updateStatus);
-  updateInfo.appendChild(updateMeta);
-  updateInfo.appendChild(updateActivity);
-  updateInfo.appendChild(updateProgress);
-  updateRow.appendChild(updateBtn);
-  updateRow.appendChild(updateInfo);
-
-  const renderState = (appUpdateState: ReturnType<typeof getUpdateCenterState>['app']) => {
-    renderAboutUpdateState({
-      appUpdateState,
-      formatRelativeTimestamp,
-      updateBtn,
-      updateStatus,
-      updateMeta,
-      updateActivity,
-      updateProgress,
-      updateProgressFill,
-    });
-  };
-
-  renderState(getUpdateCenterState().app);
-  const cleanup = onUpdateCenterChange((snapshot) => {
-    renderState(snapshot.app);
-  });
-  return { row: updateRow, cleanup };
-}
-
-function createExternalAboutLink(label: string, url: string): HTMLAnchorElement {
-  const link = document.createElement('a');
-  link.className = 'about-link';
-  link.textContent = label;
-  link.href = '#';
-  link.addEventListener('click', (event) => {
-    event.preventDefault();
-    window.calder.app.openExternal(url);
-  });
-  return link;
-}
-
-function createAboutLinks(): HTMLElement {
-  const linksDiv = document.createElement('div');
-  linksDiv.className = 'about-links about-link-grid';
-  linksDiv.appendChild(createExternalAboutLink('GitHub', 'https://github.com/batuhanyuksel/calder'));
-  linksDiv.appendChild(createExternalAboutLink('Report a Bug', 'https://github.com/batuhanyuksel/calder/issues'));
-  return linksDiv;
-}
-
-function createAboutCommunity(): HTMLElement {
-  const communityDiv = document.createElement('div');
-  communityDiv.className = 'about-community';
-  communityDiv.append(
-    'Calder is open source. ',
-    createExternalAboutLink('Contribute on GitHub', 'https://github.com/batuhanyuksel/calder'),
-    ' — and if you find it useful, give it a star!',
-  );
-  return communityDiv;
-}
-
-function createDebugModeRow(preferenceDraft: AboutDraft): HTMLElement {
-  const debugRow = document.createElement('div');
-  debugRow.className = 'modal-toggle-field';
-
-  const debugLabel = document.createElement('label');
-  debugLabel.htmlFor = 'pref-debug-mode';
-  debugLabel.textContent = 'Debug Mode';
-
-  const debugModeCheckbox = document.createElement('input');
-  debugModeCheckbox.type = 'checkbox';
-  debugModeCheckbox.id = 'pref-debug-mode';
-  debugModeCheckbox.checked = preferenceDraft.debugMode;
-  debugModeCheckbox.addEventListener('change', () => {
-    preferenceDraft.debugMode = debugModeCheckbox.checked;
-  });
-
-  debugRow.appendChild(debugLabel);
-  debugRow.appendChild(debugModeCheckbox);
-  return debugRow;
-}
-
-export function renderAboutPreferencesSection({
-  content,
-  preferenceDraft,
-  appendSectionIntro,
-  appendOverviewGrid,
-  formatRelativeTimestamp,
-}: RenderAboutSectionArgs): () => void {
-  appendSectionIntro(
-    content,
-    'Project',
-    'Calder',
-    'Version details, update checks, and source links for the current build.',
-  );
-
-  appendOverviewGrid(content, [
-    {
-      label: 'Channel',
-      value: 'Desktop app',
-      note: 'This workspace is tuned for side-by-side surface and session work.',
-    },
-    {
-      label: 'Source',
-      value: 'Open source',
-      note: 'The repo and issue tracker stay one click away.',
-    },
-    {
-      label: 'Updates',
-      value: 'Manual check',
-      note: 'Run a direct check whenever you want to confirm a newer build.',
-    },
-  ]);
-
-  const aboutDiv = document.createElement('div');
-  aboutDiv.className = 'about-section';
-
-  const { hero: aboutHero, versionLine } = createAboutHero();
-  const { row: updateRow, cleanup: updateCleanup } = createAboutUpdateRow(formatRelativeTimestamp);
-  const linksDiv = createAboutLinks();
-  const communityDiv = createAboutCommunity();
-  const debugRow = createDebugModeRow(preferenceDraft);
-
-  aboutDiv.appendChild(aboutHero);
-  aboutDiv.appendChild(updateRow);
-  aboutDiv.appendChild(linksDiv);
-  aboutDiv.appendChild(communityDiv);
-  aboutDiv.appendChild(debugRow);
-  content.appendChild(aboutDiv);
-
-  void window.calder.app.getVersion().then((ver) => {
-    versionLine.textContent = `Version: ${ver}`;
-  });
-
-  return updateCleanup;
-}
+// about-hero + about-link-grid are rendered in preferences-modal-sections-about.ts.
 
 export function renderProvidersPreferencesSection({
   content,

@@ -4,6 +4,9 @@ import { readFileSync } from 'fs';
 const source = [
   readFileSync(new URL('./i18n.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-core-part-1.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-core-part-2.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-core-part-3.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-tab-terminal.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-preferences.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-mobile.ts', import.meta.url), 'utf-8'),

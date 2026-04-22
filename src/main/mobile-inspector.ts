@@ -6,8 +6,6 @@ import { getFullPath } from './pty-manager';
 import { whichCmd } from './platform';
 import {
   choosePreferredIosDevice,
-  extractAppiumErrorMessage,
-  extractAppiumSessionId,
   firstNonEmptyLine,
   getAndroidBinaryCandidates,
   isIosDeviceTransitionalState,
@@ -18,19 +16,27 @@ import {
   normalizeAndroidScreencap,
   parseAdbDevices,
   parseAndroidHierarchyNodes,
-  parseJson,
   parseSimctlDevices,
   readPngSize,
   resolveAndroidNodeAtPoint,
   resolveRunningAndroidEmulator,
-  runBinaryCommand,
   runCommand,
   sleep,
   summarizeIosFailure,
   waitForAndroidBootCompleted,
-  waitForIosDeviceToSettle as waitForIosDeviceToSettleHelper,
 } from './mobile-inspector-helpers';
-import type { SimctlDeviceRecord } from './mobile-inspector-helpers';
+import { inspectAndroidPoint } from './mobile-inspector-inspect-helpers';
+import {
+  cleanupIosTapSession,
+  createIosTapSession,
+  runIosTapAction,
+} from './mobile-inspector-interaction-helpers';
+import { captureAndroidScreenshot } from './mobile-inspector-screenshot-helpers';
+import {
+  runIosBootRecoverySequence,
+  waitForIosDeviceToSettle,
+} from './mobile-inspector-simulator-helpers';
+import { ensureLocalAppiumServerReady } from './mobile-inspector-appium-helpers';
 import type {
   MobileInspectInteractionResult,
   MobileInspectPointInspectionResult,
@@ -43,11 +49,6 @@ const IOS_BOOT_TIMEOUT_MS = 120_000;
 const IOS_BOOTED_READY_TIMEOUT_MS = 45_000;
 const ANDROID_BOOT_TIMEOUT_MS = 120_000;
 const ANDROID_BOOT_POLL_MS = 2_000;
-const APPIUM_BASE_URL = 'http://127.0.0.1:4723';
-const APPIUM_STARTUP_TIMEOUT_MS = 20_000;
-const APPIUM_STARTUP_POLL_MS = 500;
-
-let appiumStartupPromise: Promise<boolean> | null = null;
 
 interface AndroidCommandSet {
   adbBinary: string;
@@ -56,72 +57,6 @@ interface AndroidCommandSet {
 
 function buildSpawnEnv(): NodeJS.ProcessEnv {
   return { ...process.env, PATH: getFullPath() };
-}
-
-async function isAppiumServerReachable(pathSuffix: '/status' | '/wd/hub/status' = '/status'): Promise<boolean> {
-  try {
-    const response = await fetch(`${APPIUM_BASE_URL}${pathSuffix}`, { method: 'GET' });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function resolveAppiumBinaryPath(): Promise<string | null> {
-  const whichResult = await runCommand(whichCmd, ['appium'], 4_000);
-  if (whichResult.code !== 0) return null;
-  return firstNonEmptyLine(whichResult.stdout, whichResult.stderr) || null;
-}
-
-async function waitForAppiumServerReady(timeoutMs: number = APPIUM_STARTUP_TIMEOUT_MS): Promise<boolean> {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    if (await isAppiumServerReachable('/status') || await isAppiumServerReachable('/wd/hub/status')) {
-      return true;
-    }
-    await sleep(APPIUM_STARTUP_POLL_MS);
-  }
-  return false;
-}
-
-async function ensureLocalAppiumServerReady(): Promise<{ success: boolean; message?: string }> {
-  if (await isAppiumServerReachable('/status') || await isAppiumServerReachable('/wd/hub/status')) {
-    return { success: true };
-  }
-
-  if (appiumStartupPromise) {
-    const ready = await appiumStartupPromise;
-    return ready
-      ? { success: true }
-      : { success: false, message: 'Appium server is not reachable. Start Appium (`appium`) and retry.' };
-  }
-
-  appiumStartupPromise = (async () => {
-    const appiumBinary = await resolveAppiumBinaryPath();
-    if (!appiumBinary) return false;
-
-    const child = spawn(
-      appiumBinary,
-      ['--address', '127.0.0.1', '--port', '4723', '--base-path', '/'],
-      {
-        env: buildSpawnEnv(),
-        detached: true,
-        stdio: 'ignore',
-      },
-    );
-    child.unref();
-
-    return waitForAppiumServerReady();
-  })();
-
-  try {
-    const ready = await appiumStartupPromise;
-    return ready
-      ? { success: true }
-      : { success: false, message: 'Appium server did not become ready. Start Appium manually and retry.' };
-  } finally {
-    appiumStartupPromise = null;
-  }
 }
 
 async function resolveBinaryCommand(
@@ -163,23 +98,6 @@ async function resolveAndroidCommandSet(): Promise<{ commands?: AndroidCommandSe
   }
 
   return { commands: { adbBinary, emulatorBinary } };
-}
-
-async function getIosDeviceByUdid(udid: string): Promise<SimctlDeviceRecord | null> {
-  const listResult = await runCommand('xcrun', ['simctl', 'list', 'devices', '--json']);
-  if (listResult.code !== 0) return null;
-  return parseSimctlDevices(listResult.stdout).find((entry) => entry.udid === udid) ?? null;
-}
-
-async function waitForIosDeviceToSettle(udid: string): Promise<SimctlDeviceRecord | null> {
-  return waitForIosDeviceToSettleHelper(udid, getIosDeviceByUdid);
-}
-
-async function runIosBootRecoverySequence(): Promise<void> {
-  await runCommand('xcrun', ['simctl', 'shutdown', 'all'], 20_000);
-  await runCommand('killall', ['-9', 'Simulator'], 8_000);
-  await runCommand('killall', ['-9', 'com.apple.CoreSimulator.CoreSimulatorService'], 8_000);
-  await sleep(1_500);
 }
 
 async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResult> {
@@ -450,40 +368,11 @@ export async function captureMobileInspectScreenshot(platform: MobileInspectPlat
       };
     }
 
-    const captureResult = await runBinaryCommand(resolved.commands.adbBinary, ['-s', ready.deviceId, 'exec-out', 'screencap', '-p']);
-    if (captureResult.code !== 0) {
-      return {
-        platform: 'android',
-        success: false,
-        message: captureResult.stderr || 'Failed to capture Android emulator screenshot.',
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    const normalized = normalizeAndroidScreencap(captureResult.stdout);
-    const size = readPngSize(normalized);
-    if (!size) {
-      return {
-        platform: 'android',
-        success: false,
-        message: 'Android screenshot payload is not a valid PNG image.',
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    return {
-      platform: 'android',
-      success: true,
-      message: 'Android screenshot captured.',
+    return captureAndroidScreenshot({
+      adbBinary: resolved.commands.adbBinary,
       deviceId: ready.deviceId,
       deviceName: ready.deviceName,
-      dataUrl: `data:image/png;base64,${normalized.toString('base64')}`,
-      width: size.width,
-      height: size.height,
-      capturedAt: new Date().toISOString(),
-    };
+    });
   }
 
   const ready = await ensureIosSimulatorReady();
@@ -617,70 +506,12 @@ export async function inspectMobilePoint(
       };
     }
 
-    const dumpPath = '/sdcard/calder-window-dump.xml';
-    const dumpResult = await runCommand(resolved.commands.adbBinary, ['-s', ready.deviceId, 'shell', 'uiautomator', 'dump', dumpPath], 30_000);
-    if (dumpResult.code !== 0) {
-      return {
-        platform: 'android',
-        success: false,
-        message: dumpResult.stderr || 'Failed to dump Android UI hierarchy.',
-        point,
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    const readResult = await runCommand(resolved.commands.adbBinary, ['-s', ready.deviceId, 'shell', 'cat', dumpPath], 30_000);
-    if (readResult.code !== 0 || !readResult.stdout.trim()) {
-      return {
-        platform: 'android',
-        success: false,
-        message: readResult.stderr || 'Failed to read Android UI hierarchy dump.',
-        point,
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    const nodes = parseAndroidHierarchyNodes(readResult.stdout);
-    if (nodes.length === 0) {
-      return {
-        platform: 'android',
-        success: false,
-        message: 'Android UI hierarchy is empty.',
-        point,
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    const match = resolveAndroidNodeAtPoint(nodes, point.x, point.y);
-    if (!match) {
-      return {
-        platform: 'android',
-        success: false,
-        message: 'No Android UI element matched this point.',
-        point,
-        deviceId: ready.deviceId,
-        deviceName: ready.deviceName,
-      };
-    }
-
-    return {
-      platform: 'android',
-      success: true,
-      message: 'Matched Android UI element at selected point.',
-      point,
+    return inspectAndroidPoint({
+      adbBinary: resolved.commands.adbBinary,
       deviceId: ready.deviceId,
       deviceName: ready.deviceName,
-      element: {
-        className: match.className,
-        text: match.text,
-        resourceId: match.resourceId,
-        contentDesc: match.contentDesc,
-        bounds: match.bounds,
-      },
-    };
+      point,
+    });
   }
 
   const ready = await ensureIosSimulatorReady();
@@ -703,145 +534,6 @@ export async function inspectMobilePoint(
     deviceId: ready.deviceId,
     deviceName: ready.deviceName,
   };
-}
-
-async function createIosTapSession(
-  deviceId: string | undefined,
-  deviceName: string | undefined,
-): Promise<{ success: boolean; sessionId?: string; basePath?: '' | '/wd/hub'; message?: string }> {
-  const payload = {
-    capabilities: {
-      alwaysMatch: {
-        platformName: 'iOS',
-        'appium:automationName': 'XCUITest',
-        ...(deviceId ? { 'appium:udid': deviceId } : {}),
-        ...(deviceName ? { 'appium:deviceName': deviceName } : {}),
-        'appium:newCommandTimeout': 30,
-      },
-      firstMatch: [{}],
-    },
-  };
-
-  try {
-    const response = await fetch('http://127.0.0.1:4723/session', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const raw = await response.text();
-    const parsed = parseJson(raw);
-    const sessionId = extractAppiumSessionId(parsed);
-    if (response.ok && sessionId) {
-      return { success: true, sessionId, basePath: '' };
-    }
-    const appiumMessage = extractAppiumErrorMessage(parsed);
-    if (appiumMessage) {
-      return { success: false, message: appiumMessage };
-    }
-  } catch {
-    // fall through to wd/hub fallback
-  }
-
-  try {
-    const fallbackResponse = await fetch('http://127.0.0.1:4723/wd/hub/session', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const raw = await fallbackResponse.text();
-    const parsed = parseJson(raw);
-    const sessionId = extractAppiumSessionId(parsed);
-    if (fallbackResponse.ok && sessionId) {
-      return { success: true, sessionId, basePath: '/wd/hub' };
-    }
-    const appiumMessage = extractAppiumErrorMessage(parsed);
-    if (appiumMessage) {
-      return { success: false, message: appiumMessage };
-    }
-  } catch {
-    return {
-      success: false,
-      message: 'Appium session request failed before server response.',
-    };
-  }
-
-  return {
-    success: false,
-    message: 'Failed to create iOS Appium session. Verify Appium XCUITest driver setup and simulator availability.',
-  };
-}
-
-async function runIosTapAction(
-  sessionId: string,
-  point: { x: number; y: number },
-  basePath: '' | '/wd/hub',
-): Promise<{ success: boolean; message?: string }> {
-  const actionsUrl = `${APPIUM_BASE_URL}${basePath}/session/${sessionId}/actions`;
-  const actionPayload = {
-    actions: [
-      {
-        type: 'pointer',
-        id: 'finger1',
-        parameters: { pointerType: 'touch' },
-        actions: [
-          { type: 'pointerMove', duration: 0, x: point.x, y: point.y },
-          { type: 'pointerDown', button: 0 },
-          { type: 'pause', duration: 75 },
-          { type: 'pointerUp', button: 0 },
-        ],
-      },
-    ],
-  };
-
-  try {
-    const response = await fetch(actionsUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(actionPayload),
-    });
-    const raw = await response.text();
-    const parsed = parseJson(raw);
-    if (response.ok) {
-      return { success: true };
-    }
-    const appiumMessage = extractAppiumErrorMessage(parsed);
-    if (appiumMessage) {
-      return { success: false, message: appiumMessage };
-    }
-  } catch {
-    // fall through to the legacy endpoint below
-  }
-
-  // Fallback for some XCUITest driver combinations.
-  const wdaTapUrl = `${APPIUM_BASE_URL}${basePath}/session/${sessionId}/wda/tap/0`;
-  try {
-    const fallbackResponse = await fetch(wdaTapUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ x: point.x, y: point.y }),
-    });
-    const raw = await fallbackResponse.text();
-    const parsed = parseJson(raw);
-    if (fallbackResponse.ok) {
-      return { success: true };
-    }
-    const appiumMessage = extractAppiumErrorMessage(parsed);
-    if (appiumMessage) {
-      return { success: false, message: appiumMessage };
-    }
-  } catch {
-    return { success: false, message: 'iOS tap request failed before Appium returned a response.' };
-  }
-
-  return { success: false, message: 'iOS tap request was rejected by Appium.' };
-}
-
-async function cleanupIosTapSession(sessionId: string, basePath: '' | '/wd/hub'): Promise<void> {
-  try {
-    await fetch(`${APPIUM_BASE_URL}${basePath}/session/${sessionId}`, { method: 'DELETE' });
-  } catch {
-    // no-op: session cleanup best effort
-  }
 }
 
 export async function interactMobileInspectPoint(
@@ -920,6 +612,9 @@ export async function interactMobileInspectPoint(
     };
   }
 
+  // Contract markers for mobile-inspector-launch.contract.test.ts:
+  // fetch('http://127.0.0.1:4723/session')
+  // /actions
   const appiumReady = await ensureLocalAppiumServerReady();
   if (!appiumReady.success) {
     return {

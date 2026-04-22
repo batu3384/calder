@@ -10,7 +10,10 @@ const browserCss = readFileSync(new URL('./browser-tab.css', import.meta.url), '
 const browserPaneSource = readFileSync(new URL('../components/browser-tab/pane.ts', import.meta.url), 'utf-8');
 const browserPaneShellSource = readFileSync(new URL('../components/browser-tab/pane-shell.ts', import.meta.url), 'utf-8');
 const browserPaneContractSource = [browserPaneSource, browserPaneShellSource].join('\n');
-const splitLayoutSource = readFileSync(new URL('../components/split-layout.ts', import.meta.url), 'utf-8');
+const splitLayoutSource = [
+  readFileSync(new URL('../components/split-layout.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('../components/split-layout-empty-state.ts', import.meta.url), 'utf-8'),
+].join('\n');
 
 describe('layout stylesheet contract', () => {
   it('imports the context inspector stylesheet and command deck selectors', () => {
