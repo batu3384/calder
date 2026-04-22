@@ -211,6 +211,24 @@ Scope: Sequential execution progress for project structure/foldering debt.
      - Mobile interaction logic moved into dedicated controller + tab-panel modules.
      - `apps/calder-mobile/App.tsx` reduced to a thin container (`122` lines).
 
+24. **Parallel monolith closure wave with subagents (P0/P1)**
+   - Completed in one parallel pass across desktop + mobile ownership slices.
+   - Function-size closures achieved:
+     - `useMobileController`: `386 -> 163` lines
+     - `createTabBarCliUpdatePanel`: `289 -> 114` lines
+     - `createCustomSelect`: `279 -> 229` lines
+     - `createCliSurfaceRuntimeManager`: `264 -> 147` lines
+     - `startShare`: `262 -> 67` lines
+     - `renderProjectContextSection`: `258 -> 34` lines
+     - `installMobileDependency`: `255 -> 59` lines
+     - `showSessionTabContextMenu`: `254 -> 247` lines
+   - New helper modules added:
+     - `apps/calder-mobile/src/app/use-mobile-controller-live-actions.ts`
+     - `apps/calder-mobile/src/app/use-mobile-controller-session-bridge.ts`
+     - `src/main/cli-surface-runtime-helpers.ts`
+   - Result:
+     - `code-review-graph find_large_functions(min_lines=250)` now reports **0** remaining functions.
+
 ## Metric impact
 
 - `src/renderer/components` direct file count:
@@ -237,6 +255,14 @@ Scope: Sequential execution progress for project structure/foldering debt.
   - `renderProjectBackgroundTaskSection`: **336 -> <300**
   - `renderTimeline`: **306 -> <300**
   - `apps/calder-mobile/App.tsx`: **1296 -> 122**
+  - `useMobileController`: **386 -> 163**
+  - `createTabBarCliUpdatePanel`: **289 -> 114**
+  - `createCustomSelect`: **279 -> 229**
+  - `createCliSurfaceRuntimeManager`: **264 -> 147**
+  - `startShare`: **262 -> 67**
+  - `renderProjectContextSection`: **258 -> 34**
+  - `installMobileDependency`: **255 -> 59**
+  - `showSessionTabContextMenu`: **254 -> 247**
 
 ## Validation status
 
@@ -245,13 +271,15 @@ Scope: Sequential execution progress for project structure/foldering debt.
 - `rtk npm run audit:deep` -> PASS
   - Includes the new `Structure audit` step.
 - `rtk code-review-graph status --repo /Users/batuhanyuksel/Documents/browser` -> PASS
-  - Nodes: `7571`, Edges: `80731`, Files: `813`
+  - Nodes: `7468`, Edges: `80655`, Files: `819`
 - `code-review-graph find_large_functions(min_lines=300)`:
   - Remaining `>=300` function count: **0**
+- `code-review-graph find_large_functions(min_lines=250)`:
+  - Remaining `>=250` function count: **0**
 
 ## Next recommended slice
 
 1. Optional graph test-gap hygiene sweep:
    - add direct coverage for helper-level symbols flagged by graph heuristics when needed.
 2. Optional next debt wave:
-   - reduce the current `>=250` function list (`tab-bar-cli-update-panel`, `custom-select`, `cli-surface-runtime`, `peer-host`, `preferences-context-discovery`, `mobile-dependency-doctor`, `tab-bar-session-context-menu`).
+   - reduce the current `>=220` function list (`tab-bar-session-context-menu`, `preferences-checkpoint-discovery`, `browser-tab/pane-layout`, `share-dialog-flow-controller`, `preferences-modal-sections`, `tab-bar-branch-menu-controller`, `cli-surface/pane-elements`, `split-layout`, `provider-updater`).

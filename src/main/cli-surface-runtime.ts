@@ -1,58 +1,47 @@
 import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project';
-import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
+import {
+  appendStartupReadyOutput,
+  buildRuntimeState,
+  collectReservedPorts,
+  compileStartupReadyPattern,
+  createInitialRuntimeLaunchState,
+  createResolvedRuntimeLaunchState,
+  getCliSurfaceRuntimeId,
+  recordStartupFirstOutput,
+  markStartupSpawned,
+  markStartupStopped,
+  resolveRuntimeLaunch,
+  type CliSurfaceRuntimeEmit,
+  type CliSurfaceRuntimeLaunchState,
+} from './cli-surface-runtime-helpers';
 import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
+import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
 
 const MAX_STARTUP_READY_BUFFER = 8192;
 
-export function createCliSurfaceRuntimeManager(emit: {
-  data(projectId: string, data: string): void;
-  exit(projectId: string, exitCode: number, signal?: number): void;
-  status(projectId: string, state: CliSurfaceRuntimeState): void;
-  error(projectId: string, message: string): void;
-}) {
+export function createCliSurfaceRuntimeManager(emit: CliSurfaceRuntimeEmit) {
   const profiles = new Map<string, CliSurfaceProfile>();
   const pendingData = new Map<string, string[]>();
   const dataFlushTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const runningEmitted = new Set<string>();
   const startupReadyBuffers = new Map<string, string>();
   const startupTimings = new Map<string, CliSurfaceStartupTiming>();
-  const runtimeLaunches = new Map<
-    string,
-    {
-      selectedProfileId?: string;
-      command?: string;
-      args?: string[];
-      cwd?: string;
-      cols?: number;
-      rows?: number;
-      resolvedPort?: number;
-      resolvedUrl?: string;
-      portMode?: CliSurfaceRuntimeState['portMode'];
-      portFallbackUsed?: boolean;
-      portReason?: string;
-    }
-  >();
+  const runtimeLaunches = new Map<string, CliSurfaceRuntimeLaunchState>();
 
-  function resolveLaunch(profile: CliSurfaceProfile): {
-    command: string;
-    args?: string[];
-    cwd: string;
-    envPatch?: Record<string, string>;
-    cols?: number;
-    rows?: number;
-  } {
-    return {
-      command: profile.command,
-      args: profile.args,
-      cwd: profile.cwd ?? process.cwd(),
-      envPatch: profile.envPatch,
-      cols: profile.cols,
-      rows: profile.rows,
-    };
-  }
-
-  function getRuntimeId(projectId: string): string {
-    return `cli-surface:${projectId}`;
+  function createRuntimeState(
+    projectId: string,
+    profile: CliSurfaceProfile | undefined,
+    status: CliSurfaceRuntimeState['status'],
+    extra: Partial<CliSurfaceRuntimeState> = {},
+  ): CliSurfaceRuntimeState {
+    return buildRuntimeState({
+      projectId,
+      profile,
+      status,
+      startupTimings,
+      runtimeLaunches,
+      extra,
+    });
   }
 
   function flushData(projectId: string): void {
@@ -75,49 +64,6 @@ export function createCliSurfaceRuntimeManager(emit: {
     dataFlushTimers.set(projectId, setTimeout(() => flushData(projectId), 16));
   }
 
-  function buildRuntimeState(
-    projectId: string,
-    profile: CliSurfaceProfile | undefined,
-    status: CliSurfaceRuntimeState['status'],
-    extra: Partial<CliSurfaceRuntimeState> = {},
-  ): CliSurfaceRuntimeState {
-    const timing = startupTimings.get(projectId);
-    const launch = runtimeLaunches.get(projectId);
-    return {
-      status,
-      runtimeId: status === 'stopped' ? undefined : getRuntimeId(projectId),
-      selectedProfileId: launch?.selectedProfileId ?? profile?.id,
-      command: launch?.command ?? profile?.command,
-      args: launch?.args ?? profile?.args,
-      cwd: launch?.cwd ?? profile?.cwd,
-      cols: launch?.cols ?? profile?.cols,
-      rows: launch?.rows ?? profile?.rows,
-      resolvedPort: launch?.resolvedPort,
-      resolvedUrl: launch?.resolvedUrl,
-      portMode: launch?.portMode ?? profile?.portMode,
-      portFallbackUsed: launch?.portFallbackUsed,
-      portReason: launch?.portReason,
-      ...(timing ? { startupTiming: { ...timing } } : {}),
-      ...extra,
-    };
-  }
-
-  function markStopped(projectId: string): void {
-    const timing = startupTimings.get(projectId);
-    if (!timing) return;
-    const stoppedAtMs = Date.now();
-    timing.stoppedAtMs = stoppedAtMs;
-    timing.totalRuntimeMs = Math.max(0, stoppedAtMs - timing.startedAtMs);
-  }
-
-  function recordFirstOutput(projectId: string): void {
-    const timing = startupTimings.get(projectId);
-    if (!timing || timing.firstOutputAtMs !== undefined) return;
-    const firstOutputAtMs = Date.now();
-    timing.firstOutputAtMs = firstOutputAtMs;
-    timing.firstOutputLatencyMs = Math.max(0, firstOutputAtMs - timing.startedAtMs);
-  }
-
   function markRunning(projectId: string, profile: CliSurfaceProfile): void {
     if (runningEmitted.has(projectId)) return;
     runningEmitted.add(projectId);
@@ -125,25 +71,7 @@ export function createCliSurfaceRuntimeManager(emit: {
     if (timing) {
       timing.runningAtMs = Date.now();
     }
-    emit.status(projectId, buildRuntimeState(projectId, profile, 'running'));
-  }
-
-  function compileStartupReadyPattern(projectId: string, pattern?: string): RegExp | undefined {
-    if (!pattern) return undefined;
-    try {
-      return new RegExp(pattern, 'm');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Invalid regular expression.';
-      emit.error(projectId, `Invalid CLI surface startup ready pattern: ${message}`);
-      return undefined;
-    }
-  }
-
-  function appendStartupReadyOutput(projectId: string, data: string): string {
-    const current = startupReadyBuffers.get(projectId) ?? '';
-    const next = `${current}${data}`.slice(-MAX_STARTUP_READY_BUFFER);
-    startupReadyBuffers.set(projectId, next);
-    return next;
+    emit.status(projectId, createRuntimeState(projectId, profile, 'running'));
   }
 
   return {
@@ -152,62 +80,37 @@ export function createCliSurfaceRuntimeManager(emit: {
       runningEmitted.delete(projectId);
       startupReadyBuffers.delete(projectId);
       startupTimings.set(projectId, { startedAtMs: Date.now() });
-      runtimeLaunches.set(projectId, {
-        selectedProfileId: profile.id,
-        command: profile.command,
-        args: profile.args ? [...profile.args] : undefined,
-        cwd: profile.cwd ?? process.cwd(),
-        cols: profile.cols,
-        rows: profile.rows,
-        portMode: profile.portMode,
-      });
-      emit.status(projectId, buildRuntimeState(projectId, profile, 'starting'));
+      runtimeLaunches.set(projectId, createInitialRuntimeLaunchState(profile));
+      emit.status(projectId, createRuntimeState(projectId, profile, 'starting'));
 
-      const reservedPorts = new Set<number>();
-      for (const [runtimeProjectId, launch] of runtimeLaunches.entries()) {
-        if (runtimeProjectId === projectId) continue;
-        if (typeof launch.resolvedPort === 'number') {
-          reservedPorts.add(launch.resolvedPort);
-        }
-      }
-
-      let launch = resolveLaunch(profile);
+      const reservedPorts = collectReservedPorts(projectId, runtimeLaunches);
+      let launch = resolveRuntimeLaunch(profile);
       try {
         const resolved = await resolveCliSurfaceLaunch(projectId, profile, reservedPorts);
         launch = resolved.launch;
-        runtimeLaunches.set(projectId, {
-          selectedProfileId: profile.id,
-          command: resolved.launch.command,
-          args: resolved.launch.args ? [...resolved.launch.args] : undefined,
-          cwd: resolved.launch.cwd,
-          cols: resolved.launch.cols,
-          rows: resolved.launch.rows,
-          resolvedPort: resolved.metadata.resolvedPort,
-          resolvedUrl: resolved.metadata.resolvedUrl,
-          portMode: resolved.metadata.portMode,
-          portFallbackUsed: resolved.metadata.portFallbackUsed,
-          portReason: resolved.metadata.portReason,
-        });
+        runtimeLaunches.set(projectId, createResolvedRuntimeLaunchState(profile, resolved));
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to prepare CLI surface launch.';
         runningEmitted.delete(projectId);
-        markStopped(projectId);
+        markStartupStopped(projectId, startupTimings);
         emit.error(projectId, message);
-        emit.status(
-          projectId,
-          buildRuntimeState(projectId, profile, 'error', { lastError: message }),
-        );
+        emit.status(projectId, createRuntimeState(projectId, profile, 'error', { lastError: message }));
         return;
       }
 
-      const startupReadyPattern = compileStartupReadyPattern(projectId, profile.startupReadyPattern);
+      const startupReadyPattern = compileStartupReadyPattern(projectId, profile.startupReadyPattern, emit);
       spawnCommandPty(
-        getRuntimeId(projectId),
+        getCliSurfaceRuntimeId(projectId),
         launch,
         (data) => {
-          recordFirstOutput(projectId);
+          recordStartupFirstOutput(projectId, startupTimings);
           if (startupReadyPattern && !runningEmitted.has(projectId)) {
-            const readyOutput = appendStartupReadyOutput(projectId, data);
+            const readyOutput = appendStartupReadyOutput({
+              projectId,
+              data,
+              startupReadyBuffers,
+              maxBufferLength: MAX_STARTUP_READY_BUFFER,
+            });
             if (startupReadyPattern.test(readyOutput)) {
               markRunning(projectId, profile);
             }
@@ -217,44 +120,39 @@ export function createCliSurfaceRuntimeManager(emit: {
         (exitCode, signal) => {
           runningEmitted.delete(projectId);
           startupReadyBuffers.delete(projectId);
-          markStopped(projectId);
+          markStartupStopped(projectId, startupTimings);
           flushData(projectId);
           runtimeLaunches.delete(projectId);
           emit.exit(projectId, exitCode, signal);
-          emit.status(projectId, buildRuntimeState(projectId, profile, 'stopped', { lastExitCode: exitCode }));
+          emit.status(projectId, createRuntimeState(projectId, profile, 'stopped', { lastExitCode: exitCode }));
         },
       );
 
-      const timing = startupTimings.get(projectId);
-      if (timing) {
-        const ptySpawnedAtMs = Date.now();
-        timing.ptySpawnedAtMs = ptySpawnedAtMs;
-        timing.spawnLatencyMs = Math.max(0, ptySpawnedAtMs - timing.startedAtMs);
-        emit.status(projectId, buildRuntimeState(projectId, profile, 'starting'));
+      if (markStartupSpawned(projectId, startupTimings)) {
+        emit.status(projectId, createRuntimeState(projectId, profile, 'starting'));
       }
-
       if (!startupReadyPattern) {
         markRunning(projectId, profile);
       }
     },
 
     write(projectId: string, data: string): void {
-      writePty(getRuntimeId(projectId), data);
+      writePty(getCliSurfaceRuntimeId(projectId), data);
     },
 
     resize(projectId: string, cols: number, rows: number): void {
-      resizePty(getRuntimeId(projectId), cols, rows);
+      resizePty(getCliSurfaceRuntimeId(projectId), cols, rows);
     },
 
     stop(projectId: string): void {
       runningEmitted.delete(projectId);
       startupReadyBuffers.delete(projectId);
-      markStopped(projectId);
+      markStartupStopped(projectId, startupTimings);
       flushData(projectId);
-      killPty(getRuntimeId(projectId));
+      killPty(getCliSurfaceRuntimeId(projectId));
       runtimeLaunches.delete(projectId);
       const profile = profiles.get(projectId);
-      emit.status(projectId, buildRuntimeState(projectId, profile, 'stopped'));
+      emit.status(projectId, createRuntimeState(projectId, profile, 'stopped'));
     },
 
     async restart(projectId: string): Promise<void> {

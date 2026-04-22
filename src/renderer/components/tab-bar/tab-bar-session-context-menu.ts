@@ -24,6 +24,16 @@ export interface SessionTabContextMenuOptions {
   startRename: (tab: HTMLElement, project: ProjectRecord, session: SessionRecord) => void;
 }
 
+function constrainMenuToViewport(menu: HTMLElement): void {
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    menu.style.left = `${window.innerWidth - rect.width - 4}px`;
+  }
+  if (rect.bottom > window.innerHeight) {
+    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  }
+}
+
 export function showSessionTabContextMenu(options: SessionTabContextMenuOptions): void {
   const {
     x,
@@ -268,13 +278,6 @@ export function showSessionTabContextMenu(options: SessionTabContextMenuOptions)
   menu.appendChild(closeLeftItem);
   document.body.appendChild(menu);
   setActiveContextMenu(menu);
-
-  const rect = menu.getBoundingClientRect();
-  if (rect.right > window.innerWidth) {
-    menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  }
-  if (rect.bottom > window.innerHeight) {
-    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-  }
+  constrainMenuToViewport(menu);
   applyContextMenuSemantics(menu, 'Session actions');
 }

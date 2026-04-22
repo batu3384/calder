@@ -20,6 +20,148 @@ export interface CustomSelectConfig {
   onOpenChange?: (open: boolean) => void;
 }
 
+function eventTargetsCurrentSelect(
+  event: Event,
+  wrapper: HTMLElement,
+  dropdown: HTMLElement,
+  trigger: HTMLElement,
+): boolean {
+  const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
+  if (composedPath.includes(wrapper) || composedPath.includes(dropdown) || composedPath.includes(trigger)) {
+    return true;
+  }
+  const target = event.target as Node | null;
+  return Boolean(
+    target
+    && (
+      wrapper.contains(target)
+      || dropdown.contains(target)
+      || trigger.contains(target)
+    )
+  );
+}
+
+function createSelectItems(
+  options: SelectOption[],
+  hiddenValue: string,
+  onHover: (index: number) => void,
+  onSelect: (index: number) => void,
+): HTMLElement[] {
+  const items: HTMLElement[] = [];
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
+    const item = document.createElement('div');
+    item.className = 'custom-select-item';
+    item.textContent = opt.label;
+    item.dataset.value = opt.value;
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', String(opt.value === hiddenValue));
+    if (opt.disabled) item.classList.add('disabled');
+    if (opt.value === hiddenValue) item.classList.add('selected');
+
+    item.addEventListener('mouseenter', () => {
+      if (!opt.disabled) onHover(i);
+    });
+
+    item.addEventListener('click', () => {
+      if (!opt.disabled) onSelect(i);
+    });
+
+    items.push(item);
+  }
+  return items;
+}
+
+interface SelectKeyboardHandlerArgs {
+  event: KeyboardEvent;
+  options: SelectOption[];
+  isOpen: () => boolean;
+  openDropdown: (reason: string) => void;
+  closeDropdown: (reason: string) => void;
+  getActiveIndex: () => number;
+  setActiveIndex: (index: number) => void;
+  updateActive: () => void;
+  selectOption: (index: number, reason: string) => void;
+}
+
+function handleSelectTriggerKeydown({
+  event,
+  options,
+  isOpen,
+  openDropdown,
+  closeDropdown,
+  getActiveIndex,
+  setActiveIndex,
+  updateActive,
+  selectOption,
+}: SelectKeyboardHandlerArgs): void {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!isOpen()) openDropdown('keyboard-arrow');
+    const dir = event.key === 'ArrowDown' ? 1 : -1;
+    let next = getActiveIndex();
+    for (let attempt = 0; attempt < options.length; attempt++) {
+      next = (next + dir + options.length) % options.length;
+      if (!options[next].disabled) {
+        setActiveIndex(next);
+        break;
+      }
+    }
+    updateActive();
+    return;
+  }
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    event.stopPropagation();
+    if (isOpen() && getActiveIndex() >= 0) selectOption(getActiveIndex(), 'keyboard-enter');
+    else if (!isOpen()) openDropdown('keyboard-enter');
+    return;
+  }
+  if (event.key === 'Escape') {
+    if (isOpen()) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDropdown('keyboard-escape');
+    }
+    return;
+  }
+  if (event.key === 'Tab') {
+    closeDropdown('keyboard-tab');
+  }
+}
+
+interface OutsidePressHandlerArgs {
+  wrapper: HTMLElement;
+  dropdown: HTMLElement;
+  trigger: HTMLElement;
+  isOpen: () => boolean;
+  closeDropdown: (reason: string) => void;
+}
+
+function registerOutsidePressHandler({
+  wrapper,
+  dropdown,
+  trigger,
+  isOpen,
+  closeDropdown,
+}: OutsidePressHandlerArgs): () => void {
+  const onOutsidePointerDown = (event: PointerEvent | MouseEvent) => {
+    if (!isOpen()) return;
+    if (eventTargetsCurrentSelect(event, wrapper, dropdown, trigger)) return;
+    closeDropdown('outside-press');
+  };
+  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
+    typeof window !== 'undefined' && 'PointerEvent' in window
+  ) ? 'pointerdown' : 'mousedown';
+  document.addEventListener(outsidePressEventName, onOutsidePointerDown);
+  return () => {
+    document.removeEventListener(outsidePressEventName, onOutsidePointerDown);
+    document.removeEventListener('pointerdown', onOutsidePointerDown);
+    document.removeEventListener('mousedown', onOutsidePointerDown);
+  };
+}
+
 export function createCustomSelect(
   id: string,
   options: SelectOption[],
@@ -56,7 +198,7 @@ export function createCustomSelect(
 
   let activeIndex = -1;
   let floatingCleanup: (() => void) | null = null;
-  const items: HTMLElement[] = [];
+  let items: HTMLElement[] = [];
   const debugSessionId = `custom-select:${id}`;
 
   function ensureFloatingDropdownHost(): void {
@@ -78,31 +220,16 @@ export function createCustomSelect(
     }
   }
 
-  for (let i = 0; i < options.length; i++) {
-    const opt = options[i];
-    const item = document.createElement('div');
-    item.className = 'custom-select-item';
-    item.textContent = opt.label;
-    item.dataset.value = opt.value;
-    item.setAttribute('role', 'option');
-    item.setAttribute('aria-selected', String(opt.value === hidden.value));
-    if (opt.disabled) item.classList.add('disabled');
-    if (opt.value === hidden.value) item.classList.add('selected');
-
-    item.addEventListener('mouseenter', () => {
-      if (!opt.disabled) {
-        activeIndex = i;
-        updateActive();
-      }
-    });
-
-    item.addEventListener('click', () => {
-      if (!opt.disabled) selectOption(i);
-    });
-
-    items.push(item);
-    dropdown.appendChild(item);
-  }
+  items = createSelectItems(
+    options,
+    hidden.value,
+    index => {
+      activeIndex = index;
+      updateActive();
+    },
+    index => selectOption(index),
+  );
+  items.forEach(item => dropdown.appendChild(item));
 
   function applySelectedIndex(index: number): void {
     const opt = options[index];
@@ -208,62 +335,29 @@ export function createCustomSelect(
     else openDropdown('trigger-toggle');
   });
 
-  trigger.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!isOpen()) openDropdown('keyboard-arrow');
-      const dir = e.key === 'ArrowDown' ? 1 : -1;
-      let next = activeIndex;
-      for (let attempt = 0; attempt < options.length; attempt++) {
-        next = (next + dir + options.length) % options.length;
-        if (!options[next].disabled) {
-          activeIndex = next;
-          break;
-        }
-      }
-      updateActive();
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (isOpen() && activeIndex >= 0) selectOption(activeIndex, 'keyboard-enter');
-      else if (!isOpen()) openDropdown('keyboard-enter');
-    } else if (e.key === 'Escape') {
-      if (isOpen()) {
-        e.preventDefault();
-        e.stopPropagation();
-        closeDropdown('keyboard-escape');
-      }
-    } else if (e.key === 'Tab') {
-      closeDropdown('keyboard-tab');
-    }
+  trigger.addEventListener('keydown', (event: KeyboardEvent) => {
+    handleSelectTriggerKeydown({
+      event,
+      options,
+      isOpen,
+      openDropdown,
+      closeDropdown,
+      getActiveIndex: () => activeIndex,
+      setActiveIndex: index => {
+        activeIndex = index;
+      },
+      updateActive,
+      selectOption,
+    });
   });
 
-  function eventTargetsCurrentSelect(event: Event): boolean {
-    const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
-    if (composedPath.includes(wrapper) || composedPath.includes(dropdown) || composedPath.includes(trigger)) {
-      return true;
-    }
-    const target = event.target as Node | null;
-    return Boolean(
-      target
-      && (
-        wrapper.contains(target)
-        || dropdown.contains(target)
-        || trigger.contains(target)
-      )
-    );
-  }
-
-  const onOutsidePointerDown = (event: PointerEvent | MouseEvent) => {
-    if (!isOpen()) return;
-    if (eventTargetsCurrentSelect(event)) return;
-    closeDropdown('outside-press');
-  };
-  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
-    typeof window !== 'undefined' && 'PointerEvent' in window
-  ) ? 'pointerdown' : 'mousedown';
-  document.addEventListener(outsidePressEventName, onOutsidePointerDown);
+  const cleanupOutsidePressHandler = registerOutsidePressHandler({
+    wrapper,
+    dropdown,
+    trigger,
+    isOpen,
+    closeDropdown,
+  });
 
   const initialIndex = options.findIndex(o => o.value === hidden.value);
   if (initialIndex >= 0) {
@@ -293,9 +387,7 @@ export function createCustomSelect(
     },
     destroy() {
       closeDropdown('destroy');
-      document.removeEventListener(outsidePressEventName, onOutsidePointerDown);
-      document.removeEventListener('pointerdown', onOutsidePointerDown);
-      document.removeEventListener('mousedown', onOutsidePointerDown);
+      cleanupOutsidePressHandler();
     },
   };
 }

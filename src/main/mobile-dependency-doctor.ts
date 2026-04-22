@@ -797,149 +797,206 @@ async function runInstallStep(
   return result;
 }
 
-export async function installMobileDependency(
-  dependencyId: MobileDependencyId,
-  options?: InstallDependencyOptions,
-): Promise<MobileDependencyInstallResult> {
-  const runner = options?.runner ?? defaultRunner;
-  const hostPlatform = options?.hostPlatform ?? process.platform;
-  const env = options?.env ?? process.env;
-  const installId = options?.installId || createInstallId();
-  const onProgress = options?.onProgress;
-  const startedAt = new Date().toISOString();
-  const spec = INSTALL_SPECS[dependencyId];
+interface InstallExecutionContext {
+  dependencyId: MobileDependencyId;
+  installId: string;
+  startedAt: string;
+  onProgress?: (event: MobileDependencyInstallProgressEvent) => void;
+}
 
-  if (!spec) {
-    onProgress?.(buildProgressEvent({
-      installId,
-      dependencyId,
-      phase: 'failed',
-      startedAt,
-      finishedAt: new Date().toISOString(),
-      message: 'No automatic install command is configured for this dependency.',
-      percent: 0,
-    }));
-    return {
-      dependencyId,
-      success: false,
-      message: 'No automatic install command is configured for this dependency.',
-    };
-  }
+interface InstallExecutionState {
+  commandParts: string[];
+  combinedStdout: string;
+  combinedStderr: string;
+  alreadyInstalledNote: string | null;
+}
 
-  if (spec.macOnly && hostPlatform !== 'darwin') {
-    onProgress?.(buildProgressEvent({
-      installId,
-      dependencyId,
-      phase: 'failed',
-      startedAt,
-      finishedAt: new Date().toISOString(),
-      message: 'Automatic install for this dependency is only available on macOS.',
-      percent: 0,
-    }));
-    return {
-      dependencyId,
-      success: false,
-      message: 'Automatic install for this dependency is only available on macOS.',
-    };
-  }
+interface InstallStepTelemetry {
+  latestStepPercent?: number;
+  latestDownloadedBytes?: number;
+  latestTotalBytes?: number;
+  latestRemainingBytes?: number;
+}
 
-  const commandParts: string[] = [];
-  let combinedStdout = '';
-  let combinedStderr = '';
-  let installSteps = spec.steps;
-  let alreadyInstalledNote: string | null = null;
+type InstallProgressInput = Omit<
+  Parameters<typeof buildProgressEvent>[0],
+  'installId' | 'dependencyId' | 'startedAt'
+>;
 
-  if (dependencyId === 'android-emulator') {
-    const resolvedSdkManager = await resolveBinary(runner, 'sdkmanager', {
-      fallbackPaths: getAndroidBinaryCandidates('sdkmanager', env, hostPlatform),
-      probeArgs: ['--version'],
-    });
-    if (resolvedSdkManager) {
-      installSteps = spec.steps.map((step) =>
-        step.command === 'sdkmanager'
-          ? { ...step, command: resolvedSdkManager }
-          : step,
-      );
-    }
-  }
-
-  const totalSteps = installSteps.length;
-  onProgress?.(buildProgressEvent({
-    installId,
-    dependencyId,
-    phase: 'started',
-    startedAt,
-    totalSteps,
-    percent: 0,
-    message: 'Starting installation...',
+function emitInstallProgress(context: InstallExecutionContext, input: InstallProgressInput): void {
+  context.onProgress?.(buildProgressEvent({
+    ...input,
+    installId: context.installId,
+    dependencyId: context.dependencyId,
+    startedAt: context.startedAt,
   }));
+}
+
+function createInstallExecutionState(): InstallExecutionState {
+  return {
+    commandParts: [],
+    combinedStdout: '',
+    combinedStderr: '',
+    alreadyInstalledNote: null,
+  };
+}
+
+function buildInstallResult(
+  context: InstallExecutionContext,
+  state: InstallExecutionState,
+  success: boolean,
+  message: string,
+): MobileDependencyInstallResult {
+  return {
+    dependencyId: context.dependencyId,
+    success,
+    message,
+    command: state.commandParts.join(' && '),
+    stdout: state.combinedStdout.trim(),
+    stderr: state.combinedStderr.trim(),
+  };
+}
+
+function buildEarlyInstallFailure(
+  context: InstallExecutionContext,
+  message: string,
+): MobileDependencyInstallResult {
+  emitInstallProgress(context, {
+    phase: 'failed',
+    finishedAt: new Date().toISOString(),
+    message,
+    percent: 0,
+  });
+  return {
+    dependencyId: context.dependencyId,
+    success: false,
+    message,
+  };
+}
+
+async function resolveInstallSteps(
+  dependencyId: MobileDependencyId,
+  spec: InstallSpec,
+  runner: CommandRunner,
+  env: NodeJS.ProcessEnv,
+  hostPlatform: NodeJS.Platform,
+): Promise<InstallStep[]> {
+  if (dependencyId !== 'android-emulator') {
+    return spec.steps;
+  }
+
+  const resolvedSdkManager = await resolveBinary(runner, 'sdkmanager', {
+    fallbackPaths: getAndroidBinaryCandidates('sdkmanager', env, hostPlatform),
+    probeArgs: ['--version'],
+  });
+  if (!resolvedSdkManager) {
+    return spec.steps;
+  }
+
+  return spec.steps.map((step) =>
+    step.command === 'sdkmanager'
+      ? { ...step, command: resolvedSdkManager }
+      : step,
+  );
+}
+
+function processInstallLine(input: {
+  context: InstallExecutionContext;
+  source: 'stdout' | 'stderr';
+  line: string;
+  stepIndex: number;
+  totalSteps: number;
+  commandText: string;
+  stepDriverTarget: string | null;
+  telemetry: InstallStepTelemetry;
+}): void {
+  const cleanedLine = stripAnsi(input.line).trim();
+  if (!cleanedLine) return;
+  if (input.stepDriverTarget && /already installed/i.test(cleanedLine)) return;
+
+  const parsedPercent = parsePercentFromLine(cleanedLine);
+  if (parsedPercent !== null) {
+    input.telemetry.latestStepPercent = parsedPercent;
+  }
+
+  const parsedBytes = parseBytePairFromLine(cleanedLine);
+  if (parsedBytes) {
+    input.telemetry.latestDownloadedBytes = parsedBytes.downloadedBytes;
+    input.telemetry.latestTotalBytes = parsedBytes.totalBytes;
+    input.telemetry.latestRemainingBytes = parsedBytes.remainingBytes;
+  }
+
+  emitInstallProgress(input.context, {
+    phase: 'step_progress',
+    stepIndex: input.stepIndex,
+    totalSteps: input.totalSteps,
+    command: input.commandText,
+    source: input.source,
+    detail: cleanedLine,
+    stepPercent: input.telemetry.latestStepPercent,
+    downloadedBytes: input.telemetry.latestDownloadedBytes,
+    totalBytes: input.telemetry.latestTotalBytes,
+    remainingBytes: input.telemetry.latestRemainingBytes,
+    percent: computeOverallPercent(
+      input.totalSteps,
+      input.stepIndex,
+      input.telemetry.latestStepPercent,
+      input.telemetry.latestDownloadedBytes,
+      input.telemetry.latestTotalBytes,
+    ),
+  });
+}
+
+function flushInstallRemainder(
+  source: 'stdout' | 'stderr',
+  remainderRef: { value: string },
+  handleLine: (source: 'stdout' | 'stderr', line: string) => void,
+): void {
+  const remainder = remainderRef.value.trim();
+  if (!remainder) return;
+  handleLine(source, remainder);
+}
+
+async function executeInstallSteps(input: {
+  context: InstallExecutionContext;
+  state: InstallExecutionState;
+  runner: CommandRunner;
+  installSteps: InstallStep[];
+}): Promise<MobileDependencyInstallResult | null> {
+  const { context, state, runner, installSteps } = input;
+  const totalSteps = installSteps.length;
 
   for (let index = 0; index < installSteps.length; index += 1) {
     const step = installSteps[index]!;
     const stepIndex = index + 1;
     const commandText = [step.command, ...step.args].join(' ');
     const stepDriverTarget = getAppiumDriverInstallTarget(step);
-    commandParts.push(commandText);
+    const telemetry: InstallStepTelemetry = {};
+    const stdoutRemainder = { value: '' };
+    const stderrRemainder = { value: '' };
 
-    onProgress?.(buildProgressEvent({
-      installId,
-      dependencyId,
+    state.commandParts.push(commandText);
+    emitInstallProgress(context, {
       phase: 'step_started',
-      startedAt,
       stepIndex,
       totalSteps,
       command: commandText,
       percent: computeOverallPercent(totalSteps, stepIndex, 0),
       stepPercent: 0,
       message: `Running step ${stepIndex}/${totalSteps}`,
-    }));
+    });
 
-    const stdoutRemainder = { value: '' };
-    const stderrRemainder = { value: '' };
-    let latestStepPercent: number | undefined;
-    let latestDownloadedBytes: number | undefined;
-    let latestTotalBytes: number | undefined;
-    let latestRemainingBytes: number | undefined;
-
-    const processInstallLine = (source: 'stdout' | 'stderr', line: string): void => {
-      const cleanedLine = stripAnsi(line).trim();
-      if (!cleanedLine) return;
-      if (stepDriverTarget && /already installed/i.test(cleanedLine)) {
-        return;
-      }
-      const parsedPercent = parsePercentFromLine(cleanedLine);
-      if (parsedPercent !== null) {
-        latestStepPercent = parsedPercent;
-      }
-      const parsedBytes = parseBytePairFromLine(cleanedLine);
-      if (parsedBytes) {
-        latestDownloadedBytes = parsedBytes.downloadedBytes;
-        latestTotalBytes = parsedBytes.totalBytes;
-        latestRemainingBytes = parsedBytes.remainingBytes;
-      }
-
-      onProgress?.(buildProgressEvent({
-        installId,
-        dependencyId,
-        phase: 'step_progress',
-        startedAt,
+    const handleLine = (source: 'stdout' | 'stderr', line: string): void => {
+      processInstallLine({
+        context,
+        source,
+        line,
         stepIndex,
         totalSteps,
-        command: commandText,
-        source,
-        detail: cleanedLine,
-        stepPercent: latestStepPercent,
-        downloadedBytes: latestDownloadedBytes,
-        totalBytes: latestTotalBytes,
-        remainingBytes: latestRemainingBytes,
-        percent: computeOverallPercent(
-          totalSteps,
-          stepIndex,
-          latestStepPercent,
-          latestDownloadedBytes,
-          latestTotalBytes,
-        ),
-      }));
+        commandText,
+        stepDriverTarget,
+        telemetry,
+      });
     };
 
     const rawResult = await runInstallStep(
@@ -948,31 +1005,24 @@ export async function installMobileDependency(
       step.timeoutMs ?? INSTALL_TIMEOUT_MS,
       (source, chunk) => {
         const remainderRef = source === 'stdout' ? stdoutRemainder : stderrRemainder;
-        pushChunkLines(chunk, remainderRef, (line) => processInstallLine(source, line));
+        pushChunkLines(chunk, remainderRef, (line) => handleLine(source, line));
       },
     );
     const result = sanitizeCommandResult(rawResult);
 
-    if (stdoutRemainder.value.trim()) {
-      processInstallLine('stdout', stdoutRemainder.value.trim());
-    }
-    if (stderrRemainder.value.trim()) {
-      processInstallLine('stderr', stderrRemainder.value.trim());
-    }
+    flushInstallRemainder('stdout', stdoutRemainder, handleLine);
+    flushInstallRemainder('stderr', stderrRemainder, handleLine);
 
-    combinedStdout += `${result.stdout}\n`;
-    combinedStderr += `${result.stderr}\n`;
+    state.combinedStdout += `${result.stdout}\n`;
+    state.combinedStderr += `${result.stderr}\n`;
 
     if (result.code !== 0) {
       if (isDriverAlreadyInstalledFailure(step, result)) {
         const driverName = getAppiumDriverInstallTarget(step) ?? 'driver';
         const note = `Driver ${driverName} is already installed.`;
-        alreadyInstalledNote = note;
-        onProgress?.(buildProgressEvent({
-          installId,
-          dependencyId,
+        state.alreadyInstalledNote = note;
+        emitInstallProgress(context, {
           phase: 'step_finished',
-          startedAt,
           stepIndex,
           totalSteps,
           command: commandText,
@@ -980,77 +1030,112 @@ export async function installMobileDependency(
           detail: note,
           percent: computeOverallPercent(totalSteps, stepIndex + 1, 0),
           stepPercent: 100,
-        }));
+        });
         continue;
       }
+
       const failureMessage = normalizeInstallFailureMessage(
         firstNonEmptyLine(result.stderr, result.stdout),
         step.command,
       );
-      onProgress?.(buildProgressEvent({
-        installId,
-        dependencyId,
+      emitInstallProgress(context, {
         phase: 'failed',
-        startedAt,
         finishedAt: new Date().toISOString(),
         stepIndex,
         totalSteps,
         command: commandText,
         message: failureMessage,
         detail: result.stderr || result.stdout,
-        percent: computeOverallPercent(totalSteps, stepIndex, latestStepPercent, latestDownloadedBytes, latestTotalBytes),
-        stepPercent: latestStepPercent,
-        downloadedBytes: latestDownloadedBytes,
-        totalBytes: latestTotalBytes,
-        remainingBytes: latestRemainingBytes,
-      }));
-      return {
-        dependencyId,
-        success: false,
-        message: failureMessage,
-        command: commandParts.join(' && '),
-        stdout: combinedStdout.trim(),
-        stderr: combinedStderr.trim(),
-      };
+        percent: computeOverallPercent(
+          totalSteps,
+          stepIndex,
+          telemetry.latestStepPercent,
+          telemetry.latestDownloadedBytes,
+          telemetry.latestTotalBytes,
+        ),
+        stepPercent: telemetry.latestStepPercent,
+        downloadedBytes: telemetry.latestDownloadedBytes,
+        totalBytes: telemetry.latestTotalBytes,
+        remainingBytes: telemetry.latestRemainingBytes,
+      });
+      return buildInstallResult(context, state, false, failureMessage);
     }
 
-    onProgress?.(buildProgressEvent({
-      installId,
-      dependencyId,
+    emitInstallProgress(context, {
       phase: 'step_finished',
-      startedAt,
       stepIndex,
       totalSteps,
       command: commandText,
       message: `Step ${stepIndex}/${totalSteps} completed.`,
       percent: computeOverallPercent(totalSteps, stepIndex + 1, 0),
       stepPercent: 100,
-      downloadedBytes: latestDownloadedBytes,
-      totalBytes: latestTotalBytes,
-      remainingBytes: latestRemainingBytes,
-    }));
+      downloadedBytes: telemetry.latestDownloadedBytes,
+      totalBytes: telemetry.latestTotalBytes,
+      remainingBytes: telemetry.latestRemainingBytes,
+    });
   }
 
-  onProgress?.(buildProgressEvent({
-    installId,
+  return null;
+}
+
+export async function installMobileDependency(
+  dependencyId: MobileDependencyId,
+  options?: InstallDependencyOptions,
+): Promise<MobileDependencyInstallResult> {
+  const runner = options?.runner ?? defaultRunner;
+  const hostPlatform = options?.hostPlatform ?? process.platform;
+  const env = options?.env ?? process.env;
+  const context: InstallExecutionContext = {
     dependencyId,
+    installId: options?.installId || createInstallId(),
+    onProgress: options?.onProgress,
+    startedAt: new Date().toISOString(),
+  };
+  const spec = INSTALL_SPECS[dependencyId];
+
+  if (!spec) {
+    return buildEarlyInstallFailure(
+      context,
+      'No automatic install command is configured for this dependency.',
+    );
+  }
+
+  if (spec.macOnly && hostPlatform !== 'darwin') {
+    return buildEarlyInstallFailure(
+      context,
+      'Automatic install for this dependency is only available on macOS.',
+    );
+  }
+
+  const state = createInstallExecutionState();
+  const installSteps = await resolveInstallSteps(dependencyId, spec, runner, env, hostPlatform);
+  const totalSteps = installSteps.length;
+  emitInstallProgress(context, {
+    phase: 'started',
+    totalSteps,
+    percent: 0,
+    message: 'Starting installation...',
+  });
+
+  const failure = await executeInstallSteps({
+    context,
+    state,
+    runner,
+    installSteps,
+  });
+  if (failure) {
+    return failure;
+  }
+
+  const successMessage = state.alreadyInstalledNote || 'Install command finished successfully.';
+  emitInstallProgress(context, {
     phase: 'finished',
-    startedAt,
     finishedAt: new Date().toISOString(),
     totalSteps,
     percent: 100,
-    message: alreadyInstalledNote || 'Install command finished successfully.',
-  }));
-
-  const successMessage = alreadyInstalledNote || 'Install command finished successfully.';
-  return {
-    dependencyId,
-    success: true,
     message: successMessage,
-    command: commandParts.join(' && '),
-    stdout: combinedStdout.trim(),
-    stderr: combinedStderr.trim(),
-  };
+  });
+  return buildInstallResult(context, state, true, successMessage);
 }
 
 export const _internal = {

@@ -405,30 +405,23 @@ export interface ShareHandle {
   onAuthFailed(cb: (reason: string) => void): void;
 }
 
-export function startShare(
+interface StartShareCallbacks {
+  connected: EventCallback[];
+  disconnected: EventCallback[];
+  authFailed: Array<(reason: string) => void>;
+}
+
+function createHostPeer(
   sessionId: string,
   mode: ShareMode,
   passphrase: string,
+  serializeAddon: SerializeAddon,
   rtcConfig?: ShareRtcConfig,
-): ShareHandle {
-  stopShare(sessionId);
-
-  const instance = getTerminalInstance(sessionId);
-  if (!instance) throw new Error(`No terminal instance for session ${sessionId}`);
-  const terminalInstance = instance;
-
-  const serializeAddon = new SerializeAddon();
-  terminalInstance.terminal.loadAddon(serializeAddon);
-
-  const connectedCbs: EventCallback[] = [];
-  const disconnectedCbs: EventCallback[] = [];
-  const authFailedCbs: ((reason: string) => void)[] = [];
-  let disconnectFired = false;
-
+): HostPeer {
   const pc = new RTCPeerConnection(buildRtcConfiguration(rtcConfig));
   const dc = pc.createDataChannel('terminal', { ordered: true });
 
-  const hostPeer: HostPeer = {
+  return {
     ownerSessionId: sessionId,
     activeSessionId: sessionId,
     mode,
@@ -447,48 +440,292 @@ export function startShare(
     lastPongAtMs: null,
     serializeAddon,
   };
+}
 
-  hostPeers.set(sessionId, hostPeer);
+function emitConnected(callbacks: EventCallback[]): void {
+  for (const cb of callbacks) cb();
+}
 
-  function sendInitAndStartKeepalive(): void {
-    const snapshot = getSessionSnapshot(hostPeer, hostPeer.activeSessionId);
-    if (!snapshot) return;
+function emitAuthFailed(callbacks: Array<(reason: string) => void>, reason: string): void {
+  for (const cb of callbacks) cb(reason);
+}
 
-    const initMsg: ShareMessage = {
-      type: 'init',
-      scrollback: '',
-      mode,
-      cols: snapshot.cols,
-      rows: snapshot.rows,
-      sessionName: snapshot.sessionName,
-    };
+function sendInitAndStartKeepalive(
+  hostPeer: HostPeer,
+  ownerSessionId: string,
+  mode: ShareMode,
+  connectedCbs: EventCallback[],
+): void {
+  const snapshot = getSessionSnapshot(hostPeer, hostPeer.activeSessionId);
+  if (!snapshot) return;
 
-    if (snapshot.scrollback.length > CHUNK_SIZE) {
-      sendMessage(dc, initMsg);
-      for (let i = 0; i < snapshot.scrollback.length; i += CHUNK_SIZE) {
-        sendMessage(dc, { type: 'data', payload: snapshot.scrollback.slice(i, i + CHUNK_SIZE) });
-      }
-    } else {
-      initMsg.scrollback = snapshot.scrollback;
-      sendMessage(dc, initMsg);
+  const initMsg: ShareMessage = {
+    type: 'init',
+    scrollback: '',
+    mode,
+    cols: snapshot.cols,
+    rows: snapshot.rows,
+    sessionName: snapshot.sessionName,
+  };
+
+  if (snapshot.scrollback.length > CHUNK_SIZE) {
+    sendMessage(hostPeer.dc, initMsg);
+    for (let i = 0; i < snapshot.scrollback.length; i += CHUNK_SIZE) {
+      sendMessage(hostPeer.dc, { type: 'data', payload: snapshot.scrollback.slice(i, i + CHUNK_SIZE) });
     }
-
-    sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
-    sendBrowserState(hostPeer);
-
-    hostPeer.keepaliveTimer = setInterval(() => {
-      if (!hostPeer.connected) return;
-      hostPeer.missedPongs++;
-      if (hostPeer.missedPongs > MAX_MISSED_PONGS) {
-        stopShare(sessionId);
-        return;
-      }
-      hostPeer.lastPingAtMs = Date.now();
-      sendMessage(dc, { type: 'ping' });
-    }, KEEPALIVE_INTERVAL);
-
-    for (const cb of connectedCbs) cb();
+  } else {
+    initMsg.scrollback = snapshot.scrollback;
+    sendMessage(hostPeer.dc, initMsg);
   }
+
+  sendMessage(hostPeer.dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+  sendBrowserState(hostPeer);
+
+  hostPeer.keepaliveTimer = setInterval(() => {
+    if (!hostPeer.connected) return;
+    hostPeer.missedPongs++;
+    if (hostPeer.missedPongs > MAX_MISSED_PONGS) {
+      stopShare(ownerSessionId);
+      return;
+    }
+    hostPeer.lastPingAtMs = Date.now();
+    sendMessage(hostPeer.dc, { type: 'ping' });
+  }, KEEPALIVE_INTERVAL);
+
+  emitConnected(connectedCbs);
+}
+
+function beginAuthHandshake(
+  hostPeer: HostPeer,
+  ownerSessionId: string,
+  authFailedCbs: Array<(reason: string) => void>,
+): void {
+  const challenge = generateChallenge();
+  hostPeer.authChallenge = challenge;
+  hostPeer.authState = 'pending';
+  sendMessage(hostPeer.dc, { type: 'auth-challenge', challenge: bytesToHex(challenge) });
+
+  hostPeer.authTimeout = setTimeout(() => {
+    if (hostPeer.authState !== 'verified') {
+      emitAuthFailed(authFailedCbs, 'Authentication timed out');
+      stopShare(ownerSessionId);
+    }
+  }, AUTH_TIMEOUT);
+}
+
+async function verifyAuthResponse(
+  hostPeer: HostPeer,
+  response: string,
+  passphrase: string,
+  ownerSessionId: string,
+  mode: ShareMode,
+  connectedCbs: EventCallback[],
+  authFailedCbs: Array<(reason: string) => void>,
+): Promise<void> {
+  const expected = await computeChallengeResponse(hostPeer.authChallenge!, passphrase);
+  if (hostPeer.authTimeout) {
+    clearTimeout(hostPeer.authTimeout);
+    hostPeer.authTimeout = null;
+  }
+  if (expected === response) {
+    hostPeer.authState = 'verified';
+    hostPeer.verifiedAtMs = Date.now();
+    sendMessage(hostPeer.dc, { type: 'auth-result', ok: true });
+    sendInitAndStartKeepalive(hostPeer, ownerSessionId, mode, connectedCbs);
+    return;
+  }
+
+  sendMessage(hostPeer.dc, { type: 'auth-result', ok: false, reason: 'Passphrase mismatch' });
+  emitAuthFailed(authFailedCbs, 'Passphrase mismatch');
+  stopShare(ownerSessionId);
+}
+
+function handleSessionSwitchMessage(hostPeer: HostPeer, requestedSessionId: string): void {
+  const catalog = buildSessionCatalog(hostPeer);
+  const exists = catalog.sessions.some((session) => session.id === requestedSessionId);
+  if (!exists) {
+    sendMessage(hostPeer.dc, { type: 'session-switch-result', ok: false, reason: 'Session not available.' });
+    return;
+  }
+
+  const snapshot = getSessionSnapshot(hostPeer, requestedSessionId);
+  if (!snapshot) {
+    sendMessage(hostPeer.dc, { type: 'session-switch-result', ok: false, reason: 'Session terminal is not available.' });
+    return;
+  }
+
+  hostPeer.activeSessionId = requestedSessionId;
+  const project = findProjectForShare(hostPeer.ownerSessionId);
+  if (project) {
+    appState.setActiveSession(project.id, requestedSessionId);
+  }
+
+  sendMessage(hostPeer.dc, {
+    type: 'session-switch-result',
+    ok: true,
+    sessionId: snapshot.sessionId,
+    sessionName: snapshot.sessionName,
+    scrollback: snapshot.scrollback,
+    cols: snapshot.cols,
+    rows: snapshot.rows,
+  });
+  sendMessage(hostPeer.dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+  sendBrowserState(hostPeer);
+}
+
+function handleBrowserControlMessage(
+  hostPeer: HostPeer,
+  mode: ShareMode,
+  action: ShareBrowserControlAction,
+  sessionId?: string,
+  viewportLabel?: string,
+): void {
+  if (mode !== 'readwrite') {
+    sendBrowserControlResult(
+      hostPeer,
+      action,
+      false,
+      sessionId,
+      'Browser controls are disabled in read-only mode.',
+    );
+    sendBrowserState(hostPeer);
+    return;
+  }
+  handleBrowserControl(hostPeer, action, sessionId, viewportLabel);
+}
+
+function handleBrowserInspectSubmitMessage(
+  hostPeer: HostPeer,
+  mode: ShareMode,
+  sessionId: string | undefined,
+  instruction: string,
+): void {
+  if (mode !== 'readwrite') {
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      sessionId,
+      'Inspect submit is disabled in read-only mode.',
+    );
+    sendBrowserState(hostPeer);
+    return;
+  }
+  void handleBrowserInspectSubmit(hostPeer, sessionId, instruction);
+}
+
+function handleVerifiedMessage(hostPeer: HostPeer, mode: ShareMode, msg: ShareMessage): void {
+  if (msg.type === 'session-switch') {
+    handleSessionSwitchMessage(hostPeer, msg.sessionId);
+    return;
+  }
+
+  if (msg.type === 'session-catalog-request') {
+    sendMessage(hostPeer.dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
+    return;
+  }
+
+  if (msg.type === 'browser-state-request') {
+    sendBrowserState(hostPeer);
+    return;
+  }
+
+  if (msg.type === 'browser-control') {
+    handleBrowserControlMessage(hostPeer, mode, msg.action, msg.sessionId, msg.viewportLabel);
+    return;
+  }
+
+  if (msg.type === 'browser-inspect-submit') {
+    handleBrowserInspectSubmitMessage(hostPeer, mode, msg.sessionId, msg.instruction);
+    return;
+  }
+
+  if (msg.type === 'input' && mode === 'readwrite') {
+    window.calder.pty.write(hostPeer.activeSessionId, msg.payload);
+  } else if (msg.type === 'pong') {
+    hostPeer.missedPongs = 0;
+    hostPeer.lastPongAtMs = Date.now();
+  }
+}
+
+function parseShareMessage(raw: string): ShareMessage | null {
+  try {
+    return JSON.parse(raw) as ShareMessage;
+  } catch {
+    return null;
+  }
+}
+
+function createDisconnectHandler(
+  ownerSessionId: string,
+  hostPeer: HostPeer,
+  disconnectedCbs: EventCallback[],
+): () => void {
+  let disconnectFired = false;
+  return () => {
+    if (disconnectFired) return;
+    disconnectFired = true;
+    hostPeer.connected = false;
+    cleanup(ownerSessionId);
+    for (const cb of disconnectedCbs) cb();
+  };
+}
+
+function createShareHandle(
+  ownerSessionId: string,
+  hostPeer: HostPeer,
+  passphrase: string,
+  callbacks: StartShareCallbacks,
+  rtcConfig?: ShareRtcConfig,
+): ShareHandle {
+  return {
+    async getOffer(): Promise<string> {
+      const offer = await hostPeer.pc.createOffer();
+      await hostPeer.pc.setLocalDescription(offer);
+      await waitForIceGathering(hostPeer.pc);
+      return encodeConnectionCode(hostPeer.pc.localDescription, passphrase, rtcConfig);
+    },
+    async acceptAnswer(answer: string): Promise<void> {
+      const desc = await decodeConnectionCode(answer, 'answer', passphrase);
+      await hostPeer.pc.setRemoteDescription(new RTCSessionDescription(desc));
+    },
+    stop(): void {
+      stopShare(ownerSessionId);
+    },
+    onConnected(cb: EventCallback): void {
+      callbacks.connected.push(cb);
+    },
+    onDisconnected(cb: EventCallback): void {
+      callbacks.disconnected.push(cb);
+    },
+    onAuthFailed(cb: (reason: string) => void): void {
+      callbacks.authFailed.push(cb);
+    },
+  };
+}
+
+export function startShare(
+  sessionId: string,
+  mode: ShareMode,
+  passphrase: string,
+  rtcConfig?: ShareRtcConfig,
+): ShareHandle {
+  stopShare(sessionId);
+
+  const instance = getTerminalInstance(sessionId);
+  if (!instance) throw new Error(`No terminal instance for session ${sessionId}`);
+
+  const serializeAddon = new SerializeAddon();
+  instance.terminal.loadAddon(serializeAddon);
+
+  const callbacks: StartShareCallbacks = {
+    connected: [],
+    disconnected: [],
+    authFailed: [],
+  };
+
+  const hostPeer = createHostPeer(sessionId, mode, passphrase, serializeAddon, rtcConfig);
+  const { pc, dc } = hostPeer;
+  hostPeers.set(sessionId, hostPeer);
 
   dc.onopen = () => {
     hostPeer.connected = true;
@@ -497,142 +734,31 @@ export function startShare(
     hostPeer.lastPingAtMs = null;
     hostPeer.lastPongAtMs = null;
 
-    // Start auth handshake — do not send session data until verified
-    const challenge = generateChallenge();
-    hostPeer.authChallenge = challenge;
-    hostPeer.authState = 'pending';
-    sendMessage(dc, { type: 'auth-challenge', challenge: bytesToHex(challenge) });
-
-    hostPeer.authTimeout = setTimeout(() => {
-      if (hostPeer.authState !== 'verified') {
-        for (const cb of authFailedCbs) cb('Authentication timed out');
-        stopShare(sessionId);
-      }
-    }, AUTH_TIMEOUT);
+    beginAuthHandshake(hostPeer, sessionId, callbacks.authFailed);
   };
 
   dc.onmessage = (event: MessageEvent) => {
-    let msg: ShareMessage;
-    try {
-      msg = JSON.parse(event.data);
-    } catch {
-      return;
-    }
+    const msg = parseShareMessage(event.data);
+    if (!msg) return;
 
-    // Auth handshake
     if (hostPeer.authState === 'pending' && msg.type === 'auth-response') {
-      computeChallengeResponse(hostPeer.authChallenge!, passphrase).then((expected) => {
-        if (hostPeer.authTimeout) {
-          clearTimeout(hostPeer.authTimeout);
-          hostPeer.authTimeout = null;
-        }
-        if (expected === msg.response) {
-          hostPeer.authState = 'verified';
-          hostPeer.verifiedAtMs = Date.now();
-          sendMessage(dc, { type: 'auth-result', ok: true });
-          sendInitAndStartKeepalive();
-        } else {
-          sendMessage(dc, { type: 'auth-result', ok: false, reason: 'Passphrase mismatch' });
-          for (const cb of authFailedCbs) cb('Passphrase mismatch');
-          stopShare(sessionId);
-        }
-      });
+      void verifyAuthResponse(
+        hostPeer,
+        msg.response,
+        passphrase,
+        sessionId,
+        mode,
+        callbacks.connected,
+        callbacks.authFailed,
+      );
       return;
     }
 
-    // Ignore all non-auth messages until verified
     if (hostPeer.authState !== 'verified') return;
-
-    if (msg.type === 'session-switch') {
-      const catalog = buildSessionCatalog(hostPeer);
-      const exists = catalog.sessions.some((session) => session.id === msg.sessionId);
-      if (!exists) {
-        sendMessage(dc, { type: 'session-switch-result', ok: false, reason: 'Session not available.' });
-        return;
-      }
-
-      const snapshot = getSessionSnapshot(hostPeer, msg.sessionId);
-      if (!snapshot) {
-        sendMessage(dc, { type: 'session-switch-result', ok: false, reason: 'Session terminal is not available.' });
-        return;
-      }
-
-      hostPeer.activeSessionId = msg.sessionId;
-      const project = findProjectForShare(hostPeer.ownerSessionId);
-      if (project) {
-        appState.setActiveSession(project.id, msg.sessionId);
-      }
-
-      sendMessage(dc, {
-        type: 'session-switch-result',
-        ok: true,
-        sessionId: snapshot.sessionId,
-        sessionName: snapshot.sessionName,
-        scrollback: snapshot.scrollback,
-        cols: snapshot.cols,
-        rows: snapshot.rows,
-      });
-      sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
-      sendBrowserState(hostPeer);
-      return;
-    }
-
-    if (msg.type === 'session-catalog-request') {
-      sendMessage(dc, { type: 'session-catalog', ...buildSessionCatalog(hostPeer) });
-      return;
-    }
-
-    if (msg.type === 'browser-state-request') {
-      sendBrowserState(hostPeer);
-      return;
-    }
-
-    if (msg.type === 'browser-control') {
-      if (mode !== 'readwrite') {
-        sendBrowserControlResult(
-          hostPeer,
-          msg.action,
-          false,
-          msg.sessionId,
-          'Browser controls are disabled in read-only mode.',
-        );
-        sendBrowserState(hostPeer);
-        return;
-      }
-      handleBrowserControl(hostPeer, msg.action, msg.sessionId, msg.viewportLabel);
-      return;
-    }
-
-    if (msg.type === 'browser-inspect-submit') {
-      if (mode !== 'readwrite') {
-        sendBrowserInspectResult(
-          hostPeer,
-          false,
-          msg.sessionId,
-          'Inspect submit is disabled in read-only mode.',
-        );
-        sendBrowserState(hostPeer);
-        return;
-      }
-      void handleBrowserInspectSubmit(hostPeer, msg.sessionId, msg.instruction);
-      return;
-    }
-
-    if (msg.type === 'input' && mode === 'readwrite') {
-      window.calder.pty.write(hostPeer.activeSessionId, msg.payload);
-    } else if (msg.type === 'pong') {
-      hostPeer.missedPongs = 0;
-      hostPeer.lastPongAtMs = Date.now();
-    }
+    handleVerifiedMessage(hostPeer, mode, msg);
   };
 
-  const handleDisconnect = () => {
-    if (disconnectFired) return;
-    disconnectFired = true;
-    hostPeer.connected = false;
-    cleanup(sessionId);
-    for (const cb of disconnectedCbs) cb();
-  };
+  const handleDisconnect = createDisconnectHandler(sessionId, hostPeer, callbacks.disconnected);
 
   dc.onclose = handleDisconnect;
 
@@ -642,30 +768,7 @@ export function startShare(
     }
   };
 
-  return {
-    async getOffer(): Promise<string> {
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await waitForIceGathering(pc);
-      return encodeConnectionCode(pc.localDescription, passphrase, rtcConfig);
-    },
-    async acceptAnswer(answer: string): Promise<void> {
-      const desc = await decodeConnectionCode(answer, 'answer', passphrase);
-      await pc.setRemoteDescription(new RTCSessionDescription(desc));
-    },
-    stop(): void {
-      stopShare(sessionId);
-    },
-    onConnected(cb: EventCallback): void {
-      connectedCbs.push(cb);
-    },
-    onDisconnected(cb: EventCallback): void {
-      disconnectedCbs.push(cb);
-    },
-    onAuthFailed(cb: (reason: string) => void): void {
-      authFailedCbs.push(cb);
-    },
-  };
+  return createShareHandle(sessionId, hostPeer, passphrase, callbacks, rtcConfig);
 }
 
 export function stopShare(sessionId: string): void {
