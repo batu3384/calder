@@ -183,6 +183,19 @@ describe('browser-bridge', () => {
     expect(env.NODE_OPTIONS).toBe(base.NODE_OPTIONS);
   });
 
+  it('writes the Node open hook script with expected patch sections', async () => {
+    await startBrowserBridge(() => {});
+    const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin' });
+    const hookPath = env.NODE_OPTIONS.replace('--require=', '').trim();
+
+    expect(fs.existsSync(hookPath)).toBe(true);
+    const hookSource = fs.readFileSync(hookPath, 'utf8');
+    expect(hookSource).toContain('patchedSpawn');
+    expect(hookSource).toContain('patchedExecFile');
+    expect(hookSource).toContain('patchedLoad');
+    expect(hookSource).toContain("Symbol.for('calder.playwright.exports')");
+  });
+
   it('routes absolute open command launches from Node child_process through the bridge', async () => {
     if (process.platform === 'win32') return;
 

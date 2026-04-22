@@ -92,8 +92,7 @@ exit 1
 `;
 }
 
-function createNodeOpenHookScript(): string {
-  return `'use strict';
+const NODE_OPEN_HOOK_PRELUDE = `'use strict';
 
 const childProcess = require('node:child_process');
 const Module = require('node:module');
@@ -314,7 +313,9 @@ if (launcher) {
     if (!OPEN_COMMANDS.has(normalizeCommandName(command))) return null;
     return extractHttpUrl(args);
   }
+`;
 
+const NODE_OPEN_HOOK_PROCESS_PATCH_SECTION = `
   childProcess.spawn = function patchedSpawn(command, args, options) {
     const parsedArgs = Array.isArray(args) ? args : [];
     const target = resolveEmbeddedTarget(command, parsedArgs);
@@ -378,7 +379,9 @@ if (launcher) {
     }
     return originalExecFileSync.call(this, launcher, [target], options);
   };
+`;
 
+const NODE_OPEN_HOOK_MODULE_PATCH_SECTION = `
   const ModuleClass = Module.Module || Module;
   if (ModuleClass && typeof ModuleClass._load === 'function') {
     const originalLoad = ModuleClass._load;
@@ -392,6 +395,13 @@ if (launcher) {
   }
 }
 `;
+
+function createNodeOpenHookScript(): string {
+  return [
+    NODE_OPEN_HOOK_PRELUDE,
+    NODE_OPEN_HOOK_PROCESS_PATCH_SECTION,
+    NODE_OPEN_HOOK_MODULE_PATCH_SECTION,
+  ].join('\n');
 }
 
 function appendNodeRequire(existingNodeOptions: string | undefined, hookPath: string): string {

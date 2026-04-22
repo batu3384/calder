@@ -154,6 +154,48 @@ Scope: Sequential execution progress for project structure/foldering debt.
     - Result:
       - Improved runtime-safety checks around Appium response parsing and session id extraction edge-cases.
 
+18. **i18n pattern monolith decomposition (P1)**
+    - Refactored:
+      - `src/renderer/i18n-pattern-translations.ts`
+    - `createPatternTranslations` split into orchestrated helper builders:
+      - `createWorkflowAndInstallPatterns`
+      - `createPolicyAndRoutingPatterns`
+      - `createRelativeTimePatterns`
+      - `createCliSurfaceSummaryPatterns`
+      - `createInspectorAndErrorPatterns`
+    - Expanded coverage in:
+      - `src/renderer/i18n-pattern-translations.test.ts`
+
+19. **Browser auth controller decomposition (P1)**
+    - Refactored:
+      - `src/renderer/components/browser-tab/auth-controller.ts`
+    - `createBrowserAuthController` moved to helper-driven orchestration (URL/origin resolution, action state, profile refresh, fill/save/delete flows).
+    - Added focused runtime coverage:
+      - `src/renderer/components/browser-tab/auth-controller.test.ts`
+
+20. **Browser bridge hook-script decomposition + windows harness hardening (P1)**
+    - Refactored:
+      - `src/main/browser-bridge.ts`
+    - `createNodeOpenHookScript` now composes three script sections:
+      - prelude, process patch, module patch.
+    - Hardened tests:
+      - `src/main/browser-bridge.test.ts`
+      - `src/main/pty-manager.windows.test.ts` (`setupWindowsPtyHarness` naming + isolation checks).
+
+21. **Preferences background-task section decomposition (P1)**
+    - Refactored:
+      - `src/renderer/components/preferences/preferences-background-task-discovery.ts`
+    - `renderProjectBackgroundTaskSection` now helper-driven orchestrator.
+    - Added targeted tests:
+      - `src/renderer/components/preferences/preferences-background-task-discovery.test.ts`
+
+22. **Session inspector timeline decomposition (P1)**
+    - Refactored:
+      - `src/renderer/components/session-inspector/session-inspector-timeline.ts`
+    - `renderTimeline` split into helper renderers for group/range/meta description concerns.
+    - Extended tests:
+      - `src/renderer/components/session-inspector/session-inspector-timeline.test.ts`
+
 ## Metric impact
 
 - `src/renderer/components` direct file count:
@@ -174,23 +216,26 @@ Scope: Sequential execution progress for project structure/foldering debt.
   - `renderAutoApprovalSection`: **343 -> 153**
   - `renderPreferencesModalContent`: **268 -> 214**
   - `createShareDialogFlowController`: **273 -> 237**
+  - `createPatternTranslations`: **429 -> <300**
+  - `createBrowserAuthController`: **322 -> <300**
+  - `createNodeOpenHookScript`: **301 -> <300**
+  - `renderProjectBackgroundTaskSection`: **336 -> <300**
+  - `renderTimeline`: **306 -> <300**
 
 ## Validation status
 
 - `rtk npm run build` -> PASS
-- `rtk npm test` -> PASS (`355/355`, `2517/2517`)
+- `rtk npm test` -> PASS (`357/357`, `2531/2531`)
 - `rtk npm run audit:deep` -> PASS
   - Includes the new `Structure audit` step.
-- `rtk code-review-graph detect-changes --base HEAD~1 --brief` -> PASS
-  - 212 changed files analyzed, risk `0.60`, test gaps reported outside this slice:
-    - `extractAppiumSessionId`
-    - `uniquePaths`
-    - `loadWindowsPtyManager`
-    - `fs`
+- `rtk code-review-graph status --repo /Users/batuhanyuksel/Documents/browser` -> PASS
+  - Nodes: `7312`, Edges: `81126`, Files: `740`
+- `code-review-graph find_large_functions(min_lines=300)`:
+  - Remaining `>=300` function count: **1** (`apps/calder-mobile/App.tsx::App`)
 
 ## Next recommended slice
 
-1. Continue renderer monolith reduction in domain folders:
-   - Prioritize `preferences-modal-sections` and `preferences-background-task-discovery`.
-2. Add one more runtime-focused coverage slice for share dialog flow:
-   - direct mobile polling behavior tests for `createMobileAnswerPolling`.
+1. Optional mobile-specific debt wave:
+   - split `apps/calder-mobile/App.tsx::App` monolith (desktop closure is complete).
+2. Optional graph test-gap hygiene sweep:
+   - add direct coverage for helper-level symbols flagged by graph heuristics when needed.

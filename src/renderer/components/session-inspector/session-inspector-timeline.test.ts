@@ -16,7 +16,12 @@ vi.mock('./session-inspector-state-ui.js', () => ({
 }));
 
 import { getEvents } from '../../session-inspector-state.js';
-import { renderTimeline, buildAgentModel } from './session-inspector-timeline.js';
+import {
+  renderTimeline,
+  buildAgentModel,
+  describeTimelineEvent,
+  buildApprovalDecisionMetaText,
+} from './session-inspector-timeline.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
 
@@ -304,6 +309,32 @@ describe('buildAgentModel', () => {
     const model = buildAgentModel(events, 0);
 
     expect(model.stopIndices).toEqual(new Set([1, 3]));
+  });
+});
+
+describe('session-inspector timeline helper exports', () => {
+  it('prefers a provided tool label for tool events', () => {
+    const event = ev('tool_use', 1000, { tool_name: 'mcp__memory__create_entities' });
+    expect(describeTimelineEvent(event, [event], 0, 'memory / create_entities')).toBe('memory / create_entities');
+    expect(describeTimelineEvent(event, [event], 0)).toBe('mcp__memory__create_entities');
+  });
+
+  it('builds approval decision metadata text only for approval events', () => {
+    const approvalEvent = ev('approval_decision', 1000, {
+      auto_approval: {
+        policy_source: 'project',
+        effective_mode: 'full_auto',
+        operation_class: 'safe_tool',
+        decision: 'allow',
+        reason: 'Safe operation class',
+      },
+    });
+    const meta = buildApprovalDecisionMetaText(approvalEvent);
+    expect(meta).toContain('Mode: full_auto');
+    expect(meta).toContain('Source: project');
+    expect(meta).toContain('Reason: Safe operation class');
+
+    expect(buildApprovalDecisionMetaText(ev('stop', 1200))).toBeNull();
   });
 });
 

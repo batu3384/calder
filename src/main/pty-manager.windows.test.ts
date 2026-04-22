@@ -16,7 +16,7 @@ function createMockPtyProcess() {
   };
 }
 
-async function loadWindowsPtyManager() {
+async function setupWindowsPtyHarness() {
   vi.resetModules();
 
   const mockSpawn = vi.fn();
@@ -78,8 +78,22 @@ afterEach(() => {
 });
 
 describe('pty-manager windows behaviors', () => {
+  it('loads a fresh mocked module graph for each harness call', async () => {
+    const first = await setupWindowsPtyHarness();
+    const second = await setupWindowsPtyHarness();
+
+    const firstProc = createMockPtyProcess();
+    first.mockSpawn.mockReturnValue(firstProc);
+    first.spawnShellPty('shell-win-first', 'C:\\repo', vi.fn(), vi.fn());
+    expect(first.mockSpawn).toHaveBeenCalledTimes(1);
+    expect(second.mockSpawn).toHaveBeenCalledTimes(0);
+
+    first.killAllPtys();
+    second.killAllPtys();
+  });
+
   it('builds full PATH from current PATH plus Windows-specific extras', async () => {
-    const { getFullPath } = await loadWindowsPtyManager();
+    const { getFullPath } = await setupWindowsPtyHarness();
     const originalPath = process.env.PATH;
     const appDataNpm = path.join('/mock/home', 'AppData', 'Roaming', 'npm');
     const localBin = path.join('/mock/home', '.local', 'bin');
@@ -94,8 +108,25 @@ describe('pty-manager windows behaviors', () => {
     process.env.PATH = originalPath;
   });
 
+  it('builds full PATH from Windows extras when PATH is unset', async () => {
+    const { getFullPath } = await setupWindowsPtyHarness();
+    const originalPath = process.env.PATH;
+    const appDataNpm = path.join('/mock/home', 'AppData', 'Roaming', 'npm');
+    const localBin = path.join('/mock/home', '.local', 'bin');
+    delete process.env.PATH;
+
+    try {
+      const full = getFullPath();
+      const segments = full.split(';');
+      expect(segments).toContain(appDataNpm);
+      expect(segments).toContain(localBin);
+    } finally {
+      process.env.PATH = originalPath;
+    }
+  });
+
   it('spawns shell PTY with COMSPEC when present', async () => {
-    const { spawnShellPty, mockSpawn, mockBuildBrowserBridgeEnv, killAllPtys } = await loadWindowsPtyManager();
+    const { spawnShellPty, mockSpawn, mockBuildBrowserBridgeEnv, killAllPtys } = await setupWindowsPtyHarness();
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
     const originalComspec = process.env.COMSPEC;
@@ -121,7 +152,7 @@ describe('pty-manager windows behaviors', () => {
   });
 
   it('falls back to cmd.exe when COMSPEC is unset', async () => {
-    const { spawnShellPty, mockSpawn, killAllPtys } = await loadWindowsPtyManager();
+    const { spawnShellPty, mockSpawn, killAllPtys } = await setupWindowsPtyHarness();
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
     const originalComspec = process.env.COMSPEC;
@@ -140,7 +171,7 @@ describe('pty-manager windows behaviors', () => {
   });
 
   it('returns null cwd for Windows sessions', async () => {
-    const { spawnShellPty, getPtyCwd, mockSpawn, killAllPtys } = await loadWindowsPtyManager();
+    const { spawnShellPty, getPtyCwd, mockSpawn, killAllPtys } = await setupWindowsPtyHarness();
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
 
