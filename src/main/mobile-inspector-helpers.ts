@@ -1,8 +1,7 @@
 import { execFile, spawn } from 'child_process';
-import * as os from 'os';
-import * as path from 'path';
 import { getFullPath } from './pty-manager';
 import { whichCmd } from './platform';
+import { getAndroidBinaryCandidates as getDependencyDoctorBinaryCandidates } from './mobile-dependency-doctor-binaries';
 
 const COMMAND_TIMEOUT_MS = 20_000;
 const IOS_DEVICE_SETTLE_TIMEOUT_MS = 20_000;
@@ -276,50 +275,12 @@ export function extractAppiumSessionId(body: unknown): string | null {
   return null;
 }
 
-function uniquePaths(paths: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const entry of paths) {
-    const trimmed = entry.trim();
-    if (!trimmed) continue;
-    const normalized = trimmed.replace(/[\\/]+$/, '');
-    if (seen.has(normalized)) continue;
-    seen.add(normalized);
-    out.push(normalized);
-  }
-  return out;
-}
-
-function getAndroidSdkRoots(env: NodeJS.ProcessEnv): string[] {
-  const roots: string[] = [];
-  if (env.ANDROID_HOME) roots.push(env.ANDROID_HOME);
-  if (env.ANDROID_SDK_ROOT) roots.push(env.ANDROID_SDK_ROOT);
-
-  const home = env.HOME || os.homedir();
-  if (home) {
-    roots.push(path.join(home, 'Library', 'Android', 'sdk'));
-    roots.push(path.join(home, 'Android', 'Sdk'));
-    roots.push(path.join(home, 'AppData', 'Local', 'Android', 'Sdk'));
-  }
-
-  if (env.LOCALAPPDATA) {
-    roots.push(path.join(env.LOCALAPPDATA, 'Android', 'Sdk'));
-  }
-
-  return uniquePaths(roots);
-}
-
 export function getAndroidBinaryCandidates(
   binary: 'adb' | 'emulator',
   env: NodeJS.ProcessEnv,
   hostPlatform: NodeJS.Platform,
 ): string[] {
-  const sdkRoots = getAndroidSdkRoots(env);
-  const commandName = hostPlatform === 'win32' ? `${binary}.exe` : binary;
-  if (binary === 'adb') {
-    return uniquePaths(sdkRoots.map((sdkRoot) => path.join(sdkRoot, 'platform-tools', commandName)));
-  }
-  return uniquePaths(sdkRoots.map((sdkRoot) => path.join(sdkRoot, 'emulator', commandName)));
+  return getDependencyDoctorBinaryCandidates(binary, env, hostPlatform);
 }
 
 export function parseSimctlDevices(stdout: string): SimctlDeviceRecord[] {

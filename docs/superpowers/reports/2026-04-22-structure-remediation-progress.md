@@ -134,6 +134,16 @@ Scope: Sequential execution progress for project structure/foldering debt.
     - Updated mobile contract test source aggregation to include the new module:
       - `src/renderer/components/share-dialog/share-dialog-mobile.contract.test.ts`
 
+16. **Mobile inspector Android candidate dedupe (P1)**
+    - Removed duplicated Android SDK root/path expansion logic from:
+      - `src/main/mobile-inspector-helpers.ts`
+    - `getAndroidBinaryCandidates` now delegates to the single source of truth:
+      - `src/main/mobile-dependency-doctor-binaries.ts`
+    - Added focused regression tests:
+      - `src/main/mobile-inspector-helpers.android-binaries.test.ts`
+    - Result:
+      - Reduced duplicate binary discovery logic in main runtime and aligned inspector path candidates with dependency doctor behavior.
+
 ## Metric impact
 
 - `src/renderer/components` direct file count:
@@ -158,13 +168,13 @@ Scope: Sequential execution progress for project structure/foldering debt.
 ## Validation status
 
 - `rtk npm run build` -> PASS
-- `rtk npm test` -> PASS (`353/353`, `2512/2512`)
+- `rtk npm test` -> PASS (`354/354`, `2514/2514`)
 - `rtk npm run audit:deep` -> PASS
   - Includes the new `Structure audit` step.
 - `rtk code-review-graph detect-changes --base HEAD~1 --brief` -> PASS
-  - 211 changed files analyzed, risk `0.55`, test gaps reported outside this slice:
+  - 214 changed files analyzed, risk `0.60`, test gaps reported outside this slice:
+    - `extractAppiumSessionId`
     - `uniquePaths`
-    - `getAndroidSdkRoots`
     - `loadWindowsPtyManager`
     - `createModeSelect` (graph still reports as gap despite direct helper tests)
     - `createModeGuide` (graph still reports as gap despite direct helper tests)
