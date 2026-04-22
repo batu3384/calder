@@ -212,7 +212,7 @@ async function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promis
   scheduleInspectLiveLoop(instance);
 }
 
-async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance): Promise<void> {
+export async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance): Promise<void> {
   const prompt = buildMobileInspectPrompt({
     inspectState: instance.inspectState,
     platformLabel: MOBILE_PLATFORM_LABEL[instance.inspectState.platform],
@@ -246,7 +246,7 @@ async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance)
   rerenderFromState(instance);
 }
 
-function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
+export function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
   return renderMobileInspectWorkbench({
     instance,
     report,
