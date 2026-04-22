@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const previewSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-preview-discovery.ts'),
   'utf8',
@@ -14,7 +16,7 @@ describe('project preview preferences contract', () => {
     expect(modalSource).toContain("import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';");
     expect(modalSource).toContain('renderProjectPreviewCenterSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
-    expect(modalSource).toContain('onCloseModalWide: () => {');
+    expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(previewSource).toContain('Preview center');
     expect(previewSource).toContain('window.calder.browser');

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const governanceSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-governance-discovery.ts'),
   'utf8',
@@ -14,7 +16,7 @@ describe('project governance preferences contract', () => {
     expect(modalSource).toContain("import { renderProjectGovernanceSection } from './preferences-governance-discovery.js';");
     expect(modalSource).toContain('renderProjectGovernanceSection({');
     expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onRefreshProviders: () => renderSection(\'providers\')');
+    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
 
     expect(governanceSource).toContain('Governance policies');
     expect(governanceSource).toContain('Create starter policy');

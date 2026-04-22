@@ -64,6 +64,7 @@ import {
   syncBrowserTabToSessionState,
 } from './pane-helpers.js';
 import {
+  appendFlowPickerMenuOptions,
   createDrawPanelElements,
   createFlowPanelElements,
   createFlowPickerElements,
@@ -464,29 +465,7 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
   const flowPickerElements = createFlowPickerElements();
   const flowPickerOverlay = flowPickerElements.overlay;
   const flowPickerMenu = flowPickerElements.menu;
-
-  const pickerOptions: { label: string; sub: string; action: FlowPickerAction }[] = [
-    { label: 'Click', sub: 'Navigate without recording', action: 'click' },
-    { label: 'Record', sub: 'Capture without clicking', action: 'record' },
-    { label: 'Click + Record', sub: 'Click and add step', action: 'click-and-record' },
-  ];
-  for (const opt of pickerOptions) {
-    const item = document.createElement('button');
-    item.className = 'flow-picker-item';
-    item.dataset['action'] = opt.action;
-
-    const labelEl = document.createElement('span');
-    labelEl.className = 'flow-picker-label';
-    labelEl.textContent = opt.label;
-
-    const subEl = document.createElement('span');
-    subEl.className = 'flow-picker-sub';
-    subEl.textContent = opt.sub;
-
-    item.appendChild(labelEl);
-    item.appendChild(subEl);
-    flowPickerMenu.appendChild(item);
-  }
+  appendFlowPickerMenuOptions(flowPickerMenu);
   el.appendChild(flowPickerOverlay);
 
   const targetMenuElements = createTargetMenuElements();

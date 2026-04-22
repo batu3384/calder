@@ -3,6 +3,23 @@ import {
   getUpdateCenterState,
   onUpdateCenterChange,
 } from '../update-center.js';
+import { appState } from '../state.js';
+import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';
+import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
+import { renderProjectContextSection } from './preferences-context-discovery.js';
+import { renderProjectGovernanceSection } from './preferences-governance-discovery.js';
+import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';
+import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';
+import {
+  renderMobileSetupSection,
+  renderSetupSection,
+} from './preferences-provider-setup.js';
+import { renderProjectReviewSection } from './preferences-review-discovery.js';
+import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
+import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
+import type { MobileDependencyId } from '../../shared/types/mobile.js';
+import type { ProviderId } from '../../shared/types/provider.js';
+import type { ProjectCheckpointDocument } from '../../shared/types/project.js';
 
 type AppendSectionIntro = (
   container: HTMLElement,
@@ -17,6 +34,12 @@ type AppendOverviewGrid = (
 ) => void;
 
 type AppendSectionCard = (container: HTMLElement, title: string, description?: string) => HTMLElement;
+type AppendSectionGroup = (
+  container: HTMLElement,
+  eyebrow: string,
+  title: string,
+  description: string,
+) => HTMLElement;
 
 interface LayoutSidebarViews {
   configSections: boolean;
@@ -47,6 +70,30 @@ interface RenderAboutSectionArgs {
   appendSectionIntro: AppendSectionIntro;
   appendOverviewGrid: AppendOverviewGrid;
   formatRelativeTimestamp: (timestamp?: string) => string;
+}
+
+interface RenderProvidersSectionArgs {
+  content: HTMLElement;
+  appendSectionIntro: AppendSectionIntro;
+  appendOverviewGrid: AppendOverviewGrid;
+  appendSectionGroup: AppendSectionGroup;
+  appendSectionCard: AppendSectionCard;
+  closeWideModal: () => void;
+  rerenderProviders: () => void;
+  modalBody: HTMLElement;
+  confirmButton: HTMLButtonElement;
+  cancelButton: HTMLButtonElement;
+  registerModalCleanup: (cleanup: () => void) => void;
+  buildCheckpointRestoreConfirm: (
+    projectId: string,
+    projectPath: string,
+    checkpointDocument: ProjectCheckpointDocument,
+    restoreSummaryText: string,
+  ) => HTMLElement;
+  isProvidersSectionActive: () => boolean;
+  onApplySetupBadge: (hasIssue: boolean) => void;
+  onFixProvider: (providerId?: ProviderId) => Promise<void>;
+  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
 }
 
 export function renderLayoutPreferencesSection({
@@ -371,4 +418,178 @@ export function renderAboutPreferencesSection({
   });
 
   return updateCleanup;
+}
+
+export function renderProvidersPreferencesSection({
+  content,
+  appendSectionIntro,
+  appendOverviewGrid,
+  appendSectionGroup,
+  appendSectionCard,
+  closeWideModal,
+  rerenderProviders,
+  modalBody,
+  confirmButton,
+  cancelButton,
+  registerModalCleanup,
+  buildCheckpointRestoreConfirm,
+  isProvidersSectionActive,
+  onApplySetupBadge,
+  onFixProvider,
+  onInstallMobileDependency,
+}: RenderProvidersSectionArgs): void {
+  appendSectionIntro(
+    content,
+    'Integrations',
+    'Tool connections',
+    'Check binaries, hooks, and tracking health without leaving the workspace.',
+  );
+  appendOverviewGrid(content, [
+    {
+      label: 'Checks',
+      value: 'Live',
+      note: 'Binary status and tracking checks are refreshed from the local setup.',
+    },
+    {
+      label: 'Tracking',
+      value: 'Status line + hooks',
+      note: 'Cost, context, and session activity depend on these staying healthy.',
+    },
+    {
+      label: 'Scope',
+      value: 'All coding tools',
+      note: 'Claude, Codex, Gemini, Qwen, and the rest share one health view.',
+    },
+  ]);
+
+  const providerHealthGroup = appendSectionGroup(
+    content,
+    'Integrations',
+    'Provider health',
+    'Installed tools, defaults, and repair actions.',
+  );
+
+  const mobileHealthGroup = appendSectionGroup(
+    content,
+    'Mobile',
+    'Mobile automation readiness',
+    'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
+  );
+
+  const orchestrationGroup = appendSectionGroup(
+    content,
+    'Project flow',
+    'Orchestration phases',
+    'Context, previews, reviews, checkpoints, and workflow health in calmer groups.',
+  );
+
+  const trackingGroup = appendSectionGroup(
+    content,
+    'Diagnostics',
+    'Tracking & fixes',
+    'Validation, install health, and direct repair actions.',
+  );
+
+  renderOrchestrationOverviewSection({
+    container: orchestrationGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onBootstrapStarters: async (project) => {
+      const contextResult = await window.calder.context.createStarterFiles(project.path);
+      appState.setProjectContext(project.id, contextResult.state);
+
+      const workflowResult = await window.calder.workflow.createStarterFiles(project.path);
+      appState.setProjectWorkflows(project.id, workflowResult.state);
+
+      const teamResult = await window.calder.teamContext.createStarterFiles(project.path);
+      appState.setProjectTeamContext(project.id, teamResult.state);
+
+      const governanceResult = await window.calder.governance.createStarterPolicy(project.path);
+      appState.setProjectGovernance(project.id, governanceResult.state);
+
+      rerenderProviders();
+      return [
+        `Context +${contextResult.created.length}`,
+        `Workflows +${workflowResult.created.length}`,
+        `Team spaces +${teamResult.created.length}`,
+        governanceResult.created ? 'Governance policy created' : 'Governance policy already present',
+      ].join(' · ');
+    },
+  });
+
+  renderProjectPreviewCenterSection({
+    container: orchestrationGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectWorkflowSection({
+    container: orchestrationGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderProviders,
+    onCloseModalWide: closeWideModal,
+  });
+
+  renderProjectContextSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderProviders,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectGovernanceSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderProviders,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectTeamContextSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderProviders,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectReviewSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectBackgroundTaskSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onCloseModalWide: closeWideModal,
+    modalBody,
+    confirmButton,
+    cancelButton,
+    registerModalCleanup,
+  });
+  renderProjectCheckpointSection({
+    container: trackingGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onCloseModalWide: closeWideModal,
+    onRefreshProviders: rerenderProviders,
+    confirmButton,
+    cancelButton,
+    modalBody,
+    registerModalCleanup,
+    buildCheckpointRestoreConfirm,
+  });
+
+  void renderSetupSection({
+    container: providerHealthGroup,
+    isProvidersSectionActive,
+    onApplySetupBadge,
+    onFixProvider,
+  });
+  void renderMobileSetupSection({
+    container: mobileHealthGroup,
+    isProvidersSectionActive,
+    onInstallMobileDependency,
+  });
 }

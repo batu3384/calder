@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const reviewSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-review-discovery.ts'),
   'utf8',
@@ -14,7 +16,7 @@ describe('project review preferences contract', () => {
     expect(modalSource).toContain("import { renderProjectReviewSection } from './preferences-review-discovery.js';");
     expect(modalSource).toContain('renderProjectReviewSection({');
     expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onCloseModalWide: () => {');
+    expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(reviewSource).toContain('Review findings');
     expect(reviewSource).toContain('saved PR review notes');

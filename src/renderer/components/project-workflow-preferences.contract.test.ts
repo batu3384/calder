@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const workflowSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-workflow-discovery.ts'),
   'utf8',
@@ -14,8 +16,8 @@ describe('project workflow preferences contract', () => {
     expect(modalSource).toContain("import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';");
     expect(modalSource).toContain('renderProjectWorkflowSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
-    expect(modalSource).toContain('onRefreshProviders: () => renderSection(\'providers\')');
-    expect(modalSource).toContain('onCloseModalWide: () => {');
+    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(workflowSource).toContain('Workflow templates');
     expect(workflowSource).toContain('reusable workflows');

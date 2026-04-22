@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal-sections.ts'), 'utf8');
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const teamContextSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences-team-context-discovery.ts'),
   'utf8',
@@ -14,8 +16,8 @@ describe('project team context preferences contract', () => {
     expect(modalSource).toContain("import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';");
     expect(modalSource).toContain('renderProjectTeamContextSection({');
     expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onRefreshProviders: () => renderSection(\'providers\')');
-    expect(modalSource).toContain('onCloseModalWide: () => {');
+    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(teamContextSource).toContain('Team context');
     expect(teamContextSource).toContain('Create starter spaces');
