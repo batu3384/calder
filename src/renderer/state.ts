@@ -3,23 +3,10 @@ import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord, ArchivedSession, CostInfo, ContextWindowInfo, InitialContextSnapshot } from '../shared/types/session.js';
 import type { ProjectGovernanceState } from '../shared/types/governance.js';
 import type { ProjectRecord, Preferences, PersistedState, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types/project.js';
-import { getCost } from './session-cost.js';
-import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
-import { clampRatio } from './components/mosaic-layout-model.js';
-import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
-import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import { migrateLoadedRendererState } from './state-load-migration.js';
-import { resumeProjectWithProvider } from './state-resume-with-provider.js';
-import {
-  archiveSessionToHistory,
-  clearProjectHistory,
-  removeHistoryEntryFromProject,
-  resumeSessionFromHistory,
-  toggleProjectHistoryBookmark,
-} from './state-history.js';
 import {
   collectSessionIdsForRemoval,
   resolveCycledSessionId,
@@ -33,50 +20,51 @@ import {
   focusMobileProjectSurface,
   setActiveProjectSession,
 } from './state-surface-updater.js';
-import {
-  addInsightSnapshotToProject,
-  dismissInsightForProject,
-  isInsightDismissedForProject,
-  reorderProjectSession,
-} from './state-session-mutators.js';
-import {
-  findProjectSession,
-  isCliSessionRecord,
-  repairProjectSurface,
-  resolveSurfaceTargetFromProject,
-} from './state-project-surface.js';
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
-  createStandardSessionRecord,
-  createWorkflowLaunchSessionRecord,
-} from './state-session-factory.js';
-import {
-  buildWorkflowLaunchPrompt,
-  DEFAULT_BROWSER_WIDTH_RATIO,
   normalizeProjectBackgroundTaskState,
   normalizeProjectCheckpointState,
   normalizeProjectContextState,
   normalizeProjectGovernanceState,
-  normalizeProjectLayout,
   normalizeProjectReviewState,
   normalizeProjectTeamContextState,
   normalizeProjectWorkflowState,
 } from './state-normalizers.js';
-import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
-import {
-  addMcpInspectorSession as addMcpInspectorSessionToProject,
-  addRemoteSession as addRemoteSessionToProject,
-  addSessionToProject,
-  openUrlInExistingBrowserSession,
-  passivateBrowserTabSession as passivateBrowserTabSessionRecord,
-  setSurfaceTargetSession as setSurfaceTargetSessionOnProject,
-  updateBrowserTabUrl,
-  upsertBrowserTabSession,
-  upsertDiffViewerSession,
-  upsertFileReaderSession,
-} from './state-session-ops.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
+import {
+  addInsightSnapshotForProject,
+  addMcpInspectorProjectSession,
+  addRemoteProjectSession,
+  addStandardProjectSession,
+  addWorkflowLaunchSession,
+  clearHistoryForProject,
+  createProjectRecord,
+  dismissInsightForProjectId,
+  isInsightDismissedForProjectId,
+  listSurfaceTargetSessionsForProject,
+  openUrlInProjectBrowserSurface,
+  passivateBrowserTabSessionById,
+  removeHistoryEntryForProject,
+  removeProjectAndCollectSessions,
+  removeProjectSession,
+  renameProjectSession,
+  reorderSessionForProject,
+  resolveSurfaceTargetSessionForProject,
+  resolvePlanSessionConfig,
+  resumeHistorySessionForProject,
+  restoreProjectCheckpointForState,
+  resumeWithProviderForProject,
+  setBrowserWidthRatioForProject,
+  setMosaicRatioForProject,
+  setSurfaceTargetSessionForProject,
+  toggleHistoryBookmarkForProject,
+  updateBrowserTabSessionUrlById,
+  updateProjectSessionCliId,
+  upsertBrowserTabProjectSession,
+  upsertDiffViewerProjectSession,
+  upsertFileReaderProjectSession,
+} from './state-appstate-extracts.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
@@ -347,22 +335,21 @@ class AppState {
     checkpoint: ProjectCheckpointDocument,
     mode: ProjectCheckpointRestoreMode = 'additive',
   ): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    const { createdSessions, removedSessions } = restoreProjectCheckpointState({
-      project,
+    const result = restoreProjectCheckpointForState({
+      projects: this.state.projects,
+      projectId,
       checkpoint,
       mode,
       defaultProviderId: this.state.preferences.defaultProvider ?? 'claude',
       pruneNav: (sessionId) => this.pruneNav(sessionId),
       pushNav: (sessionId) => this.pushNav(sessionId),
     });
+    if (!result) return;
     this.persist();
-
-    for (const session of removedSessions) {
+    for (const session of result.removedSessions) {
       this.emit('session-removed', { projectId, sessionId: session.id });
     }
-    for (const session of createdSessions) {
+    for (const session of result.createdSessions) {
       this.emit('session-added', { projectId, session });
     }
     this.emit('project-changed');
@@ -370,21 +357,7 @@ class AppState {
   }
 
   addProject(name: string, path: string): ProjectRecord {
-    const project: ProjectRecord = {
-      id: crypto.randomUUID(),
-      name,
-      path,
-      sessions: [],
-      activeSessionId: null,
-      surface: {
-        kind: 'web',
-        active: false,
-        tabFocus: 'session',
-        web: { history: [] },
-        cli: { profiles: [], runtime: { status: 'idle' } },
-      },
-      layout: normalizeProjectLayout({ mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' }),
-    };
+    const project = createProjectRecord(name, path);
     this.state.projects.push(project);
     this.state.activeProjectId = project.id;
     this.persist();
@@ -394,13 +367,7 @@ class AppState {
   }
 
   removeProject(id: string): void {
-    const project = this.state.projects.find((p) => p.id === id);
-    const sessions = project?.sessions ?? [];
-
-    this.state.projects = this.state.projects.filter((p) => p.id !== id);
-    if (this.state.activeProjectId === id) {
-      this.state.activeProjectId = this.state.projects[0]?.id ?? null;
-    }
+    const sessions = removeProjectAndCollectSessions(this.state, id);
     this.persist();
     for (const session of sessions) {
       this.emit('session-removed', { projectId: id, sessionId: session.id });
@@ -412,13 +379,12 @@ class AppState {
   addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-    const activeSession = project.sessions.find((s) => s.id === project.activeSessionId);
-    const providerId = providerOverride ?? this.state.preferences.defaultProvider ?? activeSession?.providerId ?? 'claude';
-    const caps = getProviderCapabilities(providerId);
-    const planArg = caps?.planModeArg ?? '';
-    const base = project.defaultArgs ?? '';
-    const args = [base, planArg].filter(Boolean).join(' ').trim() || undefined;
-    return this.addSession(projectId, name, args, providerId);
+    const plan = resolvePlanSessionConfig({
+      project,
+      providerOverride,
+      defaultProviderId: this.state.preferences.defaultProvider,
+    });
+    return this.addSession(projectId, name, plan.args, plan.providerId);
   }
 
   launchWorkflowSession(
@@ -428,18 +394,13 @@ class AppState {
   ): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-
-    const session = createWorkflowLaunchSessionRecord({
-      name: workflow.title,
-      providerId: providerOverride ?? this.state.preferences.defaultProvider ?? 'claude',
-      args: project.defaultArgs,
-      pendingInitialPrompt: appendProjectGovernanceToPrompt(
-        appendProjectTeamContextToPrompt(buildWorkflowLaunchPrompt(workflow), project.projectTeamContext),
-        project.projectGovernance,
-      ),
+    const session = addWorkflowLaunchSession({
+      project,
+      workflow,
+      providerOverride,
+      defaultProviderId: this.state.preferences.defaultProvider,
+      pushNav: (sessionId) => this.pushNav(sessionId),
     });
-
-    addSessionToProject(project, session, (sessionId) => this.pushNav(sessionId), { includeInMosaic: true });
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -449,14 +410,40 @@ class AppState {
   addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-
-    const effectiveArgs = args ?? project.defaultArgs;
-    const session = createStandardSessionRecord({
+    const session = addStandardProjectSession({
+      project,
       name,
-      providerId: providerId ?? this.state.preferences.defaultProvider ?? 'claude',
-      args: effectiveArgs,
+      args,
+      providerId,
+      defaultProviderId: this.state.preferences.defaultProvider,
+      pushNav: (sessionId) => this.pushNav(sessionId),
     });
-    addSessionToProject(project, session, (sessionId) => this.pushNav(sessionId), { includeInMosaic: true });
+    this.persist();
+    this.emit('session-added', { projectId, session });
+    this.emit('session-changed');
+    return session;
+  }
+
+  private addOrUpdateSession(
+    projectId: string,
+    run: (project: ProjectRecord) => { session: SessionRecord; created: boolean },
+  ): SessionRecord | undefined {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return undefined;
+    const result = run(project);
+    this.persist();
+    if (result.created) this.emit('session-added', { projectId, session: result.session });
+    this.emit('session-changed');
+    return result.session;
+  }
+
+  private addSessionAndNotify(
+    projectId: string,
+    run: (project: ProjectRecord) => SessionRecord,
+  ): SessionRecord | undefined {
+    const project = this.state.projects.find((entry) => entry.id === projectId);
+    if (!project) return undefined;
+    const session = run(project);
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -464,35 +451,25 @@ class AppState {
   }
 
   addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-
-    const result = upsertDiffViewerSession(
-      project,
-      { filePath, area, worktreePath },
-      (sessionId) => this.pushNav(sessionId),
-    );
-    this.persist();
-    if (result.created) {
-      this.emit('session-added', { projectId, session: result.session });
-    }
-    this.emit('session-changed');
-    return result.session;
+    return this.addOrUpdateSession(projectId, (project) =>
+      upsertDiffViewerProjectSession({
+        project,
+        filePath,
+        area,
+        worktreePath,
+        pushNav: (sessionId) => this.pushNav(sessionId),
+      }));
   }
 
   addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-
-    const session = addRemoteSessionToProject(
-      project,
-      { sessionId, hostSessionName, shareMode },
-      (createdSessionId) => this.pushNav(createdSessionId),
-    );
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
+    return this.addSessionAndNotify(projectId, (project) =>
+      addRemoteProjectSession({
+        project,
+        sessionId,
+        hostSessionName,
+        shareMode,
+        pushNav: (createdSessionId) => this.pushNav(createdSessionId),
+      }));
   }
 
   addBrowserTabSession(
@@ -500,26 +477,23 @@ class AppState {
     url?: string,
     options?: { dedupeByUrl?: boolean },
   ): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-    const result = upsertBrowserTabSession(
-      project,
-      { url, dedupeByUrl: options?.dedupeByUrl ?? true },
-      (sessionKey) => this.pushNav(sessionKey),
-    );
-    this.persist();
-    if (result.created) {
-      this.emit('session-added', { projectId, session: result.session });
-    }
-    this.emit('session-changed');
-    return result.session;
+    return this.addOrUpdateSession(projectId, (project) =>
+      upsertBrowserTabProjectSession({
+        project,
+        url,
+        dedupeByUrl: options?.dedupeByUrl ?? true,
+        pushNav: (sessionKey) => this.pushNav(sessionKey),
+      }));
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return undefined;
-
-    const targetBrowserSession = openUrlInExistingBrowserSession(project, url, (sessionId) => this.pushNav(sessionId));
+    const targetBrowserSession = openUrlInProjectBrowserSurface({
+      project,
+      url,
+      pushNav: (sessionId) => this.pushNav(sessionId),
+    });
     if (!targetBrowserSession) {
       return this.addBrowserTabSession(project.id, url);
     }
@@ -530,62 +504,38 @@ class AppState {
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-
-    const result = upsertFileReaderSession(project, { filePath, lineNumber }, (sessionId) => this.pushNav(sessionId));
-    this.persist();
-    if (result.created) {
-      this.emit('session-added', { projectId, session: result.session });
-    }
-    this.emit('session-changed');
-    return result.session;
+    return this.addOrUpdateSession(projectId, (project) =>
+      upsertFileReaderProjectSession({
+        project,
+        filePath,
+        lineNumber,
+        pushNav: (sessionId) => this.pushNav(sessionId),
+      }));
   }
 
   addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-
-    const session = addMcpInspectorSessionToProject(project, name, (sessionId) => this.pushNav(sessionId));
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
+    return this.addSessionAndNotify(projectId, (project) =>
+      addMcpInspectorProjectSession({
+        project,
+        name,
+        pushNav: (sessionId) => this.pushNav(sessionId),
+      }));
   }
 
   removeSession(projectId: string, sessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-
-    // Archive CLI sessions before removing (cost data must be captured before session-removed triggers destroyTerminal)
-    const session = project.sessions.find((s) => s.id === sessionId);
-    if (session && (!session.type || session.type === 'claude') && this.state.preferences.sessionHistoryEnabled) {
-      // Skip archiving empty sessions (no CLI activity)
-      if (session.cliSessionId || getCost(session.id) !== null) {
-        this.archiveSession(project, session);
-      }
-    }
-
-    const closingIndex = project.sessions.findIndex((s) => s.id === sessionId);
-    project.sessions = project.sessions.filter((s) => s.id !== sessionId);
-    this.pruneNav(sessionId);
-    if (project.activeSessionId === sessionId) {
-      const newIndex = closingIndex > 0 ? closingIndex - 1 : 0;
-      project.activeSessionId = project.sessions[newIndex]?.id ?? null;
-      if (project.activeSessionId) this.pushNav(project.activeSessionId);
-    }
-    repairProjectSurface(project);
-    // Keep the mosaic pane list in sync with removed sessions.
-    project.layout.splitPanes = project.layout.splitPanes.filter((id) => id !== sessionId);
+    removeProjectSession({
+      project,
+      sessionId,
+      sessionHistoryEnabled: this.state.preferences.sessionHistoryEnabled,
+      pruneNav: (navSessionId) => this.pruneNav(navSessionId),
+      pushNav: (navSessionId) => this.pushNav(navSessionId),
+      onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
+    });
     this.persist();
     this.emit('session-removed', { projectId, sessionId });
     this.emit('session-changed');
-  }
-
-  private archiveSession(project: ProjectRecord, session: SessionRecord): void {
-    const costInfo = getCost(session.id);
-    archiveSessionToHistory(project, session, costInfo);
-    this.emit('history-changed', project.id);
   }
 
   getSessionHistory(projectId: string): ArchivedSession[] {
@@ -594,39 +544,33 @@ class AppState {
   }
 
   removeHistoryEntry(projectId: string, archivedSessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    if (!project.sessionHistory) return;
-    removeHistoryEntryFromProject(project, archivedSessionId);
+    if (!removeHistoryEntryForProject(this.state.projects, projectId, archivedSessionId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
 
   toggleBookmark(projectId: string, archivedSessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    if (!toggleProjectHistoryBookmark(project, archivedSessionId)) return;
+    if (!toggleHistoryBookmarkForProject(this.state.projects, projectId, archivedSessionId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
 
   clearSessionHistory(projectId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    clearProjectHistory(project);
+    if (!clearHistoryForProject(this.state.projects, projectId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
 
   resumeFromHistory(projectId: string, archivedSessionId: string): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-    const result = resumeSessionFromHistory(project, archivedSessionId, (sessionId) => this.pushNav(sessionId));
-    if (!result.session) return undefined;
+    const result = resumeHistorySessionForProject({
+      projects: this.state.projects,
+      projectId,
+      archivedSessionId,
+      pushNav: (sessionId) => this.pushNav(sessionId),
+    });
+    if (!result) return undefined;
     this.persist();
-    if (result.created) {
-      this.emit('session-added', { projectId, session: result.session });
-    }
+    if (result.created) this.emit('session-added', { projectId, session: result.session });
     this.emit('session-changed');
     return result.session;
   }
@@ -636,17 +580,9 @@ class AppState {
     source: { archivedSessionId?: string; sessionId?: string },
     targetProviderId: ProviderId,
   ): Promise<SessionRecord | undefined> {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-
-    // Defense-in-depth: UI gates this by availability, but bail if the target
-    // provider isn't actually installed so we don't create a broken session.
-    const snapshot = getProviderAvailabilitySnapshot();
-    if (snapshot && snapshot.availability.get(targetProviderId) === false) {
-      return undefined;
-    }
-    const session = await resumeProjectWithProvider({
-      project,
+    const session = await resumeWithProviderForProject({
+      projects: this.state.projects,
+      projectId,
       source,
       targetProviderId,
       buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
@@ -713,83 +649,64 @@ class AppState {
     this.emit('project-changed');
   }
 
-  focusCliSurfaceTab(projectId: string): void {
+  private updateProjectSurface(
+    projectId: string,
+    mutate: (project: ProjectRecord) => boolean,
+  ): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!focusCliProjectSurface(project)) return;
+    if (!project || !mutate(project)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
+  }
+
+  focusCliSurfaceTab(projectId: string): void {
+    this.updateProjectSurface(projectId, focusCliProjectSurface);
   }
 
   closeCliSurface(projectId: string): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!closeCliProjectSurface(project)) return;
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
+    this.updateProjectSurface(projectId, closeCliProjectSurface);
   }
 
   focusMobileSurfaceTab(projectId: string): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!focusMobileProjectSurface(project)) return;
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
+    this.updateProjectSurface(projectId, focusMobileProjectSurface);
   }
 
   closeMobileSurface(projectId: string): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!closeMobileProjectSurface(project)) return;
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
+    this.updateProjectSurface(projectId, closeMobileProjectSurface);
   }
 
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return [];
-    return project.sessions.filter((session) => isCliSessionRecord(session));
+    return listSurfaceTargetSessionsForProject(this.state.projects, projectId);
   }
 
   resolveSurfaceTargetSession(
     projectId: string,
     options?: { requireExplicitTarget?: boolean },
   ): SessionRecord | undefined {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return undefined;
-    return resolveSurfaceTargetFromProject(project, {
-      allowActiveFallback: options?.requireExplicitTarget ? false : true,
+    return resolveSurfaceTargetSessionForProject({
+      projects: this.state.projects,
+      projectId,
+      requireExplicitTarget: options?.requireExplicitTarget,
     });
   }
 
   setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setSurfaceTargetSessionOnProject(project, targetSessionId)) return;
+    if (!setSurfaceTargetSessionForProject(this.state.projects, projectId, targetSessionId)) return;
     this.persist();
     this.emit('session-changed');
   }
 
   updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const session = project.sessions.find((s) => s.id === sessionId);
-    if (!session) return;
-
-    // If session already had a different cliSessionId (e.g., /clear was used),
-    // archive the previous session and reset the tab name
-    if (session.cliSessionId && session.cliSessionId !== cliSessionId) {
-      this.archiveSession(project, session);
-      session.name = `Session ${project.sessions.length + (project.sessionHistory?.length || 0)}`;
-      session.userRenamed = false;
-      this.emit('cli-session-cleared', { sessionId });
-    }
-
-    session.cliSessionId = cliSessionId;
+    const result = updateProjectSessionCliId({
+      projects: this.state.projects,
+      projectId,
+      sessionId,
+      cliSessionId,
+      onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
+    });
+    if (!result.updated) return;
+    if (result.clearedPreviousCliSession) this.emit('cli-session-cleared', { sessionId });
     this.persist();
     this.emit('session-changed');
   }
@@ -826,54 +743,40 @@ class AppState {
   }
 
   updateSessionBrowserTabUrl(sessionId: string, url: string): void {
-    const project = this.findProjectBySession(sessionId);
-    const session = this.findSessionById(sessionId);
-    if (!session || !updateBrowserTabUrl(project, session, url)) return;
+    if (!updateBrowserTabSessionUrlById(this.state.projects, sessionId, url)) return;
     this.persist();
   }
 
   passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
-    const project = this.findProjectBySession(sessionId);
-    const session = this.findSessionById(sessionId);
-    if (!project || !session || !passivateBrowserTabSessionRecord(project, session, failedUrl)) return;
+    if (!passivateBrowserTabSessionById(this.state.projects, sessionId, failedUrl)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
   }
 
   renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const session = project.sessions.find((s) => s.id === sessionId);
-    if (!session) return;
-    session.name = name.slice(0, MAX_SESSION_NAME_LENGTH);
-    if (userRenamed) session.userRenamed = true;
-    // Keep history entry in sync if this session was resumed from history
-    if (session.cliSessionId && project.sessionHistory) {
-      const historyEntry = project.sessionHistory.find((a) => a.cliSessionId === session.cliSessionId);
-      if (historyEntry) {
-        historyEntry.name = session.name;
-        this.emit('history-changed', project.id);
-      }
-    }
+    const result = renameProjectSession({
+      projects: this.state.projects,
+      projectId,
+      sessionId,
+      name,
+      userRenamed,
+      maxSessionNameLength: MAX_SESSION_NAME_LENGTH,
+    });
+    if (!result.renamed) return;
+    if (result.historyRenamed) this.emit('history-changed', projectId);
     this.persist();
     this.emit('session-changed');
   }
 
   setBrowserWidthRatio(projectId: string, ratio: number): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    project.layout.browserWidthRatio = clampRatio(ratio, 0.25, 0.7, DEFAULT_BROWSER_WIDTH_RATIO);
+    if (!setBrowserWidthRatioForProject(this.state.projects, projectId, ratio)) return;
     this.persist();
     this.emit('layout-changed');
   }
 
   setMosaicRatio(projectId: string, key: string, ratio: number): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const next = { ...(project.layout.mosaicRatios ?? {}) };
-    next[key] = clampRatio(ratio, 0.2, 0.8, next[key] ?? 0.5);
-    project.layout.mosaicRatios = next;
+    if (!setMosaicRatioForProject(this.state.projects, projectId, key, ratio)) return;
     this.persist();
     this.emit('layout-changed');
   }
@@ -923,31 +826,23 @@ class AppState {
   }
 
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    addInsightSnapshotToProject(project, snapshot);
+    if (!addInsightSnapshotForProject(this.state.projects, projectId, snapshot)) return;
     this.persist();
     this.emit('insights-changed', projectId);
   }
 
   dismissInsight(projectId: string, insightId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    dismissInsightForProject(project, insightId);
+    if (!dismissInsightForProjectId(this.state.projects, projectId, insightId)) return;
     this.persist();
     this.emit('insights-changed', projectId);
   }
 
   isInsightDismissed(projectId: string, insightId: string): boolean {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return false;
-    return isInsightDismissedForProject(project, insightId);
+    return isInsightDismissedForProjectId(this.state.projects, projectId, insightId);
   }
 
   reorderSession(projectId: string, sessionId: string, toIndex: number): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!reorderProjectSession(project, sessionId, toIndex)) return;
+    if (!reorderSessionForProject(this.state.projects, projectId, sessionId, toIndex)) return;
     this.persist();
     this.emit('session-changed');
   }
