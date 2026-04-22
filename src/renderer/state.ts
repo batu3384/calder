@@ -90,6 +90,7 @@ type EventType =
   | 'state-loaded';
 
 type EventCallback = (data?: unknown) => void;
+type SessionRemovalScope = 'all' | 'right' | 'left' | 'others';
 
 const defaultPreferences: Preferences = {
   soundOnSessionWaiting: true,
@@ -1114,32 +1115,27 @@ class AppState {
     this.emit('session-changed');
   }
 
-  removeAllSessions(projectId: string): void {
+  private removeSessionsByScope(projectId: string, scope: SessionRemovalScope, anchorSessionId?: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    const ids = collectSessionIdsForRemoval(project.sessions, 'all');
+    const ids = collectSessionIdsForRemoval(project.sessions, scope, anchorSessionId);
     for (const id of ids) this.removeSession(projectId, id);
+  }
+
+  removeAllSessions(projectId: string): void {
+    this.removeSessionsByScope(projectId, 'all');
   }
 
   removeSessionsFromRight(projectId: string, sessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const ids = collectSessionIdsForRemoval(project.sessions, 'right', sessionId);
-    for (const id of ids) this.removeSession(projectId, id);
+    this.removeSessionsByScope(projectId, 'right', sessionId);
   }
 
   removeSessionsFromLeft(projectId: string, sessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const ids = collectSessionIdsForRemoval(project.sessions, 'left', sessionId);
-    for (const id of ids) this.removeSession(projectId, id);
+    this.removeSessionsByScope(projectId, 'left', sessionId);
   }
 
   removeOtherSessions(projectId: string, sessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const ids = collectSessionIdsForRemoval(project.sessions, 'others', sessionId);
-    for (const id of ids) this.removeSession(projectId, id);
+    this.removeSessionsByScope(projectId, 'others', sessionId);
   }
 
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
