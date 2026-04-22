@@ -1,6 +1,3 @@
-import type { Terminal } from '@xterm/xterm';
-import type { FitAddon } from '@xterm/addon-fit';
-import type { SerializeAddon } from '@xterm/addon-serialize';
 import type {
   AppliedContextSummary,
   CliSurfacePromptContextMode,
@@ -19,10 +16,8 @@ import {
 } from './composer-position.js';
 import {
   closeInspect,
-  createInitialInspectState,
   openInspect,
   setInspectPayload,
-  type CliInspectState,
 } from './inspect-mode.js';
 import { createSelectionPayload } from './selection.js';
 import { inferCliRegions } from './heuristics.js';
@@ -41,7 +36,6 @@ import {
 } from './semantic-state.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol.js';
-import type { CliTargetMenuController } from './target-menu.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
@@ -66,7 +60,9 @@ import {
 import {
   createCliSurfaceLayout,
   createCliSurfaceTerminal,
+  type CliSurfaceLayoutElements,
 } from './pane-elements.js';
+import { createCliSurfaceInstance, type CliSurfaceInstance } from './pane-instance.js';
 import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
 import {
   bindCliSurfaceInspectActionHandlers,
@@ -76,53 +72,6 @@ import {
 } from './pane-action-handlers.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
-
-interface CliSurfaceInstance {
-  projectId: string;
-  element: HTMLDivElement;
-  viewport: HTMLDivElement;
-  selectionOverlayEl: HTMLDivElement;
-  hoverOverlayEl: HTMLDivElement;
-  hoverLabelEl: HTMLDivElement;
-  hoverMetaEl: HTMLDivElement;
-  hoverPreviewEl: HTMLPreElement;
-  terminal: Terminal;
-  fitAddon: FitAddon;
-  serializeAddon: SerializeAddon;
-  emptyEl: HTMLDivElement;
-  metaEl: HTMLDivElement;
-  routeEl: HTMLDivElement;
-  adapterMetaEl: HTMLDivElement;
-  inspectButton: HTMLButtonElement;
-  composerEl: HTMLDivElement;
-  composerHandleEl: HTMLDivElement;
-  composerHintEl: HTMLDivElement;
-  composerPreviewEl: HTMLPreElement;
-  composerScopeEl: HTMLDivElement;
-  composerContextTraceEl: HTMLDivElement;
-  composerContextSelectEl: HTMLSelectElement;
-  composerErrorEl: HTMLDivElement;
-  selectedButton: HTMLButtonElement;
-  newButton: HTMLButtonElement;
-  customButton: HTMLButtonElement;
-  targetMenuEl: HTMLDivElement;
-  targetMenuListEl: HTMLDivElement;
-  inspectState: CliInspectState;
-  viewportLines: string[];
-  inferredRegions: InferredCliRegion[];
-  inferredRegionsKey: string;
-  semanticRegions: SelectableCliRegion[];
-  semanticRegionsVersion: number;
-  hoveredRegion: SelectableCliRegion | null;
-  refreshFramePending: boolean;
-  dataFramePending: boolean;
-  pendingDataChunks: string[];
-  selectionAnchor: { row: number; col: number } | null;
-  contextModeOverride: CliSurfacePromptContextMode | null;
-  targetMenuController?: CliTargetMenuController;
-  targetMenuOutsideClickHandler?: (event: MouseEvent) => void;
-  cleanupFns: Array<() => void>;
-}
 
 const instances = new Map<string, CliSurfaceInstance>();
 const semanticNodes = new Map<string, Map<string, CalderProtocolMessage>>();
@@ -598,84 +547,23 @@ function attachPaneBindings(): void {
   });
 }
 
-function ensureInstance(projectId: string): CliSurfaceInstance {
-  return ensureCliSurfaceInstance(projectId);
+function createCliSurfaceComposerHelpers(instance: CliSurfaceInstance) {
+  return {
+    getSendPayload: () => getSendPayload(instance),
+    closeInspectComposer: () => closeInspectComposer(instance),
+    clearComposerError: () => clearComposerError(instance),
+    showComposerError: (message: string) => showComposerError(instance, message),
+  };
 }
 
-function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
-  const existing = instances.get(projectId);
-  if (existing) return existing;
+function bindCliSurfaceInstanceHandlers(
+  projectId: string,
+  instance: CliSurfaceInstance,
+  layout: CliSurfaceLayoutElements,
+): void {
+  const helpers = createCliSurfaceComposerHelpers(instance);
 
-  attachPaneBindings();
-
-  const layout = createCliSurfaceLayout(projectId);
-  const terminalElements = createCliSurfaceTerminal(
-    projectId,
-    layout.viewport,
-    layout.hoverOverlay,
-    layout.selectionOverlay,
-    {
-      resolveProjectPath: (nextProjectId) => getProject(nextProjectId)?.path,
-      openExternal: (url, cwd) => window.calder.app.openExternal(url, cwd),
-    },
-  );
-
-  const instance: CliSurfaceInstance = {
-    projectId,
-    element: layout.element,
-    viewport: layout.viewport,
-    selectionOverlayEl: layout.selectionOverlay,
-    hoverOverlayEl: layout.hoverOverlay,
-    hoverLabelEl: layout.hoverLabel,
-    hoverMetaEl: layout.hoverMeta,
-    hoverPreviewEl: layout.hoverPreview,
-    terminal: terminalElements.terminal,
-    fitAddon: terminalElements.fitAddon,
-    serializeAddon: terminalElements.serializeAddon,
-    emptyEl: layout.empty,
-    metaEl: layout.meta,
-    routeEl: layout.route,
-    adapterMetaEl: layout.adapterMeta,
-    inspectButton: layout.inspectButton,
-    composerEl: layout.composer,
-    composerHandleEl: layout.composerHandle,
-    composerHintEl: layout.composerHint,
-    composerPreviewEl: layout.composerPreview,
-    composerScopeEl: layout.composerScope,
-    composerContextTraceEl: layout.composerContextTrace,
-    composerContextSelectEl: layout.composerContextSelect,
-    composerErrorEl: layout.composerError,
-    selectedButton: layout.selectedButton,
-    newButton: layout.newButton,
-    customButton: layout.customButton,
-    targetMenuEl: layout.targetMenu,
-    targetMenuListEl: layout.targetMenuList,
-    inspectState: createInitialInspectState(),
-    viewportLines: [],
-    inferredRegions: [],
-    inferredRegionsKey: '',
-    semanticRegions: [],
-    semanticRegionsVersion: -1,
-    hoveredRegion: null,
-    refreshFramePending: false,
-    dataFramePending: false,
-    pendingDataChunks: [],
-    selectionAnchor: null,
-    contextModeOverride: null,
-    targetMenuController: undefined,
-    targetMenuOutsideClickHandler: undefined,
-    cleanupFns: [],
-  };
-
-  instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(
-    instance,
-    {
-      getSendPayload: () => getSendPayload(instance),
-      closeInspectComposer: () => closeInspectComposer(instance),
-      clearComposerError: () => clearComposerError(instance),
-      showComposerError: (message: string) => showComposerError(instance, message),
-    },
-  );
+  instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(instance, helpers);
   bindCliSurfaceRuntimeActionHandlers({
     projectId,
     context: instance,
@@ -684,12 +572,7 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
     getCliSurfaceApi,
     renderInspectState: () => renderInspectState(instance),
     setInspectPayloadFromSelection: (selection) => setInspectPayloadFromSelection(instance, selection),
-    helpers: {
-      getSendPayload: () => getSendPayload(instance),
-      closeInspectComposer: () => closeInspectComposer(instance),
-      clearComposerError: () => clearComposerError(instance),
-      showComposerError: (message: string) => showComposerError(instance, message),
-    },
+    helpers,
   });
   bindCliSurfaceInspectActionHandlers({
     context: instance,
@@ -697,12 +580,7 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
       instance.inspectState = openInspect(instance.inspectState);
       renderInspectState(instance);
     },
-    helpers: {
-      getSendPayload: () => getSendPayload(instance),
-      closeInspectComposer: () => closeInspectComposer(instance),
-      clearComposerError: () => clearComposerError(instance),
-      showComposerError: (message: string) => showComposerError(instance, message),
-    },
+    helpers,
   });
   bindCliSurfaceInspectPointerHandlers({
     context: instance,
@@ -745,8 +623,10 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
       getCliSurfaceApi()?.write(nextProjectId, data);
     },
   });
+}
 
-  instances.set(projectId, instance);
+function initializeCliSurfaceInstance(instance: CliSurfaceInstance): void {
+  instances.set(instance.projectId, instance);
   instance.cleanupFns.push(enableComposerDraggingBehavior({
     paneEl: instance.element,
     composerEl: instance.composerEl,
@@ -755,6 +635,33 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
   syncViewportLines(instance);
   renderRuntimeMeta(instance);
   renderInspectState(instance);
+}
+
+function ensureInstance(projectId: string): CliSurfaceInstance {
+  return ensureCliSurfaceInstance(projectId);
+}
+
+function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
+  const existing = instances.get(projectId);
+  if (existing) return existing;
+
+  attachPaneBindings();
+
+  const layout = createCliSurfaceLayout(projectId);
+  const terminalElements = createCliSurfaceTerminal(
+    projectId,
+    layout.viewport,
+    layout.hoverOverlay,
+    layout.selectionOverlay,
+    {
+      resolveProjectPath: (nextProjectId) => getProject(nextProjectId)?.path,
+      openExternal: (url, cwd) => window.calder.app.openExternal(url, cwd),
+    },
+  );
+
+  const instance = createCliSurfaceInstance(projectId, layout, terminalElements);
+  bindCliSurfaceInstanceHandlers(projectId, instance, layout);
+  initializeCliSurfaceInstance(instance);
   return instance;
 }
 
