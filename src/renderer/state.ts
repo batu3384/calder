@@ -62,6 +62,7 @@ import {
   normalizeProjectWorkflowState,
 } from './state-normalizers.js';
 import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
+import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
@@ -330,60 +331,48 @@ class AppState {
     }
   }
 
-  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
+  private setProjectDomain<K extends ProjectDomainStateKey>(
+    projectId: string,
+    key: K,
+    incoming: ProjectRecord[K],
+    normalize: (
+      incoming: NonNullable<ProjectRecord[K]>,
+      previous: ProjectRecord[K],
+    ) => ProjectRecord[K],
+  ): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    if (!setProjectDomainState(project, 'projectContext', projectContext, normalizeProjectContextState)) return;
+    if (!setProjectDomainState(project, key, incoming, normalize)) return;
     this.persist();
     this.emitProjectChangedIfActive(project);
+  }
+
+  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
+    this.setProjectDomain(projectId, 'projectContext', projectContext, normalizeProjectContextState);
   }
 
   setProjectWorkflows(projectId: string, projectWorkflows: ProjectWorkflowState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectWorkflows', projectWorkflows, normalizeProjectWorkflowState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectWorkflows', projectWorkflows, normalizeProjectWorkflowState);
   }
 
   setProjectTeamContext(projectId: string, projectTeamContext: ProjectTeamContextState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectTeamContext', projectTeamContext, normalizeProjectTeamContextState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectTeamContext', projectTeamContext, normalizeProjectTeamContextState);
   }
 
   setProjectReviews(projectId: string, projectReviews: ProjectReviewState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectReviews', projectReviews, normalizeProjectReviewState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectReviews', projectReviews, normalizeProjectReviewState);
   }
 
   setProjectGovernance(projectId: string, projectGovernance: ProjectGovernanceState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectGovernance', projectGovernance, normalizeProjectGovernanceState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectGovernance', projectGovernance, normalizeProjectGovernanceState);
   }
 
   setProjectBackgroundTasks(projectId: string, projectBackgroundTasks: ProjectBackgroundTaskState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectBackgroundTasks', projectBackgroundTasks, normalizeProjectBackgroundTaskState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectBackgroundTasks', projectBackgroundTasks, normalizeProjectBackgroundTaskState);
   }
 
   setProjectCheckpoints(projectId: string, projectCheckpoints: ProjectCheckpointState | undefined): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, 'projectCheckpoints', projectCheckpoints, normalizeProjectCheckpointState)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    this.setProjectDomain(projectId, 'projectCheckpoints', projectCheckpoints, normalizeProjectCheckpointState);
   }
 
   restoreProjectCheckpoint(

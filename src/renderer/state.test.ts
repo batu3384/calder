@@ -1740,6 +1740,142 @@ describe('setActiveProject()', () => {
   });
 });
 
+describe('project domain setters', () => {
+  it('updates each project domain and emits project-changed for active project', () => {
+    const project = addProject('Domains', '/domains');
+    appState.setActiveProject(project.id);
+    const changed = vi.fn();
+    appState.on('project-changed', changed);
+
+    appState.setProjectContext(project.id, {
+      sources: [{
+        id: 'shared-rules',
+        provider: 'shared',
+        scope: 'project',
+        kind: 'rules',
+        path: '.agents/rules.md',
+        displayName: 'Rules',
+        summary: 'Shared rules',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+      }],
+      sharedRuleCount: 0,
+      providerSourceCount: 999,
+    });
+    appState.setProjectWorkflows(project.id, {
+      workflows: [{
+        id: 'workflow-1',
+        path: '.agents/workflows/release.md',
+        displayName: 'Release',
+        summary: 'Release checklist',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+      }],
+      lastUpdated: '2026-04-22T00:00:00.000Z',
+    });
+    appState.setProjectTeamContext(project.id, {
+      spaces: [{
+        id: 'space-1',
+        path: '.agents/team/backend.md',
+        displayName: 'Backend',
+        summary: 'Backend ownership',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+        linkedRuleCount: 1,
+        linkedWorkflowCount: 1,
+      }],
+      sharedRuleCount: 1,
+      workflowCount: 1,
+    });
+    appState.setProjectReviews(project.id, {
+      reviews: [{
+        id: 'review-1',
+        path: '.agents/reviews/security.md',
+        displayName: 'Security review',
+        summary: 'Security rubric',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+      }],
+    });
+    appState.setProjectGovernance(project.id, {
+      policy: {
+        id: 'governance:/domains/.calder/governance/policy.json',
+        path: '/domains/.calder/governance/policy.json',
+        displayName: 'Project policy',
+        summary: 'advisory · tools ask · writes ask · network ask',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+        mode: 'advisory',
+        toolPolicy: 'ask',
+        writePolicy: 'ask',
+        networkPolicy: 'ask',
+        mcpAllowlistCount: 0,
+        providerProfileCount: 0,
+      },
+    });
+    appState.setProjectBackgroundTasks(project.id, {
+      tasks: [{
+        id: 'task-1',
+        path: '.agents/tasks/follow-up.md',
+        title: 'Follow-up',
+        status: 'queued',
+        summary: 'Ship remaining cleanup',
+        createdAt: '2026-04-22T00:00:00.000Z',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+        artifactCount: 0,
+        handoffSummary: 'Pending',
+      }],
+      queuedCount: 1,
+      runningCount: 0,
+      completedCount: 0,
+    });
+    appState.setProjectCheckpoints(project.id, {
+      checkpoints: [{
+        id: 'checkpoint-1',
+        path: '.calder/checkpoints/checkpoint-1.json',
+        displayName: 'Checkpoint 1',
+        label: 'Before cleanup',
+        createdAt: '2026-04-22T00:00:00.000Z',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+        sessionCount: 3,
+        changedFileCount: 2,
+        restoreSummary: '3 sessions, 2 changed files',
+      }],
+    });
+
+    expect(appState.activeProject?.projectContext?.sharedRuleCount).toBe(1);
+    expect(appState.activeProject?.projectContext?.providerSourceCount).toBe(0);
+    expect(appState.activeProject?.projectWorkflows?.workflows).toHaveLength(1);
+    expect(appState.activeProject?.projectTeamContext?.spaces).toHaveLength(1);
+    expect(appState.activeProject?.projectReviews?.reviews).toHaveLength(1);
+    expect(appState.activeProject?.projectGovernance?.policy?.displayName).toBe('Project policy');
+    expect(appState.activeProject?.projectBackgroundTasks?.tasks).toHaveLength(1);
+    expect(appState.activeProject?.projectCheckpoints?.checkpoints).toHaveLength(1);
+    expect(changed).toHaveBeenCalledTimes(7);
+  });
+
+  it('does not emit when normalized project domain state is unchanged', () => {
+    const project = addProject('Domains', '/domains');
+    appState.setActiveProject(project.id);
+    const changed = vi.fn();
+    appState.on('project-changed', changed);
+
+    const workflows = {
+      workflows: [{
+        id: 'workflow-1',
+        path: '.agents/workflows/release.md',
+        displayName: 'Release',
+        summary: 'Release checklist',
+        lastUpdated: '2026-04-22T00:00:00.000Z',
+      }],
+      lastUpdated: '2026-04-22T00:00:00.000Z',
+    };
+
+    appState.setProjectWorkflows(project.id, workflows);
+    appState.setProjectWorkflows(project.id, {
+      ...workflows,
+      workflows: [...workflows.workflows],
+    });
+
+    expect(changed).toHaveBeenCalledTimes(1);
+  });
+});
+
 // --- Session History Tests ---
 
 function mockCostData() {
