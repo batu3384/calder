@@ -1,12 +1,10 @@
 import { appState } from '../../state.js';
 import {
-  closeModal,
   extendModalCleanup,
   prepareModalSurface,
   runModalCleanup,
 } from '../modal.js';
 import type { CustomSelectInstance } from '../custom-select.js';
-import { shortcutManager } from '../../shortcuts.js';
 import {
   appendOverviewGrid as appendOverviewGridLayout,
   appendSectionCard as appendSectionCardLayout,
@@ -20,16 +18,18 @@ import {
   bindPreferencesModalActions,
   savePreferenceDraft,
 } from './preferences-modal-actions.js';
-import { buildCheckpointRestoreConfirm } from './preferences-checkpoint-confirm.js';
-import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 import {
   renderAboutPreferencesSection,
   renderGeneralPreferencesSection,
   renderLayoutPreferencesSection,
-  renderProvidersPreferencesSection,
 } from './preferences-modal-sections.js';
 import { createPreferencesModalShell } from './preferences-modal-shell.js';
 import { formatRelativeTimestamp } from './preferences-time.js';
+import {
+  bindPreferencesMenuNavigation,
+  renderProvidersPreferencesContent,
+  renderShortcutPreferencesContent,
+} from './preferences-modal-renderers.js';
 import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 
@@ -87,28 +87,6 @@ function createPreferenceDraft(): PreferenceDraft {
   };
 }
 
-function countCustomizedShortcuts(shortcutOverridesDraft: Record<string, string>): number {
-  let count = 0;
-  for (const [, shortcuts] of shortcutManager.getAll(shortcutOverridesDraft)) {
-    for (const shortcut of shortcuts) {
-      if (shortcutManager.hasOverride(shortcut.id, shortcutOverridesDraft)) count += 1;
-    }
-  }
-  return count;
-}
-
-function bindPreferencesMenuNavigation(
-  menu: HTMLElement,
-  renderSection: (section: Section) => void,
-): void {
-  menu.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest('.preferences-menu-item') as HTMLElement | null;
-    if (target && target.dataset.section) {
-      renderSection(target.dataset.section as Section);
-    }
-  });
-}
-
 function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string): void {
   // preferences-section-intro
   appendSectionIntroLayout(container, eyebrow, title, description);
@@ -135,82 +113,6 @@ function appendOverviewGrid(
 ): void {
   // preferences-overview-grid
   appendOverviewGridLayout(container, items);
-}
-
-function renderShortcutPreferencesContent(args: {
-  content: HTMLElement;
-  shortcutOverridesDraft: Record<string, string>;
-  cleanupRecorder: () => void;
-  setActiveRecorder: (cleanup: () => void) => void;
-  clearActiveRecorder: () => void;
-  rerenderShortcuts: () => void;
-}): void {
-  appendSectionIntro(
-    args.content,
-    'Keyboard',
-    'Working keys',
-    'Keep the shortcuts you use every day close to hand and override only the ones that really help.',
-  );
-  appendOverviewGrid(args.content, [
-    {
-      label: 'Customized',
-      value: `${countCustomizedShortcuts(args.shortcutOverridesDraft)}`,
-      note: 'Only explicit overrides are tracked here.',
-    },
-    {
-      label: 'Focus',
-      value: 'Session + surface',
-      note: 'Bindings cover sessions, the left stage, and shell navigation.',
-    },
-    {
-      label: 'Style',
-      value: 'Command-first',
-      note: 'Record a new combo directly from the keyboard when you need one.',
-    },
-  ]);
-  renderShortcutsSection({
-    container: args.content,
-    shortcutOverridesDraft: args.shortcutOverridesDraft,
-    cleanupRecorder: args.cleanupRecorder,
-    setActiveRecorder: args.setActiveRecorder,
-    clearActiveRecorder: args.clearActiveRecorder,
-    rerenderShortcuts: args.rerenderShortcuts,
-  });
-}
-
-function renderProvidersPreferencesContent(args: {
-  content: HTMLElement;
-  modalBody: HTMLElement;
-  confirmButton: HTMLButtonElement;
-  cancelButton: HTMLButtonElement;
-  registerModalCleanup: (cleanup: () => void) => void;
-  currentSection: () => Section;
-  rerenderProviders: () => void;
-  applySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
-}): void {
-  renderProvidersPreferencesSection({
-    content: args.content,
-    appendSectionIntro,
-    appendOverviewGrid,
-    appendSectionGroup,
-    appendSectionCard,
-    closeWideModal: () => {
-      closeModal();
-      modal.classList.remove('modal-wide');
-    },
-    rerenderProviders: args.rerenderProviders,
-    modalBody: args.modalBody,
-    confirmButton: args.confirmButton,
-    cancelButton: args.cancelButton,
-    registerModalCleanup: args.registerModalCleanup,
-    buildCheckpointRestoreConfirm,
-    isProvidersSectionActive: () => args.currentSection() === 'providers',
-    onApplySetupBadge: args.applySetupBadge,
-    onFixProvider: args.onFixProvider,
-    onInstallMobileDependency: args.onInstallMobileDependency,
-  });
 }
 
 export function showPreferencesModal(): void {
@@ -315,6 +217,8 @@ function renderPreferencesModalContent(): void {
           activeRecorder = null;
         },
         rerenderShortcuts: () => renderSection('shortcuts'),
+        appendSectionIntro,
+        appendOverviewGrid,
       });
 
     } else if (section === 'providers') {
@@ -329,6 +233,11 @@ function renderPreferencesModalContent(): void {
         applySetupBadge,
         onFixProvider: fixAndRerender,
         onInstallMobileDependency: installMobileDependencyAndRerender,
+        appendSectionIntro,
+        appendOverviewGrid,
+        appendSectionGroup,
+        appendSectionCard,
+        modalElement: modal,
       });
 
     } else if (section === 'about') {
