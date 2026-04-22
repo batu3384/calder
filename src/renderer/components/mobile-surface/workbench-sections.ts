@@ -62,6 +62,11 @@ interface AppendMobileDependencyChecklistSectionOptions {
   renderCheckRow(check: MobileDependencyCheck): HTMLElement;
 }
 
+interface BuildMobileInspectBlockingPanelOptions {
+  checks: MobileDependencyCheck[];
+  renderCheckRow(check: MobileDependencyCheck): HTMLElement;
+}
+
 export function renderInspectCapabilityPanel(
   platform: MobileInspectPlatform,
   platformLabels: Record<MobileInspectPlatform, string>,
@@ -303,4 +308,28 @@ export function appendMobileDependencyChecklistSection(
       description: 'Install and verify prerequisites relevant to the current project profile.',
     },
   });
+}
+
+export function buildMobileInspectBlockingPanel(
+  options: BuildMobileInspectBlockingPanelOptions,
+): HTMLDivElement | null {
+  if (options.checks.length === 0) return null;
+
+  const blockerPanel = document.createElement('div');
+  blockerPanel.className = 'mobile-surface-inspect-blockers';
+
+  const blockerTitle = document.createElement('div');
+  blockerTitle.className = 'mobile-surface-inspect-blockers-title';
+  blockerTitle.textContent = 'Blocking requirements';
+
+  const blockerDesc = document.createElement('div');
+  blockerDesc.className = 'mobile-surface-inspect-blockers-desc';
+  blockerDesc.textContent = 'Install required dependencies below before launching this platform.';
+
+  blockerPanel.append(blockerTitle, blockerDesc);
+  for (const check of options.checks) {
+    blockerPanel.appendChild(options.renderCheckRow(check));
+  }
+
+  return blockerPanel;
 }

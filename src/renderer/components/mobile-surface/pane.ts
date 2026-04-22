@@ -29,6 +29,7 @@ import {
 } from './dependency-scoping.js';
 import {
   appendMobileDependencyChecklistSection,
+  buildMobileInspectBlockingPanel,
   buildMobileDependencyCheckRow,
   renderMobileScopedSummaryPanel,
   renderInspectCapabilityPanel,
@@ -769,32 +770,18 @@ function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, repo
   section.appendChild(interactionHint);
 
   section.appendChild(renderInspectCapabilityPanel(inspect.platform, MOBILE_PLATFORM_LABEL));
-
-  if (blockingChecks.length > 0) {
-    const blockerPanel = document.createElement('div');
-    blockerPanel.className = 'mobile-surface-inspect-blockers';
-
-    const blockerTitle = document.createElement('div');
-    blockerTitle.className = 'mobile-surface-inspect-blockers-title';
-    blockerTitle.textContent = 'Blocking requirements';
-
-    const blockerDesc = document.createElement('div');
-    blockerDesc.className = 'mobile-surface-inspect-blockers-desc';
-    blockerDesc.textContent = 'Install required dependencies below before launching this platform.';
-
-    blockerPanel.append(blockerTitle, blockerDesc);
-    for (const check of blockingChecks) {
-      blockerPanel.appendChild(buildMobileDependencyCheckRow({
-        instance,
-        check,
-        isInspectBusy,
-        setPaneStatus,
-        setActionAvailability,
-        refreshMobileSurfacePane,
-      }));
-    }
-    section.appendChild(blockerPanel);
-  }
+  const blockerPanel = buildMobileInspectBlockingPanel({
+    checks: blockingChecks,
+    renderCheckRow: (check) => buildMobileDependencyCheckRow({
+      instance,
+      check,
+      isInspectBusy,
+      setPaneStatus,
+      setActionAvailability,
+      refreshMobileSurfacePane,
+    }),
+  });
+  if (blockerPanel) section.appendChild(blockerPanel);
 
   section.appendChild(renderInspectPreviewPanel(instance));
   appendInspectSendControls(instance, section);
