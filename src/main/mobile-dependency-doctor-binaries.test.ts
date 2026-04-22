@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   getAndroidBinaryCandidates,
+  getAndroidSdkRoots,
   resolveBinary,
+  uniquePaths,
 } from './mobile-dependency-doctor-binaries';
 
 describe('mobile dependency doctor binary helpers', () => {
@@ -13,6 +15,18 @@ describe('mobile dependency doctor binary helpers', () => {
     const candidates = getAndroidBinaryCandidates('sdkmanager', env, 'darwin');
     expect(candidates).toContain('/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager');
     expect(candidates).toContain('/opt/android-sdk/cmdline-tools/bin/sdkmanager');
+  });
+
+  it('normalizes duplicate raw paths and exposes sdk root discovery helpers', () => {
+    expect(uniquePaths(['/tmp/android-sdk/', '/tmp/android-sdk', '', '  ']))
+      .toEqual(['/tmp/android-sdk']);
+
+    const roots = getAndroidSdkRoots({
+      ANDROID_HOME: '/tmp/android-sdk',
+      ANDROID_SDK_ROOT: '/tmp/android-sdk/',
+      HOME: '/Users/tester',
+    } as NodeJS.ProcessEnv);
+    expect(roots[0]).toBe('/tmp/android-sdk');
   });
 
   it('deduplicates root candidates before expanding binary paths', () => {

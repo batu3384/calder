@@ -17,7 +17,7 @@ export interface BinaryCommandRunner {
   ): Promise<BinaryProbeResult>;
 }
 
-function uniquePaths(paths: string[]): string[] {
+export function uniquePaths(paths: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const entry of paths) {
@@ -31,7 +31,7 @@ function uniquePaths(paths: string[]): string[] {
   return out;
 }
 
-function getAndroidSdkRoots(env: NodeJS.ProcessEnv): string[] {
+export function getAndroidSdkRoots(env: NodeJS.ProcessEnv): string[] {
   const roots: string[] = [];
   if (env.ANDROID_HOME) roots.push(env.ANDROID_HOME);
   if (env.ANDROID_SDK_ROOT) roots.push(env.ANDROID_SDK_ROOT);
