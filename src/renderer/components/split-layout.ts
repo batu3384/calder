@@ -667,6 +667,200 @@ function focusActivePane(project: ProjectRecord): void {
   }
 }
 
+function renderSingleMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  canvas.style.gap = '10px';
+  canvas.style.gridTemplateColumns = '1fr';
+  canvas.style.gridTemplateRows = '1fr';
+  showPanes(project, canvas, paneIds);
+}
+
+function renderColumns2MosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  const primaryRatio = readMosaicRatio(project, 'columns-2-primary', 0.5);
+  const applyColumns2 = (ratio: number) => {
+    canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+    canvas.style.gridTemplateRows = '1fr';
+  };
+  canvas.style.gap = '0';
+  applyColumns2(primaryRatio);
+
+  appendMosaicSlot(project, canvas, [paneIds[0]]);
+  const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
+  canvas.appendChild(primaryDivider);
+  appendMosaicSlot(project, canvas, [paneIds[1]]);
+
+  bindMosaicDivider(primaryDivider, canvas, {
+    onPreview: (ratio) => applyColumns2(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'columns-2-primary', ratio),
+  }, {
+    axis: 'x',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.5,
+  });
+}
+
+function renderRows2MosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  const primaryRatio = readMosaicRatio(project, 'rows-2-primary', 0.5);
+  const applyRows2 = (ratio: number) => {
+    canvas.style.gridTemplateColumns = '1fr';
+    canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+  };
+  canvas.style.gap = '0';
+  applyRows2(primaryRatio);
+
+  appendMosaicSlot(project, canvas, [paneIds[0]]);
+  const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
+  canvas.appendChild(primaryDivider);
+  appendMosaicSlot(project, canvas, [paneIds[1]]);
+
+  bindMosaicDivider(primaryDivider, canvas, {
+    onPreview: (ratio) => applyRows2(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'rows-2-primary', ratio),
+  }, {
+    axis: 'y',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.5,
+  });
+}
+
+function renderFocusLeftMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  const mainRatio = readMosaicRatio(project, 'focus-left-main', 0.58);
+  const stackRatio = readMosaicRatio(project, 'focus-left-stack', 0.5);
+  const applyFocusLeftMain = (ratio: number) => {
+    canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+    canvas.style.gridTemplateRows = '1fr';
+  };
+  canvas.classList.add('mosaic-focus-left');
+  canvas.style.gap = '0';
+  applyFocusLeftMain(mainRatio);
+
+  appendMosaicSlot(project, canvas, [paneIds[0]], 'mosaic-focus-left-main');
+  const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
+  canvas.appendChild(primaryDivider);
+
+  const stack = document.createElement('div');
+  stack.className = 'mosaic-focus-left-stack';
+  stack.style.gap = '0';
+  const applyFocusLeftStack = (ratio: number) => {
+    stack.style.gridTemplateColumns = '1fr';
+    stack.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+  };
+  applyFocusLeftStack(stackRatio);
+  canvas.appendChild(stack);
+
+  appendMosaicSlot(project, stack, [paneIds[1]]);
+  const secondaryDivider = createMosaicDivider('y', 'mosaic-divider-secondary');
+  stack.appendChild(secondaryDivider);
+  appendMosaicSlot(project, stack, [paneIds[2]]);
+
+  bindMosaicDivider(primaryDivider, canvas, {
+    onPreview: (ratio) => applyFocusLeftMain(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-main', ratio),
+  }, {
+    axis: 'x',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.58,
+  });
+  bindMosaicDivider(secondaryDivider, stack, {
+    onPreview: (ratio) => applyFocusLeftStack(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-stack', ratio),
+  }, {
+    axis: 'y',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.5,
+  });
+}
+
+function renderFocusTopMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  const mainRatio = readMosaicRatio(project, 'focus-top-main', 0.58);
+  const rowRatio = readMosaicRatio(project, 'focus-top-row', 0.5);
+  const applyFocusTopMain = (ratio: number) => {
+    canvas.style.gridTemplateColumns = '1fr';
+    canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+  };
+  canvas.classList.add('mosaic-focus-top');
+  canvas.style.gap = '0';
+  applyFocusTopMain(mainRatio);
+
+  appendMosaicSlot(project, canvas, [paneIds[0]], 'mosaic-focus-top-main');
+  const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
+  canvas.appendChild(primaryDivider);
+
+  const row = document.createElement('div');
+  row.className = 'mosaic-focus-top-row';
+  row.style.gap = '0';
+  const applyFocusTopRow = (ratio: number) => {
+    row.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
+    row.style.gridTemplateRows = '1fr';
+  };
+  applyFocusTopRow(rowRatio);
+  canvas.appendChild(row);
+
+  appendMosaicSlot(project, row, [paneIds[1]]);
+  const secondaryDivider = createMosaicDivider('x', 'mosaic-divider-secondary');
+  row.appendChild(secondaryDivider);
+  appendMosaicSlot(project, row, [paneIds[2]]);
+
+  bindMosaicDivider(primaryDivider, canvas, {
+    onPreview: (ratio) => applyFocusTopMain(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-main', ratio),
+  }, {
+    axis: 'y',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.58,
+  });
+  bindMosaicDivider(secondaryDivider, row, {
+    onPreview: (ratio) => applyFocusTopRow(ratio),
+    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-row', ratio),
+  }, {
+    axis: 'x',
+    min: 0.2,
+    max: 0.8,
+    fallback: 0.5,
+  });
+}
+
+function renderGridMosaicPreset(project: ProjectRecord, canvas: HTMLElement, paneIds: string[]): void {
+  canvas.classList.add('mosaic-grid-2x2');
+  canvas.style.gap = '10px';
+  canvas.style.gridTemplateColumns = 'repeat(2, 1fr)';
+  canvas.style.gridTemplateRows = `repeat(${Math.max(2, Math.ceil(paneIds.length / 2))}, 1fr)`;
+  showPanes(project, canvas, paneIds);
+}
+
+function renderSwarmMosaicPreset(
+  project: ProjectRecord,
+  canvas: HTMLElement,
+  preset: string,
+  paneIds: string[],
+): void {
+  if (preset === 'single') {
+    renderSingleMosaicPreset(project, canvas, paneIds);
+    return;
+  }
+  if (preset === 'columns-2') {
+    renderColumns2MosaicPreset(project, canvas, paneIds);
+    return;
+  }
+  if (preset === 'rows-2') {
+    renderRows2MosaicPreset(project, canvas, paneIds);
+    return;
+  }
+  if (preset === 'focus-left' && paneIds.length >= 3) {
+    renderFocusLeftMosaicPreset(project, canvas, paneIds);
+    return;
+  }
+  if (preset === 'focus-top' && paneIds.length >= 3) {
+    renderFocusTopMosaicPreset(project, canvas, paneIds);
+    return;
+  }
+  renderGridMosaicPreset(project, canvas, paneIds);
+}
+
 function renderSwarmMode(project: ProjectRecord): void {
   const visibleSessions = getVisibleSwarmSessions(project);
   const visiblePaneIds = visibleSessions.map((session) => session.id);
@@ -726,161 +920,7 @@ function renderSwarmMode(project: ProjectRecord): void {
   const canvas = document.createElement('div');
   canvas.className = `swarm-grid-wrapper mosaic-session-canvas mosaic-${resolvedPreset}`;
   container.appendChild(canvas);
-
-  if (resolvedPreset === 'single') {
-    canvas.style.gap = '10px';
-    canvas.style.gridTemplateColumns = '1fr';
-    canvas.style.gridTemplateRows = '1fr';
-    showPanes(project, canvas, visiblePaneIds);
-  } else if (resolvedPreset === 'columns-2') {
-    const primaryRatio = readMosaicRatio(project, 'columns-2-primary', 0.5);
-    const applyColumns2 = (ratio: number) => {
-      canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-      canvas.style.gridTemplateRows = '1fr';
-    };
-    canvas.style.gap = '0';
-    applyColumns2(primaryRatio);
-
-    appendMosaicSlot(project, canvas, [visiblePaneIds[0]]);
-    const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
-    canvas.appendChild(primaryDivider);
-    appendMosaicSlot(project, canvas, [visiblePaneIds[1]]);
-
-    bindMosaicDivider(primaryDivider, canvas, {
-      onPreview: (ratio) => applyColumns2(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'columns-2-primary', ratio),
-    }, {
-      axis: 'x',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.5,
-    });
-  } else if (resolvedPreset === 'rows-2') {
-    const primaryRatio = readMosaicRatio(project, 'rows-2-primary', 0.5);
-    const applyRows2 = (ratio: number) => {
-      canvas.style.gridTemplateColumns = '1fr';
-      canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    };
-    canvas.style.gap = '0';
-    applyRows2(primaryRatio);
-
-    appendMosaicSlot(project, canvas, [visiblePaneIds[0]]);
-    const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
-    canvas.appendChild(primaryDivider);
-    appendMosaicSlot(project, canvas, [visiblePaneIds[1]]);
-
-    bindMosaicDivider(primaryDivider, canvas, {
-      onPreview: (ratio) => applyRows2(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'rows-2-primary', ratio),
-    }, {
-      axis: 'y',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.5,
-    });
-  } else if (resolvedPreset === 'focus-left' && count >= 3) {
-    const mainRatio = readMosaicRatio(project, 'focus-left-main', 0.58);
-    const stackRatio = readMosaicRatio(project, 'focus-left-stack', 0.5);
-    const applyFocusLeftMain = (ratio: number) => {
-      canvas.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-      canvas.style.gridTemplateRows = '1fr';
-    };
-    const applyFocusLeftStack = (ratio: number) => {
-      stack.style.gridTemplateColumns = '1fr';
-      stack.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    };
-    canvas.classList.add('mosaic-focus-left');
-    canvas.style.gap = '0';
-    applyFocusLeftMain(mainRatio);
-
-    appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-left-main');
-    const primaryDivider = createMosaicDivider('x', 'mosaic-divider-primary');
-    canvas.appendChild(primaryDivider);
-
-    const stack = document.createElement('div');
-    stack.className = 'mosaic-focus-left-stack';
-    stack.style.gap = '0';
-    applyFocusLeftStack(stackRatio);
-    canvas.appendChild(stack);
-
-    appendMosaicSlot(project, stack, [visiblePaneIds[1]]);
-    const secondaryDivider = createMosaicDivider('y', 'mosaic-divider-secondary');
-    stack.appendChild(secondaryDivider);
-    appendMosaicSlot(project, stack, [visiblePaneIds[2]]);
-
-    bindMosaicDivider(primaryDivider, canvas, {
-      onPreview: (ratio) => applyFocusLeftMain(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-main', ratio),
-    }, {
-      axis: 'x',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.58,
-    });
-    bindMosaicDivider(secondaryDivider, stack, {
-      onPreview: (ratio) => applyFocusLeftStack(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-stack', ratio),
-    }, {
-      axis: 'y',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.5,
-    });
-  } else if (resolvedPreset === 'focus-top' && count >= 3) {
-    const mainRatio = readMosaicRatio(project, 'focus-top-main', 0.58);
-    const rowRatio = readMosaicRatio(project, 'focus-top-row', 0.5);
-    const applyFocusTopMain = (ratio: number) => {
-      canvas.style.gridTemplateColumns = '1fr';
-      canvas.style.gridTemplateRows = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-    };
-    canvas.classList.add('mosaic-focus-top');
-    canvas.style.gap = '0';
-    applyFocusTopMain(mainRatio);
-
-    appendMosaicSlot(project, canvas, [visiblePaneIds[0]], 'mosaic-focus-top-main');
-    const primaryDivider = createMosaicDivider('y', 'mosaic-divider-primary');
-    canvas.appendChild(primaryDivider);
-
-    const row = document.createElement('div');
-    row.className = 'mosaic-focus-top-row';
-    const applyFocusTopRow = (ratio: number) => {
-      row.style.gridTemplateColumns = `minmax(0, ${formatRatio(ratio)}fr) ${MOSAIC_DIVIDER_TRACK} minmax(0, ${formatInverseRatio(ratio)}fr)`;
-      row.style.gridTemplateRows = '1fr';
-    };
-    row.style.gap = '0';
-    applyFocusTopRow(rowRatio);
-    canvas.appendChild(row);
-
-    appendMosaicSlot(project, row, [visiblePaneIds[1]]);
-    const secondaryDivider = createMosaicDivider('x', 'mosaic-divider-secondary');
-    row.appendChild(secondaryDivider);
-    appendMosaicSlot(project, row, [visiblePaneIds[2]]);
-
-    bindMosaicDivider(primaryDivider, canvas, {
-      onPreview: (ratio) => applyFocusTopMain(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-main', ratio),
-    }, {
-      axis: 'y',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.58,
-    });
-    bindMosaicDivider(secondaryDivider, row, {
-      onPreview: (ratio) => applyFocusTopRow(ratio),
-      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-row', ratio),
-    }, {
-      axis: 'x',
-      min: 0.2,
-      max: 0.8,
-      fallback: 0.5,
-    });
-  } else {
-    canvas.classList.add('mosaic-grid-2x2');
-    canvas.style.gap = '10px';
-    canvas.style.gridTemplateColumns = 'repeat(2, 1fr)';
-    canvas.style.gridTemplateRows = `repeat(${Math.max(2, Math.ceil(count / 2))}, 1fr)`;
-    showPanes(project, canvas, visiblePaneIds);
-  }
+  renderSwarmMosaicPreset(project, canvas, resolvedPreset, visiblePaneIds);
 
   decorateSwarmReorderHandles(project, canvas);
 

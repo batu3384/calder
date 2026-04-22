@@ -338,43 +338,21 @@ export async function updateProviders(
   return summary;
 }
 
-async function runProviderUpdate(input: {
-  providerId: ProviderId;
-  providerName: string;
-  binaryPath: string;
+interface ProviderUpdateCheckResult {
+  latestVersion: string | undefined;
+  updateNeeded: boolean;
+  checkCommand: string | undefined;
+}
+
+async function resolveProviderUpdateCheck(input: {
   source: ProviderUpdateSource;
   spec: ProviderUpdateSpec;
   beforeVersion?: string;
   runner: ProviderUpdaterRunner;
   signal?: AbortSignal;
   onStage?: (message: string) => void;
-}): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
-  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal, onStage } = input;
-
-  if (signal?.aborted) {
-    return buildCancelledResult({
-      providerId,
-      providerName,
-      source,
-      beforeVersion,
-      message: 'Update cancelled before checks completed.',
-    });
-  }
-
-  if (source === 'unknown') {
-    onStage?.('Update source could not be detected.');
-    return {
-      providerId,
-      providerName,
-      source,
-      status: 'skipped',
-      checked: true,
-      updateAttempted: false,
-      beforeVersion,
-      message: 'Update source could not be determined for this provider.',
-    };
-  }
-
+}): Promise<ProviderUpdateCheckResult> {
+  const { source, spec, beforeVersion, runner, signal, onStage } = input;
   let latestVersion: string | undefined;
   let updateNeeded = true;
   let checkCommand: string | undefined;
@@ -412,6 +390,116 @@ async function runProviderUpdate(input: {
     }
   }
 
+  return { latestVersion, updateNeeded, checkCommand };
+}
+
+async function buildBrewSyncPendingResult(input: {
+  providerId: ProviderId;
+  providerName: string;
+  source: ProviderUpdateSource;
+  spec: ProviderUpdateSpec;
+  beforeVersion?: string;
+  latestVersion?: string;
+  checkCommand?: string;
+  runner: ProviderUpdaterRunner;
+  signal?: AbortSignal;
+  onStage?: (message: string) => void;
+}): Promise<Omit<ProviderUpdateResult, 'durationMs'> | null> {
+  const { providerId, providerName, source, spec, beforeVersion, latestVersion, checkCommand, runner, signal, onStage } = input;
+  if (
+    source !== 'brew-formula'
+    && source !== 'brew-cask'
+  ) {
+    return null;
+  }
+  if (!spec.npmPackage || !beforeVersion) {
+    return null;
+  }
+
+  onStage?.('Checking upstream npm release…');
+  const npmLatestVersion = await readNpmLatestVersion(runner, spec.npmPackage, signal);
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      message: 'Update cancelled before execution.',
+    });
+  }
+  if (!npmLatestVersion || !shouldUpdate(beforeVersion, npmLatestVersion)) {
+    return null;
+  }
+
+  const packageToken = source === 'brew-formula' ? spec.brewFormula : spec.brewCask;
+  const brewKindLabel = source === 'brew-formula' ? 'formula' : 'cask';
+  const npmCheckCommand = `npm view ${spec.npmPackage} version --silent`;
+  const combinedCheckCommand = checkCommand ? `${checkCommand}; ${npmCheckCommand}` : npmCheckCommand;
+  return {
+    providerId,
+    providerName,
+    source,
+    status: 'sync_pending',
+    checked: true,
+    updateAttempted: false,
+    checkCommand: combinedCheckCommand,
+    beforeVersion,
+    latestVersion: npmLatestVersion,
+    message: `${providerName} upstream has ${npmLatestVersion}, but Homebrew ${brewKindLabel}`
+      + `${packageToken ? ` "${packageToken}"` : ''} has not synced yet. `
+      + 'Run `brew update` and retry later, or switch to npm install for immediate updates.',
+  };
+}
+
+async function runProviderUpdate(input: {
+  providerId: ProviderId;
+  providerName: string;
+  binaryPath: string;
+  source: ProviderUpdateSource;
+  spec: ProviderUpdateSpec;
+  beforeVersion?: string;
+  runner: ProviderUpdaterRunner;
+  signal?: AbortSignal;
+  onStage?: (message: string) => void;
+}): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
+  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal, onStage } = input;
+
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      message: 'Update cancelled before checks completed.',
+    });
+  }
+
+  if (source === 'unknown') {
+    onStage?.('Update source could not be detected.');
+    return {
+      providerId,
+      providerName,
+      source,
+      status: 'skipped',
+      checked: true,
+      updateAttempted: false,
+      beforeVersion,
+      message: 'Update source could not be determined for this provider.',
+    };
+  }
+
+  const checkResult = await resolveProviderUpdateCheck({
+    source,
+    spec,
+    beforeVersion,
+    runner,
+    signal,
+    onStage,
+  });
+  let { latestVersion, updateNeeded, checkCommand } = checkResult;
+
   if (signal?.aborted) {
     return buildCancelledResult({
       providerId,
@@ -424,44 +512,21 @@ async function runProviderUpdate(input: {
     });
   }
 
-  if (
-    !updateNeeded
-    && (source === 'brew-formula' || source === 'brew-cask')
-    && spec.npmPackage
-    && beforeVersion
-  ) {
-    onStage?.('Checking upstream npm release…');
-    const npmLatestVersion = await readNpmLatestVersion(runner, spec.npmPackage, signal);
-    if (signal?.aborted) {
-      return buildCancelledResult({
-        providerId,
-        providerName,
-        source,
-        beforeVersion,
-        latestVersion,
-        checkCommand,
-        message: 'Update cancelled before execution.',
-      });
-    }
-    if (npmLatestVersion && shouldUpdate(beforeVersion, npmLatestVersion)) {
-      const packageToken = source === 'brew-formula' ? spec.brewFormula : spec.brewCask;
-      const brewKindLabel = source === 'brew-formula' ? 'formula' : 'cask';
-      const npmCheckCommand = `npm view ${spec.npmPackage} version --silent`;
-      const combinedCheckCommand = checkCommand ? `${checkCommand}; ${npmCheckCommand}` : npmCheckCommand;
-      return {
-        providerId,
-        providerName,
-        source,
-        status: 'sync_pending',
-        checked: true,
-        updateAttempted: false,
-        checkCommand: combinedCheckCommand,
-        beforeVersion,
-        latestVersion: npmLatestVersion,
-        message: `${providerName} upstream has ${npmLatestVersion}, but Homebrew ${brewKindLabel}`
-          + `${packageToken ? ` "${packageToken}"` : ''} has not synced yet. `
-          + 'Run `brew update` and retry later, or switch to npm install for immediate updates.',
-      };
+  if (!updateNeeded) {
+    const syncPendingResult = await buildBrewSyncPendingResult({
+      providerId,
+      providerName,
+      source,
+      spec,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      runner,
+      signal,
+      onStage,
+    });
+    if (syncPendingResult) {
+      return syncPendingResult;
     }
   }
 

@@ -11,13 +11,87 @@ interface CreateTabBarBranchMenuControllerOptions {
   refreshGitStatus: () => void;
 }
 
+interface ShowBranchContextMenuOptions {
+  gitStatusEl: HTMLElement;
+  hideTabContextMenu: () => void;
+  getActiveContextMenu: () => HTMLElement | null;
+  setActiveContextMenu: (menu: HTMLElement | null) => void;
+  applyContextMenuSemantics: (menu: HTMLElement, label: string, focusFirstItem?: boolean) => void;
+  refreshGitStatus: () => void;
+}
+
 export interface TabBarBranchMenuController {
   showBranchContextMenu: (event: MouseEvent) => Promise<void>;
 }
 
-export function createTabBarBranchMenuController(
-  options: CreateTabBarBranchMenuControllerOptions,
-): TabBarBranchMenuController {
+function constrainMenuToViewport(menu: HTMLElement): void {
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
+  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+}
+
+function createBranchMenu(gitStatusEl: HTMLElement): HTMLDivElement {
+  const menu = document.createElement('div');
+  menu.className = 'tab-context-menu calder-floating-list';
+  menu.addEventListener('click', (clickEvent) => clickEvent.stopPropagation());
+  menu.setAttribute('role', 'menu');
+  menu.setAttribute('aria-label', 'Branch actions');
+
+  const elRect = gitStatusEl.getBoundingClientRect();
+  menu.style.left = `${elRect.left}px`;
+  menu.style.top = `${elRect.bottom + 4}px`;
+
+  const loadingItem = document.createElement('div');
+  loadingItem.className = 'tab-context-menu-item disabled';
+  loadingItem.textContent = 'Loading branches\u2026';
+  menu.appendChild(loadingItem);
+
+  return menu;
+}
+
+async function switchBranch(gitPath: string, branchName: string, refreshGitStatus: () => void): Promise<void> {
+  const project = appState.activeProject;
+  const freshStatus = project ? getGitStatus(project.id) : null;
+  const dirty = freshStatus ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted : 0;
+  if (dirty > 0) {
+    const confirmed = confirm(`You have uncommitted changes. Switch to "${branchName}" anyway?`);
+    if (!confirmed) return;
+  }
+
+  try {
+    await window.calder.git.checkoutBranch(gitPath, branchName);
+    refreshGitStatus();
+  } catch (err) {
+    alert(`Failed to switch branch: ${err instanceof Error ? err.message : err}`);
+  }
+}
+
+function promptCreateBranch(gitPath: string, refreshGitStatus: () => void): void {
+  showModal('Create New Branch', [
+    { label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' },
+  ], async (values) => {
+    const name = values['branch-name']?.trim();
+    if (!name) {
+      setModalError('branch-name', 'Branch name is required');
+      return;
+    }
+    if (/\s/.test(name)) {
+      setModalError('branch-name', 'Branch name cannot contain spaces');
+      return;
+    }
+    try {
+      await window.calder.git.createBranch(gitPath, name);
+      closeModal();
+      refreshGitStatus();
+    } catch (err) {
+      setModalError('branch-name', err instanceof Error ? err.message : 'Failed to create branch');
+    }
+  });
+}
+
+function createShowBranchContextMenuHandler(
+  options: ShowBranchContextMenuOptions,
+): (event: MouseEvent) => Promise<void> {
   const {
     gitStatusEl,
     hideTabContextMenu,
@@ -27,47 +101,7 @@ export function createTabBarBranchMenuController(
     refreshGitStatus,
   } = options;
 
-  async function switchBranch(gitPath: string, branchName: string): Promise<void> {
-    const project = appState.activeProject;
-    const freshStatus = project ? getGitStatus(project.id) : null;
-    const dirty = freshStatus ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted : 0;
-    if (dirty > 0) {
-      const confirmed = confirm(`You have uncommitted changes. Switch to "${branchName}" anyway?`);
-      if (!confirmed) return;
-    }
-
-    try {
-      await window.calder.git.checkoutBranch(gitPath, branchName);
-      refreshGitStatus();
-    } catch (err) {
-      alert(`Failed to switch branch: ${err instanceof Error ? err.message : err}`);
-    }
-  }
-
-  function promptCreateBranch(gitPath: string): void {
-    showModal('Create New Branch', [
-      { label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' },
-    ], async (values) => {
-      const name = values['branch-name']?.trim();
-      if (!name) {
-        setModalError('branch-name', 'Branch name is required');
-        return;
-      }
-      if (/\s/.test(name)) {
-        setModalError('branch-name', 'Branch name cannot contain spaces');
-        return;
-      }
-      try {
-        await window.calder.git.createBranch(gitPath, name);
-        closeModal();
-        refreshGitStatus();
-      } catch (err) {
-        setModalError('branch-name', err instanceof Error ? err.message : 'Failed to create branch');
-      }
-    });
-  }
-
-  async function showBranchContextMenu(event: MouseEvent): Promise<void> {
+  return async function showBranchContextMenu(event: MouseEvent): Promise<void> {
     event.stopPropagation();
     hideTabContextMenu();
 
@@ -78,28 +112,12 @@ export function createTabBarBranchMenuController(
     if (!status || !status.isGitRepo) return;
 
     const gitPath = getActiveGitPath(project.id);
-
-    const menu = document.createElement('div');
-    menu.className = 'tab-context-menu calder-floating-list';
-    menu.addEventListener('click', (clickEvent) => clickEvent.stopPropagation());
-    menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', 'Branch actions');
-
-    const elRect = gitStatusEl.getBoundingClientRect();
-    menu.style.left = `${elRect.left}px`;
-    menu.style.top = `${elRect.bottom + 4}px`;
-
-    const loadingItem = document.createElement('div');
-    loadingItem.className = 'tab-context-menu-item disabled';
-    loadingItem.textContent = 'Loading branches\u2026';
-    menu.appendChild(loadingItem);
-
+    const menu = createBranchMenu(gitStatusEl);
     document.body.appendChild(menu);
     setActiveContextMenu(menu);
 
     try {
       const branches = await window.calder.git.listBranches(gitPath);
-
       if (getActiveContextMenu() !== menu) return;
 
       menu.innerHTML = '';
@@ -169,7 +187,7 @@ export function createTabBarBranchMenuController(
           if (!branch.current) {
             item.addEventListener('click', () => {
               hideTabContextMenu();
-              void switchBranch(gitPath, branch.name);
+              void switchBranch(gitPath, branch.name, refreshGitStatus);
             });
           }
 
@@ -202,7 +220,7 @@ export function createTabBarBranchMenuController(
               const selected = filteredBranches[activeIndex];
               if (!selected.current) {
                 hideTabContextMenu();
-                void switchBranch(gitPath, selected.name);
+                void switchBranch(gitPath, selected.name, refreshGitStatus);
               }
             }
             break;
@@ -224,14 +242,11 @@ export function createTabBarBranchMenuController(
       createItem.textContent = 'Create New Branch\u2026';
       createItem.addEventListener('click', () => {
         hideTabContextMenu();
-        promptCreateBranch(gitPath);
+        promptCreateBranch(gitPath, refreshGitStatus);
       });
       menu.appendChild(createItem);
 
-      const rect = menu.getBoundingClientRect();
-      if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-      if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-
+      constrainMenuToViewport(menu);
       applyContextMenuSemantics(menu, 'Branch actions', false);
       searchInput.focus();
     } catch {
@@ -243,9 +258,13 @@ export function createTabBarBranchMenuController(
       menu.appendChild(errorItem);
       applyContextMenuSemantics(menu, 'Branch actions', false);
     }
-  }
+  };
+}
 
+export function createTabBarBranchMenuController(
+  options: CreateTabBarBranchMenuControllerOptions,
+): TabBarBranchMenuController {
   return {
-    showBranchContextMenu,
+    showBranchContextMenu: createShowBranchContextMenuHandler(options),
   };
 }

@@ -162,6 +162,118 @@ function registerOutsidePressHandler({
   };
 }
 
+interface RegisterSelectTriggerHandlersArgs {
+  trigger: HTMLButtonElement;
+  options: SelectOption[];
+  isOpen: () => boolean;
+  openDropdown: (reason: string) => void;
+  closeDropdown: (reason: string) => void;
+  getActiveIndex: () => number;
+  setActiveIndex: (index: number) => void;
+  updateActive: () => void;
+  selectOption: (index: number, reason: string) => void;
+}
+
+function registerSelectTriggerHandlers({
+  trigger,
+  options,
+  isOpen,
+  openDropdown,
+  closeDropdown,
+  getActiveIndex,
+  setActiveIndex,
+  updateActive,
+  selectOption,
+}: RegisterSelectTriggerHandlersArgs): void {
+  trigger.addEventListener('click', () => {
+    if (isOpen()) closeDropdown('trigger-toggle');
+    else openDropdown('trigger-toggle');
+  });
+
+  trigger.addEventListener('keydown', (event: KeyboardEvent) => {
+    handleSelectTriggerKeydown({
+      event,
+      options,
+      isOpen,
+      openDropdown,
+      closeDropdown,
+      getActiveIndex,
+      setActiveIndex,
+      updateActive,
+      selectOption,
+    });
+  });
+}
+
+function initializeSelectValue(
+  options: SelectOption[],
+  currentValue: string,
+  applySelectedIndex: (index: number) => void,
+): void {
+  const initialIndex = options.findIndex(o => o.value === currentValue);
+  if (initialIndex >= 0) {
+    applySelectedIndex(initialIndex);
+  }
+}
+
+function mountSelectElements(
+  wrapper: HTMLElement,
+  hidden: HTMLInputElement,
+  trigger: HTMLButtonElement,
+  dropdown: HTMLElement,
+): void {
+  wrapper.appendChild(hidden);
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(dropdown);
+}
+
+interface BuildCustomSelectInstanceArgs {
+  wrapper: HTMLElement;
+  hidden: HTMLInputElement;
+  options: SelectOption[];
+  applySelectedIndex: (index: number) => void;
+  traceDropdownEvent: (
+    event: 'open' | 'close' | 'change',
+    reason: string,
+    data?: Record<string, unknown>,
+  ) => void;
+  closeDropdown: (reason: string) => void;
+  cleanupOutsidePressHandler: () => void;
+}
+
+function buildCustomSelectInstance({
+  wrapper,
+  hidden,
+  options,
+  applySelectedIndex,
+  traceDropdownEvent,
+  closeDropdown,
+  cleanupOutsidePressHandler,
+}: BuildCustomSelectInstanceArgs): CustomSelectInstance {
+  return {
+    element: wrapper,
+    getValue() { return hidden.value; },
+    setValue(value: string) {
+      const previousValue = hidden.value;
+      const nextIndex = options.findIndex(opt => opt.value === value && !opt.disabled);
+      if (nextIndex >= 0) {
+        applySelectedIndex(nextIndex);
+        if (previousValue !== hidden.value) {
+          traceDropdownEvent('change', 'set-value', {
+            previousValue,
+            nextValue: options[nextIndex]?.value,
+            index: nextIndex,
+          });
+        }
+      }
+    },
+    destroy() {
+      closeDropdown('destroy');
+      cleanupOutsidePressHandler();
+    },
+  };
+}
+
 export function createCustomSelect(
   id: string,
   options: SelectOption[],
@@ -170,20 +282,17 @@ export function createCustomSelect(
 ): CustomSelectInstance {
   const defaultOpt = options.find(o => o.value === defaultValue) ?? options.find(o => !o.disabled) ?? options[0];
   const usesFloatingSurface = config.floating !== false;
-
   const wrapper = document.createElement('div');
   wrapper.className = 'custom-select';
   wrapper.dataset.state = 'closed';
   wrapper.dataset.floating = config.floating === false ? 'inline' : 'floating';
   wrapper.dataset.align = config.align ?? 'start';
-
   const hidden = document.createElement('input');
   hidden.type = 'hidden';
   hidden.id = id;
   hidden.value = defaultOpt?.value ?? '';
   wrapper.dataset.value = hidden.value;
   wrapper.dataset.provider = hidden.value;
-
   const trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'custom-select-trigger';
@@ -191,11 +300,9 @@ export function createCustomSelect(
   trigger.dataset.provider = hidden.value;
   trigger.setAttribute('aria-haspopup', 'listbox');
   trigger.setAttribute('aria-expanded', 'false');
-
   const dropdown = document.createElement('div');
   dropdown.className = 'custom-select-dropdown calder-floating-list';
   dropdown.setAttribute('role', 'listbox');
-
   let activeIndex = -1;
   let floatingCleanup: (() => void) | null = null;
   let items: HTMLElement[] = [];
@@ -219,7 +326,6 @@ export function createCustomSelect(
       wrapper.appendChild(dropdown);
     }
   }
-
   items = createSelectItems(
     options,
     hidden.value,
@@ -230,7 +336,6 @@ export function createCustomSelect(
     index => selectOption(index),
   );
   items.forEach(item => dropdown.appendChild(item));
-
   function applySelectedIndex(index: number): void {
     const opt = options[index];
     if (!opt) return;
@@ -244,7 +349,6 @@ export function createCustomSelect(
       el.setAttribute('aria-selected', String(itemIndex === index));
     });
   }
-
   function traceDropdownEvent(
     event: 'open' | 'close' | 'change',
     reason: string,
@@ -257,7 +361,6 @@ export function createCustomSelect(
       ...data,
     });
   }
-
   function selectOption(index: number, reason = 'select'): void {
     const opt = options[index];
     if (!opt || opt.disabled) return;
@@ -274,12 +377,10 @@ export function createCustomSelect(
     }
     closeDropdown(`select:${reason}`);
   }
-
   function updateActive(): void {
     items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
     if (activeIndex >= 0) items[activeIndex]?.scrollIntoView({ block: 'nearest' });
   }
-
   function openDropdown(reason = 'programmatic'): void {
     if (isOpen()) return;
     const triggerWidth = Math.ceil(trigger.getBoundingClientRect().width);
@@ -308,7 +409,6 @@ export function createCustomSelect(
       align: config.align ?? 'start',
     });
   }
-
   function closeDropdown(reason = 'programmatic'): void {
     const wasOpen = isOpen();
     floatingCleanup?.();
@@ -325,32 +425,22 @@ export function createCustomSelect(
       traceDropdownEvent('close', reason);
     }
   }
-
   function isOpen(): boolean {
     return dropdown.classList.contains('visible');
   }
-
-  trigger.addEventListener('click', () => {
-    if (isOpen()) closeDropdown('trigger-toggle');
-    else openDropdown('trigger-toggle');
+  registerSelectTriggerHandlers({
+    trigger,
+    options,
+    isOpen,
+    openDropdown,
+    closeDropdown,
+    getActiveIndex: () => activeIndex,
+    setActiveIndex: index => {
+      activeIndex = index;
+    },
+    updateActive,
+    selectOption,
   });
-
-  trigger.addEventListener('keydown', (event: KeyboardEvent) => {
-    handleSelectTriggerKeydown({
-      event,
-      options,
-      isOpen,
-      openDropdown,
-      closeDropdown,
-      getActiveIndex: () => activeIndex,
-      setActiveIndex: index => {
-        activeIndex = index;
-      },
-      updateActive,
-      selectOption,
-    });
-  });
-
   const cleanupOutsidePressHandler = registerOutsidePressHandler({
     wrapper,
     dropdown,
@@ -358,36 +448,15 @@ export function createCustomSelect(
     isOpen,
     closeDropdown,
   });
-
-  const initialIndex = options.findIndex(o => o.value === hidden.value);
-  if (initialIndex >= 0) {
-    applySelectedIndex(initialIndex);
-  }
-
-  wrapper.appendChild(hidden);
-  wrapper.appendChild(trigger);
-  wrapper.appendChild(dropdown);
-
-  return {
-    element: wrapper,
-    getValue() { return hidden.value; },
-    setValue(value: string) {
-      const previousValue = hidden.value;
-      const nextIndex = options.findIndex(opt => opt.value === value && !opt.disabled);
-      if (nextIndex >= 0) {
-        applySelectedIndex(nextIndex);
-        if (previousValue !== hidden.value) {
-          traceDropdownEvent('change', 'set-value', {
-            previousValue,
-            nextValue: options[nextIndex]?.value,
-            index: nextIndex,
-          });
-        }
-      }
-    },
-    destroy() {
-      closeDropdown('destroy');
-      cleanupOutsidePressHandler();
-    },
-  };
+  initializeSelectValue(options, hidden.value, applySelectedIndex);
+  mountSelectElements(wrapper, hidden, trigger, dropdown);
+  return buildCustomSelectInstance({
+    wrapper,
+    hidden,
+    options,
+    applySelectedIndex,
+    traceDropdownEvent,
+    closeDropdown,
+    cleanupOutsidePressHandler,
+  });
 }

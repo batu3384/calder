@@ -63,11 +63,44 @@ export interface CliSurfaceTerminalDeps {
   openExternal: (url: string, cwd?: string) => void;
 }
 
-export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutElements {
-  const element = document.createElement('div');
-  element.className = 'cli-surface-pane hidden';
-  element.dataset.projectId = projectId;
+interface CliSurfaceToolbarElements {
+  toolbar: HTMLDivElement;
+  meta: HTMLDivElement;
+  route: HTMLDivElement;
+  adapterMeta: HTMLDivElement;
+  inspectButton: HTMLButtonElement;
+  startButton: HTMLButtonElement;
+  stopButton: HTMLButtonElement;
+  restartButton: HTMLButtonElement;
+  captureButton: HTMLButtonElement;
+}
 
+interface CliSurfaceViewportElements {
+  viewport: HTMLDivElement;
+  selectionOverlay: HTMLDivElement;
+  hoverOverlay: HTMLDivElement;
+  hoverLabel: HTMLDivElement;
+  hoverMeta: HTMLDivElement;
+  hoverPreview: HTMLPreElement;
+}
+
+interface CliSurfaceComposerElements {
+  composer: HTMLDivElement;
+  composerHandle: HTMLDivElement;
+  composerHint: HTMLDivElement;
+  composerPreview: HTMLPreElement;
+  composerScope: HTMLDivElement;
+  composerContextTrace: HTMLDivElement;
+  composerContextSelect: HTMLSelectElement;
+  composerError: HTMLDivElement;
+  selectedButton: HTMLButtonElement;
+  newButton: HTMLButtonElement;
+  customButton: HTMLButtonElement;
+  targetMenu: HTMLDivElement;
+  targetMenuList: HTMLDivElement;
+}
+
+function createCliSurfaceToolbarElements(): CliSurfaceToolbarElements {
   const toolbar = document.createElement('div');
   toolbar.className = 'cli-surface-toolbar';
 
@@ -141,11 +174,23 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
   actions.appendChild(runtimeGroup);
   actions.appendChild(captureGroup);
   toolbar.appendChild(actions);
-  element.appendChild(toolbar);
 
+  return {
+    toolbar,
+    meta,
+    route,
+    adapterMeta,
+    inspectButton,
+    startButton,
+    stopButton,
+    restartButton,
+    captureButton,
+  };
+}
+
+function createCliSurfaceViewportElements(): CliSurfaceViewportElements {
   const viewport = document.createElement('div');
   viewport.className = 'cli-surface-viewport';
-  element.appendChild(viewport);
 
   const selectionOverlay = document.createElement('div');
   selectionOverlay.className = 'cli-surface-selection-overlay hidden';
@@ -165,11 +210,17 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
   hoverPreview.className = 'cli-surface-hover-preview';
   hoverOverlay.appendChild(hoverPreview);
 
-  const empty = document.createElement('div');
-  empty.className = 'cli-surface-empty';
-  empty.textContent = 'Run a CLI or TUI profile to preview it here.';
-  element.appendChild(empty);
+  return {
+    viewport,
+    selectionOverlay,
+    hoverOverlay,
+    hoverLabel,
+    hoverMeta,
+    hoverPreview,
+  };
+}
 
+function createCliSurfaceComposerElements(): CliSurfaceComposerElements {
   const composer = document.createElement('div');
   composer.className = 'cli-surface-composer hidden';
   composer.classList.add('calder-popover');
@@ -212,12 +263,13 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
   composerContextLabel.textContent = 'Context';
   const composerContextSelect = document.createElement('select');
   composerContextSelect.className = 'cli-surface-composer-select';
-  [
+  const contextOptions: Array<[string, string]> = [
     ['auto', 'Auto'],
     ['selection-only', 'Selection only'],
     ['selection-nearby', 'Selection + nearby'],
     ['selection-nearby-viewport', 'Selection + viewport'],
-  ].forEach(([value, label]) => {
+  ];
+  contextOptions.forEach(([value, label]) => {
     const option = document.createElement('option');
     option.setAttribute('value', value);
     option.textContent = label;
@@ -255,22 +307,7 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
   targetMenuList.className = 'cli-surface-target-menu-list';
   targetMenu.appendChild(targetMenuList);
 
-  element.appendChild(targetMenu);
-  element.appendChild(composer);
-
   return {
-    element,
-    viewport,
-    selectionOverlay,
-    hoverOverlay,
-    hoverLabel,
-    hoverMeta,
-    hoverPreview,
-    empty,
-    meta,
-    route,
-    adapterMeta,
-    inspectButton,
     composer,
     composerHandle,
     composerHint,
@@ -284,10 +321,58 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
     customButton,
     targetMenu,
     targetMenuList,
-    startButton,
-    stopButton,
-    restartButton,
-    captureButton,
+  };
+}
+
+export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutElements {
+  const element = document.createElement('div');
+  element.className = 'cli-surface-pane hidden';
+  element.dataset.projectId = projectId;
+
+  const toolbarElements = createCliSurfaceToolbarElements();
+  const viewportElements = createCliSurfaceViewportElements();
+  const composerElements = createCliSurfaceComposerElements();
+
+  const empty = document.createElement('div');
+  empty.className = 'cli-surface-empty';
+  empty.textContent = 'Run a CLI or TUI profile to preview it here.';
+
+  element.appendChild(toolbarElements.toolbar);
+  element.appendChild(viewportElements.viewport);
+  element.appendChild(empty);
+  element.appendChild(composerElements.targetMenu);
+  element.appendChild(composerElements.composer);
+
+  return {
+    element,
+    viewport: viewportElements.viewport,
+    selectionOverlay: viewportElements.selectionOverlay,
+    hoverOverlay: viewportElements.hoverOverlay,
+    hoverLabel: viewportElements.hoverLabel,
+    hoverMeta: viewportElements.hoverMeta,
+    hoverPreview: viewportElements.hoverPreview,
+    empty,
+    meta: toolbarElements.meta,
+    route: toolbarElements.route,
+    adapterMeta: toolbarElements.adapterMeta,
+    inspectButton: toolbarElements.inspectButton,
+    composer: composerElements.composer,
+    composerHandle: composerElements.composerHandle,
+    composerHint: composerElements.composerHint,
+    composerPreview: composerElements.composerPreview,
+    composerScope: composerElements.composerScope,
+    composerContextTrace: composerElements.composerContextTrace,
+    composerContextSelect: composerElements.composerContextSelect,
+    composerError: composerElements.composerError,
+    selectedButton: composerElements.selectedButton,
+    newButton: composerElements.newButton,
+    customButton: composerElements.customButton,
+    targetMenu: composerElements.targetMenu,
+    targetMenuList: composerElements.targetMenuList,
+    startButton: toolbarElements.startButton,
+    stopButton: toolbarElements.stopButton,
+    restartButton: toolbarElements.restartButton,
+    captureButton: toolbarElements.captureButton,
   };
 }
 
