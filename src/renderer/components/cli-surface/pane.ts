@@ -70,6 +70,11 @@ import {
   createCliSurfaceTerminal,
   type CliSurfaceLayoutElements,
 } from './pane-elements.js';
+import {
+  bindInspectActionHandlers as bindInspectActionHandlersModule,
+  bindInspectPointerHandlers as bindInspectPointerHandlersModule,
+  bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
+} from './pane-bindings.js';
 
 interface SelectableCliRegion {
   kind: 'semantic' | 'inferred';
@@ -777,164 +782,99 @@ function bindRuntimeActionHandlers(
   instance: CliSurfaceInstance,
   controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>,
 ): void {
-  controls.startButton.addEventListener('click', async () => {
-    const profile = resolveSelectedProfile(projectId);
-    if (!profile) {
-      showComposerError(instance, 'Select a CLI surface profile first.');
-      return;
-    }
-    clearComposerError(instance);
-    await getCliSurfaceApi()?.start(projectId, profile);
-  });
-
-  controls.stopButton.addEventListener('click', async () => {
-    clearComposerError(instance);
-    await getCliSurfaceApi()?.stop(projectId);
-  });
-
-  controls.restartButton.addEventListener('click', async () => {
-    clearComposerError(instance);
-    await getCliSurfaceApi()?.restart(projectId);
-  });
-
-  controls.captureButton.addEventListener('click', () => {
-    instance.inspectState = openInspect(instance.inspectState);
-    clearComposerError(instance);
-    renderInspectState(instance);
-    setInspectPayloadFromSelection(
-      instance,
-      selectionFromViewport(instance.viewportLines.length, instance.terminal.cols),
-    );
-    setComposerPositionBehavior({
-      paneEl: instance.element,
-      composerEl: instance.composerEl,
-      left: 16,
-      top: 72,
-    });
+  bindRuntimeActionHandlersModule({
+    projectId,
+    controls,
+    resolveSelectedProfile,
+    showComposerError: (message) => showComposerError(instance, message),
+    clearComposerError: () => clearComposerError(instance),
+    getCliSurfaceApi,
+    onCapture: () => {
+      instance.inspectState = openInspect(instance.inspectState);
+      clearComposerError(instance);
+      renderInspectState(instance);
+      setInspectPayloadFromSelection(
+        instance,
+        selectionFromViewport(instance.viewportLines.length, instance.terminal.cols),
+      );
+      setComposerPositionBehavior({
+        paneEl: instance.element,
+        composerEl: instance.composerEl,
+        left: 16,
+        top: 72,
+      });
+    },
   });
 }
 
 function bindInspectActionHandlers(instance: CliSurfaceInstance): void {
-  instance.inspectButton.addEventListener('click', () => {
-    if (instance.inspectState.active) {
+  bindInspectActionHandlersModule({
+    instance,
+    closeInspectComposer: () => closeInspectComposer(instance),
+    openInspectComposer: () => {
+      instance.inspectState = openInspect(instance.inspectState);
+      renderInspectState(instance);
+    },
+    onSendToSelected: async () => {
+      const payload = getSendPayload(instance);
+      if (!payload) return;
+      const result = await sendCliSelectionToSelectedSession(payload);
+      if (!result.ok) {
+        showComposerError(instance, result.error ?? 'Failed to send prompt.');
+        return;
+      }
       closeInspectComposer(instance);
-      return;
-    }
-    instance.inspectState = openInspect(instance.inspectState);
-    renderInspectState(instance);
+    },
+    onSendToNew: () => {
+      const payload = getSendPayload(instance);
+      if (!payload) return;
+      clearComposerError(instance);
+      sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
+      closeInspectComposer(instance);
+    },
   });
-
-  instance.selectedButton.addEventListener('click', async () => {
-    const payload = getSendPayload(instance);
-    if (!payload) return;
-    const result = await sendCliSelectionToSelectedSession(payload);
-    if (!result.ok) {
-      showComposerError(instance, result.error ?? 'Failed to send prompt.');
-      return;
-    }
-    closeInspectComposer(instance);
-  });
-
-  instance.newButton.addEventListener('click', () => {
-    const payload = getSendPayload(instance);
-    if (!payload) return;
-    clearComposerError(instance);
-    sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
-    closeInspectComposer(instance);
-  });
-
-  instance.customButton.addEventListener('click', () => {
-    instance.targetMenuController?.openMenu();
-  });
-
-  instance.targetMenuOutsideClickHandler = (event: MouseEvent) => {
-    const target = event.target as Node | null;
-    if (!target) return;
-    if (!instance.targetMenuEl.contains(target) && !instance.customButton.contains(target)) {
-      instance.targetMenuController?.closeMenu();
-    }
-  };
-  document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
 }
 
 function bindInspectPointerHandlers(instance: CliSurfaceInstance): void {
-  instance.composerContextSelectEl.addEventListener('change', () => {
-    const nextValue = instance.composerContextSelectEl.value;
-    instance.contextModeOverride = nextValue === 'auto'
-      ? null
-      : nextValue as CliSurfacePromptContextMode;
-    const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
-    if (selection) {
+  bindInspectPointerHandlersModule({
+    instance,
+    setInspectPayloadFromSelection: (selection) => {
+      if (!selection) {
+        renderInspectState(instance);
+        return;
+      }
       setInspectPayloadFromSelection(instance, selection);
-      return;
-    }
-    renderInspectState(instance);
-  });
-
-  instance.terminal.onSelectionChange(() => {
-    if (!instance.inspectState.active) return;
-    setInspectPayloadFromSelection(instance, selectionFromTerminal({
+    },
+    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(instance, event),
+    setHoverRegion: (region) => setHoverRegion(instance, region),
+    pointerToCell: (event) => pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
+    findSelectableRegionAtCell: (cell) => findSelectableRegionAtCell(instance, cell),
+    selectionFromTerminal: () => selectionFromTerminal({
       viewportLineCount: instance.viewportLines.length,
       terminalCols: instance.terminal.cols,
       viewportY: instance.terminal.buffer.active.viewportY,
       selectionText: instance.terminal.getSelection(),
       range: instance.terminal.getSelectionPosition(),
-    }));
-  });
-
-  instance.selectionOverlayEl.addEventListener('pointerdown', (event) => {
-    if (!instance.inspectState.active) return;
-    event.preventDefault();
-    instance.selectionAnchor = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
-    setHoverRegion(instance, null);
-    setInspectPayloadFromPointer(instance, event);
-  });
-
-  instance.selectionOverlayEl.addEventListener('pointermove', (event) => {
-    if (!instance.inspectState.active) return;
-    event.preventDefault();
-    if (instance.selectionAnchor) {
-      setInspectPayloadFromPointer(instance, event);
-      return;
-    }
-    const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
-    setHoverRegion(instance, current ? findSelectableRegionAtCell(instance, current) : null);
-  });
-
-  instance.selectionOverlayEl.addEventListener('pointerup', (event) => {
-    if (!instance.inspectState.active || !instance.selectionAnchor) return;
-    event.preventDefault();
-    const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
-    const singleClick = current
-      && current.row === instance.selectionAnchor.row
-      && current.col === instance.selectionAnchor.col;
-
-    if (singleClick && current) {
-      const region = findSelectableRegionAtCell(instance, current);
-      if (region) {
-        setInspectPayloadFromSelection(instance, region.selection);
-      } else {
-        setInspectPayloadFromPointer(instance, event);
+    }),
+    positionComposerNearPointer: (event) => {
+      positionComposerNearPointerBehavior({
+        paneEl: instance.element,
+        composerEl: instance.composerEl,
+        event: event as PointerEvent,
+      });
+    },
+    onContextModeOverrideChange: (mode) => {
+      instance.contextModeOverride = mode;
+      const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
+      if (selection) {
+        setInspectPayloadFromSelection(instance, selection);
+        return;
       }
-    } else {
-      setInspectPayloadFromPointer(instance, event);
-    }
-    positionComposerNearPointerBehavior({
-      paneEl: instance.element,
-      composerEl: instance.composerEl,
-      event,
-    });
-    instance.selectionAnchor = null;
-    setHoverRegion(instance, null);
-  });
-
-  instance.selectionOverlayEl.addEventListener('pointerleave', () => {
-    if (instance.selectionAnchor) return;
-    setHoverRegion(instance, null);
-  });
-
-  instance.terminal.onData((data) => {
-    getCliSurfaceApi()?.write(instance.projectId, data);
+      renderInspectState(instance);
+    },
+    writeToRuntime: (projectId, data) => {
+      getCliSurfaceApi()?.write(projectId, data);
+    },
   });
 }
 
