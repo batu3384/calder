@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const paneCoreSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
+const paneWorkbenchSource = readFileSync(new URL('./mobile-surface/inspect-workbench.ts', import.meta.url), 'utf8');
 const paneSectionsSource = readFileSync(new URL('./mobile-surface/workbench-sections.ts', import.meta.url), 'utf8');
-const paneSource = `${paneCoreSource}\n${paneSectionsSource}`;
+const paneSource = `${paneCoreSource}\n${paneWorkbenchSource}\n${paneSectionsSource}`;
 const scopingSource = readFileSync(new URL('./mobile-surface/dependency-scoping.ts', import.meta.url), 'utf8');
 
 describe('mobile surface inspect workbench contract', () => {
@@ -30,8 +31,11 @@ describe('mobile surface inspect workbench contract', () => {
   });
 
   it('launches simulator into a stable single-frame state instead of forcing live mode', () => {
-    expect(paneSource).toContain("await captureInspectFrame(instance, 'manual');");
-    expect(paneSource).toContain('stopInspectLiveMode(instance, \'Live paused for precise point inspection.\'');
+    const capturesManualFrame =
+      paneSource.includes("await captureInspectFrame(instance, 'manual');")
+      || paneSource.includes("await handlers.captureInspectFrame(instance, 'manual');");
+    expect(capturesManualFrame).toBe(true);
+    expect(paneSource).toContain('Live paused for precise point inspection.');
   });
 
   it('renders compact inspect flow with blockers and dependency checklist', () => {

@@ -1,88 +1,29 @@
 import type {
   MobileDependencyReport,
-  MobileInspectInteractionResult,
-  MobileInspectLaunchResult,
   MobileInspectPlatform,
-  MobileInspectPointInspectionResult,
   MobileInspectScreenshotResult,
 } from '../../../shared/types/mobile.js';
 import { appState } from '../../state.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
 import { deliverSurfacePrompt } from '../surface-routing.js';
 import type { ProviderId } from '../../types.js';
-import {
-  isInstallRunning,
-  type MobileSurfaceInstallState,
-} from './install-progress.js';
+import { isInstallRunning } from './install-progress.js';
 import {
   detectProjectProfile,
-  formatCaptureMeta,
-  formatPointLabel,
-  getBlockingChecks,
-  getInspectInteractionHint,
   getProfileScopedChecks,
   getProjectProfileLabel,
   getProjectProfileStatusPrefix,
   getScopedSummary,
   hasBlockingChecks,
-  type MobileProjectProfile,
 } from './dependency-scoping.js';
 import {
   appendMobileDependencyChecklistSection,
-  buildMobileInspectBlockingPanel,
   buildMobileDependencyCheckRow,
   renderMobileScopedSummaryPanel,
-  renderInspectCapabilityPanel,
 } from './workbench-sections.js';
-
-interface MobileSurfaceInspectPoint {
-  x: number;
-  y: number;
-  normalizedX: number;
-  normalizedY: number;
-}
-
-interface MobileSurfaceInspectState {
-  platform: MobileInspectPlatform;
-  launching: boolean;
-  capturing: boolean;
-  inspectingPoint: boolean;
-  interacting: boolean;
-  pointInspectToken: number;
-  liveMode: boolean;
-  liveIntervalMs: number;
-  liveLoopToken: number;
-  liveTimer: number | null;
-  liveFrames: number;
-  liveLastFrameAt: string | null;
-  message: string;
-  tone: 'default' | 'success' | 'error';
-  screenshot: MobileInspectScreenshotResult | null;
-  selectedPoint: MobileSurfaceInspectPoint | null;
-  selectedElement: MobileInspectPointInspectionResult | null;
-  instruction: string;
-  sendError: string;
-  contextTrace: string[];
-}
-
-interface MobileSurfacePaneInstance {
-  projectId: string;
-  el: HTMLDivElement;
-  statusEl: HTMLDivElement;
-  summaryEl: HTMLDivElement;
-  progressEl: HTMLDivElement;
-  bodyEl: HTMLDivElement;
-  refreshBtn: HTMLButtonElement;
-  loadToken: number;
-  loading: boolean;
-  installState: MobileSurfaceInstallState | null;
-  installProgressCleanup?: () => void;
-  lastReport: MobileDependencyReport | null;
-  lastRefreshedAtMs: number;
-  inspectState: MobileSurfaceInspectState;
-  projectProfile: MobileProjectProfile;
-  autoDetectedPlatform: MobileInspectPlatform | null;
-}
+import { renderMobileInspectWorkbench } from './inspect-workbench.js';
+import { buildMobileInspectPrompt, resolveMobileInspectPromptError } from './inspect-prompt.js';
+import type { MobileSurfaceInspectState, MobileSurfacePaneInstance } from './types.js';
 
 const panes = new Map<string, MobileSurfacePaneInstance>();
 const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
@@ -271,67 +212,16 @@ async function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promis
   scheduleInspectLiveLoop(instance);
 }
 
-function buildInspectPrompt(instance: MobileSurfacePaneInstance): string | null {
-  const inspect = instance.inspectState;
-  if (!inspect.screenshot || !inspect.screenshot.success || !inspect.screenshot.dataUrl) return null;
-  if (!inspect.selectedPoint) return null;
-  const instruction = inspect.instruction.trim();
-  if (!instruction) return null;
-
-  const lines = [
-    `Mobile inspect task (${MOBILE_PLATFORM_LABEL[inspect.platform]}).`,
-    `Selected point: ${formatPointLabel(inspect.selectedPoint)}.`,
-  ];
-  if (typeof inspect.screenshot.width === 'number' && typeof inspect.screenshot.height === 'number') {
-    lines.push(`Screenshot size: ${inspect.screenshot.width}x${inspect.screenshot.height}.`);
-  }
-  if (inspect.screenshot.deviceName) {
-    lines.push(`Device: ${inspect.screenshot.deviceName}.`);
-  } else if (inspect.screenshot.deviceId) {
-    lines.push(`Device id: ${inspect.screenshot.deviceId}.`);
-  }
-  if (inspect.screenshot.capturedAt) {
-    lines.push(`Capture timestamp: ${inspect.screenshot.capturedAt}.`);
-  }
-  if (inspect.selectedElement?.success && inspect.selectedElement.element) {
-    const element = inspect.selectedElement.element;
-    const elementParts: string[] = [];
-    if (element.className) elementParts.push(`class=${element.className}`);
-    if (element.resourceId) elementParts.push(`resourceId=${element.resourceId}`);
-    if (element.contentDesc) elementParts.push(`contentDesc=${element.contentDesc}`);
-    if (element.text) elementParts.push(`text=${element.text}`);
-    if (element.bounds) {
-      const { left, top, right, bottom } = element.bounds;
-      elementParts.push(`bounds=[${left},${top}]-[${right},${bottom}]`);
-    }
-    if (elementParts.length > 0) {
-      lines.push(`Matched element: ${elementParts.join(', ')}.`);
-    }
-  }
-  lines.push(`Instruction: ${instruction}`);
-  return lines.join('\n');
-}
-
-function requireInspectPrompt(instance: MobileSurfacePaneInstance): string | null {
-  const prompt = buildInspectPrompt(instance);
-  if (prompt) return prompt;
-
-  if (!instance.inspectState.screenshot?.dataUrl) {
-    instance.inspectState.sendError = 'Capture a simulator frame first.';
-  } else if (!instance.inspectState.selectedPoint) {
-    instance.inspectState.sendError = 'Pick a point on the captured frame first.';
-  } else if (!instance.inspectState.instruction.trim()) {
-    instance.inspectState.sendError = 'Write an instruction before sending.';
-  } else {
-    instance.inspectState.sendError = 'Inspect prompt is incomplete.';
-  }
-  rerenderFromState(instance);
-  return null;
-}
-
 async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance): Promise<void> {
-  const prompt = requireInspectPrompt(instance);
-  if (!prompt) return;
+  const prompt = buildMobileInspectPrompt({
+    inspectState: instance.inspectState,
+    platformLabel: MOBILE_PLATFORM_LABEL[instance.inspectState.platform],
+  });
+  if (!prompt) {
+    instance.inspectState.sendError = resolveMobileInspectPromptError(instance.inspectState);
+    rerenderFromState(instance);
+    return;
+  }
 
   const target = appState.resolveSurfaceTargetSession(instance.projectId, { requireExplicitTarget: true });
   if (!target) {
@@ -357,436 +247,23 @@ async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance)
 }
 
 function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
-  return renderInspectWorkbenchContent(instance, report);
-}
-
-function renderInspectPreviewPanel(instance: MobileSurfacePaneInstance): HTMLDivElement {
-  const inspect = instance.inspectState;
-  const preview = document.createElement('div');
-  preview.className = 'mobile-surface-inspect-preview';
-  if (inspect.screenshot?.dataUrl) {
-    const frame = document.createElement('div');
-    frame.className = 'mobile-surface-inspect-frame';
-
-    const image = document.createElement('img');
-    image.className = 'mobile-surface-inspect-image';
-    image.src = inspect.screenshot.dataUrl;
-    image.alt = `${MOBILE_PLATFORM_LABEL[inspect.platform]} screenshot`;
-    image.addEventListener('click', (event) => {
-      if (inspect.interacting) return;
-      if (inspect.liveMode) {
-        stopInspectLiveMode(instance, 'Live paused for precise point inspection.', 'default');
-      }
-      const rect = image.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return;
-      const rawX = event.clientX - rect.left;
-      const rawY = event.clientY - rect.top;
-      const normalizedX = Math.min(1, Math.max(0, rawX / rect.width));
-      const normalizedY = Math.min(1, Math.max(0, rawY / rect.height));
-      const screenshotWidth = inspect.screenshot?.width ?? Math.round(rect.width);
-      const screenshotHeight = inspect.screenshot?.height ?? Math.round(rect.height);
-      inspect.selectedPoint = {
-        x: Math.round(normalizedX * screenshotWidth),
-        y: Math.round(normalizedY * screenshotHeight),
-        normalizedX,
-        normalizedY,
-      };
-      inspect.selectedElement = null;
-      inspect.inspectingPoint = true;
-      const inspectToken = inspect.pointInspectToken + 1;
-      inspect.pointInspectToken = inspectToken;
-      inspect.sendError = '';
-      setInspectStatus(instance, 'Inspecting selected point…', 'default');
-      rerenderFromState(instance);
-
-      const api = window.calder?.mobileInspect;
-      if (!api) {
-        inspect.inspectingPoint = false;
-        setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
-        rerenderFromState(instance);
-        return;
-      }
-
-      const selectedPoint = inspect.selectedPoint;
-      void (async () => {
-        try {
-          const result = await api.inspectPoint(inspect.platform, selectedPoint.x, selectedPoint.y);
-          if (inspect.pointInspectToken !== inspectToken) return;
-          inspect.selectedElement = result;
-          if (result.success) {
-            setInspectStatus(instance, result.message, 'success');
-          } else {
-            setInspectStatus(instance, result.message, 'default');
-          }
-        } catch (error) {
-          if (inspect.pointInspectToken !== inspectToken) return;
-          const message = error instanceof Error ? error.message : 'Point inspection failed.';
-          inspect.selectedElement = null;
-          setInspectStatus(instance, message, 'error');
-        } finally {
-          if (inspect.pointInspectToken !== inspectToken) return;
-          inspect.inspectingPoint = false;
-          rerenderFromState(instance);
-        }
-      })();
-    });
-
-    frame.appendChild(image);
-
-    const bounds = inspect.selectedElement?.success ? inspect.selectedElement.element?.bounds : undefined;
-    const screenshotWidth = inspect.screenshot?.width;
-    const screenshotHeight = inspect.screenshot?.height;
-    if (
-      bounds
-      && typeof screenshotWidth === 'number'
-      && screenshotWidth > 0
-      && typeof screenshotHeight === 'number'
-      && screenshotHeight > 0
-    ) {
-      const overlay = document.createElement('span');
-      overlay.className = 'mobile-surface-inspect-bounds-overlay';
-      overlay.style.left = `${(bounds.left / screenshotWidth) * 100}%`;
-      overlay.style.top = `${(bounds.top / screenshotHeight) * 100}%`;
-      overlay.style.width = `${((bounds.right - bounds.left) / screenshotWidth) * 100}%`;
-      overlay.style.height = `${((bounds.bottom - bounds.top) / screenshotHeight) * 100}%`;
-      frame.appendChild(overlay);
-    }
-
-    if (inspect.selectedPoint) {
-      const marker = document.createElement('span');
-      marker.className = 'mobile-surface-inspect-marker';
-      marker.style.left = `${inspect.selectedPoint.normalizedX * 100}%`;
-      marker.style.top = `${inspect.selectedPoint.normalizedY * 100}%`;
-      frame.appendChild(marker);
-    }
-
-    preview.appendChild(frame);
-
-    const meta = document.createElement('div');
-    meta.className = 'mobile-surface-inspect-meta';
-    const liveParts: string[] = [formatCaptureMeta(inspect.screenshot) || 'Frame captured'];
-    if (inspect.liveMode) {
-      liveParts.push(`Live: on (${inspect.liveIntervalMs}ms)`);
-      liveParts.push(`Frames: ${inspect.liveFrames}`);
-    }
-    if (inspect.liveLastFrameAt) {
-      liveParts.push(`Last: ${inspect.liveLastFrameAt}`);
-    }
-    meta.textContent = liveParts.join(' · ');
-    preview.appendChild(meta);
-
-    if (inspect.inspectingPoint) {
-      const pointLoading = document.createElement('div');
-      pointLoading.className = 'mobile-surface-inspect-point-loading';
-      pointLoading.textContent = 'Inspecting selected point…';
-      preview.appendChild(pointLoading);
-    }
-
-    if (inspect.selectedElement) {
-      const elementInfo = document.createElement('div');
-      elementInfo.className = 'mobile-surface-inspect-element';
-      if (inspect.selectedElement.success && inspect.selectedElement.element) {
-        const element = inspect.selectedElement.element;
-        const lines = [
-          element.className ? `Class: ${element.className}` : null,
-          element.resourceId ? `Resource ID: ${element.resourceId}` : null,
-          element.contentDesc ? `Content description: ${element.contentDesc}` : null,
-          element.text ? `Text: ${element.text}` : null,
-          element.bounds
-            ? `Bounds: [${element.bounds.left},${element.bounds.top}]–[${element.bounds.right},${element.bounds.bottom}]`
-            : null,
-        ].filter((entry): entry is string => Boolean(entry));
-        elementInfo.textContent = lines.length > 0
-          ? lines.join('\n')
-          : inspect.selectedElement.message;
-      } else {
-        elementInfo.textContent = inspect.selectedElement.message;
-      }
-      preview.appendChild(elementInfo);
-    }
-  } else {
-    const empty = document.createElement('div');
-    empty.className = 'mobile-surface-inspect-empty';
-    empty.textContent = 'No capture yet. Launch simulator and capture a frame.';
-    preview.appendChild(empty);
-  }
-  return preview;
-}
-
-function appendInspectSendControls(instance: MobileSurfacePaneInstance, section: HTMLElement): void {
-  const inspect = instance.inspectState;
-  const instruction = document.createElement('textarea');
-  instruction.className = 'mobile-surface-inspect-input';
-  instruction.rows = 3;
-  instruction.placeholder = 'Describe what should change on the selected element…';
-  instruction.value = inspect.instruction;
-  instruction.addEventListener('input', () => {
-    inspect.instruction = instruction.value;
-  });
-  section.appendChild(instruction);
-
-  const sendRow = document.createElement('div');
-  sendRow.className = 'mobile-surface-inspect-send-row';
-
-  const targetSelect = document.createElement('select');
-  targetSelect.className = 'mobile-surface-inspect-target';
-  const targetSessions = appState.listSurfaceTargetSessions(instance.projectId);
-  const currentTarget = appState.resolveSurfaceTargetSession(instance.projectId, { requireExplicitTarget: true });
-
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = targetSessions.length > 0 ? 'Select session target…' : 'Open a CLI session first';
-  targetSelect.appendChild(defaultOption);
-  for (const session of targetSessions) {
-    const option = document.createElement('option');
-    option.value = session.id;
-    option.textContent = session.name;
-    if (currentTarget?.id === session.id) {
-      option.selected = true;
-    }
-    targetSelect.appendChild(option);
-  }
-  targetSelect.disabled = targetSessions.length === 0;
-  targetSelect.addEventListener('change', () => {
-    const next = targetSelect.value.trim();
-    appState.setSurfaceTargetSession(instance.projectId, next || null);
-    rerenderFromState(instance);
-  });
-
-  const sendSelectedBtn = document.createElement('button');
-  sendSelectedBtn.type = 'button';
-  sendSelectedBtn.className = 'mobile-surface-refresh-btn';
-  sendSelectedBtn.textContent = 'Send to selected';
-  const canSendPrompt = Boolean(inspect.selectedPoint && inspect.instruction.trim().length > 0);
-  sendSelectedBtn.disabled = !currentTarget || !canSendPrompt || inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting;
-  sendSelectedBtn.addEventListener('click', () => {
-    void sendInspectToSelectedSession(instance);
-  });
-
-  sendRow.append(targetSelect, sendSelectedBtn);
-  section.appendChild(sendRow);
-
-  if (inspect.selectedPoint) {
-    const point = document.createElement('div');
-    point.className = 'mobile-surface-inspect-point';
-    point.textContent = `Selected point: ${formatPointLabel(inspect.selectedPoint)}`;
-    section.appendChild(point);
-  }
-
-  if (inspect.sendError) {
-    const error = document.createElement('div');
-    error.className = 'mobile-surface-inspect-error';
-    error.textContent = inspect.sendError;
-    section.appendChild(error);
-  }
-}
-
-function renderInspectWorkbenchHeader(
-  instance: MobileSurfacePaneInstance,
-  report: MobileDependencyReport,
-): HTMLDivElement {
-  const inspect = instance.inspectState;
-  const header = document.createElement('div');
-  header.className = 'mobile-surface-inspect-header';
-
-  const titleWrap = document.createElement('div');
-  titleWrap.className = 'mobile-surface-inspect-title-wrap';
-  const title = document.createElement('h3');
-  title.className = 'mobile-surface-group-title';
-  title.textContent = 'Inspect workbench';
-  const subtitle = document.createElement('p');
-  subtitle.className = 'mobile-surface-inspect-subtitle';
-  subtitle.textContent = `${getProjectProfileLabel(instance.projectProfile)} · Launch, capture, select, send.`;
-  titleWrap.append(title, subtitle);
-
-  const platformToggle = document.createElement('div');
-  platformToggle.className = 'mobile-surface-platform-toggle';
-  (['ios', 'android'] as const).forEach((platform) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `mobile-surface-platform-btn${inspect.platform === platform ? ' active' : ''}`;
-    btn.textContent = MOBILE_PLATFORM_LABEL[platform];
-    const blocked = hasBlockingChecks(report, platform);
-    btn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || blocked;
-    if (blocked) {
-      btn.title = `${MOBILE_PLATFORM_LABEL[platform]} has missing required dependencies below.`;
-    }
-    btn.addEventListener('click', () => {
-      if (inspect.platform === platform || inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting) return;
-      stopInspectLiveMode(instance);
-      inspect.platform = platform;
-      inspect.screenshot = null;
-      inspect.selectedPoint = null;
-      inspect.selectedElement = null;
-      inspect.inspectingPoint = false;
-      inspect.interacting = false;
-      inspect.pointInspectToken += 1;
-      inspect.sendError = '';
-      inspect.contextTrace = [];
-      setInspectStatus(instance, `Platform switched to ${MOBILE_PLATFORM_LABEL[platform]}.`, 'default');
-      rerenderFromState(instance);
-    });
-    platformToggle.appendChild(btn);
-  });
-
-  header.append(titleWrap, platformToggle);
-  return header;
-}
-
-function appendInspectActionControls(
-  instance: MobileSurfacePaneInstance,
-  report: MobileDependencyReport,
-  section: HTMLElement,
-): void {
-  const inspect = instance.inspectState;
-  const actionRow = document.createElement('div');
-  actionRow.className = 'mobile-surface-inspect-actions';
-
-  const launchBtn = document.createElement('button');
-  launchBtn.type = 'button';
-  launchBtn.className = 'mobile-surface-refresh-btn';
-  launchBtn.textContent = inspect.launching ? 'Launching…' : `Launch ${MOBILE_PLATFORM_LABEL[inspect.platform]}`;
-  launchBtn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
-  launchBtn.addEventListener('click', async () => {
-    const api = window.calder?.mobileInspect;
-    if (!api) {
-      setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
-      rerenderFromState(instance);
-      return;
-    }
-
-    stopInspectLiveMode(instance);
-    inspect.launching = true;
-    inspect.sendError = '';
-    setInspectStatus(instance, `Launching ${MOBILE_PLATFORM_LABEL[inspect.platform]}…`, 'default');
-    rerenderFromState(instance);
-    try {
-      const result: MobileInspectLaunchResult = await api.launch(inspect.platform);
-      setInspectStatus(instance, result.message, result.success ? 'success' : 'error');
-      if (result.success) {
-        await captureInspectFrame(instance, 'manual');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Launch command failed.';
-      setInspectStatus(instance, message, 'error');
-    } finally {
-      inspect.launching = false;
-      rerenderFromState(instance);
-    }
-  });
-
-  const captureBtn = document.createElement('button');
-  captureBtn.type = 'button';
-  captureBtn.className = 'mobile-surface-refresh-btn';
-  captureBtn.textContent = inspect.capturing ? 'Capturing…' : 'Capture frame';
-  captureBtn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
-  captureBtn.addEventListener('click', () => {
-    void captureInspectFrame(instance, 'manual');
-  });
-
-  const liveBtn = document.createElement('button');
-  liveBtn.type = 'button';
-  liveBtn.className = 'mobile-surface-refresh-btn';
-  liveBtn.textContent = inspect.liveMode ? 'Stop live' : 'Start live';
-  liveBtn.disabled = inspect.launching || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
-  liveBtn.addEventListener('click', () => {
-    if (inspect.liveMode) {
-      stopInspectLiveMode(instance, 'Embedded live view stopped.', 'default');
-      rerenderFromState(instance);
-      return;
-    }
-    void startInspectLiveMode(instance);
-  });
-
-  const tapSelectedBtn = document.createElement('button');
-  tapSelectedBtn.type = 'button';
-  tapSelectedBtn.className = 'mobile-surface-refresh-btn';
-  tapSelectedBtn.textContent = inspect.interacting ? 'Tapping…' : 'Tap selected';
-  tapSelectedBtn.disabled = !inspect.selectedPoint
-    || inspect.launching
-    || inspect.capturing
-    || inspect.inspectingPoint
-    || inspect.interacting
-    || hasBlockingChecks(report, inspect.platform);
-  tapSelectedBtn.addEventListener('click', async () => {
-    const selectedPoint = inspect.selectedPoint;
-    if (!selectedPoint) {
-      setInspectStatus(instance, 'Pick a point on the screenshot first.', 'default');
-      rerenderFromState(instance);
-      return;
-    }
-
-    const api = window.calder?.mobileInspect;
-    if (!api) {
-      setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
-      rerenderFromState(instance);
-      return;
-    }
-
-    if (inspect.liveMode) {
-      stopInspectLiveMode(instance, 'Live paused before interaction.', 'default');
-    }
-
-    inspect.interacting = true;
-    inspect.sendError = '';
-    setInspectStatus(instance, 'Dispatching tap to selected point…', 'default');
-    rerenderFromState(instance);
-    try {
-      const result: MobileInspectInteractionResult = await api.interact(inspect.platform, selectedPoint.x, selectedPoint.y);
-      setInspectStatus(instance, result.message, result.success ? 'success' : 'error');
-      if (result.success) {
-        await captureInspectFrame(instance, 'live');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Tap request failed.';
-      setInspectStatus(instance, message, 'error');
-    } finally {
-      inspect.interacting = false;
-      rerenderFromState(instance);
-    }
-  });
-
-  actionRow.append(launchBtn, captureBtn, liveBtn, tapSelectedBtn);
-  section.appendChild(actionRow);
-}
-
-function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
-  const inspect = instance.inspectState;
-  const blockingChecks = getBlockingChecks(report, inspect.platform);
-  const section = document.createElement('section');
-  section.className = 'mobile-surface-group mobile-surface-inspect-group';
-  section.appendChild(renderInspectWorkbenchHeader(instance, report));
-  appendInspectActionControls(instance, report, section);
-
-  const status = document.createElement('div');
-  status.className = 'mobile-surface-inspect-status';
-  status.dataset.tone = inspect.tone;
-  status.textContent = inspect.message;
-  section.appendChild(status);
-
-  const interactionHint = document.createElement('div');
-  interactionHint.className = 'mobile-surface-inspect-hint';
-  interactionHint.textContent = getInspectInteractionHint();
-  section.appendChild(interactionHint);
-
-  section.appendChild(renderInspectCapabilityPanel(inspect.platform, MOBILE_PLATFORM_LABEL));
-  const blockerPanel = buildMobileInspectBlockingPanel({
-    checks: blockingChecks,
-    renderCheckRow: (check) => buildMobileDependencyCheckRow({
-      instance,
-      check,
+  return renderMobileInspectWorkbench({
+    instance,
+    report,
+    platformLabels: MOBILE_PLATFORM_LABEL,
+    handlers: {
+      stopInspectLiveMode,
+      rerenderFromState,
+      setInspectStatus,
+      captureInspectFrame,
+      startInspectLiveMode,
+      sendInspectToSelectedSession,
       isInspectBusy,
       setPaneStatus,
       setActionAvailability,
       refreshMobileSurfacePane,
-    }),
+    },
   });
-  if (blockerPanel) section.appendChild(blockerPanel);
-
-  section.appendChild(renderInspectPreviewPanel(instance));
-  appendInspectSendControls(instance, section);
-
-  return section;
 }
 
 function renderReport(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): void {
