@@ -28,8 +28,9 @@ import {
   type MobileProjectProfile,
 } from './dependency-scoping.js';
 import {
-  appendMobileDependencyGroup,
+  appendMobileDependencyChecklistSection,
   buildMobileDependencyCheckRow,
+  renderMobileScopedSummaryPanel,
   renderInspectCapabilityPanel,
 } from './workbench-sections.js';
 
@@ -808,25 +809,16 @@ function renderReport(instance: MobileSurfacePaneInstance, report: MobileDepende
   }
   instance.summaryEl.innerHTML = '';
   instance.bodyEl.innerHTML = '';
-
-  const summary = document.createElement('div');
-  summary.className = 'mobile-surface-summary';
   const scopedSummary = getScopedSummary(report, instance.projectProfile);
-  summary.innerHTML = `
-    <span class="mobile-surface-summary-pill">Scope: ${getProjectProfileLabel(instance.projectProfile).replace('Project profile: ', '')}</span>
-    <span class="mobile-surface-summary-pill">Ready: ${scopedSummary.ready}</span>
-    <span class="mobile-surface-summary-pill">Warnings: ${scopedSummary.warnings}</span>
-    <span class="mobile-surface-summary-pill">Required missing: ${scopedSummary.requiredMissing}</span>
-  `;
-  instance.summaryEl.appendChild(summary);
+  instance.summaryEl.appendChild(renderMobileScopedSummaryPanel({
+    scopeLabel: getProjectProfileLabel(instance.projectProfile).replace('Project profile: ', ''),
+    summary: scopedSummary,
+  }));
 
   instance.bodyEl.appendChild(renderInspectWorkbench(instance, report));
-
-  const checklist = getProfileScopedChecks(report, instance.projectProfile);
-  appendMobileDependencyGroup({
+  appendMobileDependencyChecklistSection({
     container: instance.bodyEl,
-    title: 'Dependency checklist',
-    checks: checklist,
+    checks: getProfileScopedChecks(report, instance.projectProfile),
     renderCheckRow: (check) => buildMobileDependencyCheckRow({
       instance,
       check,
@@ -835,11 +827,6 @@ function renderReport(instance: MobileSurfacePaneInstance, report: MobileDepende
       setActionAvailability,
       refreshMobileSurfacePane,
     }),
-    options: {
-      collapsible: true,
-      open: false,
-      description: 'Install and verify prerequisites relevant to the current project profile.',
-    },
   });
   setActionAvailability(instance);
 }

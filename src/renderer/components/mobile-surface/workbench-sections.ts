@@ -47,6 +47,21 @@ interface AppendMobileDependencyGroupOptions {
   };
 }
 
+interface RenderMobileScopedSummaryPanelOptions {
+  scopeLabel: string;
+  summary: {
+    ready: number;
+    warnings: number;
+    requiredMissing: number;
+  };
+}
+
+interface AppendMobileDependencyChecklistSectionOptions {
+  container: HTMLElement;
+  checks: MobileDependencyCheck[];
+  renderCheckRow(check: MobileDependencyCheck): HTMLElement;
+}
+
 export function renderInspectCapabilityPanel(
   platform: MobileInspectPlatform,
   platformLabels: Record<MobileInspectPlatform, string>,
@@ -258,4 +273,34 @@ export function appendMobileDependencyGroup(params: AppendMobileDependencyGroupO
   }
 
   container.appendChild(section);
+}
+
+export function renderMobileScopedSummaryPanel(
+  options: RenderMobileScopedSummaryPanelOptions,
+): HTMLDivElement {
+  const summary = document.createElement('div');
+  summary.className = 'mobile-surface-summary';
+  summary.innerHTML = `
+    <span class="mobile-surface-summary-pill">Scope: ${options.scopeLabel}</span>
+    <span class="mobile-surface-summary-pill">Ready: ${options.summary.ready}</span>
+    <span class="mobile-surface-summary-pill">Warnings: ${options.summary.warnings}</span>
+    <span class="mobile-surface-summary-pill">Required missing: ${options.summary.requiredMissing}</span>
+  `;
+  return summary;
+}
+
+export function appendMobileDependencyChecklistSection(
+  options: AppendMobileDependencyChecklistSectionOptions,
+): void {
+  appendMobileDependencyGroup({
+    container: options.container,
+    title: 'Dependency checklist',
+    checks: options.checks,
+    renderCheckRow: options.renderCheckRow,
+    options: {
+      collapsible: true,
+      open: false,
+      description: 'Install and verify prerequisites relevant to the current project profile.',
+    },
+  });
 }
