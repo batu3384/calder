@@ -3,7 +3,9 @@ import { readFileSync } from 'fs';
 
 const modalSourceFile = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
 const modalSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
-const source = [modalSourceFile, modalSectionsSource].join('\n');
+const modalActionsSource = readFileSync(new URL('./preferences-modal-actions.ts', import.meta.url), 'utf-8');
+const modalShellSource = readFileSync(new URL('./preferences-modal-shell.ts', import.meta.url), 'utf-8');
+const source = [modalSourceFile, modalSectionsSource, modalActionsSource, modalShellSource].join('\n');
 const providerSetupSource = readFileSync(new URL('./preferences-provider-setup.ts', import.meta.url), 'utf-8');
 const shortcutsSource = readFileSync(new URL('./preferences-shortcuts-section.ts', import.meta.url), 'utf-8');
 const modalSource = readFileSync(new URL('./modal.ts', import.meta.url), 'utf-8');
@@ -124,6 +126,6 @@ describe('preferences modal contract', () => {
     expect(source).not.toContain('shortcutManager.setOverride(');
     expect(source).not.toContain('shortcutManager.resetOverride(');
     expect(source).toContain('extendModalCleanup(() => {');
-    expect(source).not.toContain('registerModalCleanup(() => {');
+    expect(modalSourceFile).not.toContain('registerModalCleanup(() => {');
   });
 });

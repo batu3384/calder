@@ -16,6 +16,10 @@ import {
 import {
   resolveSetupBadgeHasIssue,
 } from './preferences-provider-setup.js';
+import {
+  bindPreferencesModalActions,
+  savePreferenceDraft,
+} from './preferences-modal-actions.js';
 import { buildCheckpointRestoreConfirm } from './preferences-checkpoint-confirm.js';
 import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 import {
@@ -24,6 +28,8 @@ import {
   renderLayoutPreferencesSection,
   renderProvidersPreferencesSection,
 } from './preferences-modal-sections.js';
+import { createPreferencesModalShell } from './preferences-modal-shell.js';
+import { formatRelativeTimestamp } from './preferences-time.js';
 import type { ProviderId, UiLanguage } from '../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../shared/types/mobile.js';
 
@@ -75,23 +81,6 @@ function renderPreferencesModalContent(): void {
   modal.classList.add('modal-wide');
   bodyEl.classList.add('preferences-body');
 
-  // Build two-pane layout
-  const layout = document.createElement('div');
-  layout.className = 'preferences-layout preferences-shell';
-
-  // Side menu
-  const menu = document.createElement('div');
-  menu.className = 'preferences-menu';
-
-  const menuHeader = document.createElement('div');
-  menuHeader.className = 'preferences-menu-header';
-  menuHeader.innerHTML = `
-    <div class="preferences-menu-kicker shell-kicker">Calder</div>
-    <div class="preferences-menu-title">Calder workspace</div>
-    <div class="preferences-menu-caption">Defaults, layout, integrations, and the rules that shape every session.</div>
-  `;
-  menu.appendChild(menuHeader);
-
   const sections: { id: Section; label: string; caption: string }[] = [
     { id: 'general', label: 'Session', caption: 'How Calder starts and remembers work' },
     { id: 'layout', label: 'Layout', caption: 'Surface and rail visibility defaults' },
@@ -100,31 +89,14 @@ function renderPreferencesModalContent(): void {
     { id: 'about', label: 'About', caption: 'Version, updates, and project links' },
   ];
 
-  const menuItems: Map<Section, HTMLButtonElement> = new Map();
-  for (const section of sections) {
-    const item = document.createElement('button');
-    item.className = 'preferences-menu-item';
-    item.type = 'button';
-    item.dataset.section = section.id;
-    item.innerHTML = `
-      <span class="preferences-menu-item-label">${section.label}</span>
-      <span class="preferences-menu-item-caption">${section.caption}</span>
-    `;
-    menu.appendChild(item);
-    menuItems.set(section.id, item);
-  }
-
-  // Content area
-  const contentShell = document.createElement('div');
-  contentShell.className = 'preferences-content-shell';
-
-  const content = document.createElement('div');
-  content.className = 'preferences-content preferences-section';
-
-  layout.appendChild(menu);
-  contentShell.appendChild(content);
-  layout.appendChild(contentShell);
-  bodyEl.appendChild(layout);
+  const {
+    menu,
+    menuItems,
+    content,
+  } = createPreferencesModalShell({
+    body: bodyEl,
+    sections,
+  });
 
   // Build section content
   let currentSection: Section = 'general';
@@ -164,24 +136,6 @@ function renderPreferencesModalContent(): void {
     },
   };
   const shortcutOverridesDraft: Record<string, string> = { ...(appState.preferences.keybindings ?? {}) };
-
-  function formatRelativeTimestamp(timestamp?: string): string {
-    if (!timestamp) return 'No sync yet';
-    const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return 'No sync yet';
-    const diffMs = Date.now() - date.getTime();
-    if (diffMs < 0) {
-      return `Updated ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (diffMs < 60_000) return 'Updated just now';
-    const diffMinutes = Math.floor(diffMs / 60_000);
-    if (diffMinutes < 60) return `Updated ${diffMinutes}m ago`;
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `Updated ${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `Updated ${diffDays}d ago`;
-    return `Updated ${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
-  }
 
   function countCustomizedShortcuts(): number {
     let count = 0;
@@ -371,66 +325,20 @@ function renderPreferencesModalContent(): void {
     modal.classList.remove('modal-wide');
     btnConfirm.textContent = 'Create';
   });
-
-  const save = () => {
-    appState.setPreference('soundOnSessionWaiting', preferenceDraft.soundOnSessionWaiting);
-    appState.setPreference('notificationsDesktop', preferenceDraft.notificationsDesktop);
-    appState.setPreference('sessionHistoryEnabled', preferenceDraft.sessionHistoryEnabled);
-    appState.setPreference('insightsEnabled', preferenceDraft.insightsEnabled);
-    appState.setPreference('autoTitleEnabled', preferenceDraft.autoTitleEnabled);
-    appState.setPreference('defaultProvider', preferenceDraft.defaultProvider);
-    appState.setPreference('sidebarViews', {
-      configSections: preferenceDraft.sidebarViews.configSections,
-      gitPanel: preferenceDraft.sidebarViews.gitPanel,
-      sessionHistory: preferenceDraft.sidebarViews.sessionHistory,
-      costFooter: preferenceDraft.sidebarViews.costFooter,
-    });
-    appState.setPreference('keybindings', { ...shortcutOverridesDraft });
-    appState.setPreference('language', preferenceDraft.language);
-    if (preferenceDraft.debugMode !== appState.preferences.debugMode) {
-      appState.setPreference('debugMode', preferenceDraft.debugMode);
-      window.calder.menu.rebuild(preferenceDraft.debugMode);
-    }
-  };
-
-  const handleConfirm = () => {
-    cleanupRecorder();
-    save();
-    closeModal();
-    modal.classList.remove('modal-wide');
-    btnConfirm.textContent = 'Create';
-  };
-
-  const handleCancel = () => {
-    cleanupRecorder();
-    closeModal();
-    modal.classList.remove('modal-wide');
-    btnConfirm.textContent = 'Create';
-  };
-
-  const handleKeydown = (e: KeyboardEvent) => {
-    // Don't intercept if we're recording a shortcut
-    if (activeRecorder) return;
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleConfirm();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCancel();
-    }
-  };
-
-  btnConfirm.addEventListener('click', handleConfirm);
-  btnCancel.addEventListener('click', handleCancel);
-  document.addEventListener('keydown', handleKeydown);
+  bindPreferencesModalActions({
+    confirmButton: btnConfirm,
+    cancelButton: btnCancel,
+    modalElement: modal,
+    cleanupRecorder,
+    isRecorderActive: () => Boolean(activeRecorder),
+    savePreferences: () => savePreferenceDraft(preferenceDraft, shortcutOverridesDraft),
+    registerModalCleanup: extendModalCleanup,
+  });
 
   extendModalCleanup(() => {
     cleanupRecorder();
     cleanupAboutUpdateListeners();
     if (defaultProviderSelect) defaultProviderSelect.destroy();
     if (languageSelect) languageSelect.destroy();
-    btnConfirm.removeEventListener('click', handleConfirm);
-    btnCancel.removeEventListener('click', handleCancel);
-    document.removeEventListener('keydown', handleKeydown);
   });
 }
