@@ -6,6 +6,7 @@ const paneRuntimeSource = readFileSync(new URL('./browser-tab/pane-runtime.ts', 
 const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
 const paneViewportMenuSource = readFileSync(new URL('./browser-tab/pane-viewport-menu.ts', import.meta.url), 'utf-8');
 const paneShellSource = readFileSync(new URL('./browser-tab/pane-shell.ts', import.meta.url), 'utf-8');
+const paneRuntimeBindingsSource = readFileSync(new URL('./browser-tab/pane-runtime-bindings.ts', import.meta.url), 'utf-8');
 const paneInteractionsSource = readFileSync(new URL('./browser-tab/pane-interactions.ts', import.meta.url), 'utf-8');
 const captureElementsSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
 const paneArtifactsSource = readFileSync(new URL('./browser-tab/pane-artifacts.ts', import.meta.url), 'utf-8');
@@ -15,6 +16,7 @@ const source = [
   paneLayoutSource,
   paneViewportMenuSource,
   paneShellSource,
+  paneRuntimeBindingsSource,
   paneInteractionsSource,
   captureElementsSource,
   paneArtifactsSource,

@@ -7,6 +7,7 @@ const {
   mockCreateBrowserTabInstance,
   mockCreateBrowserViewportMenuController,
   mockCreateBrowserTabShellArtifacts,
+  mockInitializeBrowserTabRuntimeBindings,
   sharedInstances,
 } = vi.hoisted(() => {
   const instances = new Map<string, any>();
@@ -17,6 +18,7 @@ const {
     mockCreateBrowserTabInstance: vi.fn(),
     mockCreateBrowserViewportMenuController: vi.fn(),
     mockCreateBrowserTabShellArtifacts: vi.fn(),
+    mockInitializeBrowserTabRuntimeBindings: vi.fn(),
     sharedInstances: instances,
   };
 });
@@ -45,6 +47,10 @@ vi.mock('./pane-viewport-menu.js', () => ({
 
 vi.mock('./pane-shell.js', () => ({
   createBrowserTabShellArtifacts: (...args: unknown[]) => mockCreateBrowserTabShellArtifacts(...args),
+}));
+
+vi.mock('./pane-runtime-bindings.js', () => ({
+  initializeBrowserTabRuntimeBindings: (...args: unknown[]) => mockInitializeBrowserTabRuntimeBindings(...args),
 }));
 
 vi.mock('./pane-interactions.js', () => ({
@@ -247,6 +253,7 @@ describe('browser tab pane entry', () => {
     expect(mockCreateBrowserTabPaneLayout).toHaveBeenCalledTimes(1);
     expect(mockCreateBrowserTabShellArtifacts).toHaveBeenCalledTimes(1);
     expect(mockCreateBrowserViewportMenuController).toHaveBeenCalledTimes(1);
+    expect(mockInitializeBrowserTabRuntimeBindings).toHaveBeenCalledTimes(1);
     expect(sharedInstances.has('session-1')).toBe(true);
   });
 });
