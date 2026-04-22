@@ -5,7 +5,6 @@ import type {
   AppliedContextSummary,
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
-  CliSurfaceStartupTiming,
   SurfaceSelectionRange,
 } from '../../../shared/types/project.js';
 import { appState } from '../../state.js';
@@ -48,7 +47,6 @@ import {
 } from './session-integration.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol.js';
-import { getCliSurfaceProfileLabel } from './profile.js';
 import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
@@ -82,6 +80,9 @@ import {
   bindInspectPointerHandlers as bindInspectPointerHandlersModule,
   bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
 } from './pane-bindings.js';
+import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
+
+export { formatCliSurfaceTiming } from './pane-meta.js';
 
 interface CliSurfaceInstance {
   projectId: string;
@@ -203,45 +204,6 @@ function syncComposerContextTrace(instance: CliSurfaceInstance): void {
   );
 }
 
-function formatDurationMs(value: number): string {
-  if (value < 1_000) return `${Math.round(value)}ms`;
-  const seconds = value / 1_000;
-  return seconds < 10 ? `${seconds.toFixed(1)}s` : `${Math.round(seconds)}s`;
-}
-
-export function formatCliSurfaceTiming(timing?: Partial<CliSurfaceStartupTiming>): string {
-  if (!timing) return '';
-
-  const parts: string[] = [];
-  if (typeof timing.spawnLatencyMs === 'number') {
-    parts.push(`spawn ${formatDurationMs(timing.spawnLatencyMs)}`);
-  }
-  if (typeof timing.firstOutputLatencyMs === 'number') {
-    parts.push(`first output ${formatDurationMs(timing.firstOutputLatencyMs)}`);
-  }
-  return parts.join(' · ');
-}
-
-function formatRuntimeStatus(status: CliSurfaceRuntimeState['status'] | undefined): string {
-  switch (status) {
-    case 'running':
-      return 'live';
-    case 'starting':
-      return 'starting';
-    case 'stopped':
-      return 'stopped';
-    case 'error':
-      return 'error';
-    default:
-      return 'idle';
-  }
-}
-
-function buildSurfaceRouteCopy(projectId: string): string {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId);
-  return targetSession ? `Routing to ${targetSession.name}` : 'Routing is not set';
-}
-
 function clearComposerError(instance: CliSurfaceInstance): void {
   instance.composerErrorEl.textContent = '';
   instance.composerErrorEl.style.display = 'none';
@@ -267,66 +229,13 @@ function updateProjectRuntime(projectId: string, runtime: CliSurfaceRuntimeState
   });
 }
 
-function renderRouteMeta(instance: CliSurfaceInstance): void {
-  instance.routeEl.textContent = buildSurfaceRouteCopy(instance.projectId);
-}
-
-function renderAdapterMeta(instance: CliSurfaceInstance): void {
-  const runtime = getRuntimeState(instance.projectId);
-  const profile = resolveSelectedProfile(instance.projectId);
-  const adapter = detectCliAdapter({
-    command: runtime?.command ?? profile?.command,
-    args: runtime?.args ?? profile?.args,
-    title: profile?.name ?? runtime?.command,
+function renderRuntimeMeta(instance: CliSurfaceInstance): void {
+  renderCliSurfaceRuntimeMeta({
+    instance,
+    getRuntimeState,
+    resolveSelectedProfile,
     adapterHint: semanticAdapterHints.get(instance.projectId),
   });
-
-  instance.adapterMetaEl.innerHTML = '';
-  showElement(instance.adapterMetaEl, Boolean(adapter));
-  if (!adapter) return;
-
-  const badges = [adapter.displayName, ...adapter.capabilityBadges];
-  for (const badgeLabel of badges) {
-    const badge = document.createElement('span');
-    badge.className = 'cli-surface-adapter-badge';
-    badge.textContent = badgeLabel;
-    instance.adapterMetaEl.appendChild(badge);
-  }
-}
-
-function renderRuntimeMeta(instance: CliSurfaceInstance): void {
-  const runtime = getRuntimeState(instance.projectId);
-  const profile = resolveSelectedProfile(instance.projectId);
-  const label = profile ? getCliSurfaceProfileLabel(profile) : (runtime?.command ?? 'No profile');
-  const status = formatRuntimeStatus(runtime?.status);
-  const timingLabel = formatCliSurfaceTiming(runtime?.startupTiming);
-  instance.metaEl.textContent = `${label} · ${status}${timingLabel ? ` · ${timingLabel}` : ''}`;
-  renderRouteMeta(instance);
-  renderAdapterMeta(instance);
-  instance.targetMenuController?.syncControls();
-
-  if (runtime?.status === 'running') {
-    instance.emptyEl.textContent = 'Runtime is live. Select text or capture the viewport to send context.';
-    showElement(instance.emptyEl, instance.viewportLines.length === 0);
-    return;
-  }
-
-  if (runtime?.status === 'starting') {
-    instance.emptyEl.textContent = timingLabel
-      ? `Starting CLI surface runtime. ${timingLabel}. Waiting for first output.`
-      : 'Starting CLI surface runtime…';
-    showElement(instance.emptyEl, true);
-    return;
-  }
-
-  if (runtime?.status === 'error') {
-    instance.emptyEl.textContent = runtime?.lastError || 'CLI surface failed to start. Edit the command or try another suggestion.';
-    showElement(instance.emptyEl, true);
-    return;
-  }
-
-  instance.emptyEl.textContent = 'Calder can run a detected CLI or TUI command here. If startup fails, edit the command or try another suggestion.';
-  showElement(instance.emptyEl, true);
 }
 
 function renderInspectState(instance: CliSurfaceInstance): void {
