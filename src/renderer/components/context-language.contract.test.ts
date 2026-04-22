@@ -3,8 +3,8 @@ import { readFileSync } from 'fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const configSectionsSource = [
-  readFileSync(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-  readFileSync(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./config-sections/config-sections.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./config-sections/config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
 ].join('\n');
 const gitPanelSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');

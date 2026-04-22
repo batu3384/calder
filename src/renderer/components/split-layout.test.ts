@@ -307,7 +307,7 @@ vi.mock('./mobile-surface/pane.js', () => ({
   showMobileSurfacePane: vi.fn(),
 }));
 
-vi.mock('./tab-bar.js', () => ({
+vi.mock('./tab-bar/tab-bar.js', () => ({
   quickNewSession: vi.fn(),
 }));
 
@@ -315,7 +315,7 @@ vi.mock('./sidebar.js', () => ({
   promptNewProject: vi.fn(),
 }));
 
-vi.mock('./session-inspector.js', () => ({
+vi.mock('./session-inspector/session-inspector.js', () => ({
   isInspectorOpen: vi.fn(() => false),
 }));
 
@@ -338,7 +338,7 @@ describe('split-layout mosaic behavior', () => {
       return 1;
     });
 
-    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
     vi.mocked(isInspectorOpen).mockReturnValue(false);
   });
 
@@ -567,7 +567,7 @@ describe('split-layout mosaic behavior', () => {
   it('uses only the live-surface span when dragging the center divider with the inspector open', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
-    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
     const { initSplitLayout, renderLayout } = await import('./split-layout.js');
 
     vi.mocked(isInspectorOpen).mockReturnValue(true);
@@ -634,7 +634,7 @@ describe('split-layout mosaic behavior', () => {
   it('expands the session mosaic back to full width after closing the cli surface tab', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
-    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
     const { renderLayout } = await import('./split-layout.js');
     vi.mocked(isInspectorOpen).mockReturnValue(false);
 
@@ -669,7 +669,7 @@ describe('split-layout mosaic behavior', () => {
   it('does not pin an empty surface column when mobile surface focus returns to session tabs', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
-    const { isInspectorOpen } = await import('./session-inspector.js');
+    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
     const { renderLayout } = await import('./split-layout.js');
     vi.mocked(isInspectorOpen).mockReturnValue(false);
 

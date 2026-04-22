@@ -68,7 +68,7 @@ vi.mock('electron', () => ({
   BrowserWindow: { getAllWindows: mocks.getAllWindows },
 }));
 
-vi.mock('./hook-status', () => ({
+vi.mock('./hooks/hook-status', () => ({
   startWatching: mocks.startWatching,
   cleanupSessionStatus: mocks.cleanupSessionStatus,
   stopWatching: mocks.stopHookWatching,

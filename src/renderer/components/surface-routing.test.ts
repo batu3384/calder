@@ -28,7 +28,7 @@ vi.mock('./terminal-pane.js', () => ({
   setPendingPrompt: mockSetPendingPrompt,
 }));
 
-vi.mock('./tab-bar.js', () => ({
+vi.mock('./tab-bar/tab-bar.js', () => ({
   promptNewSession: mockPromptNewSession,
 }));
 

@@ -5,7 +5,7 @@ import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
 import { installQwenHooks, validateQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';
-import { installStatusLineScript } from '../hook-status';
+import { installStatusLineScript } from '../hooks/hook-status';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 
 const binaryCache = { path: null as string | null };

@@ -1,5 +1,5 @@
 import { BrowserWindow, shell } from 'electron';
-import { setInspectorEventsMiddleware } from './hook-status';
+import { setInspectorEventsMiddleware } from './hooks/hook-status';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import { resolveAutoApprovalInput } from './calder-governance/auto-approval-dispatch';
 import { applySessionOverrideToGovernanceState } from './ipc-auto-approval-governance';

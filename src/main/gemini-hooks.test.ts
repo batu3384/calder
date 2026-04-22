@@ -12,7 +12,7 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
-vi.mock('./hook-commands', () => ({
+vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
   statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`),
@@ -24,7 +24,7 @@ vi.mock('./hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as hookCommands from './hook-commands';
+import * as hookCommands from './hooks/hook-commands';
 import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks, GEMINI_HOOK_MARKER } from './gemini-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);

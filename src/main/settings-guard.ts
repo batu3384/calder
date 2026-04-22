@@ -1,10 +1,10 @@
 import { homedir } from 'os';
 import * as path from 'path';
 import { ipcMain, BrowserWindow } from 'electron';
-import { getStatusLineScriptPath } from './hook-status';
+import { getStatusLineScriptPath } from './hooks/hook-status';
 import { HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
 import { readJsonSafe } from './fs-utils';
-import { isManagedStatusLineCommand } from './statusline-command';
+import { isManagedStatusLineCommand } from './statusline/statusline-command';
 import { loadState, saveState } from './store';
 import type { SettingsValidationResult } from '../shared/types/provider';
 

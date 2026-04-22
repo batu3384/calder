@@ -55,7 +55,7 @@ async function loadWindowsPtyManager() {
       resolveBinaryPath: () => 'claude.exe',
     })),
   }));
-  vi.doMock('./hook-status', () => ({
+  vi.doMock('./hooks/hook-status', () => ({
     registerSession: vi.fn(),
   }));
   vi.doMock('./provider-env', () => ({

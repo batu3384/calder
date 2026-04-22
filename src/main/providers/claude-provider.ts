@@ -5,7 +5,7 @@ import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
-import { installStatusLineScript, cleanupAll as cleanupHookStatus } from '../hook-status';
+import { installStatusLineScript, cleanupAll as cleanupHookStatus } from '../hooks/hook-status';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 import { getClaudeConfig } from '../claude-cli';
 import { guardedInstall, validateSettings, reinstallSettings } from '../settings-guard';

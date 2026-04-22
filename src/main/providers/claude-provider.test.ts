@@ -18,7 +18,7 @@ vi.mock('../full-path', () => ({
   getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
 }));
 
-vi.mock('../hook-status', () => ({
+vi.mock('../hooks/hook-status', () => ({
   getStatusLineScriptPath: vi.fn(() => '/mock/home/.calder/runtime/statusline.sh'),
   installStatusLineScript: vi.fn(),
   cleanupAll: vi.fn(),
@@ -44,7 +44,7 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { ClaudeProvider, _resetCachedPath } from './claude-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
-import { cleanupAll, installStatusLineScript } from '../hook-status';
+import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
 import { getClaudeConfig } from '../claude-cli';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { guardedInstall, validateSettings as validateGuardedSettings } from '../settings-guard';

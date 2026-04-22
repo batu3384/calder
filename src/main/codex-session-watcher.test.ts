@@ -24,7 +24,7 @@ const { STATUS_DIR: MOCK_STATUS_DIR } = vi.hoisted(() => {
   return { STATUS_DIR: path.join('/tmp', 'calder') };
 });
 
-vi.mock('./hook-status', () => ({
+vi.mock('./hooks/hook-status', () => ({
   STATUS_DIR: MOCK_STATUS_DIR,
 }));
 

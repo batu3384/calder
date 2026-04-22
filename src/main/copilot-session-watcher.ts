@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import type { BrowserWindow } from 'electron';
-import { STATUS_DIR } from './hook-status';
+import { STATUS_DIR } from './hooks/hook-status';
 
 const SESSION_STATE_DIR = path.join(os.homedir(), '.copilot', 'session-state');
 const MATCH_WINDOW_MS = 10 * 60 * 1000;

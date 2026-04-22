@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hook-status';
+import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hooks/hook-status';
 import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
 import { startCopilotSessionWatcher, registerPendingCopilotSession, unregisterCopilotSession, stopCopilotSessionWatcher } from './copilot-session-watcher';
 import { registerMcpHandlers } from './mcp-ipc-handlers';

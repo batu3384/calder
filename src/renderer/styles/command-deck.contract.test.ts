@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const tabsCss = readFileSync(new URL('./tabs.css', import.meta.url), 'utf-8');
-const tabBarSource = readFileSync(new URL('../components/tab-bar.ts', import.meta.url), 'utf-8');
+const tabBarSource = readFileSync(new URL('../components/tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
 
 describe('command deck stylesheet contract', () => {
   it('renders status and launcher controls as lighter inline instrument pills', () => {

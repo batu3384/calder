@@ -1,6 +1,6 @@
 import { appState } from './state.js';
 import { promptNewProject, toggleSidebar } from './components/sidebar.js';
-import { quickNewSession } from './components/tab-bar.js';
+import { quickNewSession } from './components/tab-bar/tab-bar.js';
 import { toggleProjectTerminal } from './components/project-terminal.js';
 import { toggleDebugPanel } from './components/debug-panel.js';
 import { showHelpDialog } from './components/help-dialog.js';
@@ -13,9 +13,9 @@ import { shortcutManager } from './shortcuts.js';
 import { getFileReaderInstance, getFileReaderTextSelector, showGoToLineBar } from './components/file-reader.js';
 import { getFileViewerInstance } from './components/file-viewer.js';
 import { DomSearchBackend } from './components/dom-search-backend.js';
-import { toggleInspector } from './components/session-inspector.js';
+import { toggleInspector } from './components/session-inspector/session-inspector.js';
 import { toggleContextInspector } from './components/context-inspector.js';
-import { showPreferencesModal } from './components/preferences-modal.js';
+import { showPreferencesModal } from './components/preferences/preferences-modal.js';
 import { closeModal, showModal } from './components/modal.js';
 
 let initialized = false;

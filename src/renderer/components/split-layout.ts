@@ -22,7 +22,7 @@ import {
   getInspectorInstance,
   disconnectInspector,
 } from './mcp-inspector.js';
-import { isInspectorOpen } from './session-inspector.js';
+import { isInspectorOpen } from './session-inspector/session-inspector.js';
 import {
   createFileViewerPane,
   destroyFileViewerPane,
@@ -58,7 +58,7 @@ import {
 import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
 import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
 import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
-import { quickNewSession } from './tab-bar.js';
+import { quickNewSession } from './tab-bar/tab-bar.js';
 import { promptNewProject } from './sidebar.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
 import { attachRatioHandle } from './mosaic-resize.js';

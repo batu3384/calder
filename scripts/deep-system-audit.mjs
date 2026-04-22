@@ -37,6 +37,7 @@ const steps = [
   { name: 'Build', cmd: NPM, args: ['run', 'build'] },
   { name: 'Production dependency audit', cmd: NPM, args: ['audit', '--omit=dev'] },
   { name: 'Dead code scan (Knip, pinned)', cmd: NPM, args: ['run', 'audit:knip'] },
+  { name: 'Structure audit', cmd: NPM, args: ['run', 'audit:structure'] },
 ];
 
 let failed = false;

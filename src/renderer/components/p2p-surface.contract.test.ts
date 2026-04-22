@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const remotePaneSource = readFileSync(new URL('./remote-terminal-pane.ts', import.meta.url), 'utf-8');
-const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const sessionTabFactorySource = readFileSync(new URL('./tab-bar-session-tab-factory.ts', import.meta.url), 'utf-8');
+const tabBarSource = readFileSync(new URL('./tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
+const sessionTabFactorySource = readFileSync(new URL('./tab-bar/tab-bar-session-tab-factory.ts', import.meta.url), 'utf-8');
 const shareStyles = readFileSync(new URL('../styles/p2p-sharing.css', import.meta.url), 'utf-8');
 
 describe('p2p live surface contract', () => {

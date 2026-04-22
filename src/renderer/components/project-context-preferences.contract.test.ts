@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const modalPrimarySource = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf8');
-const modalSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf8');
+const modalPrimarySource = readFileSync(new URL('./preferences/preferences-modal.ts', import.meta.url), 'utf8');
+const modalSectionsSource = readFileSync(new URL('./preferences/preferences-modal-sections.ts', import.meta.url), 'utf8');
 const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
-const contextSource = readFileSync(new URL('./preferences-context-discovery.ts', import.meta.url), 'utf8');
+const contextSource = readFileSync(new URL('./preferences/preferences-context-discovery.ts', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../styles/preferences.css', import.meta.url), 'utf8');
 
 describe('project context preferences contract', () => {

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const tabBarSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/tab-bar.ts'), 'utf8');
+const tabBarSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/tab-bar/tab-bar.ts'), 'utf8');
 const largeFileDetectorSource = readFileSync(path.join(process.cwd(), 'src/renderer/tools/large-file-detector.ts'), 'utf8');
 const browserSessionStorageSource = readFileSync(path.join(process.cwd(), 'src/main/browser-session-storage.ts'), 'utf8');
 const prerequisitesSource = readFileSync(path.join(process.cwd(), 'src/main/prerequisites.ts'), 'utf8');
 const resolveBinarySource = readFileSync(path.join(process.cwd(), 'src/main/providers/resolve-binary.ts'), 'utf8');
 const backgroundTaskActionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/project-background-task-actions.ts'), 'utf8');
 const modalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/modal.ts'), 'utf8');
-const preferencesModalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences-modal.ts'), 'utf8');
+const preferencesModalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'), 'utf8');
 const usageModalSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/usage-modal.ts'), 'utf8');
 const starPromptSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/star-prompt-dialog.ts'), 'utf8');
 

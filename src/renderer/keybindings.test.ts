@@ -62,7 +62,7 @@ vi.mock('./components/sidebar.js', () => ({
   toggleSidebar: vi.fn(),
 }));
 
-vi.mock('./components/tab-bar.js', () => ({
+vi.mock('./components/tab-bar/tab-bar.js', () => ({
   quickNewSession: vi.fn(),
 }));
 
@@ -118,11 +118,11 @@ vi.mock('./components/dom-search-backend.js', () => ({
   DomSearchBackend: vi.fn(),
 }));
 
-vi.mock('./components/session-inspector.js', () => ({
+vi.mock('./components/session-inspector/session-inspector.js', () => ({
   toggleInspector: vi.fn(),
 }));
 
-vi.mock('./components/preferences-modal.js', () => ({
+vi.mock('./components/preferences/preferences-modal.js', () => ({
   showPreferencesModal: vi.fn(),
 }));
 

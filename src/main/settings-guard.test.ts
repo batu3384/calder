@@ -24,7 +24,7 @@ vi.mock('electron', () => ({
   BrowserWindow: {},
 }));
 
-vi.mock('./hook-status', () => ({
+vi.mock('./hooks/hook-status', () => ({
   getStatusLineScriptPath: () => '/mock/home/.calder/runtime/statusline.sh',
 }));
 

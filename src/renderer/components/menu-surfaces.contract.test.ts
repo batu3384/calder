@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const menuSemanticsSource = readFileSync(new URL('./tab-bar-menu-semantics.ts', import.meta.url), 'utf-8');
-const sessionContextMenuSource = readFileSync(new URL('./tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
+const tabBarSource = readFileSync(new URL('./tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
+const menuSemanticsSource = readFileSync(new URL('./tab-bar/tab-bar-menu-semantics.ts', import.meta.url), 'utf-8');
+const sessionContextMenuSource = readFileSync(new URL('./tab-bar/tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
 const providerSelectorSource = readFileSync(
-  new URL('./tab-bar-provider-selector-controller.ts', import.meta.url),
+  new URL('./tab-bar/tab-bar-provider-selector-controller.ts', import.meta.url),
   'utf-8',
 );
 const surfaceControlsSource = readFileSync(
-  new URL('./tab-bar-surface-controls.ts', import.meta.url),
+  new URL('./tab-bar/tab-bar-surface-controls.ts', import.meta.url),
   'utf-8',
 );
 const branchMenuSource = readFileSync(
-  new URL('./tab-bar-branch-menu-controller.ts', import.meta.url),
+  new URL('./tab-bar/tab-bar-branch-menu-controller.ts', import.meta.url),
   'utf-8',
 );
 const sessionMenuSource = readFileSync(
-  new URL('./tab-bar-session-menu-controller.ts', import.meta.url),
+  new URL('./tab-bar/tab-bar-session-menu-controller.ts', import.meta.url),
   'utf-8',
 );
 const sidebarSource = readFileSync(new URL('./sidebar.ts', import.meta.url), 'utf-8');

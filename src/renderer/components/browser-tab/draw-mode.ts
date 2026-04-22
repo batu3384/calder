@@ -5,7 +5,7 @@ import {
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from '../../project-context-prompt.js';
-import { promptNewSession } from '../tab-bar.js';
+import { promptNewSession } from '../tab-bar/tab-bar.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
 import type { BrowserTabInstance } from './types.js';
 import { positionPopover } from './popover.js';

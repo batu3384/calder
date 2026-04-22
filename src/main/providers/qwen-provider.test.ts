@@ -35,7 +35,7 @@ vi.mock('../config-watcher', () => ({
   stopConfigWatcher: vi.fn(),
 }));
 
-vi.mock('../hook-status', () => ({
+vi.mock('../hooks/hook-status', () => ({
   installStatusLineScript: vi.fn(),
 }));
 
@@ -46,7 +46,7 @@ import { _resetPrereqCheckCache } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
 import { installQwenHooks, validateQwenHooks, cleanupQwenHooks } from '../qwen-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { installStatusLineScript } from '../hook-status';
+import { installStatusLineScript } from '../hooks/hook-status';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);

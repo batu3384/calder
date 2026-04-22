@@ -12,7 +12,7 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
-vi.mock('./hook-commands', () => ({
+vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
   statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`),
@@ -21,7 +21,7 @@ vi.mock('./hook-commands', () => ({
   wrapPythonHookCmd: vi.fn((_name: string, _code: string, marker: string) => `capture-event $CALDER_SESSION_ID .events ${marker}`),
 }));
 
-vi.mock('./hook-status', () => ({
+vi.mock('./hooks/hook-status', () => ({
   STATUS_DIR: '/mock/home/.calder/runtime',
   getStatusLineScriptPath: vi.fn(() => '/mock/home/.calder/runtime/statusline.sh'),
 }));

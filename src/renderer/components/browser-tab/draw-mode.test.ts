@@ -33,7 +33,7 @@ vi.mock('../../project-context-prompt.js', () => ({
   formatAppliedContextTrace: mockFormatAppliedContextTrace,
 }));
 
-vi.mock('../tab-bar.js', () => ({
+vi.mock('../tab-bar/tab-bar.js', () => ({
   promptNewSession: vi.fn(),
 }));
 

@@ -2,7 +2,7 @@ import { appState, ArchivedSession } from '../state.js';
 import { loadProviderAvailability } from '../provider-availability.js';
 import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
-import { applyTabContextMenuSemantics } from './tab-bar-menu-semantics.js';
+import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 

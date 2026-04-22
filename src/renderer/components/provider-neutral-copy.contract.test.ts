@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const preferencesModalSource = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
-const preferencesSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
+const preferencesModalSource = readFileSync(new URL('./preferences/preferences-modal.ts', import.meta.url), 'utf-8');
+const preferencesSectionsSource = readFileSync(new URL('./preferences/preferences-modal-sections.ts', import.meta.url), 'utf-8');
 const preferencesSource = [preferencesModalSource, preferencesSectionsSource].join('\n');
 const settingsGuardSource = readFileSync(new URL('./settings-guard-ui.ts', import.meta.url), 'utf-8');
 const conflictModalSource = readFileSync(new URL('./statusline-conflict-modal.ts', import.meta.url), 'utf-8');

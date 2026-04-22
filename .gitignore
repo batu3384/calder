@@ -30,3 +30,4 @@ out/
 .tmp-home-ui/
 .tmp-ui/
 .worktrees/
+.codex-ui-backups/

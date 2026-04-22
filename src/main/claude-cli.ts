@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR, getStatusLineScriptPath, installStatusLineScript } from './hook-status';
-import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hook-commands';
+import { STATUS_DIR, getStatusLineScriptPath, installStatusLineScript } from './hooks/hook-status';
+import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hooks/hook-commands';
 import { buildClaudeEventHookPython } from './claude-event-hook-template';
 import { readJsonSafe, readDirSafe } from './fs-utils';
 import type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types/provider';

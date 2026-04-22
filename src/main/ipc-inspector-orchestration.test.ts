@@ -25,7 +25,7 @@ vi.mock('electron', () => ({
   },
 }));
 
-vi.mock('./hook-status', () => ({
+vi.mock('./hooks/hook-status', () => ({
   setInspectorEventsMiddleware: mockSetInspectorEventsMiddleware,
 }));
 

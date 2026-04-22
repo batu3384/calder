@@ -45,7 +45,15 @@ npm run test:critical-stability
 npm run audit:deep
 ```
 
-`audit:deep` runs cache-clear, shuffled test passes, coverage lanes, build, dependency audit, and dead-code scan.
+`audit:deep` runs cache-clear, shuffled test passes, coverage lanes, build, dependency audit, dead-code scan, and structure guardrails.
+
+## Structure Guardrails
+
+```bash
+npm run audit:structure
+```
+
+`audit:structure` enforces repository hygiene guardrails (forbidden tracked artifact paths and direct file count budgets in hot folders).
 
 ## Packaging
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const mobileControlSource = readFileSync(new URL('./tab-bar-mobile-control.ts', import.meta.url), 'utf-8');
-const sessionContextMenuSource = readFileSync(new URL('./tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
-const shareDialogCoreSource = readFileSync(new URL('./share-dialog.ts', import.meta.url), 'utf-8');
-const shareDialogCopySource = readFileSync(new URL('./share-dialog-copy.ts', import.meta.url), 'utf-8');
+const tabBarSource = readFileSync(new URL('./tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
+const mobileControlSource = readFileSync(new URL('./tab-bar/tab-bar-mobile-control.ts', import.meta.url), 'utf-8');
+const sessionContextMenuSource = readFileSync(new URL('./tab-bar/tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
+const shareDialogCoreSource = readFileSync(new URL('./share-dialog/share-dialog.ts', import.meta.url), 'utf-8');
+const shareDialogCopySource = readFileSync(new URL('./share-dialog/share-dialog-copy.ts', import.meta.url), 'utf-8');
 const shareDialogSource = [shareDialogCoreSource, shareDialogCopySource].join('\n');
 const htmlSource = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const tabsCssSource = readFileSync(new URL('../styles/tabs.css', import.meta.url), 'utf-8');

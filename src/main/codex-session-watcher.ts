@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { BrowserWindow } from 'electron';
-import { STATUS_DIR } from './hook-status';
+import { STATUS_DIR } from './hooks/hook-status';
 
 const HISTORY_PATH = path.join(os.homedir(), '.codex', 'history.jsonl');
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const helpSource = readFileSync(new URL('./help-dialog.ts', import.meta.url), 'utf-8');
-const shareSource = readFileSync(new URL('./share-dialog.ts', import.meta.url), 'utf-8');
+const shareSource = readFileSync(new URL('./share-dialog/share-dialog.ts', import.meta.url), 'utf-8');
 const joinSource = readFileSync(new URL('./join-dialog.ts', import.meta.url), 'utf-8');
 const dialogStyles = readFileSync(new URL('../styles/dialogs.css', import.meta.url), 'utf-8');
 const shareStyles = readFileSync(new URL('../styles/p2p-sharing.css', import.meta.url), 'utf-8');

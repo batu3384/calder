@@ -2,7 +2,7 @@ import * as pty from 'node-pty';
 import { execFile, execFileSync } from 'child_process';
 import type { ProviderId } from '../shared/types/provider';
 import { getProvider } from './providers/registry';
-import { registerSession } from './hook-status';
+import { registerSession } from './hooks/hook-status';
 import { buildProviderBaseEnv } from './provider-env';
 import { getFullPath } from './full-path';
 import { isWin } from './platform';
