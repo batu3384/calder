@@ -27,7 +27,7 @@ vi.mock('./hook-commands', () => ({
 import * as fs from 'fs';
 import * as path from 'path';
 import * as hookCommands from './hook-commands';
-import { getClaudeConfig, installHooks, removeMcpServer } from './claude-cli';
+import { getClaudeConfig, installHooks, installHooksOnly, removeMcpServer } from './claude-cli';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
@@ -463,6 +463,26 @@ describe('installHooks', () => {
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
     expect(withStatusLine.statusLine.command).toBe(path.join('/mock/home', '.calder', 'runtime', statusLineScriptName));
+  });
+
+  it('writes only hooks when installHooksOnly is used directly', () => {
+    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+
+    installHooksOnly();
+
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), { recursive: true });
+    expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
+
+    const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]));
+    expect(written.hooks).toBeDefined();
+    expect(written.statusLine).toBeUndefined();
+
+    expect(mockInstallEventScript).toHaveBeenCalledTimes(26);
+    const eventScripts = mockInstallEventScript.mock.calls.map(([scriptName]) => String(scriptName));
+    expect(eventScripts).toContain('claude_event_SessionStart.py');
+    expect(eventScripts).toContain('claude_event_PostToolUse.py');
+    expect(eventScripts).toContain('claude_event_PostToolUseFailure.py');
+    expect(eventScripts).toContain('claude_event_PermissionRequest.py');
   });
 
   it('preserves existing non-calder hooks', () => {
