@@ -3,7 +3,8 @@ import { readFileSync } from 'fs';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
 const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
-const source = [paneSource, paneLayoutSource].join('\n');
+const paneShellSource = readFileSync(new URL('./browser-tab/pane-shell.ts', import.meta.url), 'utf-8');
+const source = [paneSource, paneLayoutSource, paneShellSource].join('\n');
 const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
 const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const css = readFileSync(new URL('../styles/browser-tab.css', import.meta.url), 'utf-8');

@@ -1,11 +1,12 @@
 import { appState } from '../../state.js';
 import {
+  VIEWPORT_PRESETS,
   type BrowserTabInstance,
   type WebviewElement,
 } from './types.js';
 import { instances } from './instance.js';
 import {
-  describeBrowserPageState,
+  isLocalBrowserUrl,
   navigateTo,
   type BrowserPageState,
 } from './navigation.js';
@@ -17,14 +18,11 @@ import { populateLocalTargets } from './local-targets.js';
 import {
   closeBrowserTargetMenu,
 } from './target-menu.js';
-import { createNewTabStateController } from './new-tab-state.js';
 import {
   syncAddressBarState as syncBrowserAddressBarState,
   syncNavigationControls as syncBrowserNavigationControls,
 } from './navigation-chrome.js';
-import { createBrowserNewTabUi } from './new-tab-ui.js';
 import {
-  resolveBrowserPartitionForSession,
   resolveCredentialOrigin,
   syncBrowserTabToSessionState,
 } from './pane-helpers.js';
@@ -49,6 +47,7 @@ import {
   type BrowserNewTabStateBindings,
 } from './pane-runtime.js';
 import { createBrowserViewportMenuController } from './pane-viewport-menu.js';
+import { createBrowserTabShellArtifacts } from './pane-shell.js';
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
   initializeBrowserTabPane(sessionId, url);
@@ -296,40 +295,6 @@ function initializeBrowserTabRuntimeBindings(params: BrowserTabRuntimeInitializa
   });
 }
 
-function syncBrowserStatusUi(
-  statusBadge: HTMLSpanElement,
-  chromeHint: HTMLDivElement,
-  goBtn: HTMLButtonElement,
-  state: BrowserPageState,
-): void {
-  statusBadge.dataset.state = state;
-  statusBadge.textContent = describeBrowserPageState(state);
-  chromeHint.textContent = state === 'loading'
-    ? 'Waiting for page'
-    : state === 'offline'
-      ? 'Surface unavailable'
-      : state === 'local'
-        ? 'Live local surface'
-        : state === 'remote'
-          ? 'External page'
-          : 'Capture context';
-  goBtn.textContent = state === 'loading' ? 'Stop' : 'Go';
-  goBtn.classList.toggle('loading', state === 'loading');
-  goBtn.ariaLabel = state === 'loading' ? 'Stop page load' : 'Open address';
-}
-
-function syncBrowserSurfaceVisibility(
-  newTabPage: HTMLDivElement,
-  webview: WebviewElement,
-  showEmptySurface: boolean,
-): void {
-  newTabPage.style.display = showEmptySurface ? 'flex' : 'none';
-  newTabPage.setAttribute('aria-hidden', showEmptySurface ? 'false' : 'true');
-  webview.dataset.surface = showEmptySurface ? 'hidden' : 'live';
-  webview.hidden = showEmptySurface;
-  webview.setAttribute('aria-hidden', showEmptySurface ? 'true' : 'false');
-}
-
 function initializeBrowserTabPane(sessionId: string, url?: string): void {
   if (instances.has(sessionId)) return;
 
@@ -359,52 +324,28 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     authBtn,
     viewportContainer,
   } = createBrowserTabPaneLayout(sessionId, url);
-
   const {
+    webview,
+    contentShell,
     newTabPage,
-    ntpState,
-    ntpTitle,
-    ntpSubtitle,
+    ntpGrid,
     ntpTargetsText,
     ntpTargetsMeta,
-    ntpGrid,
     focusAddressBtn,
     refreshTargetsBtn,
-  } = createBrowserNewTabUi(url === 'about:blank' ? 'default' : 'hidden');
-
-  const syncBrowserStatus = (state: BrowserPageState): void => {
-    syncBrowserStatusUi(statusBadge, chromeHint, goBtn, state);
-  };
-
-  const webview = document.createElement('webview') as unknown as WebviewElement;
-  webview.className = 'browser-webview';
-  webview.setAttribute('partition', resolveBrowserPartitionForSession(sessionId));
-
-  const syncSurfaceVisibility = (showEmptySurface: boolean): void => {
-    syncBrowserSurfaceVisibility(newTabPage, webview, showEmptySurface);
-  };
-
-  const newTabStateController = createNewTabStateController({
-    elements: {
-      newTabPage,
-      ntpState,
-      ntpTitle,
-      ntpSubtitle,
-      ntpTargetsText,
-      ntpTargetsMeta,
-      ntpGrid,
-    },
+    newTabStateController,
     syncSurfaceVisibility,
+    syncBrowserStatus,
+  } = createBrowserTabShellArtifacts({
+    sessionId,
+    url,
+    el,
+    viewportContainer,
+    statusBadge,
+    chromeHint,
+    goBtn,
     isLocalSurfaceUrl: isLocalBrowserUrl,
   });
-
-  syncSurfaceVisibility(!url || url === 'about:blank');
-
-  const contentShell = document.createElement('div');
-  contentShell.className = 'browser-content-shell live-view-surface live-view';
-  contentShell.appendChild(viewportContainer);
-  contentShell.appendChild(newTabPage);
-  el.appendChild(contentShell);
 
   const capture = createBrowserPaneCaptureArtifacts(el);
   const authPanelArtifacts = createBrowserAuthPanelArtifacts(el);
