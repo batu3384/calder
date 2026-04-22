@@ -2,11 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const paneRuntimeSource = readFileSync(new URL('./browser-tab/pane-runtime.ts', import.meta.url), 'utf-8');
 const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
 const paneInteractionsSource = readFileSync(new URL('./browser-tab/pane-interactions.ts', import.meta.url), 'utf-8');
 const captureElementsSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
 const paneArtifactsSource = readFileSync(new URL('./browser-tab/pane-artifacts.ts', import.meta.url), 'utf-8');
-const source = [paneSource, paneLayoutSource, paneInteractionsSource, captureElementsSource, paneArtifactsSource].join('\n');
+const source = [
+  paneSource,
+  paneRuntimeSource,
+  paneLayoutSource,
+  paneInteractionsSource,
+  captureElementsSource,
+  paneArtifactsSource,
+].join('\n');
 const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
 const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
 const authPanelSource = readFileSync(new URL('./browser-tab/auth-panel.ts', import.meta.url), 'utf-8');
@@ -116,7 +124,8 @@ describe('browser tab pane contract', () => {
   });
 
   it('loads the guest preload script before assigning the browser surface src', () => {
-    expect(source).toContain("import { getPreloadPath, instances } from './instance.js';");
+    expect(source).toContain("import { getPreloadPath } from './instance.js';");
+    expect(source).toContain("import { instances } from './instance.js';");
     expect(source).toContain('void getPreloadPath()');
     expect(source).toContain("webview.setAttribute('preload', `file://${preloadPath}`);");
     expect(source).toContain('viewportContainer.appendChild(webview);');
