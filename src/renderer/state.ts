@@ -18,7 +18,6 @@ import {
   closeMobileProjectSurface,
   focusCliProjectSurface,
   focusMobileProjectSurface,
-  setActiveProjectSession,
 } from './state-surface-updater.js';
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
@@ -34,33 +33,36 @@ import {
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import {
   addInsightSnapshotForProject,
+  addPlanSessionInAppState,
   addMcpInspectorProjectSession,
   addRemoteProjectSession,
-  addStandardProjectSession,
-  addWorkflowLaunchSession,
+  addSessionInAppState,
   clearHistoryForProject,
   createProjectRecord,
   dismissInsightForProjectId,
+  findProjectBySessionId,
+  findSessionById,
   isInsightDismissedForProjectId,
   listSurfaceTargetSessionsForProject,
-  openUrlInProjectBrowserSurface,
+  openUrlInBrowserSurfaceInAppState,
   passivateBrowserTabSessionById,
   removeHistoryEntryForProject,
   removeProjectAndCollectSessions,
-  removeProjectSession,
-  renameProjectSession,
+  removeSessionInAppState,
+  renameSessionInAppState,
   reorderSessionForProject,
   resolveSurfaceTargetSessionForProject,
-  resolvePlanSessionConfig,
-  resumeHistorySessionForProject,
-  restoreProjectCheckpointForState,
-  resumeWithProviderForProject,
+  resumeFromHistoryInAppState,
+  resumeWithProviderInAppState,
+  restoreProjectCheckpointInAppState,
+  launchWorkflowSessionInAppState,
   setBrowserWidthRatioForProject,
   setMosaicRatioForProject,
+  setActiveSessionInAppState,
   setSurfaceTargetSessionForProject,
   toggleHistoryBookmarkForProject,
   updateBrowserTabSessionUrlById,
-  updateProjectSessionCliId,
+  updateSessionCliIdInAppState,
   upsertBrowserTabProjectSession,
   upsertDiffViewerProjectSession,
   upsertFileReaderProjectSession,
@@ -75,32 +77,16 @@ declare global {
   }
 }
 
-type EventType =
-  | 'project-added'
-  | 'project-removed'
-  | 'project-changed'
-  | 'session-added'
-  | 'session-removed'
-  | 'session-changed'
-  | 'layout-changed'
-  | 'preferences-changed'
-  | 'terminal-panel-changed'
-  | 'history-changed'
-  | 'insights-changed'
-  | 'sidebar-toggled'
-  | 'cli-session-cleared'
-  | 'state-loaded';
+type EventType = 'project-added' | 'project-removed' | 'project-changed' | 'session-added' | 'session-removed'
+  | 'session-changed' | 'layout-changed' | 'preferences-changed' | 'terminal-panel-changed' | 'history-changed'
+  | 'insights-changed' | 'sidebar-toggled' | 'cli-session-cleared' | 'state-loaded';
 
 type EventCallback = (data?: unknown) => void;
 type SessionRemovalScope = 'all' | 'right' | 'left' | 'others';
 
 const defaultPreferences: Preferences = {
-  soundOnSessionWaiting: true,
-  notificationsDesktop: true,
-  debugMode: false,
-  sessionHistoryEnabled: true,
-  insightsEnabled: true,
-  autoTitleEnabled: true,
+  soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true,
+  insightsEnabled: true, autoTitleEnabled: true,
   sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true },
 };
 
@@ -123,10 +109,6 @@ class AppState {
     this.navigation.prune(sessionId);
   }
 
-  private findProjectBySession(sessionId: string): ProjectRecord | undefined {
-    return this.state.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
-  }
-
   findProjectForPath(inputPath: string | null | undefined): ProjectRecord | undefined {
     return findProjectRecordForPath(this.state.projects, inputPath);
   }
@@ -142,7 +124,7 @@ class AppState {
   private stepNav(direction: 1 | -1): void {
     this.navigation.step(
       direction,
-      (sessionId) => this.findProjectBySession(sessionId),
+      (sessionId) => findProjectBySessionId(this.state.projects, sessionId),
       (project, sessionId) => {
         const projectChanged = this.state.activeProjectId !== project.id;
         this.state.activeProjectId = project.id;
@@ -191,40 +173,32 @@ class AppState {
   get projects(): ProjectRecord[] {
     return this.state.projects;
   }
-
   get activeProjectId(): string | null {
     return this.state.activeProjectId;
   }
-
   get activeProject(): ProjectRecord | undefined {
     return this.state.projects.find((p) => p.id === this.state.activeProjectId);
   }
-
   get activeSession(): SessionRecord | undefined {
     const project = this.activeProject;
     if (!project) return undefined;
     return project.sessions.find((s) => s.id === project.activeSessionId);
   }
-
   get sidebarWidth(): number | undefined {
     return this.state.sidebarWidth;
   }
-
   setSidebarWidth(width: number): void {
     this.state.sidebarWidth = width;
     this.persist();
   }
-
   get sidebarCollapsed(): boolean {
     return this.state.sidebarCollapsed ?? false;
   }
-
   toggleSidebar(): void {
     this.state.sidebarCollapsed = !this.sidebarCollapsed;
     this.persist();
     this.emit('sidebar-toggled');
   }
-
   setTerminalPanelOpen(open: boolean): void {
     const project = this.activeProject;
     if (!project) return;
@@ -232,46 +206,37 @@ class AppState {
     this.persist();
     this.emit('terminal-panel-changed');
   }
-
   setTerminalPanelHeight(height: number): void {
     const project = this.activeProject;
     if (!project) return;
     project.terminalPanelHeight = height;
     this.persist();
   }
-
   get lastSeenVersion(): string | undefined {
     return this.state.lastSeenVersion;
   }
-
   setLastSeenVersion(version: string): void {
     this.state.lastSeenVersion = version;
     this.persist();
   }
-
   get appLaunchCount(): number {
     return this.state.appLaunchCount ?? 0;
   }
-
   get starPromptDismissed(): boolean {
     return this.state.starPromptDismissed ?? false;
   }
-
   dismissStarPrompt(): void {
     this.state.starPromptDismissed = true;
     this.persist();
   }
-
   get preferences(): Preferences {
     return this.state.preferences;
   }
-
   setPreference<K extends keyof Preferences>(key: K, value: Preferences[K]): void {
     this.state.preferences[key] = value;
     this.persist();
     this.emit('preferences-changed');
   }
-
   setActiveProject(id: string | null): void {
     this.state.activeProjectId = id;
     const project = this.state.projects.find((p) => p.id === id);
@@ -335,7 +300,7 @@ class AppState {
     checkpoint: ProjectCheckpointDocument,
     mode: ProjectCheckpointRestoreMode = 'additive',
   ): void {
-    const result = restoreProjectCheckpointForState({
+    restoreProjectCheckpointInAppState({
       projects: this.state.projects,
       projectId,
       checkpoint,
@@ -343,17 +308,12 @@ class AppState {
       defaultProviderId: this.state.preferences.defaultProvider ?? 'claude',
       pruneNav: (sessionId) => this.pruneNav(sessionId),
       pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionRemoved: (sessionId) => this.emit('session-removed', { projectId, sessionId }),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onProjectChanged: () => this.emit('project-changed'),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!result) return;
-    this.persist();
-    for (const session of result.removedSessions) {
-      this.emit('session-removed', { projectId, sessionId: session.id });
-    }
-    for (const session of result.createdSessions) {
-      this.emit('session-added', { projectId, session });
-    }
-    this.emit('project-changed');
-    this.emit('session-changed');
   }
 
   addProject(name: string, path: string): ProjectRecord {
@@ -377,14 +337,17 @@ class AppState {
   }
 
   addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-    const plan = resolvePlanSessionConfig({
-      project,
+    return addPlanSessionInAppState({
+      projects: this.state.projects,
+      projectId,
+      name,
       providerOverride,
       defaultProviderId: this.state.preferences.defaultProvider,
+      pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    return this.addSession(projectId, name, plan.args, plan.providerId);
   }
 
   launchWorkflowSession(
@@ -392,36 +355,32 @@ class AppState {
     workflow: ProjectWorkflowDocument,
     providerOverride?: ProviderId,
   ): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-    const session = addWorkflowLaunchSession({
-      project,
+    return launchWorkflowSessionInAppState({
+      projects: this.state.projects,
+      projectId,
       workflow,
       providerOverride,
       defaultProviderId: this.state.preferences.defaultProvider,
       pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
   }
 
   addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return undefined;
-    const session = addStandardProjectSession({
-      project,
+    return addSessionInAppState({
+      projects: this.state.projects,
+      projectId,
       name,
       args,
       providerId,
       defaultProviderId: this.state.preferences.defaultProvider,
       pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
   }
 
   private addOrUpdateSession(
@@ -437,19 +396,6 @@ class AppState {
     return result.session;
   }
 
-  private addSessionAndNotify(
-    projectId: string,
-    run: (project: ProjectRecord) => SessionRecord,
-  ): SessionRecord | undefined {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return undefined;
-    const session = run(project);
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
-  }
-
   addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined {
     return this.addOrUpdateSession(projectId, (project) =>
       upsertDiffViewerProjectSession({
@@ -462,14 +408,16 @@ class AppState {
   }
 
   addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined {
-    return this.addSessionAndNotify(projectId, (project) =>
-      addRemoteProjectSession({
+    return this.addOrUpdateSession(projectId, (project) => ({
+      session: addRemoteProjectSession({
         project,
         sessionId,
         hostSessionName,
         shareMode,
         pushNav: (createdSessionId) => this.pushNav(createdSessionId),
-      }));
+      }),
+      created: true,
+    }));
   }
 
   addBrowserTabSession(
@@ -487,20 +435,16 @@ class AppState {
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return undefined;
-    const targetBrowserSession = openUrlInProjectBrowserSurface({
-      project,
+    return openUrlInBrowserSurfaceInAppState({
+      projects: this.state.projects,
+      projectId,
       url,
       pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onProjectChanged: () => this.emit('project-changed'),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!targetBrowserSession) {
-      return this.addBrowserTabSession(project.id, url);
-    }
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
-    return targetBrowserSession;
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
@@ -514,95 +458,81 @@ class AppState {
   }
 
   addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined {
-    return this.addSessionAndNotify(projectId, (project) =>
-      addMcpInspectorProjectSession({
+    return this.addOrUpdateSession(projectId, (project) => ({
+      session: addMcpInspectorProjectSession({
         project,
         name,
         pushNav: (sessionId) => this.pushNav(sessionId),
-      }));
+      }),
+      created: true,
+    }));
   }
 
   removeSession(projectId: string, sessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    removeProjectSession({
-      project,
+    removeSessionInAppState({
+      projects: this.state.projects,
+      projectId,
       sessionId,
       sessionHistoryEnabled: this.state.preferences.sessionHistoryEnabled,
       pruneNav: (navSessionId) => this.pruneNav(navSessionId),
       pushNav: (navSessionId) => this.pushNav(navSessionId),
       onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
+      persist: () => this.persist(),
+      onSessionRemoved: () => this.emit('session-removed', { projectId, sessionId }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    this.persist();
-    this.emit('session-removed', { projectId, sessionId });
-    this.emit('session-changed');
   }
 
   getSessionHistory(projectId: string): ArchivedSession[] {
     const project = this.state.projects.find((p) => p.id === projectId);
     return project?.sessionHistory ?? [];
   }
-
   removeHistoryEntry(projectId: string, archivedSessionId: string): void {
     if (!removeHistoryEntryForProject(this.state.projects, projectId, archivedSessionId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
-
   toggleBookmark(projectId: string, archivedSessionId: string): void {
     if (!toggleHistoryBookmarkForProject(this.state.projects, projectId, archivedSessionId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
-
   clearSessionHistory(projectId: string): void {
     if (!clearHistoryForProject(this.state.projects, projectId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
-
   resumeFromHistory(projectId: string, archivedSessionId: string): SessionRecord | undefined {
-    const result = resumeHistorySessionForProject({
+    return resumeFromHistoryInAppState({
       projects: this.state.projects,
       projectId,
       archivedSessionId,
       pushNav: (sessionId) => this.pushNav(sessionId),
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!result) return undefined;
-    this.persist();
-    if (result.created) this.emit('session-added', { projectId, session: result.session });
-    this.emit('session-changed');
-    return result.session;
   }
-
   async resumeWithProvider(
     projectId: string,
     source: { archivedSessionId?: string; sessionId?: string },
     targetProviderId: ProviderId,
   ): Promise<SessionRecord | undefined> {
-    const session = await resumeWithProviderForProject({
+    return resumeWithProviderInAppState({
       projects: this.state.projects,
       projectId,
       source,
       targetProviderId,
       buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
-        window.calder.session.buildResumeWithPrompt(
-          sourceProviderId,
-          sourceCliSessionId,
-          projectPath,
-          sourceName,
-        ),
+        window.calder.session.buildResumeWithPrompt(sourceProviderId, sourceCliSessionId, projectPath, sourceName),
       pushNav: (sessionId) => this.pushNav(sessionId),
+      // persist() strips pendingInitialPrompt (transient). split-layout.onSessionAdded
+      // will consume it synchronously from in-memory state before the next persist.
+      persist: () => this.persist(),
+      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!session) return undefined;
-    // persist() strips pendingInitialPrompt (transient). split-layout.onSessionAdded
-    // will consume it synchronously from in-memory state before the next persist.
-    this.persist();
-    this.emit('session-added', { projectId, session });
-    this.emit('session-changed');
-    return session;
   }
-
   consumePendingInitialPrompt(projectId: string, sessionId: string): string | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     const session = project?.sessions.find((s) => s.id === sessionId);
@@ -611,31 +541,27 @@ class AppState {
     delete session.pendingInitialPrompt;
     return prompt;
   }
-
   setActiveSession(projectId: string, sessionId: string): void {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    this.pushNav(sessionId);
-    const { surfaceChanged } = setActiveProjectSession(project, sessionId);
-    this.persist();
-    if (surfaceChanged) {
-      this.emit('project-changed');
-    }
-    this.emit('session-changed');
+    setActiveSessionInAppState({
+      projects: this.state.projects,
+      projectId,
+      sessionId,
+      pushNav: (nextSessionId) => this.pushNav(nextSessionId),
+      persist: () => this.persist(),
+      onProjectChanged: () => this.emit('project-changed'),
+      onSessionChanged: () => this.emit('session-changed'),
+    });
   }
-
   listBrowserTargetSessions(browserSessionId: string): SessionRecord[] {
-    const project = this.findProjectBySession(browserSessionId);
+    const project = findProjectBySessionId(this.state.projects, browserSessionId);
     return project ? this.listSurfaceTargetSessions(project.id) : [];
   }
-
   resolveBrowserTargetSession(browserSessionId: string): SessionRecord | undefined {
-    const project = this.findProjectBySession(browserSessionId);
+    const project = findProjectBySessionId(this.state.projects, browserSessionId);
     return project ? this.resolveSurfaceTargetSession(project.id) : undefined;
   }
-
   setBrowserTargetSession(browserSessionId: string, targetSessionId: string | null): void {
-    const project = this.findProjectBySession(browserSessionId);
+    const project = findProjectBySessionId(this.state.projects, browserSessionId);
     if (!project) return;
     this.setSurfaceTargetSession(project.id, targetSessionId);
   }
@@ -698,17 +624,16 @@ class AppState {
   }
 
   updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void {
-    const result = updateProjectSessionCliId({
+    updateSessionCliIdInAppState({
       projects: this.state.projects,
       projectId,
       sessionId,
       cliSessionId,
       onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
+      persist: () => this.persist(),
+      onCliSessionCleared: () => this.emit('cli-session-cleared', { sessionId }),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!result.updated) return;
-    if (result.clearedPreviousCliSession) this.emit('cli-session-cleared', { sessionId });
-    this.persist();
-    this.emit('session-changed');
   }
 
   /** @deprecated Use updateSessionCliId */
@@ -717,26 +642,18 @@ class AppState {
   }
 
   hasSession(sessionId: string): boolean {
-    return this.findSessionById(sessionId) !== undefined;
-  }
-
-  private findSessionById(sessionId: string): SessionRecord | undefined {
-    for (const project of this.state.projects) {
-      const session = project.sessions.find((s) => s.id === sessionId);
-      if (session) return session;
-    }
-    return undefined;
+    return findSessionById(this.state.projects, sessionId) !== undefined;
   }
 
   updateSessionCost(sessionId: string, cost: CostInfo): void {
-    const session = this.findSessionById(sessionId);
+    const session = findSessionById(this.state.projects, sessionId);
     if (!session) return;
     session.cost = { ...cost };
     this.persist();
   }
 
   updateSessionContext(sessionId: string, context: ContextWindowInfo): void {
-    const session = this.findSessionById(sessionId);
+    const session = findSessionById(this.state.projects, sessionId);
     if (!session) return;
     session.contextWindow = { ...context };
     this.persist();
@@ -755,18 +672,17 @@ class AppState {
   }
 
   renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {
-    const result = renameProjectSession({
+    renameSessionInAppState({
       projects: this.state.projects,
       projectId,
       sessionId,
       name,
       userRenamed,
       maxSessionNameLength: MAX_SESSION_NAME_LENGTH,
+      persist: () => this.persist(),
+      onHistoryChanged: () => this.emit('history-changed', projectId),
+      onSessionChanged: () => this.emit('session-changed'),
     });
-    if (!result.renamed) return;
-    if (result.historyRenamed) this.emit('history-changed', projectId);
-    this.persist();
-    this.emit('session-changed');
   }
 
   setBrowserWidthRatio(projectId: string, ratio: number): void {

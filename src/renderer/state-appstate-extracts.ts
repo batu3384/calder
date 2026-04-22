@@ -37,9 +37,22 @@ import {
   upsertDiffViewerSession,
   upsertFileReaderSession,
 } from './state-session-ops.js';
+import { setActiveProjectSession } from './state-surface-updater.js';
 
 function findProjectById(projects: ProjectRecord[], projectId: string): ProjectRecord | undefined {
   return projects.find((project) => project.id === projectId);
+}
+
+export function findProjectBySessionId(projects: ProjectRecord[], sessionId: string): ProjectRecord | undefined {
+  return projects.find((project) => project.sessions.some((session) => session.id === sessionId));
+}
+
+export function findSessionById(projects: ProjectRecord[], sessionId: string): SessionRecord | undefined {
+  for (const project of projects) {
+    const session = project.sessions.find((entry) => entry.id === sessionId);
+    if (session) return session;
+  }
+  return undefined;
 }
 
 export function createProjectRecord(name: string, path: string): ProjectRecord {
@@ -85,6 +98,38 @@ export function resolvePlanSessionConfig(options: {
   return { providerId, args };
 }
 
+export function addPlanSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  name: string;
+  providerOverride?: ProviderId;
+  defaultProviderId?: ProviderId;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onSessionChanged: () => void;
+}): SessionRecord | undefined {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return undefined;
+  const plan = resolvePlanSessionConfig({
+    project,
+    providerOverride: options.providerOverride,
+    defaultProviderId: options.defaultProviderId,
+  });
+  return addSessionInAppState({
+    projects: options.projects,
+    projectId: options.projectId,
+    name: options.name,
+    args: plan.args,
+    providerId: plan.providerId,
+    defaultProviderId: options.defaultProviderId,
+    pushNav: options.pushNav,
+    persist: options.persist,
+    onSessionAdded: options.onSessionAdded,
+    onSessionChanged: options.onSessionChanged,
+  });
+}
+
 export function addWorkflowLaunchSession(options: {
   project: ProjectRecord;
   workflow: ProjectWorkflowDocument;
@@ -106,6 +151,32 @@ export function addWorkflowLaunchSession(options: {
   return session;
 }
 
+export function launchWorkflowSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  workflow: ProjectWorkflowDocument;
+  providerOverride?: ProviderId;
+  defaultProviderId?: ProviderId;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onSessionChanged: () => void;
+}): SessionRecord | undefined {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return undefined;
+  const session = addWorkflowLaunchSession({
+    project,
+    workflow: options.workflow,
+    providerOverride: options.providerOverride,
+    defaultProviderId: options.defaultProviderId,
+    pushNav: options.pushNav,
+  });
+  options.persist();
+  options.onSessionAdded(session);
+  options.onSessionChanged();
+  return session;
+}
+
 export function addStandardProjectSession(options: {
   project: ProjectRecord;
   name: string;
@@ -122,6 +193,34 @@ export function addStandardProjectSession(options: {
     args: effectiveArgs,
   });
   addSessionToProject(project, session, pushNav, { includeInMosaic: true });
+  return session;
+}
+
+export function addSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  name: string;
+  args?: string;
+  providerId?: ProviderId;
+  defaultProviderId?: ProviderId;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onSessionChanged: () => void;
+}): SessionRecord | undefined {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return undefined;
+  const session = addStandardProjectSession({
+    project,
+    name: options.name,
+    args: options.args,
+    providerId: options.providerId,
+    defaultProviderId: options.defaultProviderId,
+    pushNav: options.pushNav,
+  });
+  options.persist();
+  options.onSessionAdded(session);
+  options.onSessionChanged();
   return session;
 }
 
@@ -496,4 +595,221 @@ export function reorderSessionForProject(
   const project = findProjectById(projects, projectId);
   if (!project) return false;
   return reorderProjectSession(project, sessionId, toIndex);
+}
+
+export function restoreProjectCheckpointInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  checkpoint: ProjectCheckpointDocument;
+  mode: ProjectCheckpointRestoreMode;
+  defaultProviderId: ProviderId;
+  pruneNav: (sessionId: string) => void;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionRemoved: (sessionId: string) => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onProjectChanged: () => void;
+  onSessionChanged: () => void;
+}): boolean {
+  const result = restoreProjectCheckpointForState({
+    projects: options.projects,
+    projectId: options.projectId,
+    checkpoint: options.checkpoint,
+    mode: options.mode,
+    defaultProviderId: options.defaultProviderId,
+    pruneNav: options.pruneNav,
+    pushNav: options.pushNav,
+  });
+  if (!result) return false;
+  options.persist();
+  for (const session of result.removedSessions) options.onSessionRemoved(session.id);
+  for (const session of result.createdSessions) options.onSessionAdded(session);
+  options.onProjectChanged();
+  options.onSessionChanged();
+  return true;
+}
+
+export function openUrlInBrowserSurfaceInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  url: string;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onProjectChanged: () => void;
+  onSessionChanged: () => void;
+}): SessionRecord | undefined {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return undefined;
+  const existingBrowserSession = openUrlInProjectBrowserSurface({
+    project,
+    url: options.url,
+    pushNav: options.pushNav,
+  });
+  if (existingBrowserSession) {
+    options.persist();
+    options.onProjectChanged();
+    options.onSessionChanged();
+    return existingBrowserSession;
+  }
+  const result = upsertBrowserTabProjectSession({
+    project,
+    url: options.url,
+    dedupeByUrl: true,
+    pushNav: options.pushNav,
+  });
+  options.persist();
+  if (result.created) options.onSessionAdded(result.session);
+  options.onSessionChanged();
+  return result.session;
+}
+
+export function removeSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  sessionId: string;
+  sessionHistoryEnabled: boolean;
+  pruneNav: (sessionId: string) => void;
+  pushNav: (sessionId: string) => void;
+  onHistoryChanged: (projectId: string) => void;
+  persist: () => void;
+  onSessionRemoved: () => void;
+  onSessionChanged: () => void;
+}): boolean {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return false;
+  removeProjectSession({
+    project,
+    sessionId: options.sessionId,
+    sessionHistoryEnabled: options.sessionHistoryEnabled,
+    pruneNav: options.pruneNav,
+    pushNav: options.pushNav,
+    onHistoryChanged: options.onHistoryChanged,
+  });
+  options.persist();
+  options.onSessionRemoved();
+  options.onSessionChanged();
+  return true;
+}
+
+export function resumeFromHistoryInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  archivedSessionId: string;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onSessionChanged: () => void;
+}): SessionRecord | undefined {
+  const result = resumeHistorySessionForProject({
+    projects: options.projects,
+    projectId: options.projectId,
+    archivedSessionId: options.archivedSessionId,
+    pushNav: options.pushNav,
+  });
+  if (!result) return undefined;
+  options.persist();
+  if (result.created) options.onSessionAdded(result.session);
+  options.onSessionChanged();
+  return result.session;
+}
+
+export async function resumeWithProviderInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  source: { archivedSessionId?: string; sessionId?: string };
+  targetProviderId: ProviderId;
+  pushNav: (sessionId: string) => void;
+  buildResumePrompt: (
+    sourceProviderId: ProviderId,
+    sourceCliSessionId: string | null,
+    projectPath: string,
+    sourceName: string,
+  ) => Promise<string>;
+  persist: () => void;
+  onSessionAdded: (session: SessionRecord) => void;
+  onSessionChanged: () => void;
+}): Promise<SessionRecord | undefined> {
+  const session = await resumeWithProviderForProject({
+    projects: options.projects,
+    projectId: options.projectId,
+    source: options.source,
+    targetProviderId: options.targetProviderId,
+    buildResumePrompt: options.buildResumePrompt,
+    pushNav: options.pushNav,
+  });
+  if (!session) return undefined;
+  options.persist();
+  options.onSessionAdded(session);
+  options.onSessionChanged();
+  return session;
+}
+
+export function setActiveSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  sessionId: string;
+  pushNav: (sessionId: string) => void;
+  persist: () => void;
+  onProjectChanged: () => void;
+  onSessionChanged: () => void;
+}): boolean {
+  const project = findProjectById(options.projects, options.projectId);
+  if (!project) return false;
+  options.pushNav(options.sessionId);
+  const { surfaceChanged } = setActiveProjectSession(project, options.sessionId);
+  options.persist();
+  if (surfaceChanged) options.onProjectChanged();
+  options.onSessionChanged();
+  return true;
+}
+
+export function updateSessionCliIdInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  sessionId: string;
+  cliSessionId: string;
+  onHistoryChanged: (projectId: string) => void;
+  persist: () => void;
+  onCliSessionCleared: () => void;
+  onSessionChanged: () => void;
+}): boolean {
+  const result = updateProjectSessionCliId({
+    projects: options.projects,
+    projectId: options.projectId,
+    sessionId: options.sessionId,
+    cliSessionId: options.cliSessionId,
+    onHistoryChanged: options.onHistoryChanged,
+  });
+  if (!result.updated) return false;
+  if (result.clearedPreviousCliSession) options.onCliSessionCleared();
+  options.persist();
+  options.onSessionChanged();
+  return true;
+}
+
+export function renameSessionInAppState(options: {
+  projects: ProjectRecord[];
+  projectId: string;
+  sessionId: string;
+  name: string;
+  userRenamed?: boolean;
+  maxSessionNameLength: number;
+  persist: () => void;
+  onHistoryChanged: () => void;
+  onSessionChanged: () => void;
+}): boolean {
+  const result = renameProjectSession({
+    projects: options.projects,
+    projectId: options.projectId,
+    sessionId: options.sessionId,
+    name: options.name,
+    userRenamed: options.userRenamed,
+    maxSessionNameLength: options.maxSessionNameLength,
+  });
+  if (!result.renamed) return false;
+  if (result.historyRenamed) options.onHistoryChanged();
+  options.persist();
+  options.onSessionChanged();
+  return true;
 }

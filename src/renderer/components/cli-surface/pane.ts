@@ -14,7 +14,6 @@ import {
 } from './composer-position.js';
 import {
   openInspect,
-  setInspectPayload,
 } from './inspect-mode.js';
 import { createSelectionPayload } from './selection.js';
 import { inferCliRegions } from './heuristics.js';
@@ -36,7 +35,6 @@ import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
   pointerToCell,
   selectionFromTerminal,
-  selectionsMatchBounds,
 } from './inspect-geometry.js';
 import {
   deriveSemanticRegions,
@@ -58,6 +56,8 @@ import {
 } from './pane-elements.js';
 import { createCliSurfaceInstance, type CliSurfaceInstance } from './pane-instance.js';
 import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
+import { createCliSurfaceInspectStateHelpers } from './pane-inspect-state.js';
+import { createCliSurfaceFrameHelpers } from './pane-frame-helpers.js';
 import {
   bindCliSurfaceInspectActionHandlers,
   bindCliSurfaceInspectPointerHandlers,
@@ -71,13 +71,9 @@ import {
   updateCliSurfaceRuntimeState,
 } from './pane-project-state.js';
 import {
-  clearComposerError,
   createCliSurfaceComposerHelpers,
   setInspectPayloadFromPointer,
   showComposerError,
-  showElement,
-  syncComposerContextControl,
-  syncComposerContextTrace,
 } from './pane-composer-helpers.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
@@ -104,16 +100,6 @@ function clearProjectSurfaceCaches(projectId: string): void {
   clearCliSurfaceLinkDispatch(projectId);
 }
 
-
-function syncViewportLines(instance: CliSurfaceInstance): void {
-  const buffer = instance.terminal.buffer.active;
-  const start = buffer.viewportY;
-  instance.viewportLines = Array.from({ length: instance.terminal.rows }, (_, index) =>
-    buffer.getLine(start + index)?.translateToString(true) ?? '',
-  );
-  getInferredRegions(instance);
-}
-
 export function renderRuntimeMeta(instance: CliSurfaceInstance): void {
   renderCliSurfaceRuntimeMeta({
     instance,
@@ -121,62 +107,6 @@ export function renderRuntimeMeta(instance: CliSurfaceInstance): void {
     resolveSelectedProfile: (projectId) => resolveCliSurfaceSelectedProfile(appState, projectId),
     adapterHint: semanticAdapterHints.get(instance.projectId),
   });
-}
-
-function renderInspectState(instance: CliSurfaceInstance): void {
-  const hasPayload = Boolean(instance.inspectState.payload);
-  showElement(instance.composerEl, hasPayload);
-  showElement(instance.selectionOverlayEl, instance.inspectState.active);
-  showHoverRegion(instance, instance.inspectState.active && !instance.selectionAnchor ? instance.hoveredRegion : null);
-  showElement(instance.inspectButton, true);
-  instance.inspectButton.textContent = instance.inspectState.active ? 'Exit Inspect' : 'Inspect';
-  instance.inspectButton.classList.toggle('active', instance.inspectState.active);
-  instance.inspectButton.setAttribute('aria-pressed', instance.inspectState.active ? 'true' : 'false');
-
-  if (!instance.inspectState.active && !hasPayload) {
-    instance.composerHintEl.textContent = 'Press Inspect, then drag over terminal output. Use Capture only when you want the whole screen.';
-    instance.composerPreviewEl.textContent = '';
-    syncComposerContextControl(instance, 'selection-only');
-    syncComposerContextTrace(instance);
-    instance.targetMenuController?.syncControls();
-    clearComposerError(instance);
-    return;
-  }
-
-  if (!instance.inspectState.payload) {
-    instance.composerHintEl.textContent = instance.hoveredRegion
-      ? `Click to select ${instance.hoveredRegion.label}, or drag for a precise region.`
-      : 'Inspect mode is on. Hover to preview a panel, click to select it, or drag for a precise region.';
-    instance.composerPreviewEl.textContent = '';
-    syncComposerContextControl(instance, 'selection-only');
-    syncComposerContextTrace(instance);
-    instance.targetMenuController?.syncControls();
-    return;
-  }
-
-  const { payload } = instance.inspectState;
-  const hintParts: string[] = [];
-  if (payload.selectionSource === 'semantic' && payload.semanticLabel) {
-    hintParts.push(`Semantic target: ${payload.semanticLabel}`);
-  } else if (payload.selectionSource === 'inferred' && payload.inferredLabel) {
-    hintParts.push(`Inferred panel: ${payload.inferredLabel}`);
-  } else {
-    hintParts.push(`Selected region: ${payload.selection.mode}`);
-    if (payload.semanticLabel) {
-      hintParts.push(`Semantic target: ${payload.semanticLabel}`);
-    }
-    if (payload.inferredLabel) {
-      hintParts.push(`Inside: ${payload.inferredLabel}`);
-    }
-  }
-  if (payload.command) {
-    hintParts.push(`Command: ${payload.command}`);
-  }
-  instance.composerHintEl.textContent = hintParts.join(' · ');
-  instance.composerPreviewEl.textContent = payload.selectedText || payload.viewportText;
-  syncComposerContextControl(instance, payload.contextMode ?? 'selection-only');
-  syncComposerContextTrace(instance);
-  instance.targetMenuController?.syncControls();
 }
 
 function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[] {
@@ -269,33 +199,6 @@ export function buildInspectPayload(
   });
 }
 
-function setInspectPayloadFromSelection(instance: CliSurfaceInstance, selection: SurfaceSelectionRange | null): void {
-  if (!selection) {
-    renderInspectState(instance);
-    return;
-  }
-
-  instance.inspectState = setInspectPayload(
-    instance.inspectState,
-    selection,
-    buildInspectPayload(instance, selection),
-  );
-  renderInspectState(instance);
-}
-
-function setHoverRegion(instance: CliSurfaceInstance, region: SelectableCliRegion | null): void {
-  if (
-    instance.hoveredRegion?.label === region?.label
-    && instance.hoveredRegion
-    && region
-    && selectionsMatchBounds(instance.hoveredRegion.selection, region.selection)
-  ) {
-    return;
-  }
-  instance.hoveredRegion = region;
-  renderInspectState(instance);
-}
-
 function getInferredRegions(instance: CliSurfaceInstance): InferredCliRegion[] {
   const nextKey = instance.viewportLines.join('\n');
   if (instance.inferredRegionsKey === nextKey) {
@@ -331,47 +234,29 @@ function showHoverRegion(instance: CliSurfaceInstance, region: SelectableCliRegi
   });
 }
 
-function scheduleViewportRefresh(instance: CliSurfaceInstance): void {
-  if (instance.refreshFramePending) return;
-  instance.refreshFramePending = true;
+const inspectStateHelpers = createCliSurfaceInspectStateHelpers({
+  buildInspectPayload: (instance, selection) => buildInspectPayload(instance, selection),
+  getInferredRegions: (instance) => getInferredRegions(instance),
+  showHoverRegion: (instance, region) => showHoverRegion(instance, region),
+});
+const { syncViewportLines, renderInspectState, setInspectPayloadFromSelection, setHoverRegion } = inspectStateHelpers;
 
-  requestAnimationFrame(() => {
-    instance.refreshFramePending = false;
-    syncViewportLines(instance);
-    renderRuntimeMeta(instance);
-    if (instance.inspectState.active) {
-      setInspectPayloadFromSelection(instance, selectionFromTerminal({
-        viewportLineCount: instance.viewportLines.length,
-        terminalCols: instance.terminal.cols,
-        viewportY: instance.terminal.buffer.active.viewportY,
-        selectionText: instance.terminal.getSelection(),
-        range: instance.terminal.getSelectionPosition(),
-      }));
-    }
-  });
-}
-
-function scheduleTerminalDataFlush(instance: CliSurfaceInstance): void {
-  if (instance.dataFramePending) return;
-  instance.dataFramePending = true;
-
-  requestAnimationFrame(() => {
-    instance.dataFramePending = false;
-    const data = instance.pendingDataChunks.join('');
-    instance.pendingDataChunks = [];
-    if (!data) return;
-    instance.terminal.write(data);
-    scheduleViewportRefresh(instance);
-  });
-}
-
-function fitSurface(instance: CliSurfaceInstance): void {
-  requestAnimationFrame(() => {
-    instance.fitAddon.fit();
-    getCliSurfaceApi()?.resize(instance.projectId, instance.terminal.cols, instance.terminal.rows);
-    scheduleViewportRefresh(instance);
-  });
-}
+const frameHelpers = createCliSurfaceFrameHelpers({
+  syncViewportLines: (instance) => syncViewportLines(instance),
+  renderRuntimeMeta: (instance) => renderRuntimeMeta(instance),
+  setInspectPayloadFromSelection: (instance, selection) => setInspectPayloadFromSelection(instance, selection),
+  getRuntimeViewportSelection: (instance) => selectionFromTerminal({
+    viewportLineCount: instance.viewportLines.length,
+    terminalCols: instance.terminal.cols,
+    viewportY: instance.terminal.buffer.active.viewportY,
+    selectionText: instance.terminal.getSelection(),
+    range: instance.terminal.getSelectionPosition(),
+  }),
+  resizeRuntime: (projectId, cols, rows) => {
+    getCliSurfaceApi()?.resize(projectId, cols, rows);
+  },
+});
+const { scheduleViewportRefresh, scheduleTerminalDataFlush, fitSurface } = frameHelpers;
 
 export function attachPaneBindings(): void {
   attachCliSurfaceRuntimeBindings({
