@@ -6,9 +6,8 @@ import {
   runModalCleanup,
   showModal,
 } from './modal.js';
-import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
+import type { CustomSelectInstance } from './custom-select.js';
 import { shortcutManager } from '../shortcuts.js';
-import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../provider-availability.js';
 import { toProjectRelativeContextPath } from '../project-context-utils.js';
 import {
   appendOverviewGrid as appendOverviewGridLayout,
@@ -22,10 +21,11 @@ import {
 import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 import {
   renderAboutPreferencesSection,
+  renderGeneralPreferencesSection,
   renderLayoutPreferencesSection,
   renderProvidersPreferencesSection,
 } from './preferences-modal-sections.js';
-import type { CliProviderMeta, ProviderId, UiLanguage } from '../../shared/types/provider.js';
+import type { ProviderId, UiLanguage } from '../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../shared/types/mobile.js';
 import type { ProjectCheckpointDocument } from '../../shared/types/project.js';
 
@@ -130,11 +130,6 @@ function renderPreferencesModalContent(): void {
 
   // Build section content
   let currentSection: Section = 'general';
-  let soundCheckbox: HTMLInputElement | null = null;
-  let notificationsCheckbox: HTMLInputElement | null = null;
-  let historyCheckbox: HTMLInputElement | null = null;
-  let insightsCheckbox: HTMLInputElement | null = null;
-  let autoTitleCheckbox: HTMLInputElement | null = null;
   let defaultProviderSelect: CustomSelectInstance | null = null;
   let languageSelect: CustomSelectInstance | null = null;
   let activeRecorder: { cleanup: () => void } | null = null;
@@ -419,6 +414,20 @@ function renderPreferencesModalContent(): void {
     }
   }
 
+  function replaceDefaultProviderSelect(select: CustomSelectInstance): void {
+    if (defaultProviderSelect && defaultProviderSelect !== select) {
+      defaultProviderSelect.destroy();
+    }
+    defaultProviderSelect = select;
+  }
+
+  function replaceLanguageSelect(select: CustomSelectInstance): void {
+    if (languageSelect && languageSelect !== select) {
+      languageSelect.destroy();
+    }
+    languageSelect = select;
+  }
+
   function renderSection(section: Section) {
     cleanupRecorder();
     cleanupAboutUpdateListeners();
@@ -432,233 +441,16 @@ function renderPreferencesModalContent(): void {
     }
 
     if (section === 'general') {
-      appendSectionIntro(
+      renderGeneralPreferencesSection({
         content,
-        'Session',
-        'Launch defaults',
-        'Choose how Calder opens new work, how it names sessions, and which signals stay on while you code.',
-      );
-      appendOverviewGrid(content, [
-        {
-          label: 'Language',
-          value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
-          note: 'Applies to the full Calder interface.',
-        },
-        {
-          label: 'Default tool',
-          value: preferenceDraft.defaultProvider,
-          note: 'Used when a new session has no explicit provider.',
-        },
-        {
-          label: 'History',
-          value: preferenceDraft.sessionHistoryEnabled ? 'On' : 'Off',
-          note: 'Closed sessions can stay searchable in the run log.',
-        },
-        {
-          label: 'Alerts',
-          value: preferenceDraft.notificationsDesktop ? 'Desktop' : 'In-app only',
-          note: 'Sound and notification behavior stays local to this workspace.',
-        },
-      ]);
-      // Default provider dropdown
-      const providerRow = document.createElement('div');
-      providerRow.className = 'modal-toggle-field';
-
-      const providerLabel = document.createElement('label');
-      providerLabel.textContent = 'Default coding tool';
-
-      const currentDefault = preferenceDraft.defaultProvider;
-
-      const buildProviderOptions = (snapshot: { providers: CliProviderMeta[]; availability: Map<ProviderId, boolean> }) =>
-        snapshot.providers.map(provider => {
-          const available = snapshot.availability.get(provider.id) ?? true;
-          return {
-            value: provider.id,
-            label: available ? provider.displayName : `${provider.displayName} (not installed)`,
-            disabled: !available,
-          };
-        });
-
-      const buildProviderNote = (snapshot: { availability: Map<ProviderId, boolean> } | null, providerId: ProviderId): string => {
-        if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
-        if (snapshot.availability.get(providerId)) {
-          return 'New sessions use this tool unless a workflow picks a different one.';
-        }
-        return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
-      };
-
-      let snapshot = getProviderAvailabilitySnapshot();
-      if (snapshot) {
-        defaultProviderSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
-        preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
-      } else {
-        defaultProviderSelect = createCustomSelect('pref-default-provider', [{ value: currentDefault, label: 'Loading…' }], currentDefault);
-        loadProviderAvailability().then(() => {
-          if (currentSection !== 'general') return;
-          snapshot = getProviderAvailabilitySnapshot();
-          if (snapshot) {
-            if (defaultProviderSelect) defaultProviderSelect.destroy();
-            defaultProviderSelect = createCustomSelect(
-              'pref-default-provider',
-              buildProviderOptions(snapshot),
-              preferenceDraft.defaultProvider,
-            );
-            providerRow.querySelector('.custom-select')?.remove();
-            providerRow.appendChild(defaultProviderSelect.element);
-            preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
-            providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
-            defaultProviderSelect.element.addEventListener('change', () => {
-              if (!defaultProviderSelect) return;
-              preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
-              providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
-            });
-          }
-        });
-      }
-
-      const providerNote = document.createElement('div');
-      providerNote.className = 'preferences-control-note';
-      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
-
-      defaultProviderSelect.element.addEventListener('change', () => {
-        if (!defaultProviderSelect) return;
-        preferenceDraft.defaultProvider = defaultProviderSelect.getValue() as ProviderId;
-        providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+        preferenceDraft,
+        appendSectionIntro,
+        appendOverviewGrid,
+        isGeneralSectionActive: () => currentSection === 'general',
+        getDefaultProviderSelect: () => defaultProviderSelect,
+        replaceDefaultProviderSelect,
+        replaceLanguageSelect,
       });
-
-      providerRow.appendChild(providerLabel);
-      providerRow.appendChild(defaultProviderSelect.element);
-      content.appendChild(providerRow);
-      content.appendChild(providerNote);
-
-      const languageRow = document.createElement('div');
-      languageRow.className = 'modal-toggle-field';
-
-      const languageLabel = document.createElement('label');
-      languageLabel.textContent = 'Interface language';
-
-      const currentLanguage = preferenceDraft.language;
-      languageSelect = createCustomSelect(
-        'pref-language',
-        [
-          { value: 'en', label: 'English' },
-          { value: 'tr', label: 'Turkish' },
-        ],
-        currentLanguage,
-      );
-
-      const languageNote = document.createElement('div');
-      languageNote.className = 'preferences-control-note';
-      languageNote.textContent = 'Language changes apply after the interface refreshes.';
-
-      languageRow.appendChild(languageLabel);
-      languageRow.appendChild(languageSelect.element);
-      content.appendChild(languageRow);
-      content.appendChild(languageNote);
-      languageSelect.element.addEventListener('change', () => {
-        if (!languageSelect) return;
-        preferenceDraft.language = languageSelect.getValue() as UiLanguage;
-      });
-
-      const row = document.createElement('div');
-      row.className = 'modal-toggle-field';
-
-      const label = document.createElement('label');
-      label.htmlFor = 'pref-sound-on-waiting';
-      label.textContent = 'Play sound when session finishes work';
-
-      soundCheckbox = document.createElement('input');
-      soundCheckbox.type = 'checkbox';
-      soundCheckbox.id = 'pref-sound-on-waiting';
-      soundCheckbox.checked = preferenceDraft.soundOnSessionWaiting;
-      soundCheckbox.addEventListener('change', () => {
-        if (!soundCheckbox) return;
-        preferenceDraft.soundOnSessionWaiting = soundCheckbox.checked;
-      });
-
-      row.appendChild(label);
-      row.appendChild(soundCheckbox);
-      content.appendChild(row);
-
-      const notifRow = document.createElement('div');
-      notifRow.className = 'modal-toggle-field';
-
-      const notifLabel = document.createElement('label');
-      notifLabel.htmlFor = 'pref-notifications-desktop';
-      notifLabel.textContent = 'Desktop notifications when sessions need attention';
-
-      notificationsCheckbox = document.createElement('input');
-      notificationsCheckbox.type = 'checkbox';
-      notificationsCheckbox.id = 'pref-notifications-desktop';
-      notificationsCheckbox.checked = preferenceDraft.notificationsDesktop;
-      notificationsCheckbox.addEventListener('change', () => {
-        if (!notificationsCheckbox) return;
-        preferenceDraft.notificationsDesktop = notificationsCheckbox.checked;
-      });
-
-      notifRow.appendChild(notifLabel);
-      notifRow.appendChild(notificationsCheckbox);
-      content.appendChild(notifRow);
-
-      const historyRow = document.createElement('div');
-      historyRow.className = 'modal-toggle-field';
-
-      const historyLabel = document.createElement('label');
-      historyLabel.htmlFor = 'pref-session-history';
-      historyLabel.textContent = 'Record session history when sessions close';
-
-      historyCheckbox = document.createElement('input');
-      historyCheckbox.type = 'checkbox';
-      historyCheckbox.id = 'pref-session-history';
-      historyCheckbox.checked = preferenceDraft.sessionHistoryEnabled;
-      historyCheckbox.addEventListener('change', () => {
-        if (!historyCheckbox) return;
-        preferenceDraft.sessionHistoryEnabled = historyCheckbox.checked;
-      });
-
-      historyRow.appendChild(historyLabel);
-      historyRow.appendChild(historyCheckbox);
-      content.appendChild(historyRow);
-
-      const insightsRow = document.createElement('div');
-      insightsRow.className = 'modal-toggle-field';
-
-      const insightsLabel = document.createElement('label');
-      insightsLabel.htmlFor = 'pref-insights-enabled';
-      insightsLabel.textContent = 'Show insight alerts';
-
-      insightsCheckbox = document.createElement('input');
-      insightsCheckbox.type = 'checkbox';
-      insightsCheckbox.id = 'pref-insights-enabled';
-      insightsCheckbox.checked = preferenceDraft.insightsEnabled;
-      insightsCheckbox.addEventListener('change', () => {
-        if (!insightsCheckbox) return;
-        preferenceDraft.insightsEnabled = insightsCheckbox.checked;
-      });
-
-      insightsRow.appendChild(insightsLabel);
-      insightsRow.appendChild(insightsCheckbox);
-      content.appendChild(insightsRow);
-
-      const autoTitleRow = document.createElement('div');
-      autoTitleRow.className = 'modal-toggle-field';
-
-      const autoTitleLabel = document.createElement('label');
-      autoTitleLabel.htmlFor = 'pref-auto-title';
-      autoTitleLabel.textContent = 'Auto-name sessions from conversation title';
-
-      autoTitleCheckbox = document.createElement('input');
-      autoTitleCheckbox.type = 'checkbox';
-      autoTitleCheckbox.id = 'pref-auto-title';
-      autoTitleCheckbox.checked = preferenceDraft.autoTitleEnabled;
-      autoTitleCheckbox.addEventListener('change', () => {
-        if (!autoTitleCheckbox) return;
-        preferenceDraft.autoTitleEnabled = autoTitleCheckbox.checked;
-      });
-
-      autoTitleRow.appendChild(autoTitleLabel);
-      autoTitleRow.appendChild(autoTitleCheckbox);
-      content.appendChild(autoTitleRow);
 
     } else if (section === 'layout') {
       renderLayoutPreferencesSection({

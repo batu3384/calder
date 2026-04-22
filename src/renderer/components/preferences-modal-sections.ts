@@ -4,6 +4,8 @@ import {
   onUpdateCenterChange,
 } from '../update-center.js';
 import { appState } from '../state.js';
+import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
+import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../provider-availability.js';
 import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';
 import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
 import { renderProjectContextSection } from './preferences-context-discovery.js';
@@ -18,7 +20,7 @@ import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
 import type { MobileDependencyId } from '../../shared/types/mobile.js';
-import type { ProviderId } from '../../shared/types/provider.js';
+import type { CliProviderMeta, ProviderId, UiLanguage } from '../../shared/types/provider.js';
 import type { ProjectCheckpointDocument } from '../../shared/types/project.js';
 
 type AppendSectionIntro = (
@@ -56,6 +58,16 @@ interface AboutDraft {
   debugMode: boolean;
 }
 
+interface GeneralDraft {
+  soundOnSessionWaiting: boolean;
+  notificationsDesktop: boolean;
+  sessionHistoryEnabled: boolean;
+  insightsEnabled: boolean;
+  autoTitleEnabled: boolean;
+  defaultProvider: ProviderId;
+  language: UiLanguage;
+}
+
 interface RenderLayoutSectionArgs {
   content: HTMLElement;
   preferenceDraft: LayoutDraft;
@@ -70,6 +82,17 @@ interface RenderAboutSectionArgs {
   appendSectionIntro: AppendSectionIntro;
   appendOverviewGrid: AppendOverviewGrid;
   formatRelativeTimestamp: (timestamp?: string) => string;
+}
+
+interface RenderGeneralSectionArgs {
+  content: HTMLElement;
+  preferenceDraft: GeneralDraft;
+  appendSectionIntro: AppendSectionIntro;
+  appendOverviewGrid: AppendOverviewGrid;
+  isGeneralSectionActive: () => boolean;
+  getDefaultProviderSelect: () => CustomSelectInstance | null;
+  replaceDefaultProviderSelect: (select: CustomSelectInstance) => void;
+  replaceLanguageSelect: (select: CustomSelectInstance) => void;
 }
 
 interface RenderProvidersSectionArgs {
@@ -94,6 +117,210 @@ interface RenderProvidersSectionArgs {
   onApplySetupBadge: (hasIssue: boolean) => void;
   onFixProvider: (providerId?: ProviderId) => Promise<void>;
   onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+}
+
+export function renderGeneralPreferencesSection({
+  content,
+  preferenceDraft,
+  appendSectionIntro,
+  appendOverviewGrid,
+  isGeneralSectionActive,
+  getDefaultProviderSelect,
+  replaceDefaultProviderSelect,
+  replaceLanguageSelect,
+}: RenderGeneralSectionArgs): void {
+  appendSectionIntro(
+    content,
+    'Session',
+    'Launch defaults',
+    'Choose how Calder opens new work, how it names sessions, and which signals stay on while you code.',
+  );
+  appendOverviewGrid(content, [
+    {
+      label: 'Language',
+      value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
+      note: 'Applies to the full Calder interface.',
+    },
+    {
+      label: 'Default tool',
+      value: preferenceDraft.defaultProvider,
+      note: 'Used when a new session has no explicit provider.',
+    },
+    {
+      label: 'History',
+      value: preferenceDraft.sessionHistoryEnabled ? 'On' : 'Off',
+      note: 'Closed sessions can stay searchable in the run log.',
+    },
+    {
+      label: 'Alerts',
+      value: preferenceDraft.notificationsDesktop ? 'Desktop' : 'In-app only',
+      note: 'Sound and notification behavior stays local to this workspace.',
+    },
+  ]);
+
+  const providerRow = document.createElement('div');
+  providerRow.className = 'modal-toggle-field';
+
+  const providerLabel = document.createElement('label');
+  providerLabel.textContent = 'Default coding tool';
+
+  const currentDefault = preferenceDraft.defaultProvider;
+
+  const buildProviderOptions = (snapshot: { providers: CliProviderMeta[]; availability: Map<ProviderId, boolean> }) =>
+    snapshot.providers.map(provider => {
+      const available = snapshot.availability.get(provider.id) ?? true;
+      return {
+        value: provider.id,
+        label: available ? provider.displayName : `${provider.displayName} (not installed)`,
+        disabled: !available,
+      };
+    });
+
+  const buildProviderNote = (snapshot: { availability: Map<ProviderId, boolean> } | null, providerId: ProviderId): string => {
+    if (!snapshot) return 'Calder falls back to the next installed tool if this one is missing.';
+    if (snapshot.availability.get(providerId)) {
+      return 'New sessions use this tool unless a workflow picks a different one.';
+    }
+    return 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
+  };
+
+  let snapshot = getProviderAvailabilitySnapshot();
+  if (snapshot) {
+    const defaultSelect = createCustomSelect('pref-default-provider', buildProviderOptions(snapshot), currentDefault);
+    replaceDefaultProviderSelect(defaultSelect);
+    preferenceDraft.defaultProvider = defaultSelect.getValue() as ProviderId;
+  } else {
+    const loadingSelect = createCustomSelect('pref-default-provider', [{ value: currentDefault, label: 'Loading…' }], currentDefault);
+    replaceDefaultProviderSelect(loadingSelect);
+    loadProviderAvailability().then(() => {
+      if (!isGeneralSectionActive()) return;
+      snapshot = getProviderAvailabilitySnapshot();
+      if (!snapshot) return;
+
+      const refreshedSelect = createCustomSelect(
+        'pref-default-provider',
+        buildProviderOptions(snapshot),
+        preferenceDraft.defaultProvider,
+      );
+      replaceDefaultProviderSelect(refreshedSelect);
+      providerRow.querySelector('.custom-select')?.remove();
+      providerRow.appendChild(refreshedSelect.element);
+      preferenceDraft.defaultProvider = refreshedSelect.getValue() as ProviderId;
+      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+      refreshedSelect.element.addEventListener('change', () => {
+        const select = getDefaultProviderSelect();
+        if (!select) return;
+        preferenceDraft.defaultProvider = select.getValue() as ProviderId;
+        providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+      });
+    });
+  }
+
+  const providerNote = document.createElement('div');
+  providerNote.className = 'preferences-control-note';
+  providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+
+  const providerSelect = getDefaultProviderSelect();
+  if (providerSelect) {
+    providerSelect.element.addEventListener('change', () => {
+      const select = getDefaultProviderSelect();
+      if (!select) return;
+      preferenceDraft.defaultProvider = select.getValue() as ProviderId;
+      providerNote.textContent = buildProviderNote(snapshot, preferenceDraft.defaultProvider);
+    });
+    providerRow.appendChild(providerLabel);
+    providerRow.appendChild(providerSelect.element);
+    content.appendChild(providerRow);
+    content.appendChild(providerNote);
+  }
+
+  const languageRow = document.createElement('div');
+  languageRow.className = 'modal-toggle-field';
+
+  const languageLabel = document.createElement('label');
+  languageLabel.textContent = 'Interface language';
+
+  const languageSelect = createCustomSelect(
+    'pref-language',
+    [
+      { value: 'en', label: 'English' },
+      { value: 'tr', label: 'Turkish' },
+    ],
+    preferenceDraft.language,
+  );
+  replaceLanguageSelect(languageSelect);
+
+  const languageNote = document.createElement('div');
+  languageNote.className = 'preferences-control-note';
+  languageNote.textContent = 'Language changes apply after the interface refreshes.';
+
+  languageRow.appendChild(languageLabel);
+  languageRow.appendChild(languageSelect.element);
+  content.appendChild(languageRow);
+  content.appendChild(languageNote);
+  languageSelect.element.addEventListener('change', () => {
+    preferenceDraft.language = languageSelect.getValue() as UiLanguage;
+  });
+
+  const appendToggleField = (id: string, labelText: string, checked: boolean, onChange: (checkedState: boolean) => void) => {
+    const row = document.createElement('div');
+    row.className = 'modal-toggle-field';
+
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = labelText;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = id;
+    checkbox.checked = checked;
+    checkbox.addEventListener('change', () => onChange(checkbox.checked));
+
+    row.appendChild(label);
+    row.appendChild(checkbox);
+    content.appendChild(row);
+  };
+
+  appendToggleField(
+    'pref-sound-on-waiting',
+    'Play sound when session finishes work',
+    preferenceDraft.soundOnSessionWaiting,
+    (checked) => {
+      preferenceDraft.soundOnSessionWaiting = checked;
+    },
+  );
+  appendToggleField(
+    'pref-notifications-desktop',
+    'Desktop notifications when sessions need attention',
+    preferenceDraft.notificationsDesktop,
+    (checked) => {
+      preferenceDraft.notificationsDesktop = checked;
+    },
+  );
+  appendToggleField(
+    'pref-session-history',
+    'Record session history when sessions close',
+    preferenceDraft.sessionHistoryEnabled,
+    (checked) => {
+      preferenceDraft.sessionHistoryEnabled = checked;
+    },
+  );
+  appendToggleField(
+    'pref-insights-enabled',
+    'Show insight alerts',
+    preferenceDraft.insightsEnabled,
+    (checked) => {
+      preferenceDraft.insightsEnabled = checked;
+    },
+  );
+  appendToggleField(
+    'pref-auto-title',
+    'Auto-name sessions from conversation title',
+    preferenceDraft.autoTitleEnabled,
+    (checked) => {
+      preferenceDraft.autoTitleEnabled = checked;
+    },
+  );
 }
 
 export function renderLayoutPreferencesSection({
