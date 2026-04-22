@@ -1,6 +1,5 @@
 import { appState } from '../../state.js';
 import {
-  VIEWPORT_PRESETS,
   type BrowserTabInstance,
   type WebviewElement,
 } from './types.js';
@@ -10,7 +9,7 @@ import {
   navigateTo,
   type BrowserPageState,
 } from './navigation.js';
-import { applyViewport, openViewportDropdown, closeViewportDropdown } from './viewport.js';
+import { applyViewport } from './viewport.js';
 import { addFlowStep } from './flow-recording.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import { createBrowserAuthController } from './auth-controller.js';
@@ -37,7 +36,6 @@ import {
   attachBrowserViewportInteractions,
   bindBrowserToolbarState,
   type BrowserCaptureToolbarCluster,
-  type ViewportMenuFocusMode,
 } from './pane-interactions.js';
 import {
   createBrowserAuthPanelArtifacts,
@@ -50,6 +48,7 @@ import {
   createBrowserTabInstance,
   type BrowserNewTabStateBindings,
 } from './pane-runtime.js';
+import { createBrowserViewportMenuController } from './pane-viewport-menu.js';
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
   initializeBrowserTabPane(sessionId, url);
@@ -361,77 +360,6 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     viewportContainer,
   } = createBrowserTabPaneLayout(sessionId, url);
 
-  const viewportMenuItems: HTMLButtonElement[] = [];
-
-  const focusViewportMenuItem = (index: number): void => {
-    if (viewportMenuItems.length === 0) return;
-    const normalized = ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
-    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
-    const nextItem = viewportMenuItems[normalized];
-    nextItem.tabIndex = 0;
-    nextItem.focus();
-  };
-
-  const focusSelectedViewportMenuItem = (): void => {
-    const selectedIndex = viewportMenuItems.findIndex((item) => item.getAttribute('aria-checked') === 'true');
-    focusViewportMenuItem(selectedIndex >= 0 ? selectedIndex : 0);
-  };
-
-  function openViewportMenu(
-    reason = 'programmatic',
-    focusMode: ViewportMenuFocusMode = 'selected',
-  ): void {
-    const showCustomForm = instance.currentViewport.label === 'Custom';
-    customForm.style.display = showCustomForm ? 'flex' : 'none';
-    customItem.setAttribute('aria-expanded', String(showCustomForm));
-    openViewportDropdown(instance, reason);
-    if (focusMode === 'none') return;
-    requestAnimationFrame(() => {
-      if (focusMode === 'first') {
-        focusViewportMenuItem(0);
-        return;
-      }
-      if (focusMode === 'last') {
-        focusViewportMenuItem(viewportMenuItems.length - 1);
-        return;
-      }
-      focusSelectedViewportMenuItem();
-    });
-  }
-
-  function closeViewportMenu(reason = 'programmatic', returnFocus = false): void {
-    closeViewportDropdown(instance, reason);
-    customForm.style.display = 'none';
-    customItem.setAttribute('aria-expanded', 'false');
-    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
-    if (returnFocus) {
-      requestAnimationFrame(() => viewportBtn.focus());
-    }
-  }
-
-  for (const preset of VIEWPORT_PRESETS) {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'browser-viewport-item';
-    item.dataset.viewportKey = preset.label;
-    item.textContent = preset.width !== null
-      ? `${preset.label} — ${preset.width}×${preset.height}`
-      : preset.label;
-    item.setAttribute('role', 'menuitemradio');
-    item.setAttribute('aria-checked', 'false');
-    item.tabIndex = -1;
-    item.addEventListener('click', () => {
-      applyViewport(instance, preset);
-      closeViewportMenu('preset-select');
-    });
-    viewportMenuItems.push(item);
-    viewportDropdown.appendChild(item);
-  }
-  customItem.tabIndex = -1;
-  viewportMenuItems.push(customItem);
-  viewportDropdown.appendChild(customItem);
-  viewportDropdown.appendChild(customForm);
-
   const {
     newTabPage,
     ntpState,
@@ -501,6 +429,13 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     capture,
   });
   instances.set(sessionId, instance);
+  const viewportMenuController = createBrowserViewportMenuController({
+    instance,
+    viewportBtn,
+    viewportDropdown,
+    customItem,
+    customForm,
+  });
   initializeBrowserTabRuntimeBindings({
     instance,
     sessionId,
@@ -530,7 +465,7 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     viewportWrapper,
     viewportBtn,
     viewportDropdown,
-    viewportMenuItems,
+    viewportMenuItems: viewportMenuController.viewportMenuItems,
     customForm,
     customItem,
     customWInput,
@@ -538,8 +473,8 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     customApplyBtn,
     syncSurfaceVisibility,
     syncBrowserStatus,
-    openViewportMenu,
-    closeViewportMenu,
+    openViewportMenu: viewportMenuController.openViewportMenu,
+    closeViewportMenu: viewportMenuController.closeViewportMenu,
   });
 }
 
