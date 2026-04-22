@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const source = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
+const source = [paneSource, paneLayoutSource].join('\n');
 const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
 const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const css = readFileSync(new URL('../styles/browser-tab.css', import.meta.url), 'utf-8');

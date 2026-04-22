@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const source = readFileSync(new URL('./share-dialog.ts', import.meta.url), 'utf-8');
+const shareDialogSource = readFileSync(new URL('./share-dialog.ts', import.meta.url), 'utf-8');
+const shareDialogCopySource = readFileSync(new URL('./share-dialog-copy.ts', import.meta.url), 'utf-8');
+const shareDialogFlowControllerSource = readFileSync(
+  new URL('./share-dialog-flow-controller.ts', import.meta.url),
+  'utf-8',
+);
+const shareDialogMobilePresenceSource = readFileSync(
+  new URL('./share-dialog-mobile-presence.ts', import.meta.url),
+  'utf-8',
+);
+const source = [
+  shareDialogSource,
+  shareDialogCopySource,
+  shareDialogFlowControllerSource,
+  shareDialogMobilePresenceSource,
+].join('\n');
 
 describe('share dialog mobile UX contract', () => {
   it('surfaces a quick handoff lane and keeps manual codes as explicit fallback', () => {

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
+const paneInteractionsSource = readFileSync(new URL('./browser-tab/pane-interactions.ts', import.meta.url), 'utf-8');
 const captureElementsSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
-const source = [paneSource, captureElementsSource].join('\n');
+const paneArtifactsSource = readFileSync(new URL('./browser-tab/pane-artifacts.ts', import.meta.url), 'utf-8');
+const source = [paneSource, paneLayoutSource, paneInteractionsSource, captureElementsSource, paneArtifactsSource].join('\n');
 const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
 const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
 const authPanelSource = readFileSync(new URL('./browser-tab/auth-panel.ts', import.meta.url), 'utf-8');
@@ -252,9 +255,9 @@ describe('browser tab pane contract', () => {
 
   it('adds a secure login vault panel with fill, save, and delete actions', () => {
     expect(source).toContain("authBtn.className = 'browser-auth-btn'");
-    expect(source).toContain("import { createBrowserAuthPanel } from './auth-panel.js';");
+    expect(source).toContain("from './pane-artifacts.js';");
     expect(source).toContain("import { createBrowserAuthController } from './auth-controller.js';");
-    expect(source).toContain('} = createBrowserAuthPanel();');
+    expect(source).toContain('createBrowserAuthPanelArtifacts(el)');
     expect(source).toContain('const authController = createBrowserAuthController({');
     expect(authPanelSource).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
     expect(authPanelSource).toContain("authCloseBtn.className = 'browser-auth-close-btn'");

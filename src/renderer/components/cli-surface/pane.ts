@@ -53,14 +53,21 @@ import { createCliTargetMenuController, type CliTargetMenuController } from './t
 import type { InferredCliRegion } from './heuristics.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
-  findRegionAtCell,
   pointerToCell,
-  selectionArea,
   selectionFromCells,
   selectionFromTerminal,
   selectionFromViewport,
   selectionsMatchBounds,
 } from './inspect-geometry.js';
+import {
+  deriveSemanticRegions,
+  findContainingInferredRegion,
+  findContainingSemanticRegion,
+  findSelectableRegionAtCell as findSelectableRegionAtCellBehavior,
+  reconcileHoveredRegion,
+  resolveSelectionSource,
+  type SelectableCliRegion,
+} from './inspect-selection.js';
 import {
   attachCliSurfaceRuntimeBindings,
   attachCliSurfaceStateBindings,
@@ -75,15 +82,6 @@ import {
   bindInspectPointerHandlers as bindInspectPointerHandlersModule,
   bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
 } from './pane-bindings.js';
-
-interface SelectableCliRegion {
-  kind: 'semantic' | 'inferred';
-  label: string;
-  selection: SurfaceSelectionRange;
-  semanticNodeId?: string;
-  semanticLabel?: string;
-  sourceFile?: string;
-}
 
 interface CliSurfaceInstance {
   projectId: string;
@@ -399,10 +397,6 @@ function setInspectPayloadFromPointer(instance: CliSurfaceInstance, event: Pick<
   }));
 }
 
-function findInferredRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }) {
-  return findRegionAtCell(getInferredRegions(instance), cell);
-}
-
 function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[] {
   const version = semanticRegionVersions.get(instance.projectId) ?? 0;
   if (instance.semanticRegionsVersion === version) {
@@ -410,51 +404,25 @@ function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[]
   }
 
   const focusedNodeId = getFocusedSemanticNodeIdBehavior(semanticFocusNodes, instance.projectId);
-
-  instance.semanticRegions = [...(semanticNodes.get(instance.projectId)?.values() ?? [])]
-    .filter((message): message is CalderProtocolMessage & { bounds: SurfaceSelectionRange } => Boolean(message.bounds))
-    .map((message) => ({
-      kind: 'semantic' as const,
-      label: message.label ?? message.nodeId,
-      selection: message.bounds,
-      semanticNodeId: message.nodeId,
-      semanticLabel: message.label,
-      sourceFile: message.sourceFile,
-    }))
-    .sort((left, right) => {
-      const leftFocused = left.semanticNodeId === focusedNodeId ? 1 : 0;
-      const rightFocused = right.semanticNodeId === focusedNodeId ? 1 : 0;
-      if (leftFocused !== rightFocused) return rightFocused - leftFocused;
-      return selectionArea(left.selection) - selectionArea(right.selection);
-    });
+  instance.semanticRegions = deriveSemanticRegions({
+    focusedNodeId,
+    messages: semanticNodes.get(instance.projectId)?.values() ?? [],
+  });
   instance.semanticRegionsVersion = version;
-  if (
-    instance.hoveredRegion
-    && instance.hoveredRegion.kind === 'semantic'
-    && !instance.semanticRegions.some((candidate) =>
-      candidate.label === instance.hoveredRegion?.label
-      && selectionsMatchBounds(candidate.selection, instance.hoveredRegion.selection),
-    )
-  ) {
-    instance.hoveredRegion = null;
-  }
+  instance.hoveredRegion = reconcileHoveredRegion(
+    instance.hoveredRegion,
+    instance.semanticRegions,
+    instance.inferredRegions,
+  );
   return instance.semanticRegions;
 }
 
-function findSemanticRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }) {
-  return findRegionAtCell(getSemanticRegions(instance), cell);
-}
-
 function findSelectableRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }): SelectableCliRegion | null {
-  const semanticRegion = findSemanticRegionAtCell(instance, cell);
-  if (semanticRegion) return semanticRegion;
-  const inferredRegion = findInferredRegionAtCell(instance, cell);
-  if (!inferredRegion) return null;
-  return {
-    kind: 'inferred',
-    label: inferredRegion.label,
-    selection: inferredRegion.selection,
-  };
+  return findSelectableRegionAtCellBehavior(
+    getSemanticRegions(instance),
+    getInferredRegions(instance),
+    cell,
+  );
 }
 
 function buildInspectPayload(
@@ -465,16 +433,10 @@ function buildInspectPayload(
   const project = getProject(instance.projectId) ?? appState.activeProject;
   const runtime = getRuntimeState(instance.projectId);
   const profile = resolveSelectedProfile(instance.projectId);
-  const selectionHint = getInferredRegions(instance).find((candidate) =>
-    candidate.selection.startRow <= selection.startRow
-    && candidate.selection.endRow >= selection.endRow,
-  );
-  const semanticRegion = getSemanticRegions(instance).find((candidate) =>
-    candidate.selection.startRow <= selection.startRow
-    && candidate.selection.endRow >= selection.endRow
-    && candidate.selection.startCol <= selection.startCol
-    && candidate.selection.endCol >= selection.endCol,
-  );
+  const inferredRegions = getInferredRegions(instance);
+  const semanticRegions = getSemanticRegions(instance);
+  const selectionHint = findContainingInferredRegion(inferredRegions, selection);
+  const semanticRegion = findContainingSemanticRegion(semanticRegions, selection);
   const adapter = detectCliAdapter({
     command: runtime?.command ?? profile?.command,
     args: runtime?.args ?? profile?.args,
@@ -495,11 +457,7 @@ function buildInspectPayload(
         }
       : {}),
   });
-  const selectionSource = semanticRegion && selectionsMatchBounds(semanticRegion.selection, selection)
-    ? 'semantic'
-    : selectionHint && selectionsMatchBounds(selectionHint.selection, selection)
-      ? 'inferred'
-      : 'exact';
+  const selectionSource = resolveSelectionSource(selection, selectionHint, semanticRegion);
   const contextMode = getContextModeForSelectionBehavior(instance.contextModeOverride, selectionSource);
   const targetProviderId = appState.resolveSurfaceTargetSession(instance.projectId)?.providerId
     ?? resolvePreferredProviderForLaunch(
@@ -564,16 +522,11 @@ function getInferredRegions(instance: CliSurfaceInstance): InferredCliRegion[] {
 
   instance.inferredRegions = inferCliRegions(instance.viewportLines);
   instance.inferredRegionsKey = nextKey;
-  if (
-    instance.hoveredRegion
-    && instance.hoveredRegion.kind === 'inferred'
-    && !instance.inferredRegions.some((candidate) =>
-      candidate.label === instance.hoveredRegion?.label
-      && selectionsMatchBounds(candidate.selection, instance.hoveredRegion.selection),
-    )
-  ) {
-    instance.hoveredRegion = null;
-  }
+  instance.hoveredRegion = reconcileHoveredRegion(
+    instance.hoveredRegion,
+    instance.semanticRegions,
+    instance.inferredRegions,
+  );
   return instance.inferredRegions;
 }
 
