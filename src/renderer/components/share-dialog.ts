@@ -532,6 +532,37 @@ interface ShareDialogActionElements {
   connectBtn: HTMLButtonElement;
 }
 
+interface ShareDialogFlowController {
+  setManualFallbackVisible(visible: boolean): void;
+  setShareHandshake(offer: string | null, passphrase: string | null): void;
+  generateMobilePairing(): Promise<void>;
+  handleAuthFailure(): void;
+}
+
+interface CreateShareDialogFlowControllerParams {
+  sessionId: string;
+  overlay: HTMLDivElement;
+  copy: ShareDialogCopy;
+  mobileApi: MobileControlApi | null;
+  getSelectedMode: () => ShareMode;
+  statusEl: HTMLDivElement;
+  manualToggleRow: HTMLDivElement;
+  manualToggleBtn: HTMLButtonElement;
+  manualSection: HTMLDivElement;
+  answerTextarea: HTMLTextAreaElement;
+  connectBtn: HTMLButtonElement;
+  mobileLinkInput: HTMLInputElement;
+  mobileFallbackRow: HTMLDivElement;
+  mobileFallbackInput: HTMLInputElement;
+  useMobileFallbackBtn: HTMLButtonElement;
+  copyMobileFallbackBtn: HTMLButtonElement;
+  mobileOtpBadge: HTMLDivElement;
+  mobileOtpHint: HTMLDivElement;
+  mobileQrImg: HTMLImageElement;
+  mobileStatus: HTMLDivElement;
+  retryMobilePairingBtn: HTMLButtonElement;
+}
+
 function attachCopyFeedback(
   button: HTMLButtonElement,
   getValue: () => string,
@@ -858,6 +889,288 @@ function createShareDialogActions(copy: ShareDialogCopy): ShareDialogActionEleme
   };
 }
 
+function createShareDialogFlowController(params: CreateShareDialogFlowControllerParams): ShareDialogFlowController {
+  const {
+    sessionId,
+    overlay,
+    copy,
+    mobileApi,
+    getSelectedMode,
+    statusEl,
+    manualToggleRow,
+    manualToggleBtn,
+    manualSection,
+    answerTextarea,
+    connectBtn,
+    mobileLinkInput,
+    mobileFallbackRow,
+    mobileFallbackInput,
+    useMobileFallbackBtn,
+    copyMobileFallbackBtn,
+    mobileOtpBadge,
+    mobileOtpHint,
+    mobileQrImg,
+    mobileStatus,
+    retryMobilePairingBtn,
+  } = params;
+
+  let manualFallbackVisible = !mobileApi;
+  let currentShareOffer: string | null = null;
+  let currentSharePassphrase: string | null = null;
+  let mobilePollingErrorCount = 0;
+  let mobileFallbackLinks: string[] = [];
+
+  const setManualFallbackVisible = (visible: boolean): void => {
+    manualFallbackVisible = visible;
+    manualSection.classList.toggle('hidden', !visible);
+    manualToggleBtn.textContent = visible ? copy.hideManualCodes : copy.showManualCodes;
+    if (mobileApi) {
+      connectBtn.classList.toggle('hidden', !visible);
+    } else {
+      connectBtn.classList.remove('hidden');
+    }
+  };
+
+  if (mobileApi) {
+    manualToggleRow.classList.remove('hidden');
+    manualToggleBtn.addEventListener('click', () => {
+      setManualFallbackVisible(!manualFallbackVisible);
+    });
+    setManualFallbackVisible(false);
+  } else {
+    manualToggleRow.classList.add('hidden');
+    setManualFallbackVisible(true);
+  }
+
+  const setMobileStatus = (text: string, kind: 'info' | 'success' | 'error' = 'info'): void => {
+    mobileStatus.textContent = text;
+    mobileStatus.classList.remove('is-success');
+    mobileStatus.classList.remove('is-error');
+    if (kind === 'success') mobileStatus.classList.add('is-success');
+    if (kind === 'error') mobileStatus.classList.add('is-error');
+  };
+
+  const setRetryVisibility = (visible: boolean): void => {
+    retryMobilePairingBtn.classList.toggle('hidden', !visible);
+    retryMobilePairingBtn.disabled = !visible;
+  };
+
+  const setPrimaryMobileLink = async (link: string): Promise<boolean> => {
+    mobileLinkInput.value = link;
+    const qrDataUrl = await createQrDataUrl(link);
+    if (qrDataUrl) {
+      mobileQrImg.src = qrDataUrl;
+      mobileQrImg.classList.remove('hidden');
+      return true;
+    }
+    mobileQrImg.classList.add('hidden');
+    return false;
+  };
+
+  const setMobileFallbackLinks = (links: string[], primaryLink: string): void => {
+    const isLoopbackLink = (value: string): boolean => {
+      try {
+        const parsed = new URL(value);
+        const host = parsed.hostname.toLowerCase();
+        return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]';
+      } catch {
+        return false;
+      }
+    };
+    const deduped = Array.from(new Set(links.filter((link) => link && link.trim().length > 0)));
+    mobileFallbackLinks = deduped.filter((link) => link !== primaryLink && !isLoopbackLink(link));
+    const fallback = mobileFallbackLinks[0] ?? '';
+    mobileFallbackInput.value = fallback;
+    mobileFallbackRow.classList.toggle('hidden', !fallback);
+    useMobileFallbackBtn.disabled = !fallback;
+    copyMobileFallbackBtn.disabled = !fallback;
+  };
+
+  useMobileFallbackBtn.addEventListener('click', () => {
+    const fallback = mobileFallbackInput.value.trim();
+    if (!fallback) return;
+    void setPrimaryMobileLink(fallback).then((hasQr) => {
+      setMobileStatus(hasQr ? copy.usingLanFallback : `${copy.usingLanFallback} ${copy.qrUnavailableUseLink}`);
+    });
+  });
+
+  const submitAnswer = async (answer: string, source: 'manual' | 'mobile') => {
+    const trimmed = answer.trim();
+    if (!trimmed) return;
+    if (source === 'manual') {
+      clearPendingMobilePairing(true);
+      setMobileStatus(copy.manualResponseDetected);
+    }
+    try {
+      await acceptShareAnswer(sessionId, trimmed);
+      connectBtn.disabled = true;
+      connectBtn.textContent = copy.connecting;
+      answerTextarea.readOnly = true;
+      statusEl.textContent = copy.establishingConnection;
+      if (source === 'mobile') {
+        setMobileStatus(copy.mobileResponseReceived, 'success');
+      }
+    } catch (err) {
+      const reasonText = err instanceof Error ? err.message : copy.invalidResponseCode;
+      statusEl.textContent = reasonText;
+      answerTextarea.readOnly = false;
+      connectBtn.disabled = !answerTextarea.value.trim();
+      connectBtn.textContent = copy.connect;
+      if (source === 'mobile') {
+        setMobileStatus(`${copy.mobileResponseValidationFailed} ${reasonText}`, 'error');
+      }
+    }
+  };
+
+  const generateMobilePairing = async (): Promise<void> => {
+    if (!mobileApi || !currentShareOffer || !currentSharePassphrase || activeOverlay !== overlay) return;
+    setRetryVisibility(false);
+    setMobileStatus(copy.generatingMobilePairing);
+    mobileOtpHint.textContent = copy.waitingPairingCode;
+    clearPendingMobilePairing(true);
+    try {
+      const decodedOffer = await decodeConnectionEnvelope(currentShareOffer, 'offer', currentSharePassphrase);
+      const offerDescription = decodedOffer.description;
+      if (offerDescription.type !== 'offer' || typeof offerDescription.sdp !== 'string') {
+        throw new Error(copy.mobileHandoffFailedFallback);
+      }
+      const pairing = await mobileApi.createControlPairing(
+        sessionId,
+        currentShareOffer,
+        currentSharePassphrase,
+        getSelectedMode(),
+        appState.preferences.language ?? 'en',
+        {
+          type: 'offer',
+          sdp: offerDescription.sdp,
+        },
+      );
+      if (activeOverlay !== overlay) {
+        void mobileApi.revokeControlPairing(pairing.pairingId).catch(() => {});
+        return;
+      }
+      pendingMobilePairingId = pairing.pairingId;
+      mobilePollingErrorCount = 0;
+      const localFallbackLinks = Array.isArray(pairing.localPairingUrls) && pairing.localPairingUrls.length > 0
+        ? pairing.localPairingUrls
+        : [pairing.localPairingUrl];
+      const primaryLink = pairing.pairingUrl || localFallbackLinks[0] || pairing.localPairingUrl;
+      setMobileFallbackLinks(localFallbackLinks, primaryLink);
+      const hasQr = await setPrimaryMobileLink(primaryLink);
+      const otpDisplay = formatOtpForDisplay(pairing.otpCode);
+      mobileOtpBadge.textContent = otpDisplay;
+      mobileOtpHint.textContent = copy.otpUsageHint(otpDisplay);
+      const expiresAt = new Date(pairing.expiresAt);
+      const expiresLabel = Number.isNaN(expiresAt.getTime())
+        ? copy.soon
+        : expiresAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      const modeLabel = pairing.accessMode === 'remote' ? copy.remoteModeActive : copy.lanModeActive;
+      const statusMessage = `${modeLabel} ${copy.scanQrBefore(expiresLabel)}`;
+      if (hasQr) {
+        setMobileStatus(statusMessage, 'success');
+      } else {
+        setMobileStatus(`${statusMessage} ${copy.qrUnavailableUseLink}`, 'error');
+      }
+      startMobileAnswerPolling();
+    } catch (error) {
+      mobilePollingErrorCount = 0;
+      setManualFallbackVisible(true);
+      setRetryVisibility(true);
+      mobileOtpHint.textContent = copy.waitingPairingCode;
+      setMobileStatus(
+        error instanceof Error
+          ? copy.mobileHandoffFailedWithReason(error.message)
+          : copy.mobileHandoffFailedFallback,
+        'error',
+      );
+    }
+  };
+
+  const pollMobileAnswer = async (): Promise<void> => {
+    if (!mobileApi || !pendingMobilePairingId || activeOverlay !== overlay) return;
+    try {
+      const result = await mobileApi.consumeControlAnswer(pendingMobilePairingId);
+      if (result.status === 'ready' && result.answer) {
+        pendingMobilePairingId = null;
+        stopMobileAnswerPolling();
+        mobilePollingErrorCount = 0;
+        answerTextarea.value = result.answer;
+        connectBtn.disabled = false;
+        await submitAnswer(result.answer, 'mobile');
+        return;
+      }
+      if (result.status === 'expired') {
+        pendingMobilePairingId = null;
+        stopMobileAnswerPolling();
+        mobilePollingErrorCount = 0;
+        setRetryVisibility(true);
+        setManualFallbackVisible(true);
+        setMobileStatus(copy.mobilePairingExpired, 'error');
+        return;
+      }
+      mobilePollingErrorCount = 0;
+    } catch {
+      mobilePollingErrorCount += 1;
+      setRetryVisibility(true);
+      if (mobilePollingErrorCount >= 3) {
+        pendingMobilePairingId = null;
+        stopMobileAnswerPolling();
+        setManualFallbackVisible(true);
+        setMobileStatus(copy.mobilePairingCheckFailedRepeated, 'error');
+        return;
+      }
+      setMobileStatus(copy.mobilePairingCheckFailedRetrying, 'error');
+    }
+    if (pendingMobilePairingId && activeOverlay === overlay) {
+      mobileAnswerPollTimer = setTimeout(() => {
+        void pollMobileAnswer();
+      }, MOBILE_ANSWER_POLL_MS);
+    }
+  };
+
+  const startMobileAnswerPolling = (): void => {
+    if (!pendingMobilePairingId) return;
+    stopMobileAnswerPolling();
+    mobilePollingErrorCount = 0;
+    mobileAnswerPollTimer = setTimeout(() => {
+      void pollMobileAnswer();
+    }, MOBILE_ANSWER_POLL_MS);
+  };
+
+  connectBtn.addEventListener('click', async () => {
+    const answer = String(answerTextarea.value ?? '').trim();
+    if (!answer) return;
+    await submitAnswer(answer, 'manual');
+  });
+
+  retryMobilePairingBtn.addEventListener('click', () => {
+    retryMobilePairingBtn.disabled = true;
+    void generateMobilePairing().finally(() => {
+      if (!retryMobilePairingBtn.classList.contains('hidden')) {
+        retryMobilePairingBtn.disabled = false;
+      }
+    });
+  });
+
+  return {
+    setManualFallbackVisible,
+    setShareHandshake: (offer: string | null, passphrase: string | null) => {
+      currentShareOffer = offer;
+      currentSharePassphrase = passphrase;
+      if (!offer || !passphrase) {
+        mobilePollingErrorCount = 0;
+        mobileFallbackLinks = [];
+      }
+    },
+    generateMobilePairing,
+    handleAuthFailure: () => {
+      setManualFallbackVisible(true);
+      setRetryVisibility(true);
+      setMobileStatus(copy.authenticationFailedRestart, 'error');
+    },
+  };
+}
+
 export function showShareDialog(sessionId: string): void {
   renderShareDialog(sessionId);
 }
@@ -1006,244 +1319,28 @@ function renderShareDialog(sessionId: string): void {
     connectBtn.disabled = !String(answerTextarea.value ?? '').trim();
   });
 
-  let manualFallbackVisible = !mobileApi;
-  let currentShareOffer: string | null = null;
-  let currentSharePassphrase: string | null = null;
-  let mobilePollingErrorCount = 0;
-  let mobileFallbackLinks: string[] = [];
-
-  const setManualFallbackVisible = (visible: boolean): void => {
-    manualFallbackVisible = visible;
-    manualSection.classList.toggle('hidden', !visible);
-    manualToggleBtn.textContent = visible ? copy.hideManualCodes : copy.showManualCodes;
-    if (mobileApi) {
-      connectBtn.classList.toggle('hidden', !visible);
-    } else {
-      connectBtn.classList.remove('hidden');
-    }
-  };
-
-  if (mobileApi) {
-    manualToggleRow.classList.remove('hidden');
-    manualToggleBtn.addEventListener('click', () => {
-      setManualFallbackVisible(!manualFallbackVisible);
-    });
-    setManualFallbackVisible(false);
-  } else {
-    manualToggleRow.classList.add('hidden');
-    setManualFallbackVisible(true);
-  }
-
-  const setMobileStatus = (text: string, kind: 'info' | 'success' | 'error' = 'info') => {
-    mobileStatus.textContent = text;
-    mobileStatus.classList.remove('is-success');
-    mobileStatus.classList.remove('is-error');
-    if (kind === 'success') mobileStatus.classList.add('is-success');
-    if (kind === 'error') mobileStatus.classList.add('is-error');
-  };
-
-  const setRetryVisibility = (visible: boolean): void => {
-    retryMobilePairingBtn.classList.toggle('hidden', !visible);
-    retryMobilePairingBtn.disabled = !visible;
-  };
-
-  const setPrimaryMobileLink = async (link: string): Promise<boolean> => {
-    mobileLinkInput.value = link;
-    const qrDataUrl = await createQrDataUrl(link);
-    if (qrDataUrl) {
-      mobileQrImg.src = qrDataUrl;
-      mobileQrImg.classList.remove('hidden');
-      return true;
-    } else {
-      mobileQrImg.classList.add('hidden');
-      return false;
-    }
-  };
-
-  const setMobileFallbackLinks = (links: string[], primaryLink: string): void => {
-    const isLoopbackLink = (value: string): boolean => {
-      try {
-        const parsed = new URL(value);
-        const host = parsed.hostname.toLowerCase();
-        return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]';
-      } catch {
-        return false;
-      }
-    };
-    const deduped = Array.from(new Set(links.filter((link) => link && link.trim().length > 0)));
-    mobileFallbackLinks = deduped.filter((link) => link !== primaryLink && !isLoopbackLink(link));
-    const fallback = mobileFallbackLinks[0] ?? '';
-    mobileFallbackInput.value = fallback;
-    mobileFallbackRow.classList.toggle('hidden', !fallback);
-    useMobileFallbackBtn.disabled = !fallback;
-    copyMobileFallbackBtn.disabled = !fallback;
-  };
-
-  useMobileFallbackBtn.addEventListener('click', () => {
-    const fallback = mobileFallbackInput.value.trim();
-    if (!fallback) return;
-    void setPrimaryMobileLink(fallback).then((hasQr) => {
-      setMobileStatus(hasQr ? copy.usingLanFallback : `${copy.usingLanFallback} ${copy.qrUnavailableUseLink}`);
-    });
-  });
-
-  const submitAnswer = async (answer: string, source: 'manual' | 'mobile') => {
-    const trimmed = answer.trim();
-    if (!trimmed) return;
-    if (source === 'manual') {
-      clearPendingMobilePairing(true);
-      setMobileStatus(copy.manualResponseDetected);
-    }
-    try {
-      await acceptShareAnswer(sessionId, trimmed);
-      connectBtn.disabled = true;
-      connectBtn.textContent = copy.connecting;
-      answerTextarea.readOnly = true;
-      statusEl.textContent = copy.establishingConnection;
-      if (source === 'mobile') {
-        setMobileStatus(copy.mobileResponseReceived, 'success');
-      }
-    } catch (err) {
-      const reasonText = err instanceof Error ? err.message : copy.invalidResponseCode;
-      statusEl.textContent = reasonText;
-      answerTextarea.readOnly = false;
-      connectBtn.disabled = !answerTextarea.value.trim();
-      connectBtn.textContent = copy.connect;
-      if (source === 'mobile') {
-        setMobileStatus(`${copy.mobileResponseValidationFailed} ${reasonText}`, 'error');
-      }
-    }
-  };
-
-  const generateMobilePairing = async (): Promise<void> => {
-    if (!mobileApi || !currentShareOffer || !currentSharePassphrase || activeOverlay !== overlay) return;
-    setRetryVisibility(false);
-    setMobileStatus(copy.generatingMobilePairing);
-    mobileOtpHint.textContent = copy.waitingPairingCode;
-    clearPendingMobilePairing(true);
-    try {
-      const decodedOffer = await decodeConnectionEnvelope(currentShareOffer, 'offer', currentSharePassphrase);
-      const offerDescription = decodedOffer.description;
-      if (offerDescription.type !== 'offer' || typeof offerDescription.sdp !== 'string') {
-        throw new Error(copy.mobileHandoffFailedFallback);
-      }
-      const pairing = await mobileApi.createControlPairing(
-        sessionId,
-        currentShareOffer,
-        currentSharePassphrase,
-        selectedMode,
-        appState.preferences.language ?? 'en',
-        {
-          type: 'offer',
-          sdp: offerDescription.sdp,
-        },
-      );
-      if (activeOverlay !== overlay) {
-        void mobileApi.revokeControlPairing(pairing.pairingId).catch(() => {});
-        return;
-      }
-      pendingMobilePairingId = pairing.pairingId;
-      mobilePollingErrorCount = 0;
-      const localFallbackLinks = Array.isArray(pairing.localPairingUrls) && pairing.localPairingUrls.length > 0
-        ? pairing.localPairingUrls
-        : [pairing.localPairingUrl];
-      const primaryLink = pairing.pairingUrl || localFallbackLinks[0] || pairing.localPairingUrl;
-      setMobileFallbackLinks(localFallbackLinks, primaryLink);
-      const hasQr = await setPrimaryMobileLink(primaryLink);
-      const otpDisplay = formatOtpForDisplay(pairing.otpCode);
-      mobileOtpBadge.textContent = otpDisplay;
-      mobileOtpHint.textContent = copy.otpUsageHint(otpDisplay);
-      const expiresAt = new Date(pairing.expiresAt);
-      const expiresLabel = Number.isNaN(expiresAt.getTime())
-        ? copy.soon
-        : expiresAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-      const modeLabel = pairing.accessMode === 'remote' ? copy.remoteModeActive : copy.lanModeActive;
-      const statusMessage = `${modeLabel} ${copy.scanQrBefore(expiresLabel)}`;
-      if (hasQr) {
-        setMobileStatus(statusMessage, 'success');
-      } else {
-        setMobileStatus(`${statusMessage} ${copy.qrUnavailableUseLink}`, 'error');
-      }
-      startMobileAnswerPolling();
-    } catch (error) {
-      mobilePollingErrorCount = 0;
-      setManualFallbackVisible(true);
-      setRetryVisibility(true);
-      mobileOtpHint.textContent = copy.waitingPairingCode;
-      setMobileStatus(
-        error instanceof Error
-          ? copy.mobileHandoffFailedWithReason(error.message)
-          : copy.mobileHandoffFailedFallback,
-        'error',
-      );
-    }
-  };
-
-  const pollMobileAnswer = async () => {
-    if (!mobileApi || !pendingMobilePairingId || activeOverlay !== overlay) return;
-    try {
-      const result = await mobileApi.consumeControlAnswer(pendingMobilePairingId);
-      if (result.status === 'ready' && result.answer) {
-        pendingMobilePairingId = null;
-        stopMobileAnswerPolling();
-        mobilePollingErrorCount = 0;
-        answerTextarea.value = result.answer;
-        connectBtn.disabled = false;
-        await submitAnswer(result.answer, 'mobile');
-        return;
-      }
-      if (result.status === 'expired') {
-        pendingMobilePairingId = null;
-        stopMobileAnswerPolling();
-        mobilePollingErrorCount = 0;
-        setRetryVisibility(true);
-        setManualFallbackVisible(true);
-        setMobileStatus(copy.mobilePairingExpired, 'error');
-        return;
-      }
-      mobilePollingErrorCount = 0;
-    } catch {
-      mobilePollingErrorCount += 1;
-      setRetryVisibility(true);
-      if (mobilePollingErrorCount >= 3) {
-        pendingMobilePairingId = null;
-        stopMobileAnswerPolling();
-        setManualFallbackVisible(true);
-        setMobileStatus(copy.mobilePairingCheckFailedRepeated, 'error');
-        return;
-      }
-      setMobileStatus(copy.mobilePairingCheckFailedRetrying, 'error');
-    }
-    if (pendingMobilePairingId && activeOverlay === overlay) {
-      mobileAnswerPollTimer = setTimeout(() => {
-        void pollMobileAnswer();
-      }, MOBILE_ANSWER_POLL_MS);
-    }
-  };
-
-  const startMobileAnswerPolling = () => {
-    if (!pendingMobilePairingId) return;
-    stopMobileAnswerPolling();
-    mobilePollingErrorCount = 0;
-    mobileAnswerPollTimer = setTimeout(() => {
-      void pollMobileAnswer();
-    }, MOBILE_ANSWER_POLL_MS);
-  };
-
-  // Connect handler (registered once, guarded by disabled state)
-  connectBtn.addEventListener('click', async () => {
-    const answer = String(answerTextarea.value ?? '').trim();
-    if (!answer) return;
-    await submitAnswer(answer, 'manual');
-  });
-
-  retryMobilePairingBtn.addEventListener('click', () => {
-    retryMobilePairingBtn.disabled = true;
-    void generateMobilePairing().finally(() => {
-      if (!retryMobilePairingBtn.classList.contains('hidden')) {
-        retryMobilePairingBtn.disabled = false;
-      }
-    });
+  const flowController = createShareDialogFlowController({
+    sessionId,
+    overlay,
+    copy,
+    mobileApi,
+    getSelectedMode: () => selectedMode,
+    statusEl,
+    manualToggleRow,
+    manualToggleBtn,
+    manualSection,
+    answerTextarea,
+    connectBtn,
+    mobileLinkInput,
+    mobileFallbackRow,
+    mobileFallbackInput,
+    useMobileFallbackBtn,
+    copyMobileFallbackBtn,
+    mobileOtpBadge,
+    mobileOtpHint,
+    mobileQrImg,
+    mobileStatus,
+    retryMobilePairingBtn,
   });
 
   // ── Handle Escape ──
@@ -1291,8 +1388,7 @@ function renderShareDialog(sessionId: string): void {
       offerTextarea.value = offer;
       offerSection.classList.remove('hidden');
       answerSection.classList.remove('hidden');
-      currentShareOffer = offer;
-      currentSharePassphrase = passphrase;
+      flowController.setShareHandshake(offer, passphrase);
       startBtn.classList.add('hidden');
       backBtn.classList.add('hidden');
       connectBtn.classList.remove('hidden');
@@ -1300,7 +1396,7 @@ function renderShareDialog(sessionId: string): void {
       if (rtcConfig?.iceTransportPolicy === 'relay') {
         statusEl.textContent = copy.waitingForPeerTurn;
       }
-      setManualFallbackVisible(!mobileApi);
+      flowController.setManualFallbackVisible(!mobileApi);
 
       handle.onConnected(() => {
         closeShareDialog();
@@ -1312,14 +1408,12 @@ function renderShareDialog(sessionId: string): void {
         connectBtn.textContent = copy.connect;
         answerTextarea.value = '';
         answerTextarea.readOnly = false;
-        setManualFallbackVisible(true);
-        setRetryVisibility(true);
-        setMobileStatus(copy.authenticationFailedRestart, 'error');
+        flowController.handleAuthFailure();
       });
 
       if (mobileApi) {
         mobileSection.classList.remove('hidden');
-        await generateMobilePairing();
+        await flowController.generateMobilePairing();
       }
     } catch (err) {
       clearPendingMobilePairing(true);
@@ -1327,8 +1421,7 @@ function renderShareDialog(sessionId: string): void {
         endShare(pendingShareSessionId);
       }
       pendingShareSessionId = null;
-      currentShareOffer = null;
-      currentSharePassphrase = null;
+      flowController.setShareHandshake(null, null);
       statusEl.textContent = copy.errorWithReason(err instanceof Error ? err.message : copy.unknownError);
       startBtn.disabled = false;
       startBtn.textContent = copy.startSharing;
