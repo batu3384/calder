@@ -70,6 +70,12 @@ import {
   bindCliSurfaceRuntimeActionHandlers,
   createCliSurfaceTargetMenuControllerWithHandlers,
 } from './pane-action-handlers.js';
+import {
+  getCliSurfaceProject,
+  getCliSurfaceRuntimeState,
+  resolveCliSurfaceSelectedProfile,
+  updateCliSurfaceRuntimeState,
+} from './pane-project-state.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
 
@@ -85,14 +91,6 @@ function getCliSurfaceApi() {
   return typeof window !== 'undefined' ? window.calder?.cliSurface : undefined;
 }
 
-function getProject(projectId: string) {
-  return appState.projects.find((project) => project.id === projectId);
-}
-
-function getRuntimeState(projectId: string): CliSurfaceRuntimeState | undefined {
-  return getProject(projectId)?.surface?.cli?.runtime;
-}
-
 function clearProjectSurfaceCaches(projectId: string): void {
   semanticNodes.delete(projectId);
   semanticFocusNodes.delete(projectId);
@@ -103,12 +101,6 @@ function clearProjectSurfaceCaches(projectId: string): void {
   clearCliSurfaceLinkDispatch(projectId);
 }
 
-function resolveSelectedProfile(projectId: string) {
-  const cliState = getProject(projectId)?.surface?.cli;
-  if (!cliState) return undefined;
-  const selectedId = cliState.selectedProfileId ?? cliState.runtime?.selectedProfileId;
-  return cliState.profiles.find((profile) => profile.id === selectedId) ?? cliState.profiles[0];
-}
 
 function syncViewportLines(instance: CliSurfaceInstance): void {
   const buffer = instance.terminal.buffer.active;
@@ -157,25 +149,11 @@ function showComposerError(instance: CliSurfaceInstance, message: string): void 
   instance.composerErrorEl.style.display = 'block';
 }
 
-function updateProjectRuntime(projectId: string, runtime: CliSurfaceRuntimeState): void {
-  const project = getProject(projectId);
-  if (!project?.surface) return;
-
-  appState.setProjectSurface(projectId, {
-    ...project.surface,
-    cli: {
-      selectedProfileId: runtime.selectedProfileId ?? project.surface.cli?.selectedProfileId,
-      profiles: project.surface.cli?.profiles ?? [],
-      runtime,
-    },
-  });
-}
-
-function renderRuntimeMeta(instance: CliSurfaceInstance): void {
+export function renderRuntimeMeta(instance: CliSurfaceInstance): void {
   renderCliSurfaceRuntimeMeta({
     instance,
-    getRuntimeState,
-    resolveSelectedProfile,
+    getRuntimeState: (projectId) => getCliSurfaceRuntimeState(appState, projectId),
+    resolveSelectedProfile: (projectId) => resolveCliSurfaceSelectedProfile(appState, projectId),
     adapterHint: semanticAdapterHints.get(instance.projectId),
   });
 }
@@ -276,14 +254,14 @@ function findSelectableRegionAtCell(instance: CliSurfaceInstance, cell: { row: n
   );
 }
 
-function buildInspectPayload(
+export function buildInspectPayload(
   instance: CliSurfaceInstance,
   selection: SurfaceSelectionRange,
   options?: { includeAnsiSnapshot?: boolean },
 ) {
-  const project = getProject(instance.projectId) ?? appState.activeProject;
-  const runtime = getRuntimeState(instance.projectId);
-  const profile = resolveSelectedProfile(instance.projectId);
+  const project = getCliSurfaceProject(appState, instance.projectId) ?? appState.activeProject;
+  const runtime = getCliSurfaceRuntimeState(appState, instance.projectId);
+  const profile = resolveCliSurfaceSelectedProfile(appState, instance.projectId);
   const inferredRegions = getInferredRegions(instance);
   const semanticRegions = getSemanticRegions(instance);
   const selectionHint = findContainingInferredRegion(inferredRegions, selection);
@@ -454,7 +432,7 @@ function fitSurface(instance: CliSurfaceInstance): void {
   });
 }
 
-function attachPaneBindings(): void {
+export function attachPaneBindings(): void {
   attachCliSurfaceRuntimeBindings({
     getApi: getCliSurfaceApi,
     onData: (projectId, data) => {
@@ -496,7 +474,7 @@ function attachPaneBindings(): void {
       scheduleTerminalDataFlush(instance);
     },
     onStatus: (projectId, state) => {
-      updateProjectRuntime(projectId, state as CliSurfaceRuntimeState);
+      updateCliSurfaceRuntimeState(appState, projectId, state as CliSurfaceRuntimeState);
       const instance = instances.get(projectId);
       if (!instance) return;
       renderRuntimeMeta(instance);
@@ -504,9 +482,9 @@ function attachPaneBindings(): void {
     onExit: (projectId, exitCode) => {
       const instance = instances.get(projectId);
       if (!instance) return;
-      const runtime = getRuntimeState(projectId);
+      const runtime = getCliSurfaceRuntimeState(appState, projectId);
       if (runtime) {
-        updateProjectRuntime(projectId, {
+        updateCliSurfaceRuntimeState(appState, projectId, {
           ...runtime,
           status: 'stopped',
           lastExitCode: exitCode,
@@ -517,8 +495,8 @@ function attachPaneBindings(): void {
     onError: (projectId, message) => {
       const instance = instances.get(projectId);
       if (!instance) return;
-      const runtime = getRuntimeState(projectId);
-      updateProjectRuntime(projectId, {
+      const runtime = getCliSurfaceRuntimeState(appState, projectId);
+      updateCliSurfaceRuntimeState(appState, projectId, {
         ...(runtime ?? { status: 'error' }),
         status: 'error',
         lastError: message,
@@ -556,7 +534,7 @@ function createCliSurfaceComposerHelpers(instance: CliSurfaceInstance) {
   };
 }
 
-function bindCliSurfaceInstanceHandlers(
+export function bindCliSurfaceInstanceHandlers(
   projectId: string,
   instance: CliSurfaceInstance,
   layout: CliSurfaceLayoutElements,
@@ -568,7 +546,7 @@ function bindCliSurfaceInstanceHandlers(
     projectId,
     context: instance,
     controls: layout,
-    resolveSelectedProfile,
+    resolveSelectedProfile: (nextProjectId) => resolveCliSurfaceSelectedProfile(appState, nextProjectId),
     getCliSurfaceApi,
     renderInspectState: () => renderInspectState(instance),
     setInspectPayloadFromSelection: (selection) => setInspectPayloadFromSelection(instance, selection),
@@ -641,7 +619,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   return ensureCliSurfaceInstance(projectId);
 }
 
-function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
+export function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
   const existing = instances.get(projectId);
   if (existing) return existing;
 
@@ -654,7 +632,7 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
     layout.hoverOverlay,
     layout.selectionOverlay,
     {
-      resolveProjectPath: (nextProjectId) => getProject(nextProjectId)?.path,
+      resolveProjectPath: (nextProjectId) => getCliSurfaceProject(appState, nextProjectId)?.path,
       openExternal: (url, cwd) => window.calder.app.openExternal(url, cwd),
     },
   );
@@ -664,6 +642,14 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
   initializeCliSurfaceInstance(instance);
   return instance;
 }
+
+export const __cliSurfacePaneInternals = {
+  renderRuntimeMeta,
+  buildInspectPayload,
+  attachPaneBindings,
+  bindCliSurfaceInstanceHandlers,
+  ensureCliSurfaceInstance,
+};
 
 export function attachCliSurfacePane(projectId: string, container: HTMLElement): void {
   const instance = ensureInstance(projectId);

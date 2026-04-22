@@ -1592,4 +1592,122 @@ describe('cli surface pane', () => {
     expect(formatCliSurfaceTiming({ spawnLatencyMs: 18 })).toBe('spawn 18ms');
     expect(formatCliSurfaceTiming()).toBe('');
   });
+
+  it('registers runtime and state subscriptions through the pane binding hook', async () => {
+    const { attachPaneBindings } = await import('./pane.js');
+
+    attachPaneBindings();
+
+    const cliSurfaceApi = (window as any).calder.cliSurface;
+    expect(cliSurfaceDataCallbacks).toHaveLength(1);
+    expect(cliSurfaceApi.onStatus).toHaveBeenCalledTimes(1);
+    expect(cliSurfaceApi.onExit).toHaveBeenCalledTimes(1);
+    expect(cliSurfaceApi.onError).toHaveBeenCalledTimes(1);
+  });
+
+  it('builds inspect payloads with ANSI snapshots through pane internals', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Inspect Payload', '/tmp/inspect-payload');
+    appState.setProjectSurface(project.id, {
+      ...project.surface!,
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'preview',
+        profiles: [{ id: 'preview', name: 'Preview', command: 'python', args: ['app.py'] }],
+        runtime: { status: 'running', command: 'python', args: ['app.py'], cwd: '/tmp/inspect-payload' },
+      },
+    });
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, buildInspectPayload } = await import('./pane.js');
+
+    attachCliSurfacePane(project.id, container);
+    const instance = getCliSurfacePaneInstance(project.id) as unknown as {
+      viewportLines: string[];
+      terminal: { cols: number; rows: number };
+    };
+    instance.viewportLines = ['alpha beta', 'gamma delta'];
+    instance.terminal.cols = 10;
+    instance.terminal.rows = 2;
+
+    const payload = buildInspectPayload(
+      instance as any,
+      {
+        mode: 'region',
+        startRow: 0,
+        endRow: 1,
+        startCol: 0,
+        endCol: 5,
+      },
+      { includeAnsiSnapshot: true },
+    );
+
+    expect(payload.projectId).toBe(project.id);
+    expect(payload.selection.mode).toBe('region');
+    expect(payload.ansiSnapshot).toBe('');
+    expect(mockSerialize).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-renders runtime metadata through the internal runtime renderer', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Runtime Meta', '/tmp/runtime-meta');
+    appState.setProjectSurface(project.id, {
+      ...project.surface!,
+      kind: 'cli',
+      active: true,
+      cli: {
+        selectedProfileId: 'preview',
+        profiles: [{ id: 'preview', name: 'Preview', command: 'node', args: ['server.js'] }],
+        runtime: { status: 'running', command: 'node', args: ['server.js'] },
+      },
+    });
+
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, renderRuntimeMeta } = await import('./pane.js');
+    attachCliSurfacePane(project.id, container);
+    const instance = getCliSurfacePaneInstance(project.id) as unknown as {
+      metaEl: FakeElement;
+    };
+
+    renderRuntimeMeta(instance as any);
+
+    expect(instance.metaEl.textContent).toContain('Preview');
+  });
+
+  it('wires instance handlers through the internal binder', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, bindCliSurfaceInstanceHandlers } = await import('./pane.js');
+
+    attachCliSurfacePane('project-1', container);
+    const instance = getCliSurfacePaneInstance('project-1') as unknown as {
+      targetMenuController?: unknown;
+    };
+    const addEventListenerMock = document.addEventListener as unknown as ReturnType<typeof vi.fn>;
+    addEventListenerMock.mockClear();
+
+    bindCliSurfaceInstanceHandlers(
+      'project-1',
+      instance as any,
+      {
+        startButton: new FakeElement('button') as unknown as HTMLButtonElement,
+        stopButton: new FakeElement('button') as unknown as HTMLButtonElement,
+        restartButton: new FakeElement('button') as unknown as HTMLButtonElement,
+        captureButton: new FakeElement('button') as unknown as HTMLButtonElement,
+      } as any,
+    );
+
+    expect(instance.targetMenuController).toBeTruthy();
+    expect(addEventListenerMock).toHaveBeenCalledWith('mousedown', expect.any(Function));
+  });
+
+  it('reuses an existing CLI surface instance for repeated ensure calls', async () => {
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Ensure Instance', '/tmp/ensure-instance');
+    const { ensureCliSurfaceInstance } = await import('./pane.js');
+
+    const first = ensureCliSurfaceInstance(project.id);
+    const second = ensureCliSurfaceInstance(project.id);
+
+    expect(second).toBe(first);
+  });
 });
