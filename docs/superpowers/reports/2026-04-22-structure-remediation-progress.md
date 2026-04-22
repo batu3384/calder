@@ -194,7 +194,22 @@ Scope: Sequential execution progress for project structure/foldering debt.
       - `src/renderer/components/session-inspector/session-inspector-timeline.ts`
     - `renderTimeline` split into helper renderers for group/range/meta description concerns.
     - Extended tests:
-      - `src/renderer/components/session-inspector/session-inspector-timeline.test.ts`
+    - `src/renderer/components/session-inspector/session-inspector-timeline.test.ts`
+
+23. **Calder mobile app decomposition (P1)**
+   - Refactored:
+     - `apps/calder-mobile/App.tsx`
+   - Extracted mobile app internals into dedicated modules:
+     - `apps/calder-mobile/src/app/types.ts`
+     - `apps/calder-mobile/src/app/copy.ts`
+     - `apps/calder-mobile/src/app/live-bridge.ts`
+     - `apps/calder-mobile/src/app/styles.ts`
+     - `apps/calder-mobile/src/app/use-mobile-controller.ts`
+     - `apps/calder-mobile/src/app/mobile-tab-panel.tsx`
+   - Result:
+     - App shell became orchestrator-first.
+     - Mobile interaction logic moved into dedicated controller + tab-panel modules.
+     - `apps/calder-mobile/App.tsx` reduced to a thin container (`122` lines).
 
 ## Metric impact
 
@@ -221,6 +236,7 @@ Scope: Sequential execution progress for project structure/foldering debt.
   - `createNodeOpenHookScript`: **301 -> <300**
   - `renderProjectBackgroundTaskSection`: **336 -> <300**
   - `renderTimeline`: **306 -> <300**
+  - `apps/calder-mobile/App.tsx`: **1296 -> 122**
 
 ## Validation status
 
@@ -229,13 +245,13 @@ Scope: Sequential execution progress for project structure/foldering debt.
 - `rtk npm run audit:deep` -> PASS
   - Includes the new `Structure audit` step.
 - `rtk code-review-graph status --repo /Users/batuhanyuksel/Documents/browser` -> PASS
-  - Nodes: `7312`, Edges: `81126`, Files: `740`
+  - Nodes: `7571`, Edges: `80731`, Files: `813`
 - `code-review-graph find_large_functions(min_lines=300)`:
-  - Remaining `>=300` function count: **1** (`apps/calder-mobile/App.tsx::App`)
+  - Remaining `>=300` function count: **0**
 
 ## Next recommended slice
 
-1. Optional mobile-specific debt wave:
-   - split `apps/calder-mobile/App.tsx::App` monolith (desktop closure is complete).
-2. Optional graph test-gap hygiene sweep:
+1. Optional graph test-gap hygiene sweep:
    - add direct coverage for helper-level symbols flagged by graph heuristics when needed.
+2. Optional next debt wave:
+   - reduce the current `>=250` function list (`tab-bar-cli-update-panel`, `custom-select`, `cli-surface-runtime`, `peer-host`, `preferences-context-discovery`, `mobile-dependency-doctor`, `tab-bar-session-context-menu`).
