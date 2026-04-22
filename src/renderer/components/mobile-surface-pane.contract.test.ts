@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const paneSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
+const paneCoreSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
+const paneSectionsSource = readFileSync(new URL('./mobile-surface/workbench-sections.ts', import.meta.url), 'utf8');
+const paneSource = `${paneCoreSource}\n${paneSectionsSource}`;
 const scopingSource = readFileSync(new URL('./mobile-surface/dependency-scoping.ts', import.meta.url), 'utf8');
 
 describe('mobile surface inspect workbench contract', () => {
