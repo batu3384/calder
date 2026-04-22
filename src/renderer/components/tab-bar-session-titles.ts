@@ -1,4 +1,4 @@
-import type { SessionRecord } from '../../shared/types.js';
+import type { SessionRecord } from '../../shared/types/session.js';
 import type { SessionStatus } from '../session-activity.js';
 
 export function buildSessionTooltip(status: SessionStatus, cliSessionId?: string | null): string {

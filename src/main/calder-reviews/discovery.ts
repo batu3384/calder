@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectReviewSource, ProjectReviewState } from '../../shared/types.js';
+import type { ProjectReviewSource, ProjectReviewState } from '../../shared/types/project.js';
 
 function isFile(filePath: string): boolean {
   try {

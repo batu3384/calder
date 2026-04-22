@@ -1,4 +1,4 @@
-import type { MosaicPreset } from '../../shared/types.js';
+import type { MosaicPreset } from '../../shared/types/session.js';
 
 export function validPresetsForCount(count: number): MosaicPreset[] {
   if (count <= 1) return ['single'];

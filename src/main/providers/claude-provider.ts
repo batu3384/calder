@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
+import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
 import { installStatusLineScript, cleanupAll as cleanupHookStatus } from '../hook-status';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';

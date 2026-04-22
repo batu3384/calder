@@ -1,4 +1,4 @@
-import type { InitialContextSnapshot } from '../../shared/types.js';
+import type { InitialContextSnapshot } from '../../shared/types/session.js';
 import type { InsightAnalyzer, InsightResult } from './types.js';
 
 const THRESHOLD_PERCENTAGE = 15;

@@ -1,10 +1,6 @@
-import type {
-  AutoApprovalDecision,
-  AutoApprovalMode,
-  AutoApprovalPolicySource,
-  InspectorEvent,
-  ProviderId,
-} from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
+import type { InspectorEvent } from '../../shared/types/session.js';
+import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalPolicySource } from '../../shared/types/governance.js';
 import {
   classifyAutoApprovalOperation,
   decideAutoApprovalAction,

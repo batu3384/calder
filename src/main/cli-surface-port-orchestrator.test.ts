@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { CliSurfaceProfile } from '../shared/types';
+import type { CliSurfaceProfile } from '../shared/types/project';
 import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 
 const roots: string[] = [];

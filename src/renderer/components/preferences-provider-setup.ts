@@ -1,12 +1,6 @@
 import { appState } from '../state.js';
-import type {
-  CliProviderMeta,
-  MobileDependencyCheck,
-  MobileDependencyId,
-  MobileDependencyReport,
-  ProviderId,
-  SettingsValidationResult,
-} from '../../shared/types.js';
+import type { CliProviderMeta, ProviderId, SettingsValidationResult } from '../../shared/types/provider.js';
+import type { MobileDependencyCheck, MobileDependencyId, MobileDependencyReport } from '../../shared/types/mobile.js';
 import { isTrackingHealthy } from '../../shared/tracking-health.js';
 
 interface ProviderStatus {

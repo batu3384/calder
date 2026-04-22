@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { homedir } from 'os';
 import { fileExists, readDirSafe, readFileSafe } from './fs-utils';
-import type { Agent, McpServer, ProviderConfig, Skill } from '../shared/types';
+import type { Agent, McpServer, ProviderConfig, Skill } from '../shared/types/provider';
 
 function parseFrontmatter(filePath: string): Record<string, string> {
   const content = readFileSafe(filePath);

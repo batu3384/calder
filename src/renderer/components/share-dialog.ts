@@ -2,7 +2,9 @@
 
 import QRCode from 'qrcode';
 import type { ShareMode } from '../../shared/sharing-types.js';
-import type { MobileControlPairingResult, ShareConnectionDescription, ShareRtcConfig, UiLanguage } from '../../shared/types.js';
+import type { UiLanguage } from '../../shared/types/provider.js';
+import type { MobileControlPairingResult } from '../../shared/types/mobile.js';
+import type { ShareConnectionDescription, ShareRtcConfig } from '../../shared/types/project.js';
 import { shareSession, acceptShareAnswer, endShare } from '../sharing/share-manager.js';
 import { getShareConnectionSnapshot, isSharing, isConnected } from '../sharing/peer-host.js';
 import { generatePassphrase, validateSharePassphrase } from '../sharing/share-crypto.js';
@@ -492,6 +494,10 @@ async function createQrDataUrl(value: string): Promise<string | null> {
 }
 
 export function showShareDialog(sessionId: string): void {
+  renderShareDialog(sessionId);
+}
+
+function renderShareDialog(sessionId: string): void {
   closeShareDialog();
   clearPendingMobilePairing(true);
 

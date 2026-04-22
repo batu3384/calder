@@ -1,4 +1,4 @@
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 
 const AUTO_APPROVAL_INPUT_BY_PROVIDER: Partial<Record<ProviderId, string>> = {
   claude: '1\n',

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { handleToolFailure, onLargeFileAlert, _resetForTesting, type LargeFileAlert } from './large-file-detector.js';
 import { appState, _resetForTesting as resetState } from '../state.js';
-import type { ToolFailureData } from '../../shared/types.js';
+import type { ToolFailureData } from '../../shared/types/session.js';
 
 const mockReadFile = vi.fn().mockResolvedValue('');
 

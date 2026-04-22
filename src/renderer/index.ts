@@ -31,7 +31,7 @@ import { initShareManager, forwardPtyData, endShare, cleanupAllShares } from './
 import { isSharing } from './sharing/peer-host.js';
 import { checkStarPrompt } from './components/star-prompt-dialog.js';
 import { addEvents as addInspectorEvents } from './session-inspector-state.js';
-import type { InspectorEvent } from '../shared/types.js';
+import type { InspectorEvent } from '../shared/types/session.js';
 import { getContext } from './session-context.js';
 import { initSessionInspector } from './components/session-inspector.js';
 import { loadProviderMetas } from './provider-availability.js';

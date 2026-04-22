@@ -1,4 +1,4 @@
-import type { AppliedContextSummary, CliSurfacePromptContextMode } from '../../../shared/types.js';
+import type { AppliedContextSummary, CliSurfacePromptContextMode } from '../../../shared/types/project.js';
 import { formatAppliedContextTrace } from '../../project-context-prompt.js';
 
 type CliSelectionSource = 'exact' | 'inferred' | 'semantic';

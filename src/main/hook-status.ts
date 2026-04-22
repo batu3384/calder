@@ -4,7 +4,8 @@ import * as os from 'os';
 import { BrowserWindow } from 'electron';
 import { isWin } from './platform';
 import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from './statusline-template';
-import type { CostData, InspectorEvent, ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
+import type { CostData, InspectorEvent } from '../shared/types/session';
 
 export const STATUS_DIR = path.join(os.homedir(), '.calder', 'runtime');
 const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');

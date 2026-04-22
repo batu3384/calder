@@ -1,10 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import type {
-  CliSurfaceDiscoveryCandidate,
-  CliSurfaceDiscoveryConfidence,
-  CliSurfaceDiscoveryResult,
-} from '../shared/types';
+import type { CliSurfaceDiscoveryCandidate, CliSurfaceDiscoveryConfidence, CliSurfaceDiscoveryResult } from '../shared/types/project';
 
 const NODE_SCRIPT_ORDER = ['dev:tui', 'dev:cli', 'tui', 'cli', 'dev', 'start'] as const;
 

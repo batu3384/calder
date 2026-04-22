@@ -5,7 +5,8 @@ import { STATUS_DIR, getStatusLineScriptPath } from './hook-status';
 import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hook-commands';
 import { readJsonSafe } from './fs-utils';
 import { isManagedStatusLineCommand } from './statusline-command';
-import type { InspectorEventType, SettingsValidationResult } from '../shared/types';
+import type { SettingsValidationResult } from '../shared/types/provider';
+import type { InspectorEventType } from '../shared/types/session';
 
 export const QWEN_HOOK_MARKER = '# calder-hook';
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';

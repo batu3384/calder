@@ -1,4 +1,4 @@
-import type { ProjectRecord } from '../../shared/types.js';
+import type { ProjectRecord } from '../../shared/types/project.js';
 
 type OrchestrationPhaseTone = 'active' | 'partial' | 'empty';
 type OrchestrationHealthTone = 'healthy' | 'watch' | 'risk';

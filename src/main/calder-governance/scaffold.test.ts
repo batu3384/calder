@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { AutoApprovalMode } from '../../shared/types.js';
+import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import { createProjectGovernanceStarterPolicy } from './scaffold.js';
 
 const roots: string[] = [];

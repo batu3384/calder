@@ -1,4 +1,4 @@
-import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types.js';
+import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project.js';
 
 export interface CliInspectState {
   active: boolean;

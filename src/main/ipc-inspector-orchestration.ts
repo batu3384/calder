@@ -14,7 +14,8 @@ import {
   type PlaywrightMirrorState,
 } from './ipc-playwright-mirror';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import type { ProjectGovernanceState, InspectorEvent } from '../shared/types';
+import type { InspectorEvent } from '../shared/types/session';
+import type { ProjectGovernanceState } from '../shared/types/governance';
 import {
   buildMiniMaxToolCallRecoveryPrompt,
   shouldTriggerMiniMaxToolCallRecovery,

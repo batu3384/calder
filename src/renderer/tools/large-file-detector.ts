@@ -1,5 +1,5 @@
 import picomatch from 'picomatch';
-import type { ToolFailureData } from '../../shared/types.js';
+import type { ToolFailureData } from '../../shared/types/session.js';
 import { DEFAULT_SCAN_IGNORE, EXCLUDED_DIRECTORIES, EXTRA_ALERT_IGNORE } from '../../shared/constants.js';
 import { appState } from '../state.js';
 

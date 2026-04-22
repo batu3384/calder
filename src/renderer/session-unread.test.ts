@@ -1,4 +1,4 @@
-import type { ProjectRecord } from '../shared/types';
+import type { ProjectRecord } from '../shared/types/project';
 
 const { statusChangeCallbacks, eventCallbacks, mockAppState } = vi.hoisted(() => ({
   statusChangeCallbacks: [] as Array<(sessionId: string, status: string) => void>,

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectGovernanceState } from '../../shared/types.js';
+import type { ProjectGovernanceState } from '../../shared/types/governance.js';
 import { discoverProjectGovernance } from './discovery.js';
 
 const DEBOUNCE_MS = 500;

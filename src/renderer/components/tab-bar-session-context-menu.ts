@@ -1,5 +1,5 @@
 import { appState, type ProjectRecord, type SessionRecord } from '../state.js';
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import { showShareDialog } from './share-dialog.js';
 import { isSharing } from '../sharing/peer-host.js';
 import { endShare } from '../sharing/share-manager.js';

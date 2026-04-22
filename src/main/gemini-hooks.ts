@@ -4,7 +4,8 @@ import { homedir } from 'os';
 import { STATUS_DIR } from './hook-status';
 import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hook-commands';
 import { readJsonSafe } from './fs-utils';
-import type { InspectorEventType, SettingsValidationResult } from '../shared/types';
+import type { SettingsValidationResult } from '../shared/types/provider';
+import type { InspectorEventType } from '../shared/types/session';
 
 export const GEMINI_HOOK_MARKER = '# calder-hook';
 

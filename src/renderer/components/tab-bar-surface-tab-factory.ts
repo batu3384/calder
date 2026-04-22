@@ -1,5 +1,5 @@
 import type { ProjectRecord } from '../state.js';
-import type { ProjectSurfaceRecord } from '../../shared/types.js';
+import type { ProjectSurfaceRecord } from '../../shared/types/project.js';
 
 interface CreateSurfaceModeTabOptions {
   kind: 'cli' | 'mobile';

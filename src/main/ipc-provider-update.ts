@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import type { ProviderUpdateSummary } from '../shared/types';
+import type { ProviderUpdateSummary } from '../shared/types/provider';
 import { updateAllProviders } from './provider-updater';
 
 let providerUpdateAbortController: AbortController | null = null;

@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
-import type { GitFileEntry } from '../shared/types';
+import type { GitFileEntry } from '../shared/types/project';
 import {
   checkoutGitBranch,
   createGitBranch,

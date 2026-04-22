@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InspectorEvent } from '../../shared/types.js';
+import type { InspectorEvent } from '../../shared/types/session.js';
 
 const mockDiscoverProjectGovernance = vi.hoisted(() => vi.fn());
 

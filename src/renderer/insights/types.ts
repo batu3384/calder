@@ -1,4 +1,4 @@
-import type { InitialContextSnapshot } from '../../shared/types.js';
+import type { InitialContextSnapshot } from '../../shared/types/session.js';
 
 export type InsightSeverity = 'info' | 'warning';
 

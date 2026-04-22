@@ -1,4 +1,4 @@
-import type { InitialContextSnapshot } from '../shared/types.js';
+import type { InitialContextSnapshot } from '../shared/types/session.js';
 import type { InsightResult } from './insights/types.js';
 import { analyzeInitialContext } from './insights/registry.js';
 import { appState } from './state.js';

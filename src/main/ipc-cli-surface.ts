@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import * as path from 'node:path';
-import type { CliSurfaceProfile } from '../shared/types';
+import type { CliSurfaceProfile } from '../shared/types/project';
 import { discoverCliSurface } from './cli-surface-discovery';
 
 const MAX_PROJECT_ID_LENGTH = 200;

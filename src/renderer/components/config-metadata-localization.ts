@@ -1,4 +1,4 @@
-import type { UiLanguage } from '../../shared/types.js';
+import type { UiLanguage } from '../../shared/types/provider.js';
 
 export type ConfigMetadataKind = 'skill' | 'command';
 

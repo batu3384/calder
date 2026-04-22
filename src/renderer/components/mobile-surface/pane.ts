@@ -7,7 +7,7 @@ import type {
   MobileInspectPlatform,
   MobileInspectPointInspectionResult,
   MobileInspectScreenshotResult,
-} from '../../../shared/types.js';
+} from '../../../shared/types/mobile.js';
 import { appState } from '../../state.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
 import { deliverSurfacePrompt } from '../surface-routing.js';
@@ -398,6 +398,10 @@ function renderInspectCapabilityPanel(platform: MobileInspectPlatform): HTMLElem
 }
 
 function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
+  return renderInspectWorkbenchContent(instance, report);
+}
+
+function renderInspectWorkbenchContent(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
   const inspect = instance.inspectState;
   const blockingChecks = getBlockingChecks(report, inspect.platform);
   const section = document.createElement('section');

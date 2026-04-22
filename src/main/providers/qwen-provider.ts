@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron';
 import type { CliProvider } from './provider';
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types';
+import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';

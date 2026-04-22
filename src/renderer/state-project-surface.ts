@@ -1,4 +1,5 @@
-import type { ProjectRecord, SessionRecord } from '../shared/types.js';
+import type { SessionRecord } from '../shared/types/session.js';
+import type { ProjectRecord } from '../shared/types/project.js';
 import { normalizeProjectSurface } from './state-normalizers.js';
 
 export function isCliSessionRecord(session: SessionRecord): boolean {

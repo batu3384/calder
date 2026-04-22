@@ -1,5 +1,5 @@
 import { appState } from './state.js';
-import type { UiLanguage } from '../shared/types.js';
+import type { UiLanguage } from '../shared/types/provider.js';
 import { DIRECT_TRANSLATIONS } from './i18n-translations.js';
 import { createPatternTranslations } from './i18n-pattern-translations.js';
 

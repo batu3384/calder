@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectContextState, ProjectRecord } from '../shared/types.js';
+import type { ProjectContextState, ProjectRecord } from '../shared/types/project.js';
 import {
   buildWorkflowLaunchPrompt,
   deriveBrowserSessionName,

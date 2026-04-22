@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { CliProvider } from './provider';
-import type { CliProviderMeta } from '../../shared/types';
+import type { CliProviderMeta } from '../../shared/types/provider';
 import {
   initProviders,
   registerProvider,

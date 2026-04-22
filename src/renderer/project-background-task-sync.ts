@@ -1,4 +1,4 @@
-import type { ProjectBackgroundTaskState } from '../shared/types.js';
+import type { ProjectBackgroundTaskState } from '../shared/types/project.js';
 import { appState } from './state.js';
 
 let initialized = false;

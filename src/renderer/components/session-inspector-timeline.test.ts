@@ -18,7 +18,7 @@ vi.mock('./session-inspector-state-ui.js', () => ({
 import { getEvents } from '../session-inspector-state.js';
 import { renderTimeline, buildAgentModel } from './session-inspector-timeline.js';
 import { inspectorState } from './session-inspector-state-ui.js';
-import type { InspectorEvent } from '../../shared/types.js';
+import type { InspectorEvent } from '../../shared/types/session.js';
 
 class FakeClassList {
   private values = new Set<string>();

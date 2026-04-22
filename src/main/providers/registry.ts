@@ -1,4 +1,4 @@
-import type { ProviderId, CliProviderMeta } from '../../shared/types';
+import type { ProviderId, CliProviderMeta } from '../../shared/types/provider';
 import type { CliProvider } from './provider';
 import { ClaudeProvider } from './claude-provider';
 import { CodexProvider } from './codex-provider';

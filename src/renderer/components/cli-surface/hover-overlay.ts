@@ -1,4 +1,4 @@
-import type { SurfaceSelectionRange } from '../../../shared/types.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project.js';
 import { buildSelectionText } from './selection.js';
 import type { CalderProtocolMessage } from './protocol.js';
 

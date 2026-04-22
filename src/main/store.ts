@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { PersistedState } from '../shared/types';
+import type { PersistedState } from '../shared/types/project';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState } from '../shared/types';
 

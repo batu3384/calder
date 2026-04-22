@@ -1,31 +1,6 @@
 import type { IpcRenderer } from 'electron';
-import type {
-  AutoApprovalMode,
-  ProjectBackgroundTaskCreateResult,
-  ProjectBackgroundTaskDocument,
-  ProjectBackgroundTaskState,
-  ProjectCheckpointCreateResult,
-  ProjectCheckpointDocument,
-  ProjectCheckpointSnapshotInput,
-  ProjectCheckpointState,
-  ProjectContextCreateRuleResult,
-  ProjectContextDeleteRuleResult,
-  ProjectContextRenameRuleResult,
-  ProjectContextStarterFilesResult,
-  ProjectContextState,
-  ProjectGovernanceStarterPolicyResult,
-  ProjectGovernanceState,
-  ProjectReviewCreateResult,
-  ProjectReviewDocument,
-  ProjectReviewState,
-  ProjectTeamContextCreateSpaceResult,
-  ProjectTeamContextStarterFilesResult,
-  ProjectTeamContextState,
-  ProjectWorkflowCreateResult,
-  ProjectWorkflowDocument,
-  ProjectWorkflowStarterFilesResult,
-  ProjectWorkflowState,
-} from '../shared/types';
+import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult, ProjectGovernanceState } from '../shared/types/governance';
+import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState, ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState, ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectReviewState, ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult, ProjectTeamContextState, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 

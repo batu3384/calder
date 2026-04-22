@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { InitialContextSnapshot, ProjectRecord, SessionRecord } from '../shared/types.js';
+import type { InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
+import type { ProjectRecord } from '../shared/types/project.js';
 import {
   addInsightSnapshotToProject,
   dismissInsightForProject,

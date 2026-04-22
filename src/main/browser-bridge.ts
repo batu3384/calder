@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { randomBytes } from 'crypto';
 import type { AddressInfo } from 'net';
-import type { EmbeddedBrowserOpenPayload } from '../shared/types';
+import type { EmbeddedBrowserOpenPayload } from '../shared/types/project';
 import { isMac, isWin, pathSep } from './platform';
 import { isAllowedExternalUrl } from './browser-open-policy';
 

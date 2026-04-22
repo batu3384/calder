@@ -36,13 +36,9 @@ import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
-import type {
-  CliProviderMeta,
-  MobileDependencyId,
-  ProjectCheckpointDocument,
-  ProviderId,
-  UiLanguage,
-} from '../../shared/types.js';
+import type { CliProviderMeta, ProviderId, UiLanguage } from '../../shared/types/provider.js';
+import type { MobileDependencyId } from '../../shared/types/mobile.js';
+import type { ProjectCheckpointDocument } from '../../shared/types/project.js';
 
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -82,6 +78,10 @@ function appendOverviewGrid(
 }
 
 export function showPreferencesModal(): void {
+  renderPreferencesModalContent();
+}
+
+function renderPreferencesModalContent(): void {
   prepareModalSurface();
   titleEl.textContent = 'Workspace Center';
   bodyEl.innerHTML = '';

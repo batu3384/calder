@@ -2,7 +2,7 @@
 // AppState, and the terminal/remote-terminal panes.
 
 import type { ShareMode } from '../../shared/sharing-types.js';
-import type { ShareRtcConfig } from '../../shared/types.js';
+import type { ShareRtcConfig } from '../../shared/types/project.js';
 import { startShare, stopShare, broadcastData, broadcastResize, isSharing, type ShareHandle } from './peer-host.js';
 import { joinShare, type JoinHandle, type InitData } from './peer-guest.js';
 import { appState } from '../state.js';

@@ -1,4 +1,4 @@
-import type { ProjectCheckpointState } from '../shared/types.js';
+import type { ProjectCheckpointState } from '../shared/types/project.js';
 import { appState } from './state.js';
 
 let initialized = false;

@@ -1,4 +1,4 @@
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 
 const PROVIDER_ICON_ASSETS: Partial<Record<ProviderId, string>> = {
   claude: 'claude.png',

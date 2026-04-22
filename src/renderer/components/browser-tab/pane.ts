@@ -36,7 +36,7 @@ import { showFlowPicker, dismissFlowPicker } from './flow-picker.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import type {
   BrowserGuestOpenPayload,
-} from '../../../shared/types.js';
+} from '../../../shared/types/project.js';
 import {
   sendFlowToSelectedSession,
   sendToSelectedSession,
@@ -65,6 +65,10 @@ import {
 } from './pane-helpers.js';
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
+  initializeBrowserTabPane(sessionId, url);
+}
+
+function initializeBrowserTabPane(sessionId: string, url?: string): void {
   if (instances.has(sessionId)) return;
 
   const el = document.createElement('div');

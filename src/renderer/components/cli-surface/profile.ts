@@ -1,4 +1,4 @@
-import type { CliSurfaceDiscoveryCandidate, CliSurfaceProfile } from '../../../shared/types.js';
+import type { CliSurfaceDiscoveryCandidate, CliSurfaceProfile } from '../../../shared/types/project.js';
 
 export function formatCliSurfaceCommand(command: string, args?: string[]): string {
   return [command, ...(args ?? [])].join(' ');

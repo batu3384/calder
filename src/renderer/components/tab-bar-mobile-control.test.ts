@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectRecord, SessionRecord } from '../../shared/types.js';
+import type { SessionRecord } from '../../shared/types/session.js';
+import type { ProjectRecord } from '../../shared/types/project.js';
 
 const mockIsSharing = vi.fn<(sessionId: string) => boolean>();
 const mockIsConnected = vi.fn<(sessionId: string) => boolean>();

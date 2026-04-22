@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectCheckpointSource, ProjectCheckpointState } from '../../shared/types.js';
+import type { ProjectCheckpointSource, ProjectCheckpointState } from '../../shared/types/project.js';
 
 interface RawCheckpointFile {
   schemaVersion?: number;

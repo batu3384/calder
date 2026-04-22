@@ -47,7 +47,7 @@ import { getCodexConfig } from '../codex-config';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../codex-hooks';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
-import type { ProviderConfig } from '../../shared/types';
+import type { ProviderConfig } from '../../shared/types/provider';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);

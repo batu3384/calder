@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectRecord, SessionRecord } from '../shared/types.js';
+import type { SessionRecord } from '../shared/types/session.js';
+import type { ProjectRecord } from '../shared/types/project.js';
 import { normalizeProjectLayout } from './state-normalizers.js';
 import {
   findActiveCliSession,

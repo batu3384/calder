@@ -3,7 +3,7 @@ import type {
   MobileDependencyReport,
   MobileInspectPlatform,
   MobileInspectScreenshotResult,
-} from '../../../shared/types.js';
+} from '../../../shared/types/mobile.js';
 import { appState } from '../../state.js';
 
 export type MobileProjectProfile = 'ios' | 'android' | 'cross' | 'unknown';

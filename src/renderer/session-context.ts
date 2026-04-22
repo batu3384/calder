@@ -1,4 +1,4 @@
-import type { ContextWindowInfo } from '../shared/types';
+import type { ContextWindowInfo } from '../shared/types/session';
 
 export type { ContextWindowInfo } from '../shared/types';
 

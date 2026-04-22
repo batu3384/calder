@@ -5,7 +5,7 @@ import type {
   AutoApprovalMode,
   AutoApprovalPolicySource,
   ProjectGovernanceAutoApprovalState,
-} from '../../shared/types.js';
+} from '../../shared/types/governance.js';
 
 interface RawAutoApprovalPolicy {
   autoApproval?: {

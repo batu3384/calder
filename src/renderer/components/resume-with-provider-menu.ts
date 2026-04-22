@@ -1,4 +1,4 @@
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import { getProviderAvailabilitySnapshot } from '../provider-availability.js';
 
 /**

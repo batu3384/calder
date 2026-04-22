@@ -3,7 +3,7 @@ import type {
   CliSurfaceDiscoveryResult,
   CliSurfaceProfile,
   ProjectRecord,
-} from '../../../shared/types.js';
+} from '../../../shared/types/project.js';
 import { createDiscoveredCliSurfaceProfile } from './profile.js';
 
 interface SetupDeps {

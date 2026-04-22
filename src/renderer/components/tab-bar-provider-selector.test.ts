@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CliProviderMeta, ProviderId } from '../../shared/types.js';
+import type { CliProviderMeta, ProviderId } from '../../shared/types/provider.js';
 import {
   resolveProviderForCheck,
   resolvePreferredProviderForLaunch,

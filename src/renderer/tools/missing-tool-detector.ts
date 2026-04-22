@@ -1,4 +1,4 @@
-import type { ToolFailureData } from '../../shared/types.js';
+import type { ToolFailureData } from '../../shared/types/session.js';
 import type { ToolInfo } from './tool-catalog.js';
 import { findTool } from './tool-catalog.js';
 import { appState } from '../state.js';

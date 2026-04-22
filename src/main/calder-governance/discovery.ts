@@ -6,7 +6,7 @@ import type {
   ProjectGovernanceMode,
   ProjectGovernancePolicySource,
   ProjectGovernanceState,
-} from '../../shared/types.js';
+} from '../../shared/types/governance.js';
 import {
   readGlobalAutoApprovalPolicy,
   resolveEffectiveAutoApprovalMode,

@@ -1,7 +1,7 @@
 import type {
   MobileDependencyId,
   MobileDependencyInstallProgressEvent,
-} from '../../../shared/types.js';
+} from '../../../shared/types/mobile.js';
 
 const MAX_INSTALL_LOG_LINES = 8;
 

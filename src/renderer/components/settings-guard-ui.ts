@@ -1,6 +1,6 @@
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { showStatusLineConflictModal } from './statusline-conflict-modal.js';
-import type { SettingsWarningData } from '../../shared/types';
+import type { SettingsWarningData } from '../../shared/types/provider';
 import { isTrackingHealthy } from '../../shared/tracking-health.js';
 
 let initialized = false;

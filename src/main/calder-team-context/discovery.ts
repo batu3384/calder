@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectTeamContextSpaceSource, ProjectTeamContextState } from '../../shared/types.js';
+import type { ProjectTeamContextSpaceSource, ProjectTeamContextState } from '../../shared/types/project.js';
 
 function isFile(filePath: string): boolean {
   try {

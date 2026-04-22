@@ -1,4 +1,4 @@
-import type { SurfaceSelectionRange } from '../../../shared/types.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project.js';
 import type { CalderProtocolMessage } from './protocol.js';
 
 export function normalizeSemanticAdapterHint(value: unknown): string | undefined {

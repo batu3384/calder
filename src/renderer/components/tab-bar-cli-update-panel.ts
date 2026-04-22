@@ -1,4 +1,4 @@
-import type { ProviderUpdateSummary } from '../../shared/types.js';
+import type { ProviderUpdateSummary } from '../../shared/types/provider.js';
 import type { CliProviderProgressState, CliUpdateCenterState } from '../update-center.js';
 
 interface CliUpdateStatusCounters {

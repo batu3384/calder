@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect } from 'vitest';
 import { _resetAnalyzersForTest, analyzeInitialContext, registerAnalyzer } from './registry.js';
-import type { InitialContextSnapshot } from '../../shared/types.js';
+import type { InitialContextSnapshot } from '../../shared/types/session.js';
 import type { InsightAnalyzer } from './types.js';
 
 function makeSnapshot(usedPercentage: number): InitialContextSnapshot {

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectWorkflowState } from '../../shared/types.js';
+import type { ProjectWorkflowState } from '../../shared/types/project.js';
 import { discoverProjectWorkflows } from './discovery.js';
 
 const DEBOUNCE_MS = 500;

@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-  ProviderId,
-  ProviderUpdateProgressEvent,
-  ProviderUpdateResult,
-  ProviderUpdateSummary,
-} from '../shared/types';
+import type { ProviderId, ProviderUpdateProgressEvent, ProviderUpdateResult, ProviderUpdateSummary } from '../shared/types/provider';
 import {
   _resetUpdateCenterForTesting,
   cancelCliProviderUpdates,

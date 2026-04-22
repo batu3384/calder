@@ -9,7 +9,7 @@ import {
   renderAutoApprovalSection as renderAutoApprovalSectionCore,
 } from './config-sections-auto-approval.js';
 import { isTrackingHealthy } from '../../shared/tracking-health.js';
-import type { UiLanguage } from '../../shared/types.js';
+import type { UiLanguage } from '../../shared/types/provider.js';
 import type {
   ProviderConfig,
   ProviderId,

@@ -1,4 +1,4 @@
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 import {
   getProviderAvailabilitySnapshot,

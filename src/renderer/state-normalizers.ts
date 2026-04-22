@@ -1,18 +1,6 @@
-import type {
-  CliSurfaceRuntimeState,
-  ProjectBackgroundTaskState,
-  ProjectCheckpointState,
-  ProjectContextState,
-  ProjectGovernanceState,
-  ProjectLayoutState,
-  ProjectRecord,
-  ProjectReviewState,
-  ProjectSurfaceRecord,
-  SessionRecord,
-  ProjectTeamContextState,
-  ProjectWorkflowDocument,
-  ProjectWorkflowState,
-} from '../shared/types.js';
+import type { ProjectLayoutState, SessionRecord } from '../shared/types/session.js';
+import type { ProjectGovernanceState } from '../shared/types/governance.js';
+import type { CliSurfaceRuntimeState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectContextState, ProjectRecord, ProjectReviewState, ProjectSurfaceRecord, ProjectTeamContextState, ProjectWorkflowDocument, ProjectWorkflowState } from '../shared/types/project.js';
 
 export const DEFAULT_BROWSER_WIDTH_RATIO = 0.38;
 

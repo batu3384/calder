@@ -1,4 +1,4 @@
-import type { ProviderId } from '../../../shared/types.js';
+import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState } from '../../state.js';
 import { getProviderDisplayName } from '../../provider-availability.js';
 import { getStatus } from '../../session-activity.js';

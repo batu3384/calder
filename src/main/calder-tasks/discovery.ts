@@ -4,7 +4,7 @@ import type {
   ProjectBackgroundTaskSource,
   ProjectBackgroundTaskState,
   ProjectBackgroundTaskStatus,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 
 interface RawTaskDocument {
   title?: unknown;

@@ -1,4 +1,4 @@
-import type { ProjectGovernanceState } from '../shared/types.js';
+import type { ProjectGovernanceState } from '../shared/types/governance.js';
 import { appState } from './state.js';
 
 let initialized = false;

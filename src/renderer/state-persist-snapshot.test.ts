@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { PersistedState } from '../shared/types.js';
+import type { PersistedState } from '../shared/types/project.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 
 function makeState(): PersistedState {

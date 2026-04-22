@@ -1,5 +1,5 @@
 import { appState, type SessionRecord } from '../state.js';
-import type { ProviderId } from '../../shared/types.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import { closeModal, showModal, type FieldDef } from './modal.js';
 import { showJoinDialog } from './join-dialog.js';
 import {

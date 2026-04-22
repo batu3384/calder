@@ -1,14 +1,13 @@
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { SerializeAddon } from '@xterm/addon-serialize';
-import { WebLinksAddon } from '@xterm/addon-web-links';
+import type { Terminal } from '@xterm/xterm';
+import type { FitAddon } from '@xterm/addon-fit';
+import type { SerializeAddon } from '@xterm/addon-serialize';
 import type {
   AppliedContextSummary,
   CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
   CliSurfaceStartupTiming,
   SurfaceSelectionRange,
-} from '../../../shared/types.js';
+} from '../../../shared/types/project.js';
 import { appState } from '../../state.js';
 import { buildAppliedContextSummary } from '../../project-context-prompt.js';
 import {
@@ -52,12 +51,25 @@ import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol
 import { getCliSurfaceProfileLabel } from './profile.js';
 import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
 import type { InferredCliRegion } from './heuristics.js';
+import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
-  clearCliSurfaceLinkDispatch,
-  extractUrlFromEventTarget,
-  findInlineUrlAtPointer,
-  openCliSurfaceWebLink,
-} from './link-dispatch.js';
+  findRegionAtCell,
+  pointerToCell,
+  selectionArea,
+  selectionFromCells,
+  selectionFromTerminal,
+  selectionFromViewport,
+  selectionsMatchBounds,
+} from './inspect-geometry.js';
+import {
+  attachCliSurfaceRuntimeBindings,
+  attachCliSurfaceStateBindings,
+} from './runtime-bindings.js';
+import {
+  createCliSurfaceLayout,
+  createCliSurfaceTerminal,
+  type CliSurfaceLayoutElements,
+} from './pane-elements.js';
 
 interface SelectableCliRegion {
   kind: 'semantic' | 'inferred';
@@ -122,20 +134,6 @@ const semanticStateNodes = new Map<string, Map<string, CalderProtocolMessage>>()
 const semanticAdapterHints = new Map<string, string>();
 const protocolRemainders = new Map<string, string>();
 const semanticRegionVersions = new Map<string, number>();
-let runtimeBindingsAttached = false;
-let stateBindingsAttached = false;
-
-type CliSurfaceButtonTone = 'neutral' | 'primary' | 'danger' | 'ghost';
-
-function buildToolbarButton(label: string, action: string, tone: CliSurfaceButtonTone = 'neutral'): HTMLButtonElement {
-  const button = document.createElement('button');
-  button.className = `cli-surface-button cli-surface-button-${tone}`;
-  button.type = 'button';
-  button.dataset.action = action;
-  button.dataset.tone = tone;
-  button.textContent = label;
-  return button;
-}
 
 function getCliSurfaceApi() {
   return typeof window !== 'undefined' ? window.calder?.cliSurface : undefined;
@@ -384,107 +382,20 @@ function renderInspectState(instance: CliSurfaceInstance): void {
   instance.targetMenuController?.syncControls();
 }
 
-function selectionFromViewport(instance: CliSurfaceInstance): SurfaceSelectionRange | null {
-  if (instance.viewportLines.length === 0) return null;
-  return {
-    mode: 'viewport',
-    startRow: 0,
-    endRow: instance.viewportLines.length - 1,
-    startCol: 0,
-    endCol: instance.terminal.cols,
-  };
-}
-
-function selectionFromTerminal(instance: CliSurfaceInstance): SurfaceSelectionRange | null {
-  if (instance.viewportLines.length === 0) return null;
-
-  const selectionText = instance.terminal.getSelection().trim();
-  const range = instance.terminal.getSelectionPosition();
-  if (!selectionText || !range) {
-    return null;
-  }
-
-  const viewportY = instance.terminal.buffer.active.viewportY;
-  const lastRow = Math.max(0, instance.viewportLines.length - 1);
-  const startRow = Math.min(lastRow, Math.max(0, range.start.y - 1 - viewportY));
-  const endRow = Math.min(lastRow, Math.max(startRow, range.end.y - 1 - viewportY));
-  const startCol = Math.max(0, range.start.x - 1);
-  const endCol = Math.max(startCol + 1, range.end.x);
-  const mode = startCol === 0 && endCol >= instance.terminal.cols ? 'line' : 'region';
-
-  return {
-    mode,
-    startRow,
-    endRow,
-    startCol,
-    endCol,
-  };
-}
-
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function pointerToCell(instance: CliSurfaceInstance, event: Pick<PointerEvent, 'clientX' | 'clientY'>): { row: number; col: number } | null {
-  if (instance.terminal.cols <= 0 || instance.terminal.rows <= 0) return null;
-  const rect = instance.viewport.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  const col = clampNumber(
-    Math.floor((event.clientX - rect.left) / (rect.width / instance.terminal.cols)),
-    0,
-    instance.terminal.cols,
-  );
-  const row = clampNumber(
-    Math.floor((event.clientY - rect.top) / (rect.height / instance.terminal.rows)),
-    0,
-    Math.max(0, instance.terminal.rows - 1),
-  );
-  return { row, col };
-}
-
-function selectionFromCells(
-  instance: CliSurfaceInstance,
-  start: { row: number; col: number },
-  end: { row: number; col: number },
-): SurfaceSelectionRange {
-  const startRow = clampNumber(Math.min(start.row, end.row), 0, Math.max(0, instance.viewportLines.length - 1));
-  const endRow = clampNumber(Math.max(start.row, end.row), startRow, Math.max(0, instance.viewportLines.length - 1));
-  const startCol = clampNumber(Math.min(start.col, end.col), 0, instance.terminal.cols);
-  const endCol = clampNumber(Math.max(start.col, end.col), startCol + 1, instance.terminal.cols);
-  return {
-    mode: startCol === 0 && endCol >= instance.terminal.cols ? 'line' : 'region',
-    startRow,
-    endRow,
-    startCol,
-    endCol,
-  };
-}
-
 function setInspectPayloadFromPointer(instance: CliSurfaceInstance, event: Pick<PointerEvent, 'clientX' | 'clientY'>): void {
   if (!instance.selectionAnchor) return;
-  const current = pointerToCell(instance, event);
+  const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
   if (!current) return;
-  setInspectPayloadFromSelection(instance, selectionFromCells(instance, instance.selectionAnchor, current));
-}
-
-function selectionsMatchBounds(left: SurfaceSelectionRange, right: SurfaceSelectionRange): boolean {
-  return left.startRow === right.startRow
-    && left.endRow === right.endRow
-    && left.startCol === right.startCol
-    && left.endCol === right.endCol;
+  setInspectPayloadFromSelection(instance, selectionFromCells({
+    viewportLineCount: instance.viewportLines.length,
+    terminalCols: instance.terminal.cols,
+    start: instance.selectionAnchor,
+    end: current,
+  }));
 }
 
 function findInferredRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }) {
-  return getInferredRegions(instance).find((candidate) =>
-    candidate.selection.startRow <= cell.row
-    && candidate.selection.endRow >= cell.row
-    && candidate.selection.startCol <= cell.col
-    && candidate.selection.endCol >= cell.col,
-  );
-}
-
-function selectionArea(selection: SurfaceSelectionRange): number {
-  return (selection.endRow - selection.startRow + 1) * Math.max(1, selection.endCol - selection.startCol);
+  return findRegionAtCell(getInferredRegions(instance), cell);
 }
 
 function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[] {
@@ -526,12 +437,7 @@ function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[]
 }
 
 function findSemanticRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }) {
-  return getSemanticRegions(instance).find((candidate) =>
-    candidate.selection.startRow <= cell.row
-    && candidate.selection.endRow >= cell.row
-    && candidate.selection.startCol <= cell.col
-    && candidate.selection.endCol >= cell.col,
-  );
+  return findRegionAtCell(getSemanticRegions(instance), cell);
 }
 
 function findSelectableRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }): SelectableCliRegion | null {
@@ -700,7 +606,13 @@ function scheduleViewportRefresh(instance: CliSurfaceInstance): void {
     syncViewportLines(instance);
     renderRuntimeMeta(instance);
     if (instance.inspectState.active) {
-      setInspectPayloadFromSelection(instance, selectionFromTerminal(instance));
+      setInspectPayloadFromSelection(instance, selectionFromTerminal({
+        viewportLineCount: instance.viewportLines.length,
+        terminalCols: instance.terminal.cols,
+        viewportY: instance.terminal.buffer.active.viewportY,
+        selectionText: instance.terminal.getSelection(),
+        range: instance.terminal.getSelectionPosition(),
+      }));
     }
   });
 }
@@ -733,458 +645,106 @@ function fitSurface(instance: CliSurfaceInstance): void {
   });
 }
 
-function attachRuntimeBindings(): void {
-  if (runtimeBindingsAttached) return;
-  const api = getCliSurfaceApi();
-  if (!api) return;
-
-  runtimeBindingsAttached = true;
-
-  api.onData((projectId, data) => {
-    const { plainText, messages, remainder } = extractCalderOscMessages(data, protocolRemainders.get(projectId) ?? '');
-    if (remainder) {
-      protocolRemainders.set(projectId, remainder);
-    } else {
-      protocolRemainders.delete(projectId);
-    }
-    if (messages.length > 0) {
-      for (const message of messages) {
-        if (message.type === 'focus') {
-          const bucket = new Map<string, CalderProtocolMessage>();
-          bucket.set(message.nodeId, message);
-          semanticFocusNodes.set(projectId, bucket);
-        } else {
-          const store = message.type === 'state' ? semanticStateNodes : semanticNodes;
-          getSemanticBucketBehavior(store, projectId).set(message.nodeId, message);
+function attachPaneBindings(): void {
+  attachCliSurfaceRuntimeBindings({
+    getApi: getCliSurfaceApi,
+    onData: (projectId, data) => {
+      const { plainText, messages, remainder } = extractCalderOscMessages(data, protocolRemainders.get(projectId) ?? '');
+      if (remainder) {
+        protocolRemainders.set(projectId, remainder);
+      } else {
+        protocolRemainders.delete(projectId);
+      }
+      if (messages.length > 0) {
+        for (const message of messages) {
+          if (message.type === 'focus') {
+            const bucket = new Map<string, CalderProtocolMessage>();
+            bucket.set(message.nodeId, message);
+            semanticFocusNodes.set(projectId, bucket);
+          } else {
+            const store = message.type === 'state' ? semanticStateNodes : semanticNodes;
+            getSemanticBucketBehavior(store, projectId).set(message.nodeId, message);
+          }
+          const adapterHint = normalizeSemanticAdapterHintBehavior(message.meta?.framework);
+          if (adapterHint) {
+            semanticAdapterHints.set(projectId, adapterHint);
+          }
         }
-        const adapterHint = normalizeSemanticAdapterHintBehavior(message.meta?.framework);
-        if (adapterHint) {
-          semanticAdapterHints.set(projectId, adapterHint);
+        semanticRegionVersions.set(projectId, (semanticRegionVersions.get(projectId) ?? 0) + 1);
+      }
+
+      const instance = instances.get(projectId);
+      if (!instance) return;
+      if (messages.length > 0) {
+        renderRuntimeMeta(instance);
+        const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
+        if (selection) {
+          setInspectPayloadFromSelection(instance, selection);
         }
       }
-      semanticRegionVersions.set(projectId, (semanticRegionVersions.get(projectId) ?? 0) + 1);
-    }
-
-    const instance = instances.get(projectId);
-    if (!instance) return;
-    if (messages.length > 0) {
+      if (!plainText) return;
+      instance.pendingDataChunks.push(plainText);
+      scheduleTerminalDataFlush(instance);
+    },
+    onStatus: (projectId, state) => {
+      updateProjectRuntime(projectId, state as CliSurfaceRuntimeState);
+      const instance = instances.get(projectId);
+      if (!instance) return;
       renderRuntimeMeta(instance);
-      const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
-      if (selection) {
-        setInspectPayloadFromSelection(instance, selection);
+    },
+    onExit: (projectId, exitCode) => {
+      const instance = instances.get(projectId);
+      if (!instance) return;
+      const runtime = getRuntimeState(projectId);
+      if (runtime) {
+        updateProjectRuntime(projectId, {
+          ...runtime,
+          status: 'stopped',
+          lastExitCode: exitCode,
+        });
       }
-    }
-    if (!plainText) return;
-    instance.pendingDataChunks.push(plainText);
-    scheduleTerminalDataFlush(instance);
-  });
-
-  api.onStatus((projectId, state) => {
-    updateProjectRuntime(projectId, state);
-    const instance = instances.get(projectId);
-    if (!instance) return;
-    renderRuntimeMeta(instance);
-  });
-
-  api.onExit((projectId, exitCode) => {
-    const instance = instances.get(projectId);
-    if (!instance) return;
-    const runtime = getRuntimeState(projectId);
-    if (runtime) {
+      renderRuntimeMeta(instance);
+    },
+    onError: (projectId, message) => {
+      const instance = instances.get(projectId);
+      if (!instance) return;
+      const runtime = getRuntimeState(projectId);
       updateProjectRuntime(projectId, {
-        ...runtime,
-        status: 'stopped',
-        lastExitCode: exitCode,
+        ...(runtime ?? { status: 'error' }),
+        status: 'error',
+        lastError: message,
       });
-    }
-    renderRuntimeMeta(instance);
-  });
-
-  api.onError((projectId, message) => {
-    const instance = instances.get(projectId);
-    if (!instance) return;
-    const runtime = getRuntimeState(projectId);
-    updateProjectRuntime(projectId, {
-      ...(runtime ?? { status: 'error' }),
-      status: 'error',
-      lastError: message,
-    });
-    renderRuntimeMeta(instance);
-    showComposerError(instance, message);
-  });
-}
-
-function attachStateBindings(): void {
-  if (stateBindingsAttached) return;
-  stateBindingsAttached = true;
-
-  const pruneStaleInstances = () => {
-    const activeProjectIds = new Set(appState.projects.map((project) => project.id));
-    for (const projectId of [...instances.keys()]) {
-      if (!activeProjectIds.has(projectId)) {
-        destroyCliSurfacePane(projectId);
-      }
-    }
-  };
-
-  const rerender = () => {
-    pruneStaleInstances();
-    instances.forEach((instance) => {
       renderRuntimeMeta(instance);
-      renderInspectState(instance);
-    });
-  };
+      showComposerError(instance, message);
+    },
+  });
 
-  appState.on('state-loaded', rerender);
-  appState.on('project-changed', rerender);
-  appState.on('project-removed', rerender);
-  appState.on('session-changed', rerender);
-  appState.on('session-added', rerender);
-  appState.on('session-removed', rerender);
+  attachCliSurfaceStateBindings({
+    subscribe: (event, cb) => {
+      appState.on(event, cb);
+    },
+    rerender: () => {
+      const activeProjectIds = new Set(appState.projects.map((project) => project.id));
+      for (const projectId of [...instances.keys()]) {
+        if (!activeProjectIds.has(projectId)) {
+          destroyCliSurfacePane(projectId);
+        }
+      }
+      instances.forEach((instance) => {
+        renderRuntimeMeta(instance);
+        renderInspectState(instance);
+      });
+    },
+  });
 }
 
 function ensureInstance(projectId: string): CliSurfaceInstance {
-  const existing = instances.get(projectId);
-  if (existing) return existing;
+  return ensureCliSurfaceInstance(projectId);
+}
 
-  attachRuntimeBindings();
-  attachStateBindings();
-
-  const element = document.createElement('div');
-  element.className = 'cli-surface-pane hidden';
-  element.dataset.projectId = projectId;
-
-  const toolbar = document.createElement('div');
-  toolbar.className = 'cli-surface-toolbar';
-
-  const toolbarMain = document.createElement('div');
-  toolbarMain.className = 'cli-surface-toolbar-main';
-
-  const titleGroup = document.createElement('div');
-  titleGroup.className = 'cli-surface-title-group';
-
-  const title = document.createElement('div');
-  title.className = 'cli-surface-title';
-  title.textContent = 'CLI Surface';
-  titleGroup.appendChild(title);
-
-  const meta = document.createElement('div');
-  meta.className = 'cli-surface-meta';
-  meta.textContent = 'No profile · idle';
-  titleGroup.appendChild(meta);
-
-  toolbarMain.appendChild(titleGroup);
-
-  const toolbarMeta = document.createElement('div');
-  toolbarMeta.className = 'cli-surface-toolbar-meta';
-
-  const adapterMeta = document.createElement('div');
-  adapterMeta.className = 'cli-surface-adapter-meta hidden';
-  toolbarMeta.appendChild(adapterMeta);
-
-  const route = document.createElement('div');
-  route.className = 'cli-surface-route';
-  route.textContent = 'Routing is not set';
-  toolbarMeta.appendChild(route);
-
-  toolbarMain.appendChild(toolbarMeta);
-  toolbar.appendChild(toolbarMain);
-
-  const actions = document.createElement('div');
-  actions.className = 'cli-surface-actions';
-
-  const startButton = buildToolbarButton('Start', 'start', 'primary');
-  const stopButton = buildToolbarButton('Stop', 'stop', 'danger');
-  const restartButton = buildToolbarButton('Restart', 'restart');
-  const inspectButton = buildToolbarButton('Inspect', 'inspect', 'ghost');
-  const captureButton = buildToolbarButton('Capture', 'capture');
-
-  const runtimeGroup = document.createElement('div');
-  runtimeGroup.className = 'cli-surface-action-group';
-  const runtimeLabel = document.createElement('div');
-  runtimeLabel.className = 'cli-surface-action-label';
-  runtimeLabel.textContent = 'Runtime';
-  runtimeGroup.appendChild(runtimeLabel);
-  const runtimeControls = document.createElement('div');
-  runtimeControls.className = 'cli-surface-action-row';
-  runtimeControls.appendChild(startButton);
-  runtimeControls.appendChild(stopButton);
-  runtimeControls.appendChild(restartButton);
-  runtimeGroup.appendChild(runtimeControls);
-
-  const captureGroup = document.createElement('div');
-  captureGroup.className = 'cli-surface-action-group';
-  const captureLabel = document.createElement('div');
-  captureLabel.className = 'cli-surface-action-label';
-  captureLabel.textContent = 'Capture';
-  captureGroup.appendChild(captureLabel);
-  const captureControls = document.createElement('div');
-  captureControls.className = 'cli-surface-action-row';
-  captureControls.appendChild(inspectButton);
-  captureControls.appendChild(captureButton);
-  captureGroup.appendChild(captureControls);
-
-  actions.appendChild(runtimeGroup);
-  actions.appendChild(captureGroup);
-  toolbar.appendChild(actions);
-  element.appendChild(toolbar);
-
-  const viewport = document.createElement('div');
-  viewport.className = 'cli-surface-viewport';
-  element.appendChild(viewport);
-
-  const selectionOverlay = document.createElement('div');
-  selectionOverlay.className = 'cli-surface-selection-overlay hidden';
-
-  const hoverOverlay = document.createElement('div');
-  hoverOverlay.className = 'cli-surface-hover-overlay hidden';
-
-  const hoverLabel = document.createElement('div');
-  hoverLabel.className = 'cli-surface-hover-label';
-  hoverOverlay.appendChild(hoverLabel);
-
-  const hoverMeta = document.createElement('div');
-  hoverMeta.className = 'cli-surface-hover-meta';
-  hoverOverlay.appendChild(hoverMeta);
-
-  const hoverPreview = document.createElement('pre');
-  hoverPreview.className = 'cli-surface-hover-preview';
-  hoverOverlay.appendChild(hoverPreview);
-
-  const empty = document.createElement('div');
-  empty.className = 'cli-surface-empty';
-  empty.textContent = 'Run a CLI or TUI profile to preview it here.';
-  element.appendChild(empty);
-
-  const composer = document.createElement('div');
-  composer.className = 'cli-surface-composer hidden';
-  composer.classList.add('calder-popover');
-
-  const composerHandle = document.createElement('div');
-  composerHandle.className = 'cli-surface-composer-handle';
-
-  const composerHandleLabel = document.createElement('span');
-  composerHandleLabel.className = 'cli-surface-composer-handle-label';
-  composerHandleLabel.textContent = 'Terminal capture';
-
-  const composerHandleGrip = document.createElement('span');
-  composerHandleGrip.className = 'cli-surface-composer-handle-grip';
-  composerHandleGrip.textContent = 'Move';
-
-  composerHandle.appendChild(composerHandleLabel);
-  composerHandle.appendChild(composerHandleGrip);
-  composer.appendChild(composerHandle);
-
-  const composerHint = document.createElement('div');
-  composerHint.className = 'cli-surface-composer-hint';
-  composer.appendChild(composerHint);
-
-  const composerPreview = document.createElement('pre');
-  composerPreview.className = 'cli-surface-composer-preview';
-  composer.appendChild(composerPreview);
-
-  const composerScope = document.createElement('div');
-  composerScope.className = 'cli-surface-composer-scope';
-  composerScope.textContent = 'Will send: Selection only';
-  composer.appendChild(composerScope);
-
-  const composerContextTrace = document.createElement('div');
-  composerContextTrace.className = 'cli-surface-composer-context-trace';
-  composer.appendChild(composerContextTrace);
-
-  const composerContextRow = document.createElement('label');
-  composerContextRow.className = 'cli-surface-composer-toggle';
-  const composerContextLabel = document.createElement('span');
-  composerContextLabel.textContent = 'Context';
-  const composerContextSelect = document.createElement('select');
-  composerContextSelect.className = 'cli-surface-composer-select';
-  [
-    ['auto', 'Auto'],
-    ['selection-only', 'Selection only'],
-    ['selection-nearby', 'Selection + nearby'],
-    ['selection-nearby-viewport', 'Selection + viewport'],
-  ].forEach(([value, label]) => {
-    const option = document.createElement('option');
-    option.setAttribute('value', value);
-    option.textContent = label;
-    composerContextSelect.appendChild(option);
-  });
-  composerContextRow.appendChild(composerContextLabel);
-  composerContextRow.appendChild(composerContextSelect);
-  composer.appendChild(composerContextRow);
-
-  const composerActions = document.createElement('div');
-  composerActions.className = 'cli-surface-composer-actions';
-
-  const selectedButton = buildToolbarButton('Send to selected', 'send-selected', 'primary');
-  const newButton = buildToolbarButton('New session', 'send-new');
-  const customButton = buildToolbarButton('Choose session', 'send-custom', 'ghost');
-  selectedButton.disabled = true;
-  newButton.disabled = true;
-  customButton.disabled = false;
-  composerActions.appendChild(selectedButton);
-  composerActions.appendChild(newButton);
-  composerActions.appendChild(customButton);
-  composer.appendChild(composerActions);
-
-  const composerError = document.createElement('div');
-  composerError.className = 'cli-surface-composer-error';
-  composerError.style.display = 'none';
-  composer.appendChild(composerError);
-
-  const targetMenu = document.createElement('div');
-  targetMenu.className = 'cli-surface-target-menu';
-  targetMenu.classList.add('calder-popover');
-  targetMenu.style.display = 'none';
-
-  const targetMenuList = document.createElement('div');
-  targetMenuList.className = 'cli-surface-target-menu-list';
-  targetMenu.appendChild(targetMenuList);
-
-  element.appendChild(targetMenu);
-
-  element.appendChild(composer);
-
-  const terminal = new Terminal({
-    allowProposedApi: true,
-    fontSize: 14,
-    cursorBlink: true,
-    linkHandler: {
-      activate: (event, uri) => {
-        event.preventDefault?.();
-        event.stopPropagation?.();
-        try { terminal.clearSelection(); } catch {}
-        window.getSelection?.()?.removeAllRanges?.();
-        openCliSurfaceWebLink(
-          projectId,
-          uri,
-          'osc-link',
-          getProject(projectId)?.path,
-          (url, cwd) => window.calder.app.openExternal(url, cwd),
-        );
-      },
-    },
-  });
-  const fitAddon = new FitAddon();
-  const serializeAddon = new SerializeAddon();
-  terminal.loadAddon(fitAddon);
-  terminal.loadAddon(serializeAddon);
-  terminal.loadAddon(new WebLinksAddon((event, url) => {
-    event.preventDefault?.();
-    event.stopPropagation?.();
-    try { terminal.clearSelection(); } catch {}
-    window.getSelection?.()?.removeAllRanges?.();
-    openCliSurfaceWebLink(
-      projectId,
-      url,
-      'web-link',
-      getProject(projectId)?.path,
-      (nextUrl, cwd) => window.calder.app.openExternal(nextUrl, cwd),
-    );
-  }));
-  let suppressLinkDragSelection = false;
-  const clearPointerSelection = (): void => {
-    try { terminal.clearSelection(); } catch {}
-    window.getSelection?.()?.removeAllRanges?.();
-  };
-  const suppressPointerEvent = (event: MouseEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-    (event as MouseEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
-  };
-  viewport.addEventListener('mousedown', (event: MouseEvent) => {
-    if (event.button !== 0) return;
-    // Clear stale suppression from a previous link click before evaluating
-    // the current pointer target.
-    suppressLinkDragSelection = false;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressLinkDragSelection = true;
-    suppressPointerEvent(event);
-    clearPointerSelection();
-  }, { capture: true });
-  viewport.addEventListener('mousemove', (event: MouseEvent) => {
-    if (!suppressLinkDragSelection) return;
-    if ((event.buttons & 1) !== 1) {
-      suppressLinkDragSelection = false;
-      return;
-    }
-    suppressPointerEvent(event);
-    clearPointerSelection();
-  }, { capture: true });
-  viewport.addEventListener('mouseup', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-  viewport.addEventListener('mouseleave', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-  viewport.addEventListener('click', (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressPointerEvent(event);
-    clearPointerSelection();
-    openCliSurfaceWebLink(
-      projectId,
-      candidate,
-      'web-link',
-      getProject(projectId)?.path,
-      (url, cwd) => window.calder.app.openExternal(url, cwd),
-    );
-  }, { capture: true });
-  terminal.open(viewport);
-  viewport.appendChild(hoverOverlay);
-  viewport.appendChild(selectionOverlay);
-
-  const instance: CliSurfaceInstance = {
-    projectId,
-    element,
-    viewport,
-    selectionOverlayEl: selectionOverlay,
-    hoverOverlayEl: hoverOverlay,
-    hoverLabelEl: hoverLabel,
-    hoverMetaEl: hoverMeta,
-    hoverPreviewEl: hoverPreview,
-    terminal,
-    fitAddon,
-    serializeAddon,
-    emptyEl: empty,
-    metaEl: meta,
-    routeEl: route,
-    adapterMetaEl: adapterMeta,
-    inspectButton,
-    composerEl: composer,
-    composerHandleEl: composerHandle,
-    composerHintEl: composerHint,
-    composerPreviewEl: composerPreview,
-    composerScopeEl: composerScope,
-    composerContextTraceEl: composerContextTrace,
-    composerContextSelectEl: composerContextSelect,
-    composerErrorEl: composerError,
-    selectedButton,
-    newButton,
-    customButton,
-    targetMenuEl: targetMenu,
-    targetMenuListEl: targetMenuList,
-    inspectState: createInitialInspectState(),
-    viewportLines: [],
-    inferredRegions: [],
-    inferredRegionsKey: '',
-    semanticRegions: [],
-    semanticRegionsVersion: -1,
-    hoveredRegion: null,
-    refreshFramePending: false,
-    dataFramePending: false,
-    pendingDataChunks: [],
-    selectionAnchor: null,
-    contextModeOverride: null,
-    targetMenuController: undefined,
-    targetMenuOutsideClickHandler: undefined,
-    cleanupFns: [],
-  };
-
-  instance.targetMenuController = createCliTargetMenuController({
-    projectId,
+function createCliSurfaceTargetMenuController(instance: CliSurfaceInstance): CliTargetMenuController {
+  return createCliTargetMenuController({
+    projectId: instance.projectId,
     elements: {
       composerEl: instance.composerEl,
       selectedButton: instance.selectedButton,
@@ -1210,8 +770,14 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
       });
     },
   });
+}
 
-  startButton.addEventListener('click', async () => {
+function bindRuntimeActionHandlers(
+  projectId: string,
+  instance: CliSurfaceInstance,
+  controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>,
+): void {
+  controls.startButton.addEventListener('click', async () => {
     const profile = resolveSelectedProfile(projectId);
     if (!profile) {
       showComposerError(instance, 'Select a CLI surface profile first.');
@@ -1221,17 +787,35 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     await getCliSurfaceApi()?.start(projectId, profile);
   });
 
-  stopButton.addEventListener('click', async () => {
+  controls.stopButton.addEventListener('click', async () => {
     clearComposerError(instance);
     await getCliSurfaceApi()?.stop(projectId);
   });
 
-  restartButton.addEventListener('click', async () => {
+  controls.restartButton.addEventListener('click', async () => {
     clearComposerError(instance);
     await getCliSurfaceApi()?.restart(projectId);
   });
 
-  inspectButton.addEventListener('click', () => {
+  controls.captureButton.addEventListener('click', () => {
+    instance.inspectState = openInspect(instance.inspectState);
+    clearComposerError(instance);
+    renderInspectState(instance);
+    setInspectPayloadFromSelection(
+      instance,
+      selectionFromViewport(instance.viewportLines.length, instance.terminal.cols),
+    );
+    setComposerPositionBehavior({
+      paneEl: instance.element,
+      composerEl: instance.composerEl,
+      left: 16,
+      top: 72,
+    });
+  });
+}
+
+function bindInspectActionHandlers(instance: CliSurfaceInstance): void {
+  instance.inspectButton.addEventListener('click', () => {
     if (instance.inspectState.active) {
       closeInspectComposer(instance);
       return;
@@ -1240,20 +824,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     renderInspectState(instance);
   });
 
-  captureButton.addEventListener('click', () => {
-    instance.inspectState = openInspect(instance.inspectState);
-    clearComposerError(instance);
-    renderInspectState(instance);
-    setInspectPayloadFromSelection(instance, selectionFromViewport(instance));
-    setComposerPositionBehavior({
-      paneEl: instance.element,
-      composerEl: instance.composerEl,
-      left: 16,
-      top: 72,
-    });
-  });
-
-  selectedButton.addEventListener('click', async () => {
+  instance.selectedButton.addEventListener('click', async () => {
     const payload = getSendPayload(instance);
     if (!payload) return;
     const result = await sendCliSelectionToSelectedSession(payload);
@@ -1264,7 +835,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     closeInspectComposer(instance);
   });
 
-  newButton.addEventListener('click', () => {
+  instance.newButton.addEventListener('click', () => {
     const payload = getSendPayload(instance);
     if (!payload) return;
     clearComposerError(instance);
@@ -1272,7 +843,7 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     closeInspectComposer(instance);
   });
 
-  customButton.addEventListener('click', () => {
+  instance.customButton.addEventListener('click', () => {
     instance.targetMenuController?.openMenu();
   });
 
@@ -1284,9 +855,11 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     }
   };
   document.addEventListener('mousedown', instance.targetMenuOutsideClickHandler);
+}
 
-  composerContextSelect.addEventListener('change', () => {
-    const nextValue = composerContextSelect.value;
+function bindInspectPointerHandlers(instance: CliSurfaceInstance): void {
+  instance.composerContextSelectEl.addEventListener('change', () => {
+    const nextValue = instance.composerContextSelectEl.value;
     instance.contextModeOverride = nextValue === 'auto'
       ? null
       : nextValue as CliSurfacePromptContextMode;
@@ -1298,34 +871,40 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     renderInspectState(instance);
   });
 
-  terminal.onSelectionChange(() => {
+  instance.terminal.onSelectionChange(() => {
     if (!instance.inspectState.active) return;
-    setInspectPayloadFromSelection(instance, selectionFromTerminal(instance));
+    setInspectPayloadFromSelection(instance, selectionFromTerminal({
+      viewportLineCount: instance.viewportLines.length,
+      terminalCols: instance.terminal.cols,
+      viewportY: instance.terminal.buffer.active.viewportY,
+      selectionText: instance.terminal.getSelection(),
+      range: instance.terminal.getSelectionPosition(),
+    }));
   });
 
-  selectionOverlay.addEventListener('pointerdown', (event) => {
+  instance.selectionOverlayEl.addEventListener('pointerdown', (event) => {
     if (!instance.inspectState.active) return;
     event.preventDefault();
-    instance.selectionAnchor = pointerToCell(instance, event);
+    instance.selectionAnchor = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
     setHoverRegion(instance, null);
     setInspectPayloadFromPointer(instance, event);
   });
 
-  selectionOverlay.addEventListener('pointermove', (event) => {
+  instance.selectionOverlayEl.addEventListener('pointermove', (event) => {
     if (!instance.inspectState.active) return;
     event.preventDefault();
     if (instance.selectionAnchor) {
       setInspectPayloadFromPointer(instance, event);
       return;
     }
-    const current = pointerToCell(instance, event);
+    const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
     setHoverRegion(instance, current ? findSelectableRegionAtCell(instance, current) : null);
   });
 
-  selectionOverlay.addEventListener('pointerup', (event) => {
+  instance.selectionOverlayEl.addEventListener('pointerup', (event) => {
     if (!instance.inspectState.active || !instance.selectionAnchor) return;
     event.preventDefault();
-    const current = pointerToCell(instance, event);
+    const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
     const singleClick = current
       && current.row === instance.selectionAnchor.row
       && current.col === instance.selectionAnchor.col;
@@ -1349,14 +928,85 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
     setHoverRegion(instance, null);
   });
 
-  selectionOverlay.addEventListener('pointerleave', () => {
+  instance.selectionOverlayEl.addEventListener('pointerleave', () => {
     if (instance.selectionAnchor) return;
     setHoverRegion(instance, null);
   });
 
-  terminal.onData((data) => {
-    getCliSurfaceApi()?.write(projectId, data);
+  instance.terminal.onData((data) => {
+    getCliSurfaceApi()?.write(instance.projectId, data);
   });
+}
+
+function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
+  const existing = instances.get(projectId);
+  if (existing) return existing;
+
+  attachPaneBindings();
+
+  const layout = createCliSurfaceLayout(projectId);
+  const terminalElements = createCliSurfaceTerminal(
+    projectId,
+    layout.viewport,
+    layout.hoverOverlay,
+    layout.selectionOverlay,
+    {
+      resolveProjectPath: (nextProjectId) => getProject(nextProjectId)?.path,
+      openExternal: (url, cwd) => window.calder.app.openExternal(url, cwd),
+    },
+  );
+
+  const instance: CliSurfaceInstance = {
+    projectId,
+    element: layout.element,
+    viewport: layout.viewport,
+    selectionOverlayEl: layout.selectionOverlay,
+    hoverOverlayEl: layout.hoverOverlay,
+    hoverLabelEl: layout.hoverLabel,
+    hoverMetaEl: layout.hoverMeta,
+    hoverPreviewEl: layout.hoverPreview,
+    terminal: terminalElements.terminal,
+    fitAddon: terminalElements.fitAddon,
+    serializeAddon: terminalElements.serializeAddon,
+    emptyEl: layout.empty,
+    metaEl: layout.meta,
+    routeEl: layout.route,
+    adapterMetaEl: layout.adapterMeta,
+    inspectButton: layout.inspectButton,
+    composerEl: layout.composer,
+    composerHandleEl: layout.composerHandle,
+    composerHintEl: layout.composerHint,
+    composerPreviewEl: layout.composerPreview,
+    composerScopeEl: layout.composerScope,
+    composerContextTraceEl: layout.composerContextTrace,
+    composerContextSelectEl: layout.composerContextSelect,
+    composerErrorEl: layout.composerError,
+    selectedButton: layout.selectedButton,
+    newButton: layout.newButton,
+    customButton: layout.customButton,
+    targetMenuEl: layout.targetMenu,
+    targetMenuListEl: layout.targetMenuList,
+    inspectState: createInitialInspectState(),
+    viewportLines: [],
+    inferredRegions: [],
+    inferredRegionsKey: '',
+    semanticRegions: [],
+    semanticRegionsVersion: -1,
+    hoveredRegion: null,
+    refreshFramePending: false,
+    dataFramePending: false,
+    pendingDataChunks: [],
+    selectionAnchor: null,
+    contextModeOverride: null,
+    targetMenuController: undefined,
+    targetMenuOutsideClickHandler: undefined,
+    cleanupFns: [],
+  };
+
+  instance.targetMenuController = createCliSurfaceTargetMenuController(instance);
+  bindRuntimeActionHandlers(projectId, instance, layout);
+  bindInspectActionHandlers(instance);
+  bindInspectPointerHandlers(instance);
 
   instances.set(projectId, instance);
   instance.cleanupFns.push(enableComposerDraggingBehavior({

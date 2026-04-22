@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { createServer } from 'node:net';
-import type { CliSurfacePortMode, CliSurfaceProfile } from '../shared/types';
+import type { CliSurfacePortMode, CliSurfaceProfile } from '../shared/types/project';
 
 const AUTO_PORT_MIN = 4300;
 const AUTO_PORT_SPAN = 2000;

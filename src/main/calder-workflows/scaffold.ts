@@ -3,7 +3,7 @@ import path from 'node:path';
 import type {
   ProjectWorkflowCreateResult,
   ProjectWorkflowStarterFilesResult,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 import { discoverProjectWorkflows } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [

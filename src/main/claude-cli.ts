@@ -4,7 +4,8 @@ import { homedir } from 'os';
 import { STATUS_DIR, getStatusLineScriptPath, installStatusLineScript } from './hook-status';
 import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hook-commands';
 import { readJsonSafe, readDirSafe } from './fs-utils';
-import type { McpServer, Agent, Skill, Command, ClaudeConfig, InspectorEventType } from '../shared/types';
+import type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types/provider';
+import type { InspectorEventType } from '../shared/types/session';
 
 export type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types';
 

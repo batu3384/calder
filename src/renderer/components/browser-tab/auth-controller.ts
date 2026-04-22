@@ -6,7 +6,7 @@ import type {
   BrowserCredentialFillData,
   BrowserCredentialSaveInput,
   BrowserCredentialSummary,
-} from '../../../shared/types.js';
+} from '../../../shared/types/project.js';
 
 type AuthStatusTone = 'neutral' | 'success' | 'error';
 

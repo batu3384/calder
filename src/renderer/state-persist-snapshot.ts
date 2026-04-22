@@ -1,4 +1,4 @@
-import type { PersistedState } from '../shared/types.js';
+import type { PersistedState } from '../shared/types/project.js';
 import { stripTransientRuntimeFields } from './state-normalizers.js';
 
 export function buildRendererPersistSnapshot(state: PersistedState): PersistedState {

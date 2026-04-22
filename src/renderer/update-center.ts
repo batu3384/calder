@@ -4,7 +4,7 @@ import type {
   ProviderUpdateProgressEvent,
   ProviderUpdateResult,
   ProviderUpdateSummary,
-} from '../shared/types.js';
+} from '../shared/types/provider.js';
 import type { CalderApi } from './types.js';
 
 const APP_UP_TO_DATE_TIMEOUT_MS = 6000;

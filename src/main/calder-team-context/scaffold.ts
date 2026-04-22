@@ -3,7 +3,7 @@ import path from 'node:path';
 import type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextStarterFilesResult,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 import { discoverProjectTeamContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [

@@ -1,4 +1,5 @@
-import type { ProjectBackgroundTaskDocument, ProviderId } from '../shared/types.js';
+import type { ProviderId } from '../shared/types/provider.js';
+import type { ProjectBackgroundTaskDocument } from '../shared/types/project.js';
 import { appState } from './state.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';

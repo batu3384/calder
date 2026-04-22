@@ -2,7 +2,7 @@ import type {
   AutoApprovalDecision,
   AutoApprovalMode,
   AutoApprovalOperationClass,
-} from '../../shared/types.js';
+} from '../../shared/types/governance.js';
 
 export interface AutoApprovalOperationInput {
   tool?: string | null;

@@ -4,7 +4,7 @@ import type {
   ProjectCheckpointDocument,
   ProjectCheckpointCreateResult,
   ProjectCheckpointSnapshotInput,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 import { getGitFiles, getGitStatus } from '../git-status.js';
 import { discoverProjectCheckpoints } from './discovery.js';
 

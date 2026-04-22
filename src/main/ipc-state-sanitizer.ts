@@ -1,5 +1,6 @@
 import * as path from 'path';
-import type { PersistedState, ProviderId } from '../shared/types';
+import type { ProviderId } from '../shared/types/provider';
+import type { PersistedState } from '../shared/types/project';
 import { isWin } from './platform';
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,7 +1,7 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../state.js';
 import type {
   CliSurfaceProfile,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 import { onChange as onStatusChange, type SessionStatus } from '../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, refreshGitStatus } from '../git-status.js';
 

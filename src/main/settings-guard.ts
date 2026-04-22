@@ -6,7 +6,7 @@ import { HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
 import { readJsonSafe } from './fs-utils';
 import { isManagedStatusLineCommand } from './statusline-command';
 import { loadState, saveState } from './store';
-import type { SettingsValidationResult } from '../shared/types';
+import type { SettingsValidationResult } from '../shared/types/provider';
 
 const EXPECTED_HOOK_EVENTS = [
   'SessionStart', 'UserPromptSubmit', 'PostToolUse',

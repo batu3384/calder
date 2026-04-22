@@ -1,4 +1,4 @@
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types';
+import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project';
 import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
 import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 

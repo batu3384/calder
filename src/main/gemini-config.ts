@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { homedir } from 'os';
 import { fileExists, readDirSafe, readFileSafe, readJsonSafe } from './fs-utils';
-import type { McpServer, ProviderConfig, Skill } from '../shared/types';
+import type { McpServer, ProviderConfig, Skill } from '../shared/types/provider';
 
 function readMcpServersFromJson(filePath: string, scope: 'user' | 'project'): McpServer[] {
   const json = readJsonSafe(filePath);

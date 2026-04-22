@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { GitWorktree, GitFileEntry } from '../shared/types';
+import type { GitWorktree, GitFileEntry } from '../shared/types/project';
 
 export type { GitWorktree, GitFileEntry } from '../shared/types';
 

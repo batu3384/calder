@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ProjectReviewCreateResult } from '../../shared/types.js';
+import type { ProjectReviewCreateResult } from '../../shared/types/project.js';
 import { discoverProjectReviews } from './discovery.js';
 
 function slugifyReviewTitle(title: string): string {

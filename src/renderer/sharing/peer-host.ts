@@ -2,7 +2,8 @@
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
 import type { ShareBrowserControlAction, ShareMode, ShareMessage } from '../../shared/sharing-types.js';
-import type { SessionRecord, ShareRtcConfig } from '../../shared/types.js';
+import type { SessionRecord } from '../../shared/types/session.js';
+import type { ShareRtcConfig } from '../../shared/types/project.js';
 import { deliverPromptToTerminalSession, getTerminalInstance } from '../components/terminal-pane.js';
 import { getBrowserTabInstance } from '../components/browser-tab/instance.js';
 import { toggleInspectMode } from '../components/browser-tab/inspect-mode.js';

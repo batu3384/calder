@@ -1,5 +1,5 @@
 import type { ProjectRecord } from '../state.js';
-import type { CliSurfaceProfile, ProjectSurfaceRecord, SurfaceKind } from '../../shared/types.js';
+import type { CliSurfaceProfile, ProjectSurfaceRecord, SurfaceKind } from '../../shared/types/project.js';
 import { createCustomSelect, type CustomSelectInstance } from './custom-select.js';
 
 interface CreateTabBarSurfaceControlsControllerOptions {

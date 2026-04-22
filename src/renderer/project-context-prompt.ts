@@ -1,4 +1,5 @@
-import type { AppliedContextSummary, ProjectContextState, ProviderId } from '../shared/types.js';
+import type { ProviderId } from '../shared/types/provider.js';
+import type { AppliedContextSummary, ProjectContextState } from '../shared/types/project.js';
 import { appState } from './state.js';
 
 export function buildAppliedContextSummary(

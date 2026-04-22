@@ -5,7 +5,7 @@ import type {
   ProjectContextDeleteRuleResult,
   ProjectContextRenameRuleResult,
   ProjectContextStarterFilesResult,
-} from '../../shared/types.js';
+} from '../../shared/types/project.js';
 import { discoverProjectContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [

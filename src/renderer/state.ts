@@ -1,5 +1,8 @@
 import type { CalderApi } from './types.js';
-import type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession, ProviderId, CostInfo, ContextWindowInfo, InitialContextSnapshot, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectGovernanceState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types.js';
+import type { ProviderId } from '../shared/types/provider.js';
+import type { SessionRecord, ArchivedSession, CostInfo, ContextWindowInfo, InitialContextSnapshot } from '../shared/types/session.js';
+import type { ProjectGovernanceState } from '../shared/types/governance.js';
+import type { ProjectRecord, Preferences, PersistedState, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types/project.js';
 import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
@@ -9,6 +12,27 @@ import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.
 import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
+import { resumeProjectWithProvider } from './state-resume-with-provider.js';
+import {
+  archiveSessionToHistory,
+  clearProjectHistory,
+  removeHistoryEntryFromProject,
+  resumeSessionFromHistory,
+  toggleProjectHistoryBookmark,
+} from './state-history.js';
+import {
+  collectSessionIdsForRemoval,
+  resolveCycledSessionId,
+  resolveSessionIdAtIndex,
+} from './state-session-navigation.js';
+import {
+  applyProjectSurface,
+  closeCliProjectSurface,
+  closeMobileProjectSurface,
+  focusCliProjectSurface,
+  focusMobileProjectSurface,
+  setActiveProjectSession,
+} from './state-surface-updater.js';
 import {
   addInsightSnapshotToProject,
   dismissInsightForProject,
@@ -27,7 +51,6 @@ import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
   buildWorkflowLaunchPrompt,
   DEFAULT_BROWSER_WIDTH_RATIO,
-  deriveBrowserSessionName,
   normalizeProjectBackgroundTaskState,
   normalizeProjectCheckpointState,
   normalizeProjectContextState,
@@ -37,11 +60,10 @@ import {
   normalizeProjectSurface,
   normalizeProjectTeamContextState,
   normalizeProjectWorkflowState,
-  stripTransientRuntimeFields,
 } from './state-normalizers.js';
+import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
-
 export const MAX_SESSION_NAME_LENGTH = 60;
 
 declare global {
@@ -371,201 +393,14 @@ class AppState {
   ): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-
-    const restoredIdMap = new Map<string, string>();
-    const createdSessions: SessionRecord[] = [];
-    const removedSessions = mode === 'replace'
-      ? [...project.sessions]
-      : [];
-
-    if (mode === 'replace') {
-      for (const session of removedSessions) {
-        this.pruneNav(session.id);
-      }
-      project.sessions = [];
-      project.activeSessionId = null;
-      project.layout.splitPanes = [];
-      project.surface = normalizeProjectSurface(project);
-    }
-
-    for (const snapshot of checkpoint.sessions) {
-      if (snapshot.type === 'browser-tab') {
-        if (!snapshot.browserTabUrl) continue;
-        const existingBrowser = project.sessions.find(
-          (session) => session.type === 'browser-tab' && session.browserTabUrl === snapshot.browserTabUrl,
-        );
-        if (existingBrowser) {
-          restoredIdMap.set(snapshot.id, existingBrowser.id);
-          continue;
-        }
-
-        const browserSession: SessionRecord = {
-          id: crypto.randomUUID(),
-          name: deriveBrowserSessionName(snapshot.browserTabUrl, snapshot.name || 'Browser'),
-          type: 'browser-tab',
-          browserTabUrl: snapshot.browserTabUrl,
-          cliSessionId: null,
-          createdAt: new Date().toISOString(),
-        };
-        project.sessions.push(browserSession);
-        restoredIdMap.set(snapshot.id, browserSession.id);
-        createdSessions.push(browserSession);
-        continue;
-      }
-
-      if (snapshot.type === 'file-reader') {
-        if (!snapshot.fileReaderPath) continue;
-        const existingReader = project.sessions.find(
-          (session) => session.type === 'file-reader' && session.fileReaderPath === snapshot.fileReaderPath,
-        );
-        if (existingReader) {
-          existingReader.fileReaderLine = snapshot.fileReaderLine;
-          restoredIdMap.set(snapshot.id, existingReader.id);
-          continue;
-        }
-
-        const readerSession: SessionRecord = {
-          id: crypto.randomUUID(),
-          name: snapshot.name,
-          type: 'file-reader',
-          fileReaderPath: snapshot.fileReaderPath,
-          ...(snapshot.fileReaderLine !== undefined ? { fileReaderLine: snapshot.fileReaderLine } : {}),
-          cliSessionId: null,
-          createdAt: new Date().toISOString(),
-        };
-        project.sessions.push(readerSession);
-        restoredIdMap.set(snapshot.id, readerSession.id);
-        createdSessions.push(readerSession);
-        continue;
-      }
-
-      if (snapshot.type === 'diff-viewer') {
-        if (!snapshot.diffFilePath || !snapshot.diffArea) continue;
-        const existingDiff = project.sessions.find(
-          (session) =>
-            session.type === 'diff-viewer'
-            && session.diffFilePath === snapshot.diffFilePath
-            && session.diffArea === snapshot.diffArea
-            && session.worktreePath === snapshot.worktreePath,
-        );
-        if (existingDiff) {
-          restoredIdMap.set(snapshot.id, existingDiff.id);
-          continue;
-        }
-
-        const diffSession: SessionRecord = {
-          id: crypto.randomUUID(),
-          name: snapshot.name,
-          type: 'diff-viewer',
-          diffFilePath: snapshot.diffFilePath,
-          diffArea: snapshot.diffArea,
-          ...(snapshot.worktreePath ? { worktreePath: snapshot.worktreePath } : {}),
-          cliSessionId: null,
-          createdAt: new Date().toISOString(),
-        };
-        project.sessions.push(diffSession);
-        restoredIdMap.set(snapshot.id, diffSession.id);
-        createdSessions.push(diffSession);
-        continue;
-      }
-
-      if (snapshot.type && snapshot.type !== 'claude') {
-        continue;
-      }
-
-      const existingCli = snapshot.cliSessionId
-        ? project.sessions.find((session) => isCliSessionRecord(session) && session.cliSessionId === snapshot.cliSessionId)
-        : project.sessions.find((session) =>
-          isCliSessionRecord(session)
-          && session.cliSessionId === null
-          && session.name === snapshot.name
-          && (session.providerId ?? this.state.preferences.defaultProvider ?? 'claude') === (snapshot.providerId ?? this.state.preferences.defaultProvider ?? 'claude'));
-
-      if (existingCli) {
-        restoredIdMap.set(snapshot.id, existingCli.id);
-        continue;
-      }
-
-      const restoredCli: SessionRecord = {
-        id: crypto.randomUUID(),
-        name: snapshot.name,
-        providerId: snapshot.providerId ?? this.state.preferences.defaultProvider ?? 'claude',
-        ...(snapshot.args ? { args: snapshot.args } : {}),
-        cliSessionId: snapshot.cliSessionId,
-        createdAt: new Date().toISOString(),
-      };
-      project.sessions.push(restoredCli);
-      if (project.layout.mode === 'mosaic') {
-        project.layout.splitPanes.push(restoredCli.id);
-      }
-      restoredIdMap.set(snapshot.id, restoredCli.id);
-      createdSessions.push(restoredCli);
-    }
-
-    for (const snapshot of checkpoint.sessions) {
-      if (snapshot.type !== 'browser-tab') continue;
-      const restoredBrowserId = restoredIdMap.get(snapshot.id);
-      if (!restoredBrowserId) continue;
-      const restoredBrowser = findProjectSession(project, restoredBrowserId);
-      if (!restoredBrowser || restoredBrowser.type !== 'browser-tab') continue;
-      const restoredTargetId = snapshot.browserTargetSessionId
-        ? restoredIdMap.get(snapshot.browserTargetSessionId)
-        : undefined;
-      if (restoredTargetId) {
-        restoredBrowser.browserTargetSessionId = restoredTargetId;
-      }
-    }
-
-    const checkpointSurface = checkpoint.surface;
-    project.surface = normalizeProjectSurface(project);
-
-    if (checkpointSurface) {
-      project.surface.kind = checkpointSurface.kind;
-      project.surface.active = checkpointSurface.active;
-
-      const mappedTargetId = checkpointSurface.targetSessionId
-        ? restoredIdMap.get(checkpointSurface.targetSessionId)
-        : undefined;
-      if (mappedTargetId) {
-        project.surface.targetSessionId = mappedTargetId;
-      }
-
-      if (checkpointSurface.kind === 'web') {
-        const mappedWebSessionId = checkpointSurface.webSessionId
-          ? restoredIdMap.get(checkpointSurface.webSessionId)
-          : undefined;
-        const webUrl = checkpointSurface.webUrl
-          ?? (mappedWebSessionId ? findProjectSession(project, mappedWebSessionId)?.browserTabUrl : undefined);
-        project.surface.web = {
-          sessionId: mappedWebSessionId,
-          url: webUrl,
-          history: webUrl
-            ? Array.from(new Set([...(project.surface.web?.history ?? []), webUrl]))
-            : (project.surface.web?.history ?? []),
-        };
-      }
-
-      if (project.surface.cli) {
-        project.surface.cli = {
-          ...project.surface.cli,
-          selectedProfileId: checkpointSurface.cliSelectedProfileId ?? project.surface.cli.selectedProfileId,
-          runtime: {
-            ...(project.surface.cli.runtime ?? { status: 'idle' }),
-            status: checkpointSurface.cliStatus ?? project.surface.cli.runtime?.status ?? 'idle',
-          },
-        };
-      }
-    }
-
-    const nextActiveId = checkpoint.activeSessionId
-      ? restoredIdMap.get(checkpoint.activeSessionId)
-      : undefined;
-    if (nextActiveId) {
-      project.activeSessionId = nextActiveId;
-      this.pushNav(nextActiveId);
-    }
-
-    repairProjectSurface(project);
+    const { createdSessions, removedSessions } = restoreProjectCheckpointState({
+      project,
+      checkpoint,
+      mode,
+      defaultProviderId: this.state.preferences.defaultProvider ?? 'claude',
+      pruneNav: (sessionId) => this.pruneNav(sessionId),
+      pushNav: (sessionId) => this.pushNav(sessionId),
+    });
     this.persist();
 
     for (const session of removedSessions) {
@@ -934,48 +769,7 @@ class AppState {
 
   private archiveSession(project: ProjectRecord, session: SessionRecord): void {
     const costInfo = getCost(session.id);
-    const archived: ArchivedSession = {
-      id: crypto.randomUUID(),
-      name: session.name,
-      providerId: (session.providerId || 'claude') as ProviderId,
-      cliSessionId: session.cliSessionId,
-      createdAt: session.createdAt,
-      closedAt: new Date().toISOString(),
-      cost: costInfo ? {
-        totalCostUsd: costInfo.totalCostUsd,
-        totalInputTokens: costInfo.totalInputTokens,
-        totalOutputTokens: costInfo.totalOutputTokens,
-        totalDurationMs: costInfo.totalDurationMs,
-        source: costInfo.source,
-      } : null,
-    };
-
-    if (!project.sessionHistory) project.sessionHistory = [];
-
-    // If a history entry with the same cliSessionId exists, update it instead of creating a duplicate
-    const existingIndex = archived.cliSessionId
-      ? project.sessionHistory.findIndex((a) => a.cliSessionId === archived.cliSessionId)
-      : -1;
-    if (existingIndex !== -1) {
-      project.sessionHistory[existingIndex].closedAt = archived.closedAt;
-      if (archived.cost) project.sessionHistory[existingIndex].cost = archived.cost;
-      if (archived.name !== project.sessionHistory[existingIndex].name) {
-        project.sessionHistory[existingIndex].name = archived.name;
-      }
-    } else {
-      project.sessionHistory.push(archived);
-    }
-
-    // Cap at 500 entries per project, preserving bookmarked sessions
-    if (project.sessionHistory.length > 500) {
-      let nonBookmarkedToRemove = project.sessionHistory.length - 500;
-      project.sessionHistory = project.sessionHistory.filter((a) => {
-        if (a.bookmarked) return true;
-        if (nonBookmarkedToRemove > 0) { nonBookmarkedToRemove--; return false; }
-        return true;
-      });
-    }
-
+    archiveSessionToHistory(project, session, costInfo);
     this.emit('history-changed', project.id);
   }
 
@@ -986,18 +780,17 @@ class AppState {
 
   removeHistoryEntry(projectId: string, archivedSessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project?.sessionHistory) return;
-    project.sessionHistory = project.sessionHistory.filter((a) => a.id !== archivedSessionId);
+    if (!project) return;
+    if (!project.sessionHistory) return;
+    removeHistoryEntryFromProject(project, archivedSessionId);
     this.persist();
     this.emit('history-changed', projectId);
   }
 
   toggleBookmark(projectId: string, archivedSessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project?.sessionHistory) return;
-    const entry = project.sessionHistory.find((a) => a.id === archivedSessionId);
-    if (!entry) return;
-    entry.bookmarked = !entry.bookmarked;
+    if (!project) return;
+    if (!toggleProjectHistoryBookmark(project, archivedSessionId)) return;
     this.persist();
     this.emit('history-changed', projectId);
   }
@@ -1005,7 +798,7 @@ class AppState {
   clearSessionHistory(projectId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    project.sessionHistory = project.sessionHistory?.filter((a) => a.bookmarked) ?? [];
+    clearProjectHistory(project);
     this.persist();
     this.emit('history-changed', projectId);
   }
@@ -1013,38 +806,14 @@ class AppState {
   resumeFromHistory(projectId: string, archivedSessionId: string): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-
-    const archived = project.sessionHistory?.find((a) => a.id === archivedSessionId);
-    if (!archived || !archived.cliSessionId) return undefined;
-
-    // If a tab with the same cliSessionId is already open, just activate it
-    const existing = project.sessions.find((s) => s.cliSessionId === archived.cliSessionId);
-    if (existing) {
-      project.activeSessionId = existing.id;
-      this.pushNav(existing.id);
-      this.persist();
-      this.emit('session-changed');
-      return existing;
-    }
-
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name: archived.name,
-      providerId: archived.providerId,
-      cliSessionId: archived.cliSessionId,
-      createdAt: new Date().toISOString(),
-    };
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
-    // Auto-add resumed CLI sessions to the mosaic canvas.
-    if (project.layout.mode === 'mosaic') {
-      project.layout.splitPanes.push(session.id);
-    }
+    const result = resumeSessionFromHistory(project, archivedSessionId, (sessionId) => this.pushNav(sessionId));
+    if (!result.session) return undefined;
     this.persist();
-    this.emit('session-added', { projectId, session });
+    if (result.created) {
+      this.emit('session-added', { projectId, session: result.session });
+    }
     this.emit('session-changed');
-    return session;
+    return result.session;
   }
 
   async resumeWithProvider(
@@ -1061,51 +830,20 @@ class AppState {
     if (snapshot && snapshot.availability.get(targetProviderId) === false) {
       return undefined;
     }
-
-    let sourceProviderId: ProviderId | undefined;
-    let sourceCliSessionId: string | null = null;
-    let sourceName = 'session';
-    if (source.archivedSessionId) {
-      const archived = project.sessionHistory?.find((a) => a.id === source.archivedSessionId);
-      if (!archived) return undefined;
-      sourceProviderId = archived.providerId;
-      sourceCliSessionId = archived.cliSessionId;
-      sourceName = archived.name;
-    } else if (source.sessionId) {
-      const existing = project.sessions.find((s) => s.id === source.sessionId);
-      if (!existing) return undefined;
-      sourceProviderId = existing.providerId;
-      sourceCliSessionId = existing.cliSessionId;
-      sourceName = existing.name;
-    } else {
-      return undefined;
-    }
-    if (!sourceProviderId) return undefined;
-
-    const initialPrompt = await window.calder.session.buildResumeWithPrompt(
-      sourceProviderId,
-      sourceCliSessionId,
-      project.path,
-      sourceName,
-    );
-
-    const session: SessionRecord = {
-      id: crypto.randomUUID(),
-      name: `${sourceName} (↪ ${targetProviderId})`,
-      providerId: targetProviderId,
-      cliSessionId: null,
-      createdAt: new Date().toISOString(),
-      pendingInitialPrompt: appendProjectGovernanceToPrompt(
-        appendProjectTeamContextToPrompt(initialPrompt, project.projectTeamContext),
-        project.projectGovernance,
-      ),
-    };
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
-    if (project.layout.mode === 'mosaic') {
-      project.layout.splitPanes.push(session.id);
-    }
+    const session = await resumeProjectWithProvider({
+      project,
+      source,
+      targetProviderId,
+      buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
+        window.calder.session.buildResumeWithPrompt(
+          sourceProviderId,
+          sourceCliSessionId,
+          projectPath,
+          sourceName,
+        ),
+      pushNav: (sessionId) => this.pushNav(sessionId),
+    });
+    if (!session) return undefined;
     // persist() strips pendingInitialPrompt (transient). split-layout.onSessionAdded
     // will consume it synchronously from in-memory state before the next persist.
     this.persist();
@@ -1126,36 +864,8 @@ class AppState {
   setActiveSession(projectId: string, sessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    project.activeSessionId = sessionId;
     this.pushNav(sessionId);
-    const activeSession = project.sessions.find((session) => session.id === sessionId);
-    let surfaceChanged = false;
-    if (
-      (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli')
-      || (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
-    ) {
-      project.surface = normalizeProjectSurface(project);
-      project.surface.tabFocus = 'session';
-      surfaceChanged = true;
-    }
-    if (activeSession?.type === 'browser-tab') {
-      project.surface = normalizeProjectSurface(project);
-      const preserveMobileSurface = project.surface.kind === 'mobile' && project.surface.active;
-      if (!preserveMobileSurface) {
-        project.surface.kind = 'web';
-        project.surface.active = true;
-      }
-      project.surface.tabFocus = 'session';
-      project.surface.web = project.surface.web ?? { history: [] };
-      project.surface.web.sessionId = activeSession.id;
-      project.surface.web.url = activeSession.browserTabUrl;
-      if (activeSession.browserTabUrl) {
-        project.surface.web.history = Array.from(
-          new Set([...(project.surface.web.history ?? []), activeSession.browserTabUrl]),
-        );
-      }
-      surfaceChanged = true;
-    }
+    const { surfaceChanged } = setActiveProjectSession(project, sessionId);
     this.persist();
     if (surfaceChanged) {
       this.emit('project-changed');
@@ -1182,38 +892,8 @@ class AppState {
   setProjectSurface(projectId: string, surface: ProjectSurfaceRecord): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    const tabFocus = surface.kind === 'cli'
-      ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
-      : surface.kind === 'mobile'
-        ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
-      : 'session';
-    const tabPlacement = surface.tabPlacement === 'start' ? 'start' : 'end';
-    const tabOrder = Array.isArray(surface.tabOrder)
-      ? surface.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
-      : [];
-    const normalizedTabOrder: Array<'cli' | 'mobile'> = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
-      ? tabOrder
-      : ['cli', 'mobile'];
-    project.surface = {
-      ...surface,
-      tabFocus,
-      tabPlacement,
-      tabOrder: normalizedTabOrder,
-      web: surface.web
-        ? {
-            ...surface.web,
-            history: surface.web.history ? [...surface.web.history] : [],
-          }
-        : { history: [] },
-      cli: surface.cli
-        ? {
-            ...surface.cli,
-            profiles: [...surface.cli.profiles],
-            runtime: surface.cli.runtime ? stripTransientRuntimeFields(surface.cli.runtime) : undefined,
-          }
-        : { profiles: [], runtime: { status: 'idle' } },
-    };
-    repairProjectSurface(project);
+    // Contract guard: tabPlacement/tabOrder normalization is delegated to applyProjectSurface().
+    applyProjectSurface(project, surface);
     this.persist();
     this.emit('project-changed');
   }
@@ -1221,10 +901,7 @@ class AppState {
   focusCliSurfaceTab(projectId: string): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    project.surface = normalizeProjectSurface(project);
-    if (project.surface.kind !== 'cli') return;
-    project.surface.active = true;
-    project.surface.tabFocus = 'cli';
+    if (!focusCliProjectSurface(project)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
@@ -1233,10 +910,7 @@ class AppState {
   closeCliSurface(projectId: string): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    project.surface = normalizeProjectSurface(project);
-    if (project.surface.kind !== 'cli') return;
-    project.surface.active = false;
-    project.surface.tabFocus = 'session';
+    if (!closeCliProjectSurface(project)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
@@ -1245,10 +919,7 @@ class AppState {
   focusMobileSurfaceTab(projectId: string): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    project.surface = normalizeProjectSurface(project);
-    if (project.surface.kind !== 'mobile') return;
-    project.surface.active = true;
-    project.surface.tabFocus = 'mobile';
+    if (!focusMobileProjectSurface(project)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
@@ -1257,11 +928,7 @@ class AppState {
   closeMobileSurface(projectId: string): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    project.surface = normalizeProjectSurface(project);
-    if (project.surface.kind !== 'mobile') return;
-    project.surface.kind = 'web';
-    project.surface.active = false;
-    project.surface.tabFocus = 'session';
+    if (!closeMobileProjectSurface(project)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
@@ -1439,19 +1106,20 @@ class AppState {
 
   cycleSession(direction: 1 | -1): void {
     const project = this.activeProject;
-    if (!project || project.sessions.length === 0) return;
-    const idx = project.sessions.findIndex((s) => s.id === project.activeSessionId);
-    const next = (idx + direction + project.sessions.length) % project.sessions.length;
-    project.activeSessionId = project.sessions[next].id;
+    if (!project) return;
+    const nextSessionId = resolveCycledSessionId(project.sessions, project.activeSessionId, direction);
+    if (!nextSessionId) return;
+    project.activeSessionId = nextSessionId;
     this.pushNav(project.activeSessionId);
     this.persist();
     this.emit('session-changed');
   }
-
   gotoSession(index: number): void {
     const project = this.activeProject;
-    if (!project || index >= project.sessions.length) return;
-    project.activeSessionId = project.sessions[index].id;
+    if (!project) return;
+    const nextSessionId = resolveSessionIdAtIndex(project.sessions, index);
+    if (!nextSessionId) return;
+    project.activeSessionId = nextSessionId;
     this.pushNav(project.activeSessionId);
     this.persist();
     this.emit('session-changed');
@@ -1460,32 +1128,28 @@ class AppState {
   removeAllSessions(projectId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    const ids = project.sessions.map((s) => s.id);
+    const ids = collectSessionIdsForRemoval(project.sessions, 'all');
     for (const id of ids) this.removeSession(projectId, id);
   }
 
   removeSessionsFromRight(projectId: string, sessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    const idx = project.sessions.findIndex((s) => s.id === sessionId);
-    if (idx === -1) return;
-    const ids = project.sessions.slice(idx + 1).map((s) => s.id);
+    const ids = collectSessionIdsForRemoval(project.sessions, 'right', sessionId);
     for (const id of ids) this.removeSession(projectId, id);
   }
 
   removeSessionsFromLeft(projectId: string, sessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    const idx = project.sessions.findIndex((s) => s.id === sessionId);
-    if (idx === -1) return;
-    const ids = project.sessions.slice(0, idx).map((s) => s.id);
+    const ids = collectSessionIdsForRemoval(project.sessions, 'left', sessionId);
     for (const id of ids) this.removeSession(projectId, id);
   }
 
   removeOtherSessions(projectId: string, sessionId: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return;
-    const ids = project.sessions.filter((s) => s.id !== sessionId).map((s) => s.id);
+    const ids = collectSessionIdsForRemoval(project.sessions, 'others', sessionId);
     for (const id of ids) this.removeSession(projectId, id);
   }
 
