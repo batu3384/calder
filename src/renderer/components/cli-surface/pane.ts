@@ -16,7 +16,6 @@ import {
 import {
   enableComposerDragging as enableComposerDraggingBehavior,
   positionComposerNearPointer as positionComposerNearPointerBehavior,
-  setComposerPosition as setComposerPositionBehavior,
 } from './composer-position.js';
 import {
   closeInspect,
@@ -40,21 +39,15 @@ import {
   getSemanticNodeForSelection as getSemanticNodeForSelectionBehavior,
   normalizeSemanticAdapterHint as normalizeSemanticAdapterHintBehavior,
 } from './semantic-state.js';
-import {
-  sendCliSelectionToCustomSession,
-  sendCliSelectionToNewSession,
-  sendCliSelectionToSelectedSession,
-} from './session-integration.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { extractCalderOscMessages, type CalderProtocolMessage } from './protocol.js';
-import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
+import type { CliTargetMenuController } from './target-menu.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
   pointerToCell,
   selectionFromCells,
   selectionFromTerminal,
-  selectionFromViewport,
   selectionsMatchBounds,
 } from './inspect-geometry.js';
 import {
@@ -73,14 +66,16 @@ import {
 import {
   createCliSurfaceLayout,
   createCliSurfaceTerminal,
-  type CliSurfaceLayoutElements,
 } from './pane-elements.js';
 import {
-  bindInspectActionHandlers as bindInspectActionHandlersModule,
   bindInspectPointerHandlers as bindInspectPointerHandlersModule,
-  bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
 } from './pane-bindings.js';
 import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
+import {
+  bindCliSurfaceInspectActionHandlers,
+  bindCliSurfaceRuntimeActionHandlers,
+  createCliSurfaceTargetMenuControllerWithHandlers,
+} from './pane-action-handlers.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
 
@@ -609,94 +604,6 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   return ensureCliSurfaceInstance(projectId);
 }
 
-function createCliSurfaceTargetMenuController(instance: CliSurfaceInstance): CliTargetMenuController {
-  return createCliTargetMenuController({
-    projectId: instance.projectId,
-    elements: {
-      composerEl: instance.composerEl,
-      selectedButton: instance.selectedButton,
-      newButton: instance.newButton,
-      customButton: instance.customButton,
-      targetMenuEl: instance.targetMenuEl,
-      targetMenuListEl: instance.targetMenuListEl,
-    },
-    hasPayload: () => Boolean(instance.inspectState.payload),
-    onSendToNew: () => {
-      const payload = getSendPayload(instance);
-      if (!payload) return;
-      clearComposerError(instance);
-      sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
-      closeInspectComposer(instance);
-    },
-    onSendToCustom: () => {
-      const payload = getSendPayload(instance);
-      if (!payload) return;
-      sendCliSelectionToCustomSession(payload, () => {
-        clearComposerError(instance);
-        closeInspectComposer(instance);
-      });
-    },
-  });
-}
-
-function bindRuntimeActionHandlers(
-  projectId: string,
-  instance: CliSurfaceInstance,
-  controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>,
-): void {
-  bindRuntimeActionHandlersModule({
-    projectId,
-    controls,
-    resolveSelectedProfile,
-    showComposerError: (message) => showComposerError(instance, message),
-    clearComposerError: () => clearComposerError(instance),
-    getCliSurfaceApi,
-    onCapture: () => {
-      instance.inspectState = openInspect(instance.inspectState);
-      clearComposerError(instance);
-      renderInspectState(instance);
-      setInspectPayloadFromSelection(
-        instance,
-        selectionFromViewport(instance.viewportLines.length, instance.terminal.cols),
-      );
-      setComposerPositionBehavior({
-        paneEl: instance.element,
-        composerEl: instance.composerEl,
-        left: 16,
-        top: 72,
-      });
-    },
-  });
-}
-
-function bindInspectActionHandlers(instance: CliSurfaceInstance): void {
-  bindInspectActionHandlersModule({
-    instance,
-    closeInspectComposer: () => closeInspectComposer(instance),
-    openInspectComposer: () => {
-      instance.inspectState = openInspect(instance.inspectState);
-      renderInspectState(instance);
-    },
-    onSendToSelected: async () => {
-      const payload = getSendPayload(instance);
-      if (!payload) return;
-      const result = await sendCliSelectionToSelectedSession(payload);
-      if (!result.ok) {
-        showComposerError(instance, result.error ?? 'Failed to send prompt.');
-        return;
-      }
-      closeInspectComposer(instance);
-    },
-    onSendToNew: () => {
-      const payload = getSendPayload(instance);
-      if (!payload) return;
-      clearComposerError(instance);
-      sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
-      closeInspectComposer(instance);
-    },
-  });
-}
-
 function bindInspectPointerHandlers(instance: CliSurfaceInstance): void {
   bindInspectPointerHandlersModule({
     instance,
@@ -805,9 +712,43 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
     cleanupFns: [],
   };
 
-  instance.targetMenuController = createCliSurfaceTargetMenuController(instance);
-  bindRuntimeActionHandlers(projectId, instance, layout);
-  bindInspectActionHandlers(instance);
+  instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(
+    instance,
+    {
+      getSendPayload: () => getSendPayload(instance),
+      closeInspectComposer: () => closeInspectComposer(instance),
+      clearComposerError: () => clearComposerError(instance),
+      showComposerError: (message: string) => showComposerError(instance, message),
+    },
+  );
+  bindCliSurfaceRuntimeActionHandlers({
+    projectId,
+    context: instance,
+    controls: layout,
+    resolveSelectedProfile,
+    getCliSurfaceApi,
+    renderInspectState: () => renderInspectState(instance),
+    setInspectPayloadFromSelection: (selection) => setInspectPayloadFromSelection(instance, selection),
+    helpers: {
+      getSendPayload: () => getSendPayload(instance),
+      closeInspectComposer: () => closeInspectComposer(instance),
+      clearComposerError: () => clearComposerError(instance),
+      showComposerError: (message: string) => showComposerError(instance, message),
+    },
+  });
+  bindCliSurfaceInspectActionHandlers({
+    context: instance,
+    openInspectComposer: () => {
+      instance.inspectState = openInspect(instance.inspectState);
+      renderInspectState(instance);
+    },
+    helpers: {
+      getSendPayload: () => getSendPayload(instance),
+      closeInspectComposer: () => closeInspectComposer(instance),
+      clearComposerError: () => clearComposerError(instance),
+      showComposerError: (message: string) => showComposerError(instance, message),
+    },
+  });
   bindInspectPointerHandlers(instance);
 
   instances.set(projectId, instance);
