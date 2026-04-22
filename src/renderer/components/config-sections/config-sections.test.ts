@@ -102,11 +102,12 @@ describe('getConfigProviderId', () => {
   it('shows inherit state for project scope instead of mirroring global mode', async () => {
     const source = await import('node:fs/promises')
       .then(async (fs) => {
-        const [configSections, autoApprovalSection] = await Promise.all([
+        const [configSections, autoApprovalSection, autoApprovalI18n] = await Promise.all([
           fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
           fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+          fs.readFile(new URL('./config-sections-auto-approval-i18n.ts', import.meta.url), 'utf-8'),
         ]);
-        return `${configSections}\n${autoApprovalSection}`;
+        return `${configSections}\n${autoApprovalSection}\n${autoApprovalI18n}`;
       });
 
     expect(source).toContain('Use Global Default');

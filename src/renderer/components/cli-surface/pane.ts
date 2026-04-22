@@ -1,6 +1,4 @@
 import type {
-  AppliedContextSummary,
-  CliSurfacePromptContextMode,
   CliSurfaceRuntimeState,
   SurfaceSelectionRange,
 } from '../../../shared/types/project.js';
@@ -15,7 +13,6 @@ import {
   positionComposerNearPointer as positionComposerNearPointerBehavior,
 } from './composer-position.js';
 import {
-  closeInspect,
   openInspect,
   setInspectPayload,
 } from './inspect-mode.js';
@@ -24,8 +21,6 @@ import { inferCliRegions } from './heuristics.js';
 import { renderCliHoverOverlay } from './hover-overlay.js';
 import {
   getContextModeForSelection as getContextModeForSelectionBehavior,
-  syncComposerContextControl as syncComposerContextControlBehavior,
-  syncComposerContextTrace as syncComposerContextTraceBehavior,
 } from './context-controls.js';
 import {
   buildSemanticMeta as buildSemanticMetaBehavior,
@@ -40,7 +35,6 @@ import type { InferredCliRegion } from './heuristics.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
 import {
   pointerToCell,
-  selectionFromCells,
   selectionFromTerminal,
   selectionsMatchBounds,
 } from './inspect-geometry.js';
@@ -76,6 +70,15 @@ import {
   resolveCliSurfaceSelectedProfile,
   updateCliSurfaceRuntimeState,
 } from './pane-project-state.js';
+import {
+  clearComposerError,
+  createCliSurfaceComposerHelpers,
+  setInspectPayloadFromPointer,
+  showComposerError,
+  showElement,
+  syncComposerContextControl,
+  syncComposerContextTrace,
+} from './pane-composer-helpers.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
 
@@ -109,44 +112,6 @@ function syncViewportLines(instance: CliSurfaceInstance): void {
     buffer.getLine(start + index)?.translateToString(true) ?? '',
   );
   getInferredRegions(instance);
-}
-
-function showElement(element: HTMLElement, visible: boolean): void {
-  if (visible) {
-    element.classList.remove('hidden');
-  } else {
-    element.classList.add('hidden');
-  }
-}
-
-function syncComposerContextControl(
-  instance: CliSurfaceInstance,
-  mode: CliSurfacePromptContextMode,
-): void {
-  syncComposerContextControlBehavior(
-    instance.contextModeOverride,
-    instance.composerContextSelectEl,
-    instance.composerScopeEl,
-    mode,
-  );
-}
-
-function syncComposerContextTrace(instance: CliSurfaceInstance): void {
-  syncComposerContextTraceBehavior(
-    instance.composerContextTraceEl,
-    instance.inspectState.payload?.appliedContext as AppliedContextSummary | undefined,
-  );
-}
-
-function clearComposerError(instance: CliSurfaceInstance): void {
-  instance.composerErrorEl.textContent = '';
-  instance.composerErrorEl.style.display = 'none';
-}
-
-function showComposerError(instance: CliSurfaceInstance, message: string): void {
-  showElement(instance.composerEl, true);
-  instance.composerErrorEl.textContent = message;
-  instance.composerErrorEl.style.display = 'block';
 }
 
 export function renderRuntimeMeta(instance: CliSurfaceInstance): void {
@@ -212,18 +177,6 @@ function renderInspectState(instance: CliSurfaceInstance): void {
   syncComposerContextControl(instance, payload.contextMode ?? 'selection-only');
   syncComposerContextTrace(instance);
   instance.targetMenuController?.syncControls();
-}
-
-function setInspectPayloadFromPointer(instance: CliSurfaceInstance, event: Pick<PointerEvent, 'clientX' | 'clientY'>): void {
-  if (!instance.selectionAnchor) return;
-  const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
-  if (!current) return;
-  setInspectPayloadFromSelection(instance, selectionFromCells({
-    viewportLineCount: instance.viewportLines.length,
-    terminalCols: instance.terminal.cols,
-    start: instance.selectionAnchor,
-    end: current,
-  }));
 }
 
 function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[] {
@@ -378,12 +331,6 @@ function showHoverRegion(instance: CliSurfaceInstance, region: SelectableCliRegi
   });
 }
 
-function getSendPayload(instance: CliSurfaceInstance) {
-  const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
-  if (!selection) return null;
-  return buildInspectPayload(instance, selection, { includeAnsiSnapshot: true });
-}
-
 function scheduleViewportRefresh(instance: CliSurfaceInstance): void {
   if (instance.refreshFramePending) return;
   instance.refreshFramePending = true;
@@ -416,12 +363,6 @@ function scheduleTerminalDataFlush(instance: CliSurfaceInstance): void {
     instance.terminal.write(data);
     scheduleViewportRefresh(instance);
   });
-}
-
-function closeInspectComposer(instance: CliSurfaceInstance): void {
-  instance.inspectState = closeInspect(instance.inspectState);
-  renderInspectState(instance);
-  clearComposerError(instance);
 }
 
 function fitSurface(instance: CliSurfaceInstance): void {
@@ -525,21 +466,16 @@ export function attachPaneBindings(): void {
   });
 }
 
-function createCliSurfaceComposerHelpers(instance: CliSurfaceInstance) {
-  return {
-    getSendPayload: () => getSendPayload(instance),
-    closeInspectComposer: () => closeInspectComposer(instance),
-    clearComposerError: () => clearComposerError(instance),
-    showComposerError: (message: string) => showComposerError(instance, message),
-  };
-}
-
 export function bindCliSurfaceInstanceHandlers(
   projectId: string,
   instance: CliSurfaceInstance,
   layout: CliSurfaceLayoutElements,
 ): void {
-  const helpers = createCliSurfaceComposerHelpers(instance);
+  const helpers = createCliSurfaceComposerHelpers(
+    instance,
+    buildInspectPayload,
+    () => renderInspectState(instance),
+  );
 
   instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(instance, helpers);
   bindCliSurfaceRuntimeActionHandlers({
@@ -570,7 +506,11 @@ export function bindCliSurfaceInstanceHandlers(
       }
       setInspectPayloadFromSelection(instance, selection);
     },
-    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(instance, event),
+    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(
+      instance,
+      event,
+      (selection) => setInspectPayloadFromSelection(instance, selection),
+    ),
     setHoverRegion: (region) => setHoverRegion(instance, region),
     pointerToCell: (event) => pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
     findSelectableRegionAtCell: (cell) => findSelectableRegionAtCell(instance, cell),

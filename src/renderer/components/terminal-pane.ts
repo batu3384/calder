@@ -5,18 +5,19 @@ import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { initSession, removeSession } from '../session-activity.js';
 import { markFreshSession } from '../session-insights.js';
-import {
-  removeSession as removeCostSession,
-  isDerivedCost,
-  isEstimatedCost,
-  type CostInfo,
-} from '../session-cost.js';
+import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
 import { getProviderCapabilities, getProviderDisplayName } from '../provider-availability.js';
 import { FilePathLinkProvider, GithubLinkProvider } from './terminal-link-provider.js';
+import {
+  activateOscLink,
+  activateWebLink,
+  bindTerminalLinkPointerHandlers,
+  clearTerminalLinkDispatch,
+} from './terminal-pane-links.js';
+import { renderContextDisplay, renderCostDisplay, revealSessionStatusBar } from './terminal-pane-status.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
-import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../link-routing.js';
 
 interface TerminalInstance {
   terminal: Terminal;
@@ -38,64 +39,6 @@ interface TerminalInstance {
 
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
-const lastTerminalLinkDispatchBySession = new Map<string, LinkDispatchSnapshot>();
-const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
-
-function openTerminalWebLink(sessionId: string, url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
-  const normalizedUrl = resolveNavigableHttpUrl(url);
-  if (!normalizedUrl) return;
-  const now = Date.now();
-  const lastDispatch = lastTerminalLinkDispatchBySession.get(sessionId) ?? null;
-  if (!shouldDispatchLinkOpen(normalizedUrl, lastDispatch, source, now)) return;
-  lastTerminalLinkDispatchBySession.set(sessionId, { url: normalizedUrl, at: now, source });
-  void window.calder.app.openExternal(normalizedUrl, cwd);
-}
-
-function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: MouseEvent): string | null {
-  if (terminal.cols <= 0 || terminal.rows <= 0) return null;
-  const rect = host.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  if (event.clientX < rect.left || event.clientX > rect.right) return null;
-  if (event.clientY < rect.top || event.clientY > rect.bottom) return null;
-
-  const col = Math.max(0, Math.min(
-    terminal.cols - 1,
-    Math.floor((event.clientX - rect.left) / (rect.width / terminal.cols)),
-  ));
-  const row = Math.max(0, Math.min(
-    terminal.rows - 1,
-    Math.floor((event.clientY - rect.top) / (rect.height / terminal.rows)),
-  ));
-
-  const lineIndex = terminal.buffer.active.viewportY + row;
-  const line = terminal.buffer.active.getLine(lineIndex);
-  if (!line) return null;
-  const text = line.translateToString(true);
-  if (!text) return null;
-
-  INLINE_URL_PATTERN.lastIndex = 0;
-  let match: RegExpExecArray | null;
-  while ((match = INLINE_URL_PATTERN.exec(text)) !== null) {
-    const start = match.index;
-    const end = start + match[0].length - 1;
-    if (col >= start && col <= end) {
-      return match[0];
-    }
-  }
-
-  return null;
-}
-
-function extractUrlFromEventTarget(event: MouseEvent): string | null {
-  const maybeTarget = event.target as {
-    closest?: (selector: string) => { getAttribute?: (name: string) => string | null } | null;
-  } | null;
-  if (!maybeTarget?.closest) return null;
-  const anchor = maybeTarget.closest('a[href]');
-  if (!anchor?.getAttribute) return null;
-  const href = anchor.getAttribute('href');
-  return typeof href === 'string' && href.trim().length > 0 ? href : null;
-}
 
 function workspaceLabel(projectPath: string): string {
   const normalized = projectPath.replace(/\\/g, '/');
@@ -183,13 +126,6 @@ interface TerminalCore {
   searchAddon: SearchAddon;
 }
 
-function clearDomSelection(terminal: Terminal): void {
-  try {
-    terminal.clearSelection();
-  } catch {}
-  window.getSelection?.()?.removeAllRanges?.();
-}
-
 function createTerminalCore(sessionId: string, projectPath: string): TerminalCore {
   const terminal = new Terminal({
     theme: {
@@ -212,10 +148,7 @@ function createTerminalCore(sessionId: string, projectPath: string): TerminalCor
     allowProposedApi: true,
     linkHandler: {
       activate: (event, uri) => {
-        event.preventDefault?.();
-        event.stopPropagation?.();
-        clearDomSelection(terminal);
-        openTerminalWebLink(sessionId, uri, 'osc-link', projectPath);
+        activateOscLink(terminal, sessionId, uri, projectPath, event);
       },
     },
   });
@@ -227,66 +160,10 @@ function createTerminalCore(sessionId: string, projectPath: string): TerminalCor
   terminal.loadAddon(searchAddon);
 
   terminal.loadAddon(new WebLinksAddon((event, url) => {
-    event.preventDefault?.();
-    event.stopPropagation?.();
-    clearDomSelection(terminal);
-    openTerminalWebLink(sessionId, url, 'web-link', projectPath);
+    activateWebLink(terminal, sessionId, url, projectPath, event);
   }));
 
   return { terminal, fitAddon, searchAddon };
-}
-
-function bindTerminalLinkPointerHandlers(
-  terminal: Terminal,
-  xtermWrap: HTMLDivElement,
-  sessionId: string,
-  projectPath: string,
-): void {
-  let suppressLinkDragSelection = false;
-  const suppressPointerEvent = (event: MouseEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-    (event as MouseEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
-  };
-
-  xtermWrap.addEventListener('mousedown', (event: MouseEvent) => {
-    if (event.button !== 0) return;
-    // Clear stale suppression from a previous link click before evaluating
-    // the current pointer target.
-    suppressLinkDragSelection = false;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressLinkDragSelection = true;
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-  }, { capture: true });
-
-  xtermWrap.addEventListener('mousemove', (event: MouseEvent) => {
-    if (!suppressLinkDragSelection) return;
-    if ((event.buttons & 1) !== 1) {
-      suppressLinkDragSelection = false;
-      return;
-    }
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-  }, { capture: true });
-
-  xtermWrap.addEventListener('mouseup', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-
-  xtermWrap.addEventListener('mouseleave', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-
-  xtermWrap.addEventListener('click', (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-    openTerminalWebLink(sessionId, candidate, 'web-link', projectPath);
-  }, { capture: true });
 }
 
 function bindTerminalInputAndFocusHandlers(
@@ -622,20 +499,10 @@ export function destroyTerminal(sessionId: string): void {
   instance.terminal.dispose();
   instance.element.remove();
   instances.delete(sessionId);
-  lastTerminalLinkDispatchBySession.delete(sessionId);
+  clearTerminalLinkDispatch(sessionId);
   removeSession(sessionId);
   removeCostSession(sessionId);
   removeContextSession(sessionId);
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return String(n);
-}
-
-function showStatusBar(instance: TerminalInstance): void {
-  const bar = instance.element.querySelector('.session-status-bar');
-  if (bar) bar.classList.remove('hidden');
 }
 
 export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
@@ -645,36 +512,8 @@ export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
   const el = instance.element.querySelector('.cost-display');
   if (!el) return;
 
-  const derived = isDerivedCost(cost);
-  const estimated = isEstimatedCost(cost);
-  const estimatedPrefix = !estimated
-    ? ''
-    : derived
-      ? 'Derived · '
-      : 'Estimated · ';
-  const costStr = derived && cost.totalCostUsd <= 0
-    ? '--'
-    : `$${cost.totalCostUsd.toFixed(4)}`;
-  const modelPrefix = cost.model ? `${cost.model}  \u00b7  ` : '';
-  if (cost.totalInputTokens > 0 || cost.totalOutputTokens > 0) {
-    el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}  \u00b7  ${formatTokens(cost.totalInputTokens)} in / ${formatTokens(cost.totalOutputTokens)} out`;
-    const durationSec = (cost.totalDurationMs / 1000).toFixed(1);
-    const apiDurationSec = (cost.totalApiDurationMs / 1000).toFixed(1);
-    const estimateNote = !estimated
-      ? ''
-      : derived
-        ? 'Derived from hook usage metadata · '
-        : 'Estimated from terminal output · ';
-    (el as HTMLElement).title = `${estimateNote}Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
-  } else {
-    el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}`;
-    (el as HTMLElement).title = !estimated
-      ? ''
-      : derived
-        ? 'Derived from hook usage metadata'
-        : 'Estimated from terminal output';
-  }
-  showStatusBar(instance);
+  renderCostDisplay(el, cost);
+  revealSessionStatusBar(instance.element);
 }
 
 export function updateContextDisplay(sessionId: string, info: ContextWindowInfo): void {
@@ -684,21 +523,6 @@ export function updateContextDisplay(sessionId: string, info: ContextWindowInfo)
   const el = instance.element.querySelector('.context-indicator') as HTMLElement | null;
   if (!el) return;
 
-  const pct = Math.min(Math.round(info.usedPercentage), 100);
-  const filledCount = Math.round(pct / 10);
-  const emptyCount = 10 - filledCount;
-  const bar = '=' .repeat(filledCount) + '-'.repeat(emptyCount);
-  const tokenStr = formatTokens(info.totalTokens);
-
-  el.textContent = `[${bar}] ${pct}% ${tokenStr} tokens`;
-  el.title = `${info.totalTokens.toLocaleString()} / ${info.contextWindowSize.toLocaleString()} tokens`;
-
-  el.classList.remove('warning', 'critical');
-  if (pct >= 90) {
-    el.classList.add('critical');
-  } else if (pct >= 70) {
-    el.classList.add('warning');
-  }
-
-  showStatusBar(instance);
+  renderContextDisplay(el, info);
+  revealSessionStatusBar(instance.element);
 }

@@ -40,7 +40,6 @@ import {
   reorderProjectSession,
 } from './state-session-mutators.js';
 import {
-  findActiveCliSession,
   findProjectSession,
   isCliSessionRecord,
   repairProjectSurface,
@@ -49,11 +48,6 @@ import {
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
 import {
-  createBrowserTabSessionRecord,
-  createDiffViewerSessionRecord,
-  createFileReaderSessionRecord,
-  createMcpInspectorSessionRecord,
-  createRemoteSessionRecord,
   createStandardSessionRecord,
   createWorkflowLaunchSessionRecord,
 } from './state-session-factory.js';
@@ -66,11 +60,22 @@ import {
   normalizeProjectGovernanceState,
   normalizeProjectLayout,
   normalizeProjectReviewState,
-  normalizeProjectSurface,
   normalizeProjectTeamContextState,
   normalizeProjectWorkflowState,
 } from './state-normalizers.js';
 import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
+import {
+  addMcpInspectorSession as addMcpInspectorSessionToProject,
+  addRemoteSession as addRemoteSessionToProject,
+  addSessionToProject,
+  openUrlInExistingBrowserSession,
+  passivateBrowserTabSession as passivateBrowserTabSessionRecord,
+  setSurfaceTargetSession as setSurfaceTargetSessionOnProject,
+  updateBrowserTabUrl,
+  upsertBrowserTabSession,
+  upsertDiffViewerSession,
+  upsertFileReaderSession,
+} from './state-session-ops.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 
 export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
@@ -434,12 +439,7 @@ class AppState {
       ),
     });
 
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
-    if (project.layout.mode === 'mosaic') {
-      project.layout.splitPanes.push(session.id);
-    }
+    addSessionToProject(project, session, (sessionId) => this.pushNav(sessionId), { includeInMosaic: true });
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -456,13 +456,7 @@ class AppState {
       providerId: providerId ?? this.state.preferences.defaultProvider ?? 'claude',
       args: effectiveArgs,
     });
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
-    // Auto-add visible CLI sessions to the mosaic canvas.
-    if (project.layout.mode === 'mosaic') {
-      project.layout.splitPanes.push(session.id);
-    }
+    addSessionToProject(project, session, (sessionId) => this.pushNav(sessionId), { includeInMosaic: true });
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -473,36 +467,28 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    // If a diff tab for this file+area+worktree already exists, just switch to it
-    const existing = project.sessions.find(
-      (s) => s.type === 'diff-viewer' && s.diffFilePath === filePath && s.diffArea === area && s.worktreePath === worktreePath
+    const result = upsertDiffViewerSession(
+      project,
+      { filePath, area, worktreePath },
+      (sessionId) => this.pushNav(sessionId),
     );
-    if (existing) {
-      project.activeSessionId = existing.id;
-      this.pushNav(existing.id);
-      this.persist();
-      this.emit('session-changed');
-      return existing;
-    }
-
-    const session = createDiffViewerSessionRecord({ filePath, area, worktreePath });
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
     this.persist();
-    this.emit('session-added', { projectId, session });
+    if (result.created) {
+      this.emit('session-added', { projectId, session: result.session });
+    }
     this.emit('session-changed');
-    return session;
+    return result.session;
   }
 
   addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    const session = createRemoteSessionRecord({ sessionId, hostSessionName, shareMode });
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
+    const session = addRemoteSessionToProject(
+      project,
+      { sessionId, hostSessionName, shareMode },
+      (createdSessionId) => this.pushNav(createdSessionId),
+    );
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -516,83 +502,26 @@ class AppState {
   ): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
-    const initialTargetSession = findActiveCliSession(project);
-    const dedupeByUrl = options?.dedupeByUrl ?? true;
-
-    // If a browser-tab with the same URL already exists, switch to it
-    if (url && dedupeByUrl) {
-      const existing = project.sessions.find(
-        (s) => s.type === 'browser-tab' && s.browserTabUrl === url
-      );
-      if (existing) {
-        project.activeSessionId = existing.id;
-        this.pushNav(existing.id);
-        this.persist();
-        this.emit('session-changed');
-        return existing;
-      }
-    }
-
-    const session = createBrowserTabSessionRecord({
-      url,
-      targetSessionId: initialTargetSession?.id,
-    });
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    project.surface = normalizeProjectSurface(project);
-    project.surface.kind = 'web';
-    project.surface.active = true;
-    project.surface.tabFocus = 'session';
-    project.surface.web = {
-      sessionId: session.id,
-      url,
-      history: url
-        ? Array.from(new Set([...(project.surface.web?.history ?? []), url]))
-        : (project.surface.web?.history ?? []),
-    };
-    if (initialTargetSession) {
-      project.surface.targetSessionId = initialTargetSession.id;
-    }
-    this.pushNav(session.id);
+    const result = upsertBrowserTabSession(
+      project,
+      { url, dedupeByUrl: options?.dedupeByUrl ?? true },
+      (sessionKey) => this.pushNav(sessionKey),
+    );
     this.persist();
-    this.emit('session-added', { projectId, session });
+    if (result.created) {
+      this.emit('session-added', { projectId, session: result.session });
+    }
     this.emit('session-changed');
-    return session;
+    return result.session;
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return undefined;
 
-    const activeBrowserSession = project.activeSessionId
-      ? project.sessions.find((session) => session.id === project.activeSessionId && session.type === 'browser-tab')
-      : undefined;
-    const currentSurfaceSessionId = project.surface?.web?.sessionId;
-    const currentSurfaceSession = currentSurfaceSessionId
-      ? project.sessions.find((session) => session.id === currentSurfaceSessionId && session.type === 'browser-tab')
-      : undefined;
-    const fallbackBrowserSession = currentSurfaceSession
-      ?? [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
-    const targetBrowserSession = currentSurfaceSession ?? activeBrowserSession ?? fallbackBrowserSession;
-
+    const targetBrowserSession = openUrlInExistingBrowserSession(project, url, (sessionId) => this.pushNav(sessionId));
     if (!targetBrowserSession) {
       return this.addBrowserTabSession(project.id, url);
-    }
-
-    project.activeSessionId = targetBrowserSession.id;
-    this.pushNav(targetBrowserSession.id);
-    targetBrowserSession.browserTabUrl = url;
-    project.surface = normalizeProjectSurface(project);
-    project.surface.kind = 'web';
-    project.surface.active = true;
-    project.surface.tabFocus = 'session';
-    project.surface.web = {
-      sessionId: targetBrowserSession.id,
-      url,
-      history: Array.from(new Set([...(project.surface.web?.history ?? []), url])),
-    };
-    if (targetBrowserSession.browserTargetSessionId) {
-      project.surface.targetSessionId = targetBrowserSession.browserTargetSessionId;
     }
     this.persist();
     this.emit('project-changed');
@@ -604,37 +533,20 @@ class AppState {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    // If a file-reader tab for this path already exists, just switch to it
-    const existing = project.sessions.find(
-      (s) => s.type === 'file-reader' && s.fileReaderPath === filePath
-    );
-    if (existing) {
-      existing.fileReaderLine = lineNumber;
-      project.activeSessionId = existing.id;
-      this.pushNav(existing.id);
-      this.persist();
-      this.emit('session-changed');
-      return existing;
-    }
-
-    const session = createFileReaderSessionRecord({ filePath, lineNumber });
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
+    const result = upsertFileReaderSession(project, { filePath, lineNumber }, (sessionId) => this.pushNav(sessionId));
     this.persist();
-    this.emit('session-added', { projectId, session });
+    if (result.created) {
+      this.emit('session-added', { projectId, session: result.session });
+    }
     this.emit('session-changed');
-    return session;
+    return result.session;
   }
 
   addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
     if (!project) return undefined;
 
-    const session = createMcpInspectorSessionRecord(name);
-    project.sessions.push(session);
-    project.activeSessionId = session.id;
-    this.pushNav(session.id);
+    const session = addMcpInspectorSessionToProject(project, name, (sessionId) => this.pushNav(sessionId));
     this.persist();
     this.emit('session-added', { projectId, session });
     this.emit('session-changed');
@@ -857,25 +769,7 @@ class AppState {
   setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {
     const project = this.state.projects.find((entry) => entry.id === projectId);
     if (!project) return;
-    project.surface = normalizeProjectSurface(project);
-
-    if (targetSessionId === null) {
-      delete project.surface.targetSessionId;
-      for (const session of project.sessions) {
-        if (session.type === 'browser-tab') delete session.browserTargetSessionId;
-      }
-      this.persist();
-      this.emit('session-changed');
-      return;
-    }
-
-    const targetSession = findProjectSession(project, targetSessionId);
-    if (!targetSession || !isCliSessionRecord(targetSession)) return;
-    if (project.surface.targetSessionId === targetSessionId) return;
-    project.surface.targetSessionId = targetSessionId;
-    for (const session of project.sessions) {
-      if (session.type === 'browser-tab') session.browserTargetSessionId = targetSessionId;
-    }
+    if (!setSurfaceTargetSessionOnProject(project, targetSessionId)) return;
     this.persist();
     this.emit('session-changed');
   }
@@ -934,37 +828,14 @@ class AppState {
   updateSessionBrowserTabUrl(sessionId: string, url: string): void {
     const project = this.findProjectBySession(sessionId);
     const session = this.findSessionById(sessionId);
-    if (!session || session.browserTabUrl === url) return;
-    session.browserTabUrl = url;
-    if (project?.surface?.web?.sessionId === sessionId) {
-      project.surface.web.url = url;
-      project.surface.web.history = Array.from(new Set([...(project.surface.web.history ?? []), url]));
-    }
+    if (!session || !updateBrowserTabUrl(project, session, url)) return;
     this.persist();
   }
 
   passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
     const project = this.findProjectBySession(sessionId);
     const session = this.findSessionById(sessionId);
-    if (!project || !session || session.type !== 'browser-tab') return;
-
-    const rememberedUrl = failedUrl ?? session.browserTabUrl;
-    delete session.browserTabUrl;
-    project.surface = normalizeProjectSurface(project);
-    project.surface.web = project.surface.web ?? { history: [] };
-
-    if (rememberedUrl) {
-      project.surface.web.history = Array.from(new Set([...(project.surface.web.history ?? []), rememberedUrl]));
-    }
-
-    if (project.surface.web.sessionId === sessionId) {
-      project.surface.web.url = undefined;
-      if (project.surface.kind === 'web') {
-        project.surface.active = false;
-        project.surface.tabFocus = 'session';
-      }
-    }
-
+    if (!project || !session || !passivateBrowserTabSessionRecord(project, session, failedUrl)) return;
     this.persist();
     this.emit('project-changed');
     this.emit('session-changed');
