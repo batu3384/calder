@@ -273,6 +273,34 @@ describe('cli surface pane', () => {
     expect(mockFit).toHaveBeenCalled();
   });
 
+  it('applies context-mode override from composer context control', async () => {
+    const container = new FakeElement('div') as unknown as HTMLElement;
+    const { appState } = await import('../../state.js');
+    const project = appState.addProject('Context Override', '/tmp/context-override');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance } = await import('./pane.js');
+
+    attachCliSurfacePane(project.id, container);
+    const instance = getCliSurfacePaneInstance(project.id);
+    expect(instance).toBeTruthy();
+    if (!instance) return;
+
+    instance.inspectState.selection = {
+      mode: 'line',
+      startRow: 0,
+      endRow: 0,
+      startCol: 0,
+      endCol: 1,
+    };
+
+    const contextControl = instance.composerContextSelectEl as unknown as FakeElement & { value?: string };
+    contextControl.value = 'selection-nearby';
+    const listeners = contextControl.listeners.get('change') ?? [];
+    listeners.forEach((listener) => listener({}));
+
+    expect(instance.contextModeOverride).toBe('selection-nearby');
+    expect(instance.inspectState.payload?.contextMode).toBe('selection-nearby');
+  });
+
   it('disposes stale CLI surface pane when the project is removed', async () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
     const { appState } = await import('../../state.js');

@@ -3,6 +3,7 @@ import {
 } from './composer-position.js';
 import { openInspect } from './inspect-mode.js';
 import { selectionFromViewport } from './inspect-geometry.js';
+import type { CliSurfacePromptContextMode, SurfaceSelectionRange } from '../../../shared/types/project.js';
 import {
   sendCliSelectionToCustomSession,
   sendCliSelectionToNewSession,
@@ -11,13 +12,29 @@ import {
 import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
 import {
   bindInspectActionHandlers as bindInspectActionHandlersModule,
+  bindInspectPointerHandlers as bindInspectPointerHandlersModule,
   bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
 } from './pane-bindings.js';
 import type { CliSurfaceLayoutElements } from './pane-elements.js';
 
+type CliSurfaceApi = {
+  start(projectId: string, profile: unknown): Promise<void>;
+  stop(projectId: string): Promise<void>;
+  restart(projectId: string): Promise<void>;
+  write(projectId: string, data: string): void;
+};
+
+type PointerCell = { row: number; col: number };
+type PointerLike = Pick<PointerEvent, 'clientX' | 'clientY' | 'preventDefault'>;
+type SelectableRegion = { selection: SurfaceSelectionRange };
+
 export interface CliSurfaceActionContext {
   projectId: string;
-  inspectState: any;
+  inspectState: {
+    active: boolean;
+    selection: SurfaceSelectionRange | null;
+    payload: { selection: SurfaceSelectionRange } | null;
+  };
   element: HTMLDivElement;
   terminal: {
     cols: number;
@@ -43,7 +60,7 @@ interface CliSurfaceRuntimeHandlerOptions {
   context: CliSurfaceActionContext;
   controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>;
   resolveSelectedProfile(projectId: string): unknown;
-  getCliSurfaceApi(): unknown;
+  getCliSurfaceApi(): CliSurfaceApi | null | undefined;
   renderInspectState(): void;
   setInspectPayloadFromSelection(selection: ReturnType<typeof selectionFromViewport>): void;
   helpers: CliSurfaceActionHelpers;
@@ -53,6 +70,20 @@ interface CliSurfaceInspectHandlerOptions {
   context: CliSurfaceActionContext;
   openInspectComposer(): void;
   helpers: CliSurfaceActionHelpers;
+}
+
+interface CliSurfacePointerHandlerOptions {
+  context: CliSurfaceActionContext;
+  renderInspectState(): void;
+  setInspectPayloadFromSelection(selection: SurfaceSelectionRange | null): void;
+  setInspectPayloadFromPointer(event: PointerLike): void;
+  setHoverRegion(region: SelectableRegion | null): void;
+  pointerToCell(event: PointerLike): PointerCell | null;
+  findSelectableRegionAtCell(cell: PointerCell): SelectableRegion | null;
+  selectionFromTerminal(): SurfaceSelectionRange | null;
+  positionComposerNearPointer(event: PointerLike): void;
+  onContextModeOverrideChange(mode: CliSurfacePromptContextMode | null): void;
+  writeToRuntime(projectId: string, data: string): void;
 }
 
 export function createCliSurfaceTargetMenuControllerWithHandlers(
@@ -105,7 +136,7 @@ export function bindCliSurfaceRuntimeActionHandlers(options: CliSurfaceRuntimeHa
     resolveSelectedProfile,
     showComposerError: (message) => helpers.showComposerError(message),
     clearComposerError: () => helpers.clearComposerError(),
-    getCliSurfaceApi: getCliSurfaceApi as any,
+    getCliSurfaceApi,
     onCapture: () => {
       context.inspectState = openInspect(context.inspectState as any) as any;
       helpers.clearComposerError();
@@ -150,5 +181,40 @@ export function bindCliSurfaceInspectActionHandlers(options: CliSurfaceInspectHa
       sendCliSelectionToNewSession(payload, 'CLI inspect follow-up');
       helpers.closeInspectComposer();
     },
+  });
+}
+
+export function bindCliSurfaceInspectPointerHandlers(options: CliSurfacePointerHandlerOptions): void {
+  const {
+    context,
+    renderInspectState,
+    setInspectPayloadFromSelection,
+    setInspectPayloadFromPointer,
+    setHoverRegion,
+    pointerToCell,
+    findSelectableRegionAtCell,
+    selectionFromTerminal,
+    positionComposerNearPointer,
+    onContextModeOverrideChange,
+    writeToRuntime,
+  } = options;
+
+  bindInspectPointerHandlersModule({
+    instance: context as any,
+    setInspectPayloadFromSelection: (selection) => {
+      if (!selection) {
+        renderInspectState();
+        return;
+      }
+      setInspectPayloadFromSelection(selection);
+    },
+    setInspectPayloadFromPointer,
+    setHoverRegion,
+    pointerToCell,
+    findSelectableRegionAtCell,
+    selectionFromTerminal,
+    positionComposerNearPointer,
+    onContextModeOverrideChange,
+    writeToRuntime,
   });
 }

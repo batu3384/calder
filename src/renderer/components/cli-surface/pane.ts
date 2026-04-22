@@ -67,12 +67,10 @@ import {
   createCliSurfaceLayout,
   createCliSurfaceTerminal,
 } from './pane-elements.js';
-import {
-  bindInspectPointerHandlers as bindInspectPointerHandlersModule,
-} from './pane-bindings.js';
 import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
 import {
   bindCliSurfaceInspectActionHandlers,
+  bindCliSurfaceInspectPointerHandlers,
   bindCliSurfaceRuntimeActionHandlers,
   createCliSurfaceTargetMenuControllerWithHandlers,
 } from './pane-action-handlers.js';
@@ -604,49 +602,6 @@ function ensureInstance(projectId: string): CliSurfaceInstance {
   return ensureCliSurfaceInstance(projectId);
 }
 
-function bindInspectPointerHandlers(instance: CliSurfaceInstance): void {
-  bindInspectPointerHandlersModule({
-    instance,
-    setInspectPayloadFromSelection: (selection) => {
-      if (!selection) {
-        renderInspectState(instance);
-        return;
-      }
-      setInspectPayloadFromSelection(instance, selection);
-    },
-    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(instance, event),
-    setHoverRegion: (region) => setHoverRegion(instance, region),
-    pointerToCell: (event) => pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
-    findSelectableRegionAtCell: (cell) => findSelectableRegionAtCell(instance, cell),
-    selectionFromTerminal: () => selectionFromTerminal({
-      viewportLineCount: instance.viewportLines.length,
-      terminalCols: instance.terminal.cols,
-      viewportY: instance.terminal.buffer.active.viewportY,
-      selectionText: instance.terminal.getSelection(),
-      range: instance.terminal.getSelectionPosition(),
-    }),
-    positionComposerNearPointer: (event) => {
-      positionComposerNearPointerBehavior({
-        paneEl: instance.element,
-        composerEl: instance.composerEl,
-        event: event as PointerEvent,
-      });
-    },
-    onContextModeOverrideChange: (mode) => {
-      instance.contextModeOverride = mode;
-      const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
-      if (selection) {
-        setInspectPayloadFromSelection(instance, selection);
-        return;
-      }
-      renderInspectState(instance);
-    },
-    writeToRuntime: (projectId, data) => {
-      getCliSurfaceApi()?.write(projectId, data);
-    },
-  });
-}
-
 function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
   const existing = instances.get(projectId);
   if (existing) return existing;
@@ -749,7 +704,47 @@ function ensureCliSurfaceInstance(projectId: string): CliSurfaceInstance {
       showComposerError: (message: string) => showComposerError(instance, message),
     },
   });
-  bindInspectPointerHandlers(instance);
+  bindCliSurfaceInspectPointerHandlers({
+    context: instance,
+    renderInspectState: () => renderInspectState(instance),
+    setInspectPayloadFromSelection: (selection) => {
+      if (!selection) {
+        renderInspectState(instance);
+        return;
+      }
+      setInspectPayloadFromSelection(instance, selection);
+    },
+    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(instance, event),
+    setHoverRegion: (region) => setHoverRegion(instance, region),
+    pointerToCell: (event) => pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
+    findSelectableRegionAtCell: (cell) => findSelectableRegionAtCell(instance, cell),
+    selectionFromTerminal: () => selectionFromTerminal({
+      viewportLineCount: instance.viewportLines.length,
+      terminalCols: instance.terminal.cols,
+      viewportY: instance.terminal.buffer.active.viewportY,
+      selectionText: instance.terminal.getSelection(),
+      range: instance.terminal.getSelectionPosition(),
+    }),
+    positionComposerNearPointer: (event) => {
+      positionComposerNearPointerBehavior({
+        paneEl: instance.element,
+        composerEl: instance.composerEl,
+        event: event as PointerEvent,
+      });
+    },
+    onContextModeOverrideChange: (mode) => {
+      instance.contextModeOverride = mode;
+      const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
+      if (selection) {
+        setInspectPayloadFromSelection(instance, selection);
+        return;
+      }
+      renderInspectState(instance);
+    },
+    writeToRuntime: (nextProjectId, data) => {
+      getCliSurfaceApi()?.write(nextProjectId, data);
+    },
+  });
 
   instances.set(projectId, instance);
   instance.cleanupFns.push(enableComposerDraggingBehavior({
