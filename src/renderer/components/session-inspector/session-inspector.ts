@@ -9,12 +9,22 @@ import { resetUIState, canInspectSession } from './session-inspector-utils.js';
 import { renderTimeline } from './session-inspector-timeline.js';
 import { renderCosts, renderTools, renderContext } from './session-inspector-views.js';
 
+let onInspectorLayoutChanged: (() => void) | null = null;
+
 export function isInspectorOpen(): boolean {
   return inspectorState.inspectorPanel !== null && inspectorState.inspectedSessionId !== null;
 }
 
 export function getInspectedSessionId(): string | null {
   return inspectorState.inspectedSessionId;
+}
+
+export function setSessionInspectorRelayoutCallback(callback: (() => void) | null): void {
+  onInspectorLayoutChanged = callback;
+}
+
+function notifyInspectorLayoutChanged(): void {
+  onInspectorLayoutChanged?.();
 }
 
 export function openInspector(sessionId: string): void {
@@ -34,8 +44,7 @@ export function openInspector(sessionId: string): void {
     const container = document.getElementById('terminal-container')!;
     container.appendChild(inspectorState.inspectorPanel);
     container.classList.add('inspector-open');
-    // Dynamic import to avoid circular dependency (split-layout imports from session-inspector)
-    import('../split-layout.js').then(m => m.renderLayout());
+    notifyInspectorLayoutChanged();
   }
 
   renderActiveTab();
@@ -55,8 +64,7 @@ export function closeInspector(): void {
   inspectorState.inspectorPanel = null;
   inspectorState.inspectedSessionId = null;
 
-  // Dynamic import to avoid circular dependency (split-layout imports from session-inspector)
-  import('../split-layout.js').then(m => m.renderLayout());
+  notifyInspectorLayoutChanged();
 }
 
 export function toggleInspector(): void {

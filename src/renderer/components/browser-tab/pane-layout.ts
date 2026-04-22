@@ -5,6 +5,12 @@ interface BrowserCaptureToolbarCluster {
   label: HTMLSpanElement;
 }
 
+interface BrowserPaneChromeElements {
+  chrome: HTMLDivElement;
+  chromeHint: HTMLDivElement;
+  statusBadge: HTMLSpanElement;
+}
+
 export interface BrowserTabPaneLayoutElements {
   el: HTMLDivElement;
   chromeHint: HTMLDivElement;
@@ -32,11 +38,7 @@ export interface BrowserTabPaneLayoutElements {
   viewportContainer: HTMLDivElement;
 }
 
-export function createBrowserTabPaneLayout(sessionId: string, url?: string): BrowserTabPaneLayoutElements {
-  const el = document.createElement('div');
-  el.className = 'browser-tab-pane hidden';
-  el.dataset.sessionId = sessionId;
-
+function createBrowserPaneChrome(): BrowserPaneChromeElements {
   const chrome = document.createElement('div');
   chrome.className = 'browser-pane-chrome';
 
@@ -59,6 +61,20 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   chromeMeta.appendChild(chromeHint);
   chrome.appendChild(chromeLabel);
   chrome.appendChild(chromeMeta);
+
+  return {
+    chrome,
+    chromeHint,
+    statusBadge,
+  };
+}
+
+export function createBrowserTabPaneLayout(sessionId: string, url?: string): BrowserTabPaneLayoutElements {
+  const el = document.createElement('div');
+  el.className = 'browser-tab-pane hidden';
+  el.dataset.sessionId = sessionId;
+
+  const { chrome, chromeHint, statusBadge } = createBrowserPaneChrome();
   el.appendChild(chrome);
 
   const toolbar = document.createElement('div');

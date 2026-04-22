@@ -28,6 +28,26 @@ export function onShareChange(cb: ShareChangeListener): void {
 function notifyShareChange(): void {
   for (const cb of shareChangeListeners) cb();
 }
+const REMOTE_DISCONNECT_REQUEST_EVENT = 'calder:remote-disconnect-request';
+let remoteDisconnectListener: ((event: Event) => void) | null = null;
+
+function bindRemoteDisconnectListener(): void {
+  if (remoteDisconnectListener || typeof window === 'undefined') return;
+  remoteDisconnectListener = (event: Event) => {
+    const customEvent = event as CustomEvent<{ sessionId?: string }>;
+    const sessionId = customEvent.detail?.sessionId;
+    if (sessionId) {
+      disconnectRemoteSession(sessionId);
+    }
+  };
+  window.addEventListener(REMOTE_DISCONNECT_REQUEST_EVENT, remoteDisconnectListener);
+}
+
+function unbindRemoteDisconnectListener(): void {
+  if (!remoteDisconnectListener || typeof window === 'undefined') return;
+  window.removeEventListener(REMOTE_DISCONNECT_REQUEST_EVENT, remoteDisconnectListener);
+  remoteDisconnectListener = null;
+}
 
 // --- Host side ---
 
@@ -155,6 +175,8 @@ export function isRemoteSession(sessionId: string): boolean {
 // --- Cleanup ---
 
 export function initShareManager(): void {
+  bindRemoteDisconnectListener();
+
   appState.on('session-removed', (data?: unknown) => {
     const d = data as { sessionId?: string } | undefined;
     if (!d?.sessionId) return;
@@ -185,6 +207,7 @@ export function cleanupAllShares(): void {
 }
 
 export function _resetForTesting(): void {
+  unbindRemoteDisconnectListener();
   shareHandles.clear();
   guestHandles.clear();
   pendingJoinHandles.clear();

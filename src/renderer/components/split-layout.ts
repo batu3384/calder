@@ -310,7 +310,21 @@ function setContainerClass(cls: string): void {
   if (hasInspector) container.classList.add('inspector-open');
 }
 
+function registerInspectorRelayoutBridge(): void {
+  import('./session-inspector/session-inspector.js')
+    .then((inspectorModule) => {
+      inspectorModule.setSessionInspectorRelayoutCallback?.(() => {
+        renderLayout();
+      });
+    })
+    .catch(() => {
+      // Keep layout functional even if the inspector module is mocked in isolated tests.
+    });
+}
+
 export function initSplitLayout(): void {
+  registerInspectorRelayoutBridge();
+
   appState.on('state-loaded', renderLayout);
   appState.on('project-changed', renderLayout);
   appState.on('session-added', onSessionAdded);

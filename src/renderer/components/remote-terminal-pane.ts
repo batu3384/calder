@@ -15,6 +15,7 @@ interface RemoteTerminalInstance {
 }
 
 const instances = new Map<string, RemoteTerminalInstance>();
+const REMOTE_DISCONNECT_REQUEST_EVENT = 'calder:remote-disconnect-request';
 
 export function createRemoteTerminalPane(
   sessionId: string,
@@ -45,10 +46,11 @@ export function createRemoteTerminalPane(
   disconnectBtn.className = 'remote-disconnect-btn calder-button';
   disconnectBtn.textContent = 'Disconnect';
   disconnectBtn.addEventListener('click', () => {
-    // Import dynamically to avoid circular dependency
-    import('../sharing/share-manager.js').then(({ disconnectRemoteSession }) => {
-      disconnectRemoteSession(sessionId);
-    });
+    window.dispatchEvent(
+      new CustomEvent<{ sessionId: string }>(REMOTE_DISCONNECT_REQUEST_EVENT, {
+        detail: { sessionId },
+      }),
+    );
   });
   statusBar.appendChild(modeLabel);
   statusBar.appendChild(disconnectBtn);
