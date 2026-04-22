@@ -63,6 +63,13 @@ import {
   resolveCredentialOrigin,
   syncBrowserTabToSessionState,
 } from './pane-helpers.js';
+import {
+  createDrawPanelElements,
+  createFlowPanelElements,
+  createFlowPickerElements,
+  createInspectPanelElements,
+  createTargetMenuElements,
+} from './pane-capture-elements.js';
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
   initializeBrowserTabPane(sessionId, url);
@@ -416,324 +423,75 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
   contentShell.appendChild(newTabPage);
   el.appendChild(contentShell);
 
-  const inspectPanel = document.createElement('div');
-  inspectPanel.className = 'browser-inspect-panel';
-  inspectPanel.classList.add('calder-popover');
-  inspectPanel.style.display = 'none';
-
-  const inspectHandle = document.createElement('div');
-  inspectHandle.className = 'browser-inspect-panel-handle';
-
-  const inspectHandleLabel = document.createElement('span');
-  inspectHandleLabel.className = 'browser-inspect-panel-handle-label';
-  inspectHandleLabel.textContent = 'Element capture';
-
-  const inspectHandleGrip = document.createElement('span');
-  inspectHandleGrip.className = 'browser-inspect-panel-handle-grip';
-  inspectHandleGrip.textContent = 'Move';
-
-  inspectHandle.appendChild(inspectHandleLabel);
-  inspectHandle.appendChild(inspectHandleGrip);
-  inspectPanel.appendChild(inspectHandle);
-
-  const inspectHeader = document.createElement('div');
-  inspectHeader.className = 'browser-capture-header';
-
-  const inspectCopy = document.createElement('div');
-  inspectCopy.className = 'browser-capture-copy';
-
-  const inspectKicker = document.createElement('div');
-  inspectKicker.className = 'browser-capture-kicker';
-  inspectKicker.textContent = 'Inspect target';
-
-  const inspectTitle = document.createElement('div');
-  inspectTitle.className = 'browser-capture-title';
-  inspectTitle.textContent = 'Select an element';
-
-  const inspectSubtitle = document.createElement('div');
-  inspectSubtitle.className = 'browser-capture-subtitle';
-  inspectSubtitle.textContent = 'Click a page element to capture its selector and send a focused prompt.';
-
-  inspectCopy.appendChild(inspectKicker);
-  inspectCopy.appendChild(inspectTitle);
-  inspectCopy.appendChild(inspectSubtitle);
-
-  const inspectChip = document.createElement('span');
-  inspectChip.className = 'browser-capture-chip';
-  inspectChip.textContent = 'Inspect';
-
-  inspectHeader.appendChild(inspectCopy);
-  inspectHeader.appendChild(inspectChip);
-  inspectPanel.appendChild(inspectHeader);
-
-  const elementInfoEl = document.createElement('div');
-  elementInfoEl.className = 'inspect-element-info';
-  inspectPanel.appendChild(elementInfoEl);
-
-  const inputRow = document.createElement('div');
-  inputRow.className = 'inspect-input-row';
-
-  const instructionInput = document.createElement('textarea');
-  instructionInput.className = 'inspect-instruction-input';
-  instructionInput.rows = 3;
-  instructionInput.placeholder = 'Describe what you want to do\u2026';
-
-  const submitGroup = document.createElement('div');
-  submitGroup.className = 'inspect-submit-group';
-
-  const submitBtn = document.createElement('button');
-  submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to selected';
-
-  const customBtn = document.createElement('button');
-  customBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  customBtn.textContent = 'Select Session \u25BE';
-  customBtn.title = 'Choose target session';
-
-  submitGroup.appendChild(submitBtn);
-  submitGroup.appendChild(customBtn);
-
-  inputRow.appendChild(instructionInput);
-  inspectPanel.appendChild(inputRow);
-
-  const inspectAttachDimsRow = document.createElement('label');
-  inspectAttachDimsRow.className = 'inspect-attach-dims-row';
-  const inspectAttachDimsCheckbox = document.createElement('input');
-  inspectAttachDimsCheckbox.type = 'checkbox';
-  inspectAttachDimsCheckbox.checked = true;
-  const inspectAttachDimsText = document.createElement('span');
-  inspectAttachDimsText.textContent = 'Attach browser dimensions to the instructions';
-  inspectAttachDimsRow.appendChild(inspectAttachDimsCheckbox);
-  inspectAttachDimsRow.appendChild(inspectAttachDimsText);
-  inspectPanel.appendChild(inspectAttachDimsRow);
-
-  const inspectErrorEl = document.createElement('div');
-  inspectErrorEl.className = 'inspect-error-text';
-  inspectPanel.appendChild(inspectErrorEl);
-
-  const inspectContextTraceEl = document.createElement('div');
-  inspectContextTraceEl.className = 'inspect-context-trace';
-  inspectPanel.appendChild(inspectContextTraceEl);
-
-  inspectPanel.appendChild(submitGroup);
+  const inspectPanelElements = createInspectPanelElements();
+  const inspectPanel = inspectPanelElements.panel;
+  const inspectHandle = inspectPanelElements.handle;
+  const inspectTitle = inspectPanelElements.titleEl;
+  const inspectSubtitle = inspectPanelElements.subtitleEl;
+  const elementInfoEl = inspectPanelElements.elementInfoEl;
+  const instructionInput = inspectPanelElements.instructionInput;
+  const submitBtn = inspectPanelElements.submitBtn;
+  const customBtn = inspectPanelElements.targetBtn;
+  const inspectAttachDimsCheckbox = inspectPanelElements.attachDimsCheckbox;
+  const inspectErrorEl = inspectPanelElements.errorEl;
+  const inspectContextTraceEl = inspectPanelElements.contextTraceEl;
   el.appendChild(inspectPanel);
 
-  const drawPanel = document.createElement('div');
-  drawPanel.className = 'browser-inspect-panel browser-draw-panel';
-  drawPanel.classList.add('calder-popover');
-  drawPanel.style.display = 'none';
-
-  const drawHeader = document.createElement('div');
-  drawHeader.className = 'browser-capture-header';
-
-  const drawCopy = document.createElement('div');
-  drawCopy.className = 'browser-capture-copy';
-
-  const drawKicker = document.createElement('div');
-  drawKicker.className = 'browser-capture-kicker';
-  drawKicker.textContent = 'Annotated capture';
-
-  const drawTitle = document.createElement('div');
-  drawTitle.className = 'browser-capture-title';
-  drawTitle.textContent = 'Mark the page, then hand it off';
-
-  const drawSubtitle = document.createElement('div');
-  drawSubtitle.className = 'browser-capture-subtitle';
-  drawSubtitle.textContent = 'Sketch directly on the surface and send the annotated screenshot with your instructions.';
-
-  drawCopy.appendChild(drawKicker);
-  drawCopy.appendChild(drawTitle);
-  drawCopy.appendChild(drawSubtitle);
-
-  const drawChip = document.createElement('span');
-  drawChip.className = 'browser-capture-chip';
-  drawChip.textContent = 'Draw';
-
-  drawHeader.appendChild(drawCopy);
-  drawHeader.appendChild(drawChip);
-  drawPanel.appendChild(drawHeader);
-
-  const drawControlsRow = document.createElement('div');
-  drawControlsRow.className = 'inspect-input-row';
-
-  const drawInstructionInput = document.createElement('textarea');
-  drawInstructionInput.className = 'inspect-instruction-input';
-  drawInstructionInput.rows = 3;
-  drawInstructionInput.placeholder = 'Describe what you want to do\u2026';
-
-  const drawSubmitGroup = document.createElement('div');
-  drawSubmitGroup.className = 'inspect-submit-group';
-
-  const drawClearBtn = document.createElement('button');
-  drawClearBtn.className = 'inspect-clear-btn';
-  drawClearBtn.textContent = 'Clear';
-  drawClearBtn.title = 'Clear drawing';
-
-  const drawSubmitBtn = document.createElement('button');
-  drawSubmitBtn.className = 'inspect-submit-btn';
-  drawSubmitBtn.textContent = 'Send to selected';
-
-  const drawCustomBtn = document.createElement('button');
-  drawCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  drawCustomBtn.textContent = 'Select Session \u25BE';
-  drawCustomBtn.title = 'Choose target session';
-
-  drawSubmitGroup.appendChild(drawSubmitBtn);
-  drawSubmitGroup.appendChild(drawCustomBtn);
-
-  const drawActions = document.createElement('div');
-  drawActions.className = 'inspect-draw-actions';
-  drawActions.appendChild(drawClearBtn);
-  drawActions.appendChild(drawSubmitGroup);
-
-  drawControlsRow.appendChild(drawInstructionInput);
-  drawPanel.appendChild(drawControlsRow);
-
-  const drawAttachDimsRow = document.createElement('label');
-  drawAttachDimsRow.className = 'inspect-attach-dims-row';
-  const drawAttachDimsCheckbox = document.createElement('input');
-  drawAttachDimsCheckbox.type = 'checkbox';
-  drawAttachDimsCheckbox.checked = true;
-  const drawAttachDimsText = document.createElement('span');
-  drawAttachDimsText.textContent = 'Attach browser dimensions to the instructions';
-  drawAttachDimsRow.appendChild(drawAttachDimsCheckbox);
-  drawAttachDimsRow.appendChild(drawAttachDimsText);
-  drawPanel.appendChild(drawAttachDimsRow);
-
-  const drawErrorEl = document.createElement('div');
-  drawErrorEl.className = 'inspect-error-text';
-  drawPanel.appendChild(drawErrorEl);
-
-  const drawContextTraceEl = document.createElement('div');
-  drawContextTraceEl.className = 'inspect-context-trace';
-  drawPanel.appendChild(drawContextTraceEl);
-
-  drawPanel.appendChild(drawActions);
+  const drawPanelElements = createDrawPanelElements();
+  const drawPanel = drawPanelElements.panel;
+  const drawInstructionInput = drawPanelElements.instructionInput;
+  const drawSubmitBtn = drawPanelElements.submitBtn;
+  const drawCustomBtn = drawPanelElements.targetBtn;
+  const drawAttachDimsCheckbox = drawPanelElements.attachDimsCheckbox;
+  const drawClearBtn = drawPanelElements.clearBtn;
+  const drawErrorEl = drawPanelElements.errorEl;
+  const drawContextTraceEl = drawPanelElements.contextTraceEl;
   el.appendChild(drawPanel);
 
-  // Flow Panel
-  const flowPanel = document.createElement('div');
-  flowPanel.className = 'browser-capture-panel browser-flow-panel';
-  flowPanel.style.display = 'none';
-
-  const flowHeader = document.createElement('div');
-  flowHeader.className = 'flow-panel-header';
-
-  const flowCopy = document.createElement('div');
-  flowCopy.className = 'browser-capture-copy';
-
-  const flowKicker = document.createElement('div');
-  flowKicker.className = 'browser-capture-kicker';
-  flowKicker.textContent = 'Recorded flow';
-
-  const flowLabel = document.createElement('span');
-  flowLabel.className = 'flow-panel-label';
-  flowLabel.textContent = 'Flow (0 steps)';
-
-  const flowSubtitle = document.createElement('div');
-  flowSubtitle.className = 'browser-capture-subtitle';
-  flowSubtitle.textContent = 'Capture a short browser path and route it into an AI session as a reproducible handoff.';
-
-  flowCopy.appendChild(flowKicker);
-  flowCopy.appendChild(flowLabel);
-  flowCopy.appendChild(flowSubtitle);
-
-  const flowChip = document.createElement('span');
-  flowChip.className = 'browser-capture-chip';
-  flowChip.textContent = 'Flow';
-
-  const flowClearBtn = document.createElement('button');
-  flowClearBtn.className = 'flow-panel-clear-btn';
-  flowClearBtn.textContent = 'Clear';
-
-  const flowHeaderActions = document.createElement('div');
-  flowHeaderActions.className = 'inspect-draw-actions';
-  flowHeaderActions.appendChild(flowChip);
-  flowHeaderActions.appendChild(flowClearBtn);
-
-  flowHeader.appendChild(flowCopy);
-  flowHeader.appendChild(flowHeaderActions);
-  flowPanel.appendChild(flowHeader);
-
-  const flowStepsList = document.createElement('div');
-  flowStepsList.className = 'flow-steps-list';
-  flowPanel.appendChild(flowStepsList);
-
-  const flowInputRow = document.createElement('div');
-  flowInputRow.className = 'flow-input-row';
-  flowInputRow.style.display = 'none';
-
-  const flowInstructionInput = document.createElement('textarea');
-  flowInstructionInput.className = 'flow-instruction-input';
-  flowInstructionInput.placeholder = 'Describe what to do with this flow\u2026';
-  flowInstructionInput.rows = 2;
-
-  const flowSubmitGroup = document.createElement('div');
-  flowSubmitGroup.className = 'inspect-submit-group';
-
-  const flowSubmitBtn = document.createElement('button');
-  flowSubmitBtn.className = 'inspect-submit-btn';
-  flowSubmitBtn.textContent = 'Send to selected';
-
-  const flowCustomBtn = document.createElement('button');
-  flowCustomBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  flowCustomBtn.textContent = 'Select Session \u25BE';
-  flowCustomBtn.title = 'Choose target session';
-
-  flowSubmitGroup.appendChild(flowSubmitBtn);
-  flowSubmitGroup.appendChild(flowCustomBtn);
-  flowInputRow.appendChild(flowInstructionInput);
-  flowInputRow.appendChild(flowSubmitGroup);
-  flowPanel.appendChild(flowInputRow);
-
-  const flowErrorEl = document.createElement('div');
-  flowErrorEl.className = 'inspect-error-text';
-  flowPanel.appendChild(flowErrorEl);
-
-  const flowContextTraceEl = document.createElement('div');
-  flowContextTraceEl.className = 'inspect-context-trace';
-  flowPanel.appendChild(flowContextTraceEl);
-
+  const flowPanelElements = createFlowPanelElements();
+  const flowPanel = flowPanelElements.panel;
+  const flowLabel = flowPanelElements.labelEl;
+  const flowStepsList = flowPanelElements.stepsList;
+  const flowInputRow = flowPanelElements.inputRow;
+  const flowInstructionInput = flowPanelElements.instructionInput;
+  const flowSubmitBtn = flowPanelElements.submitBtn;
+  const flowCustomBtn = flowPanelElements.targetBtn;
+  const flowClearBtn = flowPanelElements.clearBtn;
+  const flowErrorEl = flowPanelElements.errorEl;
+  const flowContextTraceEl = flowPanelElements.contextTraceEl;
   el.appendChild(flowPanel);
 
-  // Flow action picker popup
-  const flowPickerOverlay = document.createElement('div');
-  flowPickerOverlay.className = 'flow-picker-overlay';
-  flowPickerOverlay.style.display = 'none';
-
-  const flowPickerMenu = document.createElement('div');
-  flowPickerMenu.className = 'flow-picker-menu';
+  const flowPickerElements = createFlowPickerElements();
+  const flowPickerOverlay = flowPickerElements.overlay;
+  const flowPickerMenu = flowPickerElements.menu;
 
   const pickerOptions: { label: string; sub: string; action: FlowPickerAction }[] = [
-    { label: 'Click',          sub: 'Navigate without recording', action: 'click' },
-    { label: 'Record',         sub: 'Capture without clicking',   action: 'record' },
-    { label: 'Click + Record', sub: 'Click and add step',         action: 'click-and-record' },
+    { label: 'Click', sub: 'Navigate without recording', action: 'click' },
+    { label: 'Record', sub: 'Capture without clicking', action: 'record' },
+    { label: 'Click + Record', sub: 'Click and add step', action: 'click-and-record' },
   ];
   for (const opt of pickerOptions) {
     const item = document.createElement('button');
     item.className = 'flow-picker-item';
     item.dataset['action'] = opt.action;
+
     const labelEl = document.createElement('span');
     labelEl.className = 'flow-picker-label';
     labelEl.textContent = opt.label;
+
     const subEl = document.createElement('span');
     subEl.className = 'flow-picker-sub';
     subEl.textContent = opt.sub;
+
     item.appendChild(labelEl);
     item.appendChild(subEl);
     flowPickerMenu.appendChild(item);
   }
-  flowPickerOverlay.appendChild(flowPickerMenu);
   el.appendChild(flowPickerOverlay);
 
-  const targetMenu = document.createElement('div');
-  targetMenu.className = 'browser-target-menu';
-  targetMenu.classList.add('calder-popover');
-  targetMenu.style.display = 'none';
-
-  const targetMenuList = document.createElement('div');
-  targetMenuList.className = 'browser-target-menu-list';
-  targetMenu.appendChild(targetMenuList);
+  const targetMenuElements = createTargetMenuElements();
+  const targetMenu = targetMenuElements.menu;
+  const targetMenuList = targetMenuElements.list;
   el.appendChild(targetMenu);
 
   const {

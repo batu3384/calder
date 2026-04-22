@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const preferencesSource = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
+const preferencesModalSource = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
+const preferencesSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
+const preferencesSource = [preferencesModalSource, preferencesSectionsSource].join('\n');
 const settingsGuardSource = readFileSync(new URL('./settings-guard-ui.ts', import.meta.url), 'utf-8');
 const conflictModalSource = readFileSync(new URL('./statusline-conflict-modal.ts', import.meta.url), 'utf-8');
-const browserStageSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const browserStagePaneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const browserStageCaptureSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
+const browserStageSource = [browserStagePaneSource, browserStageCaptureSource].join('\n');
 const browserNewTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
 const contributing = readFileSync(new URL('../../../CONTRIBUTING.md', import.meta.url), 'utf-8');
 const readme = readFileSync(new URL('../../../README.md', import.meta.url), 'utf-8');

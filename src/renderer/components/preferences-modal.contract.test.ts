@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const source = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
+const modalSourceFile = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
+const modalSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
+const source = [modalSourceFile, modalSectionsSource].join('\n');
 const providerSetupSource = readFileSync(new URL('./preferences-provider-setup.ts', import.meta.url), 'utf-8');
 const shortcutsSource = readFileSync(new URL('./preferences-shortcuts-section.ts', import.meta.url), 'utf-8');
 const modalSource = readFileSync(new URL('./modal.ts', import.meta.url), 'utf-8');

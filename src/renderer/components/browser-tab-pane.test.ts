@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 
-const source = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
+const captureElementsSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
+const source = [paneSource, captureElementsSource].join('\n');
 const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
 const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
 const authPanelSource = readFileSync(new URL('./browser-tab/auth-panel.ts', import.meta.url), 'utf-8');
@@ -279,8 +281,7 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('browser-capture-title');
     expect(source).toContain('browser-inspect-panel-handle');
     expect(source).toContain('enablePopoverDragging(instance, inspectPanel, inspectHandle)');
-    expect(source).toContain("inspectPanel.classList.add('calder-popover')");
-    expect(source).toContain("drawPanel.classList.add('calder-popover')");
+    expect(source).toContain("panel.classList.add('calder-popover')");
   });
 
   it('tags the browser pane with its session id for layout routing', () => {
