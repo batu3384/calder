@@ -144,6 +144,16 @@ Scope: Sequential execution progress for project structure/foldering debt.
     - Result:
       - Reduced duplicate binary discovery logic in main runtime and aligned inspector path candidates with dependency doctor behavior.
 
+17. **Mobile inspector parsing helper coverage (P1)**
+    - Added direct unit coverage for parser/extractor helpers in:
+      - `src/main/mobile-inspector-helpers.parsing.test.ts`
+    - Covered:
+      - `parseJson`
+      - `extractAppiumErrorMessage`
+      - `extractAppiumSessionId`
+    - Result:
+      - Improved runtime-safety checks around Appium response parsing and session id extraction edge-cases.
+
 ## Metric impact
 
 - `src/renderer/components` direct file count:
@@ -168,16 +178,15 @@ Scope: Sequential execution progress for project structure/foldering debt.
 ## Validation status
 
 - `rtk npm run build` -> PASS
-- `rtk npm test` -> PASS (`354/354`, `2514/2514`)
+- `rtk npm test` -> PASS (`355/355`, `2517/2517`)
 - `rtk npm run audit:deep` -> PASS
   - Includes the new `Structure audit` step.
 - `rtk code-review-graph detect-changes --base HEAD~1 --brief` -> PASS
-  - 214 changed files analyzed, risk `0.60`, test gaps reported outside this slice:
+  - 212 changed files analyzed, risk `0.60`, test gaps reported outside this slice:
     - `extractAppiumSessionId`
     - `uniquePaths`
     - `loadWindowsPtyManager`
-    - `createModeSelect` (graph still reports as gap despite direct helper tests)
-    - `createModeGuide` (graph still reports as gap despite direct helper tests)
+    - `fs`
 
 ## Next recommended slice
 
