@@ -115,6 +115,153 @@ function appendOverviewGrid(
   appendOverviewGridLayout(container, items);
 }
 
+type PreferencesModalState = {
+  currentSection: Section;
+  defaultProviderSelect: CustomSelectInstance | null;
+  languageSelect: CustomSelectInstance | null;
+  activeRecorder: { cleanup: () => void } | null;
+  aboutUpdateCleanup: (() => void) | null;
+};
+
+function createPreferencesModalState(): PreferencesModalState {
+  return {
+    currentSection: 'general',
+    defaultProviderSelect: null,
+    languageSelect: null,
+    activeRecorder: null,
+    aboutUpdateCleanup: null,
+  };
+}
+
+function cleanupRecorder(state: PreferencesModalState): void {
+  if (!state.activeRecorder) return;
+  state.activeRecorder.cleanup();
+  state.activeRecorder = null;
+}
+
+function cleanupAboutUpdateListeners(state: PreferencesModalState): void {
+  if (!state.aboutUpdateCleanup) return;
+  state.aboutUpdateCleanup();
+  state.aboutUpdateCleanup = null;
+}
+
+function replaceCustomSelect(
+  current: CustomSelectInstance | null,
+  next: CustomSelectInstance,
+): CustomSelectInstance {
+  if (current && current !== next) {
+    current.destroy();
+  }
+  return next;
+}
+
+function setActivePreferencesMenuItem(
+  menuItems: Map<Section, HTMLButtonElement>,
+  section: Section,
+): void {
+  for (const [id, item] of menuItems) {
+    item.classList.toggle('active', id === section);
+  }
+}
+
+function renderPreferencesSectionById(args: {
+  section: Section;
+  state: PreferencesModalState;
+  menuItems: Map<Section, HTMLButtonElement>;
+  content: HTMLElement;
+  preferenceDraft: PreferenceDraft;
+  shortcutOverridesDraft: Record<string, string>;
+  rerenderSection: (section: Section) => void;
+  onFixProvider: (providerId?: ProviderId) => Promise<void>;
+  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+  applySetupBadge: (hasIssue: boolean) => void;
+}): void {
+  cleanupRecorder(args.state);
+  cleanupAboutUpdateListeners(args.state);
+  args.state.currentSection = args.section;
+  args.content.innerHTML = '';
+  args.content.scrollTop = 0;
+  setActivePreferencesMenuItem(args.menuItems, args.section);
+
+  if (args.section === 'general') {
+    renderGeneralPreferencesSection({
+      content: args.content,
+      preferenceDraft: args.preferenceDraft,
+      appendSectionIntro,
+      appendOverviewGrid,
+      isGeneralSectionActive: () => args.state.currentSection === 'general',
+      getDefaultProviderSelect: () => args.state.defaultProviderSelect,
+      replaceDefaultProviderSelect: (select) => {
+        args.state.defaultProviderSelect = replaceCustomSelect(args.state.defaultProviderSelect, select);
+      },
+      replaceLanguageSelect: (select) => {
+        args.state.languageSelect = replaceCustomSelect(args.state.languageSelect, select);
+      },
+    });
+    return;
+  }
+
+  if (args.section === 'layout') {
+    renderLayoutPreferencesSection({
+      content: args.content,
+      preferenceDraft: args.preferenceDraft,
+      appendSectionIntro,
+      appendOverviewGrid,
+      appendSectionCard,
+    });
+    return;
+  }
+
+  if (args.section === 'shortcuts') {
+    renderShortcutPreferencesContent({
+      content: args.content,
+      shortcutOverridesDraft: args.shortcutOverridesDraft,
+      cleanupRecorder: () => cleanupRecorder(args.state),
+      setActiveRecorder: (cleanup) => {
+        args.state.activeRecorder = { cleanup };
+      },
+      clearActiveRecorder: () => {
+        args.state.activeRecorder = null;
+      },
+      rerenderShortcuts: () => args.rerenderSection('shortcuts'),
+      appendSectionIntro,
+      appendOverviewGrid,
+    });
+    return;
+  }
+
+  if (args.section === 'providers') {
+    renderProvidersPreferencesContent({
+      content: args.content,
+      modalBody: bodyEl,
+      confirmButton: btnConfirm,
+      cancelButton: btnCancel,
+      registerModalCleanup: extendModalCleanup,
+      currentSection: () => args.state.currentSection,
+      rerenderProviders: () => args.rerenderSection('providers'),
+      applySetupBadge: args.applySetupBadge,
+      onFixProvider: args.onFixProvider,
+      onInstallMobileDependency: args.onInstallMobileDependency,
+      appendSectionIntro,
+      appendOverviewGrid,
+      appendSectionGroup,
+      appendSectionCard,
+      modalElement: modal,
+    });
+    return;
+  }
+
+  if (args.section === 'about') {
+    args.state.aboutUpdateCleanup = renderAboutPreferencesSection({
+      content: args.content,
+      preferenceDraft: args.preferenceDraft,
+      appendSectionIntro,
+      appendOverviewGrid,
+      formatRelativeTimestamp,
+    });
+  }
+}
+
 export function showPreferencesModal(): void {
   renderPreferencesModalContent();
 }
@@ -135,121 +282,9 @@ function renderPreferencesModalContent(): void {
     sections: PREFERENCE_SECTIONS,
   });
 
-  // Build section content
-  let currentSection: Section = 'general';
-  let defaultProviderSelect: CustomSelectInstance | null = null;
-  let languageSelect: CustomSelectInstance | null = null;
-  let activeRecorder: { cleanup: () => void } | null = null;
-  let aboutUpdateCleanup: (() => void) | null = null;
+  const state = createPreferencesModalState();
   const preferenceDraft: PreferenceDraft = createPreferenceDraft();
   const shortcutOverridesDraft: Record<string, string> = { ...(appState.preferences.keybindings ?? {}) };
-
-  function cleanupRecorder() {
-    if (activeRecorder) {
-      activeRecorder.cleanup();
-      activeRecorder = null;
-    }
-  }
-
-  function cleanupAboutUpdateListeners() {
-    if (aboutUpdateCleanup) {
-      aboutUpdateCleanup();
-      aboutUpdateCleanup = null;
-    }
-  }
-
-  function replaceDefaultProviderSelect(select: CustomSelectInstance): void {
-    if (defaultProviderSelect && defaultProviderSelect !== select) {
-      defaultProviderSelect.destroy();
-    }
-    defaultProviderSelect = select;
-  }
-
-  function replaceLanguageSelect(select: CustomSelectInstance): void {
-    if (languageSelect && languageSelect !== select) {
-      languageSelect.destroy();
-    }
-    languageSelect = select;
-  }
-
-  function renderSection(section: Section) {
-    cleanupRecorder();
-    cleanupAboutUpdateListeners();
-    currentSection = section;
-    content.innerHTML = '';
-    content.scrollTop = 0;
-
-    // Update active menu item
-    for (const [id, item] of menuItems) {
-      item.classList.toggle('active', id === section);
-    }
-
-    if (section === 'general') {
-      renderGeneralPreferencesSection({
-        content,
-        preferenceDraft,
-        appendSectionIntro,
-        appendOverviewGrid,
-        isGeneralSectionActive: () => currentSection === 'general',
-        getDefaultProviderSelect: () => defaultProviderSelect,
-        replaceDefaultProviderSelect,
-        replaceLanguageSelect,
-      });
-
-    } else if (section === 'layout') {
-      renderLayoutPreferencesSection({
-        content,
-        preferenceDraft,
-        appendSectionIntro,
-        appendOverviewGrid,
-        appendSectionCard,
-      });
-
-    } else if (section === 'shortcuts') {
-      renderShortcutPreferencesContent({
-        content,
-        shortcutOverridesDraft,
-        cleanupRecorder,
-        setActiveRecorder: (cleanup) => {
-          activeRecorder = { cleanup };
-        },
-        clearActiveRecorder: () => {
-          activeRecorder = null;
-        },
-        rerenderShortcuts: () => renderSection('shortcuts'),
-        appendSectionIntro,
-        appendOverviewGrid,
-      });
-
-    } else if (section === 'providers') {
-      renderProvidersPreferencesContent({
-        content,
-        modalBody: bodyEl,
-        confirmButton: btnConfirm,
-        cancelButton: btnCancel,
-        registerModalCleanup: extendModalCleanup,
-        currentSection: () => currentSection,
-        rerenderProviders: () => renderSection('providers'),
-        applySetupBadge,
-        onFixProvider: fixAndRerender,
-        onInstallMobileDependency: installMobileDependencyAndRerender,
-        appendSectionIntro,
-        appendOverviewGrid,
-        appendSectionGroup,
-        appendSectionCard,
-        modalElement: modal,
-      });
-
-    } else if (section === 'about') {
-      aboutUpdateCleanup = renderAboutPreferencesSection({
-        content,
-        preferenceDraft,
-        appendSectionIntro,
-        appendOverviewGrid,
-        formatRelativeTimestamp,
-      });
-    }
-  }
 
   async function fixAndRerender(providerId?: ProviderId) {
     await window.calder.settings.reinstall(providerId);
@@ -271,10 +306,25 @@ function renderPreferencesModalContent(): void {
     }
   }
 
+  function renderSection(section: Section): void {
+    renderPreferencesSectionById({
+      section,
+      state,
+      menuItems,
+      content,
+      preferenceDraft,
+      shortcutOverridesDraft,
+      rerenderSection: renderSection,
+      onFixProvider: fixAndRerender,
+      onInstallMobileDependency: installMobileDependencyAndRerender,
+      applySetupBadge,
+    });
+  }
+
   async function updateSetupBadge() {
     applySetupBadge(await resolveSetupBadgeHasIssue());
   }
-  updateSetupBadge();
+  void updateSetupBadge();
 
   bindPreferencesMenuNavigation(menu, renderSection);
 
@@ -295,16 +345,16 @@ function renderPreferencesModalContent(): void {
     confirmButton: btnConfirm,
     cancelButton: btnCancel,
     modalElement: modal,
-    cleanupRecorder,
-    isRecorderActive: () => Boolean(activeRecorder),
+    cleanupRecorder: () => cleanupRecorder(state),
+    isRecorderActive: () => Boolean(state.activeRecorder),
     savePreferences: () => savePreferenceDraft(preferenceDraft, shortcutOverridesDraft),
     registerModalCleanup: extendModalCleanup,
   });
 
   extendModalCleanup(() => {
-    cleanupRecorder();
-    cleanupAboutUpdateListeners();
-    if (defaultProviderSelect) defaultProviderSelect.destroy();
-    if (languageSelect) languageSelect.destroy();
+    cleanupRecorder(state);
+    cleanupAboutUpdateListeners(state);
+    if (state.defaultProviderSelect) state.defaultProviderSelect.destroy();
+    if (state.languageSelect) state.languageSelect.destroy();
   });
 }

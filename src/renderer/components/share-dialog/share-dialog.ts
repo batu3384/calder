@@ -1,26 +1,19 @@
 // Share dialog — host-side UI for sharing a session via P2P.
 
-import type { ShareMode } from '../../../shared/sharing-types.js';
 import { endShare } from '../../sharing/share-manager.js';
 import { isSharing, isConnected } from '../../sharing/peer-host.js';
 import { appState } from '../../state.js';
-import {
-  createShareDialogFlowController,
-  type ShareDialogFlowController,
-} from './share-dialog-flow-controller.js';
-import { createShareDialogPhaseTwo } from './share-dialog-phase-two.js';
+import type { ShareDialogFlowController } from './share-dialog-flow-controller.js';
 import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
-import { bindStartSharingHandler } from './share-dialog-start-handler.js';
-import {
-  bindShareDialogPhaseNavigation,
-  createShareDialogActions,
-  createShareDialogPhaseOne,
-} from './share-dialog-shell.js';
 import {
   getShareDialogCopy,
   resolveShareDialogLanguage,
 } from './share-dialog-copy.js';
 import { buildShareDialogMobilePresence } from './share-dialog-mobile-presence.js';
+import {
+  buildShareDialogSections,
+  wireShareDialogInteractions,
+} from './share-dialog-render-helpers.js';
 
 export type { ShareDialogCopy } from './share-dialog-copy.js';
 export {
@@ -61,7 +54,6 @@ function renderShareDialog(sessionId: string): void {
   const dialog = document.createElement('div');
   dialog.className = 'share-dialog modal-surface share-dialog-shell';
 
-  let selectedMode: ShareMode = 'readonly';
   const mobileApi = getMobileControlApi();
   const sharingConfigApi = getSharingConfigApi();
   const uiLanguage = resolveShareDialogLanguage(appState.preferences.language);
@@ -125,125 +117,59 @@ function renderShareDialog(sessionId: string): void {
   }
   dialog.appendChild(hero);
 
-  const { phase1, modeGroup, rwWarning } = createShareDialogPhaseOne(copy, Boolean(mobileApi));
-  modeGroup.addEventListener('change', (event) => {
-    const value = (event.target as HTMLInputElement).value as ShareMode;
-    selectedMode = value;
-    rwWarning.classList.toggle('hidden', value !== 'readwrite');
+  const sections = buildShareDialogSections({
+    dialog,
+    copy,
+    mobileApi,
+    onClose: closeShareDialog,
   });
-  dialog.appendChild(phase1);
-
-  const {
-    phase2,
-    passphraseLabel,
-    passphraseInput,
-    manualToggleRow,
-    manualToggleBtn,
-    manualSection,
-    offerSection,
-    offerTextarea,
-    answerSection,
-    answerTextarea,
-    mobileSection,
-    mobileLinkInput,
-    mobileFallbackRow,
-    mobileFallbackInput,
-    useMobileFallbackBtn,
-    copyMobileFallbackBtn,
-    mobileOtpBadge,
-    mobileOtpHint,
-    mobileQrImg,
-    mobileStatus,
-    retryMobilePairingBtn,
-  } = createShareDialogPhaseTwo(copy);
-  dialog.appendChild(phase2);
-
-  const statusEl = document.createElement('div');
-  statusEl.className = 'share-status';
-  dialog.appendChild(statusEl);
-
-  const { actions, closeBtn, backBtn, nextBtn, startBtn, connectBtn } = createShareDialogActions(copy);
-  closeBtn.addEventListener('click', closeShareDialog);
-  dialog.appendChild(actions);
 
   overlay.appendChild(dialog);
   document.body.appendChild(overlay);
 
-  bindShareDialogPhaseNavigation({
-    phase1,
-    phase2,
-    nextBtn,
-    backBtn,
-    startBtn,
-    passphraseInput,
-    statusEl,
-  });
-
-  // Enable Connect only when answer code is entered
-  answerTextarea.addEventListener('input', () => {
-    connectBtn.disabled = !String(answerTextarea.value ?? '').trim();
-  });
-
-  const flowController = createShareDialogFlowController({
+  const flowController = wireShareDialogInteractions({
     sessionId,
-    copy,
-    mobileApi,
-    getSelectedMode: () => selectedMode,
-    isOverlayActive: () => activeOverlay === overlay,
-    statusEl,
-    manualToggleRow,
-    manualToggleBtn,
-    manualSection,
-    answerTextarea,
-    connectBtn,
-    mobileLinkInput,
-    mobileFallbackRow,
-    mobileFallbackInput,
-    useMobileFallbackBtn,
-    copyMobileFallbackBtn,
-    mobileOtpBadge,
-    mobileOtpHint,
-    mobileQrImg,
-    mobileStatus,
-    retryMobilePairingBtn,
-  });
-  activeFlowController = flowController;
-
-  overlay.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') closeShareDialog();
-  });
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeShareDialog();
-  });
-
-  bindStartSharingHandler({
-    sessionId,
-    getSelectedMode: () => selectedMode,
-    passphraseInput,
-    passphraseLabel,
-    offerSection,
-    offerTextarea,
-    answerSection,
-    answerTextarea,
-    startBtn,
-    backBtn,
-    connectBtn,
-    statusEl,
-    mobileSection,
-    mobileApi,
-    sharingConfigApi,
-    flowController,
     copy,
     uiLanguage,
-    clearPendingMobilePairing: (revoke) => {
-      flowController.clearPendingMobilePairing(revoke);
-    },
+    mobileApi,
+    sharingConfigApi,
+    overlay,
+    getSelectedMode: sections.getSelectedMode,
+    isOverlayActive: () => activeOverlay === overlay,
+    statusEl: sections.statusEl,
+    passphraseLabel: sections.passphraseLabel,
+    passphraseInput: sections.passphraseInput,
+    manualToggleRow: sections.manualToggleRow,
+    manualToggleBtn: sections.manualToggleBtn,
+    manualSection: sections.manualSection,
+    offerSection: sections.offerSection,
+    offerTextarea: sections.offerTextarea,
+    answerSection: sections.answerSection,
+    answerTextarea: sections.answerTextarea,
+    mobileSection: sections.mobileSection,
+    mobileLinkInput: sections.mobileLinkInput,
+    mobileFallbackRow: sections.mobileFallbackRow,
+    mobileFallbackInput: sections.mobileFallbackInput,
+    useMobileFallbackBtn: sections.useMobileFallbackBtn,
+    copyMobileFallbackBtn: sections.copyMobileFallbackBtn,
+    mobileOtpBadge: sections.mobileOtpBadge,
+    mobileOtpHint: sections.mobileOtpHint,
+    mobileQrImg: sections.mobileQrImg,
+    mobileStatus: sections.mobileStatus,
+    retryMobilePairingBtn: sections.retryMobilePairingBtn,
+    backBtn: sections.backBtn,
+    nextBtn: sections.nextBtn,
+    startBtn: sections.startBtn,
+    connectBtn: sections.connectBtn,
+    phase1: sections.phase1,
+    phase2: sections.phase2,
     setPendingShareSessionId: (nextSessionId) => {
       pendingShareSessionId = nextSessionId;
     },
     getPendingShareSessionId: () => pendingShareSessionId,
-    closeShareDialog,
+    onClose: closeShareDialog,
   });
+  activeFlowController = flowController;
 }
 
 export function closeShareDialog(): void {

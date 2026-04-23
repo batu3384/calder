@@ -34,16 +34,12 @@ const PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE = 'This default is not installed on t
 
 export { renderAboutPreferencesSection } from './preferences-modal-sections-about.js';
 
-export function renderGeneralPreferencesSection({
-  content,
-  preferenceDraft,
-  appendSectionIntro,
-  appendOverviewGrid,
-  isGeneralSectionActive,
-  getDefaultProviderSelect,
-  replaceDefaultProviderSelect,
-  replaceLanguageSelect,
-}: RenderGeneralSectionArgs): void {
+function appendGeneralSectionOverview(
+  content: HTMLElement,
+  preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
+  appendSectionIntro: RenderGeneralSectionArgs['appendSectionIntro'],
+  appendOverviewGrid: RenderGeneralSectionArgs['appendOverviewGrid'],
+): void {
   appendSectionIntro(
     content,
     'Session',
@@ -72,93 +68,112 @@ export function renderGeneralPreferencesSection({
       note: 'Sound and notification behavior stays local to this workspace.',
     },
   ]);
+}
 
+function buildDefaultProviderNote(
+  snapshot: ReturnType<typeof getProviderAvailabilitySnapshot>,
+  providerId: ProviderId,
+): string {
+  return buildProviderNote(
+    snapshot,
+    providerId,
+    PROVIDER_DEFAULT_MISSING_MESSAGE,
+    PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+    PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+  );
+}
+
+function appendDefaultProviderField({
+  content,
+  preferenceDraft,
+  isGeneralSectionActive,
+  getDefaultProviderSelect,
+  replaceDefaultProviderSelect,
+}: Pick<
+  RenderGeneralSectionArgs,
+  'content'
+  | 'preferenceDraft'
+  | 'isGeneralSectionActive'
+  | 'getDefaultProviderSelect'
+  | 'replaceDefaultProviderSelect'
+>): void {
   const providerRow = document.createElement('div');
   providerRow.className = 'modal-toggle-field';
 
   const providerLabel = document.createElement('label');
   providerLabel.textContent = 'Default coding tool';
 
-  const currentDefault = preferenceDraft.defaultProvider;
+  const providerNote = document.createElement('div');
+  providerNote.className = 'preferences-control-note';
 
-  let snapshot = getProviderAvailabilitySnapshot();
-  if (snapshot) {
+  const currentDefault = preferenceDraft.defaultProvider;
+  const providerSnapshot = { current: getProviderAvailabilitySnapshot() };
+
+  const updateProviderDraftAndNote = (): void => {
+    const select = getDefaultProviderSelect();
+    if (!select) return;
+    preferenceDraft.defaultProvider = select.getValue() as ProviderId;
+    providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
+  };
+
+  const bindProviderSelectChange = (): void => {
+    const select = getDefaultProviderSelect();
+    if (!select) return;
+    select.element.addEventListener('change', () => {
+      updateProviderDraftAndNote();
+    });
+  };
+
+  if (providerSnapshot.current) {
     const defaultSelect = createCustomSelect(
       'pref-default-provider',
-      buildProviderOptions(snapshot, PROVIDER_UNAVAILABLE_SUFFIX),
+      buildProviderOptions(providerSnapshot.current, PROVIDER_UNAVAILABLE_SUFFIX),
       currentDefault,
     );
     replaceDefaultProviderSelect(defaultSelect);
     preferenceDraft.defaultProvider = defaultSelect.getValue() as ProviderId;
   } else {
-    const loadingSelect = createCustomSelect('pref-default-provider', [{ value: currentDefault, label: 'Loading…' }], currentDefault);
+    const loadingSelect = createCustomSelect(
+      'pref-default-provider',
+      [{ value: currentDefault, label: 'Loading…' }],
+      currentDefault,
+    );
     replaceDefaultProviderSelect(loadingSelect);
-    loadProviderAvailability().then(() => {
+    void loadProviderAvailability().then(() => {
       if (!isGeneralSectionActive()) return;
-      snapshot = getProviderAvailabilitySnapshot();
-      if (!snapshot) return;
+      providerSnapshot.current = getProviderAvailabilitySnapshot();
+      if (!providerSnapshot.current) return;
 
       const refreshedSelect = createCustomSelect(
         'pref-default-provider',
-        buildProviderOptions(snapshot, PROVIDER_UNAVAILABLE_SUFFIX),
+        buildProviderOptions(providerSnapshot.current, PROVIDER_UNAVAILABLE_SUFFIX),
         preferenceDraft.defaultProvider,
       );
       replaceDefaultProviderSelect(refreshedSelect);
       providerRow.querySelector('.custom-select')?.remove();
       providerRow.appendChild(refreshedSelect.element);
       preferenceDraft.defaultProvider = refreshedSelect.getValue() as ProviderId;
-      providerNote.textContent = buildProviderNote(
-        snapshot,
-        preferenceDraft.defaultProvider,
-        PROVIDER_DEFAULT_MISSING_MESSAGE,
-        PROVIDER_DEFAULT_INSTALLED_MESSAGE,
-        PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
-      );
-      refreshedSelect.element.addEventListener('change', () => {
-        const select = getDefaultProviderSelect();
-        if (!select) return;
-        preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-        providerNote.textContent = buildProviderNote(
-          snapshot,
-          preferenceDraft.defaultProvider,
-          PROVIDER_DEFAULT_MISSING_MESSAGE,
-          PROVIDER_DEFAULT_INSTALLED_MESSAGE,
-          PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
-        );
-      });
+      providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
+      bindProviderSelectChange();
     });
   }
-
-  const providerNote = document.createElement('div');
-  providerNote.className = 'preferences-control-note';
-  providerNote.textContent = buildProviderNote(
-    snapshot,
-    preferenceDraft.defaultProvider,
-    PROVIDER_DEFAULT_MISSING_MESSAGE,
-    PROVIDER_DEFAULT_INSTALLED_MESSAGE,
-    PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
-  );
 
   const providerSelect = getDefaultProviderSelect();
-  if (providerSelect) {
-    providerSelect.element.addEventListener('change', () => {
-      const select = getDefaultProviderSelect();
-      if (!select) return;
-      preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-      providerNote.textContent = buildProviderNote(
-        snapshot,
-        preferenceDraft.defaultProvider,
-        PROVIDER_DEFAULT_MISSING_MESSAGE,
-        PROVIDER_DEFAULT_INSTALLED_MESSAGE,
-        PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
-      );
-    });
-    providerRow.appendChild(providerLabel);
-    providerRow.appendChild(providerSelect.element);
-    content.appendChild(providerRow);
-    content.appendChild(providerNote);
-  }
+  if (!providerSelect) return;
 
+  providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
+  bindProviderSelectChange();
+  providerRow.appendChild(providerLabel);
+  providerRow.appendChild(providerSelect.element);
+  content.appendChild(providerRow);
+  content.appendChild(providerNote);
+}
+
+function appendLanguageField({
+  content,
+  preferenceDraft,
+  replaceLanguageSelect,
+}: Pick<RenderGeneralSectionArgs, 'content' | 'preferenceDraft' | 'replaceLanguageSelect'>): void {
   const languageRow = document.createElement('div');
   languageRow.className = 'modal-toggle-field';
 
@@ -186,7 +201,12 @@ export function renderGeneralPreferencesSection({
   languageSelect.element.addEventListener('change', () => {
     preferenceDraft.language = languageSelect.getValue() as UiLanguage;
   });
+}
 
+function appendGeneralSessionToggles(
+  content: HTMLElement,
+  preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
+): void {
   appendPreferencesToggleField(
     content,
     'pref-sound-on-waiting',
@@ -232,6 +252,32 @@ export function renderGeneralPreferencesSection({
       preferenceDraft.autoTitleEnabled = checked;
     },
   );
+}
+
+export function renderGeneralPreferencesSection({
+  content,
+  preferenceDraft,
+  appendSectionIntro,
+  appendOverviewGrid,
+  isGeneralSectionActive,
+  getDefaultProviderSelect,
+  replaceDefaultProviderSelect,
+  replaceLanguageSelect,
+}: RenderGeneralSectionArgs): void {
+  appendGeneralSectionOverview(content, preferenceDraft, appendSectionIntro, appendOverviewGrid);
+  appendDefaultProviderField({
+    content,
+    preferenceDraft,
+    isGeneralSectionActive,
+    getDefaultProviderSelect,
+    replaceDefaultProviderSelect,
+  });
+  appendLanguageField({
+    content,
+    preferenceDraft,
+    replaceLanguageSelect,
+  });
+  appendGeneralSessionToggles(content, preferenceDraft);
 }
 
 export function renderLayoutPreferencesSection({
