@@ -1,10 +1,10 @@
 import { Terminal } from '@xterm/xterm';
 import { SearchAddon } from '@xterm/addon-search';
-import { removeSession } from '../session-activity.js';
+import { removeSession } from './surface-services/session-activity.js';
 import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
-import { getProviderCapabilities, getProviderDisplayName } from '../provider-availability.js';
+import { getProviderCapabilities, getProviderDisplayName } from './surface-services/provider-availability.js';
 import {
   activateOscLink,
   activateWebLink,

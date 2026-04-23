@@ -1,5 +1,5 @@
 import type { Terminal } from '@xterm/xterm';
-import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from '../link-routing.js';
+import { resolveNavigableHttpUrl, shouldDispatchLinkOpen, type LinkDispatchSnapshot } from './surface-services/link-routing.js';
 
 const lastTerminalLinkDispatchBySession = new Map<string, LinkDispatchSnapshot>();
 const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;

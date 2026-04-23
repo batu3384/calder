@@ -3,7 +3,7 @@
 import { joinRemoteSession } from '../sharing/share-manager.js';
 import { appState } from '../state.js';
 import { DecryptionError, validateJoinPassphrase } from '../sharing/share-crypto.js';
-import { createPassphraseInput } from '../dom-utils.js';
+import { createPassphraseInput } from './surface-services/dom-utils.js';
 
 let activeOverlay: HTMLElement | null = null;
 

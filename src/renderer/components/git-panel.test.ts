@@ -86,7 +86,7 @@ vi.mock('../state.js', () => ({
   appState: mockAppState,
 }));
 
-vi.mock('../git-status.js', () => ({
+vi.mock('./surface-services/git-status.js', () => ({
   onChange: (cb: (projectId: string, status: GitStatusRecord) => void) => {
     gitModuleState.setChangeHandler(cb);
     return () => {};
@@ -101,7 +101,7 @@ vi.mock('../git-status.js', () => ({
   },
 }));
 
-vi.mock('../session-activity.js', () => ({
+vi.mock('./surface-services/session-activity.js', () => ({
   onChange: () => () => {},
 }));
 
@@ -109,7 +109,7 @@ vi.mock('./file-viewer.js', () => ({
   showFileViewer: vi.fn(),
 }));
 
-vi.mock('../dom-utils.js', () => ({
+vi.mock('./surface-services/dom-utils.js', () => ({
   areaLabel: (value: string) => value,
 }));
 

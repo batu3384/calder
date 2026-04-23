@@ -1,5 +1,5 @@
 import type { ProviderId } from '../../shared/types/provider.js';
-import { getProviderAvailabilitySnapshot } from '../provider-availability.js';
+import { getProviderAvailabilitySnapshot } from './surface-services/provider-availability.js';
 
 /**
  * Build context-menu items for "Resume with <other provider>".

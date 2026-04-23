@@ -4,7 +4,7 @@ import {
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from '../../project-context-prompt.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
 import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
 import type { BrowserTabInstance } from './types.js';
 import type { ProviderId } from '../../types.js';

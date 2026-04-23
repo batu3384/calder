@@ -1,5 +1,5 @@
 import { appState } from '../../state.js';
-import { getProviderDisplayName } from '../../provider-availability.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import { showMcpAddModal } from '../mcp-add-modal.js';
 import { localizeConfigMetadataSummary, type ConfigMetadataKind } from '../config-metadata-localization.js';
 import { getVisibleToolchainSections, sectionSummaryText, type ToolchainSummarySection } from '../config-toolchain-summary.js';

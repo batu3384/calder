@@ -1,5 +1,5 @@
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
-import { shortcutManager, displayKeys } from '../shortcuts.js';
+import { shortcutManager, displayKeys } from './surface-services/shortcuts.js';
 
 const overlay = document.getElementById('modal-overlay')!;
 const modal = document.getElementById('modal')!;

@@ -4,7 +4,7 @@ import {
   resolveProviderForCheck,
   resolvePreferredProviderForLaunch,
   shouldRenderInlineProviderSelector,
-} from '../../provider-availability.js';
+} from '../surface-services/provider-availability.js';
 
 function createProvider(id: ProviderId, displayName: string): CliProviderMeta {
   return {

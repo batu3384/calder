@@ -5,7 +5,7 @@ import {
   resolvePreferredProviderForLaunch,
   shouldRenderInlineProviderSelector,
   type ProviderAvailabilitySnapshot,
-} from '../../provider-availability.js';
+} from '../surface-services/provider-availability.js';
 
 interface CreateTabBarProviderSelectorControllerOptions {
   addSessionButtonEl: HTMLElement;

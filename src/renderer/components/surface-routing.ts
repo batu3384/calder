@@ -1,8 +1,8 @@
 import { appState } from '../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './terminal-pane.js';
 import { promptNewSession } from './tab-bar/tab-bar.js';
-import { appendProjectGovernanceToPrompt } from '../project-governance-prompt.js';
+import { appendProjectGovernanceToPrompt } from './surface-services/project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from '../project-team-context-prompt.js';
 
 function getPreferredLaunchProvider() {

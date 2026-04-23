@@ -6,7 +6,7 @@ import {
   getProviderAvailabilitySnapshot,
   loadProviderAvailability,
   resolvePreferredProviderForLaunch,
-} from '../../provider-availability.js';
+} from '../surface-services/provider-availability.js';
 
 interface CreateTabBarSessionMenuControllerOptions {
   hideTabContextMenu: () => void;

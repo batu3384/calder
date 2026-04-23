@@ -102,12 +102,12 @@ vi.mock('@xterm/addon-web-links', () => ({
   },
 }));
 
-vi.mock('../session-activity.js', () => ({
+vi.mock('./surface-services/session-activity.js', () => ({
   initSession: vi.fn(),
   removeSession: vi.fn(),
 }));
 
-vi.mock('../session-insights.js', () => ({
+vi.mock('./surface-services/session-insights.js', () => ({
   markFreshSession: vi.fn(),
 }));
 
@@ -119,7 +119,7 @@ vi.mock('../session-context.js', () => ({
   removeSession: vi.fn(),
 }));
 
-vi.mock('../provider-availability.js', () => ({
+vi.mock('./surface-services/provider-availability.js', () => ({
   getProviderCapabilities: vi.fn((providerId: string) => providerCaps.get(providerId) ?? null),
   getProviderDisplayName: vi.fn((providerId: string) => providerNames.get(providerId) ?? providerId),
 }));

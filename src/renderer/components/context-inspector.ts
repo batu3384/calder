@@ -1,7 +1,7 @@
 import { appState } from '../state.js';
-import { esc } from '../dom-utils.js';
-import { getGitStatus, onChange as onGitStatusChange } from '../git-status.js';
-import { getProviderDisplayName } from '../provider-availability.js';
+import { esc } from './surface-services/dom-utils.js';
+import { getGitStatus, onChange as onGitStatusChange } from './surface-services/git-status.js';
+import { getProviderDisplayName } from './surface-services/provider-availability.js';
 import type { ProviderId, ProjectContextState } from '../types.js';
 
 const mainAreaEl = document.getElementById('main-area')!;

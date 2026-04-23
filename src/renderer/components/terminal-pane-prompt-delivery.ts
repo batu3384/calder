@@ -1,4 +1,4 @@
-import { getProviderCapabilities } from '../provider-availability.js';
+import { getProviderCapabilities } from './surface-services/provider-availability.js';
 import type { ProviderId } from '../types.js';
 
 interface StartupPromptState {

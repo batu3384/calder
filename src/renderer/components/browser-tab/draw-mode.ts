@@ -1,5 +1,5 @@
 import { appState } from '../../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../../provider-availability.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
 import {
   appendAppliedContextToPrompt,
   buildAppliedContextSummary,

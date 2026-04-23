@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../session-inspector-state.js', () => ({
+vi.mock('../surface-services/session-inspector-state.js', () => ({
   getEvents: vi.fn(),
   getCostDeltas: vi.fn(() => []),
 }));
@@ -15,7 +15,7 @@ vi.mock('./session-inspector-state-ui.js', () => ({
   },
 }));
 
-import { getEvents } from '../../session-inspector-state.js';
+import { getEvents } from '../surface-services/session-inspector-state.js';
 import {
   renderTimeline,
   buildAgentModel,

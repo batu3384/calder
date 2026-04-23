@@ -1,5 +1,5 @@
 import { appState } from '../../state.js';
-import { shortcutManager } from '../../shortcuts.js';
+import { shortcutManager } from '../surface-services/shortcuts.js';
 import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
 import { getPreloadPath } from './instance.js';
 import {

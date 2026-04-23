@@ -4,7 +4,7 @@ import { buildAppliedContextSummary } from '../../project-context-prompt.js';
 import {
   getProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
-} from '../../provider-availability.js';
+} from '../surface-services/provider-availability.js';
 import {
   enableComposerDragging as enableComposerDraggingBehavior,
   positionComposerNearPointer as positionComposerNearPointerBehavior,

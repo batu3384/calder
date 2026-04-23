@@ -1,5 +1,5 @@
 import { createCustomSelect } from '../custom-select.js';
-import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../../provider-availability.js';
+import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../surface-services/provider-availability.js';
 import {
   appendPreferencesToggleField,
   buildProviderNote,

@@ -1,6 +1,6 @@
 import { appState } from '../state.js';
-import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, getWorktrees, setActiveWorktree, onWorktreeChange } from '../git-status.js';
-import { onChange as onStatusChange } from '../session-activity.js';
+import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, getWorktrees, setActiveWorktree, onWorktreeChange } from './surface-services/git-status.js';
+import { onChange as onStatusChange } from './surface-services/session-activity.js';
 import type { GitFileEntry } from '../types.js';
 import {
   ensureGitSection,

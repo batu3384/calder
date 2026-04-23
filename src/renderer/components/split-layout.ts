@@ -1,5 +1,5 @@
 import { appState, ProjectRecord } from '../state.js';
-import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
+import { isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
 import {
   attachToContainer,
   showPane,

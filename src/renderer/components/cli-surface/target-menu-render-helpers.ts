@@ -1,6 +1,6 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
-import { getProviderDisplayName } from '../../provider-availability.js';
-import { getStatus } from '../../session-activity.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
+import { getStatus } from '../surface-services/session-activity.js';
 
 type CliTargetSession = {
   id: string;

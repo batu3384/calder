@@ -1,5 +1,5 @@
 import { appState } from '../../state.js';
-import { getProviderDisplayName } from '../../provider-availability.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import type {
   BrowserTabInstance,
   FlowPickerAction,

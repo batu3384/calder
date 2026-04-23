@@ -1,4 +1,4 @@
-import type { GitStatus } from '../../git-status.js';
+import type { GitStatus } from '../surface-services/git-status.js';
 
 export type GitStatusViewState = 'hidden' | 'loading' | 'clean' | 'dirty';
 

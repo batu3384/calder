@@ -18,7 +18,7 @@ vi.mock('../state.js', () => ({
   },
 }));
 
-vi.mock('../provider-availability.js', () => ({
+vi.mock('./surface-services/provider-availability.js', () => ({
   getProviderAvailabilitySnapshot: vi.fn(() => null),
   resolvePreferredProviderForLaunch: vi.fn(() => 'claude'),
 }));

@@ -9,7 +9,7 @@ import {
   isInspectorOpen,
   openInspector,
 } from '../session-inspector/session-inspector.js';
-import { getProviderCapabilities } from '../../provider-availability.js';
+import { getProviderCapabilities } from '../surface-services/provider-availability.js';
 import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 
 export interface SessionTabContextMenuOptions {

@@ -1,5 +1,5 @@
 import { showFileViewer } from './file-viewer.js';
-import { areaLabel } from '../dom-utils.js';
+import { areaLabel } from './surface-services/dom-utils.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 import { esc } from './git-panel-presentation-helpers.js';
 import type { GitFileEntry } from '../types.js';

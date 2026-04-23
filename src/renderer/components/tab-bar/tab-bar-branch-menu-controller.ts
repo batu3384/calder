@@ -1,5 +1,5 @@
 import { appState } from '../../state.js';
-import { getActiveGitPath, getGitStatus } from '../../git-status.js';
+import { getActiveGitPath, getGitStatus } from '../surface-services/git-status.js';
 import { closeModal, setModalError, showModal } from '../modal.js';
 
 interface CreateTabBarBranchMenuControllerOptions {

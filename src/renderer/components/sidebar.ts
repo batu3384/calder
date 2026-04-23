@@ -1,8 +1,8 @@
 import { appState, ProjectRecord } from '../state.js';
 import { showModal, setModalError, closeModal } from './modal.js';
 import { showPreferencesModal } from './preferences/preferences-modal.js';
-import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from '../session-unread.js';
-import { getStatus, onChange as onSessionStatusChange } from '../session-activity.js';
+import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
+import { getStatus, onChange as onSessionStatusChange } from './surface-services/session-activity.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 
 const projectListEl = document.getElementById('project-list')!;

@@ -1,5 +1,5 @@
 import type { ProjectRecord } from '../../state.js';
-import type { GitStatus } from '../../git-status.js';
+import type { GitStatus } from '../surface-services/git-status.js';
 import { getProjectSurface } from './tab-bar-surface-state.js';
 import { buildGitStatusView } from './tab-bar-git-status-view.js';
 

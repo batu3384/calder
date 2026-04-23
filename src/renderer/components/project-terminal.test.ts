@@ -44,7 +44,7 @@ vi.mock('../state.js', () => ({
 
 vi.mock('./terminal-pane.js', () => ({ fitAllVisible: vi.fn() }));
 vi.mock('./search-bar.js', () => ({ destroySearchBar: vi.fn(), hideSearchBar: vi.fn() }));
-vi.mock('../shortcuts.js', () => ({
+vi.mock('./surface-services/shortcuts.js', () => ({
   shortcutManager: { getKeys: vi.fn(() => []) },
   displayKeys: vi.fn(() => ''),
 }));

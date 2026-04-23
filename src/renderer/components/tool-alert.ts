@@ -1,7 +1,7 @@
 import { onToolAlert, type ToolAlert, type FailureReason } from '../tools/missing-tool-detector.js';
-import { dismissInsight } from '../session-insights.js';
+import { dismissInsight } from './surface-services/session-insights.js';
 import { appState } from '../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
 import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
 import { setPendingPrompt } from './terminal-pane.js';
 

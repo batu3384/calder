@@ -1,4 +1,4 @@
-import { createPassphraseInput } from '../../dom-utils.js';
+import { createPassphraseInput } from '../surface-services/dom-utils.js';
 import { generatePassphrase } from '../../sharing/share-crypto.js';
 import type { ShareDialogCopy } from './share-dialog-copy.js';
 

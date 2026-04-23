@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GitStatus } from '../../git-status.js';
+import type { GitStatus } from '../surface-services/git-status.js';
 import { buildGitStatusView } from './tab-bar-git-status-view.js';
 
 const esc = (value: string) => value.replace(/</g, '&lt;').replace(/>/g, '&gt;');

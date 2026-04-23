@@ -1,4 +1,4 @@
-import { getProviderDisplayName } from '../../provider-availability.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import type {
   ProjectGovernanceAutoApprovalState,
   ProjectGovernanceState,

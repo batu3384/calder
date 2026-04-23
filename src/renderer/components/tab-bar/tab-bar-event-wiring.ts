@@ -1,9 +1,9 @@
 import { appState } from '../../state.js';
-import { onChange as onStatusChange, type SessionStatus } from '../../session-activity.js';
-import { onChange as onGitStatusChange } from '../../git-status.js';
-import { onChange as onUnreadChange } from '../../session-unread.js';
+import { onChange as onStatusChange, type SessionStatus } from '../surface-services/session-activity.js';
+import { onChange as onGitStatusChange } from '../surface-services/git-status.js';
+import { onChange as onUnreadChange } from '../surface-services/session-unread.js';
 import { onShareChange } from '../../sharing/share-manager.js';
-import { hasMultipleAvailableProviders, loadProviderAvailability } from '../../provider-availability.js';
+import { hasMultipleAvailableProviders, loadProviderAvailability } from '../surface-services/provider-availability.js';
 
 interface TabBarActionHandlerArgs {
   addSessionButtonEl: HTMLElement;

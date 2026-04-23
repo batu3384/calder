@@ -111,7 +111,7 @@ vi.mock('../../state.js', () => ({
   MAX_SESSION_NAME_LENGTH: 80,
 }));
 
-vi.mock('../../git-status.js', () => ({
+vi.mock('../surface-services/git-status.js', () => ({
   getGitStatus: vi.fn(() => null),
   refreshGitStatus: vi.fn(),
 }));
@@ -168,7 +168,7 @@ vi.mock('./tab-bar-surface-controls.js', () => ({
   createTabBarSurfaceControlsController: vi.fn(() => surfaceControlsController),
 }));
 
-vi.mock('../../update-center.js', () => ({
+vi.mock('../surface-services/update-center.js', () => ({
   cancelCliProviderUpdates: vi.fn(),
   getUpdateCenterState: vi.fn(() => updateCenterSnapshot),
   onUpdateCenterChange: vi.fn(() => () => undefined),

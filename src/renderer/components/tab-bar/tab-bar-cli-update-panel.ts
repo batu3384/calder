@@ -1,5 +1,5 @@
 import type { ProviderUpdateSummary } from '../../../shared/types/provider.js';
-import type { CliProviderProgressState, CliUpdateCenterState } from '../../update-center.js';
+import type { CliProviderProgressState, CliUpdateCenterState } from '../surface-services/update-center.js';
 
 interface CliUpdateStatusCounters {
   updated: number;

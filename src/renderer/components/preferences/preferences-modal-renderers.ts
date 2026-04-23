@@ -1,5 +1,5 @@
 import { closeModal } from '../modal.js';
-import { shortcutManager } from '../../shortcuts.js';
+import { shortcutManager } from '../surface-services/shortcuts.js';
 import type { ProviderId } from '../../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 import { buildCheckpointRestoreConfirm } from './preferences-checkpoint-confirm.js';

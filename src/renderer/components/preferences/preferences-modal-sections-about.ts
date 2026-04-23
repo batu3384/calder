@@ -2,7 +2,7 @@ import {
   checkForAppUpdates,
   getUpdateCenterState,
   onUpdateCenterChange,
-} from '../../update-center.js';
+} from '../surface-services/update-center.js';
 import type {
   AboutDraft,
   RenderAboutSectionArgs,

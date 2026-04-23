@@ -1,4 +1,4 @@
-import { getUpdateCenterState, onUpdateCenterChange } from '../update-center.js';
+import { getUpdateCenterState, onUpdateCenterChange } from './surface-services/update-center.js';
 
 export function initUpdateBanner(): void {
   const mainArea = document.getElementById('main-area');

@@ -1,4 +1,4 @@
-import { getEvents, getCostDeltas } from '../../session-inspector-state.js';
+import { getEvents, getCostDeltas } from '../surface-services/session-inspector-state.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {

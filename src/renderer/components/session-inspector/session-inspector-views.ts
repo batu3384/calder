@@ -1,5 +1,5 @@
-import { getEvents, getToolStats, getContextHistory, getCostDeltas } from '../../session-inspector-state.js';
-import { getProviderCapabilities } from '../../provider-availability.js';
+import { getEvents, getToolStats, getContextHistory, getCostDeltas } from '../surface-services/session-inspector-state.js';
+import { getProviderCapabilities } from '../surface-services/provider-availability.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
   emptyMessage,
