@@ -102,6 +102,15 @@ describe('browser stage contract', () => {
     expect(css).toContain('padding-left: 0;');
   });
 
+  it('uses pane-width container queries so split browser controls never clip inside a narrow pane', () => {
+    expect(css).toContain('container: browser-pane / inline-size;');
+    expect(css).toContain('@container browser-pane (max-width: 760px)');
+    expect(css).toContain('.browser-tab-pane.split .browser-toolbar-tools-shell');
+    expect(css).toContain('flex-wrap: wrap;');
+    expect(css).toContain('overflow: visible;');
+    expect(css).toContain('@container browser-pane (max-width: 540px)');
+  });
+
   it('keeps the viewport picker dropdown above live content layers', () => {
     expect(css).toContain('.browser-viewport-dropdown');
     expect(css).toContain('z-index: 120;');

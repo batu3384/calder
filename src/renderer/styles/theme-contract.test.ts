@@ -23,6 +23,7 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--accent-line');
     expect(baseCss).toContain('--motion-fast');
     expect(baseCss).toContain('--motion-panel');
+    expect(baseCss).toContain('--font-sans: "IBM Plex Sans", "Inter"');
     expect(baseCss).not.toContain('--accent: #ef6879;');
   });
 
@@ -31,7 +32,12 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--accent-aurora');
     expect(baseCss).not.toContain('--surface-canvas: #090705;');
     expect(auroraCss).toContain('--aurora-panel-gradient');
+    expect(auroraCss).toContain('--executive-panel-gradient');
+    expect(auroraCss).toContain('grid-auto-rows: max-content;');
     expect(auroraCss).toContain('calder-aurora-drift');
+    expect(auroraCss).toContain('Premium shell audit v10');
+    expect(auroraCss).toContain('--premium-panel-hairline');
+    expect(auroraCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
   });
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {

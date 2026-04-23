@@ -31,8 +31,8 @@ export function createPreferencesModalShell({
   menuHeader.className = 'preferences-menu-header';
   menuHeader.innerHTML = `
     <div class="preferences-menu-kicker shell-kicker">Calder</div>
-    <div class="preferences-menu-title">Calder workspace</div>
-    <div class="preferences-menu-caption">Defaults, layout, integrations, and the rules that shape every session.</div>
+    <div class="preferences-menu-title">Workspace settings</div>
+    <div class="preferences-menu-caption">Defaults, layout, providers, and safety rules for every session.</div>
   `;
   menu.appendChild(menuHeader);
 

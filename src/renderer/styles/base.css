@@ -1,34 +1,34 @@
 :root {
-  --surface-canvas: #060911;
-  --surface-panel: #0c121b;
-  --surface-panel-alt: #101722;
-  --surface-elevated: #151d29;
-  --surface-shell: #0a1018;
-  --surface-rail: #0b1018;
-  --surface-live: #080c13;
-  --surface-deck: #0d131c;
-  --surface-ops: #0d131b;
-  --surface-workspace: #070b12;
-  --surface-raised: #18212d;
-  --surface-glass: rgba(12, 18, 27, 0.84);
-  --surface-overlay: rgba(4, 7, 15, 0.82);
-  --surface-hover: #151d28;
-  --surface-muted: #0f151f;
+  --surface-canvas: #05070c;
+  --surface-panel: #0a1017;
+  --surface-panel-alt: #101821;
+  --surface-elevated: #151f2a;
+  --surface-shell: #080d14;
+  --surface-rail: #090e15;
+  --surface-live: #060a10;
+  --surface-deck: #0a1119;
+  --surface-ops: #0a1018;
+  --surface-workspace: #05090f;
+  --surface-raised: #172230;
+  --surface-glass: rgba(10, 16, 23, 0.88);
+  --surface-overlay: rgba(3, 6, 12, 0.86);
+  --surface-hover: #131d27;
+  --surface-muted: #0e151e;
   --surface-contrast: #223243;
-  --text-primary: #f2f6fb;
-  --text-secondary: #cdd8e6;
-  --text-muted: #96a5b8;
-  --text-dim: #6c7f94;
-  --accent-warm: #d5a94f;
-  --accent-cool: #7fd4ff;
-  --accent-aurora: #7fd4ff;
-  --accent-violet: #6da4ff;
-  --accent-rose: #d69584;
-  --accent-emerald: #3ccca9;
+  --text-primary: #f5f7f4;
+  --text-secondary: #ced8d8;
+  --text-muted: #91a1a6;
+  --text-dim: #667982;
+  --accent-warm: #c8a866;
+  --accent-cool: #74c7ff;
+  --accent-aurora: #5ed6c3;
+  --accent-violet: #7aa4d8;
+  --accent-rose: #d29a86;
+  --accent-emerald: #48caa7;
   --accent: var(--accent-aurora);
-  --accent-dim: #5997c6;
-  --accent-soft: rgba(127, 212, 255, 0.14);
-  --accent-ghost: rgba(127, 212, 255, 0.08);
+  --accent-dim: #459d94;
+  --accent-soft: rgba(94, 214, 195, 0.13);
+  --accent-ghost: rgba(94, 214, 195, 0.075);
   --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
   --accent-positive: #44c69e;
   --accent-warning: #d5a94f;
@@ -40,10 +40,10 @@
   --border-subtle: #233142;
   --border: #33485d;
   --border-strong: #49657f;
-  --border-focus: rgba(127, 212, 255, 0.42);
+  --border-focus: rgba(94, 214, 195, 0.44);
   --tab-active: #121923;
   --tab-inactive: #0a0f17;
-  --pane-focus: #7fd4ff;
+  --pane-focus: #5ed6c3;
   --pane-unfocus: #253444;
   --bookmark: #aeb7ff;
   --success: #44c69e;
@@ -72,18 +72,18 @@
   --git-modified: #f59e0b;
   --git-renamed: #88a1c0;
   --git-conflicted: #f97316;
-  --shadow-soft: 0 20px 48px rgba(2, 8, 18, 0.34);
-  --shadow-elevated: 0 30px 80px rgba(2, 8, 18, 0.5);
-  --shadow-card: 0 12px 28px rgba(2, 8, 18, 0.14);
-  --shadow-card-strong: 0 20px 48px rgba(2, 8, 18, 0.24);
-  --shadow-lift: 0 16px 34px rgba(2, 8, 18, 0.22);
+  --shadow-soft: 0 18px 44px rgba(1, 5, 12, 0.34);
+  --shadow-elevated: 0 30px 76px rgba(1, 5, 12, 0.52);
+  --shadow-card: 0 10px 24px rgba(1, 5, 12, 0.14);
+  --shadow-card-strong: 0 18px 44px rgba(1, 5, 12, 0.24);
+  --shadow-lift: 0 14px 30px rgba(1, 5, 12, 0.22);
   --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
   --glass-highlight: rgba(227, 236, 247, 0.05);
   --radius-xs: 5px;
   --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
   --control-height-xs: 24px;
   --control-height-sm: 28px;
   --control-height-md: 34px;
@@ -101,8 +101,8 @@
   --motion-normal: 180ms;
   --motion-panel: 220ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --font-sans: "Inter", "SF Pro Text", "IBM Plex Sans", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: "Inter", "SF Pro Display", "IBM Plex Sans", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", "Inter", "SF Pro Text", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "IBM Plex Sans", "Inter", "SF Pro Display", "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
   --font-ui: var(--font-sans);
   --type-2xs: 10px;
@@ -118,10 +118,10 @@
   --line-tight: 1.2;
   --line-normal: 1.45;
   --line-relaxed: 1.6;
-  --sidebar-width-default: 236px;
-  --sidebar-width-collapsed: 46px;
-  --ops-rail-width-default: 336px;
-  --ops-rail-width-compact: 292px;
+  --sidebar-width-default: 232px;
+  --sidebar-width-collapsed: 72px;
+  --ops-rail-width-default: 300px;
+  --ops-rail-width-compact: 268px;
   --debug-panel-height: 300px;
 
   /* Compatibility aliases for existing renderer styles. */
@@ -147,9 +147,9 @@ html, body {
   line-height: var(--line-normal);
   color: var(--text-primary);
   background:
-    radial-gradient(circle at 14% -6%, rgba(127, 212, 255, 0.14), transparent 30%),
-    radial-gradient(circle at 84% 0%, rgba(213, 169, 79, 0.08), transparent 28%),
-    linear-gradient(180deg, #0a111b 0%, var(--surface-canvas) 44%, #04070d 100%);
+    radial-gradient(circle at 14% -6%, rgba(94, 214, 195, 0.1), transparent 30%),
+    radial-gradient(circle at 84% 0%, rgba(200, 168, 102, 0.07), transparent 28%),
+    linear-gradient(180deg, #081019 0%, var(--surface-canvas) 48%, #03050a 100%);
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -160,8 +160,8 @@ html, body {
   height: 100vh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 14%),
-    radial-gradient(circle at 22% -8%, rgba(127, 212, 255, 0.06), transparent 34%),
-    radial-gradient(circle at 82% -10%, rgba(213, 169, 79, 0.05), transparent 28%),
+    radial-gradient(circle at 22% -8%, rgba(94, 214, 195, 0.05), transparent 34%),
+    radial-gradient(circle at 82% -10%, rgba(200, 168, 102, 0.045), transparent 28%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 94%, black), var(--surface-canvas));
 }
 

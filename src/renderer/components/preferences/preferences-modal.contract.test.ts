@@ -91,7 +91,7 @@ describe('preferences modal contract', () => {
 
   it('uses shell language for layout controls', () => {
     expect(source).toContain('Workspace Center');
-    expect(source).toContain('Calder workspace');
+    expect(source).toContain('Workspace settings');
     expect(source).toContain('Layout');
     expect(source).toContain('Integrations');
     expect(source).not.toContain('Control Center');

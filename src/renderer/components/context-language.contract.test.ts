@@ -13,41 +13,50 @@ const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', imp
 
 describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
-    expect(html).toContain('Overview');
-    expect(html).toContain('id="context-inspector-overview"');
+    expect(html).toContain('Control Rail');
+    expect(html).toContain('Workspace Control');
+    expect(html).toContain('Approvals, git, and recent activity without leaving the flow.');
+    expect(html).toContain('Worktree status, branches, and safe git actions.');
+    expect(html).toContain('Recent runs, notes, and session timeline.');
+    expect(html).not.toContain('id="context-inspector-overview"');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
     expect(configSectionsSource).toContain("'MCP Servers'");
     expect(configSectionsSource).toContain("'Auto Approval'");
     expect(configSectionsSource).toContain('Model Context Protocol');
     expect(configSectionsSource).toContain("'Skills'");
     expect(configSectionsSource).toContain("'Commands'");
+    expect(configSectionsSource).toContain('localizedSectionTitle');
+    expect(configSectionsSource).toContain('localizedAddLabel');
+    expect(configSectionsSource).toContain("'MCP sunucusu ekle'");
     expect(configSectionsSource).not.toContain("'Integrations'");
     expect(configSectionsSource).toContain('Toolkit');
     expect(gitPanelSource).toContain('Git');
     expect(gitPanelSource).toContain('Git is clean');
     expect(historySource).toContain('Run Log');
+    expect(historySource).toContain("'Çalışma günlüğü'");
+    expect(historySource).toContain('localizedText');
     expect(historySource).toContain('recent run');
-    expect(inspectorSource).toContain('Project Snapshot');
-    expect(inspectorSource).toContain('Open sessions');
-    expect(inspectorSource).toContain('Changes');
-    expect(inspectorSource).toContain('Run log');
-    expect(inspectorSource).toContain('Browser View');
-    expect(inspectorSource).toContain('CLI Surface');
-    expect(inspectorSource).toContain('saved');
+    expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
+    expect(inspectorSource).not.toContain('context-inspector-provider-chip');
+    expect(inspectorSource).not.toContain('context-inspector-surface-chip');
+    expect(inspectorSource).not.toContain('context-inspector-signal-chip');
+    expect(html).not.toContain('Calder Signal');
+    expect(html).toContain('context-inspector-header-note');
     expect(html).not.toContain('Ops Rail');
     expect(html).not.toContain('Support');
     expect(html).not.toContain('AI Setup');
     expect(html).not.toContain('Recent Sessions');
     expect(html).not.toContain('Toolchain');
     expect(html).not.toContain('Control Panel');
+    expect(html).not.toContain('Sessions, git status, and run activity in one place.');
     expect(html).not.toContain('Tool Status');
     expect(html).not.toContain('Repo');
     expect(html).not.toContain('Config');
   });
 
-  it('keeps a dedicated project snapshot card with stable rail section structure', () => {
+  it('keeps stable right-rail sections after removing the snapshot card', () => {
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
-    expect(inspectorSource).toContain('Project Snapshot');
+    expect(inspectorSource).not.toContain('Project Snapshot');
     expect(html).toContain('data-section="capabilities"');
     expect(html).toContain('data-section="git"');
     expect(html).not.toContain('data-section="health"');
@@ -68,7 +77,8 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-section-header');
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
-    expect(inspectorCss).toContain('.inspector-overview-pill');
+    expect(inspectorCss).toContain('overflow-wrap: anywhere;');
+    expect(inspectorCss).toContain('.context-inspector-header-note');
     expect(inspectorCss).toContain('.auto-approval-control');
   });
 
@@ -79,6 +89,6 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('background: transparent;');
     expect(inspectorCss).toContain('border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);');
-    expect(inspectorCss).toContain('.inspector-overview-card');
+    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='warning'] .context-inspector-section[data-section=\"capabilities\"]");
   });
 });

@@ -58,4 +58,9 @@ copyDir(
   path.join(dist, 'assets', 'providers')
 );
 
+copyDir(
+  path.join(root, 'src', 'renderer', 'assets', 'brand'),
+  path.join(dist, 'assets', 'brand')
+);
+
 console.log('Assets copied.');

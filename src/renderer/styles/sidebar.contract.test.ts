@@ -60,6 +60,38 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('#sidebar.collapsed .project-item-main');
   });
 
+  it('keeps the sidebar mascot visible and non-distorted in both rail modes', () => {
+    expect(sidebarCss).toContain('.sidebar-brand-totem');
+    expect(sidebarCss).toContain('.sidebar-mascot-shell');
+    expect(sidebarCss).toContain('.sidebar-mascot');
+    expect(sidebarCss).toContain('.sidebar-brand-meta');
+    expect(sidebarCss).toContain('width: 72px;');
+    expect(sidebarCss).toContain('height: 64px;');
+    expect(sidebarCss).toContain('object-fit: contain;');
+    expect(sidebarCss).toContain('image-rendering: auto;');
+    expect(sidebarCss).toContain('animation: sidebar-mascot-float');
+    expect(sidebarCss).toContain('@keyframes sidebar-mascot-float');
+    expect(sidebarCss).toContain('@keyframes sidebar-mascot-aura');
+    expect(sidebarCss).toContain('.sidebar-mascot-shell::before');
+    expect(sidebarCss).toContain('#sidebar.collapsed .sidebar-mascot-shell');
+    expect(sidebarCss).toContain('width: 58px;');
+    expect(sidebarCss).toContain('height: 52px;');
+    expect(sidebarCss).not.toContain('sidebar-stage-sheen');
+  });
+
+  it('keeps mascot presence premium and project rows height-stable', () => {
+    expect(sidebarCss).toContain('Premium stability pass');
+    expect(sidebarCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
+    expect(sidebarCss).toContain('width: 82px;');
+    expect(sidebarCss).toContain('height: 74px;');
+    expect(sidebarCss).toContain('min-height: 56px;');
+    expect(sidebarCss).toContain('.project-item .project-path');
+    expect(sidebarCss).toContain('max-height: none;');
+    expect(sidebarCss).toContain('#sidebar.collapsed');
+    expect(sidebarCss).toContain('width: 88px !important;');
+    expect(sidebarCss).toContain('height: 62px;');
+  });
+
   it('styles project state badges as semantic status chips', () => {
     expect(sidebarCss).toContain('.project-status-chip.is-attention');
     expect(sidebarCss).toContain('.project-status-chip.is-unread');

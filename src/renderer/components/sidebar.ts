@@ -15,9 +15,10 @@ const resizeHandle = document.getElementById('sidebar-resize-handle')!;
 const sidebarFooterEl = document.getElementById('sidebar-footer')!;
 const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
 
-const SIDEBAR_DEFAULT = 236;
-const SIDEBAR_MIN = 176;
-const SIDEBAR_MAX = 540;
+const SIDEBAR_DEFAULT = 232;
+const SIDEBAR_MIN = 184;
+const SIDEBAR_MAX = 460;
+const LEGACY_SIDEBAR_DEFAULT = 214;
 
 type ProjectSignalTone = 'attention' | 'unread' | 'live' | 'queue';
 
@@ -44,7 +45,11 @@ export function initSidebar(): void {
   initResizeHandle();
   appState.on('state-loaded', () => {
     const preferredWidth = appState.sidebarWidth || SIDEBAR_DEFAULT;
-    sidebarEl.style.width = Math.max(SIDEBAR_DEFAULT, preferredWidth) + 'px';
+    const normalizedWidth = preferredWidth === LEGACY_SIDEBAR_DEFAULT
+      ? SIDEBAR_DEFAULT
+      : preferredWidth;
+    const clampedWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, normalizedWidth));
+    sidebarEl.style.width = clampedWidth + 'px';
     applySidebarCollapsed();
     render();
   });
@@ -101,6 +106,9 @@ function render(): void {
       <div class="project-item-main">
         <div class="project-item-row">
           <div class="project-name${unread ? ' unread' : ''}">${esc(project.name)}</div>
+        </div>
+        <div class="project-meta-row">
+          <span class="project-session-meta">${sessionCount} ${sessionCount === 1 ? 'session' : 'sessions'}</span>
           ${signal ? `<span class="project-session-count project-status-chip is-${signal.tone} control-chip" title="${esc(signal.summary)}">${esc(signal.label)}</span>` : ''}
         </div>
         <div class="project-path" title="${esc(project.path)}">${esc(locationLabel)}</div>

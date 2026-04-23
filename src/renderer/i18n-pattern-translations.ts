@@ -191,6 +191,62 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
 function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslation[] {
   return [
     {
+      pattern: /^(\d+)\s+session$/u,
+      replace: (match) => `${match[1]} oturum`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions$/u,
+      replace: (match) => `${match[1]} oturum`,
+    },
+    {
+      pattern: /^Input\s+(\d+)$/u,
+      replace: (match) => `Girdi ${match[1]}`,
+    },
+    {
+      pattern: /^New\s+(\d+)$/u,
+      replace: (match) => `Yeni ${match[1]}`,
+    },
+    {
+      pattern: /^Live\s+(\d+)$/u,
+      replace: (match) => `Canlı ${match[1]}`,
+    },
+    {
+      pattern: /^Queue\s+(\d+)$/u,
+      replace: (match) => `Kuyruk ${match[1]}`,
+    },
+    {
+      pattern: /^(\d+)\s+session needs input$/u,
+      replace: (match) => `${match[1]} oturum girdi bekliyor`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions need input$/u,
+      replace: (match) => `${match[1]} oturum girdi bekliyor`,
+    },
+    {
+      pattern: /^(\d+)\s+session has new output$/u,
+      replace: (match) => `${match[1]} oturumda yeni çıktı var`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions have new output$/u,
+      replace: (match) => `${match[1]} oturumda yeni çıktı var`,
+    },
+    {
+      pattern: /^(\d+)\s+active run$/u,
+      replace: (match) => `${match[1]} aktif çalışma`,
+    },
+    {
+      pattern: /^(\d+)\s+active runs$/u,
+      replace: (match) => `${match[1]} aktif çalışma`,
+    },
+    {
+      pattern: /^(\d+)\s+queued task$/u,
+      replace: (match) => `${match[1]} kuyruk görevi`,
+    },
+    {
+      pattern: /^(\d+)\s+queued tasks$/u,
+      replace: (match) => `${match[1]} kuyruk görevi`,
+    },
+    {
       pattern: /^Latest:\s*(.+)$/u,
       replace: (match) => `Son sürüm: ${match[1]}`,
     },
@@ -239,34 +295,13 @@ function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslatio
 
 function createRelativeTimePatterns(): PatternTranslation[] {
   return [
-    {
-      pattern: /^(\d+) earlier events not shown$/u,
-      replace: (match) => `${match[1]} önceki etkinlik gösterilmiyor`,
-    },
-    {
-      pattern: /^Updated (\d+)m ago$/u,
-      replace: (match) => `${match[1]} dk önce güncellendi`,
-    },
-    {
-      pattern: /^Updated (\d+)h ago$/u,
-      replace: (match) => `${match[1]} sa önce güncellendi`,
-    },
-    {
-      pattern: /^Updated (\d+)d ago$/u,
-      replace: (match) => `${match[1]} gün önce güncellendi`,
-    },
-    {
-      pattern: /^Updated just now$/u,
-      replace: () => 'Az önce güncellendi',
-    },
-    {
-      pattern: /^(\d+)m ago$/u,
-      replace: (match) => `${match[1]} dk önce`,
-    },
-    {
-      pattern: /^(\d+)h ago$/u,
-      replace: (match) => `${match[1]} sa önce`,
-    },
+    { pattern: /^(\d+) earlier events not shown$/u, replace: (match) => `${match[1]} önceki etkinlik gösterilmiyor` },
+    { pattern: /^Updated (\d+)m ago$/u, replace: (match) => `${match[1]} dk önce güncellendi` },
+    { pattern: /^Updated (\d+)h ago$/u, replace: (match) => `${match[1]} sa önce güncellendi` },
+    { pattern: /^Updated (\d+)d ago$/u, replace: (match) => `${match[1]} gün önce güncellendi` },
+    { pattern: /^Updated just now$/u, replace: () => 'Az önce güncellendi' },
+    { pattern: /^(\d+)m ago$/u, replace: (match) => `${match[1]} dk önce` },
+    { pattern: /^(\d+)h ago$/u, replace: (match) => `${match[1]} sa önce` },
   ];
 }
 

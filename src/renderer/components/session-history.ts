@@ -72,6 +72,14 @@ let collapsed = true;
 let compactExpanded = false;
 let bookmarkFilterActive = false;
 
+function isTurkishUiLanguage(): boolean {
+  return appState.preferences.language === 'tr';
+}
+
+function localizedText(english: string, turkish: string): string {
+  return isTurkishUiLanguage() ? turkish : english;
+}
+
 function getSectionPresentation(): SectionPresentation {
   const wrapper = container?.parentNode as { dataset?: Record<string, string> } | null;
   const value = wrapper?.dataset?.presentation;
@@ -161,7 +169,7 @@ function render(): void {
   button.setAttribute('aria-expanded', String(!collapsed));
   button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">Run Log</span>
+    <span class="config-section-title">${localizedText('Run Log', 'Çalışma günlüğü')}</span>
   `;
   header.appendChild(button);
 
@@ -193,10 +201,10 @@ function render(): void {
     summary.className = 'history-compact-summary ops-rail-note';
     summary.dataset.tone = history.length === 0 ? 'muted' : 'default';
     summary.textContent = history.length === 0
-      ? 'No run history yet'
+      ? localizedText('No run history yet', 'Henüz çalışma geçmişi yok')
       : history.length === 1
-        ? '1 recent run'
-        : `${history.length} recent runs`;
+        ? localizedText('1 recent run', '1 son çalışma')
+        : localizedText(`${history.length} recent runs`, `${history.length} son çalışma`);
     body.appendChild(summary);
     container.appendChild(body);
     return;
@@ -206,7 +214,7 @@ function render(): void {
     const empty = document.createElement('div');
     empty.className = 'history-empty ops-rail-note';
     empty.dataset.tone = 'muted';
-    empty.textContent = 'No run history yet';
+    empty.textContent = localizedText('No run history yet', 'Henüz çalışma geçmişi yok');
     body.appendChild(empty);
     container.appendChild(body);
     return;
@@ -222,8 +230,8 @@ function render(): void {
   searchInput = document.createElement('input');
   searchInput.className = 'history-search';
   searchInput.type = 'text';
-  searchInput.placeholder = 'Filter runs…';
-  searchInput.ariaLabel = 'Filter run history';
+  searchInput.placeholder = localizedText('Filter runs…', 'Çalışmaları filtrele…');
+  searchInput.ariaLabel = localizedText('Filter run history', 'Çalışma geçmişini filtrele');
   searchInput.addEventListener('input', () => renderList(history));
   searchShell.appendChild(searchInput);
   toolbar.appendChild(searchShell);
@@ -232,7 +240,9 @@ function render(): void {
   const bookmarkFilter = document.createElement('button');
   const applyFilterState = () => {
     bookmarkFilter.className = `history-bookmark-filter${bookmarkFilterActive ? ' active' : ''}`;
-    bookmarkFilter.textContent = bookmarkFilterActive ? '★ Bookmarked' : '☆ Bookmarked';
+    bookmarkFilter.textContent = bookmarkFilterActive
+      ? localizedText('★ Bookmarked', '★ İşaretli')
+      : localizedText('☆ Bookmarked', '☆ İşaretli');
   };
   applyFilterState();
   bookmarkFilter.addEventListener('click', () => {
@@ -244,11 +254,14 @@ function render(): void {
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button';
   clearBtn.className = 'history-clear-btn';
-  clearBtn.textContent = 'Clear Log';
-  clearBtn.ariaLabel = 'Clear run history';
+  clearBtn.textContent = localizedText('Clear Log', 'Günlüğü temizle');
+  clearBtn.ariaLabel = localizedText('Clear run history', 'Çalışma geçmişini temizle');
   clearBtn.addEventListener('click', () => {
     if (!project) return;
-    if (!confirm('Clear all session history for this project? This cannot be undone.')) return;
+    if (!confirm(localizedText(
+      'Clear all session history for this project? This cannot be undone.',
+      'Bu projenin tüm oturum geçmişi temizlensin mi? Bu işlem geri alınamaz.',
+    ))) return;
     appState.clearSessionHistory(project.id);
   });
 
@@ -280,7 +293,9 @@ function renderList(history: ArchivedSession[]): void {
     .reverse(); // newest first
   if (resultCountEl) {
     resultCountEl.textContent = `${Math.min(filtered.length, MAX_VISIBLE)}/${history.length}`;
-    resultCountEl.title = `${filtered.length} matching run${filtered.length === 1 ? '' : 's'}`;
+    resultCountEl.title = filtered.length === 1
+      ? localizedText('1 matching run', '1 eşleşen çalışma')
+      : localizedText(`${filtered.length} matching runs`, `${filtered.length} eşleşen çalışma`);
   }
 
   listEl.innerHTML = '';

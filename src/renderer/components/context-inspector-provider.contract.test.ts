@@ -4,7 +4,9 @@ import { readFileSync } from 'fs';
 const source = readFileSync(new URL('./context-inspector.ts', import.meta.url), 'utf-8');
 
 describe('context inspector provider label contract', () => {
-  it('derives the overview provider label from shared provider metadata', () => {
-    expect(source).toContain('getProviderDisplayName(getInspectorProviderId())');
+  it('keeps right-rail signal logic independent from provider chip chrome', () => {
+    expect(source).toContain("inspectorEl.dataset.railSignal = 'default'");
+    expect(source).not.toContain('context-inspector-provider-chip');
+    expect(source).not.toContain('context-inspector-surface-chip');
   });
 });

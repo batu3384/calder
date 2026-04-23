@@ -10,6 +10,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  container: browser-pane / inline-size;
   background:
     radial-gradient(circle at 0% 0%, rgba(127, 212, 255, 0.05), transparent 24%),
     radial-gradient(circle at 100% 0%, rgba(213, 169, 79, 0.035), transparent 20%),
@@ -114,6 +115,8 @@
   align-items: center;
   gap: var(--space-8);
   flex-wrap: wrap;
+  align-content: flex-start;
+  min-width: 0;
   padding: 8px 12px 9px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
@@ -2411,4 +2414,104 @@ body.sidebar-resizing .browser-webview {
   font-size: 10px;
   color: var(--text-secondary);
   margin-top: 1px;
+}
+
+/* Split-pane resilience: browser toolbar responds to its own pane width, not only the full workspace. */
+.browser-toolbar-primary,
+.browser-toolbar-tools,
+.browser-toolbar-tools-shell,
+.browser-toolbar-cluster,
+.browser-toolbar-cluster-controls {
+  min-width: 0;
+}
+
+.browser-toolbar-tools-shell {
+  max-width: 100%;
+}
+
+@container browser-pane (max-width: 760px) {
+  .browser-tab-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .browser-toolbar-primary {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .browser-toolbar-nav {
+    flex: 0 0 auto;
+  }
+
+  .browser-toolbar-address {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .browser-tab-pane.split .browser-toolbar-tools,
+  .browser-toolbar-tools {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .browser-tab-pane.split .browser-toolbar-tools-shell,
+  .browser-toolbar-tools-shell {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 5px;
+    border-radius: 14px;
+    overflow: visible;
+  }
+
+  .browser-tab-pane.split .browser-toolbar-cluster,
+  .browser-toolbar-cluster {
+    flex: 0 1 auto;
+    min-width: max-content;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .browser-tab-pane.split .browser-toolbar-cluster-controls,
+  .browser-toolbar-cluster-controls {
+    flex-wrap: nowrap;
+  }
+}
+
+@container browser-pane (max-width: 540px) {
+  .browser-tab-toolbar {
+    padding: 7px;
+  }
+
+  .browser-toolbar-primary {
+    gap: 5px;
+  }
+
+  .browser-toolbar-address-shell {
+    min-height: 30px;
+    gap: 5px;
+    padding-left: 9px;
+  }
+
+  .browser-toolbar-tools-shell {
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .browser-go-btn,
+  .browser-nav-btn,
+  .browser-draw-btn,
+  .browser-inspect-btn,
+  .browser-record-btn,
+  .browser-viewport-btn {
+    flex: 0 0 auto;
+    min-height: 28px;
+    max-width: none;
+    padding-inline: 7px;
+  }
 }

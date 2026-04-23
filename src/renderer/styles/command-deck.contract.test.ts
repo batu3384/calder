@@ -38,6 +38,24 @@ describe('command deck stylesheet contract', () => {
     expect(tabsCss).toContain(".session-launcher-group[data-select-open='true']");
   });
 
+  it('lets the command deck wrap safely when split panes squeeze the session controls', () => {
+    expect(tabsCss).toContain('@container workspace-stack (max-width: 720px)');
+    expect(tabsCss).toContain('#tab-actions');
+    expect(tabsCss).toContain('width: 100%;');
+    expect(tabsCss).toContain('flex-wrap: wrap;');
+  });
+
+  it('keeps launcher selectors from clipping before the narrow mobile-style breakpoints', () => {
+    expect(tabsCss).toContain('Premium command deck guardrail');
+    expect(tabsCss).toContain('@container workspace-stack (max-width: 900px)');
+    expect(tabsCss).toContain('#surface-mode-slot');
+    expect(tabsCss).toContain('#surface-profile-slot');
+    expect(tabsCss).toContain('#session-provider-slot');
+    expect(tabsCss).toContain('overflow: visible;');
+    expect(tabsCss).toContain('flex: 1 1 148px;');
+    expect(tabsCss).toContain('min-width: min(148px, 100%);');
+  });
+
   it('uses operational project metadata instead of live archived jargon', () => {
     expect(tabBarSource).not.toContain('renderWorkspaceIdentity');
     expect(tabBarSource).not.toContain('Cost');

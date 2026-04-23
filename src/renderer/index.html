@@ -13,32 +13,46 @@
   <a class="skip-link" href="#main-area">Skip to workspace</a>
   <div id="app">
     <nav id="sidebar" class="sidebar-surface project-rail" aria-label="Projects">
+      <div id="sidebar-brand-stage" class="sidebar-header-topline" aria-label="Calder mascot stage">
+        <div class="sidebar-brand-totem" aria-hidden="true">
+          <div class="sidebar-mascot-shell">
+            <img class="sidebar-mascot" src="assets/brand/maskot-ui.png" alt="" width="515" height="470" decoding="async" draggable="false">
+          </div>
+        </div>
+        <div class="sidebar-brand-meta">
+          <span class="sidebar-brand-name">Calder</span>
+          <span class="sidebar-brand-status">Agent command desk</span>
+        </div>
+      </div>
       <div id="sidebar-header">
-        <div class="sidebar-title-group">
+        <div class="sidebar-header-primary">
+          <div class="sidebar-title-group">
+            <div class="sidebar-brand-block">
+              <span class="sidebar-eyebrow">Workspace</span>
+              <span class="sidebar-title">Projects</span>
+            </div>
+            <span class="sidebar-header-note">Switch projects and keep live sessions visible.</span>
+          </div>
           <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="3"></rect>
               <path d="M9 4v16"></path>
             </svg>
           </button>
-          <div class="sidebar-brand-block">
-            <span class="sidebar-eyebrow">Calder</span>
-            <span class="sidebar-title">Project Index</span>
+          <div class="sidebar-header-actions">
+            <button id="btn-preferences" class="icon-btn" title="Preferences" aria-label="Open preferences">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3.2"></circle>
+                <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8l-.2.2a2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-2 2h-.3a2 2 0 0 1-2-2v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1 .2l-.2.1a2 2 0 0 1-2.8 0l-.2-.2a2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1-2-2v-.3a2 2 0 0 1 2-2h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1L4.8 8a2 2 0 0 1 0-2.8l.2-.2a2 2 0 0 1 2.8 0l.2.1a1 1 0 0 0 1 .2 1 1 0 0 0 .6-.9V4a2 2 0 0 1 2-2h.3a2 2 0 0 1 2 2v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 0 1 2 2v.3a2 2 0 0 1-2 2h-.2a1 1 0 0 0-.9.6z"></path>
+              </svg>
+            </button>
+            <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)" aria-label="Create new project">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+            </button>
           </div>
-        </div>
-        <div class="sidebar-header-actions">
-          <button id="btn-preferences" class="icon-btn" title="Preferences" aria-label="Open preferences">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2"></circle>
-              <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 0 1 0 2.8l-.2.2a2 2 0 0 1-2.8 0l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 0 1-2 2h-.3a2 2 0 0 1-2-2v-.2a1 1 0 0 0-.7-.9 1 1 0 0 0-1 .2l-.2.1a2 2 0 0 1-2.8 0l-.2-.2a2 2 0 0 1 0-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 0 1-2-2v-.3a2 2 0 0 1 2-2h.2a1 1 0 0 0 .9-.7 1 1 0 0 0-.2-1L4.8 8a2 2 0 0 1 0-2.8l.2-.2a2 2 0 0 1 2.8 0l.2.1a1 1 0 0 0 1 .2 1 1 0 0 0 .6-.9V4a2 2 0 0 1 2-2h.3a2 2 0 0 1 2 2v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 0 1 2.8 0l.2.2a2 2 0 0 1 0 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6H20a2 2 0 0 1 2 2v.3a2 2 0 0 1-2 2h-.2a1 1 0 0 0-.9.6z"></path>
-            </svg>
-          </button>
-          <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)" aria-label="Create new project">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14"></path>
-              <path d="M5 12h14"></path>
-            </svg>
-          </button>
         </div>
       </div>
       <div id="sidebar-content">
@@ -109,20 +123,22 @@
         </div>
         <aside id="context-inspector" class="context-inspector-open control-panel-surface ops-rail ops-rail-surface">
           <div id="context-inspector-header">
-            <div class="context-inspector-title-group">
-              <span class="context-inspector-eyebrow">Workspace</span>
-              <span class="context-inspector-title">Overview</span>
-            </div>
-            <div class="context-inspector-header-actions">
-              <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6 6l12 12"></path>
-                  <path d="M18 6L6 18"></path>
-                </svg>
-              </button>
+            <div class="context-inspector-header-top">
+              <div class="context-inspector-title-group">
+                <span class="context-inspector-eyebrow">Control Rail</span>
+                <span class="context-inspector-title">Workspace Control</span>
+                <span class="context-inspector-header-note">Approvals, git, and recent activity without leaving the flow.</span>
+              </div>
+              <div class="context-inspector-header-actions">
+                <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12"></path>
+                    <path d="M18 6L6 18"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-          <div id="context-inspector-overview"></div>
           <div id="context-inspector-sections">
             <section class="context-inspector-section" data-section="capabilities">
               <header class="context-inspector-block-header">
@@ -134,14 +150,14 @@
             <section class="context-inspector-section" data-section="git">
               <header class="context-inspector-block-header">
                 <span class="context-inspector-block-title">Git Workspace</span>
-                <span class="context-inspector-block-copy">Worktree status, branches, and quick git actions.</span>
+                <span class="context-inspector-block-copy">Worktree status, branches, and safe git actions.</span>
               </header>
               <div id="git-panel" class="context-inspector-block-body"></div>
             </section>
             <section class="context-inspector-section" data-section="activity">
               <header class="context-inspector-block-header">
                 <span class="context-inspector-block-title">Run Activity</span>
-                <span class="context-inspector-block-copy">Recent executions, notes, and session timeline.</span>
+                <span class="context-inspector-block-copy">Recent runs, notes, and session timeline.</span>
               </header>
               <div id="session-history" class="context-inspector-block-body"></div>
             </section>

@@ -38,6 +38,39 @@ function localizedText(english: string, turkish: string): string {
 }
 export const describeAutoApprovalScopes = describeAutoApprovalScopesCore;
 
+function localizedSectionTitle(title: string): string {
+  switch (title) {
+    case 'MCP Servers':
+      return localizedText('MCP Servers', 'MCP Sunucuları');
+    case 'Agents':
+      return localizedText('Agents', 'Ajanlar');
+    case 'Skills':
+      return localizedText('Skills', 'Beceriler');
+    case 'Commands':
+      return localizedText('Commands', 'Komutlar');
+    default:
+      return title;
+  }
+}
+
+function localizedAddLabel(id: string, title: string): string {
+  if (id === 'mcp') return localizedText('Add MCP Server', 'MCP sunucusu ekle');
+  return localizedText(`Add ${title.replace(/s$/, '')}`, `${localizedSectionTitle(title)} ekle`);
+}
+
+function localizedEmptyText(text: string): string {
+  if (text.startsWith('No MCP servers configured.')) {
+    return localizedText(
+      text,
+      'Henüz MCP sunucusu yapılandırılmadı. Model Context Protocol sunucuları kod araçlarını harici veri ve aksiyonlara bağlar.',
+    );
+  }
+  if (text === 'None configured') {
+    return localizedText('None configured', 'Yapılandırma yok');
+  }
+  return text;
+}
+
 export function scopeBadge(scope: 'user' | 'project'): string {
   return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
 }
@@ -55,9 +88,10 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
   button.type = 'button';
   button.className = 'config-section-heading config-section-toggle-button';
   button.setAttribute('aria-expanded', String(!isCollapsed));
+  const displayTitle = localizedSectionTitle(title);
   button.innerHTML = `
     <span class="config-section-toggle ${isCollapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">${title}</span>
+    <span class="config-section-title">${displayTitle}</span>
   `;
   header.appendChild(button);
 
@@ -71,11 +105,12 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
 
   if (onAdd) {
     const addBtn = document.createElement('button');
+    const addLabel = localizedAddLabel(id, title);
     addBtn.type = 'button';
     addBtn.className = 'config-section-add-btn';
     addBtn.textContent = '+';
-    addBtn.title = `Add ${title.replace(/s$/, '')}`;
-    addBtn.ariaLabel = `Add ${title.replace(/s$/, '')}`;
+    addBtn.title = addLabel;
+    addBtn.ariaLabel = addLabel;
     addBtn.addEventListener('click', (e) => { e.stopPropagation(); onAdd(); });
     meta.appendChild(addBtn);
   }
@@ -88,7 +123,7 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
     const empty = document.createElement('div');
     empty.className = 'config-empty ops-rail-note';
     empty.dataset.tone = 'muted';
-    empty.textContent = emptyText;
+    empty.textContent = localizedEmptyText(emptyText);
     body.appendChild(empty);
   } else {
     items.forEach(el => body.appendChild(el));
@@ -223,14 +258,16 @@ function renderToolchainSummary(
   const provider = document.createElement('div');
   provider.className = 'toolchain-provider';
   provider.innerHTML = `
-    <span class="toolchain-provider-kicker">Toolkit</span>
-    <span class="toolchain-provider-value">Configured for ${esc(getProviderDisplayName(providerId))}</span>
+    <span class="toolchain-provider-kicker">${esc(localizedText('Toolkit', 'Araç Seti'))}</span>
+    <span class="toolchain-provider-value">${esc(localizedText('Configured for', 'Yapılandırılan CLI'))} ${esc(getProviderDisplayName(providerId))}</span>
   `;
   wrap.appendChild(provider);
 
   const status = document.createElement('div');
   status.className = `toolchain-summary-status ${trackingHealthy ? 'is-healthy' : 'is-warning'}`;
-  status.textContent = trackingHealthy ? 'Tracking on' : 'Tracking limited';
+  status.textContent = trackingHealthy
+    ? localizedText('Tracking on', 'İzleme açık')
+    : localizedText('Tracking limited', 'İzleme sınırlı');
   wrap.appendChild(status);
 
   const chips = document.createElement('div');
@@ -239,7 +276,10 @@ function renderToolchainSummary(
   if (sections.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'toolchain-summary-empty';
-    empty.textContent = 'No project MCP, skills, or commands connected yet.';
+    empty.textContent = localizedText(
+      'No project MCP, skills, or commands connected yet.',
+      'Henüz proje MCP, beceri veya komut bağlantısı yok.',
+    );
     wrap.appendChild(empty);
     return wrap;
   }
@@ -249,7 +289,7 @@ function renderToolchainSummary(
     chip.type = 'button';
     chip.className = 'toolchain-summary-chip control-chip';
     chip.innerHTML = `
-      <span class="toolchain-summary-chip-label">${esc(section.title)}</span>
+      <span class="toolchain-summary-chip-label">${esc(localizedSectionTitle(section.title))}</span>
       <span class="toolchain-summary-chip-value">${esc(sectionSummaryText(section))}</span>
     `;
     chip.addEventListener('click', () => {

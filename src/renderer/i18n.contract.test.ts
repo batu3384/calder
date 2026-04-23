@@ -17,6 +17,9 @@ const source = [
 describe('i18n contract', () => {
   it('covers key workspace Turkish translations for rail and settings copy', () => {
     expect(source).toContain("['Hybrid context', 'Hibrit bağlam']");
+    expect(source).toContain("['Agent command desk', 'Ajan komut masası']");
+    expect(source).toContain("['Add MCP Server', 'MCP sunucusu ekle']");
+    expect(source).toContain("['Run Log', 'Çalışma günlüğü']");
     expect(source).toContain("['Workflows & checkpoints', 'İş akışları ve kontrol noktaları']");
     expect(source).toContain("['Review & preview loop', 'İnceleme ve önizleme döngüsü']");
     expect(source).toContain("['Governance layer', 'Yönetişim katmanı']");

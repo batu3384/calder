@@ -1473,3 +1473,53 @@
 .tab-cli-surface-badge {
   color: color-mix(in srgb, var(--accent-cool) 74%, var(--text-secondary));
 }
+
+/* Command deck resilience when the browser/session split leaves a narrow top bar. */
+@container workspace-stack (max-width: 720px) {
+  #tab-actions {
+    width: 100%;
+    justify-content: flex-start;
+    max-width: 100%;
+  }
+
+  .session-launcher-group {
+    flex: 1 1 auto;
+    max-width: 100%;
+    flex-wrap: wrap;
+    border-radius: 14px;
+  }
+
+  .session-launcher-group .icon-btn,
+  .session-launcher-group .tab-action-primary {
+    flex: 0 0 auto;
+  }
+}
+
+/* Premium command deck guardrail: selectors and launch controls must wrap before clipping. */
+@container workspace-stack (max-width: 900px) {
+  #tab-actions,
+  .session-launcher-group,
+  #surface-mode-slot,
+  #surface-profile-slot,
+  #session-provider-slot {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .session-launcher-group {
+    overflow: visible;
+  }
+
+  .command-deck-provider-select,
+  .command-deck-cli-profile-select {
+    flex: 1 1 148px;
+    min-width: min(148px, 100%);
+    max-width: 100%;
+  }
+
+  .surface-mode-switcher,
+  .surface-profile-group {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+}
