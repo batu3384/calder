@@ -1,10 +1,7 @@
 import type { ProviderId } from '../shared/types/provider.js';
-import type {
-  ProjectCheckpointDocument,
-  ProjectCheckpointRestoreMode,
-  ProjectRecord,
-  ProjectWorkflowDocument,
-} from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import type { ContextWindowInfo, CostInfo, InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
 import { setActiveProjectSession } from './state-surface-updater.js';
 import {

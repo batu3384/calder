@@ -1,5 +1,6 @@
 import type { ProviderId } from '../shared/types/provider.js';
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { deriveBrowserSessionName, normalizeProjectSurface } from './state-normalizers.js';
 import { findProjectSession, isCliSessionRecord, repairProjectSurface } from './state-project-surface.js';

@@ -1,11 +1,7 @@
 import type { ProviderId } from '../shared/types/provider.js';
-import type {
-  PersistedState,
-  ProjectCheckpointDocument,
-  ProjectCheckpointRestoreMode,
-  ProjectRecord,
-  ProjectWorkflowDocument,
-} from '../shared/types/project.js';
+import type { PersistedState, ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import type { InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
 import { clampRatio } from './components/mosaic-layout-model.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';

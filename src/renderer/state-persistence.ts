@@ -1,4 +1,4 @@
-import type { PersistedState } from '../shared/types/project.js';
+import type { PersistedState } from '../shared/types/project-state.js';
 
 export type PersistedStateSave = (snapshot: PersistedState) => unknown;
 export type PersistedStateErrorHandler = (error: unknown) => void;

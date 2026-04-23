@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectTeamContextState } from '../../shared/types/project.js';
+import type { ProjectTeamContextState } from '../../shared/types/project-team-context.js';
 import { discoverProjectTeamContext } from './discovery.js';
 
 const DEBOUNCE_MS = 80;

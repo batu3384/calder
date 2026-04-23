@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ProjectWorkflowDocument } from '../../shared/types/project.js';
+import type { ProjectWorkflowDocument } from '../../shared/types/project-workflow.js';
 
 function normalizeWorkflowRelativePath(projectPath: string, workflowPath: string): string {
   const resolvedProjectPath = path.resolve(projectPath);

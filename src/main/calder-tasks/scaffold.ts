@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ProjectBackgroundTaskCreateResult } from '../../shared/types/project.js';
+import type { ProjectBackgroundTaskCreateResult } from '../../shared/types/project-background-task.js';
 import { discoverProjectBackgroundTasks } from './discovery.js';
 
 function slugifyTaskTitle(title: string): string {

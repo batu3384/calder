@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ProviderId } from '../../shared/types/provider.js';
-import type { ProjectContextSource, ProjectContextState } from '../../shared/types/project.js';
+import type { ProjectContextSource, ProjectContextState } from '../../shared/types/project-context.js';
 
 function isFile(filePath: string): boolean {
   try {

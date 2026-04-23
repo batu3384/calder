@@ -1,5 +1,5 @@
 import type { ProviderId } from '../shared/types/provider.js';
-import type { ProjectRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';

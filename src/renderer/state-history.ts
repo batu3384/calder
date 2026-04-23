@@ -1,5 +1,5 @@
 import type { ProviderId } from '../shared/types/provider.js';
-import type { ProjectRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { ArchivedSession, CostInfo, SessionRecord } from '../shared/types/session.js';
 
 export function archiveSessionToHistory(

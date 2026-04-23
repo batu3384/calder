@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectBackgroundTaskState } from '../../shared/types/project.js';
+import type { ProjectBackgroundTaskState } from '../../shared/types/project-background-task.js';
 import { discoverProjectBackgroundTasks } from './discovery.js';
 
 const DEBOUNCE_MS = 500;

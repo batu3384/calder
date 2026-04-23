@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProjectReviewState } from '../../shared/types/project.js';
+import type { ProjectReviewState } from '../../shared/types/project-review.js';
 import { discoverProjectReviews } from './discovery.js';
 
 const DEBOUNCE_MS = 500;

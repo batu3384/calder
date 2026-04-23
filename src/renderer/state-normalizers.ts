@@ -1,6 +1,13 @@
 import type { ProjectLayoutState, SessionRecord } from '../shared/types/session.js';
 import type { ProjectGovernanceState } from '../shared/types/governance.js';
-import type { CliSurfaceRuntimeState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectContextState, ProjectRecord, ProjectReviewState, ProjectSurfaceRecord, ProjectTeamContextState, ProjectWorkflowDocument, ProjectWorkflowState } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
+import type { CliSurfaceRuntimeState, ProjectSurfaceRecord } from '../shared/types/project-surface.js';
+import type { ProjectContextState } from '../shared/types/project-context.js';
+import type { ProjectWorkflowDocument, ProjectWorkflowState } from '../shared/types/project-workflow.js';
+import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
+import type { ProjectReviewState } from '../shared/types/project-review.js';
+import type { ProjectBackgroundTaskState } from '../shared/types/project-background-task.js';
+import type { ProjectCheckpointState } from '../shared/types/project-checkpoint.js';
 
 export const DEFAULT_BROWSER_WIDTH_RATIO = 0.38;
 

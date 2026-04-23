@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectContextState, ProjectRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectContextState } from '../shared/types/project-context.js';
 import { normalizeProjectLayout } from './state-normalizers.js';
 import { setProjectDomainState } from './state-project-domain-updater.js';
 

@@ -1,11 +1,6 @@
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type {
-  ProjectContextCreateRuleResult,
-  ProjectContextDeleteRuleResult,
-  ProjectContextRenameRuleResult,
-  ProjectContextStarterFilesResult,
-} from '../../shared/types/project.js';
+import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult } from '../../shared/types/project-context.js';
 import { discoverProjectContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [

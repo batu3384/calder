@@ -1,5 +1,5 @@
 import type { InitialContextSnapshot } from '../shared/types/session.js';
-import type { ProjectRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
 
 export function addInsightSnapshotToProject(project: ProjectRecord, snapshot: InitialContextSnapshot): void {
   if (!project.insights) {

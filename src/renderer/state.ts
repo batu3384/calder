@@ -2,7 +2,14 @@ import type { CalderApi } from './types.js';
 import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord, ArchivedSession, CostInfo, ContextWindowInfo, InitialContextSnapshot } from '../shared/types/session.js';
 import type { ProjectGovernanceState } from '../shared/types/governance.js';
-import type { ProjectRecord, Preferences, PersistedState, ProjectSurfaceRecord, ProjectContextState, ProjectWorkflowState, ProjectTeamContextState, ProjectReviewState, ProjectBackgroundTaskState, ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode, ProjectWorkflowDocument } from '../shared/types/project.js';
+import type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state.js';
+import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
+import type { ProjectContextState } from '../shared/types/project-context.js';
+import type { ProjectWorkflowState, ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
+import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
+import type { ProjectReviewState } from '../shared/types/project-review.js';
+import type { ProjectBackgroundTaskState } from '../shared/types/project-background-task.js';
+import type { ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
@@ -69,7 +76,7 @@ import {
 } from './state/state-appstate-runtime-bridge.js';
 
 export type { SessionRecord, ArchivedSession } from '../shared/types/session.js';
-export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project.js';
+export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
 
 declare global {
