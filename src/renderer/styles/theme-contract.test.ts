@@ -43,7 +43,12 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('--studio-cyan');
     expect(commandStudioCss).toContain('.context-inspector-tabs');
     expect(commandStudioCss).toContain('context-inspector-panel-enter');
-    expect(commandStudioCss).toContain('grid-template-rows: 106px auto;');
+    expect(commandStudioCss).toContain('grid-template-columns: 82px minmax(0, 1fr);');
+    expect(commandStudioCss).toContain('width: 78px;');
+    expect(commandStudioCss).toContain('height: 70px;');
+    expect(commandStudioCss).toContain('scrollbar-gutter: stable;');
+    expect(commandStudioCss).toContain('.project-item-shell + .project-item-shell::before');
+    expect(commandStudioCss).toContain('width: 84px !important;');
     expect(commandStudioCss).toContain('grid-template-areas:');
     expect(commandStudioCss).toContain('"nav primary"');
   });

@@ -50,83 +50,96 @@ body {
 
 /* Left dock */
 #sidebar.command-dock {
-  min-width: 232px;
-  max-width: 380px;
+  min-width: 224px;
+  max-width: 340px;
   border-right: 1px solid var(--studio-line);
   background:
-    radial-gradient(circle at 50% -8%, rgba(102, 231, 223, 0.115), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent 34%),
+    radial-gradient(circle at 50% -10%, rgba(102, 231, 223, 0.085), transparent 27%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent 32%),
     rgba(7, 13, 20, 0.96);
   box-shadow:
     inset -1px 0 0 rgba(255, 255, 255, 0.018),
-    18px 0 46px rgba(0, 0, 0, 0.18);
+    14px 0 34px rgba(0, 0, 0, 0.14);
 }
 
 #sidebar-brand-stage.sidebar-brand-stage {
-  min-height: 150px;
+  min-height: 112px;
   margin: 0;
-  padding: 18px 14px 13px;
+  padding: 14px 13px 11px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 106px auto;
-  justify-items: center;
+  grid-template-columns: 82px minmax(0, 1fr);
+  grid-template-rows: auto;
+  justify-items: stretch;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   border: 0;
   border-radius: 0;
   background:
-    radial-gradient(ellipse at 50% 46%, rgba(102, 231, 223, 0.16), transparent 58%),
-    radial-gradient(ellipse at 50% 92%, rgba(0, 0, 0, 0.28), transparent 58%);
+    radial-gradient(ellipse at 24% 44%, rgba(102, 231, 223, 0.13), transparent 58%),
+    radial-gradient(ellipse at 66% 108%, rgba(0, 0, 0, 0.26), transparent 58%);
   box-shadow: inset 0 -1px 0 var(--studio-line-soft);
   overflow: visible;
 }
 
 #sidebar-brand-stage .sidebar-brand-totem {
-  width: 100%;
-  height: 106px;
+  width: 82px;
+  height: 76px;
   display: grid;
   place-items: center;
   isolation: isolate;
 }
 
 #sidebar-brand-stage .sidebar-brand-totem::before {
-  width: 128px;
-  height: 76px;
-  opacity: 0.9;
-  filter: blur(18px);
+  width: 84px;
+  height: 58px;
+  opacity: 0.88;
+  filter: blur(14px);
   background:
-    radial-gradient(circle at 50% 30%, rgba(102, 231, 223, 0.32), transparent 62%),
-    radial-gradient(circle at 50% 74%, rgba(39, 82, 178, 0.24), transparent 70%);
+    radial-gradient(circle at 50% 30%, rgba(102, 231, 223, 0.26), transparent 62%),
+    radial-gradient(circle at 50% 74%, rgba(39, 82, 178, 0.2), transparent 70%);
 }
 
 #sidebar-brand-stage .sidebar-brand-totem::after {
-  width: 92px;
-  height: 10px;
-  bottom: 2px;
-  opacity: 0.75;
+  width: 58px;
+  height: 7px;
+  bottom: 3px;
+  opacity: 0.68;
   background: radial-gradient(circle, rgba(102, 231, 223, 0.24), rgba(0, 0, 0, 0.04) 70%, transparent);
 }
 
 #sidebar-brand-stage .sidebar-mascot-shell {
-  width: 118px;
-  height: 108px;
+  width: 78px;
+  height: 70px;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   overflow: visible;
+  transition:
+    filter var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
   filter:
-    drop-shadow(0 18px 24px rgba(0, 0, 0, 0.42))
-    drop-shadow(0 0 22px rgba(102, 231, 223, 0.14));
-  animation: sidebar-mascot-float 6s ease-in-out infinite;
+    drop-shadow(0 14px 20px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 16px rgba(102, 231, 223, 0.13));
+  animation: sidebar-mascot-float 5.8s ease-in-out infinite;
 }
 
 #sidebar-brand-stage .sidebar-mascot-shell::before {
   inset: 4px 8px 0;
   border-radius: 999px;
-  opacity: 0.55;
-  filter: blur(16px);
+  opacity: 0.5;
+  filter: blur(13px);
   background: radial-gradient(circle, rgba(102, 231, 223, 0.18), transparent 68%);
+}
+
+#sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-mascot-shell {
+  filter:
+    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.44))
+    drop-shadow(0 0 21px rgba(102, 231, 223, 0.18));
+}
+
+#sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-brand-totem::before {
+  opacity: 1;
 }
 
 #sidebar-brand-stage .sidebar-mascot {
@@ -144,13 +157,14 @@ body {
 
 #sidebar-brand-stage .sidebar-brand-meta {
   display: grid;
-  gap: 3px;
-  justify-items: center;
-  text-align: center;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+  text-align: left;
 }
 
 .sidebar-brand-name {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 780;
   letter-spacing: -0.02em;
 }
@@ -158,25 +172,25 @@ body {
 .sidebar-brand-status {
   max-width: 100%;
   color: color-mix(in srgb, var(--studio-cyan) 40%, var(--text-muted));
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  text-wrap: balance;
 }
 
 #sidebar-header {
-  padding: 12px 14px 10px;
+  padding: 10px 12px 9px;
   border-bottom: 0;
   background: transparent;
   box-shadow: inset 0 -1px 0 var(--studio-line-soft);
 }
 
 #sidebar-header .sidebar-header-primary {
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "title toggle"
-    "actions actions";
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "title actions toggle";
+  align-items: center;
+  gap: 8px;
 }
 
 .sidebar-title-group {
@@ -185,28 +199,28 @@ body {
 
 .sidebar-header-actions {
   grid-area: actions;
-  justify-self: stretch;
-  width: 100%;
-  min-height: 34px;
-  padding: 3px;
-  border-radius: 12px;
+  justify-self: end;
+  width: fit-content;
+  min-height: 30px;
+  padding: 2px;
+  border-radius: 10px;
   border-color: var(--studio-line-soft);
   background: rgba(255, 255, 255, 0.026);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .sidebar-header-actions .icon-btn {
-  flex: 1 1 0;
-  width: auto;
-  min-width: 36px;
-  height: 28px;
+  flex: 0 0 auto;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
 }
 
 .sidebar-toggle-btn {
   grid-area: toggle;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
   border-radius: 10px;
 }
 
@@ -215,12 +229,12 @@ body {
 }
 
 .sidebar-title {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 740;
 }
 
 .sidebar-header-note {
-  display: block;
+  display: none;
   max-width: 24ch;
   color: var(--text-dim);
   font-size: 10.5px;
@@ -228,17 +242,59 @@ body {
 }
 
 #sidebar-content {
-  padding: 10px 10px 14px;
+  padding: 8px 8px 12px;
+  scrollbar-color: color-mix(in srgb, var(--studio-cyan) 26%, var(--studio-line)) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, transparent 0, black 10px, black calc(100% - 12px), transparent 100%);
+}
+
+#sidebar-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+#sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#sidebar-content::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(102, 231, 223, 0.36), rgba(102, 231, 223, 0.14))
+    padding-box;
+}
+
+#sidebar-content::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, rgba(102, 231, 223, 0.5), rgba(213, 175, 105, 0.18))
+    padding-box;
 }
 
 #project-list {
-  gap: 6px;
+  gap: 3px;
+  padding: 1px 0;
+}
+
+.project-item-shell {
+  position: relative;
+}
+
+.project-item-shell + .project-item-shell::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--studio-line-soft), transparent);
+  pointer-events: none;
 }
 
 .project-item {
-  min-height: 58px;
-  padding: 10px 36px 10px 14px;
-  border-radius: 14px;
+  min-height: 52px;
+  padding: 8px 34px 8px 12px;
+  border-radius: 12px;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
@@ -253,49 +309,51 @@ body {
 }
 
 .project-item.active {
-  border-color: color-mix(in srgb, var(--studio-cyan) 28%, var(--studio-line));
+  border-color: color-mix(in srgb, var(--studio-cyan) 22%, var(--studio-line));
   background:
-    radial-gradient(circle at 0% 0%, rgba(102, 231, 223, 0.16), transparent 46%),
-    linear-gradient(90deg, rgba(102, 231, 223, 0.12), transparent 78%),
-    rgba(255, 255, 255, 0.035);
+    radial-gradient(circle at 0% 0%, rgba(102, 231, 223, 0.12), transparent 42%),
+    linear-gradient(90deg, rgba(102, 231, 223, 0.1), transparent 78%),
+    rgba(255, 255, 255, 0.028);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 26px rgba(0, 0, 0, 0.14);
+    0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
 .project-item::before {
-  left: 5px;
+  left: 4px;
   width: 3px;
-  top: 12px;
-  bottom: 12px;
+  top: 10px;
+  bottom: 10px;
 }
 
 .project-item .project-name {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .project-item .project-path {
-  opacity: 0.68;
-  max-height: none;
+  opacity: 0.5;
+  max-height: 13px;
   transform: none;
 }
 
 #sidebar.collapsed {
-  width: 96px !important;
-  min-width: 96px;
+  width: 84px !important;
+  min-width: 84px;
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-brand-stage {
-  min-height: 126px;
-  padding: 16px 8px 10px;
-  grid-template-rows: 84px auto;
+  min-height: 82px;
+  padding: 11px 8px 8px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  justify-items: center;
 }
 
 #sidebar.collapsed #sidebar-brand-stage .sidebar-brand-totem,
 #sidebar.collapsed #sidebar-brand-stage .sidebar-mascot-shell {
-  width: 82px;
-  height: 78px;
+  width: 58px;
+  height: 54px;
 }
 
 #sidebar.collapsed #sidebar-brand-stage .sidebar-mascot {
@@ -321,9 +379,9 @@ body {
 }
 
 #sidebar.collapsed .project-item {
-  width: 54px;
-  min-height: 50px;
-  border-radius: 14px;
+  width: 48px;
+  min-height: 46px;
+  border-radius: 12px;
 }
 
 #sidebar.collapsed .project-collapsed-pill {
