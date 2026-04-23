@@ -5,8 +5,9 @@ import * as path from 'path';
 import { randomBytes } from 'crypto';
 import type { AddressInfo } from 'net';
 import type { EmbeddedBrowserOpenPayload } from '../shared/types/project';
-import { isMac, isWin, pathSep } from './platform';
-import { isAllowedExternalUrl } from './browser-open-policy';
+import { isMac, isWin } from './platform';
+import { handleBrowserBridgeRequest } from './browser-bridge/request';
+import { buildBrowserBridgeEnvFromState } from './browser-bridge/env';
 
 interface BrowserBridgeState {
   launcherPath: string;
@@ -404,41 +405,8 @@ function createNodeOpenHookScript(): string {
   ].join('\n');
 }
 
-function appendNodeRequire(existingNodeOptions: string | undefined, hookPath: string): string {
-  const requireFlag = `--require=${hookPath}`;
-  if (!existingNodeOptions || existingNodeOptions.trim().length === 0) {
-    return requireFlag;
-  }
-  if (existingNodeOptions.includes(requireFlag) || existingNodeOptions.includes(hookPath)) {
-    return existingNodeOptions;
-  }
-  return `${existingNodeOptions} ${requireFlag}`;
-}
-
 function writeExecutable(filePath: string, contents: string): void {
   fs.writeFileSync(filePath, contents, { mode: 0o755 });
-}
-
-function prependPath(originalPath: string | undefined, entry: string): string {
-  if (!originalPath) return entry;
-  const segments = originalPath.split(pathSep).filter(Boolean);
-  if (segments.includes(entry)) {
-    return [entry, ...segments.filter((segment) => segment !== entry)].join(pathSep);
-  }
-  return [entry, ...segments].join(pathSep);
-}
-
-function parseRequestBody(raw: string): EmbeddedBrowserOpenPayload | null {
-  const params = new URLSearchParams(raw);
-  const url = params.get('url')?.trim();
-  const cwd = params.get('cwd')?.trim();
-  const preferEmbedded = params.get('preferEmbedded') === '1';
-  if (!url || !isAllowedExternalUrl(url)) return null;
-  return {
-    url,
-    ...(cwd ? { cwd } : {}),
-    ...(preferEmbedded ? { preferEmbedded: true } : {}),
-  };
 }
 
 export async function startBrowserBridge(
@@ -458,40 +426,7 @@ export async function startBrowserBridge(
 
   const token = randomBytes(16).toString('hex');
   const server = http.createServer((req, res) => {
-    if (req.method !== 'POST' || req.url !== '/open') {
-      res.writeHead(404).end();
-      return;
-    }
-    if (req.headers['x-calder-token'] !== token) {
-      res.writeHead(403).end();
-      return;
-    }
-
-    let body = '';
-    req.setEncoding('utf8');
-    req.on('data', (chunk) => {
-      body += chunk;
-      if (body.length > 16_384) {
-        req.destroy(new Error('request too large'));
-      }
-    });
-    req.on('end', async () => {
-      const payload = parseRequestBody(body);
-      if (!payload) {
-        res.writeHead(400).end();
-        return;
-      }
-      try {
-        await onOpenRequest(payload);
-        res.writeHead(204).end();
-      } catch (error) {
-        console.error('Calder browser bridge failed to handle open request', error);
-        res.writeHead(500).end();
-      }
-    });
-    req.on('error', () => {
-      if (!res.writableEnded) res.writeHead(400).end();
-    });
+    handleBrowserBridgeRequest(req, res, token, onOpenRequest);
   });
 
   const address = await new Promise<AddressInfo>((resolve, reject) => {
@@ -521,25 +456,7 @@ export async function startBrowserBridge(
 export function buildBrowserBridgeEnv(cwd: string, env: Record<string, string>): Record<string, string> {
   if (!bridgeState) return { ...env };
 
-  const nextEnv: Record<string, string> = {
-    ...env,
-    BROWSER: bridgeState.launcherPath,
-    PATH: prependPath(env.PATH, bridgeState.shimDir),
-    CALDER_BROWSER_BRIDGE_URL: bridgeState.url,
-    CALDER_BROWSER_BRIDGE_TOKEN: bridgeState.token,
-    CALDER_BROWSER_BRIDGE_LAUNCHER: bridgeState.launcherPath,
-    CALDER_BROWSER_BRIDGE_CWD: cwd,
-    NODE_OPTIONS: appendNodeRequire(env.NODE_OPTIONS, bridgeState.nodeHookPath),
-  };
-
-  if (bridgeState.realOpenPath) {
-    nextEnv.CALDER_BROWSER_BRIDGE_REAL_OPEN = bridgeState.realOpenPath;
-  }
-  if (bridgeState.realXdgOpenPath) {
-    nextEnv.CALDER_BROWSER_BRIDGE_REAL_XDG_OPEN = bridgeState.realXdgOpenPath;
-  }
-
-  return nextEnv;
+  return buildBrowserBridgeEnvFromState(cwd, env, bridgeState);
 }
 
 export async function stopBrowserBridge(): Promise<void> {

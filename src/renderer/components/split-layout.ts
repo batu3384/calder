@@ -1,62 +1,15 @@
 import { appState, ProjectRecord } from '../state.js';
 import { isUnread, onChange as onUnreadChange } from '../session-unread.js';
 import {
-  createTerminalPane,
   attachToContainer,
   showPane,
-  hideAllPanes,
   fitAllVisible,
   setFocused,
   clearFocused,
   spawnTerminal,
-  setPendingPrompt,
-  destroyTerminal,
   getTerminalInstance,
 } from './terminal-pane.js';
-import {
-  createInspectorPane,
-  destroyInspectorPane,
-  showInspectorPane,
-  hideAllInspectorPanes,
-  attachInspectorToContainer,
-  getInspectorInstance,
-  disconnectInspector,
-} from './mcp-inspector.js';
 import { isInspectorOpen } from './session-inspector/session-inspector.js';
-import {
-  createFileViewerPane,
-  destroyFileViewerPane,
-  showFileViewerPane,
-  hideAllFileViewerPanes,
-  attachFileViewerToContainer,
-  getFileViewerInstance,
-} from './file-viewer.js';
-import {
-  createFileReaderPane,
-  destroyFileReaderPane,
-  showFileReaderPane,
-  hideAllFileReaderPanes,
-  attachFileReaderToContainer,
-  getFileReaderInstance,
-  setFileReaderLine,
-} from './file-reader.js';
-import {
-  getRemoteTerminalInstance,
-  destroyRemoteTerminal,
-  attachRemoteToContainer,
-  showRemotePane,
-  hideAllRemotePanes,
-} from './remote-terminal-pane.js';
-import {
-  createBrowserTabPane,
-  destroyBrowserTabPane,
-  showBrowserTabPane,
-  hideAllBrowserTabPanes,
-  attachBrowserTabToContainer,
-  getBrowserTabInstance,
-} from './browser-tab-pane.js';
-import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
-import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
 import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
 import { quickNewSession } from './tab-bar/tab-bar.js';
 import { promptNewProject } from './sidebar.js';
@@ -76,85 +29,32 @@ import {
 } from './split-layout-swarm-reorder.js';
 import { getLayoutRenderSignature } from './split-layout-signature.js';
 import { removeEmptyState, showEmptyState } from './split-layout-empty-state.js';
+import {
+  attachSplitLayoutNonCliPane,
+  ensureSplitLayoutSessionInstances,
+  handleSplitLayoutSessionAdded,
+  handleSplitLayoutSessionRemoved,
+  hideAllSplitLayoutPanes,
+  removeSplitLayoutMosaicArtifacts,
+  showSplitLayoutPanes,
+} from './split-layout-pane-orchestration.js';
+import {
+  clearMosaicResizeBindings,
+  getSurfaceResizeBounds,
+  getSwarmBrowserSession,
+  registerMosaicResizeCleanup,
+} from './split-layout-mosaic-state.js';
 
 const container = document.getElementById('terminal-container')!;
 const MOSAIC_DIVIDER_TRACK = '10px';
-const INSPECTOR_WIDTH_FALLBACK = 350;
 const SURFACE_COLUMN_MIN = '288px';
 const SURFACE_RATIO_MIN = 0.25;
 const SURFACE_RATIO_MAX = 0.7;
 const SURFACE_RATIO_FALLBACK = 0.38;
-const lastSwarmBrowserSessionIds = new Map<string, string>();
-let mosaicResizeCleanups: Array<() => void> = [];
 let lastLayoutRenderSignature: string | null = null;
 
 function isMosaicMode(project: ProjectRecord | undefined): boolean {
   return !!project && project.layout.mode === 'mosaic';
-}
-
-function getSwarmBrowserSession(project: ProjectRecord) {
-  const activeSession = project.activeSessionId
-    ? project.sessions.find((session) => session.id === project.activeSessionId)
-    : undefined;
-  if (activeSession?.type === 'browser-tab') {
-    lastSwarmBrowserSessionIds.set(project.id, activeSession.id);
-    return activeSession;
-  }
-
-  const rememberedId = lastSwarmBrowserSessionIds.get(project.id);
-  if (rememberedId) {
-    const remembered = project.sessions.find((session) => session.id === rememberedId && session.type === 'browser-tab');
-    if (remembered) return remembered;
-  }
-
-  const latest = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
-  if (latest) {
-    lastSwarmBrowserSessionIds.set(project.id, latest.id);
-  } else {
-    lastSwarmBrowserSessionIds.delete(project.id);
-  }
-  return latest;
-}
-
-function clearMosaicResizeBindings(): void {
-  for (const cleanup of mosaicResizeCleanups) {
-    cleanup();
-  }
-  mosaicResizeCleanups = [];
-}
-
-function registerMosaicResizeCleanup(cleanup: () => void): void {
-  mosaicResizeCleanups.push(cleanup);
-}
-
-function readInspectorWidth(target: HTMLElement): number {
-  const inlineStyle = target.style as CSSStyleDeclaration & Record<string, string | undefined>;
-  const inlineWidthValue = typeof inlineStyle.getPropertyValue === 'function'
-    ? target.style.getPropertyValue('--inspector-width')
-    : inlineStyle.getPropertyValue?.('--inspector-width') ?? inlineStyle['--inspector-width'];
-  const inlineWidth = Number.parseFloat(inlineWidthValue ?? '');
-  if (Number.isFinite(inlineWidth) && inlineWidth > 0) return inlineWidth;
-
-  const inspector = target.querySelector('#session-inspector') as HTMLElement | null;
-  const inspectorWidth = inspector?.getBoundingClientRect().width ?? 0;
-  if (inspectorWidth > 0) return inspectorWidth;
-
-  return INSPECTOR_WIDTH_FALLBACK;
-}
-
-function getSurfaceResizeBounds(target: HTMLElement, hasInspector: boolean): DOMRect {
-  const bounds = target.getBoundingClientRect();
-  if (!hasInspector) return bounds;
-
-  const inspectorWidth = Math.min(readInspectorWidth(target), bounds.width);
-  const width = Math.max(0, bounds.width - inspectorWidth);
-  return {
-    ...bounds,
-    width,
-    right: bounds.left + width,
-    x: bounds.left,
-    y: bounds.top,
-  } as DOMRect;
 }
 
 /** Set the container's layout class while preserving the inspector-open class if active. */
@@ -207,59 +107,11 @@ export function initSplitLayout(): void {
 }
 
 function onSessionAdded(data: unknown): void {
-  const { session } = data as { projectId: string; session: { id: string; type?: string; cliSessionId: string | null; providerId?: string; args?: string; diffFilePath?: string; diffArea?: string; worktreePath?: string; fileReaderPath?: string; fileReaderLine?: number; browserTabUrl?: string } };
-  const project = appState.activeProject;
-  if (!project) return;
-
-  if (session.type === 'file-reader') {
-    createFileReaderPane(session.id, session.fileReaderPath || '', session.fileReaderLine);
-    renderLayout();
-  } else if (session.type === 'diff-viewer') {
-    createFileViewerPane(session.id, session.diffFilePath || '', session.diffArea || '', session.worktreePath);
-    renderLayout();
-  } else if (session.type === 'mcp-inspector') {
-    createInspectorPane(session.id);
-    renderLayout();
-  } else if (session.type === 'remote-terminal') {
-    // Remote terminal pane is created by share-manager before session-added fires
-    renderLayout();
-  } else if (session.type === 'browser-tab') {
-    createBrowserTabPane(session.id, session.browserTabUrl);
-    renderLayout();
-  } else {
-    // Create and spawn immediately
-    createTerminalPane(session.id, project.path, session.cliSessionId, !!session.cliSessionId, session.args || '', (session.providerId as import('../../shared/types').ProviderId) || 'claude', project.id);
-    const pending = appState.consumePendingInitialPrompt(project.id, session.id);
-    if (pending) {
-      setPendingPrompt(session.id, pending);
-    }
-    renderLayout();
-
-    // Spawn after layout is rendered so terminal has dimensions
-    requestAnimationFrame(() => {
-      spawnTerminal(session.id);
-      fitAllVisible();
-    });
-  }
+  handleSplitLayoutSessionAdded(data, renderLayout);
 }
 
 function onSessionRemoved(data: unknown): void {
-  const { sessionId } = data as { projectId: string; sessionId: string };
-  if (getFileReaderInstance(sessionId)) {
-    destroyFileReaderPane(sessionId);
-  } else if (getFileViewerInstance(sessionId)) {
-    destroyFileViewerPane(sessionId);
-  } else if (getInspectorInstance(sessionId)) {
-    disconnectInspector(sessionId);
-    destroyInspectorPane(sessionId);
-  } else if (getRemoteTerminalInstance(sessionId)) {
-    destroyRemoteTerminal(sessionId);
-  } else if (getBrowserTabInstance(sessionId)) {
-    destroyBrowserTabPane(sessionId);
-  } else {
-    destroyTerminal(sessionId);
-  }
-  renderLayout();
+  handleSplitLayoutSessionRemoved(data, renderLayout);
 }
 
 export function renderLayout(): void {
@@ -276,62 +128,16 @@ export function renderLayout(): void {
   clearMosaicResizeBindings();
 
   if (!project || project.sessions.length === 0) {
-    hideAllPanes();
-    hideAllInspectorPanes();
-    hideAllFileViewerPanes();
-    hideAllFileReaderPanes();
-    hideAllRemotePanes();
-    hideAllBrowserTabPanes();
-    hideAllCliSurfacePanes();
-    hideAllMobileSurfacePanes();
+    hideAllSplitLayoutPanes();
     setContainerClass('');
     showEmptyState(container, project, promptNewProject, quickNewSession);
     return;
   }
 
   removeEmptyState(container);
-  container.querySelectorAll('.swarm-grid-wrapper').forEach(el => el.remove());
-  container.querySelectorAll('.swarm-browser-column').forEach(el => el.remove());
-  container.querySelectorAll('.swarm-empty-cell').forEach(el => el.remove());
-  container.querySelectorAll('.mosaic-session-canvas').forEach(el => el.remove());
-  container.querySelectorAll('.mosaic-browser-column').forEach(el => el.remove());
-  container.querySelectorAll('.mosaic-divider-browser').forEach(el => el.remove());
-
-  // Ensure all sessions have their respective instances
-  for (const session of project.sessions) {
-    if (session.type === 'file-reader') {
-      if (!getFileReaderInstance(session.id)) {
-        createFileReaderPane(session.id, session.fileReaderPath || '', session.fileReaderLine);
-      }
-    } else if (session.type === 'diff-viewer') {
-      if (!getFileViewerInstance(session.id)) {
-        createFileViewerPane(session.id, session.diffFilePath || '', session.diffArea || '', session.worktreePath);
-      }
-    } else if (session.type === 'mcp-inspector') {
-      if (!getInspectorInstance(session.id)) {
-        createInspectorPane(session.id);
-      }
-    } else if (session.type === 'remote-terminal') {
-      // Remote terminal instances are created by share-manager, skip here
-    } else if (session.type === 'browser-tab') {
-      if (!getBrowserTabInstance(session.id)) {
-        createBrowserTabPane(session.id, session.browserTabUrl);
-      }
-    } else {
-      if (!getTerminalInstance(session.id)) {
-        createTerminalPane(session.id, project.path, session.cliSessionId, !!session.cliSessionId, session.args || '', session.providerId || 'claude', project.id);
-      }
-    }
-  }
-
-  hideAllPanes();
-  hideAllInspectorPanes();
-  hideAllFileViewerPanes();
-  hideAllFileReaderPanes();
-  hideAllRemotePanes();
-  hideAllBrowserTabPanes();
-  hideAllCliSurfacePanes();
-  hideAllMobileSurfacePanes();
+  removeSplitLayoutMosaicArtifacts(container);
+  ensureSplitLayoutSessionInstances(project);
+  hideAllSplitLayoutPanes();
 
   const activeSession = project.activeSessionId
     ? project.sessions.find((session) => session.id === project.activeSessionId)
@@ -350,29 +156,6 @@ export function renderLayout(): void {
   requestAnimationFrame(fitAllVisible);
 }
 
-/** Attach and show a non-CLI session pane. */
-function attachNonCliPane(session: { id: string; type?: string; fileReaderLine?: number }, target: HTMLElement, inSplit: boolean): void {
-  if (session.type === 'file-reader') {
-    attachFileReaderToContainer(session.id, target);
-    showFileReaderPane(session.id, inSplit);
-    if (session.fileReaderLine) {
-      setFileReaderLine(session.id, session.fileReaderLine);
-    }
-  } else if (session.type === 'diff-viewer') {
-    attachFileViewerToContainer(session.id, target);
-    showFileViewerPane(session.id, inSplit);
-  } else if (session.type === 'mcp-inspector') {
-    attachInspectorToContainer(session.id, target);
-    showInspectorPane(session.id, inSplit);
-  } else if (session.type === 'remote-terminal') {
-    attachRemoteToContainer(session.id, target);
-    showRemotePane(session.id, inSplit);
-  } else if (session.type === 'browser-tab') {
-    attachBrowserTabToContainer(session.id, target);
-    showBrowserTabPane(session.id, inSplit);
-  }
-}
-
 function renderTabMode(project: ProjectRecord): void {
   clearSwarmReorderDecorations(container);
   setContainerClass('');
@@ -386,7 +169,7 @@ function renderTabMode(project: ProjectRecord): void {
   const activeSession = project.sessions.find(s => s.id === activeId);
   if (activeSession?.type && activeSession.type !== 'claude') {
     clearFocused();
-    attachNonCliPane(activeSession, container, false);
+    attachSplitLayoutNonCliPane(activeSession, container, false);
     return;
   }
 
@@ -409,21 +192,7 @@ function renderTabMode(project: ProjectRecord): void {
 
 /** Attach, show, and ensure-spawn for each pane in the list. */
 function showPanes(project: ProjectRecord, target: HTMLElement = container, paneIds: string[] = project.layout.splitPanes): void {
-  for (const paneId of paneIds) {
-    const session = project.sessions.find(s => s.id === paneId);
-    if (session?.type && session.type !== 'claude') {
-      attachNonCliPane(session, target, true);
-      continue;
-    }
-
-    attachToContainer(paneId, target);
-    showPane(paneId, true);
-
-    const instance = getTerminalInstance(paneId);
-    if (instance && !instance.spawned && !instance.exited) {
-      requestAnimationFrame(() => spawnTerminal(paneId));
-    }
-  }
+  showSplitLayoutPanes(project, paneIds, target);
 }
 
 function focusActivePane(project: ProjectRecord): void {

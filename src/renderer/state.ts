@@ -39,43 +39,46 @@ import {
 } from './state-normalizers.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import {
-  addInsightSnapshotInAppState,
-  addPlanSessionInAppState,
   addMcpInspectorProjectSession,
   addRemoteProjectSession,
-  addSessionInAppState,
   clearHistoryForProject,
   createProjectRecord,
-  dismissInsightInAppState,
   findProjectBySessionId,
   findSessionById,
   isInsightDismissedInAppState,
   listSurfaceTargetSessionsForProject,
-  openUrlInBrowserSurfaceInAppState,
-  passivateBrowserTabSessionInAppState,
   removeHistoryEntryForProject,
   removeProjectAndCollectSessions,
-  removeSessionInAppState,
-  renameSessionInAppState,
-  reorderSessionInAppState,
   resolveSurfaceTargetSessionForProject,
-  resumeFromHistoryInAppState,
-  resumeWithProviderInAppState,
-  restoreProjectCheckpointInAppState,
-  launchWorkflowSessionInAppState,
-  setBrowserWidthRatioInAppState,
-  setMosaicRatioInAppState,
-  setActiveSessionInAppState,
-  setSurfaceTargetSessionInAppState,
   toggleHistoryBookmarkForProject,
-  updateSessionBrowserTabUrlInAppState,
-  updateSessionCliIdInAppState,
-  updateSessionContextInAppState,
-  updateSessionCostInAppState,
   upsertBrowserTabProjectSession,
   upsertDiffViewerProjectSession,
   upsertFileReaderProjectSession,
 } from './state-appstate-extracts.js';
+import type { AppStateRuntimeBridge } from './state/state-appstate-runtime-bridge.js';
+import {
+  addInsightSnapshotWithBridge,
+  addPlanSessionWithBridge,
+  addSessionWithBridge,
+  dismissInsightWithBridge,
+  launchWorkflowSessionWithBridge,
+  openUrlInBrowserSurfaceWithBridge,
+  passivateBrowserTabSessionWithBridge,
+  removeSessionWithBridge,
+  renameSessionWithBridge,
+  reorderSessionWithBridge,
+  resumeFromHistoryWithBridge,
+  resumeWithProviderWithBridge,
+  restoreProjectCheckpointWithBridge,
+  setActiveSessionWithBridge,
+  setBrowserWidthRatioWithBridge,
+  setMosaicRatioWithBridge,
+  setSurfaceTargetSessionWithBridge,
+  updateSessionBrowserTabUrlWithBridge,
+  updateSessionCliIdWithBridge,
+  updateSessionContextWithBridge,
+  updateSessionCostWithBridge,
+} from './state/state-appstate-runtime-bridge.js';
 
 export type { SessionRecord, ArchivedSession } from '../shared/types/session.js';
 export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project.js';
@@ -262,6 +265,20 @@ class AppState {
     this.emitProjectChangedIfActive(project);
   }
 
+  private runtimeBridge(): AppStateRuntimeBridge {
+    return {
+      projects: this.state.projects,
+      defaultProviderId: this.state.preferences.defaultProvider,
+      sessionHistoryEnabled: this.state.preferences.sessionHistoryEnabled,
+      pushNav: (sessionId) => this.pushNav(sessionId),
+      pruneNav: (sessionId) => this.pruneNav(sessionId),
+      persist: () => this.persist(),
+      emit: (event, data) => this.emit(event, data),
+      buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
+        window.calder.session.buildResumeWithPrompt(sourceProviderId, sourceCliSessionId, projectPath, sourceName),
+    };
+  }
+
   setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
     this.setProjectDomain(projectId, 'projectContext', projectContext, normalizeProjectContextState);
   }
@@ -295,20 +312,7 @@ class AppState {
     checkpoint: ProjectCheckpointDocument,
     mode: ProjectCheckpointRestoreMode = 'additive',
   ): void {
-    restoreProjectCheckpointInAppState({
-      projects: this.state.projects,
-      projectId,
-      checkpoint,
-      mode,
-      defaultProviderId: this.state.preferences.defaultProvider ?? 'claude',
-      pruneNav: (sessionId) => this.pruneNav(sessionId),
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionRemoved: (sessionId) => this.emit('session-removed', { projectId, sessionId }),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onProjectChanged: () => this.emit('project-changed'),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    restoreProjectCheckpointWithBridge(this.runtimeBridge(), projectId, checkpoint, mode);
   }
 
   addProject(name: string, path: string): ProjectRecord {
@@ -332,17 +336,7 @@ class AppState {
   }
 
   addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined {
-    return addPlanSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      name,
-      providerOverride,
-      defaultProviderId: this.state.preferences.defaultProvider,
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return addPlanSessionWithBridge(this.runtimeBridge(), projectId, name, providerOverride);
   }
 
   launchWorkflowSession(
@@ -350,32 +344,11 @@ class AppState {
     workflow: ProjectWorkflowDocument,
     providerOverride?: ProviderId,
   ): SessionRecord | undefined {
-    return launchWorkflowSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      workflow,
-      providerOverride,
-      defaultProviderId: this.state.preferences.defaultProvider,
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return launchWorkflowSessionWithBridge(this.runtimeBridge(), projectId, workflow, providerOverride);
   }
 
   addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined {
-    return addSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      name,
-      args,
-      providerId,
-      defaultProviderId: this.state.preferences.defaultProvider,
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return addSessionWithBridge(this.runtimeBridge(), projectId, name, args, providerId);
   }
 
   private addOrUpdateSession(
@@ -430,16 +403,7 @@ class AppState {
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
-    return openUrlInBrowserSurfaceInAppState({
-      projects: this.state.projects,
-      projectId,
-      url,
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onProjectChanged: () => this.emit('project-changed'),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return openUrlInBrowserSurfaceWithBridge(this.runtimeBridge(), projectId, url);
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
@@ -464,18 +428,7 @@ class AppState {
   }
 
   removeSession(projectId: string, sessionId: string): void {
-    removeSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      sessionId,
-      sessionHistoryEnabled: this.state.preferences.sessionHistoryEnabled,
-      pruneNav: (navSessionId) => this.pruneNav(navSessionId),
-      pushNav: (navSessionId) => this.pushNav(navSessionId),
-      onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
-      persist: () => this.persist(),
-      onSessionRemoved: () => this.emit('session-removed', { projectId, sessionId }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    removeSessionWithBridge(this.runtimeBridge(), projectId, sessionId);
   }
 
   getSessionHistory(projectId: string): ArchivedSession[] {
@@ -498,35 +451,14 @@ class AppState {
     this.emit('history-changed', projectId);
   }
   resumeFromHistory(projectId: string, archivedSessionId: string): SessionRecord | undefined {
-    return resumeFromHistoryInAppState({
-      projects: this.state.projects,
-      projectId,
-      archivedSessionId,
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return resumeFromHistoryWithBridge(this.runtimeBridge(), projectId, archivedSessionId);
   }
   async resumeWithProvider(
     projectId: string,
     source: { archivedSessionId?: string; sessionId?: string },
     targetProviderId: ProviderId,
   ): Promise<SessionRecord | undefined> {
-    return resumeWithProviderInAppState({
-      projects: this.state.projects,
-      projectId,
-      source,
-      targetProviderId,
-      buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
-        window.calder.session.buildResumeWithPrompt(sourceProviderId, sourceCliSessionId, projectPath, sourceName),
-      pushNav: (sessionId) => this.pushNav(sessionId),
-      // persist() strips pendingInitialPrompt (transient). split-layout.onSessionAdded
-      // will consume it synchronously from in-memory state before the next persist.
-      persist: () => this.persist(),
-      onSessionAdded: (session) => this.emit('session-added', { projectId, session }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    return resumeWithProviderWithBridge(this.runtimeBridge(), projectId, source, targetProviderId);
   }
   consumePendingInitialPrompt(projectId: string, sessionId: string): string | undefined {
     const project = this.state.projects.find((p) => p.id === projectId);
@@ -537,15 +469,7 @@ class AppState {
     return prompt;
   }
   setActiveSession(projectId: string, sessionId: string): void {
-    setActiveSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      sessionId,
-      pushNav: (nextSessionId) => this.pushNav(nextSessionId),
-      persist: () => this.persist(),
-      onProjectChanged: () => this.emit('project-changed'),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    setActiveSessionWithBridge(this.runtimeBridge(), projectId, sessionId);
   }
   listBrowserTargetSessions(browserSessionId: string): SessionRecord[] {
     const project = findProjectBySessionId(this.state.projects, browserSessionId);
@@ -613,26 +537,11 @@ class AppState {
   }
 
   setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {
-    setSurfaceTargetSessionInAppState(
-      this.state.projects,
-      projectId,
-      targetSessionId,
-      () => this.persist(),
-      () => this.emit('session-changed'),
-    );
+    setSurfaceTargetSessionWithBridge(this.runtimeBridge(), projectId, targetSessionId);
   }
 
   updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void {
-    updateSessionCliIdInAppState({
-      projects: this.state.projects,
-      projectId,
-      sessionId,
-      cliSessionId,
-      onHistoryChanged: (historyProjectId) => this.emit('history-changed', historyProjectId),
-      persist: () => this.persist(),
-      onCliSessionCleared: () => this.emit('cli-session-cleared', { sessionId }),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    updateSessionCliIdWithBridge(this.runtimeBridge(), projectId, sessionId, cliSessionId);
   }
 
   /** @deprecated Use updateSessionCliId */
@@ -645,61 +554,31 @@ class AppState {
   }
 
   updateSessionCost(sessionId: string, cost: CostInfo): void {
-    updateSessionCostInAppState(this.state.projects, sessionId, cost, () => this.persist());
+    updateSessionCostWithBridge(this.runtimeBridge(), sessionId, cost);
   }
 
   updateSessionContext(sessionId: string, context: ContextWindowInfo): void {
-    updateSessionContextInAppState(this.state.projects, sessionId, context, () => this.persist());
+    updateSessionContextWithBridge(this.runtimeBridge(), sessionId, context);
   }
 
   updateSessionBrowserTabUrl(sessionId: string, url: string): void {
-    updateSessionBrowserTabUrlInAppState(this.state.projects, sessionId, url, () => this.persist());
+    updateSessionBrowserTabUrlWithBridge(this.runtimeBridge(), sessionId, url);
   }
 
   passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
-    passivateBrowserTabSessionInAppState(
-      this.state.projects,
-      sessionId,
-      failedUrl,
-      () => this.persist(),
-      () => this.emit('project-changed'),
-      () => this.emit('session-changed'),
-    );
+    passivateBrowserTabSessionWithBridge(this.runtimeBridge(), sessionId, failedUrl);
   }
 
   renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {
-    renameSessionInAppState({
-      projects: this.state.projects,
-      projectId,
-      sessionId,
-      name,
-      userRenamed,
-      maxSessionNameLength: MAX_SESSION_NAME_LENGTH,
-      persist: () => this.persist(),
-      onHistoryChanged: () => this.emit('history-changed', projectId),
-      onSessionChanged: () => this.emit('session-changed'),
-    });
+    renameSessionWithBridge(this.runtimeBridge(), projectId, sessionId, name, MAX_SESSION_NAME_LENGTH, userRenamed);
   }
 
   setBrowserWidthRatio(projectId: string, ratio: number): void {
-    setBrowserWidthRatioInAppState(
-      this.state.projects,
-      projectId,
-      ratio,
-      () => this.persist(),
-      () => this.emit('layout-changed'),
-    );
+    setBrowserWidthRatioWithBridge(this.runtimeBridge(), projectId, ratio);
   }
 
   setMosaicRatio(projectId: string, key: string, ratio: number): void {
-    setMosaicRatioInAppState(
-      this.state.projects,
-      projectId,
-      key,
-      ratio,
-      () => this.persist(),
-      () => this.emit('layout-changed'),
-    );
+    setMosaicRatioWithBridge(this.runtimeBridge(), projectId, key, ratio);
   }
 
   cycleSession(direction: 1 | -1): void {
@@ -747,23 +626,11 @@ class AppState {
   }
 
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
-    addInsightSnapshotInAppState(
-      this.state.projects,
-      projectId,
-      snapshot,
-      () => this.persist(),
-      (targetProjectId) => this.emit('insights-changed', targetProjectId),
-    );
+    addInsightSnapshotWithBridge(this.runtimeBridge(), projectId, snapshot);
   }
 
   dismissInsight(projectId: string, insightId: string): void {
-    dismissInsightInAppState(
-      this.state.projects,
-      projectId,
-      insightId,
-      () => this.persist(),
-      (targetProjectId) => this.emit('insights-changed', targetProjectId),
-    );
+    dismissInsightWithBridge(this.runtimeBridge(), projectId, insightId);
   }
 
   isInsightDismissed(projectId: string, insightId: string): boolean {
@@ -771,14 +638,7 @@ class AppState {
   }
 
   reorderSession(projectId: string, sessionId: string, toIndex: number): void {
-    reorderSessionInAppState(
-      this.state.projects,
-      projectId,
-      sessionId,
-      toIndex,
-      () => this.persist(),
-      () => this.emit('session-changed'),
-    );
+    reorderSessionWithBridge(this.runtimeBridge(), projectId, sessionId, toIndex);
   }
 
   /** @internal Test-only: reset all state containers */

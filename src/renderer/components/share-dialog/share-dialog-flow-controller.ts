@@ -1,9 +1,15 @@
 import type { ShareMode } from '../../../shared/sharing-types.js';
-import { acceptShareAnswer } from '../../sharing/share-manager.js';
 import { decodeConnectionEnvelope } from '../../sharing/webrtc-utils.js';
 import { appState } from '../../state.js';
 import type { MobileControlApi } from './share-dialog-api.js';
 import type { ShareDialogCopy } from './share-dialog-copy.js';
+import { submitShareDialogAnswer } from './share-dialog-flow-submit-answer.js';
+import {
+  bindConnectAndRetryHandlers,
+  bindUseMobileFallbackButton,
+  createFlowControllerResult,
+  setupManualFallbackUi,
+} from './share-dialog-flow-ui-bindings.js';
 import {
   createMobileAnswerPolling,
   formatOtpForDisplay,
@@ -11,18 +17,6 @@ import {
   setShareDialogMobileFallbackLinks,
   setShareDialogPrimaryMobileLink,
 } from './share-dialog-mobile-pairing.js';
-
-interface SubmitShareDialogAnswerParams {
-  sessionId: string;
-  answer: string;
-  source: 'manual' | 'mobile';
-  copy: ShareDialogCopy;
-  statusEl: HTMLDivElement;
-  answerTextarea: HTMLTextAreaElement;
-  connectBtn: HTMLButtonElement;
-  clearPendingMobilePairing(revoke: boolean): void;
-  setMobileStatus: (text: string, kind?: 'info' | 'success' | 'error') => void;
-}
 
 export interface ShareDialogFlowController {
   setManualFallbackVisible(visible: boolean): void;
@@ -54,167 +48,6 @@ export interface CreateShareDialogFlowControllerParams {
   mobileQrImg: HTMLImageElement;
   mobileStatus: HTMLDivElement;
   retryMobilePairingBtn: HTMLButtonElement;
-}
-
-async function submitShareDialogAnswer(params: SubmitShareDialogAnswerParams): Promise<void> {
-  const {
-    sessionId,
-    answer,
-    source,
-    copy,
-    statusEl,
-    answerTextarea,
-    connectBtn,
-    clearPendingMobilePairing,
-    setMobileStatus,
-  } = params;
-
-  const trimmed = answer.trim();
-  if (!trimmed) return;
-  if (source === 'manual') {
-    clearPendingMobilePairing(true);
-    setMobileStatus(copy.manualResponseDetected);
-  }
-  try {
-    await acceptShareAnswer(sessionId, trimmed);
-    connectBtn.disabled = true;
-    connectBtn.textContent = copy.connecting;
-    answerTextarea.readOnly = true;
-    statusEl.textContent = copy.establishingConnection;
-    if (source === 'mobile') {
-      setMobileStatus(copy.mobileResponseReceived, 'success');
-    }
-  } catch (err) {
-    const reasonText = err instanceof Error ? err.message : copy.invalidResponseCode;
-    statusEl.textContent = reasonText;
-    answerTextarea.readOnly = false;
-    connectBtn.disabled = !answerTextarea.value.trim();
-    connectBtn.textContent = copy.connect;
-    if (source === 'mobile') {
-      setMobileStatus(`${copy.mobileResponseValidationFailed} ${reasonText}`, 'error');
-    }
-  }
-}
-
-interface SetupManualFallbackUiParams {
-  mobileApi: MobileControlApi | null;
-  manualToggleRow: HTMLDivElement;
-  manualToggleBtn: HTMLButtonElement;
-  isManualFallbackVisible: () => boolean;
-  setManualFallbackVisible: (visible: boolean) => void;
-}
-
-function setupManualFallbackUi(params: SetupManualFallbackUiParams): void {
-  const {
-    mobileApi,
-    manualToggleRow,
-    manualToggleBtn,
-    isManualFallbackVisible,
-    setManualFallbackVisible,
-  } = params;
-
-  if (mobileApi) {
-    manualToggleRow.classList.remove('hidden');
-    manualToggleBtn.addEventListener('click', () => {
-      setManualFallbackVisible(!isManualFallbackVisible());
-    });
-    setManualFallbackVisible(false);
-    return;
-  }
-
-  manualToggleRow.classList.add('hidden');
-  setManualFallbackVisible(true);
-}
-
-interface BindUseMobileFallbackButtonParams {
-  useMobileFallbackBtn: HTMLButtonElement;
-  mobileFallbackInput: HTMLInputElement;
-  mobileLinkInput: HTMLInputElement;
-  mobileQrImg: HTMLImageElement;
-  copy: ShareDialogCopy;
-  setMobileStatus: (text: string, kind?: 'info' | 'success' | 'error') => void;
-}
-
-function bindUseMobileFallbackButton(params: BindUseMobileFallbackButtonParams): void {
-  const {
-    useMobileFallbackBtn,
-    mobileFallbackInput,
-    mobileLinkInput,
-    mobileQrImg,
-    copy,
-    setMobileStatus,
-  } = params;
-
-  useMobileFallbackBtn.addEventListener('click', () => {
-    const fallback = mobileFallbackInput.value.trim();
-    if (!fallback) return;
-    void setShareDialogPrimaryMobileLink({
-      link: fallback,
-      mobileLinkInput,
-      mobileQrImg,
-    }).then((hasQr) => {
-      setMobileStatus(hasQr ? copy.usingLanFallback : `${copy.usingLanFallback} ${copy.qrUnavailableUseLink}`);
-    });
-  });
-}
-
-interface BindConnectAndRetryHandlersParams {
-  connectBtn: HTMLButtonElement;
-  answerTextarea: HTMLTextAreaElement;
-  retryMobilePairingBtn: HTMLButtonElement;
-  generateMobilePairing: () => Promise<void>;
-  submitShareAnswer: (answer: string) => Promise<void>;
-}
-
-function bindConnectAndRetryHandlers(params: BindConnectAndRetryHandlersParams): void {
-  const {
-    connectBtn,
-    answerTextarea,
-    retryMobilePairingBtn,
-    generateMobilePairing,
-    submitShareAnswer,
-  } = params;
-
-  connectBtn.addEventListener('click', async () => {
-    const answer = String(answerTextarea.value ?? '').trim();
-    if (!answer) return;
-    await submitShareAnswer(answer);
-  });
-
-  retryMobilePairingBtn.addEventListener('click', () => {
-    retryMobilePairingBtn.disabled = true;
-    void generateMobilePairing().finally(() => {
-      if (!retryMobilePairingBtn.classList.contains('hidden')) {
-        retryMobilePairingBtn.disabled = false;
-      }
-    });
-  });
-}
-
-interface CreateFlowControllerResultParams {
-  setManualFallbackVisible: (visible: boolean) => void;
-  setShareHandshake: (offer: string | null, passphrase: string | null) => void;
-  generateMobilePairing: () => Promise<void>;
-  handleAuthFailure: () => void;
-  clearPendingMobilePairing: (revoke: boolean) => void;
-}
-
-function createFlowControllerResult(params: CreateFlowControllerResultParams): ShareDialogFlowController {
-  const {
-    setManualFallbackVisible,
-    setShareHandshake,
-    generateMobilePairing,
-    handleAuthFailure,
-    clearPendingMobilePairing,
-  } = params;
-
-  return {
-    setManualFallbackVisible,
-    setShareHandshake,
-    generateMobilePairing,
-    handleAuthFailure,
-    clearPendingMobilePairing,
-  };
 }
 
 interface GenerateShareDialogMobilePairingParams {

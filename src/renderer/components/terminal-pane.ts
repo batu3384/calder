@@ -3,8 +3,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { initSession, removeSession } from '../session-activity.js';
-import { markFreshSession } from '../session-insights.js';
+import { removeSession } from '../session-activity.js';
 import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
@@ -16,6 +15,13 @@ import {
   bindTerminalLinkPointerHandlers,
   clearTerminalLinkDispatch,
 } from './terminal-pane-links.js';
+import { clearPendingPromptTimer, deliverPrompt } from './terminal-pane-prompt-delivery.js';
+import {
+  clearSpawnFailureOverlay,
+  formatSpawnFailureMessage,
+  showSpawnFailureOverlay,
+} from './terminal-pane-spawn-overlay.js';
+import { spawnPtySession } from './terminal-pane-spawn-session.js';
 import { renderContextDisplay, renderCostDisplay, revealSessionStatusBar } from './terminal-pane-status.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
@@ -270,66 +276,6 @@ export function setPendingPrompt(sessionId: string, prompt: string): void {
   }
 }
 
-function buildBracketedPastePayload(prompt: string): string {
-  return `\u001b[200~${prompt}\u001b[201~\r`;
-}
-
-function clearPendingPromptTimer(instance: TerminalInstance): void {
-  if (instance.pendingPromptTimer) {
-    clearTimeout(instance.pendingPromptTimer);
-    instance.pendingPromptTimer = null;
-  }
-}
-
-function formatSpawnFailureMessage(error: unknown): string {
-  if (error instanceof Error && typeof error.message === 'string' && error.message.trim().length > 0) {
-    return error.message.trim();
-  }
-  if (typeof error === 'string' && error.trim().length > 0) {
-    return error.trim();
-  }
-  return 'The CLI process could not start. Check provider installation and settings, then retry.';
-}
-
-function showSpawnFailureOverlay(instance: TerminalInstance, details: string): void {
-  const existing = instance.element.querySelector('.terminal-exit-overlay');
-  if (existing) existing.remove();
-
-  const overlay = document.createElement('div');
-  overlay.className = 'terminal-exit-overlay';
-
-  const shell = document.createElement('div');
-  shell.className = 'terminal-exit-message terminal-exit-shell';
-
-  const kicker = document.createElement('div');
-  kicker.className = 'terminal-exit-kicker shell-kicker';
-  kicker.textContent = 'Terminal';
-
-  const title = document.createElement('div');
-  title.className = 'terminal-exit-title';
-  title.textContent = 'Session failed to start';
-
-  const copy = document.createElement('div');
-  copy.className = 'terminal-exit-copy';
-  copy.textContent = details;
-
-  const respawnButton = document.createElement('button');
-  respawnButton.className = 'respawn-btn calder-button';
-  respawnButton.textContent = 'Retry Session';
-  respawnButton.addEventListener('click', () => {
-    overlay.remove();
-    void spawnTerminal(instance.sessionId);
-  });
-
-  shell.appendChild(kicker);
-  shell.appendChild(title);
-  shell.appendChild(copy);
-  shell.appendChild(respawnButton);
-  overlay.appendChild(shell);
-  instance.element.appendChild(overlay);
-}
-
-
 export async function spawnTerminal(sessionId: string): Promise<void> {
   const instance = instances.get(sessionId);
   if (!instance || instance.spawned) return;
@@ -338,34 +284,19 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
   instance.exited = false;
 
   // Remove any exit overlay
-  const overlay = instance.element.querySelector('.terminal-exit-overlay');
-  if (overlay) overlay.remove();
-
-  if (!instance.isResume) {
-    markFreshSession(sessionId);
-  }
-  initSession(sessionId);
-  let initialPrompt: string | undefined;
-  if (instance.pendingPrompt && getProviderCapabilities(instance.providerId)?.pendingPromptTrigger === 'startup-arg') {
-    initialPrompt = instance.pendingPrompt;
-    instance.pendingPrompt = null;
-  }
+  clearSpawnFailureOverlay(instance.element);
   try {
-    await window.calder.pty.create(
-      sessionId,
-      instance.projectPath,
-      instance.cliSessionId,
-      instance.isResume,
-      instance.args,
-      instance.providerId,
-      initialPrompt,
-    );
-    instance.isResume = true; // subsequent spawns (e.g. Restart Session) should resume
+    await spawnPtySession(instance);
   } catch (error) {
     // Keep restore/startup failures non-fatal so one broken session does not crash the whole UI.
     instance.spawned = false;
     instance.exited = true;
-    showSpawnFailureOverlay(instance, formatSpawnFailureMessage(error));
+    showSpawnFailureOverlay({
+      element: instance.element,
+      sessionId: instance.sessionId,
+      details: formatSpawnFailureMessage(error),
+      onRetry: spawnTerminal,
+    });
     console.error(`[terminal-pane] Failed to spawn terminal session ${sessionId}`, error);
   }
 }
@@ -374,13 +305,12 @@ export async function deliverPromptToTerminalSession(sessionId: string, prompt: 
   const instance = instances.get(sessionId);
   if (!instance) return false;
 
-  if (!instance.spawned) {
-    setPendingPrompt(sessionId, prompt);
-    await spawnTerminal(sessionId);
-    return true;
-  }
-
-  window.calder.pty.write(sessionId, buildBracketedPastePayload(prompt));
+  await deliverPrompt({
+    session: instance,
+    prompt,
+    setPendingPrompt,
+    spawnSession: spawnTerminal,
+  });
   return true;
 }
 

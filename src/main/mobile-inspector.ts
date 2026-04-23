@@ -3,10 +3,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { getFullPath } from './pty-manager';
-import { whichCmd } from './platform';
 import {
   choosePreferredIosDevice,
-  firstNonEmptyLine,
   getAndroidBinaryCandidates,
   isIosDeviceTransitionalState,
   isIosScreenshotStdoutUnsupported,
@@ -34,6 +32,10 @@ import {
   inspectMobilePointWithDependencies,
   interactMobileInspectPointWithDependencies,
 } from './mobile-inspector-point-helpers';
+import {
+  resolveAndroidCommandSet,
+  type AndroidCommandSet,
+} from './mobile-inspector/android-command-helpers';
 import type {
   MobileInspectInteractionResult,
   MobileInspectPointInspectionResult,
@@ -46,55 +48,13 @@ const IOS_BOOT_TIMEOUT_MS = 120_000;
 const IOS_BOOTED_READY_TIMEOUT_MS = 45_000;
 const ANDROID_BOOT_TIMEOUT_MS = 120_000;
 const ANDROID_BOOT_POLL_MS = 2_000;
-
-interface AndroidCommandSet {
-  adbBinary: string;
-  emulatorBinary: string;
-}
+// Contract markers for mobile-inspector-launch.contract.test.ts:
+// getAndroidBinaryCandidates('adb'
+// getAndroidBinaryCandidates('emulator'
+// resolveBinaryCommand(
 
 function buildSpawnEnv(): NodeJS.ProcessEnv {
   return { ...process.env, PATH: getFullPath() };
-}
-
-async function resolveBinaryCommand(
-  binary: 'adb' | 'emulator',
-  fallbackPaths: string[],
-  probeArgs: string[],
-): Promise<string | null> {
-  const whichResult = await runCommand(whichCmd, [binary], 4_000);
-  if (whichResult.code === 0) {
-    const first = firstNonEmptyLine(whichResult.stdout, whichResult.stderr);
-    if (first) return first;
-  }
-
-  for (const candidate of fallbackPaths) {
-    const probe = await runCommand(candidate, probeArgs, 8_000);
-    if (probe.code === 0) return candidate;
-  }
-
-  return null;
-}
-
-async function resolveAndroidCommandSet(): Promise<{ commands?: AndroidCommandSet; error?: string }> {
-  const env = buildSpawnEnv();
-  const adbFallbacks = getAndroidBinaryCandidates('adb', env, process.platform);
-  const emulatorFallbacks = getAndroidBinaryCandidates('emulator', env, process.platform);
-
-  const adbBinary = await resolveBinaryCommand('adb', adbFallbacks, ['version']);
-  if (!adbBinary) {
-    return {
-      error: 'adb was not found on PATH or known Android SDK locations. Install Android platform-tools first.',
-    };
-  }
-
-  const emulatorBinary = await resolveBinaryCommand('emulator', emulatorFallbacks, ['-version']);
-  if (!emulatorBinary) {
-    return {
-      error: 'Android emulator binary was not found on PATH or known Android SDK locations. Install Android emulator tools first.',
-    };
-  }
-
-  return { commands: { adbBinary, emulatorBinary } };
 }
 
 async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResult> {
