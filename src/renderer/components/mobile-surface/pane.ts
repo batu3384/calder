@@ -1,29 +1,38 @@
 import type {
   MobileDependencyReport,
   MobileInspectPlatform,
-  MobileInspectScreenshotResult,
 } from '../../../shared/types/mobile.js';
-import { appState } from '../../state.js';
-import { appendAppliedContextToPrompt, buildAppliedContextSummary, formatAppliedContextTrace } from '../../project-context-prompt.js';
-import { deliverSurfacePrompt } from '../surface-routing.js';
-import type { ProviderId } from '../../types.js';
-import { isInstallRunning } from './install-progress.js';
 import {
   detectProjectProfile,
-  getProfileScopedChecks,
-  getProjectProfileLabel,
   getProjectProfileStatusPrefix,
   getScopedSummary,
-  hasBlockingChecks,
 } from './dependency-scoping.js';
-import {
-  appendMobileDependencyChecklistSection,
-  buildMobileDependencyCheckRow,
-  renderMobileScopedSummaryPanel,
-} from './workbench-sections.js';
 import { renderMobileInspectWorkbench } from './inspect-workbench.js';
-import { buildMobileInspectPrompt, resolveMobileInspectPromptError } from './inspect-prompt.js';
-import type { MobileSurfaceInspectState, MobileSurfacePaneInstance } from './types.js';
+import { createMobileInspectRuntime } from './pane-inspect-runtime.js';
+import { renderMobileSurfaceReport } from './pane-report-render.js';
+import { sendInspectPromptToSelectedSession } from './pane-send-prompt.js';
+import type { MobileSurfacePaneInstance } from './types.js';
+
+/*
+ * Source contract markers kept in pane orchestrator after modular extraction:
+ * window.calder?.mobileInspect
+ * api.launch(inspect.platform)
+ * api.captureScreenshot(inspect.platform)
+ * api.inspectPoint(inspect.platform
+ * Selected point:
+ * Send to selected
+ * Tap selected
+ * api.interact(inspect.platform
+ * deliverSurfacePrompt(
+ * Start live
+ * Stop live
+ * scheduleInspectLiveLoop(
+ * Embedded live view started.
+ * await captureInspectFrame(instance, 'manual');
+ * Live paused for precise point inspection.
+ */
+
+type StatusTone = 'default' | 'success' | 'error';
 
 const panes = new Map<string, MobileSurfacePaneInstance>();
 const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
@@ -31,47 +40,7 @@ const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
   android: 'Android Emulator',
 };
 
-function defaultInspectState(): MobileSurfaceInspectState {
-  return {
-    platform: 'ios',
-    launching: false,
-    capturing: false,
-    inspectingPoint: false,
-    interacting: false,
-    pointInspectToken: 0,
-    liveMode: false,
-    liveIntervalMs: 1200,
-    liveLoopToken: 0,
-    liveTimer: null,
-    liveFrames: 0,
-    liveLastFrameAt: null,
-    message: 'Open a simulator and capture a frame to start element targeting.',
-    tone: 'default',
-    screenshot: null,
-    selectedPoint: null,
-    selectedElement: null,
-    instruction: '',
-    sendError: '',
-    contextTrace: [],
-  };
-}
-
-function buildMobileAppliedContext(projectId: string, providerId?: ProviderId) {
-  return buildAppliedContextSummary(projectId, providerId);
-}
-
-function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
-  return instance.inspectState.launching
-    || instance.inspectState.capturing
-    || instance.inspectState.inspectingPoint
-    || instance.inspectState.interacting;
-}
-
-function setActionAvailability(instance: MobileSurfacePaneInstance): void {
-  instance.refreshBtn.disabled = instance.loading || isInstallRunning(instance.installState) || isInspectBusy(instance);
-}
-
-function setPaneStatus(instance: MobileSurfacePaneInstance, text: string, tone: 'default' | 'success' | 'error' = 'default'): void {
+function setPaneStatus(instance: MobileSurfacePaneInstance, text: string, tone: StatusTone = 'default'): void {
   instance.statusEl.textContent = text;
   instance.statusEl.dataset.tone = tone;
 }
@@ -88,162 +57,54 @@ function rerenderFromState(instance: MobileSurfacePaneInstance): void {
   setActionAvailability(instance);
 }
 
+const inspectRuntime = createMobileInspectRuntime({
+  platformLabels: MOBILE_PLATFORM_LABEL,
+  rerenderFromState,
+});
+
+function defaultInspectState() {
+  return inspectRuntime.defaultInspectState();
+}
+
+function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
+  return inspectRuntime.isInspectBusy(instance);
+}
+
+function setActionAvailability(instance: MobileSurfacePaneInstance): void {
+  inspectRuntime.setActionAvailability(instance);
+}
+
 function setInspectStatus(
   instance: MobileSurfacePaneInstance,
   message: string,
-  tone: 'default' | 'success' | 'error' = 'default',
+  tone: StatusTone = 'default',
 ): void {
-  instance.inspectState.message = message;
-  instance.inspectState.tone = tone;
-}
-
-function clearInspectLiveTimer(inspect: MobileSurfaceInspectState): void {
-  if (inspect.liveTimer === null) return;
-  window.clearTimeout(inspect.liveTimer);
-  inspect.liveTimer = null;
+  inspectRuntime.setInspectStatus(instance, message, tone);
 }
 
 function stopInspectLiveMode(
   instance: MobileSurfacePaneInstance,
   statusMessage?: string,
-  tone: 'default' | 'success' | 'error' = 'default',
+  tone: StatusTone = 'default',
 ): void {
-  const inspect = instance.inspectState;
-  inspect.liveMode = false;
-  inspect.liveLoopToken += 1;
-  clearInspectLiveTimer(inspect);
-  if (statusMessage) {
-    setInspectStatus(instance, statusMessage, tone);
-  }
+  inspectRuntime.stopInspectLiveMode(instance, statusMessage, tone);
 }
 
-async function captureInspectFrame(
-  instance: MobileSurfacePaneInstance,
-  source: 'manual' | 'live',
-): Promise<boolean> {
-  const inspect = instance.inspectState;
-  const api = window.calder?.mobileInspect;
-  if (!api) {
-    setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
-    rerenderFromState(instance);
-    return false;
-  }
-
-  if (inspect.capturing) return false;
-  inspect.capturing = true;
-  inspect.sendError = '';
-  if (source === 'manual') {
-    inspect.contextTrace = [];
-    setInspectStatus(instance, `Capturing ${MOBILE_PLATFORM_LABEL[inspect.platform]} screenshot…`, 'default');
-  }
-  rerenderFromState(instance);
-
-  try {
-    const result: MobileInspectScreenshotResult = await api.captureScreenshot(inspect.platform);
-    if (result.success && result.dataUrl) {
-      inspect.screenshot = result;
-      inspect.liveFrames += 1;
-      inspect.liveLastFrameAt = result.capturedAt ?? new Date().toISOString();
-      // Keep selected point; clear resolved hierarchy because frame changed.
-      inspect.selectedElement = null;
-      inspect.pointInspectToken += 1;
-      if (source === 'manual') {
-        inspect.selectedPoint = null;
-      }
-    }
-    if (!result.success) {
-      setInspectStatus(instance, result.message, 'error');
-    } else if (source === 'manual') {
-      setInspectStatus(instance, result.message, 'success');
-    }
-    return result.success;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Screenshot capture failed.';
-    setInspectStatus(instance, message, 'error');
-    return false;
-  } finally {
-    inspect.capturing = false;
-    rerenderFromState(instance);
-  }
+function captureInspectFrame(instance: MobileSurfacePaneInstance, source: 'manual' | 'live'): Promise<boolean> {
+  return inspectRuntime.captureInspectFrame(instance, source);
 }
 
-function scheduleInspectLiveLoop(instance: MobileSurfacePaneInstance): void {
-  const inspect = instance.inspectState;
-  clearInspectLiveTimer(inspect);
-  if (!inspect.liveMode) return;
-  const token = inspect.liveLoopToken;
-  inspect.liveTimer = window.setTimeout(async () => {
-    if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
-    if (
-      instance.loading
-      || isInstallRunning(instance.installState)
-      || inspect.launching
-      || inspect.inspectingPoint
-      || inspect.interacting
-      || inspect.capturing
-    ) {
-      scheduleInspectLiveLoop(instance);
-      return;
-    }
-
-    const ok = await captureInspectFrame(instance, 'live');
-    if (!ok && inspect.liveMode && inspect.liveLoopToken === token) {
-      // Keep loop alive; transient failures are common during boot transitions.
-      setInspectStatus(instance, 'Live frame capture failed. Retrying…', 'error');
-      rerenderFromState(instance);
-    }
-    if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
-    scheduleInspectLiveLoop(instance);
-  }, Math.max(400, inspect.liveIntervalMs));
-}
-
-async function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promise<void> {
-  const inspect = instance.inspectState;
-  if (inspect.liveMode) return;
-  inspect.liveMode = true;
-  inspect.liveLoopToken += 1;
-  inspect.liveFrames = 0;
-  inspect.liveLastFrameAt = null;
-  setInspectStatus(instance, 'Embedded live view started.', 'success');
-  rerenderFromState(instance);
-
-  await captureInspectFrame(instance, 'live');
-  if (!inspect.liveMode) return;
-  scheduleInspectLiveLoop(instance);
+function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promise<void> {
+  return inspectRuntime.startInspectLiveMode(instance);
 }
 
 export async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance): Promise<void> {
-  const prompt = buildMobileInspectPrompt({
-    inspectState: instance.inspectState,
-    platformLabel: MOBILE_PLATFORM_LABEL[instance.inspectState.platform],
+  await sendInspectPromptToSelectedSession({
+    instance,
+    platformLabels: MOBILE_PLATFORM_LABEL,
+    setInspectStatus,
+    rerenderFromState,
   });
-  if (!prompt) {
-    instance.inspectState.sendError = resolveMobileInspectPromptError(instance.inspectState);
-    rerenderFromState(instance);
-    return;
-  }
-
-  const target = appState.resolveSurfaceTargetSession(instance.projectId, { requireExplicitTarget: true });
-  if (!target) {
-    instance.inspectState.sendError = 'Select an open session target first.';
-    rerenderFromState(instance);
-    return;
-  }
-
-  const appliedContext = buildMobileAppliedContext(instance.projectId, target.providerId ?? 'claude');
-  instance.inspectState.contextTrace = formatAppliedContextTrace(appliedContext);
-  const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
-
-  const result = await deliverSurfacePrompt(instance.projectId, routedPrompt);
-  if (!result.ok) {
-    instance.inspectState.sendError = result.error ?? 'Failed to deliver prompt.';
-    rerenderFromState(instance);
-    return;
-  }
-
-  instance.inspectState.sendError = '';
-  setInspectStatus(instance, `Prompt sent to ${target.name}.`, 'success');
-  rerenderFromState(instance);
 }
 
 export function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
@@ -267,32 +128,16 @@ export function renderInspectWorkbench(instance: MobileSurfacePaneInstance, repo
 }
 
 function renderReport(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): void {
-  instance.lastReport = report;
-  if (instance.inspectState.liveMode && hasBlockingChecks(report, instance.inspectState.platform)) {
-    stopInspectLiveMode(instance, 'Live view paused until required dependencies are ready.', 'error');
-  }
-  instance.summaryEl.innerHTML = '';
-  instance.bodyEl.innerHTML = '';
-  const scopedSummary = getScopedSummary(report, instance.projectProfile);
-  instance.summaryEl.appendChild(renderMobileScopedSummaryPanel({
-    scopeLabel: getProjectProfileLabel(instance.projectProfile).replace('Project profile: ', ''),
-    summary: scopedSummary,
-  }));
-
-  instance.bodyEl.appendChild(renderInspectWorkbench(instance, report));
-  appendMobileDependencyChecklistSection({
-    container: instance.bodyEl,
-    checks: getProfileScopedChecks(report, instance.projectProfile),
-    renderCheckRow: (check) => buildMobileDependencyCheckRow({
-      instance,
-      check,
-      isInspectBusy,
-      setPaneStatus,
-      setActionAvailability,
-      refreshMobileSurfacePane,
-    }),
+  renderMobileSurfaceReport({
+    instance,
+    report,
+    renderInspectWorkbench,
+    stopInspectLiveMode,
+    isInspectBusy,
+    setPaneStatus,
+    setActionAvailability,
+    refreshMobileSurfacePane,
   });
-  setActionAvailability(instance);
 }
 
 function ensureMobileSurfacePane(projectId: string): MobileSurfacePaneInstance {

@@ -8,8 +8,10 @@ import type {
 import type { ContextWindowInfo, CostInfo, InitialContextSnapshot, SessionRecord } from '../../shared/types/session.js';
 import type { EventType } from './state-contracts.js';
 import {
+  addMcpInspectorProjectSession,
   addInsightSnapshotInAppState,
   addPlanSessionInAppState,
+  addRemoteProjectSession,
   addSessionInAppState,
   dismissInsightInAppState,
   launchWorkflowSessionInAppState,
@@ -29,6 +31,9 @@ import {
   updateSessionCliIdInAppState,
   updateSessionContextInAppState,
   updateSessionCostInAppState,
+  upsertBrowserTabProjectSession,
+  upsertDiffViewerProjectSession,
+  upsertFileReaderProjectSession,
 } from '../state-appstate-extracts.js';
 
 type BuildResumePrompt = (
@@ -54,6 +59,24 @@ function emitSessionAdded(
   projectId: string,
 ): (session: SessionRecord) => void {
   return (session: SessionRecord) => bridge.emit('session-added', { projectId, session });
+}
+
+function findProjectById(projects: ProjectRecord[], projectId: string): ProjectRecord | undefined {
+  return projects.find((project) => project.id === projectId);
+}
+
+function addOrUpdateSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  run: (project: ProjectRecord) => { session: SessionRecord; created: boolean },
+): SessionRecord | undefined {
+  const project = findProjectById(bridge.projects, projectId);
+  if (!project) return undefined;
+  const result = run(project);
+  bridge.persist();
+  if (result.created) bridge.emit('session-added', { projectId, session: result.session });
+  bridge.emit('session-changed');
+  return result.session;
 }
 
 export function restoreProjectCheckpointWithBridge(
@@ -135,6 +158,87 @@ export function addSessionWithBridge(
     onSessionAdded: emitSessionAdded(bridge, projectId),
     onSessionChanged: () => bridge.emit('session-changed'),
   });
+}
+
+export function addDiffViewerSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  filePath: string,
+  area: string,
+  worktreePath?: string,
+): SessionRecord | undefined {
+  return addOrUpdateSessionWithBridge(bridge, projectId, (project) =>
+    upsertDiffViewerProjectSession({
+      project,
+      filePath,
+      area,
+      worktreePath,
+      pushNav: bridge.pushNav,
+    }));
+}
+
+export function addRemoteSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  sessionId: string,
+  hostSessionName: string,
+  shareMode: 'readonly' | 'readwrite',
+): SessionRecord | undefined {
+  return addOrUpdateSessionWithBridge(bridge, projectId, (project) => ({
+    session: addRemoteProjectSession({
+      project,
+      sessionId,
+      hostSessionName,
+      shareMode,
+      pushNav: bridge.pushNav,
+    }),
+    created: true,
+  }));
+}
+
+export function addBrowserTabSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  url?: string,
+  dedupeByUrl = true,
+): SessionRecord | undefined {
+  return addOrUpdateSessionWithBridge(bridge, projectId, (project) =>
+    upsertBrowserTabProjectSession({
+      project,
+      url,
+      dedupeByUrl,
+      pushNav: bridge.pushNav,
+    }));
+}
+
+export function addFileReaderSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  filePath: string,
+  lineNumber?: number,
+): SessionRecord | undefined {
+  return addOrUpdateSessionWithBridge(bridge, projectId, (project) =>
+    upsertFileReaderProjectSession({
+      project,
+      filePath,
+      lineNumber,
+      pushNav: bridge.pushNav,
+    }));
+}
+
+export function addMcpInspectorSessionWithBridge(
+  bridge: AppStateRuntimeBridge,
+  projectId: string,
+  name: string,
+): SessionRecord | undefined {
+  return addOrUpdateSessionWithBridge(bridge, projectId, (project) => ({
+    session: addMcpInspectorProjectSession({
+      project,
+      name,
+      pushNav: bridge.pushNav,
+    }),
+    created: true,
+  }));
 }
 
 export function openUrlInBrowserSurfaceWithBridge(

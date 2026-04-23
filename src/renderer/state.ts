@@ -39,8 +39,6 @@ import {
 } from './state-normalizers.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import {
-  addMcpInspectorProjectSession,
-  addRemoteProjectSession,
   clearHistoryForProject,
   createProjectRecord,
   findProjectBySessionId,
@@ -51,14 +49,16 @@ import {
   removeProjectAndCollectSessions,
   resolveSurfaceTargetSessionForProject,
   toggleHistoryBookmarkForProject,
-  upsertBrowserTabProjectSession,
-  upsertDiffViewerProjectSession,
-  upsertFileReaderProjectSession,
 } from './state-appstate-extracts.js';
 import type { AppStateRuntimeBridge } from './state/state-appstate-runtime-bridge.js';
 import {
+  addBrowserTabSessionWithBridge,
+  addDiffViewerSessionWithBridge,
   addInsightSnapshotWithBridge,
+  addFileReaderSessionWithBridge,
+  addMcpInspectorSessionWithBridge,
   addPlanSessionWithBridge,
+  addRemoteSessionWithBridge,
   addSessionWithBridge,
   dismissInsightWithBridge,
   launchWorkflowSessionWithBridge,
@@ -351,41 +351,12 @@ class AppState {
     return addSessionWithBridge(this.runtimeBridge(), projectId, name, args, providerId);
   }
 
-  private addOrUpdateSession(
-    projectId: string,
-    run: (project: ProjectRecord) => { session: SessionRecord; created: boolean },
-  ): SessionRecord | undefined {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return undefined;
-    const result = run(project);
-    this.persist();
-    if (result.created) this.emit('session-added', { projectId, session: result.session });
-    this.emit('session-changed');
-    return result.session;
-  }
-
   addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined {
-    return this.addOrUpdateSession(projectId, (project) =>
-      upsertDiffViewerProjectSession({
-        project,
-        filePath,
-        area,
-        worktreePath,
-        pushNav: (sessionId) => this.pushNav(sessionId),
-      }));
+    return addDiffViewerSessionWithBridge(this.runtimeBridge(), projectId, filePath, area, worktreePath);
   }
 
   addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined {
-    return this.addOrUpdateSession(projectId, (project) => ({
-      session: addRemoteProjectSession({
-        project,
-        sessionId,
-        hostSessionName,
-        shareMode,
-        pushNav: (createdSessionId) => this.pushNav(createdSessionId),
-      }),
-      created: true,
-    }));
+    return addRemoteSessionWithBridge(this.runtimeBridge(), projectId, sessionId, hostSessionName, shareMode);
   }
 
   addBrowserTabSession(
@@ -393,13 +364,12 @@ class AppState {
     url?: string,
     options?: { dedupeByUrl?: boolean },
   ): SessionRecord | undefined {
-    return this.addOrUpdateSession(projectId, (project) =>
-      upsertBrowserTabProjectSession({
-        project,
-        url,
-        dedupeByUrl: options?.dedupeByUrl ?? true,
-        pushNav: (sessionKey) => this.pushNav(sessionKey),
-      }));
+    return addBrowserTabSessionWithBridge(
+      this.runtimeBridge(),
+      projectId,
+      url,
+      options?.dedupeByUrl ?? true,
+    );
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
@@ -407,24 +377,11 @@ class AppState {
   }
 
   addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
-    return this.addOrUpdateSession(projectId, (project) =>
-      upsertFileReaderProjectSession({
-        project,
-        filePath,
-        lineNumber,
-        pushNav: (sessionId) => this.pushNav(sessionId),
-      }));
+    return addFileReaderSessionWithBridge(this.runtimeBridge(), projectId, filePath, lineNumber);
   }
 
   addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined {
-    return this.addOrUpdateSession(projectId, (project) => ({
-      session: addMcpInspectorProjectSession({
-        project,
-        name,
-        pushNav: (sessionId) => this.pushNav(sessionId),
-      }),
-      created: true,
-    }));
+    return addMcpInspectorSessionWithBridge(this.runtimeBridge(), projectId, name);
   }
 
   removeSession(projectId: string, sessionId: string): void {
