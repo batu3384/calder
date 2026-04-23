@@ -1,106 +1,52 @@
-import { appState } from './state.js';
-import { promptNewProject, toggleSidebar } from './components/sidebar.js';
-import { quickNewSession } from './components/tab-bar/tab-bar.js';
-import { toggleProjectTerminal } from './components/project-terminal.js';
-import { toggleDebugPanel } from './components/debug-panel.js';
-import { showHelpDialog } from './components/help-dialog.js';
-import { getFocusedSessionId } from './components/terminal-pane.js';
-import { showSearchBar, TerminalSearchBackend, ShellTerminalSearchBackend } from './components/search-bar.js';
-import { getActiveShellSessionId } from './components/project-terminal.js';
-import { toggleGitPanel } from './components/git-panel.js';
-import { showQuickOpen } from './components/quick-open.js';
 import { shortcutManager } from './shortcuts.js';
-import { getFileReaderInstance, getFileReaderTextSelector, showGoToLineBar } from './components/file-reader.js';
-import { getFileViewerInstance } from './components/file-viewer.js';
-import { DomSearchBackend } from './components/dom-search-backend.js';
-import { toggleInspector } from './components/session-inspector/session-inspector.js';
-import { toggleContextInspector } from './components/context-inspector.js';
-import { showPreferencesModal } from './components/preferences/preferences-modal.js';
-import { closeModal, showModal } from './components/modal.js';
+import { createKeybindingActionBridge } from './bootstrap/keybindings-action-bridge.js';
 
 let initialized = false;
 
 export function initKeybindings(): void {
   if (initialized) return;
   initialized = true;
+  const actions = createKeybindingActionBridge();
 
   // Menu-based shortcuts (registered via Electron menu accelerators)
   // These handlers receive events forwarded from the main process menu
-  window.calder.menu.onPreferences(() => showPreferencesModal());
-  window.calder.menu.onNewProject(() => promptNewProject());
-  window.calder.menu.onNewSession(() => quickNewSession());
-  window.calder.menu.onNextSession(() => appState.cycleSession(1));
-  window.calder.menu.onPrevSession(() => appState.cycleSession(-1));
-  window.calder.menu.onGotoSession((index) => appState.gotoSession(index));
-  window.calder.menu.onToggleDebug(() => toggleDebugPanel());
-  window.calder.menu.onProjectTerminal(() => toggleProjectTerminal());
-  window.calder.menu.onNewMcpInspector(() => promptNewMcpInspector());
-  window.calder.menu.onSessionIndicatorsHelp(() => showHelpDialog());
-  window.calder.menu.onToggleInspector(() => toggleInspector());
+  window.calder.menu.onPreferences(() => actions.showPreferences());
+  window.calder.menu.onNewProject(() => actions.newProject());
+  window.calder.menu.onNewSession(() => actions.newSession());
+  window.calder.menu.onNextSession(() => actions.nextSession());
+  window.calder.menu.onPrevSession(() => actions.prevSession());
+  window.calder.menu.onGotoSession((index) => actions.gotoSession(index));
+  window.calder.menu.onToggleDebug(() => actions.toggleDebug());
+  window.calder.menu.onProjectTerminal(() => actions.toggleProjectTerminal());
+  window.calder.menu.onNewMcpInspector(() => actions.newMcpInspector());
+  window.calder.menu.onSessionIndicatorsHelp(() => actions.showSessionIndicatorsHelp());
+  window.calder.menu.onToggleInspector(() => actions.toggleInspector());
+  const toggleContextInspector = (): void => actions.toggleContextPanel();
   window.calder.menu.onToggleContextPanel(() => toggleContextInspector());
-  window.calder.menu.onCloseSession(() => {
-    const project = appState.activeProject;
-    const session = appState.activeSession;
-    if (project && session) appState.removeSession(project.id, session.id);
-  });
+  window.calder.menu.onCloseSession(() => actions.closeSession());
 
   // Register shortcut handlers
-  shortcutManager.registerHandler('new-session', () => quickNewSession());
-  shortcutManager.registerHandler('new-session-alt', () => quickNewSession());
-  shortcutManager.registerHandler('new-project', () => promptNewProject());
+  shortcutManager.registerHandler('new-session', () => actions.newSession());
+  shortcutManager.registerHandler('new-session-alt', () => actions.newSession());
+  shortcutManager.registerHandler('new-project', () => actions.newProject());
   for (let i = 1; i <= 9; i++) {
-    shortcutManager.registerHandler(`goto-session-${i}`, () => appState.gotoSession(i - 1));
+    shortcutManager.registerHandler(`goto-session-${i}`, () => actions.gotoSession(i - 1));
   }
-  shortcutManager.registerHandler('next-session', () => appState.cycleSession(1));
-  shortcutManager.registerHandler('prev-session', () => appState.cycleSession(-1));
-  shortcutManager.registerHandler('next-project', () => cycleProject(1));
-  shortcutManager.registerHandler('prev-project', () => cycleProject(-1));
-  shortcutManager.registerHandler('tab-back', () => appState.navigateBack());
-  shortcutManager.registerHandler('tab-forward', () => appState.navigateForward());
-  shortcutManager.registerHandler('toggle-sidebar', () => toggleSidebar());
-  shortcutManager.registerHandler('project-terminal', () => toggleProjectTerminal());
-  shortcutManager.registerHandler('project-terminal-alt', () => toggleProjectTerminal());
-  shortcutManager.registerHandler('debug-panel', () => toggleDebugPanel());
-  shortcutManager.registerHandler('git-panel', () => toggleGitPanel());
-  shortcutManager.registerHandler('quick-open', () => showQuickOpen());
-  shortcutManager.registerHandler('find-in-terminal', () => {
-    const shellPanel = document.getElementById('project-terminal-panel');
-    if (shellPanel && !shellPanel.classList.contains('hidden') &&
-        shellPanel.contains(document.activeElement)) {
-      const shellSessionId = getActiveShellSessionId();
-      if (shellSessionId) {
-        showSearchBar(shellSessionId, ShellTerminalSearchBackend(shellSessionId));
-        return;
-      }
-    }
-
-    const session = appState.activeSession;
-    if (!session) return;
-
-    if (session.type === 'file-reader') {
-      const instance = getFileReaderInstance(session.id);
-      if (!instance) return;
-      const body = instance.element.querySelector('.file-reader-body') as HTMLElement;
-      if (!body) return;
-      showSearchBar(session.id, new DomSearchBackend(body, getFileReaderTextSelector(session.id)));
-    } else if (session.type === 'diff-viewer') {
-      const instance = getFileViewerInstance(session.id);
-      if (!instance) return;
-      const body = instance.element.querySelector('.file-viewer-body') as HTMLElement;
-      if (!body) return;
-      showSearchBar(session.id, new DomSearchBackend(body, '.diff-line'));
-    } else {
-      const sessionId = getFocusedSessionId();
-      if (sessionId) showSearchBar(sessionId, TerminalSearchBackend(sessionId));
-    }
-  });
-  shortcutManager.registerHandler('goto-line', () => {
-    const session = appState.activeSession;
-    if (session?.type === 'file-reader') {
-      showGoToLineBar(session.id);
-    }
-  });
-  shortcutManager.registerHandler('help', () => showHelpDialog());
+  shortcutManager.registerHandler('next-session', () => actions.nextSession());
+  shortcutManager.registerHandler('prev-session', () => actions.prevSession());
+  shortcutManager.registerHandler('next-project', () => actions.nextProject());
+  shortcutManager.registerHandler('prev-project', () => actions.prevProject());
+  shortcutManager.registerHandler('tab-back', () => actions.navigateBack());
+  shortcutManager.registerHandler('tab-forward', () => actions.navigateForward());
+  shortcutManager.registerHandler('toggle-sidebar', () => actions.toggleSidebar());
+  shortcutManager.registerHandler('project-terminal', () => actions.toggleProjectTerminal());
+  shortcutManager.registerHandler('project-terminal-alt', () => actions.toggleProjectTerminal());
+  shortcutManager.registerHandler('debug-panel', () => actions.toggleDebug());
+  shortcutManager.registerHandler('git-panel', () => actions.toggleGitPanel());
+  shortcutManager.registerHandler('quick-open', () => actions.quickOpen());
+  shortcutManager.registerHandler('find-in-terminal', () => actions.findInTerminal());
+  shortcutManager.registerHandler('goto-line', () => actions.gotoLine());
+  shortcutManager.registerHandler('help', () => actions.help());
 
   document.addEventListener('keydown', (e) => {
     shortcutManager.matchEvent(e);
@@ -109,34 +55,4 @@ export function initKeybindings(): void {
 
 export function _resetKeybindingsForTesting(): void {
   initialized = false;
-}
-
-function promptNewMcpInspector(): void {
-  const project = appState.activeProject;
-  if (!project) return;
-
-  const inspectorNum = project.sessions.filter(s => s.type === 'mcp-inspector').length + 1;
-  showModal('New MCP Inspector', [
-    { label: 'Name', id: 'inspector-name', placeholder: `Inspector ${inspectorNum}`, defaultValue: `Inspector ${inspectorNum}` },
-  ], (values) => {
-    const name = values['inspector-name']?.trim();
-    if (!name) return;
-
-    closeModal();
-    appState.addMcpInspectorSession(project.id, name);
-  });
-}
-
-function cycleProject(direction: 1 | -1): void {
-  const projects = appState.projects;
-  if (!projects.length) return;
-
-  const currentIndex = appState.activeProjectId
-    ? projects.findIndex((project) => project.id === appState.activeProjectId)
-    : 0;
-  const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
-  const nextIndex = (normalizedIndex + direction + projects.length) % projects.length;
-  const target = projects[nextIndex];
-  if (!target) return;
-  appState.setActiveProject(target.id);
 }
