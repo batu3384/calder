@@ -1,4 +1,5 @@
-import type { CliSurfacePromptContextMode, SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import type { CliSurfaceLayoutElements } from './pane-elements.js';
 
 type CliSurfaceApi = {

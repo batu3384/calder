@@ -1,4 +1,5 @@
-import type { ProjectRecord, ProjectSurfaceRecord } from '../shared/types/project.js';
+import type { ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
 import { appState } from './state.js';
 
 export type PreviewRuntimeHealthTone = 'healthy' | 'muted' | 'warning' | 'danger';

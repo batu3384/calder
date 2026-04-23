@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CliSurfaceProfile, ProjectRecord } from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import type { CliSurfaceProfile } from '../../../shared/types/project-surface.js';
 import {
   createDefaultProjectSurface,
   getProjectSurface,

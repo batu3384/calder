@@ -1,9 +1,5 @@
-import type {
-  CliSurfaceProfile,
-  CliSurfaceRuntimeState,
-  ProjectRecord,
-  ProjectSurfaceRecord,
-} from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import type { CliSurfaceProfile, CliSurfaceRuntimeState, ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
 
 interface CliSurfaceProjectStateStore {
   projects: ProjectRecord[];

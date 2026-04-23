@@ -1,4 +1,4 @@
-import type { ProjectWorkflowState } from '../shared/types/project.js';
+import type { ProjectWorkflowState } from '../shared/types/project-workflow.js';
 import { appState } from './state.js';
 
 let initialized = false;

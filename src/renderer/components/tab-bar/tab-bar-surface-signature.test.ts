@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectRecord } from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
 
 function makeProject(): ProjectRecord {

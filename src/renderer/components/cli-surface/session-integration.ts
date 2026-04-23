@@ -1,4 +1,4 @@
-import type { SurfacePromptPayload } from '../../../shared/types/project.js';
+import type { SurfacePromptPayload } from '../../../shared/types/project-surface.js';
 import { appendAppliedContextToPrompt } from '../../project-context-prompt.js';
 import {
   deliverSurfacePrompt,

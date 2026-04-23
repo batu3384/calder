@@ -1,4 +1,4 @@
-import type { CliSurfacePromptContextMode } from '../../../shared/types/project.js';
+import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { createInitialInspectState, type CliInspectState } from './inspect-mode.js';
 import type { SelectableCliRegion } from './inspect-selection.js';

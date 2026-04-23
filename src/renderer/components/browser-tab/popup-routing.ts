@@ -1,4 +1,4 @@
-import type { BrowserGuestOpenPayload } from '../../../shared/types/project.js';
+import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
 
 interface BrowserGuestOpenRoutingHandlers {
   openEmbedded: (url: string) => void;

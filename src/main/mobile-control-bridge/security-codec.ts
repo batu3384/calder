@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from 'node:crypto';
-import type { ShareConnectionDescription } from '../../shared/types/project';
+import type { ShareConnectionDescription } from '../../shared/types/project-core';
 import {
   normalizeSharePassphrase,
   SHARE_AES_KEY_BYTES,

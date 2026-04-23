@@ -1,4 +1,4 @@
-import type { ProjectRecord } from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import { appState } from '../../state.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { setModalError, showModal } from '../modal.js';

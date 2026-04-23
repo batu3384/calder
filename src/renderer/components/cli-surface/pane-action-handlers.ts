@@ -3,7 +3,8 @@ import {
 } from './composer-position.js';
 import { openInspect } from './inspect-mode.js';
 import { selectionFromViewport } from './inspect-geometry.js';
-import type { CliSurfacePromptContextMode, SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import {
   sendCliSelectionToCustomSession,
   sendCliSelectionToNewSession,

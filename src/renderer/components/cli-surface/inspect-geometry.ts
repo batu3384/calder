@@ -1,4 +1,4 @@
-import type { SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 
 export function selectionsMatchBounds(left: SurfaceSelectionRange, right: SurfaceSelectionRange): boolean {
   return left.startRow === right.startRow

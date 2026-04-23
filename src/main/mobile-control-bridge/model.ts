@@ -1,6 +1,6 @@
 import * as http from 'node:http';
 import type { ShareMode, ShareRtcConfig } from '../../shared/sharing-types';
-import type { ShareConnectionDescription } from '../../shared/types/project';
+import type { ShareConnectionDescription } from '../../shared/types/project-core';
 import type { MobileUiLanguage } from './copy';
 
 export type PairingStatus = 'pending' | 'ready' | 'expired';

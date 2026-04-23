@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ProjectBackgroundTaskSource } from '../../../shared/types/project.js';
+import type { ProjectBackgroundTaskSource } from '../../../shared/types/project-background-task.js';
 
 vi.mock('../../state.js', () => ({
   appState: {

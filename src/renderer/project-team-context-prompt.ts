@@ -1,4 +1,4 @@
-import type { ProjectTeamContextState } from '../shared/types/project.js';
+import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
 
 function pluralize(count: number, singular: string, plural = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : plural}`;

@@ -1,4 +1,4 @@
-import type { ProjectContextState } from '../shared/types/project.js';
+import type { ProjectContextState } from '../shared/types/project-context.js';
 import { appState } from './state.js';
 
 let initialized = false;

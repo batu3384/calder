@@ -1,5 +1,5 @@
 import type { ProjectRecord } from '../../state.js';
-import type { CliSurfaceProfile } from '../../../shared/types/project.js';
+import type { CliSurfaceProfile } from '../../../shared/types/project-surface.js';
 import { closeModal, setModalError, showModal } from '../modal.js';
 import {
   isLikelyFixedPortCompatible,

@@ -1,4 +1,4 @@
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project';
+import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project-surface';
 import type { CliSurfaceLaunchResolution } from './cli-surface-port-orchestrator';
 
 export interface CliSurfaceRuntimeEmit {

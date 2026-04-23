@@ -1,4 +1,4 @@
-import type { CliSurfacePortMode } from '../../../shared/types/project.js';
+import type { CliSurfacePortMode } from '../../../shared/types/project-surface.js';
 
 export function parseCliSurfaceArgs(raw: string): string[] | undefined {
   const matches = raw.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];

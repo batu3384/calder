@@ -1,5 +1,5 @@
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
-import type { ProjectSurfaceRecord } from '../../../shared/types/project.js';
+import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
 import { getStatus } from '../../session-activity.js';
 import { isUnread } from '../../session-unread.js';
 import { isSharing } from '../../sharing/peer-host.js';

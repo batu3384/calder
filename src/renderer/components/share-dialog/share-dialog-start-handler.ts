@@ -1,5 +1,5 @@
 import type { ShareMode } from '../../../shared/sharing-types.js';
-import type { ShareRtcConfig } from '../../../shared/types/project.js';
+import type { ShareRtcConfig } from '../../../shared/types/project-core.js';
 import { shareSession, endShare } from '../../sharing/share-manager.js';
 import { isSharing } from '../../sharing/peer-host.js';
 import { validateSharePassphrase } from '../../sharing/share-crypto.js';

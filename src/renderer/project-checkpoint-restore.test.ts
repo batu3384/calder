@@ -24,7 +24,7 @@ vi.mock('./session-context.js', () => ({
 }));
 
 import { appState, _resetForTesting } from './state.js';
-import type { ProjectCheckpointDocument } from '../shared/types/project.js';
+import type { ProjectCheckpointDocument } from '../shared/types/project-checkpoint.js';
 
 function buildCheckpointDocument(overrides: Partial<ProjectCheckpointDocument> = {}): ProjectCheckpointDocument {
   return {

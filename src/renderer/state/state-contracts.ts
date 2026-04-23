@@ -1,4 +1,4 @@
-import type { Preferences } from '../../shared/types/project.js';
+import type { Preferences } from '../../shared/types/project-state.js';
 
 export type EventType = 'project-added' | 'project-removed' | 'project-changed' | 'session-added' | 'session-removed'
   | 'session-changed' | 'layout-changed' | 'preferences-changed' | 'terminal-panel-changed' | 'history-changed'

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CliSurfaceProfile } from '../shared/types/project';
+import type { CliSurfaceProfile } from '../shared/types/project-surface';
 
 const {
   mockSpawnCommandPty,

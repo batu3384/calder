@@ -1,6 +1,6 @@
 import { appState } from '../../state.js';
 import { shortcutManager } from '../../shortcuts.js';
-import type { BrowserGuestOpenPayload } from '../../../shared/types/project.js';
+import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
 import { getPreloadPath } from './instance.js';
 import {
   clearPendingNavigation,

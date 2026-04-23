@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow, app, shell, webContents } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import type { BrowserCredentialSaveInput } from '../shared/types/project';
+import type { BrowserCredentialSaveInput } from '../shared/types/project-core';
 import type { ProjectGovernanceOperation } from './calder-governance/enforcement';
 import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {

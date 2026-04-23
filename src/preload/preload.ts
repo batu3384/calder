@@ -3,7 +3,14 @@ import type { ProviderId, UiLanguage, CliProviderMeta, ProviderUpdateSummary, Pr
 import type { CostData, StatsCache, ToolFailureData, InspectorEvent } from '../shared/types/session';
 import type { MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, MobileDependencyInstallProgressEvent, MobileInspectPlatform, MobileInspectLaunchResult, MobileInspectScreenshotResult, MobileInspectPointInspectionResult, MobileInspectInteractionResult, MobileControlPairingResult, MobileControlAnswerResult } from '../shared/types/mobile';
 import type { AutoApprovalMode, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult } from '../shared/types/governance';
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, ShareConnectionDescription, ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult, ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult, ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types/project';
+import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState } from '../shared/types/project-background-task';
+import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint';
+import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState } from '../shared/types/project-context';
+import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary, EmbeddedBrowserOpenPayload, ShareConnectionDescription, ShareRtcConfig } from '../shared/types/project-core';
+import type { ProjectReviewCreateResult, ProjectReviewDocument, ProjectReviewState } from '../shared/types/project-review';
+import type { CliSurfaceDiscoveryResult, CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface';
+import type { ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult, ProjectTeamContextState } from '../shared/types/project-team-context';
+import type { ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project-workflow';
 import { createPreloadMcpApi } from './preload-api-mcp.js';
 import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
 import {

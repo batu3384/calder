@@ -1,9 +1,5 @@
-import type {
-  ProjectBackgroundTaskDocument,
-  ProjectBackgroundTaskSource,
-  ProjectBackgroundTaskState,
-  ProjectRecord,
-} from '../../../shared/types/project.js';
+import type { ProjectBackgroundTaskDocument, ProjectBackgroundTaskSource, ProjectBackgroundTaskState } from '../../../shared/types/project-background-task.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import { appState } from '../../state.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import {

@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import type { MobileDependencyId, MobileDependencyInstallProgressEvent, MobileInspectPlatform } from '../shared/types/mobile';
-import type { ShareConnectionDescription } from '../shared/types/project';
+import type { ShareConnectionDescription } from '../shared/types/project-core';
 import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 import {
   captureMobileInspectScreenshot,

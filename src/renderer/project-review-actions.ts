@@ -1,4 +1,4 @@
-import type { ProjectReviewDocument } from '../shared/types/project.js';
+import type { ProjectReviewDocument } from '../shared/types/project-review.js';
 import { appState } from './state.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';

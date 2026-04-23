@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { EmbeddedBrowserOpenPayload } from '../../shared/types/project';
+import type { EmbeddedBrowserOpenPayload } from '../../shared/types/project-core';
 import { isAllowedExternalUrl } from '../browser-open-policy';
 
 const MAX_REQUEST_BODY_LENGTH = 16_384;

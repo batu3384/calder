@@ -1,6 +1,11 @@
 import type { IpcRenderer } from 'electron';
 import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult, ProjectGovernanceState } from '../shared/types/governance';
-import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState, ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState, ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState, ProjectReviewCreateResult, ProjectReviewDocument, ProjectReviewState, ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult, ProjectTeamContextState, ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project';
+import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState } from '../shared/types/project-background-task';
+import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint';
+import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState } from '../shared/types/project-context';
+import type { ProjectReviewCreateResult, ProjectReviewDocument, ProjectReviewState } from '../shared/types/project-review';
+import type { ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult, ProjectTeamContextState } from '../shared/types/project-team-context';
+import type { ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project-workflow';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 

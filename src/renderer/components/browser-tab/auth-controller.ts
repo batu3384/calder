@@ -2,11 +2,7 @@ import { anchorFloatingSurface } from '../floating-surface.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import type { BrowserAuthPanelElements } from './auth-panel.js';
 import type { BrowserTabInstance } from './types.js';
-import type {
-  BrowserCredentialFillData,
-  BrowserCredentialSaveInput,
-  BrowserCredentialSummary,
-} from '../../../shared/types/project.js';
+import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../../../shared/types/project-core.js';
 
 type AuthStatusTone = 'neutral' | 'success' | 'error';
 

@@ -1,7 +1,4 @@
-import type {
-  CliSurfaceRuntimeState,
-  SurfaceSelectionRange,
-} from '../../../shared/types/project.js';
+import type { CliSurfaceRuntimeState, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import { attachCliSurfaceRuntimeBindings, attachCliSurfaceStateBindings } from './runtime-bindings.js';
 import { extractCalderOscMessages } from './protocol.js';
 import type { CalderProtocolMessage } from './protocol.js';

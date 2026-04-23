@@ -1,4 +1,6 @@
-import type { AppliedContextSummary, CliSurfacePromptContextMode, SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { AppliedContextSummary } from '../../../shared/types/project-context.js';
+import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
+import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 
 export function buildViewportText(lines: string[]): string {
   return lines.join('\n');

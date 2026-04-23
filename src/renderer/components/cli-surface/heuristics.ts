@@ -1,4 +1,4 @@
-import type { SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 
 export interface InferredCliRegion {
   label: string;

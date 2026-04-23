@@ -1,6 +1,6 @@
 import { appState } from '../../state.js';
 import { closeModal } from '../modal.js';
-import type { ProjectCheckpointDocument } from '../../../shared/types/project.js';
+import type { ProjectCheckpointDocument } from '../../../shared/types/project-checkpoint.js';
 
 function formatCountLabel(count: number, singular: string, plural: string): string {
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`;

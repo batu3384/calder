@@ -1,4 +1,4 @@
-import type { ProjectRecord } from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import {
   describePreviewRuntimeHealth,
   focusCliPreviewSurface,

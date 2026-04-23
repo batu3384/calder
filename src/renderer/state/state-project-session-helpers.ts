@@ -1,4 +1,4 @@
-import type { PersistedState, ProjectRecord } from '../../shared/types/project.js';
+import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
 import type { SessionRecord } from '../../shared/types/session.js';
 import { createProjectRecord, removeProjectAndCollectSessions } from '../state-appstate-extracts.js';
 import { collectSessionIdsForRemoval, resolveCycledSessionId, resolveSessionIdAtIndex } from '../state-session-navigation.js';

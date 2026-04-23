@@ -1,9 +1,5 @@
-import type {
-  CliSurfaceDiscoveryCandidate,
-  CliSurfaceDiscoveryResult,
-  CliSurfaceProfile,
-  ProjectRecord,
-} from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import type { CliSurfaceDiscoveryCandidate, CliSurfaceDiscoveryResult, CliSurfaceProfile } from '../../../shared/types/project-surface.js';
 import { createDiscoveredCliSurfaceProfile } from './profile.js';
 
 interface SetupDeps {

@@ -2,7 +2,7 @@ import { app, safeStorage } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
-import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../shared/types/project';
+import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../shared/types/project-core';
 
 interface BrowserCredentialRecord {
   id: string;

@@ -1,4 +1,4 @@
-import type { ProjectRecord } from '../../../shared/types/project.js';
+import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import { getCliSurfaceProfileLabel } from '../cli-surface/profile.js';
 import { getProjectSurface } from './tab-bar-surface-state.js';
 

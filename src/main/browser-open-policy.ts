@@ -1,4 +1,4 @@
-import type { EmbeddedBrowserOpenPayload } from '../shared/types/project';
+import type { EmbeddedBrowserOpenPayload } from '../shared/types/project-core';
 
 interface BrowserWindowLike {
   isDestroyed?(): boolean;

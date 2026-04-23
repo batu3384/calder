@@ -12,7 +12,7 @@ import type {
   MobileInspectPointInspectionResult,
   MobileInspectScreenshotResult,
 } from '../shared/types/mobile';
-import type { ShareConnectionDescription } from '../shared/types/project';
+import type { ShareConnectionDescription } from '../shared/types/project-core';
 import type { UiLanguage } from '../shared/types/provider';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;

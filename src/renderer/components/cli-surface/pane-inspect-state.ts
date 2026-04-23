@@ -1,4 +1,4 @@
-import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project.js';
+import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { setInspectPayload } from './inspect-mode.js';
 import { selectionsMatchBounds } from './inspect-geometry.js';

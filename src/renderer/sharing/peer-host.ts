@@ -2,7 +2,7 @@
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
 import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
-import type { ShareRtcConfig } from '../../shared/types/project.js';
+import type { ShareRtcConfig } from '../../shared/types/project-core.js';
 import { getTerminalInstance } from '../components/terminal-pane.js';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { buildRtcConfiguration, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';

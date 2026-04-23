@@ -1,8 +1,6 @@
-import type {
-  AppliedContextSummary,
-  CliSurfacePromptContextMode,
-  SurfaceSelectionRange,
-} from '../../../shared/types/project.js';
+import type { AppliedContextSummary } from '../../../shared/types/project-context.js';
+import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
+import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import {
   closeInspect,
 } from './inspect-mode.js';

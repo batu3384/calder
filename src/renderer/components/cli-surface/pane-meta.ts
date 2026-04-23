@@ -1,7 +1,4 @@
-import type {
-  CliSurfaceRuntimeState,
-  CliSurfaceStartupTiming,
-} from '../../../shared/types/project.js';
+import type { CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../../../shared/types/project-surface.js';
 import { appState } from '../../state.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { getCliSurfaceProfileLabel } from './profile.js';

@@ -1,4 +1,4 @@
-import type { CliSurfaceDiscoveryCandidate } from '../../../shared/types/project.js';
+import type { CliSurfaceDiscoveryCandidate } from '../../../shared/types/project-surface.js';
 
 interface QuickSetupHandlers {
   onRun: (candidate: CliSurfaceDiscoveryCandidate) => void;
