@@ -8,6 +8,13 @@ import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import { migrateLoadedRendererState } from './state-load-migration.js';
 import {
+  defaultPreferences,
+  type EventCallback,
+  type EventType,
+  NAV_HISTORY_MAX,
+  type SessionRemovalScope,
+} from './state/state-contracts.js';
+import {
   collectSessionIdsForRemoval,
   resolveCycledSessionId,
   resolveSessionIdAtIndex,
@@ -32,43 +39,46 @@ import {
 } from './state-normalizers.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import {
-  addInsightSnapshotForProject,
+  addInsightSnapshotInAppState,
   addPlanSessionInAppState,
   addMcpInspectorProjectSession,
   addRemoteProjectSession,
   addSessionInAppState,
   clearHistoryForProject,
   createProjectRecord,
-  dismissInsightForProjectId,
+  dismissInsightInAppState,
   findProjectBySessionId,
   findSessionById,
-  isInsightDismissedForProjectId,
+  isInsightDismissedInAppState,
   listSurfaceTargetSessionsForProject,
   openUrlInBrowserSurfaceInAppState,
-  passivateBrowserTabSessionById,
+  passivateBrowserTabSessionInAppState,
   removeHistoryEntryForProject,
   removeProjectAndCollectSessions,
   removeSessionInAppState,
   renameSessionInAppState,
-  reorderSessionForProject,
+  reorderSessionInAppState,
   resolveSurfaceTargetSessionForProject,
   resumeFromHistoryInAppState,
   resumeWithProviderInAppState,
   restoreProjectCheckpointInAppState,
   launchWorkflowSessionInAppState,
-  setBrowserWidthRatioForProject,
-  setMosaicRatioForProject,
+  setBrowserWidthRatioInAppState,
+  setMosaicRatioInAppState,
   setActiveSessionInAppState,
-  setSurfaceTargetSessionForProject,
+  setSurfaceTargetSessionInAppState,
   toggleHistoryBookmarkForProject,
-  updateBrowserTabSessionUrlById,
+  updateSessionBrowserTabUrlInAppState,
   updateSessionCliIdInAppState,
+  updateSessionContextInAppState,
+  updateSessionCostInAppState,
   upsertBrowserTabProjectSession,
   upsertDiffViewerProjectSession,
   upsertFileReaderProjectSession,
 } from './state-appstate-extracts.js';
 
-export type { SessionRecord, ProjectRecord, Preferences, PersistedState, ArchivedSession } from '../shared/types.js';
+export type { SessionRecord, ArchivedSession } from '../shared/types/session.js';
+export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
 
 declare global {
@@ -76,21 +86,6 @@ declare global {
     calder: CalderApi;
   }
 }
-
-type EventType = 'project-added' | 'project-removed' | 'project-changed' | 'session-added' | 'session-removed'
-  | 'session-changed' | 'layout-changed' | 'preferences-changed' | 'terminal-panel-changed' | 'history-changed'
-  | 'insights-changed' | 'sidebar-toggled' | 'cli-session-cleared' | 'state-loaded';
-
-type EventCallback = (data?: unknown) => void;
-type SessionRemovalScope = 'all' | 'right' | 'left' | 'others';
-
-const defaultPreferences: Preferences = {
-  soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true,
-  insightsEnabled: true, autoTitleEnabled: true,
-  sidebarViews: { configSections: true, gitPanel: true, sessionHistory: true, costFooter: true },
-};
-
-const NAV_HISTORY_MAX = 50;
 
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
@@ -618,9 +613,13 @@ class AppState {
   }
 
   setSurfaceTargetSession(projectId: string, targetSessionId: string | null): void {
-    if (!setSurfaceTargetSessionForProject(this.state.projects, projectId, targetSessionId)) return;
-    this.persist();
-    this.emit('session-changed');
+    setSurfaceTargetSessionInAppState(
+      this.state.projects,
+      projectId,
+      targetSessionId,
+      () => this.persist(),
+      () => this.emit('session-changed'),
+    );
   }
 
   updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void {
@@ -646,29 +645,26 @@ class AppState {
   }
 
   updateSessionCost(sessionId: string, cost: CostInfo): void {
-    const session = findSessionById(this.state.projects, sessionId);
-    if (!session) return;
-    session.cost = { ...cost };
-    this.persist();
+    updateSessionCostInAppState(this.state.projects, sessionId, cost, () => this.persist());
   }
 
   updateSessionContext(sessionId: string, context: ContextWindowInfo): void {
-    const session = findSessionById(this.state.projects, sessionId);
-    if (!session) return;
-    session.contextWindow = { ...context };
-    this.persist();
+    updateSessionContextInAppState(this.state.projects, sessionId, context, () => this.persist());
   }
 
   updateSessionBrowserTabUrl(sessionId: string, url: string): void {
-    if (!updateBrowserTabSessionUrlById(this.state.projects, sessionId, url)) return;
-    this.persist();
+    updateSessionBrowserTabUrlInAppState(this.state.projects, sessionId, url, () => this.persist());
   }
 
   passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
-    if (!passivateBrowserTabSessionById(this.state.projects, sessionId, failedUrl)) return;
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
+    passivateBrowserTabSessionInAppState(
+      this.state.projects,
+      sessionId,
+      failedUrl,
+      () => this.persist(),
+      () => this.emit('project-changed'),
+      () => this.emit('session-changed'),
+    );
   }
 
   renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {
@@ -686,15 +682,24 @@ class AppState {
   }
 
   setBrowserWidthRatio(projectId: string, ratio: number): void {
-    if (!setBrowserWidthRatioForProject(this.state.projects, projectId, ratio)) return;
-    this.persist();
-    this.emit('layout-changed');
+    setBrowserWidthRatioInAppState(
+      this.state.projects,
+      projectId,
+      ratio,
+      () => this.persist(),
+      () => this.emit('layout-changed'),
+    );
   }
 
   setMosaicRatio(projectId: string, key: string, ratio: number): void {
-    if (!setMosaicRatioForProject(this.state.projects, projectId, key, ratio)) return;
-    this.persist();
-    this.emit('layout-changed');
+    setMosaicRatioInAppState(
+      this.state.projects,
+      projectId,
+      key,
+      ratio,
+      () => this.persist(),
+      () => this.emit('layout-changed'),
+    );
   }
 
   cycleSession(direction: 1 | -1): void {
@@ -742,25 +747,38 @@ class AppState {
   }
 
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
-    if (!addInsightSnapshotForProject(this.state.projects, projectId, snapshot)) return;
-    this.persist();
-    this.emit('insights-changed', projectId);
+    addInsightSnapshotInAppState(
+      this.state.projects,
+      projectId,
+      snapshot,
+      () => this.persist(),
+      (targetProjectId) => this.emit('insights-changed', targetProjectId),
+    );
   }
 
   dismissInsight(projectId: string, insightId: string): void {
-    if (!dismissInsightForProjectId(this.state.projects, projectId, insightId)) return;
-    this.persist();
-    this.emit('insights-changed', projectId);
+    dismissInsightInAppState(
+      this.state.projects,
+      projectId,
+      insightId,
+      () => this.persist(),
+      (targetProjectId) => this.emit('insights-changed', targetProjectId),
+    );
   }
 
   isInsightDismissed(projectId: string, insightId: string): boolean {
-    return isInsightDismissedForProjectId(this.state.projects, projectId, insightId);
+    return isInsightDismissedInAppState(this.state.projects, projectId, insightId);
   }
 
   reorderSession(projectId: string, sessionId: string, toIndex: number): void {
-    if (!reorderSessionForProject(this.state.projects, projectId, sessionId, toIndex)) return;
-    this.persist();
-    this.emit('session-changed');
+    reorderSessionInAppState(
+      this.state.projects,
+      projectId,
+      sessionId,
+      toIndex,
+      () => this.persist(),
+      () => this.emit('session-changed'),
+    );
   }
 
   /** @internal Test-only: reset all state containers */

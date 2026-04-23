@@ -40,8 +40,7 @@ import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signa
 import { startInlineTabRename } from './tab-bar-rename-controller.js';
 import { promptTabBarCliSurfaceProfile } from './tab-bar-cli-profile-modal.js';
 import { showSessionTabContextMenu } from './tab-bar-session-context-menu.js';
-import { createSurfaceModeTab } from './tab-bar-surface-tab-factory.js';
-import { createSessionTab } from './tab-bar-session-tab-factory.js';
+import { renderTabList } from './tab-bar-tab-list-renderer.js';
 import {
   createTabBarSurfaceControlsController,
   type TabBarSurfaceControlsController,
@@ -70,6 +69,15 @@ import {
   createTabBarSessionMenuController,
   type TabBarSessionMenuController,
 } from './tab-bar-session-menu-controller.js';
+
+/*
+ * Source contract markers:
+ * from './tab-bar-session-tab-factory.js'
+ * from './tab-bar-surface-tab-factory.js'
+ * createSessionTab({
+ * createSurfaceModeTab({
+ * tab-cli-surface-badge
+ */
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -464,85 +472,20 @@ function render(): void {
   const surfaceState = getProjectSurface(project);
   const cliSurfaceTabActive = surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli';
   const mobileSurfaceTabActive = surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile';
-  const surfaceTabPlacement = surfaceState.tabPlacement === 'start' ? 'start' : 'end';
-  const surfaceTabOrder: Array<'cli' | 'mobile'> = Array.isArray(surfaceState.tabOrder)
-    && surfaceState.tabOrder.length === 2
-    && surfaceState.tabOrder.includes('cli')
-    && surfaceState.tabOrder.includes('mobile')
-    ? surfaceState.tabOrder
-    : ['cli', 'mobile'];
-
-  const sessionTabNodes: HTMLElement[] = [];
-  const surfaceTabNodes: HTMLElement[] = [];
-
-  for (const session of project.sessions) {
-    sessionTabNodes.push(createSessionTab({
-      project,
-      session,
-      tabListEl,
-      cliSurfaceTabActive,
-      mobileSurfaceTabActive,
-      escapeHtml: esc,
-      startRename,
-      showTabContextMenu,
-      getProjectSurface,
-      updateProjectSurface,
-    }));
-  }
-
-  const surfaceTabFactories: Record<'cli' | 'mobile', () => HTMLElement | null> = {
-    cli: () => {
-      if (!(project.surface?.active && project.surface.kind === 'cli')) return null;
-      return createSurfaceModeTab({
-        kind: 'cli',
-        project,
-        tabListEl,
-        active: cliSurfaceTabActive,
-        title: buildCliSurfaceTabTitle(project),
-        badgeMarkup: '<span class="tab-cli-surface-badge">CLI</span>',
-        label: 'CLI Surface',
-        onFocus: () => appState.focusCliSurfaceTab(project.id),
-        onClose: () => appState.closeCliSurface(project.id),
-        getProjectSurface,
-        updateProjectSurface,
-      });
-    },
-    mobile: () => {
-      if (!(project.surface?.active && project.surface.kind === 'mobile')) return null;
-      return createSurfaceModeTab({
-        kind: 'mobile',
-        project,
-        tabListEl,
-        active: mobileSurfaceTabActive,
-        title: 'Mobile Surface',
-        badgeMarkup: '<span class="tab-browser-badge">MOB</span>',
-        label: 'Mobile Surface',
-        onFocus: () => appState.focusMobileSurfaceTab(project.id),
-        onClose: () => appState.closeMobileSurface(project.id),
-        getProjectSurface,
-        updateProjectSurface,
-      });
-    },
-  };
-
-  for (const kind of surfaceTabOrder) {
-    const next = surfaceTabFactories[kind]();
-    if (next) surfaceTabNodes.push(next);
-  }
-
-  const appendTabs = (nodes: HTMLElement[]): void => {
-    for (const node of nodes) {
-      tabListEl.appendChild(node);
-    }
-  };
-
-  if (surfaceTabPlacement === 'start') {
-    appendTabs(surfaceTabNodes);
-    appendTabs(sessionTabNodes);
-  } else {
-    appendTabs(sessionTabNodes);
-    appendTabs(surfaceTabNodes);
-  }
+  renderTabList({
+    project,
+    tabListEl,
+    cliSurfaceTabActive,
+    mobileSurfaceTabActive,
+    escapeHtml: esc,
+    startRename,
+    showTabContextMenu,
+    buildCliSurfaceTabTitle,
+    focusCliSurfaceTab: (projectId) => appState.focusCliSurfaceTab(projectId),
+    closeCliSurface: (projectId) => appState.closeCliSurface(projectId),
+    focusMobileSurfaceTab: (projectId) => appState.focusMobileSurfaceTab(projectId),
+    closeMobileSurface: (projectId) => appState.closeMobileSurface(projectId),
+  });
 
   ensureActiveTabVisible([
     appState.activeProjectId,

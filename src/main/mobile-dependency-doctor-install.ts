@@ -1,4 +1,4 @@
-import { execFile, spawn } from 'child_process';
+import { execFile } from 'child_process';
 import { getFullPath } from './pty-manager';
 import {
   MOBILE_DOCTOR_INSTALL_SPECS as INSTALL_SPECS,
@@ -20,6 +20,10 @@ import {
   sanitizeCommandResult,
   stripAnsi,
 } from './mobile-dependency-doctor-utils';
+import {
+  createInstallId,
+  runCommandStreaming,
+} from './mobile-dependency-doctor-install-runner';
 import type {
   MobileDependencyId,
   MobileDependencyInstallProgressEvent,
@@ -88,75 +92,6 @@ const defaultRunner: CommandRunner = {
     });
   },
 };
-
-async function runDefaultCommandStreaming(
-  command: string,
-  args: string[],
-  timeoutMs: number,
-  onChunk: (source: 'stdout' | 'stderr', chunk: string) => void,
-): Promise<CommandResult> {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      env: { ...process.env, PATH: getFullPath() },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-    let timedOut = false;
-
-    const timeout = setTimeout(() => {
-      timedOut = true;
-      child.kill('SIGTERM');
-      setTimeout(() => {
-        if (!child.killed) child.kill('SIGKILL');
-      }, 1500).unref();
-    }, timeoutMs);
-
-    child.stdout?.on('data', (chunk: Buffer | string) => {
-      const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
-      stdout += text;
-      onChunk('stdout', text);
-    });
-
-    child.stderr?.on('data', (chunk: Buffer | string) => {
-      const text = Buffer.isBuffer(chunk) ? chunk.toString('utf8') : String(chunk);
-      stderr += text;
-      onChunk('stderr', text);
-    });
-
-    child.on('error', (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      const message = error.message || `${command} failed`;
-      if (stderr.trim().length === 0) {
-        stderr = message;
-      } else {
-        stderr = `${stderr}\n${message}`;
-      }
-      resolve({ code: 1, stdout, stderr });
-    });
-
-    child.on('close', (code) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      if (timedOut) {
-        const timeoutMessage = `Command timed out after ${Math.round(timeoutMs / 1000)}s.`;
-        stderr = stderr.trim().length > 0 ? `${stderr}\n${timeoutMessage}` : timeoutMessage;
-        resolve({ code: 124, stdout, stderr });
-        return;
-      }
-      resolve({ code: code ?? 1, stdout, stderr });
-    });
-  });
-}
-
-function createInstallId(): string {
-  return `mobile-install-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
 
 function computeOverallPercent(
   totalSteps: number,
@@ -244,7 +179,7 @@ async function runInstallStep(
   onChunk?: (source: 'stdout' | 'stderr', chunk: string) => void,
 ): Promise<CommandResult> {
   if (onChunk && runner === defaultRunner) {
-    return runDefaultCommandStreaming(step.command, step.args, timeoutMs, onChunk);
+    return runCommandStreaming(step.command, step.args, timeoutMs, onChunk);
   }
 
   const result = await runner.run(step.command, step.args, { timeoutMs });

@@ -5,18 +5,28 @@ import type {
   ProjectRecord,
   ProjectWorkflowDocument,
 } from '../shared/types/project.js';
-import type { SessionRecord } from '../shared/types/session.js';
+import type { ContextWindowInfo, CostInfo, InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
 import { setActiveProjectSession } from './state-surface-updater.js';
 import {
+  addInsightSnapshotForProject,
   addStandardProjectSession,
   addWorkflowLaunchSession,
+  dismissInsightForProjectId,
+  findSessionById,
+  isInsightDismissedForProjectId,
   openUrlInProjectBrowserSurface,
+  passivateBrowserTabSessionById,
+  reorderSessionForProject,
   removeProjectSession,
   renameProjectSession,
   resolvePlanSessionConfig,
   restoreProjectCheckpointForState,
   resumeHistorySessionForProject,
   resumeWithProviderForProject,
+  setBrowserWidthRatioForProject,
+  setMosaicRatioForProject,
+  setSurfaceTargetSessionForProject,
+  updateBrowserTabSessionUrlById,
   updateProjectSessionCliId,
   upsertBrowserTabProjectSession,
 } from './state-appstate-core.js';
@@ -325,5 +335,145 @@ export function renameSessionInAppState(options: {
   if (result.historyRenamed) options.onHistoryChanged();
   options.persist();
   options.onSessionChanged();
+  return true;
+}
+
+export function setSurfaceTargetSessionInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  targetSessionId: string | null,
+  persist: () => void,
+  onSessionChanged: () => void,
+): boolean {
+  if (!setSurfaceTargetSessionForProject(projects, projectId, targetSessionId)) return false;
+  persist();
+  onSessionChanged();
+  return true;
+}
+
+export function updateSessionCostInAppState(
+  projects: ProjectRecord[],
+  sessionId: string,
+  cost: CostInfo,
+  persist: () => void,
+): boolean {
+  const session = findSessionById(projects, sessionId);
+  if (!session) return false;
+  session.cost = { ...cost };
+  persist();
+  return true;
+}
+
+export function updateSessionContextInAppState(
+  projects: ProjectRecord[],
+  sessionId: string,
+  context: ContextWindowInfo,
+  persist: () => void,
+): boolean {
+  const session = findSessionById(projects, sessionId);
+  if (!session) return false;
+  session.contextWindow = { ...context };
+  persist();
+  return true;
+}
+
+export function updateSessionBrowserTabUrlInAppState(
+  projects: ProjectRecord[],
+  sessionId: string,
+  url: string,
+  persist: () => void,
+): boolean {
+  if (!updateBrowserTabSessionUrlById(projects, sessionId, url)) return false;
+  persist();
+  return true;
+}
+
+export function passivateBrowserTabSessionInAppState(
+  projects: ProjectRecord[],
+  sessionId: string,
+  failedUrl: string | undefined,
+  persist: () => void,
+  onProjectChanged: () => void,
+  onSessionChanged: () => void,
+): boolean {
+  if (!passivateBrowserTabSessionById(projects, sessionId, failedUrl)) return false;
+  persist();
+  onProjectChanged();
+  onSessionChanged();
+  return true;
+}
+
+export function setBrowserWidthRatioInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  ratio: number,
+  persist: () => void,
+  onLayoutChanged: () => void,
+): boolean {
+  if (!setBrowserWidthRatioForProject(projects, projectId, ratio)) return false;
+  persist();
+  onLayoutChanged();
+  return true;
+}
+
+export function setMosaicRatioInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  key: string,
+  ratio: number,
+  persist: () => void,
+  onLayoutChanged: () => void,
+): boolean {
+  if (!setMosaicRatioForProject(projects, projectId, key, ratio)) return false;
+  persist();
+  onLayoutChanged();
+  return true;
+}
+
+export function addInsightSnapshotInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  snapshot: InitialContextSnapshot,
+  persist: () => void,
+  onInsightsChanged: (projectId: string) => void,
+): boolean {
+  if (!addInsightSnapshotForProject(projects, projectId, snapshot)) return false;
+  persist();
+  onInsightsChanged(projectId);
+  return true;
+}
+
+export function dismissInsightInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  insightId: string,
+  persist: () => void,
+  onInsightsChanged: (projectId: string) => void,
+): boolean {
+  if (!dismissInsightForProjectId(projects, projectId, insightId)) return false;
+  persist();
+  onInsightsChanged(projectId);
+  return true;
+}
+
+export function isInsightDismissedInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  insightId: string,
+): boolean {
+  return isInsightDismissedForProjectId(projects, projectId, insightId);
+}
+
+export function reorderSessionInAppState(
+  projects: ProjectRecord[],
+  projectId: string,
+  sessionId: string,
+  toIndex: number,
+  persist: () => void,
+  onSessionChanged: () => void,
+): boolean {
+  if (!reorderSessionForProject(projects, projectId, sessionId, toIndex)) return false;
+  persist();
+  onSessionChanged();
   return true;
 }
