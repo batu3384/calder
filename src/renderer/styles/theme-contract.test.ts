@@ -42,7 +42,10 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('Calder Command Studio');
     expect(commandStudioCss).toContain('--studio-cyan');
     expect(commandStudioCss).toContain('.context-inspector-tabs');
+    expect(commandStudioCss).toContain('context-inspector-panel-enter');
     expect(commandStudioCss).toContain('grid-template-rows: 106px auto;');
+    expect(commandStudioCss).toContain('grid-template-areas:');
+    expect(commandStudioCss).toContain('"nav primary"');
   });
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {

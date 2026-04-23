@@ -19,6 +19,8 @@ const inspectorSections = queryInspectorChildren<HTMLElement>('.context-inspecto
 type RailSignal = 'default' | 'active' | 'warning';
 type InspectorTab = 'capabilities' | 'git' | 'activity';
 
+const INSPECTOR_TAB_ORDER: InspectorTab[] = ['capabilities', 'git', 'activity'];
+
 let inspectorOpen = true;
 let renderQueued = false;
 let activeInspectorTab: InspectorTab = 'capabilities';
@@ -75,6 +77,9 @@ function syncInspectorTabState(): void {
     button.classList.toggle('active', isActive);
     button.setAttribute('aria-selected', isActive ? 'true' : 'false');
     button.tabIndex = isActive ? 0 : -1;
+    if (button.getAttribute('role') !== 'tab') {
+      button.setAttribute('role', 'tab');
+    }
   }
 
   for (const section of inspectorSections) {
@@ -83,12 +88,60 @@ function syncInspectorTabState(): void {
     section.classList.toggle('active', isActive);
     section.toggleAttribute('hidden', !isActive);
     section.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    if (section.getAttribute('role') !== 'tabpanel') {
+      section.setAttribute('role', 'tabpanel');
+    }
   }
 }
 
 function setInspectorTab(tab: InspectorTab): void {
   activeInspectorTab = tab;
   syncInspectorTabState();
+}
+
+function findTabButton(tab: InspectorTab): HTMLButtonElement | undefined {
+  return inspectorTabButtons.find((button) => button.dataset.inspectorTab === tab);
+}
+
+function focusInspectorTab(tab: InspectorTab): void {
+  findTabButton(tab)?.focus();
+}
+
+function moveInspectorTab(delta: number): void {
+  const activeIndex = INSPECTOR_TAB_ORDER.indexOf(activeInspectorTab);
+  const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+  const nextIndex = (safeIndex + delta + INSPECTOR_TAB_ORDER.length) % INSPECTOR_TAB_ORDER.length;
+  const nextTab = INSPECTOR_TAB_ORDER[nextIndex];
+  setInspectorTab(nextTab);
+  focusInspectorTab(nextTab);
+}
+
+function handleInspectorTabKeydown(event: KeyboardEvent): void {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    event.preventDefault();
+    moveInspectorTab(1);
+    return;
+  }
+
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    moveInspectorTab(-1);
+    return;
+  }
+
+  if (event.key === 'Home') {
+    event.preventDefault();
+    setInspectorTab(INSPECTOR_TAB_ORDER[0]);
+    focusInspectorTab(INSPECTOR_TAB_ORDER[0]);
+    return;
+  }
+
+  if (event.key === 'End') {
+    event.preventDefault();
+    const lastTab = INSPECTOR_TAB_ORDER[INSPECTOR_TAB_ORDER.length - 1];
+    setInspectorTab(lastTab);
+    focusInspectorTab(lastTab);
+  }
 }
 
 function scheduleInspectorRender(): void {
@@ -123,6 +176,7 @@ export function initContextInspector(): void {
         setInspectorTab(button.dataset.inspectorTab);
       }
     });
+    button.addEventListener('keydown', handleInspectorTabKeydown);
   }
 
   appState.on('project-changed', () => {

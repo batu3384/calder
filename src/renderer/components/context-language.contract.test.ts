@@ -17,6 +17,12 @@ describe('context language contract', () => {
     expect(html).toContain('Workspace Pulse');
     expect(html).toContain('Run controls, project state, and tools stay separated so the rail stays readable.');
     expect(html).toContain('context-inspector-tabs');
+    expect(html).toContain('aria-controls="context-inspector-panel-run"');
+    expect(html).toContain('aria-controls="context-inspector-panel-project"');
+    expect(html).toContain('aria-controls="context-inspector-panel-timeline"');
+    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-run"');
+    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-project"');
+    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-timeline"');
     expect(html).toContain('Worktree status, branches, and safe git actions.');
     expect(html).toContain('Recent runs, notes, and session timeline.');
     expect(html).not.toContain('id="context-inspector-overview"');
@@ -38,6 +44,10 @@ describe('context language contract', () => {
     expect(historySource).toContain('localizedText');
     expect(historySource).toContain('recent run');
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
+    expect(inspectorSource).toContain('handleInspectorTabKeydown');
+    expect(inspectorSource).toContain("'ArrowRight'");
+    expect(inspectorSource).toContain("'Home'");
+    expect(inspectorSource).toContain("'End'");
     expect(inspectorSource).not.toContain('context-inspector-provider-chip');
     expect(inspectorSource).not.toContain('context-inspector-surface-chip');
     expect(inspectorSource).not.toContain('context-inspector-signal-chip');

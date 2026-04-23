@@ -412,6 +412,7 @@ body {
 }
 
 .context-inspector-tab {
+  position: relative;
   min-height: 30px;
   border: 0;
   border-radius: 10px;
@@ -434,6 +435,17 @@ body {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.context-inspector-tab:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 0 3px color-mix(in srgb, var(--studio-cyan) 22%, transparent);
+}
+
+.context-inspector-tab:active {
+  transform: translateY(1px);
+}
+
 .context-inspector-tab.active {
   color: #061015;
   background:
@@ -451,9 +463,11 @@ body {
 
 #context-inspector .context-inspector-section.active {
   display: flex;
+  animation: context-inspector-panel-enter 180ms var(--ease-standard) both;
 }
 
 #context-inspector .context-inspector-section {
+  min-width: 0;
   border-radius: 18px;
   padding: 14px;
   border-color: var(--studio-line-soft);
@@ -516,6 +530,11 @@ body {
   gap: 8px;
 }
 
+.browser-toolbar-nav {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .browser-toolbar-primary {
   flex: 1 1 520px;
   min-width: 260px;
@@ -537,20 +556,27 @@ body {
   min-width: 0;
 }
 
+.browser-toolbar-presence-text,
 .browser-toolbar-cluster-label {
   max-width: 78px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @container browser-pane (max-width: 780px) {
   .browser-tab-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
-      "primary presence"
+      "nav primary"
       "tools tools";
     align-items: center;
+  }
+
+  .browser-toolbar-nav {
+    grid-area: nav;
+    min-width: 0;
   }
 
   .browser-toolbar-primary {
@@ -565,6 +591,11 @@ body {
   .browser-toolbar-tools {
     grid-area: tools;
     overflow-x: auto;
+    justify-content: stretch;
+  }
+
+  .browser-toolbar-tools-shell {
+    width: 100%;
   }
 }
 
@@ -576,6 +607,26 @@ body {
   .browser-toolbar-tools-shell {
     width: 100%;
     overflow-x: auto;
+  }
+}
+
+@container browser-pane (max-width: 440px) {
+  .browser-tab-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "nav"
+      "primary"
+      "tools";
+  }
+
+  .browser-toolbar-nav-shell,
+  .browser-toolbar-address-shell,
+  .browser-toolbar-tools-shell {
+    width: 100%;
+  }
+
+  .browser-toolbar-nav-shell {
+    justify-content: space-between;
   }
 }
 
@@ -604,6 +655,7 @@ body {
   width: 244px;
   padding: 14px 12px;
   gap: 6px;
+  overflow-x: hidden;
 }
 
 .preferences-menu-title {
@@ -621,6 +673,13 @@ body {
   border-radius: 12px;
   background: transparent;
   box-shadow: none;
+}
+
+.preferences-menu-item:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 0 0 3px color-mix(in srgb, var(--studio-cyan) 20%, transparent);
 }
 
 .preferences-menu-item-caption {
@@ -663,5 +722,21 @@ body {
 @media (prefers-reduced-motion: reduce) {
   #sidebar-brand-stage .sidebar-mascot-shell {
     animation: none;
+  }
+
+  #context-inspector .context-inspector-section.active {
+    animation: none;
+  }
+}
+
+@keyframes context-inspector-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
