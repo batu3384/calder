@@ -29,5 +29,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Structure guardrails
+        run: npm run audit:structure
+
       - name: Run tests
         run: npm test

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="build/calder-black.png" alt="Calder" width="128" />
+  <img src="build/calder-logo.png" alt="Calder" width="240" />
 </p>
 
 <h1 align="center">Calder</h1>
@@ -113,6 +113,7 @@ Quick local path:
 
 ```bash
 npm install
+npm run hooks:install
 npm run dev
 ```
 
