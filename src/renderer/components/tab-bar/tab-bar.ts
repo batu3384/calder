@@ -4,7 +4,6 @@ import type {
 } from '../../../shared/types/project.js';
 import { onChange as onStatusChange, type SessionStatus } from '../../session-activity.js';
 import { onChange as onGitStatusChange, getGitStatus, refreshGitStatus } from '../../git-status.js';
-
 import { onChange as onUnreadChange } from '../../session-unread.js';
 import { onShareChange } from '../../sharing/share-manager.js';
 import {
@@ -122,70 +121,60 @@ function buildCliSurfaceTabTitle(project: ProjectRecord): string {
 }
 
 function getCliUpdatePanelController(): TabBarCliUpdatePanelController {
-  if (!cliUpdatePanelController) {
-    cliUpdatePanelController = createTabBarCliUpdatePanel({
-      tabActionsEl,
-      updateButtonEl: btnUpdateCliTools,
-      onCancelUpdate: cancelCliProviderUpdates,
-    });
-  }
+  if (!cliUpdatePanelController) cliUpdatePanelController = createTabBarCliUpdatePanel({
+    tabActionsEl,
+    updateButtonEl: btnUpdateCliTools,
+    onCancelUpdate: cancelCliProviderUpdates,
+  });
   return cliUpdatePanelController;
 }
 
 function getSessionProviderSelectorController(): TabBarProviderSelectorController {
-  if (!sessionProviderSelectorController) {
-    sessionProviderSelectorController = createTabBarProviderSelectorController({
-      addSessionButtonEl: btnAddSession,
-      sessionProviderSlotEl,
-      onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
-      onProviderSelected: (providerId) => appState.setPreference('defaultProvider', providerId),
-    });
-  }
+  if (!sessionProviderSelectorController) sessionProviderSelectorController = createTabBarProviderSelectorController({
+    addSessionButtonEl: btnAddSession,
+    sessionProviderSlotEl,
+    onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open),
+    onProviderSelected: (providerId) => appState.setPreference('defaultProvider', providerId),
+  });
   return sessionProviderSelectorController;
 }
 
 function getBranchMenuController(): TabBarBranchMenuController {
-  if (!branchMenuController) {
-    branchMenuController = createTabBarBranchMenuController({
-      gitStatusEl,
-      hideTabContextMenu,
-      getActiveContextMenu: contextMenuWiring.getActiveContextMenu,
-      setActiveContextMenu: contextMenuWiring.setActiveContextMenu,
-      applyContextMenuSemantics,
-      refreshGitStatus,
-    });
-  }
+  if (!branchMenuController) branchMenuController = createTabBarBranchMenuController({
+    gitStatusEl,
+    hideTabContextMenu,
+    getActiveContextMenu: contextMenuWiring.getActiveContextMenu,
+    setActiveContextMenu: contextMenuWiring.setActiveContextMenu,
+    applyContextMenuSemantics,
+    refreshGitStatus,
+  });
   return branchMenuController;
 }
 
 function getSessionMenuController(): TabBarSessionMenuController {
-  if (!sessionMenuController) {
-    sessionMenuController = createTabBarSessionMenuController({
-      hideTabContextMenu,
-      setActiveContextMenu: contextMenuWiring.setActiveContextMenu,
-      applyContextMenuSemantics,
-    });
-  }
+  if (!sessionMenuController) sessionMenuController = createTabBarSessionMenuController({
+    hideTabContextMenu,
+    setActiveContextMenu: contextMenuWiring.setActiveContextMenu,
+    applyContextMenuSemantics,
+  });
   return sessionMenuController;
 }
 
 function getSurfaceControlsController(): TabBarSurfaceControlsController {
-  if (!surfaceControlsController) {
-    surfaceControlsController = createTabBarSurfaceControlsController({
-      surfaceModeSlotEl,
-      surfaceProfileSlotEl,
-      getActiveProject: () => appState.activeProject,
-      buildSurfaceControlsSignature: buildSurfaceControlsSignatureForProject,
-      getProjectSurface,
-      getCliSurfaceProfileLabel,
-      selectCliSurfaceProfile,
-      activateLiveViewSurface,
-      activateCliSurface,
-      activateMobileSurface,
-      promptCliSurfaceProfile,
-      onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
-    });
-  }
+  if (!surfaceControlsController) surfaceControlsController = createTabBarSurfaceControlsController({
+    surfaceModeSlotEl,
+    surfaceProfileSlotEl,
+    getActiveProject: () => appState.activeProject,
+    buildSurfaceControlsSignature: buildSurfaceControlsSignatureForProject,
+    getProjectSurface,
+    getCliSurfaceProfileLabel,
+    selectCliSurfaceProfile,
+    activateLiveViewSurface,
+    activateCliSurface,
+    activateMobileSurface,
+    promptCliSurfaceProfile,
+    onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
+  });
   return surfaceControlsController;
 }
 
@@ -320,9 +309,7 @@ function activateLiveViewSurface(project: ProjectRecord): void {
   });
 }
 
-function activateMobileSurface(project: ProjectRecord): void {
-  activateMobileSurfaceHandler(project);
-}
+function activateMobileSurface(project: ProjectRecord): void { activateMobileSurfaceHandler(project); }
 
 async function activateCliSurface(project: ProjectRecord): Promise<void> {
   const cliApi = window.calder?.cliSurface;
@@ -358,37 +345,15 @@ async function activateCliSurface(project: ProjectRecord): Promise<void> {
   });
 }
 
-function renderSurfaceControls(): void {
-  getSurfaceControlsController().renderSurfaceControls();
-}
+function renderSurfaceControls(): void { getSurfaceControlsController().renderSurfaceControls(); }
 
-function syncSessionProviderSelector(): void {
-  getSessionProviderSelectorController().syncSessionProviderSelector(appState.preferences.defaultProvider);
-}
-
-function setupCliUpdatePanel(): void {
-  getCliUpdatePanelController().setup();
-}
-
-function isCliUpdatePanelVisible(): boolean {
-  return getCliUpdatePanelController().isVisible();
-}
-
-function doesCliUpdatePanelContain(target: Node): boolean {
-  return getCliUpdatePanelController().containsTarget(target);
-}
-
-function toggleCliUpdatePanel(visible: boolean): void {
-  getCliUpdatePanelController().toggle(visible);
-}
-
-function renderCliUpdateButton(cliState: CliUpdateCenterState): void {
-  getCliUpdatePanelController().renderButton(cliState);
-}
-
-function renderCliUpdatePanel(cliState: CliUpdateCenterState): void {
-  getCliUpdatePanelController().renderPanel(cliState);
-}
+function syncSessionProviderSelector(): void { getSessionProviderSelectorController().syncSessionProviderSelector(appState.preferences.defaultProvider); }
+function setupCliUpdatePanel(): void { getCliUpdatePanelController().setup(); }
+function isCliUpdatePanelVisible(): boolean { return getCliUpdatePanelController().isVisible(); }
+function doesCliUpdatePanelContain(target: Node): boolean { return getCliUpdatePanelController().containsTarget(target); }
+function toggleCliUpdatePanel(visible: boolean): void { getCliUpdatePanelController().toggle(visible); }
+function renderCliUpdateButton(cliState: CliUpdateCenterState): void { getCliUpdatePanelController().renderButton(cliState); }
+function renderCliUpdatePanel(cliState: CliUpdateCenterState): void { getCliUpdatePanelController().renderPanel(cliState); }
 
 function startRename(tab: HTMLElement, project: ProjectRecord, session: SessionRecord): void {
   startInlineTabRename({
@@ -418,9 +383,7 @@ function showTabContextMenu(x: number, y: number, project: ProjectRecord, sessio
   });
 }
 
-function hideTabContextMenu(): void {
-  contextMenuWiring.hideTabContextMenu();
-}
+function hideTabContextMenu(): void { contextMenuWiring.hideTabContextMenu(); }
 
 function ensureActiveTabVisible(key: string): void {
   if (key === lastActiveTabRailKey) return;

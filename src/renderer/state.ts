@@ -7,18 +7,7 @@ import { RendererPersistQueue } from './state-persistence.js';
 import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import { migrateLoadedRendererState } from './state-load-migration.js';
-import {
-  defaultPreferences,
-  type EventCallback,
-  type EventType,
-  NAV_HISTORY_MAX,
-  type SessionRemovalScope,
-} from './state/state-contracts.js';
-import {
-  collectSessionIdsForRemoval,
-  resolveCycledSessionId,
-  resolveSessionIdAtIndex,
-} from './state-session-navigation.js';
+import { defaultPreferences, type EventCallback, type EventType, NAV_HISTORY_MAX, type SessionRemovalScope } from './state/state-contracts.js';
 import {
   applyProjectSurface,
   closeCliProjectSurface,
@@ -40,16 +29,15 @@ import {
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import {
   clearHistoryForProject,
-  createProjectRecord,
   findProjectBySessionId,
   findSessionById,
   isInsightDismissedInAppState,
   listSurfaceTargetSessionsForProject,
   removeHistoryEntryForProject,
-  removeProjectAndCollectSessions,
   resolveSurfaceTargetSessionForProject,
   toggleHistoryBookmarkForProject,
 } from './state-appstate-extracts.js';
+import { addProjectToState, collectProjectSessionIdsForScope, consumePendingInitialPromptFromState, cycleActiveProjectSession, gotoProjectSession, removeProjectFromState } from './state/state-project-session-helpers.js';
 import type { AppStateRuntimeBridge } from './state/state-appstate-runtime-bridge.js';
 import {
   addBrowserTabSessionWithBridge,
@@ -99,25 +87,15 @@ class AppState {
     (error) => { console.warn('Failed to persist renderer state:', error); },
   );
 
-  private pushNav(sessionId: string | null | undefined): void {
-    this.navigation.push(sessionId);
-  }
-
-  private pruneNav(sessionId: string): void {
-    this.navigation.prune(sessionId);
-  }
+  private pushNav(sessionId: string | null | undefined): void { this.navigation.push(sessionId); }
+  private pruneNav(sessionId: string): void { this.navigation.prune(sessionId); }
 
   findProjectForPath(inputPath: string | null | undefined): ProjectRecord | undefined {
     return findProjectRecordForPath(this.state.projects, inputPath);
   }
 
-  navigateBack(): void {
-    this.stepNav(-1);
-  }
-
-  navigateForward(): void {
-    this.stepNav(1);
-  }
+  navigateBack(): void { this.stepNav(-1); }
+  navigateForward(): void { this.stepNav(1); }
 
   private stepNav(direction: 1 | -1): void {
     this.navigation.step(
@@ -135,9 +113,7 @@ class AppState {
   }
 
   on(event: EventType, cb: EventCallback): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
+    if (!this.listeners.has(event)) this.listeners.set(event, new Set());
     this.listeners.get(event)!.add(cb);
     return () => this.listeners.get(event)?.delete(cb);
   }
@@ -171,9 +147,7 @@ class AppState {
   get projects(): ProjectRecord[] {
     return this.state.projects;
   }
-  get activeProjectId(): string | null {
-    return this.state.activeProjectId;
-  }
+  get activeProjectId(): string | null { return this.state.activeProjectId; }
   get activeProject(): ProjectRecord | undefined {
     return this.state.projects.find((p) => p.id === this.state.activeProjectId);
   }
@@ -182,16 +156,12 @@ class AppState {
     if (!project) return undefined;
     return project.sessions.find((s) => s.id === project.activeSessionId);
   }
-  get sidebarWidth(): number | undefined {
-    return this.state.sidebarWidth;
-  }
+  get sidebarWidth(): number | undefined { return this.state.sidebarWidth; }
   setSidebarWidth(width: number): void {
     this.state.sidebarWidth = width;
     this.persist();
   }
-  get sidebarCollapsed(): boolean {
-    return this.state.sidebarCollapsed ?? false;
-  }
+  get sidebarCollapsed(): boolean { return this.state.sidebarCollapsed ?? false; }
   toggleSidebar(): void {
     this.state.sidebarCollapsed = !this.sidebarCollapsed;
     this.persist();
@@ -210,26 +180,18 @@ class AppState {
     project.terminalPanelHeight = height;
     this.persist();
   }
-  get lastSeenVersion(): string | undefined {
-    return this.state.lastSeenVersion;
-  }
+  get lastSeenVersion(): string | undefined { return this.state.lastSeenVersion; }
   setLastSeenVersion(version: string): void {
     this.state.lastSeenVersion = version;
     this.persist();
   }
-  get appLaunchCount(): number {
-    return this.state.appLaunchCount ?? 0;
-  }
-  get starPromptDismissed(): boolean {
-    return this.state.starPromptDismissed ?? false;
-  }
+  get appLaunchCount(): number { return this.state.appLaunchCount ?? 0; }
+  get starPromptDismissed(): boolean { return this.state.starPromptDismissed ?? false; }
   dismissStarPrompt(): void {
     this.state.starPromptDismissed = true;
     this.persist();
   }
-  get preferences(): Preferences {
-    return this.state.preferences;
-  }
+  get preferences(): Preferences { return this.state.preferences; }
   setPreference<K extends keyof Preferences>(key: K, value: Preferences[K]): void {
     this.state.preferences[key] = value;
     this.persist();
@@ -244,9 +206,7 @@ class AppState {
   }
 
   private emitProjectChangedIfActive(project: ProjectRecord): void {
-    if (project.id === this.state.activeProjectId) {
-      this.emit('project-changed');
-    }
+    if (project.id === this.state.activeProjectId) this.emit('project-changed');
   }
 
   private setProjectDomain<K extends ProjectDomainStateKey>(
@@ -279,33 +239,13 @@ class AppState {
     };
   }
 
-  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void {
-    this.setProjectDomain(projectId, 'projectContext', projectContext, normalizeProjectContextState);
-  }
-
-  setProjectWorkflows(projectId: string, projectWorkflows: ProjectWorkflowState | undefined): void {
-    this.setProjectDomain(projectId, 'projectWorkflows', projectWorkflows, normalizeProjectWorkflowState);
-  }
-
-  setProjectTeamContext(projectId: string, projectTeamContext: ProjectTeamContextState | undefined): void {
-    this.setProjectDomain(projectId, 'projectTeamContext', projectTeamContext, normalizeProjectTeamContextState);
-  }
-
-  setProjectReviews(projectId: string, projectReviews: ProjectReviewState | undefined): void {
-    this.setProjectDomain(projectId, 'projectReviews', projectReviews, normalizeProjectReviewState);
-  }
-
-  setProjectGovernance(projectId: string, projectGovernance: ProjectGovernanceState | undefined): void {
-    this.setProjectDomain(projectId, 'projectGovernance', projectGovernance, normalizeProjectGovernanceState);
-  }
-
-  setProjectBackgroundTasks(projectId: string, projectBackgroundTasks: ProjectBackgroundTaskState | undefined): void {
-    this.setProjectDomain(projectId, 'projectBackgroundTasks', projectBackgroundTasks, normalizeProjectBackgroundTaskState);
-  }
-
-  setProjectCheckpoints(projectId: string, projectCheckpoints: ProjectCheckpointState | undefined): void {
-    this.setProjectDomain(projectId, 'projectCheckpoints', projectCheckpoints, normalizeProjectCheckpointState);
-  }
+  setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void { this.setProjectDomain(projectId, 'projectContext', projectContext, normalizeProjectContextState); }
+  setProjectWorkflows(projectId: string, projectWorkflows: ProjectWorkflowState | undefined): void { this.setProjectDomain(projectId, 'projectWorkflows', projectWorkflows, normalizeProjectWorkflowState); }
+  setProjectTeamContext(projectId: string, projectTeamContext: ProjectTeamContextState | undefined): void { this.setProjectDomain(projectId, 'projectTeamContext', projectTeamContext, normalizeProjectTeamContextState); }
+  setProjectReviews(projectId: string, projectReviews: ProjectReviewState | undefined): void { this.setProjectDomain(projectId, 'projectReviews', projectReviews, normalizeProjectReviewState); }
+  setProjectGovernance(projectId: string, projectGovernance: ProjectGovernanceState | undefined): void { this.setProjectDomain(projectId, 'projectGovernance', projectGovernance, normalizeProjectGovernanceState); }
+  setProjectBackgroundTasks(projectId: string, projectBackgroundTasks: ProjectBackgroundTaskState | undefined): void { this.setProjectDomain(projectId, 'projectBackgroundTasks', projectBackgroundTasks, normalizeProjectBackgroundTaskState); }
+  setProjectCheckpoints(projectId: string, projectCheckpoints: ProjectCheckpointState | undefined): void { this.setProjectDomain(projectId, 'projectCheckpoints', projectCheckpoints, normalizeProjectCheckpointState); }
 
   restoreProjectCheckpoint(
     projectId: string,
@@ -316,40 +256,21 @@ class AppState {
   }
 
   addProject(name: string, path: string): ProjectRecord {
-    const project = createProjectRecord(name, path);
-    this.state.projects.push(project);
-    this.state.activeProjectId = project.id;
-    this.persist();
-    this.emit('project-added', project);
-    this.emit('project-changed');
+    const project = addProjectToState(this.state, name, path);
+    this.persist(); this.emit('project-added', project); this.emit('project-changed');
     return project;
   }
 
   removeProject(id: string): void {
-    const sessions = removeProjectAndCollectSessions(this.state, id);
+    const sessions = removeProjectFromState(this.state, id);
     this.persist();
-    for (const session of sessions) {
-      this.emit('session-removed', { projectId: id, sessionId: session.id });
-    }
-    this.emit('project-removed', id);
-    this.emit('project-changed');
+    for (const session of sessions) this.emit('session-removed', { projectId: id, sessionId: session.id });
+    this.emit('project-removed', id); this.emit('project-changed');
   }
 
-  addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined {
-    return addPlanSessionWithBridge(this.runtimeBridge(), projectId, name, providerOverride);
-  }
-
-  launchWorkflowSession(
-    projectId: string,
-    workflow: ProjectWorkflowDocument,
-    providerOverride?: ProviderId,
-  ): SessionRecord | undefined {
-    return launchWorkflowSessionWithBridge(this.runtimeBridge(), projectId, workflow, providerOverride);
-  }
-
-  addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined {
-    return addSessionWithBridge(this.runtimeBridge(), projectId, name, args, providerId);
-  }
+  addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined { return addPlanSessionWithBridge(this.runtimeBridge(), projectId, name, providerOverride); }
+  launchWorkflowSession(projectId: string, workflow: ProjectWorkflowDocument, providerOverride?: ProviderId): SessionRecord | undefined { return launchWorkflowSessionWithBridge(this.runtimeBridge(), projectId, workflow, providerOverride); }
+  addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined { return addSessionWithBridge(this.runtimeBridge(), projectId, name, args, providerId); }
 
   addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined {
     return addDiffViewerSessionWithBridge(this.runtimeBridge(), projectId, filePath, area, worktreePath);
@@ -359,17 +280,8 @@ class AppState {
     return addRemoteSessionWithBridge(this.runtimeBridge(), projectId, sessionId, hostSessionName, shareMode);
   }
 
-  addBrowserTabSession(
-    projectId: string,
-    url?: string,
-    options?: { dedupeByUrl?: boolean },
-  ): SessionRecord | undefined {
-    return addBrowserTabSessionWithBridge(
-      this.runtimeBridge(),
-      projectId,
-      url,
-      options?.dedupeByUrl ?? true,
-    );
+  addBrowserTabSession(projectId: string, url?: string, options?: { dedupeByUrl?: boolean }): SessionRecord | undefined {
+    return addBrowserTabSessionWithBridge(this.runtimeBridge(), projectId, url, options?.dedupeByUrl ?? true);
   }
 
   openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
@@ -394,18 +306,15 @@ class AppState {
   }
   removeHistoryEntry(projectId: string, archivedSessionId: string): void {
     if (!removeHistoryEntryForProject(this.state.projects, projectId, archivedSessionId)) return;
-    this.persist();
-    this.emit('history-changed', projectId);
+    this.persist(); this.emit('history-changed', projectId);
   }
   toggleBookmark(projectId: string, archivedSessionId: string): void {
     if (!toggleHistoryBookmarkForProject(this.state.projects, projectId, archivedSessionId)) return;
-    this.persist();
-    this.emit('history-changed', projectId);
+    this.persist(); this.emit('history-changed', projectId);
   }
   clearSessionHistory(projectId: string): void {
     if (!clearHistoryForProject(this.state.projects, projectId)) return;
-    this.persist();
-    this.emit('history-changed', projectId);
+    this.persist(); this.emit('history-changed', projectId);
   }
   resumeFromHistory(projectId: string, archivedSessionId: string): SessionRecord | undefined {
     return resumeFromHistoryWithBridge(this.runtimeBridge(), projectId, archivedSessionId);
@@ -418,12 +327,7 @@ class AppState {
     return resumeWithProviderWithBridge(this.runtimeBridge(), projectId, source, targetProviderId);
   }
   consumePendingInitialPrompt(projectId: string, sessionId: string): string | undefined {
-    const project = this.state.projects.find((p) => p.id === projectId);
-    const session = project?.sessions.find((s) => s.id === sessionId);
-    if (!session?.pendingInitialPrompt) return undefined;
-    const prompt = session.pendingInitialPrompt;
-    delete session.pendingInitialPrompt;
-    return prompt;
+    return consumePendingInitialPromptFromState(this.state, projectId, sessionId);
   }
   setActiveSession(projectId: string, sessionId: string): void {
     setActiveSessionWithBridge(this.runtimeBridge(), projectId, sessionId);
@@ -447,8 +351,7 @@ class AppState {
     if (!project) return;
     // Contract guard: tabPlacement/tabOrder normalization is delegated to applyProjectSurface().
     applyProjectSurface(project, surface);
-    this.persist();
-    this.emit('project-changed');
+    this.persist(); this.emit('project-changed');
   }
 
   private updateProjectSurface(
@@ -462,21 +365,10 @@ class AppState {
     this.emit('session-changed');
   }
 
-  focusCliSurfaceTab(projectId: string): void {
-    this.updateProjectSurface(projectId, focusCliProjectSurface);
-  }
-
-  closeCliSurface(projectId: string): void {
-    this.updateProjectSurface(projectId, closeCliProjectSurface);
-  }
-
-  focusMobileSurfaceTab(projectId: string): void {
-    this.updateProjectSurface(projectId, focusMobileProjectSurface);
-  }
-
-  closeMobileSurface(projectId: string): void {
-    this.updateProjectSurface(projectId, closeMobileProjectSurface);
-  }
+  focusCliSurfaceTab(projectId: string): void { this.updateProjectSurface(projectId, focusCliProjectSurface); }
+  closeCliSurface(projectId: string): void { this.updateProjectSurface(projectId, closeCliProjectSurface); }
+  focusMobileSurfaceTab(projectId: string): void { this.updateProjectSurface(projectId, focusMobileProjectSurface); }
+  closeMobileSurface(projectId: string): void { this.updateProjectSurface(projectId, closeMobileProjectSurface); }
 
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {
     return listSurfaceTargetSessionsForProject(this.state.projects, projectId);
@@ -539,48 +431,26 @@ class AppState {
   }
 
   cycleSession(direction: 1 | -1): void {
-    const project = this.activeProject;
-    if (!project) return;
-    const nextSessionId = resolveCycledSessionId(project.sessions, project.activeSessionId, direction);
+    const nextSessionId = cycleActiveProjectSession(this.activeProject, direction);
     if (!nextSessionId) return;
-    project.activeSessionId = nextSessionId;
-    this.pushNav(project.activeSessionId);
-    this.persist();
-    this.emit('session-changed');
+    this.pushNav(nextSessionId); this.persist(); this.emit('session-changed');
   }
   gotoSession(index: number): void {
-    const project = this.activeProject;
-    if (!project) return;
-    const nextSessionId = resolveSessionIdAtIndex(project.sessions, index);
+    const nextSessionId = gotoProjectSession(this.activeProject, index);
     if (!nextSessionId) return;
-    project.activeSessionId = nextSessionId;
-    this.pushNav(project.activeSessionId);
-    this.persist();
-    this.emit('session-changed');
+    this.pushNav(nextSessionId); this.persist(); this.emit('session-changed');
   }
 
   private removeSessionsByScope(projectId: string, scope: SessionRemovalScope, anchorSessionId?: string): void {
     const project = this.state.projects.find((p) => p.id === projectId);
-    if (!project) return;
-    const ids = collectSessionIdsForRemoval(project.sessions, scope, anchorSessionId);
+    const ids = collectProjectSessionIdsForScope(project, scope, anchorSessionId);
     for (const id of ids) this.removeSession(projectId, id);
   }
 
-  removeAllSessions(projectId: string): void {
-    this.removeSessionsByScope(projectId, 'all');
-  }
-
-  removeSessionsFromRight(projectId: string, sessionId: string): void {
-    this.removeSessionsByScope(projectId, 'right', sessionId);
-  }
-
-  removeSessionsFromLeft(projectId: string, sessionId: string): void {
-    this.removeSessionsByScope(projectId, 'left', sessionId);
-  }
-
-  removeOtherSessions(projectId: string, sessionId: string): void {
-    this.removeSessionsByScope(projectId, 'others', sessionId);
-  }
+  removeAllSessions(projectId: string): void { this.removeSessionsByScope(projectId, 'all'); }
+  removeSessionsFromRight(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'right', sessionId); }
+  removeSessionsFromLeft(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'left', sessionId); }
+  removeOtherSessions(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'others', sessionId); }
 
   addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
     addInsightSnapshotWithBridge(this.runtimeBridge(), projectId, snapshot);
