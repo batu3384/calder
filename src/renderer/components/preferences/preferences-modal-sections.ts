@@ -1,6 +1,4 @@
 import { appState } from '../../state.js';
-import { createCustomSelect } from '../custom-select.js';
-import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../../provider-availability.js';
 import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';
 import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
 import { renderProjectContextSection } from './preferences-context-discovery.js';
@@ -14,14 +12,9 @@ import {
 import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
-import {
-  appendPreferencesToggleField,
-  buildProviderNote,
-  buildProviderOptions,
-} from './preferences-modal-general-helpers.js';
-import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
+import { renderGeneralPreferencesSectionContent } from './preferences-modal-sections-general-content.js';
+import { renderLayoutPreferencesSectionContent } from './preferences-modal-sections-layout-content.js';
 import type {
-  LayoutSidebarViews,
   RenderGeneralSectionArgs,
   RenderLayoutSectionArgs,
   RenderProvidersSectionArgs,
@@ -31,228 +24,11 @@ const PROVIDER_UNAVAILABLE_SUFFIX = ' (not installed)';
 const PROVIDER_DEFAULT_MISSING_MESSAGE = 'Calder falls back to the next installed tool if this one is missing.';
 const PROVIDER_DEFAULT_INSTALLED_MESSAGE = 'New sessions use this tool unless a workflow picks a different one.';
 const PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE = 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
+const LAYOUT_OPS_RAIL_TITLE = 'Ops Rail modules';
+const LAYOUT_LIVE_VIEW_TITLE = 'Live View behavior';
+const LAYOUT_SESSION_DECK_TITLE = 'Session Deck defaults';
 
 export { renderAboutPreferencesSection } from './preferences-modal-sections-about.js';
-
-function appendGeneralSectionOverview(
-  content: HTMLElement,
-  preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
-  appendSectionIntro: RenderGeneralSectionArgs['appendSectionIntro'],
-  appendOverviewGrid: RenderGeneralSectionArgs['appendOverviewGrid'],
-): void {
-  appendSectionIntro(
-    content,
-    'Session',
-    'Launch defaults',
-    'Choose how Calder opens new work, how it names sessions, and which signals stay on while you code.',
-  );
-  appendOverviewGrid(content, [
-    {
-      label: 'Language',
-      value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
-      note: 'Applies to the full Calder interface.',
-    },
-    {
-      label: 'Default tool',
-      value: preferenceDraft.defaultProvider,
-      note: 'Used when a new session has no explicit provider.',
-    },
-    {
-      label: 'History',
-      value: preferenceDraft.sessionHistoryEnabled ? 'On' : 'Off',
-      note: 'Closed sessions can stay searchable in the run log.',
-    },
-    {
-      label: 'Alerts',
-      value: preferenceDraft.notificationsDesktop ? 'Desktop' : 'In-app only',
-      note: 'Sound and notification behavior stays local to this workspace.',
-    },
-  ]);
-}
-
-function buildDefaultProviderNote(
-  snapshot: ReturnType<typeof getProviderAvailabilitySnapshot>,
-  providerId: ProviderId,
-): string {
-  return buildProviderNote(
-    snapshot,
-    providerId,
-    PROVIDER_DEFAULT_MISSING_MESSAGE,
-    PROVIDER_DEFAULT_INSTALLED_MESSAGE,
-    PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
-  );
-}
-
-function appendDefaultProviderField({
-  content,
-  preferenceDraft,
-  isGeneralSectionActive,
-  getDefaultProviderSelect,
-  replaceDefaultProviderSelect,
-}: Pick<
-  RenderGeneralSectionArgs,
-  'content'
-  | 'preferenceDraft'
-  | 'isGeneralSectionActive'
-  | 'getDefaultProviderSelect'
-  | 'replaceDefaultProviderSelect'
->): void {
-  const providerRow = document.createElement('div');
-  providerRow.className = 'modal-toggle-field';
-
-  const providerLabel = document.createElement('label');
-  providerLabel.textContent = 'Default coding tool';
-
-  const providerNote = document.createElement('div');
-  providerNote.className = 'preferences-control-note';
-
-  const currentDefault = preferenceDraft.defaultProvider;
-  const providerSnapshot = { current: getProviderAvailabilitySnapshot() };
-
-  const updateProviderDraftAndNote = (): void => {
-    const select = getDefaultProviderSelect();
-    if (!select) return;
-    preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-    providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
-  };
-
-  const bindProviderSelectChange = (): void => {
-    const select = getDefaultProviderSelect();
-    if (!select) return;
-    select.element.addEventListener('change', () => {
-      updateProviderDraftAndNote();
-    });
-  };
-
-  if (providerSnapshot.current) {
-    const defaultSelect = createCustomSelect(
-      'pref-default-provider',
-      buildProviderOptions(providerSnapshot.current, PROVIDER_UNAVAILABLE_SUFFIX),
-      currentDefault,
-    );
-    replaceDefaultProviderSelect(defaultSelect);
-    preferenceDraft.defaultProvider = defaultSelect.getValue() as ProviderId;
-  } else {
-    const loadingSelect = createCustomSelect(
-      'pref-default-provider',
-      [{ value: currentDefault, label: 'Loading…' }],
-      currentDefault,
-    );
-    replaceDefaultProviderSelect(loadingSelect);
-    void loadProviderAvailability().then(() => {
-      if (!isGeneralSectionActive()) return;
-      providerSnapshot.current = getProviderAvailabilitySnapshot();
-      if (!providerSnapshot.current) return;
-
-      const refreshedSelect = createCustomSelect(
-        'pref-default-provider',
-        buildProviderOptions(providerSnapshot.current, PROVIDER_UNAVAILABLE_SUFFIX),
-        preferenceDraft.defaultProvider,
-      );
-      replaceDefaultProviderSelect(refreshedSelect);
-      providerRow.querySelector('.custom-select')?.remove();
-      providerRow.appendChild(refreshedSelect.element);
-      preferenceDraft.defaultProvider = refreshedSelect.getValue() as ProviderId;
-      providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
-      bindProviderSelectChange();
-    });
-  }
-
-  const providerSelect = getDefaultProviderSelect();
-  if (!providerSelect) return;
-
-  providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider);
-  bindProviderSelectChange();
-  providerRow.appendChild(providerLabel);
-  providerRow.appendChild(providerSelect.element);
-  content.appendChild(providerRow);
-  content.appendChild(providerNote);
-}
-
-function appendLanguageField({
-  content,
-  preferenceDraft,
-  replaceLanguageSelect,
-}: Pick<RenderGeneralSectionArgs, 'content' | 'preferenceDraft' | 'replaceLanguageSelect'>): void {
-  const languageRow = document.createElement('div');
-  languageRow.className = 'modal-toggle-field';
-
-  const languageLabel = document.createElement('label');
-  languageLabel.textContent = 'Interface language';
-
-  const languageSelect = createCustomSelect(
-    'pref-language',
-    [
-      { value: 'en', label: 'English' },
-      { value: 'tr', label: 'Turkish' },
-    ],
-    preferenceDraft.language,
-  );
-  replaceLanguageSelect(languageSelect);
-
-  const languageNote = document.createElement('div');
-  languageNote.className = 'preferences-control-note';
-  languageNote.textContent = 'Language changes apply after the interface refreshes.';
-
-  languageRow.appendChild(languageLabel);
-  languageRow.appendChild(languageSelect.element);
-  content.appendChild(languageRow);
-  content.appendChild(languageNote);
-  languageSelect.element.addEventListener('change', () => {
-    preferenceDraft.language = languageSelect.getValue() as UiLanguage;
-  });
-}
-
-function appendGeneralSessionToggles(
-  content: HTMLElement,
-  preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
-): void {
-  appendPreferencesToggleField(
-    content,
-    'pref-sound-on-waiting',
-    'Play sound when session finishes work',
-    preferenceDraft.soundOnSessionWaiting,
-    (checked) => {
-      preferenceDraft.soundOnSessionWaiting = checked;
-    },
-  );
-  appendPreferencesToggleField(
-    content,
-    'pref-notifications-desktop',
-    'Desktop notifications when sessions need attention',
-    preferenceDraft.notificationsDesktop,
-    (checked) => {
-      preferenceDraft.notificationsDesktop = checked;
-    },
-  );
-  appendPreferencesToggleField(
-    content,
-    'pref-session-history',
-    'Record session history when sessions close',
-    preferenceDraft.sessionHistoryEnabled,
-    (checked) => {
-      preferenceDraft.sessionHistoryEnabled = checked;
-    },
-  );
-  appendPreferencesToggleField(
-    content,
-    'pref-insights-enabled',
-    'Show insight alerts',
-    preferenceDraft.insightsEnabled,
-    (checked) => {
-      preferenceDraft.insightsEnabled = checked;
-    },
-  );
-  appendPreferencesToggleField(
-    content,
-    'pref-auto-title',
-    'Auto-name sessions from conversation title',
-    preferenceDraft.autoTitleEnabled,
-    (checked) => {
-      preferenceDraft.autoTitleEnabled = checked;
-    },
-  );
-}
 
 export function renderGeneralPreferencesSection({
   content,
@@ -264,20 +40,22 @@ export function renderGeneralPreferencesSection({
   replaceDefaultProviderSelect,
   replaceLanguageSelect,
 }: RenderGeneralSectionArgs): void {
-  appendGeneralSectionOverview(content, preferenceDraft, appendSectionIntro, appendOverviewGrid);
-  appendDefaultProviderField({
+  renderGeneralPreferencesSectionContent({
     content,
     preferenceDraft,
+    appendSectionIntro,
+    appendOverviewGrid,
     isGeneralSectionActive,
     getDefaultProviderSelect,
     replaceDefaultProviderSelect,
-  });
-  appendLanguageField({
-    content,
-    preferenceDraft,
     replaceLanguageSelect,
+    providerCopy: {
+      unavailableSuffix: PROVIDER_UNAVAILABLE_SUFFIX,
+      defaultMissingMessage: PROVIDER_DEFAULT_MISSING_MESSAGE,
+      defaultInstalledMessage: PROVIDER_DEFAULT_INSTALLED_MESSAGE,
+      defaultUnavailableMessage: PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE,
+    },
   });
-  appendGeneralSessionToggles(content, preferenceDraft);
 }
 
 export function renderLayoutPreferencesSection({
@@ -287,84 +65,18 @@ export function renderLayoutPreferencesSection({
   appendOverviewGrid,
   appendSectionCard,
 }: RenderLayoutSectionArgs): void {
-  appendSectionIntro(
+  renderLayoutPreferencesSectionContent({
     content,
-    'Workspace',
-    'Stage layout',
-    'Keep the left surface stable while deciding which support modules stay visible around active sessions.',
-  );
-
-  const views = preferenceDraft.sidebarViews;
-  appendOverviewGrid(content, [
-    {
-      label: 'Ops rail',
-      value: `${Object.values(views).filter(Boolean).length - (views.costFooter ? 1 : 0)} modules`,
-      note: 'The right-side support column stays focused when you trim unused tools.',
+    preferenceDraft,
+    appendSectionIntro,
+    appendOverviewGrid,
+    appendSectionCard,
+    copy: {
+      opsRailTitle: LAYOUT_OPS_RAIL_TITLE,
+      liveViewTitle: LAYOUT_LIVE_VIEW_TITLE,
+      sessionDeckTitle: LAYOUT_SESSION_DECK_TITLE,
     },
-    {
-      label: 'Surface split',
-      value: 'Pinned left',
-      note: 'Browser and CLI surfaces keep the project visible while sessions change on the right.',
-    },
-    {
-      label: 'Session strip',
-      value: views.costFooter ? 'Cost chip visible' : 'Cost chip hidden',
-      note: 'Session chrome stays compact until you need more context.',
-    },
-  ]);
-
-  const toggles: Array<{ key: keyof LayoutSidebarViews; label: string; group: 'ops' | 'session' }> = [
-    { key: 'configSections', label: 'Toolkit', group: 'ops' },
-    { key: 'gitPanel', label: 'Git', group: 'ops' },
-    { key: 'sessionHistory', label: 'Run log', group: 'ops' },
-    { key: 'costFooter', label: 'Spend chip', group: 'session' },
-  ];
-
-  const opsCard = appendSectionCard(
-    content,
-    'Ops Rail modules',
-    'Choose which support modules stay visible in the right-side operations rail.',
-  );
-  const liveViewCard = appendSectionCard(
-    content,
-    'Live View behavior',
-    'Live View stays anchored on the left when a browser session is open so page context never disappears.',
-  );
-  const sessionDeckCard = appendSectionCard(
-    content,
-    'Session Deck defaults',
-    'Tune the shared AI work area and the strip above active sessions.',
-  );
-
-  for (const toggle of toggles) {
-    const row = document.createElement('div');
-    row.className = 'modal-toggle-field';
-
-    const label = document.createElement('label');
-    label.htmlFor = `pref-sidebar-${toggle.key}`;
-    label.textContent = toggle.label;
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.id = `pref-sidebar-${toggle.key}`;
-    cb.checked = views[toggle.key];
-    cb.addEventListener('change', () => {
-      preferenceDraft.sidebarViews[toggle.key] = cb.checked;
-    });
-
-    row.appendChild(label);
-    row.appendChild(cb);
-    if (toggle.group === 'ops') {
-      opsCard.appendChild(row);
-    } else {
-      sessionDeckCard.appendChild(row);
-    }
-  }
-
-  const pinnedNote = document.createElement('div');
-  pinnedNote.className = 'preferences-card-note';
-  pinnedNote.textContent = 'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
-  liveViewCard.appendChild(pinnedNote);
+  });
 }
 
 // about-hero + about-link-grid are rendered in preferences-modal-sections-about.ts.

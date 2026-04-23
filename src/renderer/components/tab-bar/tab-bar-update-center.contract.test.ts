@@ -7,6 +7,14 @@ const updateCenterSource = `${tabBarSource}\n${cliUpdatePanelSource}`;
 const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar update center contract', () => {
+  it('keeps initTabBar as a lightweight orchestrator over extracted wiring helpers', () => {
+    expect(tabBarSource).toContain('export function initTabBar(): void');
+    expect(tabBarSource).toContain('bootstrapTabBarProviderAvailability({');
+    expect(tabBarSource).toContain('wireTabBarStateSubscriptions({');
+    expect(tabBarSource).toContain('wireTabBarActionHandlers({');
+    expect(tabBarSource).toContain('wireTabBarDismissHandlers({');
+  });
+
   it('renders explicit progress and timestamp rows in the CLI update panel', () => {
     expect(updateCenterSource).toContain('cli-update-panel-progress-label');
     expect(updateCenterSource).toContain('cli-update-panel-timestamp');

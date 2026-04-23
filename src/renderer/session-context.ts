@@ -1,6 +1,6 @@
 import type { ContextWindowInfo } from '../shared/types/session';
 
-export type { ContextWindowInfo } from '../shared/types';
+export type { ContextWindowInfo } from '../shared/types/session';
 
 type ContextChangeCallback = (sessionId: string, info: ContextWindowInfo) => void;
 

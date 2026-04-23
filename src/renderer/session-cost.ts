@@ -1,7 +1,7 @@
 import { stripAnsi } from './ansi';
 import type { CostData, CostInfo } from '../shared/types/session';
 
-export type { CostInfo } from '../shared/types';
+export type { CostInfo } from '../shared/types/session';
 
 type CostChangeCallback = (sessionId: string, cost: CostInfo) => void;
 

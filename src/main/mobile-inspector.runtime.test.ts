@@ -256,6 +256,44 @@ describe('mobile-inspector runtime android flows', () => {
     expect(spawnPlans).toHaveLength(0);
   });
 
+  it('returns Android toolchain error when screenshot capture cannot resolve emulator binary', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], code: 1, stderr: 'emulator not found' },
+    );
+    const emulatorFallbacks = _internal.getAndroidBinaryCandidates('emulator', process.env, process.platform);
+    for (const candidate of emulatorFallbacks) {
+      execPlans.push({
+        command: candidate,
+        args: ['-version'],
+        code: 1,
+        stderr: 'missing emulator binary',
+      });
+    }
+
+    const result = await captureMobileInspectScreenshot('android');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Android emulator binary was not found');
+    expect(execPlans).toHaveLength(0);
+    expect(spawnPlans).toHaveLength(0);
+  });
+
+  it('returns Android readiness error when adb probe fails before screenshot capture', async () => {
+    execPlans.push(
+      { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
+      { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
+      { command: '/usr/local/bin/adb', args: ['devices'], code: 1, stderr: 'adb daemon is down' },
+    );
+
+    const result = await captureMobileInspectScreenshot('android');
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('adb daemon is down');
+    expect(execPlans).toHaveLength(0);
+    expect(spawnPlans).toHaveLength(0);
+  });
+
   it('inspects Android UI hierarchy and returns matched element metadata', async () => {
     const xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',

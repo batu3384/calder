@@ -1,33 +1,41 @@
 import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { SearchAddon } from '@xterm/addon-search';
-import { WebLinksAddon } from '@xterm/addon-web-links';
 import { removeSession } from '../session-activity.js';
 import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
 import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
 import type { ProviderId } from '../types.js';
 import { getProviderCapabilities, getProviderDisplayName } from '../provider-availability.js';
-import { FilePathLinkProvider, GithubLinkProvider } from './terminal-link-provider.js';
 import {
   activateOscLink,
   activateWebLink,
   bindTerminalLinkPointerHandlers,
   clearTerminalLinkDispatch,
 } from './terminal-pane-links.js';
+import {
+  attachTerminalInstanceToContainer,
+  clearFocusedTerminalInstances,
+  fitTerminalInstance,
+  hideTerminalInstance,
+  setFocusedTerminalInstance,
+  showTerminalInstance,
+} from './terminal-pane-instance-dom.js';
 import { clearPendingPromptTimer, deliverPrompt } from './terminal-pane-prompt-delivery.js';
 import {
   clearSpawnFailureOverlay,
   formatSpawnFailureMessage,
   showSpawnFailureOverlay,
 } from './terminal-pane-spawn-overlay.js';
+import {
+  bindTerminalInputAndFocusHandlers,
+  createTerminalCore,
+  registerTerminalLinkProviders,
+} from './terminal-pane-runtime.js';
 import { spawnPtySession } from './terminal-pane-spawn-session.js';
 import { renderContextDisplay, renderCostDisplay, revealSessionStatusBar } from './terminal-pane-status.js';
-import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 interface TerminalInstance {
   terminal: Terminal;
-  fitAddon: FitAddon;
+  fitAddon: ReturnType<typeof createTerminalCore>['fitAddon'];
   searchAddon: SearchAddon;
   element: HTMLDivElement;
   sessionId: string;
@@ -126,96 +134,6 @@ function createTerminalShell(params: CreateTerminalShellParams): TerminalShellEl
   return { element, xtermWrap };
 }
 
-interface TerminalCore {
-  terminal: Terminal;
-  fitAddon: FitAddon;
-  searchAddon: SearchAddon;
-}
-
-function createTerminalCore(sessionId: string, projectPath: string): TerminalCore {
-  const terminal = new Terminal({
-    theme: {
-      background: '#000000',
-      foreground: '#e0e0e0',
-      cursor: '#e94560',
-      selectionBackground: '#ff6b85a6',
-      black: '#000000',
-      red: '#e94560',
-      green: '#0f9b58',
-      yellow: '#f4b400',
-      blue: '#4285f4',
-      magenta: '#ab47bc',
-      cyan: '#00acc1',
-      white: '#e0e0e0',
-    },
-    fontSize: 14,
-    fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace",
-    cursorBlink: true,
-    allowProposedApi: true,
-    linkHandler: {
-      activate: (event, uri) => {
-        activateOscLink(terminal, sessionId, uri, projectPath, event);
-      },
-    },
-  });
-
-  const fitAddon = new FitAddon();
-  terminal.loadAddon(fitAddon);
-
-  const searchAddon = new SearchAddon();
-  terminal.loadAddon(searchAddon);
-
-  terminal.loadAddon(new WebLinksAddon((event, url) => {
-    activateWebLink(terminal, sessionId, url, projectPath, event);
-  }));
-
-  return { terminal, fitAddon, searchAddon };
-}
-
-function bindTerminalInputAndFocusHandlers(
-  terminal: Terminal,
-  element: HTMLDivElement,
-  sessionId: string,
-): void {
-  // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline
-  attachClipboardCopyHandler(terminal, (e) => {
-    if (e.shiftKey && e.key === 'Enter') {
-      if (e.type === 'keydown') window.calder.pty.write(sessionId, '\x1b[13;2u');
-      e.preventDefault();
-      return false;
-    }
-  });
-
-  // Handle user input → PTY
-  terminal.onData((data) => {
-    window.calder.pty.write(sessionId, data);
-  });
-
-  // Focus tracking
-  element.addEventListener('mousedown', () => {
-    setFocused(sessionId);
-  });
-  terminal.onData(() => {
-    if (focusedSessionId !== sessionId) {
-      setFocused(sessionId);
-    }
-  });
-}
-
-function registerTerminalLinkProviders(terminal: Terminal, projectPath: string, projectId?: string): void {
-  // Register file path link provider for Cmd+Click
-  if (projectId) {
-    terminal.registerLinkProvider(new FilePathLinkProvider(projectId, terminal));
-  }
-
-  // Register GitHub #123 link provider
-  window.calder.git.getRemoteUrl(projectPath).then((repoUrl) => {
-    if (repoUrl) {
-      terminal.registerLinkProvider(new GithubLinkProvider(repoUrl, terminal));
-    }
-  });
-}
-
 export function createTerminalPane(
   sessionId: string,
   projectPath: string,
@@ -238,9 +156,27 @@ export function createTerminalPane(
     effectiveIsResume,
     caps,
   });
-  const { terminal, fitAddon, searchAddon } = createTerminalCore(sessionId, projectPath);
+  const { terminal, fitAddon, searchAddon } = createTerminalCore({
+    sessionId,
+    projectPath,
+    activateOscLink: (event, uri) => {
+      activateOscLink(terminal, sessionId, uri, projectPath, event);
+    },
+    activateWebLink: (event, url) => {
+      activateWebLink(terminal, sessionId, url, projectPath, event);
+    },
+  });
   bindTerminalLinkPointerHandlers(terminal, xtermWrap, sessionId, projectPath);
-  bindTerminalInputAndFocusHandlers(terminal, element, sessionId);
+  bindTerminalInputAndFocusHandlers({
+    terminal,
+    element,
+    sessionId,
+    writePtyData: (targetSessionId, data) => {
+      window.calder.pty.write(targetSessionId, data);
+    },
+    setFocused,
+    getFocusedSessionId: () => focusedSessionId,
+  });
 
   const instance: TerminalInstance = {
     terminal,
@@ -261,7 +197,12 @@ export function createTerminalPane(
   };
 
   instances.set(sessionId, instance);
-  registerTerminalLinkProviders(terminal, projectPath, projectId);
+  registerTerminalLinkProviders({
+    terminal,
+    projectPath,
+    projectId,
+    getRemoteUrl: (targetProjectPath) => window.calder.git.getRemoteUrl(targetProjectPath),
+  });
   return instance;
 }
 
@@ -317,54 +258,27 @@ export async function deliverPromptToTerminalSession(sessionId: string, prompt: 
 export function attachToContainer(sessionId: string, container: HTMLElement): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
-
-  const xtermWrap = instance.element.querySelector('.xterm-wrap')!;
-  if (!xtermWrap.querySelector('.xterm')) {
-    container.appendChild(instance.element);
-    instance.terminal.open(xtermWrap as HTMLElement);
-
-    // Try WebGL, fall back silently
-    try {
-      const webglAddon = new WebglAddon();
-      instance.terminal.loadAddon(webglAddon);
-    } catch {
-      // WebGL not available, software renderer works fine
-    }
-  } else {
-    // Always re-append to ensure correct DOM order (appendChild moves existing children)
-    container.appendChild(instance.element);
-  }
+  attachTerminalInstanceToContainer(instance, container);
 }
 
 export function showPane(sessionId: string, split: boolean): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
-  instance.element.classList.remove('hidden');
-  if (split) {
-    instance.element.classList.add('split');
-  } else {
-    instance.element.classList.remove('split');
-  }
+  showTerminalInstance(instance, split);
 }
 
 export function hideAllPanes(): void {
   for (const [, instance] of instances) {
-    instance.element.classList.add('hidden');
-    instance.element.classList.remove('swarm-dimmed', 'swarm-unread');
+    hideTerminalInstance(instance);
   }
 }
 
 export function fitTerminal(sessionId: string): void {
   const instance = instances.get(sessionId);
-  if (!instance || instance.element.classList.contains('hidden')) return;
-
-  try {
-    instance.fitAddon.fit();
-    const { cols, rows } = instance.terminal;
-    window.calder.pty.resize(sessionId, cols, rows);
-  } catch {
-    // Element not yet visible
-  }
+  if (!instance) return;
+  fitTerminalInstance(sessionId, instance, (targetSessionId, cols, rows) => {
+    window.calder.pty.resize(targetSessionId, cols, rows);
+  });
 }
 
 export function fitAllVisible(): void {
@@ -385,32 +299,12 @@ export function getFocusedSessionId(): string | null {
 
 export function clearFocused(): void {
   focusedSessionId = null;
-  for (const [, instance] of instances) {
-    instance.element.classList.remove('focused');
-  }
+  clearFocusedTerminalInstances(instances);
 }
 
 export function setFocused(sessionId: string): void {
   focusedSessionId = sessionId;
-
-  // Only move DOM focus if it's currently on a session terminal (or nothing).
-  // This prevents stealing focus from the project terminal panel, search bar, modals, etc.
-  const activeEl = document.activeElement;
-  const shouldFocusTerminal =
-    !activeEl ||
-    activeEl === document.body ||
-    !!activeEl.closest('.terminal-pane');
-
-  for (const [id, instance] of instances) {
-    if (id === sessionId) {
-      instance.element.classList.add('focused');
-      if (shouldFocusTerminal) {
-        instance.terminal.focus();
-      }
-    } else {
-      instance.element.classList.remove('focused');
-    }
-  }
+  setFocusedTerminalInstance(sessionId, instances);
 }
 
 export function handlePtyData(sessionId: string, data: string): void {

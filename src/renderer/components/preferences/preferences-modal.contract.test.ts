@@ -1,5 +1,76 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
+
+const mockRenderGeneralPreferencesSectionContent = vi.hoisted(() => vi.fn());
+const mockRenderLayoutPreferencesSectionContent = vi.hoisted(() => vi.fn());
+
+vi.mock('./preferences-modal-sections-general-content.js', () => ({
+  renderGeneralPreferencesSectionContent: mockRenderGeneralPreferencesSectionContent,
+}));
+
+vi.mock('./preferences-modal-sections-layout-content.js', () => ({
+  renderLayoutPreferencesSectionContent: mockRenderLayoutPreferencesSectionContent,
+}));
+
+vi.mock('../../state.js', () => ({
+  appState: {
+    activeProject: null,
+    setProjectContext: vi.fn(),
+    setProjectWorkflows: vi.fn(),
+    setProjectTeamContext: vi.fn(),
+    setProjectGovernance: vi.fn(),
+  },
+}));
+
+vi.mock('./preferences-background-task-discovery.js', () => ({
+  renderProjectBackgroundTaskSection: vi.fn(),
+}));
+
+vi.mock('./preferences-checkpoint-discovery.js', () => ({
+  renderProjectCheckpointSection: vi.fn(),
+}));
+
+vi.mock('./preferences-context-discovery.js', () => ({
+  renderProjectContextSection: vi.fn(),
+}));
+
+vi.mock('./preferences-governance-discovery.js', () => ({
+  renderProjectGovernanceSection: vi.fn(),
+}));
+
+vi.mock('./preferences-orchestration-overview.js', () => ({
+  renderOrchestrationOverviewSection: vi.fn(),
+}));
+
+vi.mock('./preferences-preview-discovery.js', () => ({
+  renderProjectPreviewCenterSection: vi.fn(),
+}));
+
+vi.mock('./preferences-provider-setup.js', () => ({
+  renderSetupSection: vi.fn(),
+  renderMobileSetupSection: vi.fn(),
+}));
+
+vi.mock('./preferences-review-discovery.js', () => ({
+  renderProjectReviewSection: vi.fn(),
+}));
+
+vi.mock('./preferences-team-context-discovery.js', () => ({
+  renderProjectTeamContextSection: vi.fn(),
+}));
+
+vi.mock('./preferences-workflow-discovery.js', () => ({
+  renderProjectWorkflowSection: vi.fn(),
+}));
+
+vi.mock('./preferences-modal-sections-about.js', () => ({
+  renderAboutPreferencesSection: vi.fn(),
+}));
+
+import {
+  renderGeneralPreferencesSection,
+  renderLayoutPreferencesSection,
+} from './preferences-modal-sections.js';
 
 const modalSourceFile = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
 const modalSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
@@ -127,5 +198,85 @@ describe('preferences modal contract', () => {
     expect(source).not.toContain('shortcutManager.resetOverride(');
     expect(source).toContain('extendModalCleanup(() => {');
     expect(modalSourceFile).not.toContain('registerModalCleanup(() => {');
+  });
+});
+
+function createGeneralSectionArgs() {
+  return {
+    content: {} as HTMLElement,
+    preferenceDraft: {
+      soundOnSessionWaiting: true,
+      notificationsDesktop: true,
+      sessionHistoryEnabled: true,
+      insightsEnabled: true,
+      autoTitleEnabled: true,
+      defaultProvider: 'codex' as const,
+      language: 'en' as const,
+    },
+    appendSectionIntro: () => {},
+    appendOverviewGrid: () => {},
+    isGeneralSectionActive: () => true,
+    getDefaultProviderSelect: () => null,
+    replaceDefaultProviderSelect: () => {},
+    replaceLanguageSelect: () => {},
+  };
+}
+
+function createLayoutSectionArgs() {
+  return {
+    content: {} as HTMLElement,
+    preferenceDraft: {
+      sidebarViews: {
+        configSections: true,
+        gitPanel: true,
+        sessionHistory: true,
+        costFooter: true,
+      },
+    },
+    appendSectionIntro: () => {},
+    appendOverviewGrid: () => {},
+    appendSectionCard: () => ({} as HTMLElement),
+  };
+}
+
+describe('preferences section wrappers', () => {
+  beforeEach(() => {
+    mockRenderGeneralPreferencesSectionContent.mockReset();
+    mockRenderLayoutPreferencesSectionContent.mockReset();
+  });
+
+  it('passes provider copy constants into renderGeneralPreferencesSectionContent', () => {
+    const args = createGeneralSectionArgs();
+
+    renderGeneralPreferencesSection(args);
+
+    expect(mockRenderGeneralPreferencesSectionContent).toHaveBeenCalledTimes(1);
+    expect(mockRenderGeneralPreferencesSectionContent).toHaveBeenCalledWith(expect.objectContaining({
+      content: args.content,
+      preferenceDraft: args.preferenceDraft,
+      providerCopy: {
+        unavailableSuffix: ' (not installed)',
+        defaultMissingMessage: 'Calder falls back to the next installed tool if this one is missing.',
+        defaultInstalledMessage: 'New sessions use this tool unless a workflow picks a different one.',
+        defaultUnavailableMessage: 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.',
+      },
+    }));
+  });
+
+  it('passes layout copy constants into renderLayoutPreferencesSectionContent', () => {
+    const args = createLayoutSectionArgs();
+
+    renderLayoutPreferencesSection(args);
+
+    expect(mockRenderLayoutPreferencesSectionContent).toHaveBeenCalledTimes(1);
+    expect(mockRenderLayoutPreferencesSectionContent).toHaveBeenCalledWith(expect.objectContaining({
+      content: args.content,
+      preferenceDraft: args.preferenceDraft,
+      copy: {
+        opsRailTitle: 'Ops Rail modules',
+        liveViewTitle: 'Live View behavior',
+        sessionDeckTitle: 'Session Deck defaults',
+      },
+    }));
   });
 });

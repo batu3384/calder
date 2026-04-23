@@ -23,7 +23,7 @@ import { createPreloadGitApi } from './preload-api-git.js';
 import { createPreloadPtyApi } from './preload-api-pty.js';
 import { createPreloadProjectDomainApi } from './preload-api-project-domains.js';
 
-export type { CostData } from '../shared/types';
+export type { CostData } from '../shared/types/session';
 
 export interface CalderApi {
   pty: {

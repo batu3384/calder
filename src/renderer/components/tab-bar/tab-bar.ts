@@ -1,13 +1,7 @@
 import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../../state.js';
 import type { CliSurfaceProfile } from '../../../shared/types/project-surface.js';
-import { onChange as onStatusChange, type SessionStatus } from '../../session-activity.js';
-import { onChange as onGitStatusChange, getGitStatus, refreshGitStatus } from '../../git-status.js';
-import { onChange as onUnreadChange } from '../../session-unread.js';
-import { onShareChange } from '../../sharing/share-manager.js';
-import {
-  loadProviderAvailability,
-  hasMultipleAvailableProviders,
-} from '../../provider-availability.js';
+import type { SessionStatus } from '../../session-activity.js';
+import { getGitStatus, refreshGitStatus } from '../../git-status.js';
 import { openCliSurfaceWithSetup } from '../cli-surface/setup.js';
 import { showCliSurfaceQuickSetup } from '../cli-surface/quick-setup.js';
 import {
@@ -71,6 +65,12 @@ import {
   renderGitStatusBlock,
   shouldSkipTabListRender,
 } from './tab-bar-render-blocks.js';
+import {
+  bootstrapTabBarProviderAvailability,
+  wireTabBarActionHandlers,
+  wireTabBarDismissHandlers,
+  wireTabBarStateSubscriptions,
+} from './tab-bar-event-wiring.js';
 
 /*
  * Source contract markers:
@@ -193,91 +193,53 @@ export function initTabBar(): void {
     lastCliPhase = snapshot.cli.phase;
   });
 
-  btnUpdateCliTools.addEventListener('click', () => {
-    toggleCliUpdatePanel(true);
-    if (getUpdateCenterState().cli.phase !== 'running') {
-      void runCliProviderUpdates().catch((error) => {
-        console.error('[tab-bar] Failed to update CLI tools', error);
+  wireTabBarActionHandlers({
+    addSessionButtonEl: btnAddSession,
+    updateCliToolsButtonEl: btnUpdateCliTools,
+    mobileControlButtonEl: btnMobileControl,
+    gitStatusEl,
+    onToggleUpdatePanelAndRun: () => {
+      toggleCliUpdatePanel(true);
+      if (getUpdateCenterState().cli.phase !== 'running') {
+        void runCliProviderUpdates().catch((error) => {
+          console.error('[tab-bar] Failed to update CLI tools', error);
+        });
+      }
+    },
+    onQuickNewSession: quickNewSession,
+    onMobileControlClick: () => {
+      handleMobileControlClick({
+        project: appState.activeProject,
+        btnMobileControl,
+        mobileControlPresenceEl,
+        promptNewSession,
       });
-    }
-  });
-  btnAddSession.addEventListener('click', () => quickNewSession());
-  btnMobileControl?.addEventListener('click', () => {
-    handleMobileControlClick({
-      project: appState.activeProject,
-      btnMobileControl,
-      mobileControlPresenceEl,
-      promptNewSession,
-    });
-  });
-  btnAddSession.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    showAddSessionContextMenu(e.clientX, e.clientY);
-  });
-  gitStatusEl.addEventListener('click', (e) => showBranchContextMenu(e));
-
-  // Icons only distinguish providers when multiple are installed
-  loadProviderAvailability().then(() => {
-    syncSessionProviderSelector();
-    if (hasMultipleAvailableProviders()) render();
-  }).catch((error) => {
-    console.warn('[tab-bar] Failed to load provider availability', error);
-    syncSessionProviderSelector();
+    },
+    onShowAddSessionContextMenu: showAddSessionContextMenu,
+    onShowBranchContextMenu: (event) => {
+      void showBranchContextMenu(event);
+    },
   });
 
-  appState.on('state-loaded', render);
-  appState.on('project-changed', render);
-  appState.on('session-added', render);
-  appState.on('session-removed', (data?: unknown) => {
-    const d = data as { sessionId?: string } | undefined;
-    if (d?.sessionId) {
-      prevStatus.delete(d.sessionId);
-    }
-    render();
+  bootstrapTabBarProviderAvailability({
+    syncSessionProviderSelector,
+    render,
   });
-  appState.on('session-changed', render);
-  appState.on('layout-changed', render);
-  appState.on('preferences-changed', syncSessionProviderSelector);
-  onShareChange(render);
-
-  onStatusChange((sessionId, status) => {
-    prevStatus.set(sessionId, status);
-
-    const dot = tabListEl.querySelector(`.tab-item[data-session-id="${sessionId}"] .tab-status`) as HTMLElement | null;
-    if (dot) {
-      dot.className = `tab-status ${status}`;
-    }
-    const tab = tabListEl.querySelector(`.tab-item[data-session-id="${sessionId}"]`) as HTMLElement | null;
-    if (tab) {
-      const session = appState.activeProject?.sessions.find(s => s.id === sessionId);
-      tab.title = buildSessionTooltip(status, session?.cliSessionId);
-    }
-
+  wireTabBarStateSubscriptions({
+    prevStatus,
+    tabListEl,
+    buildSessionTooltip,
+    render,
+    renderGitStatus,
+    syncSessionProviderSelector,
   });
 
-  onUnreadChange(render);
-
-  onGitStatusChange((projectId) => {
-    if (projectId === appState.activeProjectId) {
-      renderGitStatus();
-    }
-  });
-  appState.on('project-changed', renderGitStatus);
-
-  document.addEventListener('click', (event) => {
-    hideTabContextMenu();
-    if (!isCliUpdatePanelVisible()) return;
-    const target = event.target as Node | null;
-    if (!target) return;
-    if (doesCliUpdatePanelContain(target)) return;
-    if (btnUpdateCliTools.contains(target)) return;
-    toggleCliUpdatePanel(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    hideTabContextMenu();
-    toggleCliUpdatePanel(false);
+  wireTabBarDismissHandlers({
+    updateCliToolsButtonEl: btnUpdateCliTools,
+    isCliUpdatePanelVisible,
+    doesCliUpdatePanelContain,
+    toggleCliUpdatePanel,
+    hideTabContextMenu,
   });
 
   render();

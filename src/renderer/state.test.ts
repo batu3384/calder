@@ -760,6 +760,18 @@ describe('addMcpInspectorSession()', () => {
   });
 });
 
+describe('addRemoteSession()', () => {
+  it('creates a remote terminal session and makes it active', () => {
+    const project = addProject();
+    const remote = appState.addRemoteSession(project.id, 'remote-session-1', 'Host Session', 'readwrite')!;
+    expect(remote.id).toBe('remote-session-1');
+    expect(remote.type).toBe('remote-terminal');
+    expect(remote.remoteHostName).toBe('Host Session');
+    expect(remote.shareMode).toBe('readwrite');
+    expect(appState.activeProject?.activeSessionId).toBe(remote.id);
+  });
+});
+
 describe('browser target sessions', () => {
   it('seeds a new browser tab with the previously active cli session as its target', () => {
     const project = addProject();
@@ -768,7 +780,7 @@ describe('browser target sessions', () => {
     const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
 
     expect(browser.browserTargetSessionId).toBe(cli.id);
-    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(cli.id);
+    expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(cli.id);
   });
 
   it('retargets a browser tab when its chosen cli session is removed', () => {
@@ -777,13 +789,13 @@ describe('browser target sessions', () => {
     const secondary = appState.addSession(project.id, 'Secondary', undefined, 'codex')!;
     const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
 
-    (appState as any).setBrowserTargetSession(browser.id, secondary.id);
+    appState.setBrowserTargetSession(browser.id, secondary.id);
     appState.setActiveSession(project.id, primary.id);
     appState.removeSession(project.id, secondary.id);
 
     const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
     expect(browserSession.browserTargetSessionId).toBe(primary.id);
-    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(primary.id);
+    expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(primary.id);
   });
 
   it('lists and resolves targetable surface sessions without using browser-tab state', () => {
@@ -820,8 +832,8 @@ describe('browser target sessions', () => {
 
     appState.setSurfaceTargetSession(project.id, target.id);
 
-    expect((appState as any).resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
-    expect((appState as any).listBrowserTargetSessions(browser.id).map((session: { id: string }) => session.id)).toContain(target.id);
+    expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
+    expect(appState.listBrowserTargetSessions(browser.id).map((session) => session.id)).toContain(target.id);
   });
 
   it('reuses the current live view session when opening a new embedded browser url', () => {
@@ -830,7 +842,7 @@ describe('browser target sessions', () => {
 
     mockSave.mockClear();
 
-    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:4173');
+    const reused = appState.openUrlInBrowserSurface(project.id, 'http://localhost:4173')!;
 
     expect(reused.id).toBe(browser.id);
     expect(appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab')).toHaveLength(1);
@@ -866,7 +878,7 @@ describe('browser target sessions', () => {
     });
 
     mockSave.mockClear();
-    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:3002');
+    const reused = appState.openUrlInBrowserSurface(project.id, 'http://localhost:3002')!;
 
     expect(reused.id).toBe(first.id);
     expect(appState.activeProject!.surface?.web).toMatchObject({
@@ -907,7 +919,7 @@ describe('browser target sessions', () => {
     appState.setActiveSession(project.id, second.id);
     mockSave.mockClear();
 
-    const reused = (appState as any).openUrlInBrowserSurface(project.id, 'http://localhost:3002');
+    const reused = appState.openUrlInBrowserSurface(project.id, 'http://localhost:3002')!;
 
     expect(reused.id).toBe(second.id);
     expect(appState.activeProject!.surface?.web).toMatchObject({

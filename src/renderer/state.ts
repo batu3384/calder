@@ -15,75 +15,21 @@ import { RendererStateNavigation } from './state-navigation.js';
 import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import { migrateLoadedRendererState } from './state-load-migration.js';
 import { defaultPreferences, type EventCallback, type EventType, NAV_HISTORY_MAX, type SessionRemovalScope } from './state/state-contracts.js';
-import {
-  applyProjectSurface,
-  closeCliProjectSurface,
-  closeMobileProjectSurface,
-  focusCliProjectSurface,
-  focusMobileProjectSurface,
-} from './state-surface-updater.js';
+import { applyProjectSurface, closeCliProjectSurface, closeMobileProjectSurface, focusCliProjectSurface, focusMobileProjectSurface } from './state-surface-updater.js';
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
-import { setProjectDomainState } from './state-project-domain-updater.js';
-import {
-  normalizeProjectBackgroundTaskState,
-  normalizeProjectCheckpointState,
-  normalizeProjectContextState,
-  normalizeProjectGovernanceState,
-  normalizeProjectReviewState,
-  normalizeProjectTeamContextState,
-  normalizeProjectWorkflowState,
-} from './state-normalizers.js';
+import { normalizeProjectBackgroundTaskState, normalizeProjectCheckpointState, normalizeProjectContextState, normalizeProjectGovernanceState, normalizeProjectReviewState, normalizeProjectTeamContextState, normalizeProjectWorkflowState } from './state-normalizers.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
-import {
-  clearHistoryForProject,
-  findProjectBySessionId,
-  findSessionById,
-  isInsightDismissedInAppState,
-  listSurfaceTargetSessionsForProject,
-  removeHistoryEntryForProject,
-  resolveSurfaceTargetSessionForProject,
-  toggleHistoryBookmarkForProject,
-} from './state-appstate-extracts.js';
+import { createAppStateRuntimeBridge, setProjectDomainForState, updateProjectSurfaceForState } from './state/state-appstate-orchestration-helpers.js';
+import { clearHistoryForProject, findProjectBySessionId, findSessionById, isInsightDismissedInAppState, listSurfaceTargetSessionsForProject, removeHistoryEntryForProject, resolveSurfaceTargetSessionForProject, toggleHistoryBookmarkForProject } from './state-appstate-extracts.js';
 import { addProjectToState, collectProjectSessionIdsForScope, consumePendingInitialPromptFromState, cycleActiveProjectSession, gotoProjectSession, removeProjectFromState } from './state/state-project-session-helpers.js';
 import type { AppStateRuntimeBridge } from './state/state-appstate-runtime-bridge.js';
-import {
-  addBrowserTabSessionWithBridge,
-  addDiffViewerSessionWithBridge,
-  addInsightSnapshotWithBridge,
-  addFileReaderSessionWithBridge,
-  addMcpInspectorSessionWithBridge,
-  addPlanSessionWithBridge,
-  addRemoteSessionWithBridge,
-  addSessionWithBridge,
-  dismissInsightWithBridge,
-  launchWorkflowSessionWithBridge,
-  openUrlInBrowserSurfaceWithBridge,
-  passivateBrowserTabSessionWithBridge,
-  removeSessionWithBridge,
-  renameSessionWithBridge,
-  reorderSessionWithBridge,
-  resumeFromHistoryWithBridge,
-  resumeWithProviderWithBridge,
-  restoreProjectCheckpointWithBridge,
-  setActiveSessionWithBridge,
-  setBrowserWidthRatioWithBridge,
-  setMosaicRatioWithBridge,
-  setSurfaceTargetSessionWithBridge,
-  updateSessionBrowserTabUrlWithBridge,
-  updateSessionCliIdWithBridge,
-  updateSessionContextWithBridge,
-  updateSessionCostWithBridge,
-} from './state/state-appstate-runtime-bridge.js';
+import { addBrowserTabSessionWithBridge, addDiffViewerSessionWithBridge, addInsightSnapshotWithBridge, addFileReaderSessionWithBridge, addMcpInspectorSessionWithBridge, addPlanSessionWithBridge, addRemoteSessionWithBridge, addSessionWithBridge, dismissInsightWithBridge, launchWorkflowSessionWithBridge, openUrlInBrowserSurfaceWithBridge, passivateBrowserTabSessionWithBridge, removeSessionWithBridge, renameSessionWithBridge, reorderSessionWithBridge, resumeFromHistoryWithBridge, resumeWithProviderWithBridge, restoreProjectCheckpointWithBridge, setActiveSessionWithBridge, setBrowserWidthRatioWithBridge, setMosaicRatioWithBridge, setSurfaceTargetSessionWithBridge, updateSessionBrowserTabUrlWithBridge, updateSessionCliIdWithBridge, updateSessionContextWithBridge, updateSessionCostWithBridge } from './state/state-appstate-runtime-bridge.js';
 
 export type { SessionRecord, ArchivedSession } from '../shared/types/session.js';
 export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
 
-declare global {
-  interface Window {
-    calder: CalderApi;
-  }
-}
+declare global { interface Window { calder: CalderApi; } }
 
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
@@ -212,10 +158,6 @@ class AppState {
     this.emit('project-changed');
   }
 
-  private emitProjectChangedIfActive(project: ProjectRecord): void {
-    if (project.id === this.state.activeProjectId) this.emit('project-changed');
-  }
-
   private setProjectDomain<K extends ProjectDomainStateKey>(
     projectId: string,
     key: K,
@@ -225,25 +167,28 @@ class AppState {
       previous: ProjectRecord[K],
     ) => ProjectRecord[K],
   ): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project) return;
-    if (!setProjectDomainState(project, key, incoming, normalize)) return;
-    this.persist();
-    this.emitProjectChangedIfActive(project);
+    setProjectDomainForState({
+      projects: this.state.projects,
+      activeProjectId: this.state.activeProjectId,
+      projectId,
+      key,
+      incoming,
+      normalize,
+      persist: () => this.persist(),
+      emit: (event) => this.emit(event),
+    });
   }
 
   private runtimeBridge(): AppStateRuntimeBridge {
-    return {
-      projects: this.state.projects,
-      defaultProviderId: this.state.preferences.defaultProvider,
-      sessionHistoryEnabled: this.state.preferences.sessionHistoryEnabled,
+    return createAppStateRuntimeBridge({
+      state: this.state,
       pushNav: (sessionId) => this.pushNav(sessionId),
       pruneNav: (sessionId) => this.pruneNav(sessionId),
       persist: () => this.persist(),
       emit: (event, data) => this.emit(event, data),
       buildResumePrompt: (sourceProviderId, sourceCliSessionId, projectPath, sourceName) =>
         window.calder.session.buildResumeWithPrompt(sourceProviderId, sourceCliSessionId, projectPath, sourceName),
-    };
+    });
   }
 
   setProjectContext(projectId: string, projectContext: ProjectContextState | undefined): void { this.setProjectDomain(projectId, 'projectContext', projectContext, normalizeProjectContextState); }
@@ -278,34 +223,13 @@ class AppState {
   addPlanSession(projectId: string, name: string, providerOverride?: ProviderId): SessionRecord | undefined { return addPlanSessionWithBridge(this.runtimeBridge(), projectId, name, providerOverride); }
   launchWorkflowSession(projectId: string, workflow: ProjectWorkflowDocument, providerOverride?: ProviderId): SessionRecord | undefined { return launchWorkflowSessionWithBridge(this.runtimeBridge(), projectId, workflow, providerOverride); }
   addSession(projectId: string, name: string, args?: string, providerId?: ProviderId): SessionRecord | undefined { return addSessionWithBridge(this.runtimeBridge(), projectId, name, args, providerId); }
-
-  addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined {
-    return addDiffViewerSessionWithBridge(this.runtimeBridge(), projectId, filePath, area, worktreePath);
-  }
-
-  addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined {
-    return addRemoteSessionWithBridge(this.runtimeBridge(), projectId, sessionId, hostSessionName, shareMode);
-  }
-
-  addBrowserTabSession(projectId: string, url?: string, options?: { dedupeByUrl?: boolean }): SessionRecord | undefined {
-    return addBrowserTabSessionWithBridge(this.runtimeBridge(), projectId, url, options?.dedupeByUrl ?? true);
-  }
-
-  openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined {
-    return openUrlInBrowserSurfaceWithBridge(this.runtimeBridge(), projectId, url);
-  }
-
-  addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined {
-    return addFileReaderSessionWithBridge(this.runtimeBridge(), projectId, filePath, lineNumber);
-  }
-
-  addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined {
-    return addMcpInspectorSessionWithBridge(this.runtimeBridge(), projectId, name);
-  }
-
-  removeSession(projectId: string, sessionId: string): void {
-    removeSessionWithBridge(this.runtimeBridge(), projectId, sessionId);
-  }
+  addDiffViewerSession(projectId: string, filePath: string, area: string, worktreePath?: string): SessionRecord | undefined { return addDiffViewerSessionWithBridge(this.runtimeBridge(), projectId, filePath, area, worktreePath); }
+  addRemoteSession(projectId: string, sessionId: string, hostSessionName: string, shareMode: 'readonly' | 'readwrite'): SessionRecord | undefined { return addRemoteSessionWithBridge(this.runtimeBridge(), projectId, sessionId, hostSessionName, shareMode); }
+  addBrowserTabSession(projectId: string, url?: string, options?: { dedupeByUrl?: boolean }): SessionRecord | undefined { return addBrowserTabSessionWithBridge(this.runtimeBridge(), projectId, url, options?.dedupeByUrl ?? true); }
+  openUrlInBrowserSurface(projectId: string, url: string): SessionRecord | undefined { return openUrlInBrowserSurfaceWithBridge(this.runtimeBridge(), projectId, url); }
+  addFileReaderSession(projectId: string, filePath: string, lineNumber?: number): SessionRecord | undefined { return addFileReaderSessionWithBridge(this.runtimeBridge(), projectId, filePath, lineNumber); }
+  addMcpInspectorSession(projectId: string, name: string): SessionRecord | undefined { return addMcpInspectorSessionWithBridge(this.runtimeBridge(), projectId, name); }
+  removeSession(projectId: string, sessionId: string): void { removeSessionWithBridge(this.runtimeBridge(), projectId, sessionId); }
 
   getSessionHistory(projectId: string): ArchivedSession[] {
     const project = this.state.projects.find((p) => p.id === projectId);
@@ -361,17 +285,9 @@ class AppState {
     this.persist(); this.emit('project-changed');
   }
 
-  private updateProjectSurface(
-    projectId: string,
-    mutate: (project: ProjectRecord) => boolean,
-  ): void {
-    const project = this.state.projects.find((entry) => entry.id === projectId);
-    if (!project || !mutate(project)) return;
-    this.persist();
-    this.emit('project-changed');
-    this.emit('session-changed');
+  private updateProjectSurface(projectId: string, mutate: (project: ProjectRecord) => boolean): void {
+    updateProjectSurfaceForState({ projects: this.state.projects, projectId, mutate, persist: () => this.persist(), emit: (event) => this.emit(event) });
   }
-
   focusCliSurfaceTab(projectId: string): void { this.updateProjectSurface(projectId, focusCliProjectSurface); }
   closeCliSurface(projectId: string): void { this.updateProjectSurface(projectId, closeCliProjectSurface); }
   focusMobileSurfaceTab(projectId: string): void { this.updateProjectSurface(projectId, focusMobileProjectSurface); }
@@ -396,9 +312,7 @@ class AppState {
     setSurfaceTargetSessionWithBridge(this.runtimeBridge(), projectId, targetSessionId);
   }
 
-  updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void {
-    updateSessionCliIdWithBridge(this.runtimeBridge(), projectId, sessionId, cliSessionId);
-  }
+  updateSessionCliId(projectId: string, sessionId: string, cliSessionId: string): void { updateSessionCliIdWithBridge(this.runtimeBridge(), projectId, sessionId, cliSessionId); }
 
   /** @deprecated Use updateSessionCliId */
   updateSessionClaudeId(projectId: string, sessionId: string, claudeSessionId: string): void {
@@ -409,33 +323,13 @@ class AppState {
     return findSessionById(this.state.projects, sessionId) !== undefined;
   }
 
-  updateSessionCost(sessionId: string, cost: CostInfo): void {
-    updateSessionCostWithBridge(this.runtimeBridge(), sessionId, cost);
-  }
-
-  updateSessionContext(sessionId: string, context: ContextWindowInfo): void {
-    updateSessionContextWithBridge(this.runtimeBridge(), sessionId, context);
-  }
-
-  updateSessionBrowserTabUrl(sessionId: string, url: string): void {
-    updateSessionBrowserTabUrlWithBridge(this.runtimeBridge(), sessionId, url);
-  }
-
-  passivateBrowserTabSession(sessionId: string, failedUrl?: string): void {
-    passivateBrowserTabSessionWithBridge(this.runtimeBridge(), sessionId, failedUrl);
-  }
-
-  renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void {
-    renameSessionWithBridge(this.runtimeBridge(), projectId, sessionId, name, MAX_SESSION_NAME_LENGTH, userRenamed);
-  }
-
-  setBrowserWidthRatio(projectId: string, ratio: number): void {
-    setBrowserWidthRatioWithBridge(this.runtimeBridge(), projectId, ratio);
-  }
-
-  setMosaicRatio(projectId: string, key: string, ratio: number): void {
-    setMosaicRatioWithBridge(this.runtimeBridge(), projectId, key, ratio);
-  }
+  updateSessionCost(sessionId: string, cost: CostInfo): void { updateSessionCostWithBridge(this.runtimeBridge(), sessionId, cost); }
+  updateSessionContext(sessionId: string, context: ContextWindowInfo): void { updateSessionContextWithBridge(this.runtimeBridge(), sessionId, context); }
+  updateSessionBrowserTabUrl(sessionId: string, url: string): void { updateSessionBrowserTabUrlWithBridge(this.runtimeBridge(), sessionId, url); }
+  passivateBrowserTabSession(sessionId: string, failedUrl?: string): void { passivateBrowserTabSessionWithBridge(this.runtimeBridge(), sessionId, failedUrl); }
+  renameSession(projectId: string, sessionId: string, name: string, userRenamed?: boolean): void { renameSessionWithBridge(this.runtimeBridge(), projectId, sessionId, name, MAX_SESSION_NAME_LENGTH, userRenamed); }
+  setBrowserWidthRatio(projectId: string, ratio: number): void { setBrowserWidthRatioWithBridge(this.runtimeBridge(), projectId, ratio); }
+  setMosaicRatio(projectId: string, key: string, ratio: number): void { setMosaicRatioWithBridge(this.runtimeBridge(), projectId, key, ratio); }
 
   cycleSession(direction: 1 | -1): void {
     const nextSessionId = cycleActiveProjectSession(this.activeProject, direction);
@@ -458,22 +352,10 @@ class AppState {
   removeSessionsFromRight(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'right', sessionId); }
   removeSessionsFromLeft(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'left', sessionId); }
   removeOtherSessions(projectId: string, sessionId: string): void { this.removeSessionsByScope(projectId, 'others', sessionId); }
-
-  addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void {
-    addInsightSnapshotWithBridge(this.runtimeBridge(), projectId, snapshot);
-  }
-
-  dismissInsight(projectId: string, insightId: string): void {
-    dismissInsightWithBridge(this.runtimeBridge(), projectId, insightId);
-  }
-
-  isInsightDismissed(projectId: string, insightId: string): boolean {
-    return isInsightDismissedInAppState(this.state.projects, projectId, insightId);
-  }
-
-  reorderSession(projectId: string, sessionId: string, toIndex: number): void {
-    reorderSessionWithBridge(this.runtimeBridge(), projectId, sessionId, toIndex);
-  }
+  addInsightSnapshot(projectId: string, snapshot: InitialContextSnapshot): void { addInsightSnapshotWithBridge(this.runtimeBridge(), projectId, snapshot); }
+  dismissInsight(projectId: string, insightId: string): void { dismissInsightWithBridge(this.runtimeBridge(), projectId, insightId); }
+  isInsightDismissed(projectId: string, insightId: string): boolean { return isInsightDismissedInAppState(this.state.projects, projectId, insightId); }
+  reorderSession(projectId: string, sessionId: string, toIndex: number): void { reorderSessionWithBridge(this.runtimeBridge(), projectId, sessionId, toIndex); }
 
   /** @internal Test-only: reset all state containers */
   resetForTesting(): void {

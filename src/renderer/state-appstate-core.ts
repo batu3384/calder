@@ -2,8 +2,7 @@ import type { ProviderId } from '../shared/types/provider.js';
 import type { PersistedState, ProjectRecord } from '../shared/types/project-state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
 import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
-import type { InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
-import { clampRatio } from './components/mosaic-layout-model.js';
+import type { SessionRecord } from '../shared/types/session.js';
 import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
@@ -16,9 +15,8 @@ import {
   toggleProjectHistoryBookmark,
 } from './state-history.js';
 import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
-import { addInsightSnapshotToProject, dismissInsightForProject, isInsightDismissedForProject, reorderProjectSession } from './state-session-mutators.js';
-import { DEFAULT_BROWSER_WIDTH_RATIO, buildWorkflowLaunchPrompt, normalizeProjectLayout } from './state-normalizers.js';
-import { isCliSessionRecord, repairProjectSurface, resolveSurfaceTargetFromProject } from './state-project-surface.js';
+import { buildWorkflowLaunchPrompt, normalizeProjectLayout } from './state-normalizers.js';
+import { repairProjectSurface } from './state-project-surface.js';
 import { resumeProjectWithProvider } from './state-resume-with-provider.js';
 import { createStandardSessionRecord, createWorkflowLaunchSessionRecord } from './state-session-factory.js';
 import {
@@ -26,29 +24,31 @@ import {
   addRemoteSession as addRemoteSessionToProject,
   addSessionToProject,
   openUrlInExistingBrowserSession,
-  passivateBrowserTabSession as passivateBrowserTabSessionRecord,
-  setSurfaceTargetSession as setSurfaceTargetSessionOnProject,
-  updateBrowserTabUrl,
   upsertBrowserTabSession,
   upsertDiffViewerSession,
   upsertFileReaderSession,
 } from './state-session-ops.js';
+import { findProjectById } from './state/state-appstate-core-project-access.js';
 
-function findProjectById(projects: ProjectRecord[], projectId: string): ProjectRecord | undefined {
-  return projects.find((project) => project.id === projectId);
-}
-
-export function findProjectBySessionId(projects: ProjectRecord[], sessionId: string): ProjectRecord | undefined {
-  return projects.find((project) => project.sessions.some((session) => session.id === sessionId));
-}
-
-export function findSessionById(projects: ProjectRecord[], sessionId: string): SessionRecord | undefined {
-  for (const project of projects) {
-    const session = project.sessions.find((entry) => entry.id === sessionId);
-    if (session) return session;
-  }
-  return undefined;
-}
+export {
+  findProjectBySessionId,
+  findSessionById,
+} from './state/state-appstate-core-project-access.js';
+export {
+  addInsightSnapshotForProject,
+  dismissInsightForProjectId,
+  isInsightDismissedForProjectId,
+  reorderSessionForProject,
+} from './state/state-appstate-core-insights-ordering.js';
+export {
+  listSurfaceTargetSessionsForProject,
+  passivateBrowserTabSessionById,
+  resolveSurfaceTargetSessionForProject,
+  setBrowserWidthRatioForProject,
+  setMosaicRatioForProject,
+  setSurfaceTargetSessionForProject,
+  updateBrowserTabSessionUrlById,
+} from './state/state-appstate-core-surface-layout.js';
 
 export function createProjectRecord(name: string, path: string): ProjectRecord {
   return {
@@ -386,125 +386,4 @@ export function resumeHistorySessionForProject(options: {
   const result = resumeSessionFromHistory(project, options.archivedSessionId, options.pushNav);
   if (!result.session) return undefined;
   return { session: result.session, created: result.created };
-}
-
-export function listSurfaceTargetSessionsForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-): SessionRecord[] {
-  const project = findProjectById(projects, projectId);
-  if (!project) return [];
-  return project.sessions.filter((session) => isCliSessionRecord(session));
-}
-
-export function resolveSurfaceTargetSessionForProject(options: {
-  projects: ProjectRecord[];
-  projectId: string;
-  requireExplicitTarget?: boolean;
-}): SessionRecord | undefined {
-  const project = findProjectById(options.projects, options.projectId);
-  if (!project) return undefined;
-  return resolveSurfaceTargetFromProject(project, {
-    allowActiveFallback: options.requireExplicitTarget ? false : true,
-  });
-}
-
-export function setSurfaceTargetSessionForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-  targetSessionId: string | null,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  return setSurfaceTargetSessionOnProject(project, targetSessionId);
-}
-
-export function updateBrowserTabSessionUrlById(
-  projects: ProjectRecord[],
-  sessionId: string,
-  url: string,
-): boolean {
-  const project = projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
-  const session = project?.sessions.find((entry) => entry.id === sessionId);
-  if (!session) return false;
-  return updateBrowserTabUrl(project, session, url);
-}
-
-export function passivateBrowserTabSessionById(
-  projects: ProjectRecord[],
-  sessionId: string,
-  failedUrl?: string,
-): boolean {
-  const project = projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
-  const session = project?.sessions.find((entry) => entry.id === sessionId);
-  if (!project || !session) return false;
-  return passivateBrowserTabSessionRecord(project, session, failedUrl);
-}
-
-export function setBrowserWidthRatioForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-  ratio: number,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  project.layout.browserWidthRatio = clampRatio(ratio, 0.25, 0.7, DEFAULT_BROWSER_WIDTH_RATIO);
-  return true;
-}
-
-export function setMosaicRatioForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-  key: string,
-  ratio: number,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  const next = { ...(project.layout.mosaicRatios ?? {}) };
-  next[key] = clampRatio(ratio, 0.2, 0.8, next[key] ?? 0.5);
-  project.layout.mosaicRatios = next;
-  return true;
-}
-
-export function addInsightSnapshotForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-  snapshot: InitialContextSnapshot,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  addInsightSnapshotToProject(project, snapshot);
-  return true;
-}
-
-export function dismissInsightForProjectId(
-  projects: ProjectRecord[],
-  projectId: string,
-  insightId: string,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  dismissInsightForProject(project, insightId);
-  return true;
-}
-
-export function isInsightDismissedForProjectId(
-  projects: ProjectRecord[],
-  projectId: string,
-  insightId: string,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  return isInsightDismissedForProject(project, insightId);
-}
-
-export function reorderSessionForProject(
-  projects: ProjectRecord[],
-  projectId: string,
-  sessionId: string,
-  toIndex: number,
-): boolean {
-  const project = findProjectById(projects, projectId);
-  if (!project) return false;
-  return reorderProjectSession(project, sessionId, toIndex);
 }

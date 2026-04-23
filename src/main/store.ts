@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import type { PersistedState } from '../shared/types/project-state';
 
-export type { SessionRecord, ProjectRecord, Preferences, PersistedState } from '../shared/types';
+export type { SessionRecord } from '../shared/types/session';
+export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state';
 
 const STATE_DIR = path.join(os.homedir(), '.calder');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');

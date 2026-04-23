@@ -10,7 +10,7 @@ import type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/t
 import type { InspectorEventType } from '../shared/types/session';
 export type { McpServerConfig } from './claude-mcp-config';
 
-export type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types';
+export type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types/provider';
 
 export const HOOK_MARKER = '# calder-hook';
 

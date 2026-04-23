@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { GitFileEntry, GitWorktree } from '../shared/types/project-core';
 
-export type { GitWorktree, GitFileEntry } from '../shared/types';
+export type { GitWorktree, GitFileEntry } from '../shared/types/project-core';
 
 export interface GitStatus {
   isGitRepo: boolean;
