@@ -791,4 +791,14 @@ describe('terminal helper extractions', () => {
     setFocusedTerminalInstance('a', [['a', instanceA]]);
     expect(terminalA.focus).not.toHaveBeenCalled();
   });
+
+  it('fitTerminal forwards terminal dimensions to pty resize for registered sessions', async () => {
+    const { createTerminalPane, fitTerminal } = await import('./terminal-pane.js');
+    const resizeSpy = (window as any).calder.pty.resize;
+
+    createTerminalPane('fit-wrapper', '/project', null, false, '', 'claude');
+    fitTerminal('fit-wrapper');
+
+    expect(resizeSpy).toHaveBeenCalledWith('fit-wrapper', 120, 30);
+  });
 });
