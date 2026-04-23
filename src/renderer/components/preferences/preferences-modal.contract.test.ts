@@ -113,7 +113,9 @@ describe('preferences modal contract', () => {
 
   it('uses native modal and preferences shell hooks', () => {
     expect(source).toContain("titleEl.textContent = 'Workspace Center'");
+    expect(source).toContain("modal.classList.add('preferences-modal');");
     expect(source).toContain("bodyEl.classList.add('preferences-body');");
+    expect(source).toContain("modal.classList.remove('preferences-modal');");
     expect(source).toContain('content.scrollTop = 0;');
     expect(source).toContain('Provider');
     expect(source).toContain('CLI health and mobile readiness');
@@ -144,6 +146,9 @@ describe('preferences modal contract', () => {
     expect(source).toContain('about-hero');
     expect(source).toContain('about-link-grid');
     expect(styles).toContain('#modal-body.preferences-body');
+    expect(styles).toContain('#modal.preferences-modal.modal-wide');
+    expect(styles).toContain('height: min(760px, calc(100vh - 56px));');
+    expect(styles).toContain('#modal.preferences-modal .preferences-layout');
     expect(styles).toContain('.preferences-content-shell');
     expect(styles).toContain('display: flex;');
     expect(styles).toContain('.modal-toggle-field');

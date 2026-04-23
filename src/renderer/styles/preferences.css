@@ -57,6 +57,28 @@
   padding-right: 0;
 }
 
+#modal.preferences-modal.modal-wide {
+  height: min(760px, calc(100vh - 56px));
+  max-height: calc(100vh - 56px);
+}
+
+#modal.preferences-modal #modal-body.preferences-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#modal.preferences-modal .preferences-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+#modal.preferences-modal .preferences-menu,
+#modal.preferences-modal .preferences-content-shell {
+  min-height: 0;
+  max-height: 100%;
+}
+
 .preferences-layout {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);

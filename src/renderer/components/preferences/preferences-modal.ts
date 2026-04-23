@@ -302,6 +302,7 @@ function renderPreferencesModalContent(): void {
   titleEl.textContent = 'Workspace Center';
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
+  modal.classList.add('preferences-modal');
   bodyEl.classList.add('preferences-body');
 
   const {
@@ -369,6 +370,7 @@ function renderPreferencesModalContent(): void {
   runModalCleanup();
   extendModalCleanup(() => {
     bodyEl.classList.remove('preferences-body');
+    modal.classList.remove('preferences-modal');
     modal.classList.remove('modal-wide');
     btnConfirm.textContent = 'Create';
   });
