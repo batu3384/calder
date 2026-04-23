@@ -282,28 +282,6 @@ describe('updateProviders', () => {
     ))).toBe(false);
   });
 
-  it('detects Codex installed from the Homebrew formula and uses formula update strategy', async () => {
-    const runner = new FakeRunner();
-    const codexBinary = '/opt/homebrew/Cellar/codex/0.46.0/bin/codex';
-    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.46.0' });
-    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'codex'], {
-      code: 0,
-      stdout: JSON.stringify({ formulae: [], casks: [] }),
-    });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.46.0' });
-
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_566) as () => number },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('codex');
-    expect(summary.results[0].source).toBe('brew-formula');
-    expect(summary.results[0].status).toBe('up_to_date');
-    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --formula codex');
-  });
-
   it('marks brew cask providers as sync_pending when npm upstream is newer than Homebrew metadata', async () => {
     const runner = new FakeRunner();
     const codexBinary = '/opt/homebrew/Caskroom/codex/0.121.0/codex';

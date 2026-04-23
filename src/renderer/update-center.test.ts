@@ -511,6 +511,67 @@ describe('update center cli updates', () => {
     await updatePromise;
   });
 
+  it('keeps other providers visible when a single-provider run starts', async () => {
+    const firstRunSummary = buildSummary([
+      {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'updated',
+        checked: true,
+        updateAttempted: true,
+        message: 'Claude Code was updated successfully.',
+        durationMs: 90,
+      },
+      {
+        providerId: 'codex',
+        providerName: 'Codex CLI',
+        source: 'npm',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Codex CLI is already up to date.',
+        durationMs: 80,
+      },
+    ]);
+    let resolveSummary: SummaryResolver | null = null;
+    const mockApi = createMockApi({
+      updateAll: async () => firstRunSummary,
+      updateProvider: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+    });
+    initUpdateCenter(mockApi as any);
+
+    await runCliProviderUpdates();
+    expect(getUpdateCenterState().cli.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
+
+    const runOne = runCliProviderUpdate('claude');
+    mockApi.emitProviderProgress({
+      phase: 'started',
+      startedAt: '2026-04-16T09:20:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
+    });
+
+    const midState = getUpdateCenterState().cli;
+    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
+    expect(midState.providers.every((provider) => provider.status === 'queued')).toBe(true);
+
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([
+      {
+        providerId: 'claude',
+        providerName: 'Claude Code',
+        source: 'self',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Claude Code is already up to date.',
+        durationMs: 65,
+      },
+    ]));
+    await runOne;
+  });
+
   it('ignores stale progress events from a previous run after a new run starts', async () => {
     const resolvers: SummaryResolver[] = [];
     const mockApi = createMockApi({

@@ -6,13 +6,7 @@ const APP_UP_TO_DATE_TIMEOUT_MS = 6000;
 type UpdateCenterBridge = Pick<CalderApi, 'update' | 'provider'>;
 type UpdateCenterListener = (state: UpdateCenterState) => void;
 
-export type AppUpdatePhase =
-  | 'idle'
-  | 'checking'
-  | 'downloading'
-  | 'ready_to_restart'
-  | 'up_to_date'
-  | 'error';
+export type AppUpdatePhase = 'idle' | 'checking' | 'downloading' | 'ready_to_restart' | 'up_to_date' | 'error';
 
 export interface AppUpdateCenterState {
   phase: AppUpdatePhase;
@@ -92,18 +86,12 @@ function emit(): void {
 }
 
 function setAppState(next: Partial<AppUpdateCenterState>): void {
-  state = {
-    ...state,
-    app: { ...state.app, ...next },
-  };
+  state = { ...state, app: { ...state.app, ...next } };
   emit();
 }
 
 function setCliState(next: Partial<CliUpdateCenterState>): void {
-  state = {
-    ...state,
-    cli: { ...state.cli, ...next },
-  };
+  state = { ...state, cli: { ...state.cli, ...next } };
   emit();
 }
 
@@ -241,11 +229,23 @@ function handleAppError(info: { message: string }): void {
 }
 
 function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
-  if (!cliInFlight && state.cli.phase !== 'running') {
-    return;
-  }
+  if (!cliInFlight && state.cli.phase !== 'running') return;
 
   if (event.phase === 'started') {
+    let nextProviders = state.cli.providers.map((provider) => ({
+      providerId: provider.providerId,
+      providerName: provider.providerName,
+      status: 'queued' as const,
+    }));
+    if (event.providers?.length && nextProviders.length === 0) {
+      nextProviders = event.providers.map((provider) => ({ providerId: provider.providerId, providerName: provider.providerName, status: 'queued' as const }));
+    } else if (event.providers?.length) {
+      for (const provider of event.providers) {
+        const index = nextProviders.findIndex((entry) => entry.providerId === provider.providerId);
+        if (index >= 0) nextProviders[index] = { ...nextProviders[index], providerName: provider.providerName, status: 'queued' };
+        else nextProviders.push({ providerId: provider.providerId, providerName: provider.providerName, status: 'queued' });
+      }
+    }
     activeCliProgressStartedAt = event.startedAt;
     setCliState({
       phase: 'running',
@@ -254,24 +254,15 @@ function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
       totalProviders: event.totalProviders,
       completedProviders: event.completedProviders,
       activeProviderId: undefined,
-      providers: (event.providers ?? []).map((provider) => ({
-        providerId: provider.providerId,
-        providerName: provider.providerName,
-        status: 'queued',
-      })),
+      providers: nextProviders,
       cancelRequested: false,
       errorMessage: undefined,
     });
     return;
   }
 
-  if (!activeCliProgressStartedAt) {
-    return;
-  }
-
-  if (activeCliProgressStartedAt && event.startedAt !== activeCliProgressStartedAt) {
-    return;
-  }
+  if (!activeCliProgressStartedAt) return;
+  if (activeCliProgressStartedAt && event.startedAt !== activeCliProgressStartedAt) return;
 
   if (event.phase === 'provider_started' && event.providerId && event.providerName) {
     const nextProviders = upsertCliProvider(state.cli.providers, event.providerId, event.providerName)

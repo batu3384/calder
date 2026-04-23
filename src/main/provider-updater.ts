@@ -85,7 +85,6 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
   },
   codex: {
     npmPackage: '@openai/codex',
-    brewFormula: 'codex',
     brewCask: 'codex',
   },
   copilot: {
