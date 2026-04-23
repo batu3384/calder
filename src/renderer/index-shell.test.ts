@@ -7,8 +7,8 @@ const tabsCss = readFileSync(new URL('./styles/tabs.css', import.meta.url), 'utf
 
 describe('index shell contract', () => {
   it('exposes cockpit wrappers for sidebar and top bar chrome', () => {
-    expect(html).toContain('class="sidebar-header-topline"');
-    expect(html).toContain('class="sidebar-brand-totem"');
+    expect(html).toContain('sidebar-header-topline sidebar-brand-stage');
+    expect(html).toContain('sidebar-brand-totem sidebar-mascot-presence');
     expect(html).toContain('class="sidebar-header-primary"');
     expect(html).toContain('class="sidebar-mascot-shell"');
     expect(html).toContain('src="assets/brand/maskot-ui.png"');

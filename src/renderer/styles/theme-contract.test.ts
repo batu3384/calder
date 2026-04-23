@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'fs';
 const baseCss = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 const imports = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8');
 const auroraCss = readFileSync(new URL('./theme-aurora.css', import.meta.url), 'utf-8');
+const commandStudioCss = readFileSync(new URL('./theme-command-studio.css', import.meta.url), 'utf-8');
 const cockpitUrl = new URL('./cockpit.css', import.meta.url);
 const cockpitCss = existsSync(cockpitUrl) ? readFileSync(cockpitUrl, 'utf-8') : '';
 
@@ -27,8 +28,8 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).not.toContain('--accent: #ef6879;');
   });
 
-  it('loads the aurora premium theme after feature styles', () => {
-    expect(imports.trim().endsWith("@import url('./styles/theme-aurora.css');")).toBe(true);
+  it('loads the command studio premium theme after feature styles', () => {
+    expect(imports.trim().endsWith("@import url('./styles/theme-command-studio.css');")).toBe(true);
     expect(baseCss).toContain('--accent-aurora');
     expect(baseCss).not.toContain('--surface-canvas: #090705;');
     expect(auroraCss).toContain('--aurora-panel-gradient');
@@ -38,6 +39,10 @@ describe('precision cockpit theme contract', () => {
     expect(auroraCss).toContain('Premium shell audit v10');
     expect(auroraCss).toContain('--premium-panel-hairline');
     expect(auroraCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
+    expect(commandStudioCss).toContain('Calder Command Studio');
+    expect(commandStudioCss).toContain('--studio-cyan');
+    expect(commandStudioCss).toContain('.context-inspector-tabs');
+    expect(commandStudioCss).toContain('grid-template-rows: 106px auto;');
   });
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {

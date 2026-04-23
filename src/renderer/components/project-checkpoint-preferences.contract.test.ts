@@ -16,10 +16,10 @@ const checkpointSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project checkpoint preferences contract', () => {
-  it('surfaces saved checkpoints inside the integrations section', () => {
+  it('surfaces saved checkpoints inside the safety section', () => {
     expect(modalSource).toContain("import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';");
     expect(modalSource).toContain('renderProjectCheckpointSection({');
-    expect(modalSource).toContain('container: trackingGroup');
+    expect(modalSource).toContain('container: recoveryGroup');
     expect(modalSource).toContain('buildCheckpointRestoreConfirm');
     expect(modalSource).toContain('checkpointDocument.git.changedFiles');
     expect(modalSource).toContain('checkpointDocument.projectTeamContext');

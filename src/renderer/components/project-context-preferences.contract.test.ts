@@ -8,11 +8,11 @@ const contextSource = readFileSync(new URL('./preferences/preferences-context-di
 const styles = readFileSync(new URL('../styles/preferences.css', import.meta.url), 'utf8');
 
 describe('project context preferences contract', () => {
-  it('surfaces discovered project context inside the integrations section', () => {
+  it('surfaces discovered project context inside the safety section', () => {
     expect(modalSource).toContain("import { renderProjectContextSection } from './preferences-context-discovery.js';");
     expect(modalSource).toContain('renderProjectContextSection({');
-    expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('container: memoryGroup');
+    expect(modalSource).toContain('onRefreshProviders: rerenderSafety');
     expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(contextSource).toContain('Project context');

@@ -12,11 +12,11 @@ const workflowSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project workflow preferences contract', () => {
-  it('surfaces reusable project workflows inside the integrations section', () => {
+  it('surfaces reusable project workflows inside the automation section', () => {
     expect(modalSource).toContain("import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';");
     expect(modalSource).toContain('renderProjectWorkflowSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
-    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('onRefreshProviders: rerenderAutomation');
     expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(workflowSource).toContain('Workflow templates');

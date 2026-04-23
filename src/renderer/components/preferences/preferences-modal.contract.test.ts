@@ -92,16 +92,20 @@ describe('preferences modal contract', () => {
   it('uses shell language for layout controls', () => {
     expect(source).toContain('Workspace Center');
     expect(source).toContain('Workspace settings');
-    expect(source).toContain('Layout');
-    expect(source).toContain('Integrations');
+    expect(source).toContain('Interface');
+    expect(source).toContain('Tools');
+    expect(source).toContain('Automation');
+    expect(source).toContain('Safety');
     expect(source).not.toContain('Control Center');
     expect(source).not.toContain('System controls');
   });
 
   it('uses control-center sections and layout groups', () => {
-    expect(source).toContain("type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about'");
-    expect(source).toContain("id: 'layout', label: 'Layout'");
-    expect(source).toContain("id: 'providers', label: 'Integrations'");
+    expect(source).toContain("type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about'");
+    expect(source).toContain("id: 'interface', label: 'Interface'");
+    expect(source).toContain("id: 'tools', label: 'Tools'");
+    expect(source).toContain("id: 'automation', label: 'Automation'");
+    expect(source).toContain("id: 'safety', label: 'Safety'");
     expect(source).toContain('Ops Rail modules');
     expect(source).toContain('Live View behavior');
     expect(source).toContain('Session Deck defaults');
@@ -112,7 +116,9 @@ describe('preferences modal contract', () => {
     expect(source).toContain("bodyEl.classList.add('preferences-body');");
     expect(source).toContain('content.scrollTop = 0;');
     expect(source).toContain('Provider');
-    expect(source).toContain('Tracking');
+    expect(source).toContain('CLI health and mobile readiness');
+    expect(source).toContain('Project workflow system');
+    expect(source).toContain('Memory, policy, and recovery');
     expect(source).toContain('preferences-overview-grid');
     expect(source).toContain('(not installed)');
     expect(source).toContain('Calder will fall back to the next installed tool');
@@ -174,12 +180,14 @@ describe('preferences modal contract', () => {
     expect(source).toContain('preferences-subsection');
     expect(source).toContain('Provider health');
     expect(source).toContain('Orchestration phases');
-    expect(source).toContain('Tracking & fixes');
+    expect(source).toContain('Context and team knowledge');
+    expect(source).toContain('Governance and review');
+    expect(source).toContain('Checkpoints');
     expect(styles).toContain('.preferences-subsection');
     expect(styles).toContain('.preferences-subsection-grid');
   });
 
-  it('shows mobile readiness setup group and install actions in integrations', () => {
+  it('shows mobile readiness setup group and install actions in tools', () => {
     expect(source).toContain('Mobile automation readiness');
     expect(source).toContain('Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
     expect(source).toContain('renderMobileSetupSection');

@@ -12,11 +12,11 @@ const teamContextSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project team context preferences contract', () => {
-  it('surfaces shared team context inside the integrations section', () => {
+  it('surfaces shared team context inside the safety section', () => {
     expect(modalSource).toContain("import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';");
     expect(modalSource).toContain('renderProjectTeamContextSection({');
-    expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('container: memoryGroup');
+    expect(modalSource).toContain('onRefreshProviders: rerenderSafety');
     expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(teamContextSource).toContain('Team context');

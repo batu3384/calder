@@ -12,16 +12,16 @@
 <body>
   <a class="skip-link" href="#main-area">Skip to workspace</a>
   <div id="app">
-    <nav id="sidebar" class="sidebar-surface project-rail" aria-label="Projects">
-      <div id="sidebar-brand-stage" class="sidebar-header-topline" aria-label="Calder mascot stage">
-        <div class="sidebar-brand-totem" aria-hidden="true">
+    <nav id="sidebar" class="sidebar-surface project-rail command-dock" aria-label="Projects">
+      <div id="sidebar-brand-stage" class="sidebar-header-topline sidebar-brand-stage" aria-label="Calder mascot stage">
+        <div class="sidebar-brand-totem sidebar-mascot-presence" aria-hidden="true">
           <div class="sidebar-mascot-shell">
             <img class="sidebar-mascot" src="assets/brand/maskot-ui.png" alt="" width="515" height="470" decoding="async" draggable="false">
           </div>
         </div>
         <div class="sidebar-brand-meta">
           <span class="sidebar-brand-name">Calder</span>
-          <span class="sidebar-brand-status">Agent command desk</span>
+          <span class="sidebar-brand-status">Command studio</span>
         </div>
       </div>
       <div id="sidebar-header">
@@ -29,9 +29,9 @@
           <div class="sidebar-title-group">
             <div class="sidebar-brand-block">
               <span class="sidebar-eyebrow">Workspace</span>
-              <span class="sidebar-title">Projects</span>
+              <span class="sidebar-title">Project Dock</span>
             </div>
-            <span class="sidebar-header-note">Switch projects and keep live sessions visible.</span>
+            <span class="sidebar-header-note">Switch context without losing live work.</span>
           </div>
           <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -125,9 +125,9 @@
           <div id="context-inspector-header">
             <div class="context-inspector-header-top">
               <div class="context-inspector-title-group">
-                <span class="context-inspector-eyebrow">Control Rail</span>
-                <span class="context-inspector-title">Workspace Control</span>
-                <span class="context-inspector-header-note">Approvals, git, and recent activity without leaving the flow.</span>
+                <span class="context-inspector-eyebrow">Inspector</span>
+                <span class="context-inspector-title">Workspace Pulse</span>
+                <span class="context-inspector-header-note">Run controls, project state, and tools stay separated so the rail stays readable.</span>
               </div>
               <div class="context-inspector-header-actions">
                 <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">
@@ -137,6 +137,11 @@
                   </svg>
                 </button>
               </div>
+            </div>
+            <div class="context-inspector-tabs" role="tablist" aria-label="Workspace inspector sections">
+              <button class="context-inspector-tab active" type="button" role="tab" aria-selected="true" data-inspector-tab="capabilities">Run</button>
+              <button class="context-inspector-tab" type="button" role="tab" aria-selected="false" data-inspector-tab="git">Project</button>
+              <button class="context-inspector-tab" type="button" role="tab" aria-selected="false" data-inspector-tab="activity">Timeline</button>
             </div>
           </div>
           <div id="context-inspector-sections">

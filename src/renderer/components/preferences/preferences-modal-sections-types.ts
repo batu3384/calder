@@ -75,14 +75,39 @@ export interface RenderGeneralSectionArgs {
   replaceLanguageSelect: (select: CustomSelectInstance) => void;
 }
 
-export interface RenderProvidersSectionArgs {
+export interface RenderToolsSectionArgs {
+  content: HTMLElement;
+  appendSectionIntro: AppendSectionIntro;
+  appendOverviewGrid: AppendOverviewGrid;
+  appendSectionCard: AppendSectionCard;
+  isToolsSectionActive: () => boolean;
+  onApplySetupBadge: (hasIssue: boolean) => void;
+  onFixProvider: (providerId?: ProviderId) => Promise<void>;
+  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+}
+
+export interface RenderAutomationSectionArgs {
   content: HTMLElement;
   appendSectionIntro: AppendSectionIntro;
   appendOverviewGrid: AppendOverviewGrid;
   appendSectionGroup: AppendSectionGroup;
   appendSectionCard: AppendSectionCard;
   closeWideModal: () => void;
-  rerenderProviders: () => void;
+  rerenderAutomation: () => void;
+  modalBody: HTMLElement;
+  confirmButton: HTMLButtonElement;
+  cancelButton: HTMLButtonElement;
+  registerModalCleanup: (cleanup: () => void) => void;
+}
+
+export interface RenderSafetySectionArgs {
+  content: HTMLElement;
+  appendSectionIntro: AppendSectionIntro;
+  appendOverviewGrid: AppendOverviewGrid;
+  appendSectionGroup: AppendSectionGroup;
+  appendSectionCard: AppendSectionCard;
+  closeWideModal: () => void;
+  rerenderSafety: () => void;
   modalBody: HTMLElement;
   confirmButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
@@ -93,10 +118,6 @@ export interface RenderProvidersSectionArgs {
     checkpointDocument: ProjectCheckpointDocument,
     restoreSummaryText: string,
   ) => HTMLElement;
-  isProvidersSectionActive: () => boolean;
-  onApplySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
 }
 
 export interface ProviderAvailabilitySnapshot {

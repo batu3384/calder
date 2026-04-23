@@ -12,11 +12,11 @@ const governanceSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project governance preferences contract', () => {
-  it('surfaces governance policies inside the integrations section', () => {
+  it('surfaces governance policies inside the safety section', () => {
     expect(modalSource).toContain("import { renderProjectGovernanceSection } from './preferences-governance-discovery.js';");
     expect(modalSource).toContain('renderProjectGovernanceSection({');
-    expect(modalSource).toContain('container: trackingGroup');
-    expect(modalSource).toContain('onRefreshProviders: rerenderProviders');
+    expect(modalSource).toContain('container: policyGroup');
+    expect(modalSource).toContain('onRefreshProviders: rerenderSafety');
 
     expect(governanceSource).toContain('Governance policies');
     expect(governanceSource).toContain('Create starter policy');

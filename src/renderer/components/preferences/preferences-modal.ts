@@ -27,8 +27,10 @@ import { createPreferencesModalShell } from './preferences-modal-shell.js';
 import { formatRelativeTimestamp } from './preferences-time.js';
 import {
   bindPreferencesMenuNavigation,
-  renderProvidersPreferencesContent,
+  renderAutomationPreferencesContent,
+  renderSafetyPreferencesContent,
   renderShortcutPreferencesContent,
+  renderToolsPreferencesContent,
 } from './preferences-modal-renderers.js';
 import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
@@ -41,13 +43,15 @@ const bodyEl = document.getElementById('modal-body')!;
 const btnCancel = document.getElementById('modal-cancel') as HTMLButtonElement;
 const btnConfirm = document.getElementById('modal-confirm') as HTMLButtonElement;
 
-type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
+type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about';
 
 const PREFERENCE_SECTIONS: Array<{ id: Section; label: string; caption: string }> = [
-  { id: 'general', label: 'Session', caption: 'How Calder starts and remembers work' },
-  { id: 'layout', label: 'Layout', caption: 'Surface and rail visibility defaults' },
+  { id: 'general', label: 'Session', caption: 'Startup, language, and session memory' },
+  { id: 'interface', label: 'Interface', caption: 'Shell layout, rails, and live view behavior' },
+  { id: 'tools', label: 'Tools', caption: 'CLI providers and mobile dependency health' },
+  { id: 'automation', label: 'Automation', caption: 'Project workflows, previews, and background tasks' },
+  { id: 'safety', label: 'Safety', caption: 'Context, governance, reviews, and checkpoints' },
   { id: 'shortcuts', label: 'Keys', caption: 'Command bindings and overrides' },
-  { id: 'providers', label: 'Integrations', caption: 'Tool health, orchestration phases, and tracking' },
   { id: 'about', label: 'About', caption: 'Version, updates, and project links' },
 ];
 
@@ -201,13 +205,61 @@ function renderPreferencesSectionById(args: {
     return;
   }
 
-  if (args.section === 'layout') {
+  if (args.section === 'interface') {
     renderLayoutPreferencesSection({
       content: args.content,
       preferenceDraft: args.preferenceDraft,
       appendSectionIntro,
       appendOverviewGrid,
       appendSectionCard,
+    });
+    return;
+  }
+
+  if (args.section === 'tools') {
+    renderToolsPreferencesContent({
+      content: args.content,
+      currentSection: () => args.state.currentSection,
+      applySetupBadge: args.applySetupBadge,
+      onFixProvider: args.onFixProvider,
+      onInstallMobileDependency: args.onInstallMobileDependency,
+      appendSectionIntro,
+      appendOverviewGrid,
+      appendSectionCard,
+    });
+    return;
+  }
+
+  if (args.section === 'automation') {
+    renderAutomationPreferencesContent({
+      content: args.content,
+      modalBody: bodyEl,
+      confirmButton: btnConfirm,
+      cancelButton: btnCancel,
+      registerModalCleanup: extendModalCleanup,
+      rerenderAutomation: () => args.rerenderSection('automation'),
+      appendSectionIntro,
+      appendOverviewGrid,
+      appendSectionGroup,
+      appendSectionCard,
+      modalElement: modal,
+    });
+    return;
+  }
+
+  if (args.section === 'safety') {
+    renderSafetyPreferencesContent({
+      content: args.content,
+      modalBody: bodyEl,
+      confirmButton: btnConfirm,
+      cancelButton: btnCancel,
+      registerModalCleanup: extendModalCleanup,
+      rerenderSafety: () => args.rerenderSection('safety'),
+      appendSectionIntro,
+      appendOverviewGrid,
+      appendSectionGroup,
+      appendSectionCard,
+      modalElement: modal,
     });
     return;
   }
@@ -226,27 +278,6 @@ function renderPreferencesSectionById(args: {
       rerenderShortcuts: () => args.rerenderSection('shortcuts'),
       appendSectionIntro,
       appendOverviewGrid,
-    });
-    return;
-  }
-
-  if (args.section === 'providers') {
-    renderProvidersPreferencesContent({
-      content: args.content,
-      modalBody: bodyEl,
-      confirmButton: btnConfirm,
-      cancelButton: btnCancel,
-      registerModalCleanup: extendModalCleanup,
-      currentSection: () => args.state.currentSection,
-      rerenderProviders: () => args.rerenderSection('providers'),
-      applySetupBadge: args.applySetupBadge,
-      onFixProvider: args.onFixProvider,
-      onInstallMobileDependency: args.onInstallMobileDependency,
-      appendSectionIntro,
-      appendOverviewGrid,
-      appendSectionGroup,
-      appendSectionCard,
-      modalElement: modal,
     });
     return;
   }
@@ -288,7 +319,7 @@ function renderPreferencesModalContent(): void {
 
   async function fixAndRerender(providerId?: ProviderId) {
     await window.calder.settings.reinstall(providerId);
-    renderSection('providers');
+    renderSection('tools');
   }
 
   async function installMobileDependencyAndRerender(dependencyId: MobileDependencyId): Promise<void> {
@@ -296,11 +327,11 @@ function renderPreferencesModalContent(): void {
     if (!result.success) {
       throw new Error(result.message || 'Install command failed.');
     }
-    renderSection('providers');
+    renderSection('tools');
   }
 
   function applySetupBadge(hasIssue: boolean) {
-    const setupItem = menuItems.get('providers');
+    const setupItem = menuItems.get('tools');
     if (setupItem) {
       setupItem.classList.toggle('has-badge', hasIssue);
     }

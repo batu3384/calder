@@ -30,7 +30,7 @@ describe('layout stylesheet contract', () => {
     expect(browserCss).toContain('.live-view-surface');
     expect(html).toContain('class="skip-link"');
     expect(html).toContain('<main id="main-area"');
-    expect(html).toContain('class="sidebar-surface project-rail"');
+    expect(html).toContain('class="sidebar-surface project-rail command-dock"');
     expect(html).toContain('aria-label="Projects"');
     expect(html).toContain('class="workspace-shell-surface"');
     expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');

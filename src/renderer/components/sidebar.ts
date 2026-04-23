@@ -15,9 +15,9 @@ const resizeHandle = document.getElementById('sidebar-resize-handle')!;
 const sidebarFooterEl = document.getElementById('sidebar-footer')!;
 const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')!;
 
-const SIDEBAR_DEFAULT = 232;
-const SIDEBAR_MIN = 184;
-const SIDEBAR_MAX = 460;
+const SIDEBAR_DEFAULT = 264;
+const SIDEBAR_MIN = 232;
+const SIDEBAR_MAX = 380;
 const LEGACY_SIDEBAR_DEFAULT = 214;
 
 type ProjectSignalTone = 'attention' | 'unread' | 'live' | 'queue';

@@ -1,4 +1,4 @@
-export type PreferencesSection = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
+export type PreferencesSection = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about';
 
 interface PreferencesSectionSpec {
   id: PreferencesSection;
@@ -32,7 +32,7 @@ export function createPreferencesModalShell({
   menuHeader.innerHTML = `
     <div class="preferences-menu-kicker shell-kicker">Calder</div>
     <div class="preferences-menu-title">Workspace settings</div>
-    <div class="preferences-menu-caption">Defaults, layout, providers, and safety rules for every session.</div>
+    <div class="preferences-menu-caption">Session defaults, interface behavior, tool health, automation, and safety rules.</div>
   `;
   menu.appendChild(menuHeader);
 

@@ -4,11 +4,13 @@ import type { ProviderId } from '../../../shared/types/provider.js';
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 import { buildCheckpointRestoreConfirm } from './preferences-checkpoint-confirm.js';
 import {
-  renderProvidersPreferencesSection,
+  renderAutomationPreferencesSection,
+  renderSafetyPreferencesSection,
+  renderToolsPreferencesSection,
 } from './preferences-modal-sections.js';
 import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 
-export type PreferencesSection = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about';
+export type PreferencesSection = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about';
 
 function countCustomizedShortcuts(shortcutOverridesDraft: Record<string, string>): number {
   let count = 0;
@@ -78,17 +80,38 @@ export function renderShortcutPreferencesContent(args: {
   });
 }
 
-export function renderProvidersPreferencesContent(args: {
+export function renderToolsPreferencesContent(args: {
+  content: HTMLElement;
+  currentSection: () => PreferencesSection;
+  applySetupBadge: (hasIssue: boolean) => void;
+  onFixProvider: (providerId?: ProviderId) => Promise<void>;
+  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendOverviewGrid: (
+    container: HTMLElement,
+    items: Array<{ label: string; value: string; note?: string }>,
+  ) => void;
+  appendSectionCard: (container: HTMLElement, title: string, description?: string) => HTMLElement;
+}): void {
+  renderToolsPreferencesSection({
+    content: args.content,
+    appendSectionIntro: args.appendSectionIntro,
+    appendOverviewGrid: args.appendOverviewGrid,
+    appendSectionCard: args.appendSectionCard,
+    isToolsSectionActive: () => args.currentSection() === 'tools',
+    onApplySetupBadge: args.applySetupBadge,
+    onFixProvider: args.onFixProvider,
+    onInstallMobileDependency: args.onInstallMobileDependency,
+  });
+}
+
+export function renderAutomationPreferencesContent(args: {
   content: HTMLElement;
   modalBody: HTMLElement;
   confirmButton: HTMLButtonElement;
   cancelButton: HTMLButtonElement;
   registerModalCleanup: (cleanup: () => void) => void;
-  currentSection: () => PreferencesSection;
-  rerenderProviders: () => void;
-  applySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
+  rerenderAutomation: () => void;
   appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
   appendOverviewGrid: (
     container: HTMLElement,
@@ -103,7 +126,7 @@ export function renderProvidersPreferencesContent(args: {
   appendSectionCard: (container: HTMLElement, title: string, description?: string) => HTMLElement;
   modalElement: HTMLElement;
 }): void {
-  renderProvidersPreferencesSection({
+  renderAutomationPreferencesSection({
     content: args.content,
     appendSectionIntro: args.appendSectionIntro,
     appendOverviewGrid: args.appendOverviewGrid,
@@ -113,15 +136,50 @@ export function renderProvidersPreferencesContent(args: {
       closeModal();
       args.modalElement.classList.remove('modal-wide');
     },
-    rerenderProviders: args.rerenderProviders,
+    rerenderAutomation: args.rerenderAutomation,
+    modalBody: args.modalBody,
+    confirmButton: args.confirmButton,
+    cancelButton: args.cancelButton,
+    registerModalCleanup: args.registerModalCleanup,
+  });
+}
+
+export function renderSafetyPreferencesContent(args: {
+  content: HTMLElement;
+  modalBody: HTMLElement;
+  confirmButton: HTMLButtonElement;
+  cancelButton: HTMLButtonElement;
+  registerModalCleanup: (cleanup: () => void) => void;
+  rerenderSafety: () => void;
+  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendOverviewGrid: (
+    container: HTMLElement,
+    items: Array<{ label: string; value: string; note?: string }>,
+  ) => void;
+  appendSectionGroup: (
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ) => HTMLElement;
+  appendSectionCard: (container: HTMLElement, title: string, description?: string) => HTMLElement;
+  modalElement: HTMLElement;
+}): void {
+  renderSafetyPreferencesSection({
+    content: args.content,
+    appendSectionIntro: args.appendSectionIntro,
+    appendOverviewGrid: args.appendOverviewGrid,
+    appendSectionGroup: args.appendSectionGroup,
+    appendSectionCard: args.appendSectionCard,
+    closeWideModal: () => {
+      closeModal();
+      args.modalElement.classList.remove('modal-wide');
+    },
+    rerenderSafety: args.rerenderSafety,
     modalBody: args.modalBody,
     confirmButton: args.confirmButton,
     cancelButton: args.cancelButton,
     registerModalCleanup: args.registerModalCleanup,
     buildCheckpointRestoreConfirm,
-    isProvidersSectionActive: () => args.currentSection() === 'providers',
-    onApplySetupBadge: args.applySetupBadge,
-    onFixProvider: args.onFixProvider,
-    onInstallMobileDependency: args.onInstallMobileDependency,
   });
 }

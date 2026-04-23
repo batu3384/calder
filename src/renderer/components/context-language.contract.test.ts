@@ -13,9 +13,10 @@ const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', imp
 
 describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
-    expect(html).toContain('Control Rail');
-    expect(html).toContain('Workspace Control');
-    expect(html).toContain('Approvals, git, and recent activity without leaving the flow.');
+    expect(html).toContain('Inspector');
+    expect(html).toContain('Workspace Pulse');
+    expect(html).toContain('Run controls, project state, and tools stay separated so the rail stays readable.');
+    expect(html).toContain('context-inspector-tabs');
     expect(html).toContain('Worktree status, branches, and safe git actions.');
     expect(html).toContain('Recent runs, notes, and session timeline.');
     expect(html).not.toContain('id="context-inspector-overview"');

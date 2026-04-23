@@ -12,10 +12,10 @@ const reviewSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project review preferences contract', () => {
-  it('surfaces saved review findings inside the integrations section', () => {
+  it('surfaces saved review findings inside the safety section', () => {
     expect(modalSource).toContain("import { renderProjectReviewSection } from './preferences-review-discovery.js';");
     expect(modalSource).toContain('renderProjectReviewSection({');
-    expect(modalSource).toContain('container: trackingGroup');
+    expect(modalSource).toContain('container: policyGroup');
     expect(modalSource).toContain('onCloseModalWide: closeWideModal');
 
     expect(reviewSource).toContain('Review findings');

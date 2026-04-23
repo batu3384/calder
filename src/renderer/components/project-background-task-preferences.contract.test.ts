@@ -12,10 +12,10 @@ const backgroundTaskSource = readFileSync(
 const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
 
 describe('project background task preferences contract', () => {
-  it('surfaces the local background task queue in integrations', () => {
+  it('surfaces the local background task queue in automation', () => {
     expect(modalSource).toContain("import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';");
     expect(modalSource).toContain('renderProjectBackgroundTaskSection({');
-    expect(modalSource).toContain('container: trackingGroup');
+    expect(modalSource).toContain('container: orchestrationGroup');
     expect(modalSource).toContain('modalBody: bodyEl');
     expect(modalSource).toContain('confirmButton: btnConfirm');
     expect(modalSource).toContain('cancelButton: btnCancel');

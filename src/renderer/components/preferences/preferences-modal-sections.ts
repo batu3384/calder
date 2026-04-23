@@ -17,7 +17,9 @@ import { renderLayoutPreferencesSectionContent } from './preferences-modal-secti
 import type {
   RenderGeneralSectionArgs,
   RenderLayoutSectionArgs,
-  RenderProvidersSectionArgs,
+  RenderAutomationSectionArgs,
+  RenderSafetySectionArgs,
+  RenderToolsSectionArgs,
 } from './preferences-modal-sections-types.js';
 
 const PROVIDER_UNAVAILABLE_SUFFIX = ' (not installed)';
@@ -81,74 +83,98 @@ export function renderLayoutPreferencesSection({
 
 // about-hero + about-link-grid are rendered in preferences-modal-sections-about.ts.
 
-export function renderProvidersPreferencesSection({
+export function renderToolsPreferencesSection({
+  content,
+  appendSectionIntro,
+  appendOverviewGrid,
+  appendSectionCard,
+  isToolsSectionActive,
+  onApplySetupBadge,
+  onFixProvider,
+  onInstallMobileDependency,
+}: RenderToolsSectionArgs): void {
+  appendSectionIntro(
+    content,
+    'Tools',
+    'CLI health and mobile readiness',
+    'Keep providers, local binaries, and mobile automation dependencies healthy without mixing them with project workflow settings.',
+  );
+  appendOverviewGrid(content, [
+    {
+      label: 'Providers',
+      value: 'Live',
+      note: 'Installed tools, defaults, and repair actions refresh from the local machine.',
+    },
+    {
+      label: 'Mobile',
+      value: 'Doctor',
+      note: 'Simulator dependencies stay visible without crowding the main workspace.',
+    },
+    {
+      label: 'Scope',
+      value: 'All CLIs',
+      note: 'Claude, Codex, Gemini, Qwen, Minimax, and the rest share one health view.',
+    },
+  ]);
+
+  const providerHealthGroup = appendSectionCard(content, 'Provider health', 'Installed tools, defaults, and repair actions.');
+  const mobileHealthGroup = appendSectionCard(content, 'Mobile automation readiness', 'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
+
+  void renderSetupSection({
+    container: providerHealthGroup,
+    isProvidersSectionActive: isToolsSectionActive,
+    onApplySetupBadge,
+    onFixProvider,
+  });
+  void renderMobileSetupSection({
+    container: mobileHealthGroup,
+    isProvidersSectionActive: isToolsSectionActive,
+    onInstallMobileDependency,
+  });
+}
+
+export function renderAutomationPreferencesSection({
   content,
   appendSectionIntro,
   appendOverviewGrid,
   appendSectionGroup,
   appendSectionCard,
   closeWideModal,
-  rerenderProviders,
+  rerenderAutomation,
   modalBody,
   confirmButton,
   cancelButton,
   registerModalCleanup,
-  buildCheckpointRestoreConfirm,
-  isProvidersSectionActive,
-  onApplySetupBadge,
-  onFixProvider,
-  onInstallMobileDependency,
-}: RenderProvidersSectionArgs): void {
+}: RenderAutomationSectionArgs): void {
   appendSectionIntro(
     content,
-    'Integrations',
-    'Tool connections',
-    'Check binaries, hooks, and tracking health without leaving the workspace.',
+    'Automation',
+    'Project workflow system',
+    'Preview capture, project workflows, background tasks, and orchestration live here as one operational layer.',
   );
   appendOverviewGrid(content, [
     {
-      label: 'Checks',
-      value: 'Live',
-      note: 'Binary status and tracking checks are refreshed from the local setup.',
+      label: 'Flow',
+      value: 'Contextual',
+      note: 'Workflow helpers are scoped to the active project instead of global tool setup.',
     },
     {
-      label: 'Tracking',
-      value: 'Status line + hooks',
-      note: 'Cost, context, and session activity depend on these staying healthy.',
+      label: 'Preview',
+      value: 'Browser + app',
+      note: 'Capture, visual checks, and project previews stay near the workflows that use them.',
     },
     {
-      label: 'Scope',
-      value: 'All coding tools',
-      note: 'Claude, Codex, Gemini, Qwen, and the rest share one health view.',
+      label: 'Tasks',
+      value: 'Background',
+      note: 'Long-running project tasks remain inspectable without blocking the shell.',
     },
   ]);
-
-  const providerHealthGroup = appendSectionGroup(
-    content,
-    'Integrations',
-    'Provider health',
-    'Installed tools, defaults, and repair actions.',
-  );
-
-  const mobileHealthGroup = appendSectionGroup(
-    content,
-    'Mobile',
-    'Mobile automation readiness',
-    'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
-  );
 
   const orchestrationGroup = appendSectionGroup(
     content,
     'Project flow',
     'Orchestration phases',
-    'Context, previews, reviews, checkpoints, and workflow health in calmer groups.',
-  );
-
-  const trackingGroup = appendSectionGroup(
-    content,
-    'Diagnostics',
-    'Tracking & fixes',
-    'Validation, install health, and direct repair actions.',
+    'Preview capture, workflow files, and long-running tasks grouped by project flow.',
   );
 
   renderOrchestrationOverviewSection({
@@ -168,7 +194,7 @@ export function renderProvidersPreferencesSection({
       const governanceResult = await window.calder.governance.createStarterPolicy(project.path);
       appState.setProjectGovernance(project.id, governanceResult.state);
 
-      rerenderProviders();
+      rerenderAutomation();
       return [
         `Context +${contextResult.created.length}`,
         `Workflows +${workflowResult.created.length}`,
@@ -188,39 +214,11 @@ export function renderProvidersPreferencesSection({
     container: orchestrationGroup,
     project: appState.activeProject,
     appendSectionCard,
-    onRefreshProviders: rerenderProviders,
-    onCloseModalWide: closeWideModal,
-  });
-
-  renderProjectContextSection({
-    container: trackingGroup,
-    project: appState.activeProject,
-    appendSectionCard,
-    onRefreshProviders: rerenderProviders,
-    onCloseModalWide: closeWideModal,
-  });
-  renderProjectGovernanceSection({
-    container: trackingGroup,
-    project: appState.activeProject,
-    appendSectionCard,
-    onRefreshProviders: rerenderProviders,
-    onCloseModalWide: closeWideModal,
-  });
-  renderProjectTeamContextSection({
-    container: trackingGroup,
-    project: appState.activeProject,
-    appendSectionCard,
-    onRefreshProviders: rerenderProviders,
-    onCloseModalWide: closeWideModal,
-  });
-  renderProjectReviewSection({
-    container: trackingGroup,
-    project: appState.activeProject,
-    appendSectionCard,
+    onRefreshProviders: rerenderAutomation,
     onCloseModalWide: closeWideModal,
   });
   renderProjectBackgroundTaskSection({
-    container: trackingGroup,
+    container: orchestrationGroup,
     project: appState.activeProject,
     appendSectionCard,
     onCloseModalWide: closeWideModal,
@@ -229,28 +227,104 @@ export function renderProvidersPreferencesSection({
     cancelButton,
     registerModalCleanup,
   });
-  renderProjectCheckpointSection({
-    container: trackingGroup,
+}
+
+export function renderSafetyPreferencesSection({
+  content,
+  appendSectionIntro,
+  appendOverviewGrid,
+  appendSectionGroup,
+  appendSectionCard,
+  closeWideModal,
+  rerenderSafety,
+  modalBody,
+  confirmButton,
+  cancelButton,
+  registerModalCleanup,
+  buildCheckpointRestoreConfirm,
+}: RenderSafetySectionArgs): void {
+  appendSectionIntro(
+    content,
+    'Safety',
+    'Memory, policy, and recovery',
+    'Project memory, team context, governance, review rules, and checkpoints are grouped away from raw tool setup.',
+  );
+  appendOverviewGrid(content, [
+    {
+      label: 'Memory',
+      value: 'Project-aware',
+      note: 'Context files and team notes feed Calder without hiding where they come from.',
+    },
+    {
+      label: 'Policy',
+      value: 'Governed',
+      note: 'Approval and review rules stay visible before automation acts.',
+    },
+    {
+      label: 'Recovery',
+      value: 'Checkpoints',
+      note: 'Restore points are managed beside the safety rules that protect work.',
+    },
+  ]);
+
+  const memoryGroup = appendSectionGroup(
+    content,
+    'Memory',
+    'Context and team knowledge',
+    'Project context and team notes that Calder can reuse across CLI sessions.',
+  );
+
+  const policyGroup = appendSectionGroup(
+    content,
+    'Policy',
+    'Governance and review',
+    'Approval rules, review expectations, and guardrails for automation.',
+  );
+
+  const recoveryGroup = appendSectionGroup(
+    content,
+    'Recovery',
+    'Checkpoints',
+    'Restore points and rollback helpers for project changes.',
+  );
+
+  renderProjectContextSection({
+    container: memoryGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderSafety,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectTeamContextSection({
+    container: memoryGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderSafety,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectGovernanceSection({
+    container: policyGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onRefreshProviders: rerenderSafety,
+    onCloseModalWide: closeWideModal,
+  });
+  renderProjectReviewSection({
+    container: policyGroup,
     project: appState.activeProject,
     appendSectionCard,
     onCloseModalWide: closeWideModal,
-    onRefreshProviders: rerenderProviders,
+  });
+  renderProjectCheckpointSection({
+    container: recoveryGroup,
+    project: appState.activeProject,
+    appendSectionCard,
+    onCloseModalWide: closeWideModal,
+    onRefreshProviders: rerenderSafety,
     confirmButton,
     cancelButton,
     modalBody,
     registerModalCleanup,
     buildCheckpointRestoreConfirm,
-  });
-
-  void renderSetupSection({
-    container: providerHealthGroup,
-    isProvidersSectionActive,
-    onApplySetupBadge,
-    onFixProvider,
-  });
-  void renderMobileSetupSection({
-    container: mobileHealthGroup,
-    isProvidersSectionActive,
-    onInstallMobileDependency,
   });
 }
