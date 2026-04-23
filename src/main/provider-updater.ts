@@ -3,6 +3,14 @@ import type { CliProvider } from './providers/provider';
 import { getAllProviders } from './providers/registry';
 import { getFullPath } from './pty-manager';
 import {
+  buildProviderUpdateSummary,
+  buildSkippedProviderResult,
+  createProviderProgressEmitter,
+  emitUpdateFinished,
+  emitUpdateStarted,
+  type ProviderProgressContext,
+} from './provider-updater/progress-helpers';
+import {
   detectUpdateSource,
   readBinaryVersion,
   resolveRealPath,
@@ -29,6 +37,25 @@ interface ProviderUpdaterOptions {
   now?: () => number;
   onProgress?: (event: ProviderUpdateProgressEvent) => void;
   signal?: AbortSignal;
+}
+
+interface ResolvedProviderUpdaterOptions {
+  runner: ProviderUpdaterRunner;
+  now: () => number;
+  onProgress?: (event: ProviderUpdateProgressEvent) => void;
+  signal?: AbortSignal;
+}
+
+interface RunConfiguredProviderUpdateInput {
+  provider: ProviderUpdaterTarget;
+  providerId: ProviderId;
+  providerName: string;
+  spec: ProviderUpdateSpec;
+  providerStart: number;
+  runner: ProviderUpdaterRunner;
+  now: () => number;
+  signal?: AbortSignal;
+  emitProviderMessage: (providerMessage: string) => void;
 }
 
 const CHECK_TIMEOUT_MS = 20_000;
@@ -151,46 +178,78 @@ export async function updateAllProviders(options?: ProviderUpdaterOptions): Prom
   return updateProviders(getAllProviders(), options);
 }
 
+function resolveUpdaterOptions(options?: ProviderUpdaterOptions): ResolvedProviderUpdaterOptions {
+  return {
+    runner: options?.runner ?? defaultRunner,
+    now: options?.now ?? Date.now,
+    onProgress: options?.onProgress,
+    signal: options?.signal,
+  };
+}
+
+async function runConfiguredProviderUpdate(input: RunConfiguredProviderUpdateInput): Promise<ProviderUpdateResult> {
+  const {
+    provider,
+    providerId,
+    providerName,
+    spec,
+    providerStart,
+    runner,
+    now,
+    signal,
+    emitProviderMessage,
+  } = input;
+  const binaryPath = provider.resolveBinaryPath();
+  const resolvedBinaryPath = resolveRealPath(binaryPath);
+  const source = detectUpdateSource(providerId, spec, resolvedBinaryPath);
+  emitProviderMessage('Checking installed version…');
+  const beforeVersion = await readBinaryVersion(runner, binaryPath, signal);
+
+  const baseResult = await runProviderUpdate({
+    providerId,
+    providerName,
+    binaryPath,
+    source,
+    spec,
+    beforeVersion,
+    runner,
+    signal,
+    onStage: emitProviderMessage,
+  });
+  return {
+    ...baseResult,
+    durationMs: Math.max(0, now() - providerStart),
+  };
+}
+
 export async function updateProviders(
   providers: ProviderUpdaterTarget[],
   options?: ProviderUpdaterOptions,
 ): Promise<ProviderUpdateSummary> {
-  const runner = options?.runner ?? defaultRunner;
-  const now = options?.now ?? Date.now;
-  const onProgress = options?.onProgress;
-  const signal = options?.signal;
-  const startedAtMs = now();
-  const startedAt = new Date(startedAtMs).toISOString();
+  const { runner, now, onProgress, signal } = resolveUpdaterOptions(options);
+  const startedAt = new Date(now()).toISOString();
   const results: ProviderUpdateResult[] = [];
   const providerTargets = providers.map((provider) => ({
     providerId: provider.meta.id,
     providerName: provider.meta.displayName,
   }));
-
-  onProgress?.({
-    phase: 'started',
+  const progressContext: ProviderProgressContext = {
     startedAt,
     totalProviders: providers.length,
-    completedProviders: 0,
-    providers: providerTargets,
-  });
+    getCompletedProviders: () => results.length,
+    onProgress,
+  };
+  emitUpdateStarted(progressContext, providerTargets);
 
   if (signal?.aborted) {
     const finishedAt = new Date(now()).toISOString();
-    const summary: ProviderUpdateSummary = {
+    const summary = buildProviderUpdateSummary({
       startedAt,
       finishedAt,
       results,
       cancelled: true,
-    };
-    onProgress?.({
-      phase: 'finished',
-      startedAt,
-      finishedAt,
-      cancelled: true,
-      totalProviders: providers.length,
-      completedProviders: results.length,
     });
+    emitUpdateFinished(progressContext, finishedAt, true);
     return summary;
   }
 
@@ -201,111 +260,48 @@ export async function updateProviders(
     const providerStart = now();
     const id = provider.meta.id;
     const providerName = provider.meta.displayName;
-    const spec = PROVIDER_UPDATE_SPECS[id];
+    const progress = createProviderProgressEmitter(progressContext, id, providerName);
+    progress.started('Preparing update checks…');
+
     const prerequisites = provider.validatePrerequisites();
-
-    onProgress?.({
-      phase: 'provider_started',
-      startedAt,
-      totalProviders: providers.length,
-      completedProviders: results.length,
-      providerId: id,
-      providerName,
-      providerMessage: 'Preparing update checks…',
-    });
-
-    const emitProviderMessage = (providerMessage: string): void => {
-      onProgress?.({
-        phase: 'provider_started',
-        startedAt,
-        totalProviders: providers.length,
-        completedProviders: results.length,
-        providerId: id,
-        providerName,
-        providerMessage,
-      });
-    };
-
     if (!prerequisites.ok) {
-      const result: ProviderUpdateResult = {
+      const result = buildSkippedProviderResult({
         providerId: id,
         providerName,
-        source: 'unknown',
-        status: 'skipped',
-        checked: false,
-        updateAttempted: false,
         message: `${providerName} is not installed.`,
         durationMs: Math.max(0, now() - providerStart),
-      };
-      results.push(result);
-      onProgress?.({
-        phase: 'provider_finished',
-        startedAt,
-        totalProviders: providers.length,
-        completedProviders: results.length,
-        providerId: id,
-        providerName,
-        result,
       });
+      results.push(result);
+      progress.finished(result);
       continue;
     }
 
+    const spec = PROVIDER_UPDATE_SPECS[id];
     if (!spec) {
-      const result: ProviderUpdateResult = {
+      const result = buildSkippedProviderResult({
         providerId: id,
         providerName,
-        source: 'unknown',
-        status: 'skipped',
-        checked: false,
-        updateAttempted: false,
         message: 'No update strategy configured for this provider.',
         durationMs: Math.max(0, now() - providerStart),
-      };
-      results.push(result);
-      onProgress?.({
-        phase: 'provider_finished',
-        startedAt,
-        totalProviders: providers.length,
-        completedProviders: results.length,
-        providerId: id,
-        providerName,
-        result,
       });
+      results.push(result);
+      progress.finished(result);
       continue;
     }
 
-    const binaryPath = provider.resolveBinaryPath();
-    const resolvedBinaryPath = resolveRealPath(binaryPath);
-    const source = detectUpdateSource(id, spec, resolvedBinaryPath);
-    emitProviderMessage('Checking installed version…');
-    const beforeVersion = await readBinaryVersion(runner, binaryPath, signal);
-
-    const baseResult = await runProviderUpdate({
+    const result = await runConfiguredProviderUpdate({
+      provider,
       providerId: id,
       providerName,
-      binaryPath,
-      source,
       spec,
-      beforeVersion,
+      providerStart,
       runner,
+      now,
       signal,
-      onStage: emitProviderMessage,
+      emitProviderMessage: progress.message,
     });
-    const result: ProviderUpdateResult = {
-      ...baseResult,
-      durationMs: Math.max(0, now() - providerStart),
-    };
-
     results.push(result);
-    onProgress?.({
-      phase: 'provider_finished',
-      startedAt,
-      totalProviders: providers.length,
-      completedProviders: results.length,
-      providerId: id,
-      providerName,
-      result,
-    });
+    progress.finished(result);
 
     if (result.status === 'cancelled') {
       break;
@@ -313,19 +309,12 @@ export async function updateProviders(
   }
 
   const finishedAt = new Date(now()).toISOString();
-  const summary: ProviderUpdateSummary = {
+  const summary = buildProviderUpdateSummary({
     startedAt,
     finishedAt,
     results,
     cancelled: signal?.aborted === true,
-  };
-  onProgress?.({
-    phase: 'finished',
-    startedAt,
-    finishedAt,
-    cancelled: summary.cancelled,
-    totalProviders: providers.length,
-    completedProviders: results.length,
   });
+  emitUpdateFinished(progressContext, finishedAt, summary.cancelled ?? false);
   return summary;
 }

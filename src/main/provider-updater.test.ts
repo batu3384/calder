@@ -822,4 +822,28 @@ describe('updateProviders', () => {
     expect(summary.results[0].status).toBe('cancelled');
     expect(summary.results[0].message).toContain('cancelled');
   });
+
+  it('returns an immediate cancelled summary when signal is already aborted', async () => {
+    const runner = new FakeRunner();
+    const abortController = new AbortController();
+    const progressEvents: string[] = [];
+    abortController.abort();
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', '/usr/local/bin/codex')],
+      {
+        runner,
+        signal: abortController.signal,
+        now: (() => 5_500) as () => number,
+        onProgress: (event) => {
+          progressEvents.push(event.phase);
+        },
+      },
+    );
+
+    expect(summary.cancelled).toBe(true);
+    expect(summary.results).toHaveLength(0);
+    expect(progressEvents).toEqual(['started', 'finished']);
+    expect(runner.calls).toHaveLength(0);
+  });
 });

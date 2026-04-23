@@ -7,6 +7,14 @@ import {
   parseVersion,
   shouldUpdate,
 } from './provider-updater-version';
+import {
+  buildCancelledResult,
+  buildMissingUpdateCommandResult,
+  buildPostUpdateResult,
+  buildUnknownSourceResult,
+  buildUpdateErrorResult,
+  buildUpToDateResult,
+} from './provider-updater/update-result-helpers';
 
 const CHECK_TIMEOUT_MS = 20_000;
 const UPDATE_TIMEOUT_MS = 6 * 60_000;
@@ -196,32 +204,6 @@ async function resolveProviderUpdateCheck(input: {
   return { latestVersion, updateNeeded, checkCommand };
 }
 
-function buildCancelledResult(input: {
-  providerId: ProviderId;
-  providerName: string;
-  source: ProviderUpdateSource;
-  beforeVersion?: string;
-  latestVersion?: string;
-  checkCommand?: string;
-  updateCommand?: string;
-  updateAttempted?: boolean;
-  message: string;
-}): Omit<ProviderUpdateResult, 'durationMs'> {
-  return {
-    providerId: input.providerId,
-    providerName: input.providerName,
-    source: input.source,
-    status: 'cancelled',
-    checked: true,
-    updateAttempted: input.updateAttempted ?? false,
-    checkCommand: input.checkCommand,
-    updateCommand: input.updateCommand,
-    beforeVersion: input.beforeVersion,
-    latestVersion: input.latestVersion,
-    message: input.message,
-  };
-}
-
 async function buildBrewSyncPendingResult(input: {
   providerId: ProviderId;
   providerName: string;
@@ -282,6 +264,59 @@ async function buildBrewSyncPendingResult(input: {
   };
 }
 
+async function resolveNoUpdateResult(input: {
+  providerId: ProviderId;
+  providerName: string;
+  source: ProviderUpdateSource;
+  spec: ProviderUpdateSpec;
+  beforeVersion?: string;
+  latestVersion?: string;
+  checkCommand?: string;
+  updateNeeded: boolean;
+  runner: ProviderUpdaterRunner;
+  signal?: AbortSignal;
+  onStage?: (message: string) => void;
+}): Promise<Omit<ProviderUpdateResult, 'durationMs'> | null> {
+  const {
+    providerId,
+    providerName,
+    source,
+    spec,
+    beforeVersion,
+    latestVersion,
+    checkCommand,
+    updateNeeded,
+    runner,
+    signal,
+    onStage,
+  } = input;
+  if (updateNeeded) return null;
+
+  const syncPendingResult = await buildBrewSyncPendingResult({
+    providerId,
+    providerName,
+    source,
+    spec,
+    beforeVersion,
+    latestVersion,
+    checkCommand,
+    runner,
+    signal,
+    onStage,
+  });
+  if (syncPendingResult) return syncPendingResult;
+
+  onStage?.('Already up to date.');
+  return buildUpToDateResult({
+    providerId,
+    providerName,
+    source,
+    checkCommand,
+    beforeVersion,
+    latestVersion,
+  });
+}
+
 function resolveUpdateCommand(
   binaryPath: string,
   source: ProviderUpdateSource,
@@ -300,6 +335,95 @@ function resolveUpdateCommand(
     return { command: 'brew', args: ['upgrade', '--cask', spec.brewCask] };
   }
   return null;
+}
+
+async function applyUpdateCommandAndVerify(input: {
+  providerId: ProviderId;
+  providerName: string;
+  binaryPath: string;
+  source: ProviderUpdateSource;
+  beforeVersion?: string;
+  latestVersion?: string;
+  checkCommand?: string;
+  updateCommandInput: { command: string; args: string[] };
+  runner: ProviderUpdaterRunner;
+  signal?: AbortSignal;
+  onStage?: (message: string) => void;
+}): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
+  const {
+    providerId,
+    providerName,
+    binaryPath,
+    source,
+    beforeVersion,
+    latestVersion,
+    checkCommand,
+    updateCommandInput,
+    runner,
+    signal,
+    onStage,
+  } = input;
+  const updateCommand = `${updateCommandInput.command} ${updateCommandInput.args.join(' ')}`.trim();
+
+  onStage?.('Applying update command…');
+  const updateExec = await runner.run(updateCommandInput.command, updateCommandInput.args, {
+    timeoutMs: UPDATE_TIMEOUT_MS,
+    signal,
+  });
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      updateCommand,
+      updateAttempted: true,
+      message: 'Update cancelled while command was running.',
+    });
+  }
+  if (updateExec.code !== 0) {
+    const errorMessage = (updateExec.stderr || updateExec.stdout || 'Update command failed').trim();
+    return buildUpdateErrorResult({
+      providerId,
+      providerName,
+      source,
+      checkCommand,
+      updateCommand,
+      beforeVersion,
+      latestVersion,
+      message: errorMessage,
+    });
+  }
+
+  onStage?.('Verifying installed version…');
+  const afterVersion = await readBinaryVersion(runner, binaryPath, signal);
+  if (signal?.aborted) {
+    return buildCancelledResult({
+      providerId,
+      providerName,
+      source,
+      beforeVersion,
+      latestVersion,
+      checkCommand,
+      updateCommand,
+      updateAttempted: true,
+      message: 'Update cancelled before version verification completed.',
+    });
+  }
+
+  return buildPostUpdateResult({
+    providerId,
+    providerName,
+    source,
+    checkCommand,
+    updateCommand,
+    beforeVersion,
+    latestVersion,
+    afterVersion,
+    hasVersionBump: hasDifferentVersion(beforeVersion, afterVersion),
+  });
 }
 
 export async function runProviderUpdate(input: {
@@ -327,16 +451,12 @@ export async function runProviderUpdate(input: {
 
   if (source === 'unknown') {
     onStage?.('Update source could not be detected.');
-    return {
+    return buildUnknownSourceResult({
       providerId,
       providerName,
       source,
-      status: 'skipped',
-      checked: true,
-      updateAttempted: false,
       beforeVersion,
-      message: 'Update source could not be determined for this provider.',
-    };
+    });
   }
 
   const checkResult = await resolveProviderUpdateCheck({
@@ -361,120 +481,47 @@ export async function runProviderUpdate(input: {
     });
   }
 
-  if (!updateNeeded) {
-    const syncPendingResult = await buildBrewSyncPendingResult({
-      providerId,
-      providerName,
-      source,
-      spec,
-      beforeVersion,
-      latestVersion,
-      checkCommand,
-      runner,
-      signal,
-      onStage,
-    });
-    if (syncPendingResult) {
-      return syncPendingResult;
-    }
-  }
-
-  if (!updateNeeded) {
-    onStage?.('Already up to date.');
-    return {
-      providerId,
-      providerName,
-      source,
-      status: 'up_to_date',
-      checked: true,
-      updateAttempted: false,
-      checkCommand,
-      beforeVersion,
-      latestVersion,
-      message: `${providerName} is already up to date.`,
-    };
-  }
-
-  const command = resolveUpdateCommand(binaryPath, source, spec);
-  if (!command) {
-    onStage?.('No update command configured for this source.');
-    return {
-      providerId,
-      providerName,
-      source,
-      status: 'skipped',
-      checked: true,
-      updateAttempted: false,
-      checkCommand,
-      beforeVersion,
-      latestVersion,
-      message: 'No update command available for this provider source.',
-    };
-  }
-
-  const updateCommand = `${command.command} ${command.args.join(' ')}`.trim();
-  onStage?.('Applying update command…');
-  const updateExec = await runner.run(command.command, command.args, { timeoutMs: UPDATE_TIMEOUT_MS, signal });
-  if (signal?.aborted) {
-    return buildCancelledResult({
-      providerId,
-      providerName,
-      source,
-      beforeVersion,
-      latestVersion,
-      checkCommand,
-      updateCommand,
-      updateAttempted: true,
-      message: 'Update cancelled while command was running.',
-    });
-  }
-  if (updateExec.code !== 0) {
-    const errorMessage = (updateExec.stderr || updateExec.stdout || 'Update command failed').trim();
-    return {
-      providerId,
-      providerName,
-      source,
-      status: 'error',
-      checked: true,
-      updateAttempted: true,
-      checkCommand,
-      updateCommand,
-      beforeVersion,
-      latestVersion,
-      message: errorMessage,
-    };
-  }
-
-  onStage?.('Verifying installed version…');
-  const afterVersion = await readBinaryVersion(runner, binaryPath, signal);
-  if (signal?.aborted) {
-    return buildCancelledResult({
-      providerId,
-      providerName,
-      source,
-      beforeVersion,
-      latestVersion,
-      checkCommand,
-      updateCommand,
-      updateAttempted: true,
-      message: 'Update cancelled before version verification completed.',
-    });
-  }
-  const hasVersionBump = hasDifferentVersion(beforeVersion, afterVersion);
-  return {
+  const noUpdateResult = await resolveNoUpdateResult({
     providerId,
     providerName,
     source,
-    status: hasVersionBump ? 'updated' : 'up_to_date',
-    checked: true,
-    updateAttempted: true,
-    checkCommand,
-    updateCommand,
+    spec,
     beforeVersion,
     latestVersion,
-    afterVersion,
-    message: hasVersionBump
-      ? `${providerName} was updated successfully.`
-      : `${providerName} is already up to date.`,
-  };
+    checkCommand,
+    updateNeeded,
+    runner,
+    signal,
+    onStage,
+  });
+  if (noUpdateResult) {
+    return noUpdateResult;
+  }
+
+  const updateCommandInput = resolveUpdateCommand(binaryPath, source, spec);
+  if (!updateCommandInput) {
+    onStage?.('No update command configured for this source.');
+    return buildMissingUpdateCommandResult({
+      providerId,
+      providerName,
+      source,
+      checkCommand,
+      beforeVersion,
+      latestVersion,
+    });
+  }
+
+  return applyUpdateCommandAndVerify({
+    providerId,
+    providerName,
+    binaryPath,
+    source,
+    beforeVersion,
+    latestVersion,
+    checkCommand,
+    updateCommandInput,
+    runner,
+    signal,
+    onStage,
+  });
 }
