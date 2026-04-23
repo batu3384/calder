@@ -1,10 +1,4 @@
-import type {
-  ProviderUpdateCancelResult,
-  ProviderId,
-  ProviderUpdateProgressEvent,
-  ProviderUpdateResult,
-  ProviderUpdateSummary,
-} from '../shared/types/provider.js';
+import type { CliProviderMeta, ProviderId, ProviderUpdateCancelResult, ProviderUpdateProgressEvent, ProviderUpdateResult, ProviderUpdateSummary } from '../shared/types/provider.js';
 import type { CalderApi } from './types.js';
 
 const APP_UP_TO_DATE_TIMEOUT_MS = 6000;
@@ -35,6 +29,7 @@ export interface CliProviderProgressState {
   providerName: string;
   status: CliProviderStatus;
   message?: string;
+  progressPercent?: number;
   beforeVersion?: string;
   latestVersion?: string;
   afterVersion?: string;
@@ -157,6 +152,7 @@ function mergeCliResult(
     providerName: result.providerName,
     status: result.status,
     message: result.message,
+    progressPercent: 100,
     beforeVersion: result.beforeVersion,
     latestVersion: result.latestVersion,
     afterVersion: result.afterVersion,
@@ -175,10 +171,34 @@ function deriveProvidersFromSummary(summary: ProviderUpdateSummary): CliProvider
     providerName: result.providerName,
     status: result.status,
     message: result.message,
+    progressPercent: 100,
     beforeVersion: result.beforeVersion,
     latestVersion: result.latestVersion,
     afterVersion: result.afterVersion,
   }));
+}
+
+function deriveProvidersFromMetas(metas: CliProviderMeta[]): CliProviderProgressState[] {
+  return metas.map((meta) => ({
+    providerId: meta.id,
+    providerName: meta.displayName,
+    status: 'queued',
+    message: 'Ready to update individually.',
+  }));
+}
+
+async function refreshCliProviderCatalog(currentBridge: UpdateCenterBridge): Promise<void> {
+  if (state.cli.phase === 'running') return;
+  if (state.cli.providers.length > 0) return;
+  const listProviders = currentBridge.provider.listProviders;
+  if (typeof listProviders !== 'function') return;
+  try {
+    const metas = await listProviders.call(currentBridge.provider);
+    if (state.cli.phase === 'running' || state.cli.providers.length > 0) return;
+    setCliState({ providers: deriveProvidersFromMetas(metas) });
+  } catch (error) {
+    console.warn('[update-center] Failed to load provider catalog', error);
+  }
 }
 
 function handleAppAvailable(info: { version: string }): void {
@@ -257,7 +277,12 @@ function handleProviderProgress(event: ProviderUpdateProgressEvent): void {
     const nextProviders = upsertCliProvider(state.cli.providers, event.providerId, event.providerName)
       .map((provider) => (
         provider.providerId === event.providerId
-          ? { ...provider, status: 'running' as const, message: event.providerMessage ?? provider.message }
+          ? {
+              ...provider,
+              status: 'running' as const,
+              message: event.providerMessage ?? provider.message,
+              progressPercent: event.providerProgressPercent ?? provider.progressPercent,
+            }
           : provider
       ));
     setCliState({
@@ -307,6 +332,7 @@ export function initUpdateCenter(inputBridge?: UpdateCenterBridge): void {
     bridge.provider.onUpdateProgress((event) => handleProviderProgress(event)),
   ];
   initialized = true;
+  void refreshCliProviderCatalog(bridge);
 }
 
 export function getUpdateCenterState(): UpdateCenterState {
@@ -355,24 +381,33 @@ export async function checkForAppUpdates(): Promise<void> {
   }, APP_UP_TO_DATE_TIMEOUT_MS);
 }
 
-export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
-  const currentBridge = requireBridge();
+function runCliProviderUpdateRequest(
+  request: () => Promise<ProviderUpdateSummary>,
+  providerId?: ProviderId,
+): Promise<ProviderUpdateSummary> {
   if (cliInFlight) return cliInFlight;
   activeCliProgressStartedAt = null;
+  const providers = providerId
+    ? state.cli.providers.map((provider) => (
+      provider.providerId === providerId
+        ? { ...provider, status: 'running' as const, message: 'Preparing update checks…', progressPercent: 0 }
+        : { ...provider, status: 'queued' as const }
+    ))
+    : [];
 
   setCliState({
     phase: 'running',
     startedAt: nowIso(),
     finishedAt: undefined,
-    totalProviders: 0,
+    totalProviders: providerId ? 1 : 0,
     completedProviders: 0,
-    activeProviderId: undefined,
-    providers: [],
+    activeProviderId: providerId,
+    providers,
     cancelRequested: false,
     errorMessage: undefined,
   });
 
-  cliInFlight = currentBridge.provider.updateAll()
+  cliInFlight = request()
     .then((summary) => {
       const providers = deriveProvidersFromSummary(summary);
       const totalProviders = state.cli.totalProviders > 0
@@ -409,6 +444,16 @@ export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
     });
 
   return cliInFlight;
+}
+
+export function runCliProviderUpdates(): Promise<ProviderUpdateSummary> {
+  const currentBridge = requireBridge();
+  return runCliProviderUpdateRequest(() => currentBridge.provider.updateAll());
+}
+
+export function runCliProviderUpdate(providerId: ProviderId): Promise<ProviderUpdateSummary> {
+  const currentBridge = requireBridge();
+  return runCliProviderUpdateRequest(() => currentBridge.provider.updateProvider(providerId), providerId);
 }
 
 export async function cancelCliProviderUpdates(): Promise<ProviderUpdateCancelResult> {

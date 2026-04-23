@@ -16,6 +16,12 @@ const source = [
 
 describe('i18n contract', () => {
   it('covers key workspace Turkish translations for rail and settings copy', () => {
+    expect(source).toContain("['Skip to workspace', 'Çalışma alanına atla']");
+    expect(source).toContain("['Command studio', 'Komut stüdyosu']");
+    expect(source).toContain("['Project Dock', 'Proje Paneli']");
+    expect(source).toContain("['Switch context without losing live work.', 'Canlı işi kaybetmeden bağlam değiştirin.']");
+    expect(source).toContain("['Workspace Pulse', 'Çalışma Alanı Nabzı']");
+    expect(source).toContain("['Run controls, project state, and tools stay separated so the rail stays readable.', 'Çalışma kontrolleri, proje durumu ve araçlar ayrı kalır; panel okunabilirliğini korur.']");
     expect(source).toContain("['Hybrid context', 'Hibrit bağlam']");
     expect(source).toContain("['Agent command desk', 'Ajan komut masası']");
     expect(source).toContain("['Add MCP Server', 'MCP sunucusu ekle']");
@@ -28,6 +34,13 @@ describe('i18n contract', () => {
   });
 
   it('covers settings shell subgroup copy in Turkish', () => {
+    expect(source).toContain("['Session defaults, interface behavior, tool health, automation, and safety rules.', 'Oturum varsayılanları, arayüz davranışı, araç sağlığı, otomasyon ve güvenlik kuralları.']");
+    expect(source).toContain("['Interface', 'Arayüz']");
+    expect(source).toContain("['Automation', 'Otomasyon']");
+    expect(source).toContain("['Safety', 'Güvenlik']");
+    expect(source).toContain("['Startup, language, and session memory', 'Başlangıç, dil ve oturum belleği']");
+    expect(source).toContain("['Shell layout, rails, and live view behavior', 'Kabuk düzeni, paneller ve Canlı Görünüm davranışı']");
+    expect(source).toContain("['CLI providers and mobile dependency health', 'CLI sağlayıcıları ve mobil bağımlılık sağlığı']");
     expect(source).toContain("['Provider health', 'Sağlayıcı durumu']");
     expect(source).toContain("['Orchestration phases', 'Orkestrasyon fazları']");
     expect(source).toContain("['Tracking & fixes', 'İzleme ve düzeltmeler']");
@@ -35,6 +48,12 @@ describe('i18n contract', () => {
   });
 
   it('covers session inspector and usage modal labels in Turkish', () => {
+    expect(source).toContain("['Usage', 'Kullanım']");
+    expect(source).toContain("['Workspace activity snapshot', 'Çalışma alanı etkinlik özeti']");
+    expect(source).toContain("['Guide', 'Rehber']");
+    expect(source).toContain("['Workspace signals and shortcuts', 'Çalışma alanı sinyalleri ve kısayollar']");
+    expect(source).toContain("['Tab Status Dot', 'Sekme durum noktası']");
+    expect(source).toContain("['Git Status', 'Git durumu']");
     expect(source).toContain("['Timeline', 'Zaman çizelgesi']");
     expect(source).toContain("['Costs', 'Maliyetler']");
     expect(source).toContain("['Tools', 'Araçlar']");
@@ -98,6 +117,7 @@ describe('i18n contract', () => {
     expect(source).toContain("['linked run', 'bağlı çalışma']");
     expect(source).toContain("['active run', 'aktif çalışma']");
     expect(source).toContain("pattern: /^New (.+) Session \\(Ctrl\\+Shift\\+N\\)$/u");
+    expect(source).toContain("pattern: /^Shortcuts:\\s*(.+)$/u");
     expect(source).toContain("pattern: /^Create new (.+) session$/u");
     expect(source).toContain("pattern: /^Status:\\s*(\\S+)\\s+Session:\\s*(.+)\\s+Drag to reorder$/u");
     expect(source).toContain("pattern: /^CLI Surface\\s+Profile:\\s*(.+)$/u");

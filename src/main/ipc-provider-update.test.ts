@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockUpdateAllProviders = vi.hoisted(() => vi.fn());
+const mockUpdateProviderById = vi.hoisted(() => vi.fn());
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -11,6 +12,7 @@ vi.mock('electron', () => ({
 
 vi.mock('./provider-updater', () => ({
   updateAllProviders: mockUpdateAllProviders,
+  updateProviderById: mockUpdateProviderById,
 }));
 
 function getHandleHandler(channel: string): (...args: any[]) => any {
@@ -92,5 +94,31 @@ describe('ipc provider-update handlers', () => {
     expect(cancelled).toEqual({ cancelled: true });
     expect(cancelledAgain).toEqual({ cancelled: false });
     expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(true);
+  });
+
+  it('runs a selected provider update through the same progress and cancellation pipeline', async () => {
+    let capturedSignal: AbortSignal | null = null;
+    mockUpdateProviderById.mockImplementation((providerId: string, { signal, onProgress }: {
+      signal: AbortSignal;
+      onProgress: (event: unknown) => void;
+    }) => {
+      capturedSignal = signal;
+      onProgress({ phase: 'provider_started', providerId });
+      return Promise.resolve({ results: [{ providerId }] });
+    });
+    const { registerProviderUpdateIpcHandlers } = await import('./ipc-provider-update');
+    registerProviderUpdateIpcHandlers();
+
+    const updateProviderHandler = getHandleHandler('provider:updateProvider');
+    const sender = { isDestroyed: () => false, send: vi.fn() };
+
+    await expect(updateProviderHandler({ sender }, 'gemini')).resolves.toEqual({ results: [{ providerId: 'gemini' }] });
+
+    expect(mockUpdateProviderById).toHaveBeenCalledWith('gemini', expect.objectContaining({
+      signal: expect.any(AbortSignal),
+      onProgress: expect.any(Function),
+    }));
+    expect(sender.send).toHaveBeenCalledWith('provider:update-progress', { phase: 'provider_started', providerId: 'gemini' });
+    expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(false);
   });
 });

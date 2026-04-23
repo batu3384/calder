@@ -10,7 +10,7 @@ interface TabBarActionHandlerArgs {
   updateCliToolsButtonEl: HTMLButtonElement;
   mobileControlButtonEl: HTMLButtonElement | null;
   gitStatusEl: HTMLElement;
-  onToggleUpdatePanelAndRun: () => void;
+  onOpenUpdatePanel: () => void;
   onQuickNewSession: () => void;
   onMobileControlClick: () => void;
   onShowAddSessionContextMenu: (x: number, y: number) => void;
@@ -19,7 +19,7 @@ interface TabBarActionHandlerArgs {
 
 export function wireTabBarActionHandlers(args: TabBarActionHandlerArgs): void {
   args.updateCliToolsButtonEl.addEventListener('click', () => {
-    args.onToggleUpdatePanelAndRun();
+    args.onOpenUpdatePanel();
   });
   args.addSessionButtonEl.addEventListener('click', () => args.onQuickNewSession());
   args.mobileControlButtonEl?.addEventListener('click', () => {

@@ -40,7 +40,9 @@ describe('precision cockpit theme contract', () => {
     expect(auroraCss).toContain('--premium-panel-hairline');
     expect(auroraCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
     expect(commandStudioCss).toContain('Calder Command Studio');
+    expect(commandStudioCss).toContain('Command studio coherence pass');
     expect(commandStudioCss).toContain('--studio-cyan');
+    expect(commandStudioCss).toContain('--studio-focus-halo');
     expect(commandStudioCss).toContain('.context-inspector-tabs');
     expect(commandStudioCss).toContain('context-inspector-panel-enter');
     expect(commandStudioCss).toContain('grid-template-columns: 76px minmax(0, 1fr);');
@@ -56,6 +58,8 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('height: min(760px, calc(100vh - 56px));');
     expect(commandStudioCss).toContain('#context-inspector {');
     expect(commandStudioCss).toContain('width: 304px;');
+    expect(commandStudioCss).toContain('width: 312px;');
+    expect(commandStudioCss).toContain('backdrop-filter: blur(10px) saturate(1.1);');
     expect(commandStudioCss).toContain('grid-template-areas:');
     expect(commandStudioCss).toContain('"nav primary"');
   });

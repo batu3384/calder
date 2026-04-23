@@ -21,7 +21,7 @@ export interface ProviderTargetProgress {
 
 export interface ProviderProgressEmitter {
   started(message: string): void;
-  message(message: string): void;
+  message(message: string, providerProgressPercent?: number): void;
   finished(result: ProviderUpdateResult): void;
 }
 
@@ -58,7 +58,7 @@ export function createProviderProgressEmitter(
   providerId: ProviderId,
   providerName: string,
 ): ProviderProgressEmitter {
-  const emitProviderMessage = (providerMessage: string): void => {
+  const emitProviderMessage = (providerMessage: string, providerProgressPercent?: number): void => {
     context.onProgress?.({
       phase: 'provider_started',
       startedAt: context.startedAt,
@@ -67,6 +67,7 @@ export function createProviderProgressEmitter(
       providerId,
       providerName,
       providerMessage,
+      providerProgressPercent,
     });
   };
 

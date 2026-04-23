@@ -8,7 +8,7 @@ export interface ProviderUpdaterRunner {
 
 export interface ProviderUpdateSpec {
   npmPackage?: string;
-  brewFormula?: string;
-  brewCask?: string;
+  brewFormula?: string | string[];
+  brewCask?: string | string[];
   selfUpdateArgs?: string[];
 }

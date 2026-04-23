@@ -8,10 +8,16 @@ import {
 
 const UPDATE_TIMEOUT_MS = 6 * 60_000;
 
+function getPrimaryToken(tokenOrTokens?: string | string[]): string | undefined {
+  if (!tokenOrTokens) return undefined;
+  return Array.isArray(tokenOrTokens) ? tokenOrTokens[0] : tokenOrTokens;
+}
+
 export function resolveUpdateCommand(
   binaryPath: string,
   source: ProviderUpdateSource,
   spec: ProviderUpdateSpec,
+  sourcePackageToken?: string,
 ): { command: string; args: string[] } | null {
   if (source === 'self' && spec.selfUpdateArgs) {
     return { command: binaryPath, args: spec.selfUpdateArgs };
@@ -20,10 +26,10 @@ export function resolveUpdateCommand(
     return { command: 'npm', args: ['install', '-g', `${spec.npmPackage}@latest`] };
   }
   if (source === 'brew-formula' && spec.brewFormula) {
-    return { command: 'brew', args: ['upgrade', spec.brewFormula] };
+    return { command: 'brew', args: ['upgrade', sourcePackageToken ?? getPrimaryToken(spec.brewFormula)!] };
   }
   if (source === 'brew-cask' && spec.brewCask) {
-    return { command: 'brew', args: ['upgrade', '--cask', spec.brewCask] };
+    return { command: 'brew', args: ['upgrade', '--cask', sourcePackageToken ?? getPrimaryToken(spec.brewCask)!] };
   }
   return null;
 }

@@ -17,6 +17,9 @@ export const onUpdateCenterChange: UpdateCenterModule["onUpdateCenterChange"] = 
 export const runCliProviderUpdates: UpdateCenterModule["runCliProviderUpdates"] = (...args) =>
   updateCenter.runCliProviderUpdates(...args);
 
+export const runCliProviderUpdate: UpdateCenterModule["runCliProviderUpdate"] = (...args) =>
+  updateCenter.runCliProviderUpdate(...args);
+
 export const initUpdateCenter: UpdateCenterModule["initUpdateCenter"] = (...args) =>
   updateCenter.initUpdateCenter(...args);
 

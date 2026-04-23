@@ -33,6 +33,7 @@ import {
   cancelCliProviderUpdates,
   getUpdateCenterState,
   onUpdateCenterChange,
+  runCliProviderUpdate,
   runCliProviderUpdates,
   initUpdateCenter,
   type CliUpdateCenterState,
@@ -123,6 +124,8 @@ function getCliUpdatePanelController(): TabBarCliUpdatePanelController {
     tabActionsEl,
     updateButtonEl: btnUpdateCliTools,
     onCancelUpdate: cancelCliProviderUpdates,
+    onRunProviderUpdate: runCliProviderUpdate,
+    onRunAllUpdates: runCliProviderUpdates,
   });
   return cliUpdatePanelController;
 }
@@ -198,13 +201,8 @@ export function initTabBar(): void {
     updateCliToolsButtonEl: btnUpdateCliTools,
     mobileControlButtonEl: btnMobileControl,
     gitStatusEl,
-    onToggleUpdatePanelAndRun: () => {
-      toggleCliUpdatePanel(true);
-      if (getUpdateCenterState().cli.phase !== 'running') {
-        void runCliProviderUpdates().catch((error) => {
-          console.error('[tab-bar] Failed to update CLI tools', error);
-        });
-      }
+    onOpenUpdatePanel: () => {
+      toggleCliUpdatePanel(!isCliUpdatePanelVisible());
     },
     onQuickNewSession: quickNewSession,
     onMobileControlClick: () => {

@@ -12,6 +12,7 @@ describe('ipc provider update contract', () => {
 
   it('keeps provider update progress and cancellation channels wired', () => {
     expect(providerUpdateSource).toContain("'provider:updateAll'");
+    expect(providerUpdateSource).toContain("'provider:updateProvider'");
     expect(providerUpdateSource).toContain("'provider:update-progress'");
     expect(providerUpdateSource).toContain("'provider:cancelUpdateAll'");
   });

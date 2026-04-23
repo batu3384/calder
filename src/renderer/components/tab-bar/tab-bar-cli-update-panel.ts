@@ -1,4 +1,4 @@
-import type { ProviderUpdateSummary } from '../../../shared/types/provider.js';
+import type { ProviderId, ProviderUpdateSummary } from '../../../shared/types/provider.js';
 import type { CliProviderProgressState, CliUpdateCenterState } from '../surface-services/update-center.js';
 
 interface CliUpdateStatusCounters {
@@ -14,6 +14,8 @@ interface CreateTabBarCliUpdatePanelOptions {
   tabActionsEl: HTMLElement;
   updateButtonEl: HTMLButtonElement;
   onCancelUpdate: () => Promise<unknown>;
+  onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>;
+  onRunAllUpdates: () => Promise<unknown>;
 }
 
 export interface TabBarCliUpdatePanelController {
@@ -80,6 +82,7 @@ interface CliUpdatePanelRenderContext {
   progressLabelEl: HTMLElement;
   timestampEl: HTMLElement;
   listEl: HTMLElement;
+  updateAllBtnEl: HTMLButtonElement | null;
   cancelBtnEl: HTMLButtonElement | null;
 }
 
@@ -149,10 +152,7 @@ function renderCliUpdateButton(updateButtonEl: HTMLButtonElement, cliState: CliU
   updateButtonEl.setAttribute('aria-label', 'Update CLI tools');
 }
 
-function renderCliUpdatePanelCancelButton(
-  cancelBtnEl: HTMLButtonElement | null,
-  cliState: CliUpdateCenterState,
-): void {
+function renderCliUpdatePanelCancelButton(cancelBtnEl: HTMLButtonElement | null, cliState: CliUpdateCenterState): void {
   if (!cancelBtnEl) return;
   const running = cliState.phase === 'running';
   cancelBtnEl.classList.toggle('hidden', !running);
@@ -168,7 +168,11 @@ function getCliUpdateProgress(cliState: CliUpdateCenterState): {
 } {
   const total = cliState.totalProviders > 0 ? cliState.totalProviders : Math.max(cliState.providers.length, 0);
   const completed = Math.min(cliState.completedProviders, total || cliState.completedProviders);
-  const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const activeProvider = cliState.providers.find((provider) => provider.providerId === cliState.activeProviderId);
+  const activeProgress = cliState.phase === 'running'
+    ? Math.max(0, Math.min(100, activeProvider?.progressPercent ?? 0)) / 100
+    : 0;
+  const progressPercent = total > 0 ? Math.round(((completed + activeProgress) / total) * 100) : 0;
   const progressLabel = total > 0 ? `${completed}/${total}` : '0/0';
   return { total, completed, progressPercent, progressLabel };
 }
@@ -255,7 +259,9 @@ function renderCliUpdatePanelStatusAndMeta(
 function getCliUpdateProviderDetail(provider: CliUpdateProviderState): string {
   const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
   if (provider.status === 'running' && provider.message) {
-    return provider.message;
+    return typeof provider.progressPercent === 'number'
+      ? `${provider.message} (${Math.round(provider.progressPercent)}%)`
+      : provider.message;
   }
   if (provider.status === 'sync_pending' && provider.message) {
     return provider.message;
@@ -272,7 +278,11 @@ function getCliUpdateProviderDetail(provider: CliUpdateProviderState): string {
   return provider.status === 'running' ? 'Running...' : 'Waiting...';
 }
 
-function renderCliUpdatePanelList(listEl: HTMLElement, cliState: CliUpdateCenterState): void {
+function renderCliUpdatePanelList(
+  listEl: HTMLElement,
+  cliState: CliUpdateCenterState,
+  onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>,
+): void {
   listEl.innerHTML = '';
   const providers = cliState.providers;
   if (providers.length === 0) {
@@ -299,8 +309,25 @@ function renderCliUpdatePanelList(listEl: HTMLElement, cliState: CliUpdateCenter
     status.className = `cli-update-provider-status ${provider.status}`;
     status.textContent = getCliProviderStatusLabel(provider.status);
 
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'cli-update-provider-action';
+    action.setAttribute('data-provider-id', provider.providerId);
+    action.disabled = cliState.phase === 'running';
+    action.textContent = provider.status === 'running' && typeof provider.progressPercent === 'number'
+      ? `${Math.round(provider.progressPercent)}%`
+      : 'Update';
+    action.setAttribute('aria-label', `Update ${provider.providerName}`);
+    action.addEventListener('click', () => {
+      if (action.disabled) return;
+      void onRunProviderUpdate(provider.providerId).catch((error) => {
+        console.error('[tab-bar] Failed to update selected CLI provider', error);
+      });
+    });
+
     top.appendChild(name);
     top.appendChild(status);
+    top.appendChild(action);
 
     const detail = document.createElement('div');
     detail.className = 'cli-update-provider-detail';
@@ -315,6 +342,7 @@ function renderCliUpdatePanelList(listEl: HTMLElement, cliState: CliUpdateCenter
 function renderCliUpdatePanelContent(
   context: CliUpdatePanelRenderContext,
   cliState: CliUpdateCenterState,
+  onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>,
 ): void {
   const {
     statusEl,
@@ -323,10 +351,15 @@ function renderCliUpdatePanelContent(
     progressLabelEl,
     timestampEl,
     listEl,
+    updateAllBtnEl,
     cancelBtnEl,
   } = context;
 
   renderCliUpdatePanelCancelButton(cancelBtnEl, cliState);
+  if (updateAllBtnEl) {
+    updateAllBtnEl.disabled = cliState.phase === 'running';
+    updateAllBtnEl.textContent = cliState.phase === 'running' ? 'Updating...' : 'Update all';
+  }
   const { total, completed, progressPercent, progressLabel } = getCliUpdateProgress(cliState);
   progressLabelEl.textContent = `Progress: ${progressLabel} (${progressPercent}%)`;
   renderCliUpdatePanelTimestamp(timestampEl, cliState);
@@ -334,11 +367,11 @@ function renderCliUpdatePanelContent(
 
   progressFillEl.style.width = `${Math.max(progressPercent, cliState.phase === 'running' ? 8 : 0)}%`;
   progressFillEl.classList.toggle('is-running', cliState.phase === 'running');
-  renderCliUpdatePanelList(listEl, cliState);
+  renderCliUpdatePanelList(listEl, cliState, onRunProviderUpdate);
 }
 
 export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOptions): TabBarCliUpdatePanelController {
-  const { tabActionsEl, updateButtonEl, onCancelUpdate } = options;
+  const { tabActionsEl, updateButtonEl, onCancelUpdate, onRunProviderUpdate, onRunAllUpdates } = options;
   let cliUpdatePanelEl: HTMLElement | null = null;
   let cliUpdatePanelVisible = false;
   let cliUpdatePanelStatusEl: HTMLElement | null = null;
@@ -347,6 +380,7 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
   let cliUpdatePanelProgressLabelEl: HTMLElement | null = null;
   let cliUpdatePanelTimestampEl: HTMLElement | null = null;
   let cliUpdatePanelListEl: HTMLElement | null = null;
+  let cliUpdatePanelUpdateAllBtnEl: HTMLButtonElement | null = null;
   let cliUpdatePanelCancelBtnEl: HTMLButtonElement | null = null;
 
   function setup(): void {
@@ -358,10 +392,12 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
     <div class="cli-update-panel-header">
       <div class="cli-update-panel-title">CLI Update Center</div>
       <div class="cli-update-panel-header-actions">
+        <button type="button" class="cli-update-panel-update-all" aria-label="Update all CLI tools">Update all</button>
         <button type="button" class="cli-update-panel-cancel hidden" aria-label="Cancel CLI update">Cancel</button>
         <button type="button" class="cli-update-panel-close" aria-label="Close update panel">&times;</button>
       </div>
     </div>
+    <div class="cli-update-panel-actions">Choose one CLI below, or run Update all for the full toolkit.</div>
     <div class="cli-update-panel-status">No update run yet.</div>
     <div class="cli-update-panel-progress-track">
       <div class="cli-update-panel-progress-fill" style="width: 0%"></div>
@@ -376,8 +412,15 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
     panel.addEventListener('click', (event) => event.stopPropagation());
 
     const closeBtn = panel.querySelector('.cli-update-panel-close') as HTMLButtonElement | null;
+    const updateAllBtn = panel.querySelector('.cli-update-panel-update-all') as HTMLButtonElement | null;
     const cancelBtn = panel.querySelector('.cli-update-panel-cancel') as HTMLButtonElement | null;
     closeBtn?.addEventListener('click', () => toggle(false));
+    updateAllBtn?.addEventListener('click', () => {
+      if (updateAllBtn.disabled) return;
+      void onRunAllUpdates().catch((error) => {
+        console.error('[tab-bar] Failed to update CLI tools', error);
+      });
+    });
     cancelBtn?.addEventListener('click', () => {
       if (cancelBtn.disabled) return;
       void onCancelUpdate().catch((error) => {
@@ -391,14 +434,13 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
     cliUpdatePanelProgressLabelEl = panel.querySelector('.cli-update-panel-progress-label');
     cliUpdatePanelTimestampEl = panel.querySelector('.cli-update-panel-timestamp');
     cliUpdatePanelListEl = panel.querySelector('.cli-update-panel-list');
+    cliUpdatePanelUpdateAllBtnEl = updateAllBtn;
     cliUpdatePanelCancelBtnEl = cancelBtn;
     if (cliUpdatePanelStatusEl) {
       cliUpdatePanelStatusEl.setAttribute('role', 'status');
       cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite');
     }
-    if (cliUpdatePanelMetaEl) {
-      cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite');
-    }
+    if (cliUpdatePanelMetaEl) cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite');
     panel.setAttribute('aria-busy', 'false');
 
     tabActionsEl.appendChild(panel);
@@ -425,9 +467,7 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
       || !cliUpdatePanelProgressLabelEl
       || !cliUpdatePanelTimestampEl
     ) return;
-    if (cliUpdatePanelEl) {
-      cliUpdatePanelEl.setAttribute('aria-busy', cliState.phase === 'running' ? 'true' : 'false');
-    }
+    if (cliUpdatePanelEl) cliUpdatePanelEl.setAttribute('aria-busy', cliState.phase === 'running' ? 'true' : 'false');
     renderCliUpdatePanelContent(
       {
         statusEl: cliUpdatePanelStatusEl,
@@ -436,9 +476,11 @@ export function createTabBarCliUpdatePanel(options: CreateTabBarCliUpdatePanelOp
         progressLabelEl: cliUpdatePanelProgressLabelEl,
         timestampEl: cliUpdatePanelTimestampEl,
         listEl: cliUpdatePanelListEl,
+        updateAllBtnEl: cliUpdatePanelUpdateAllBtnEl,
         cancelBtnEl: cliUpdatePanelCancelBtnEl,
       },
       cliState,
+      onRunProviderUpdate,
     );
   }
 

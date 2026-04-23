@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
-import { updateProviders, type ProviderUpdaterRunner, type ProviderUpdaterTarget } from './provider-updater';
+import { updateProvider, updateProviders, type ProviderUpdaterRunner, type ProviderUpdaterTarget } from './provider-updater';
 import { runProviderUpdate } from './provider-updater-update-helpers';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {
@@ -108,10 +108,7 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.37.1' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.37.1' });
 
@@ -135,10 +132,7 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.2' });
 
@@ -165,10 +159,7 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 1, stderr: 'network error' });
 
@@ -248,10 +239,7 @@ describe('updateProviders', () => {
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'codex'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
 
@@ -268,16 +256,61 @@ describe('updateProviders', () => {
     expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask codex');
   });
 
+  it('detects Claude Code installed from Homebrew latest cask before falling back to self update', async () => {
+    const runner = new FakeRunner();
+    const claudeBinary = '/opt/homebrew/Caskroom/claude-code@latest/2.1.109/claude';
+    runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: 'Claude Code 2.1.109' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'claude-code@latest'], {
+      code: 0,
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
+    });
+    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], { code: 0, stdout: '2.1.109' });
+
+    const summary = await updateProviders(
+      [createTarget('claude', 'Claude Code', claudeBinary)],
+      { runner, now: (() => 4_565) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('claude');
+    expect(summary.results[0].source).toBe('brew-cask');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].updateAttempted).toBe(false);
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask claude-code@latest');
+    expect(runner.calls.some((call) => (
+      call.command === claudeBinary && call.args.join(' ') === 'update'
+    ))).toBe(false);
+  });
+
+  it('detects Codex installed from the Homebrew formula and uses formula update strategy', async () => {
+    const runner = new FakeRunner();
+    const codexBinary = '/opt/homebrew/Cellar/codex/0.46.0/bin/codex';
+    runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.46.0' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'codex'], {
+      code: 0,
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
+    });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.46.0' });
+
+    const summary = await updateProviders(
+      [createTarget('codex', 'Codex CLI', codexBinary)],
+      { runner, now: (() => 4_566) as () => number },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('codex');
+    expect(summary.results[0].source).toBe('brew-formula');
+    expect(summary.results[0].status).toBe('up_to_date');
+    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --formula codex');
+  });
+
   it('marks brew cask providers as sync_pending when npm upstream is newer than Homebrew metadata', async () => {
     const runner = new FakeRunner();
     const codexBinary = '/opt/homebrew/Caskroom/codex/0.121.0/codex';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'codex'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.122.0' });
 
@@ -333,13 +366,7 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.0' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
       code: 1,
-      stdout: JSON.stringify({
-        formulae: [{
-          name: 'gemini-cli',
-          installed_versions: ['0.38.0'],
-          current_version: '0.38.1',
-        }],
-      }),
+      stdout: JSON.stringify({ formulae: [{ name: 'gemini-cli', installed_versions: ['0.38.0'], current_version: '0.38.1' }] }),
     });
     runner.enqueue('brew', ['upgrade', 'gemini-cli'], { code: 0, stdout: 'upgraded' });
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
@@ -366,10 +393,7 @@ describe('updateProviders', () => {
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [],
-        casks: [],
-      }),
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
     runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], { code: 0, stdout: '1.0.30' });
 
@@ -545,9 +569,7 @@ describe('updateProviders', () => {
     });
     runner.enqueue('brew', ['info', '--json=v2', 'gemini-cli'], {
       code: 0,
-      stdout: JSON.stringify({
-        formulae: [{ versions: { stable: '0.38.1' } }],
-      }),
+      stdout: JSON.stringify({ formulae: [{ versions: { stable: '0.38.1' } }] }),
     });
     runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
 
@@ -573,9 +595,7 @@ describe('updateProviders', () => {
     });
     runner.enqueue('brew', ['info', '--json=v2', '--cask', 'codex'], {
       code: 0,
-      stdout: JSON.stringify({
-        casks: [{ version: '0.122.0' }],
-      }),
+      stdout: JSON.stringify({ casks: [{ version: '0.122.0' }] }),
     });
     runner.enqueue('brew', ['upgrade', '--cask', 'codex'], { code: 0, stdout: 'upgraded' });
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.122.0' });
@@ -598,12 +618,7 @@ describe('updateProviders', () => {
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
       code: 1,
-      stdout: JSON.stringify({
-        casks: [{
-          name: ['copilot', 'copilot-cli'],
-          current_version: '1.0.31',
-        }],
-      }),
+      stdout: JSON.stringify({ casks: [{ name: ['copilot', 'copilot-cli'], current_version: '1.0.31' }] }),
     });
     runner.enqueue('brew', ['upgrade', '--cask', 'copilot-cli'], { code: 0, stdout: 'upgraded' });
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.31.' });
@@ -754,6 +769,38 @@ describe('updateProviders', () => {
       'provider_finished',
       'finished',
     ]);
+  });
+
+  it('updates a single selected provider without running every provider', async () => {
+    const runner = new FakeRunner();
+    const progressEvents: Array<{ phase: string; totalProviders: number; providerId?: ProviderId }> = [];
+    const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.38.1/bin/gemini';
+    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
+    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
+      code: 0,
+      stdout: JSON.stringify({ formulae: [], casks: [] }),
+    });
+    runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
+
+    const summary = await updateProvider(
+      createTarget('gemini', 'Gemini CLI', geminiBinary),
+      {
+        runner,
+        now: (() => 5_125) as () => number,
+        onProgress: (event) => {
+          progressEvents.push({
+            phase: event.phase,
+            totalProviders: event.totalProviders,
+            providerId: event.providerId,
+          });
+        },
+      },
+    );
+
+    expect(summary.results).toHaveLength(1);
+    expect(summary.results[0].providerId).toBe('gemini');
+    expect(progressEvents[0]).toMatchObject({ phase: 'started', totalProviders: 1 });
+    expect(progressEvents.some((event) => event.providerId === 'gemini')).toBe(true);
   });
 
   it('emits running stage messages for the active provider while update checks execute', async () => {

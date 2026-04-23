@@ -21,6 +21,25 @@ import {
 
 const CHECK_TIMEOUT_MS = 20_000;
 
+interface ProviderUpdateSourceResolution {
+  source: ProviderUpdateSource;
+  packageToken?: string;
+}
+
+function toPackageTokens(tokenOrTokens?: string | string[]): string[] {
+  if (!tokenOrTokens) return [];
+  return Array.isArray(tokenOrTokens) ? tokenOrTokens : [tokenOrTokens];
+}
+
+function findPackageTokenInPath(
+  normalizedPath: string,
+  rootSegment: 'Caskroom' | 'Cellar',
+  tokenOrTokens?: string | string[],
+): string | undefined {
+  return toPackageTokens(tokenOrTokens)
+    .find((token) => normalizedPath.includes(`/${rootSegment}/${token}/`));
+}
+
 export function resolveRealPath(binaryPath: string): string {
   try {
     return fs.realpathSync(binaryPath);
@@ -33,31 +52,33 @@ export function detectUpdateSource(
   providerId: ProviderId,
   spec: ProviderUpdateSpec,
   resolvedBinaryPath: string,
-): ProviderUpdateSource {
+): ProviderUpdateSourceResolution {
   const normalized = resolvedBinaryPath.replace(/\\/g, '/');
   const npmSegment = spec.npmPackage ? `/node_modules/${spec.npmPackage.replace(/\//g, '/')}/` : '';
-  if (spec.brewCask && normalized.includes(`/Caskroom/${spec.brewCask}/`)) {
-    return 'brew-cask';
+  const brewCaskToken = findPackageTokenInPath(normalized, 'Caskroom', spec.brewCask);
+  if (brewCaskToken) {
+    return { source: 'brew-cask', packageToken: brewCaskToken };
   }
-  if (spec.brewFormula && normalized.includes(`/Cellar/${spec.brewFormula}/`)) {
-    return 'brew-formula';
+  const brewFormulaToken = findPackageTokenInPath(normalized, 'Cellar', spec.brewFormula);
+  if (brewFormulaToken) {
+    return { source: 'brew-formula', packageToken: brewFormulaToken };
   }
   if (npmSegment && normalized.includes(npmSegment)) {
-    return 'npm';
+    return { source: 'npm' };
   }
   if (providerId === 'codex' && normalized.includes('/node_modules/@openai/codex/')) {
-    return 'npm';
+    return { source: 'npm' };
   }
   if (providerId === 'gemini' && normalized.includes('/node_modules/@google/gemini-cli/')) {
-    return 'npm';
+    return { source: 'npm' };
   }
   if (providerId === 'qwen' && normalized.includes('/node_modules/@qwen-code/qwen-code/')) {
-    return 'npm';
+    return { source: 'npm' };
   }
   if (spec.selfUpdateArgs) {
-    return 'self';
+    return { source: 'self' };
   }
-  return 'unknown';
+  return { source: 'unknown' };
 }
 
 export async function readBinaryVersion(
@@ -76,13 +97,25 @@ export async function runProviderUpdate(input: {
   providerName: string;
   binaryPath: string;
   source: ProviderUpdateSource;
+  sourcePackageToken?: string;
   spec: ProviderUpdateSpec;
   beforeVersion?: string;
   runner: ProviderUpdaterRunner;
   signal?: AbortSignal;
   onStage?: (message: string) => void;
 }): Promise<Omit<ProviderUpdateResult, 'durationMs'>> {
-  const { providerId, providerName, binaryPath, source, spec, beforeVersion, runner, signal, onStage } = input;
+  const {
+    providerId,
+    providerName,
+    binaryPath,
+    source,
+    sourcePackageToken,
+    spec,
+    beforeVersion,
+    runner,
+    signal,
+    onStage,
+  } = input;
 
   if (signal?.aborted) {
     return buildCancelledResult({
@@ -106,6 +139,7 @@ export async function runProviderUpdate(input: {
 
   const checkResult = await resolveProviderUpdateCheck({
     source,
+    sourcePackageToken,
     spec,
     beforeVersion,
     runner,
@@ -143,7 +177,7 @@ export async function runProviderUpdate(input: {
     return noUpdateResult;
   }
 
-  const updateCommandInput = resolveUpdateCommand(binaryPath, source, spec);
+  const updateCommandInput = resolveUpdateCommand(binaryPath, source, spec, sourcePackageToken);
   if (!updateCommandInput) {
     onStage?.('No update command configured for this source.');
     return buildMissingUpdateCommandResult({

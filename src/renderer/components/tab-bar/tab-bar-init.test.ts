@@ -172,6 +172,7 @@ vi.mock('../surface-services/update-center.js', () => ({
   cancelCliProviderUpdates: vi.fn(),
   getUpdateCenterState: vi.fn(() => updateCenterSnapshot),
   onUpdateCenterChange: vi.fn(() => () => undefined),
+  runCliProviderUpdate: vi.fn(async () => undefined),
   runCliProviderUpdates: vi.fn(async () => undefined),
   initUpdateCenter: vi.fn(),
 }));

@@ -7,6 +7,7 @@ import {
   getUpdateCenterState,
   initUpdateCenter,
   runCliProviderUpdates,
+  runCliProviderUpdate,
 } from './update-center';
 
 type UpdateCallback<T> = (payload: T) => void;
@@ -30,6 +31,7 @@ interface MockApi {
   };
   provider: {
     updateAll: ReturnType<typeof vi.fn>;
+    updateProvider: ReturnType<typeof vi.fn>;
     cancelUpdateAll: ReturnType<typeof vi.fn>;
     onUpdateProgress(cb: UpdateCallback<ProviderUpdateProgressEvent>): () => void;
   };
@@ -40,6 +42,7 @@ interface MockApi {
   emitProviderProgress(event: ProviderUpdateProgressEvent): void;
   checkNow: ReturnType<typeof vi.fn>;
   updateAll: ReturnType<typeof vi.fn>;
+  updateProvider: ReturnType<typeof vi.fn>;
   cancelUpdateAll: ReturnType<typeof vi.fn>;
 }
 
@@ -54,6 +57,7 @@ function buildSummary(results: ProviderUpdateResult[]): ProviderUpdateSummary {
 function createMockApi(overrides?: {
   checkNow?: () => Promise<void>;
   updateAll?: () => Promise<ProviderUpdateSummary>;
+  updateProvider?: (providerId: ProviderId) => Promise<ProviderUpdateSummary>;
   cancelUpdateAll?: () => Promise<{ cancelled: boolean }>;
 }): MockApi {
   let onAvailable: UpdateCallback<{ version: string }> | null = null;
@@ -64,6 +68,7 @@ function createMockApi(overrides?: {
 
   const checkNow = vi.fn(overrides?.checkNow ?? (async () => {}));
   const updateAll = vi.fn(overrides?.updateAll ?? (async () => buildSummary([])));
+  const updateProvider = vi.fn(overrides?.updateProvider ?? (async () => buildSummary([])));
   const cancelUpdateAll = vi.fn(overrides?.cancelUpdateAll ?? (async () => ({ cancelled: true })));
 
   const api = {
@@ -97,6 +102,7 @@ function createMockApi(overrides?: {
     },
     provider: {
       updateAll,
+      updateProvider,
       cancelUpdateAll,
       onUpdateProgress: (cb: UpdateCallback<ProviderUpdateProgressEvent>) => {
         onProviderProgress = cb;
@@ -126,6 +132,7 @@ function createMockApi(overrides?: {
     },
     checkNow,
     updateAll,
+    updateProvider,
     cancelUpdateAll,
   };
 }
@@ -277,6 +284,59 @@ describe('update center cli updates', () => {
     expect(getUpdateCenterState().cli.phase).toBe('completed');
     expect(getUpdateCenterState().cli.lastSummary?.results[0].providerId).toBe('claude');
     expect(mockApi.updateAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs one selected provider without invoking updateAll and tracks provider stage percent', async () => {
+    let resolveSummary: SummaryResolver | null = null;
+    const mockApi = createMockApi({
+      updateProvider: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+    });
+    initUpdateCenter(mockApi as any);
+
+    const updatePromise = runCliProviderUpdate('gemini');
+    expect(getUpdateCenterState().cli.phase).toBe('running');
+    expect(mockApi.updateProvider).toHaveBeenCalledWith('gemini');
+    expect(mockApi.updateAll).not.toHaveBeenCalled();
+
+    mockApi.emitProviderProgress({
+      phase: 'started',
+      startedAt: '2026-04-16T09:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providers: [
+        { providerId: 'gemini', providerName: 'Gemini CLI' },
+      ],
+    });
+    mockApi.emitProviderProgress({
+      phase: 'provider_started',
+      startedAt: '2026-04-16T09:00:00.000Z',
+      totalProviders: 1,
+      completedProviders: 0,
+      providerId: 'gemini',
+      providerName: 'Gemini CLI',
+      providerMessage: 'Applying update command…',
+      providerProgressPercent: 75,
+    });
+
+    const cli = getUpdateCenterState().cli;
+    expect(cli.totalProviders).toBe(1);
+    expect(cli.providers[0].providerId).toBe('gemini');
+    expect(cli.providers[0].progressPercent).toBe(75);
+
+    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([
+      {
+        providerId: 'gemini',
+        providerName: 'Gemini CLI',
+        source: 'brew-formula',
+        status: 'up_to_date',
+        checked: true,
+        updateAttempted: false,
+        message: 'Gemini CLI is already up to date.',
+        durationMs: 50,
+      },
+    ]));
+    await updatePromise;
+    expect(getUpdateCenterState().cli.phase).toBe('completed');
   });
 
   it('returns the same in-flight promise when updates are already running', async () => {

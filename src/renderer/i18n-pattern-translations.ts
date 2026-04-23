@@ -11,6 +11,7 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
       pattern: /^Session (\d+)$/u,
       replace: (match) => `Oturum ${match[1]}`,
     },
+    { pattern: /^Shortcuts:\s*(.+)$/u, replace: (match) => `Kısayollar: ${translate(match[1])}` },
     {
       pattern: /^What's New in v(.+)$/u,
       replace: (match) => `v${match[1]} sürümündeki yenilikler`,

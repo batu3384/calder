@@ -22,6 +22,12 @@ describe('tab bar update center contract', () => {
     expect(updateCenterSource).toContain('Last run: No updates yet');
   });
 
+  it('opens the update panel from the toolbar without starting updates immediately', () => {
+    expect(tabBarSource).toContain('onOpenUpdatePanel');
+    expect(tabBarSource).toContain('toggleCliUpdatePanel(!isCliUpdatePanelVisible())');
+    expect(tabBarSource).not.toContain('onToggleUpdatePanelAndRun');
+  });
+
   it('auto-opens the update panel when a new update run starts', () => {
     expect(tabBarSource).toContain("snapshot.cli.phase === 'running' && lastCliPhase !== 'running'");
     expect(tabBarSource).toContain('!isCliUpdatePanelVisible()');
@@ -44,6 +50,14 @@ describe('tab bar update center contract', () => {
   it('renders active provider stage details while updates are running', () => {
     expect(updateCenterSource).toContain("row.classList.toggle('is-active'");
     expect(updateCenterSource).toContain("provider.status === 'running' && provider.message");
+  });
+
+  it('renders explicit selected-provider and update-all actions inside the panel', () => {
+    expect(updateCenterSource).toContain('cli-update-panel-actions');
+    expect(updateCenterSource).toContain('Update all');
+    expect(updateCenterSource).toContain('data-provider-id');
+    expect(updateCenterSource).toContain('onRunProviderUpdate');
+    expect(updateCenterSource).toContain('onRunAllUpdates');
   });
 
   it('announces update status changes for assistive technologies', () => {
