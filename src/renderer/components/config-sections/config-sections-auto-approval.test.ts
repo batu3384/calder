@@ -185,6 +185,12 @@ describe('config-sections-auto-approval helpers', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(body.classList.contains('hidden')).toBe(true);
     expect(body.children).toHaveLength(5);
+    expect(body.children[0].innerHTML).toContain('Auto-runs: Nothing.');
+    expect(body.children[0].innerHTML).toContain('Still asks: Every edit, command, and tool run.');
+    expect(body.children[3].innerHTML).toContain('Auto-runs: Non-destructive operations.');
+    expect(body.children[3].innerHTML).toContain('Still asks: Destructive actions.');
+    expect(body.children[4].innerHTML).toContain('Auto-runs: Everything, including destructive actions.');
+    expect(body.children[4].innerHTML).toContain('Still asks: Nothing by policy.');
 
     await toggle.dispatch('click');
     expect(toggle.getAttribute('aria-expanded')).toBe('true');

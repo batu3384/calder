@@ -1,3 +1,10 @@
+import {
+  deriveQuotaConfidence,
+  formatQuotaConfidenceLabel,
+  inferGatewayBackendForModel,
+  type QuotaConfidence,
+} from '../../shared/provider-route';
+
 export type StatuslineProvider = 'anthropic' | 'zai' | 'minimax' | 'qwen';
 export type ProviderQuotaStatus = 'syncing' | 'unknown' | 'unsupported';
 export type QuotaFreshness = 'live' | 'syncing' | 'stale';
@@ -36,11 +43,7 @@ const PROVIDER_LABELS: Record<StatuslineProvider, string> = {
 };
 
 export function inferStatuslineProvider(modelDisplayName: string): StatuslineProvider {
-  const normalized = modelDisplayName.trim().toLowerCase();
-  if (normalized.startsWith('glm-')) return 'zai';
-  if (normalized.startsWith('minimax-')) return 'minimax';
-  if (normalized.startsWith('qwen')) return 'qwen';
-  return 'anthropic';
+  return inferGatewayBackendForModel(modelDisplayName);
 }
 
 export function fallbackQuotaStatus(provider: StatuslineProvider): ProviderQuotaStatus {
@@ -62,13 +65,25 @@ export function deriveQuotaFreshness(
   return nowMs - snapshot.updatedAt > staleAfterMs ? 'stale' : 'live';
 }
 
-function titleCase(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+export function deriveProviderQuotaConfidence(
+  snapshot: ProviderQuotaSnapshot | null,
+  nowMs = Date.now(),
+  staleAfterMs = DEFAULT_STATUSLINE_STALE_MS,
+): QuotaConfidence {
+  return deriveQuotaConfidence(
+    snapshot && {
+      status: snapshot.status,
+      updatedAt: snapshot.updatedAt,
+      hasMeasuredValues: Boolean(snapshot.fiveHour || snapshot.weekly),
+    },
+    nowMs,
+    staleAfterMs,
+  );
 }
 
 export function formatHybridStatusLine(view: HybridStatuslineView): string {
   const quotaStatus = view.quota?.status ?? fallbackQuotaStatus(view.provider);
-  const freshness = titleCase(deriveQuotaFreshness(view.quota, view.nowMs));
+  const quotaConfidence = formatQuotaConfidenceLabel(deriveProviderQuotaConfidence(view.quota, view.nowMs));
   const contextLabel = view.contextPercent == null ? '--' : String(view.contextPercent);
   const costLabel = view.costLabel?.trim() || '--';
   const weeklyLabel = view.quota?.weeklyLabel?.trim() || 'Week';
@@ -89,7 +104,7 @@ export function formatHybridStatusLine(view: HybridStatuslineView): string {
     `Ctx ${contextLabel}%`,
     `Cost ${costLabel}`,
     ...quotaParts,
-    freshness,
+    quotaConfidence,
   ].join('  ');
   return `${line1}\n${line2}`;
 }

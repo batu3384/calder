@@ -139,7 +139,9 @@ describe('getConfigProviderId', () => {
     expect(summary.session).toBe('Use Project / Global Default');
     expect(summary.effectiveSource).toBe('Global default');
     expect(summary.effectiveExplanation).toBe('Project and Session follow higher scope, so Global setting applies.');
-    expect(summary.effectiveBehavior).toBe('Auto-approves file edits only.');
+    expect(summary.effectiveBehavior).toBe('Auto-runs file edits; asks before commands and tools.');
+    expect(summary.effectiveAutoRuns).toBe('File edits.');
+    expect(summary.effectiveStillAsks).toBe('Commands, tools, and destructive actions.');
   });
 
   it('describes effective scope when session override is active', async () => {
@@ -159,7 +161,9 @@ describe('getConfigProviderId', () => {
     expect(summary.session).toBe('Edit + Safe Tools');
     expect(summary.effectiveSource).toBe('Session override');
     expect(summary.effectiveExplanation).toBe('Session override is active, so Session setting applies.');
-    expect(summary.effectiveBehavior).toBe('Auto-approves file edits and safe read-only commands.');
+    expect(summary.effectiveBehavior).toBe('Auto-runs file edits and safe read-only commands.');
+    expect(summary.effectiveAutoRuns).toBe('File edits and safe read-only commands.');
+    expect(summary.effectiveStillAsks).toBe('Write, risky, or destructive commands.');
   });
 
   it('shows fallback explanation when nothing is explicitly configured', async () => {
@@ -176,7 +180,9 @@ describe('getConfigProviderId', () => {
 
     expect(summary.effectiveSource).toBe('Fallback default');
     expect(summary.effectiveExplanation).toBe('No explicit setting found; fallback Off applies.');
-    expect(summary.effectiveBehavior).toBe('Always asks for approval before actions.');
+    expect(summary.effectiveBehavior).toBe('Auto-runs nothing; asks before every action.');
+    expect(summary.effectiveAutoRuns).toBe('Nothing.');
+    expect(summary.effectiveStillAsks).toBe('Every edit, command, and tool run.');
   });
 
   it('describes full_auto behavior clearly', async () => {
@@ -192,7 +198,9 @@ describe('getConfigProviderId', () => {
     });
 
     expect(summary.global).toBe('Full Auto');
-    expect(summary.effectiveBehavior).toBe('Auto-approves non-destructive operations; destructive actions still require manual approval.');
+    expect(summary.effectiveBehavior).toBe('Auto-runs non-destructive operations; asks before destructive actions.');
+    expect(summary.effectiveAutoRuns).toBe('Non-destructive operations.');
+    expect(summary.effectiveStillAsks).toBe('Destructive actions.');
   });
 
   it('describes full_auto_unsafe behavior clearly', async () => {
@@ -208,7 +216,9 @@ describe('getConfigProviderId', () => {
     });
 
     expect(summary.global).toBe('Full Auto (Unsafe)');
-    expect(summary.effectiveBehavior).toBe('Auto-approves every operation, including destructive actions.');
+    expect(summary.effectiveBehavior).toBe('Auto-runs every operation, including destructive actions.');
+    expect(summary.effectiveAutoRuns).toBe('Everything, including destructive actions.');
+    expect(summary.effectiveStillAsks).toBe('Nothing by policy.');
   });
 
   it('renders concise Turkish metadata summaries for right-rail skills and commands', async () => {

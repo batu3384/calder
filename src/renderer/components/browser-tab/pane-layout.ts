@@ -9,6 +9,7 @@ interface BrowserPaneChromeElements {
   chrome: HTMLDivElement;
   chromeHint: HTMLDivElement;
   statusBadge: HTMLSpanElement;
+  trustZoneBadge: HTMLSpanElement;
 }
 
 interface BrowserToolbarStructure {
@@ -52,6 +53,7 @@ export interface BrowserTabPaneLayoutElements {
   el: HTMLDivElement;
   chromeHint: HTMLDivElement;
   statusBadge: HTMLSpanElement;
+  trustZoneBadge: HTMLSpanElement;
   toolbarAddressShell: HTMLDivElement;
   captureCluster: BrowserCaptureToolbarCluster;
   backBtn: HTMLButtonElement;
@@ -94,7 +96,16 @@ function createBrowserPaneChrome(): BrowserPaneChromeElements {
   statusBadge.className = 'browser-pane-status';
   statusBadge.textContent = 'Ready';
 
+  const trustZoneBadge = document.createElement('span');
+  trustZoneBadge.className = 'browser-trust-zone-badge';
+  trustZoneBadge.dataset.zone = 'unknown';
+  trustZoneBadge.dataset.access = 'unknown';
+  trustZoneBadge.textContent = 'Unknown';
+  trustZoneBadge.title = 'Unknown browser surface. Runtime permissions are unchanged.';
+  trustZoneBadge.setAttribute('aria-label', 'Unknown trust zone: unknown');
+
   chromeMeta.appendChild(statusBadge);
+  chromeMeta.appendChild(trustZoneBadge);
   chromeMeta.appendChild(chromeHint);
   chrome.appendChild(chromeLabel);
   chrome.appendChild(chromeMeta);
@@ -103,6 +114,7 @@ function createBrowserPaneChrome(): BrowserPaneChromeElements {
     chrome,
     chromeHint,
     statusBadge,
+    trustZoneBadge,
   };
 }
 
@@ -313,7 +325,7 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   el.className = 'browser-tab-pane hidden';
   el.dataset.sessionId = sessionId;
 
-  const { chrome, chromeHint, statusBadge } = createBrowserPaneChrome();
+  const { chrome, chromeHint, statusBadge, trustZoneBadge } = createBrowserPaneChrome();
   el.appendChild(chrome);
   const nav = createBrowserNavControls();
   const address = createBrowserAddressControls(url);
@@ -333,6 +345,7 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
     el,
     chromeHint,
     statusBadge,
+    trustZoneBadge,
     toolbarAddressShell,
     captureCluster,
     backBtn: nav.backBtn,

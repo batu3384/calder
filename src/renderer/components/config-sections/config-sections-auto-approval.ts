@@ -7,6 +7,7 @@ import type {
 import {
   autoApprovalModeBehavior,
   autoApprovalModeLabel,
+  autoApprovalModePlainLanguageDetails,
   autoApprovalSourceLabel,
   localizedText,
   projectInheritLabel,
@@ -61,6 +62,8 @@ export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoAp
     );
   }
 
+  const effectiveDetails = autoApprovalModePlainLanguageDetails(autoApproval.effectiveMode);
+
   return {
     global: autoApprovalModeLabel(autoApproval.globalMode),
     project: autoApproval.projectMode
@@ -72,6 +75,8 @@ export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoAp
     effectiveSource: autoApprovalSourceLabel(autoApproval.policySource),
     effectiveExplanation,
     effectiveBehavior: autoApprovalModeBehavior(autoApproval.effectiveMode),
+    effectiveAutoRuns: effectiveDetails.autoRuns,
+    effectiveStillAsks: effectiveDetails.stillAsks,
   };
 }
 
@@ -125,6 +130,8 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const effectiveModeLabel = localizedText('Effective Mode', 'Etkin Mod');
   const effectiveSourceLabel = localizedText('Effective Source', 'Etkin Kaynak');
   const currentBehaviorLabel = localizedText('Current Behavior', 'Mevcut Davranış');
+  const autoRunsLabel = localizedText('Auto-runs', 'Otomatik çalışır');
+  const stillAsksLabel = localizedText('Still asks', 'Yine sorar');
   const providerLabelText = localizedText('Provider', 'Sağlayıcı');
   const policyStackLabel = localizedText('Policy Stack', 'Politika Katmanı');
   const globalPolicyLabel = localizedText('Global Default', 'Global Varsayılan');
@@ -166,6 +173,14 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
       <div class="auto-approval-meta-inline-item">
         <span class="auto-approval-meta-inline-label">${esc(currentBehaviorLabel)}</span>
         <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveBehavior)}</span>
+      </div>
+      <div class="auto-approval-meta-inline-item">
+        <span class="auto-approval-meta-inline-label">${esc(autoRunsLabel)}</span>
+        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveAutoRuns)}</span>
+      </div>
+      <div class="auto-approval-meta-inline-item">
+        <span class="auto-approval-meta-inline-label">${esc(stillAsksLabel)}</span>
+        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveStillAsks)}</span>
       </div>
     </div>
   `;

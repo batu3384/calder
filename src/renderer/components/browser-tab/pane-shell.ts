@@ -7,6 +7,7 @@ import { createBrowserNewTabUi } from './new-tab-ui.js';
 import {
   resolveBrowserPartitionForSession,
 } from './pane-helpers.js';
+import { syncBrowserTrustZoneBadge } from './trust-zone.js';
 import type { BrowserTabInstance, WebviewElement } from './types.js';
 
 interface BrowserTabShellArtifactsParams {
@@ -15,6 +16,7 @@ interface BrowserTabShellArtifactsParams {
   el: HTMLDivElement;
   viewportContainer: HTMLDivElement;
   statusBadge: HTMLSpanElement;
+  trustZoneBadge: HTMLSpanElement;
   chromeHint: HTMLDivElement;
   goBtn: HTMLButtonElement;
   isLocalSurfaceUrl(url: string): boolean;
@@ -38,17 +40,20 @@ export interface BrowserTabShellArtifacts {
     setLocalTargetsMeta(value: string): void;
   };
   syncSurfaceVisibility(showEmptySurface: boolean): void;
-  syncBrowserStatus(state: BrowserPageState): void;
+  syncBrowserStatus(state: BrowserPageState, currentUrl?: string): void;
 }
 
 export function syncBrowserStatusUi(
   statusBadge: HTMLSpanElement,
+  trustZoneBadge: HTMLSpanElement,
   chromeHint: HTMLDivElement,
   goBtn: HTMLButtonElement,
   state: BrowserPageState,
+  currentUrl?: string,
 ): void {
   statusBadge.dataset.state = state;
   statusBadge.textContent = describeBrowserPageState(state);
+  syncBrowserTrustZoneBadge(trustZoneBadge, currentUrl);
   chromeHint.textContent = state === 'loading'
     ? 'Waiting for page'
     : state === 'offline'
@@ -84,6 +89,7 @@ export function createBrowserTabShellArtifacts(
     el,
     viewportContainer,
     statusBadge,
+    trustZoneBadge,
     chromeHint,
     goBtn,
     isLocalSurfaceUrl,
@@ -101,8 +107,8 @@ export function createBrowserTabShellArtifacts(
     refreshTargetsBtn,
   } = createBrowserNewTabUi(url === 'about:blank' ? 'default' : 'hidden');
 
-  const syncBrowserStatus = (state: BrowserPageState): void => {
-    syncBrowserStatusUi(statusBadge, chromeHint, goBtn, state);
+  const syncBrowserStatus = (state: BrowserPageState, currentUrl?: string): void => {
+    syncBrowserStatusUi(statusBadge, trustZoneBadge, chromeHint, goBtn, state, currentUrl);
   };
 
   const webview = document.createElement('webview') as unknown as WebviewElement;

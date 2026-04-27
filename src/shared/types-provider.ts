@@ -5,6 +5,18 @@
 export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 export type UiLanguage = 'en' | 'tr';
+export type GatewayBackendId = 'anthropic' | 'zai' | 'minimax' | 'qwen';
+export type ProviderRouteKind = 'native-cli' | 'gateway';
+export type ProviderRouteConfidence = 'verified' | 'estimated' | 'unavailable';
+export type QuotaConfidence = 'verified' | 'estimated' | 'stale' | 'unavailable';
+
+export interface ProviderGatewayRoute {
+  nativeProviderId: ProviderId;
+  backendProviderId: GatewayBackendId;
+  model: string;
+  routeKind: ProviderRouteKind;
+  confidence: ProviderRouteConfidence;
+}
 
 export interface CliProviderCapabilities {
   sessionResume: boolean;

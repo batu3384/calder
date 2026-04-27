@@ -99,6 +99,7 @@ export interface BrowserTabInstance {
   webview: WebviewElement;
   webviewReady: boolean;
   statusBadge: HTMLSpanElement;
+  trustZoneBadge: HTMLSpanElement;
   toolbarHint: HTMLDivElement;
   committedUrl: string;
   pendingNavigationUrl?: string;

@@ -25,6 +25,11 @@ export const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label:
   { value: 'full_auto_unsafe', label: AUTO_APPROVAL_MODE_LABELS.full_auto_unsafe },
 ];
 
+export type AutoApprovalModePlainLanguageDetails = {
+  autoRuns: string;
+  stillAsks: string;
+};
+
 function isTurkishUiLanguage(): boolean {
   return appState.preferences.language === 'tr';
 }
@@ -74,48 +79,69 @@ export function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
   const tr = isTurkishUiLanguage();
   if (mode === 'off') {
     return tr
-      ? 'Her işlemden önce onay ister.'
-      : 'Always asks for approval before actions.';
+      ? 'Hiçbir şeyi otomatik çalıştırmaz; her işlemde onay ister.'
+      : 'Auto-runs nothing; asks before every action.';
   }
   if (mode === 'edit_only') {
     return tr
-      ? 'Yalnızca dosya düzenlemelerini otomatik onaylar.'
-      : 'Auto-approves file edits only.';
+      ? 'Dosya düzenlemelerini otomatik çalıştırır; komutlar ve araçlar için sorar.'
+      : 'Auto-runs file edits; asks before commands and tools.';
   }
   if (mode === 'edit_plus_safe_tools') {
     return tr
-      ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
-      : 'Auto-approves file edits and safe read-only commands.';
+      ? 'Dosya düzenlemelerini ve güvenli salt-okunur komutları otomatik çalıştırır.'
+      : 'Auto-runs file edits and safe read-only commands.';
   }
   if (mode === 'full_auto') {
     return tr
-      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemler manuel onay gerektirir.'
-      : 'Auto-approves non-destructive operations; destructive actions still require manual approval.';
+      ? 'Yıkıcı olmayan işlemleri otomatik çalıştırır; yıkıcı işlemler için sorar.'
+      : 'Auto-runs non-destructive operations; asks before destructive actions.';
   }
   return tr
-    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation, including destructive actions.';
+    ? 'Yıkıcı işlemler dahil her şeyi otomatik çalıştırır.'
+    : 'Auto-runs every operation, including destructive actions.';
+}
+
+export function autoApprovalModePlainLanguageDetails(mode: AutoApprovalMode): AutoApprovalModePlainLanguageDetails {
+  const tr = isTurkishUiLanguage();
+  if (mode === 'off') {
+    return {
+      autoRuns: tr ? 'Hiçbir şey.' : 'Nothing.',
+      stillAsks: tr ? 'Her düzenleme, komut ve araç çalıştırma.' : 'Every edit, command, and tool run.',
+    };
+  }
+  if (mode === 'edit_only') {
+    return {
+      autoRuns: tr ? 'Dosya düzenlemeleri.' : 'File edits.',
+      stillAsks: tr ? 'Komutlar, araçlar ve yıkıcı işlemler.' : 'Commands, tools, and destructive actions.',
+    };
+  }
+  if (mode === 'edit_plus_safe_tools') {
+    return {
+      autoRuns: tr
+        ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutlar.'
+        : 'File edits and safe read-only commands.',
+      stillAsks: tr
+        ? 'Yazma yapan, riskli veya yıkıcı komutlar.'
+        : 'Write, risky, or destructive commands.',
+    };
+  }
+  if (mode === 'full_auto') {
+    return {
+      autoRuns: tr ? 'Yıkıcı olmayan işlemler.' : 'Non-destructive operations.',
+      stillAsks: tr ? 'Yıkıcı işlemler.' : 'Destructive actions.',
+    };
+  }
+  return {
+    autoRuns: tr ? 'Yıkıcı işlemler dahil her şey.' : 'Everything, including destructive actions.',
+    stillAsks: tr ? 'Politika gereği hiçbir şey.' : 'Nothing by policy.',
+  };
 }
 
 export function autoApprovalModeGuideSummary(mode: AutoApprovalMode): string {
-  const tr = isTurkishUiLanguage();
-  if (mode === 'off') {
-    return tr ? 'İşlemleri onaylamadan önce sorar.' : 'Asks before approving operations.';
-  }
-  if (mode === 'edit_only') {
-    return tr ? 'Dosya düzenlemelerini otomatik onaylar.' : 'Auto-approves file edits.';
-  }
-  if (mode === 'edit_plus_safe_tools') {
-    return tr
-      ? 'Düzenlemeleri ve güvenli salt-okunur komutları otomatik onaylar.'
-      : 'Auto-approves edits and read-only safe commands.';
-  }
-  if (mode === 'full_auto') {
-    return tr
-      ? 'Yıkıcı olmayan işlemleri otomatik onaylar; yıkıcı işlemlerde sorar.'
-      : 'Auto-approves non-destructive operations; asks before destructive actions.';
-  }
-  return tr
-    ? 'Yıkıcı işlemler dahil tüm işlemleri otomatik onaylar.'
-    : 'Auto-approves every operation, including destructive actions.';
+  const details = autoApprovalModePlainLanguageDetails(mode);
+  return localizedText(
+    `Auto-runs: ${details.autoRuns} Still asks: ${details.stillAsks}`,
+    `Otomatik çalıştırır: ${details.autoRuns} Yine sorar: ${details.stillAsks}`,
+  );
 }

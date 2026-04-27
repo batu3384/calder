@@ -130,6 +130,7 @@ function buildLayout() {
     el: makeElement(),
     chromeHint: makeElement(),
     statusBadge: makeElement(),
+    trustZoneBadge: makeElement(),
     toolbarAddressShell: makeElement(),
     captureCluster: { element: makeElement(), label: makeElement() },
     backBtn: makeElement(),

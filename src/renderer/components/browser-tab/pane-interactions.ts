@@ -81,7 +81,7 @@ export interface BrowserNavigationInteractionBindingParams {
   reloadBtn: HTMLButtonElement;
   homeBtn: HTMLButtonElement;
   goBtn: HTMLButtonElement;
-  syncBrowserStatus(state: BrowserPageState): void;
+  syncBrowserStatus(state: BrowserPageState, currentUrl?: string): void;
   syncNavigationControls(): void;
   syncAddressBarState(): void;
   reloadCurrentPage(): void;
@@ -370,7 +370,7 @@ export function attachBrowserNavigationInteractions(params: BrowserNavigationInt
     if (instance.isLoading) {
       try { webview.stop(); } catch {}
       instance.isLoading = false;
-      syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+      syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false), urlInput.value.trim());
       syncNavigationControls();
       syncAddressBarState();
       return;

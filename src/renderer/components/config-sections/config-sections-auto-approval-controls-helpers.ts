@@ -23,6 +23,8 @@ export type AutoApprovalScopeSummary = {
   effectiveSource: string;
   effectiveExplanation: string;
   effectiveBehavior: string;
+  effectiveAutoRuns: string;
+  effectiveStillAsks: string;
 };
 
 type AppendAutoApprovalControlsArgs = {
@@ -117,7 +119,7 @@ export function createModeGuide(esc: (input: string) => string): HTMLDivElement 
     const row = document.createElement('div');
     row.className = 'auto-approval-mode-guide-row';
     row.innerHTML = `
-      <span class="auto-approval-mode-guide-row-label">${esc(option.label)}</span>
+      <span class="auto-approval-mode-guide-row-label">${esc(autoApprovalModeLabel(option.value))}</span>
       <span class="auto-approval-mode-guide-row-detail">${esc(autoApprovalModeGuideSummary(option.value))}</span>
     `;
     modeGuideBody.appendChild(row);

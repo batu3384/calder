@@ -1,4 +1,5 @@
 import { appState } from '../state.js';
+import { renderDiagnosticsSummary } from './diagnostics-summary.js';
 import { getGitStatus, onChange as onGitStatusChange } from './surface-services/git-status.js';
 
 const mainAreaEl = document.getElementById('main-area')!;
@@ -64,6 +65,7 @@ function renderInspectorChrome(): void {
   syncRailSignal();
   syncInspectorOpenState();
   syncInspectorTabState();
+  renderDiagnosticsSummary();
 }
 
 function isInspectorTab(value: string | undefined): value is InspectorTab {

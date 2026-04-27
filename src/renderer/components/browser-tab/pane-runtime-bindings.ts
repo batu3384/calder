@@ -67,7 +67,7 @@ export interface BrowserTabRuntimeInitializationParams {
   customHInput: HTMLInputElement;
   customApplyBtn: HTMLButtonElement;
   syncSurfaceVisibility(showEmptySurface: boolean): void;
-  syncBrowserStatus(state: BrowserPageState): void;
+  syncBrowserStatus(state: BrowserPageState, currentUrl?: string): void;
   openViewportMenu(reason?: string, focusMode?: ViewportMenuFocusMode): void;
   closeViewportMenu(reason?: string, returnFocus?: boolean): void;
 }

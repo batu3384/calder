@@ -9,6 +9,7 @@ const configSectionsSource = [
 const gitPanelSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');
 const inspectorSource = readFileSync(new URL('./context-inspector.ts', import.meta.url), 'utf-8');
+const diagnosticsSource = readFileSync(new URL('./diagnostics-summary.ts', import.meta.url), 'utf-8');
 const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', import.meta.url), 'utf-8');
 
 describe('context language contract', () => {
@@ -23,6 +24,7 @@ describe('context language contract', () => {
     expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-run"');
     expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-project"');
     expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-timeline"');
+    expect(html).toContain('id="diagnostics-summary"');
     expect(html).toContain('Worktree status, branches, and safe git actions.');
     expect(html).toContain('Recent runs, notes, and session timeline.');
     expect(html).not.toContain('id="context-inspector-overview"');
@@ -44,6 +46,10 @@ describe('context language contract', () => {
     expect(historySource).toContain('localizedText');
     expect(historySource).toContain('recent run');
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
+    expect(inspectorSource).toContain('renderDiagnosticsSummary');
+    expect(diagnosticsSource).toContain('Workspace Trust');
+    expect(diagnosticsSource).toContain('describeProviderRoute');
+    expect(diagnosticsSource).toContain('getGitStatus(project.id)');
     expect(inspectorSource).toContain('handleInspectorTabKeydown');
     expect(inspectorSource).toContain("'ArrowRight'");
     expect(inspectorSource).toContain("'Home'");
@@ -91,6 +97,8 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('overflow-wrap: anywhere;');
     expect(inspectorCss).toContain('.context-inspector-header-note');
     expect(inspectorCss).toContain('.auto-approval-control');
+    expect(inspectorCss).toContain('.diagnostics-summary');
+    expect(inspectorCss).toContain('.diagnostics-summary-grid');
   });
 
   it('keeps the ops rail flatter than a stacked dashboard card column', () => {

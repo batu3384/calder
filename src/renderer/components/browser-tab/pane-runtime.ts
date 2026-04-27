@@ -47,7 +47,7 @@ interface BrowserWebviewBindingParams {
   newTabStateController: BrowserNewTabStateBindings;
   authController: BrowserAuthControllerBindings;
   syncSurfaceVisibility(showEmptySurface: boolean): void;
-  syncBrowserStatus(state: BrowserPageState): void;
+  syncBrowserStatus(state: BrowserPageState, currentUrl?: string): void;
   syncNavigationControls(): void;
   syncAddressBarState(): void;
   reloadCurrentPage(): void;
@@ -60,6 +60,7 @@ interface BrowserInstanceCreationParams {
   el: HTMLDivElement;
   webview: WebviewElement;
   statusBadge: HTMLSpanElement;
+  trustZoneBadge: HTMLSpanElement;
   chromeHint: HTMLDivElement;
   contentShell: HTMLDivElement;
   viewportContainer: HTMLDivElement;
@@ -81,6 +82,7 @@ export function createBrowserTabInstance(params: BrowserInstanceCreationParams):
     el,
     webview,
     statusBadge,
+    trustZoneBadge,
     chromeHint,
     contentShell,
     viewportContainer,
@@ -101,6 +103,7 @@ export function createBrowserTabInstance(params: BrowserInstanceCreationParams):
     webview,
     webviewReady: false,
     statusBadge,
+    trustZoneBadge,
     toolbarHint: chromeHint,
     committedUrl: normalizeUrl(url || ''),
     contentShell,
@@ -237,7 +240,7 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     }
     instance.committedUrl = url;
     urlInput.value = url;
-    syncBrowserStatus(resolveBrowserPageState(url, instance.isLoading, false));
+    syncBrowserStatus(resolveBrowserPageState(url, instance.isLoading, false), url);
     syncNavigationControls();
     syncAddressBarState();
     appState.updateSessionBrowserTabUrl(sessionId, url);
@@ -248,7 +251,8 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
 
   webview.addEventListener('did-start-loading', (() => {
     instance.isLoading = true;
-    syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), true, false));
+    const loadingUrl = instance.committedUrl || urlInput.value.trim();
+    syncBrowserStatus(resolveBrowserPageState(loadingUrl, true, false), loadingUrl);
     syncNavigationControls();
     syncAddressBarState();
   }) as EventListener);
@@ -267,7 +271,8 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
 
   webview.addEventListener('did-stop-loading', (() => {
     instance.isLoading = false;
-    syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+    const currentUrl = instance.committedUrl || urlInput.value.trim();
+    syncBrowserStatus(resolveBrowserPageState(currentUrl, false, false), currentUrl);
     syncNavigationControls();
     syncAddressBarState();
   }) as EventListener);
@@ -296,7 +301,7 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     if (!failedUrl) return;
     instance.isLoading = false;
     instance.committedUrl = failedUrl;
-    syncBrowserStatus(resolveBrowserPageState(failedUrl, false, true));
+    syncBrowserStatus(resolveBrowserPageState(failedUrl, false, true), failedUrl);
     syncNavigationControls();
     syncAddressBarState();
     newTabStateController.showOfflineState(failedUrl);
@@ -312,7 +317,8 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     clearPendingNavigation(instance);
   }) as EventListener);
 
-  syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false));
+  const initialUrl = instance.committedUrl || urlInput.value.trim();
+  syncBrowserStatus(resolveBrowserPageState(initialUrl, false, false), initialUrl);
   syncNavigationControls();
   syncAddressBarState();
   authController.syncActionsEnabledState();

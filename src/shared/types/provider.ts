@@ -1,7 +1,12 @@
 export type {
   ProviderId,
+  GatewayBackendId,
   PendingPromptTrigger,
   UiLanguage,
+  ProviderGatewayRoute,
+  ProviderRouteKind,
+  ProviderRouteConfidence,
+  QuotaConfidence,
   CliProviderCapabilities,
   CliProviderMeta,
   ProviderUpdateSource,

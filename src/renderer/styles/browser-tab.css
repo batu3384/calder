@@ -109,6 +109,56 @@
   color: color-mix(in srgb, #ff938c 84%, var(--text-primary));
 }
 
+.browser-trust-zone-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 58%, transparent);
+  color: var(--text-muted);
+  font-size: var(--type-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.browser-trust-zone-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.78;
+}
+
+.browser-trust-zone-badge[data-zone='local'] {
+  border-color: color-mix(in srgb, #5dd39e 30%, var(--border-subtle));
+  background:
+    linear-gradient(180deg, rgba(132, 239, 187, 0.08), rgba(132, 239, 187, 0.018)),
+    color-mix(in srgb, var(--surface-panel-alt) 72%, transparent);
+  color: color-mix(in srgb, #84efbb 82%, var(--text-primary));
+}
+
+.browser-trust-zone-badge[data-zone='remote'] {
+  border-color: color-mix(in srgb, #ffb86b 24%, var(--border-subtle));
+  color: color-mix(in srgb, #ffc98e 78%, var(--text-primary));
+}
+
+.browser-trust-zone-badge[data-zone='file'] {
+  border-color: color-mix(in srgb, #f7d774 24%, var(--border-subtle));
+  color: color-mix(in srgb, #f7d774 78%, var(--text-primary));
+}
+
+.browser-trust-zone-badge[data-zone='unknown'] {
+  opacity: 0.72;
+}
+
 /* Toolbar */
 .browser-tab-toolbar {
   display: flex;
