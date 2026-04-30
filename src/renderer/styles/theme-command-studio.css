@@ -594,20 +594,20 @@ body {
 }
 
 .context-inspector-reopen {
-  top: 14px;
-  right: 12px;
-  transform: none;
-  min-height: 34px;
-  min-width: 96px;
-  padding: 0 12px;
-  border-radius: 999px;
-  writing-mode: horizontal-tb;
-  text-orientation: initial;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  min-height: 96px;
+  min-width: 30px;
+  padding: 10px 6px;
+  border-radius: 12px 0 0 12px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }
 
 .context-inspector-reopen:hover,
 .context-inspector-reopen:focus {
-  transform: none;
+  transform: translateY(-50%);
 }
 
 @container workspace-shell (max-width: 1120px) {
@@ -1023,7 +1023,8 @@ body {
 .project-status-chip,
 .project-session-count {
   border-radius: 999px;
-  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 #sidebar.collapsed {
@@ -1722,4 +1723,206 @@ body {
     animation: none;
     transform: none;
   }
+}
+
+/* Calder tonal refinement pass
+ * Static-only color work: no new animation, timers, blur layers, or runtime cost.
+ */
+:root {
+  --studio-canvas: #050812;
+  --studio-ink: #07101d;
+  --studio-panel: #0b1524;
+  --studio-panel-raised: #101d2f;
+  --studio-panel-soft: rgba(14, 25, 39, 0.78);
+  --studio-line: rgba(151, 180, 210, 0.16);
+  --studio-line-soft: rgba(151, 180, 210, 0.09);
+  --studio-cyan: #8aa7ff;
+  --studio-cyan-soft: rgba(138, 167, 255, 0.105);
+  --studio-brass: #d8b16a;
+  --studio-brass-soft: rgba(216, 177, 106, 0.095);
+  --studio-glass-top: rgba(255, 255, 255, 0.04);
+  --studio-glass-mid: rgba(255, 255, 255, 0.018);
+  --studio-cyan-line: rgba(138, 167, 255, 0.18);
+  --studio-brass-line: rgba(216, 177, 106, 0.16);
+  --studio-resonance-line: rgba(138, 167, 255, 0.12);
+  --studio-resonance-glow: 0 0 20px rgba(138, 167, 255, 0.062);
+  --studio-mascot-stage: rgba(10, 20, 34, 0.58);
+  --surface-rail: #07101c;
+  --surface-ops: #08111e;
+  --surface-deck: #08111d;
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at 16% -12%, rgba(138, 167, 255, 0.064), transparent 31%),
+    radial-gradient(circle at 86% -10%, rgba(216, 177, 106, 0.048), transparent 30%),
+    linear-gradient(180deg, #08101d 0%, var(--studio-canvas) 58%, #03050c 100%);
+}
+
+#app {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.011) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.008) 1px, transparent 1px),
+    radial-gradient(circle at 16% -12%, rgba(138, 167, 255, 0.03), transparent 34%),
+    radial-gradient(circle at 82% -12%, rgba(216, 177, 106, 0.03), transparent 30%),
+    linear-gradient(180deg, #07101c 0%, var(--studio-canvas) 100%);
+}
+
+#workspace-shell.workspace-shell-surface {
+  background:
+    radial-gradient(circle at 4% 0%, rgba(138, 167, 255, 0.03), transparent 26%),
+    radial-gradient(circle at 100% 3%, rgba(216, 177, 106, 0.026), transparent 24%),
+    rgba(3, 7, 13, 0.46);
+}
+
+#sidebar.command-dock {
+  background:
+    radial-gradient(circle at 46px 62px, rgba(138, 167, 255, 0.09), transparent 126px),
+    radial-gradient(circle at 112% 2%, rgba(216, 177, 106, 0.046), transparent 112px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012), transparent 46%),
+    linear-gradient(180deg, #091423 0%, #07101b 48%, #050a13 100%);
+  border-right-color: color-mix(in srgb, var(--studio-cyan) 12%, var(--studio-line));
+}
+
+#sidebar.command-dock::before {
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(138, 167, 255, 0.13) 18%,
+      rgba(216, 177, 106, 0.105) 52%,
+      transparent 88%
+    );
+}
+
+#sidebar.command-dock::after {
+  background: linear-gradient(180deg, transparent, rgba(138, 167, 255, 0.15), transparent 82%);
+}
+
+#sidebar-brand-stage.sidebar-brand-stage {
+  background:
+    radial-gradient(circle at 24% 38%, rgba(138, 167, 255, 0.105), transparent 47%),
+    radial-gradient(circle at 68% 0%, rgba(216, 177, 106, 0.055), transparent 42%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.007) 58%),
+    var(--studio-mascot-stage);
+  border-color: color-mix(in srgb, var(--studio-cyan) 11%, var(--studio-line));
+}
+
+#sidebar-brand-stage.sidebar-brand-stage::after {
+  background: linear-gradient(90deg, transparent, rgba(138, 167, 255, 0.28));
+}
+
+#sidebar-brand-stage .sidebar-brand-totem::before {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(138, 167, 255, 0.16), transparent 58%),
+    radial-gradient(circle at 50% 72%, rgba(57, 79, 176, 0.15), transparent 72%);
+}
+
+#sidebar-brand-stage .sidebar-mascot-shell {
+  filter:
+    drop-shadow(0 13px 18px rgba(2, 9, 26, 0.4))
+    drop-shadow(0 0 16px rgba(138, 167, 255, 0.105));
+}
+
+#sidebar-brand-stage .sidebar-mascot-shell::before {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(138, 167, 255, 0.125), transparent 62%),
+    radial-gradient(circle at 50% 82%, rgba(0, 0, 0, 0.18), transparent 70%);
+}
+
+#sidebar-brand-stage .sidebar-mascot-shell::after {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(138, 167, 255, 0.62) 42%, transparent 72%);
+  box-shadow:
+    0 0 10px rgba(138, 167, 255, 0.36),
+    0 0 18px rgba(138, 167, 255, 0.085);
+}
+
+#sidebar-header,
+.project-item,
+#context-inspector .context-inspector-section,
+.preferences-overview-card,
+.preferences-subsection,
+.preferences-section-card,
+.modal-toggle-field {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent),
+    rgba(10, 19, 31, 0.66);
+}
+
+.project-item:hover {
+  background:
+    var(--studio-card-sheen),
+    linear-gradient(90deg, rgba(138, 167, 255, 0.055), transparent 78%),
+    rgba(255, 255, 255, 0.016);
+}
+
+.project-item.active {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(138, 167, 255, 0.1), transparent 52%),
+    var(--studio-card-sheen),
+    rgba(255, 255, 255, 0.02);
+}
+
+#tab-bar {
+  background:
+    radial-gradient(circle at 12% -120%, rgba(138, 167, 255, 0.068), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+    rgba(8, 14, 23, 0.965);
+}
+
+#context-inspector {
+  background:
+    radial-gradient(circle at 106% -4%, rgba(138, 167, 255, 0.082), transparent 36%),
+    radial-gradient(circle at -8% 22%, rgba(216, 177, 106, 0.048), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent 34%),
+    rgba(8, 15, 25, 0.984);
+}
+
+.context-inspector-tabs {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.023), transparent),
+    rgba(255, 255, 255, 0.01);
+}
+
+.context-inspector-tab.active,
+.preferences-menu-item.active {
+  background:
+    linear-gradient(90deg, rgba(138, 167, 255, 0.086), transparent 82%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.034), rgba(255, 255, 255, 0.008));
+}
+
+.preferences-menu,
+.preferences-content-shell {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(138, 167, 255, 0.05), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent),
+    rgba(9, 17, 28, 0.84);
+}
+
+.preferences-menu-header {
+  background:
+    linear-gradient(180deg, rgba(9, 17, 28, 0.98), rgba(9, 17, 28, 0.72) 74%, transparent);
+}
+
+#sidebar-content,
+#context-inspector-sections,
+.preferences-menu,
+.preferences-content {
+  scrollbar-color: color-mix(in srgb, var(--studio-cyan) 32%, var(--studio-line)) transparent;
+}
+
+#sidebar-content::-webkit-scrollbar-thumb,
+#context-inspector-sections::-webkit-scrollbar-thumb,
+.preferences-menu::-webkit-scrollbar-thumb,
+.preferences-content::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, rgba(138, 167, 255, 0.26), rgba(216, 177, 106, 0.13))
+    padding-box;
+}
+
+.project-status-chip,
+.project-session-count {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
