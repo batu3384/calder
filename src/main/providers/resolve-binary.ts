@@ -111,6 +111,11 @@ export function resolveBinary(binaryName: string, cache: { path: string | null }
   }
 
   const fullPath = getFullPath();
+  const resolved = whichBinary(binaryName, fullPath);
+  if (resolved) {
+    cache.path = resolved;
+    return resolved;
+  }
 
   for (const dir of COMMON_BIN_DIRS) {
     const found = findBinaryInDir(dir, binaryName);
@@ -118,12 +123,6 @@ export function resolveBinary(binaryName: string, cache: { path: string | null }
       cache.path = found;
       return found;
     }
-  }
-
-  const resolved = whichBinary(binaryName, fullPath);
-  if (resolved) {
-    cache.path = resolved;
-    return resolved;
   }
 
   cache.path = binaryName;

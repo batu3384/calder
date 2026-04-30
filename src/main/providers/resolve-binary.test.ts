@@ -53,11 +53,31 @@ describe('resolve-binary', () => {
     const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(false);
     const fallbackPath = path.join('/usr/local/bin', 'codex');
 
-    mockExecSync.mockReturnValue(`alias codex='/does/not/exist --flag'\n` as any);
+    mockExecSync.mockImplementation((command: unknown) => {
+      if (String(command).includes('command -v "codex"')) {
+        return `alias codex='/does/not/exist --flag'\n` as any;
+      }
+      throw new Error('not found in PATH');
+    });
     mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === fallbackPath);
 
     const resolved = resolveBinary('codex', { path: null });
     expect(resolved).toBe(fallbackPath);
+  });
+
+  it('prefers the login-shell PATH result before fixed common directories', async () => {
+    const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(false);
+    const homebrewPath = '/opt/homebrew/bin/gemini';
+    const shellPath = '/mock/home/.npm-global/bin/gemini';
+
+    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === homebrewPath);
+    mockExecSync.mockImplementation((command: unknown) => {
+      if (String(command).includes('command -v "gemini"')) return `${shellPath}\n` as any;
+      if (String(command).startsWith('which "gemini"')) return `${shellPath}\n` as any;
+      throw new Error(`unexpected command: ${String(command)}`);
+    });
+
+    expect(resolveBinary('gemini', { path: null })).toBe(shellPath);
   });
 
   it('handles Windows extension probing and keeps first where() result line', async () => {

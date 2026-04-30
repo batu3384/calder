@@ -94,7 +94,7 @@ describe('provider update fallbacks', () => {
     runner.enqueue('brew', ['upgrade', 'gemini-cli'], { code: 1, stderr: 'brew route failed' });
     runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
     runner.enqueue('npm', ['install', '-g', '@google/gemini-cli@latest'], { code: 0, stdout: 'updated' });
-    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
+    runner.enqueue('gemini', ['--version'], { code: 0, stdout: '0.38.1' });
 
     const summary = await updateProviders([createTarget('gemini', 'Gemini CLI', geminiBinary)], {
       runner,
@@ -113,7 +113,7 @@ describe('provider update fallbacks', () => {
       'brew upgrade gemini-cli',
       'npm view @google/gemini-cli version --silent',
       'npm install -g @google/gemini-cli@latest',
-      `${geminiBinary} --version`,
+      'gemini --version',
     ]);
   });
 });

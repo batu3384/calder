@@ -138,12 +138,29 @@ function buildProviderUpdateSourceAttempts(
 
 function shouldRetryWithFallback(result: Omit<ProviderUpdateResult, 'durationMs'>): boolean {
   if (result.status === 'error') return true;
+  if (result.status === 'sync_pending' && result.source === 'brew-formula') return true;
   if (result.status !== 'skipped') return false;
   return (
     result.message.includes('No update command available')
     || result.message.includes('could not be determined')
     || result.message.includes('No update command configured')
   );
+}
+
+function getCommandNameFromBinaryPath(binaryPath: string): string {
+  const normalized = binaryPath.replace(/\\/g, '/');
+  return normalized.split('/').filter(Boolean).pop() || binaryPath;
+}
+
+function getAttemptBinaryPath(
+  binaryPath: string,
+  primarySource: ProviderUpdateSource,
+  attemptSource: ProviderUpdateSource,
+): string {
+  if (attemptSource === 'npm' && primarySource !== 'npm') {
+    return getCommandNameFromBinaryPath(binaryPath);
+  }
+  return binaryPath;
 }
 
 function describeFallbackAttempt(providerName: string, source: ProviderUpdateSource): string {
@@ -325,7 +342,7 @@ async function runConfiguredProviderUpdate(input: RunConfiguredProviderUpdateInp
       now,
       signal,
       emitProviderMessage,
-      binaryPath,
+      binaryPath: getAttemptBinaryPath(binaryPath, sourceResolution.source, sourceAttempts[index].source),
       beforeVersion,
       sourceResolution: sourceAttempts[index],
     });
