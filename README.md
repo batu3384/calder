@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
-  <a href="https://github.com/batu3384/calder/actions/workflows/ci.yml"><img src="https://github.com/batu3384/calder/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/batu3384/calder/actions/workflows/ci.yml"><img src="https://github.com/batu3384/calder/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://github.com/batu3384/calder"><img src="https://img.shields.io/badge/GitHub-calder-181717?logo=github" alt="GitHub Repository" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-0A7" alt="Platforms" />
 </p>

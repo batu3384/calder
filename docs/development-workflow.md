@@ -77,6 +77,8 @@ The repository ships a local `pre-push` hook in `.githooks/pre-push`.
 It blocks push unless all pass:
 
 - `npm run audit:structure`
+- `npm run lint`
+- `npm run format:check`
 - `npm run build`
 - `npm test`
 
