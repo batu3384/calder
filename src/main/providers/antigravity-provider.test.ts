@@ -50,6 +50,7 @@ vi.mock('../antigravity-hooks', () => ({
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { getAntigravityConfig } from '../antigravity-config';
 import {
   cleanupAntigravityHooks,
@@ -57,7 +58,6 @@ import {
   validateAntigravityHooks,
 } from '../antigravity-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { _resetCachedPath, AntigravityProvider } from './antigravity-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 

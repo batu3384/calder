@@ -35,10 +35,10 @@ vi.mock('../copilot-session-watcher', () => ({
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
-import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { _resetCachedPath, CopilotProvider } from './copilot-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 

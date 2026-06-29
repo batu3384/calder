@@ -44,11 +44,11 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 
 import type { ProviderConfig } from '../../shared/types/provider';
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { getCodexConfig } from '../codex-config';
 import { cleanupCodexHooks, installCodexHooks, validateCodexHooks } from '../codex-hooks';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { _resetCachedPath, CodexProvider } from './codex-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
