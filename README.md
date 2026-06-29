@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/calder-mark.png" alt="Calder" width="160" />
+  <img src="docs/images/calder-app-icon.png" alt="Calder app icon" width="200" />
 </p>
 
 <h1 align="center">Calder</h1>
@@ -16,12 +16,24 @@
   Run multiple agent sessions in parallel, inspect costs and context, route browser + terminal signals to the right session, and keep project workflows organized.
 </p>
 
+## Screenshots
+
 <p align="center">
-  <img src="build/calder-logo.png" alt="Calder workspace branding" width="720" />
+  <img src="docs/images/screenshots/workspace-mosaic.png" alt="Calder Command Studio — multi-session workspace with browser live view and session inspector" width="920" />
+</p>
+<p align="center">
+  <sub><strong>Command Studio</strong> — run Claude, Codex, Copilot, Antigravity, and Qwen side-by-side with browser live view and workspace inspector.</sub>
 </p>
 
 <p align="center">
-  <img src="docs/images/calder-mascot.png" alt="Calder mascot" width="120" />
+  <img src="docs/images/screenshots/workspace-settings.png" alt="Calder Workspace Center — session defaults and provider settings" width="720" />
+</p>
+<p align="center">
+  <sub><strong>Workspace Center</strong> — configure launch defaults, CLI providers, governance, shortcuts, and updates in one place.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/images/calder-mascot.png" alt="Calder mascot" width="96" />
   <br/>
   <sub>Calder mascot — the little helper inside the workspace UI.</sub>
 </p>
