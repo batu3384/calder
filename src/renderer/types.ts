@@ -228,7 +228,7 @@ export interface CalderApi {
     listDirs(dirPath: string, prefix?: string): Promise<string[]>;
     browseDirectory(): Promise<string | null>;
     listFiles(cwd: string, query: string): Promise<string[]>;
-    readFile(filePath: string): Promise<import('../../shared/types/fs-read').FsReadFileResult>;
+    readFile(filePath: string): Promise<import('../shared/types/fs-read').FsReadFileResult>;
     watchFile(filePath: string): void;
     unwatchFile(filePath: string): void;
     onFileChanged(callback: (filePath: string) => void): () => void;

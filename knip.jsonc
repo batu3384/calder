@@ -5,6 +5,11 @@
   "entry": [
     "src/main/main.ts",
     "src/preload/preload.ts",
+    "src/main/security/secrets-audit.ts",
+    "src/test-support/electron-vitest-mock.ts",
+    "src/test-support/reset-binary-probe-mocks.ts",
+    "scripts/scan-tracked-secrets.mjs",
+    "scripts/install-electron-binary.mjs",
     "apps/calder-mobile/App.tsx",
     "apps/calder-mobile/babel.config.js",
   ],
@@ -15,7 +20,7 @@
 
   // Mobile app dependencies are declared in apps/calder-mobile/package.json,
   // while root Knip runs against the desktop workspace package.
-  "ignoreDependencies": ["react", "react-native", "react-native-webview"],
+  "ignoreDependencies": ["react", "react-native", "react-native-webview", "@eslint/js"],
 
   // Many renderer helpers intentionally export internal building blocks from the same file.
   "ignoreExportsUsedInFile": true,
@@ -23,5 +28,15 @@
   // These duplicate exports are intentional compatibility aliases.
   "ignoreIssues": {
     "src/renderer/components/file-reader-agent-doc.ts": ["duplicates"],
+    "src/main/calder-governance/governance-engine.ts": ["exports"],
+    "src/main/provider-updater/update-result-helpers.ts": ["exports"],
+    "src/main/providers/registry.ts": ["exports"],
+    "src/main/validation/schemas.ts": ["exports"],
+    "src/renderer/components/component-lifecycle.ts": ["exports"],
+    "src/renderer/components/focus-management.ts": ["exports"],
+    "src/renderer/components/onboarding-dialog.ts": ["exports"],
+    "src/renderer/components/surface-services/dom-utils.ts": ["exports"],
+    "src/renderer/components/toast.ts": ["exports"],
+    "src/main/pty-manager.ts": ["duplicates"],
   },
 }
