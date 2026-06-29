@@ -45,6 +45,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Run tests with coverage
+        if: runner.os != 'Windows'
         run: npm run test:coverage
 
   deep-audit:

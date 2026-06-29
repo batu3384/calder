@@ -47,6 +47,7 @@ import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installStatusLineScript } from '../hooks/hook-status';
 import { findQwenTranscriptPath, getQwenConfig } from '../qwen-config';
 import { cleanupQwenHooks, installQwenHooks, validateQwenHooks } from '../qwen-hooks';
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { _resetCachedPath, QwenProvider } from './qwen-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
@@ -65,6 +66,7 @@ let provider: QwenProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new QwenProvider();

@@ -44,6 +44,7 @@ vi.mock('../settings-guard', () => ({
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { getClaudeConfig } from '../claude-cli';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
@@ -65,6 +66,7 @@ let provider: ClaudeProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new ClaudeProvider();

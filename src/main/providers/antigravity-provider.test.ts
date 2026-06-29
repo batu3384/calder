@@ -57,6 +57,7 @@ import {
   validateAntigravityHooks,
 } from '../antigravity-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { _resetCachedPath, AntigravityProvider } from './antigravity-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
@@ -76,6 +77,8 @@ let provider: AntigravityProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  mockReaddirSync.mockReturnValue([]);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new AntigravityProvider();
