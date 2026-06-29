@@ -1,4 +1,3 @@
-import { execSync, spawnSync } from 'child_process';
 import type { Mock } from 'vitest';
 
 type SpawnSyncResult = ReturnType<typeof import('child_process').spawnSync>;

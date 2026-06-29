@@ -13,12 +13,12 @@ import {
   spawnShellPty,
   writePty,
 } from './pty-manager';
+import { sanitizeSessionId } from './security/sanitize';
 import {
   validatePtyCreatePayload,
   validatePtyResizePayload,
   validatePtyWritePayload,
 } from './validation/ipc-validation';
-import { sanitizeSessionId } from './security/sanitize';
 
 /** Simple in-memory rate limiter for pty:create / pty:createShell per sessionId */
 const ptyCreateRateLimit = new Map<string, { count: number; resetAt: number }>();

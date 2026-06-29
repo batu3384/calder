@@ -649,7 +649,7 @@ export async function installProviders(
   options?: ProviderUpdaterOptions,
 ): Promise<ProviderUpdateSummary> {
   const resolved = resolveUpdaterOptions(options);
-  const { runner, now, onProgress, signal } = resolved;
+  const { now, onProgress, signal } = resolved;
   const startedAt = new Date(now()).toISOString();
   const results: ProviderUpdateResult[] = [];
   const providerTargets = providers.map((provider) => ({

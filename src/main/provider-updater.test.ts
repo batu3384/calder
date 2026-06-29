@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 import {
+  installProviders,
   type ProviderUpdaterRunner,
   type ProviderUpdaterTarget,
-  installProviders,
   updateProvider,
   updateProviders,
 } from './provider-updater';

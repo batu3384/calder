@@ -97,7 +97,6 @@ describe('resolve-binary', () => {
   it('prefers the login-shell PATH result before fixed common directories', async () => {
     const { resolveBinary, mockExistsSync, mockExecSync, mockSpawnSync } =
       await loadResolveBinaryModule(false);
-    const homebrewPath = '/opt/homebrew/bin/gemini';
     const shellPath = '/mock/home/.npm-global/bin/gemini';
 
     mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === shellPath);

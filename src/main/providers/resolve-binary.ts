@@ -21,7 +21,6 @@ const COMMON_BIN_DIRS = isWin
 // On Windows, CLI tools installed via npm are .cmd shims
 const WIN_EXTENSIONS = ['.cmd', '.exe', '.ps1', ''];
 const DEFAULT_BINARY_PROBE_TIMEOUT_MS = 3000;
-const PREREQ_ALIAS_PROBE_TIMEOUT_MS = 250;
 const PREREQ_CACHE_TTL_MS = 10_000;
 const LAUNCH_PROBE_TIMEOUT_MS = 2500;
 

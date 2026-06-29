@@ -6,7 +6,7 @@ import type {
   ProviderUpdateProgressEvent,
   ProviderUpdateSummary,
 } from '../shared/types/provider';
-import { updateAllProviders, installProviderById, updateProviderById } from './provider-updater';
+import { installProviderById, updateAllProviders, updateProviderById } from './provider-updater';
 
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;

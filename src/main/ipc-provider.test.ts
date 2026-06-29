@@ -30,7 +30,7 @@ vi.mock('./providers/resume-handoff', () => ({
   buildHandoffPrompt: mockBuildHandoffPrompt,
 }));
 
-import { registerProviderIpcHandlers } from './ipc-provider';
+import { _resetConfigWatchBindingsForTests,registerProviderIpcHandlers } from './ipc-provider';
 
 function getHandleHandler(channel: string): (...args: any[]) => any {
   const call = mockIpcHandle.mock.calls.find(([name]) => name === channel);
@@ -57,6 +57,7 @@ function createOps() {
 describe('ipc provider handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    _resetConfigWatchBindingsForTests();
   });
 
   it('handles provider:getConfig and claude:getConfig alias', async () => {

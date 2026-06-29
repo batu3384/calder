@@ -7,7 +7,6 @@ import { _resetCachedPath as resetCodexCache } from './codex-provider';
 import { _resetCachedPath as resetCopilotCache } from './copilot-provider';
 import type { CliProvider } from './provider';
 import { _resetCachedPath as resetQwenCache } from './qwen-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
 import {
   getAllProviderMetas,
   getAllProviders,
@@ -19,6 +18,7 @@ import {
   SUPPORTED_PROVIDER_IDS,
   unregisterProvider,
 } from './registry';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const fakeMeta: CliProviderMeta = {
   id: 'copilot',
