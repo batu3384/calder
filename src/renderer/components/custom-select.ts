@@ -27,17 +27,16 @@ function eventTargetsCurrentSelect(
   trigger: HTMLElement,
 ): boolean {
   const composedPath = typeof event.composedPath === 'function' ? event.composedPath() : [];
-  if (composedPath.includes(wrapper) || composedPath.includes(dropdown) || composedPath.includes(trigger)) {
+  if (
+    composedPath.includes(wrapper) ||
+    composedPath.includes(dropdown) ||
+    composedPath.includes(trigger)
+  ) {
     return true;
   }
   const target = event.target as Node | null;
   return Boolean(
-    target
-    && (
-      wrapper.contains(target)
-      || dropdown.contains(target)
-      || trigger.contains(target)
-    )
+    target && (wrapper.contains(target) || dropdown.contains(target) || trigger.contains(target)),
   );
 }
 
@@ -151,9 +150,8 @@ function registerOutsidePressHandler({
     if (eventTargetsCurrentSelect(event, wrapper, dropdown, trigger)) return;
     closeDropdown('outside-press');
   };
-  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
-    typeof window !== 'undefined' && 'PointerEvent' in window
-  ) ? 'pointerdown' : 'mousedown';
+  const outsidePressEventName: 'pointerdown' | 'mousedown' =
+    typeof window !== 'undefined' && 'PointerEvent' in window ? 'pointerdown' : 'mousedown';
   document.addEventListener(outsidePressEventName, onOutsidePointerDown);
   return () => {
     document.removeEventListener(outsidePressEventName, onOutsidePointerDown);
@@ -210,7 +208,7 @@ function initializeSelectValue(
   currentValue: string,
   applySelectedIndex: (index: number) => void,
 ): void {
-  const initialIndex = options.findIndex(o => o.value === currentValue);
+  const initialIndex = options.findIndex((o) => o.value === currentValue);
   if (initialIndex >= 0) {
     applySelectedIndex(initialIndex);
   }
@@ -252,10 +250,12 @@ function buildCustomSelectInstance({
 }: BuildCustomSelectInstanceArgs): CustomSelectInstance {
   return {
     element: wrapper,
-    getValue() { return hidden.value; },
+    getValue() {
+      return hidden.value;
+    },
     setValue(value: string) {
       const previousValue = hidden.value;
-      const nextIndex = options.findIndex(opt => opt.value === value && !opt.disabled);
+      const nextIndex = options.findIndex((opt) => opt.value === value && !opt.disabled);
       if (nextIndex >= 0) {
         applySelectedIndex(nextIndex);
         if (previousValue !== hidden.value) {
@@ -280,7 +280,8 @@ export function createCustomSelect(
   defaultValue?: string,
   config: CustomSelectConfig = {},
 ): CustomSelectInstance {
-  const defaultOpt = options.find(o => o.value === defaultValue) ?? options.find(o => !o.disabled) ?? options[0];
+  const defaultOpt =
+    options.find((o) => o.value === defaultValue) ?? options.find((o) => !o.disabled) ?? options[0];
   const usesFloatingSurface = config.floating !== false;
   const wrapper = document.createElement('div');
   wrapper.className = 'custom-select';
@@ -329,13 +330,13 @@ export function createCustomSelect(
   items = createSelectItems(
     options,
     hidden.value,
-    index => {
+    (index) => {
       activeIndex = index;
       updateActive();
     },
-    index => selectOption(index),
+    (index) => selectOption(index),
   );
-  items.forEach(item => dropdown.appendChild(item));
+  items.forEach((item) => dropdown.appendChild(item));
   function applySelectedIndex(index: number): void {
     const opt = options[index];
     if (!opt) return;
@@ -391,7 +392,7 @@ export function createCustomSelect(
     trigger.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     wrapper.dataset.state = 'open';
-    activeIndex = options.findIndex(o => o.value === hidden.value);
+    activeIndex = options.findIndex((o) => o.value === hidden.value);
     if (usesFloatingSurface) {
       floatingCleanup?.();
       floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
@@ -419,7 +420,7 @@ export function createCustomSelect(
     trigger.setAttribute('aria-expanded', 'false');
     wrapper.dataset.state = 'closed';
     activeIndex = -1;
-    items.forEach(el => el.classList.remove('active'));
+    items.forEach((el) => el.classList.remove('active'));
     if (wasOpen) {
       config.onOpenChange?.(false);
       traceDropdownEvent('close', reason);
@@ -435,7 +436,7 @@ export function createCustomSelect(
     openDropdown,
     closeDropdown,
     getActiveIndex: () => activeIndex,
-    setActiveIndex: index => {
+    setActiveIndex: (index) => {
       activeIndex = index;
     },
     updateActive,

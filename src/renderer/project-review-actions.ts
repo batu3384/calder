@@ -1,6 +1,9 @@
 import type { ProjectReviewDocument } from '../shared/types/project-review.js';
 import { deliverPromptToTerminalSession } from './components/terminal-pane.js';
-import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
+import {
+  appendAppliedContextToPrompt,
+  buildAppliedContextSummary,
+} from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 import { appState } from './state.js';
@@ -19,14 +22,18 @@ export function buildProjectReviewFixPrompt(review: ProjectReviewDocument): stri
     `Source: ${review.relativePath}`,
     body,
     'Work through the findings in priority order. If a finding no longer applies, explain that briefly before moving on.',
-  ].filter(Boolean).join('\n\n');
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 export async function sendProjectReviewToSelectedSession(
   projectId: string,
   review: ProjectReviewDocument,
 ): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId, { requireExplicitTarget: true });
+  const targetSession = appState.resolveSurfaceTargetSession(projectId, {
+    requireExplicitTarget: true,
+  });
   if (!targetSession) {
     return { ok: false, error: 'Open or select a CLI session first.' };
   }

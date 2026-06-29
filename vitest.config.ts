@@ -11,10 +11,7 @@ const coverageExclude = [
   'src/renderer/keybindings.ts',
   'src/renderer/notification-sound.ts',
   'src/renderer/git-status.ts',
-  ...(fullCoverageProfile ? [] : [
-    'src/renderer/components/**',
-    'src/preload/**',
-  ]),
+  ...(fullCoverageProfile ? [] : ['src/renderer/components/**', 'src/preload/**']),
 ];
 
 export default defineConfig({
@@ -32,11 +29,7 @@ export default defineConfig({
         functions: 50,
         lines: 45,
       },
-      include: [
-        'src/main/**/*.ts',
-        'src/renderer/**/*.ts',
-        'src/preload/**/*.ts',
-      ],
+      include: ['src/main/**/*.ts', 'src/renderer/**/*.ts', 'src/preload/**/*.ts'],
       exclude: coverageExclude,
     },
   },

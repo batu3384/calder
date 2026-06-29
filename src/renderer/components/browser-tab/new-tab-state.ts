@@ -19,28 +19,20 @@ export interface NewTabStateController {
   showOfflineState: (failedUrl: string) => void;
 }
 
-export function createNewTabStateController(options: NewTabStateControllerOptions): NewTabStateController {
-  const {
-    elements,
-    syncSurfaceVisibility,
-    isLocalSurfaceUrl,
-  } = options;
-  const {
-    newTabPage,
-    ntpState,
-    ntpTitle,
-    ntpSubtitle,
-    ntpTargetsText,
-    ntpTargetsMeta,
-    ntpGrid,
-  } = elements;
+export function createNewTabStateController(
+  options: NewTabStateControllerOptions,
+): NewTabStateController {
+  const { elements, syncSurfaceVisibility, isLocalSurfaceUrl } = options;
+  const { newTabPage, ntpState, ntpTitle, ntpSubtitle, ntpTargetsText, ntpTargetsMeta, ntpGrid } =
+    elements;
 
   function resetNewTabCopy(): void {
     newTabPage.dataset.mode = 'default';
     ntpState.dataset.state = 'default';
     ntpState.textContent = 'Ready to capture';
     ntpTitle.textContent = 'Open a running surface';
-    ntpSubtitle.textContent = 'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
+    ntpSubtitle.textContent =
+      'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
     ntpTargetsText.textContent = 'Scanning for active localhost targets…';
     ntpTargetsMeta.textContent = 'Scanning…';
   }

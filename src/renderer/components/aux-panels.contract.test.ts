@@ -1,10 +1,22 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const inspectorViewsSource = readFileSync(new URL('./session-inspector/session-inspector-views.ts', import.meta.url), 'utf-8');
-const inspectorUtilsSource = readFileSync(new URL('./session-inspector/session-inspector-utils.ts', import.meta.url), 'utf-8');
-const sessionInspectorSource = readFileSync(new URL('./session-inspector/session-inspector.ts', import.meta.url), 'utf-8');
-const inspectorCss = readFileSync(new URL('../styles/session-inspector.css', import.meta.url), 'utf-8');
+const inspectorViewsSource = readFileSync(
+  new URL('./session-inspector/session-inspector-views.ts', import.meta.url),
+  'utf-8',
+);
+const inspectorUtilsSource = readFileSync(
+  new URL('./session-inspector/session-inspector-utils.ts', import.meta.url),
+  'utf-8',
+);
+const sessionInspectorSource = readFileSync(
+  new URL('./session-inspector/session-inspector.ts', import.meta.url),
+  'utf-8',
+);
+const inspectorCss = readFileSync(
+  new URL('../styles/session-inspector.css', import.meta.url),
+  'utf-8',
+);
 const mcpInspectorSource = readFileSync(new URL('./mcp-inspector.ts', import.meta.url), 'utf-8');
 const mcpCss = readFileSync(new URL('../styles/mcp-inspector.css', import.meta.url), 'utf-8');
 

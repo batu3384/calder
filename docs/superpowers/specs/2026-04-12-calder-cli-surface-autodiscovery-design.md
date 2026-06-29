@@ -7,6 +7,7 @@
 ## Product Diagnosis
 
 `CLI Surface` technically works today, but the first interaction is too heavy:
+
 - the user clicks `CLI Surface`
 - Calder immediately asks for a profile
 - the user has to split a known terminal command into `command` and `arguments`
@@ -22,6 +23,7 @@ For many CLI-first projects, Calder should be able to infer a likely runtime com
 Adopt an **autodiscovery-first** flow for `CLI Surface`.
 
 Behavior:
+
 - if the project already has a saved CLI profile, use it
 - if not, Calder scans the project and builds runtime candidates
 - if Calder finds exactly one strong candidate, it:
@@ -67,10 +69,12 @@ When the user opens `CLI Surface` for a project:
 #### High confidence
 
 Conditions:
+
 - one strong candidate
 - no competing candidate with similar score
 
 Behavior:
+
 - create a CLI profile automatically
 - persist it into `project.surface.cli.profiles`
 - mark it as `selectedProfileId`
@@ -81,10 +85,12 @@ The user should not see a setup form in this case.
 #### Medium confidence
 
 Conditions:
+
 - multiple plausible candidates
 - one or more candidates are reasonable, but Calder should not choose silently
 
 Behavior:
+
 - open a compact `Quick Setup` surface
 - show each candidate with:
   - launch command
@@ -100,11 +106,13 @@ This must be lighter than the full profile modal.
 #### Low confidence
 
 Conditions:
+
 - no meaningful candidate
 - ambiguous repo shape
 - likely non-runnable or unsupported structure
 
 Behavior:
+
 - fall back to the existing full `CLI Surface Profile` modal
 
 ## Discovery Sources
@@ -114,9 +122,11 @@ Calder should build CLI candidates from project files and known ecosystem conven
 ### Node / JavaScript / TypeScript
 
 Primary source:
+
 - `package.json`
 
 Priority order:
+
 - `dev:tui`
 - `dev:cli`
 - `tui`
@@ -125,47 +135,56 @@ Priority order:
 - `start`
 
 Generated command shape:
+
 - `npm run <script>`
 - `pnpm <script>` or `yarn <script>` only when Calder can identify the active package manager from project files or lockfiles
 
 ### Python
 
 Primary sources:
+
 - `pyproject.toml`
 - common Textual/TUI entry patterns
 - direct runnable app files
 
 Priority examples:
+
 - `uv run python ...`
 - `poetry run python ...`
 - `python -m textual run ...`
 - `python app.py`
 
 Bias:
+
 - prefer explicit TUI/Textual-style commands over generic scripts
 
 ### Rust
 
 Primary source:
+
 - `Cargo.toml`
 
 Priority:
+
 - direct binary target if clearly named for app runtime
 - otherwise `cargo run`
 
 ### Go
 
 Primary sources:
+
 - `go.mod`
 - common `cmd/...` entrypoints
 
 Priority:
+
 - `go run ./cmd/<name>`
 - otherwise `go run .`
 
 ### Documentation-assisted fallback
 
 If structured project files do not provide enough signal, Calder may inspect:
+
 - root `README.md`
 - clearly named run instructions
 
@@ -174,6 +193,7 @@ This must remain secondary to structured project metadata.
 ## Candidate Scoring
 
 Every discovered candidate should carry:
+
 - `command`
 - `args`
 - `cwd`
@@ -182,6 +202,7 @@ Every discovered candidate should carry:
 - `confidence`
 
 Confidence should be derived from:
+
 - explicit runtime metadata
 - script naming strength
 - framework-specific signals
@@ -195,6 +216,7 @@ Calder must not silently auto-run a candidate when the confidence is only medium
 The quick setup UI is a new intermediate layer between full automation and the manual form.
 
 Requirements:
+
 - compact modal or inline surface
 - candidate list with plain-English reasoning
 - one-click `Run`
@@ -202,17 +224,20 @@ Requirements:
 - `Manual setup` for total control
 
 This surface should be presented as:
+
 - a runtime suggestion step
 - not a settings form
 
 ## Persistence Rules
 
 Once a profile is created, whether automatically or through user choice:
+
 - store it in `project.surface.cli.profiles`
 - update `selectedProfileId`
 - reuse it on future launches
 
 Rules:
+
 - do not overwrite an existing saved profile automatically
 - do not discard user-edited profiles when a new autodiscovery pass finds another candidate
 - the last successful profile should remain the default profile for the project
@@ -220,6 +245,7 @@ Rules:
 ## Failure Handling
 
 If an automatically selected or quick-setup candidate fails to launch:
+
 - keep the profile
 - show a clear runtime failure state in `CLI Surface`
 - offer:
@@ -239,6 +265,7 @@ Do not send the user back to a blank full form unless there is no better recover
 ## Technical Touchpoints
 
 Primary expected areas:
+
 - `src/renderer/components/tab-bar.ts`
 - `src/renderer/components/cli-surface/pane.ts`
 - `src/renderer/state.ts`
@@ -246,11 +273,13 @@ Primary expected areas:
 - new discovery module in main or shared runtime orchestration
 
 Likely new modules:
+
 - `src/main/cli-surface-discovery.ts`
 - `src/main/cli-surface-discovery.test.ts`
 - shared candidate types in `src/shared/types.ts` so renderer can render reasoning data without recomputing it
 
 Expected responsibilities:
+
 - discovery lives outside renderer
 - renderer receives structured candidates and confidence
 - renderer decides whether to:
@@ -261,6 +290,7 @@ Expected responsibilities:
 ## Acceptance Criteria
 
 This design is complete when:
+
 - clicking `CLI Surface` no longer always opens the full profile form
 - high-confidence projects auto-create and auto-start a CLI runtime profile
 - medium-confidence projects show a quick candidate picker
@@ -271,6 +301,7 @@ This design is complete when:
 ## Verification Plan
 
 Minimum verification after implementation:
+
 - discovery unit tests for Node, Python, Rust, and Go project fixtures
 - confidence classification tests
 - renderer tests for:

@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const cliUpdatePanelSource = readFileSync(new URL('./tab-bar-cli-update-panel.ts', import.meta.url), 'utf-8');
+const cliUpdatePanelSource = readFileSync(
+  new URL('./tab-bar-cli-update-panel.ts', import.meta.url),
+  'utf-8',
+);
 const updateCenterSource = `${tabBarSource}\n${cliUpdatePanelSource}`;
 const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
 
@@ -29,7 +32,8 @@ describe('tab bar update center contract', () => {
   });
 
   it('auto-opens the update panel when a new update run starts', () => {
-    expect(tabBarSource).toContain("snapshot.cli.phase === 'running' && lastCliPhase !== 'running'");
+    expect(tabBarSource).toContain("snapshot.cli.phase === 'running'");
+    expect(tabBarSource).toContain("lastCliPhase !== 'running'");
     expect(tabBarSource).toContain('!isCliUpdatePanelVisible()');
     expect(tabBarSource).toContain('toggleCliUpdatePanel(true)');
   });
@@ -48,8 +52,10 @@ describe('tab bar update center contract', () => {
   });
 
   it('renders active provider stage details while updates are running', () => {
-    expect(updateCenterSource).toContain("row.classList.toggle('is-active'");
-    expect(updateCenterSource).toContain("provider.status === 'running' && provider.message");
+    expect(updateCenterSource).toContain('row.classList.toggle(');
+    expect(updateCenterSource).toContain("'is-active'");
+    expect(updateCenterSource).toContain("cliState.phase === 'running'");
+    expect(updateCenterSource).toContain('cliState.activeProviderId');
   });
 
   it('renders explicit selected-provider and update-all actions inside the panel', () => {
@@ -62,8 +68,12 @@ describe('tab bar update center contract', () => {
 
   it('announces update status changes for assistive technologies', () => {
     expect(updateCenterSource).toContain("cliUpdatePanelStatusEl.setAttribute('role', 'status')");
-    expect(updateCenterSource).toContain("cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite')");
-    expect(updateCenterSource).toContain("cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite')");
+    expect(updateCenterSource).toContain(
+      "cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite')",
+    );
+    expect(updateCenterSource).toContain(
+      "cliUpdatePanelMetaEl.setAttribute('aria-live', 'polite')",
+    );
     expect(updateCenterSource).toContain("cliUpdatePanelEl.setAttribute('aria-busy'");
   });
 });

@@ -26,15 +26,7 @@ interface BindShareDialogPhaseNavigationParams {
 }
 
 export function bindShareDialogPhaseNavigation(params: BindShareDialogPhaseNavigationParams): void {
-  const {
-    phase1,
-    phase2,
-    nextBtn,
-    backBtn,
-    startBtn,
-    passphraseInput,
-    statusEl,
-  } = params;
+  const { phase1, phase2, nextBtn, backBtn, startBtn, passphraseInput, statusEl } = params;
 
   nextBtn.addEventListener('click', () => {
     phase1.classList.add('hidden');
@@ -55,7 +47,10 @@ export function bindShareDialogPhaseNavigation(params: BindShareDialogPhaseNavig
   });
 }
 
-export function createShareDialogPhaseOne(copy: ShareDialogCopy, hasMobileApi: boolean): ShareDialogPhaseOneElements {
+export function createShareDialogPhaseOne(
+  copy: ShareDialogCopy,
+  hasMobileApi: boolean,
+): ShareDialogPhaseOneElements {
   const phase1 = document.createElement('div');
   phase1.className = 'share-phase';
 
@@ -142,7 +137,12 @@ export function createShareDialogActions(copy: ShareDialogCopy): ShareDialogActi
   };
 }
 
-function createRadio(name: string, value: string, labelText: string, checked: boolean): HTMLElement {
+function createRadio(
+  name: string,
+  value: string,
+  labelText: string,
+  checked: boolean,
+): HTMLElement {
   const wrapper = document.createElement('label');
   wrapper.className = 'share-radio-label';
   const input = document.createElement('input');

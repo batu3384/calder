@@ -4,31 +4,45 @@ import { describe, expect, it } from 'vitest';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const configSectionsSource = [
   readFileSync(new URL('./config-sections/config-sections.ts', import.meta.url), 'utf-8'),
-  readFileSync(new URL('./config-sections/config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+  readFileSync(
+    new URL('./config-sections/config-sections-auto-approval.ts', import.meta.url),
+    'utf-8',
+  ),
 ].join('\n');
 const gitPanelSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');
 const inspectorSource = readFileSync(new URL('./context-inspector.ts', import.meta.url), 'utf-8');
-const diagnosticsSource = readFileSync(new URL('./diagnostics-summary.ts', import.meta.url), 'utf-8');
-const inspectorCss = readFileSync(new URL('../styles/context-inspector.css', import.meta.url), 'utf-8');
+const diagnosticsSource = readFileSync(
+  new URL('./diagnostics-summary.ts', import.meta.url),
+  'utf-8',
+);
+const inspectorCss = readFileSync(
+  new URL('../styles/context-inspector.css', import.meta.url),
+  'utf-8',
+);
 
 describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
     expect(html).toContain('Inspector');
     expect(html).toContain('Workspace Pulse');
-    expect(html).toContain('Run controls, project state, and tools stay separated so the rail stays readable.');
+    expect(html).toContain(
+      'Run controls, project state, and tools stay separated so the rail stays',
+    );
     expect(html).toContain('context-inspector-tabs');
     expect(html).toContain('aria-controls="context-inspector-panel-run"');
     expect(html).toContain('aria-controls="context-inspector-panel-project"');
     expect(html).toContain('aria-controls="context-inspector-panel-timeline"');
-    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-run"');
-    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-project"');
-    expect(html).toContain('role="tabpanel" aria-labelledby="context-inspector-tab-timeline"');
+    expect(html).toContain('role="tabpanel"');
+    expect(html).toContain('aria-labelledby="context-inspector-tab-run"');
+    expect(html).toContain('aria-labelledby="context-inspector-tab-project"');
+    expect(html).toContain('aria-labelledby="context-inspector-tab-timeline"');
     expect(html).toContain('id="diagnostics-summary"');
     expect(html).toContain('Worktree status, branches, and safe git actions.');
     expect(html).toContain('Recent runs, notes, and session timeline.');
     expect(html).not.toContain('id="context-inspector-overview"');
-    expect(html).toContain('class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"');
+    expect(html).toContain(
+      'class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"',
+    );
     expect(configSectionsSource).toContain("'MCP Servers'");
     expect(configSectionsSource).toContain("'Auto Approval'");
     expect(configSectionsSource).toContain('Model Context Protocol');
@@ -107,7 +121,10 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('border-bottom: 1px solid');
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('background: transparent;');
-    expect(inspectorCss).toContain('border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);');
-    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='warning'] .context-inspector-section[data-section=\"capabilities\"]");
+    expect(inspectorCss).toContain(
+      'border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);',
+    );
+    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='warning']");
+    expect(inspectorCss).toContain(".context-inspector-section[data-section='capabilities']");
   });
 });

@@ -20,17 +20,30 @@ vi.mock('./external-hook-policy', () => ({
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
-  statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`),
-  captureSessionIdCmd: vi.fn((_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`),
+  statusCmd: vi.fn(
+    (e: string, s: string, _v: string, marker: string) =>
+      `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`,
+  ),
+  captureSessionIdCmd: vi.fn(
+    (_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`,
+  ),
   captureToolFailureCmd: vi.fn((_v: string, marker: string) => `capture-toolfailure ${marker}`),
-  wrapPythonHookCmd: vi.fn((_name: string, _code: string, marker: string) => `capture-event $CALDER_SESSION_ID .events ${marker}`),
+  wrapPythonHookCmd: vi.fn(
+    (_name: string, _code: string, marker: string) =>
+      `capture-event $CALDER_SESSION_ID .events ${marker}`,
+  ),
   cleanupHookScripts: vi.fn(),
 }));
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ANTIGRAVITY_HOOK_MARKER,cleanupAntigravityHooks, installAntigravityHooks, validateAntigravityHooks } from './antigravity-hooks';
+import {
+  ANTIGRAVITY_HOOK_MARKER,
+  cleanupAntigravityHooks,
+  installAntigravityHooks,
+  validateAntigravityHooks,
+} from './antigravity-hooks';
 import * as hookCommands from './hooks/hook-commands';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -60,7 +73,7 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     expect(call).toBeDefined();
     const written = JSON.parse(String(call![1]));
     const hooks = written.hooks;
@@ -78,7 +91,7 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
 
     for (const [, matchers] of Object.entries(hooks) as [string, any[]][]) {
@@ -94,7 +107,7 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
 
     for (const [, matchers] of Object.entries(hooks) as [string, any[]][]) {
@@ -110,10 +123,12 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
     const beforeToolHooks = hooks.BeforeTool?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = beforeToolHooks.find((hook: any) => String(hook.command).includes('rtk hook antigravity'));
+    const rtkHook = beforeToolHooks.find((hook: any) =>
+      String(hook.command).includes('rtk hook antigravity'),
+    );
 
     expect(rtkHook).toBeDefined();
     expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
@@ -126,7 +141,7 @@ describe('installAntigravityHooks', () => {
     });
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
     expect(written.theme).toBe('dark');
     expect(written.mcpServers.test.command).toBe('test');
@@ -135,26 +150,28 @@ describe('installAntigravityHooks', () => {
   it('preserves existing user hooks', () => {
     const existing = {
       hooks: {
-        SessionStart: [{
-          matcher: 'startup',
-          hooks: [{ type: 'command', command: 'echo user-hook' }],
-        }],
+        SessionStart: [
+          {
+            matcher: 'startup',
+            hooks: [{ type: 'command', command: 'echo user-hook' }],
+          },
+        ],
       },
     };
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
 
-    const userMatcher = hooks.SessionStart.find(
-      (m: any) => m.hooks.some((h: any) => h.command === 'echo user-hook')
+    const userMatcher = hooks.SessionStart.find((m: any) =>
+      m.hooks.some((h: any) => h.command === 'echo user-hook'),
     );
     expect(userMatcher).toBeDefined();
 
-    const calderMatcher = hooks.SessionStart.find(
-      (m: any) => m.hooks.some((h: any) => h.command.includes(ANTIGRAVITY_HOOK_MARKER))
+    const calderMatcher = hooks.SessionStart.find((m: any) =>
+      m.hooks.some((h: any) => h.command.includes(ANTIGRAVITY_HOOK_MARKER)),
     );
     expect(calderMatcher).toBeDefined();
   });
@@ -162,18 +179,26 @@ describe('installAntigravityHooks', () => {
   it('is idempotent — no duplicate hooks on second run', () => {
     mockFiles({});
     installAntigravityHooks();
-    const firstCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const firstCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const firstOutput = String(firstCall![1]);
 
     mockFiles({ [SETTINGS_PATH]: firstOutput });
     mockWriteFileSync.mockClear();
 
     installAntigravityHooks();
-    const secondCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const secondCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const secondOutput = JSON.parse(String(secondCall![1]));
     const firstParsed = JSON.parse(firstOutput);
 
-    for (const event of ['SessionStart', 'BeforeAgent', 'BeforeTool', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest']) {
+    for (const event of [
+      'SessionStart',
+      'BeforeAgent',
+      'BeforeTool',
+      'AfterTool',
+      'AfterAgent',
+      'SessionEnd',
+      'PermissionRequest',
+    ]) {
       expect(secondOutput.hooks[event]?.length).toBe(firstParsed.hooks[event]?.length);
     }
   });
@@ -182,11 +207,12 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
 
     const getStatusCmd = (event: string) =>
-      hooks[event].find((m: any) => m.hooks.some((h: any) => h.command.includes('.status')))
+      hooks[event]
+        .find((m: any) => m.hooks.some((h: any) => h.command.includes('.status')))
         ?.hooks.find((h: any) => h.command.includes('.status'))?.command;
 
     expect(getStatusCmd('SessionStart')).toContain('SessionStart:waiting');
@@ -202,13 +228,11 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
 
     const hasSessionIdCapture = (event: string) =>
-      hooks[event]?.some((m: any) =>
-        m.hooks.some((h: any) => h.name === 'calder-sessionid')
-      );
+      hooks[event]?.some((m: any) => m.hooks.some((h: any) => h.name === 'calder-sessionid'));
 
     expect(hasSessionIdCapture('SessionStart')).toBe(true);
     expect(hasSessionIdCapture('BeforeAgent')).toBe(true);
@@ -223,7 +247,9 @@ describe('installAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const afterToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'antigravity_event_AfterTool.py');
+    const afterToolScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'antigravity_event_AfterTool.py',
+    );
     expect(afterToolScript).toBeDefined();
     const py = String(afterToolScript![1]);
 
@@ -238,7 +264,7 @@ describe('validateAntigravityHooks', () => {
     mockFiles({});
     installAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const content = String(call![1]);
     mockFiles({ [SETTINGS_PATH]: content });
 
@@ -271,8 +297,18 @@ describe('validateAntigravityHooks', () => {
   it('returns partial when some hooks are missing', () => {
     const partial = {
       hooks: {
-        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }] }],
-        BeforeAgent: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }] }],
+        SessionStart: [
+          {
+            matcher: '',
+            hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }],
+          },
+        ],
+        BeforeAgent: [
+          {
+            matcher: '',
+            hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }],
+          },
+        ],
       },
     };
 
@@ -291,13 +327,27 @@ describe('validateAntigravityHooks', () => {
   it('does not treat unknown legacy hooks as installed', () => {
     const legacyOnly = {
       hooks: {
-        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        BeforeAgent: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        BeforeTool: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        AfterTool: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        AfterAgent: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        SessionEnd: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        PermissionRequest: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
+        SessionStart: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        BeforeAgent: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        BeforeTool: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        AfterTool: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        AfterAgent: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        SessionEnd: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        PermissionRequest: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
       },
     };
 
@@ -321,7 +371,10 @@ describe('cleanupAntigravityHooks', () => {
       hooks: {
         SessionStart: [
           { matcher: 'startup', hooks: [{ type: 'command', command: 'echo user-hook' }] },
-          { matcher: '', hooks: [{ type: 'command', command: `echo status ${ANTIGRAVITY_HOOK_MARKER}` }] },
+          {
+            matcher: '',
+            hooks: [{ type: 'command', command: `echo status ${ANTIGRAVITY_HOOK_MARKER}` }],
+          },
         ],
       },
     };
@@ -329,7 +382,7 @@ describe('cleanupAntigravityHooks', () => {
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
     cleanupAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
 
     expect(written.hooks.SessionStart).toHaveLength(1);
@@ -349,7 +402,7 @@ describe('cleanupAntigravityHooks', () => {
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
     cleanupAntigravityHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
     expect(written.hooks).toBeUndefined();
     expect(written.theme).toBe('dark');

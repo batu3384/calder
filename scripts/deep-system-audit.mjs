@@ -29,9 +29,21 @@ function runStep(step) {
 const steps = [
   { name: 'Clear Vitest cache', cmd: NPX, args: ['vitest', '--clearCache'] },
   { name: 'Main test suite', cmd: NPM, args: ['test'] },
-  { name: 'Shuffle seed 1', cmd: NPX, args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '1'] },
-  { name: 'Shuffle seed 42', cmd: NPX, args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '42'] },
-  { name: 'Shuffle seed 2026', cmd: NPX, args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '2026'] },
+  {
+    name: 'Shuffle seed 1',
+    cmd: NPX,
+    args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '1'],
+  },
+  {
+    name: 'Shuffle seed 42',
+    cmd: NPX,
+    args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '42'],
+  },
+  {
+    name: 'Shuffle seed 2026',
+    cmd: NPX,
+    args: ['vitest', 'run', '--sequence.shuffle', '--sequence.seed', '2026'],
+  },
   { name: 'Coverage suite', cmd: NPM, args: ['run', 'test:coverage'] },
   { name: 'Coverage suite (full boundaries)', cmd: NPM, args: ['run', 'test:coverage:full'] },
   { name: 'Build', cmd: NPM, args: ['run', 'build'] },
@@ -39,6 +51,7 @@ const steps = [
   { name: 'Dead code scan (Knip, pinned)', cmd: NPM, args: ['run', 'audit:knip'] },
   { name: 'Graph gap audit', cmd: NPM, args: ['run', 'audit:graph'] },
   { name: 'Structure audit', cmd: NPM, args: ['run', 'audit:structure'] },
+  { name: 'Tracked secrets scan', cmd: NPM, args: ['run', 'audit:secrets'] },
 ];
 
 let failed = false;

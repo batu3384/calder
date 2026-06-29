@@ -7,7 +7,11 @@ interface MatchInfo {
 }
 
 export function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function escapeRegExp(s: string): string {
@@ -97,7 +101,11 @@ export class DomSearchBackend implements SearchBackend {
 
   /** Returns true if matches were recalculated, false if cached. */
   private search(query: string, options: { caseSensitive: boolean; regex: boolean }): boolean {
-    if (query === this.lastQuery && options.caseSensitive === this.lastOptions.caseSensitive && options.regex === this.lastOptions.regex) {
+    if (
+      query === this.lastQuery &&
+      options.caseSensitive === this.lastOptions.caseSensitive &&
+      options.regex === this.lastOptions.regex
+    ) {
       return false;
     }
 

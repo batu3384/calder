@@ -2,7 +2,7 @@ import type { ShareMode } from '../../../shared/sharing-types.js';
 import type { ShareRtcConfig } from '../../../shared/types/project-core.js';
 import { isSharing } from '../../sharing/peer-host.js';
 import { validateSharePassphrase } from '../../sharing/share-crypto.js';
-import { endShare,shareSession } from '../../sharing/share-manager.js';
+import { endShare, shareSession } from '../../sharing/share-manager.js';
 import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
 import {
   localizePassphraseError,
@@ -137,7 +137,9 @@ export function bindStartSharingHandler(params: BindStartSharingHandlerParams): 
       }
       setPendingShareSessionId(null);
       flowController.setShareHandshake(null, null);
-      statusEl.textContent = copy.errorWithReason(err instanceof Error ? err.message : copy.unknownError);
+      statusEl.textContent = copy.errorWithReason(
+        err instanceof Error ? err.message : copy.unknownError,
+      );
       startBtn.disabled = false;
       startBtn.textContent = copy.startSharing;
     }

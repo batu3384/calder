@@ -6,7 +6,10 @@ export function buildSurfaceControlsSignatureForProject(project: ProjectRecord):
   const surface = getProjectSurface(project);
   const profiles = surface.cli?.profiles ?? [];
   const profileSignature = profiles
-    .map((profile) => `${profile.id}:${getCliSurfaceProfileLabel(profile)}:${profile.cwd ?? ''}:${profile.command}`)
+    .map(
+      (profile) =>
+        `${profile.id}:${getCliSurfaceProfileLabel(profile)}:${profile.cwd ?? ''}:${profile.command}`,
+    )
     .join('|');
   return [
     project.id,

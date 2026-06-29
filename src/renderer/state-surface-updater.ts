@@ -7,14 +7,17 @@ interface ActiveSessionUpdateResult {
   surfaceChanged: boolean;
 }
 
-export function setActiveProjectSession(project: ProjectRecord, sessionId: string): ActiveSessionUpdateResult {
+export function setActiveProjectSession(
+  project: ProjectRecord,
+  sessionId: string,
+): ActiveSessionUpdateResult {
   project.activeSessionId = sessionId;
   const activeSession = project.sessions.find((session) => session.id === sessionId);
   let surfaceChanged = false;
 
   if (
-    (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli')
-    || (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
+    (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') ||
+    (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
   ) {
     project.surface = normalizeProjectSurface(project);
     project.surface.tabFocus = 'session';
@@ -44,18 +47,22 @@ export function setActiveProjectSession(project: ProjectRecord, sessionId: strin
 }
 
 export function applyProjectSurface(project: ProjectRecord, surface: ProjectSurfaceRecord): void {
-  const tabFocus = surface.kind === 'cli'
-    ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
-    : surface.kind === 'mobile'
-      ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
-    : 'session';
+  const tabFocus =
+    surface.kind === 'cli'
+      ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
+      : surface.kind === 'mobile'
+        ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
+        : 'session';
   const tabPlacement = surface.tabPlacement === 'start' ? 'start' : 'end';
   const tabOrder = Array.isArray(surface.tabOrder)
-    ? surface.tabOrder.filter((entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile')
+    ? surface.tabOrder.filter(
+        (entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile',
+      )
     : [];
-  const normalizedTabOrder: Array<'cli' | 'mobile'> = (tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile'))
-    ? tabOrder
-    : ['cli', 'mobile'];
+  const normalizedTabOrder: Array<'cli' | 'mobile'> =
+    tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile')
+      ? tabOrder
+      : ['cli', 'mobile'];
 
   project.surface = {
     ...surface,
@@ -72,7 +79,9 @@ export function applyProjectSurface(project: ProjectRecord, surface: ProjectSurf
       ? {
           ...surface.cli,
           profiles: [...surface.cli.profiles],
-          runtime: surface.cli.runtime ? stripTransientRuntimeFields(surface.cli.runtime) : undefined,
+          runtime: surface.cli.runtime
+            ? stripTransientRuntimeFields(surface.cli.runtime)
+            : undefined,
         }
       : { profiles: [], runtime: { status: 'idle' } },
   };

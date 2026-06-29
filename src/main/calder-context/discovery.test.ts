@@ -1,4 +1,4 @@
-import { mkdirSync,mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -78,7 +78,8 @@ describe('discoverProjectContext', () => {
       'GEMINI.md': '# Gemini instructions\nKeep responses short.\n',
       'QWEN.md': '# Qwen instructions\nPrioritize safety checks.\n',
       '.github/copilot-instructions.md': '# Copilot instructions\nPrefer concise PR notes.\n',
-      '.github/instructions/api/backend.instructions.md': '# Backend instructions\nUse strict API schemas.\n',
+      '.github/instructions/api/backend.instructions.md':
+        '# Backend instructions\nUse strict API schemas.\n',
       '.claude/CLAUDE.md': '# Claude workspace memory\nFavor vitest for tests.\n',
     });
 

@@ -3,18 +3,32 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'), 'utf8');
-const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'), 'utf8');
-const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
-const backgroundTaskSource = readFileSync(
-  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-background-task-discovery.ts'),
+const modalPrimarySource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'),
   'utf8',
 );
-const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
+const modalSectionsSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'),
+  'utf8',
+);
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
+const backgroundTaskSource = readFileSync(
+  path.join(
+    process.cwd(),
+    'src/renderer/components/preferences/preferences-background-task-discovery.ts',
+  ),
+  'utf8',
+);
+const styles = readFileSync(
+  path.join(process.cwd(), 'src/renderer/styles/preferences.css'),
+  'utf8',
+);
 
 describe('project background task preferences contract', () => {
   it('surfaces the local background task queue in automation', () => {
-    expect(modalSource).toContain("import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';");
+    expect(modalSource).toContain(
+      "import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';",
+    );
     expect(modalSource).toContain('renderProjectBackgroundTaskSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
     expect(modalSource).toContain('modalBody: bodyEl');

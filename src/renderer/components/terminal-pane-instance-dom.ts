@@ -78,9 +78,7 @@ export function setFocusedTerminalInstance(
   // This prevents stealing focus from the project terminal panel, search bar, modals, etc.
   const activeEl = document.activeElement;
   const shouldFocusTerminal =
-    !activeEl ||
-    activeEl === document.body ||
-    !!activeEl.closest('.terminal-pane');
+    !activeEl || activeEl === document.body || !!activeEl.closest('.terminal-pane');
 
   for (const [id, instance] of instances) {
     if (id === sessionId) {

@@ -13,7 +13,9 @@ export interface SubmitShareDialogAnswerParams {
   setMobileStatus: (text: string, kind?: 'info' | 'success' | 'error') => void;
 }
 
-export async function submitShareDialogAnswer(params: SubmitShareDialogAnswerParams): Promise<void> {
+export async function submitShareDialogAnswer(
+  params: SubmitShareDialogAnswerParams,
+): Promise<void> {
   const {
     sessionId,
     answer,

@@ -144,28 +144,28 @@ export function inferConnectionStateFromText(value: string): ConnectionState {
   const text = value.toLowerCase();
   if (!text) return 'idle';
   if (
-    text.includes('connected')
-    || text.includes('bagli')
-    || text.includes('bağlı')
-    || text.includes('aktif')
+    text.includes('connected') ||
+    text.includes('bagli') ||
+    text.includes('bağlı') ||
+    text.includes('aktif')
   ) {
     return 'connected';
   }
   if (
-    text.includes('waiting')
-    || text.includes('authoriz')
-    || text.includes('verifying')
-    || text.includes('bekli')
-    || text.includes('dogrul')
-    || text.includes('doğrul')
+    text.includes('waiting') ||
+    text.includes('authoriz') ||
+    text.includes('verifying') ||
+    text.includes('bekli') ||
+    text.includes('dogrul') ||
+    text.includes('doğrul')
   ) {
     return 'waiting';
   }
   if (
-    text.includes('failed')
-    || text.includes('error')
-    || text.includes('hata')
-    || text.includes('mismatch')
+    text.includes('failed') ||
+    text.includes('error') ||
+    text.includes('hata') ||
+    text.includes('mismatch')
   ) {
     return 'error';
   }

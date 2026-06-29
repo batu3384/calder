@@ -17,7 +17,7 @@ describe('cli surface discovery IPC contract', () => {
   });
 
   it('exposes discover on window.calder.cliSurface', () => {
-    expect(preloadSource).toContain("discover: (projectPath: string)");
+    expect(preloadSource).toContain('discover: (projectPath: string)');
     expect(preloadSource).toContain("ipcRenderer.invoke('cli-surface:discover', projectPath)");
   });
 });

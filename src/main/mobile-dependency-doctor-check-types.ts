@@ -1,7 +1,4 @@
-import type {
-  MobileDependencyCheck,
-  MobileDependencyId,
-} from '../shared/types/mobile';
+import type { MobileDependencyCheck, MobileDependencyId } from '../shared/types/mobile';
 
 export interface MobileDoctorCommandResult {
   code: number;

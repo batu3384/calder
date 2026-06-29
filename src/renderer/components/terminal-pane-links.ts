@@ -1,18 +1,30 @@
 import type { Terminal } from '@xterm/xterm';
 
-import { type LinkDispatchSnapshot,resolveNavigableHttpUrl, shouldDispatchLinkOpen } from './surface-services/link-routing.js';
+import {
+  type LinkDispatchSnapshot,
+  resolveNavigableHttpUrl,
+  shouldDispatchLinkOpen,
+} from './surface-services/link-routing.js';
 
 const lastTerminalLinkDispatchBySession = new Map<string, LinkDispatchSnapshot>();
-const INLINE_URL_PATTERN = /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/ig;
+const INLINE_URL_PATTERN =
+  /(https?:\/\/[^\s<>()\[\]{}"']+|(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?)/gi;
 
 function clearDomSelection(terminal: Terminal): void {
   try {
     terminal.clearSelection();
-  } catch { /* ignore malformed URL */ }
+  } catch {
+    /* ignore malformed URL */
+  }
   window.getSelection?.()?.removeAllRanges?.();
 }
 
-function openTerminalWebLink(sessionId: string, url: string, source: LinkDispatchSnapshot['source'], cwd?: string): void {
+function openTerminalWebLink(
+  sessionId: string,
+  url: string,
+  source: LinkDispatchSnapshot['source'],
+  cwd?: string,
+): void {
   const normalizedUrl = resolveNavigableHttpUrl(url);
   if (!normalizedUrl) return;
   const now = Date.now();
@@ -22,21 +34,31 @@ function openTerminalWebLink(sessionId: string, url: string, source: LinkDispatc
   void window.calder.app.openExternal(normalizedUrl, cwd);
 }
 
-function findInlineUrlAtPointer(terminal: Terminal, host: HTMLElement, event: MouseEvent): string | null {
+function findInlineUrlAtPointer(
+  terminal: Terminal,
+  host: HTMLElement,
+  event: MouseEvent,
+): string | null {
   if (terminal.cols <= 0 || terminal.rows <= 0) return null;
   const rect = host.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return null;
   if (event.clientX < rect.left || event.clientX > rect.right) return null;
   if (event.clientY < rect.top || event.clientY > rect.bottom) return null;
 
-  const col = Math.max(0, Math.min(
-    terminal.cols - 1,
-    Math.floor((event.clientX - rect.left) / (rect.width / terminal.cols)),
-  ));
-  const row = Math.max(0, Math.min(
-    terminal.rows - 1,
-    Math.floor((event.clientY - rect.top) / (rect.height / terminal.rows)),
-  ));
+  const col = Math.max(
+    0,
+    Math.min(
+      terminal.cols - 1,
+      Math.floor((event.clientX - rect.left) / (rect.width / terminal.cols)),
+    ),
+  );
+  const row = Math.max(
+    0,
+    Math.min(
+      terminal.rows - 1,
+      Math.floor((event.clientY - rect.top) / (rect.height / terminal.rows)),
+    ),
+  );
 
   const lineIndex = terminal.buffer.active.viewportY + row;
   const line = terminal.buffer.active.getLine(lineIndex);
@@ -108,44 +130,66 @@ export function bindTerminalLinkPointerHandlers(
 ): void {
   let suppressLinkDragSelection = false;
 
-  xtermWrap.addEventListener('mousedown', (event: MouseEvent) => {
-    if (event.button !== 0) return;
-    // Clear stale suppression from a previous link click before evaluating
-    // the current pointer target.
-    suppressLinkDragSelection = false;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressLinkDragSelection = true;
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-  }, { capture: true });
-
-  xtermWrap.addEventListener('mousemove', (event: MouseEvent) => {
-    if (!suppressLinkDragSelection) return;
-    if ((event.buttons & 1) !== 1) {
+  xtermWrap.addEventListener(
+    'mousedown',
+    (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      // Clear stale suppression from a previous link click before evaluating
+      // the current pointer target.
       suppressLinkDragSelection = false;
-      return;
-    }
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-  }, { capture: true });
+      const candidate =
+        findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
+      if (!candidate) return;
+      suppressLinkDragSelection = true;
+      suppressPointerEvent(event);
+      clearDomSelection(terminal);
+    },
+    { capture: true },
+  );
 
-  xtermWrap.addEventListener('mouseup', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
+  xtermWrap.addEventListener(
+    'mousemove',
+    (event: MouseEvent) => {
+      if (!suppressLinkDragSelection) return;
+      if ((event.buttons & 1) !== 1) {
+        suppressLinkDragSelection = false;
+        return;
+      }
+      suppressPointerEvent(event);
+      clearDomSelection(terminal);
+    },
+    { capture: true },
+  );
 
-  xtermWrap.addEventListener('mouseleave', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
+  xtermWrap.addEventListener(
+    'mouseup',
+    () => {
+      suppressLinkDragSelection = false;
+    },
+    { capture: true },
+  );
 
-  xtermWrap.addEventListener('click', (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressPointerEvent(event);
-    clearDomSelection(terminal);
-    openTerminalWebLink(sessionId, candidate, 'web-link', projectPath);
-  }, { capture: true });
+  xtermWrap.addEventListener(
+    'mouseleave',
+    () => {
+      suppressLinkDragSelection = false;
+    },
+    { capture: true },
+  );
+
+  xtermWrap.addEventListener(
+    'click',
+    (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      const candidate =
+        findInlineUrlAtPointer(terminal, xtermWrap, event) ?? extractUrlFromEventTarget(event);
+      if (!candidate) return;
+      suppressPointerEvent(event);
+      clearDomSelection(terminal);
+      openTerminalWebLink(sessionId, candidate, 'web-link', projectPath);
+    },
+    { capture: true },
+  );
 }
 
 export function clearTerminalLinkDispatch(sessionId: string): void {

@@ -3,8 +3,17 @@ import path from 'node:path';
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { ProjectGovernanceAutoApprovalDecisionRecord, ProjectGovernanceAutoApprovalState } from './types';
-import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalOperationClass, AutoApprovalPolicySource, InspectorEvent } from './types';
+import type {
+  ProjectGovernanceAutoApprovalDecisionRecord,
+  ProjectGovernanceAutoApprovalState,
+} from './types';
+import type {
+  AutoApprovalDecision,
+  AutoApprovalMode,
+  AutoApprovalOperationClass,
+  AutoApprovalPolicySource,
+  InspectorEvent,
+} from './types';
 
 const source = readFileSync(path.join(process.cwd(), 'src/shared/types.ts'), 'utf8');
 
@@ -16,9 +25,15 @@ describe('project governance contracts', () => {
     expect(source).toContain("writePolicy: 'allow' | 'ask' | 'block'");
     expect(source).toContain("networkPolicy: 'allow' | 'ask' | 'block'");
     expect(source).toContain('providerProfileCount: number');
-    expect(source).toContain("export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';");
-    expect(source).toContain("export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';");
-    expect(source).toContain("export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';");
+    expect(source).toContain(
+      "export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';",
+    );
+    expect(source).toContain(
+      "export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';",
+    );
+    expect(source).toContain(
+      "export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';",
+    );
     expect(source).toContain("export type AutoApprovalDecision = 'allow' | 'ask' | 'block';");
     expect(source).toContain('export interface ProjectGovernanceAutoApprovalState');
     expect(source).toContain('globalMode: AutoApprovalMode');
@@ -37,7 +52,9 @@ describe('project governance contracts', () => {
       decision: AutoApprovalDecision;
       reason?: string;
     }>();
-    expectTypeOf<ProjectGovernanceAutoApprovalState['recentDecisions'][number]>().toEqualTypeOf<ProjectGovernanceAutoApprovalDecisionRecord>();
+    expectTypeOf<
+      ProjectGovernanceAutoApprovalState['recentDecisions'][number]
+    >().toEqualTypeOf<ProjectGovernanceAutoApprovalDecisionRecord>();
   });
 
   it('extends project records with governance state', () => {
@@ -60,12 +77,15 @@ describe('project governance contracts', () => {
   });
 
   it('pins the inspector auto-approval payload shape', () => {
-    expectTypeOf<InspectorEvent['auto_approval']>().toEqualTypeOf<{
-      policy_source: AutoApprovalPolicySource;
-      effective_mode: AutoApprovalMode;
-      operation_class: AutoApprovalOperationClass;
-      decision: AutoApprovalDecision;
-      reason?: string;
-    } | undefined>();
+    expectTypeOf<InspectorEvent['auto_approval']>().toEqualTypeOf<
+      | {
+          policy_source: AutoApprovalPolicySource;
+          effective_mode: AutoApprovalMode;
+          operation_class: AutoApprovalOperationClass;
+          decision: AutoApprovalDecision;
+          reason?: string;
+        }
+      | undefined
+    >();
   });
 });

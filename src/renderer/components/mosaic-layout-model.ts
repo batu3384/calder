@@ -16,7 +16,12 @@ export function resolveMosaicPreset(count: number, requested?: MosaicPreset): Mo
   return requested && valid.includes(requested) ? requested : defaultPresetForCount(count);
 }
 
-export function clampRatio(value: number | undefined, min = 0.2, max = 0.8, fallback = 0.5): number {
+export function clampRatio(
+  value: number | undefined,
+  min = 0.2,
+  max = 0.8,
+  fallback = 0.5,
+): number {
   if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
   return Math.min(max, Math.max(min, value));
 }

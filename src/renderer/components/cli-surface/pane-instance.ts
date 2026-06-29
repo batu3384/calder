@@ -1,6 +1,6 @@
 import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
 import type { InferredCliRegion } from './heuristics.js';
-import { type CliInspectState,createInitialInspectState } from './inspect-mode.js';
+import { type CliInspectState, createInitialInspectState } from './inspect-mode.js';
 import type { SelectableCliRegion } from './inspect-selection.js';
 import type { CliSurfaceLayoutElements, CliSurfaceTerminalElements } from './pane-elements.js';
 import type { CliTargetMenuController } from './target-menu.js';

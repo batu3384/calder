@@ -56,7 +56,9 @@ function readSkillsFromDir(dirPath: string, scope: 'user' | 'project'): Skill[] 
   return skills;
 }
 
-function parseEnabledPluginEntries(configTomlPath: string): Array<{ pluginId: string; marketplace: string }> {
+function parseEnabledPluginEntries(
+  configTomlPath: string,
+): Array<{ pluginId: string; marketplace: string }> {
   const content = readFileSafe(configTomlPath);
   if (!content) return [];
 
@@ -154,7 +156,10 @@ function splitTomlSectionPath(sectionPath: string): string[] {
 
 function parseTomlString(rawValue: string): string {
   const value = rawValue.trim();
-  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith('\'') && value.endsWith('\''))) {
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
     return value.slice(1, -1);
   }
   return value;
@@ -174,7 +179,8 @@ function readMcpServersFromToml(filePath: string, scope: 'user' | 'project'): Mc
     const sectionMatch = line.match(/^\[(.+)\]$/);
     if (sectionMatch) {
       const sectionPath = splitTomlSectionPath(sectionMatch[1].trim());
-      currentServerName = sectionPath[0] === 'mcp_servers' && sectionPath[1] ? sectionPath[1] : null;
+      currentServerName =
+        sectionPath[0] === 'mcp_servers' && sectionPath[1] ? sectionPath[1] : null;
       if (currentServerName && !servers.has(currentServerName)) {
         servers.set(currentServerName, {
           name: currentServerName,
@@ -202,7 +208,7 @@ function readMcpServersFromToml(filePath: string, scope: 'user' | 'project'): Mc
     }
   }
 
-  return Array.from(servers.values()).filter(server => server.url);
+  return Array.from(servers.values()).filter((server) => server.url);
 }
 
 export async function getCodexConfig(projectPath: string): Promise<ProviderConfig> {

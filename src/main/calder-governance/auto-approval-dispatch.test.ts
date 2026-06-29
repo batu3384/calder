@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveAutoApprovalInput, supportsAutoApprovalDispatch } from './auto-approval-dispatch.js';
+import {
+  resolveAutoApprovalInput,
+  supportsAutoApprovalDispatch,
+} from './auto-approval-dispatch.js';
 
 describe('resolveAutoApprovalInput', () => {
   it('returns provider-specific approval input', () => {
@@ -12,7 +15,9 @@ describe('resolveAutoApprovalInput', () => {
   });
 
   it('throws for unsupported providers', () => {
-    expect(() => resolveAutoApprovalInput('minimax' as any)).toThrow('Unsupported auto-approval provider');
+    expect(() => resolveAutoApprovalInput('minimax' as any)).toThrow(
+      'Unsupported auto-approval provider',
+    );
   });
 
   it('exposes provider support checks for orchestrator guards', () => {

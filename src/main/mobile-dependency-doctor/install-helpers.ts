@@ -2,9 +2,7 @@ import type {
   MobileDependencyId,
   MobileDependencyInstallProgressEvent,
 } from '../../shared/types/mobile';
-import {
-  clampPercent,
-} from '../mobile-dependency-doctor-utils';
+import { clampPercent } from '../mobile-dependency-doctor-utils';
 
 interface BuildProgressEventInput {
   installId: string;
@@ -49,7 +47,9 @@ export function computeOverallPercent(
   return clampPercent(((completedBeforeStep + stepFraction) / totalSteps) * 100);
 }
 
-export function buildProgressEvent(input: BuildProgressEventInput): MobileDependencyInstallProgressEvent {
+export function buildProgressEvent(
+  input: BuildProgressEventInput,
+): MobileDependencyInstallProgressEvent {
   const event: MobileDependencyInstallProgressEvent = {
     installId: input.installId,
     dependencyId: input.dependencyId,
@@ -63,11 +63,16 @@ export function buildProgressEvent(input: BuildProgressEventInput): MobileDepend
   if (input.message) event.message = input.message;
   if (input.detail) event.detail = input.detail;
   if (input.source) event.source = input.source;
-  if (typeof input.percent === 'number' && Number.isFinite(input.percent)) event.percent = clampPercent(input.percent);
-  if (typeof input.stepPercent === 'number' && Number.isFinite(input.stepPercent)) event.stepPercent = clampPercent(input.stepPercent);
-  if (typeof input.downloadedBytes === 'number' && Number.isFinite(input.downloadedBytes)) event.downloadedBytes = Math.max(0, input.downloadedBytes);
-  if (typeof input.totalBytes === 'number' && Number.isFinite(input.totalBytes)) event.totalBytes = Math.max(0, input.totalBytes);
-  if (typeof input.remainingBytes === 'number' && Number.isFinite(input.remainingBytes)) event.remainingBytes = Math.max(0, input.remainingBytes);
+  if (typeof input.percent === 'number' && Number.isFinite(input.percent))
+    event.percent = clampPercent(input.percent);
+  if (typeof input.stepPercent === 'number' && Number.isFinite(input.stepPercent))
+    event.stepPercent = clampPercent(input.stepPercent);
+  if (typeof input.downloadedBytes === 'number' && Number.isFinite(input.downloadedBytes))
+    event.downloadedBytes = Math.max(0, input.downloadedBytes);
+  if (typeof input.totalBytes === 'number' && Number.isFinite(input.totalBytes))
+    event.totalBytes = Math.max(0, input.totalBytes);
+  if (typeof input.remainingBytes === 'number' && Number.isFinite(input.remainingBytes))
+    event.remainingBytes = Math.max(0, input.remainingBytes);
   return event;
 }
 

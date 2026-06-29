@@ -135,7 +135,10 @@ export function validateRuntimePath(basePath: string, requestedPath: string): Sa
     const requestedReal = path.resolve(basePath, normalized);
     // Check that the resolved path is still within basePath
     if (!requestedReal.startsWith(baseReal + path.sep) && requestedReal !== baseReal) {
-      return { ok: false, error: `Path resolved outside base directory: ${requestedPath.slice(0, 80)}` };
+      return {
+        ok: false,
+        error: `Path resolved outside base directory: ${requestedPath.slice(0, 80)}`,
+      };
     }
   } catch {
     return { ok: false, error: `Could not resolve path: ${requestedPath.slice(0, 80)}` };

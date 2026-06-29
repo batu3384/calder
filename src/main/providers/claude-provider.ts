@@ -3,13 +3,20 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
 import { getClaudeConfig } from '../claude-cli';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { getFullPath } from '../full-path';
-import { cleanupAll as cleanupHookStatus,installStatusLineScript } from '../hooks/hook-status';
+import { cleanupAll as cleanupHookStatus, installStatusLineScript } from '../hooks/hook-status';
 import { sanitizeExtraArgs } from '../security/sanitize';
-import { guardedInstall, reinstallSettings,validateSettings } from '../settings-guard';
+import { guardedInstall, reinstallSettings, validateSettings } from '../settings-guard';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
@@ -42,7 +49,11 @@ export class ClaudeProvider extends BaseCliProvider {
   }
 
   validatePrerequisites(): { ok: boolean; message: string } {
-    return validateBinaryExists('claude', 'Claude Code CLI', 'npm install -g @anthropic-ai/claude-code');
+    return validateBinaryExists(
+      'claude',
+      'Claude Code CLI',
+      'npm install -g @anthropic-ai/claude-code',
+    );
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
@@ -54,7 +65,12 @@ export class ClaudeProvider extends BaseCliProvider {
     return env;
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.cliSessionId) {
       if (opts.isResume) {

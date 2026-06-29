@@ -33,15 +33,26 @@ export interface PreloadMobileApi {
 
 export interface PreloadMobileSetupApi {
   checkDependencies(): Promise<MobileDependencyReport>;
-  installDependency(dependencyId: MobileDependencyId, installId?: string): Promise<MobileDependencyInstallResult>;
+  installDependency(
+    dependencyId: MobileDependencyId,
+    installId?: string,
+  ): Promise<MobileDependencyInstallResult>;
   onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void): () => void;
 }
 
 export interface PreloadMobileInspectApi {
   launch(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult>;
   captureScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult>;
-  inspectPoint(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectPointInspectionResult>;
-  interact(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectInteractionResult>;
+  inspectPoint(
+    platform: MobileInspectPlatform,
+    x: number,
+    y: number,
+  ): Promise<MobileInspectPointInspectionResult>;
+  interact(
+    platform: MobileInspectPlatform,
+    x: number,
+    y: number,
+  ): Promise<MobileInspectInteractionResult>;
 }
 
 export function createPreloadMobileApi(ipcRenderer: IpcRenderer): PreloadMobileApi {
@@ -53,9 +64,20 @@ export function createPreloadMobileApi(ipcRenderer: IpcRenderer): PreloadMobileA
       mode: 'readonly' | 'readwrite',
       language?: UiLanguage,
       offerDescription?: ShareConnectionDescription,
-    ) => ipcRenderer.invoke('mobile:createControlPairing', sessionId, offer, passphrase, mode, language, offerDescription),
-    consumeControlAnswer: (pairingId: string) => ipcRenderer.invoke('mobile:consumeControlAnswer', pairingId),
-    revokeControlPairing: (pairingId: string) => ipcRenderer.invoke('mobile:revokeControlPairing', pairingId),
+    ) =>
+      ipcRenderer.invoke(
+        'mobile:createControlPairing',
+        sessionId,
+        offer,
+        passphrase,
+        mode,
+        language,
+        offerDescription,
+      ),
+    consumeControlAnswer: (pairingId: string) =>
+      ipcRenderer.invoke('mobile:consumeControlAnswer', pairingId),
+    revokeControlPairing: (pairingId: string) =>
+      ipcRenderer.invoke('mobile:revokeControlPairing', pairingId),
   };
 }
 
@@ -69,7 +91,8 @@ export function createPreloadMobileSetupApi(
       ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId),
     onInstallProgress: (callback) =>
       onChannel('mobileSetup:installProgress', (event) =>
-        callback(event as MobileDependencyInstallProgressEvent)),
+        callback(event as MobileDependencyInstallProgressEvent),
+      ),
   };
 }
 

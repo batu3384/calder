@@ -42,6 +42,7 @@
 ## Task 1: Add Derived Right-Rail Mode Helper
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/right-rail-mode.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/right-rail-mode.test.ts`
 
@@ -177,6 +178,7 @@ git commit -m "feat: add right rail mode helper"
 ## Task 2: Wire Context Inspector To The New Rail Mode
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-inspector.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-language.contract.test.ts`
@@ -186,7 +188,7 @@ git commit -m "feat: add right rail mode helper"
 ```ts
 it('marks the right rail with rail mode and keeps a dedicated project snapshot card', () => {
   expect(inspectorSource).toContain('deriveRightRailMode');
-  expect(inspectorSource).toContain("inspectorEl.dataset.railMode = mode");
+  expect(inspectorSource).toContain('inspectorEl.dataset.railMode = mode');
   expect(inspectorSource).toContain('Project Snapshot');
   expect(html).toContain('data-section="capabilities"');
   expect(html).toContain('data-section="git"');
@@ -223,10 +225,7 @@ Expected: FAIL because the inspector does not yet derive or expose a rail mode.
 ```
 
 ```ts
-import {
-  deriveRightRailMode,
-  deriveRightRailPresentation,
-} from './right-rail-mode.js';
+import { deriveRightRailMode, deriveRightRailPresentation } from './right-rail-mode.js';
 
 function applyRailMode(): void {
   const project = appState.activeProject;
@@ -237,13 +236,12 @@ function applyRailMode(): void {
 
   const gitStatus = getGitStatus(project.id);
   const hasDirtyGit = Boolean(
-    gitStatus?.isGitRepo && (gitStatus.staged + gitStatus.modified + gitStatus.untracked) > 0,
+    gitStatus?.isGitRepo && gitStatus.staged + gitStatus.modified + gitStatus.untracked > 0,
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
   const hasToolingContext = Boolean(getInspectorProviderId());
-  const hasHealthWarning = project.readiness?.overallScore !== undefined
-    ? project.readiness.overallScore < 70
-    : false;
+  const hasHealthWarning =
+    project.readiness?.overallScore !== undefined ? project.readiness.overallScore < 70 : false;
 
   const mode = deriveRightRailMode({
     hasHealthWarning,
@@ -255,12 +253,10 @@ function applyRailMode(): void {
   inspectorEl.dataset.railMode = mode;
   const presentation = deriveRightRailPresentation(mode, { hasDirtyGit, hasGitConflicts });
 
-  inspectorEl
-    .querySelectorAll<HTMLElement>('.context-inspector-section')
-    .forEach((section) => {
-      const id = section.dataset.section as keyof typeof presentation;
-      section.dataset.presentation = presentation[id];
-    });
+  inspectorEl.querySelectorAll<HTMLElement>('.context-inspector-section').forEach((section) => {
+    const id = section.dataset.section as keyof typeof presentation;
+    section.dataset.presentation = presentation[id];
+  });
 }
 
 function renderOverview(): void {
@@ -300,6 +296,7 @@ git commit -m "feat: wire context inspector to right rail mode"
 ## Task 3: Turn Config Sections Into The Tools Focus Primary Block
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections-compact.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/types.ts`
@@ -392,6 +389,7 @@ git commit -m "feat: promote tools focus summary in right rail"
 ## Task 4: Add Compact And Promoted Variants For Git, Health, And Activity
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/git-panel.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/git-panel.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/readiness-section.ts`
@@ -465,9 +463,10 @@ if (presentation === 'compact' && result) {
 if (presentation === 'compact') {
   const summary = document.createElement('div');
   summary.className = 'history-compact-summary';
-  summary.textContent = history.length === 0
-    ? 'No run history yet'
-    : `${history.length} saved runs · ${history.at(-1)?.name ?? 'recent run'}`;
+  summary.textContent =
+    history.length === 0
+      ? 'No run history yet'
+      : `${history.length} saved runs · ${history.at(-1)?.name ?? 'recent run'}`;
   container.appendChild(summary);
   return;
 }
@@ -493,6 +492,7 @@ git commit -m "feat: add adaptive right rail section variants"
 ## Task 5: Restyle The Rail And Run Full Verification
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-language.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections-compact.contract.test.ts`
@@ -522,7 +522,8 @@ Expected: FAIL because the new styling hooks are not in CSS yet.
 - [ ] **Step 3: Add the final CSS hierarchy**
 
 ```css
-#context-inspector[data-rail-mode='tools-focus'] .context-inspector-section[data-section='capabilities'] {
+#context-inspector[data-rail-mode='tools-focus']
+  .context-inspector-section[data-section='capabilities'] {
   order: 1;
 }
 
@@ -603,4 +604,3 @@ git commit -m "feat: restyle right rail around tools focus"
   - `RightRailPresentation`
   - `data-rail-mode`
   - `data-presentation`
-

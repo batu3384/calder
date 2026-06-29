@@ -18,7 +18,9 @@ describe('session-permission-policy', () => {
 
   it('allows only an explicit local permission allowlist', () => {
     expect(shouldAllowPermissionForOrigin('fullscreen', 'file:///tmp/page.html')).toBe(true);
-    expect(shouldAllowPermissionForOrigin('clipboard-sanitized-write', 'http://localhost:3000')).toBe(true);
+    expect(
+      shouldAllowPermissionForOrigin('clipboard-sanitized-write', 'http://localhost:3000'),
+    ).toBe(true);
     expect(shouldAllowPermissionForOrigin('notifications', 'file:///tmp/page.html')).toBe(false);
     expect(shouldAllowPermissionForOrigin('fullscreen', 'https://example.com')).toBe(false);
   });
@@ -60,9 +62,14 @@ describe('session-permission-policy', () => {
 
     let granted = true;
     const invokeRequest = requestHandler as RequestHandler;
-    invokeRequest({ getURL: () => 'https://example.com' }, 'fullscreen', (ok: boolean) => {
-      granted = ok;
-    }, { requestingUrl: 'https://example.com' });
+    invokeRequest(
+      { getURL: () => 'https://example.com' },
+      'fullscreen',
+      (ok: boolean) => {
+        granted = ok;
+      },
+      { requestingUrl: 'https://example.com' },
+    );
     expect(granted).toBe(false);
 
     const invokeCheck = checkHandler as CheckHandler;

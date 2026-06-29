@@ -26,8 +26,11 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 98%, transparent),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent)
+  );
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
@@ -202,8 +205,11 @@
   padding: 20px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 98%, transparent),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent)
+  );
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
 }
 
@@ -232,8 +238,11 @@
 
 .mcp-error-state {
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 22%, var(--surface-panel)), color-mix(in srgb, var(--surface-panel) 94%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 22%, var(--surface-panel)),
+    color-mix(in srgb, var(--surface-panel) 94%, transparent)
+  );
 }
 
 .mcp-error-state .mcp-empty-title {
@@ -355,7 +364,11 @@ select.mcp-form-input {
 
 .mcp-exec-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 52%, rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 52%, rgba(255, 255, 255, 0.04)),
+      rgba(255, 255, 255, 0)
+    ),
     var(--accent);
   border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
   color: white;

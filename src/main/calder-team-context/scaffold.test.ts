@@ -4,7 +4,10 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createProjectTeamContextSpaceFile, createProjectTeamContextStarterFiles } from './scaffold.js';
+import {
+  createProjectTeamContextSpaceFile,
+  createProjectTeamContextStarterFiles,
+} from './scaffold.js';
 
 const roots: string[] = [];
 
@@ -69,7 +72,9 @@ describe('project team context scaffold', () => {
     const root = makeProject('team-context-empty-title');
     roots.push(root);
 
-    await expect(createProjectTeamContextSpaceFile(root, '   ')).rejects.toThrow('Team context title is required');
+    await expect(createProjectTeamContextSpaceFile(root, '   ')).rejects.toThrow(
+      'Team context title is required',
+    );
   });
 
   it('uses fallback slug when the team context title has no alphanumeric characters', async () => {

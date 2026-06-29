@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 
-import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../shared/types/provider';
+import type {
+  ProviderId,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+} from '../shared/types/provider';
 import {
   resolveNoUpdateResult,
   resolveProviderUpdateCheck,
@@ -14,11 +18,8 @@ import {
   buildMissingUpdateCommandResult,
   buildUnknownSourceResult,
 } from './provider-updater/update-result-helpers';
-import type { ProviderUpdaterRunner,ProviderUpdateSpec } from './provider-updater-types';
-import {
-  hasDifferentVersion,
-  parseVersion,
-} from './provider-updater-version';
+import type { ProviderUpdaterRunner, ProviderUpdateSpec } from './provider-updater-types';
+import { hasDifferentVersion, parseVersion } from './provider-updater-version';
 
 const CHECK_TIMEOUT_MS = 20_000;
 
@@ -37,8 +38,9 @@ function findPackageTokenInPath(
   rootSegment: 'Caskroom' | 'Cellar',
   tokenOrTokens?: string | string[],
 ): string | undefined {
-  return toPackageTokens(tokenOrTokens)
-    .find((token) => normalizedPath.includes(`/${rootSegment}/${token}/`));
+  return toPackageTokens(tokenOrTokens).find((token) =>
+    normalizedPath.includes(`/${rootSegment}/${token}/`),
+  );
 }
 
 export function resolveRealPath(binaryPath: string): string {
@@ -84,7 +86,10 @@ export async function readBinaryVersion(
   binaryPath: string,
   signal?: AbortSignal,
 ): Promise<string | undefined> {
-  const result = await runner.run(binaryPath, ['--version'], { timeoutMs: CHECK_TIMEOUT_MS, signal });
+  const result = await runner.run(binaryPath, ['--version'], {
+    timeoutMs: CHECK_TIMEOUT_MS,
+    signal,
+  });
   if (result.code !== 0) return undefined;
   const raw = `${result.stdout}\n${result.stderr}`.trim();
   return parseVersion(raw);

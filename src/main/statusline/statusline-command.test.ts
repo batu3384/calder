@@ -24,7 +24,12 @@ describe('isManagedStatusLineCommand', () => {
   });
 
   it('rejects the managed helper path directly', () => {
-    expect(isManagedStatusLineCommand(path.join(homedir(), '.calder', 'runtime', 'statusline.py'), managedPath)).toBe(false);
+    expect(
+      isManagedStatusLineCommand(
+        path.join(homedir(), '.calder', 'runtime', 'statusline.py'),
+        managedPath,
+      ),
+    ).toBe(false);
   });
 
   it('rejects a foreign command path', () => {

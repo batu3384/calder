@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
@@ -122,7 +122,11 @@ describe('load()', () => {
           path: '/proj',
           sessions: [],
           activeSessionId: null,
-          layout: { mode: 'swarm' as const, splitPanes: ['s1', 's2'], splitDirection: 'horizontal' as const },
+          layout: {
+            mode: 'swarm' as const,
+            splitPanes: ['s1', 's2'],
+            splitDirection: 'horizontal' as const,
+          },
         },
       ],
       activeProjectId: 'p1',
@@ -151,7 +155,11 @@ describe('load()', () => {
           path: '/proj',
           sessions: [],
           activeSessionId: null,
-          layout: { mode: 'split' as const, splitPanes: ['s1', 's2'], splitDirection: 'vertical' as const },
+          layout: {
+            mode: 'split' as const,
+            splitPanes: ['s1', 's2'],
+            splitDirection: 'vertical' as const,
+          },
         },
       ],
       activeProjectId: 'p1',
@@ -211,17 +219,25 @@ describe('load()', () => {
     };
     const persisted = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Proj',
-        path: '/proj',
-        sessions: [
-          { id: 's1', name: 'S1', cliSessionId: 'cli-1', createdAt: '2026-01-01', cost: costData },
-          { id: 's2', name: 'S2', cliSessionId: null, createdAt: '2026-01-02' },
-        ],
-        activeSessionId: 's1',
-        layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Proj',
+          path: '/proj',
+          sessions: [
+            {
+              id: 's1',
+              name: 'S1',
+              cliSessionId: 'cli-1',
+              createdAt: '2026-01-01',
+              cost: costData,
+            },
+            { id: 's2', name: 'S2', cliSessionId: null, createdAt: '2026-01-02' },
+          ],
+          activeSessionId: 's1',
+          layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+        },
+      ],
       activeProjectId: 'p1',
       preferences: { soundOnSessionWaiting: false, debugMode: false },
     };
@@ -235,16 +251,24 @@ describe('load()', () => {
     const contextData = { totalTokens: 5000, contextWindowSize: 200000, usedPercentage: 2.5 };
     const persisted = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Proj',
-        path: '/proj',
-        sessions: [
-          { id: 's1', name: 'S1', cliSessionId: null, createdAt: '2026-01-01', contextWindow: contextData },
-        ],
-        activeSessionId: 's1',
-        layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Proj',
+          path: '/proj',
+          sessions: [
+            {
+              id: 's1',
+              name: 'S1',
+              cliSessionId: null,
+              createdAt: '2026-01-01',
+              contextWindow: contextData,
+            },
+          ],
+          activeSessionId: 's1',
+          layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+        },
+      ],
       activeProjectId: 'p1',
       preferences: { soundOnSessionWaiting: false, debugMode: false },
     };
@@ -257,19 +281,45 @@ describe('load()', () => {
   it('deduplicates history entry IDs on load', async () => {
     const persisted = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Proj',
-        path: '/proj',
-        sessions: [],
-        activeSessionId: null,
-        layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
-        sessionHistory: [
-          { id: 'dup-id', name: 'Entry1', providerId: 'claude', cliSessionId: 'cli-a', createdAt: '2026-01-01', closedAt: '2026-01-01', cost: null },
-          { id: 'dup-id', name: 'Entry2', providerId: 'claude', cliSessionId: 'cli-b', createdAt: '2026-01-02', closedAt: '2026-01-02', cost: null },
-          { id: 'unique-id', name: 'Entry3', providerId: 'claude', cliSessionId: 'cli-c', createdAt: '2026-01-03', closedAt: '2026-01-03', cost: null },
-        ],
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Proj',
+          path: '/proj',
+          sessions: [],
+          activeSessionId: null,
+          layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+          sessionHistory: [
+            {
+              id: 'dup-id',
+              name: 'Entry1',
+              providerId: 'claude',
+              cliSessionId: 'cli-a',
+              createdAt: '2026-01-01',
+              closedAt: '2026-01-01',
+              cost: null,
+            },
+            {
+              id: 'dup-id',
+              name: 'Entry2',
+              providerId: 'claude',
+              cliSessionId: 'cli-b',
+              createdAt: '2026-01-02',
+              closedAt: '2026-01-02',
+              cost: null,
+            },
+            {
+              id: 'unique-id',
+              name: 'Entry3',
+              providerId: 'claude',
+              cliSessionId: 'cli-c',
+              createdAt: '2026-01-03',
+              closedAt: '2026-01-03',
+              cost: null,
+            },
+          ],
+        },
+      ],
       activeProjectId: 'p1',
       preferences: { soundOnSessionWaiting: false, debugMode: false },
     };
@@ -282,21 +332,23 @@ describe('load()', () => {
     expect(history[1].id).not.toBe('dup-id');
     expect(history[2].id).toBe('unique-id');
     // All IDs are now unique
-    const ids = new Set(history.map(h => h.id));
+    const ids = new Set(history.map((h) => h.id));
     expect(ids.size).toBe(3);
   });
 
   it('does not call restoreCost for sessions without cost', async () => {
     const persisted = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Proj',
-        path: '/proj',
-        sessions: [{ id: 's1', name: 'S1', cliSessionId: null, createdAt: '2026-01-01' }],
-        activeSessionId: 's1',
-        layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Proj',
+          path: '/proj',
+          sessions: [{ id: 's1', name: 'S1', cliSessionId: null, createdAt: '2026-01-01' }],
+          activeSessionId: 's1',
+          layout: { mode: 'tabs' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+        },
+      ],
       activeProjectId: 'p1',
       preferences: { soundOnSessionWaiting: false, debugMode: false },
     };
@@ -316,7 +368,11 @@ describe('load()', () => {
           name: 'Demo',
           path: '/tmp/demo',
           activeSessionId: 'browser-1',
-          layout: { mode: 'mosaic' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+          layout: {
+            mode: 'mosaic' as const,
+            splitPanes: [],
+            splitDirection: 'horizontal' as const,
+          },
           sessions: [
             {
               id: 'claude-1',
@@ -368,7 +424,11 @@ describe('load()', () => {
           name: 'Demo',
           path: '/tmp/demo',
           activeSessionId: null,
-          layout: { mode: 'mosaic' as const, splitPanes: [], splitDirection: 'horizontal' as const },
+          layout: {
+            mode: 'mosaic' as const,
+            splitPanes: [],
+            splitDirection: 'horizontal' as const,
+          },
           sessions: [],
           surface: {
             kind: 'web' as const,
@@ -452,14 +512,17 @@ describe('persist()', () => {
     let inFlight = 0;
     let maxInFlight = 0;
 
-    mockSave.mockImplementation(() => new Promise<void>((resolve) => {
-      inFlight += 1;
-      maxInFlight = Math.max(maxInFlight, inFlight);
-      completions.push(() => {
-        inFlight -= 1;
-        resolve();
-      });
-    }));
+    mockSave.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          inFlight += 1;
+          maxInFlight = Math.max(maxInFlight, inFlight);
+          completions.push(() => {
+            inFlight -= 1;
+            resolve();
+          });
+        }),
+    );
 
     addProject();
     appState.setSidebarWidth(100);
@@ -482,9 +545,12 @@ describe('persist()', () => {
     let rejectFirstSave: ((reason?: unknown) => void) | null = null;
 
     mockSave
-      .mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
-        rejectFirstSave = reject;
-      }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectFirstSave = reject;
+          }),
+      )
       .mockResolvedValue(undefined);
 
     addProject();
@@ -763,7 +829,12 @@ describe('addMcpInspectorSession()', () => {
 describe('addRemoteSession()', () => {
   it('creates a remote terminal session and makes it active', () => {
     const project = addProject();
-    const remote = appState.addRemoteSession(project.id, 'remote-session-1', 'Host Session', 'readwrite')!;
+    const remote = appState.addRemoteSession(
+      project.id,
+      'remote-session-1',
+      'Host Session',
+      'readwrite',
+    )!;
     expect(remote.id).toBe('remote-session-1');
     expect(remote.type).toBe('remote-terminal');
     expect(remote.remoteHostName).toBe('Host Session');
@@ -793,7 +864,9 @@ describe('browser target sessions', () => {
     appState.setActiveSession(project.id, primary.id);
     appState.removeSession(project.id, secondary.id);
 
-    const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
+    const browserSession = appState.activeProject!.sessions.find(
+      (session) => session.id === browser.id,
+    )!;
     expect(browserSession.browserTargetSessionId).toBe(primary.id);
     expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(primary.id);
   });
@@ -810,7 +883,10 @@ describe('browser target sessions', () => {
       cli: { profiles: [], runtime: { status: 'idle' } },
     });
 
-    expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([first.id, second.id]);
+    expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([
+      first.id,
+      second.id,
+    ]);
     expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(second.id);
   });
 
@@ -819,10 +895,14 @@ describe('browser target sessions', () => {
     const first = appState.addSession(project.id, 'First')!;
 
     expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(first.id);
-    expect(appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true })).toBeUndefined();
+    expect(
+      appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true }),
+    ).toBeUndefined();
 
     appState.setSurfaceTargetSession(project.id, first.id);
-    expect(appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true })?.id).toBe(first.id);
+    expect(
+      appState.resolveSurfaceTargetSession(project.id, { requireExplicitTarget: true })?.id,
+    ).toBe(first.id);
   });
 
   it('keeps browser wrapper helpers working through surface state', () => {
@@ -833,7 +913,9 @@ describe('browser target sessions', () => {
     appState.setSurfaceTargetSession(project.id, target.id);
 
     expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
-    expect(appState.listBrowserTargetSessions(browser.id).map((session) => session.id)).toContain(target.id);
+    expect(appState.listBrowserTargetSessions(browser.id).map((session) => session.id)).toContain(
+      target.id,
+    );
   });
 
   it('reuses the current live view session when opening a new embedded browser url', () => {
@@ -845,7 +927,9 @@ describe('browser target sessions', () => {
     const reused = appState.openUrlInBrowserSurface(project.id, 'http://localhost:4173')!;
 
     expect(reused.id).toBe(browser.id);
-    expect(appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab')).toHaveLength(1);
+    expect(
+      appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab'),
+    ).toHaveLength(1);
     expect(appState.activeProject!.activeSessionId).toBe(browser.id);
     expect(appState.activeProject!.surface?.kind).toBe('web');
     expect(appState.activeProject!.surface?.active).toBe(true);
@@ -857,15 +941,18 @@ describe('browser target sessions', () => {
       'http://localhost:3000',
       'http://localhost:4173',
     ]);
-    expect(appState.activeProject!.sessions.find((session) => session.id === browser.id)?.browserTabUrl)
-      .toBe('http://localhost:4173');
+    expect(
+      appState.activeProject!.sessions.find((session) => session.id === browser.id)?.browserTabUrl,
+    ).toBe('http://localhost:4173');
     expect(mockSave).toHaveBeenCalled();
   });
 
   it('prefers the surfaced browser tab even when another browser tab is active', () => {
     const project = addProject();
     const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', {
+      dedupeByUrl: false,
+    })!;
 
     appState.setProjectSurface(project.id, {
       kind: 'web',
@@ -885,17 +972,21 @@ describe('browser target sessions', () => {
       sessionId: first.id,
       url: 'http://localhost:3002',
     });
-    expect(appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl)
-      .toBe('http://localhost:3002');
-    expect(appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl)
-      .toBe('http://localhost:3001');
+    expect(
+      appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl,
+    ).toBe('http://localhost:3002');
+    expect(
+      appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl,
+    ).toBe('http://localhost:3001');
     expect(mockSave).toHaveBeenCalled();
   });
 
   it('does not let split pane order override the surfaced browser tab target', () => {
     const project = addProject();
     const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', {
+      dedupeByUrl: false,
+    })!;
     appState.addSession(project.id, 'Claude');
 
     appState.activeProject!.layout = {
@@ -926,17 +1017,21 @@ describe('browser target sessions', () => {
       sessionId: second.id,
       url: 'http://localhost:3002',
     });
-    expect(appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl)
-      .toBe('http://localhost:3002');
-    expect(appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl)
-      .toBe('http://localhost:3000');
+    expect(
+      appState.activeProject!.sessions.find((session) => session.id === second.id)?.browserTabUrl,
+    ).toBe('http://localhost:3002');
+    expect(
+      appState.activeProject!.sessions.find((session) => session.id === first.id)?.browserTabUrl,
+    ).toBe('http://localhost:3000');
     expect(mockSave).toHaveBeenCalled();
   });
 
   it('synchronizes live view surface metadata when activating a browser tab', () => {
     const project = addProject();
     const first = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', { dedupeByUrl: false })!;
+    const second = appState.addBrowserTabSession(project.id, 'http://localhost:3001', {
+      dedupeByUrl: false,
+    })!;
 
     appState.setProjectSurface(project.id, {
       kind: 'web',
@@ -976,7 +1071,9 @@ describe('browser target sessions', () => {
     })!;
 
     expect(second.id).not.toBe(first.id);
-    expect(appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab')).toHaveLength(2);
+    expect(
+      appState.activeProject!.sessions.filter((session) => session.type === 'browser-tab'),
+    ).toHaveLength(2);
     expect(appState.activeProject!.activeSessionId).toBe(second.id);
     expect(appState.activeProject!.surface?.web).toMatchObject({
       sessionId: second.id,
@@ -992,7 +1089,9 @@ describe('browser target sessions', () => {
     mockSave.mockClear();
     appState.passivateBrowserTabSession(browser.id, 'http://localhost:3000');
 
-    const browserSession = appState.activeProject!.sessions.find((session) => session.id === browser.id)!;
+    const browserSession = appState.activeProject!.sessions.find(
+      (session) => session.id === browser.id,
+    )!;
     expect(browserSession.browserTabUrl).toBeUndefined();
     expect(appState.activeProject!.surface?.kind).toBe('web');
     expect(appState.activeProject!.surface?.active).toBe(false);
@@ -1282,7 +1381,9 @@ describe('setSurfaceTargetSession()', () => {
     const first = appState.addSession(project.id, 'First')!;
     const second = appState.addSession(project.id, 'Second')!;
     const browserA = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-    const browserB = appState.addBrowserTabSession(project.id, 'http://localhost:4173', { dedupeByUrl: false })!;
+    const browserB = appState.addBrowserTabSession(project.id, 'http://localhost:4173', {
+      dedupeByUrl: false,
+    })!;
     const sessionChanged = vi.fn();
     appState.on('session-changed', sessionChanged);
 
@@ -1290,9 +1391,15 @@ describe('setSurfaceTargetSession()', () => {
 
     const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
     expect(updatedProject.surface?.targetSessionId).toBe(first.id);
-    expect(updatedProject.sessions.find((entry) => entry.id === browserA.id)?.browserTargetSessionId).toBe(first.id);
-    expect(updatedProject.sessions.find((entry) => entry.id === browserB.id)?.browserTargetSessionId).toBe(first.id);
-    expect(updatedProject.sessions.find((entry) => entry.id === second.id)?.browserTargetSessionId).toBeUndefined();
+    expect(
+      updatedProject.sessions.find((entry) => entry.id === browserA.id)?.browserTargetSessionId,
+    ).toBe(first.id);
+    expect(
+      updatedProject.sessions.find((entry) => entry.id === browserB.id)?.browserTargetSessionId,
+    ).toBe(first.id);
+    expect(
+      updatedProject.sessions.find((entry) => entry.id === second.id)?.browserTargetSessionId,
+    ).toBeUndefined();
     expect(sessionChanged).toHaveBeenCalled();
   });
 
@@ -1309,7 +1416,9 @@ describe('setSurfaceTargetSession()', () => {
 
     const updatedProject = appState.projects.find((entry) => entry.id === project.id)!;
     expect(updatedProject.surface?.targetSessionId).toBeUndefined();
-    expect(updatedProject.sessions.find((entry) => entry.id === browser.id)?.browserTargetSessionId).toBeUndefined();
+    expect(
+      updatedProject.sessions.find((entry) => entry.id === browser.id)?.browserTargetSessionId,
+    ).toBeUndefined();
     expect(sessionChanged).toHaveBeenCalled();
   });
 });
@@ -1335,14 +1444,23 @@ describe('resumeWithProvider()', () => {
       },
     });
 
-    const resumed = await appState.resumeWithProvider(project.id, { sessionId: source.id }, 'codex');
+    const resumed = await appState.resumeWithProvider(
+      project.id,
+      { sessionId: source.id },
+      'codex',
+    );
 
     expect(resumed).toBeDefined();
     expect(resumed?.providerId).toBe('codex');
     expect(resumed?.cliSessionId).toBeNull();
     expect(resumed?.name).toContain('Source Session');
     expect(resumed?.name).toContain('codex');
-    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith('claude', 'cli-source', '/test', 'Source Session');
+    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith(
+      'claude',
+      'cli-source',
+      '/test',
+      'Source Session',
+    );
     expect(resumed?.pendingInitialPrompt).toContain('Project governance policy:');
   });
 
@@ -1362,12 +1480,21 @@ describe('resumeWithProvider()', () => {
     appState.removeSession(project.id, source.id);
     const archived = appState.getSessionHistory(project.id)[0];
 
-    const resumed = await appState.resumeWithProvider(project.id, { archivedSessionId: archived.id }, 'codex');
+    const resumed = await appState.resumeWithProvider(
+      project.id,
+      { archivedSessionId: archived.id },
+      'codex',
+    );
 
     expect(resumed).toBeDefined();
     expect(resumed?.providerId).toBe('codex');
     expect(resumed?.name).toContain('Archived Source');
-    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith('claude', 'cli-archived', '/test', 'Archived Source');
+    expect(mockBuildResumeWithPrompt).toHaveBeenCalledWith(
+      'claude',
+      'cli-archived',
+      '/test',
+      'Archived Source',
+    );
   });
 });
 
@@ -1430,7 +1557,7 @@ describe('updateSessionCost()', () => {
     const session = appState.addSession(project.id, 'S1')!;
     mockSave.mockClear();
     appState.updateSessionCost(session.id, sampleCost);
-    const updated = appState.activeProject!.sessions.find(s => s.id === session.id)!;
+    const updated = appState.activeProject!.sessions.find((s) => s.id === session.id)!;
     expect(updated.cost).toEqual(sampleCost);
     expect(mockSave).toHaveBeenCalled();
   });
@@ -1448,7 +1575,9 @@ describe('updateSessionCost()', () => {
     const s1 = appState.addSession(p1.id, 'S1')!;
     appState.addSession(p2.id, 'S2');
     appState.updateSessionCost(s1.id, sampleCost);
-    const found = appState.projects.find(p => p.id === p1.id)!.sessions.find(s => s.id === s1.id)!;
+    const found = appState.projects
+      .find((p) => p.id === p1.id)!
+      .sessions.find((s) => s.id === s1.id)!;
     expect(found.cost).toEqual(sampleCost);
   });
 });
@@ -1461,7 +1590,7 @@ describe('updateSessionContext()', () => {
     const session = appState.addSession(project.id, 'S1')!;
     mockSave.mockClear();
     appState.updateSessionContext(session.id, sampleContext);
-    const updated = appState.activeProject!.sessions.find(s => s.id === session.id)!;
+    const updated = appState.activeProject!.sessions.find((s) => s.id === session.id)!;
     expect(updated.contextWindow).toEqual(sampleContext);
     expect(mockSave).toHaveBeenCalled();
   });
@@ -1581,14 +1710,20 @@ describe('batch removals', () => {
     const { project, sessions } = addProjectWithSessions(4);
     appState.removeSessionsFromRight(project.id, sessions[1].id);
     expect(appState.activeProject!.sessions).toHaveLength(2);
-    expect(appState.activeProject!.sessions.map((s) => s.id)).toEqual([sessions[0].id, sessions[1].id]);
+    expect(appState.activeProject!.sessions.map((s) => s.id)).toEqual([
+      sessions[0].id,
+      sessions[1].id,
+    ]);
   });
 
   it('removeSessionsFromLeft removes sessions before given', () => {
     const { project, sessions } = addProjectWithSessions(4);
     appState.removeSessionsFromLeft(project.id, sessions[2].id);
     expect(appState.activeProject!.sessions).toHaveLength(2);
-    expect(appState.activeProject!.sessions.map((s) => s.id)).toEqual([sessions[2].id, sessions[3].id]);
+    expect(appState.activeProject!.sessions.map((s) => s.id)).toEqual([
+      sessions[2].id,
+      sessions[3].id,
+    ]);
   });
 
   it('removeOtherSessions removes all except given', () => {
@@ -1625,7 +1760,7 @@ describe('reorderSession()', () => {
     // Move first session to last position
     appState.reorderSession(project.id, sessions[0].id, 2);
     const panesAfter = appState.activeProject!.layout.splitPanes;
-    const sessionIds = appState.activeProject!.sessions.map(s => s.id);
+    const sessionIds = appState.activeProject!.sessions.map((s) => s.id);
     // splitPanes should follow sessions order
     expect(panesAfter).toEqual(sessionIds);
   });
@@ -1760,50 +1895,58 @@ describe('project domain setters', () => {
     appState.on('project-changed', changed);
 
     appState.setProjectContext(project.id, {
-      sources: [{
-        id: 'shared-rules',
-        provider: 'shared',
-        scope: 'project',
-        kind: 'rules',
-        path: '.agents/rules.md',
-        displayName: 'Rules',
-        summary: 'Shared rules',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-      }],
+      sources: [
+        {
+          id: 'shared-rules',
+          provider: 'shared',
+          scope: 'project',
+          kind: 'rules',
+          path: '.agents/rules.md',
+          displayName: 'Rules',
+          summary: 'Shared rules',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+        },
+      ],
       sharedRuleCount: 0,
       providerSourceCount: 999,
     });
     appState.setProjectWorkflows(project.id, {
-      workflows: [{
-        id: 'workflow-1',
-        path: '.agents/workflows/release.md',
-        displayName: 'Release',
-        summary: 'Release checklist',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-      }],
+      workflows: [
+        {
+          id: 'workflow-1',
+          path: '.agents/workflows/release.md',
+          displayName: 'Release',
+          summary: 'Release checklist',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+        },
+      ],
       lastUpdated: '2026-04-22T00:00:00.000Z',
     });
     appState.setProjectTeamContext(project.id, {
-      spaces: [{
-        id: 'space-1',
-        path: '.agents/team/backend.md',
-        displayName: 'Backend',
-        summary: 'Backend ownership',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-        linkedRuleCount: 1,
-        linkedWorkflowCount: 1,
-      }],
+      spaces: [
+        {
+          id: 'space-1',
+          path: '.agents/team/backend.md',
+          displayName: 'Backend',
+          summary: 'Backend ownership',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+          linkedRuleCount: 1,
+          linkedWorkflowCount: 1,
+        },
+      ],
       sharedRuleCount: 1,
       workflowCount: 1,
     });
     appState.setProjectReviews(project.id, {
-      reviews: [{
-        id: 'review-1',
-        path: '.agents/reviews/security.md',
-        displayName: 'Security review',
-        summary: 'Security rubric',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-      }],
+      reviews: [
+        {
+          id: 'review-1',
+          path: '.agents/reviews/security.md',
+          displayName: 'Security review',
+          summary: 'Security rubric',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+        },
+      ],
     });
     appState.setProjectGovernance(project.id, {
       policy: {
@@ -1821,33 +1964,37 @@ describe('project domain setters', () => {
       },
     });
     appState.setProjectBackgroundTasks(project.id, {
-      tasks: [{
-        id: 'task-1',
-        path: '.agents/tasks/follow-up.md',
-        title: 'Follow-up',
-        status: 'queued',
-        summary: 'Ship remaining cleanup',
-        createdAt: '2026-04-22T00:00:00.000Z',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-        artifactCount: 0,
-        handoffSummary: 'Pending',
-      }],
+      tasks: [
+        {
+          id: 'task-1',
+          path: '.agents/tasks/follow-up.md',
+          title: 'Follow-up',
+          status: 'queued',
+          summary: 'Ship remaining cleanup',
+          createdAt: '2026-04-22T00:00:00.000Z',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+          artifactCount: 0,
+          handoffSummary: 'Pending',
+        },
+      ],
       queuedCount: 1,
       runningCount: 0,
       completedCount: 0,
     });
     appState.setProjectCheckpoints(project.id, {
-      checkpoints: [{
-        id: 'checkpoint-1',
-        path: '.calder/checkpoints/checkpoint-1.json',
-        displayName: 'Checkpoint 1',
-        label: 'Before cleanup',
-        createdAt: '2026-04-22T00:00:00.000Z',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-        sessionCount: 3,
-        changedFileCount: 2,
-        restoreSummary: '3 sessions, 2 changed files',
-      }],
+      checkpoints: [
+        {
+          id: 'checkpoint-1',
+          path: '.calder/checkpoints/checkpoint-1.json',
+          displayName: 'Checkpoint 1',
+          label: 'Before cleanup',
+          createdAt: '2026-04-22T00:00:00.000Z',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+          sessionCount: 3,
+          changedFileCount: 2,
+          restoreSummary: '3 sessions, 2 changed files',
+        },
+      ],
     });
 
     expect(appState.activeProject?.projectContext?.sharedRuleCount).toBe(1);
@@ -1868,13 +2015,15 @@ describe('project domain setters', () => {
     appState.on('project-changed', changed);
 
     const workflows = {
-      workflows: [{
-        id: 'workflow-1',
-        path: '.agents/workflows/release.md',
-        displayName: 'Release',
-        summary: 'Release checklist',
-        lastUpdated: '2026-04-22T00:00:00.000Z',
-      }],
+      workflows: [
+        {
+          id: 'workflow-1',
+          path: '.agents/workflows/release.md',
+          displayName: 'Release',
+          summary: 'Release checklist',
+          lastUpdated: '2026-04-22T00:00:00.000Z',
+        },
+      ],
       lastUpdated: '2026-04-22T00:00:00.000Z',
     };
 
@@ -1988,7 +2137,10 @@ describe('archiveSession via removeSession()', () => {
     expect(appState.getSessionHistory(project.id)).toHaveLength(1);
 
     // Resume and close again
-    const resumed = appState.resumeFromHistory(project.id, appState.getSessionHistory(project.id)[0].id)!;
+    const resumed = appState.resumeFromHistory(
+      project.id,
+      appState.getSessionHistory(project.id)[0].id,
+    )!;
     appState.removeSession(project.id, resumed.id);
     // Should still be 1 entry, not 2
     expect(appState.getSessionHistory(project.id)).toHaveLength(1);
@@ -2002,7 +2154,10 @@ describe('archiveSession via removeSession()', () => {
     expect(appState.getSessionHistory(project.id)[0].cost).toBeNull();
 
     // Resume with cost data
-    const resumed = appState.resumeFromHistory(project.id, appState.getSessionHistory(project.id)[0].id)!;
+    const resumed = appState.resumeFromHistory(
+      project.id,
+      appState.getSessionHistory(project.id)[0].id,
+    )!;
     mockCostData();
     appState.removeSession(project.id, resumed.id);
     expect(appState.getSessionHistory(project.id)[0].cost).not.toBeNull();
@@ -2015,7 +2170,10 @@ describe('archiveSession via removeSession()', () => {
     appState.updateSessionCliId(project.id, session.id, 'cli-abc');
     appState.removeSession(project.id, session.id);
 
-    const resumed = appState.resumeFromHistory(project.id, appState.getSessionHistory(project.id)[0].id)!;
+    const resumed = appState.resumeFromHistory(
+      project.id,
+      appState.getSessionHistory(project.id)[0].id,
+    )!;
     appState.renameSession(project.id, resumed.id, 'Renamed');
     appState.removeSession(project.id, resumed.id);
     expect(appState.getSessionHistory(project.id)[0].name).toBe('Renamed');
@@ -2127,7 +2285,7 @@ describe('removeHistoryEntry()', () => {
     const historyBefore = appState.getSessionHistory(project.id);
     expect(historyBefore).toHaveLength(2);
 
-    const entryToRemove = historyBefore.find(h => h.name === 'S1')!;
+    const entryToRemove = historyBefore.find((h) => h.name === 'S1')!;
     appState.removeHistoryEntry(project.id, entryToRemove.id);
     const history = appState.getSessionHistory(project.id);
     expect(history).toHaveLength(1);
@@ -2213,7 +2371,7 @@ describe('clearSessionHistory()', () => {
     const historyBefore = appState.getSessionHistory(project.id);
     expect(historyBefore).toHaveLength(3);
 
-    const entryToBookmark = historyBefore.find(h => h.name === sessions[1].name)!;
+    const entryToBookmark = historyBefore.find((h) => h.name === sessions[1].name)!;
     appState.toggleBookmark(project.id, entryToBookmark.id);
     appState.clearSessionHistory(project.id);
     const remaining = appState.getSessionHistory(project.id);
@@ -2447,7 +2605,10 @@ describe('renameSession() history sync', () => {
     appState.updateSessionCliId(project.id, session.id, 'cli-sync');
     appState.removeSession(project.id, session.id);
 
-    const resumed = appState.resumeFromHistory(project.id, appState.getSessionHistory(project.id)[0].id)!;
+    const resumed = appState.resumeFromHistory(
+      project.id,
+      appState.getSessionHistory(project.id)[0].id,
+    )!;
     appState.renameSession(project.id, resumed.id, 'Updated');
     expect(appState.getSessionHistory(project.id)[0].name).toBe('Updated');
   });
@@ -2458,7 +2619,10 @@ describe('renameSession() history sync', () => {
     appState.updateSessionCliId(project.id, session.id, 'cli-sync');
     appState.removeSession(project.id, session.id);
 
-    const resumed = appState.resumeFromHistory(project.id, appState.getSessionHistory(project.id)[0].id)!;
+    const resumed = appState.resumeFromHistory(
+      project.id,
+      appState.getSessionHistory(project.id)[0].id,
+    )!;
     const cb = vi.fn();
     appState.on('history-changed', cb);
     appState.renameSession(project.id, resumed.id, 'New Name');
@@ -2493,8 +2657,20 @@ describe('addInsightSnapshot()', () => {
 
   it('appends to existing snapshots', () => {
     const project = addProject();
-    const s1 = { sessionId: 's1', timestamp: new Date().toISOString(), totalTokens: 10000, contextWindowSize: 200000, usedPercentage: 5 };
-    const s2 = { sessionId: 's2', timestamp: new Date().toISOString(), totalTokens: 20000, contextWindowSize: 200000, usedPercentage: 10 };
+    const s1 = {
+      sessionId: 's1',
+      timestamp: new Date().toISOString(),
+      totalTokens: 10000,
+      contextWindowSize: 200000,
+      usedPercentage: 5,
+    };
+    const s2 = {
+      sessionId: 's2',
+      timestamp: new Date().toISOString(),
+      totalTokens: 20000,
+      contextWindowSize: 200000,
+      usedPercentage: 10,
+    };
     appState.addInsightSnapshot(project.id, s1);
     appState.addInsightSnapshot(project.id, s2);
     expect(project.insights!.initialContextSnapshots).toHaveLength(2);
@@ -2521,7 +2697,11 @@ describe('addInsightSnapshot()', () => {
     const project = addProject();
     mockSave.mockClear();
     appState.addInsightSnapshot(project.id, {
-      sessionId: 's1', timestamp: '', totalTokens: 0, contextWindowSize: 200000, usedPercentage: 0,
+      sessionId: 's1',
+      timestamp: '',
+      totalTokens: 0,
+      contextWindowSize: 200000,
+      usedPercentage: 0,
     });
     expect(mockSave).toHaveBeenCalled();
   });
@@ -2531,7 +2711,11 @@ describe('addInsightSnapshot()', () => {
     const cb = vi.fn();
     appState.on('insights-changed', cb);
     appState.addInsightSnapshot(project.id, {
-      sessionId: 's1', timestamp: '', totalTokens: 0, contextWindowSize: 200000, usedPercentage: 0,
+      sessionId: 's1',
+      timestamp: '',
+      totalTokens: 0,
+      contextWindowSize: 200000,
+      usedPercentage: 0,
     });
     expect(cb).toHaveBeenCalledWith(project.id);
   });
@@ -2539,7 +2723,11 @@ describe('addInsightSnapshot()', () => {
   it('no-op for nonexistent project', () => {
     mockSave.mockClear();
     appState.addInsightSnapshot('nonexistent', {
-      sessionId: 's1', timestamp: '', totalTokens: 0, contextWindowSize: 200000, usedPercentage: 0,
+      sessionId: 's1',
+      timestamp: '',
+      totalTokens: 0,
+      contextWindowSize: 200000,
+      usedPercentage: 0,
     });
     expect(mockSave).not.toHaveBeenCalled();
   });
@@ -2548,7 +2736,11 @@ describe('addInsightSnapshot()', () => {
     const project = addProject();
     appState.dismissInsight(project.id, 'some-insight');
     appState.addInsightSnapshot(project.id, {
-      sessionId: 's1', timestamp: '', totalTokens: 0, contextWindowSize: 200000, usedPercentage: 0,
+      sessionId: 's1',
+      timestamp: '',
+      totalTokens: 0,
+      contextWindowSize: 200000,
+      usedPercentage: 0,
     });
     expect(project.insights!.dismissed).toContain('some-insight');
   });
@@ -2573,7 +2765,7 @@ describe('dismissInsight()', () => {
     const project = addProject();
     appState.dismissInsight(project.id, 'big-initial-context');
     appState.dismissInsight(project.id, 'big-initial-context');
-    expect(project.insights!.dismissed.filter(d => d === 'big-initial-context')).toHaveLength(1);
+    expect(project.insights!.dismissed.filter((d) => d === 'big-initial-context')).toHaveLength(1);
   });
 
   it('persists after dismissal', () => {

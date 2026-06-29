@@ -33,8 +33,11 @@ export function registerMaintenanceIpcHandlers(): void {
     }
   });
 
-  ipcMain.handle('settings:validate', (_event, providerId: ProviderId = 'claude'): SettingsValidationResult => {
-    const provider = getProvider(providerId);
-    return provider.validateSettings();
-  });
+  ipcMain.handle(
+    'settings:validate',
+    (_event, providerId: ProviderId = 'claude'): SettingsValidationResult => {
+      const provider = getProvider(providerId);
+      return provider.validateSettings();
+    },
+  );
 }

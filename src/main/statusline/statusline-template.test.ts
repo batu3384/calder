@@ -14,7 +14,11 @@ const execFileAsync = promisify(execFile);
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-async function waitForSnapshotSource(statusDir: string, provider: 'zai' | 'minimax', source: string) {
+async function waitForSnapshotSource(
+  statusDir: string,
+  provider: 'zai' | 'minimax',
+  source: string,
+) {
   const path = join(statusDir, getProviderQuotaCacheFile(provider));
   for (let attempt = 0; attempt < 20; attempt += 1) {
     try {
@@ -51,7 +55,10 @@ describe('buildStatusLinePython', () => {
 
 describe('buildStatusLineWrapper', () => {
   it('invokes the managed python helper instead of inlining python', () => {
-    const wrapper = buildStatusLineWrapper('/tmp/calder/statusline.py', '/tmp/calder/statusline.log');
+    const wrapper = buildStatusLineWrapper(
+      '/tmp/calder/statusline.py',
+      '/tmp/calder/statusline.log',
+    );
     expect(wrapper).toContain('statusline.py');
     expect(wrapper).toContain('statusline.log');
   });
@@ -494,7 +501,9 @@ describe('generated renderer payload parsing', () => {
     }).trim();
 
     expect(output).toContain('MiniMax-M2.7  MiniMax  --  deneme1');
-    expect(output).toContain('Ctx 18%  Cost $1.87  5h 4496/4500 left · resets 02:32  Week 44982/45000 left  Live');
+    expect(output).toContain(
+      'Ctx 18%  Cost $1.87  5h 4496/4500 left · resets 02:32  Week 44982/45000 left  Live',
+    );
   });
 
   it('labels short Z.ai secondary windows as Week', async () => {
@@ -619,7 +628,11 @@ describe('generated renderer payload parsing', () => {
           cwd: '/Users/batuhanyuksel/Documents/aa',
         }),
         encoding: 'utf8',
-        env: { ...process.env, CLAUDE_IDE_SESSION_ID: 'sess-minimax-render', TZ: 'Europe/Istanbul' },
+        env: {
+          ...process.env,
+          CLAUDE_IDE_SESSION_ID: 'sess-minimax-render',
+          TZ: 'Europe/Istanbul',
+        },
       }).trim();
 
       expect(output).toContain('MiniMax-M2.7  MiniMax  --  aa');

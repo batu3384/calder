@@ -5,6 +5,7 @@
 ## Product Read
 
 The app already has a strong operational shape:
+
 - a dense left sidebar for projects, config, readiness, git, and history
 - a compact tab bar and action strip across the top
 - a large session workspace that changes by session type
@@ -12,6 +13,7 @@ The app already has a strong operational shape:
 - overlay-heavy secondary surfaces such as `New Project`, `Preferences`, `Usage Stats`, and `Help`
 
 The current UI works, but it feels rough rather than authored:
+
 - pure black backgrounds flatten the hierarchy
 - the hot pink-red accent is overused and feels louder than the product needs
 - spacing is tight in ways that read more accidental than intentional
@@ -32,6 +34,7 @@ The current UI works, but it feels rough rather than authored:
 This pass is a surgical polish, not a redesign.
 
 The target feeling is:
+
 - terminal-native
 - technical
 - calm
@@ -39,6 +42,7 @@ The target feeling is:
 - dense but legible
 
 This is explicitly **not**:
+
 - glassmorphism
 - oversized gradients
 - dashboard-card bloat
@@ -129,6 +133,7 @@ Centralize the shell look around shared tokens in the renderer base styles, then
 ### Shell Polish
 
 Apply the new tone system to:
+
 - sidebar
 - tab bar
 - session pane chrome
@@ -144,6 +149,7 @@ Do a hard break from the old identity in runtime/storage/bridge code rather than
 The main risk is accidentally changing how the app behaves while cleaning and polishing it.
 
 To avoid that:
+
 - preserve DOM structure where possible
 - preserve IDs and event wiring
 - prefer tokenization and style refinement over structural rewrites
@@ -158,6 +164,7 @@ Verification should prove two things:
 2. The old identity is gone from runtime behavior.
 
 Minimum verification:
+
 - full build
 - full test suite
 - repo-wide search for old ownership/runtime identifiers after implementation
@@ -172,6 +179,7 @@ Minimum verification:
 ## Success Criteria
 
 This work is successful when:
+
 - the app still works the same way
 - the shell feels more deliberate and more premium
 - nothing reads like a generic AI app reskin

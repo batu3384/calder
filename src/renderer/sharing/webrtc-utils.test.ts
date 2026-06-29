@@ -29,7 +29,9 @@ describe('encodeConnectionCode / decodeConnectionCode', () => {
     const desc = { type: 'offer', sdp: 'v=0\r\n...' } as RTCSessionDescriptionInit;
     const code = await encodeConnectionCode(desc as any, passphrase);
 
-    await expect(decodeConnectionCode(code, 'offer', passphrase.toLowerCase())).resolves.toEqual(desc);
+    await expect(decodeConnectionCode(code, 'offer', passphrase.toLowerCase())).resolves.toEqual(
+      desc,
+    );
   });
 
   it('embeds and restores rtc config metadata for offers', async () => {
@@ -37,7 +39,9 @@ describe('encodeConnectionCode / decodeConnectionCode', () => {
       { type: 'offer', sdp: 'v=0\r\n...' } as RTCSessionDescriptionInit,
       passphrase,
       {
-        iceServers: [{ urls: 'turn:turn.example.com:3478', username: 'calder', credential: 'secret' }],
+        iceServers: [
+          { urls: 'turn:turn.example.com:3478', username: 'calder', credential: 'secret' },
+        ],
         iceTransportPolicy: 'relay',
       },
     );
@@ -45,19 +49,30 @@ describe('encodeConnectionCode / decodeConnectionCode', () => {
     const decoded = await decodeConnectionEnvelope(code, 'offer', passphrase);
     expect(decoded.description).toEqual({ type: 'offer', sdp: 'v=0\r\n...' });
     expect(decoded.rtcConfig).toEqual({
-      iceServers: [{ urls: 'turn:turn.example.com:3478', username: 'calder', credential: 'secret' }],
+      iceServers: [
+        { urls: 'turn:turn.example.com:3478', username: 'calder', credential: 'secret' },
+      ],
       iceTransportPolicy: 'relay',
     });
   });
 
   it('rejects malformed or mismatched connection codes', async () => {
     const malformed = await encryptPayload(JSON.stringify({ foo: 'bar' }), passphrase);
-    await expect(decodeConnectionCode(malformed, 'offer', passphrase)).rejects.toThrow(/missing required fields/i);
+    await expect(decodeConnectionCode(malformed, 'offer', passphrase)).rejects.toThrow(
+      /missing required fields/i,
+    );
 
-    const answer = await encodeConnectionCode({ type: 'answer', sdp: 'v=0\r\n...' } as any, passphrase);
-    await expect(decodeConnectionCode(answer, 'offer', passphrase)).rejects.toThrow(/expected offer but got answer/i);
+    const answer = await encodeConnectionCode(
+      { type: 'answer', sdp: 'v=0\r\n...' } as any,
+      passphrase,
+    );
+    await expect(decodeConnectionCode(answer, 'offer', passphrase)).rejects.toThrow(
+      /expected offer but got answer/i,
+    );
 
-    await expect(decodeConnectionCode('not-a-valid-code', 'offer', passphrase)).rejects.toThrow(/could not decrypt/i);
+    await expect(decodeConnectionCode('not-a-valid-code', 'offer', passphrase)).rejects.toThrow(
+      /could not decrypt/i,
+    );
   });
 });
 
@@ -70,10 +85,12 @@ describe('buildRtcConfiguration', () => {
   });
 
   it('normalizes supplied config and transport policy', () => {
-    expect(buildRtcConfiguration({
-      iceServers: [{ urls: ['turn:turn.example.com:3478'] }],
-      iceTransportPolicy: 'relay',
-    })).toEqual({
+    expect(
+      buildRtcConfiguration({
+        iceServers: [{ urls: ['turn:turn.example.com:3478'] }],
+        iceTransportPolicy: 'relay',
+      }),
+    ).toEqual({
       iceServers: [{ urls: ['turn:turn.example.com:3478'] }],
       iceTransportPolicy: 'relay',
     });

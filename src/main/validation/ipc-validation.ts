@@ -39,7 +39,10 @@ export function validatePtyCreatePayload(
   };
 }
 
-export function validatePtyWritePayload(sessionId: string, data: string): { sessionId: string; data: string } {
+export function validatePtyWritePayload(
+  sessionId: string,
+  data: string,
+): { sessionId: string; data: string } {
   return validateOrThrow(PtyWriteSchema, { sessionId, data });
 }
 

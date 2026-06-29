@@ -53,7 +53,9 @@ triggers:
 `);
 
     expect(parsed.metadata.name).toBe('agent-reach');
-    expect(parsed.metadata.description).toBe('Give your AI agent eyes to see the internet. Works across multiple platforms.');
+    expect(parsed.metadata.description).toBe(
+      'Give your AI agent eyes to see the internet. Works across multiple platforms.',
+    );
     expect(parsed.body.trim()).toBe('# Agent Reach');
   });
 
@@ -78,7 +80,7 @@ Intro paragraph
 \`\`\`md
 ## Ignored Inside Code Fence
 \`\`\`
-`
+`,
     );
 
     expect(model).not.toBeNull();
@@ -107,12 +109,14 @@ description: >
 ## Routing
 
 Body text
-`
+`,
     );
 
     expect(model).not.toBeNull();
     expect(model?.summary.name).toBe('agent-reach');
-    expect(model?.summary.description).toBe('Give your AI agent eyes to see the internet. Search, read, and inspect the web.');
+    expect(model?.summary.description).toBe(
+      'Give your AI agent eyes to see the internet. Search, read, and inspect the web.',
+    );
     expect(model?.outline.map((item) => item.text)).toEqual(['Agent Reach', 'Routing']);
   });
 
@@ -129,7 +133,7 @@ description: Create well-formatted commits
 ## Usage
 
 Body text
-`
+`,
     );
 
     expect(model).not.toBeNull();

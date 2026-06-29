@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createPatternTranslations } from './i18n-pattern-translations.js';
 
-function getEntry(
-  patterns: ReturnType<typeof createPatternTranslations>,
-  source: string,
-) {
+function getEntry(patterns: ReturnType<typeof createPatternTranslations>, source: string) {
   return patterns.find((entry) => entry.pattern.source === source);
 }
 
@@ -46,14 +43,22 @@ describe('i18n pattern translations', () => {
 
   it('uses translation callback for failure and routing patterns', () => {
     const patterns = createPatternTranslations((value) => `TR:${value}`);
-    expect(applyPattern(patterns, '^Update failed:\\s*(.+)$', 'Update failed: stalled')).toBe('Güncelleme başarısız: TR:stalled');
-    expect(applyPattern(patterns, '^Routing to\\s+(.+)$', 'Routing to live')).toBe('TR:live oturumuna yönlendiriliyor');
+    expect(applyPattern(patterns, '^Update failed:\\s*(.+)$', 'Update failed: stalled')).toBe(
+      'Güncelleme başarısız: TR:stalled',
+    );
+    expect(applyPattern(patterns, '^Routing to\\s+(.+)$', 'Routing to live')).toBe(
+      'TR:live oturumuna yönlendiriliyor',
+    );
   });
 
   it('translates conditional and inspector status patterns', () => {
     const patterns = createPatternTranslations((value) => value);
-    expect(applyPattern(patterns, '^Auto-scroll:\\s*(ON|OFF)$', 'Auto-scroll: ON')).toBe('Otomatik kaydırma: AÇIK');
-    expect(applyPattern(patterns, '^Auto-scroll:\\s*(ON|OFF)$', 'Auto-scroll: OFF')).toBe('Otomatik kaydırma: KAPALI');
+    expect(applyPattern(patterns, '^Auto-scroll:\\s*(ON|OFF)$', 'Auto-scroll: ON')).toBe(
+      'Otomatik kaydırma: AÇIK',
+    );
+    expect(applyPattern(patterns, '^Auto-scroll:\\s*(ON|OFF)$', 'Auto-scroll: OFF')).toBe(
+      'Otomatik kaydırma: KAPALI',
+    );
     expect(
       applyPattern(
         patterns,
@@ -66,7 +71,8 @@ describe('i18n pattern translations', () => {
   it('keeps specific status-session pattern ahead of generic status pattern', () => {
     const patterns = createPatternTranslations((value) => `TR:${value}`);
     const specificIndex = patterns.findIndex(
-      (entry) => entry.pattern.source === '^Status:\\s*(\\S+)\\s+Session:\\s*(.+)\\s+Drag to reorder$',
+      (entry) =>
+        entry.pattern.source === '^Status:\\s*(\\S+)\\s+Session:\\s*(.+)\\s+Drag to reorder$',
     );
     const genericIndex = patterns.findIndex(
       (entry) => entry.pattern.source === '^Status:\\s*(.+)$',

@@ -12,8 +12,8 @@ const rendererTypesSource = readFileSync(new URL('../renderer/types.ts', import.
 describe('mobile setup IPC contract', () => {
   it('registers dependency check and install handlers in the main process', () => {
     expect(ipcHandlersSource).toContain('registerMobileIpcHandlers();');
-    expect(ipcMobileSource).toContain("ipcMain.handle('mobileSetup:checkDependencies'");
-    expect(ipcMobileSource).toContain("ipcMain.handle('mobileSetup:installDependency'");
+    expect(ipcMobileSource).toContain("'mobileSetup:checkDependencies'");
+    expect(ipcMobileSource).toContain("'mobileSetup:installDependency'");
     expect(ipcMobileSource).toContain('checkMobileDependencies()');
     expect(ipcMobileSource).toContain('installMobileDependency(');
     expect(ipcMobileSource).toContain("event.sender.send('mobileSetup:installProgress'");
@@ -22,17 +22,25 @@ describe('mobile setup IPC contract', () => {
   it('exposes mobile setup APIs on preload bridge', () => {
     expect(preloadSource).toContain('mobileSetup: {');
     expect(preloadSource).toContain('checkDependencies(): Promise<MobileDependencyReport>');
-    expect(preloadSource).toContain('installDependency(dependencyId: MobileDependencyId, installId?: string)');
-    expect(preloadSource).toContain('onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)');
+    expect(preloadSource).toContain('installDependency(');
+    expect(preloadSource).toContain('dependencyId: MobileDependencyId');
+    expect(preloadSource).toContain(
+      'onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)',
+    );
     expect(preloadSource).toContain("ipcRenderer.invoke('mobileSetup:checkDependencies')");
-    expect(preloadSource).toContain("ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId)");
+    expect(preloadSource).toContain(
+      "ipcRenderer.invoke('mobileSetup:installDependency', dependencyId, installId)",
+    );
     expect(preloadSource).toContain("onChannel('mobileSetup:installProgress'");
   });
 
   it('keeps renderer-side CalderApi typing aligned with preload bridge', () => {
     expect(rendererTypesSource).toContain('mobileSetup: {');
     expect(rendererTypesSource).toContain('checkDependencies(): Promise<MobileDependencyReport>');
-    expect(rendererTypesSource).toContain('installDependency(dependencyId: MobileDependencyId, installId?: string)');
-    expect(rendererTypesSource).toContain('onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)');
+    expect(rendererTypesSource).toContain('installDependency(');
+    expect(rendererTypesSource).toContain('dependencyId: MobileDependencyId');
+    expect(rendererTypesSource).toContain(
+      'onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void)',
+    );
   });
 });

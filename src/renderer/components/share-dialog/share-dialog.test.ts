@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock peer-host before importing share-dialog
 const mockIsSharing = vi.fn<(sessionId: unknown) => boolean>(() => false);
@@ -12,9 +12,11 @@ vi.mock('../../sharing/peer-host.js', () => ({
 
 // Mock share-manager before importing share-dialog
 const mockEndShare = vi.fn<(sessionId: unknown) => void>();
-const mockShareSession = vi.fn<(sessionId: unknown, mode: unknown, pin: unknown) => Promise<unknown>>();
+const mockShareSession =
+  vi.fn<(sessionId: unknown, mode: unknown, pin: unknown) => Promise<unknown>>();
 vi.mock('../../sharing/share-manager.js', () => ({
-  shareSession: (sessionId: unknown, mode: unknown, pin: unknown) => mockShareSession(sessionId, mode, pin),
+  shareSession: (sessionId: unknown, mode: unknown, pin: unknown) =>
+    mockShareSession(sessionId, mode, pin),
   acceptShareAnswer: vi.fn(),
   endShare: (sessionId: unknown) => mockEndShare(sessionId),
 }));
@@ -43,7 +45,9 @@ function makeElement(): Record<string, unknown> {
     checked: false,
     disabled: false,
     _listeners: {} as Record<string, Function[]>,
-    appendChild(child: Record<string, unknown>) { return child; },
+    appendChild(child: Record<string, unknown>) {
+      return child;
+    },
     remove() {},
     focus() {},
     classList: {
@@ -52,7 +56,7 @@ function makeElement(): Record<string, unknown> {
       toggle() {},
     },
     addEventListener(event: string, cb: Function) {
-      const listeners = (el._listeners as Record<string, Function[]>);
+      const listeners = el._listeners as Record<string, Function[]>;
       if (!listeners[event]) listeners[event] = [];
       listeners[event].push(cb);
     },
@@ -96,7 +100,7 @@ function installGlobalStubs() {
 
 installGlobalStubs();
 
-import { closeShareDialog,showShareDialog } from './share-dialog.js';
+import { closeShareDialog, showShareDialog } from './share-dialog.js';
 
 beforeEach(() => {
   vi.useRealTimers();
@@ -112,7 +116,7 @@ beforeEach(() => {
 
 function findButtons(text: string): Record<string, unknown>[] {
   return createdElements.filter(
-    (el) => el.textContent === text && (el as { className?: string }).className !== undefined
+    (el) => el.textContent === text && (el as { className?: string }).className !== undefined,
   );
 }
 
@@ -120,7 +124,7 @@ async function clickButton(text: string): Promise<void> {
   const buttons = findButtons(text);
   if (buttons.length === 0) throw new Error(`Button "${text}" not found`);
   for (const btn of buttons) {
-    const listeners = (btn._listeners as Record<string, Function[]> | undefined);
+    const listeners = btn._listeners as Record<string, Function[]> | undefined;
     for (const cb of listeners?.click ?? []) {
       await cb();
     }

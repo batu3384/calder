@@ -3,7 +3,7 @@ import type { SelectorOption } from './types.js';
 export function buildSelectorOptions(
   selectors: SelectorOption[],
   activeSelector: SelectorOption | undefined,
-  onActivate: (sel: SelectorOption) => void
+  onActivate: (sel: SelectorOption) => void,
 ): HTMLElement {
   const container = document.createElement('div');
   const optionEls: HTMLElement[] = [];

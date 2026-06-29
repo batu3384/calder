@@ -37,13 +37,16 @@ describe('ipc provider-update handlers', () => {
   });
 
   it('deduplicates in-flight updateAll requests and emits progress events', async () => {
-    let resolveUpdate: ((value: { ok: boolean } | PromiseLike<{ ok: boolean }>) => void) | null = null;
-    mockUpdateAllProviders.mockImplementation(({ onProgress }: { onProgress: (event: unknown) => void }) => {
-      onProgress({ stage: 'starting' });
-      return new Promise<{ ok: boolean }>((resolve) => {
-        resolveUpdate = resolve;
-      });
-    });
+    let resolveUpdate: ((value: { ok: boolean } | PromiseLike<{ ok: boolean }>) => void) | null =
+      null;
+    mockUpdateAllProviders.mockImplementation(
+      ({ onProgress }: { onProgress: (event: unknown) => void }) => {
+        onProgress({ stage: 'starting' });
+        return new Promise<{ ok: boolean }>((resolve) => {
+          resolveUpdate = resolve;
+        });
+      },
+    );
     const { registerProviderUpdateIpcHandlers } = await import('./ipc-provider-update');
     registerProviderUpdateIpcHandlers();
 
@@ -93,32 +96,52 @@ describe('ipc provider-update handlers', () => {
 
     expect(cancelled).toEqual({ cancelled: true });
     expect(cancelledAgain).toEqual({ cancelled: false });
-    expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(true);
+    expect(
+      requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted,
+    ).toBe(true);
   });
 
   it('runs a selected provider update through the same progress and cancellation pipeline', async () => {
     let capturedSignal: AbortSignal | null = null;
-    mockUpdateProviderById.mockImplementation((providerId: string, { signal, onProgress }: {
-      signal: AbortSignal;
-      onProgress: (event: unknown) => void;
-    }) => {
-      capturedSignal = signal;
-      onProgress({ phase: 'provider_started', providerId });
-      return Promise.resolve({ results: [{ providerId }] });
-    });
+    mockUpdateProviderById.mockImplementation(
+      (
+        providerId: string,
+        {
+          signal,
+          onProgress,
+        }: {
+          signal: AbortSignal;
+          onProgress: (event: unknown) => void;
+        },
+      ) => {
+        capturedSignal = signal;
+        onProgress({ phase: 'provider_started', providerId });
+        return Promise.resolve({ results: [{ providerId }] });
+      },
+    );
     const { registerProviderUpdateIpcHandlers } = await import('./ipc-provider-update');
     registerProviderUpdateIpcHandlers();
 
     const updateProviderHandler = getHandleHandler('provider:updateProvider');
     const sender = { isDestroyed: () => false, send: vi.fn() };
 
-    await expect(updateProviderHandler({ sender }, 'antigravity')).resolves.toEqual({ results: [{ providerId: 'antigravity' }] });
+    await expect(updateProviderHandler({ sender }, 'antigravity')).resolves.toEqual({
+      results: [{ providerId: 'antigravity' }],
+    });
 
-    expect(mockUpdateProviderById).toHaveBeenCalledWith('antigravity', expect.objectContaining({
-      signal: expect.any(AbortSignal),
-      onProgress: expect.any(Function),
-    }));
-    expect(sender.send).toHaveBeenCalledWith('provider:update-progress', { phase: 'provider_started', providerId: 'antigravity' });
-    expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(false);
+    expect(mockUpdateProviderById).toHaveBeenCalledWith(
+      'antigravity',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+        onProgress: expect.any(Function),
+      }),
+    );
+    expect(sender.send).toHaveBeenCalledWith('provider:update-progress', {
+      phase: 'provider_started',
+      providerId: 'antigravity',
+    });
+    expect(
+      requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted,
+    ).toBe(false);
   });
 });

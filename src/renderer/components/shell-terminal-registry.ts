@@ -11,7 +11,10 @@ export interface ShellTerminalSearchInstance {
 
 const shellInstancesByProjectId = new Map<string, ShellTerminalSearchInstance>();
 
-export function registerShellTerminalInstance(projectId: string, instance: ShellTerminalSearchInstance): void {
+export function registerShellTerminalInstance(
+  projectId: string,
+  instance: ShellTerminalSearchInstance,
+): void {
   shellInstancesByProjectId.set(projectId, instance);
 }
 
@@ -19,7 +22,9 @@ export function unregisterShellTerminalInstance(projectId: string): void {
   shellInstancesByProjectId.delete(projectId);
 }
 
-export function getShellTerminalInstance(sessionId: string): ShellTerminalSearchInstance | undefined {
+export function getShellTerminalInstance(
+  sessionId: string,
+): ShellTerminalSearchInstance | undefined {
   const projectId = sessionId.replace('shell-', '');
   return shellInstancesByProjectId.get(projectId);
 }

@@ -1,4 +1,7 @@
-import type { CliSurfaceProfile, ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceProfile,
+  ProjectSurfaceRecord,
+} from '../../../shared/types/project-surface.js';
 import { appState, type ProjectRecord } from '../../state.js';
 
 export function createDefaultProjectSurface(): ProjectSurfaceRecord {
@@ -21,7 +24,10 @@ export function updateProjectSurface(project: ProjectRecord, next: ProjectSurfac
   appState.setProjectSurface(project.id, next);
 }
 
-export function upsertCliSurfaceProfile(project: ProjectRecord, profile: CliSurfaceProfile): CliSurfaceProfile[] {
+export function upsertCliSurfaceProfile(
+  project: ProjectRecord,
+  profile: CliSurfaceProfile,
+): CliSurfaceProfile[] {
   const surface = getProjectSurface(project);
   const profiles = [...(surface.cli?.profiles ?? [])];
   const existingIndex = profiles.findIndex((entry) => entry.id === profile.id);
@@ -67,7 +73,10 @@ export function selectCliSurfaceProfile(
   });
 }
 
-export function persistAndLaunchCliSurfaceProfile(project: ProjectRecord, profile: CliSurfaceProfile): void {
+export function persistAndLaunchCliSurfaceProfile(
+  project: ProjectRecord,
+  profile: CliSurfaceProfile,
+): void {
   const profiles = upsertCliSurfaceProfile(project, profile);
   selectCliSurfaceProfile(project, profiles, profile.id);
   void window.calder?.cliSurface?.start(project.id, profile);

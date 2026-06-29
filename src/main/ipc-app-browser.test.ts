@@ -10,14 +10,22 @@ describe('ipc app/browser guest payload guard', () => {
   });
 
   it('validates bounded auth-fill payloads', () => {
-    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
-      username: 'demo@example.com',
-      password: 'secret',
-    }])).toBe(true);
-    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
-      username: 123,
-      password: 'secret',
-    }])).toBe(false);
+    expect(
+      isAllowedGuestMessagePayload('auth-fill-credentials', [
+        {
+          username: 'demo@example.com',
+          password: 'secret',
+        },
+      ]),
+    ).toBe(true);
+    expect(
+      isAllowedGuestMessagePayload('auth-fill-credentials', [
+        {
+          username: 123,
+          password: 'secret',
+        },
+      ]),
+    ).toBe(false);
   });
 
   it('rejects oversized flow click payloads', () => {
@@ -30,7 +38,9 @@ describe('ipc app/browser guest payload guard', () => {
     expect(isAllowedGuestMessagePayload('flow-do-click', ['#cta'])).toBe(true);
     expect(isAllowedGuestMessagePayload('flow-do-click', [['#cta', '#submit']])).toBe(true);
     expect(isAllowedGuestMessagePayload('flow-do-click', [123])).toBe(false);
-    expect(isAllowedGuestMessagePayload('flow-do-click', [{ selector: '#cta' }, { extra: true }])).toBe(false);
+    expect(
+      isAllowedGuestMessagePayload('flow-do-click', [{ selector: '#cta' }, { extra: true }]),
+    ).toBe(false);
   });
 
   it('rejects unknown channels and non-serializable payloads', () => {

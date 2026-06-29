@@ -58,6 +58,7 @@
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "audit:graph": "node scripts/graph-gap-audit.mjs",
     "audit:structure": "node scripts/structure-audit.mjs",
+    "audit:secrets": "node scripts/scan-tracked-secrets.mjs",
     "audit:deep": "node scripts/deep-system-audit.mjs",
     "checksums:generate": "node scripts/generate-release-checksums.mjs",
     "audit:knip": "npx --yes --package=knip@6.6.0 knip --config knip.jsonc --reporter compact",

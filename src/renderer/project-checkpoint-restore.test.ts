@@ -24,9 +24,11 @@ vi.mock('./session-context.js', () => ({
 }));
 
 import type { ProjectCheckpointDocument } from '../shared/types/project-checkpoint.js';
-import { _resetForTesting,appState } from './state.js';
+import { _resetForTesting, appState } from './state.js';
 
-function buildCheckpointDocument(overrides: Partial<ProjectCheckpointDocument> = {}): ProjectCheckpointDocument {
+function buildCheckpointDocument(
+  overrides: Partial<ProjectCheckpointDocument> = {},
+): ProjectCheckpointDocument {
   return {
     schemaVersion: 1,
     id: 'checkpoint:2026-04-13T18:00:00.000Z:manual',
@@ -102,8 +104,13 @@ describe('project checkpoint restore', () => {
       'localhost',
     ]);
 
-    const restoredCli = nextProject.sessions.find((session) => session.cliSessionId === 'cli-restore-1');
-    const restoredBrowser = nextProject.sessions.find((session) => session.type === 'browser-tab' && session.browserTabUrl === 'http://localhost:3000');
+    const restoredCli = nextProject.sessions.find(
+      (session) => session.cliSessionId === 'cli-restore-1',
+    );
+    const restoredBrowser = nextProject.sessions.find(
+      (session) =>
+        session.type === 'browser-tab' && session.browserTabUrl === 'http://localhost:3000',
+    );
 
     expect(restoredCli?.providerId).toBe('claude');
     expect(restoredBrowser?.browserTargetSessionId).toBe(restoredCli?.id);
@@ -137,7 +144,9 @@ describe('project checkpoint restore', () => {
     appState.restoreProjectCheckpoint(project.id, checkpoint);
 
     const nextProject = appState.projects.find((entry) => entry.id === project.id)!;
-    const restoredMatches = nextProject.sessions.filter((session) => session.cliSessionId === 'cli-restore-1');
+    const restoredMatches = nextProject.sessions.filter(
+      (session) => session.cliSessionId === 'cli-restore-1',
+    );
 
     expect(restoredMatches).toHaveLength(1);
     expect(nextProject.activeSessionId).toBe(existing.id);
@@ -211,7 +220,9 @@ describe('project checkpoint restore', () => {
     expect(nextProject.sessions.some((session) => session.id === currentCli.id)).toBe(false);
     expect(nextProject.sessions.some((session) => session.id === currentReader.id)).toBe(false);
 
-    const restoredCli = nextProject.sessions.find((session) => session.cliSessionId === 'cli-restore-1');
+    const restoredCli = nextProject.sessions.find(
+      (session) => session.cliSessionId === 'cli-restore-1',
+    );
     expect(nextProject.layout.splitPanes).toEqual([restoredCli?.id]);
     expect(removedCb).toHaveBeenCalledTimes(2);
     expect(removedCb).toHaveBeenCalledWith({ projectId: project.id, sessionId: currentCli.id });

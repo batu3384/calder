@@ -5,25 +5,29 @@ import type { ProjectGovernanceStarterPolicyResult } from '../../shared/types/go
 import { discoverProjectGovernance, POLICY_RELATIVE_PATH } from './discovery.js';
 
 function buildStarterPolicy(): string {
-  return `${JSON.stringify({
-    schemaVersion: 1,
-    profileName: 'Project guardrails',
-    mode: 'advisory',
-    toolPolicy: 'ask',
-    writePolicy: 'ask',
-    networkPolicy: 'ask',
-    autoApproval: {
-      mode: 'off',
-      safeToolProfile: 'default-read-only',
+  return `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      profileName: 'Project guardrails',
+      mode: 'advisory',
+      toolPolicy: 'ask',
+      writePolicy: 'ask',
+      networkPolicy: 'ask',
+      autoApproval: {
+        mode: 'off',
+        safeToolProfile: 'default-read-only',
+      },
+      mcpAllowlist: [],
+      providerProfiles: {},
+      budgetLimitUsd: 10,
+      notes: [
+        'Use advisory mode while tuning the project policy.',
+        'Switch to enforced mode only after the team agrees on the guardrails.',
+      ],
     },
-    mcpAllowlist: [],
-    providerProfiles: {},
-    budgetLimitUsd: 10,
-    notes: [
-      'Use advisory mode while tuning the project policy.',
-      'Switch to enforced mode only after the team agrees on the guardrails.',
-    ],
-  }, null, 2)}\n`;
+    null,
+    2,
+  )}\n`;
 }
 
 export async function createProjectGovernanceStarterPolicy(

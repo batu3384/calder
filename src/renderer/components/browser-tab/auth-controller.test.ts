@@ -225,11 +225,10 @@ describe('createBrowserAuthController', () => {
     await authElements.authFillBtn.dispatch('click');
     await flushPromises();
 
-    expect(sendGuestMessageMock).toHaveBeenCalledWith(
-      expect.anything(),
-      'auth-fill-credentials',
-      { username: 'demo@example.com', password: 'secret' },
-    );
+    expect(sendGuestMessageMock).toHaveBeenCalledWith(expect.anything(), 'auth-fill-credentials', {
+      username: 'demo@example.com',
+      password: 'secret',
+    });
     expect(authElements.authPanel.style.display).toBe('flex');
     expect(authElements.authStatusEl.textContent).toBe('Filled credentials from the form.');
 
@@ -250,12 +249,13 @@ describe('createBrowserAuthController', () => {
 
     await controller.maybeAutoFillCredentials();
 
-    expect(browserCredentialMock.getAutoFillForUrl).toHaveBeenCalledWith('https://example.com/login');
-    expect(sendGuestMessageMock).toHaveBeenCalledWith(
-      expect.anything(),
-      'auth-fill-credentials',
-      { username: 'auto@example.com', password: 'auto-secret' },
+    expect(browserCredentialMock.getAutoFillForUrl).toHaveBeenCalledWith(
+      'https://example.com/login',
     );
+    expect(sendGuestMessageMock).toHaveBeenCalledWith(expect.anything(), 'auth-fill-credentials', {
+      username: 'auto@example.com',
+      password: 'auto-secret',
+    });
     expect(authElements.authStatusEl.textContent).toBe('Auto-filled Auto Profile.');
     expect(authElements.authStatusEl.dataset.tone).toBe('success');
   });

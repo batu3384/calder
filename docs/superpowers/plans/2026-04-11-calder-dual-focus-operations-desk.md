@@ -83,6 +83,7 @@
 ## Task 1: Lock The New Shell Vocabulary
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-language.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/provider-neutral-copy.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
@@ -210,6 +211,7 @@ git commit -m "refactor: adopt dual-focus shell vocabulary"
 ## Task 2: Reshape Preferences Into A Control Center
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/preferences.css`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
@@ -219,7 +221,9 @@ git commit -m "refactor: adopt dual-focus shell vocabulary"
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`, add assertions like:
 
 ```ts
-expect(source).toContain("type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about'");
+expect(source).toContain(
+  "type Section = 'general' | 'layout' | 'providers' | 'shortcuts' | 'about'",
+);
 expect(source).toContain("{ id: 'layout', label: 'Layout' }");
 expect(source).toContain("{ id: 'providers', label: 'Providers' }");
 expect(source).toContain('Ops Rail modules');
@@ -283,7 +287,7 @@ Use grouped labels instead of implementation-heavy toggle labels:
   { key: 'gitPanel', label: 'Changes visibility' },
   { key: 'sessionHistory', label: 'Activity visibility' },
   { key: 'costFooter', label: 'Spend chip visibility' },
-]
+];
 ```
 
 Rename `setup` to `providers` and change the intro:
@@ -366,6 +370,7 @@ git commit -m "feat: turn preferences into a control center"
 ## Task 3: Rebuild The Theme Tokens Around Operations Desk Styling
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/base.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/cockpit.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/theme-contract.test.ts`
@@ -438,15 +443,18 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/cockpit.css`, def
 
 ```css
 .live-view-surface {
-  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0)), var(--surface-live);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)), var(--surface-live);
 }
 
 .session-deck-surface {
-  background: linear-gradient(180deg, rgba(255,255,255,0.024), rgba(255,255,255,0)), var(--surface-deck);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)), var(--surface-deck);
 }
 
 .ops-rail-surface {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)), var(--surface-ops);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)), var(--surface-ops);
 }
 ```
 
@@ -476,6 +484,7 @@ git commit -m "refactor: adopt operations desk theme tokens"
 ## Task 4: Differentiate Project Rail, Live View, Session Deck, And Ops Rail
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector.css`
@@ -508,11 +517,17 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`:
 
 ```html
 <div id="sidebar" class="sidebar-surface project-rail">
-...
-<div id="workspace-shell" class="workspace-shell-surface">
-  <div id="workspace-stack" class="session-deck session-deck-surface">
-...
-  <aside id="context-inspector" class="context-inspector-open control-panel-surface ops-rail ops-rail-surface">
+  ...
+  <div id="workspace-shell" class="workspace-shell-surface">
+    <div id="workspace-stack" class="session-deck session-deck-surface">
+      ...
+      <aside
+        id="context-inspector"
+        class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"
+      ></aside>
+    </div>
+  </div>
+</div>
 ```
 
 Add the Live View hook in `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`:
@@ -528,8 +543,9 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`, red
 ```css
 #sidebar {
   width: 204px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.018), rgba(255,255,255,0)), var(--surface-rail);
-  box-shadow: inset -1px 0 0 rgba(255,255,255,0.02);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)), var(--surface-rail);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
 }
 ```
 
@@ -537,7 +553,8 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`, streng
 
 ```css
 #tab-bar {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)), var(--surface-deck);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)), var(--surface-deck);
 }
 
 #tab-list {
@@ -550,7 +567,8 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector
 ```css
 #context-inspector {
   width: 312px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.016), rgba(255,255,255,0)), var(--surface-ops);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
 }
 
 .context-inspector-section {
@@ -594,6 +612,7 @@ git commit -m "feat: reshape calder into a dual-focus shell"
 ## Task 5: Rewrite Browser Defaults And Empty States To Match The New Identity
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/split-layout.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
@@ -647,7 +666,8 @@ Replace section copy blocks with more direct utility language:
 
 ```ts
 ntpTitle.textContent = 'Open a live target';
-ntpSubtitle.textContent = 'Jump into a local app, inspect a page, and send context to the active session without leaving Calder.';
+ntpSubtitle.textContent =
+  'Jump into a local app, inspect a page, and send context to the active session without leaving Calder.';
 ntpTargetsTitle.textContent = 'Local targets';
 ntpWorkflowTitle.textContent = 'Working loop';
 ```
@@ -659,7 +679,8 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/components/split-layout.
 ```ts
 eyebrow.textContent = 'Ready';
 title.textContent = 'Start a session or open Live View';
-copy.textContent = 'Choose a coding tool, open a browser target, or continue recent work from the current project.';
+copy.textContent =
+  'Choose a coding tool, open a browser target, or continue recent work from the current project.';
 detail.textContent = 'This area keeps your live product surface and AI work side by side.';
 ```
 
@@ -724,6 +745,7 @@ git commit -m "refactor: align live view and empty states with new shell"
 ## Task 6: Final Regression Sweep And Visual Verification
 
 **Files:**
+
 - Modify only if a failing test reveals a regression within scope.
 
 - [ ] **Step 1: Run the focused renderer smoke tests**

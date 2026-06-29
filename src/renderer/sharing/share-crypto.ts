@@ -24,7 +24,10 @@ function toBufferSource(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
 }
 
 export function normalizePassphrase(passphrase: string): string {
-  return passphrase.trim().replace(/[\s-]+/g, '').toUpperCase();
+  return passphrase
+    .trim()
+    .replace(/[\s-]+/g, '')
+    .toUpperCase();
 }
 
 function hasAllowedPassphraseChars(passphrase: string): boolean {
@@ -38,7 +41,10 @@ export function generatePassphrase(): string {
     const idx = crypto.getRandomValues(new Uint32Array(1))[0] % PASSPHRASE_ALPHABET.length;
     chars.push(PASSPHRASE_ALPHABET[idx]);
   }
-  return chars.join('').match(new RegExp(`.{1,${PASSPHRASE_GROUP_LENGTH}}`, 'g'))!.join('-');
+  return chars
+    .join('')
+    .match(new RegExp(`.{1,${PASSPHRASE_GROUP_LENGTH}}`, 'g'))!
+    .join('-');
 }
 
 export function validateSharePassphrase(passphrase: string): string | null {
@@ -75,7 +81,11 @@ export function validateJoinPassphrase(passphrase: string): string | null {
   return null;
 }
 
-async function deriveKey(passphrase: string, salt: Uint8Array, usage: KeyUsage[]): Promise<CryptoKey> {
+async function deriveKey(
+  passphrase: string,
+  salt: Uint8Array,
+  usage: KeyUsage[],
+): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(normalizePassphrase(passphrase)),
@@ -155,7 +165,10 @@ export function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
-export async function computeChallengeResponse(challenge: Uint8Array, passphrase: string): Promise<string> {
+export async function computeChallengeResponse(
+  challenge: Uint8Array,
+  passphrase: string,
+): Promise<string> {
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(normalizePassphrase(passphrase)),
@@ -164,7 +177,12 @@ export async function computeChallengeResponse(challenge: Uint8Array, passphrase
     ['deriveKey'],
   );
   const hmacKey = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: toBufferSource(CHALLENGE_SALT), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    {
+      name: 'PBKDF2',
+      salt: toBufferSource(CHALLENGE_SALT),
+      iterations: PBKDF2_ITERATIONS,
+      hash: 'SHA-256',
+    },
     keyMaterial,
     { name: 'HMAC', hash: 'SHA-256', length: 256 },
     false,

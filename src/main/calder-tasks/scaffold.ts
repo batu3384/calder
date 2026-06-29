@@ -15,16 +15,20 @@ function slugifyTaskTitle(title: string): string {
 
 function buildTaskDocument(title: string, prompt: string): string {
   const now = new Date().toISOString();
-  return `${JSON.stringify({
-    schemaVersion: 1,
-    title: title.trim(),
-    status: 'queued',
-    prompt: prompt.trim(),
-    createdAt: now,
-    updatedAt: now,
-    artifacts: [],
-    handoff: '',
-  }, null, 2)}\n`;
+  return `${JSON.stringify(
+    {
+      schemaVersion: 1,
+      title: title.trim(),
+      status: 'queued',
+      prompt: prompt.trim(),
+      createdAt: now,
+      updatedAt: now,
+      artifacts: [],
+      handoff: '',
+    },
+    null,
+    2,
+  )}\n`;
 }
 
 export async function createProjectBackgroundTaskFile(
@@ -41,7 +45,11 @@ export async function createProjectBackgroundTaskFile(
     throw new Error('Task prompt is required');
   }
 
-  const relativePath = path.posix.join('.calder', 'tasks', `${slugifyTaskTitle(trimmedTitle)}.json`);
+  const relativePath = path.posix.join(
+    '.calder',
+    'tasks',
+    `${slugifyTaskTitle(trimmedTitle)}.json`,
+  );
   const fullPath = path.join(projectPath, relativePath);
 
   let created = false;

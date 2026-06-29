@@ -46,7 +46,9 @@ describe('surface routing', () => {
     const result = await deliverSurfacePrompt('project-1', 'inspect this footer');
 
     expect(result).toEqual({ ok: true, targetSessionId: 'cli-1' });
-    expect(mockResolveSurfaceTargetSession).toHaveBeenCalledWith('project-1', { requireExplicitTarget: true });
+    expect(mockResolveSurfaceTargetSession).toHaveBeenCalledWith('project-1', {
+      requireExplicitTarget: true,
+    });
     expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
       'cli-1',
       expect.stringContaining('Routing contract (strict):'),
@@ -62,12 +64,22 @@ describe('surface routing', () => {
     mockAddPlanSession.mockReturnValue({ id: 'plan-1', name: 'Fix footer' });
 
     const { queueSurfacePromptInNewSession } = await import('./surface-routing.js');
-    const session = queueSurfacePromptInNewSession('project-1', 'Fix footer', 'inspect this footer');
+    const session = queueSurfacePromptInNewSession(
+      'project-1',
+      'Fix footer',
+      'inspect this footer',
+    );
 
     expect(session).toEqual({ id: 'plan-1', name: 'Fix footer' });
     expect(mockAddPlanSession).toHaveBeenCalledWith('project-1', 'Fix footer', 'claude');
-    expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', expect.stringContaining('Routing contract (strict):'));
-    expect(mockSetPendingPrompt).toHaveBeenCalledWith('plan-1', expect.stringContaining('inspect this footer'));
+    expect(mockSetPendingPrompt).toHaveBeenCalledWith(
+      'plan-1',
+      expect.stringContaining('Routing contract (strict):'),
+    );
+    expect(mockSetPendingPrompt).toHaveBeenCalledWith(
+      'plan-1',
+      expect.stringContaining('inspect this footer'),
+    );
   });
 
   it('respects an explicit provider override for new plan sessions', async () => {

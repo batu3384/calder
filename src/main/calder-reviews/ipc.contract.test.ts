@@ -30,8 +30,14 @@ describe('project review IPC contract', () => {
 
   it('declares project review APIs in renderer types', () => {
     expect(rendererTypesSource).toContain('review: {');
-    expect(rendererTypesSource).toContain('getProjectState(projectPath: string): Promise<ProjectReviewState>;');
-    expect(rendererTypesSource).toContain('createFile(projectPath: string, title: string): Promise<ProjectReviewCreateResult>;');
-    expect(rendererTypesSource).toContain('readFile(projectPath: string, reviewPath: string): Promise<ProjectReviewDocument>;');
+    expect(rendererTypesSource).toContain(
+      'getProjectState(projectPath: string): Promise<ProjectReviewState>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'createFile(projectPath: string, title: string): Promise<ProjectReviewCreateResult>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'readFile(projectPath: string, reviewPath: string): Promise<ProjectReviewDocument>;',
+    );
   });
 });

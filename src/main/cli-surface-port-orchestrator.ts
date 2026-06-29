@@ -116,11 +116,19 @@ function planForDirectCommand(command: string): InjectionPlan {
   switch (normalizeCommand(command)) {
     case 'vite':
     case 'astro':
-      return { mode: 'arg-and-env', argFlag: '--port', reason: 'Direct framework CLI supports --port.' };
+      return {
+        mode: 'arg-and-env',
+        argFlag: '--port',
+        reason: 'Direct framework CLI supports --port.',
+      };
     case 'nuxt':
     case 'nuxi':
     case 'next':
-      return { mode: 'arg-and-env', argFlag: '-p', reason: 'Direct framework CLI supports -p/--port.' };
+      return {
+        mode: 'arg-and-env',
+        argFlag: '-p',
+        reason: 'Direct framework CLI supports -p/--port.',
+      };
     default:
       return { mode: 'none', reason: 'Command is not recognized as a web dev server CLI.' };
   }
@@ -162,7 +170,11 @@ function resolveInjectionPlan(profile: CliSurfaceProfile): InjectionPlan {
   return planForDirectCommand(command);
 }
 
-function appendPortArguments(profile: CliSurfaceProfile, flag: ArgFlag, port: number): string[] | undefined {
+function appendPortArguments(
+  profile: CliSurfaceProfile,
+  flag: ArgFlag,
+  port: number,
+): string[] | undefined {
   const args = [...(profile.args ?? [])];
   if (hasExplicitPortArgs(args)) {
     return profile.args ? [...profile.args] : undefined;
@@ -170,7 +182,11 @@ function appendPortArguments(profile: CliSurfaceProfile, flag: ArgFlag, port: nu
 
   const command = normalizeCommand(profile.command);
   if (command === 'npm') {
-    if ((args[0] === 'run' || args[0] === 'run-script') && typeof args[1] === 'string' && args[1].length > 0) {
+    if (
+      (args[0] === 'run' || args[0] === 'run-script') &&
+      typeof args[1] === 'string' &&
+      args[1].length > 0
+    ) {
       return [...args, '--', flag, String(port)];
     }
     return profile.args ? [...profile.args] : undefined;
@@ -224,7 +240,7 @@ async function choosePort(
   reservedPorts: ReadonlySet<number>,
   allowFallback: boolean,
 ): Promise<number | null> {
-  if (!reservedPorts.has(preferredPort) && await isPortAvailable(preferredPort)) {
+  if (!reservedPorts.has(preferredPort) && (await isPortAvailable(preferredPort))) {
     return preferredPort;
   }
 
@@ -234,7 +250,7 @@ async function choosePort(
   let cursor = preferredPort + 1;
   while (attempts < MAX_FALLBACK_ATTEMPTS) {
     if (cursor > PORT_MAX) cursor = AUTO_PORT_MIN;
-    if (!reservedPorts.has(cursor) && await isPortAvailable(cursor)) {
+    if (!reservedPorts.has(cursor) && (await isPortAvailable(cursor))) {
       return cursor;
     }
     cursor += 1;
@@ -287,9 +303,10 @@ export async function resolveCliSurfaceLaunch(
     };
   }
 
-  const preferredPort = mode === 'fixed'
-    ? toValidPort(profile.preferredPort)
-    : (toValidPort(profile.preferredPort) ?? deriveAutoPort(projectId, profile));
+  const preferredPort =
+    mode === 'fixed'
+      ? toValidPort(profile.preferredPort)
+      : (toValidPort(profile.preferredPort) ?? deriveAutoPort(projectId, profile));
 
   if (!preferredPort) {
     throw new Error('Fixed port mode requires a valid preferred port (1-65535).');
@@ -306,9 +323,10 @@ export async function resolveCliSurfaceLaunch(
   }
 
   const nextEnvPatch = { ...(envPatch ?? {}), PORT: String(resolvedPort) };
-  const nextArgs = plan.mode === 'arg-and-env' && plan.argFlag
-    ? appendPortArguments(profile, plan.argFlag, resolvedPort)
-    : args;
+  const nextArgs =
+    plan.mode === 'arg-and-env' && plan.argFlag
+      ? appendPortArguments(profile, plan.argFlag, resolvedPort)
+      : args;
 
   return {
     launch: {

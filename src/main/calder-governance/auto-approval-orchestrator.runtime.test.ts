@@ -65,9 +65,7 @@ describe('auto approval orchestrator runtime branches', () => {
     });
 
     orchestrator.registerSession('session-2', 'codex', '/tmp/project');
-    await orchestrator.handleInspectorEvents('session-2', [
-      permissionRequestEvent(),
-    ]);
+    await orchestrator.handleInspectorEvents('session-2', [permissionRequestEvent()]);
 
     expect(mockDiscoverProjectGovernance).toHaveBeenCalledWith('/tmp/project');
     expect(sendApproval).toHaveBeenCalledWith('session-2', 'codex');
@@ -89,9 +87,7 @@ describe('auto approval orchestrator runtime branches', () => {
     });
 
     orchestrator.registerSession('session-3', 'codex', '/tmp/project');
-    await orchestrator.handleInspectorEvents('session-3', [
-      permissionRequestEvent(),
-    ]);
+    await orchestrator.handleInspectorEvents('session-3', [permissionRequestEvent()]);
 
     expect(sendApproval).not.toHaveBeenCalled();
     const emitted = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
@@ -114,9 +110,7 @@ describe('auto approval orchestrator runtime branches', () => {
     });
 
     orchestrator.registerSession('session-4', 'codex', '/tmp/project');
-    await orchestrator.handleInspectorEvents('session-4', [
-      permissionRequestEvent(),
-    ]);
+    await orchestrator.handleInspectorEvents('session-4', [permissionRequestEvent()]);
 
     expect(sendApproval).not.toHaveBeenCalled();
     const emitted = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;

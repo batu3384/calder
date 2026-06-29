@@ -38,7 +38,11 @@ function getWindowIdentity(win: BrowserWindow): string {
   return `obj:${fallbackId}`;
 }
 
-function createContext(win: BrowserWindow, projectPath: string, providerId: ProviderId): WatcherContext {
+function createContext(
+  win: BrowserWindow,
+  projectPath: string,
+  providerId: ProviderId,
+): WatcherContext {
   const key = `${providerId}::${projectPath}::${getWindowIdentity(win)}`;
   return {
     key,
@@ -206,7 +210,11 @@ function setupCopilotWatchers(context: WatcherContext): void {
   for (const d of dirs) watchDir(context, d);
 }
 
-export function startConfigWatcher(win: BrowserWindow, projectPath: string, providerId: ProviderId = 'claude'): void {
+export function startConfigWatcher(
+  win: BrowserWindow,
+  projectPath: string,
+  providerId: ProviderId = 'claude',
+): void {
   const nextContext = createContext(win, projectPath, providerId);
   if (activeContext?.key === nextContext.key) {
     return;

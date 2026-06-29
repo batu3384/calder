@@ -2,10 +2,19 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const paneCoreSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
-const paneWorkbenchSource = readFileSync(new URL('./mobile-surface/inspect-workbench.ts', import.meta.url), 'utf8');
-const paneSectionsSource = readFileSync(new URL('./mobile-surface/workbench-sections.ts', import.meta.url), 'utf8');
+const paneWorkbenchSource = readFileSync(
+  new URL('./mobile-surface/inspect-workbench.ts', import.meta.url),
+  'utf8',
+);
+const paneSectionsSource = readFileSync(
+  new URL('./mobile-surface/workbench-sections.ts', import.meta.url),
+  'utf8',
+);
 const paneSource = `${paneCoreSource}\n${paneWorkbenchSource}\n${paneSectionsSource}`;
-const scopingSource = readFileSync(new URL('./mobile-surface/dependency-scoping.ts', import.meta.url), 'utf8');
+const scopingSource = readFileSync(
+  new URL('./mobile-surface/dependency-scoping.ts', import.meta.url),
+  'utf8',
+);
 
 describe('mobile surface inspect workbench contract', () => {
   it('wires simulator launch and screenshot capture through mobileInspect bridge', () => {
@@ -32,8 +41,8 @@ describe('mobile surface inspect workbench contract', () => {
 
   it('launches simulator into a stable single-frame state instead of forcing live mode', () => {
     const capturesManualFrame =
-      paneSource.includes("await captureInspectFrame(instance, 'manual');")
-      || paneSource.includes("await handlers.captureInspectFrame(instance, 'manual');");
+      paneSource.includes("await captureInspectFrame(instance, 'manual');") ||
+      paneSource.includes("await handlers.captureInspectFrame(instance, 'manual');");
     expect(capturesManualFrame).toBe(true);
     expect(paneSource).toContain('Live paused for precise point inspection.');
   });
@@ -41,7 +50,9 @@ describe('mobile surface inspect workbench contract', () => {
   it('renders compact inspect flow with blockers and dependency checklist', () => {
     expect(paneSource).toContain('Blocking requirements');
     expect(paneSource).toContain('Dependency checklist');
-    expect(paneSource).toContain('Install and verify prerequisites relevant to the current project profile.');
+    expect(paneSource).toContain(
+      'Install and verify prerequisites relevant to the current project profile.',
+    );
   });
 
   it('auto-detects project profile and scopes mobile readiness messaging', () => {

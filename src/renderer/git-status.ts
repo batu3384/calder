@@ -34,13 +34,13 @@ let initialized = false;
 
 async function refreshWorktrees(projectId: string, projectPath: string): Promise<void> {
   try {
-    const worktrees = await window.calder.git.getWorktrees(projectPath) as GitWorktree[];
+    const worktrees = (await window.calder.git.getWorktrees(projectPath)) as GitWorktree[];
     const prev = worktreeCache.get(projectId);
     worktreeCache.set(projectId, worktrees);
 
     // Clean up manual overrides pointing to deleted worktrees
     const override = manualOverride.get(projectId);
-    if (override && !worktrees.some(w => w.path === override)) {
+    if (override && !worktrees.some((w) => w.path === override)) {
       manualOverride.delete(projectId);
     }
 
@@ -97,13 +97,18 @@ async function poll(): Promise<void> {
 
     // Detect active session's worktree
     const activeSession = appState.activeSession;
-    if (activeSession && activeSession.type !== 'diff-viewer' && activeSession.type !== 'file-reader' && activeSession.type !== 'mcp-inspector') {
+    if (
+      activeSession &&
+      activeSession.type !== 'diff-viewer' &&
+      activeSession.type !== 'file-reader' &&
+      activeSession.type !== 'mcp-inspector'
+    ) {
       await detectSessionWorktree(activeSession.id);
     }
 
     // Query git status using the resolved worktree path
     const gitPath = getActiveGitPath(project.id);
-    const status = await window.calder.git.getStatus(gitPath) as GitStatus;
+    const status = (await window.calder.git.getStatus(gitPath)) as GitStatus;
     const cacheKey = `${project.id}:${gitPath}`;
     const prev = cache.get(cacheKey);
     cache.set(cacheKey, status);
@@ -134,7 +139,7 @@ export function getActiveGitPath(projectId: string): string {
   if (override) return override;
 
   // Check active session's worktree
-  const project = appState.projects.find(p => p.id === projectId);
+  const project = appState.projects.find((p) => p.id === projectId);
   if (project?.activeSessionId) {
     const sessionWt = sessionWorktreeMap.get(project.activeSessionId);
     if (sessionWt) return sessionWt;
@@ -219,7 +224,12 @@ export function startPolling(): void {
   // Detect worktree on session change
   appState.on('session-changed', () => {
     const activeSession = appState.activeSession;
-    if (activeSession && activeSession.type !== 'diff-viewer' && activeSession.type !== 'file-reader' && activeSession.type !== 'mcp-inspector') {
+    if (
+      activeSession &&
+      activeSession.type !== 'diff-viewer' &&
+      activeSession.type !== 'file-reader' &&
+      activeSession.type !== 'mcp-inspector'
+    ) {
       detectSessionWorktree(activeSession.id);
     }
     // Clear manual override on session switch so auto-detection takes effect

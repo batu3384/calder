@@ -70,7 +70,10 @@ function findElementInRoot(root: Document | ShadowRoot, selectors: string[]): HT
   return null;
 }
 
-function findElementInOpenShadowTree(root: Document | ShadowRoot, selectors: string[]): HTMLElement | null {
+function findElementInOpenShadowTree(
+  root: Document | ShadowRoot,
+  selectors: string[],
+): HTMLElement | null {
   const direct = findElementInRoot(root, selectors);
   if (direct) return direct;
 
@@ -129,7 +132,7 @@ function findCanvasFallback(
   payload: NormalizedFlowReplayPayload,
 ): HTMLElement | null {
   const selectors = payload.selectors.filter((selector) =>
-    selector.toLowerCase().includes('canvas')
+    selector.toLowerCase().includes('canvas'),
   );
   const fromSelectors = selectors.length > 0 ? findElementInOpenShadowTree(root, selectors) : null;
   if (fromSelectors) return fromSelectors;
@@ -245,17 +248,19 @@ export function normalizeFlowReplayPayload(raw: unknown): NormalizedFlowReplayPa
   const record = raw as Record<string, unknown>;
   const selectors = normalizeSelectorList(record.selectors);
   const singleSelector = typeof record.selector === 'string' ? record.selector.trim() : '';
-  const mergedSelectors = selectors.length > 0
-    ? selectors
-    : normalizeSelectorList(singleSelector ? [singleSelector] : []);
+  const mergedSelectors =
+    selectors.length > 0
+      ? selectors
+      : normalizeSelectorList(singleSelector ? [singleSelector] : []);
 
   const shadowHostSelectors = Array.isArray(record.shadowHostSelectors)
     ? record.shadowHostSelectors
-      .map((entry) => normalizeSelectorList(entry))
-      .filter((entry) => entry.length > 0)
+        .map((entry) => normalizeSelectorList(entry))
+        .filter((entry) => entry.length > 0)
     : [];
 
-  const tagName = typeof record.tagName === 'string' ? record.tagName.trim().toLowerCase() : undefined;
+  const tagName =
+    typeof record.tagName === 'string' ? record.tagName.trim().toLowerCase() : undefined;
   const isCanvasLike = record.isCanvasLike === true || tagName === 'canvas';
 
   return {
@@ -264,8 +269,18 @@ export function normalizeFlowReplayPayload(raw: unknown): NormalizedFlowReplayPa
     clickPoint: parseClickPoint(record.clickPoint),
     isCanvasLike,
     tagName,
-    timeoutMs: parseBoundedNumber(record.timeoutMs, DEFAULT_TIMEOUT_MS, MIN_TIMEOUT_MS, MAX_TIMEOUT_MS),
-    retryIntervalMs: parseBoundedNumber(record.retryIntervalMs, DEFAULT_RETRY_MS, MIN_RETRY_MS, MAX_RETRY_MS),
+    timeoutMs: parseBoundedNumber(
+      record.timeoutMs,
+      DEFAULT_TIMEOUT_MS,
+      MIN_TIMEOUT_MS,
+      MAX_TIMEOUT_MS,
+    ),
+    retryIntervalMs: parseBoundedNumber(
+      record.retryIntervalMs,
+      DEFAULT_RETRY_MS,
+      MIN_RETRY_MS,
+      MAX_RETRY_MS,
+    ),
   };
 }
 

@@ -9,7 +9,9 @@ const mockExecSync = vi.hoisted(() => vi.fn());
 const mockStatSync = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 const mockReadFileSync = vi.hoisted(() => vi.fn());
-const mockExpandUserPath = vi.hoisted(() => vi.fn((value: string) => value.replace(/^~(?=\/|$)/, '/home/test')));
+const mockExpandUserPath = vi.hoisted(() =>
+  vi.fn((value: string) => value.replace(/^~(?=\/|$)/, '/home/test')),
+);
 const mockWatchFileForChanges = vi.hoisted(() => vi.fn());
 const mockUnwatchFileForChanges = vi.hoisted(() => vi.fn());
 const mockSetFileWatcherWindow = vi.hoisted(() => vi.fn());
@@ -69,7 +71,9 @@ function getOnHandler(channel: string): (...args: any[]) => any {
   return call[1] as (...args: any[]) => any;
 }
 
-function createPolicy(overrides?: Partial<Parameters<typeof registerFsStoreIpcHandlers>[0]>): Parameters<typeof registerFsStoreIpcHandlers>[0] {
+function createPolicy(
+  overrides?: Partial<Parameters<typeof registerFsStoreIpcHandlers>[0]>,
+): Parameters<typeof registerFsStoreIpcHandlers>[0] {
   return {
     isAllowedDirectoryLookupPath: vi.fn(() => true),
     isAllowedReadPath: vi.fn(() => true),
@@ -225,4 +229,3 @@ describe('ipc fs/store handlers', () => {
     expect(expanded).toBe('/home/test/project');
   });
 });
-

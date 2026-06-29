@@ -17,7 +17,13 @@ import * as fs from 'fs';
 import path from 'path';
 
 import type { PersistedState } from './store';
-import { __resetStoreCacheForTests, flushState, loadState, saveState, saveStateSync } from './store';
+import {
+  __resetStoreCacheForTests,
+  flushState,
+  loadState,
+  saveState,
+  saveStateSync,
+} from './store';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -30,7 +36,14 @@ const DEFAULT_STATE: PersistedState = {
   version: 1,
   projects: [],
   activeProjectId: null,
-  preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+  preferences: {
+    soundOnSessionWaiting: true,
+    notificationsDesktop: true,
+    debugMode: false,
+    sessionHistoryEnabled: true,
+    insightsEnabled: true,
+    autoTitleEnabled: true,
+  },
 };
 
 beforeEach(() => {
@@ -55,8 +68,8 @@ describe('loadState', () => {
   });
 
   it('ignores unknown legacy state when Calder state is missing', () => {
-    mockExistsSync.mockImplementation((file) =>
-      String(file) === '/mock/home/.legacy-app/state.json',
+    mockExistsSync.mockImplementation(
+      (file) => String(file) === '/mock/home/.legacy-app/state.json',
     );
     mockReadFileSync.mockReturnValue(JSON.stringify(DEFAULT_STATE));
 
@@ -67,9 +80,25 @@ describe('loadState', () => {
   it('parses valid JSON', () => {
     const state: PersistedState = {
       version: 1,
-      projects: [{ id: 'p1', name: 'Test', path: '/test', sessions: [], activeSessionId: null, layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' } }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Test',
+          path: '/test',
+          sessions: [],
+          activeSessionId: null,
+          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+        },
+      ],
       activeProjectId: 'p1',
-      preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+      preferences: {
+        soundOnSessionWaiting: true,
+        notificationsDesktop: true,
+        debugMode: false,
+        sessionHistoryEnabled: true,
+        insightsEnabled: true,
+        autoTitleEnabled: true,
+      },
     };
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(JSON.stringify(state));
@@ -104,14 +133,16 @@ describe('loadState', () => {
   it('prefers in-memory cached state after saveState before disk flush', () => {
     const newState: PersistedState = {
       ...DEFAULT_STATE,
-      projects: [{
-        id: 'proj-1',
-        name: 'Repo',
-        path: '/repo',
-        sessions: [],
-        activeSessionId: null,
-        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
-      }],
+      projects: [
+        {
+          id: 'proj-1',
+          name: 'Repo',
+          path: '/repo',
+          sessions: [],
+          activeSessionId: null,
+          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+        },
+      ],
       activeProjectId: 'proj-1',
     };
     saveState(newState);
@@ -155,10 +186,9 @@ describe('saveState', () => {
     saveState(DEFAULT_STATE);
     vi.advanceTimersByTime(300);
 
-    expect(mockMkdirSync).toHaveBeenCalledWith(
-      expect.stringContaining('.calder'),
-      { recursive: true },
-    );
+    expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('.calder'), {
+      recursive: true,
+    });
   });
 });
 
@@ -179,8 +209,12 @@ describe('saveStateSync', () => {
     saveStateSync(DEFAULT_STATE);
 
     expect(mockWriteFileSync).toHaveBeenCalledTimes(2);
-    expect(mockWriteFileSync.mock.calls[0]?.[0]).toBe(path.join('/mock/home', '.calder', 'state.json.tmp'));
-    expect(mockWriteFileSync.mock.calls[1]?.[0]).toBe(path.join('/mock/home', '.calder', 'state.json'));
+    expect(mockWriteFileSync.mock.calls[0]?.[0]).toBe(
+      path.join('/mock/home', '.calder', 'state.json.tmp'),
+    );
+    expect(mockWriteFileSync.mock.calls[1]?.[0]).toBe(
+      path.join('/mock/home', '.calder', 'state.json'),
+    );
   });
 });
 
@@ -196,25 +230,34 @@ describe('migrateSessionIds', () => {
   function makeState(sessions: Record<string, unknown>[]): string {
     const state: PersistedState = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Test',
-        path: '/test',
-        sessions: sessions as any,
-        activeSessionId: null,
-        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Test',
+          path: '/test',
+          sessions: sessions as any,
+          activeSessionId: null,
+          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+        },
+      ],
       activeProjectId: 'p1',
-      preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+      preferences: {
+        soundOnSessionWaiting: true,
+        notificationsDesktop: true,
+        debugMode: false,
+        sessionHistoryEnabled: true,
+        insightsEnabled: true,
+        autoTitleEnabled: true,
+      },
     };
     return JSON.stringify(state);
   }
 
   it('migrates claudeSessionId to cliSessionId', () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(makeState([
-      { id: 's1', name: 'S1', claudeSessionId: 'cs-123', createdAt: '2025-01-01' },
-    ]));
+    mockReadFileSync.mockReturnValue(
+      makeState([{ id: 's1', name: 'S1', claudeSessionId: 'cs-123', createdAt: '2025-01-01' }]),
+    );
     const loaded = loadState();
     const session = loaded.projects[0].sessions[0] as any;
     expect(session.cliSessionId).toBe('cs-123');
@@ -222,9 +265,9 @@ describe('migrateSessionIds', () => {
 
   it('sets default providerId to claude', () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(makeState([
-      { id: 's1', name: 'S1', cliSessionId: null, createdAt: '2025-01-01' },
-    ]));
+    mockReadFileSync.mockReturnValue(
+      makeState([{ id: 's1', name: 'S1', cliSessionId: null, createdAt: '2025-01-01' }]),
+    );
     const loaded = loadState();
     const session = loaded.projects[0].sessions[0] as any;
     expect(session.providerId).toBe('claude');
@@ -232,9 +275,17 @@ describe('migrateSessionIds', () => {
 
   it('preserves existing cliSessionId over claudeSessionId', () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(makeState([
-      { id: 's1', name: 'S1', claudeSessionId: 'old-id', cliSessionId: 'new-id', createdAt: '2025-01-01' },
-    ]));
+    mockReadFileSync.mockReturnValue(
+      makeState([
+        {
+          id: 's1',
+          name: 'S1',
+          claudeSessionId: 'old-id',
+          cliSessionId: 'new-id',
+          createdAt: '2025-01-01',
+        },
+      ]),
+    );
     const loaded = loadState();
     const session = loaded.projects[0].sessions[0] as any;
     expect(session.cliSessionId).toBe('new-id');
@@ -242,20 +293,22 @@ describe('migrateSessionIds', () => {
 
   it('handles sessions with neither claudeSessionId nor cliSessionId', () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(makeState([
-      { id: 's1', name: 'S1', createdAt: '2025-01-01' },
-    ]));
+    mockReadFileSync.mockReturnValue(
+      makeState([{ id: 's1', name: 'S1', createdAt: '2025-01-01' }]),
+    );
     const loaded = loadState();
     expect(loaded.projects[0].sessions[0]).toBeDefined();
   });
 
   it('normalizes removed provider ids to claude for legacy sessions', () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFileSync.mockReturnValue(makeState([
-      { id: 's1', name: 'S1', providerId: 'minimax', createdAt: '2025-01-01' },
-      { id: 's2', name: 'S2', providerId: 'blackbox', createdAt: '2025-01-01' },
-      { id: 's3', name: 'S3', providerId: 'codex', createdAt: '2025-01-01' },
-    ]));
+    mockReadFileSync.mockReturnValue(
+      makeState([
+        { id: 's1', name: 'S1', providerId: 'minimax', createdAt: '2025-01-01' },
+        { id: 's2', name: 'S2', providerId: 'blackbox', createdAt: '2025-01-01' },
+        { id: 's3', name: 'S3', providerId: 'codex', createdAt: '2025-01-01' },
+      ]),
+    );
 
     const loaded = loadState();
     const sessions = loaded.projects[0].sessions as any[];
@@ -270,29 +323,41 @@ describe('migrateSessionIds', () => {
     const workspaceFile = path.join(sessionStateDir, 'copilot-id-1', 'workspace.yaml');
     const state: PersistedState = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Test',
-        path: '/repo/project',
-        sessions: [{
-          id: 's1',
-          name: 'Copilot Session',
-          cliSessionId: null,
-          createdAt: '2026-04-21T10:00:00.000Z',
-          providerId: 'copilot',
-        } as any],
-        activeSessionId: null,
-        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Test',
+          path: '/repo/project',
+          sessions: [
+            {
+              id: 's1',
+              name: 'Copilot Session',
+              cliSessionId: null,
+              createdAt: '2026-04-21T10:00:00.000Z',
+              providerId: 'copilot',
+            } as any,
+          ],
+          activeSessionId: null,
+          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+        },
+      ],
       activeProjectId: 'p1',
-      preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+      preferences: {
+        soundOnSessionWaiting: true,
+        notificationsDesktop: true,
+        debugMode: false,
+        sessionHistoryEnabled: true,
+        insightsEnabled: true,
+        autoTitleEnabled: true,
+      },
     };
 
-    mockExistsSync.mockImplementation((file) => (
-      String(file) === stateFile
-      || String(file) === sessionStateDir
-      || String(file) === workspaceFile
-    ));
+    mockExistsSync.mockImplementation(
+      (file) =>
+        String(file) === stateFile ||
+        String(file) === sessionStateDir ||
+        String(file) === workspaceFile,
+    );
     mockReaddirSync.mockImplementation((file) => {
       if (String(file) === sessionStateDir) {
         return [{ name: 'copilot-id-1', isDirectory: () => true }] as any;
@@ -319,14 +384,24 @@ describe('migrateSessionIds', () => {
   it('normalizes unsupported defaultProvider to claude', () => {
     const state: PersistedState = {
       version: 1,
-      projects: [{
-        id: 'p1',
-        name: 'Test',
-        path: '/test',
-        sessions: [{ id: 's1', name: 'S1', cliSessionId: null, createdAt: '2025-01-01', providerId: 'claude' } as any],
-        activeSessionId: null,
-        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
-      }],
+      projects: [
+        {
+          id: 'p1',
+          name: 'Test',
+          path: '/test',
+          sessions: [
+            {
+              id: 's1',
+              name: 'S1',
+              cliSessionId: null,
+              createdAt: '2025-01-01',
+              providerId: 'claude',
+            } as any,
+          ],
+          activeSessionId: null,
+          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+        },
+      ],
       activeProjectId: 'p1',
       preferences: {
         soundOnSessionWaiting: true,

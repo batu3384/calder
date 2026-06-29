@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ProviderId, ProviderUpdateProgressEvent, ProviderUpdateResult, ProviderUpdateSummary } from '../shared/types/provider';
+import type {
+  ProviderId,
+  ProviderUpdateProgressEvent,
+  ProviderUpdateResult,
+  ProviderUpdateSummary,
+} from '../shared/types/provider';
 import {
   _resetUpdateCenterForTesting,
   cancelCliProviderUpdates,
@@ -211,7 +216,10 @@ describe('update center cli updates', () => {
       },
     ]);
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -279,7 +287,10 @@ describe('update center cli updates', () => {
     expect(getUpdateCenterState().cli.providers[0].status).toBe('updated');
     expect(getUpdateCenterState().cli.completedProviders).toBe(1);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(summary);
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(summary);
     await updatePromise;
 
     expect(getUpdateCenterState().cli.phase).toBe('completed');
@@ -290,7 +301,10 @@ describe('update center cli updates', () => {
   it('runs one selected provider without invoking updateAll and tracks provider stage percent', async () => {
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateProvider: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateProvider: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -304,9 +318,7 @@ describe('update center cli updates', () => {
       startedAt: '2026-04-16T09:00:00.000Z',
       totalProviders: 1,
       completedProviders: 0,
-      providers: [
-        { providerId: 'antigravity', providerName: 'Antigravity CLI' },
-      ],
+      providers: [{ providerId: 'antigravity', providerName: 'Antigravity CLI' }],
     });
     mockApi.emitProviderProgress({
       phase: 'provider_started',
@@ -324,18 +336,23 @@ describe('update center cli updates', () => {
     expect(cli.providers[0].providerId).toBe('antigravity');
     expect(cli.providers[0].progressPercent).toBe(75);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([
-      {
-        providerId: 'antigravity',
-        providerName: 'Antigravity CLI',
-        source: 'brew-formula',
-        status: 'up_to_date',
-        checked: true,
-        updateAttempted: false,
-        message: 'Antigravity CLI is already up to date.',
-        durationMs: 50,
-      },
-    ]));
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'antigravity',
+          providerName: 'Antigravity CLI',
+          source: 'brew-formula',
+          status: 'up_to_date',
+          checked: true,
+          updateAttempted: false,
+          message: 'Antigravity CLI is already up to date.',
+          durationMs: 50,
+        },
+      ]),
+    );
     await updatePromise;
     expect(getUpdateCenterState().cli.phase).toBe('completed');
   });
@@ -355,7 +372,10 @@ describe('update center cli updates', () => {
     ]);
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -364,14 +384,20 @@ describe('update center cli updates', () => {
 
     expect(second).toBe(first);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(summary);
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(summary);
     await first;
   });
 
   it('requests cancellation and transitions to cancelled phase when updater reports cancellation', async () => {
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
       cancelUpdateAll: async () => ({ cancelled: true }),
     });
     initUpdateCenter(mockApi as any);
@@ -392,7 +418,10 @@ describe('update center cli updates', () => {
     expect(cancelResult).toEqual({ cancelled: true });
     expect(getUpdateCenterState().cli.cancelRequested).toBe(true);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')({
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )({
       startedAt: '2026-04-16T09:00:00.000Z',
       finishedAt: '2026-04-16T09:00:05.000Z',
       cancelled: true,
@@ -476,7 +505,10 @@ describe('update center cli updates', () => {
 
     await runCliProviderUpdates();
     const firstState = getUpdateCenterState().cli;
-    expect(firstState.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
+    expect(firstState.providers.map((provider) => provider.providerId)).toEqual([
+      'claude',
+      'codex',
+    ]);
 
     // Second run intentionally emits no provider progress events; final state should be derived from summary only.
     await runCliProviderUpdates();
@@ -498,7 +530,10 @@ describe('update center cli updates', () => {
   it('clears cancelRequested when provider cancel endpoint declines cancellation', async () => {
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise((resolve) => { resolveSummary = resolve; }),
+      updateAll: () =>
+        new Promise((resolve) => {
+          resolveSummary = resolve;
+        }),
       cancelUpdateAll: async () => ({ cancelled: false }),
     });
     initUpdateCenter(mockApi as any);
@@ -508,7 +543,10 @@ describe('update center cli updates', () => {
     expect(cancelResult).toEqual({ cancelled: false });
     expect(getUpdateCenterState().cli.cancelRequested).toBe(false);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([]));
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(buildSummary([]));
     await updatePromise;
   });
 
@@ -538,12 +576,18 @@ describe('update center cli updates', () => {
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
       updateAll: async () => firstRunSummary,
-      updateProvider: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateProvider: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
     });
     initUpdateCenter(mockApi as any);
 
     await runCliProviderUpdates();
-    expect(getUpdateCenterState().cli.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
+    expect(getUpdateCenterState().cli.providers.map((provider) => provider.providerId)).toEqual([
+      'claude',
+      'codex',
+    ]);
 
     const runOne = runCliProviderUpdate('claude');
     mockApi.emitProviderProgress({
@@ -558,25 +602,33 @@ describe('update center cli updates', () => {
     expect(midState.providers.map((provider) => provider.providerId)).toEqual(['claude', 'codex']);
     expect(midState.providers.every((provider) => provider.status === 'queued')).toBe(true);
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([
-      {
-        providerId: 'claude',
-        providerName: 'Claude Code',
-        source: 'self',
-        status: 'up_to_date',
-        checked: true,
-        updateAttempted: false,
-        message: 'Claude Code is already up to date.',
-        durationMs: 65,
-      },
-    ]));
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'claude',
+          providerName: 'Claude Code',
+          source: 'self',
+          status: 'up_to_date',
+          checked: true,
+          updateAttempted: false,
+          message: 'Claude Code is already up to date.',
+          durationMs: 65,
+        },
+      ]),
+    );
     await runOne;
   });
 
   it('ignores stale progress events from a previous run after a new run starts', async () => {
     const resolvers: SummaryResolver[] = [];
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolvers.push(resolve); }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolvers.push(resolve);
+        }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -588,18 +640,23 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
     });
-    requireValue(resolvers[0], 'Expected first resolver to be registered')(buildSummary([
-      {
-        providerId: 'claude',
-        providerName: 'Claude Code',
-        source: 'self',
-        status: 'up_to_date',
-        checked: true,
-        updateAttempted: false,
-        message: 'Claude Code is already up to date.',
-        durationMs: 50,
-      },
-    ]));
+    requireValue(
+      resolvers[0],
+      'Expected first resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'claude',
+          providerName: 'Claude Code',
+          source: 'self',
+          status: 'up_to_date',
+          checked: true,
+          updateAttempted: false,
+          message: 'Claude Code is already up to date.',
+          durationMs: 50,
+        },
+      ]),
+    );
     await runOne;
 
     const runTwo = runCliProviderUpdates();
@@ -635,25 +692,33 @@ describe('update center cli updates', () => {
     expect(midState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
     expect(midState.activeProviderId).toBeUndefined();
 
-    requireValue(resolvers[1], 'Expected second resolver to be registered')(buildSummary([
-      {
-        providerId: 'qwen',
-        providerName: 'Qwen Code',
-        source: 'self',
-        status: 'updated',
-        checked: true,
-        updateAttempted: true,
-        message: 'Qwen Code was updated successfully.',
-        durationMs: 60,
-      },
-    ]));
+    requireValue(
+      resolvers[1],
+      'Expected second resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'qwen',
+          providerName: 'Qwen Code',
+          source: 'self',
+          status: 'updated',
+          checked: true,
+          updateAttempted: true,
+          message: 'Qwen Code was updated successfully.',
+          durationMs: 60,
+        },
+      ]),
+    );
     await runTwo;
   });
 
   it('ignores provider events until current run emits started', async () => {
     const resolvers: SummaryResolver[] = [];
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolvers.push(resolve); }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolvers.push(resolve);
+        }),
     });
     initUpdateCenter(mockApi as any);
 
@@ -665,18 +730,23 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [{ providerId: 'claude', providerName: 'Claude Code' }],
     });
-    requireValue(resolvers[0], 'Expected first resolver to be registered')(buildSummary([
-      {
-        providerId: 'claude',
-        providerName: 'Claude Code',
-        source: 'self',
-        status: 'up_to_date',
-        checked: true,
-        updateAttempted: false,
-        message: 'Claude Code is already up to date.',
-        durationMs: 40,
-      },
-    ]));
+    requireValue(
+      resolvers[0],
+      'Expected first resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'claude',
+          providerName: 'Claude Code',
+          source: 'self',
+          status: 'up_to_date',
+          checked: true,
+          updateAttempted: false,
+          message: 'Claude Code is already up to date.',
+          durationMs: 40,
+        },
+      ]),
+    );
     await runOne;
 
     const runTwo = runCliProviderUpdates();
@@ -704,25 +774,33 @@ describe('update center cli updates', () => {
     expect(midState.providers).toEqual([]);
     expect(midState.completedProviders).toBe(0);
 
-    requireValue(resolvers[1], 'Expected second resolver to be registered')(buildSummary([
-      {
-        providerId: 'qwen',
-        providerName: 'Qwen Code',
-        source: 'self',
-        status: 'updated',
-        checked: true,
-        updateAttempted: true,
-        message: 'Qwen Code was updated successfully.',
-        durationMs: 60,
-      },
-    ]));
+    requireValue(
+      resolvers[1],
+      'Expected second resolver to be registered',
+    )(
+      buildSummary([
+        {
+          providerId: 'qwen',
+          providerName: 'Qwen Code',
+          source: 'self',
+          status: 'updated',
+          checked: true,
+          updateAttempted: true,
+          message: 'Qwen Code was updated successfully.',
+          durationMs: 60,
+        },
+      ]),
+    );
     await runTwo;
   });
 
   it('resets cancelRequested and surfaces errors when cancel request fails', async () => {
     let resolveSummary: SummaryResolver | null = null;
     const mockApi = createMockApi({
-      updateAll: () => new Promise<ProviderUpdateSummary>((resolve) => { resolveSummary = resolve; }),
+      updateAll: () =>
+        new Promise<ProviderUpdateSummary>((resolve) => {
+          resolveSummary = resolve;
+        }),
       cancelUpdateAll: async () => {
         throw new Error('cancel endpoint unavailable');
       },
@@ -735,7 +813,10 @@ describe('update center cli updates', () => {
     expect(cli.cancelRequested).toBe(false);
     expect(cli.errorMessage).toBe('cancel endpoint unavailable');
 
-    requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([]));
+    requireValue<SummaryResolver>(
+      resolveSummary,
+      'Expected summary resolver to be registered',
+    )(buildSummary([]));
     await updatePromise;
   });
 });

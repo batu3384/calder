@@ -48,26 +48,27 @@ describe('ops rail stylesheet contract', () => {
   it('drops overview-card selectors and styles rail signals on section chrome', () => {
     expect(inspectorCss).not.toContain('#context-inspector-overview');
     expect(inspectorCss).not.toContain('.inspector-overview-card');
-    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='active'] .context-inspector-section[data-section=\"capabilities\"]");
-    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='warning'] .context-inspector-section[data-section=\"capabilities\"]");
+    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='active']");
+    expect(inspectorCss).toContain(".context-inspector-section[data-section='capabilities']");
+    expect(inspectorCss).toContain("#context-inspector[data-rail-signal='warning']");
   });
 
   it('gives the right rail an executive scan line without making every section a bulky card', () => {
     expect(inspectorCss).toContain('Executive control rail v2');
     expect(inspectorCss).toContain('.context-inspector-section::before');
     expect(inspectorCss).toContain('border-radius: 14px;');
-    expect(inspectorCss).toContain('.context-inspector-section[data-section="git"]::before');
-    expect(inspectorCss).toContain('.context-inspector-section[data-section="activity"]::before');
+    expect(inspectorCss).toContain(".context-inspector-section[data-section='git']::before");
+    expect(inspectorCss).toContain(".context-inspector-section[data-section='activity']::before");
   });
 
   it('keeps the right rail readable by using two-line config rows instead of crammed columns', () => {
     expect(inspectorCss).toContain('Premium readability pass');
     expect(inspectorCss).toContain('grid-template-areas:');
-    expect(inspectorCss).toContain('"name badge"');
-    expect(inspectorCss).toContain('"detail actions"');
+    expect(inspectorCss).toContain("'name badge'");
+    expect(inspectorCss).toContain("'detail actions'");
     expect(inspectorCss).toContain('font-size: 10.5px;');
     expect(inspectorCss).toContain('@container workspace-shell (max-width: 980px)');
-    expect(inspectorCss).toContain('"name"');
-    expect(inspectorCss).toContain('"actions"');
+    expect(inspectorCss).toContain("'name'");
+    expect(inspectorCss).toContain("'actions'");
   });
 });

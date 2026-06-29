@@ -11,7 +11,11 @@ import {
 
 type CliSurfaceButtonTone = 'neutral' | 'primary' | 'danger' | 'ghost';
 
-function buildToolbarButton(label: string, action: string, tone: CliSurfaceButtonTone = 'neutral'): HTMLButtonElement {
+function buildToolbarButton(
+  label: string,
+  action: string,
+  tone: CliSurfaceButtonTone = 'neutral',
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = `cli-surface-button cli-surface-button-${tone}`;
   button.type = 'button';
@@ -378,7 +382,11 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
 }
 
 function clearTerminalDomSelection(terminal: Terminal): void {
-  try { terminal.clearSelection(); } catch { /* xterm may not support selection */ }
+  try {
+    terminal.clearSelection();
+  } catch {
+    /* xterm may not support selection */
+  }
   window.getSelection?.()?.removeAllRanges?.();
 }
 
@@ -388,7 +396,12 @@ function suppressPointerEvent(event: MouseEvent): void {
   (event as MouseEvent & { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
 }
 
-function openCliLink(projectId: string, url: string, source: 'osc-link' | 'web-link', deps: CliSurfaceTerminalDeps): void {
+function openCliLink(
+  projectId: string,
+  url: string,
+  source: 'osc-link' | 'web-link',
+  deps: CliSurfaceTerminalDeps,
+): void {
   openCliSurfaceWebLink(
     projectId,
     url,
@@ -422,46 +435,70 @@ export function createCliSurfaceTerminal(
   const serializeAddon = new SerializeAddon();
   terminal.loadAddon(fitAddon);
   terminal.loadAddon(serializeAddon);
-  terminal.loadAddon(new WebLinksAddon((event, url) => {
-    event.preventDefault?.();
-    event.stopPropagation?.();
-    clearTerminalDomSelection(terminal);
-    openCliLink(projectId, url, 'web-link', deps);
-  }));
+  terminal.loadAddon(
+    new WebLinksAddon((event, url) => {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      clearTerminalDomSelection(terminal);
+      openCliLink(projectId, url, 'web-link', deps);
+    }),
+  );
 
   let suppressLinkDragSelection = false;
-  viewport.addEventListener('mousedown', (event: MouseEvent) => {
-    if (event.button !== 0) return;
-    suppressLinkDragSelection = false;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressLinkDragSelection = true;
-    suppressPointerEvent(event);
-    clearTerminalDomSelection(terminal);
-  }, { capture: true });
-  viewport.addEventListener('mousemove', (event: MouseEvent) => {
-    if (!suppressLinkDragSelection) return;
-    if ((event.buttons & 1) !== 1) {
+  viewport.addEventListener(
+    'mousedown',
+    (event: MouseEvent) => {
+      if (event.button !== 0) return;
       suppressLinkDragSelection = false;
-      return;
-    }
-    suppressPointerEvent(event);
-    clearTerminalDomSelection(terminal);
-  }, { capture: true });
-  viewport.addEventListener('mouseup', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-  viewport.addEventListener('mouseleave', () => {
-    suppressLinkDragSelection = false;
-  }, { capture: true });
-  viewport.addEventListener('click', (event: MouseEvent) => {
-    if (event.defaultPrevented || event.button !== 0) return;
-    const candidate = findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
-    if (!candidate) return;
-    suppressPointerEvent(event);
-    clearTerminalDomSelection(terminal);
-    openCliLink(projectId, candidate, 'web-link', deps);
-  }, { capture: true });
+      const candidate =
+        findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
+      if (!candidate) return;
+      suppressLinkDragSelection = true;
+      suppressPointerEvent(event);
+      clearTerminalDomSelection(terminal);
+    },
+    { capture: true },
+  );
+  viewport.addEventListener(
+    'mousemove',
+    (event: MouseEvent) => {
+      if (!suppressLinkDragSelection) return;
+      if ((event.buttons & 1) !== 1) {
+        suppressLinkDragSelection = false;
+        return;
+      }
+      suppressPointerEvent(event);
+      clearTerminalDomSelection(terminal);
+    },
+    { capture: true },
+  );
+  viewport.addEventListener(
+    'mouseup',
+    () => {
+      suppressLinkDragSelection = false;
+    },
+    { capture: true },
+  );
+  viewport.addEventListener(
+    'mouseleave',
+    () => {
+      suppressLinkDragSelection = false;
+    },
+    { capture: true },
+  );
+  viewport.addEventListener(
+    'click',
+    (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      const candidate =
+        findInlineUrlAtPointer(terminal, viewport, event) ?? extractUrlFromEventTarget(event);
+      if (!candidate) return;
+      suppressPointerEvent(event);
+      clearTerminalDomSelection(terminal);
+      openCliLink(projectId, candidate, 'web-link', deps);
+    },
+    { capture: true },
+  );
 
   terminal.open(viewport);
   viewport.appendChild(hoverOverlay);

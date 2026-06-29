@@ -55,12 +55,24 @@
   padding: 0 6px;
 }
 
-.git-file-badge.added { color: var(--git-added); }
-.git-file-badge.modified { color: var(--git-modified); }
-.git-file-badge.deleted { color: var(--accent); }
-.git-file-badge.renamed { color: var(--git-renamed); }
-.git-file-badge.untracked { color: var(--text-muted); }
-.git-file-badge.conflicted { color: var(--git-conflicted); }
+.git-file-badge.added {
+  color: var(--git-added);
+}
+.git-file-badge.modified {
+  color: var(--git-modified);
+}
+.git-file-badge.deleted {
+  color: var(--accent);
+}
+.git-file-badge.renamed {
+  color: var(--git-renamed);
+}
+.git-file-badge.untracked {
+  color: var(--text-muted);
+}
+.git-file-badge.conflicted {
+  color: var(--git-conflicted);
+}
 
 .git-item-actions {
   display: flex;

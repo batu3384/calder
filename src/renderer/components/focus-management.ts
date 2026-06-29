@@ -4,7 +4,8 @@
  */
 
 let ariaLiveRegion: HTMLElement | null = null;
-let pendingAnnounceTimeouts: [ReturnType<typeof setTimeout>, ReturnType<typeof setTimeout>] | null = null;
+let pendingAnnounceTimeouts: [ReturnType<typeof setTimeout>, ReturnType<typeof setTimeout>] | null =
+  null;
 
 export function getOrCreateAriaLiveRegion(): HTMLElement | null {
   if (ariaLiveRegion) return ariaLiveRegion;
@@ -32,7 +33,10 @@ export function getOrCreateAriaLiveRegion(): HTMLElement | null {
   return ariaLiveRegion;
 }
 
-export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+export function announceToScreenReader(
+  message: string,
+  priority: 'polite' | 'assertive' = 'polite',
+): void {
   const region = getOrCreateAriaLiveRegion();
   if (!region) return;
   region.setAttribute('aria-live', priority);

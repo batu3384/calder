@@ -52,12 +52,24 @@ export function buildCheckpointRestoreConfirm(
   }, new Map<string, number>());
 
   const sessionParts = [
-    sessionKinds.get('claude') ? formatCountLabel(sessionKinds.get('claude')!, 'CLI session', 'CLI sessions') : null,
-    sessionKinds.get('browser-tab') ? formatCountLabel(sessionKinds.get('browser-tab')!, 'browser surface', 'browser surfaces') : null,
-    sessionKinds.get('file-reader') ? formatCountLabel(sessionKinds.get('file-reader')!, 'file view', 'file views') : null,
-    sessionKinds.get('diff-viewer') ? formatCountLabel(sessionKinds.get('diff-viewer')!, 'diff view', 'diff views') : null,
-    sessionKinds.get('remote-terminal') ? formatCountLabel(sessionKinds.get('remote-terminal')!, 'remote session', 'remote sessions') : null,
-    sessionKinds.get('mcp-inspector') ? formatCountLabel(sessionKinds.get('mcp-inspector')!, 'inspector', 'inspectors') : null,
+    sessionKinds.get('claude')
+      ? formatCountLabel(sessionKinds.get('claude')!, 'CLI session', 'CLI sessions')
+      : null,
+    sessionKinds.get('browser-tab')
+      ? formatCountLabel(sessionKinds.get('browser-tab')!, 'browser surface', 'browser surfaces')
+      : null,
+    sessionKinds.get('file-reader')
+      ? formatCountLabel(sessionKinds.get('file-reader')!, 'file view', 'file views')
+      : null,
+    sessionKinds.get('diff-viewer')
+      ? formatCountLabel(sessionKinds.get('diff-viewer')!, 'diff view', 'diff views')
+      : null,
+    sessionKinds.get('remote-terminal')
+      ? formatCountLabel(sessionKinds.get('remote-terminal')!, 'remote session', 'remote sessions')
+      : null,
+    sessionKinds.get('mcp-inspector')
+      ? formatCountLabel(sessionKinds.get('mcp-inspector')!, 'inspector', 'inspectors')
+      : null,
   ].filter((entry): entry is string => Boolean(entry));
 
   const gitSummary = checkpointDocument.git.isGitRepo
@@ -75,8 +87,16 @@ export function buildCheckpointRestoreConfirm(
 
   const contextSummary = checkpointDocument.projectContext
     ? [
-        formatCountLabel(checkpointDocument.projectContext.sharedRuleCount, 'shared rule', 'shared rules'),
-        formatCountLabel(checkpointDocument.projectContext.providerSourceCount, 'provider source', 'provider sources'),
+        formatCountLabel(
+          checkpointDocument.projectContext.sharedRuleCount,
+          'shared rule',
+          'shared rules',
+        ),
+        formatCountLabel(
+          checkpointDocument.projectContext.providerSourceCount,
+          'provider source',
+          'provider sources',
+        ),
       ].join(' · ')
     : 'No shared project context snapshot';
 
@@ -86,9 +106,21 @@ export function buildCheckpointRestoreConfirm(
 
   const teamContextSummary = checkpointDocument.projectTeamContext
     ? [
-        formatCountLabel(checkpointDocument.projectTeamContext.spaceCount, 'shared space', 'shared spaces'),
-        formatCountLabel(checkpointDocument.projectTeamContext.sharedRuleCount, 'shared rule', 'shared rules'),
-        formatCountLabel(checkpointDocument.projectTeamContext.workflowCount, 'workflow', 'workflows'),
+        formatCountLabel(
+          checkpointDocument.projectTeamContext.spaceCount,
+          'shared space',
+          'shared spaces',
+        ),
+        formatCountLabel(
+          checkpointDocument.projectTeamContext.sharedRuleCount,
+          'shared rule',
+          'shared rules',
+        ),
+        formatCountLabel(
+          checkpointDocument.projectTeamContext.workflowCount,
+          'workflow',
+          'workflows',
+        ),
       ].join(' · ')
     : 'No team context snapshot';
 
@@ -118,7 +150,10 @@ export function buildCheckpointRestoreConfirm(
   stats.className = 'checkpoint-restore-confirm-stats';
   for (const stat of [
     { label: 'Saved', value: new Date(checkpointDocument.createdAt).toLocaleString() },
-    { label: 'Sessions', value: formatCountLabel(checkpointDocument.sessionCount, 'session', 'sessions') },
+    {
+      label: 'Sessions',
+      value: formatCountLabel(checkpointDocument.sessionCount, 'session', 'sessions'),
+    },
     { label: 'Changed files', value: String(checkpointDocument.changedFileCount) },
   ]) {
     const statCard = document.createElement('div');
@@ -188,7 +223,12 @@ export function buildCheckpointRestoreConfirm(
         if (file.area === 'untracked') {
           appState.addFileReaderSession(projectId, resolvedPath);
         } else {
-          appState.addDiffViewerSession(projectId, resolvedPath, file.area, checkpointDocument.project.path);
+          appState.addDiffViewerSession(
+            projectId,
+            resolvedPath,
+            file.area,
+            checkpointDocument.project.path,
+          );
         }
         closeWideModal();
       });

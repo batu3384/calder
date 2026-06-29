@@ -1,12 +1,7 @@
-import {
-  type BrowserPageState,
-  describeBrowserPageState,
-} from './navigation.js';
+import { type BrowserPageState, describeBrowserPageState } from './navigation.js';
 import { createNewTabStateController } from './new-tab-state.js';
 import { createBrowserNewTabUi } from './new-tab-ui.js';
-import {
-  resolveBrowserPartitionForSession,
-} from './pane-helpers.js';
+import { resolveBrowserPartitionForSession } from './pane-helpers.js';
 import { syncBrowserTrustZoneBadge } from './trust-zone.js';
 import type { WebviewElement } from './types.js';
 
@@ -54,15 +49,16 @@ export function syncBrowserStatusUi(
   statusBadge.dataset.state = state;
   statusBadge.textContent = describeBrowserPageState(state);
   syncBrowserTrustZoneBadge(trustZoneBadge, currentUrl);
-  chromeHint.textContent = state === 'loading'
-    ? 'Waiting for page'
-    : state === 'offline'
-      ? 'Surface unavailable'
-      : state === 'local'
-        ? 'Live local surface'
-        : state === 'remote'
-          ? 'External page'
-          : 'Capture context';
+  chromeHint.textContent =
+    state === 'loading'
+      ? 'Waiting for page'
+      : state === 'offline'
+        ? 'Surface unavailable'
+        : state === 'local'
+          ? 'Live local surface'
+          : state === 'remote'
+            ? 'External page'
+            : 'Capture context';
   goBtn.textContent = state === 'loading' ? 'Stop' : 'Go';
   goBtn.classList.toggle('loading', state === 'loading');
   goBtn.ariaLabel = state === 'loading' ? 'Stop page load' : 'Open address';

@@ -6,8 +6,15 @@ import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import { readJsonSafe } from './fs-utils';
-import { captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
-import { getStatusLineScriptPath,STATUS_DIR } from './hooks/hook-status';
+import {
+  captureSessionIdCmd as mkCaptureSessionIdCmd,
+  captureToolFailureCmd as mkCaptureToolFailureCmd,
+  installEventScript,
+  installHookScripts,
+  statusCmd as mkStatusCmd,
+  wrapPythonHookCmd,
+} from './hooks/hook-commands';
+import { getStatusLineScriptPath, STATUS_DIR } from './hooks/hook-status';
 import { isManagedStatusLineCommand } from './statusline/statusline-command';
 
 export const QWEN_HOOK_MARKER = '# calder-hook';
@@ -46,8 +53,10 @@ function isIdeHook(hook: HookHandler): boolean {
 function isCalderStatusLine(statusLine: unknown): boolean {
   if (!statusLine || typeof statusLine !== 'object') return false;
   const candidate = statusLine as Record<string, unknown>;
-  return candidate.type === 'command'
-    && isManagedStatusLineCommand(String(candidate.command ?? ''), getStatusLineScriptPath());
+  return (
+    candidate.type === 'command' &&
+    isManagedStatusLineCommand(String(candidate.command ?? ''), getStatusLineScriptPath())
+  );
 }
 
 function cleanHooks(existing: HooksConfig): HooksConfig {
@@ -143,7 +152,11 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     if (event === 'PostToolUseFailure') {
       hooks.push({ type: 'command', command: captureToolFailureCmd, name: 'calder-toolfailure' });
     }
-    hooks.push({ type: 'command', command: captureEventCmd(event, eventTypeMap[event]), name: 'calder-events' });
+    hooks.push({
+      type: 'command',
+      command: captureEventCmd(event, eventTypeMap[event]),
+      name: 'calder-events',
+    });
     existing.push({ matcher: '', hooks });
     cleaned[event] = existing;
   }
@@ -160,14 +173,17 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     const existing = cleaned[event] ?? [];
     existing.push({
       matcher: '',
-      hooks: [{ type: 'command', command: captureEventCmd(event, eventType), name: 'calder-events' }],
+      hooks: [
+        { type: 'command', command: captureEventCmd(event, eventType), name: 'calder-events' },
+      ],
     });
     cleaned[event] = existing;
   }
 
-  const nextUi = settings.ui && typeof settings.ui === 'object'
-    ? { ...(settings.ui as Record<string, unknown>) }
-    : {};
+  const nextUi =
+    settings.ui && typeof settings.ui === 'object'
+      ? { ...(settings.ui as Record<string, unknown>) }
+      : {};
 
   nextUi.statusLine = {
     type: 'command',
@@ -184,11 +200,16 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
 
 export function validateQwenHooks(): SettingsValidationResult {
   const settings = readJsonSafe(SETTINGS_PATH);
-  const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map((event) => [event, false]));
+  const hookDetails: Record<string, boolean> = Object.fromEntries(
+    EXPECTED_HOOK_EVENTS.map((event) => [event, false]),
+  );
 
   let statusLine: SettingsValidationResult['statusLine'] = 'missing';
   let foreignStatusLineCommand: string | undefined;
-  const ui = settings?.ui && typeof settings.ui === 'object' ? settings.ui as Record<string, unknown> : undefined;
+  const ui =
+    settings?.ui && typeof settings.ui === 'object'
+      ? (settings.ui as Record<string, unknown>)
+      : undefined;
   if (ui?.statusLine) {
     if (isCalderStatusLine(ui.statusLine)) {
       statusLine = 'calder';
@@ -207,7 +228,8 @@ export function validateQwenHooks(): SettingsValidationResult {
   let installedCount = 0;
   for (const event of EXPECTED_HOOK_EVENTS) {
     const matchers = existingHooks[event];
-    const installed = matchers?.some((matcher) => matcher.hooks?.some((hook) => isIdeHook(hook))) ?? false;
+    const installed =
+      matchers?.some((matcher) => matcher.hooks?.some((hook) => isIdeHook(hook))) ?? false;
     hookDetails[event] = installed;
     if (installed) installedCount += 1;
   }

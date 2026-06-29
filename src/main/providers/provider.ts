@@ -1,13 +1,22 @@
 import type { BrowserWindow } from 'electron';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
 
 export interface CliProvider {
   readonly meta: CliProviderMeta;
   resolveBinaryPath(): string;
   validatePrerequisites(): { ok: boolean; message: string };
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string>;
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[];
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[];
   installHooks(win?: BrowserWindow | null): Promise<void>;
   installStatusScripts(): void;
   cleanup(): void;

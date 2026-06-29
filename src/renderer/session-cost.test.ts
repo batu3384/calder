@@ -69,7 +69,11 @@ describe('setCostData', () => {
       context_window: {
         total_input_tokens: 120,
         total_output_tokens: 20,
-        current_usage: { input_tokens: 90, cache_read_input_tokens: 30, cache_creation_input_tokens: 0 },
+        current_usage: {
+          input_tokens: 90,
+          cache_read_input_tokens: 30,
+          cache_creation_input_tokens: 0,
+        },
       },
     });
 
@@ -84,7 +88,11 @@ describe('setCostData model tracking', () => {
   it('stores model display name when provided', () => {
     setCostData('s1', {
       cost: { total_cost_usd: 1.0, total_duration_ms: 1000, total_api_duration_ms: 800 },
-      context_window: { total_input_tokens: 100, total_output_tokens: 50, current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } },
+      context_window: {
+        total_input_tokens: 100,
+        total_output_tokens: 50,
+        current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
       model: 'Sonnet 4.6',
     });
     expect(getCost('s1')!.model).toBe('Sonnet 4.6');
@@ -93,12 +101,20 @@ describe('setCostData model tracking', () => {
   it('preserves existing model when subsequent hook omits it', () => {
     setCostData('s1', {
       cost: { total_cost_usd: 1.0, total_duration_ms: 1000, total_api_duration_ms: 800 },
-      context_window: { total_input_tokens: 100, total_output_tokens: 50, current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } },
+      context_window: {
+        total_input_tokens: 100,
+        total_output_tokens: 50,
+        current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
       model: 'Sonnet 4.6',
     });
     setCostData('s1', {
       cost: { total_cost_usd: 2.0, total_duration_ms: 2000, total_api_duration_ms: 1600 },
-      context_window: { total_input_tokens: 200, total_output_tokens: 100, current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } },
+      context_window: {
+        total_input_tokens: 200,
+        total_output_tokens: 100,
+        current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
     });
     expect(getCost('s1')!.model).toBe('Sonnet 4.6');
   });
@@ -106,12 +122,20 @@ describe('setCostData model tracking', () => {
   it('updates model when it changes mid-session', () => {
     setCostData('s1', {
       cost: { total_cost_usd: 1.0, total_duration_ms: 1000, total_api_duration_ms: 800 },
-      context_window: { total_input_tokens: 100, total_output_tokens: 50, current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } },
+      context_window: {
+        total_input_tokens: 100,
+        total_output_tokens: 50,
+        current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
       model: 'Sonnet 4.6',
     });
     setCostData('s1', {
       cost: { total_cost_usd: 2.0, total_duration_ms: 2000, total_api_duration_ms: 1600 },
-      context_window: { total_input_tokens: 200, total_output_tokens: 100, current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } },
+      context_window: {
+        total_input_tokens: 200,
+        total_output_tokens: 100,
+        current_usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+      },
       model: 'Opus 4.6',
     });
     expect(getCost('s1')!.model).toBe('Opus 4.6');
@@ -126,8 +150,13 @@ describe('setCostData model tracking', () => {
 describe('restoreCost model', () => {
   it('restores model from persisted state', () => {
     restoreCost('s1', {
-      totalCostUsd: 1.0, totalInputTokens: 100, totalOutputTokens: 50,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0,
+      totalCostUsd: 1.0,
+      totalInputTokens: 100,
+      totalOutputTokens: 50,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+      totalDurationMs: 0,
+      totalApiDurationMs: 0,
       model: 'Sonnet 4.6',
     });
     expect(getCost('s1')!.model).toBe('Sonnet 4.6');
@@ -218,8 +247,14 @@ describe('getAggregateCost', () => {
   });
 
   it('sums across sessions', () => {
-    setCostData('s1', { cost: { total_cost_usd: 1.0 }, context_window: { total_input_tokens: 100 } });
-    setCostData('s2', { cost: { total_cost_usd: 2.0 }, context_window: { total_input_tokens: 200 } });
+    setCostData('s1', {
+      cost: { total_cost_usd: 1.0 },
+      context_window: { total_input_tokens: 100 },
+    });
+    setCostData('s2', {
+      cost: { total_cost_usd: 2.0 },
+      context_window: { total_input_tokens: 200 },
+    });
 
     const agg = getAggregateCost();
     expect(agg.totalCostUsd).toBe(3.0);
@@ -227,7 +262,10 @@ describe('getAggregateCost', () => {
   });
 
   it('excludes estimated fallback costs from the default aggregate', () => {
-    setCostData('s1', { cost: { total_cost_usd: 1.0 }, context_window: { total_input_tokens: 100 } });
+    setCostData('s1', {
+      cost: { total_cost_usd: 1.0 },
+      context_window: { total_input_tokens: 100 },
+    });
     parseCost('s2', '$2.00');
 
     expect(getAggregateCost().totalCostUsd).toBe(1.0);
@@ -269,20 +307,38 @@ describe('restoreCost', () => {
     const cb = vi.fn();
     onChange(cb);
     restoreCost('s1', {
-      totalCostUsd: 1.0, totalInputTokens: 0, totalOutputTokens: 0,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
+      totalCostUsd: 1.0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+      totalDurationMs: 0,
+      totalApiDurationMs: 0,
+      source: 'structured',
     });
     expect(cb).not.toHaveBeenCalled();
   });
 
   it('contributes to aggregate cost', () => {
     restoreCost('s1', {
-      totalCostUsd: 1.0, totalInputTokens: 100, totalOutputTokens: 50,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
+      totalCostUsd: 1.0,
+      totalInputTokens: 100,
+      totalOutputTokens: 50,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+      totalDurationMs: 0,
+      totalApiDurationMs: 0,
+      source: 'structured',
     });
     restoreCost('s2', {
-      totalCostUsd: 2.0, totalInputTokens: 200, totalOutputTokens: 100,
-      cacheReadTokens: 0, cacheCreationTokens: 0, totalDurationMs: 0, totalApiDurationMs: 0, source: 'structured',
+      totalCostUsd: 2.0,
+      totalInputTokens: 200,
+      totalOutputTokens: 100,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
+      totalDurationMs: 0,
+      totalApiDurationMs: 0,
+      source: 'structured',
     });
     const agg = getAggregateCost();
     expect(agg.totalCostUsd).toBe(3.0);

@@ -13,6 +13,7 @@
 ### Task 1: Introduce A Real Mosaic Layout Model
 
 **Files:**
+
 - Modify: `src/shared/types.ts`
 - Modify: `src/renderer/state.ts`
 - Modify: `src/renderer/state.test.ts`
@@ -20,6 +21,7 @@
 - [ ] **Step 1: Write the failing layout-state tests**
 
 Add focused tests proving:
+
 - legacy `layout.mode === 'swarm'` is normalized to `mosaic` on load
 - new projects default to `mosaic`
 - `splitPanes` still stores only CLI session ids
@@ -41,6 +43,7 @@ expect(appState.activeProject!.layout).toMatchObject({
 Run: `npm test -- src/renderer/state.test.ts`
 
 Expected:
+
 - FAIL because `ProjectRecord.layout.mode` still only supports `tabs | split | swarm`
 - FAIL because layout persistence helpers do not know about preset or ratio fields
 
@@ -71,13 +74,16 @@ export interface ProjectLayoutState {
 In `src/renderer/state.ts`, add a normalization helper and use it during load/project creation:
 
 ```ts
-function normalizeProjectLayout(layout?: Partial<ProjectRecord['layout']>): ProjectRecord['layout'] {
+function normalizeProjectLayout(
+  layout?: Partial<ProjectRecord['layout']>,
+): ProjectRecord['layout'] {
   const mode = layout?.mode === 'tabs' ? 'tabs' : 'mosaic';
   return {
     mode,
     splitPanes: Array.isArray(layout?.splitPanes) ? [...layout!.splitPanes] : [],
     splitDirection: layout?.splitDirection === 'vertical' ? 'vertical' : 'horizontal',
-    browserWidthRatio: typeof layout?.browserWidthRatio === 'number' ? layout.browserWidthRatio : 0.38,
+    browserWidthRatio:
+      typeof layout?.browserWidthRatio === 'number' ? layout.browserWidthRatio : 0.38,
     mosaicPreset: layout?.mosaicPreset,
     mosaicRatios: layout?.mosaicRatios ? { ...layout.mosaicRatios } : {},
   };
@@ -91,6 +97,7 @@ Also update every old `project.layout.mode === 'swarm'` branch to use `mosaic`.
 Run: `npm test -- src/renderer/state.test.ts`
 
 Expected:
+
 - PASS for the new layout-shape and normalization coverage
 
 - [ ] **Step 5: Commit**
@@ -103,6 +110,7 @@ git commit -m "add calder mosaic layout state"
 ### Task 2: Add Pure Mosaic Preset Resolution Helpers
 
 **Files:**
+
 - Create: `src/renderer/components/mosaic-layout-model.ts`
 - Create: `src/renderer/components/mosaic-layout-model.test.ts`
 - Modify: `src/renderer/components/split-layout.ts`
@@ -110,6 +118,7 @@ git commit -m "add calder mosaic layout state"
 - [ ] **Step 1: Write the failing preset-resolution tests**
 
 Create focused tests that lock these rules:
+
 - 1 session -> `single`
 - 2 sessions -> default `columns-2`
 - 3 sessions -> default `focus-left`
@@ -130,6 +139,7 @@ expect(clampRatio(0.05, 0.2, 0.8)).toBe(0.2);
 Run: `npm test -- src/renderer/components/mosaic-layout-model.test.ts`
 
 Expected:
+
 - FAIL because the helper module does not exist yet
 
 - [ ] **Step 3: Implement a pure resolver module**
@@ -149,7 +159,12 @@ export function resolveMosaicPreset(count: number, requested?: MosaicPreset): Mo
   return requested && valid.includes(requested) ? requested : defaultPresetForCount(count);
 }
 
-export function clampRatio(value: number | undefined, min = 0.2, max = 0.8, fallback = 0.5): number {
+export function clampRatio(
+  value: number | undefined,
+  min = 0.2,
+  max = 0.8,
+  fallback = 0.5,
+): number {
   if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
   return Math.min(max, Math.max(min, value));
 }
@@ -166,6 +181,7 @@ Import the pure functions and replace ad-hoc `swarm` count math with resolver ca
 Run: `npm test -- src/renderer/components/mosaic-layout-model.test.ts`
 
 Expected:
+
 - PASS for preset and ratio clamping
 
 - [ ] **Step 6: Commit**
@@ -180,6 +196,7 @@ git commit -m "add mosaic preset resolution helpers"
 ### Task 3: Render Browser-Left + Session Mosaic Presets
 
 **Files:**
+
 - Modify: `src/renderer/components/split-layout.ts`
 - Modify: `src/renderer/components/split-layout.test.ts`
 - Modify: `src/renderer/styles/terminal.css`
@@ -188,6 +205,7 @@ git commit -m "add mosaic preset resolution helpers"
 - [ ] **Step 1: Write the failing renderer tests for every supported preset**
 
 Extend `src/renderer/components/split-layout.test.ts` with cases for:
+
 - browser-left + 1 session -> browser column + one large session area
 - browser-left + 2 sessions -> two right-side session panes
 - browser-left + 3 sessions -> one large left session plus two stacked right sessions
@@ -208,6 +226,7 @@ expect(sessionPane.parentElement?.className).toContain('mosaic-focus-left-main')
 Run: `npm test -- src/renderer/components/split-layout.test.ts`
 
 Expected:
+
 - FAIL because only the old `swarm-grid-wrapper` layout exists
 
 - [ ] **Step 3: Implement the mosaic DOM wrappers and preset render paths**
@@ -229,6 +248,7 @@ function renderMosaicMode(project: ProjectRecord): void {
 ```
 
 Add semantic wrappers instead of overloading one grid:
+
 - `.mosaic-browser-column`
 - `.mosaic-session-canvas`
 - `.mosaic-columns-2`
@@ -265,6 +285,7 @@ Update `session-inspector.css` selectors from `.swarm-mode` to `.mosaic-mode` wh
 Run: `npm test -- src/renderer/components/split-layout.test.ts`
 
 Expected:
+
 - PASS for browser-left preset rendering
 
 - [ ] **Step 6: Commit**
@@ -280,6 +301,7 @@ git commit -m "render browser-left session mosaic presets"
 ### Task 4: Add Draggable Browser And Mosaic Dividers
 
 **Files:**
+
 - Create: `src/renderer/components/mosaic-resize.ts`
 - Create: `src/renderer/components/mosaic-resize.test.ts`
 - Modify: `src/renderer/components/split-layout.ts`
@@ -289,6 +311,7 @@ git commit -m "render browser-left session mosaic presets"
 - [ ] **Step 1: Write the failing resize tests**
 
 Add focused tests that prove:
+
 - dragging the browser/session divider updates `layout.browserWidthRatio`
 - dragging an internal preset divider updates `layout.mosaicRatios`
 - ratios are clamped and persisted
@@ -305,6 +328,7 @@ expect(appState.activeProject!.layout.mosaicRatios?.['focus-left-main']).toBeClo
 Run: `npm test -- src/renderer/components/mosaic-resize.test.ts`
 
 Expected:
+
 - FAIL because there is no resize controller or ratio persistence path
 
 - [ ] **Step 3: Add small state setters for persisted ratios**
@@ -361,6 +385,7 @@ export function attachHorizontalRatioHandle(
 ```
 
 Use it from `split-layout.ts` to bind:
+
 - browser/session divider
 - 2-session column divider
 - 3-session focus-left vertical divider
@@ -388,6 +413,7 @@ Add CSS for handles that reads as professional layout chrome instead of debug ba
 Run: `npm test -- src/renderer/components/mosaic-resize.test.ts`
 
 Expected:
+
 - PASS for browser and internal ratio persistence
 
 - [ ] **Step 7: Commit**
@@ -404,6 +430,7 @@ git commit -m "add resizable mosaic dividers"
 ### Task 5: Repurpose The Top-Bar Toggle Into A Preset Control
 
 **Files:**
+
 - Modify: `src/renderer/components/tab-bar.ts`
 - Modify: `src/renderer/index.html`
 - Modify: `src/renderer/styles/tabs.css`
@@ -412,6 +439,7 @@ git commit -m "add resizable mosaic dividers"
 - [ ] **Step 1: Write the failing top-bar control tests**
 
 Add tests proving:
+
 - the old swarm button now reflects mosaic preset state instead of simple on/off
 - with 2 sessions, the control can switch between `columns-2` and `rows-2`
 - with 3 sessions, the control can switch between `focus-left` and `focus-top`
@@ -428,6 +456,7 @@ expect(button.dataset.preset).toBe('focus-left');
 Run: `npm test -- src/renderer/components/tab-bar-mosaic-control.test.ts`
 
 Expected:
+
 - FAIL because `btn-toggle-swarm` still exposes only binary active/idle semantics
 
 - [ ] **Step 3: Implement preset-aware control behavior**
@@ -450,6 +479,7 @@ btnToggleSwarm.setAttribute('aria-label', 'Choose session layout');
 ```
 
 The control should:
+
 - enter mosaic mode if currently in tabs
 - otherwise open/cycle valid presets for the current session count
 - never collapse the right-side workspace back to tabs as a side effect of a preset change
@@ -463,6 +493,7 @@ Update `tabs.css` so the control still fits the command deck and visually matche
 Run: `npm test -- src/renderer/components/tab-bar-mosaic-control.test.ts`
 
 Expected:
+
 - PASS for preset switching behavior
 
 - [ ] **Step 6: Commit**
@@ -478,6 +509,7 @@ git commit -m "repurpose layout toggle into mosaic preset control"
 ### Task 6: Full Verification And Manual Workspace Smoke Test
 
 **Files:**
+
 - Verify: `src/renderer/components/split-layout.ts`
 - Verify: `src/renderer/components/mosaic-layout-model.ts`
 - Verify: `src/renderer/components/mosaic-resize.ts`
@@ -488,6 +520,7 @@ git commit -m "repurpose layout toggle into mosaic preset control"
 Run: `npm test`
 
 Expected:
+
 - all Vitest suites pass
 
 - [ ] **Step 2: Run the production build**
@@ -495,6 +528,7 @@ Expected:
 Run: `npm run build`
 
 Expected:
+
 - exit code `0`
 
 - [ ] **Step 3: Launch Calder and manually verify the layout stories**
@@ -502,6 +536,7 @@ Expected:
 Run: `npm start`
 
 Verify manually:
+
 - one browser + one CLI session renders browser-left + one large right session
 - adding a second CLI session keeps both sessions visible on the right
 - with three sessions, the default preset is one large left session plus two stacked right sessions

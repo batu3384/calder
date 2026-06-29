@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { ProjectWorkflowSource, ProjectWorkflowState } from '../../shared/types/project-workflow.js';
+import type {
+  ProjectWorkflowSource,
+  ProjectWorkflowState,
+} from '../../shared/types/project-workflow.js';
 
 function isFile(filePath: string): boolean {
   try {
@@ -13,7 +16,8 @@ function isFile(filePath: string): boolean {
 
 function listMarkdownFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.md'))
       .sort((left, right) => left.localeCompare(right));
   } catch {

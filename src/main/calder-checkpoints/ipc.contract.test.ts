@@ -30,8 +30,13 @@ describe('project checkpoint IPC contract', () => {
 
   it('declares checkpoint APIs in renderer types', () => {
     expect(rendererTypesSource).toContain('checkpoint: {');
-    expect(rendererTypesSource).toContain('getProjectState(projectPath: string): Promise<ProjectCheckpointState>;');
-    expect(rendererTypesSource).toContain('create(projectPath: string, snapshot: ProjectCheckpointSnapshotInput): Promise<ProjectCheckpointCreateResult>;');
-    expect(rendererTypesSource).toContain('read(projectPath: string, checkpointPath: string): Promise<ProjectCheckpointDocument>;');
+    expect(rendererTypesSource).toContain(
+      'getProjectState(projectPath: string): Promise<ProjectCheckpointState>;',
+    );
+    expect(rendererTypesSource).toContain('create(');
+    expect(rendererTypesSource).toContain('snapshot: ProjectCheckpointSnapshotInput');
+    expect(rendererTypesSource).toContain(
+      'read(projectPath: string, checkpointPath: string): Promise<ProjectCheckpointDocument>;',
+    );
   });
 });

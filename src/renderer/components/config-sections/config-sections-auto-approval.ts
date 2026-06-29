@@ -37,7 +37,9 @@ import {
 
 export { createModeGuide, createModeSelect };
 
-export function describeAutoApprovalScopes(autoApproval: ProjectGovernanceAutoApprovalState): AutoApprovalScopeSummary {
+export function describeAutoApprovalScopes(
+  autoApproval: ProjectGovernanceAutoApprovalState,
+): AutoApprovalScopeSummary {
   let effectiveExplanation = 'No explicit setting found; fallback Off applies.';
   if (autoApproval.policySource === 'session') {
     effectiveExplanation = localizedText(
@@ -150,12 +152,18 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     'Applied order: Global -> Project -> Session -> Effective.',
     'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
   );
-  const showPolicyDetailsLabel = localizedText('Show policy details', 'Politika detaylarını göster');
+  const showPolicyDetailsLabel = localizedText(
+    'Show policy details',
+    'Politika detaylarını göster',
+  );
   const hidePolicyDetailsLabel = localizedText('Hide policy details', 'Politika detaylarını gizle');
   const quickSummaryLabel = localizedText('Quick summary', 'Hızlı özet');
-  const modeRiskNote = autoApproval.effectiveMode === 'full_auto_unsafe'
-    ? fullAutoUnsafeWarning
-    : (autoApproval.effectiveMode === 'full_auto' ? fullAutoWarning : null);
+  const modeRiskNote =
+    autoApproval.effectiveMode === 'full_auto_unsafe'
+      ? fullAutoUnsafeWarning
+      : autoApproval.effectiveMode === 'full_auto'
+        ? fullAutoWarning
+        : null;
 
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
@@ -226,9 +234,7 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
         <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
       </div>
     </div>
-    ${modeRiskNote
-      ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>`
-      : ''}
+    ${modeRiskNote ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>` : ''}
   `;
 
   detailsToggle.addEventListener('click', () => {

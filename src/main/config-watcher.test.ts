@@ -1,4 +1,4 @@
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   watchFile: vi.fn(),
@@ -181,7 +181,11 @@ describe('config-watcher', () => {
     const firstSend = vi.fn();
     const secondSend = vi.fn();
     const firstWin = { id: 11, isDestroyed: () => false, webContents: { send: firstSend } } as any;
-    const secondWin = { id: 12, isDestroyed: () => false, webContents: { send: secondSend } } as any;
+    const secondWin = {
+      id: 12,
+      isDestroyed: () => false,
+      webContents: { send: secondSend },
+    } as any;
 
     startConfigWatcher(firstWin, '/projects/test');
     watchFileCallbacks.get('/home/testuser/.claude.json')!();
@@ -327,8 +331,12 @@ describe('config-watcher', () => {
 
     expect(fs.watchFile).toHaveBeenCalledTimes(6);
     expect(watchFileCallbacks.has('/home/testuser/.gemini/settings.json')).toBe(true);
-    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/settings.json')).toBe(true);
-    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/mcp_config.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/settings.json')).toBe(
+      true,
+    );
+    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/mcp_config.json')).toBe(
+      true,
+    );
     expect(watchFileCallbacks.has('/projects/test/.gemini/settings.json')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.agents/settings.json')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.agents/mcp_config.json')).toBe(true);

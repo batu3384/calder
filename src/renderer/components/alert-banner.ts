@@ -89,7 +89,7 @@ export function showAlertBanner(config: AlertBannerConfig): void {
     const onDismiss = config.onDismiss;
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'insight-alert-dismiss';
-    dismissBtn.textContent = "Don\u2019t show again";
+    dismissBtn.textContent = 'Don\u2019t show again';
     dismissBtn.addEventListener('click', () => {
       onDismiss();
       removeAlertBanner();
@@ -112,9 +112,13 @@ export function showAlertBanner(config: AlertBannerConfig): void {
     pane.prepend(banner);
   }
 
-  banner.addEventListener('animationend', () => {
-    banner.style.animation = 'none';
-  }, { once: true });
+  banner.addEventListener(
+    'animationend',
+    () => {
+      banner.style.animation = 'none';
+    },
+    { once: true },
+  );
 
   currentBanner = banner;
 }

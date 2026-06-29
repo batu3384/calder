@@ -17,10 +17,7 @@ vi.mock('./discovery.js', () => ({
   discoverProjectBackgroundTasks: mockDiscoverProjectBackgroundTasks,
 }));
 
-import {
-  startProjectBackgroundTaskWatcher,
-  stopProjectBackgroundTaskWatcher,
-} from './watcher.js';
+import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } from './watcher.js';
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];

@@ -1,8 +1,5 @@
 import { appState } from '../../state.js';
-import type {
-  AutoApprovalMode,
-  ProjectGovernanceAutoApprovalState,
-} from '../../types.js';
+import type { AutoApprovalMode, ProjectGovernanceAutoApprovalState } from '../../types.js';
 import {
   AUTO_APPROVAL_MODE_OPTIONS,
   autoApprovalModeGuideSummary,
@@ -172,24 +169,30 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   controls.appendChild(controlsHint);
 
   const scopeHelp = autoApprovalScopeHelp();
-  const globalSelect = createModeSelect(autoApproval.globalMode, scopeHelp.global, async (nextMode) => {
-    const nextState = await window.calder.governance.setAutoApprovalMode(
-      projectPath,
-      'global',
-      nextMode,
-      sessionId,
-    );
-    appState.setProjectGovernance(projectId, nextState);
-    void refresh();
-  });
-  controls.appendChild(createAutoApprovalScopeCard(
-    globalPolicyLabel,
-    localizedText(
-      `${scopeHelp.global} Current: ${scopeSummary.global}.`,
-      `${scopeHelp.global} Şu an: ${scopeSummary.global}.`,
+  const globalSelect = createModeSelect(
+    autoApproval.globalMode,
+    scopeHelp.global,
+    async (nextMode) => {
+      const nextState = await window.calder.governance.setAutoApprovalMode(
+        projectPath,
+        'global',
+        nextMode,
+        sessionId,
+      );
+      appState.setProjectGovernance(projectId, nextState);
+      void refresh();
+    },
+  );
+  controls.appendChild(
+    createAutoApprovalScopeCard(
+      globalPolicyLabel,
+      localizedText(
+        `${scopeHelp.global} Current: ${scopeSummary.global}.`,
+        `${scopeHelp.global} Şu an: ${scopeSummary.global}.`,
+      ),
+      globalSelect,
     ),
-    globalSelect,
-  ));
+  );
 
   const projectSelect = document.createElement('select');
   projectSelect.className = 'auto-approval-select';
@@ -213,9 +216,10 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   }
 
   projectSelect.addEventListener('change', async () => {
-    const selectedMode = projectSelect.value === PROJECT_INHERIT_VALUE
-      ? null
-      : (projectSelect.value as AutoApprovalMode);
+    const selectedMode =
+      projectSelect.value === PROJECT_INHERIT_VALUE
+        ? null
+        : (projectSelect.value as AutoApprovalMode);
     projectSelect.disabled = true;
     try {
       const nextState = await window.calder.governance.setAutoApprovalMode(
@@ -231,14 +235,16 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
     }
   });
 
-  controls.appendChild(createAutoApprovalScopeCard(
-    projectPolicyLabel,
-    localizedText(
-      `${scopeHelp.project} Current: ${scopeSummary.project}.`,
-      `${scopeHelp.project} Şu an: ${scopeSummary.project}.`,
+  controls.appendChild(
+    createAutoApprovalScopeCard(
+      projectPolicyLabel,
+      localizedText(
+        `${scopeHelp.project} Current: ${scopeSummary.project}.`,
+        `${scopeHelp.project} Şu an: ${scopeSummary.project}.`,
+      ),
+      projectSelect,
     ),
-    projectSelect,
-  ));
+  );
 
   const sessionSelect = document.createElement('select');
   sessionSelect.className = 'auto-approval-select';
@@ -266,9 +272,10 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   sessionSelect.disabled = !sessionId || !supportsPermissionHooks;
   sessionSelect.addEventListener('change', async () => {
     if (!sessionId) return;
-    const selectedMode = sessionSelect.value === SESSION_INHERIT_VALUE
-      ? null
-      : (sessionSelect.value as AutoApprovalMode);
+    const selectedMode =
+      sessionSelect.value === SESSION_INHERIT_VALUE
+        ? null
+        : (sessionSelect.value as AutoApprovalMode);
     sessionSelect.disabled = true;
     try {
       await window.calder.governance.setSessionAutoApprovalOverride(sessionId, selectedMode);
@@ -280,24 +287,26 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
     }
   });
 
-  controls.appendChild(createAutoApprovalScopeCard(
-    sessionPolicyLabel,
-    !supportsPermissionHooks
-      ? localizedText(
-        'Active provider does not support permission hooks, so session auto-approval cannot run.',
-        'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
-      )
-      : (sessionId
+  controls.appendChild(
+    createAutoApprovalScopeCard(
+      sessionPolicyLabel,
+      !supportsPermissionHooks
         ? localizedText(
-          `${scopeHelp.session} Current: ${scopeSummary.session}.`,
-          `${scopeHelp.session} Şu an: ${scopeSummary.session}.`,
-        )
-        : localizedText(
-          'Open a CLI session to apply a temporary session override.',
-          'Geçici oturum politikası uygulamak için bir CLI oturumu açın.',
-        )),
-    sessionSelect,
-  ));
+            'Active provider does not support permission hooks, so session auto-approval cannot run.',
+            'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
+          )
+        : sessionId
+          ? localizedText(
+              `${scopeHelp.session} Current: ${scopeSummary.session}.`,
+              `${scopeHelp.session} Şu an: ${scopeSummary.session}.`,
+            )
+          : localizedText(
+              'Open a CLI session to apply a temporary session override.',
+              'Geçici oturum politikası uygulamak için bir CLI oturumu açın.',
+            ),
+      sessionSelect,
+    ),
+  );
 
   controls.appendChild(createModeGuide(esc));
   details.appendChild(controls);

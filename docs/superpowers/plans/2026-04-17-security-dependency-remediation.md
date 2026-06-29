@@ -13,6 +13,7 @@
 ### Task 1: Add A Dependency Security Regression Test
 
 **Files:**
+
 - Create: `src/main/dependency-security.test.ts`
 
 - [ ] **Step 1: Write the failing test**
@@ -23,7 +24,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 function parseVersion(version: string): [number, number, number] {
-  const [major = '0', minor = '0', patch = '0'] = version.split('.').map((part) => part.replace(/[^0-9].*$/, ''));
+  const [major = '0', minor = '0', patch = '0'] = version
+    .split('.')
+    .map((part) => part.replace(/[^0-9].*$/, ''));
   return [Number(major), Number(minor), Number(patch)];
 }
 
@@ -63,6 +66,7 @@ Expected: FAIL because `package-lock.json` currently resolves `dompurify` below 
 ### Task 2: Update Dependency Resolution With Minimum Risk
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
@@ -92,6 +96,7 @@ Expected: PASS
 ### Task 3: Verify The Remediation End To End
 
 **Files:**
+
 - Verify only: `package.json`, `package-lock.json`, `src/main/dependency-security.test.ts`
 
 - [ ] **Step 1: Run dependency audit**

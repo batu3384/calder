@@ -5,9 +5,17 @@ dist/
 *.tsbuildinfo
 coverage/
 
-# Environment files
+# Environment files and credentials
 .env
 .env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+credentials.json
+secrets.json
+tokens.json
+.npmrc
 
 # IDE metadata
 .idea/

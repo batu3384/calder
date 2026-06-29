@@ -38,13 +38,23 @@ export async function captureIosScreenshot(
     `calder-ios-inspect-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
   );
 
-  let captureResult = await runCommand('xcrun', ['simctl', 'io', targetDeviceId, 'screenshot', tempScreenshotPath], 30_000);
-  const firstCaptureOutput = [captureResult.stderr, captureResult.stdout].filter(Boolean).join('\n');
+  let captureResult = await runCommand(
+    'xcrun',
+    ['simctl', 'io', targetDeviceId, 'screenshot', tempScreenshotPath],
+    30_000,
+  );
+  const firstCaptureOutput = [captureResult.stderr, captureResult.stdout]
+    .filter(Boolean)
+    .join('\n');
   if (captureResult.code !== 0 && isNoBootedIosDeviceOutput(firstCaptureOutput)) {
     // Booted device sets can race briefly; perform one readiness refresh and retry once.
     const refreshed = await options.ensureIosSimulatorReady();
     if (refreshed.success && refreshed.deviceId) {
-      captureResult = await runCommand('xcrun', ['simctl', 'io', refreshed.deviceId, 'screenshot', tempScreenshotPath], 30_000);
+      captureResult = await runCommand(
+        'xcrun',
+        ['simctl', 'io', refreshed.deviceId, 'screenshot', tempScreenshotPath],
+        30_000,
+      );
     }
   }
 
@@ -53,7 +63,11 @@ export async function captureIosScreenshot(
     const readOnlyDash = isIosScreenshotStdoutUnsupported(output);
     if (readOnlyDash) {
       // Recent Xcode/runtime combos can reject "-" stdout target; retry explicitly with file target once.
-      captureResult = await runCommand('xcrun', ['simctl', 'io', targetDeviceId, 'screenshot', tempScreenshotPath], 30_000);
+      captureResult = await runCommand(
+        'xcrun',
+        ['simctl', 'io', targetDeviceId, 'screenshot', tempScreenshotPath],
+        30_000,
+      );
     }
   }
 
@@ -66,11 +80,9 @@ export async function captureIosScreenshot(
     return {
       platform: 'ios',
       success: false,
-      message: summarizeIosFailure(
-        captureResult,
-        'Failed to capture iOS simulator screenshot.',
-        { includeRecoveryHint: true },
-      ),
+      message: summarizeIosFailure(captureResult, 'Failed to capture iOS simulator screenshot.', {
+        includeRecoveryHint: true,
+      }),
       deviceId: ready.deviceId,
       deviceName: ready.deviceName,
     };

@@ -6,8 +6,15 @@
 
 import type { BrowserWindow } from 'electron';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { getFullPath } from '../full-path';
 import { installStatusLineScript } from '../hooks/hook-status';
 import type { CliProvider } from './provider';
@@ -49,11 +56,7 @@ export abstract class BaseCliProvider implements CliProvider {
   }
 
   validatePrerequisites(): { ok: boolean; message: string } {
-    return validateBinaryExists(
-      this.binaryName,
-      this.meta.displayName,
-      this.installCommand
-    );
+    return validateBinaryExists(this.binaryName, this.meta.displayName, this.installCommand);
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
@@ -66,7 +69,12 @@ export abstract class BaseCliProvider implements CliProvider {
     return env;
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.cliSessionId && opts.isResume) {
       this.appendResumeArgs(args, opts.cliSessionId);

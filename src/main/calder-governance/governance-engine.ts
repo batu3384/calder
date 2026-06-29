@@ -94,7 +94,11 @@ export class GovernanceEngine {
   private mode: GovernanceMode;
   private budgetLimitUsd: number | undefined;
 
-  constructor(rules: GovernanceRule[] = DEFAULT_RULES(() => this.budgetLimitUsd), mode: GovernanceMode = 'advisory', budgetLimitUsd?: number) {
+  constructor(
+    rules: GovernanceRule[] = DEFAULT_RULES(() => this.budgetLimitUsd),
+    mode: GovernanceMode = 'advisory',
+    budgetLimitUsd?: number,
+  ) {
     // Sort by priority (ascending — lower number = higher priority)
     this.rules = [...rules].sort((a, b) => a.priority - b.priority);
     this.mode = mode;
@@ -111,7 +115,9 @@ export class GovernanceEngine {
       if (matched) {
         const result = this.computeResult(rule, op);
         if (this.mode === 'enforced') {
-          console.info(`[governance] rule=${rule.id} action=${result.action} op=${op.label} mode=${this.mode}`);
+          console.info(
+            `[governance] rule=${rule.id} action=${result.action} op=${op.label} mode=${this.mode}`,
+          );
         }
         // In enforced mode, 'ask' becomes 'block' for write operations
         if (this.mode === 'enforced' && result.action === 'ask' && op.kind === 'write') {
@@ -120,7 +126,11 @@ export class GovernanceEngine {
         return result;
       }
     }
-    return { action: 'allow', reason: 'No matching governance rule', matchedRuleId: 'default-allow' };
+    return {
+      action: 'allow',
+      reason: 'No matching governance rule',
+      matchedRuleId: 'default-allow',
+    };
   }
 
   private matchesOperation(rule: GovernanceRule, op: ProjectGovernanceOperation): boolean {
@@ -156,7 +166,7 @@ export class GovernanceEngine {
    * Remove a rule by ID.
    */
   removeRule(id: string): boolean {
-    const idx = this.rules.findIndex(r => r.id === id);
+    const idx = this.rules.findIndex((r) => r.id === id);
     if (idx >= 0) {
       this.rules.splice(idx, 1);
       return true;
@@ -182,8 +192,8 @@ export class GovernanceEngine {
    * Serialize rules for storage in governance.json.
    */
   serializeRules(): GovernanceRule[] {
-    const defaultIds = new Set(DEFAULT_RULES(() => this.budgetLimitUsd).map(r => r.id));
-    return this.rules.filter(r => !defaultIds.has(r.id));
+    const defaultIds = new Set(DEFAULT_RULES(() => this.budgetLimitUsd).map((r) => r.id));
+    return this.rules.filter((r) => !defaultIds.has(r.id));
   }
 
   /**
@@ -193,7 +203,7 @@ export class GovernanceEngine {
    * condition evaluation would require a safe-eval sandbox and is a future enhancement.
    */
   static fromPolicyFile(policy: GovernancePolicyFile): GovernanceEngine {
-    const customRules: GovernanceRule[] = policy.rules.map(r => ({
+    const customRules: GovernanceRule[] = policy.rules.map((r) => ({
       id: r.id,
       priority: r.priority,
       operation: r.operation,
@@ -203,9 +213,15 @@ export class GovernanceEngine {
       reason: r.reason,
       description: r.reason,
     }));
-    const engine = new GovernanceEngine([...DEFAULT_RULES(() => policy.budgetLimitUsd), ...customRules], policy.mode, policy.budgetLimitUsd);
+    const engine = new GovernanceEngine(
+      [...DEFAULT_RULES(() => policy.budgetLimitUsd), ...customRules],
+      policy.mode,
+      policy.budgetLimitUsd,
+    );
     if (policy.mode === 'advisory' && customRules.length > 0) {
-      console.info(`[governance] loaded ${customRules.length} custom rules in advisory mode — condition evaluation skipped for security`);
+      console.info(
+        `[governance] loaded ${customRules.length} custom rules in advisory mode — condition evaluation skipped for security`,
+      );
     }
     return engine;
   }
@@ -216,7 +232,7 @@ export class GovernanceEngine {
  */
 export function classifyAutoApprovalAction(
   op: ProjectGovernanceOperation,
-  engine: GovernanceEngine
+  engine: GovernanceEngine,
 ): GovernanceAction {
   const result = engine.evaluate(op);
   return result.action;

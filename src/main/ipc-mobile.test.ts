@@ -63,7 +63,10 @@ describe('ipc mobile handlers', () => {
 
     mockCheckMobileDependencies.mockResolvedValue({ ok: true });
     mockInstallMobileDependency.mockImplementation(
-      (_dependencyId: string, { installId, onProgress }: { installId: string; onProgress: (event: unknown) => void }) => {
+      (
+        _dependencyId: string,
+        { installId, onProgress }: { installId: string; onProgress: (event: unknown) => void },
+      ) => {
         onProgress({ installId, step: 'download' });
         return Promise.resolve({ ok: true, installId });
       },
@@ -111,10 +114,11 @@ describe('ipc mobile handlers', () => {
     mockConsumeMobileControlPairingAnswer.mockResolvedValue({ answer: 'sdp-answer' });
 
     expect(getRtcConfig({})).toEqual({ iceServers: [] });
-    expect(await createPairing({}, 'session-1', 'offer', 'secret', 'readonly', 'tr')).toEqual({ pairingId: 'pair-1' });
+    expect(await createPairing({}, 'session-1', 'offer', 'secret', 'readonly', 'tr')).toEqual({
+      pairingId: 'pair-1',
+    });
     expect(await consumePairing({}, 'pair-1')).toEqual({ answer: 'sdp-answer' });
     expect(await revokePairing({}, 'pair-1')).toEqual({ ok: true });
     expect(mockRevokeMobileControlPairing).toHaveBeenCalledWith('pair-1');
   });
 });
-

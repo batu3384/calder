@@ -1,16 +1,19 @@
-import { isConnected,isSharing } from '../../sharing/peer-host.js';
+import { isConnected, isSharing } from '../../sharing/peer-host.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildShareDialogMobilePresence } from '../share-dialog/share-dialog.js';
 
 function getActiveCliSession(project: ProjectRecord): SessionRecord | null {
-  const activeSession = project.sessions.find((session) => session.id === project.activeSessionId) ?? null;
+  const activeSession =
+    project.sessions.find((session) => session.id === project.activeSessionId) ?? null;
   if (!activeSession) return null;
   const isCliSession = !activeSession.type || activeSession.type === 'claude';
   return isCliSession ? activeSession : null;
 }
 
 export function getPreferredCliSession(project: ProjectRecord): SessionRecord | null {
-  const cliSessions = project.sessions.filter((session) => !session.type || session.type === 'claude');
+  const cliSessions = project.sessions.filter(
+    (session) => !session.type || session.type === 'claude',
+  );
   const connectedSession = cliSessions.find((session) => isConnected(session.id));
   if (connectedSession) return connectedSession;
 
@@ -28,17 +31,21 @@ export function syncMobileControlButton(
 ): void {
   if (!btnMobileControl) return;
   const language = appState.preferences.language === 'tr' ? 'tr' : 'en';
-  const uiCopy = language === 'tr'
-    ? {
-        createCliSessionHint: 'Henüz CLI oturumu yok. Bir tane oluşturup güvenli devri başlatmak için tıklayın',
-        openSecureHandoffFor: (sessionName: string) => `"${sessionName}" için güvenli devir panelini aç`,
-        openPanelSuffix: 'Paneli aç.',
-      }
-    : {
-        createCliSessionHint: 'No CLI session yet. Click to create one and start secure handoff',
-        openSecureHandoffFor: (sessionName: string) => `Open secure handoff panel for "${sessionName}"`,
-        openPanelSuffix: 'Open panel.',
-      };
+  const uiCopy =
+    language === 'tr'
+      ? {
+          createCliSessionHint:
+            'Henüz CLI oturumu yok. Bir tane oluşturup güvenli devri başlatmak için tıklayın',
+          openSecureHandoffFor: (sessionName: string) =>
+            `"${sessionName}" için güvenli devir panelini aç`,
+          openPanelSuffix: 'Paneli aç.',
+        }
+      : {
+          createCliSessionHint: 'No CLI session yet. Click to create one and start secure handoff',
+          openSecureHandoffFor: (sessionName: string) =>
+            `Open secure handoff panel for "${sessionName}"`,
+          openPanelSuffix: 'Open panel.',
+        };
   const project = appState.activeProject;
   if (!project) {
     btnMobileControl.hidden = true;
@@ -93,18 +100,10 @@ export function syncMobileControlButton(
     ? `${presence.summaryText} · ${presence.metaText} ${uiCopy.openPanelSuffix}`
     : `${presence.summaryText} ${uiCopy.openPanelSuffix}`;
   const idleTitle = `${presence.summaryText} · ${uiCopy.openSecureHandoffFor(targetCliSession.name)}`;
-  btnMobileControl.title = connected
-    ? connectedTitle
-    : sharing
-      ? waitingTitle
-      : idleTitle;
+  btnMobileControl.title = connected ? connectedTitle : sharing ? waitingTitle : idleTitle;
   btnMobileControl.setAttribute(
     'aria-label',
-    connected
-      ? connectedTitle
-      : sharing
-        ? waitingTitle
-        : idleTitle,
+    connected ? connectedTitle : sharing ? waitingTitle : idleTitle,
   );
 
   if (mobileControlPresenceEl) {
@@ -117,9 +116,7 @@ export function syncMobileControlButton(
       mobileControlPresenceEl.hidden = false;
       mobileControlPresenceEl.dataset.connectionState = connected ? 'connected' : 'waiting';
       mobileControlPresenceEl.textContent = presence.stateLabel;
-      mobileControlPresenceEl.title = connected
-        ? connectedTitle
-        : waitingTitle;
+      mobileControlPresenceEl.title = connected ? connectedTitle : waitingTitle;
     }
   }
 }

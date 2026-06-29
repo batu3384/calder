@@ -52,7 +52,8 @@ vi.mock('./pty-manager', () => ({
 vi.mock('./ipc-playwright-mirror', () => ({
   PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS: 500,
   appendAutoApprovalAudit: mockAppendAutoApprovalAudit,
-  extractPlaywrightNavigateUrlsFromTerminalChunk: mockExtractPlaywrightNavigateUrlsFromTerminalChunk,
+  extractPlaywrightNavigateUrlsFromTerminalChunk:
+    mockExtractPlaywrightNavigateUrlsFromTerminalChunk,
   shouldMirrorPlaywrightNavigate: mockShouldMirrorPlaywrightNavigate,
   shouldMirrorPlaywrightNavigateUrl: mockShouldMirrorPlaywrightNavigateUrl,
 }));
@@ -133,7 +134,11 @@ describe('ipc inspector orchestration runtime', () => {
     const events = [{ type: 'status_update', timestamp: Date.now(), message: 'ok' }];
     options.emitInspectorEvents('session-1', events);
     expect(mockAppendAutoApprovalAudit).toHaveBeenCalledWith('session-1', events);
-    expect(win.webContents.send).toHaveBeenCalledWith('session:inspectorEvents', 'session-1', events);
+    expect(win.webContents.send).toHaveBeenCalledWith(
+      'session:inspectorEvents',
+      'session-1',
+      events,
+    );
   });
 
   it('routes middleware through auto-approval orchestrator and mirrors Playwright inspector events', () => {
@@ -188,7 +193,9 @@ describe('ipc inspector orchestration runtime', () => {
       sessionId: string,
       events: Array<Record<string, unknown>>,
     ) => Array<Record<string, unknown>>;
-    const result = middleware('session-3', [{ type: 'stop', last_assistant_message: '<tool_call>' }]);
+    const result = middleware('session-3', [
+      { type: 'stop', last_assistant_message: '<tool_call>' },
+    ]);
 
     expect(mockWritePty).toHaveBeenCalledWith('session-3', 'recover prompt\n');
     expect(result).toHaveLength(2);
@@ -275,15 +282,17 @@ describe('ipc inspector orchestration runtime', () => {
     const win = createWindowMock();
     mockGetAllWindows.mockReturnValue([win]);
     mockExtractPlaywrightNavigateUrlsFromTerminalChunk.mockReturnValue(['https://example.com']);
-    mockShouldMirrorPlaywrightNavigateUrl.mockImplementation((
-      sessionId: string,
-      _url: string,
-      state: Map<string, unknown>,
-    ) => {
-      if (state.has(sessionId)) return false;
-      state.set(sessionId, { lastOpenedAt: Date.now(), url: 'https://example.com', cwd: '/repo' });
-      return true;
-    });
+    mockShouldMirrorPlaywrightNavigateUrl.mockImplementation(
+      (sessionId: string, _url: string, state: Map<string, unknown>) => {
+        if (state.has(sessionId)) return false;
+        state.set(sessionId, {
+          lastOpenedAt: Date.now(),
+          url: 'https://example.com',
+          cwd: '/repo',
+        });
+        return true;
+      },
+    );
 
     const runtime = createInspectorOrchestration();
     runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'one');
@@ -302,4 +311,3 @@ describe('ipc inspector orchestration runtime', () => {
     expect(mockOpenUrlWithBrowserPolicy).toHaveBeenCalledTimes(5);
   });
 });
-

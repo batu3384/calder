@@ -1,8 +1,6 @@
 import { execFile } from 'child_process';
 
-import type {
-  MobileDependencyReport,
-} from '../shared/types/mobile';
+import type { MobileDependencyReport } from '../shared/types/mobile';
 import {
   type MobileDoctorCommandResult,
   type MobileDoctorCommandRunner,
@@ -63,7 +61,9 @@ const defaultRunner: MobileDoctorCommandRunner = {
   },
 };
 
-export async function checkMobileDependencies(options?: DoctorOptions): Promise<MobileDependencyReport> {
+export async function checkMobileDependencies(
+  options?: DoctorOptions,
+): Promise<MobileDependencyReport> {
   const runner = options?.runner ?? defaultRunner;
   const hostPlatform = options?.hostPlatform ?? process.platform;
   const env = options?.env ?? process.env;

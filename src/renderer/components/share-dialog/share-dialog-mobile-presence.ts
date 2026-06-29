@@ -39,7 +39,9 @@ interface BuildShareDialogMobilePresenceOptions {
   nowMs?: number;
 }
 
-export function getShareDialogMobilePresenceCopy(language: UiLanguage | undefined): ShareDialogMobilePresenceCopy {
+export function getShareDialogMobilePresenceCopy(
+  language: UiLanguage | undefined,
+): ShareDialogMobilePresenceCopy {
   const normalizedLanguage = resolveShareDialogLanguage(language);
   const copy = getShareDialogCopy(normalizedLanguage);
   return {
@@ -57,7 +59,12 @@ export function getShareDialogMobilePresenceCopy(language: UiLanguage | undefine
 export function buildShareDialogMobilePresence(
   options: BuildShareDialogMobilePresenceOptions,
 ): ShareDialogMobilePresenceView {
-  const { sessionId, language, resolveSessionName: resolveSessionNameFn, nowMs = Date.now() } = options;
+  const {
+    sessionId,
+    language,
+    resolveSessionName: resolveSessionNameFn,
+    nowMs = Date.now(),
+  } = options;
   const copy = getShareDialogMobilePresenceCopy(language);
   const mobileConnectedNow = isConnected(sessionId);
   const mobileSharingNow = isSharing(sessionId);
@@ -67,16 +74,20 @@ export function buildShareDialogMobilePresence(
       ? 'waiting'
       : 'idle';
 
-  const stateLabel = state === 'connected'
-    ? copy.mobileConnectionStateConnected
-    : state === 'waiting'
-      ? copy.mobileConnectionStateWaiting
-      : copy.mobileConnectionStateIdle;
+  const stateLabel =
+    state === 'connected'
+      ? copy.mobileConnectionStateConnected
+      : state === 'waiting'
+        ? copy.mobileConnectionStateWaiting
+        : copy.mobileConnectionStateIdle;
   const summaryText = copy.mobileConnectionSummary(stateLabel);
 
   const snapshot = getShareConnectionSnapshot(sessionId);
   if (snapshot && state === 'connected') {
-    const activeSessionName = (resolveSessionNameFn ?? resolveSessionName)(snapshot.activeSessionId, snapshot.activeSessionId);
+    const activeSessionName = (resolveSessionNameFn ?? resolveSessionName)(
+      snapshot.activeSessionId,
+      snapshot.activeSessionId,
+    );
     const modeLabel = snapshot.mode === 'readwrite' ? copy.readWrite : copy.readOnly;
     const since = snapshot.verifiedAtMs ?? snapshot.connectedAtMs;
     const durationLabel = since
@@ -133,7 +144,9 @@ export function formatShareConnectionDuration(
 }
 
 function resolveSessionName(sessionId: string, fallbackSessionId: string): string {
-  const project = appState.projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+  const project = appState.projects.find((entry) =>
+    entry.sessions.some((session) => session.id === sessionId),
+  );
   const session = project?.sessions.find((entry) => entry.id === sessionId);
   return session?.name?.trim() || fallbackSessionId;
 }

@@ -16,22 +16,10 @@ export const DEFAULT_SCAN_IGNORE = [
 ];
 
 /** Directories to exclude from large-file alerts (never worth splitting). */
-export const EXCLUDED_DIRECTORIES = [
-  'node_modules',
-  'dist',
-  'build',
-  'out',
-  '.next',
-  'coverage',
-];
+export const EXCLUDED_DIRECTORIES = ['node_modules', 'dist', 'build', 'out', '.next', 'coverage'];
 
 /** Extra glob patterns to exclude from large-file alerts (beyond DEFAULT_SCAN_IGNORE). */
-export const EXTRA_ALERT_IGNORE = [
-  '*.map',
-  '*.wasm',
-  '*.pb',
-  '*.bundle.*',
-];
+export const EXTRA_ALERT_IGNORE = ['*.map', '*.wasm', '*.pb', '*.bundle.*'];
 
 /** Dedicated persistent Chromium partition for Calder browser surfaces. */
 export const BROWSER_SESSION_PARTITION = 'persist:calder-live-view';

@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const tabsCss = readFileSync(new URL('./tabs.css', import.meta.url), 'utf-8');
-const tabBarSource = readFileSync(new URL('../components/tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
+const tabBarSource = readFileSync(
+  new URL('../components/tab-bar/tab-bar.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('command deck stylesheet contract', () => {
   it('renders status and launcher controls as lighter inline instrument pills', () => {
@@ -33,8 +36,12 @@ describe('command deck stylesheet contract', () => {
   });
 
   it('keeps the launcher controls on the top row until the workspace is genuinely narrow', () => {
-    expect(tabsCss).toMatch(/@container workspace-stack \(max-width: 980px\)\s*\{\s*#tab-bar\s*\{[\s\S]*grid-template-areas:\s*"main actions"\s*"meta actions";/m);
-    expect(tabsCss).toMatch(/@container workspace-stack \(max-width: 820px\)\s*\{\s*#tab-bar\s*\{[\s\S]*grid-template-areas:\s*"main"\s*"meta"\s*"actions";/m);
+    expect(tabsCss).toMatch(
+      /@container workspace-stack \(max-width: 980px\)\s*\{\s*#tab-bar\s*\{[\s\S]*grid-template-areas:\s*'main actions'\s*'meta actions';/m,
+    );
+    expect(tabsCss).toMatch(
+      /@container workspace-stack \(max-width: 820px\)\s*\{\s*#tab-bar\s*\{[\s\S]*grid-template-areas:\s*'main'\s*'meta'\s*'actions';/m,
+    );
     expect(tabsCss).toContain(".session-launcher-group[data-select-open='true']");
   });
 

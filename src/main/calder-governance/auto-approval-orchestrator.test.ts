@@ -391,9 +391,11 @@ describe('createAutoApprovalOrchestrator', () => {
     });
 
     orchestrator.registerSession('session-1', 'codex', '/tmp/project');
-    await expect(orchestrator.handleInspectorEvents('session-1', [
-      permissionRequestEvent({ toolName: 'Edit' }),
-    ])).resolves.toBeUndefined();
+    await expect(
+      orchestrator.handleInspectorEvents('session-1', [
+        permissionRequestEvent({ toolName: 'Edit' }),
+      ]),
+    ).resolves.toBeUndefined();
 
     expect(sendApproval).toHaveBeenCalledTimes(1);
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;

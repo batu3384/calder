@@ -28,7 +28,13 @@ describe('describeProviderRoute', () => {
   });
 
   it('marks the first-party Claude path as a native CLI route', () => {
-    expect(describeProviderRoute({ nativeProviderId: 'claude', model: 'Claude Sonnet 4.6', confidence: 'verified' })).toEqual({
+    expect(
+      describeProviderRoute({
+        nativeProviderId: 'claude',
+        model: 'Claude Sonnet 4.6',
+        confidence: 'verified',
+      }),
+    ).toEqual({
       nativeProviderId: 'claude',
       backendProviderId: 'anthropic',
       model: 'Claude Sonnet 4.6',
@@ -41,16 +47,40 @@ describe('describeProviderRoute', () => {
 describe('deriveQuotaConfidence', () => {
   it('uses explicit unavailable states when quota data is missing or still syncing', () => {
     expect(deriveQuotaConfidence(null, 1_500, 60_000)).toBe('unavailable');
-    expect(deriveQuotaConfidence({ status: 'syncing', updatedAt: 1_000, hasMeasuredValues: false }, 1_500, 60_000)).toBe('unavailable');
+    expect(
+      deriveQuotaConfidence(
+        { status: 'syncing', updatedAt: 1_000, hasMeasuredValues: false },
+        1_500,
+        60_000,
+      ),
+    ).toBe('unavailable');
   });
 
   it('distinguishes verified measured values from estimated status-only snapshots', () => {
-    expect(deriveQuotaConfidence({ status: 'unknown', updatedAt: 1_000, hasMeasuredValues: true }, 1_500, 60_000)).toBe('verified');
-    expect(deriveQuotaConfidence({ status: 'unknown', updatedAt: 1_000, hasMeasuredValues: false }, 1_500, 60_000)).toBe('estimated');
+    expect(
+      deriveQuotaConfidence(
+        { status: 'unknown', updatedAt: 1_000, hasMeasuredValues: true },
+        1_500,
+        60_000,
+      ),
+    ).toBe('verified');
+    expect(
+      deriveQuotaConfidence(
+        { status: 'unknown', updatedAt: 1_000, hasMeasuredValues: false },
+        1_500,
+        60_000,
+      ),
+    ).toBe('estimated');
   });
 
   it('marks old snapshots stale even when they have measured values', () => {
-    expect(deriveQuotaConfidence({ status: 'unknown', updatedAt: 1_000, hasMeasuredValues: true }, 120_000, 60_000)).toBe('stale');
+    expect(
+      deriveQuotaConfidence(
+        { status: 'unknown', updatedAt: 1_000, hasMeasuredValues: true },
+        120_000,
+        60_000,
+      ),
+    ).toBe('stale');
   });
 
   it('provides UI-safe labels for each confidence state', () => {

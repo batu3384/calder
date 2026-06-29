@@ -170,8 +170,8 @@ function parseHistorySession(entry: unknown, lineIndex: number): ParsedHistorySe
   return {
     codexSessionId,
     timestampMs: parseTimestampMs(timestampRaw),
-    cwdHint: cwdRaw ? normalizePathHint(cwdRaw) ?? undefined : undefined,
-    sessionTokenHint: tokenRaw ? normalizeSessionTokenHint(tokenRaw) ?? undefined : undefined,
+    cwdHint: cwdRaw ? (normalizePathHint(cwdRaw) ?? undefined) : undefined,
+    sessionTokenHint: tokenRaw ? (normalizeSessionTokenHint(tokenRaw) ?? undefined) : undefined,
     lineIndex,
   };
 }
@@ -199,16 +199,13 @@ function getOldestPendingSessionId(): string | null {
   return oldest?.[0] ?? null;
 }
 
-function scoreHistoryMatch(
-  history: ParsedHistorySession,
-  pending: PendingSessionMetadata,
-): number {
+function scoreHistoryMatch(history: ParsedHistorySession, pending: PendingSessionMetadata): number {
   let score = 0;
 
   if (
-    history.sessionTokenHint
-    && pending.sessionTokenHint
-    && history.sessionTokenHint === pending.sessionTokenHint
+    history.sessionTokenHint &&
+    pending.sessionTokenHint &&
+    history.sessionTokenHint === pending.sessionTokenHint
   ) {
     score += MATCH_WEIGHTS.sessionToken;
   }
@@ -237,10 +234,7 @@ function findBestPendingMatch(
       continue;
     }
     if (score === best.score) {
-      const cmp = comparePendingOrder(
-        [sessionId, metadata],
-        [best.sessionId, best.metadata],
-      );
+      const cmp = comparePendingOrder([sessionId, metadata], [best.sessionId, best.metadata]);
       if (cmp < 0) {
         best = { sessionId, metadata, score };
       }
@@ -255,10 +249,7 @@ function assignSessionIdToPending(uiSessionId: string, codexSessionId: string): 
   pendingSessions.delete(uiSessionId);
 
   fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(
-    path.join(STATUS_DIR, `${uiSessionId}.sessionid`),
-    codexSessionId
-  );
+  fs.writeFileSync(path.join(STATUS_DIR, `${uiSessionId}.sessionid`), codexSessionId);
 }
 
 function assignHistorySessions(entries: ParsedHistorySession[]): void {
@@ -269,13 +260,11 @@ function assignHistorySessions(entries: ParsedHistorySession[]): void {
   // Assign higher-confidence matches first so weak/ambiguous entries
   // do not consume FIFO slots needed by strong cwd/token/time matches.
   while (pendingSessions.size > 0 && remaining.length > 0) {
-    let selected:
-      | {
-        remainingIndex: number;
-        match: { sessionId: string; metadata: PendingSessionMetadata; score: number };
-        lineIndex: number;
-      }
-      | null = null;
+    let selected: {
+      remainingIndex: number;
+      match: { sessionId: string; metadata: PendingSessionMetadata; score: number };
+      lineIndex: number;
+    } | null = null;
 
     for (let i = 0; i < remaining.length; i += 1) {
       const match = findBestPendingMatch(remaining[i]);
@@ -368,7 +357,11 @@ function readNewEntries(): void {
     // File read error
   } finally {
     if (fd !== null) {
-      try { fs.closeSync(fd); } catch { /* already closed */ }
+      try {
+        fs.closeSync(fd);
+      } catch {
+        /* already closed */
+      }
     }
   }
 }
@@ -389,9 +382,10 @@ export function registerPendingCodexSession(
     trailingLineRemainder = '';
   }
 
-  const registeredAtMs = typeof hints.registeredAtMs === 'number' && Number.isFinite(hints.registeredAtMs)
-    ? Math.trunc(hints.registeredAtMs)
-    : Date.now();
+  const registeredAtMs =
+    typeof hints.registeredAtMs === 'number' && Number.isFinite(hints.registeredAtMs)
+      ? Math.trunc(hints.registeredAtMs)
+      : Date.now();
   const normalizedCwd = hints.cwd ? normalizePathHint(hints.cwd) : null;
   const normalizedToken = hints.sessionToken ? normalizeSessionTokenHint(hints.sessionToken) : null;
 

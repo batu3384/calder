@@ -2,10 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockShowAlertBanner = vi.fn();
 const mockRemoveAlertBanner = vi.fn();
-const mockShowStatusLineConflictModal = vi.fn<(...args: any[]) => Promise<'keep' | 'replace'>>(async () => 'keep');
+const mockShowStatusLineConflictModal = vi.fn<(...args: any[]) => Promise<'keep' | 'replace'>>(
+  async () => 'keep',
+);
 const mockRespondConflictDialog = vi.fn();
-const mockReinstall = vi.fn<(providerId: unknown) => Promise<{ success: boolean }>>(async () => ({ success: true }));
-const mockValidate = vi.fn<(providerId: unknown) => Promise<{ statusLine: string; hooks: string }>>(async () => ({ statusLine: 'calder', hooks: 'complete' }));
+const mockReinstall = vi.fn<(providerId: unknown) => Promise<{ success: boolean }>>(async () => ({
+  success: true,
+}));
+const mockValidate = vi.fn<(providerId: unknown) => Promise<{ statusLine: string; hooks: string }>>(
+  async () => ({ statusLine: 'calder', hooks: 'complete' }),
+);
 const mockGetMeta = vi.fn<(providerId: unknown) => Promise<any>>(async () => ({
   id: 'claude',
   displayName: 'Claude Code',
@@ -40,8 +46,14 @@ vi.stubGlobal('window', {
       getMeta: (providerId: unknown) => mockGetMeta(providerId),
     },
     settings: {
-      onConflictDialog: (cb: (data: any) => void) => { conflictHandler = cb; return () => {}; },
-      onWarning: (cb: (data: any) => void) => { warningHandler = cb; return () => {}; },
+      onConflictDialog: (cb: (data: any) => void) => {
+        conflictHandler = cb;
+        return () => {};
+      },
+      onWarning: (cb: (data: any) => void) => {
+        warningHandler = cb;
+        return () => {};
+      },
       respondConflictDialog: (choice: unknown) => mockRespondConflictDialog(choice),
       reinstall: (providerId: unknown) => mockReinstall(providerId),
       validate: (providerId: unknown) => mockValidate(providerId),
@@ -60,17 +72,29 @@ describe('settings guard UI', () => {
   });
 
   it('uses short, clear tracking copy and the Enable tracking CTA', async () => {
-    warningHandler?.({ sessionId: 's1', providerId: 'qwen', statusLine: 'foreign', hooks: 'complete' });
-
-    expect(mockShowAlertBanner).toHaveBeenCalledWith(expect.objectContaining({
+    warningHandler?.({
       sessionId: 's1',
-      message: expect.stringContaining('Tracking is off'),
-      cta: expect.objectContaining({ label: 'Enable tracking' }),
-    }));
+      providerId: 'qwen',
+      statusLine: 'foreign',
+      hooks: 'complete',
+    });
+
+    expect(mockShowAlertBanner).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: 's1',
+        message: expect.stringContaining('Tracking is off'),
+        cta: expect.objectContaining({ label: 'Enable tracking' }),
+      }),
+    );
   });
 
   it('reinstalls and validates the warned provider before clearing the alert', async () => {
-    warningHandler?.({ sessionId: 's1', providerId: 'qwen', statusLine: 'missing', hooks: 'complete' });
+    warningHandler?.({
+      sessionId: 's1',
+      providerId: 'qwen',
+      statusLine: 'missing',
+      hooks: 'complete',
+    });
     const config = mockShowAlertBanner.mock.calls[0]?.[0];
     const button = { disabled: false, textContent: '' } as HTMLButtonElement;
 
@@ -84,7 +108,12 @@ describe('settings guard UI', () => {
 
   it('keeps the alert visible when validation is still unhealthy after reinstall', async () => {
     mockValidate.mockResolvedValueOnce({ statusLine: 'foreign', hooks: 'partial' });
-    warningHandler?.({ sessionId: 's1', providerId: 'claude', statusLine: 'foreign', hooks: 'partial' });
+    warningHandler?.({
+      sessionId: 's1',
+      providerId: 'claude',
+      statusLine: 'foreign',
+      hooks: 'partial',
+    });
     const config = mockShowAlertBanner.mock.calls[0]?.[0];
     const button = { disabled: false, textContent: '' } as HTMLButtonElement;
 

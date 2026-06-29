@@ -13,6 +13,7 @@
 ### Task 1: Make Plan Session Launch Respect Explicit Provider Choice
 
 **Files:**
+
 - Modify: `src/renderer/state.ts`
 - Modify: `src/renderer/components/browser-tab/session-integration.ts`
 - Modify: `src/renderer/components/browser-tab/draw-mode.ts`
@@ -21,6 +22,7 @@
 - [ ] **Step 1: Write the failing tests**
 
 Add tests covering:
+
 - `addPlanSession(projectId, name, providerOverride)` uses the override instead of `activeSession.providerId`
 - browser new-session handoff passes the visible provider through instead of relying on project active session state
 
@@ -45,6 +47,7 @@ Expected: PASS for the new override coverage.
 ### Task 2: Add Browser-Local Open Session Targeting
 
 **Files:**
+
 - Modify: `src/shared/types.ts`
 - Modify: `src/renderer/state.ts`
 - Modify: `src/renderer/components/browser-tab/types.ts`
@@ -59,6 +62,7 @@ Expected: PASS for the new override coverage.
 - [ ] **Step 1: Write the failing tests**
 
 Add tests covering:
+
 - browser-tab session records can store `browserTargetSessionId`
 - target resolution prefers stored open CLI session, falls back to active CLI session, then empty
 - browser handoff to selected existing session writes into that session instead of creating a new one
@@ -72,6 +76,7 @@ Expected: FAIL because browser sessions cannot yet persist or resolve a target a
 - [ ] **Step 3: Implement minimal persistent browser target state**
 
 Add `browserTargetSessionId` to browser-tab sessions, plus helper methods in `state.ts` to:
+
 - list open local CLI sessions for a project
 - resolve a valid browser target session
 - set/clear browser target session
@@ -80,6 +85,7 @@ Add `browserTargetSessionId` to browser-tab sessions, plus helper methods in `st
 - [ ] **Step 4: Implement live prompt delivery**
 
 Add a terminal helper that can:
+
 - detect whether a target session already has a spawned PTY
 - send prompt text plus submission newline into that live PTY
 - fall back to pending-startup prompt when the session exists but has not spawned yet
@@ -87,6 +93,7 @@ Add a terminal helper that can:
 - [ ] **Step 5: Implement browser UI targeting**
 
 Update browser pane rendering to add:
+
 - `Open Sessions` side rail
 - selected target summary in browser chrome/toolbar
 - primary send actions that target the selected session
@@ -100,10 +107,12 @@ Expected: PASS for target resolution and live handoff behavior.
 - [ ] **Step 7: Run full verification**
 
 Run:
+
 - `npm test`
 - `npm run build`
 
 Expected:
+
 - all tests pass
 - build succeeds
 

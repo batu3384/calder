@@ -35,8 +35,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectGovernanceSyncForTesting, initProjectGovernanceSync } from './project-governance-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectGovernanceSyncForTesting,
+  initProjectGovernanceSync,
+} from './project-governance-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -83,7 +86,10 @@ describe('project governance sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj', undefined);
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.displayName).toBe('Project guardrails');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy
+        ?.displayName,
+    ).toBe('Project guardrails');
   });
 
   it('applies live governance updates to the matching project', async () => {
@@ -110,12 +116,15 @@ describe('project governance sync', () => {
       lastUpdated: '2026-04-13T20:05:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.networkPolicy).toBe('block');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy
+        ?.networkPolicy,
+    ).toBe('block');
   });
 
   it('re-resolves governance for the active CLI session when live updates arrive', async () => {
     let includeSessionOverride = false;
-    mockGetProjectState.mockImplementation(async () => (
+    mockGetProjectState.mockImplementation(async () =>
       includeSessionOverride
         ? {
             autoApproval: {
@@ -136,8 +145,8 @@ describe('project governance sync', () => {
               safeToolProfile: 'default-read-only',
               recentDecisions: [],
             },
-          }
-    ));
+          },
+    );
 
     const project = appState.addProject('Calder', '/proj');
     const session = appState.addSession(project.id, 'Codex Main', undefined, 'codex');
@@ -159,7 +168,9 @@ describe('project governance sync', () => {
     await flushTasks();
 
     expect(mockGetProjectState).toHaveBeenLastCalledWith('/proj', session?.id);
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.autoApproval).toMatchObject({
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.autoApproval,
+    ).toMatchObject({
       sessionMode: 'full_auto',
       effectiveMode: 'full_auto',
       policySource: 'session',
@@ -180,7 +191,9 @@ describe('project governance sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
@@ -206,7 +219,9 @@ describe('project governance sync', () => {
       },
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy).toBeUndefined();
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy,
+    ).toBeUndefined();
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
@@ -244,11 +259,17 @@ describe('project governance sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.displayName).toBe('Latest policy');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy
+        ?.displayName,
+    ).toBe('Latest policy');
 
     firstResponse.resolve({});
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy?.displayName).toBe('Latest policy');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.policy
+        ?.displayName,
+    ).toBe('Latest policy');
   });
 });

@@ -7,6 +7,7 @@
 ## Product Intent
 
 Calder already has a strong live workflow for web applications:
+
 - the left side hosts a live surface
 - the right side hosts working AI sessions
 - browser inspect can send targeted prompts into an existing selected session
@@ -14,10 +15,12 @@ Calder already has a strong live workflow for web applications:
 That workflow should expand to terminal-native products.
 
 The new model is:
+
 - `Web Surface` for browser-based projects
 - `CLI Surface` for terminal or TUI-based projects
 
 Both surfaces should feel like first-class tools inside the same shell:
+
 - preview on the left
 - execution and iteration on the right
 - explicit target session routing
@@ -28,6 +31,7 @@ The browser system is not being replaced. It stays intact and should continue to
 ## Problem Statement
 
 Calder currently has no preview surface for CLI-first projects. Users can work in AI sessions, but they cannot:
+
 - run a CLI or TUI app in a dedicated left-side preview surface
 - inspect part of that live terminal UI
 - select a region of the terminal preview and send targeted prompts into an existing working session
@@ -39,6 +43,7 @@ This leaves Calder strongest for web application flows and weaker for terminal-n
 Add a new `CLI Surface` alongside the existing browser surface.
 
 Behavior:
+
 - the current browser-based `Live View` remains unchanged
 - projects can expose a live left-side surface of type `web` or `cli`
 - the `CLI Surface` runs a dedicated PTY-backed preview/runtime process
@@ -47,6 +52,7 @@ Behavior:
 - browser and CLI surfaces share routing concepts but use different selection models
 
 Selection model differences:
+
 - browser surface selects DOM-backed page elements
 - CLI surface selects terminal-backed lines, rectangular regions, or visible screen areas
 
@@ -55,14 +61,17 @@ Selection model differences:
 The current browser implementation stores the browser tab in the session list. That was workable for browser-only support, but it becomes the wrong abstraction once a second live surface type is added.
 
 Calder should distinguish between:
+
 - **working sessions** on the right
 - **live surfaces** on the left
 
 New conceptual model:
+
 - `sessions[]` remain AI and utility workspaces
 - `surface` becomes the left-side preview/workspace surface
 
 This keeps the shell clear:
+
 - left side = thing being run, viewed, or inspected
 - right side = AI sessions used to improve it
 
@@ -114,15 +123,18 @@ export interface ProjectSurfaceRecord {
 ```
 
 `ProjectRecord` should gain:
+
 - `surface?: ProjectSurfaceRecord`
 
 ### Routing Ownership
 
 The target session should move from browser-tab-specific state toward surface-level state:
+
 - browser targeting becomes `surface.targetSessionId`
 - CLI surface uses the same target field
 
 Rules:
+
 1. if `targetSessionId` points to a valid open local AI session, use it
 2. else fall back to the current active AI session if it is targetable
 3. else leave the surface target empty and require explicit selection
@@ -130,12 +142,14 @@ Rules:
 ### Persistence Rules
 
 Persist:
+
 - active surface kind
 - selected CLI profile
 - surface target session id
 - CLI profile list
 
 Do not persist:
+
 - in-flight runtime process ids
 - transient inspect overlays
 - temporary capture buffers
@@ -147,13 +161,16 @@ Do not persist:
 The `CLI Surface` should not reuse the terminal instance of an AI session.
 
 It needs its own PTY-backed process because its job is different:
+
 - it previews or runs the product
 - it is not an AI coding session
 
 New main-process module:
+
 - `src/main/cli-surface-runtime.ts`
 
 Responsibilities:
+
 - create PTY for a CLI surface
 - stop and restart PTY
 - resize PTY
@@ -163,6 +180,7 @@ Responsibilities:
 ### Renderer Runtime Boundary
 
 New preload / IPC contract:
+
 - `cliSurface.start(projectId, profileId | launchConfig)`
 - `cliSurface.stop(projectId)`
 - `cliSurface.restart(projectId)`
@@ -171,6 +189,7 @@ New preload / IPC contract:
 - `cliSurface.requestSnapshot(projectId)`
 
 Events:
+
 - `cli-surface:data`
 - `cli-surface:exit`
 - `cli-surface:status`
@@ -181,6 +200,7 @@ Events:
 The `CLI Surface` runtime belongs to the project, not to a session.
 
 That means:
+
 - one active CLI surface runtime per project in V1
 - profile switching replaces or restarts that runtime
 - AI sessions remain independent
@@ -190,6 +210,7 @@ That means:
 ### Surface Switcher
 
 The left-side workspace gets a surface switcher:
+
 - `Live View`
 - `CLI Surface`
 
@@ -200,6 +221,7 @@ If a project only has one configured surface type, Calder may default into it wi
 The CLI surface should feel parallel to browser live view, but not imitate it blindly.
 
 Header structure:
+
 - profile picker
 - runtime status
 - `Start`
@@ -210,10 +232,12 @@ Header structure:
 - target session picker
 
 Body:
+
 - dedicated xterm-backed preview surface
 - optional empty-state guidance when not running
 
 Footer / popover flow:
+
 - inspect composer
 - capture composer
 - same target-session routing affordance as browser targeting
@@ -221,14 +245,17 @@ Footer / popover flow:
 ### Empty States
 
 Not running:
+
 - explain that this surface previews a CLI or TUI application
 - show the selected command/profile
 - give a clear start action
 
 No profile configured:
+
 - show a guided prompt to add a CLI profile for the project
 
 No target session selected:
+
 - show a routing warning similar to browser targeting
 - do not silently create a new session from the primary action
 
@@ -237,16 +264,19 @@ No target session selected:
 V1 must be strong enough to be useful for arbitrary CLI and TUI applications, even without framework-specific adapters.
 
 Supported selection modes:
+
 - `line`
 - `region`
 - `viewport`
 
 Definitions:
+
 - `line`: one or more full visible rows
 - `region`: a rectangular cell range
 - `viewport`: the entire visible terminal area
 
 Payload fields:
+
 - selected text
 - selected coordinates
 - nearby context lines
@@ -259,6 +289,7 @@ Payload fields:
 - title if available
 
 Prompt framing should say clearly that this is terminal output, not DOM:
+
 - what part of the terminal was selected
 - whether the selection is inferred or exact
 - what command generated the preview
@@ -268,15 +299,18 @@ Prompt framing should say clearly that this is terminal output, not DOM:
 V2 adds terminal-aware region understanding.
 
 Goals:
+
 - detect probable panels, sidebars, lists, forms, headers, footers, and dialogs
 - group adjacent box-drawing or aligned text blocks into inspectable regions
 - attach useful labels like `left panel`, `footer`, `task list`, or `command menu`
 
 This layer remains heuristic:
+
 - it should improve inspect quality
 - it must never pretend certainty when only doing inference
 
 UI should distinguish:
+
 - `Selected region`
 - `Inferred panel`
 
@@ -285,15 +319,18 @@ UI should distinguish:
 V3 introduces richer inspection for frameworks that expose structure.
 
 First targets:
+
 - `Textual`
 - `Ink`
 - `Blessed`
 
 Second targets:
+
 - `Bubble Tea`
 - `Ratatui`
 
 Adapter goals:
+
 - better selection boundaries
 - widget or component naming
 - focus path
@@ -301,6 +338,7 @@ Adapter goals:
 - richer inspect payloads
 
 Adapter registry shape:
+
 - renderer asks runtime which adapter, if any, is active
 - runtime can attach metadata or structured snapshots
 - renderer reflects adapter capability badges in the CLI surface UI
@@ -320,6 +358,7 @@ Adapter registry shape:
 This is the highest-fidelity path for CLI projects we control.
 
 Protocol goals:
+
 - exact component selection
 - stable component ids
 - bounds
@@ -328,6 +367,7 @@ Protocol goals:
 - lightweight state summary
 
 Transport options:
+
 - terminal escape-sequence side channel
 - structured stdout/stderr metadata stream
 - local socket or IPC sidecar
@@ -339,10 +379,12 @@ V4 should be implemented only after V1-V3 prove the generic model.
 Expected files to change or be added:
 
 State and types:
+
 - `src/shared/types.ts`
 - `src/renderer/state.ts`
 
 Renderer:
+
 - `src/renderer/components/split-layout.ts`
 - `src/renderer/components/terminal-pane.ts`
 - `src/renderer/components/browser-tab/session-integration.ts`
@@ -354,11 +396,13 @@ Renderer:
 - `src/renderer/styles/cli-surface.css`
 
 Main / preload:
+
 - `src/main/cli-surface-runtime.ts`
 - `src/main/ipc-handlers.ts`
 - `src/preload/preload.ts`
 
 Tests:
+
 - renderer surface tests
 - runtime PTY tests
 - state and routing regression tests
@@ -368,11 +412,13 @@ Tests:
 ### Batch 1 — Surface State Foundation
 
 Scope:
+
 - add new shared surface types
 - add `project.surface`
 - migrate browser target semantics to shared surface targeting helpers
 
 Success:
+
 - browser targeting still works
 - no visible behavior regression
 - project state persists cleanly
@@ -380,57 +426,68 @@ Success:
 ### Batch 2 — CLI Surface Runtime + Basic Pane
 
 Scope:
+
 - create PTY-backed runtime service
 - add renderer pane and toolbar
 - launch, stop, restart, resize
 
 Success:
+
 - a CLI app can run on the left side
 - browser surface still works unchanged
 
 ### Batch 3 — V1 Inspect + Prompt Routing
 
 Scope:
+
 - line and region selection
 - inspect composer
 - send to selected session
 - send to new session
 
 Success:
+
 - user can select part of a live CLI preview and route a prompt into an existing AI session
 
 ### Batch 4 — V2 Heuristics
 
 Scope:
+
 - inferred region grouping
 - semantic labels
 - better selection affordance
 
 Success:
+
 - TUI layouts feel easier to inspect than raw text-only selection
 
 ### Batch 5 — V3 Adapters
 
 Scope:
+
 - adapter registry
 - Textual, Ink, Blessed initial support
 
 Success:
+
 - supported frameworks expose richer inspect payloads and more reliable region identity
 
 ### Batch 6 — V4 Protocol
 
 Scope:
+
 - Calder semantic inspect protocol
 - exact node metadata
 - source/state hints
 
 Success:
+
 - Calder-controlled CLI apps can provide browser-like inspect precision
 
 ## Non-Goals
 
 This design does not:
+
 - remove or redesign the existing browser surface
 - merge AI sessions with preview/runtime surfaces
 - force all projects into CLI mode
@@ -441,6 +498,7 @@ This design does not:
 ## Acceptance Criteria
 
 This design is complete when:
+
 - Calder can host either a browser or CLI live surface on the left
 - the browser surface still works as it does now
 - a CLI app can be launched and previewed in a dedicated left-side surface
@@ -454,28 +512,35 @@ This design is complete when:
 Minimum required verification per implementation phase:
 
 Batch 1:
+
 - state and routing tests
 - browser routing regression tests
 
 Batch 2:
+
 - PTY runtime tests
 - project-level launch/stop/restart tests
 
 Batch 3:
+
 - inspect selection payload tests
 - prompt routing tests
 - manual smoke test for `CLI Surface -> select -> send`
 
 Batch 4:
+
 - heuristics fixture tests against representative terminal screenshots or buffers
 
 Batch 5:
+
 - adapter-specific fixture tests for Textual, Ink, and Blessed
 
 Batch 6:
+
 - protocol integration tests for metadata parsing and exact node selection
 
 Always:
+
 - `npm test`
 - `npm run build`
 - browser surface regression smoke check
@@ -483,6 +548,7 @@ Always:
 ## Open Decisions Intentionally Deferred
 
 These do not block the design but should be finalized during implementation planning:
+
 - whether CLI profiles live inside project state only or also in a shared user library
 - whether V1 inspect selection uses mouse-only interaction or also keyboard navigation
 - whether capture should include raster screenshot in V1 or only text + ANSI snapshot

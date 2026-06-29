@@ -112,7 +112,10 @@ describe('browser session integration errors', () => {
 
     await sendToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('inspect prompt'));
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('inspect prompt'),
+    );
     expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
       'project-1',
       expect.stringContaining('Project context:'),
@@ -125,14 +128,19 @@ describe('browser session integration errors', () => {
     expect(instance.inspectErrorEl.textContent).toBe('');
     expect(instance.inspectErrorEl.style.display).toBe('none');
     expect(instance.inspectContextTraceEl.textContent).toContain('Applied context:');
-    expect(instance.inspectContextTraceEl.textContent).toContain('Shared/rules [hard]: testing.hard.md');
+    expect(instance.inspectContextTraceEl.textContent).toContain(
+      'Shared/rules [hard]: testing.hard.md',
+    );
     expect(instance.inspectContextTraceEl.style.display).toBe('block');
   });
 
   it('shows an inspect error when no target session is selected', async () => {
     const { sendToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({ ok: false, error: 'Select an open session target first.' });
+    mockDeliverSurfacePrompt.mockResolvedValue({
+      ok: false,
+      error: 'Select an open session target first.',
+    });
 
     await sendToSelectedSession(instance);
 
@@ -144,11 +152,16 @@ describe('browser session integration errors', () => {
   it('shows a flow error when delivery to the selected session fails', async () => {
     const { sendFlowToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({ ok: false, error: 'Failed to deliver prompt to the selected session.' });
+    mockDeliverSurfacePrompt.mockResolvedValue({
+      ok: false,
+      error: 'Failed to deliver prompt to the selected session.',
+    });
 
     await sendFlowToSelectedSession(instance);
 
-    expect(instance.flowErrorEl.textContent).toBe('Failed to deliver prompt to the selected session.');
+    expect(instance.flowErrorEl.textContent).toBe(
+      'Failed to deliver prompt to the selected session.',
+    );
     expect(instance.flowErrorEl.style.display).toBe('block');
     expect(mockDismissFlow).not.toHaveBeenCalled();
   });
@@ -161,7 +174,10 @@ describe('browser session integration errors', () => {
 
     await sendFlowToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('flow prompt'));
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('flow prompt'),
+    );
     expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
       'project-1',
       expect.stringContaining('Project context:'),

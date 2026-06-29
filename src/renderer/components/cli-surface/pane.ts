@@ -10,19 +10,12 @@ import {
   enableComposerDragging as enableComposerDraggingBehavior,
   positionComposerNearPointer as positionComposerNearPointerBehavior,
 } from './composer-position.js';
-import {
-  getContextModeForSelection as getContextModeForSelectionBehavior,
-} from './context-controls.js';
+import { getContextModeForSelection as getContextModeForSelectionBehavior } from './context-controls.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { inferCliRegions } from './heuristics.js';
 import { renderCliHoverOverlay } from './hover-overlay.js';
-import {
-  pointerToCell,
-  selectionFromTerminal,
-} from './inspect-geometry.js';
-import {
-  openInspect,
-} from './inspect-mode.js';
+import { pointerToCell, selectionFromTerminal } from './inspect-geometry.js';
+import { openInspect } from './inspect-mode.js';
 import {
   deriveSemanticRegions,
   findContainingInferredRegion,
@@ -43,9 +36,7 @@ import {
   setInspectPayloadFromPointer,
   showComposerError,
 } from './pane-composer-helpers.js';
-import {
-  type CliSurfaceLayoutElements,
-} from './pane-elements.js';
+import { type CliSurfaceLayoutElements } from './pane-elements.js';
 import { attachCliSurfacePaneBindings } from './pane-event-orchestration.js';
 import { createCliSurfaceFrameHelpers } from './pane-frame-helpers.js';
 import { createCliSurfaceInspectStateHelpers } from './pane-inspect-state.js';
@@ -96,7 +87,10 @@ function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[]
     return instance.semanticRegions;
   }
 
-  const focusedNodeId = getFocusedSemanticNodeIdBehavior(store.semanticFocusNodes, instance.projectId);
+  const focusedNodeId = getFocusedSemanticNodeIdBehavior(
+    store.semanticFocusNodes,
+    instance.projectId,
+  );
   instance.semanticRegions = deriveSemanticRegions({
     focusedNodeId,
     messages: store.semanticNodes.get(instance.projectId)?.values() ?? [],
@@ -110,7 +104,10 @@ function getSemanticRegions(instance: CliSurfaceInstance): SelectableCliRegion[]
   return instance.semanticRegions;
 }
 
-function findSelectableRegionAtCell(instance: CliSurfaceInstance, cell: { row: number; col: number }): SelectableCliRegion | null {
+function findSelectableRegionAtCell(
+  instance: CliSurfaceInstance,
+  cell: { row: number; col: number },
+): SelectableCliRegion | null {
   return findSelectableRegionAtCellBehavior(
     getSemanticRegions(instance),
     getInferredRegions(instance),
@@ -156,9 +153,13 @@ export function buildInspectPayload(
       : {}),
   });
   const selectionSource = resolveSelectionSource(selection, selectionHint, semanticRegion);
-  const contextMode = getContextModeForSelectionBehavior(instance.contextModeOverride, selectionSource);
-  const targetProviderId = appState.resolveSurfaceTargetSession(instance.projectId)?.providerId
-    ?? resolvePreferredProviderForLaunch(
+  const contextMode = getContextModeForSelectionBehavior(
+    instance.contextModeOverride,
+    selectionSource,
+  );
+  const targetProviderId =
+    appState.resolveSurfaceTargetSession(instance.projectId)?.providerId ??
+    resolvePreferredProviderForLaunch(
       appState.preferences.defaultProvider,
       getProviderAvailabilitySnapshot(),
     );
@@ -225,19 +226,22 @@ const inspectStateHelpers = createCliSurfaceInspectStateHelpers({
   getInferredRegions: (instance) => getInferredRegions(instance),
   showHoverRegion: (instance, region) => showHoverRegion(instance, region),
 });
-const { syncViewportLines, renderInspectState, setInspectPayloadFromSelection, setHoverRegion } = inspectStateHelpers;
+const { syncViewportLines, renderInspectState, setInspectPayloadFromSelection, setHoverRegion } =
+  inspectStateHelpers;
 
 const frameHelpers = createCliSurfaceFrameHelpers({
   syncViewportLines: (instance) => syncViewportLines(instance),
   renderRuntimeMeta: (instance) => renderRuntimeMeta(instance),
-  setInspectPayloadFromSelection: (instance, selection) => setInspectPayloadFromSelection(instance, selection),
-  getRuntimeViewportSelection: (instance) => selectionFromTerminal({
-    viewportLineCount: instance.viewportLines.length,
-    terminalCols: instance.terminal.cols,
-    viewportY: instance.terminal.buffer.active.viewportY,
-    selectionText: instance.terminal.getSelection(),
-    range: instance.terminal.getSelectionPosition(),
-  }),
+  setInspectPayloadFromSelection: (instance, selection) =>
+    setInspectPayloadFromSelection(instance, selection),
+  getRuntimeViewportSelection: (instance) =>
+    selectionFromTerminal({
+      viewportLineCount: instance.viewportLines.length,
+      terminalCols: instance.terminal.cols,
+      viewportY: instance.terminal.buffer.active.viewportY,
+      selectionText: instance.terminal.getSelection(),
+      range: instance.terminal.getSelectionPosition(),
+    }),
   resizeRuntime: (projectId, cols, rows) => {
     getCliSurfaceApi()?.resize(projectId, cols, rows);
   },
@@ -255,9 +259,11 @@ export function attachPaneBindings(): void {
     store,
     renderRuntimeMeta: (instance) => renderRuntimeMeta(instance),
     renderInspectState: (instance) => renderInspectState(instance),
-    setInspectPayloadFromSelection: (instance, selection) => setInspectPayloadFromSelection(instance, selection),
+    setInspectPayloadFromSelection: (instance, selection) =>
+      setInspectPayloadFromSelection(instance, selection),
     scheduleTerminalDataFlush: (instance) => scheduleTerminalDataFlush(instance),
-    updateRuntimeState: (projectId, state) => updateCliSurfaceRuntimeState(appState, projectId, state),
+    updateRuntimeState: (projectId, state) =>
+      updateCliSurfaceRuntimeState(appState, projectId, state),
     getRuntimeState: (projectId) => getCliSurfaceRuntimeState(appState, projectId),
     showComposerError: (instance, message) => showComposerError(instance, message),
   });
@@ -268,21 +274,24 @@ export function bindCliSurfaceInstanceHandlers(
   instance: CliSurfaceInstance,
   layout: CliSurfaceLayoutElements,
 ): void {
-  const helpers = createCliSurfaceComposerHelpers(
-    instance,
-    buildInspectPayload,
-    () => renderInspectState(instance),
+  const helpers = createCliSurfaceComposerHelpers(instance, buildInspectPayload, () =>
+    renderInspectState(instance),
   );
 
-  instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(instance, helpers);
+  instance.targetMenuController = createCliSurfaceTargetMenuControllerWithHandlers(
+    instance,
+    helpers,
+  );
   bindCliSurfaceRuntimeActionHandlers({
     projectId,
     context: instance,
     controls: layout,
-    resolveSelectedProfile: (nextProjectId) => resolveCliSurfaceSelectedProfile(appState, nextProjectId),
+    resolveSelectedProfile: (nextProjectId) =>
+      resolveCliSurfaceSelectedProfile(appState, nextProjectId),
     getCliSurfaceApi,
     renderInspectState: () => renderInspectState(instance),
-    setInspectPayloadFromSelection: (selection) => setInspectPayloadFromSelection(instance, selection),
+    setInspectPayloadFromSelection: (selection) =>
+      setInspectPayloadFromSelection(instance, selection),
     helpers,
   });
   bindCliSurfaceInspectActionHandlers({
@@ -303,21 +312,22 @@ export function bindCliSurfaceInstanceHandlers(
       }
       setInspectPayloadFromSelection(instance, selection);
     },
-    setInspectPayloadFromPointer: (event) => setInspectPayloadFromPointer(
-      instance,
-      event,
-      (selection) => setInspectPayloadFromSelection(instance, selection),
-    ),
+    setInspectPayloadFromPointer: (event) =>
+      setInspectPayloadFromPointer(instance, event, (selection) =>
+        setInspectPayloadFromSelection(instance, selection),
+      ),
     setHoverRegion: (region) => setHoverRegion(instance, region),
-    pointerToCell: (event) => pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
+    pointerToCell: (event) =>
+      pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event),
     findSelectableRegionAtCell: (cell) => findSelectableRegionAtCell(instance, cell),
-    selectionFromTerminal: () => selectionFromTerminal({
-      viewportLineCount: instance.viewportLines.length,
-      terminalCols: instance.terminal.cols,
-      viewportY: instance.terminal.buffer.active.viewportY,
-      selectionText: instance.terminal.getSelection(),
-      range: instance.terminal.getSelectionPosition(),
-    }),
+    selectionFromTerminal: () =>
+      selectionFromTerminal({
+        viewportLineCount: instance.viewportLines.length,
+        terminalCols: instance.terminal.cols,
+        viewportY: instance.terminal.buffer.active.viewportY,
+        selectionText: instance.terminal.getSelection(),
+        range: instance.terminal.getSelectionPosition(),
+      }),
     positionComposerNearPointer: (event) => {
       positionComposerNearPointerBehavior({
         paneEl: instance.element,
@@ -342,11 +352,13 @@ export function bindCliSurfaceInstanceHandlers(
 
 function initializeCliSurfaceInstance(instance: CliSurfaceInstance): void {
   store.instances.set(instance.projectId, instance);
-  instance.cleanupFns.push(enableComposerDraggingBehavior({
-    paneEl: instance.element,
-    composerEl: instance.composerEl,
-    handleEl: instance.composerHandleEl,
-  }));
+  instance.cleanupFns.push(
+    enableComposerDraggingBehavior({
+      paneEl: instance.element,
+      composerEl: instance.composerEl,
+      handleEl: instance.composerHandleEl,
+    }),
+  );
   syncViewportLines(instance);
   renderRuntimeMeta(instance);
   renderInspectState(instance);

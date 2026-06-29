@@ -1,10 +1,6 @@
 import { spawn } from 'child_process';
 
-import {
-  firstNonEmptyLine,
-  runCommand,
-  sleep,
-} from './mobile-inspector-helpers';
+import { firstNonEmptyLine, runCommand, sleep } from './mobile-inspector-helpers';
 import { whichCmd } from './platform';
 import { getFullPath } from './pty-manager';
 
@@ -18,7 +14,9 @@ function buildSpawnEnv(): NodeJS.ProcessEnv {
   return { ...process.env, PATH: getFullPath() };
 }
 
-async function isAppiumServerReachable(pathSuffix: '/status' | '/wd/hub/status' = '/status'): Promise<boolean> {
+async function isAppiumServerReachable(
+  pathSuffix: '/status' | '/wd/hub/status' = '/status',
+): Promise<boolean> {
   try {
     const response = await fetch(`${APPIUM_BASE_URL}${pathSuffix}`, { method: 'GET' });
     return response.ok;
@@ -33,10 +31,15 @@ async function resolveAppiumBinaryPath(): Promise<string | null> {
   return firstNonEmptyLine(whichResult.stdout, whichResult.stderr) || null;
 }
 
-async function waitForAppiumServerReady(timeoutMs: number = APPIUM_STARTUP_TIMEOUT_MS): Promise<boolean> {
+async function waitForAppiumServerReady(
+  timeoutMs: number = APPIUM_STARTUP_TIMEOUT_MS,
+): Promise<boolean> {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
-    if (await isAppiumServerReachable('/status') || await isAppiumServerReachable('/wd/hub/status')) {
+    if (
+      (await isAppiumServerReachable('/status')) ||
+      (await isAppiumServerReachable('/wd/hub/status'))
+    ) {
       return true;
     }
     await sleep(APPIUM_STARTUP_POLL_MS);
@@ -44,8 +47,14 @@ async function waitForAppiumServerReady(timeoutMs: number = APPIUM_STARTUP_TIMEO
   return false;
 }
 
-export async function ensureLocalAppiumServerReady(): Promise<{ success: boolean; message?: string }> {
-  if (await isAppiumServerReachable('/status') || await isAppiumServerReachable('/wd/hub/status')) {
+export async function ensureLocalAppiumServerReady(): Promise<{
+  success: boolean;
+  message?: string;
+}> {
+  if (
+    (await isAppiumServerReachable('/status')) ||
+    (await isAppiumServerReachable('/wd/hub/status'))
+  ) {
     return { success: true };
   }
 
@@ -53,7 +62,10 @@ export async function ensureLocalAppiumServerReady(): Promise<{ success: boolean
     const ready = await appiumStartupPromise;
     return ready
       ? { success: true }
-      : { success: false, message: 'Appium server is not reachable. Start Appium (`appium`) and retry.' };
+      : {
+          success: false,
+          message: 'Appium server is not reachable. Start Appium (`appium`) and retry.',
+        };
   }
 
   appiumStartupPromise = (async () => {
@@ -78,7 +90,10 @@ export async function ensureLocalAppiumServerReady(): Promise<{ success: boolean
     const ready = await appiumStartupPromise;
     return ready
       ? { success: true }
-      : { success: false, message: 'Appium server did not become ready. Start Appium manually and retry.' };
+      : {
+          success: false,
+          message: 'Appium server did not become ready. Start Appium manually and retry.',
+        };
   } finally {
     appiumStartupPromise = null;
   }

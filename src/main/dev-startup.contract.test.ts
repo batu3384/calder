@@ -1,7 +1,9 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const packageJson = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf-8')) as {
+const packageJson = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
+) as {
   scripts?: Record<string, string>;
 };
 

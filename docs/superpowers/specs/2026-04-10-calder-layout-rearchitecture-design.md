@@ -9,6 +9,7 @@
 Calder no longer has a major naming or color problem. The remaining resemblance is structural.
 
 The current shell still reads like an inherited app because it uses the same dominant pattern:
+
 - a dense left rail that mixes projects, setup controls, project health, git, history, and usage
 - a compact top tab bar with many equal-weight utility buttons
 - a central terminal/browser workspace framed as the only primary surface
@@ -20,6 +21,7 @@ This makes the product feel like a reskin even when colors, labels, and copy are
 Use a **Project Rail + Command Deck + Context Inspector** shell.
 
 This direction keeps Calder dense, technical, and fast, but changes the mental model:
+
 - **Project Rail:** the left side becomes a narrow workspace switcher, not the home for every utility.
 - **Command Deck:** the top bar becomes the primary command surface for session creation, session navigation, layout mode, search, and overflow tools.
 - **Context Inspector:** git, readiness, history, capabilities, setup status, and related signals move into a contextual right drawer or inspector surface.
@@ -60,47 +62,49 @@ This gives Calder a new product silhouette without rewriting the core applicatio
 
 ## Surface Inventory And Treatment
 
-| Surface | Current Role | Decision | Target Placement |
-| --- | --- | --- | --- |
-| Project list | Switches active project and shows path/session count | Keep, simplify | Left project rail |
-| Add project | Creates a workspace/project | Keep | Left rail header or command deck |
-| Preferences | Global settings modal | Keep | Command deck overflow and app menu |
-| Workspace Controls | MCP servers, agents, skills, commands | Keep, move | Context inspector: Capabilities |
-| AI Readiness | Project readiness scan and score | Keep, move | Context inspector: Health, plus compact top status badge |
-| Git Changes | File status, staging, diff opening, worktree selector | Keep, move details | Compact top git chip plus Context inspector: Git |
-| Session History | Resume, bookmark, filter, clear history | Keep, move | Context inspector: Activity or command palette |
-| Cost footer | Aggregate cost | Keep, demote | Command deck status or usage modal |
-| Tab list | Active session navigation | Keep | Command deck main row |
-| New Session action | Primary creation path | Keep, emphasize | Command deck primary action |
-| Help | Explains indicators and shortcuts | Keep, demote | Command deck overflow |
-| Usage Stats | Usage analytics modal | Keep, demote and clean provider-specific copy | Command deck overflow or status area |
-| Project terminal toggle | Opens bottom shell | Keep | Command deck secondary action |
-| MCP Inspector action | Creates MCP inspector session | Keep, demote | Command deck overflow or Capabilities inspector |
-| Swarm toggle | Switches layout mode | Keep | Command deck layout control |
-| Terminal session pane | Primary CLI session | Keep | Workspace canvas |
-| Browser session pane | Embedded browser, inspect, draw, record flow | Keep, refine later | Workspace canvas |
-| Diff viewer | Shows git diff | Keep | Workspace canvas |
-| File reader | Read-only file and markdown viewer | Keep | Workspace canvas |
-| MCP inspector pane | Inspect MCP tools/resources/prompts | Keep | Workspace canvas |
-| Remote terminal pane | P2P shared terminal | Keep | Workspace canvas |
-| Session inspector | Timeline/cost/tools/context drawer | Keep, align | Right inspector family |
-| Search bar | In-session search | Keep | Local overlay inside active pane |
-| Quick open | File search overlay | Keep | Command palette / command deck |
-| Alerts | Missing tools, large files, settings warnings | Keep | Local contextual banners |
-| Debug panel | Developer event log | Keep, hidden by debug mode | Developer-only bottom panel |
-| Update banner | App update state | Keep | Main area banner |
+| Surface                 | Current Role                                          | Decision                                      | Target Placement                                         |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------- |
+| Project list            | Switches active project and shows path/session count  | Keep, simplify                                | Left project rail                                        |
+| Add project             | Creates a workspace/project                           | Keep                                          | Left rail header or command deck                         |
+| Preferences             | Global settings modal                                 | Keep                                          | Command deck overflow and app menu                       |
+| Workspace Controls      | MCP servers, agents, skills, commands                 | Keep, move                                    | Context inspector: Capabilities                          |
+| AI Readiness            | Project readiness scan and score                      | Keep, move                                    | Context inspector: Health, plus compact top status badge |
+| Git Changes             | File status, staging, diff opening, worktree selector | Keep, move details                            | Compact top git chip plus Context inspector: Git         |
+| Session History         | Resume, bookmark, filter, clear history               | Keep, move                                    | Context inspector: Activity or command palette           |
+| Cost footer             | Aggregate cost                                        | Keep, demote                                  | Command deck status or usage modal                       |
+| Tab list                | Active session navigation                             | Keep                                          | Command deck main row                                    |
+| New Session action      | Primary creation path                                 | Keep, emphasize                               | Command deck primary action                              |
+| Help                    | Explains indicators and shortcuts                     | Keep, demote                                  | Command deck overflow                                    |
+| Usage Stats             | Usage analytics modal                                 | Keep, demote and clean provider-specific copy | Command deck overflow or status area                     |
+| Project terminal toggle | Opens bottom shell                                    | Keep                                          | Command deck secondary action                            |
+| MCP Inspector action    | Creates MCP inspector session                         | Keep, demote                                  | Command deck overflow or Capabilities inspector          |
+| Swarm toggle            | Switches layout mode                                  | Keep                                          | Command deck layout control                              |
+| Terminal session pane   | Primary CLI session                                   | Keep                                          | Workspace canvas                                         |
+| Browser session pane    | Embedded browser, inspect, draw, record flow          | Keep, refine later                            | Workspace canvas                                         |
+| Diff viewer             | Shows git diff                                        | Keep                                          | Workspace canvas                                         |
+| File reader             | Read-only file and markdown viewer                    | Keep                                          | Workspace canvas                                         |
+| MCP inspector pane      | Inspect MCP tools/resources/prompts                   | Keep                                          | Workspace canvas                                         |
+| Remote terminal pane    | P2P shared terminal                                   | Keep                                          | Workspace canvas                                         |
+| Session inspector       | Timeline/cost/tools/context drawer                    | Keep, align                                   | Right inspector family                                   |
+| Search bar              | In-session search                                     | Keep                                          | Local overlay inside active pane                         |
+| Quick open              | File search overlay                                   | Keep                                          | Command palette / command deck                           |
+| Alerts                  | Missing tools, large files, settings warnings         | Keep                                          | Local contextual banners                                 |
+| Debug panel             | Developer event log                                   | Keep, hidden by debug mode                    | Developer-only bottom panel                              |
+| Update banner           | App update state                                      | Keep                                          | Main area banner                                         |
 
 ## Target Information Architecture
 
 ### Left Project Rail
 
 The left side should stop being a mixed utility sidebar. It should contain:
+
 - Calder brand/project label
 - project switcher list
 - add project
 - optional compact aggregate state only if it does not compete with project navigation
 
 It should not contain:
+
 - full git file lists
 - full readiness categories
 - full history search
@@ -112,6 +116,7 @@ It should not contain:
 The top chrome should become Calder's command surface.
 
 It should contain:
+
 - session tabs
 - primary `New Session` action
 - layout mode control
@@ -126,6 +131,7 @@ The command deck should reduce equal-weight icon clutter. The current row has to
 The right-side inspector should be the home for secondary project intelligence.
 
 Initial inspector sections:
+
 - **Health:** AI Readiness score, categories, rescan, fix actions
 - **Git:** file changes, worktree selector, stage/unstage/discard/open diff
 - **Activity:** session history, bookmarks, resume actions
@@ -136,6 +142,7 @@ The existing Session Inspector can remain a session-specific inspector, but the 
 ### Workspace Canvas
 
 Keep the existing workspace rendering strategy:
+
 - tab mode
 - split mode
 - swarm mode
@@ -156,6 +163,7 @@ It should be visually labeled as a scratch/project shell so it does not feel lik
 ## Visual Direction
 
 The new layout should feel:
+
 - compact
 - engineered
 - serious
@@ -164,6 +172,7 @@ The new layout should feel:
 - more like a professional command surface than a sidebar-heavy clone
 
 Avoid:
+
 - generic AI cards
 - purple gradient styling
 - oversized hero empty states
@@ -200,6 +209,7 @@ The visual change should come from layout silhouette, hierarchy, and rhythm, not
 The highest risk is breaking mature interaction paths while moving containers.
 
 Mitigation:
+
 - Preserve existing renderer component modules where possible.
 - Move container placement before changing component internals.
 - Keep event wiring and state events stable.
@@ -209,6 +219,7 @@ Mitigation:
 ## Verification Plan
 
 Minimum verification after implementation:
+
 - `npm run build`
 - full Vitest suite
 - shell contract tests updated for the new Project Rail / Command Deck / Context Inspector structure
@@ -227,6 +238,7 @@ Minimum verification after implementation:
 ## Success Criteria
 
 This work succeeds when:
+
 - Calder no longer looks like a left-sidebar clone of the old product.
 - The app keeps the same core behavior.
 - The left side reads as a project rail, not a catch-all utility panel.

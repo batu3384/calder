@@ -107,6 +107,7 @@ Create or modify these files:
 ### Task 1: Add Surface Types And Failing State Contracts
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/shared/types.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.test.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.test.ts`
@@ -179,7 +180,10 @@ it('lists and resolves targetable surface sessions without using browser-tab sta
     cli: { profiles: [], runtime: { status: 'idle' } },
   });
 
-  expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([first.id, second.id]);
+  expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([
+    first.id,
+    second.id,
+  ]);
   expect(appState.resolveSurfaceTargetSession(project.id)?.id).toBe(second.id);
 });
 ```
@@ -316,6 +320,7 @@ git commit -m "test: define cli surface contracts"
 ### Task 2: Implement Project Surface State, Migration, And Targeting
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.test.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.test.ts`
@@ -333,7 +338,9 @@ it('keeps browser wrapper helpers working through surface state', async () => {
   appState.setSurfaceTargetSession(project.id, target.id);
 
   expect(appState.resolveBrowserTargetSession(browser.id)?.id).toBe(target.id);
-  expect(appState.listBrowserTargetSessions(browser.id).map((session) => session.id)).toContain(target.id);
+  expect(appState.listBrowserTargetSessions(browser.id).map((session) => session.id)).toContain(
+    target.id,
+  );
 });
 
 it('does not persist transient cli runtime process data', async () => {
@@ -344,7 +351,12 @@ it('does not persist transient cli runtime process data', async () => {
     cli: {
       selectedProfileId: 'tui',
       profiles: [{ id: 'tui', name: 'TUI', command: 'npm', args: ['run', 'dev:tui'] }],
-      runtime: { status: 'running', runtimeId: 'cli-surface:project-1', command: 'npm', args: ['run', 'dev:tui'] },
+      runtime: {
+        status: 'running',
+        runtimeId: 'cli-surface:project-1',
+        command: 'npm',
+        args: ['run', 'dev:tui'],
+      },
     },
   });
 
@@ -369,7 +381,9 @@ Add these helpers near `normalizeProjectLayout`:
 
 ```ts
 function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
-  const browserSession = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  const browserSession = [...project.sessions]
+    .reverse()
+    .find((session) => session.type === 'browser-tab');
   const existing = project.surface;
   const fallbackTarget = browserSession?.browserTargetSessionId;
 
@@ -380,7 +394,9 @@ function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
     web: {
       sessionId: existing?.web?.sessionId ?? browserSession?.id,
       url: existing?.web?.url ?? browserSession?.browserTabUrl,
-      history: existing?.web?.history ?? (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []),
+      history:
+        existing?.web?.history ??
+        (browserSession?.browserTabUrl ? [browserSession.browserTabUrl] : []),
     },
     cli: {
       selectedProfileId: existing?.cli?.selectedProfileId,
@@ -500,6 +516,7 @@ npm run build && npm test
 ```
 
 Expected:
+
 - `src/renderer/state.test.ts` passes
 - full build and test suite pass
 
@@ -513,6 +530,7 @@ git commit -m "feat: add project surface state foundation"
 ### Task 3: Extract Shared Surface Prompt Routing And Preserve Browser Behavior
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/surface-routing.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/surface-routing.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/session-integration.ts`
@@ -548,7 +566,12 @@ describe('surface routing', () => {
   it('delivers prompts to the selected surface target', async () => {
     const project = appState.addProject('/tmp/cli-surface')!;
     const target = appState.addSession(project.id, 'Claude');
-    appState.setProjectSurface(project.id, { kind: 'cli', active: true, targetSessionId: target.id, cli: { profiles: [], runtime: { status: 'idle' } } });
+    appState.setProjectSurface(project.id, {
+      kind: 'cli',
+      active: true,
+      targetSessionId: target.id,
+      cli: { profiles: [], runtime: { status: 'idle' } },
+    });
 
     const result = await deliverSurfacePrompt(project.id, 'inspect this footer');
 
@@ -583,7 +606,10 @@ Create `/Users/batuhanyuksel/Documents/browser/src/renderer/components/surface-r
 
 ```ts
 import { appState } from '../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch,
+} from '../provider-availability.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './terminal-pane.js';
 import { promptNewSession } from './tab-bar.js';
 
@@ -594,7 +620,10 @@ function preferredProvider() {
   );
 }
 
-export async function deliverSurfacePrompt(projectId: string, prompt: string): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
+export async function deliverSurfacePrompt(
+  projectId: string,
+  prompt: string,
+): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
   const targetSession = appState.resolveSurfaceTargetSession(projectId);
   if (!targetSession) {
     return { ok: false, error: 'Select an open session target first.' };
@@ -607,7 +636,11 @@ export async function deliverSurfacePrompt(projectId: string, prompt: string): P
   return { ok: true, targetSessionId: targetSession.id };
 }
 
-export function queueSurfacePromptInNewSession(projectId: string, sessionName: string, prompt: string) {
+export function queueSurfacePromptInNewSession(
+  projectId: string,
+  sessionName: string,
+  prompt: string,
+) {
   const session = appState.addPlanSession(projectId, sessionName, preferredProvider());
   if (session) {
     setPendingPrompt(session.id, prompt);
@@ -626,7 +659,11 @@ export function queueSurfacePromptInCustomSession(prompt: string, onReady: () =>
 Then refactor `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/session-integration.ts`:
 
 ```ts
-import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
+import {
+  deliverSurfacePrompt,
+  queueSurfacePromptInCustomSession,
+  queueSurfacePromptInNewSession,
+} from '../surface-routing.js';
 
 async function sendPromptToSelectedSession(
   instance: BrowserTabInstance,
@@ -653,7 +690,11 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
   const prompt = buildPrompt(instance);
   const project = appState.activeProject;
   if (!info || !prompt || !project) return;
-  queueSurfacePromptInNewSession(project.id, `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`, prompt);
+  queueSurfacePromptInNewSession(
+    project.id,
+    `${info.tagName}: ${instance.instructionInput.value.trim().slice(0, 30)}`,
+    prompt,
+  );
   dismissInspect(instance);
 }
 
@@ -684,6 +725,7 @@ git commit -m "refactor: share surface prompt routing"
 ### Task 4: Add A Dedicated CLI Surface Runtime API
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/pty-manager.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/pty-manager.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/cli-surface-runtime.ts`
@@ -747,12 +789,21 @@ describe('cli surface runtime manager', () => {
       expect.any(Function),
       expect.any(Function),
     );
-    expect(emit.status).toHaveBeenCalledWith('project-1', expect.objectContaining({ status: 'starting' }));
+    expect(emit.status).toHaveBeenCalledWith(
+      'project-1',
+      expect.objectContaining({ status: 'starting' }),
+    );
   });
 
   it('proxies write, resize, and stop to the active runtime id', () => {
     const manager = createCliSurfaceRuntimeManager(emit);
-    manager.start('project-1', { id: 'bubbletea', name: 'Bubble Tea', command: 'go', args: ['run', './cmd/app'], cwd: '/tmp/demo' });
+    manager.start('project-1', {
+      id: 'bubbletea',
+      name: 'Bubble Tea',
+      command: 'go',
+      args: ['run', './cmd/app'],
+      cwd: '/tmp/demo',
+    });
 
     manager.write('project-1', 'j');
     manager.resize('project-1', 160, 48);
@@ -798,7 +849,10 @@ export function spawnCommandPty(
     killPty(sessionId);
   }
 
-  const env = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
+  const env = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<
+    string,
+    string
+  >;
   const ptyProcess = pty.spawn(launch.command, launch.args ?? [], {
     name: 'xterm-256color',
     cols: launch.cols ?? 120,
@@ -944,10 +998,19 @@ In `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`, instantiat
 
 ```ts
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
-  data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
-  exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
-  status: (projectId, state) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
-  error: (projectId, message) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
+  data: (projectId, data) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
+  exit: (projectId, exitCode, signal) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'cli-surface:exit',
+      projectId,
+      exitCode,
+      signal,
+    ),
+  status: (projectId, state) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
+  error: (projectId, message) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
 });
 
 ipcMain.handle('cli-surface:start', (_event, projectId, profile) => {
@@ -977,6 +1040,7 @@ npm run build && npm test
 ```
 
 Expected:
+
 - runtime-focused tests pass
 - full build and test suite pass
 
@@ -990,6 +1054,7 @@ git commit -m "feat: add cli surface runtime api"
 ### Task 5: Render The Left-Side CLI Surface Without Breaking Live View
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/surface-host.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/surface-host.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`
@@ -1034,7 +1099,12 @@ describe('surface host', () => {
         activeSessionId: 'claude-1',
         sessions: [],
         layout: { mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' },
-        surface: { kind: 'web', active: true, web: { sessionId: 'browser-1', url: 'http://localhost:3000' }, cli: { profiles: [], runtime: { status: 'idle' } } },
+        surface: {
+          kind: 'web',
+          active: true,
+          web: { sessionId: 'browser-1', url: 'http://localhost:3000' },
+          cli: { profiles: [], runtime: { status: 'idle' } },
+        },
       } as any,
       container,
     );
@@ -1053,7 +1123,15 @@ describe('surface host', () => {
         activeSessionId: 'claude-1',
         sessions: [],
         layout: { mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' },
-        surface: { kind: 'cli', active: true, cli: { selectedProfileId: 'textual', profiles: [{ id: 'textual', name: 'Textual', command: 'python' }], runtime: { status: 'idle' } } },
+        surface: {
+          kind: 'cli',
+          active: true,
+          cli: {
+            selectedProfileId: 'textual',
+            profiles: [{ id: 'textual', name: 'Textual', command: 'python' }],
+            runtime: { status: 'idle' },
+          },
+        },
       } as any,
       container,
     );
@@ -1257,6 +1335,7 @@ git commit -m "feat: render cli surface shell"
 ### Task 6: Implement V1 Selection, Snapshot, And Inspect Composer State
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/selection.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/selection.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/inspect-mode.ts`
@@ -1282,15 +1361,21 @@ const lines = [
 
 describe('cli surface selection helpers', () => {
   it('returns full lines for line mode', () => {
-    expect(buildSelectionText(lines, { mode: 'line', startRow: 1, endRow: 2, startCol: 0, endCol: 80 })).toBe(
-      '│ Theme: midnight         │\n│ Accent: amber           │',
-    );
+    expect(
+      buildSelectionText(lines, { mode: 'line', startRow: 1, endRow: 2, startCol: 0, endCol: 80 }),
+    ).toBe('│ Theme: midnight         │\n│ Accent: amber           │');
   });
 
   it('clips a rectangular region by columns', () => {
-    expect(buildSelectionText(lines, { mode: 'region', startRow: 1, endRow: 2, startCol: 2, endCol: 15 })).toBe(
-      'Theme: midnig\nAccent: amber',
-    );
+    expect(
+      buildSelectionText(lines, {
+        mode: 'region',
+        startRow: 1,
+        endRow: 2,
+        startCol: 2,
+        endCol: 15,
+      }),
+    ).toBe('Theme: midnig\nAccent: amber');
   });
 
   it('returns the full visible viewport for viewport mode', () => {
@@ -1346,9 +1431,7 @@ export function buildSelectionText(lines: string[], selection: SurfaceSelectionR
   if (selection.mode === 'viewport' || selection.mode === 'line') {
     return relevant.join('\n');
   }
-  return relevant
-    .map((line) => line.slice(selection.startCol, selection.endCol))
-    .join('\n');
+  return relevant.map((line) => line.slice(selection.startCol, selection.endCol)).join('\n');
 }
 
 function buildNearbyText(lines: string[], selection: SurfaceSelectionRange): string {
@@ -1485,6 +1568,7 @@ git commit -m "feat: add cli surface inspect selection"
 ### Task 7: Deliver CLI Surface Prompts Into Selected Sessions And Ship V1
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/session-integration.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/session-integration.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`
@@ -1505,8 +1589,16 @@ vi.mock('../surface-routing.js', () => ({
   queueSurfacePromptInCustomSession: vi.fn(),
 }));
 
-import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
-import { sendCliSelectionToSelectedSession, sendCliSelectionToNewSession, sendCliSelectionToCustomSession } from './session-integration.js';
+import {
+  deliverSurfacePrompt,
+  queueSurfacePromptInCustomSession,
+  queueSurfacePromptInNewSession,
+} from '../surface-routing.js';
+import {
+  sendCliSelectionToSelectedSession,
+  sendCliSelectionToNewSession,
+  sendCliSelectionToCustomSession,
+} from './session-integration.js';
 
 describe('cli surface session integration', () => {
   const payload = {
@@ -1525,7 +1617,10 @@ describe('cli surface session integration', () => {
 
   it('delivers the built inspect prompt to the selected session', async () => {
     await sendCliSelectionToSelectedSession(payload);
-    expect(deliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('Theme: midnight'));
+    expect(deliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Theme: midnight'),
+    );
   });
 
   it('can route the same selection into a new session', () => {
@@ -1556,7 +1651,11 @@ Create `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surfa
 
 ```ts
 import type { SurfacePromptPayload } from '../../../shared/types.js';
-import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
+import {
+  deliverSurfacePrompt,
+  queueSurfacePromptInCustomSession,
+  queueSurfacePromptInNewSession,
+} from '../surface-routing.js';
 
 function buildCliInspectPrompt(payload: SurfacePromptPayload): string {
   return [
@@ -1582,10 +1681,17 @@ export async function sendCliSelectionToSelectedSession(payload: SurfacePromptPa
 }
 
 export function sendCliSelectionToNewSession(payload: SurfacePromptPayload, sessionName: string) {
-  return queueSurfacePromptInNewSession(payload.projectId, sessionName, buildCliInspectPrompt(payload));
+  return queueSurfacePromptInNewSession(
+    payload.projectId,
+    sessionName,
+    buildCliInspectPrompt(payload),
+  );
 }
 
-export function sendCliSelectionToCustomSession(payload: SurfacePromptPayload, onReady: () => void) {
+export function sendCliSelectionToCustomSession(
+  payload: SurfacePromptPayload,
+  onReady: () => void,
+) {
   return queueSurfacePromptInCustomSession(buildCliInspectPrompt(payload), onReady);
 }
 ```
@@ -1593,13 +1699,17 @@ export function sendCliSelectionToCustomSession(payload: SurfacePromptPayload, o
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`, connect the inspect composer buttons:
 
 ```ts
-import { sendCliSelectionToCustomSession, sendCliSelectionToNewSession, sendCliSelectionToSelectedSession } from './session-integration.js';
+import {
+  sendCliSelectionToCustomSession,
+  sendCliSelectionToNewSession,
+  sendCliSelectionToSelectedSession,
+} from './session-integration.js';
 
 // after a payload exists
 selectedButton.addEventListener('click', async () => {
   if (!instance.inspectState.payload) return;
   const result = await sendCliSelectionToSelectedSession(instance.inspectState.payload);
-  errorEl.textContent = result.ok ? '' : result.error ?? 'Failed to send prompt.';
+  errorEl.textContent = result.ok ? '' : (result.error ?? 'Failed to send prompt.');
 });
 
 newButton.addEventListener('click', () => {
@@ -1625,6 +1735,7 @@ npm run build && npm test
 ```
 
 Expected:
+
 - CLI and browser surface routing tests pass
 - full build and test suite pass
 
@@ -1638,6 +1749,7 @@ git commit -m "feat: ship cli surface v1"
 ### Task 8: Add V2 Heuristics For TUI Region Inference
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/heuristics.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/heuristics.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`
@@ -1706,7 +1818,10 @@ export function inferCliRegions(lines: string[]): InferredCliRegion[] {
   const regions: InferredCliRegion[] = [];
 
   const boxedStart = lines.findIndex((line) => /^[╭┌]/.test(line));
-  const boxedEnd = boxedStart >= 0 ? lines.findIndex((line, index) => index >= boxedStart && /^[╰└]/.test(line)) : -1;
+  const boxedEnd =
+    boxedStart >= 0
+      ? lines.findIndex((line, index) => index >= boxedStart && /^[╰└]/.test(line))
+      : -1;
   if (boxedStart >= 0 && boxedEnd >= boxedStart) {
     regions.push({
       label: 'settings panel',
@@ -1720,7 +1835,9 @@ export function inferCliRegions(lines: string[]): InferredCliRegion[] {
     });
   }
 
-  const footerRow = lines.findIndex((line) => /\[[^\]]+\]/.test(line) && /(restart|quit|open|save|cancel)/i.test(line));
+  const footerRow = lines.findIndex(
+    (line) => /\[[^\]]+\]/.test(line) && /(restart|quit|open|save|cancel)/i.test(line),
+  );
   if (footerRow >= 0) {
     regions.push({
       label: 'footer actions',
@@ -1744,7 +1861,11 @@ Then in `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surf
 import { inferCliRegions } from './heuristics.js';
 
 const inferred = inferCliRegions(instance.viewportLines);
-const selectionHint = inferred.find((candidate) => candidate.selection.startRow <= selection.startRow && candidate.selection.endRow >= selection.endRow);
+const selectionHint = inferred.find(
+  (candidate) =>
+    candidate.selection.startRow <= selection.startRow &&
+    candidate.selection.endRow >= selection.endRow,
+);
 
 instance.inspectState = setInspectPayload(
   instance.inspectState,
@@ -1776,6 +1897,7 @@ git commit -m "feat: add cli surface heuristics"
 ### Task 9: Add V3 Framework Adapters For Textual, Ink, And Blessed
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/adapters/registry.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/adapters/registry.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/adapters/textual.ts`
@@ -1794,15 +1916,21 @@ import { detectCliAdapter } from './registry.js';
 
 describe('cli surface adapters', () => {
   it('detects Textual from the launch command', () => {
-    expect(detectCliAdapter({ command: 'python', args: ['-m', 'textual', 'run', 'app.py'] })?.id).toBe('textual');
+    expect(
+      detectCliAdapter({ command: 'python', args: ['-m', 'textual', 'run', 'app.py'] })?.id,
+    ).toBe('textual');
   });
 
   it('detects Ink from the process title', () => {
-    expect(detectCliAdapter({ command: 'node', args: ['dist/cli.js'], title: 'ink-app' })?.id).toBe('ink');
+    expect(detectCliAdapter({ command: 'node', args: ['dist/cli.js'], title: 'ink-app' })?.id).toBe(
+      'ink',
+    );
   });
 
   it('detects Blessed from explicit metadata', () => {
-    expect(detectCliAdapter({ command: 'node', args: ['cli.js'], adapterHint: 'blessed' })?.id).toBe('blessed');
+    expect(
+      detectCliAdapter({ command: 'node', args: ['cli.js'], adapterHint: 'blessed' })?.id,
+    ).toBe('blessed');
   });
 });
 ```
@@ -1880,7 +2008,9 @@ Create `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surfa
 export const blessedAdapter = {
   id: 'blessed',
   detect(input) {
-    return input.adapterHint === 'blessed' || (input.args ?? []).some((arg) => /blessed/i.test(arg));
+    return (
+      input.adapterHint === 'blessed' || (input.args ?? []).some((arg) => /blessed/i.test(arg))
+    );
   },
   enrich(meta) {
     return { ...meta, framework: 'Blessed' };
@@ -1922,6 +2052,7 @@ git commit -m "feat: add cli surface adapters"
 ### Task 10: Add V4 Calder Semantic Inspect Protocol
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/protocol.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/protocol.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-12-calder-cli-surface-protocol.md`
@@ -2009,7 +2140,7 @@ export function parseCalderOsc(input: string): CalderProtocolMessage | null {
 
 Create `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-12-calder-cli-surface-protocol.md`:
 
-```markdown
+````markdown
 # Calder CLI Surface Protocol
 
 **Date:** 2026-04-12
@@ -2037,6 +2168,7 @@ Create `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-12
   "meta": { "framework": "Calder" }
 }
 ```
+````
 
 ### Focus
 
@@ -2057,7 +2189,8 @@ Create `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-12
   "meta": { "screen": "settings", "dirty": false }
 }
 ```
-```
+
+````
 
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`, reserve protocol metadata:
 
@@ -2074,7 +2207,7 @@ window.calder.cliSurface.onData((projectId, data) => {
   }
   // existing terminal write path continues here
 });
-```
+````
 
 - [ ] **Step 4: Run the protocol tests and then the build plus full tests**
 
@@ -2086,6 +2219,7 @@ npm run build && npm test
 ```
 
 Expected:
+
 - protocol tests pass
 - full build and test suite pass
 

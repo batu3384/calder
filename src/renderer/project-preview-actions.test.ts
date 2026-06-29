@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockLoad,
-  mockSave,
-  mockRestartCliSurface,
-} = vi.hoisted(() => ({
+const { mockLoad, mockSave, mockRestartCliSurface } = vi.hoisted(() => ({
   mockLoad: vi.fn(),
   mockSave: vi.fn(),
   mockRestartCliSurface: vi.fn(),
@@ -37,7 +33,7 @@ import {
   openWorkspaceShellLogs,
   restartPreviewRuntime,
 } from './project-preview-actions.js';
-import { _resetForTesting,appState } from './state.js';
+import { _resetForTesting, appState } from './state.js';
 
 describe('project preview actions', () => {
   beforeEach(() => {

@@ -66,7 +66,10 @@ function createClassList(initial = ''): MockClassList {
     toString: () => Array.from(set).join(' '),
     setFromString: (input: string) => {
       set.clear();
-      input.split(/\s+/).filter(Boolean).forEach((token) => set.add(token));
+      input
+        .split(/\s+/)
+        .filter(Boolean)
+        .forEach((token) => set.add(token));
     },
   };
 }
@@ -189,7 +192,9 @@ describe('config-sections-auto-approval helpers', () => {
     expect(body.children[0].innerHTML).toContain('Still asks: Every edit, command, and tool run.');
     expect(body.children[3].innerHTML).toContain('Auto-runs: Non-destructive operations.');
     expect(body.children[3].innerHTML).toContain('Still asks: Destructive actions.');
-    expect(body.children[4].innerHTML).toContain('Auto-runs: Everything, including destructive actions.');
+    expect(body.children[4].innerHTML).toContain(
+      'Auto-runs: Everything, including destructive actions.',
+    );
     expect(body.children[4].innerHTML).toContain('Still asks: Nothing by policy.');
 
     await toggle.dispatch('click');

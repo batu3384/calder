@@ -9,6 +9,7 @@
 Calder is not a chat toy, a generic AI shell, or a note-taking app.
 
 It is a desktop command surface for AI-assisted development work:
+
 - multiple CLI providers
 - projects and sessions
 - split workspace behavior
@@ -16,6 +17,7 @@ It is a desktop command surface for AI-assisted development work:
 - git, readiness, history, and config visibility
 
 The UI should therefore feel like:
+
 - a serious desktop tool
 - a control surface
 - dense but deliberate
@@ -27,11 +29,13 @@ The UI should therefore feel like:
 The chosen direction is **Precision Cockpit**.
 
 This direction combines:
+
 - Apple macOS productivity clarity
 - Linear-style consistency and restraint
 - Cursor/Raycast-style modern technical polish
 
 It should create an interface that feels:
+
 - sharper
 - more structured
 - more premium
@@ -39,6 +43,7 @@ It should create an interface that feels:
 - more obviously "Calder"
 
 without turning into:
+
 - glossy AI slop
 - neon dashboard UI
 - oversized cards everywhere
@@ -58,10 +63,11 @@ without turning into:
 
 The current UI is strong structurally but under-authored visually.
 
-The redesign should not change what the app *is*.
-It should change how clearly and confidently the app *expresses itself*.
+The redesign should not change what the app _is_.
+It should change how clearly and confidently the app _expresses itself_.
 
 That means:
+
 - stronger visual hierarchy
 - more deliberate pane chrome
 - better section rhythm
@@ -100,6 +106,7 @@ The new color system should be built around four layers:
 ### Typography
 
 Typography should remain tool-oriented, but more refined:
+
 - stronger weight hierarchy
 - better casing and letter-spacing for labels
 - slightly more premium text rhythm
@@ -111,6 +118,7 @@ Its job is precision, not personality theater.
 ### Shape and Surface Language
 
 The new shell should use:
+
 - small to medium radii
 - more consistent corner treatment
 - slightly more elevation in overlays
@@ -122,6 +130,7 @@ This should feel engineered, not soft.
 ### Motion
 
 Motion should remain subtle and sparse:
+
 - hover and active transitions
 - cleaner modal and dropdown appearance
 - no ornamental or showy animations
@@ -131,6 +140,7 @@ The app should feel responsive, not animated for attention.
 ## Layout Strategy
 
 The application should preserve its existing macro-layout:
+
 - narrow control sidebar
 - compact top tab/action strip
 - large primary workspace
@@ -140,6 +150,7 @@ But the chrome should be redesigned to feel more intentional.
 ### Sidebar
 
 The sidebar should evolve from "stack of dense sections" into a stronger control tower:
+
 - tighter section rhythm
 - clearer section headers
 - stronger active row treatment
@@ -151,6 +162,7 @@ The sidebar should feel closer to a premium operations rail than a plain file tr
 ### Top Bar / Tabs
 
 The tab bar should become cleaner and more authoritative:
+
 - better tab spacing
 - more intentional selected tab presence
 - cleaner action-button grouping
@@ -161,6 +173,7 @@ The top chrome should visually anchor the app.
 ### Workspace
 
 The workspace should feel more framed and less empty:
+
 - stronger pane edges
 - more deliberate browser/terminal shell
 - cleaner empty-state presentation
@@ -173,6 +186,7 @@ The workspace must remain the dominant visual mass.
 ### Main Shell
 
 Main shell changes should include:
+
 - fully revised dark theme system
 - stronger contrast layering
 - refined sidebar and tab chrome
@@ -184,6 +198,7 @@ Main shell changes should include:
 The browser session surface should be redesigned because it is currently one of the most visible product faces.
 
 Improvements should include:
+
 - more refined control row
 - better spacing between address bar and tools
 - more premium empty-state composition
@@ -192,6 +207,7 @@ Improvements should include:
 ### Terminal Surface
 
 Terminal panes should look more productized:
+
 - cleaner pane outlines
 - better focused vs unfocused state
 - stronger session status bar styling
@@ -200,6 +216,7 @@ Terminal panes should look more productized:
 ### Preferences
 
 Preferences should become a clear flagship modal:
+
 - stronger left menu hierarchy
 - more polished section spacing
 - better field density
@@ -210,6 +227,7 @@ This is one of the best places to visibly communicate product quality.
 ### New Project / Utility Modals
 
 Shared modals should all inherit a cleaner system:
+
 - stronger header-body-footer structure
 - better input styling
 - improved select/dropdown styling
@@ -218,6 +236,7 @@ Shared modals should all inherit a cleaner system:
 ### Readiness / Git / History / Alerts
 
 These secondary utility surfaces should become more legible and more coherent:
+
 - compact but cleaner badges
 - improved progress and semantic color use
 - less ad hoc styling between components
@@ -226,12 +245,14 @@ These secondary utility surfaces should become more legible and more coherent:
 ## Brand Expression
 
 The redesign should make Calder feel like its own product through:
+
 - a more distinctive shell tone
 - stronger signature accent discipline
 - a more deliberate empty-state and top-level chrome identity
 - no residue from the previous product's visual habits
 
 The brand should be visible in:
+
 - the tone of the shell
 - the confidence of the layout
 - the consistency of the interaction surfaces
@@ -241,6 +262,7 @@ not through logos or gimmicks.
 ## What Should Change Significantly
 
 The following areas should feel materially different after this redesign:
+
 - sidebar identity and readability
 - tab/header chrome quality
 - overall color balance
@@ -252,6 +274,7 @@ The following areas should feel materially different after this redesign:
 ## What Should Not Change
 
 The following must remain conceptually the same:
+
 - project/session mental model
 - side-panel ordering
 - quick new-session behavior
@@ -267,6 +290,7 @@ This redesign should be executed in layers.
 ### Layer 1: Theme Foundation
 
 Create a stronger shared design token system:
+
 - shell palette
 - elevation tokens
 - border strengths
@@ -278,6 +302,7 @@ Create a stronger shared design token system:
 ### Layer 2: Shared Controls
 
 Standardize:
+
 - buttons
 - icon buttons
 - inputs
@@ -289,6 +314,7 @@ Standardize:
 ### Layer 3: Shell Chrome
 
 Rework:
+
 - sidebar
 - tab bar
 - global action strip
@@ -297,6 +323,7 @@ Rework:
 ### Layer 4: High-Visibility Surfaces
 
 Redesign:
+
 - browser session UI
 - preferences
 - new project modal
@@ -305,6 +332,7 @@ Redesign:
 ### Layer 5: Detail Pass
 
 Refine:
+
 - alerts
 - progress bars
 - secondary lists
@@ -314,6 +342,7 @@ Refine:
 ## Risks
 
 The main risks are:
+
 - making the UI too soft
 - accidentally creating a generic AI app look
 - breaking compact density
@@ -323,6 +352,7 @@ The main risks are:
 ## Risk Controls
 
 To avoid those risks:
+
 - preserve DOM structure where possible
 - prefer systemic restyling over component-by-component improvisation
 - keep density high
@@ -333,6 +363,7 @@ To avoid those risks:
 ## Verification
 
 Verification should include:
+
 - full build
 - full test suite
 - repo search to ensure old-brand runtime residue stays removed
@@ -347,6 +378,7 @@ Verification should include:
 ## Success Criteria
 
 This redesign is successful when:
+
 - the product immediately looks like a new owner took control
 - the app feels more premium and more modern
 - the workflow still feels identical

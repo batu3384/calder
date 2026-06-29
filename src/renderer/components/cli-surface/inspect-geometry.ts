@@ -1,14 +1,21 @@
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 
-export function selectionsMatchBounds(left: SurfaceSelectionRange, right: SurfaceSelectionRange): boolean {
-  return left.startRow === right.startRow
-    && left.endRow === right.endRow
-    && left.startCol === right.startCol
-    && left.endCol === right.endCol;
+export function selectionsMatchBounds(
+  left: SurfaceSelectionRange,
+  right: SurfaceSelectionRange,
+): boolean {
+  return (
+    left.startRow === right.startRow &&
+    left.endRow === right.endRow &&
+    left.startCol === right.startCol &&
+    left.endCol === right.endCol
+  );
 }
 
 export function selectionArea(selection: SurfaceSelectionRange): number {
-  return (selection.endRow - selection.startRow + 1) * Math.max(1, selection.endCol - selection.startCol);
+  return (
+    (selection.endRow - selection.startRow + 1) * Math.max(1, selection.endCol - selection.startCol)
+  );
 }
 
 function clampNumber(value: number, min: number, max: number): number {
@@ -89,7 +96,11 @@ export function selectionFromCells(args: {
   const startRow = clampNumber(Math.min(args.start.row, args.end.row), 0, maxRow);
   const endRow = clampNumber(Math.max(args.start.row, args.end.row), startRow, maxRow);
   const startCol = clampNumber(Math.min(args.start.col, args.end.col), 0, args.terminalCols);
-  const endCol = clampNumber(Math.max(args.start.col, args.end.col), startCol + 1, args.terminalCols);
+  const endCol = clampNumber(
+    Math.max(args.start.col, args.end.col),
+    startCol + 1,
+    args.terminalCols,
+  );
   return {
     mode: startCol === 0 && endCol >= args.terminalCols ? 'line' : 'region',
     startRow,
@@ -103,10 +114,13 @@ export function findRegionAtCell<T extends { selection: SurfaceSelectionRange }>
   regions: T[],
   cell: { row: number; col: number },
 ): T | null {
-  return regions.find((candidate) =>
-    candidate.selection.startRow <= cell.row
-    && candidate.selection.endRow >= cell.row
-    && candidate.selection.startCol <= cell.col
-    && candidate.selection.endCol >= cell.col,
-  ) ?? null;
+  return (
+    regions.find(
+      (candidate) =>
+        candidate.selection.startRow <= cell.row &&
+        candidate.selection.endRow >= cell.row &&
+        candidate.selection.startCol <= cell.col &&
+        candidate.selection.endCol >= cell.col,
+    ) ?? null
+  );
 }

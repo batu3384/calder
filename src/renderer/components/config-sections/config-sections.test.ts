@@ -7,7 +7,9 @@ const mockState = vi.hoisted(() => {
       path: '/project',
       sessions: [] as Array<{ id: string; providerId?: 'claude' | 'codex'; type?: string }>,
     },
-    activeSession: undefined as { id: string; providerId?: 'claude' | 'codex'; type?: string } | undefined,
+    activeSession: undefined as
+      | { id: string; providerId?: 'claude' | 'codex'; type?: string }
+      | undefined,
   };
   return {
     ...state,
@@ -63,8 +65,9 @@ describe('getConfigProviderId', () => {
   });
 
   it('describes integrations as MCP servers instead of a vague integrations bucket', async () => {
-    const source = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+    const source = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+    );
 
     expect(source).toContain("'MCP Servers'");
     expect(source).toContain('Model Context Protocol');
@@ -72,22 +75,22 @@ describe('getConfigProviderId', () => {
   });
 
   it('renders toolchain rows with the shared Calder list-row primitive', async () => {
-    const source = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
+    const source = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+    );
 
     expect(source).toContain("el.className = 'config-item calder-list-row'");
     expect(source).toContain('createConfigOpenButton');
   });
 
   it('includes an auto-approval control block wired to governance APIs', async () => {
-    const source = await import('node:fs/promises')
-      .then(async (fs) => {
-        const [configSections, autoApprovalSection] = await Promise.all([
-          fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-          fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
-        ]);
-        return `${configSections}\n${autoApprovalSection}`;
-      });
+    const source = await import('node:fs/promises').then(async (fs) => {
+      const [configSections, autoApprovalSection] = await Promise.all([
+        fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+        fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+      ]);
+      return `${configSections}\n${autoApprovalSection}`;
+    });
 
     expect(source).toContain("'Auto Approval'");
     expect(source).toContain('setAutoApprovalMode');
@@ -100,15 +103,14 @@ describe('getConfigProviderId', () => {
   });
 
   it('shows inherit state for project scope instead of mirroring global mode', async () => {
-    const source = await import('node:fs/promises')
-      .then(async (fs) => {
-        const [configSections, autoApprovalSection, autoApprovalI18n] = await Promise.all([
-          fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-          fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
-          fs.readFile(new URL('./config-sections-auto-approval-i18n.ts', import.meta.url), 'utf-8'),
-        ]);
-        return `${configSections}\n${autoApprovalSection}\n${autoApprovalI18n}`;
-      });
+    const source = await import('node:fs/promises').then(async (fs) => {
+      const [configSections, autoApprovalSection, autoApprovalI18n] = await Promise.all([
+        fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+        fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+        fs.readFile(new URL('./config-sections-auto-approval-i18n.ts', import.meta.url), 'utf-8'),
+      ]);
+      return `${configSections}\n${autoApprovalSection}\n${autoApprovalI18n}`;
+    });
 
     expect(source).toContain('Use Global Default');
     expect(source).toContain('Use Project / Global Default');
@@ -138,7 +140,9 @@ describe('getConfigProviderId', () => {
     expect(summary.project).toBe('Use Global Default');
     expect(summary.session).toBe('Use Project / Global Default');
     expect(summary.effectiveSource).toBe('Global default');
-    expect(summary.effectiveExplanation).toBe('Project and Session follow higher scope, so Global setting applies.');
+    expect(summary.effectiveExplanation).toBe(
+      'Project and Session follow higher scope, so Global setting applies.',
+    );
     expect(summary.effectiveBehavior).toBe('Auto-runs file edits; asks before commands and tools.');
     expect(summary.effectiveAutoRuns).toBe('File edits.');
     expect(summary.effectiveStillAsks).toBe('Commands, tools, and destructive actions.');
@@ -160,7 +164,9 @@ describe('getConfigProviderId', () => {
     expect(summary.project).toBe('Off');
     expect(summary.session).toBe('Edit + Safe Tools');
     expect(summary.effectiveSource).toBe('Session override');
-    expect(summary.effectiveExplanation).toBe('Session override is active, so Session setting applies.');
+    expect(summary.effectiveExplanation).toBe(
+      'Session override is active, so Session setting applies.',
+    );
     expect(summary.effectiveBehavior).toBe('Auto-runs file edits and safe read-only commands.');
     expect(summary.effectiveAutoRuns).toBe('File edits and safe read-only commands.');
     expect(summary.effectiveStillAsks).toBe('Write, risky, or destructive commands.');
@@ -198,7 +204,9 @@ describe('getConfigProviderId', () => {
     });
 
     expect(summary.global).toBe('Full Auto');
-    expect(summary.effectiveBehavior).toBe('Auto-runs non-destructive operations; asks before destructive actions.');
+    expect(summary.effectiveBehavior).toBe(
+      'Auto-runs non-destructive operations; asks before destructive actions.',
+    );
     expect(summary.effectiveAutoRuns).toBe('Non-destructive operations.');
     expect(summary.effectiveStillAsks).toBe('Destructive actions.');
   });
@@ -216,7 +224,9 @@ describe('getConfigProviderId', () => {
     });
 
     expect(summary.global).toBe('Full Auto (Unsafe)');
-    expect(summary.effectiveBehavior).toBe('Auto-runs every operation, including destructive actions.');
+    expect(summary.effectiveBehavior).toBe(
+      'Auto-runs every operation, including destructive actions.',
+    );
     expect(summary.effectiveAutoRuns).toBe('Everything, including destructive actions.');
     expect(summary.effectiveStillAsks).toBe('Nothing by policy.');
   });
@@ -241,16 +251,18 @@ describe('getConfigProviderId', () => {
       ),
     ).toBe('Düzenli commit mesajlarıyla temiz commit oluşturur.');
 
-    expect(
-      localizeConfigMetadataDetail('skill', 'unknown-skill', 'Keep original detail'),
-    ).toBe('Keep original detail');
+    expect(localizeConfigMetadataDetail('skill', 'unknown-skill', 'Keep original detail')).toBe(
+      'Keep original detail',
+    );
   });
 
   it('adds accessible labels and keyboard focus affordance for MCP remove buttons', async () => {
-    const source = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'));
-    const modalCss = await import('node:fs/promises')
-      .then(fs => fs.readFile(new URL('../../styles/modals.css', import.meta.url), 'utf-8'));
+    const source = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
+    );
+    const modalCss = await import('node:fs/promises').then((fs) =>
+      fs.readFile(new URL('../../styles/modals.css', import.meta.url), 'utf-8'),
+    );
 
     expect(source).toContain("removeBtn.setAttribute('aria-label', removeLabel);");
     expect(modalCss).toContain('.config-item-remove-btn:focus-visible');

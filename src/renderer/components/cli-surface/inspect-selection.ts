@@ -20,7 +20,9 @@ interface DeriveSemanticRegionsParams {
 export function deriveSemanticRegions(params: DeriveSemanticRegionsParams): SelectableCliRegion[] {
   const { focusedNodeId, messages } = params;
   return [...messages]
-    .filter((message): message is CalderProtocolMessage & { bounds: SurfaceSelectionRange } => Boolean(message.bounds))
+    .filter((message): message is CalderProtocolMessage & { bounds: SurfaceSelectionRange } =>
+      Boolean(message.bounds),
+    )
     .map((message) => ({
       kind: 'semantic' as const,
       label: message.label ?? message.nodeId,
@@ -41,9 +43,10 @@ export function findContainingInferredRegion(
   inferredRegions: InferredCliRegion[],
   selection: SurfaceSelectionRange,
 ): InferredCliRegion | undefined {
-  return inferredRegions.find((candidate) =>
-    candidate.selection.startRow <= selection.startRow
-    && candidate.selection.endRow >= selection.endRow,
+  return inferredRegions.find(
+    (candidate) =>
+      candidate.selection.startRow <= selection.startRow &&
+      candidate.selection.endRow >= selection.endRow,
   );
 }
 
@@ -51,11 +54,12 @@ export function findContainingSemanticRegion(
   semanticRegions: SelectableCliRegion[],
   selection: SurfaceSelectionRange,
 ): SelectableCliRegion | undefined {
-  return semanticRegions.find((candidate) =>
-    candidate.selection.startRow <= selection.startRow
-    && candidate.selection.endRow >= selection.endRow
-    && candidate.selection.startCol <= selection.startCol
-    && candidate.selection.endCol >= selection.endCol,
+  return semanticRegions.find(
+    (candidate) =>
+      candidate.selection.startRow <= selection.startRow &&
+      candidate.selection.endRow >= selection.endRow &&
+      candidate.selection.startCol <= selection.startCol &&
+      candidate.selection.endCol >= selection.endCol,
   );
 }
 
@@ -97,15 +101,17 @@ export function reconcileHoveredRegion(
 ): SelectableCliRegion | null {
   if (!hoveredRegion) return null;
   if (hoveredRegion.kind === 'semantic') {
-    const exists = semanticRegions.some((candidate) =>
-      candidate.label === hoveredRegion.label
-      && selectionsMatchBounds(candidate.selection, hoveredRegion.selection),
+    const exists = semanticRegions.some(
+      (candidate) =>
+        candidate.label === hoveredRegion.label &&
+        selectionsMatchBounds(candidate.selection, hoveredRegion.selection),
     );
     return exists ? hoveredRegion : null;
   }
-  const exists = inferredRegions.some((candidate) =>
-    candidate.label === hoveredRegion.label
-    && selectionsMatchBounds(candidate.selection, hoveredRegion.selection),
+  const exists = inferredRegions.some(
+    (candidate) =>
+      candidate.label === hoveredRegion.label &&
+      selectionsMatchBounds(candidate.selection, hoveredRegion.selection),
   );
   return exists ? hoveredRegion : null;
 }

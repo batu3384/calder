@@ -9,9 +9,10 @@ export function inferCliRegions(lines: string[]): InferredCliRegion[] {
   const regions: InferredCliRegion[] = [];
 
   const boxedStart = lines.findIndex((line) => /^[╭┌]/.test(line));
-  const boxedEnd = boxedStart >= 0
-    ? lines.findIndex((line, index) => index >= boxedStart && /^[╰└]/.test(line))
-    : -1;
+  const boxedEnd =
+    boxedStart >= 0
+      ? lines.findIndex((line, index) => index >= boxedStart && /^[╰└]/.test(line))
+      : -1;
 
   if (boxedStart >= 0 && boxedEnd >= boxedStart) {
     const titleLine = lines[boxedStart]?.toLowerCase() ?? '';
@@ -55,8 +56,8 @@ export function inferCliRegions(lines: string[]): InferredCliRegion[] {
     });
   }
 
-  const footerRow = lines.findIndex((line) =>
-    /\[[^\]]+\]/.test(line) && /(restart|quit|open|save|cancel)/i.test(line),
+  const footerRow = lines.findIndex(
+    (line) => /\[[^\]]+\]/.test(line) && /(restart|quit|open|save|cancel)/i.test(line),
   );
   if (footerRow >= 0) {
     regions.push({

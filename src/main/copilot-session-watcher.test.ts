@@ -10,13 +10,9 @@ function writeWorkspace(id: string, cwd: string, createdAt: string): void {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, 'workspace.yaml'),
-    [
-      `id: ${id}`,
-      `cwd: ${cwd}`,
-      `created_at: ${createdAt}`,
-      `updated_at: ${createdAt}`,
-      '',
-    ].join('\n'),
+    [`id: ${id}`, `cwd: ${cwd}`, `created_at: ${createdAt}`, `updated_at: ${createdAt}`, ''].join(
+      '\n',
+    ),
   );
 }
 

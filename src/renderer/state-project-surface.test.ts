@@ -20,7 +20,11 @@ function cliSession(id: string, overrides: Partial<SessionRecord> = {}): Session
   };
 }
 
-function browserSession(id: string, url: string, overrides: Partial<SessionRecord> = {}): SessionRecord {
+function browserSession(
+  id: string,
+  url: string,
+  overrides: Partial<SessionRecord> = {},
+): SessionRecord {
   return {
     id,
     name: id,
@@ -66,10 +70,15 @@ describe('state project surface helpers', () => {
 
     expect(findActiveCliSession(project)?.id).toBe(first.id);
     expect(resolveSurfaceTargetFromProject(project)?.id).toBe(second.id);
-    expect(resolveSurfaceTargetFromProject({
-      ...project,
-      surface: { ...project.surface!, targetSessionId: undefined },
-    }, { allowActiveFallback: false })).toBeUndefined();
+    expect(
+      resolveSurfaceTargetFromProject(
+        {
+          ...project,
+          surface: { ...project.surface!, targetSessionId: undefined },
+        },
+        { allowActiveFallback: false },
+      ),
+    ).toBeUndefined();
   });
 
   it('repairs stale browser target links from the active CLI session', () => {

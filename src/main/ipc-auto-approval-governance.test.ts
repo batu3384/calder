@@ -37,7 +37,9 @@ describe('ipc auto-approval governance helpers', () => {
     updateAutoApprovalMode(projectDir, 'project', 'full_auto');
 
     const policyPath = path.join(projectDir, '.calder', 'governance', 'policy.json');
-    const parsed = JSON.parse(fs.readFileSync(policyPath, 'utf8')) as { autoApproval?: { mode?: string } };
+    const parsed = JSON.parse(fs.readFileSync(policyPath, 'utf8')) as {
+      autoApproval?: { mode?: string };
+    };
     expect(parsed.autoApproval?.mode).toBe('full_auto');
   });
 

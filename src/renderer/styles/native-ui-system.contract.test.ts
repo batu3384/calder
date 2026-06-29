@@ -1,18 +1,26 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8').replace(/\r\n/g, '\n');
+const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8').replace(
+  /\r\n/g,
+  '\n',
+);
 const base = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 const primitives = readFileSync(new URL('./primitives.css', import.meta.url), 'utf-8');
 const contextInspector = readFileSync(new URL('./context-inspector.css', import.meta.url), 'utf-8');
 const browser = readFileSync(new URL('./browser-tab.css', import.meta.url), 'utf-8');
 const terminal = readFileSync(new URL('./terminal.css', import.meta.url), 'utf-8');
 const modalSource = readFileSync(new URL('../components/modal.ts', import.meta.url), 'utf-8');
-const selectSource = readFileSync(new URL('../components/custom-select.ts', import.meta.url), 'utf-8');
+const selectSource = readFileSync(
+  new URL('../components/custom-select.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('native-first UI system contract', () => {
   it('imports the shared primitives directly after cockpit tokens', () => {
-    expect(styles).toContain("@import url('./styles/cockpit.css');\n@import url('./styles/primitives.css');");
+    expect(styles).toContain(
+      "@import url('./styles/cockpit.css');\n@import url('./styles/primitives.css');",
+    );
   });
 
   it('defines the native-first token groups', () => {

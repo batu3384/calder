@@ -148,9 +148,12 @@ describe('getAntigravityConfig', () => {
 
   it('reads skills from user and project directories and deduplicates by name', async () => {
     mockFiles({
-      '/mock/home/.gemini/skills/shared/SKILL.md': '---\nname: SharedSkill\ndescription: User version\n---\n',
-      '/project/.gemini/skills/shared/SKILL.md': '---\nname: SharedSkill\ndescription: Project version\n---\n',
-      '/project/.gemini/skills/project-only/SKILL.md': '---\nname: ProjectOnly\ndescription: Project only\n---\n',
+      '/mock/home/.gemini/skills/shared/SKILL.md':
+        '---\nname: SharedSkill\ndescription: User version\n---\n',
+      '/project/.gemini/skills/shared/SKILL.md':
+        '---\nname: SharedSkill\ndescription: Project version\n---\n',
+      '/project/.gemini/skills/project-only/SKILL.md':
+        '---\nname: ProjectOnly\ndescription: Project only\n---\n',
     });
 
     mockReaddirSync.mockImplementation((inputPath) => {
@@ -162,9 +165,9 @@ describe('getAntigravityConfig', () => {
     mockStatSync.mockImplementation((inputPath) => {
       const filePath = n(String(inputPath));
       if (
-        filePath === '/mock/home/.gemini/skills/shared/SKILL.md'
-        || filePath === '/project/.gemini/skills/shared/SKILL.md'
-        || filePath === '/project/.gemini/skills/project-only/SKILL.md'
+        filePath === '/mock/home/.gemini/skills/shared/SKILL.md' ||
+        filePath === '/project/.gemini/skills/shared/SKILL.md' ||
+        filePath === '/project/.gemini/skills/project-only/SKILL.md'
       ) {
         return { isFile: () => true } as any;
       }
@@ -206,9 +209,9 @@ describe('getAntigravityConfig', () => {
     mockStatSync.mockImplementation((inputPath) => {
       const filePath = n(String(inputPath));
       if (
-        filePath === '/mock/home/.gemini/skills/nofm/SKILL.md'
-        || filePath === '/mock/home/.gemini/skills/empty/SKILL.md'
-        || filePath === '/mock/home/.gemini/skills/invalid/SKILL.md'
+        filePath === '/mock/home/.gemini/skills/nofm/SKILL.md' ||
+        filePath === '/mock/home/.gemini/skills/empty/SKILL.md' ||
+        filePath === '/mock/home/.gemini/skills/invalid/SKILL.md'
       ) {
         return { isFile: () => true } as any;
       }

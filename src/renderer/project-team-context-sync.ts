@@ -10,7 +10,10 @@ function findProjectIdByPath(projectPath: string): string | undefined {
   return appState.projects.find((project) => project.path === projectPath)?.id;
 }
 
-function applyProjectTeamContext(projectPath: string, projectTeamContext: ProjectTeamContextState): void {
+function applyProjectTeamContext(
+  projectPath: string,
+  projectTeamContext: ProjectTeamContextState,
+): void {
   const projectId = findProjectIdByPath(projectPath);
   if (!projectId) return;
   appState.setProjectTeamContext(projectId, projectTeamContext);

@@ -14,8 +14,12 @@ class FakeTerminal {
   simulateKey(event: Partial<KeyboardEvent>): boolean {
     return this.keyHandler ? this.keyHandler(event as KeyboardEvent) : true;
   }
-  getSelection(): string { return this._selection; }
-  setSelection(s: string): void { this._selection = s; }
+  getSelection(): string {
+    return this._selection;
+  }
+  setSelection(s: string): void {
+    this._selection = s;
+  }
 }
 
 beforeEach(() => {
@@ -58,7 +62,12 @@ describe('attachClipboardCopyHandler', () => {
     const terminal = new FakeTerminal();
     attachClipboardCopyHandler(terminal as any);
 
-    const result = terminal.simulateKey({ ctrlKey: true, shiftKey: true, key: 'C', type: 'keydown' });
+    const result = terminal.simulateKey({
+      ctrlKey: true,
+      shiftKey: true,
+      key: 'C',
+      type: 'keydown',
+    });
 
     expect(result).toBe(false);
   });

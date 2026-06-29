@@ -34,42 +34,85 @@ describe('mobile-inspector internals', () => {
     });
     const devices = _internal.parseSimctlDevices(payload);
     expect(devices).toHaveLength(1);
-    expect(devices[0]).toEqual(expect.objectContaining({
-      udid: 'AA-BB',
-      name: 'iPhone 16 Pro',
-      state: 'Shutdown',
-      isAvailable: true,
-    }));
+    expect(devices[0]).toEqual(
+      expect.objectContaining({
+        udid: 'AA-BB',
+        name: 'iPhone 16 Pro',
+        state: 'Shutdown',
+        isAvailable: true,
+      }),
+    );
   });
 
   it('chooses booted iPhone first and otherwise prefers latest available iPhone runtime', () => {
     const withBooted = _internal.choosePreferredIosDevice([
-      { udid: '1', name: 'iPhone 15', state: 'Shutdown', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-17-5' },
-      { udid: '2', name: 'iPhone 16 Pro', state: 'Booted', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-18-2' },
+      {
+        udid: '1',
+        name: 'iPhone 15',
+        state: 'Shutdown',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-17-5',
+      },
+      {
+        udid: '2',
+        name: 'iPhone 16 Pro',
+        state: 'Booted',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-18-2',
+      },
     ]);
     expect(withBooted?.udid).toBe('2');
 
     const latestAvailable = _internal.choosePreferredIosDevice([
-      { udid: '1', name: 'iPhone 15', state: 'Shutdown', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-17-5' },
-      { udid: '2', name: 'iPhone 16 Pro', state: 'Shutdown', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-18-2' },
-      { udid: '3', name: 'Apple TV', state: 'Shutdown', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.tvOS-18-0' },
+      {
+        udid: '1',
+        name: 'iPhone 15',
+        state: 'Shutdown',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-17-5',
+      },
+      {
+        udid: '2',
+        name: 'iPhone 16 Pro',
+        state: 'Shutdown',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-18-2',
+      },
+      {
+        udid: '3',
+        name: 'Apple TV',
+        state: 'Shutdown',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.tvOS-18-0',
+      },
     ]);
     expect(latestAvailable?.udid).toBe('2');
 
     const prefersStableShutdown = _internal.choosePreferredIosDevice([
-      { udid: 'a', name: 'iPhone 17 Pro', state: 'Shutting Down', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-26-4' },
-      { udid: 'b', name: 'iPhone 17', state: 'Shutdown', isAvailable: true, runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-26-4' },
+      {
+        udid: 'a',
+        name: 'iPhone 17 Pro',
+        state: 'Shutting Down',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-26-4',
+      },
+      {
+        udid: 'b',
+        name: 'iPhone 17',
+        state: 'Shutdown',
+        isAvailable: true,
+        runtimeId: 'com.apple.CoreSimulator.SimRuntime.iOS-26-4',
+      },
     ]);
     expect(prefersStableShutdown?.udid).toBe('b');
   });
 
   it('parses adb devices output', () => {
-    const parsed = _internal.parseAdbDevices([
-      'List of devices attached',
-      'emulator-5554\tdevice',
-      'emulator-5556\toffline',
-      '',
-    ].join('\n'));
+    const parsed = _internal.parseAdbDevices(
+      ['List of devices attached', 'emulator-5554\tdevice', 'emulator-5556\toffline', ''].join(
+        '\n',
+      ),
+    );
     expect(parsed).toEqual([
       { id: 'emulator-5554', state: 'device' },
       { id: 'emulator-5556', state: 'offline' },
@@ -103,12 +146,14 @@ describe('mobile-inspector internals', () => {
     expect(nodes.length).toBeGreaterThan(0);
 
     const match = _internal.resolveAndroidNodeAtPoint(nodes, 500, 1450);
-    expect(match).toEqual(expect.objectContaining({
-      className: 'android.widget.Button',
-      text: 'Login',
-      resourceId: 'app:id/login',
-      contentDesc: 'Login button',
-    }));
+    expect(match).toEqual(
+      expect.objectContaining({
+        className: 'android.widget.Button',
+        text: 'Login',
+        resourceId: 'app:id/login',
+        contentDesc: 'Login button',
+      }),
+    );
   });
 
   it('reads png dimensions and normalizes android screencap line endings', () => {

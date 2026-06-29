@@ -73,12 +73,29 @@ import {
 } from './preferences-modal-sections.js';
 
 const modalSourceFile = readFileSync(new URL('./preferences-modal.ts', import.meta.url), 'utf-8');
-const modalSectionsSource = readFileSync(new URL('./preferences-modal-sections.ts', import.meta.url), 'utf-8');
-const modalActionsSource = readFileSync(new URL('./preferences-modal-actions.ts', import.meta.url), 'utf-8');
-const modalShellSource = readFileSync(new URL('./preferences-modal-shell.ts', import.meta.url), 'utf-8');
-const source = [modalSourceFile, modalSectionsSource, modalActionsSource, modalShellSource].join('\n');
-const providerSetupSource = readFileSync(new URL('./preferences-provider-setup.ts', import.meta.url), 'utf-8');
-const shortcutsSource = readFileSync(new URL('./preferences-shortcuts-section.ts', import.meta.url), 'utf-8');
+const modalSectionsSource = readFileSync(
+  new URL('./preferences-modal-sections.ts', import.meta.url),
+  'utf-8',
+);
+const modalActionsSource = readFileSync(
+  new URL('./preferences-modal-actions.ts', import.meta.url),
+  'utf-8',
+);
+const modalShellSource = readFileSync(
+  new URL('./preferences-modal-shell.ts', import.meta.url),
+  'utf-8',
+);
+const source = [modalSourceFile, modalSectionsSource, modalActionsSource, modalShellSource].join(
+  '\n',
+);
+const providerSetupSource = readFileSync(
+  new URL('./preferences-provider-setup.ts', import.meta.url),
+  'utf-8',
+);
+const shortcutsSource = readFileSync(
+  new URL('./preferences-shortcuts-section.ts', import.meta.url),
+  'utf-8',
+);
 const modalSource = readFileSync(new URL('../modal.ts', import.meta.url), 'utf-8');
 const styles = readFileSync(new URL('../../styles/preferences.css', import.meta.url), 'utf-8');
 const modalStyles = readFileSync(new URL('../../styles/modals.css', import.meta.url), 'utf-8');
@@ -101,10 +118,13 @@ describe('preferences modal contract', () => {
   });
 
   it('uses control-center sections and layout groups', () => {
-    expect(source).toContain("type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about'");
+    expect(source).toContain(
+      "type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about'",
+    );
     expect(source).toContain("id: 'interface', label: 'Interface'");
     expect(source).toContain("id: 'tools', label: 'Tools'");
-    expect(source).toContain("id: 'automation', label: 'Automation'");
+    expect(source).toContain("id: 'automation'");
+    expect(source).toContain("label: 'Automation'");
     expect(source).toContain("id: 'safety', label: 'Safety'");
     expect(source).toContain('Ops Rail modules');
     expect(source).toContain('Live View behavior');
@@ -164,12 +184,14 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('.about-update-btn');
     expect(styles).toContain('.setup-fix-btn');
     expect(styles).toContain('var(--shadow-card-strong);');
-    expect(modalStyles).toContain('#modal-actions, .modal-actions');
+    expect(modalStyles).toContain('#modal-actions');
+    expect(modalStyles).toContain('.modal-actions');
     expect(modalStyles).toContain('justify-content: flex-end;');
     expect(modalStyles).toContain('.modal-btn.primary');
     expect(modalStyles).toContain('min-width: 112px;');
     expect(styles).not.toContain('border-left: 1px solid var(--border-subtle);');
-    expect(modalStyles).toContain('#modal, .modal-box');
+    expect(modalStyles).toContain('#modal');
+    expect(modalStyles).toContain('.modal-box');
     expect(modalStyles).toContain('border-radius: 16px;');
   });
 
@@ -194,19 +216,25 @@ describe('preferences modal contract', () => {
 
   it('shows mobile readiness setup group and install actions in tools', () => {
     expect(source).toContain('Mobile automation readiness');
-    expect(source).toContain('Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
+    expect(source).toContain(
+      'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
+    );
     expect(source).toContain('renderMobileSetupSection');
     expect(providerSetupSource).toContain('Mobile Dependency Doctor');
     expect(providerSetupSource).toContain('iOS simulator inspect');
     expect(providerSetupSource).toContain('Android emulator inspect');
     expect(providerSetupSource).toContain('Optional tools');
     expect(providerSetupSource).toContain("opts.actionLabel ? 'Installing");
-    expect(providerSetupSource).toContain("actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined");
+    expect(providerSetupSource).toContain(
+      "actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined",
+    );
   });
 
   it('stages shortcut overrides until Done and applies modal cleanup extensions safely', () => {
     expect(source).toContain('const shortcutOverridesDraft');
-    expect(source).toContain("appState.setPreference('keybindings', { ...shortcutOverridesDraft });");
+    expect(source).toContain(
+      "appState.setPreference('keybindings', { ...shortcutOverridesDraft });",
+    );
     expect(source).not.toContain('shortcutManager.setOverride(');
     expect(source).not.toContain('shortcutManager.resetOverride(');
     expect(source).toContain('extendModalCleanup(() => {');
@@ -248,7 +276,7 @@ function createLayoutSectionArgs() {
     },
     appendSectionIntro: () => {},
     appendOverviewGrid: () => {},
-    appendSectionCard: () => ({} as HTMLElement),
+    appendSectionCard: () => ({}) as HTMLElement,
   };
 }
 
@@ -264,16 +292,21 @@ describe('preferences section wrappers', () => {
     renderGeneralPreferencesSection(args);
 
     expect(mockRenderGeneralPreferencesSectionContent).toHaveBeenCalledTimes(1);
-    expect(mockRenderGeneralPreferencesSectionContent).toHaveBeenCalledWith(expect.objectContaining({
-      content: args.content,
-      preferenceDraft: args.preferenceDraft,
-      providerCopy: {
-        unavailableSuffix: ' (not installed)',
-        defaultMissingMessage: 'Calder falls back to the next installed tool if this one is missing.',
-        defaultInstalledMessage: 'New sessions use this tool unless a workflow picks a different one.',
-        defaultUnavailableMessage: 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.',
-      },
-    }));
+    expect(mockRenderGeneralPreferencesSectionContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: args.content,
+        preferenceDraft: args.preferenceDraft,
+        providerCopy: {
+          unavailableSuffix: ' (not installed)',
+          defaultMissingMessage:
+            'Calder falls back to the next installed tool if this one is missing.',
+          defaultInstalledMessage:
+            'New sessions use this tool unless a workflow picks a different one.',
+          defaultUnavailableMessage:
+            'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.',
+        },
+      }),
+    );
   });
 
   it('passes layout copy constants into renderLayoutPreferencesSectionContent', () => {
@@ -282,14 +315,16 @@ describe('preferences section wrappers', () => {
     renderLayoutPreferencesSection(args);
 
     expect(mockRenderLayoutPreferencesSectionContent).toHaveBeenCalledTimes(1);
-    expect(mockRenderLayoutPreferencesSectionContent).toHaveBeenCalledWith(expect.objectContaining({
-      content: args.content,
-      preferenceDraft: args.preferenceDraft,
-      copy: {
-        opsRailTitle: 'Ops Rail modules',
-        liveViewTitle: 'Live View behavior',
-        sessionDeckTitle: 'Session Deck defaults',
-      },
-    }));
+    expect(mockRenderLayoutPreferencesSectionContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: args.content,
+        preferenceDraft: args.preferenceDraft,
+        copy: {
+          opsRailTitle: 'Ops Rail modules',
+          liveViewTitle: 'Live View behavior',
+          sessionDeckTitle: 'Session Deck defaults',
+        },
+      }),
+    );
   });
 });

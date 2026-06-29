@@ -3,10 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { resolveShareRtcConfigFromEnv } from '../share-rtc-config';
 import type { MobileUiLanguage } from './copy';
 import { normalizeMobileLanguage } from './copy';
-import type {
-  MobileControlPairingOptions,
-  PairingRecord,
-} from './model';
+import type { MobileControlPairingOptions, PairingRecord } from './model';
 import { normalizeShareConnectionDescription } from './security';
 
 export const DEFAULT_TTL_MS = 5 * 60_000;

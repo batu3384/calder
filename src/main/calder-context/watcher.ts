@@ -67,7 +67,8 @@ function watchDir(projectPath: string, state: ContextWatchState, dirPath: string
 
 function listSubdirectoriesRecursive(dirPath: string): string[] {
   try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    const entries = fs
+      .readdirSync(dirPath, { withFileTypes: true })
       .sort((left, right) => left.name.localeCompare(right.name));
     const directories: string[] = [];
     for (const entry of entries) {

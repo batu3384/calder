@@ -9,12 +9,14 @@
 Calder already installs a Claude Code `statusLine` command, but the current script only extracts JSON fields from stdin and writes `.cost` and `.sessionid` files into the Calder temp directory.
 
 Current behavior:
+
 - Claude Code emits `cost`, `context_window`, `model`, and `session_id` into the statusLine command payload
 - Calder captures those fields into temp files for internal use
 - the terminal statusline itself remains generic and does not explain which provider or model is active
 - quota visibility is inconsistent because Claude Code does not expose a stable "remaining 5-hour / weekly allowance" field directly in the statusLine payload
 
 This leaves users without a trustworthy at-a-glance answer to the questions they actually care about during active sessions:
+
 - which model am I currently using?
 - is this Anthropic or Z.ai?
 - how full is the context window?
@@ -25,6 +27,7 @@ This leaves users without a trustworthy at-a-glance answer to the questions they
 Replace the current "capture-only" statusLine runtime with a **hybrid two-line statusline**.
 
 Behavior:
+
 - line 1 shows the currently active model identity and session context
 - line 2 shows local runtime signals plus provider quota state when available
 - quota values are shown only when Calder can read a real provider-backed source
@@ -34,6 +37,7 @@ Behavior:
   - Claude models map to `Anthropic`
 
 This keeps the statusline useful even when external quota sources are unavailable:
+
 - local session facts still render immediately
 - the statusline remains fast because it reads cache files, not remote APIs, on the hot path
 - the quota row becomes richer over time without redesigning the UI
@@ -55,6 +59,7 @@ This is attractive, but it creates too much implementation risk up front because
 ### Recommended: hybrid statusline with honest quota states
 
 This is the best balance:
+
 - strong local signal immediately
 - quota integration where supported
 - explicit fallback states where unsupported
@@ -66,12 +71,14 @@ This is the best balance:
 Use a balanced two-line layout similar to the user's reference screenshot.
 
 Line 1:
+
 - active model
 - provider name
 - effort level when available
 - compact project or cwd label
 
 Line 2:
+
 - context percentage
 - local session cost or usage when available
 - `5h` quota state
@@ -83,6 +90,7 @@ Line 2:
 The statusline must prefer short readable labels over raw JSON keys.
 
 Examples:
+
 - `Claude Sonnet 4.6  Anthropic  High  browser`
 - `Ctx 38%  Cost --  5h unknown  Week unknown  Live`
 - `GLM-5.1  Z.ai  High  browser`
@@ -91,6 +99,7 @@ Examples:
 ### Quota State Vocabulary
 
 Only the following user-facing states should be used when quota numbers are absent:
+
 - `syncing` — a collector is running but no confirmed value exists yet
 - `unknown` — a source may exist but Calder could not read a value
 - `unsupported` — Calder has no supported way to read this metric for the current provider
@@ -108,6 +117,7 @@ Only the following user-facing states should be used when quota numbers are abse
 ### Local Runtime Data
 
 Always available from Claude Code statusLine stdin or existing Calder temp files:
+
 - model display name
 - session id
 - context window information
@@ -116,6 +126,7 @@ Always available from Claude Code statusLine stdin or existing Calder temp files
 ### Provider Identity
 
 Derived from the active model string:
+
 - `glm-*` -> `Z.ai`
 - all Claude models -> `Anthropic`
 
@@ -124,6 +135,7 @@ Derived from the active model string:
 Introduce a provider quota cache file stored in Calder's existing temp/runtime area.
 
 Each cache entry should contain:
+
 - `provider`
 - `model`
 - `fiveHour`
@@ -140,6 +152,7 @@ The statusline renderer reads the cache only. It must not block on remote I/O.
 Quota collection should happen through separate provider-specific collectors.
 
 Initial expectation:
+
 - Anthropic collector starts in `unsupported` or `unknown` because public Claude Code/Claude Pro statusline surfaces do not expose a stable remaining-allowance field
 - Z.ai collector starts in `syncing` or `unknown` until a documented usage/quota surface is confirmed
 
@@ -152,6 +165,7 @@ The architecture must support later upgrades without changing statusline present
 #### 1. Statusline renderer
 
 The installed Claude Code `statusLine` command should become a dedicated renderer script that:
+
 - reads stdin JSON from Claude Code
 - updates the existing `.cost` and `.sessionid` files
 - resolves provider identity from the active model
@@ -163,6 +177,7 @@ The installed Claude Code `statusLine` command should become a dedicated rendere
 A separate helper should refresh provider quota cache out of band.
 
 Responsibilities:
+
 - provider-specific data fetch logic
 - freshness timestamps
 - cache writes with atomic replace semantics
@@ -175,6 +190,7 @@ The statusline renderer can opportunistically trigger a background refresh when 
 Reuse Calder's existing temp directory (`/tmp/calder` on Unix) and hook installation model.
 
 Expected runtime artifacts:
+
 - `.cost`
 - `.sessionid`
 - new provider quota cache file(s)
@@ -183,6 +199,7 @@ Expected runtime artifacts:
 ### Provider Adapter Shape
 
 Define a narrow internal adapter contract:
+
 - `provider id`
 - `canReadQuota()`
 - `readQuotaSnapshot()`
@@ -193,16 +210,19 @@ This keeps Anthropic and Z.ai logic isolated and allows future providers to part
 ### Failure Behavior
 
 If the renderer fails:
+
 - stdout should fall back to a compact safe string instead of exiting noisily
 - the temp file capture behavior should continue where possible
 
 If a provider collector fails:
+
 - cache should record a non-fatal state (`unknown`, `stale`, or `unsupported`)
 - the statusline should continue rendering local facts
 
 ## Primary Technical Touchpoints
 
 Expected files to change:
+
 - `src/main/hook-status.ts`
 - `src/main/claude-cli.ts`
 - `src/main/settings-guard.ts`
@@ -210,6 +230,7 @@ Expected files to change:
 - tests covering statusline installation and runtime output
 
 Likely implementation shape:
+
 - move inline shell/Python statusline generation in `hook-status.ts` to a richer managed runtime asset
 - keep `claude-cli.ts` responsible for installing the statusLine command path
 - preserve `settings-guard.ts` compatibility by keeping the installed command path recognizable as Calder-managed
@@ -218,12 +239,14 @@ Likely implementation shape:
 ## Risk Management
 
 Main risks:
+
 - slowing down the statusline by doing network work inline
 - rendering misleading quota numbers
 - creating fragile provider-specific logic
 - breaking existing settings guard behavior or foreign statusline detection
 
 Mitigation:
+
 - render from cache only
 - use strict state vocabulary instead of estimates
 - isolate provider collectors behind adapters
@@ -232,6 +255,7 @@ Mitigation:
 ## Acceptance Criteria
 
 This design is complete when:
+
 - Calder installs a two-line Claude Code statusline instead of a capture-only script
 - the statusline shows active model and derived provider correctly
 - the statusline shows context window information from Claude Code input
@@ -244,6 +268,7 @@ This design is complete when:
 ## Verification Plan
 
 Minimum verification after implementation:
+
 - unit tests for provider detection from model names
 - unit tests for statusline string formatting across all quota states
 - unit tests for cache freshness handling

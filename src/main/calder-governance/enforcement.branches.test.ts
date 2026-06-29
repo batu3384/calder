@@ -48,7 +48,11 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
     });
 
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'mcp', label: 'Add MCP server', target: 'memory' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'memory',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'ask',
@@ -62,7 +66,11 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
     });
 
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'mcp', label: 'Add MCP server', target: 'memory' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'memory',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'block',
@@ -75,7 +83,11 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
       lastUpdated: '2026-04-14T00:00:00.000Z',
     });
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'mcp', label: 'Add MCP server', target: 'memory' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'memory',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'ask',
@@ -86,7 +98,11 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
       lastUpdated: '2026-04-14T00:00:00.000Z',
     });
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'mcp', label: 'Add MCP server', target: 'memory' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'memory',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'block',
@@ -97,7 +113,11 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
     mockReadFile.mockRejectedValueOnce(new Error('ENOENT'));
 
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'mcp', label: 'Add MCP server', target: 'browser' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'browser',
+      }),
     ).resolves.toMatchObject({
       allowed: true,
       status: 'allow',
@@ -106,7 +126,10 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
 
   it('allows unknown operation kinds by default', async () => {
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'unknown' as any, label: 'Other op' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'unknown' as any,
+        label: 'Other op',
+      }),
     ).resolves.toMatchObject({
       allowed: true,
       status: 'allow',
@@ -120,7 +143,10 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
     });
 
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'network', label: 'Open external URL' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'network',
+        label: 'Open external URL',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'ask',
@@ -132,7 +158,10 @@ describe('evaluateProjectGovernanceOperation mcp branch edges', () => {
     });
 
     await expect(
-      evaluateProjectGovernanceOperation('/tmp/project', { kind: 'network', label: 'Open external URL' }),
+      evaluateProjectGovernanceOperation('/tmp/project', {
+        kind: 'network',
+        label: 'Open external URL',
+      }),
     ).resolves.toMatchObject({
       allowed: false,
       status: 'block',

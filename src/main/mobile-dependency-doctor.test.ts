@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { _internal,checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
+import {
+  _internal,
+  checkMobileDependencies,
+  installMobileDependency,
+} from './mobile-dependency-doctor';
 
 interface CommandResult {
   code: number;
@@ -44,15 +48,15 @@ describe('mobile-dependency-doctor helpers', () => {
   });
 
   it('parses installed appium driver versions', () => {
-    const output = [
-      ' - xcuitest@7.26.0 [installed]',
-      ' - uiautomator2@3.2.1 [installed]',
-    ].join('\n');
+    const output = [' - xcuitest@7.26.0 [installed]', ' - uiautomator2@3.2.1 [installed]'].join(
+      '\n',
+    );
     expect(_internal.parseInstalledDriverVersion(output, 'xcuitest')).toBe('7.26.0');
     expect(_internal.parseInstalledDriverVersion(output, 'uiautomator2')).toBe('3.2.1');
     expect(_internal.parseInstalledDriverVersion(output, 'xcuitest')).not.toBeUndefined();
 
-    const ansiOutput = '- \u001b[33mxcuitest\u001b[39m@\u001b[33m11.0.0\u001b[39m \u001b[32m[installed]\u001b[39m';
+    const ansiOutput =
+      '- \u001b[33mxcuitest\u001b[39m@\u001b[33m11.0.0\u001b[39m \u001b[32m[installed]\u001b[39m';
     expect(_internal.parseInstalledDriverVersion(ansiOutput, 'xcuitest')).toBe('11.0.0');
   });
 
@@ -105,8 +109,12 @@ describe('mobile-dependency-doctor helpers', () => {
     const asArray = JSON.stringify([{ name: 'other-driver', installed: true, version: '1.0.0' }]);
     const asObject = JSON.stringify({ other: { pkgName: 'appium-other-driver', installed: true } });
 
-    expect(_internal.parseInstalledDriverFromJson(asArray, 'xcuitest')).toEqual({ installed: false });
-    expect(_internal.parseInstalledDriverFromJson(asObject, 'uiautomator2')).toEqual({ installed: false });
+    expect(_internal.parseInstalledDriverFromJson(asArray, 'xcuitest')).toEqual({
+      installed: false,
+    });
+    expect(_internal.parseInstalledDriverFromJson(asObject, 'uiautomator2')).toEqual({
+      installed: false,
+    });
   });
 });
 
@@ -129,7 +137,10 @@ describe('checkMobileDependencies', () => {
     const runner = new StubRunner();
 
     runner.set('which', ['xcodebuild'], { code: 0, stdout: '/usr/bin/xcodebuild\n' });
-    runner.set('xcodebuild', ['-version'], { code: 0, stdout: 'Xcode 16.0\nBuild version 16A123\n' });
+    runner.set('xcodebuild', ['-version'], {
+      code: 0,
+      stdout: 'Xcode 16.0\nBuild version 16A123\n',
+    });
     runner.set('xcrun', ['simctl', 'help'], { code: 0, stdout: 'usage: simctl ...\n' });
 
     runner.set('which', ['appium'], { code: 0, stdout: '/usr/local/bin/appium\n' });
@@ -147,16 +158,28 @@ describe('checkMobileDependencies', () => {
     runner.set('/opt/android/sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
 
     runner.set('which', ['avdmanager'], { code: 0, stdout: '/opt/android/avdmanager\n' });
-    runner.set('avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
-    runner.set('/opt/android/avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
+    runner.set('avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
+    runner.set('/opt/android/avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
 
     runner.set('which', ['adb'], { code: 0, stdout: '/opt/android/adb\n' });
     runner.set('adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
-    runner.set('/opt/android/adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
+    runner.set('/opt/android/adb', ['version'], {
+      code: 0,
+      stdout: 'Android Debug Bridge version 1.0.41\n',
+    });
 
     runner.set('which', ['emulator'], { code: 0, stdout: '/opt/android/emulator\n' });
     runner.set('emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
-    runner.set('/opt/android/emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
+    runner.set('/opt/android/emulator', ['-version'], {
+      code: 0,
+      stdout: 'Android emulator version 35.2.10\n',
+    });
 
     runner.set('which', ['maestro'], { code: 0, stdout: '/usr/local/bin/maestro\n' });
     runner.set('maestro', ['--version'], { code: 0, stdout: '1.39.13\n' });
@@ -174,7 +197,10 @@ describe('checkMobileDependencies', () => {
     const runner = new StubRunner();
 
     runner.set('which', ['xcodebuild'], { code: 0, stdout: '/usr/bin/xcodebuild\n' });
-    runner.set('xcodebuild', ['-version'], { code: 0, stdout: 'Xcode 16.0\nBuild version 16A123\n' });
+    runner.set('xcodebuild', ['-version'], {
+      code: 0,
+      stdout: 'Xcode 16.0\nBuild version 16A123\n',
+    });
     runner.set('xcrun', ['simctl', 'help'], { code: 0, stdout: 'usage: simctl ...\n' });
 
     runner.set('which', ['appium'], { code: 0, stdout: '/usr/local/bin/appium\n' });
@@ -190,14 +216,26 @@ describe('checkMobileDependencies', () => {
     runner.set('sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('/opt/android/sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('which', ['avdmanager'], { code: 0, stdout: '/opt/android/avdmanager\n' });
-    runner.set('avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
-    runner.set('/opt/android/avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
+    runner.set('avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
+    runner.set('/opt/android/avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
     runner.set('which', ['adb'], { code: 0, stdout: '/opt/android/adb\n' });
     runner.set('adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
-    runner.set('/opt/android/adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
+    runner.set('/opt/android/adb', ['version'], {
+      code: 0,
+      stdout: 'Android Debug Bridge version 1.0.41\n',
+    });
     runner.set('which', ['emulator'], { code: 0, stdout: '/opt/android/emulator\n' });
     runner.set('emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
-    runner.set('/opt/android/emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
+    runner.set('/opt/android/emulator', ['-version'], {
+      code: 0,
+      stdout: 'Android emulator version 35.2.10\n',
+    });
     runner.set('which', ['maestro'], { code: 1 });
 
     const report = await checkMobileDependencies({ runner, hostPlatform: 'darwin' });
@@ -214,7 +252,10 @@ describe('checkMobileDependencies', () => {
     const runner = new StubRunner();
 
     runner.set('which', ['xcodebuild'], { code: 0, stdout: '/usr/bin/xcodebuild\n' });
-    runner.set('xcodebuild', ['-version'], { code: 0, stdout: 'Xcode 16.0\nBuild version 16A123\n' });
+    runner.set('xcodebuild', ['-version'], {
+      code: 0,
+      stdout: 'Xcode 16.0\nBuild version 16A123\n',
+    });
     runner.set('xcrun', ['simctl', 'help'], { code: 0, stdout: 'usage: simctl ...\n' });
 
     runner.set('which', ['appium'], { code: 0, stdout: '/usr/local/bin/appium\n' });
@@ -234,14 +275,26 @@ describe('checkMobileDependencies', () => {
     runner.set('sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('/opt/android/sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('which', ['avdmanager'], { code: 0, stdout: '/opt/android/avdmanager\n' });
-    runner.set('avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
-    runner.set('/opt/android/avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
+    runner.set('avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
+    runner.set('/opt/android/avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
     runner.set('which', ['adb'], { code: 0, stdout: '/opt/android/adb\n' });
     runner.set('adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
-    runner.set('/opt/android/adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
+    runner.set('/opt/android/adb', ['version'], {
+      code: 0,
+      stdout: 'Android Debug Bridge version 1.0.41\n',
+    });
     runner.set('which', ['emulator'], { code: 0, stdout: '/opt/android/emulator\n' });
     runner.set('emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
-    runner.set('/opt/android/emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
+    runner.set('/opt/android/emulator', ['-version'], {
+      code: 0,
+      stdout: 'Android emulator version 35.2.10\n',
+    });
     runner.set('which', ['maestro'], { code: 1 });
 
     const report = await checkMobileDependencies({ runner, hostPlatform: 'darwin' });
@@ -255,14 +308,18 @@ describe('checkMobileDependencies', () => {
     const runner = new StubRunner();
 
     runner.set('which', ['xcodebuild'], { code: 0, stdout: '/usr/bin/xcodebuild\n' });
-    runner.set('xcodebuild', ['-version'], { code: 0, stdout: 'Xcode 16.0\nBuild version 16A123\n' });
+    runner.set('xcodebuild', ['-version'], {
+      code: 0,
+      stdout: 'Xcode 16.0\nBuild version 16A123\n',
+    });
     runner.set('xcrun', ['simctl', 'help'], { code: 0, stdout: 'usage: simctl ...\n' });
 
     runner.set('which', ['appium'], { code: 0, stdout: '/usr/local/bin/appium\n' });
     runner.set('appium', ['--version'], { code: 0, stdout: '3.0.0\n' });
     runner.set('appium', ['driver', 'list', '--installed'], {
       code: 0,
-      stdout: '- \u001b[33mxcuitest\u001b[39m@\u001b[33m11.0.0\u001b[39m \u001b[32m[installed]\u001b[39m\n- \u001b[33muiautomator2\u001b[39m@\u001b[33m4.1.0\u001b[39m \u001b[32m[installed]\u001b[39m\n',
+      stdout:
+        '- \u001b[33mxcuitest\u001b[39m@\u001b[33m11.0.0\u001b[39m \u001b[32m[installed]\u001b[39m\n- \u001b[33muiautomator2\u001b[39m@\u001b[33m4.1.0\u001b[39m \u001b[32m[installed]\u001b[39m\n',
     });
 
     runner.set('which', ['java'], { code: 0, stdout: '/usr/bin/java\n' });
@@ -271,26 +328,45 @@ describe('checkMobileDependencies', () => {
     runner.set('sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('/opt/android/sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('which', ['avdmanager'], { code: 0, stdout: '/opt/android/avdmanager\n' });
-    runner.set('avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
-    runner.set('/opt/android/avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
+    runner.set('avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
+    runner.set('/opt/android/avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
     runner.set('which', ['adb'], { code: 0, stdout: '/opt/android/adb\n' });
     runner.set('adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
-    runner.set('/opt/android/adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
+    runner.set('/opt/android/adb', ['version'], {
+      code: 0,
+      stdout: 'Android Debug Bridge version 1.0.41\n',
+    });
     runner.set('which', ['emulator'], { code: 0, stdout: '/opt/android/emulator\n' });
     runner.set('emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
-    runner.set('/opt/android/emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
+    runner.set('/opt/android/emulator', ['-version'], {
+      code: 0,
+      stdout: 'Android emulator version 35.2.10\n',
+    });
     runner.set('which', ['maestro'], { code: 1 });
 
     const report = await checkMobileDependencies({ runner, hostPlatform: 'darwin' });
-    expect(report.checks.find((entry) => entry.id === 'appium-xcuitest-driver')?.status).toBe('ready');
-    expect(report.checks.find((entry) => entry.id === 'appium-uiautomator2-driver')?.status).toBe('ready');
+    expect(report.checks.find((entry) => entry.id === 'appium-xcuitest-driver')?.status).toBe(
+      'ready',
+    );
+    expect(report.checks.find((entry) => entry.id === 'appium-uiautomator2-driver')?.status).toBe(
+      'ready',
+    );
   });
 
   it('prefers JSON driver list output when available even if plain list command fails', async () => {
     const runner = new StubRunner();
 
     runner.set('which', ['xcodebuild'], { code: 0, stdout: '/usr/bin/xcodebuild\n' });
-    runner.set('xcodebuild', ['-version'], { code: 0, stdout: 'Xcode 16.0\nBuild version 16A123\n' });
+    runner.set('xcodebuild', ['-version'], {
+      code: 0,
+      stdout: 'Xcode 16.0\nBuild version 16A123\n',
+    });
     runner.set('xcrun', ['simctl', 'help'], { code: 0, stdout: 'usage: simctl ...\n' });
 
     runner.set('which', ['appium'], { code: 0, stdout: '/usr/local/bin/appium\n' });
@@ -321,19 +397,35 @@ describe('checkMobileDependencies', () => {
     runner.set('sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('/opt/android/sdkmanager', ['--version'], { code: 0, stdout: '12.0\n' });
     runner.set('which', ['avdmanager'], { code: 0, stdout: '/opt/android/avdmanager\n' });
-    runner.set('avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
-    runner.set('/opt/android/avdmanager', ['list', 'target'], { code: 0, stdout: 'Available Android targets:\n' });
+    runner.set('avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
+    runner.set('/opt/android/avdmanager', ['list', 'target'], {
+      code: 0,
+      stdout: 'Available Android targets:\n',
+    });
     runner.set('which', ['adb'], { code: 0, stdout: '/opt/android/adb\n' });
     runner.set('adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
-    runner.set('/opt/android/adb', ['version'], { code: 0, stdout: 'Android Debug Bridge version 1.0.41\n' });
+    runner.set('/opt/android/adb', ['version'], {
+      code: 0,
+      stdout: 'Android Debug Bridge version 1.0.41\n',
+    });
     runner.set('which', ['emulator'], { code: 0, stdout: '/opt/android/emulator\n' });
     runner.set('emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
-    runner.set('/opt/android/emulator', ['-version'], { code: 0, stdout: 'Android emulator version 35.2.10\n' });
+    runner.set('/opt/android/emulator', ['-version'], {
+      code: 0,
+      stdout: 'Android emulator version 35.2.10\n',
+    });
     runner.set('which', ['maestro'], { code: 1 });
 
     const report = await checkMobileDependencies({ runner, hostPlatform: 'darwin' });
-    expect(report.checks.find((entry) => entry.id === 'appium-xcuitest-driver')?.status).toBe('ready');
-    expect(report.checks.find((entry) => entry.id === 'appium-uiautomator2-driver')?.status).toBe('ready');
+    expect(report.checks.find((entry) => entry.id === 'appium-xcuitest-driver')?.status).toBe(
+      'ready',
+    );
+    expect(report.checks.find((entry) => entry.id === 'appium-uiautomator2-driver')?.status).toBe(
+      'ready',
+    );
   });
 
   it('detects Android SDK tools from ANDROID_HOME even when binaries are not on PATH', async () => {
@@ -466,10 +558,15 @@ describe('installMobileDependency', () => {
     });
 
     try {
-      const result = await installMobileDependency('android-emulator', { runner, hostPlatform: 'darwin' });
+      const result = await installMobileDependency('android-emulator', {
+        runner,
+        hostPlatform: 'darwin',
+      });
 
       expect(result.success).toBe(true);
-      expect(result.command).toBe('/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --install emulator');
+      expect(result.command).toBe(
+        '/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --install emulator',
+      );
       expect(runner.calls.at(-1)).toEqual({
         command: '/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager',
         args: ['--install', 'emulator'],
@@ -491,7 +588,10 @@ describe('installMobileDependency', () => {
   it('emits install progress events with per-step lifecycle and final completion', async () => {
     const runner = new StubRunner();
     runner.set('brew', ['tap', 'mobile-dev-inc/tap'], { code: 0, stdout: 'tapped\n' });
-    runner.set('brew', ['install', 'mobile-dev-inc/tap/maestro'], { code: 0, stdout: 'installed\n' });
+    runner.set('brew', ['install', 'mobile-dev-inc/tap/maestro'], {
+      code: 0,
+      stdout: 'installed\n',
+    });
 
     const events: Array<Record<string, unknown>> = [];
 

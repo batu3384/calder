@@ -1,7 +1,11 @@
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { normalizeProjectSurface } from './state-normalizers.js';
-import { findActiveCliSession, findProjectSession, isCliSessionRecord } from './state-project-surface.js';
+import {
+  findActiveCliSession,
+  findProjectSession,
+  isCliSessionRecord,
+} from './state-project-surface.js';
 import {
   createBrowserTabSessionRecord,
   createDiffViewerSessionRecord,
@@ -67,10 +71,10 @@ export function upsertDiffViewerSession(
 ): SessionMutationResult {
   const existing = project.sessions.find(
     (session) =>
-      session.type === 'diff-viewer'
-      && session.diffFilePath === payload.filePath
-      && session.diffArea === payload.area
-      && session.worktreePath === payload.worktreePath,
+      session.type === 'diff-viewer' &&
+      session.diffFilePath === payload.filePath &&
+      session.diffArea === payload.area &&
+      session.worktreePath === payload.worktreePath,
   );
   if (existing) {
     activateSession(project, existing.id, pushNav);
@@ -111,7 +115,11 @@ export function addRemoteSession(
   return session;
 }
 
-export function addMcpInspectorSession(project: ProjectRecord, name: string, pushNav: PushNav): SessionRecord {
+export function addMcpInspectorSession(
+  project: ProjectRecord,
+  name: string,
+  pushNav: PushNav,
+): SessionRecord {
   const session = createMcpInspectorSessionRecord(name);
   addSessionToProject(project, session, pushNav);
   return session;
@@ -147,14 +155,18 @@ export function upsertBrowserTabSession(
 function resolveBrowserSurfaceSession(project: ProjectRecord): SessionRecord | undefined {
   const currentSurfaceSessionId = project.surface?.web?.sessionId;
   const currentSurfaceSession = currentSurfaceSessionId
-    ? project.sessions.find((session) => session.id === currentSurfaceSessionId && session.type === 'browser-tab')
+    ? project.sessions.find(
+        (session) => session.id === currentSurfaceSessionId && session.type === 'browser-tab',
+      )
     : undefined;
   if (currentSurfaceSession) {
     return currentSurfaceSession;
   }
 
   const activeBrowserSession = project.activeSessionId
-    ? project.sessions.find((session) => session.id === project.activeSessionId && session.type === 'browser-tab')
+    ? project.sessions.find(
+        (session) => session.id === project.activeSessionId && session.type === 'browser-tab',
+      )
     : undefined;
   if (activeBrowserSession) {
     return activeBrowserSession;
@@ -177,7 +189,10 @@ export function openUrlInExistingBrowserSession(
   return targetSession;
 }
 
-export function setSurfaceTargetSession(project: ProjectRecord, targetSessionId: string | null): boolean {
+export function setSurfaceTargetSession(
+  project: ProjectRecord,
+  targetSessionId: string | null,
+): boolean {
   project.surface = normalizeProjectSurface(project);
 
   if (targetSessionId === null) {

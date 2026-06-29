@@ -1,6 +1,14 @@
 import { isTrackingHealthy } from '../../../shared/tracking-health.js';
-import type { MobileDependencyCheck, MobileDependencyId, MobileDependencyReport } from '../../../shared/types/mobile.js';
-import type { CliProviderMeta, ProviderId, SettingsValidationResult } from '../../../shared/types/provider.js';
+import type {
+  MobileDependencyCheck,
+  MobileDependencyId,
+  MobileDependencyReport,
+} from '../../../shared/types/mobile.js';
+import type {
+  CliProviderMeta,
+  ProviderId,
+  SettingsValidationResult,
+} from '../../../shared/types/provider.js';
 interface ProviderStatus {
   meta: CliProviderMeta;
   validation: SettingsValidationResult;
@@ -47,7 +55,9 @@ function renderCheckItem(parent: HTMLElement, opts: RenderCheckItemOptions): voi
   }
 
   const status = document.createElement('div');
-  status.className = opts.ok ? 'setup-check-status setup-check-status-pill ok' : 'setup-check-status setup-check-status-pill error';
+  status.className = opts.ok
+    ? 'setup-check-status setup-check-status-pill ok'
+    : 'setup-check-status setup-check-status-pill error';
   status.textContent = opts.statusText;
 
   row.appendChild(icon);
@@ -97,8 +107,9 @@ function renderProviderHeader(parent: HTMLElement, displayName: string, hasIssue
 }
 
 function hasMobileRequiredIssue(report: MobileDependencyReport): boolean {
-  return report.checks.some((check) =>
-    check.required && (check.status === 'missing' || check.status === 'warning'));
+  return report.checks.some(
+    (check) => check.required && (check.status === 'missing' || check.status === 'warning'),
+  );
 }
 
 function getMobileStatusText(check: MobileDependencyCheck): string {
@@ -119,7 +130,7 @@ function getMobileHelpText(check: MobileDependencyCheck): string {
 async function fetchProviderStatuses(): Promise<ProviderStatus[]> {
   const providers = await window.calder.provider.listProviders();
   return Promise.all(
-    providers.map(meta =>
+    providers.map((meta) =>
       Promise.all([
         window.calder.settings.validate(meta.id),
         window.calder.provider.checkBinary(meta.id),
@@ -174,7 +185,11 @@ export async function renderSetupSection(args: RenderSetupSectionArgs): Promise<
     providerShell.className = 'setup-provider-shell';
     section.appendChild(providerShell);
 
-    renderProviderHeader(providerShell, meta.displayName, hasProviderIssue({ meta, validation, binary }));
+    renderProviderHeader(
+      providerShell,
+      meta.displayName,
+      hasProviderIssue({ meta, validation, binary }),
+    );
 
     renderCheckItem(providerShell, {
       label: meta.displayName,
@@ -318,8 +333,11 @@ export async function renderMobileSetupSection(args: RenderMobileSetupSectionArg
     groupShell.className = 'setup-provider-shell';
     section.appendChild(groupShell);
 
-    renderProviderHeader(groupShell, group.title, group.checks.some((check) =>
-      check.status === 'missing' || check.status === 'warning'));
+    renderProviderHeader(
+      groupShell,
+      group.title,
+      group.checks.some((check) => check.status === 'missing' || check.status === 'warning'),
+    );
 
     for (const check of group.checks) {
       const isReady = check.status === 'ready' || check.status === 'unsupported';
@@ -329,9 +347,10 @@ export async function renderMobileSetupSection(args: RenderMobileSetupSectionArg
         ok: isReady,
         statusText: getMobileStatusText(check),
         helpText: isReady ? undefined : getMobileHelpText(check),
-        onFix: check.autoFixAvailable && !isReady
-          ? () => args.onInstallMobileDependency(check.id)
-          : undefined,
+        onFix:
+          check.autoFixAvailable && !isReady
+            ? () => args.onInstallMobileDependency(check.id)
+            : undefined,
         actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined,
       });
     }

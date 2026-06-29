@@ -19,7 +19,10 @@ class FakeWebContents {
 
   on(event: 'will-navigate', listener: WillNavigateHandler): this;
   on(event: 'did-attach-webview', listener: AttachWebviewHandler): this;
-  on(event: 'will-navigate' | 'did-attach-webview', listener: WillNavigateHandler | AttachWebviewHandler): this {
+  on(
+    event: 'will-navigate' | 'did-attach-webview',
+    listener: WillNavigateHandler | AttachWebviewHandler,
+  ): this {
     if (event === 'will-navigate') {
       this.willNavigateHandlers.push(listener as WillNavigateHandler);
     } else {

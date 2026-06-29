@@ -34,7 +34,10 @@ async function resolveBinaryCommand(
   return null;
 }
 
-export async function resolveAndroidCommandSet(): Promise<{ commands?: AndroidCommandSet; error?: string }> {
+export async function resolveAndroidCommandSet(): Promise<{
+  commands?: AndroidCommandSet;
+  error?: string;
+}> {
   const env = buildResolveEnv();
   const adbFallbacks = getAndroidBinaryCandidates('adb', env, process.platform);
   const emulatorFallbacks = getAndroidBinaryCandidates('emulator', env, process.platform);
@@ -42,14 +45,16 @@ export async function resolveAndroidCommandSet(): Promise<{ commands?: AndroidCo
   const adbBinary = await resolveBinaryCommand('adb', adbFallbacks, ['version']);
   if (!adbBinary) {
     return {
-      error: 'adb was not found on PATH or known Android SDK locations. Install Android platform-tools first.',
+      error:
+        'adb was not found on PATH or known Android SDK locations. Install Android platform-tools first.',
     };
   }
 
   const emulatorBinary = await resolveBinaryCommand('emulator', emulatorFallbacks, ['-version']);
   if (!emulatorBinary) {
     return {
-      error: 'Android emulator binary was not found on PATH or known Android SDK locations. Install Android emulator tools first.',
+      error:
+        'Android emulator binary was not found on PATH or known Android SDK locations. Install Android emulator tools first.',
     };
   }
 

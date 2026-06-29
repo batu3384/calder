@@ -1,16 +1,27 @@
-import { BrowserWindow,ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 
 import { isTrackingHealthy } from '../shared/tracking-health';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
-import { registerPendingCodexSession, startCodexSessionWatcher, stopCodexSessionWatcher,unregisterCodexSession } from './codex-session-watcher';
-import { registerPendingCopilotSession, startCopilotSessionWatcher, stopCopilotSessionWatcher,unregisterCopilotSession } from './copilot-session-watcher';
-import { cleanupSessionStatus, startWatching, stopWatching as stopHookWatching } from './hooks/hook-status';
-import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
 import {
-  isAutoApprovalMode,
-  updateAutoApprovalMode,
-} from './ipc-auto-approval-governance';
+  registerPendingCodexSession,
+  startCodexSessionWatcher,
+  stopCodexSessionWatcher,
+  unregisterCodexSession,
+} from './codex-session-watcher';
+import {
+  registerPendingCopilotSession,
+  startCopilotSessionWatcher,
+  stopCopilotSessionWatcher,
+  unregisterCopilotSession,
+} from './copilot-session-watcher';
+import {
+  cleanupSessionStatus,
+  startWatching,
+  stopWatching as stopHookWatching,
+} from './hooks/hook-status';
+import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
+import { isAutoApprovalMode, updateAutoApprovalMode } from './ipc-auto-approval-governance';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
@@ -42,10 +53,19 @@ import { loadState } from './store';
 let hookWatcherStarted = false;
 
 const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
-  data: (projectId, data) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
-  exit: (projectId, exitCode, signal) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:exit', projectId, exitCode, signal),
-  status: (projectId, state) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
-  error: (projectId, message) => BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
+  data: (projectId, data) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
+  exit: (projectId, exitCode, signal) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send(
+      'cli-surface:exit',
+      projectId,
+      exitCode,
+      signal,
+    ),
+  status: (projectId, state) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
+  error: (projectId, message) =>
+    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
 });
 
 export function resetHookWatcher(): void {
@@ -58,14 +78,12 @@ export function resetHookWatcher(): void {
 }
 
 export function registerIpcHandlers(): void {
-  const {
-    autoApprovalOrchestrator,
-    getGovernanceState,
-    mirrorPlaywrightFromPtyData,
-  } = createInspectorOrchestration();
+  const { autoApprovalOrchestrator, getGovernanceState, mirrorPlaywrightFromPtyData } =
+    createInspectorOrchestration();
 
   registerPtyIpcHandlers({
-    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+    assertProjectGovernanceAllows: (projectPath, operation) =>
+      assertProjectGovernanceAllows(projectPath, operation),
     isWithinKnownProject,
     ensureHookWatcherStarted: (win) => {
       if (hookWatcherStarted) return;
@@ -85,9 +103,9 @@ export function registerIpcHandlers(): void {
       let trackingHealthy = isTrackingHealthy(provider.meta, validation);
       if (!trackingHealthy) {
         const shouldSkipClaudeForeignStatuslineAutoHeal =
-          providerId === 'claude'
-          && validation.statusLine === 'foreign'
-          && loadState().preferences.statusLineConsent === 'declined';
+          providerId === 'claude' &&
+          validation.statusLine === 'foreign' &&
+          loadState().preferences.statusLineConsent === 'declined';
 
         if (shouldSkipClaudeForeignStatuslineAutoHeal) {
           win.webContents.send('settings:warning', {
@@ -136,7 +154,8 @@ export function registerIpcHandlers(): void {
   });
 
   registerCliSurfaceIpcHandlers(cliSurfaceRuntime, {
-    resolveProjectPath: (projectId) => loadState().projects.find((project) => project.id === projectId)?.path,
+    resolveProjectPath: (projectId) =>
+      loadState().projects.find((project) => project.id === projectId)?.path,
     isWithinKnownProject,
   });
 
@@ -149,10 +168,12 @@ export function registerIpcHandlers(): void {
   registerMaintenanceIpcHandlers();
   registerMcpGovernanceIpcHandlers({
     requireKnownProjectPath,
-    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+    assertProjectGovernanceAllows: (projectPath, operation) =>
+      assertProjectGovernanceAllows(projectPath, operation),
   });
   registerGitIpcHandlers({
-    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+    assertProjectGovernanceAllows: (projectPath, operation) =>
+      assertProjectGovernanceAllows(projectPath, operation),
   });
   registerProviderIpcHandlers();
   registerProviderUpdateIpcHandlers();
@@ -163,16 +184,19 @@ export function registerIpcHandlers(): void {
   });
 
   registerCalderIpcHandlers({
-    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+    assertProjectGovernanceAllows: (projectPath, operation) =>
+      assertProjectGovernanceAllows(projectPath, operation),
     getGovernanceState,
     isAutoApprovalMode,
     updateAutoApprovalMode,
-    setSessionAutoApprovalOverride: (sessionId, mode) => autoApprovalOrchestrator.setSessionOverride(sessionId, mode),
+    setSessionAutoApprovalOverride: (sessionId, mode) =>
+      autoApprovalOrchestrator.setSessionOverride(sessionId, mode),
   });
   registerAppBrowserIpcHandlers({
     requireKnownProjectPath,
     getActiveProjectPath,
-    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
+    assertProjectGovernanceAllows: (projectPath, operation) =>
+      assertProjectGovernanceAllows(projectPath, operation),
   });
 
   registerMcpHandlers();

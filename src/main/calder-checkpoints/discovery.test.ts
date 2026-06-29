@@ -31,28 +31,32 @@ describe('discoverProjectCheckpoints', () => {
     const root = makeProject('checkpoint-discovery');
     roots.push(root);
     writeFiles(root, {
-      '.calder/checkpoints/2026-04-13T12-00-00-000Z-manual-checkpoint.json': JSON.stringify({
-        schemaVersion: 1,
-        id: 'cp-1',
-        label: 'Manual checkpoint',
-        createdAt: '2026-04-13T12:00:00.000Z',
-        sessionCount: 2,
-        changedFileCount: 3,
-        sessions: [
-          {
-            id: 'cli-1',
-            name: 'Main session',
-            cliSessionId: 'cli-restore-1',
-          },
-          {
-            id: 'browser-1',
-            name: 'Local app',
-            type: 'browser-tab',
-            cliSessionId: null,
-            browserTabUrl: 'http://localhost:3000',
-          },
-        ],
-      }, null, 2),
+      '.calder/checkpoints/2026-04-13T12-00-00-000Z-manual-checkpoint.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          id: 'cp-1',
+          label: 'Manual checkpoint',
+          createdAt: '2026-04-13T12:00:00.000Z',
+          sessionCount: 2,
+          changedFileCount: 3,
+          sessions: [
+            {
+              id: 'cli-1',
+              name: 'Main session',
+              cliSessionId: 'cli-restore-1',
+            },
+            {
+              id: 'browser-1',
+              name: 'Local app',
+              type: 'browser-tab',
+              cliSessionId: null,
+              browserTabUrl: 'http://localhost:3000',
+            },
+          ],
+        },
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectCheckpoints(root);
@@ -83,21 +87,29 @@ describe('discoverProjectCheckpoints', () => {
     roots.push(root);
 
     writeFiles(root, {
-      '.calder/checkpoints/2026-04-13T12-10-00-000Z-fallback-count.json': JSON.stringify({
-        schemaVersion: 1,
-        id: 'cp-fallback-count',
-        label: 'Fallback count',
-        createdAt: '2026-04-13T12:10:00.000Z',
-        sessionCount: 3,
-        sessions: [{ type: 'unknown' }],
-      }, null, 2),
-      '.calder/checkpoints/2026-04-13T12-05-00-000Z-fallback-default.json': JSON.stringify({
-        schemaVersion: 1,
-        id: 'cp-fallback-default',
-        label: 'Fallback default',
-        createdAt: '2026-04-13T12:05:00.000Z',
-        sessions: [],
-      }, null, 2),
+      '.calder/checkpoints/2026-04-13T12-10-00-000Z-fallback-count.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          id: 'cp-fallback-count',
+          label: 'Fallback count',
+          createdAt: '2026-04-13T12:10:00.000Z',
+          sessionCount: 3,
+          sessions: [{ type: 'unknown' }],
+        },
+        null,
+        2,
+      ),
+      '.calder/checkpoints/2026-04-13T12-05-00-000Z-fallback-default.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          id: 'cp-fallback-default',
+          label: 'Fallback default',
+          createdAt: '2026-04-13T12:05:00.000Z',
+          sessions: [],
+        },
+        null,
+        2,
+      ),
       '.calder/checkpoints/2026-04-13T12-00-00-000Z-broken.json': '{not-valid-json',
     });
     mkdirSync(join(root, '.calder', 'checkpoints', 'folder.json'), { recursive: true });

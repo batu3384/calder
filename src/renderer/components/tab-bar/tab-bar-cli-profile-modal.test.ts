@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const profileModalSource = readFileSync(new URL('./tab-bar-cli-profile-modal.ts', import.meta.url), 'utf-8');
+const profileModalSource = readFileSync(
+  new URL('./tab-bar-cli-profile-modal.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('tab bar cli profile modal extraction', () => {
   it('keeps prompt orchestration in tab-bar and delegates details to dedicated helper', () => {
@@ -11,8 +14,12 @@ describe('tab bar cli profile modal extraction', () => {
   });
 
   it('retains profile validation and persistence behavior inside helper module', () => {
-    expect(profileModalSource).toContain("setModalError('cli-profile-name', 'Profile name is required')");
-    expect(profileModalSource).toContain("setModalError('cli-profile-command', 'Command is required')");
+    expect(profileModalSource).toContain(
+      "setModalError('cli-profile-name', 'Profile name is required')",
+    );
+    expect(profileModalSource).toContain(
+      "setModalError('cli-profile-command', 'Command is required')",
+    );
     expect(profileModalSource).toContain('parseCliSurfacePortMode');
     expect(profileModalSource).toContain('isLikelyFixedPortCompatible');
     expect(profileModalSource).toContain('upsertCliSurfaceProfile(project, profile)');

@@ -38,7 +38,10 @@ function resetHoverOverlay(options: RenderCliHoverOverlayOptions): void {
   overlayEl.dataset.focused = 'false';
 }
 
-function getHoverRegionMeta(options: RenderCliHoverOverlayOptions, region: CliHoverRegion): {
+function getHoverRegionMeta(
+  options: RenderCliHoverOverlayOptions,
+  region: CliHoverRegion,
+): {
   detail: string;
   focused: boolean;
 } {
@@ -49,7 +52,8 @@ function getHoverRegionMeta(options: RenderCliHoverOverlayOptions, region: CliHo
     };
   }
 
-  const focused = region.semanticNodeId === options.semanticFocusNodes?.values().next().value?.nodeId;
+  const focused =
+    region.semanticNodeId === options.semanticFocusNodes?.values().next().value?.nodeId;
   const nodeMessage = region.semanticNodeId
     ? options.semanticNodes?.get(region.semanticNodeId)
     : undefined;
@@ -62,23 +66,19 @@ function getHoverRegionMeta(options: RenderCliHoverOverlayOptions, region: CliHo
   } as Record<string, unknown>;
 
   const framework = typeof meta.framework === 'string' ? meta.framework : null;
-  const widget = typeof meta.widgetName === 'string'
-    ? meta.widgetName
-    : typeof meta.widgetType === 'string'
-      ? meta.widgetType
-      : typeof meta.componentName === 'string'
-        ? meta.componentName
-        : typeof meta.componentType === 'string'
-          ? meta.componentType
-          : null;
+  const widget =
+    typeof meta.widgetName === 'string'
+      ? meta.widgetName
+      : typeof meta.widgetType === 'string'
+        ? meta.widgetType
+        : typeof meta.componentName === 'string'
+          ? meta.componentName
+          : typeof meta.componentType === 'string'
+            ? meta.componentType
+            : null;
 
   return {
-    detail: [
-      'Semantic target',
-      focused ? 'Focused' : null,
-      framework,
-      widget,
-    ]
+    detail: ['Semantic target', focused ? 'Focused' : null, framework, widget]
       .filter((part): part is string => Boolean(part))
       .join(' · '),
     focused,
@@ -90,11 +90,15 @@ function getHoverPlacementClass(
   region: CliHoverRegion,
 ): 'floating-above' | 'floating-below' | 'inline' {
   const viewportRect = options.viewportEl.getBoundingClientRect();
-  const rowHeight = viewportRect.height > 0 && options.terminalRows > 0
-    ? viewportRect.height / options.terminalRows
-    : 0;
+  const rowHeight =
+    viewportRect.height > 0 && options.terminalRows > 0
+      ? viewportRect.height / options.terminalRows
+      : 0;
   const regionTop = Math.max(0, region.selection.startRow * rowHeight);
-  const regionHeight = Math.max(rowHeight, (region.selection.endRow - region.selection.startRow + 1) * rowHeight);
+  const regionHeight = Math.max(
+    rowHeight,
+    (region.selection.endRow - region.selection.startRow + 1) * rowHeight,
+  );
   const regionBottom = regionTop + regionHeight;
   const availableAbove = regionTop;
   const availableBelow = Math.max(0, viewportRect.height - regionBottom);
@@ -130,16 +134,19 @@ export function renderCliHoverOverlay(options: RenderCliHoverOverlayOptions): vo
   overlayEl.classList.toggle('floating-above', placement === 'floating-above');
   overlayEl.classList.toggle('floating-below', placement === 'floating-below');
   overlayEl.dataset.kind = region.kind;
-  overlayEl.dataset.placement = placement === 'inline' ? 'inline' : placement === 'floating-below' ? 'below' : 'above';
+  overlayEl.dataset.placement =
+    placement === 'inline' ? 'inline' : placement === 'floating-below' ? 'below' : 'above';
   overlayEl.dataset.focused = hoverMeta.focused ? 'true' : 'false';
 
   const viewportRect = options.viewportEl.getBoundingClientRect();
-  const rowHeight = viewportRect.height > 0 && options.terminalRows > 0
-    ? viewportRect.height / options.terminalRows
-    : 0;
-  const colWidth = viewportRect.width > 0 && options.terminalCols > 0
-    ? viewportRect.width / options.terminalCols
-    : 0;
+  const rowHeight =
+    viewportRect.height > 0 && options.terminalRows > 0
+      ? viewportRect.height / options.terminalRows
+      : 0;
+  const colWidth =
+    viewportRect.width > 0 && options.terminalCols > 0
+      ? viewportRect.width / options.terminalCols
+      : 0;
 
   overlayEl.style.left = `${Math.max(0, region.selection.startCol * colWidth)}px`;
   overlayEl.style.top = `${Math.max(0, region.selection.startRow * rowHeight)}px`;

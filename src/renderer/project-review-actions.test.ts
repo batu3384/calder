@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockLoad,
-  mockSave,
-  mockDeliverPromptToTerminalSession,
-} = vi.hoisted(() => ({
+const { mockLoad, mockSave, mockDeliverPromptToTerminalSession } = vi.hoisted(() => ({
   mockLoad: vi.fn(),
   mockSave: vi.fn(),
   mockDeliverPromptToTerminalSession: vi.fn(),
@@ -33,8 +29,11 @@ vi.mock('./components/terminal-pane.js', () => ({
   deliverPromptToTerminalSession: mockDeliverPromptToTerminalSession,
 }));
 
-import { buildProjectReviewFixPrompt, sendProjectReviewToSelectedSession } from './project-review-actions.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  buildProjectReviewFixPrompt,
+  sendProjectReviewToSelectedSession,
+} from './project-review-actions.js';
+import { _resetForTesting, appState } from './state.js';
 
 describe('project review actions', () => {
   beforeEach(() => {

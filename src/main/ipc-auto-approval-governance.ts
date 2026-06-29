@@ -9,17 +9,24 @@ import {
 import { POLICY_RELATIVE_PATH } from './calder-governance/discovery';
 
 export function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
-  return value === 'off'
-    || value === 'edit_only'
-    || value === 'edit_plus_safe_tools'
-    || value === 'full_auto'
-    || value === 'full_auto_unsafe';
+  return (
+    value === 'off' ||
+    value === 'edit_only' ||
+    value === 'edit_plus_safe_tools' ||
+    value === 'full_auto' ||
+    value === 'full_auto_unsafe'
+  );
 }
 
-export function updateAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null): void {
-  const targetPath = scope === 'global'
-    ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
-    : path.join(projectPath, POLICY_RELATIVE_PATH);
+export function updateAutoApprovalMode(
+  projectPath: string,
+  scope: 'global' | 'project',
+  mode: AutoApprovalMode | null,
+): void {
+  const targetPath =
+    scope === 'global'
+      ? GLOBAL_AUTO_APPROVAL_POLICY_PATH
+      : path.join(projectPath, POLICY_RELATIVE_PATH);
   setAutoApprovalModeInPolicyFile(targetPath, mode);
 }
 

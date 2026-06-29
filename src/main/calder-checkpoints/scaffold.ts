@@ -1,7 +1,11 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput } from '../../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointCreateResult,
+  ProjectCheckpointDocument,
+  ProjectCheckpointSnapshotInput,
+} from '../../shared/types/project-checkpoint.js';
 import { getGitFiles, getGitStatus } from '../git-status.js';
 import { discoverProjectCheckpoints } from './discovery.js';
 
@@ -24,13 +28,15 @@ function normalizeCheckpointRelativePath(projectPath: string, checkpointPath: st
   const resolvedCheckpointPath = path.isAbsolute(checkpointPath)
     ? path.resolve(checkpointPath)
     : path.resolve(projectPath, checkpointPath);
-  const relativePath = path.relative(resolvedProjectPath, resolvedCheckpointPath).replace(/\\/g, '/');
+  const relativePath = path
+    .relative(resolvedProjectPath, resolvedCheckpointPath)
+    .replace(/\\/g, '/');
 
   if (
-    relativePath.startsWith('..')
-    || path.isAbsolute(relativePath)
-    || !relativePath.startsWith('.calder/checkpoints/')
-    || !relativePath.endsWith('.json')
+    relativePath.startsWith('..') ||
+    path.isAbsolute(relativePath) ||
+    !relativePath.startsWith('.calder/checkpoints/') ||
+    !relativePath.endsWith('.json')
   ) {
     throw new Error('Only checkpoint files inside .calder/checkpoints are supported');
   }

@@ -20,13 +20,7 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string';
 }
 
-const VALID_PROVIDER_IDS: ProviderId[] = [
-  'claude',
-  'codex',
-  'copilot',
-  'antigravity',
-  'qwen',
-];
+const VALID_PROVIDER_IDS: ProviderId[] = ['claude', 'codex', 'copilot', 'antigravity', 'qwen'];
 
 const VALID_SESSION_TYPES = new Set([
   'claude',
@@ -79,7 +73,9 @@ function normalizeProjectPathForSave(rawPath: string): string {
   return path.resolve(rawPath);
 }
 
-function validateSessionRecordForSave(session: PersistedState['projects'][number]['sessions'][number]): void {
+function validateSessionRecordForSave(
+  session: PersistedState['projects'][number]['sessions'][number],
+): void {
   assertStringField(session.id, 'session.id', MAX_IDENTIFIER_LENGTH);
   assertStringField(session.name, 'session.name', MAX_SESSION_NAME_LENGTH);
   if (!Number.isFinite(Date.parse(session.createdAt))) {
@@ -91,27 +87,43 @@ function validateSessionRecordForSave(session: PersistedState['projects'][number
   if (session.providerId !== undefined && !isProviderId(session.providerId)) {
     const normalized = normalizeLegacyProviderId(session.providerId);
     if (!normalized) {
-      throw new Error(`Invalid state payload: unsupported session.providerId "${session.providerId}"`);
+      throw new Error(
+        `Invalid state payload: unsupported session.providerId "${session.providerId}"`,
+      );
     }
     (session as { providerId?: ProviderId }).providerId = normalized;
   }
   if (session.args !== undefined) {
-    assertStringField(session.args, 'session.args', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
+    assertStringField(session.args, 'session.args', MAX_SESSION_STRING_LENGTH, {
+      allowEmpty: true,
+    });
   }
   if (session.diffFilePath !== undefined) {
-    assertStringField(session.diffFilePath, 'session.diffFilePath', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
+    assertStringField(session.diffFilePath, 'session.diffFilePath', MAX_SESSION_STRING_LENGTH, {
+      allowEmpty: true,
+    });
   }
   if (session.worktreePath !== undefined) {
-    assertStringField(session.worktreePath, 'session.worktreePath', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
+    assertStringField(session.worktreePath, 'session.worktreePath', MAX_SESSION_STRING_LENGTH, {
+      allowEmpty: true,
+    });
   }
   if (session.fileReaderPath !== undefined) {
-    assertStringField(session.fileReaderPath, 'session.fileReaderPath', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
+    assertStringField(session.fileReaderPath, 'session.fileReaderPath', MAX_SESSION_STRING_LENGTH, {
+      allowEmpty: true,
+    });
   }
   if (session.browserTabUrl !== undefined) {
-    assertStringField(session.browserTabUrl, 'session.browserTabUrl', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
+    assertStringField(session.browserTabUrl, 'session.browserTabUrl', MAX_SESSION_STRING_LENGTH, {
+      allowEmpty: true,
+    });
   }
   if (session.browserTargetSessionId !== undefined) {
-    assertStringField(session.browserTargetSessionId, 'session.browserTargetSessionId', MAX_IDENTIFIER_LENGTH);
+    assertStringField(
+      session.browserTargetSessionId,
+      'session.browserTargetSessionId',
+      MAX_IDENTIFIER_LENGTH,
+    );
   }
 }
 
@@ -139,7 +151,9 @@ function validatePersistedStateReferences(state: PersistedState): void {
     for (const session of project.sessions) {
       validateSessionRecordForSave(session);
       if (sessionIds.has(session.id)) {
-        throw new Error(`Invalid state payload: duplicate session.id detected in project "${project.id}"`);
+        throw new Error(
+          `Invalid state payload: duplicate session.id detected in project "${project.id}"`,
+        );
       }
       sessionIds.add(session.id);
     }
@@ -147,13 +161,17 @@ function validatePersistedStateReferences(state: PersistedState): void {
     if (project.activeSessionId !== null) {
       assertStringField(project.activeSessionId, 'project.activeSessionId', MAX_IDENTIFIER_LENGTH);
       if (!sessionIds.has(project.activeSessionId)) {
-        throw new Error(`Invalid state payload: activeSessionId is missing in project "${project.id}"`);
+        throw new Error(
+          `Invalid state payload: activeSessionId is missing in project "${project.id}"`,
+        );
       }
     }
 
     for (const session of project.sessions) {
       if (session.browserTargetSessionId && !sessionIds.has(session.browserTargetSessionId)) {
-        throw new Error(`Invalid state payload: browserTargetSessionId is missing in project "${project.id}"`);
+        throw new Error(
+          `Invalid state payload: browserTargetSessionId is missing in project "${project.id}"`,
+        );
       }
     }
   }
@@ -165,10 +183,15 @@ function validatePersistedStateReferences(state: PersistedState): void {
     }
   }
 
-  if (state.preferences.defaultProvider !== undefined && !isProviderId(state.preferences.defaultProvider)) {
+  if (
+    state.preferences.defaultProvider !== undefined &&
+    !isProviderId(state.preferences.defaultProvider)
+  ) {
     const normalized = normalizeLegacyProviderId(state.preferences.defaultProvider);
     if (!normalized) {
-      throw new Error(`Invalid state payload: unsupported preferences.defaultProvider "${state.preferences.defaultProvider}"`);
+      throw new Error(
+        `Invalid state payload: unsupported preferences.defaultProvider "${state.preferences.defaultProvider}"`,
+      );
     }
     state.preferences.defaultProvider = normalized;
   }
@@ -176,10 +199,12 @@ function validatePersistedStateReferences(state: PersistedState): void {
 
 function isValidSessionRecordShape(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return isString(value.id)
-    && isString(value.name)
-    && isNullableString(value.cliSessionId)
-    && isString(value.createdAt);
+  return (
+    isString(value.id) &&
+    isString(value.name) &&
+    isNullableString(value.cliSessionId) &&
+    isString(value.createdAt)
+  );
 }
 
 function isValidProjectRecordShape(value: unknown): boolean {
@@ -193,12 +218,14 @@ function isValidProjectRecordShape(value: unknown): boolean {
 
 function isValidPreferencesShape(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  return isBoolean(value.soundOnSessionWaiting)
-    && isBoolean(value.notificationsDesktop)
-    && isBoolean(value.debugMode)
-    && isBoolean(value.sessionHistoryEnabled)
-    && isBoolean(value.insightsEnabled)
-    && isBoolean(value.autoTitleEnabled);
+  return (
+    isBoolean(value.soundOnSessionWaiting) &&
+    isBoolean(value.notificationsDesktop) &&
+    isBoolean(value.debugMode) &&
+    isBoolean(value.sessionHistoryEnabled) &&
+    isBoolean(value.insightsEnabled) &&
+    isBoolean(value.autoTitleEnabled)
+  );
 }
 
 export function sanitizePersistedStateForSave(state: unknown): PersistedState {

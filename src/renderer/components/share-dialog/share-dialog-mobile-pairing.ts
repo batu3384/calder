@@ -36,7 +36,9 @@ async function createQrDataUrl(value: string): Promise<string | null> {
   }
 }
 
-export async function setShareDialogPrimaryMobileLink(params: SetShareDialogPrimaryLinkParams): Promise<boolean> {
+export async function setShareDialogPrimaryMobileLink(
+  params: SetShareDialogPrimaryLinkParams,
+): Promise<boolean> {
   const { link, mobileLinkInput, mobileQrImg } = params;
   mobileLinkInput.value = link;
   const qrDataUrl = await createQrDataUrl(link);
@@ -59,7 +61,9 @@ function isLoopbackShareDialogLink(value: string): boolean {
   }
 }
 
-export function setShareDialogMobileFallbackLinks(params: SetShareDialogFallbackLinksParams): string {
+export function setShareDialogMobileFallbackLinks(
+  params: SetShareDialogFallbackLinksParams,
+): string {
   const {
     links,
     primaryLink,
@@ -69,7 +73,8 @@ export function setShareDialogMobileFallbackLinks(params: SetShareDialogFallback
     copyMobileFallbackBtn,
   } = params;
   const deduped = Array.from(new Set(links.filter((link) => link && link.trim().length > 0)));
-  const fallback = deduped.find((link) => link !== primaryLink && !isLoopbackShareDialogLink(link)) ?? '';
+  const fallback =
+    deduped.find((link) => link !== primaryLink && !isLoopbackShareDialogLink(link)) ?? '';
   mobileFallbackInput.value = fallback;
   mobileFallbackRow.classList.toggle('hidden', !fallback);
   useMobileFallbackBtn.disabled = !fallback;

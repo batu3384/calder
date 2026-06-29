@@ -89,7 +89,10 @@ class FakeElement {
     }
     if (selector.startsWith('.')) {
       const className = selector.slice(1);
-      return this.find((child) => child.className.split(/\s+/).includes(className) || child.classList.contains(className));
+      return this.find(
+        (child) =>
+          child.className.split(/\s+/).includes(className) || child.classList.contains(className),
+      );
     }
     return null;
   }
@@ -124,9 +127,10 @@ class FakeBackend {
     if (query === 'needle') {
       this.state = {
         totalCount: 3,
-        currentIndex: this.state.totalCount === 3 && this.lastQuery === query && this.state.currentIndex >= 0
-          ? (this.state.currentIndex + 1) % 3
-          : 0,
+        currentIndex:
+          this.state.totalCount === 3 && this.lastQuery === query && this.state.currentIndex >= 0
+            ? (this.state.currentIndex + 1) % 3
+            : 0,
       };
     } else {
       this.state = { currentIndex: -1, totalCount: 0 };
@@ -139,9 +143,10 @@ class FakeBackend {
     if (query === 'needle') {
       this.state = {
         totalCount: 3,
-        currentIndex: this.state.totalCount === 3 && this.state.currentIndex >= 0
-          ? (this.state.currentIndex + 2) % 3
-          : 2,
+        currentIndex:
+          this.state.totalCount === 3 && this.state.currentIndex >= 0
+            ? (this.state.currentIndex + 2) % 3
+            : 2,
       };
     } else {
       this.state = { currentIndex: -1, totalCount: 0 };

@@ -16,7 +16,10 @@ function getActiveCliSessionId(): string | undefined {
     : undefined;
 }
 
-function applyProjectGovernance(projectPath: string, projectGovernance: ProjectGovernanceState): void {
+function applyProjectGovernance(
+  projectPath: string,
+  projectGovernance: ProjectGovernanceState,
+): void {
   const projectId = findProjectIdByPath(projectPath);
   if (!projectId) return;
   appState.setProjectGovernance(projectId, projectGovernance);
@@ -36,7 +39,10 @@ async function syncActiveProjectGovernance(): Promise<void> {
 
   const activeCliSessionId = getActiveCliSessionId();
   const requestToken = ++activeRequestToken;
-  const projectGovernance = await window.calder.governance.getProjectState(project.path, activeCliSessionId);
+  const projectGovernance = await window.calder.governance.getProjectState(
+    project.path,
+    activeCliSessionId,
+  );
   if (requestToken !== activeRequestToken) return;
   applyProjectGovernance(project.path, projectGovernance);
 }

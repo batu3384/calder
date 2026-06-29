@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   canonicalizeNavigationUrl,
@@ -54,7 +54,9 @@ describe('normalizeUrl', () => {
 
 describe('browser navigation state helpers', () => {
   it('canonicalizes http urls before stale navigation comparison', () => {
-    expect(canonicalizeNavigationUrl(' https://example.com/path/// ')).toBe('https://example.com/path');
+    expect(canonicalizeNavigationUrl(' https://example.com/path/// ')).toBe(
+      'https://example.com/path',
+    );
     expect(canonicalizeNavigationUrl('not a url')).toBe('not a url');
   });
 
@@ -87,11 +89,13 @@ describe('browser navigation state helpers', () => {
       pendingNavigationAt: 1_000,
     };
 
-    expect(isStaleNavigationRevert(
-      navigation,
-      'http://localhost:3000',
-      1_000 + STALE_NAVIGATION_REVERT_WINDOW_MS + 1,
-    )).toBe(false);
+    expect(
+      isStaleNavigationRevert(
+        navigation,
+        'http://localhost:3000',
+        1_000 + STALE_NAVIGATION_REVERT_WINDOW_MS + 1,
+      ),
+    ).toBe(false);
     expect(navigation).toEqual({});
   });
 });

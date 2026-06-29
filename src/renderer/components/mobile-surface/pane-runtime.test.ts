@@ -31,7 +31,9 @@ vi.mock('./inspect-workbench.js', () => ({
 
 import { renderInspectWorkbench, sendInspectToSelectedSession } from './pane.js';
 
-function createInspectState(overrides: Partial<MobileSurfaceInspectState> = {}): MobileSurfaceInspectState {
+function createInspectState(
+  overrides: Partial<MobileSurfaceInspectState> = {},
+): MobileSurfaceInspectState {
   return {
     platform: 'ios',
     launching: false,
@@ -57,7 +59,9 @@ function createInspectState(overrides: Partial<MobileSurfaceInspectState> = {}):
   };
 }
 
-function createInstance(overrides: Partial<MobileSurfacePaneInstance> = {}): MobileSurfacePaneInstance {
+function createInstance(
+  overrides: Partial<MobileSurfacePaneInstance> = {},
+): MobileSurfacePaneInstance {
   return {
     projectId: 'project-1',
     el: {} as HTMLDivElement,
@@ -104,7 +108,12 @@ describe('mobile surface pane runtime handlers', () => {
   it('shows a target-selection error when no explicit surface target exists', async () => {
     const instance = createInstance({
       inspectState: createInspectState({
-        screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
+        screenshot: {
+          platform: 'ios',
+          success: true,
+          message: 'ok',
+          dataUrl: 'data:image/png;base64,AA==',
+        },
         selectedPoint: { x: 12, y: 34, normalizedX: 0.1, normalizedY: 0.2 },
         instruction: 'Tap here and report result',
       }),
@@ -114,18 +123,29 @@ describe('mobile surface pane runtime handlers', () => {
     await sendInspectToSelectedSession(instance);
 
     expect(instance.inspectState.sendError).toBe('Select an open session target first.');
-    expect(mockResolveSurfaceTargetSession).toHaveBeenCalledWith('project-1', { requireExplicitTarget: true });
+    expect(mockResolveSurfaceTargetSession).toHaveBeenCalledWith('project-1', {
+      requireExplicitTarget: true,
+    });
   });
 
   it('stores delivery failures from the routed prompt path', async () => {
     const instance = createInstance({
       inspectState: createInspectState({
-        screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
+        screenshot: {
+          platform: 'ios',
+          success: true,
+          message: 'ok',
+          dataUrl: 'data:image/png;base64,AA==',
+        },
         selectedPoint: { x: 64, y: 96, normalizedX: 0.4, normalizedY: 0.6 },
         instruction: 'Open this control',
       }),
     });
-    mockResolveSurfaceTargetSession.mockReturnValue({ id: 'session-1', name: 'Codex Main', providerId: 'codex' });
+    mockResolveSurfaceTargetSession.mockReturnValue({
+      id: 'session-1',
+      name: 'Codex Main',
+      providerId: 'codex',
+    });
     mockBuildAppliedContextSummary.mockReturnValue({ sources: [] });
     mockFormatAppliedContextTrace.mockReturnValue(['trace-line']);
     mockAppendAppliedContextToPrompt.mockImplementation((prompt: string) => `${prompt}\ncontext`);
@@ -135,18 +155,30 @@ describe('mobile surface pane runtime handlers', () => {
 
     expect(instance.inspectState.contextTrace).toEqual(['trace-line']);
     expect(instance.inspectState.sendError).toBe('delivery failed');
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('context'));
+    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('context'),
+    );
   });
 
   it('updates inspect status when prompt delivery succeeds', async () => {
     const instance = createInstance({
       inspectState: createInspectState({
-        screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
+        screenshot: {
+          platform: 'ios',
+          success: true,
+          message: 'ok',
+          dataUrl: 'data:image/png;base64,AA==',
+        },
         selectedPoint: { x: 128, y: 256, normalizedX: 0.5, normalizedY: 0.5 },
         instruction: 'Tap the highlighted row',
       }),
     });
-    mockResolveSurfaceTargetSession.mockReturnValue({ id: 'session-2', name: 'Codex Main', providerId: undefined });
+    mockResolveSurfaceTargetSession.mockReturnValue({
+      id: 'session-2',
+      name: 'Codex Main',
+      providerId: undefined,
+    });
     mockBuildAppliedContextSummary.mockReturnValue(undefined);
     mockFormatAppliedContextTrace.mockReturnValue(['No provider memory or shared rules applied.']);
     mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'session-2' });
@@ -160,7 +192,9 @@ describe('mobile surface pane runtime handlers', () => {
   });
 
   it('delegates render orchestration to the shared inspect workbench module', () => {
-    const section = { className: 'mobile-surface-group mobile-surface-inspect-group' } as unknown as HTMLElement;
+    const section = {
+      className: 'mobile-surface-group mobile-surface-inspect-group',
+    } as unknown as HTMLElement;
     mockRenderMobileInspectWorkbench.mockReturnValue(section);
     const instance = createInstance();
     const report = { checks: [], summary: { ready: 0, warnings: 0, requiredMissing: 0 } } as any;
@@ -168,16 +202,18 @@ describe('mobile surface pane runtime handlers', () => {
     const rendered = renderInspectWorkbench(instance, report);
 
     expect(rendered).toBe(section);
-    expect(mockRenderMobileInspectWorkbench).toHaveBeenCalledWith(expect.objectContaining({
-      instance,
-      report,
-      platformLabels: expect.objectContaining({
-        ios: 'iOS Simulator',
-        android: 'Android Emulator',
+    expect(mockRenderMobileInspectWorkbench).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instance,
+        report,
+        platformLabels: expect.objectContaining({
+          ios: 'iOS Simulator',
+          android: 'Android Emulator',
+        }),
+        handlers: expect.objectContaining({
+          sendInspectToSelectedSession: expect.any(Function),
+        }),
       }),
-      handlers: expect.objectContaining({
-        sendInspectToSelectedSession: expect.any(Function),
-      }),
-    }));
+    );
   });
 });

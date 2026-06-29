@@ -101,8 +101,12 @@
   --motion-normal: 180ms;
   --motion-panel: 220ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --font-sans: "Manrope", "IBM Plex Sans", "Plus Jakarta Sans", "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-display: "Sora", "Space Grotesk", "IBM Plex Sans", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans:
+    'Manrope', 'IBM Plex Sans', 'Plus Jakarta Sans', 'SF Pro Text', 'SF Pro Display', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display:
+    'Sora', 'Space Grotesk', 'IBM Plex Sans', 'SF Pro Display', 'SF Pro Text', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Monaco, Consolas, monospace;
   --font-ui: var(--font-sans);
   --type-2xs: 10px;
@@ -139,7 +143,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-sans);
@@ -164,7 +169,11 @@ html, body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 14%),
     radial-gradient(circle at 22% -8%, rgba(56, 189, 248, 0.08), transparent 34%),
     radial-gradient(circle at 82% -10%, rgba(168, 85, 247, 0.08), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-canvas) 92%, black), var(--surface-canvas));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-canvas) 92%, black),
+      var(--surface-canvas)
+    );
 }
 
 ::selection {
@@ -287,8 +296,11 @@ body.debug-panel-open #app {
   line-height: 0.98;
   font-weight: 680;
   letter-spacing: -0.03em;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 92%, white), color-mix(in srgb, var(--accent) 44%, var(--text-primary)));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--text-primary) 92%, white),
+    color-mix(in srgb, var(--accent) 44%, var(--text-primary))
+  );
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -324,7 +336,11 @@ body.debug-panel-open #app {
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
   border-radius: 12px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 44%, rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 44%, rgba(255, 255, 255, 0.04)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-panel) 82%, black);
   color: var(--text-primary);
   font-size: var(--type-md);

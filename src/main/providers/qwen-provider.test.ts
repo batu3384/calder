@@ -16,7 +16,7 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('../full-path', () => ({
-  getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
+  getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
 vi.mock('../qwen-config', () => ({
@@ -45,9 +45,9 @@ import * as fs from 'fs';
 
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installStatusLineScript } from '../hooks/hook-status';
-import { findQwenTranscriptPath,getQwenConfig } from '../qwen-config';
-import { cleanupQwenHooks,installQwenHooks, validateQwenHooks } from '../qwen-hooks';
-import { _resetCachedPath,QwenProvider } from './qwen-provider';
+import { findQwenTranscriptPath, getQwenConfig } from '../qwen-config';
+import { cleanupQwenHooks, installQwenHooks, validateQwenHooks } from '../qwen-hooks';
+import { _resetCachedPath, QwenProvider } from './qwen-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -113,7 +113,9 @@ describe('resolveBinaryPath', () => {
 
   it('falls back to bare "qwen" when both candidate and which fail', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     expect(provider.resolveBinaryPath()).toBe('qwen');
   });
 });
@@ -127,7 +129,9 @@ describe('validatePrerequisites', () => {
 
   it('returns not ok when binary not found anywhere', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Qwen Code not found');
@@ -152,17 +156,32 @@ describe('buildArgs', () => {
   });
 
   it('starts interactively with the initial prompt via -i', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['-i', 'fix the bug']);
   });
 
   it('combines extra args with prompt-interactive startup', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '--model qwen3-coder  --yolo', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '--model qwen3-coder  --yolo',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['--model', 'qwen3-coder', '--yolo', '-i', 'fix the bug']);
   });
 
   it('does not pass initialPrompt while resuming', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: true,
+      extraArgs: '',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['-r', 'sid-1']);
   });
 });
@@ -207,7 +226,15 @@ describe('hooks and config integration', () => {
 describe('provider config and transcripts', () => {
   it('returns parsed provider config', async () => {
     const config = {
-      mcpServers: [{ name: 'test', url: 'http://localhost:3000', status: 'configured', scope: 'user' as const, filePath: '/tmp/settings.json' }],
+      mcpServers: [
+        {
+          name: 'test',
+          url: 'http://localhost:3000',
+          status: 'configured',
+          scope: 'user' as const,
+          filePath: '/tmp/settings.json',
+        },
+      ],
       agents: [],
       skills: [],
       commands: [],
@@ -218,8 +245,12 @@ describe('provider config and transcripts', () => {
   });
 
   it('returns the discovered transcript path for archived handoff', () => {
-    mockFindQwenTranscriptPath.mockReturnValueOnce('/mock/home/.qwen/projects/demo/chats/sid-1.jsonl');
-    expect(provider.getTranscriptPath('sid-1', '/project')).toBe('/mock/home/.qwen/projects/demo/chats/sid-1.jsonl');
+    mockFindQwenTranscriptPath.mockReturnValueOnce(
+      '/mock/home/.qwen/projects/demo/chats/sid-1.jsonl',
+    );
+    expect(provider.getTranscriptPath('sid-1', '/project')).toBe(
+      '/mock/home/.qwen/projects/demo/chats/sid-1.jsonl',
+    );
     expect(mockFindQwenTranscriptPath).toHaveBeenCalledWith('sid-1', '/project');
   });
 });

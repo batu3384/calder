@@ -39,14 +39,17 @@ export function showEmptyState(
   if (!project) {
     eyebrow.textContent = 'Launchpad';
     title.textContent = 'Open a project or start a live run';
-    copy.textContent = 'Pick a coding tool, open Live View, or resume recent sessions from one desk.';
-    detail.textContent = 'Browser context stays on the left. Sessions and project signals stack on the right.';
+    copy.textContent =
+      'Pick a coding tool, open Live View, or resume recent sessions from one desk.';
+    detail.textContent =
+      'Browser context stays on the left. Sessions and project signals stack on the right.';
     primary.textContent = 'Create Project';
     primary.addEventListener('click', onCreateProject);
   } else {
     eyebrow.textContent = 'Project ready';
     title.textContent = 'Start a run or open Live View';
-    copy.textContent = 'Bring up a coding tool, inspect a page, or continue recent work from this project.';
+    copy.textContent =
+      'Bring up a coding tool, inspect a page, or continue recent work from this project.';
     detail.textContent = `${project.path} · Live View stays pinned while sessions share the same project context.`;
     primary.textContent = 'Start First Session';
     primary.addEventListener('click', onStartFirstSession);

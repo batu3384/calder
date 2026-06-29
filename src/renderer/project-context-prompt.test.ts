@@ -27,7 +27,7 @@ import {
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from './project-context-prompt.js';
-import { _resetForTesting,appState } from './state.js';
+import { _resetForTesting, appState } from './state.js';
 
 describe('project context prompt helpers', () => {
   beforeEach(() => {
@@ -73,7 +73,10 @@ describe('project context prompt helpers', () => {
       providerContextSummary: 'CLAUDE.md',
       sharedRulesSummary: 'testing.hard.md',
     });
-    expect(summary?.sources.map((source) => source.displayName)).toEqual(['CLAUDE.md', 'testing.hard.md']);
+    expect(summary?.sources.map((source) => source.displayName)).toEqual([
+      'CLAUDE.md',
+      'testing.hard.md',
+    ]);
     expect(summary?.sources[1]).toMatchObject({
       priority: 'hard',
       summary: 'Tests are required',

@@ -6,10 +6,7 @@ import {
   parseCliSurfaceArgs,
   parseCliSurfacePortMode,
 } from './tab-bar-cli-surface-profile-utils.js';
-import {
-  selectCliSurfaceProfile,
-  upsertCliSurfaceProfile,
-} from './tab-bar-surface-state.js';
+import { selectCliSurfaceProfile, upsertCliSurfaceProfile } from './tab-bar-surface-state.js';
 
 export function promptTabBarCliSurfaceProfile(
   project: ProjectRecord,
@@ -34,7 +31,7 @@ export function promptTabBarCliSurfaceProfile(
       {
         label: 'Arguments',
         id: 'cli-profile-args',
-        placeholder: "-m textual run app.py",
+        placeholder: '-m textual run app.py',
         defaultValue: existing?.args?.join(' ') ?? '',
       },
       {
@@ -81,7 +78,10 @@ export function promptTabBarCliSurfaceProfile(
         return;
       }
 
-      const portMode = parseCliSurfacePortMode(values['cli-profile-port-mode'], existing?.portMode ?? 'auto');
+      const portMode = parseCliSurfacePortMode(
+        values['cli-profile-port-mode'],
+        existing?.portMode ?? 'auto',
+      );
       const preferredPortRaw = values['cli-profile-preferred-port']?.trim() ?? '';
       let preferredPort: number | undefined;
       if (preferredPortRaw.length > 0) {

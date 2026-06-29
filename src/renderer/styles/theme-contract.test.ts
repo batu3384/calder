@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vitest';
 const baseCss = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 const imports = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8');
 const auroraCss = readFileSync(new URL('./theme-aurora.css', import.meta.url), 'utf-8');
-const commandStudioCss = readFileSync(new URL('./theme-command-studio.css', import.meta.url), 'utf-8');
+const commandStudioCss = readFileSync(
+  new URL('./theme-command-studio.css', import.meta.url),
+  'utf-8',
+);
 const cockpitUrl = new URL('./cockpit.css', import.meta.url);
 const cockpitCss = existsSync(cockpitUrl) ? readFileSync(cockpitUrl, 'utf-8') : '';
 
@@ -24,7 +27,9 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--accent-line');
     expect(baseCss).toContain('--motion-fast');
     expect(baseCss).toContain('--motion-panel');
-    expect(baseCss).toContain('--font-sans: "IBM Plex Sans", "Inter"');
+    expect(baseCss).toContain('--font-sans:');
+    expect(baseCss).toContain("'IBM Plex Sans'");
+    expect(baseCss).toContain("'Inter'");
     expect(baseCss).not.toContain('--accent: #ef6879;');
   });
 
@@ -50,7 +55,9 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('grid-template-columns: 76px minmax(0, 1fr);');
     expect(commandStudioCss).toContain('contain: paint;');
     expect(commandStudioCss).toContain('animation: none;');
-    expect(commandStudioCss).toContain('#sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-mascot-shell');
+    expect(commandStudioCss).toContain(
+      '#sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-mascot-shell',
+    );
     expect(commandStudioCss).toContain('width: 72px;');
     expect(commandStudioCss).toContain('height: 66px;');
     expect(commandStudioCss).toContain('scrollbar-gutter: stable;');
@@ -70,7 +77,7 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).not.toContain('animation: studio-mascot-signal');
     expect(commandStudioCss).not.toContain('backdrop-filter: blur(10px) saturate(1.1);');
     expect(commandStudioCss).toContain('grid-template-areas:');
-    expect(commandStudioCss).toContain('"nav primary"');
+    expect(commandStudioCss).toContain("'nav primary'");
   });
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {

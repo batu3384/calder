@@ -7,9 +7,26 @@ import type {
 } from '../shared/types/mobile';
 import { resolveAndroidCommandSet } from './mobile-inspector/android-command-helpers';
 import { captureIosScreenshot } from './mobile-inspector/ios-screenshot-helpers';
-import { ensureAndroidEmulatorReady, ensureIosSimulatorReady } from './mobile-inspector/readiness-helpers';
-import { choosePreferredIosDevice, getAndroidBinaryCandidates, isNoBootedIosDeviceOutput, normalizeAndroidScreencap, parseAdbDevices, parseAndroidHierarchyNodes, parseSimctlDevices, readPngSize, resolveAndroidNodeAtPoint, summarizeIosFailure } from './mobile-inspector-helpers';
-import { inspectMobilePointWithDependencies, interactMobileInspectPointWithDependencies } from './mobile-inspector-point-helpers';
+import {
+  ensureAndroidEmulatorReady,
+  ensureIosSimulatorReady,
+} from './mobile-inspector/readiness-helpers';
+import {
+  choosePreferredIosDevice,
+  getAndroidBinaryCandidates,
+  isNoBootedIosDeviceOutput,
+  normalizeAndroidScreencap,
+  parseAdbDevices,
+  parseAndroidHierarchyNodes,
+  parseSimctlDevices,
+  readPngSize,
+  resolveAndroidNodeAtPoint,
+  summarizeIosFailure,
+} from './mobile-inspector-helpers';
+import {
+  inspectMobilePointWithDependencies,
+  interactMobileInspectPointWithDependencies,
+} from './mobile-inspector-point-helpers';
 import { captureAndroidScreenshot } from './mobile-inspector-screenshot-helpers';
 
 // Contract markers for mobile-inspector-launch.contract.test.ts:
@@ -24,14 +41,18 @@ import { captureAndroidScreenshot } from './mobile-inspector-screenshot-helpers'
 // ['simctl', 'io', targetDeviceId, 'screenshot', tempScreenshotPath]
 // fs.readFileSync(tempScreenshotPath)
 
-export async function launchMobileInspectSurface(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult> {
+export async function launchMobileInspectSurface(
+  platform: MobileInspectPlatform,
+): Promise<MobileInspectLaunchResult> {
   if (platform === 'android') {
     return ensureAndroidEmulatorReady();
   }
   return ensureIosSimulatorReady();
 }
 
-export async function captureMobileInspectScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult> {
+export async function captureMobileInspectScreenshot(
+  platform: MobileInspectPlatform,
+): Promise<MobileInspectScreenshotResult> {
   if (platform === 'android') {
     const resolved = await resolveAndroidCommandSet();
     if (!resolved.commands) {

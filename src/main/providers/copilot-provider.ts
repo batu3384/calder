@@ -1,7 +1,14 @@
 import type { BrowserWindow } from 'electron';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
 import { getFullPath } from '../full-path';
@@ -10,7 +17,11 @@ import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
-const INERT_SETTINGS: SettingsValidationResult = { statusLine: 'missing', hooks: 'missing', hookDetails: {} };
+const INERT_SETTINGS: SettingsValidationResult = {
+  statusLine: 'missing',
+  hooks: 'missing',
+  hookDetails: {},
+};
 
 export class CopilotProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
@@ -45,7 +56,12 @@ export class CopilotProvider extends BaseCliProvider {
     return { ...baseEnv, PATH: getFullPath() };
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.isResume && opts.cliSessionId) {
       args.push('--resume', opts.cliSessionId);

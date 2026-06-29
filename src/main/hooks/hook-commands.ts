@@ -30,7 +30,9 @@ const SHARED_SCRIPT_NAMES = [
 ];
 
 function hasInstalledHookScripts(): boolean {
-  return SHARED_SCRIPT_NAMES.every((scriptName) => fs.existsSync(path.join(STATUS_DIR, scriptName)));
+  return SHARED_SCRIPT_NAMES.every((scriptName) =>
+    fs.existsSync(path.join(STATUS_DIR, scriptName)),
+  );
 }
 
 /**
@@ -40,7 +42,9 @@ export function installHookScripts(): void {
   if (scriptsInstalled && hasInstalledHookScripts()) return;
 
   // status_writer.py — writes event:status to .status file
-  installEventScript('status_writer.py', `import sys,os
+  installEventScript(
+    'status_writer.py',
+    `import sys,os
 if os.environ.get("CALDER_RUNTIME","")!="1":
     sys.exit(0)
 event=sys.argv[1]
@@ -50,10 +54,13 @@ status_dir=sys.argv[4]
 if sid:
     with open(os.path.join(status_dir,sid+'.status'),'w') as f:
         f.write(event+':'+status)
-`);
+`,
+  );
 
   // session_id_capture.py — captures session_id from JSON stdin
-  installEventScript('session_id_capture.py', `import sys,json,os
+  installEventScript(
+    'session_id_capture.py',
+    `import sys,json,os
 if os.environ.get("CALDER_RUNTIME","")!="1":
     sys.exit(0)
 try:
@@ -66,10 +73,13 @@ claude_sid=d.get('session_id','')
 if sid_env and claude_sid:
     with open(os.path.join(status_dir,sid_env+'.sessionid'),'w') as f:
         f.write(claude_sid)
-`);
+`,
+  );
 
   // tool_failure_capture.py — captures tool failure details
-  installEventScript('tool_failure_capture.py', `import sys,json,os,random,string
+  installEventScript(
+    'tool_failure_capture.py',
+    `import sys,json,os,random,string
 if os.environ.get("CALDER_RUNTIME","")!="1":
     sys.exit(0)
 try:
@@ -85,7 +95,8 @@ if sid and tn:
     sfx=''.join(random.choices(string.ascii_lowercase,k=6))
     with open(os.path.join(status_dir,sid+'-'+sfx+'.toolfailure'),'w') as f:
         json.dump({'tool_name':tn,'tool_input':ti,'error':err},f)
-`);
+`,
+  );
 
   scriptsInstalled = true;
 }
@@ -112,10 +123,7 @@ export function statusCmd(
 /**
  * Generate a hook command that captures session_id from JSON stdin.
  */
-export function captureSessionIdCmd(
-  sessionIdVar: string,
-  hookMarker: string,
-): string {
+export function captureSessionIdCmd(sessionIdVar: string, hookMarker: string): string {
   const py = path.join(STATUS_DIR, 'session_id_capture.py').replace(/\\/g, '/');
   const dir = STATUS_DIR.replace(/\\/g, '/');
   return `${PY} "${py}" "${sessionIdVar}" "${dir}" "${hookMarker}"`;
@@ -124,10 +132,7 @@ export function captureSessionIdCmd(
 /**
  * Generate a hook command that captures tool failure details.
  */
-export function captureToolFailureCmd(
-  sessionIdVar: string,
-  hookMarker: string,
-): string {
+export function captureToolFailureCmd(sessionIdVar: string, hookMarker: string): string {
   const py = path.join(STATUS_DIR, 'tool_failure_capture.py').replace(/\\/g, '/');
   const dir = STATUS_DIR.replace(/\\/g, '/');
   return `${PY} "${py}" "${sessionIdVar}" "${dir}" "${hookMarker}"`;

@@ -27,9 +27,9 @@ export function createLocalPairingUrls(
 } {
   const primaryHost = hosts[0] ?? '127.0.0.1';
   const localPairingUrl = createLocalPairingUrl(primaryHost, port, pairingId, token, language);
-  const localPairingUrls = Array.from(new Set(
-    hosts.map((host) => createLocalPairingUrl(host, port, pairingId, token, language)),
-  ));
+  const localPairingUrls = Array.from(
+    new Set(hosts.map((host) => createLocalPairingUrl(host, port, pairingId, token, language))),
+  );
   if (!localPairingUrls.includes(localPairingUrl)) {
     localPairingUrls.unshift(localPairingUrl);
   }

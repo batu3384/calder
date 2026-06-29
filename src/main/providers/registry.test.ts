@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { CliProviderMeta } from '../../shared/types/provider';
 import type { CliProvider } from './provider';
@@ -32,7 +32,10 @@ function makeFakeProvider(meta: CliProviderMeta, prerequisitesOk = true): CliPro
   return {
     meta,
     resolveBinaryPath: () => '/usr/bin/fake',
-    validatePrerequisites: () => ({ ok: prerequisitesOk, message: prerequisitesOk ? '' : 'missing' }),
+    validatePrerequisites: () => ({
+      ok: prerequisitesOk,
+      message: prerequisitesOk ? '' : 'missing',
+    }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],
     installHooks: async () => {},
@@ -84,7 +87,9 @@ describe('getProvider', () => {
   });
 
   it('throws for unknown provider ID', () => {
-    expect(() => getProvider('unknown-provider' as any)).toThrow('Unknown CLI provider: unknown-provider');
+    expect(() => getProvider('unknown-provider' as any)).toThrow(
+      'Unknown CLI provider: unknown-provider',
+    );
   });
 });
 
@@ -101,7 +106,7 @@ describe('getAllProviders', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const all = getAllProviders();
     expect(all.length).toBe(5);
-    const ids = all.map(p => p.meta.id);
+    const ids = all.map((p) => p.meta.id);
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
     expect(ids).toContain('copilot');
@@ -123,25 +128,31 @@ describe('getAllProviderMetas', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const metas = getAllProviderMetas();
     expect(metas.length).toBe(5);
-    expect(metas.map(m => m.id)).toContain('codex');
-    expect(metas.map(m => m.id)).toContain('copilot');
-    expect(metas.map(m => m.id)).toContain('antigravity');
-    expect(metas.map(m => m.id)).toContain('qwen');
+    expect(metas.map((m) => m.id)).toContain('codex');
+    expect(metas.map((m) => m.id)).toContain('copilot');
+    expect(metas.map((m) => m.id)).toContain('antigravity');
+    expect(metas.map((m) => m.id)).toContain('qwen');
   });
 });
 
 describe('getAvailableProviderIds', () => {
   it('returns only providers whose prerequisites validate successfully', () => {
-    const available = makeFakeProvider({
-      ...fakeMeta,
-      id: 'copilot',
-      displayName: 'Copilot Available',
-    }, true);
-    const unavailable = makeFakeProvider({
-      ...fakeMeta,
-      id: 'antigravity',
-      displayName: 'Gemini Missing',
-    }, false);
+    const available = makeFakeProvider(
+      {
+        ...fakeMeta,
+        id: 'copilot',
+        displayName: 'Copilot Available',
+      },
+      true,
+    );
+    const unavailable = makeFakeProvider(
+      {
+        ...fakeMeta,
+        id: 'antigravity',
+        displayName: 'Gemini Missing',
+      },
+      false,
+    );
 
     registerProvider(available);
     registerProvider(unavailable);
@@ -152,20 +163,26 @@ describe('getAvailableProviderIds', () => {
   });
 
   it('skips providers whose prerequisite check throws unexpectedly', () => {
-    const unstable = makeFakeProvider({
-      ...fakeMeta,
-      id: 'qwen',
-      displayName: 'Qwen Unstable',
-    }, true);
+    const unstable = makeFakeProvider(
+      {
+        ...fakeMeta,
+        id: 'qwen',
+        displayName: 'Qwen Unstable',
+      },
+      true,
+    );
     unstable.validatePrerequisites = () => {
       throw new Error('shell probe failed');
     };
 
-    const available = makeFakeProvider({
-      ...fakeMeta,
-      id: 'copilot',
-      displayName: 'Copilot Available',
-    }, true);
+    const available = makeFakeProvider(
+      {
+        ...fakeMeta,
+        id: 'copilot',
+        displayName: 'Copilot Available',
+      },
+      true,
+    );
 
     registerProvider(unstable);
     registerProvider(available);

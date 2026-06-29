@@ -10,7 +10,14 @@ import {
 } from './preferences-modal-sections.js';
 import { renderShortcutsSection } from './preferences-shortcuts-section.js';
 
-export type PreferencesSection = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about';
+export type PreferencesSection =
+  | 'general'
+  | 'interface'
+  | 'tools'
+  | 'automation'
+  | 'safety'
+  | 'shortcuts'
+  | 'about';
 
 function countCustomizedShortcuts(shortcutOverridesDraft: Record<string, string>): number {
   let count = 0;
@@ -27,7 +34,9 @@ export function bindPreferencesMenuNavigation(
   renderSection: (section: PreferencesSection) => void,
 ): void {
   menu.addEventListener('click', (e) => {
-    const target = (e.target as HTMLElement).closest('.preferences-menu-item') as HTMLElement | null;
+    const target = (e.target as HTMLElement).closest(
+      '.preferences-menu-item',
+    ) as HTMLElement | null;
     if (target && target.dataset.section) {
       renderSection(target.dataset.section as PreferencesSection);
     }
@@ -41,7 +50,12 @@ export function renderShortcutPreferencesContent(args: {
   setActiveRecorder: (cleanup: () => void) => void;
   clearActiveRecorder: () => void;
   rerenderShortcuts: () => void;
-  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendSectionIntro: (
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ) => void;
   appendOverviewGrid: (
     container: HTMLElement,
     items: Array<{ label: string; value: string; note?: string }>,
@@ -86,7 +100,12 @@ export function renderToolsPreferencesContent(args: {
   applySetupBadge: (hasIssue: boolean) => void;
   onFixProvider: (providerId?: ProviderId) => Promise<void>;
   onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
-  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendSectionIntro: (
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ) => void;
   appendOverviewGrid: (
     container: HTMLElement,
     items: Array<{ label: string; value: string; note?: string }>,
@@ -112,7 +131,12 @@ export function renderAutomationPreferencesContent(args: {
   cancelButton: HTMLButtonElement;
   registerModalCleanup: (cleanup: () => void) => void;
   rerenderAutomation: () => void;
-  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendSectionIntro: (
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ) => void;
   appendOverviewGrid: (
     container: HTMLElement,
     items: Array<{ label: string; value: string; note?: string }>,
@@ -151,7 +175,12 @@ export function renderSafetyPreferencesContent(args: {
   cancelButton: HTMLButtonElement;
   registerModalCleanup: (cleanup: () => void) => void;
   rerenderSafety: () => void;
-  appendSectionIntro: (container: HTMLElement, eyebrow: string, title: string, description: string) => void;
+  appendSectionIntro: (
+    container: HTMLElement,
+    eyebrow: string,
+    title: string,
+    description: string,
+  ) => void;
   appendOverviewGrid: (
     container: HTMLElement,
     items: Array<{ label: string; value: string; note?: string }>,

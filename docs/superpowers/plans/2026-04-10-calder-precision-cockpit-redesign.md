@@ -69,6 +69,7 @@ New tests to create:
 ### Task 1: Add Shell DOM Hooks And Lock The New Chrome Contract
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/index-shell.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`
 
@@ -109,7 +110,9 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html` so the s
 ```html
 <div id="sidebar-header">
   <div class="sidebar-title-group">
-    <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)">&#x25E7;</button>
+    <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)">
+      &#x25E7;
+    </button>
     <div class="sidebar-brand-block">
       <span class="sidebar-eyebrow">Calder</span>
       <span class="sidebar-title">Projects</span>
@@ -133,10 +136,16 @@ and:
     <div id="git-status"></div>
     <div id="tab-actions">
       <button id="btn-help" class="icon-btn" title="Session Indicators Help (F1)">?</button>
-      <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)">&#x2261;</button>
-      <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+\`)">&#x2588;</button>
+      <button id="btn-usage-stats" class="icon-btn" title="Usage Stats (Ctrl+Shift+U)">
+        &#x2261;
+      </button>
+      <button id="btn-toggle-terminal" class="icon-btn" title="Toggle Terminal (Ctrl+\`)">
+        &#x2588;
+      </button>
       <button id="btn-add-mcp-inspector" class="icon-btn" title="MCP Inspector">MCP</button>
-      <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\\)">&#x229E;</button>
+      <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\\)">
+        &#x229E;
+      </button>
       <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)">+</button>
     </div>
   </div>
@@ -167,6 +176,7 @@ Expected: commit succeeds.
 ### Task 2: Build The Shared Precision Cockpit Theme System
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/theme-contract.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/cockpit.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles.css`
@@ -331,6 +341,7 @@ Expected: commit succeeds.
 ### Task 3: Redesign Sidebar And Top Chrome Into A Control Tower
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/sidebar.ts`
@@ -369,7 +380,8 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css` 
 
 ```css
 #sidebar {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)) , var(--surface-panel);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)), var(--surface-panel);
   border-right: 1px solid var(--border-subtle);
 }
 
@@ -432,7 +444,7 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css` so 
   align-items: center;
   gap: 0;
   border-left: 1px solid var(--border-subtle);
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 ```
 
@@ -441,7 +453,7 @@ and make active tabs feel anchored rather than loud:
 ```css
 .tab-item.active {
   background: var(--surface-elevated);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 ```
 
@@ -483,6 +495,7 @@ npm run build
 ```
 
 Expected:
+
 - config sections test passes
 - build succeeds
 
@@ -500,6 +513,7 @@ Expected: commit succeeds.
 ### Task 4: Redesign The Browser Surface As Calder's Flagship Workspace
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab-pane.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
@@ -513,14 +527,44 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../state.js', () => ({ appState: {} }));
 vi.mock('../shortcuts.js', () => ({ shortcutManager: {} }));
-vi.mock('./browser-tab/instance.js', () => ({ instances: new Map(), getPreloadPath: () => 'preload.js' }));
+vi.mock('./browser-tab/instance.js', () => ({
+  instances: new Map(),
+  getPreloadPath: () => 'preload.js',
+}));
 vi.mock('./browser-tab/navigation.js', () => ({ navigateTo: vi.fn() }));
-vi.mock('./browser-tab/viewport.js', () => ({ applyViewport: vi.fn(), openViewportDropdown: vi.fn(), closeViewportDropdown: vi.fn() }));
-vi.mock('./browser-tab/inspect-mode.js', () => ({ toggleInspectMode: vi.fn(), showElementInfo: vi.fn(), dismissInspect: vi.fn() }));
-vi.mock('./browser-tab/draw-mode.js', () => ({ toggleDrawMode: vi.fn(), clearDrawing: vi.fn(), dismissDraw: vi.fn(), sendDrawToNewSession: vi.fn(), sendDrawToCustomSession: vi.fn(), positionDrawPopover: vi.fn() }));
-vi.mock('./browser-tab/flow-recording.js', () => ({ addFlowStep: vi.fn(), clearFlow: vi.fn(), toggleFlowMode: vi.fn() }));
-vi.mock('./browser-tab/flow-picker.js', () => ({ showFlowPicker: vi.fn(), dismissFlowPicker: vi.fn() }));
-vi.mock('./browser-tab/session-integration.js', () => ({ sendFlowToCustomSession: vi.fn(), sendFlowToNewSession: vi.fn(), sendToCustomSession: vi.fn(), sendToNewSession: vi.fn() }));
+vi.mock('./browser-tab/viewport.js', () => ({
+  applyViewport: vi.fn(),
+  openViewportDropdown: vi.fn(),
+  closeViewportDropdown: vi.fn(),
+}));
+vi.mock('./browser-tab/inspect-mode.js', () => ({
+  toggleInspectMode: vi.fn(),
+  showElementInfo: vi.fn(),
+  dismissInspect: vi.fn(),
+}));
+vi.mock('./browser-tab/draw-mode.js', () => ({
+  toggleDrawMode: vi.fn(),
+  clearDrawing: vi.fn(),
+  dismissDraw: vi.fn(),
+  sendDrawToNewSession: vi.fn(),
+  sendDrawToCustomSession: vi.fn(),
+  positionDrawPopover: vi.fn(),
+}));
+vi.mock('./browser-tab/flow-recording.js', () => ({
+  addFlowStep: vi.fn(),
+  clearFlow: vi.fn(),
+  toggleFlowMode: vi.fn(),
+}));
+vi.mock('./browser-tab/flow-picker.js', () => ({
+  showFlowPicker: vi.fn(),
+  dismissFlowPicker: vi.fn(),
+}));
+vi.mock('./browser-tab/session-integration.js', () => ({
+  sendFlowToCustomSession: vi.fn(),
+  sendFlowToNewSession: vi.fn(),
+  sendToCustomSession: vi.fn(),
+  sendToNewSession: vi.fn(),
+}));
 
 describe('browser tab pane cockpit markup', () => {
   beforeEach(() => {
@@ -591,7 +635,8 @@ ntpTitle.textContent = 'Browse, inspect, and hand off.';
 
 const ntpSubtitle = document.createElement('div');
 ntpSubtitle.className = 'browser-ntp-subtitle';
-ntpSubtitle.textContent = 'Open a local app or live page, then move findings directly into a session.';
+ntpSubtitle.textContent =
+  'Open a local app or live page, then move findings directly into a session.';
 
 const ntpGrid = document.createElement('div');
 ntpGrid.className = 'browser-ntp-grid';
@@ -628,8 +673,7 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.c
   gap: 14px;
   padding: 32px;
   background:
-    radial-gradient(circle at top, rgba(239,92,114,0.10), transparent 32%),
-    var(--surface-canvas);
+    radial-gradient(circle at top, rgba(239, 92, 114, 0.1), transparent 32%), var(--surface-canvas);
 }
 ```
 
@@ -653,6 +697,7 @@ npm run build
 ```
 
 Expected:
+
 - browser pane test passes
 - build succeeds
 
@@ -670,6 +715,7 @@ Expected: commit succeeds.
 ### Task 5: Redesign Modal, Preferences, And Secondary Utility Surfaces
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/custom-select.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
@@ -684,9 +730,8 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/modal.ts`
 
 ```ts
 const div = document.createElement('div');
-div.className = field.type === 'checkbox'
-  ? 'modal-field modal-field-checkbox'
-  : 'modal-field modal-field-stack';
+div.className =
+  field.type === 'checkbox' ? 'modal-field modal-field-checkbox' : 'modal-field modal-field-stack';
 
 label.classList.add('modal-field-label');
 ```
@@ -723,7 +768,7 @@ headerKicker.textContent = 'Settings';
 
 const headerTitle = document.createElement('div');
 headerTitle.className = 'preferences-content-title';
-headerTitle.textContent = sections.find(s => s.id === section)?.label ?? 'Preferences';
+headerTitle.textContent = sections.find((s) => s.id === section)?.label ?? 'Preferences';
 
 headerBlock.appendChild(headerKicker);
 headerBlock.appendChild(headerTitle);
@@ -739,7 +784,8 @@ Update the styles to match the new cockpit system:
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/modals.css`:
 
 ```css
-#modal, .modal-box {
+#modal,
+.modal-box {
   background: var(--surface-elevated);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
@@ -796,6 +842,7 @@ Expected: commit succeeds.
 ### Task 6: Finish The Workspace Frame And Run Full Verification
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/terminal.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
@@ -852,6 +899,7 @@ git -C /Users/batuhanyuksel/Documents/browser status --short --branch
 ```
 
 Expected:
+
 - build passes
 - full test suite passes
 - old-brand residue search returns no results

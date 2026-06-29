@@ -62,7 +62,10 @@ function parseListeningEntries(
   return [...entries.values()].sort((a, b) => rankPort(a.port) - rankPort(b.port));
 }
 
-export function parseListeningPorts(output: string, platform: NodeJS.Platform = process.platform): number[] {
+export function parseListeningPorts(
+  output: string,
+  platform: NodeJS.Platform = process.platform,
+): number[] {
   return parseListeningEntries(output, platform).map((entry) => entry.port);
 }
 
@@ -104,7 +107,11 @@ function looksLikeBrowserSurface(contentType: string, bodySample: string, status
   return HTML_MARKER_RE.test(bodySample);
 }
 
-function isInternalSurface(processName: string | undefined, server: string, bodySample: string): boolean {
+function isInternalSurface(
+  processName: string | undefined,
+  server: string,
+  bodySample: string,
+): boolean {
   if (processName && INTERNAL_PROCESS_RE.test(processName)) return true;
   if (INTERNAL_SERVER_RE.test(server)) return true;
   return INTERNAL_BODY_RE.test(bodySample);
@@ -151,6 +158,8 @@ export async function discoverLocalBrowserTargets(): Promise<LocalBrowserTarget[
   const candidatePorts = (await listListeningPorts()).slice(0, MAX_CANDIDATE_PORTS);
   if (candidatePorts.length === 0) return [];
 
-  const probeResults = await Promise.all(candidatePorts.map((entry) => inspectBrowserTarget(entry)));
+  const probeResults = await Promise.all(
+    candidatePorts.map((entry) => inspectBrowserTarget(entry)),
+  );
   return probeResults.filter((target): target is LocalBrowserTarget => !!target);
 }

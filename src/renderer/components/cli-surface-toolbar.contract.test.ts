@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const paneSource = readFileSync(new URL('./cli-surface/pane.ts', import.meta.url), 'utf-8');
-const paneElementsSource = readFileSync(new URL('./cli-surface/pane-elements.ts', import.meta.url), 'utf-8');
+const paneElementsSource = readFileSync(
+  new URL('./cli-surface/pane-elements.ts', import.meta.url),
+  'utf-8',
+);
 const source = `${paneSource}\n${paneElementsSource}`;
 const css = readFileSync(new URL('../styles/cli-surface.css', import.meta.url), 'utf-8');
 

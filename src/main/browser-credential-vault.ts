@@ -3,7 +3,11 @@ import { app, safeStorage } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../shared/types/project-core';
+import type {
+  BrowserCredentialFillData,
+  BrowserCredentialSaveInput,
+  BrowserCredentialSummary,
+} from '../shared/types/project-core';
 
 interface BrowserCredentialRecord {
   id: string;
@@ -130,13 +134,13 @@ function normalizeVault(data: unknown): BrowserCredentialVaultFile {
     if (!item || typeof item !== 'object') continue;
     const record = item as Partial<BrowserCredentialRecord>;
     if (
-      typeof record.id !== 'string'
-      || typeof record.origin !== 'string'
-      || typeof record.label !== 'string'
-      || typeof record.usernameEncrypted !== 'string'
-      || typeof record.passwordEncrypted !== 'string'
-      || typeof record.autoFill !== 'boolean'
-      || typeof record.updatedAt !== 'string'
+      typeof record.id !== 'string' ||
+      typeof record.origin !== 'string' ||
+      typeof record.label !== 'string' ||
+      typeof record.usernameEncrypted !== 'string' ||
+      typeof record.passwordEncrypted !== 'string' ||
+      typeof record.autoFill !== 'boolean' ||
+      typeof record.updatedAt !== 'string'
     ) {
       continue;
     }
@@ -177,7 +181,9 @@ async function writeVault(vault: BrowserCredentialVaultFile): Promise<void> {
   await fs.rename(tmpFilePath, filePath);
 }
 
-export async function listBrowserCredentialSummariesForUrl(url: string): Promise<BrowserCredentialSummary[]> {
+export async function listBrowserCredentialSummariesForUrl(
+  url: string,
+): Promise<BrowserCredentialSummary[]> {
   const origin = normalizeOriginFromUrl(url);
   const vault = await readVault();
   const summaries = vault.credentials
@@ -187,7 +193,11 @@ export async function listBrowserCredentialSummariesForUrl(url: string): Promise
   return sortSummaries(summaries);
 }
 
-function applyAutoFillExclusivity(records: BrowserCredentialRecord[], origin: string, selectedId: string): void {
+function applyAutoFillExclusivity(
+  records: BrowserCredentialRecord[],
+  origin: string,
+  selectedId: string,
+): void {
   for (const entry of records) {
     if (entry.origin === origin && entry.id !== selectedId) {
       entry.autoFill = false;
@@ -195,7 +205,9 @@ function applyAutoFillExclusivity(records: BrowserCredentialRecord[], origin: st
   }
 }
 
-export async function saveBrowserCredentialForUrl(input: BrowserCredentialSaveInput): Promise<BrowserCredentialSummary> {
+export async function saveBrowserCredentialForUrl(
+  input: BrowserCredentialSaveInput,
+): Promise<BrowserCredentialSummary> {
   const origin = normalizeOriginFromUrl(input.url);
   const username = normalizeUsername(input.username);
   const password = normalizePassword(input.password);
@@ -264,7 +276,10 @@ export async function deleteBrowserCredentialById(id: string): Promise<{ deleted
 
 async function selectCredentialForFill(
   url: string,
-  resolveRecord: (entries: BrowserCredentialRecord[], origin: string) => BrowserCredentialRecord | undefined,
+  resolveRecord: (
+    entries: BrowserCredentialRecord[],
+    origin: string,
+  ) => BrowserCredentialRecord | undefined,
 ): Promise<BrowserCredentialFillData | null> {
   const origin = normalizeOriginFromUrl(url);
   const vault = await readVault();
@@ -276,7 +291,10 @@ async function selectCredentialForFill(
   return buildFillData(selected);
 }
 
-export async function getBrowserCredentialForFill(url: string, id: string): Promise<BrowserCredentialFillData | null> {
+export async function getBrowserCredentialForFill(
+  url: string,
+  id: string,
+): Promise<BrowserCredentialFillData | null> {
   const trimmedId = id.trim();
   if (!trimmedId) return null;
   return selectCredentialForFill(url, (entries, origin) =>
@@ -284,7 +302,9 @@ export async function getBrowserCredentialForFill(url: string, id: string): Prom
   );
 }
 
-export async function getBrowserAutoFillCredentialForUrl(url: string): Promise<BrowserCredentialFillData | null> {
+export async function getBrowserAutoFillCredentialForUrl(
+  url: string,
+): Promise<BrowserCredentialFillData | null> {
   return selectCredentialForFill(url, (entries, origin) => {
     const candidates = entries
       .filter((entry) => entry.origin === origin && entry.autoFill)

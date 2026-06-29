@@ -195,7 +195,9 @@ describe('ipc app/browser runtime handlers', () => {
       target: 'openai.com',
     });
 
-    await expect(openExternal({}, 'file:///etc/passwd')).rejects.toThrow('Only HTTP(S) URLs are allowed');
+    await expect(openExternal({}, 'file:///etc/passwd')).rejects.toThrow(
+      'Only HTTP(S) URLs are allowed',
+    );
   });
 
   it('saves browser screenshots with data-url validation and delegates utility handlers', async () => {
@@ -213,16 +215,18 @@ describe('ipc app/browser runtime handlers', () => {
 
     mockDiscoverLocalBrowserTargets.mockResolvedValue([{ url: 'http://localhost:3000' }]);
     mockReaddir.mockResolvedValueOnce(['stale.png', 'broken.png']);
-    mockStat
-      .mockResolvedValueOnce({ mtimeMs: 0 })
-      .mockRejectedValueOnce(new Error('stat failed'));
+    mockStat.mockResolvedValueOnce({ mtimeMs: 0 }).mockRejectedValueOnce(new Error('stat failed'));
 
     const filePath = await saveScreenshot({}, 'session/1', 'data:image/png;base64,aGVsbG8=');
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(mockMkdir).toHaveBeenCalledWith('/tmp/calder-screenshots', { recursive: true });
     expect(mockWriteFile).toHaveBeenCalled();
     expect(mockUnlink).toHaveBeenCalledWith('/tmp/calder-screenshots/stale.png');
-    expect(warnSpy).toHaveBeenCalledWith('Failed to prune screenshot', '/tmp/calder-screenshots/broken.png', expect.any(Error));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Failed to prune screenshot',
+      '/tmp/calder-screenshots/broken.png',
+      expect.any(Error),
+    );
     expect(filePath).toContain('/tmp/calder-screenshots/draw-session_1-1700000000000.png');
     await expect(saveScreenshot({}, 's', 'data:text/plain;base64,abc')).rejects.toThrow(
       'Invalid screenshot data URL',
@@ -244,7 +248,8 @@ describe('ipc app/browser runtime handlers', () => {
     const dirError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
     mockReaddir.mockRejectedValueOnce(dirError);
 
-    const { registerAppBrowserIpcHandlers: registerHandlersFresh } = await import('./ipc-app-browser');
+    const { registerAppBrowserIpcHandlers: registerHandlersFresh } =
+      await import('./ipc-app-browser');
     registerHandlersFresh({
       requireKnownProjectPath: vi.fn((value) => value),
       getActiveProjectPath: vi.fn(() => '/repo'),

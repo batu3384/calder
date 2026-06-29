@@ -47,7 +47,9 @@ function getOnHandler(channel: string): (...args: any[]) => any {
 
 function createPolicy(projectPath = '/repo'): CliSurfaceIpcPolicy {
   return {
-    resolveProjectPath: vi.fn((projectId: string) => (projectId === 'project-1' ? projectPath : undefined)),
+    resolveProjectPath: vi.fn((projectId: string) =>
+      projectId === 'project-1' ? projectPath : undefined,
+    ),
     isWithinKnownProject: vi.fn((resolvedPath: string) => {
       return resolvedPath === projectPath || resolvedPath.startsWith(`${projectPath}/`);
     }),
@@ -122,7 +124,9 @@ describe('ipc cli-surface handlers', () => {
     registerCliSurfaceIpcHandlers(runtime, createPolicy());
     const startHandler = getHandleHandler('cli-surface:start');
 
-    await expect(startHandler({}, 'missing-project', baseProfile)).rejects.toThrow(/known project/i);
+    await expect(startHandler({}, 'missing-project', baseProfile)).rejects.toThrow(
+      /known project/i,
+    );
     await expect(
       startHandler({}, 'project-1', {
         ...baseProfile,

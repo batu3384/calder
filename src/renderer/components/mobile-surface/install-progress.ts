@@ -56,7 +56,10 @@ export function pushInstallLog(state: MobileSurfaceInstallState, line: string): 
   }
 }
 
-export function renderInstallProgress(progressEl: HTMLDivElement, state: MobileSurfaceInstallState | null): void {
+export function renderInstallProgress(
+  progressEl: HTMLDivElement,
+  state: MobileSurfaceInstallState | null,
+): void {
   progressEl.innerHTML = '';
   if (!state) {
     progressEl.classList.add('hidden');
@@ -77,16 +80,18 @@ export function renderInstallProgress(progressEl: HTMLDivElement, state: MobileS
   title.textContent = `${state.dependencyLabel} · Install progress`;
   const subtitle = document.createElement('div');
   subtitle.className = 'mobile-surface-install-subtitle';
-  subtitle.textContent = state.phase === 'running'
-    ? 'Installing dependency and collecting diagnostics…'
-    : state.phase === 'success'
-      ? 'Install completed.'
-      : 'Install failed.';
+  subtitle.textContent =
+    state.phase === 'running'
+      ? 'Installing dependency and collecting diagnostics…'
+      : state.phase === 'success'
+        ? 'Install completed.'
+        : 'Install failed.';
   titleWrap.append(title, subtitle);
 
   const phasePill = document.createElement('span');
   phasePill.className = `mobile-surface-install-phase is-${state.phase}`;
-  phasePill.textContent = state.phase === 'running' ? 'RUNNING' : state.phase === 'success' ? 'DONE' : 'FAILED';
+  phasePill.textContent =
+    state.phase === 'running' ? 'RUNNING' : state.phase === 'success' ? 'DONE' : 'FAILED';
 
   header.append(titleWrap, phasePill);
   panel.appendChild(header);
@@ -183,9 +188,11 @@ export function applyInstallProgressEvent(
   if (typeof event.stepIndex === 'number') state.stepIndex = event.stepIndex;
   if (typeof event.totalSteps === 'number') state.totalSteps = event.totalSteps;
   if (typeof event.stepPercent === 'number') state.stepPercent = clampPercent(event.stepPercent);
-  if (typeof event.downloadedBytes === 'number') state.downloadedBytes = Math.max(0, event.downloadedBytes);
+  if (typeof event.downloadedBytes === 'number')
+    state.downloadedBytes = Math.max(0, event.downloadedBytes);
   if (typeof event.totalBytes === 'number') state.totalBytes = Math.max(0, event.totalBytes);
-  if (typeof event.remainingBytes === 'number') state.remainingBytes = Math.max(0, event.remainingBytes);
+  if (typeof event.remainingBytes === 'number')
+    state.remainingBytes = Math.max(0, event.remainingBytes);
   if (event.command) state.command = event.command;
   if (event.message) state.message = event.message;
   if (event.detail) {
@@ -201,10 +208,10 @@ export function applyInstallProgressEvent(
     state.phase = 'failed';
     state.finishedAt = event.finishedAt || new Date().toISOString();
   } else if (
-    event.phase === 'started'
-    || event.phase === 'step_started'
-    || event.phase === 'step_progress'
-    || event.phase === 'step_finished'
+    event.phase === 'started' ||
+    event.phase === 'step_started' ||
+    event.phase === 'step_progress' ||
+    event.phase === 'step_finished'
   ) {
     state.phase = 'running';
   }

@@ -1,4 +1,4 @@
-import type { CliProviderMeta,ProviderId } from '../../shared/types/provider';
+import type { CliProviderMeta, ProviderId } from '../../shared/types/provider';
 import { AntigravityProvider } from './antigravity-provider';
 import { ClaudeProvider } from './claude-provider';
 import { CodexProvider } from './codex-provider';
@@ -48,7 +48,7 @@ export function getProviderMeta(id: ProviderId): CliProviderMeta {
 }
 
 export function getAllProviderMetas(): CliProviderMeta[] {
-  return getAllProviders().map(p => p.meta);
+  return getAllProviders().map((p) => p.meta);
 }
 
 export function getAvailableProviderIds(): ProviderId[] {
@@ -60,8 +60,14 @@ export function getAvailableProviderIds(): ProviderId[] {
         return false;
       }
     })
-    .map(p => p.meta.id);
+    .map((p) => p.meta.id);
 }
 
 /** Single source of truth for all known provider IDs */
-export const SUPPORTED_PROVIDER_IDS: readonly ProviderId[] = ['claude', 'codex', 'copilot', 'antigravity', 'qwen'] as const;
+export const SUPPORTED_PROVIDER_IDS: readonly ProviderId[] = [
+  'claude',
+  'codex',
+  'copilot',
+  'antigravity',
+  'qwen',
+] as const;

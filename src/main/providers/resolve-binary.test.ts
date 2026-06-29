@@ -85,7 +85,9 @@ describe('resolve-binary', () => {
     const { resolveBinary, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(true);
 
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockReturnValue('C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd\r\nC:\\alt\\qwen.cmd\r\n' as any);
+    mockExecSync.mockReturnValue(
+      'C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd\r\nC:\\alt\\qwen.cmd\r\n' as any,
+    );
 
     const resolved = resolveBinary('qwen', { path: null });
     expect(resolved).toBe('C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd');
@@ -111,7 +113,8 @@ describe('resolve-binary', () => {
   });
 
   it('validateBinaryExists returns guidance when executable cannot be found', async () => {
-    const { validateBinaryExists, mockExistsSync, mockExecSync } = await loadResolveBinaryModule(false);
+    const { validateBinaryExists, mockExistsSync, mockExecSync } =
+      await loadResolveBinaryModule(false);
 
     mockExistsSync.mockReturnValue(false);
     mockExecSync.mockImplementation(() => {
@@ -130,25 +133,36 @@ describe('resolve-binary', () => {
   });
 
   it('re-checks binary detection when cached result is stale and binary becomes available', async () => {
-    const { validateBinaryExists, _resetPrereqCheckCache, mockExecSync, mockExistsSync } = await loadResolveBinaryModule(false);
+    const { validateBinaryExists, _resetPrereqCheckCache, mockExecSync, mockExistsSync } =
+      await loadResolveBinaryModule(false);
 
     _resetPrereqCheckCache();
     mockExistsSync.mockReturnValue(false);
     mockExecSync.mockImplementation(() => {
       throw new Error('not found');
     });
-    const first = validateBinaryExists('claude', 'Claude Code CLI', 'npm install -g @anthropic-ai/claude-code');
+    const first = validateBinaryExists(
+      'claude',
+      'Claude Code CLI',
+      'npm install -g @anthropic-ai/claude-code',
+    );
     expect(first.ok).toBe(false);
 
     // Simulate installation finishing immediately after first check.
-    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate).includes('/usr/local/bin/claude'));
+    mockExistsSync.mockImplementation((candidate: unknown) =>
+      String(candidate).includes('/usr/local/bin/claude'),
+    );
     mockExecSync.mockImplementation((command: unknown) => {
       if (String(command).includes('command -v "claude"')) return '/usr/local/bin/claude\n';
       if (String(command).includes('which "claude"')) return '/usr/local/bin/claude\n';
       throw new Error('unexpected command');
     });
 
-    const second = validateBinaryExists('claude', 'Claude Code CLI', 'npm install -g @anthropic-ai/claude-code');
+    const second = validateBinaryExists(
+      'claude',
+      'Claude Code CLI',
+      'npm install -g @anthropic-ai/claude-code',
+    );
     expect(second.ok).toBe(true);
     expect(second.message).toBe('');
     expect(mockExecSync).toHaveBeenCalled();

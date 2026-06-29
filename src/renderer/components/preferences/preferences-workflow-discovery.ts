@@ -57,25 +57,29 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
   createWorkflowBtn.type = 'button';
   createWorkflowBtn.textContent = 'New workflow';
   createWorkflowBtn.addEventListener('click', () => {
-    showModal('New Workflow', [
-      {
-        label: 'Workflow name',
-        id: 'workflow-name',
-        placeholder: 'Incident triage',
-        defaultValue: 'Incident triage',
-      },
-    ], async (values) => {
-      const title = values['workflow-name']?.trim() ?? '';
-      if (!title) {
-        setModalError('workflow-name', 'Workflow name is required');
-        return;
-      }
+    showModal(
+      'New Workflow',
+      [
+        {
+          label: 'Workflow name',
+          id: 'workflow-name',
+          placeholder: 'Incident triage',
+          defaultValue: 'Incident triage',
+        },
+      ],
+      async (values) => {
+        const title = values['workflow-name']?.trim() ?? '';
+        if (!title) {
+          setModalError('workflow-name', 'Workflow name is required');
+          return;
+        }
 
-      const result = await window.calder.workflow.createFile(project.path, title);
-      appState.setProjectWorkflows(project.id, result.state);
-      args.onCloseModalWide();
-      void window.calder.git.openInEditor(project.path, result.relativePath);
-    });
+        const result = await window.calder.workflow.createFile(project.path, title);
+        appState.setProjectWorkflows(project.id, result.state);
+        args.onCloseModalWide();
+        void window.calder.git.openInEditor(project.path, result.relativePath);
+      },
+    );
   });
   actions.appendChild(createWorkflowBtn);
   shell.appendChild(actions);

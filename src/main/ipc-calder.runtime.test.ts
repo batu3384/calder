@@ -212,12 +212,16 @@ function createWindow(id: number, supportsOff = true): any {
   return win;
 }
 
-function isAutoApprovalMode(value: unknown): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
-  return value === 'off'
-    || value === 'edit_only'
-    || value === 'edit_plus_safe_tools'
-    || value === 'full_auto'
-    || value === 'full_auto_unsafe';
+function isAutoApprovalMode(
+  value: unknown,
+): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
+  return (
+    value === 'off' ||
+    value === 'edit_only' ||
+    value === 'edit_plus_safe_tools' ||
+    value === 'full_auto' ||
+    value === 'full_auto_unsafe'
+  );
 }
 
 function createOps() {
@@ -263,13 +267,17 @@ describe('ipc calder runtime handlers', () => {
 
     mockDiscoverProjectTeamContext.mockResolvedValue({ spaces: [] });
     mockCreateProjectTeamContextStarterFiles.mockResolvedValue({ created: ['team-context'] });
-    mockCreateProjectTeamContextSpaceFile.mockResolvedValue({ path: '.calder/team-context/space.md' });
+    mockCreateProjectTeamContextSpaceFile.mockResolvedValue({
+      path: '.calder/team-context/space.md',
+    });
 
     mockDiscoverProjectReviews.mockResolvedValue({ reviews: [] });
     mockCreateProjectReviewFile.mockResolvedValue({ path: '.calder/reviews/review.md' });
     mockReadProjectReviewFile.mockResolvedValue({ content: '# Review' });
 
-    mockCreateProjectGovernanceStarterPolicy.mockResolvedValue({ path: '.calder/governance/policy.md' });
+    mockCreateProjectGovernanceStarterPolicy.mockResolvedValue({
+      path: '.calder/governance/policy.md',
+    });
 
     mockDiscoverProjectBackgroundTasks.mockResolvedValue({ tasks: [] });
     mockCreateProjectBackgroundTaskFile.mockResolvedValue({ path: '.calder/tasks/task.md' });
@@ -297,43 +305,80 @@ describe('ipc calder runtime handlers', () => {
     const ops = createOps();
     registerCalderIpcHandlers(ops);
 
-    await expect(getHandleHandler('context:getProjectState')({}, '/repo')).resolves.toEqual({ rootRules: [] });
+    await expect(getHandleHandler('context:getProjectState')({}, '/repo')).resolves.toEqual({
+      rootRules: [],
+    });
     await getHandleHandler('context:createStarterFiles')({}, '/repo');
     await getHandleHandler('context:createSharedRule')({}, '/repo', 'Rule One', 'hard');
-    await getHandleHandler('context:renameSharedRule')({}, '/repo', 'rules/rule.md', 'Rule Two', 'soft');
+    await getHandleHandler('context:renameSharedRule')(
+      {},
+      '/repo',
+      'rules/rule.md',
+      'Rule Two',
+      'soft',
+    );
     await getHandleHandler('context:deleteSharedRule')({}, '/repo', 'rules/rule.md');
 
-    await expect(getHandleHandler('workflow:getProjectState')({}, '/repo')).resolves.toEqual({ workflows: [] });
+    await expect(getHandleHandler('workflow:getProjectState')({}, '/repo')).resolves.toEqual({
+      workflows: [],
+    });
     await getHandleHandler('workflow:createStarterFiles')({}, '/repo');
     await getHandleHandler('workflow:createFile')({}, '/repo', 'WF');
-    await expect(getHandleHandler('workflow:readFile')({}, '/repo', 'wf.md')).resolves.toEqual({ content: '# Workflow' });
+    await expect(getHandleHandler('workflow:readFile')({}, '/repo', 'wf.md')).resolves.toEqual({
+      content: '# Workflow',
+    });
 
-    await expect(getHandleHandler('teamContext:getProjectState')({}, '/repo')).resolves.toEqual({ spaces: [] });
+    await expect(getHandleHandler('teamContext:getProjectState')({}, '/repo')).resolves.toEqual({
+      spaces: [],
+    });
     await getHandleHandler('teamContext:createStarterFiles')({}, '/repo');
     await getHandleHandler('teamContext:createSpace')({}, '/repo', 'Team');
 
-    await expect(getHandleHandler('review:getProjectState')({}, '/repo')).resolves.toEqual({ reviews: [] });
+    await expect(getHandleHandler('review:getProjectState')({}, '/repo')).resolves.toEqual({
+      reviews: [],
+    });
     await getHandleHandler('review:createFile')({}, '/repo', 'Review');
-    await expect(getHandleHandler('review:readFile')({}, '/repo', 'review.md')).resolves.toEqual({ content: '# Review' });
+    await expect(getHandleHandler('review:readFile')({}, '/repo', 'review.md')).resolves.toEqual({
+      content: '# Review',
+    });
 
     await getHandleHandler('governance:getProjectState')({}, '/repo', 'session-1');
     await getHandleHandler('governance:createStarterPolicy')({}, '/repo');
-    await getHandleHandler('governance:setAutoApprovalMode')({}, '/repo', 'global', 'off', 'session-2');
-    await expect(getHandleHandler('governance:setSessionAutoApprovalOverride')({}, 'session-3', 'off')).resolves.toEqual({ ok: true });
+    await getHandleHandler('governance:setAutoApprovalMode')(
+      {},
+      '/repo',
+      'global',
+      'off',
+      'session-2',
+    );
+    await expect(
+      getHandleHandler('governance:setSessionAutoApprovalOverride')({}, 'session-3', 'off'),
+    ).resolves.toEqual({ ok: true });
 
-    await expect(getHandleHandler('task:getProjectState')({}, '/repo')).resolves.toEqual({ tasks: [] });
+    await expect(getHandleHandler('task:getProjectState')({}, '/repo')).resolves.toEqual({
+      tasks: [],
+    });
     await getHandleHandler('task:create')({}, '/repo', 'Task Title', 'Task Prompt');
-    await expect(getHandleHandler('task:read')({}, '/repo', 'task.md')).resolves.toEqual({ content: '# Task' });
+    await expect(getHandleHandler('task:read')({}, '/repo', 'task.md')).resolves.toEqual({
+      content: '# Task',
+    });
 
-    await expect(getHandleHandler('checkpoint:getProjectState')({}, '/repo')).resolves.toEqual({ checkpoints: [] });
+    await expect(getHandleHandler('checkpoint:getProjectState')({}, '/repo')).resolves.toEqual({
+      checkpoints: [],
+    });
     await getHandleHandler('checkpoint:create')({}, '/repo', { snapshot: true });
-    await expect(getHandleHandler('checkpoint:read')({}, '/repo', 'checkpoint.md')).resolves.toEqual({ content: '# Checkpoint' });
+    await expect(
+      getHandleHandler('checkpoint:read')({}, '/repo', 'checkpoint.md'),
+    ).resolves.toEqual({ content: '# Checkpoint' });
 
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
       kind: 'write',
       label: 'Create context starter files',
     });
-    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Create context starter files');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith(
+      '/repo',
+      'Create context starter files',
+    );
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
       kind: 'write',
       label: 'Create workflow file',
@@ -371,23 +416,33 @@ describe('ipc calder runtime handlers', () => {
         contextOnChange = onChange;
         return firstContextDispose;
       })
-      .mockImplementationOnce((_projectPath: string, _onChange: (state: unknown) => void) => secondContextDispose);
+      .mockImplementationOnce(
+        (_projectPath: string, _onChange: (state: unknown) => void) => secondContextDispose,
+      );
 
     const firstWorkflowDispose = vi.fn();
     const secondWorkflowDispose = vi.fn();
     mockStartProjectWorkflowWatcher
-      .mockImplementationOnce((_projectPath: string, _onChange: (state: unknown) => void) => firstWorkflowDispose)
-      .mockImplementationOnce((_projectPath: string, _onChange: (state: unknown) => void) => secondWorkflowDispose);
+      .mockImplementationOnce(
+        (_projectPath: string, _onChange: (state: unknown) => void) => firstWorkflowDispose,
+      )
+      .mockImplementationOnce(
+        (_projectPath: string, _onChange: (state: unknown) => void) => secondWorkflowDispose,
+      );
 
     mockBrowserWindowFromWebContents.mockReturnValue(winWithOff);
-    mockBrowserWindowFromId.mockImplementation((id: number) => (id === winWithOff.id ? winWithOff : null));
+    mockBrowserWindowFromId.mockImplementation((id: number) =>
+      id === winWithOff.id ? winWithOff : null,
+    );
 
     const onContextWatch = getOnHandler('context:watchProject');
     onContextWatch({ sender: { id: 'sender' } }, '/repo-a');
     expect(mockStartProjectContextWatcher).toHaveBeenCalledTimes(1);
 
     contextOnChange?.({ changed: true });
-    expect(winWithOff.webContents.send).toHaveBeenCalledWith('context:changed', '/repo-a', { changed: true });
+    expect(winWithOff.webContents.send).toHaveBeenCalledWith('context:changed', '/repo-a', {
+      changed: true,
+    });
 
     onContextWatch({ sender: { id: 'sender' } }, '/repo-a');
     expect(mockStartProjectContextWatcher).toHaveBeenCalledTimes(1);
@@ -405,7 +460,9 @@ describe('ipc calder runtime handlers', () => {
     expect(secondContextDispose).toHaveBeenCalledTimes(1);
 
     mockBrowserWindowFromWebContents.mockReturnValue(winWithoutOff);
-    mockBrowserWindowFromId.mockImplementation((id: number) => (id === winWithoutOff.id ? winWithoutOff : null));
+    mockBrowserWindowFromId.mockImplementation((id: number) =>
+      id === winWithoutOff.id ? winWithoutOff : null,
+    );
 
     const onWorkflowWatch = getOnHandler('workflow:watchProject');
     onWorkflowWatch({ sender: { id: 'workflow-sender' } }, '/repo-workflow-a');
@@ -415,7 +472,9 @@ describe('ipc calder runtime handlers', () => {
 
     mockBrowserWindowFromWebContents.mockReturnValue(null);
     mockBrowserWindowGetAllWindows.mockReturnValue([winWithOff]);
-    mockBrowserWindowFromId.mockImplementation((id: number) => (id === winWithOff.id ? winWithOff : null));
+    mockBrowserWindowFromId.mockImplementation((id: number) =>
+      id === winWithOff.id ? winWithOff : null,
+    );
 
     getOnHandler('teamContext:watchProject')({ sender: {} }, '/repo-team');
     getOnHandler('review:watchProject')({ sender: {} }, '/repo-review');

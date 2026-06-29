@@ -6,7 +6,11 @@
   background:
     radial-gradient(circle at 0% 0%, rgba(214, 170, 105, 0.1), transparent 24%),
     linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 44%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 44%, transparent),
+      transparent 42%
+    ),
     var(--surface-rail);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -17,13 +21,16 @@
 
 .sidebar-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
-    var(--surface-rail);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .sidebar-project-row.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 24%, transparent), transparent 70%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 24%, transparent),
+      transparent 70%
+    ),
     color-mix(in srgb, var(--surface-raised) 70%, transparent);
   border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
 }
@@ -37,7 +44,12 @@
 
 #sidebar-resize-handle:hover,
 #sidebar-resize-handle.active {
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 68%, transparent), transparent);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 68%, transparent),
+    transparent
+  );
 }
 
 #sidebar-header {
@@ -89,7 +101,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: var(--radius-sm);
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 20%, transparent), transparent 52%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 20%, transparent),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.032), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 72%, transparent);
   box-shadow:
@@ -207,7 +223,11 @@
 
 .project-item:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 86%, transparent);
   border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -224,7 +244,11 @@
 
 .project-item.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 30%, transparent), transparent 68%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 30%, transparent),
+      transparent 68%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-elevated) 88%, transparent);
   color: var(--text-primary);
@@ -389,9 +413,17 @@
 /* Premium polish overrides */
 #sidebar {
   background:
-    radial-gradient(circle at 18% -8%, color-mix(in srgb, var(--accent-soft) 40%, transparent), transparent 52%),
+    radial-gradient(
+      circle at 18% -8%,
+      color-mix(in srgb, var(--accent-soft) 40%, transparent),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 26%, transparent), transparent 40%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 26%, transparent),
+      transparent 40%
+    ),
     var(--surface-rail);
 }
 
@@ -417,20 +449,27 @@
 .project-item {
   border-color: color-mix(in srgb, var(--border-subtle) 18%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)),
-    transparent;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0)), transparent;
 }
 
 .project-item:hover {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 20%, transparent), transparent 72%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 20%, transparent),
+      transparent 72%
+    ),
     color-mix(in srgb, var(--surface-hover) 64%, transparent);
   border-color: color-mix(in srgb, var(--accent) 14%, var(--border-subtle));
 }
 
 .project-item.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 36%, transparent), transparent 68%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 36%, transparent),
+      transparent 68%
+    ),
     color-mix(in srgb, var(--surface-elevated) 84%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -455,7 +494,11 @@
 
 #sidebar-header {
   background:
-    radial-gradient(circle at 18% -40%, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 42%),
+    radial-gradient(
+      circle at 18% -40%,
+      color-mix(in srgb, var(--accent-soft) 28%, transparent),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-rail) 94%, transparent);
   box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--border-subtle) 74%, transparent);
@@ -508,7 +551,11 @@
 #sidebar-footer {
   background:
     linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.018)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 34%, transparent), transparent 72%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 34%, transparent),
+      transparent 72%
+    );
 }
 
 #update-banner {

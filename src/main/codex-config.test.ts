@@ -23,9 +23,15 @@ const mockStatSync = vi.mocked(fs.statSync);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
-  mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
-  mockStatSync.mockImplementation(() => { throw new Error('ENOENT'); });
+  mockReadFileSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
+  mockReaddirSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
+  mockStatSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
 });
 
 describe('getCodexConfig', () => {
@@ -61,8 +67,20 @@ url = "http://project"
 
     const config = await getCodexConfig('/project');
     expect(config.mcpServers).toEqual([
-      { name: 'shared', url: 'http://project', status: 'configured', scope: 'project', filePath: path.join('/project', '.codex', 'config.toml') },
-      { name: 'userOnly', url: 'http://user', status: 'configured', scope: 'user', filePath: path.join('/mock/home', '.codex', 'config.toml') },
+      {
+        name: 'shared',
+        url: 'http://project',
+        status: 'configured',
+        scope: 'project',
+        filePath: path.join('/project', '.codex', 'config.toml'),
+      },
+      {
+        name: 'userOnly',
+        url: 'http://user',
+        status: 'configured',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.codex', 'config.toml'),
+      },
     ]);
   });
 
@@ -86,16 +104,30 @@ url = "http://project"
 
     const config = await getCodexConfig('/project');
     expect(config.agents).toEqual([
-      { name: 'UserAgent', model: 'gpt-5.4', category: 'plugin', scope: 'user', filePath: path.join('/mock/home', '.codex', 'agents', 'user-agent.md') },
-      { name: 'ProjectAgent', model: 'gpt-5.4-mini', category: 'plugin', scope: 'project', filePath: path.join('/project', '.codex', 'agents', 'project-agent.md') },
+      {
+        name: 'UserAgent',
+        model: 'gpt-5.4',
+        category: 'plugin',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.codex', 'agents', 'user-agent.md'),
+      },
+      {
+        name: 'ProjectAgent',
+        model: 'gpt-5.4-mini',
+        category: 'plugin',
+        scope: 'project',
+        filePath: path.join('/project', '.codex', 'agents', 'project-agent.md'),
+      },
     ]);
   });
 
   it('deduplicates agent and skill names by first scope found', async () => {
     mockReaddirSync.mockImplementation((dirPath) => {
       const input = n(String(dirPath));
-      if (input === '/mock/home/.codex/agents' || input === '/project/.codex/agents') return ['shared.md'] as any;
-      if (input === '/mock/home/.codex/skills' || input === '/project/.codex/skills') return ['shared-skill'] as any;
+      if (input === '/mock/home/.codex/agents' || input === '/project/.codex/agents')
+        return ['shared.md'] as any;
+      if (input === '/mock/home/.codex/skills' || input === '/project/.codex/skills')
+        return ['shared-skill'] as any;
       throw new Error('ENOENT');
     });
     mockReadFileSync.mockImplementation((inputPath) => {
@@ -126,7 +158,8 @@ url = "http://project"
   it('reads skills and ignores hidden or invalid entries', async () => {
     mockReaddirSync.mockImplementation((dirPath) => {
       const input = n(String(dirPath));
-      if (input === '/mock/home/.codex/skills') return ['valid-skill', '.system', 'missing-skill'] as any;
+      if (input === '/mock/home/.codex/skills')
+        return ['valid-skill', '.system', 'missing-skill'] as any;
       throw new Error('ENOENT');
     });
     mockReadFileSync.mockImplementation((inputPath) => {
@@ -144,7 +177,12 @@ url = "http://project"
 
     const config = await getCodexConfig('/project');
     expect(config.skills).toEqual([
-      { name: 'ValidSkill', description: 'Useful', scope: 'user', filePath: path.join('/mock/home', '.codex', 'skills', 'valid-skill', 'SKILL.md') },
+      {
+        name: 'ValidSkill',
+        description: 'Useful',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.codex', 'skills', 'valid-skill', 'SKILL.md'),
+      },
     ]);
   });
 
@@ -160,7 +198,10 @@ enabled = true
 enabled = false
 ` as any;
       }
-      if (filePath === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md') {
+      if (
+        filePath ===
+        '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md'
+      ) {
         return '---\nname: using-superpowers\ndescription: Use superpowers skill.\n---\n' as any;
       }
       throw new Error('ENOENT');
@@ -168,14 +209,19 @@ enabled = false
 
     mockReaddirSync.mockImplementation((dirPath) => {
       const input = n(String(dirPath));
-      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers') return ['hash-1'] as any;
-      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills') return ['using-superpowers'] as any;
+      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers')
+        return ['hash-1'] as any;
+      if (input === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills')
+        return ['using-superpowers'] as any;
       throw new Error('ENOENT');
     });
 
     mockStatSync.mockImplementation((inputPath) => {
       const filePath = n(String(inputPath));
-      if (filePath === '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md') {
+      if (
+        filePath ===
+        '/mock/home/.codex/plugins/cache/openai-curated/superpowers/hash-1/skills/using-superpowers/SKILL.md'
+      ) {
         return { isFile: () => true } as any;
       }
       throw new Error('ENOENT');
@@ -187,7 +233,18 @@ enabled = false
         name: 'using-superpowers',
         description: 'Use superpowers skill.',
         scope: 'user',
-        filePath: path.join('/mock/home', '.codex', 'plugins', 'cache', 'openai-curated', 'superpowers', 'hash-1', 'skills', 'using-superpowers', 'SKILL.md'),
+        filePath: path.join(
+          '/mock/home',
+          '.codex',
+          'plugins',
+          'cache',
+          'openai-curated',
+          'superpowers',
+          'hash-1',
+          'skills',
+          'using-superpowers',
+          'SKILL.md',
+        ),
       },
     ]);
   });

@@ -35,8 +35,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectCheckpointSyncForTesting, initProjectCheckpointSync } from './project-checkpoint-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectCheckpointSyncForTesting,
+  initProjectCheckpointSync,
+} from './project-checkpoint-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -82,7 +85,9 @@ describe('project checkpoint sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints,
+    ).toHaveLength(1);
   });
 
   it('applies live checkpoint updates to the matching project', async () => {
@@ -111,7 +116,10 @@ describe('project checkpoint sync', () => {
       lastUpdated: '2026-04-13T16:05:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints[0]?.label).toBe('Checkpoint 2');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints[0]
+        ?.label,
+    ).toBe('Checkpoint 2');
   });
 
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
@@ -128,7 +136,9 @@ describe('project checkpoint sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
@@ -153,7 +163,9 @@ describe('project checkpoint sync', () => {
       ],
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints).toEqual([]);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints,
+    ).toEqual([]);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
@@ -190,11 +202,15 @@ describe('project checkpoint sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints,
+    ).toHaveLength(1);
 
     firstResponse.resolve({ checkpoints: [] });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectCheckpoints?.checkpoints,
+    ).toHaveLength(1);
   });
 });

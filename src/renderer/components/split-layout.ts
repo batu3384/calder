@@ -144,7 +144,11 @@ export function renderLayout(): void {
     : undefined;
 
   if (isMosaicMode(project) && project.layout.splitPanes.length >= 1) {
-    if (activeSession?.type && activeSession.type !== 'claude' && activeSession.type !== 'browser-tab') {
+    if (
+      activeSession?.type &&
+      activeSession.type !== 'claude' &&
+      activeSession.type !== 'browser-tab'
+    ) {
       renderTabMode(project);
     } else {
       renderSwarmMode(project);
@@ -166,7 +170,7 @@ function renderTabMode(project: ProjectRecord): void {
   const activeId = project.activeSessionId;
   if (!activeId) return;
 
-  const activeSession = project.sessions.find(s => s.id === activeId);
+  const activeSession = project.sessions.find((s) => s.id === activeId);
   if (activeSession?.type && activeSession.type !== 'claude') {
     clearFocused();
     attachSplitLayoutNonCliPane(activeSession, container, false);
@@ -191,7 +195,11 @@ function renderTabMode(project: ProjectRecord): void {
 }
 
 /** Attach, show, and ensure-spawn for each pane in the list. */
-function showPanes(project: ProjectRecord, target: HTMLElement = container, paneIds: string[] = project.layout.splitPanes): void {
+function showPanes(
+  project: ProjectRecord,
+  target: HTMLElement = container,
+  paneIds: string[] = project.layout.splitPanes,
+): void {
   showSplitLayoutPanes(project, paneIds, target);
 }
 
@@ -258,18 +266,24 @@ function renderSwarmMode(project: ProjectRecord): void {
     const browserDivider = createMosaicDivider('x', 'mosaic-divider-browser');
     browserDivider.title = 'Drag to resize Live View and sessions';
     container.appendChild(browserDivider);
-    bindMosaicDivider(browserDivider, () => getSurfaceResizeBounds(container, hasInspector), {
-      onPreview: (ratio) => {
-        applySurfaceColumns(ratio);
-        requestAnimationFrame(() => fitAllVisible());
+    bindMosaicDivider(
+      browserDivider,
+      () => getSurfaceResizeBounds(container, hasInspector),
+      {
+        onPreview: (ratio) => {
+          applySurfaceColumns(ratio);
+          requestAnimationFrame(() => fitAllVisible());
+        },
+        onCommit: (ratio) => appState.setBrowserWidthRatio(project.id, ratio),
       },
-      onCommit: (ratio) => appState.setBrowserWidthRatio(project.id, ratio),
-    }, {
-      axis: 'x',
-      min: SURFACE_RATIO_MIN,
-      max: SURFACE_RATIO_MAX,
-      fallback: surfaceRatio,
-    }, registerMosaicResizeCleanup);
+      {
+        axis: 'x',
+        min: SURFACE_RATIO_MIN,
+        max: SURFACE_RATIO_MAX,
+        fallback: surfaceRatio,
+      },
+      registerMosaicResizeCleanup,
+    );
   }
 
   const canvas = document.createElement('div');

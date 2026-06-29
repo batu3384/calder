@@ -70,8 +70,10 @@ function isValidAuthFillPayload(payload: unknown): boolean {
   const password = payload.password;
   if (username !== undefined && !isString(username)) return false;
   if (password !== undefined && !isString(password)) return false;
-  if (isString(username) && Buffer.byteLength(username, 'utf8') > MAX_GUEST_CREDENTIAL_FIELD_BYTES) return false;
-  if (isString(password) && Buffer.byteLength(password, 'utf8') > MAX_GUEST_CREDENTIAL_FIELD_BYTES) return false;
+  if (isString(username) && Buffer.byteLength(username, 'utf8') > MAX_GUEST_CREDENTIAL_FIELD_BYTES)
+    return false;
+  if (isString(password) && Buffer.byteLength(password, 'utf8') > MAX_GUEST_CREDENTIAL_FIELD_BYTES)
+    return false;
 
   return true;
 }
@@ -105,17 +107,19 @@ async function pruneOldScreenshots(dir: string): Promise<void> {
   try {
     const entries = await fs.promises.readdir(dir);
     const now = Date.now();
-    await Promise.all(entries.map(async (name) => {
-      const full = path.join(dir, name);
-      try {
-        const stat = await fs.promises.stat(full);
-        if (now - stat.mtimeMs > SCREENSHOT_MAX_AGE_MS) {
-          await fs.promises.unlink(full);
+    await Promise.all(
+      entries.map(async (name) => {
+        const full = path.join(dir, name);
+        try {
+          const stat = await fs.promises.stat(full);
+          if (now - stat.mtimeMs > SCREENSHOT_MAX_AGE_MS) {
+            await fs.promises.unlink(full);
+          }
+        } catch (err) {
+          console.warn('Failed to prune screenshot', full, err);
         }
-      } catch (err) {
-        console.warn('Failed to prune screenshot', full, err);
-      }
-    }));
+      }),
+    );
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
       console.warn('Failed to read screenshots dir for pruning', err);
@@ -126,7 +130,10 @@ async function pruneOldScreenshots(dir: string): Promise<void> {
 export interface AppBrowserIpcOps {
   requireKnownProjectPath: (projectPath: string, contextLabel: string) => string;
   getActiveProjectPath: () => string | undefined;
-  assertProjectGovernanceAllows: (projectPath: string, operation: ProjectGovernanceOperation) => Promise<void>;
+  assertProjectGovernanceAllows: (
+    projectPath: string,
+    operation: ProjectGovernanceOperation,
+  ) => Promise<void>;
 }
 
 export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
@@ -141,32 +148,35 @@ export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
   ipcMain.handle('app:getBrowserPreloadPath', () =>
-    path.join(__dirname, '..', '..', 'preload', 'preload', 'browser-tab-preload.js')
+    path.join(__dirname, '..', '..', 'preload', 'preload', 'browser-tab-preload.js'),
   );
-  ipcMain.handle('app:sendToGuestWebContents', (_event, webContentsId: number, channel: string, ...args: unknown[]) => {
-    if (!ALLOWED_GUEST_MESSAGE_CHANNELS.has(channel)) {
-      console.warn(`app:sendToGuestWebContents blocked unknown channel: ${channel}`);
-      return false;
-    }
-    if (!isAllowedGuestMessagePayload(channel, args)) {
-      console.warn(`app:sendToGuestWebContents blocked invalid payload for channel: ${channel}`);
-      return false;
-    }
-    const guest = webContents.fromId(webContentsId);
-    if (!guest || guest.isDestroyed()) return false;
-    if (typeof guest.getType === 'function' && guest.getType() !== 'webview') {
-      console.warn(`app:sendToGuestWebContents blocked non-webview target: ${guest.getType()}`);
-      return false;
-    }
-    const guestUrl = guest.getURL();
-    if (!guestUrl) return false;
-    if (!isAllowedGuestWebviewUrl(guestUrl)) {
-      console.warn(`app:sendToGuestWebContents blocked unknown origin: ${guestUrl}`);
-      return false;
-    }
-    guest.send(channel, ...args);
-    return true;
-  });
+  ipcMain.handle(
+    'app:sendToGuestWebContents',
+    (_event, webContentsId: number, channel: string, ...args: unknown[]) => {
+      if (!ALLOWED_GUEST_MESSAGE_CHANNELS.has(channel)) {
+        console.warn(`app:sendToGuestWebContents blocked unknown channel: ${channel}`);
+        return false;
+      }
+      if (!isAllowedGuestMessagePayload(channel, args)) {
+        console.warn(`app:sendToGuestWebContents blocked invalid payload for channel: ${channel}`);
+        return false;
+      }
+      const guest = webContents.fromId(webContentsId);
+      if (!guest || guest.isDestroyed()) return false;
+      if (typeof guest.getType === 'function' && guest.getType() !== 'webview') {
+        console.warn(`app:sendToGuestWebContents blocked non-webview target: ${guest.getType()}`);
+        return false;
+      }
+      const guestUrl = guest.getURL();
+      if (!guestUrl) return false;
+      if (!isAllowedGuestWebviewUrl(guestUrl)) {
+        console.warn(`app:sendToGuestWebContents blocked unknown origin: ${guestUrl}`);
+        return false;
+      }
+      guest.send(channel, ...args);
+      return true;
+    },
+  );
 
   ipcMain.handle('browser:saveScreenshot', async (_event, sessionId: string, dataUrl: string) => {
     const PREFIX = 'data:image/png;base64,';
@@ -192,15 +202,21 @@ export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
 
   ipcMain.handle('browser:listLocalTargets', async () => discoverLocalBrowserTargets());
   ipcMain.handle('browserCredential:listForUrl', async (_event, url: string) =>
-    listBrowserCredentialSummariesForUrl(url));
-  ipcMain.handle('browserCredential:saveForUrl', async (_event, input: BrowserCredentialSaveInput) =>
-    saveBrowserCredentialForUrl(input));
+    listBrowserCredentialSummariesForUrl(url),
+  );
+  ipcMain.handle(
+    'browserCredential:saveForUrl',
+    async (_event, input: BrowserCredentialSaveInput) => saveBrowserCredentialForUrl(input),
+  );
   ipcMain.handle('browserCredential:deleteById', async (_event, id: string) =>
-    deleteBrowserCredentialById(id));
+    deleteBrowserCredentialById(id),
+  );
   ipcMain.handle('browserCredential:getForFill', async (_event, url: string, id: string) =>
-    getBrowserCredentialForFill(url, id));
+    getBrowserCredentialForFill(url, id),
+  );
   ipcMain.handle('browserCredential:getAutoFillForUrl', async (_event, url: string) =>
-    getBrowserAutoFillCredentialForUrl(url));
+    getBrowserAutoFillCredentialForUrl(url),
+  );
   ipcMain.handle('app:openExternal', async (_event, url: string, cwd?: string) => {
     const parsed = new URL(url);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
@@ -217,6 +233,8 @@ export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
       });
     }
     const win = BrowserWindow.getAllWindows()[0];
-    return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) => shell.openExternal(target));
+    return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) =>
+      shell.openExternal(target),
+    );
   });
 }

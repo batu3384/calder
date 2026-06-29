@@ -81,7 +81,9 @@ describe('mobile-control-bridge', () => {
     const page = await getRequest(pairingUrl.toString());
     expect(page.status).toBe(200);
     expect(page.text).toContain('Calder Mobile Control');
-    expect(page.text).toContain('Use the 6-digit OTP shown under the desktop QR. Do not enter the manual passphrase here.');
+    expect(page.text).toContain(
+      'Use the 6-digit OTP shown under the desktop QR. Do not enter the manual passphrase here.',
+    );
     expect(page.text).not.toContain('Wrong passphrase or invalid connection code.');
     expect(page.text).toContain('data-mobile-view-tab="terminal"');
     expect(page.text).toContain('data-mobile-view-tab="browser"');
@@ -198,7 +200,11 @@ describe('mobile-control-bridge', () => {
     expect(typeof consumed.answer).toBe('string');
     expect((consumed.answer ?? '').length).toBeGreaterThan(24);
     expect(consumed.answer).not.toContain('v=0');
-    const decoded = await decodeConnectionCode(consumed.answer ?? '', 'answer', 'ABCD-EF12-GH34-JK56');
+    const decoded = await decodeConnectionCode(
+      consumed.answer ?? '',
+      'answer',
+      'ABCD-EF12-GH34-JK56',
+    );
     expect(decoded.type).toBe('answer');
     expect(decoded.sdp).toContain('v=0');
   });
@@ -298,7 +304,10 @@ describe('mobile-control-bridge', () => {
       offerDescription?: { type: 'offer' | 'answer'; sdp: string } | null;
     };
     expect(bootstrapBody.offer).toBe('opaque-offer-code');
-    expect(bootstrapBody.offerDescription).toEqual({ type: 'offer', sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\n' });
+    expect(bootstrapBody.offerDescription).toEqual({
+      type: 'offer',
+      sdp: 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\n',
+    });
   });
 
   it('returns pending when no answer has been submitted and supports explicit revoke', async () => {
@@ -350,7 +359,9 @@ describe('mobile-control-bridge', () => {
     expect(page.text).toContain('<html lang="tr">');
     expect(page.text).toContain('Calder Mobil Kontrol');
     expect(page.text).toContain('Doğrula ve Bağlan');
-    expect(page.text).toContain('Masaüstünde QR altında görünen 6 haneli OTP\'yi girin. Buraya manuel parola girmeyin.');
+    expect(page.text).toContain(
+      "Masaüstünde QR altında görünen 6 haneli OTP'yi girin. Buraya manuel parola girmeyin.",
+    );
     expect(page.text).not.toContain('Parola hatalı veya bağlantı kodu geçersiz.');
     expect(page.text).toContain('Kontroller');
   });
@@ -364,7 +375,9 @@ describe('mobile-control-bridge', () => {
     });
     const local = new URL(toLoopbackUrl(pairing.localPairingUrl));
 
-    const missingPairingPageTr = await getRequest(`${local.origin}/m/aaaaaaaaaaaaaaaaaaaaaaaa?lang=tr`);
+    const missingPairingPageTr = await getRequest(
+      `${local.origin}/m/aaaaaaaaaaaaaaaaaaaaaaaa?lang=tr`,
+    );
     expect(missingPairingPageTr.status).toBe(404);
     expect(missingPairingPageTr.text).toContain('Eşleştirme bulunamadı.');
 
@@ -767,11 +780,15 @@ describe('mobile-control-bridge', () => {
     expect(health.json).toEqual({ ok: true });
 
     await new Promise((resolve) => setTimeout(resolve, 90));
-    const expiredPage = await getRequest(`${local.origin}/m/${pairing.pairingId}?t=${local.searchParams.get('t') ?? ''}`);
+    const expiredPage = await getRequest(
+      `${local.origin}/m/${pairing.pairingId}?t=${local.searchParams.get('t') ?? ''}`,
+    );
     expect(expiredPage.status).toBe(404);
     expect(expiredPage.text).toContain('Pairing not found');
 
-    const unknownPost = await postJson(`${local.origin}/api/pair/${pairing.pairingId}/unknown`, { token: 'x' });
+    const unknownPost = await postJson(`${local.origin}/api/pair/${pairing.pairingId}/unknown`, {
+      token: 'x',
+    });
     expect(unknownPost.status).toBe(404);
     expect(unknownPost.text).toContain('Route not found');
   });

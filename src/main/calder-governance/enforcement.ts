@@ -24,12 +24,14 @@ interface RawGovernancePolicy {
   mcpAllowlist?: unknown;
 }
 
-async function readRawPolicy(projectPath: string): Promise<RawGovernancePolicy & Partial<GovernancePolicyFile>> {
+async function readRawPolicy(
+  projectPath: string,
+): Promise<RawGovernancePolicy & Partial<GovernancePolicyFile>> {
   try {
     const policyPath = path.join(projectPath, POLICY_RELATIVE_PATH);
     const parsed = JSON.parse(await readFile(policyPath, 'utf8'));
     return typeof parsed === 'object' && parsed
-      ? parsed as RawGovernancePolicy & Partial<GovernancePolicyFile>
+      ? (parsed as RawGovernancePolicy & Partial<GovernancePolicyFile>)
       : {};
   } catch {
     return {};
@@ -58,12 +60,16 @@ async function buildGovernanceEngine(
 
 function normalizeAllowlist(value: unknown): string[] {
   return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
-      .map((entry) => entry.trim())
+    ? value
+        .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+        .map((entry) => entry.trim())
     : [];
 }
 
-function decision(status: ProjectGovernanceDecisionStatus, reason?: string): ProjectGovernanceDecision {
+function decision(
+  status: ProjectGovernanceDecisionStatus,
+  reason?: string,
+): ProjectGovernanceDecision {
   return {
     allowed: status === 'allow' || status === 'advisory',
     status,
@@ -72,9 +78,7 @@ function decision(status: ProjectGovernanceDecisionStatus, reason?: string): Pro
 }
 
 function asFiniteNonNegativeNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0
-    ? value
-    : null;
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function formatUsd(value: number): string {
@@ -107,13 +111,19 @@ export async function evaluateProjectGovernanceOperation(
   }
 
   if (policy.mode !== 'enforced') {
-    return decision('advisory', `${operation.label} is allowed because the governance policy is advisory.`);
+    return decision(
+      'advisory',
+      `${operation.label} is allowed because the governance policy is advisory.`,
+    );
   }
 
   if (operation.kind === 'write') {
     if (policy.writePolicy === 'allow') return decision('allow');
     if (policy.writePolicy === 'ask') {
-      return decision('ask', `${operation.label} requires approval under the enforced governance policy.`);
+      return decision(
+        'ask',
+        `${operation.label} requires approval under the enforced governance policy.`,
+      );
     }
     return decision('block', `${operation.label} is blocked by the enforced write policy.`);
   }
@@ -125,13 +135,19 @@ export async function evaluateProjectGovernanceOperation(
       return decision('block', `${operation.target} is not in the project MCP allowlist.`);
     }
     if (policy.toolPolicy === 'ask') {
-      return decision('ask', `${operation.label} requires approval under the enforced tool policy.`);
+      return decision(
+        'ask',
+        `${operation.label} requires approval under the enforced tool policy.`,
+      );
     }
     if (policy.toolPolicy === 'block') {
       return decision('block', `${operation.label} is blocked by the enforced tool policy.`);
     }
     if (policy.writePolicy === 'ask') {
-      return decision('ask', `${operation.label} requires approval under the enforced write policy.`);
+      return decision(
+        'ask',
+        `${operation.label} requires approval under the enforced write policy.`,
+      );
     }
     if (policy.writePolicy === 'block') {
       return decision('block', `${operation.label} is blocked by the enforced write policy.`);
@@ -145,7 +161,10 @@ export async function evaluateProjectGovernanceOperation(
 
   if (operation.kind === 'network') {
     if (policy.networkPolicy === 'ask') {
-      return decision('ask', `${operation.label} requires approval under the enforced network policy.`);
+      return decision(
+        'ask',
+        `${operation.label} requires approval under the enforced network policy.`,
+      );
     }
     if (policy.networkPolicy === 'block') {
       return decision('block', `${operation.label} is blocked by the enforced network policy.`);
@@ -185,5 +204,7 @@ export async function assertProjectGovernanceAllows(
 ): Promise<void> {
   const result = await evaluateProjectGovernanceOperation(projectPath, operation);
   if (result.allowed) return;
-  throw new Error(`Governance policy blocked ${operation.label}: ${result.reason ?? result.status}`);
+  throw new Error(
+    `Governance policy blocked ${operation.label}: ${result.reason ?? result.status}`,
+  );
 }

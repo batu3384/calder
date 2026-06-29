@@ -7,9 +7,16 @@ import { getClaudeConfig } from './claude-config-discovery';
 import { buildClaudeEventHookPython } from './claude-event-hook-template';
 import { addMcpServer, removeMcpServer } from './claude-mcp-config';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
-import { captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
-import { getStatusLineScriptPath, installStatusLineScript,STATUS_DIR } from './hooks/hook-status';
-export type { Agent, ClaudeConfig,Command, McpServer, Skill } from '../shared/types/provider';
+import {
+  captureSessionIdCmd as mkCaptureSessionIdCmd,
+  captureToolFailureCmd as mkCaptureToolFailureCmd,
+  installEventScript,
+  installHookScripts,
+  statusCmd as mkStatusCmd,
+  wrapPythonHookCmd,
+} from './hooks/hook-commands';
+import { getStatusLineScriptPath, installStatusLineScript, STATUS_DIR } from './hooks/hook-status';
+export type { Agent, ClaudeConfig, Command, McpServer, Skill } from '../shared/types/provider';
 export type { McpServerConfig } from './claude-mcp-config';
 
 export const HOOK_MARKER = '# calder-hook';

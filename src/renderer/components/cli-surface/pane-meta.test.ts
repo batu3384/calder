@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../state.js', () => ({
   appState: {
     resolveSurfaceTargetSession: vi.fn((projectId: string) =>
-      projectId === 'project-with-route' ? { name: 'Codex Main' } : null),
+      projectId === 'project-with-route' ? { name: 'Codex Main' } : null,
+    ),
   },
 }));
 
@@ -12,7 +13,9 @@ vi.mock('./adapters/registry.js', () => ({
 }));
 
 vi.mock('./profile.js', () => ({
-  getCliSurfaceProfileLabel: vi.fn((profile: { name?: string }) => profile.name ?? 'Unknown profile'),
+  getCliSurfaceProfileLabel: vi.fn(
+    (profile: { name?: string }) => profile.name ?? 'Unknown profile',
+  ),
 }));
 
 import { detectCliAdapter } from './adapters/registry.js';
@@ -98,11 +101,12 @@ describe('cli-surface pane meta helpers', () => {
 
     renderCliSurfaceRuntimeMeta({
       instance,
-      getRuntimeState: () => ({
-        status: 'starting',
-        command: 'codex',
-        startupTiming: { spawnLatencyMs: 42 },
-      } as any),
+      getRuntimeState: () =>
+        ({
+          status: 'starting',
+          command: 'codex',
+          startupTiming: { spawnLatencyMs: 42 },
+        }) as any,
       resolveSelectedProfile: () => ({ name: 'Codex', command: 'codex', args: [] }),
       adapterHint: 'codex',
     });
@@ -121,7 +125,7 @@ describe('cli-surface pane meta helpers', () => {
 
     renderCliSurfaceRuntimeMeta({
       instance,
-      getRuntimeState: () => ({ status: 'running', command: 'codex' } as any),
+      getRuntimeState: () => ({ status: 'running', command: 'codex' }) as any,
       resolveSelectedProfile: () => undefined,
     });
     expect(instance.metaEl.textContent).toContain('live');
@@ -129,7 +133,7 @@ describe('cli-surface pane meta helpers', () => {
 
     renderCliSurfaceRuntimeMeta({
       instance,
-      getRuntimeState: () => ({ status: 'error', command: 'codex', lastError: 'boom' } as any),
+      getRuntimeState: () => ({ status: 'error', command: 'codex', lastError: 'boom' }) as any,
       resolveSelectedProfile: () => undefined,
     });
     expect(instance.metaEl.textContent).toContain('error');

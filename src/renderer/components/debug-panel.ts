@@ -22,14 +22,14 @@ let countInterval: ReturnType<typeof setInterval> | null = null;
 let countBar: HTMLElement | null = null;
 
 const TYPE_COLORS: Record<string, string> = {
-  'hookStatus': '#f4b400',
-  'costData': '#34a853',
-  'cliSessionId': '#4285f4',
+  hookStatus: '#f4b400',
+  costData: '#34a853',
+  cliSessionId: '#4285f4',
 
-  'ptyExit': '#e94560',
-  'stateEvent': '#bb86fc',
-  'uiDropdown': '#ffd166',
-  'browserMenu': '#5dd6ff',
+  ptyExit: '#e94560',
+  stateEvent: '#bb86fc',
+  uiDropdown: '#ffd166',
+  browserMenu: '#5dd6ff',
 };
 
 export function logDebugEvent(type: string, sessionId: string, data?: unknown): void {
@@ -40,8 +40,16 @@ export function logDebugEvent(type: string, sessionId: string, data?: unknown): 
 
 function formatTime(ts: number): string {
   const d = new Date(ts);
-  return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    + '.' + String(d.getMilliseconds()).padStart(3, '0');
+  return (
+    d.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }) +
+    '.' +
+    String(d.getMilliseconds()).padStart(3, '0')
+  );
 }
 
 function shortSessionId(id: string): string {
@@ -50,7 +58,7 @@ function shortSessionId(id: string): string {
 
 function getSessionName(sessionId: string): string {
   for (const project of appState.projects) {
-    const session = project.sessions.find(s => s.id === sessionId);
+    const session = project.sessions.find((s) => s.id === sessionId);
     if (session) return session.name;
   }
   return shortSessionId(sessionId);
@@ -59,23 +67,23 @@ function getSessionName(sessionId: string): string {
 function resolveSessionFilter(query: string): string {
   if (!query) return '';
   for (const project of appState.projects) {
-    if (project.sessions.some(s => s.id === query)) return query;
+    if (project.sessions.some((s) => s.id === query)) return query;
   }
   // Events may reference sessions no longer in appState
-  if (events.some(e => e.sessionId === query)) return query;
+  if (events.some((e) => e.sessionId === query)) return query;
   const lowerQuery = query.toLowerCase();
   for (const project of appState.projects) {
     for (const session of project.sessions) {
       if (session.name.toLowerCase().includes(lowerQuery)) return session.id;
     }
   }
-  const prefixMatch = events.find(e => e.sessionId.startsWith(query));
+  const prefixMatch = events.find((e) => e.sessionId.startsWith(query));
   if (prefixMatch) return prefixMatch.sessionId;
   return NO_MATCH;
 }
 
 function getFilteredEvents(): DebugEvent[] {
-  return events.filter(e => {
+  return events.filter((e) => {
     if (filterType && e.type !== filterType) return false;
     if (filterSessionId && e.sessionId !== filterSessionId) return false;
     return true;
@@ -269,7 +277,8 @@ export function setDebugVisible(show: boolean): void {
         const filtered = getFilteredEvents();
         const filters: string[] = [];
         if (filterType) filters.push(filterType);
-        if (filterSessionId && filterSessionId !== NO_MATCH) filters.push(getSessionName(filterSessionId));
+        if (filterSessionId && filterSessionId !== NO_MATCH)
+          filters.push(getSessionName(filterSessionId));
         countBar!.textContent = `${filtered.length} events${filters.length ? ` (filtered: ${filters.join(', ')})` : ''}`;
       };
       updateCount();

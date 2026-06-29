@@ -11,12 +11,7 @@ import {
 } from './inspect-selection.js';
 import type { CalderProtocolMessage } from './protocol.js';
 
-function selection(
-  startRow: number,
-  endRow: number,
-  startCol = 0,
-  endCol = 40,
-) {
+function selection(startRow: number, endRow: number, startCol = 0, endCol = 40) {
   return {
     mode: 'line' as const,
     startRow,
@@ -104,8 +99,12 @@ describe('cli-surface inspect selection helpers', () => {
       selection: selection(1, 2),
     };
 
-    expect(reconcileHoveredRegion(staleHoveredSemantic, currentSemantic, currentInferred)).toBeNull();
-    expect(reconcileHoveredRegion(staleHoveredInferred, currentSemantic, currentInferred)).toBeNull();
+    expect(
+      reconcileHoveredRegion(staleHoveredSemantic, currentSemantic, currentInferred),
+    ).toBeNull();
+    expect(
+      reconcileHoveredRegion(staleHoveredInferred, currentSemantic, currentInferred),
+    ).toBeNull();
   });
 
   it('finds containing regions for payload resolution', () => {
@@ -121,6 +120,8 @@ describe('cli-surface inspect selection helpers', () => {
     const target = selection(4, 5, 2, 12);
 
     expect(findContainingInferredRegion(inferredRegions, target)?.label).toBe('Group');
-    expect(findContainingSemanticRegion(semanticRegions, target)?.semanticNodeId).toBe('toolbar.root');
+    expect(findContainingSemanticRegion(semanticRegions, target)?.semanticNodeId).toBe(
+      'toolbar.root',
+    );
   });
 });

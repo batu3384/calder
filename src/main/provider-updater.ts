@@ -15,7 +15,7 @@ import {
   emitUpdateStarted,
   type ProviderProgressContext,
 } from './provider-updater/progress-helpers';
-import type { ProviderUpdaterRunner,ProviderUpdateSpec } from './provider-updater-types';
+import type { ProviderUpdaterRunner, ProviderUpdateSpec } from './provider-updater-types';
 import {
   detectUpdateSource,
   readBinaryVersion,
@@ -74,7 +74,8 @@ function getProviderStageProgress(message: string): number {
   if (message.includes('Trying') || message.includes('fallback')) return 58;
   if (message.includes('Applying update command')) return 72;
   if (message.includes('Verifying installed version')) return 90;
-  if (message.includes('Already up to date') || message.includes('could not be detected')) return 100;
+  if (message.includes('Already up to date') || message.includes('could not be detected'))
+    return 100;
   return 50;
 }
 
@@ -143,9 +144,9 @@ function shouldRetryWithFallback(result: Omit<ProviderUpdateResult, 'durationMs'
   if (result.status === 'sync_pending' && result.source === 'brew-formula') return true;
   if (result.status !== 'skipped') return false;
   return (
-    result.message.includes('No update command available')
-    || result.message.includes('could not be determined')
-    || result.message.includes('No update command configured')
+    result.message.includes('No update command available') ||
+    result.message.includes('could not be determined') ||
+    result.message.includes('No update command configured')
   );
 }
 
@@ -204,7 +205,11 @@ const defaultRunner: ProviderUpdaterRunner = {
             finish({ code: 0, stdout, stderr });
             return;
           }
-          const err = error as NodeJS.ErrnoException & { code?: number | string; stdout?: string; stderr?: string };
+          const err = error as NodeJS.ErrnoException & {
+            code?: number | string;
+            stdout?: string;
+            stderr?: string;
+          };
           if (signal?.aborted) {
             finish({
               code: 130,
@@ -263,7 +268,9 @@ const defaultRunner: ProviderUpdaterRunner = {
   },
 };
 
-export async function updateAllProviders(options?: ProviderUpdaterOptions): Promise<ProviderUpdateSummary> {
+export async function updateAllProviders(
+  options?: ProviderUpdaterOptions,
+): Promise<ProviderUpdateSummary> {
   return updateProviders(getAllProviders(), options);
 }
 
@@ -323,8 +330,20 @@ async function runConfiguredProviderUpdateAttempt(
   });
 }
 
-async function runConfiguredProviderUpdate(input: RunConfiguredProviderUpdateInput): Promise<ProviderUpdateResult> {
-  const { provider, providerId, providerName, spec, providerStart, runner, now, signal, emitProviderMessage } = input;
+async function runConfiguredProviderUpdate(
+  input: RunConfiguredProviderUpdateInput,
+): Promise<ProviderUpdateResult> {
+  const {
+    provider,
+    providerId,
+    providerName,
+    spec,
+    providerStart,
+    runner,
+    now,
+    signal,
+    emitProviderMessage,
+  } = input;
   const binaryPath = provider.resolveBinaryPath();
   const resolvedBinaryPath = resolveRealPath(binaryPath);
   emitProviderMessage('Checking installed version…');
@@ -344,7 +363,11 @@ async function runConfiguredProviderUpdate(input: RunConfiguredProviderUpdateInp
       now,
       signal,
       emitProviderMessage,
-      binaryPath: getAttemptBinaryPath(binaryPath, sourceResolution.source, sourceAttempts[index].source),
+      binaryPath: getAttemptBinaryPath(
+        binaryPath,
+        sourceResolution.source,
+        sourceAttempts[index].source,
+      ),
       beforeVersion,
       sourceResolution: sourceAttempts[index],
     });

@@ -16,7 +16,10 @@ function canonicalizeEmbeddedUrl(url: string | undefined): string {
   if (!value) return '';
   try {
     const parsed = new URL(value);
-    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.pathname.length > 1) {
+    if (
+      (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      parsed.pathname.length > 1
+    ) {
       parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
     }
     return parsed.href;
@@ -49,7 +52,9 @@ window.calder.app.onQuitting(() => {
 
 window.calder.app.onOpenEmbeddedBrowserUrl((payload) => {
   const projectFromSession = payload.sessionId
-    ? appState.projects.find((entry) => entry.sessions.some((session) => session.id === payload.sessionId))
+    ? appState.projects.find((entry) =>
+        entry.sessions.some((session) => session.id === payload.sessionId),
+      )
     : undefined;
   const projectFromPath = payload.cwd ? appState.findProjectForPath(payload.cwd) : undefined;
   const project = projectFromSession ?? projectFromPath ?? appState.activeProject;

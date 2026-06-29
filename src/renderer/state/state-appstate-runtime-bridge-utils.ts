@@ -9,7 +9,10 @@ export function emitSessionAdded(
   return (session: SessionRecord) => bridge.emit('session-added', { projectId, session });
 }
 
-export function findProjectById(projects: ProjectRecord[], projectId: string): ProjectRecord | undefined {
+export function findProjectById(
+  projects: ProjectRecord[],
+  projectId: string,
+): ProjectRecord | undefined {
   return projects.find((project) => project.id === projectId);
 }
 

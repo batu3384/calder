@@ -320,7 +320,10 @@ function createBrowserToolbar(
   return { toolbar, toolbarAddressShell: address.toolbarAddressShell, captureCluster };
 }
 
-export function createBrowserTabPaneLayout(sessionId: string, url?: string): BrowserTabPaneLayoutElements {
+export function createBrowserTabPaneLayout(
+  sessionId: string,
+  url?: string,
+): BrowserTabPaneLayoutElements {
   const el = document.createElement('div');
   el.className = 'browser-tab-pane hidden';
   el.dataset.sessionId = sessionId;
@@ -331,7 +334,12 @@ export function createBrowserTabPaneLayout(sessionId: string, url?: string): Bro
   const address = createBrowserAddressControls(url);
   const viewport = createBrowserViewportControls(sessionId);
   const actions = createBrowserActionButtons();
-  const { toolbar, toolbarAddressShell, captureCluster } = createBrowserToolbar(address, nav, viewport, actions);
+  const { toolbar, toolbarAddressShell, captureCluster } = createBrowserToolbar(
+    address,
+    nav,
+    viewport,
+    actions,
+  );
   el.appendChild(toolbar);
 
   const viewportContainer = document.createElement('div');

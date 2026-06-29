@@ -1,8 +1,14 @@
 import { onShareChange } from '../../sharing/share-manager.js';
 import { appState } from '../../state.js';
 import { onChange as onGitStatusChange } from '../surface-services/git-status.js';
-import { hasMultipleAvailableProviders, loadProviderAvailability } from '../surface-services/provider-availability.js';
-import { onChange as onStatusChange, type SessionStatus } from '../surface-services/session-activity.js';
+import {
+  hasMultipleAvailableProviders,
+  loadProviderAvailability,
+} from '../surface-services/provider-availability.js';
+import {
+  onChange as onStatusChange,
+  type SessionStatus,
+} from '../surface-services/session-activity.js';
 import { onChange as onUnreadChange } from '../surface-services/session-unread.js';
 
 interface TabBarActionHandlerArgs {
@@ -76,21 +82,27 @@ export interface TabBarStateSubscriptionResult {
   unsubscribe: () => void;
 }
 
-export function wireTabBarStateSubscriptions(args: TabBarStateSubscriptionArgs): TabBarStateSubscriptionResult {
+export function wireTabBarStateSubscriptions(
+  args: TabBarStateSubscriptionArgs,
+): TabBarStateSubscriptionResult {
   const subscriptions: Array<() => void> = [];
 
-  const sub = (off: () => void): void => { subscriptions.push(off); };
+  const sub = (off: () => void): void => {
+    subscriptions.push(off);
+  };
 
   sub(appState.on('state-loaded', args.render));
   sub(appState.on('project-changed', args.render));
   sub(appState.on('session-added', args.render));
-  sub(appState.on('session-removed', (data?: unknown) => {
-    const payload = data as { sessionId?: string } | undefined;
-    if (payload?.sessionId) {
-      args.prevStatus.delete(payload.sessionId);
-    }
-    args.render();
-  }));
+  sub(
+    appState.on('session-removed', (data?: unknown) => {
+      const payload = data as { sessionId?: string } | undefined;
+      if (payload?.sessionId) {
+        args.prevStatus.delete(payload.sessionId);
+      }
+      args.render();
+    }),
+  );
   sub(appState.on('session-changed', args.render));
   sub(appState.on('layout-changed', args.render));
   sub(appState.on('preferences-changed', args.syncSessionProviderSelector));
@@ -100,14 +112,20 @@ export function wireTabBarStateSubscriptions(args: TabBarStateSubscriptionArgs):
   const unsubStatus = onStatusChange((sessionId, status) => {
     args.prevStatus.set(sessionId, status);
 
-    const dot = args.tabListEl.querySelector(`.tab-item[data-session-id="${sessionId}"] .tab-status`) as HTMLElement | null;
+    const dot = args.tabListEl.querySelector(
+      `.tab-item[data-session-id="${sessionId}"] .tab-status`,
+    ) as HTMLElement | null;
     if (dot) {
       dot.className = `tab-status ${status}`;
     }
 
-    const tab = args.tabListEl.querySelector(`.tab-item[data-session-id="${sessionId}"]`) as HTMLElement | null;
+    const tab = args.tabListEl.querySelector(
+      `.tab-item[data-session-id="${sessionId}"]`,
+    ) as HTMLElement | null;
     if (!tab) return;
-    const session = appState.activeProject?.sessions.find((candidate) => candidate.id === sessionId);
+    const session = appState.activeProject?.sessions.find(
+      (candidate) => candidate.id === sessionId,
+    );
     tab.title = args.buildSessionTooltip(status, session?.cliSessionId);
   });
   sub(unsubStatus);
@@ -123,7 +141,9 @@ export function wireTabBarStateSubscriptions(args: TabBarStateSubscriptionArgs):
 
   return {
     prevStatus: args.prevStatus,
-    unsubscribe: () => { for (const fn of subscriptions) fn(); },
+    unsubscribe: () => {
+      for (const fn of subscriptions) fn();
+    },
   };
 }
 
@@ -132,7 +152,9 @@ interface TabBarProviderAvailabilityBootstrapArgs {
   render: () => void;
 }
 
-export function bootstrapTabBarProviderAvailability(args: TabBarProviderAvailabilityBootstrapArgs): void {
+export function bootstrapTabBarProviderAvailability(
+  args: TabBarProviderAvailabilityBootstrapArgs,
+): void {
   // Icons only distinguish providers when multiple are installed.
   loadProviderAvailability()
     .then(() => {

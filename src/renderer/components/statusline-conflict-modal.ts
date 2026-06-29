@@ -66,7 +66,10 @@ export function showStatusLineConflictModal(foreignCommand: string): Promise<'re
     const handleKeep = () => close('keep');
     const handleReplace = () => close('replace');
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); close('keep'); }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close('keep');
+      }
     };
 
     keepBtn.addEventListener('click', handleKeep);

@@ -40,7 +40,11 @@ beforeEach(() => {
     callback(null, '.git\n', '');
   }) as any);
 
-  vi.mocked(fs.watch).mockImplementation(((filePath: any, optionsOrListener: any, maybeListener: any) => {
+  vi.mocked(fs.watch).mockImplementation(((
+    filePath: any,
+    optionsOrListener: any,
+    maybeListener: any,
+  ) => {
     const listener = typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
     const close = vi.fn();
     closeFns.push(close);

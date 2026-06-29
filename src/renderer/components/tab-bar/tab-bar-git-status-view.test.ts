@@ -48,7 +48,11 @@ describe('tab-bar-git-status-view', () => {
   });
 
   it('renders clean git status markup', () => {
-    const view = buildGitStatusView(true, makeStatus({ branch: 'feature/<x>', ahead: 1, behind: 2 }), esc);
+    const view = buildGitStatusView(
+      true,
+      makeStatus({ branch: 'feature/<x>', ahead: 1, behind: 2 }),
+      esc,
+    );
     expect(view.state).toBe('clean');
     expect(view.busy).toBe(false);
     expect(view.shouldRefresh).toBe(false);

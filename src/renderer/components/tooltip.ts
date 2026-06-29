@@ -3,7 +3,7 @@
  * Provides styled, accessible tooltips with delay support.
  */
 
-import { autoUpdate, computePosition, flip, offset, type Placement,shift } from '@floating-ui/dom';
+import { autoUpdate, computePosition, flip, offset, type Placement, shift } from '@floating-ui/dom';
 
 export interface TooltipOptions {
   content: string;

@@ -7,7 +7,10 @@ const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 
 const menuSource = readFileSync(new URL('../../../main/menu.ts', import.meta.url), 'utf-8');
 const shortcutsSource = readFileSync(new URL('../../shortcuts.ts', import.meta.url), 'utf-8');
 const keybindingsSource = readFileSync(new URL('../../keybindings.ts', import.meta.url), 'utf-8');
-const preloadSource = readFileSync(new URL('../../../preload/preload.ts', import.meta.url), 'utf-8');
+const preloadSource = readFileSync(
+  new URL('../../../preload/preload.ts', import.meta.url),
+  'utf-8',
+);
 const rendererTypesSource = readFileSync(new URL('../../types.ts', import.meta.url), 'utf-8');
 const stateSource = readFileSync(new URL('../../state.ts', import.meta.url), 'utf-8');
 

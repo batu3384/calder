@@ -33,7 +33,11 @@
 
 .control-chip[data-state='active'] {
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border-strong));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 38%, var(--surface-elevated)), var(--surface-panel));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 38%, var(--surface-elevated)),
+    var(--surface-panel)
+  );
   color: var(--text-primary);
 }
 

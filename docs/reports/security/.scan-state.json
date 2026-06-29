@@ -42,11 +42,6 @@
     "LANG-TSJS"
   ],
   "failed_skills": [],
-  "detected_languages": [
-    "TypeScript",
-    "JavaScript",
-    "HTML",
-    "CSS"
-  ],
+  "detected_languages": ["TypeScript", "JavaScript", "HTML", "CSS"],
   "findings_count": 4
 }

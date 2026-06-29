@@ -36,7 +36,11 @@ export function firstNonEmptyLine(...chunks: Array<string | undefined>): string 
   return '';
 }
 
-export function runCommand(command: string, args: string[], timeoutMs: number = COMMAND_TIMEOUT_MS): Promise<CommandResult> {
+export function runCommand(
+  command: string,
+  args: string[],
+  timeoutMs: number = COMMAND_TIMEOUT_MS,
+): Promise<CommandResult> {
   return new Promise((resolve) => {
     execFile(
       command,
@@ -69,7 +73,11 @@ export function runCommand(command: string, args: string[], timeoutMs: number = 
   });
 }
 
-export function runBinaryCommand(command: string, args: string[], timeoutMs: number = COMMAND_TIMEOUT_MS): Promise<BinaryCommandResult> {
+export function runBinaryCommand(
+  command: string,
+  args: string[],
+  timeoutMs: number = COMMAND_TIMEOUT_MS,
+): Promise<BinaryCommandResult> {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
       env: buildCommandEnv(),
@@ -104,7 +112,9 @@ export function runBinaryCommand(command: string, args: string[], timeoutMs: num
       const stderr = Buffer.concat([
         ...stderrChunks,
         Buffer.from((error.message || '').trim(), 'utf8'),
-      ]).toString('utf8').trim();
+      ])
+        .toString('utf8')
+        .trim();
       resolve({
         code: 1,
         stdout: Buffer.concat(stdoutChunks),
@@ -121,7 +131,9 @@ export function runBinaryCommand(command: string, args: string[], timeoutMs: num
         resolve({
           code: 124,
           stdout: Buffer.concat(stdoutChunks),
-          stderr: [stderr, `Command timed out after ${Math.round(timeoutMs / 1000)}s.`].filter(Boolean).join('\n'),
+          stderr: [stderr, `Command timed out after ${Math.round(timeoutMs / 1000)}s.`]
+            .filter(Boolean)
+            .join('\n'),
         });
         return;
       }

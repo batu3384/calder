@@ -10,7 +10,10 @@ function findProjectIdByPath(projectPath: string): string | undefined {
   return appState.projects.find((project) => project.path === projectPath)?.id;
 }
 
-function applyProjectBackgroundTasks(projectPath: string, projectBackgroundTasks: ProjectBackgroundTaskState): void {
+function applyProjectBackgroundTasks(
+  projectPath: string,
+  projectBackgroundTasks: ProjectBackgroundTaskState,
+): void {
   const projectId = findProjectIdByPath(projectPath);
   if (!projectId) return;
   appState.setProjectBackgroundTasks(projectId, projectBackgroundTasks);

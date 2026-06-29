@@ -3,10 +3,7 @@ import {
   getUpdateCenterState,
   onUpdateCenterChange,
 } from '../surface-services/update-center.js';
-import type {
-  AboutDraft,
-  RenderAboutSectionArgs,
-} from './preferences-modal-sections-types.js';
+import type { AboutDraft, RenderAboutSectionArgs } from './preferences-modal-sections-types.js';
 
 interface AboutHeroElements {
   hero: HTMLElement;
@@ -51,8 +48,11 @@ function renderAboutUpdateState({
   if (appUpdateState.phase === 'downloading') {
     updateBtn.disabled = true;
     updateBtn.textContent = 'Downloading...';
-    const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new version';
-    const percent = typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
+    const versionLabel = appUpdateState.targetVersion
+      ? `v${appUpdateState.targetVersion}`
+      : 'new version';
+    const percent =
+      typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
     updateStatus.textContent = `Downloading ${versionLabel}...`;
     updateMeta.textContent = `${percent}% completed`;
     updateActivity.textContent = 'Status: package download is in progress.';
@@ -63,7 +63,9 @@ function renderAboutUpdateState({
   if (appUpdateState.phase === 'ready_to_restart') {
     updateBtn.disabled = false;
     updateBtn.textContent = 'Restart to Apply';
-    const versionLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'new update';
+    const versionLabel = appUpdateState.targetVersion
+      ? `v${appUpdateState.targetVersion}`
+      : 'new update';
     updateStatus.textContent = `${versionLabel} is ready. Restart to apply.`;
     updateMeta.textContent = 'The update is downloaded.';
     updateActivity.textContent = 'Status: restart is required to finish update.';
@@ -113,7 +115,8 @@ function createAboutHero(): AboutHeroElements {
 
   const aboutLead = document.createElement('div');
   aboutLead.className = 'about-lead';
-  aboutLead.textContent = 'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.';
+  aboutLead.textContent =
+    'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.';
 
   aboutHero.appendChild(appName);
   aboutHero.appendChild(versionLine);
@@ -201,8 +204,12 @@ function createExternalAboutLink(label: string, url: string): HTMLAnchorElement 
 function createAboutLinks(): HTMLElement {
   const linksDiv = document.createElement('div');
   linksDiv.className = 'about-links about-link-grid';
-  linksDiv.appendChild(createExternalAboutLink('GitHub', 'https://github.com/batuhanyuksel/calder'));
-  linksDiv.appendChild(createExternalAboutLink('Report a Bug', 'https://github.com/batuhanyuksel/calder/issues'));
+  linksDiv.appendChild(
+    createExternalAboutLink('GitHub', 'https://github.com/batuhanyuksel/calder'),
+  );
+  linksDiv.appendChild(
+    createExternalAboutLink('Report a Bug', 'https://github.com/batuhanyuksel/calder/issues'),
+  );
   return linksDiv;
 }
 

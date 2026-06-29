@@ -1,121 +1,193 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https: wss: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; frame-src 'self';">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calder</title>
-  <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="xterm.css">
-</head>
-<body>
-  <div id="app">
-    <div id="sidebar" class="sidebar-surface project-rail">
-      <div id="sidebar-header">
-        <div class="sidebar-title-group">
-          <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar">&#x25E7;</button>
-          <div class="sidebar-brand-block">
-            <span class="sidebar-eyebrow">Calder</span>
-            <span class="sidebar-title">Project Index</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https: wss: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; frame-src 'self';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calder</title>
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="xterm.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="sidebar" class="sidebar-surface project-rail">
+        <div id="sidebar-header">
+          <div class="sidebar-title-group">
+            <button
+              id="btn-toggle-sidebar"
+              class="icon-btn sidebar-toggle-btn"
+              title="Toggle Sidebar (Cmd+B)"
+              aria-label="Toggle sidebar"
+            >
+              &#x25E7;
+            </button>
+            <div class="sidebar-brand-block">
+              <span class="sidebar-eyebrow">Calder</span>
+              <span class="sidebar-title">Project Index</span>
+            </div>
+          </div>
+          <div class="sidebar-header-actions">
+            <button
+              id="btn-preferences"
+              class="icon-btn"
+              title="Preferences"
+              aria-label="Open preferences"
+            >
+              &#x2699;
+            </button>
+            <button
+              id="btn-add-project"
+              class="icon-btn"
+              title="New Project (Ctrl+Shift+P)"
+              aria-label="Create new project"
+            >
+              +
+            </button>
           </div>
         </div>
-        <div class="sidebar-header-actions">
-          <button id="btn-preferences" class="icon-btn" title="Preferences" aria-label="Open preferences">&#x2699;</button>
-          <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)" aria-label="Create new project">+</button>
+        <div id="sidebar-content">
+          <div id="project-list"></div>
         </div>
+        <div id="sidebar-footer"></div>
       </div>
-      <div id="sidebar-content">
-        <div id="project-list"></div>
-      </div>
-      <div id="sidebar-footer"></div>
-    </div>
-    <div id="sidebar-resize-handle"></div>
-    <div id="main-area">
-      <div id="workspace-shell" class="workspace-shell-surface">
-        <div id="workspace-stack" class="session-deck session-deck-surface">
-          <div id="tab-bar" class="tab-bar-surface session-deck-surface">
-            <div class="tab-bar-main">
-              <div id="tab-list"></div>
-            </div>
-            <div class="tab-bar-meta">
-            </div>
-            <div id="tab-actions">
-              <div class="command-deck-status">
-                <div id="git-status"></div>
+      <div id="sidebar-resize-handle"></div>
+      <div id="main-area">
+        <div id="workspace-shell" class="workspace-shell-surface">
+          <div id="workspace-stack" class="session-deck session-deck-surface">
+            <div id="tab-bar" class="tab-bar-surface session-deck-surface">
+              <div class="tab-bar-main">
+                <div id="tab-list"></div>
               </div>
-              <div id="session-launcher" class="session-launcher-group">
-                <div id="surface-mode-slot" hidden></div>
-                <div id="surface-profile-slot" hidden></div>
-                <div id="session-provider-slot" hidden></div>
-                <button id="btn-mobile-control" type="button" class="icon-btn tab-action-primary tab-action-handoff" title="Open secure handoff panel" aria-label="Open secure handoff panel" hidden><span class="tab-action-handoff-icon" aria-hidden="true">&#x21C4;</span></button>
-                <span id="mobile-control-presence" class="mobile-control-presence" hidden></span>
-                <button id="btn-update-cli-tools" class="icon-btn" title="Update CLI Tools" aria-label="Update CLI tools">&#x21BB;</button>
-                <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
+              <div class="tab-bar-meta"></div>
+              <div id="tab-actions">
+                <div class="command-deck-status">
+                  <div id="git-status"></div>
+                </div>
+                <div id="session-launcher" class="session-launcher-group">
+                  <div id="surface-mode-slot" hidden></div>
+                  <div id="surface-profile-slot" hidden></div>
+                  <div id="session-provider-slot" hidden></div>
+                  <button
+                    id="btn-mobile-control"
+                    type="button"
+                    class="icon-btn tab-action-primary tab-action-handoff"
+                    title="Open secure handoff panel"
+                    aria-label="Open secure handoff panel"
+                    hidden
+                  >
+                    <span class="tab-action-handoff-icon" aria-hidden="true">&#x21C4;</span>
+                  </button>
+                  <span id="mobile-control-presence" class="mobile-control-presence" hidden></span>
+                  <button
+                    id="btn-update-cli-tools"
+                    class="icon-btn"
+                    title="Update CLI Tools"
+                    aria-label="Update CLI tools"
+                  >
+                    &#x21BB;
+                  </button>
+                  <button
+                    id="btn-add-session"
+                    class="icon-btn"
+                    title="New Session (Ctrl+Shift+N)"
+                    aria-label="Create new session"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div id="terminal-container"></div>
-          <div id="project-terminal-resize-handle" class="hidden"></div>
-          <div id="project-terminal-panel" class="hidden">
-            <div id="project-terminal-header">
-              <span class="project-terminal-title">Quick Terminal</span>
-              <button id="btn-close-terminal" class="icon-btn" title="Close Terminal">&times;</button>
+            <div id="terminal-container"></div>
+            <div id="project-terminal-resize-handle" class="hidden"></div>
+            <div id="project-terminal-panel" class="hidden">
+              <div id="project-terminal-header">
+                <span class="project-terminal-title">Quick Terminal</span>
+                <button id="btn-close-terminal" class="icon-btn" title="Close Terminal">
+                  &times;
+                </button>
+              </div>
+              <div id="project-terminal-container"></div>
             </div>
-            <div id="project-terminal-container"></div>
           </div>
+          <aside
+            id="context-inspector"
+            class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"
+          >
+            <div id="context-inspector-header">
+              <div class="context-inspector-title-group">
+                <span class="context-inspector-eyebrow">Workspace</span>
+                <span class="context-inspector-title">Overview</span>
+              </div>
+              <div class="context-inspector-header-actions">
+                <button
+                  id="btn-close-context-inspector"
+                  class="icon-btn"
+                  title="Close Context Inspector"
+                  aria-label="Close context inspector"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+            <div id="context-inspector-overview"></div>
+            <div id="context-inspector-sections">
+              <section class="context-inspector-section" data-section="capabilities">
+                <header class="context-inspector-block-header">
+                  <span class="context-inspector-block-title">Controls</span>
+                  <span class="context-inspector-block-copy"
+                    >Provider, approvals, and project rules.</span
+                  >
+                </header>
+                <div id="config-sections" class="context-inspector-block-body"></div>
+              </section>
+              <section class="context-inspector-section" data-section="git">
+                <header class="context-inspector-block-header">
+                  <span class="context-inspector-block-title">Git Workspace</span>
+                  <span class="context-inspector-block-copy"
+                    >Worktree status, branches, and quick git actions.</span
+                  >
+                </header>
+                <div id="git-panel" class="context-inspector-block-body"></div>
+              </section>
+              <section class="context-inspector-section" data-section="activity">
+                <header class="context-inspector-block-header">
+                  <span class="context-inspector-block-title">Run Activity</span>
+                  <span class="context-inspector-block-copy"
+                    >Recent executions, notes, and session timeline.</span
+                  >
+                </header>
+                <div id="session-history" class="context-inspector-block-body"></div>
+              </section>
+            </div>
+          </aside>
+          <button
+            id="btn-open-context-inspector"
+            class="context-inspector-reopen hidden"
+            type="button"
+            title="Open control panel"
+            aria-label="Open context inspector"
+          >
+            Overview
+          </button>
         </div>
-        <aside id="context-inspector" class="context-inspector-open control-panel-surface ops-rail ops-rail-surface">
-          <div id="context-inspector-header">
-            <div class="context-inspector-title-group">
-              <span class="context-inspector-eyebrow">Workspace</span>
-              <span class="context-inspector-title">Overview</span>
-            </div>
-            <div class="context-inspector-header-actions">
-              <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
-            </div>
-          </div>
-          <div id="context-inspector-overview"></div>
-          <div id="context-inspector-sections">
-            <section class="context-inspector-section" data-section="capabilities">
-              <header class="context-inspector-block-header">
-                <span class="context-inspector-block-title">Controls</span>
-                <span class="context-inspector-block-copy">Provider, approvals, and project rules.</span>
-              </header>
-              <div id="config-sections" class="context-inspector-block-body"></div>
-            </section>
-            <section class="context-inspector-section" data-section="git">
-              <header class="context-inspector-block-header">
-                <span class="context-inspector-block-title">Git Workspace</span>
-                <span class="context-inspector-block-copy">Worktree status, branches, and quick git actions.</span>
-              </header>
-              <div id="git-panel" class="context-inspector-block-body"></div>
-            </section>
-            <section class="context-inspector-section" data-section="activity">
-              <header class="context-inspector-block-header">
-                <span class="context-inspector-block-title">Run Activity</span>
-                <span class="context-inspector-block-copy">Recent executions, notes, and session timeline.</span>
-              </header>
-              <div id="session-history" class="context-inspector-block-body"></div>
-            </section>
-          </div>
-        </aside>
-        <button id="btn-open-context-inspector" class="context-inspector-reopen hidden" type="button" title="Open control panel" aria-label="Open context inspector">Overview</button>
       </div>
     </div>
-  </div>
 
-  <div id="modal-overlay" class="hidden">
-    <div id="modal">
-      <div id="modal-title"></div>
-      <div id="modal-body"></div>
-      <div id="modal-actions">
-        <button id="modal-cancel" class="modal-btn">Cancel</button>
-        <button id="modal-confirm" class="modal-btn primary">Create</button>
+    <div id="modal-overlay" class="hidden">
+      <div id="modal">
+        <div id="modal-title"></div>
+        <div id="modal-body"></div>
+        <div id="modal-actions">
+          <button id="modal-cancel" class="modal-btn">Cancel</button>
+          <button id="modal-confirm" class="modal-btn primary">Create</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="index.js"></script>
-</body>
+    <script src="index.js"></script>
+  </body>
 </html>

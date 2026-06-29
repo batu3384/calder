@@ -34,11 +34,9 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
       content.appendChild(header);
 
       if (step.selectors?.length) {
-        const selectorOptions = buildSelectorOptions(
-          step.selectors,
-          step.activeSelector,
-          (sel) => { step.activeSelector = sel; }
-        );
+        const selectorOptions = buildSelectorOptions(step.selectors, step.activeSelector, (sel) => {
+          step.activeSelector = sel;
+        });
         selectorOptions.className = 'flow-step-selectors';
         content.appendChild(selectorOptions);
       }
@@ -65,7 +63,7 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
   });
 
   const hasSteps = instance.flowSteps.length > 0;
-  instance.flowPanel.style.display = (instance.flowMode || hasSteps) ? 'flex' : 'none';
+  instance.flowPanel.style.display = instance.flowMode || hasSteps ? 'flex' : 'none';
   instance.flowInputRow.style.display = hasSteps ? 'flex' : 'none';
   instance.flowPanelLabel.textContent = `Flow (${instance.flowSteps.length} steps)`;
   instance.syncToolbarState();

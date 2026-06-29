@@ -17,6 +17,7 @@ Core architecture separation is good (`main/preload/renderer/shared`), but disco
 ## 2) Validation Baseline
 
 ### Runtime and quality checks
+
 - `rtk npm run audit:deep` -> PASS
   - `351/351` test files passed
   - `2506/2506` tests passed
@@ -25,6 +26,7 @@ Core architecture separation is good (`main/preload/renderer/shared`), but disco
   - `knip` passed
 
 ### Graph baseline
+
 - `rtk code-review-graph status --repo /Users/batuhanyuksel/Documents/browser`
   - Nodes: `6990`
   - Edges: `78040`
@@ -35,6 +37,7 @@ Core architecture separation is good (`main/preload/renderer/shared`), but disco
 ## 3) Repo Topology Snapshot
 
 ### Root-level size hot spots
+
 - `apps/` -> `365M` (almost entirely `apps/calder-mobile/node_modules`)
 - `node_modules/` -> `775M`
 - `dist/` -> `310M` (ignored, not tracked)
@@ -42,6 +45,7 @@ Core architecture separation is good (`main/preload/renderer/shared`), but disco
 - `src/` -> `6.3M`
 
 ### Tracked files
+
 - Total tracked files: `982`
 - Top-level tracked distribution:
   - `src`: `824`
@@ -51,6 +55,7 @@ Core architecture separation is good (`main/preload/renderer/shared`), but disco
   - `.codex-ui-backups`: `10`
 
 ### Source placement density
+
 - `src/main`: `179` direct files (`345` total in tree)
 - `src/renderer`: `101` direct files (`443` total in tree)
 - `src/renderer/components`: `188` direct files (`281` total in tree)
@@ -69,11 +74,13 @@ This indicates strong growth pressure in flat directories.
 ## P0 - Immediate Structural Risks
 
 ### P0.1 Tracked backup payload in root namespace
+
 - `.codex-ui-backups/` contains tracked backup snapshots (`10` files).
 - This is production repo history mixed with archival artifacts.
 - Risk: noise in code search/review, unclear source of truth, accidental stale reference usage.
 
 ### P0.2 `src/renderer/components` is overly flat
+
 - `188` direct files at one level.
 - Large direct files include:
   - `split-layout.ts` (`950` lines)
@@ -84,6 +91,7 @@ This indicates strong growth pressure in flat directories.
 - Risk: ownership ambiguity, harder onboarding, brittle cross-component coupling.
 
 ### P0.3 `src/main` root remains too dense
+
 - `179` direct files at one level.
 - Major large files still live in root (`mobile-inspector.ts`, `mobile-dependency-doctor.ts`, `provider-updater.ts`, `claude-cli.ts`, etc.).
 - Risk: broad edit collision zone and rising merge complexity.
@@ -91,15 +99,18 @@ This indicates strong growth pressure in flat directories.
 ## P1 - Near-Term Maintainability Debt
 
 ### P1.1 Multi-app dependency model is expensive
+
 - `apps/calder-mobile` tracks only `11` source/config files but carries local `node_modules` (`364M`) and its own lockfile.
 - Risk: duplicate dependency trees, CI/local install overhead, and less predictable reproducibility across root and mobile app.
 
 ### P1.2 Tooling directories have mixed governance at root
+
 - `.code-review-graph` is ignored (good), but `.codex-ui-backups` and `.claude` are tracked.
 - `security-report/` is fully tracked with machine-oriented findings payloads.
 - Risk: root navigability degradation and blurred boundary between source code and operational artifacts.
 
 ### P1.3 Shared type coupling still broad
+
 - Imports referencing `shared/types/` submodules exist across `237` files.
 - Exact `shared/types` module import appears in `6` files.
 - Risk: central contract changes can fan out widely unless import policy is tightened per domain.
@@ -107,14 +118,17 @@ This indicates strong growth pressure in flat directories.
 ## P2 - Hygiene and Professional Packaging Gaps
 
 ### P2.1 No module-level architecture docs inside `src/`
+
 - No `README.md` or `ARCHITECTURE.md` found under `src/**`.
 - Risk: tribal knowledge dependency and slower onboarding.
 
 ### P2.2 Duplicate generic filenames across many domains
+
 - Repeated names like `discovery.ts`, `watcher.ts`, `scaffold.ts`, `pane.ts`, `store.ts`.
 - Risk: low search precision and context switching overhead.
 
 ### P2.3 Deep audit does not include structure guards
+
 - `scripts/deep-system-audit.mjs` validates runtime quality but not folder/file-budget policy.
 - Risk: structure debt can regrow even while tests stay green.
 
@@ -157,11 +171,13 @@ Note: this is a directional map. Migrations should be done in slices with compat
 ## 7) Recommended Action Plan
 
 ### Phase A (P0 cleanup, low risk)
+
 1. Move tracked backup assets from `.codex-ui-backups/` to `docs/archive/` or remove from tracked tree after explicit archival decision.
 2. Define folder ownership map for `src/renderer/components` and migrate direct files into bounded subfolders by domain.
 3. Continue extracting large `src/main` root files into domain folders without changing runtime behavior.
 
 ### Phase B (P1 normalization)
+
 1. Decide single dependency strategy for `apps/calder-mobile`:
    - Option 1: workspace-managed install from root.
    - Option 2: explicit standalone app boundary (with clear scripts and CI split).
@@ -169,6 +185,7 @@ Note: this is a directional map. Migrations should be done in slices with compat
 3. Add import-boundary policy for `shared/types/*` to reduce accidental cross-domain coupling.
 
 ### Phase C (P2 guardrails)
+
 1. Add module-level docs (`README.md`) for `src/main`, `src/renderer`, and large domain folders.
 2. Add structural audit checks:
    - max direct file count per folder

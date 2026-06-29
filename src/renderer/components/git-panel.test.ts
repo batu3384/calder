@@ -25,7 +25,7 @@ const mockAppState = vi.hoisted(() => {
       return () => listeners.get(event)?.delete(cb);
     }),
     emit(event: string) {
-      listeners.get(event)?.forEach(cb => cb());
+      listeners.get(event)?.forEach((cb) => cb());
     },
     reset() {
       listeners.clear();
@@ -126,7 +126,7 @@ class FakeClassList {
     const removeSet = new Set(tokens);
     this.owner.className = this.owner.className
       .split(/\s+/)
-      .filter(token => token && !removeSet.has(token))
+      .filter((token) => token && !removeSet.has(token))
       .join(' ');
   }
 
@@ -154,7 +154,10 @@ class FakeElement {
   listeners = new Map<string, Array<(event?: unknown) => void>>();
   classList = new FakeClassList(this);
 
-  constructor(public tagName: string, public ownerDocument: FakeDocument) {}
+  constructor(
+    public tagName: string,
+    public ownerDocument: FakeDocument,
+  ) {}
 
   set innerHTML(value: string) {
     this.textContent = value;
@@ -173,7 +176,7 @@ class FakeElement {
 
   remove(): void {
     if (!this.parentNode) return;
-    this.parentNode.children = this.parentNode.children.filter(child => child !== this);
+    this.parentNode.children = this.parentNode.children.filter((child) => child !== this);
     this.parentNode = null;
   }
 
@@ -317,7 +320,9 @@ describe('git panel', () => {
 
     expect(container.firstElementChild).not.toBeNull();
     expect(container.querySelector('.config-section-toggle-button')).not.toBeNull();
-    expect(container.querySelector('.config-empty')?.textContent).toContain('This folder is not a Git repo yet');
+    expect(container.querySelector('.config-empty')?.textContent).toContain(
+      'This folder is not a Git repo yet',
+    );
   });
 
   it('keeps git compact when the repo is clean', async () => {

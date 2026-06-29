@@ -16,10 +16,16 @@ export function init(): void {
     const prev = prevStatus.get(sessionId);
     prevStatus.set(sessionId, status);
 
-    if (prev === 'working' && (status === 'waiting' || status === 'completed' || status === 'input')) {
+    if (
+      prev === 'working' &&
+      (status === 'waiting' || status === 'completed' || status === 'input')
+    ) {
       // Find which project this session belongs to
-      const project = appState.projects.find(p => p.sessions.some(s => s.id === sessionId));
-      if (project && !(sessionId === project.activeSessionId && project.id === appState.activeProjectId)) {
+      const project = appState.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
+      if (
+        project &&
+        !(sessionId === project.activeSessionId && project.id === appState.activeProjectId)
+      ) {
         unreadSessions.add(sessionId);
         notify();
       }
@@ -48,9 +54,9 @@ export function isUnread(sessionId: string): boolean {
 }
 
 export function hasUnreadInProject(projectId: string): boolean {
-  const project = appState.projects.find(p => p.id === projectId);
+  const project = appState.projects.find((p) => p.id === projectId);
   if (!project) return false;
-  return project.sessions.some(s => unreadSessions.has(s.id));
+  return project.sessions.some((s) => unreadSessions.has(s.id));
 }
 
 export function removeSession(sessionId: string): void {

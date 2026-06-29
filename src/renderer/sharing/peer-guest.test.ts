@@ -3,10 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockSendMessage = vi.hoisted(() => vi.fn());
 const mockWaitForIceGathering = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockEncodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue('encoded-answer'));
-const mockDecodeConnectionEnvelope = vi.hoisted(() => vi.fn().mockResolvedValue({
-  description: { type: 'offer', sdp: 'offer-sdp' },
-  rtcConfig: { iceServers: [{ urls: 'turn:turn.example.com:3478' }], iceTransportPolicy: 'relay' },
-}));
+const mockDecodeConnectionEnvelope = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({
+    description: { type: 'offer', sdp: 'offer-sdp' },
+    rtcConfig: {
+      iceServers: [{ urls: 'turn:turn.example.com:3478' }],
+      iceTransportPolicy: 'relay',
+    },
+  }),
+);
 const mockBuildRtcConfiguration = vi.hoisted(() => vi.fn().mockReturnValue({ iceServers: [] }));
 const mockComputeChallengeResponse = vi.hoisted(() => vi.fn().mockResolvedValue('signed-response'));
 const mockHexToBytes = vi.hoisted(() => vi.fn().mockReturnValue(new Uint8Array([1, 2, 3])));
@@ -65,7 +70,9 @@ beforeEach(() => {
   FakePeerConnection.instances = [];
 
   vi.stubGlobal('RTCPeerConnection', FakePeerConnection as any);
-  vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(desc: RTCSessionDescriptionInit) {
+  vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(
+    desc: RTCSessionDescriptionInit,
+  ) {
     return desc;
   } as any);
 });
@@ -107,10 +114,15 @@ describe('peer-guest', () => {
     pc?.ondatachannel?.({ channel: dc } as unknown as RTCDataChannelEvent);
     dc.onopen?.();
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-challenge', challenge: 'abcd' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-challenge', challenge: 'abcd' }),
+    } as MessageEvent);
     await Promise.resolve();
     expect(mockHexToBytes).toHaveBeenCalledWith('abcd');
-    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-response', response: 'signed-response' });
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, {
+      type: 'auth-response',
+      response: 'signed-response',
+    });
 
     dc.onmessage?.({ data: JSON.stringify({ type: 'auth-result', ok: true }) } as MessageEvent);
     dc.onmessage?.({
@@ -134,8 +146,12 @@ describe('peer-guest', () => {
     handle.sendInput('pwd\r');
     expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'input', payload: 'pwd\r' });
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'data', payload: 'next chunk' }) } as MessageEvent);
-    dc.onmessage?.({ data: JSON.stringify({ type: 'resize', cols: 132, rows: 50 }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'data', payload: 'next chunk' }),
+    } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'resize', cols: 132, rows: 50 }),
+    } as MessageEvent);
     dc.onmessage?.({ data: JSON.stringify({ type: 'ping' }) } as MessageEvent);
 
     expect(dataSpy).toHaveBeenCalledWith('next chunk');
@@ -160,7 +176,9 @@ describe('peer-guest', () => {
     pc?.ondatachannel?.({ channel: dc } as unknown as RTCDataChannelEvent);
     dc.onopen?.();
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-result', ok: false, reason: 'Passphrase mismatch' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-result', ok: false, reason: 'Passphrase mismatch' }),
+    } as MessageEvent);
 
     expect(authFailedSpy).toHaveBeenCalledWith('Passphrase mismatch');
     expect(disconnectedSpy).toHaveBeenCalledTimes(1);
@@ -183,7 +201,9 @@ describe('peer-guest', () => {
 
     mockSendMessage.mockClear();
     dc.onmessage?.({ data: '{invalid-json' } as MessageEvent);
-    dc.onmessage?.({ data: JSON.stringify({ type: 'data', payload: 'ignored-pre-auth' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'data', payload: 'ignored-pre-auth' }),
+    } as MessageEvent);
     expect(mockSendMessage).not.toHaveBeenCalled();
     expect(dataSpy).not.toHaveBeenCalled();
 

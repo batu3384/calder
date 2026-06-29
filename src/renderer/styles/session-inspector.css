@@ -27,7 +27,11 @@
   border-left: 1px solid var(--border-subtle);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 92%, black), var(--surface-muted));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 92%, black),
+      var(--surface-muted)
+    );
   overflow: hidden;
   position: relative;
   min-width: 250px;
@@ -55,8 +59,11 @@
   gap: 12px;
   padding: 12px 12px 10px;
   border-bottom: 1px solid var(--border-subtle);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 98%, transparent),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent)
+  );
   flex-shrink: 0;
 }
 
@@ -101,7 +108,10 @@
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .inspector-close:hover {
@@ -125,7 +135,9 @@
   color: var(--text-muted);
   font-size: 11px;
   cursor: pointer;
-  transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+  transition:
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
 }
 
 .inspector-tab:hover {
@@ -148,7 +160,11 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease, transform var(--motion-fast) ease;
+  transition:
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    background var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
   flex-shrink: 0;
 }
 
@@ -185,8 +201,11 @@
   padding: 22px 16px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 98%, transparent), color-mix(in srgb, var(--surface-panel) 92%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 98%, transparent),
+    color-mix(in srgb, var(--surface-panel) 92%, transparent)
+  );
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
 }
 
@@ -246,20 +265,76 @@
   letter-spacing: 0.24px;
 }
 
-.inspector-badge-prompt { background: var(--status-info-bg); border-color: var(--status-info-border); color: var(--status-info-text); }
-.inspector-badge-tool { background: var(--status-success-bg); border-color: var(--status-success-border); color: var(--status-success-text); }
-.inspector-badge-failure { background: var(--status-danger-bg); border-color: var(--status-danger-border); color: var(--status-danger-text); }
-.inspector-badge-stop { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
-.inspector-badge-start { background: var(--status-accent-bg); border-color: var(--status-accent-border); color: var(--status-accent-text); }
-.inspector-badge-input { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
-.inspector-badge-agent { background: var(--status-info-bg); border-color: var(--status-info-border); color: var(--status-info-text); }
-.inspector-badge-lifecycle { background: color-mix(in srgb, var(--accent-soft) 54%, transparent); border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle)); color: color-mix(in srgb, var(--accent) 74%, white); }
-.inspector-badge-task { background: var(--status-accent-bg); border-color: var(--status-accent-border); color: var(--status-accent-text); }
-.inspector-badge-system { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
-.inspector-badge-approval { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
-.inspector-badge-notify { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning-text); }
-.inspector-badge-mcp { background: var(--status-info-bg); color: var(--status-info-text); border-color: var(--status-info-border); }
-.inspector-badge-default { background: var(--status-neutral-bg); border-color: var(--status-neutral-border); color: var(--status-neutral-text); }
+.inspector-badge-prompt {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-border);
+  color: var(--status-info-text);
+}
+.inspector-badge-tool {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
+}
+.inspector-badge-failure {
+  background: var(--status-danger-bg);
+  border-color: var(--status-danger-border);
+  color: var(--status-danger-text);
+}
+.inspector-badge-stop {
+  background: var(--status-neutral-bg);
+  border-color: var(--status-neutral-border);
+  color: var(--status-neutral-text);
+}
+.inspector-badge-start {
+  background: var(--status-accent-bg);
+  border-color: var(--status-accent-border);
+  color: var(--status-accent-text);
+}
+.inspector-badge-input {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+.inspector-badge-agent {
+  background: var(--status-info-bg);
+  border-color: var(--status-info-border);
+  color: var(--status-info-text);
+}
+.inspector-badge-lifecycle {
+  background: color-mix(in srgb, var(--accent-soft) 54%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
+  color: color-mix(in srgb, var(--accent) 74%, white);
+}
+.inspector-badge-task {
+  background: var(--status-accent-bg);
+  border-color: var(--status-accent-border);
+  color: var(--status-accent-text);
+}
+.inspector-badge-system {
+  background: var(--status-neutral-bg);
+  border-color: var(--status-neutral-border);
+  color: var(--status-neutral-text);
+}
+.inspector-badge-approval {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+.inspector-badge-notify {
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+.inspector-badge-mcp {
+  background: var(--status-info-bg);
+  color: var(--status-info-text);
+  border-color: var(--status-info-border);
+}
+.inspector-badge-default {
+  background: var(--status-neutral-bg);
+  border-color: var(--status-neutral-border);
+  color: var(--status-neutral-text);
+}
 
 /* --- Agent group nesting --- */
 
@@ -294,7 +369,6 @@
 .inspector-agent-children {
   padding-left: 14px;
 }
-
 
 .inspector-desc {
   color: var(--text-primary);
@@ -524,7 +598,11 @@
 
 .inspector-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-cool) 88%, white), var(--accent-cool));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-cool) 88%, white),
+    var(--accent-cool)
+  );
   border-radius: 2px;
   transition: width var(--motion-panel);
 }

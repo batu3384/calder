@@ -1,4 +1,11 @@
-export type PreferencesSection = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'shortcuts' | 'about';
+export type PreferencesSection =
+  | 'general'
+  | 'interface'
+  | 'tools'
+  | 'automation'
+  | 'safety'
+  | 'shortcuts'
+  | 'about';
 
 interface PreferencesSectionSpec {
   id: PreferencesSection;

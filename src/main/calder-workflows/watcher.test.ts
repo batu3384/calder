@@ -17,10 +17,7 @@ vi.mock('./discovery.js', () => ({
   discoverProjectWorkflows: mockDiscoverProjectWorkflows,
 }));
 
-import {
-  startProjectWorkflowWatcher,
-  stopProjectWorkflowWatcher,
-} from './watcher.js';
+import { startProjectWorkflowWatcher, stopProjectWorkflowWatcher } from './watcher.js';
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];

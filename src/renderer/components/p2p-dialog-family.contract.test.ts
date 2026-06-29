@@ -1,8 +1,14 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const shareSource = readFileSync(new URL('./share-dialog/share-dialog.ts', import.meta.url), 'utf-8');
-const shareShellSource = readFileSync(new URL('./share-dialog/share-dialog-shell.ts', import.meta.url), 'utf-8');
+const shareSource = readFileSync(
+  new URL('./share-dialog/share-dialog.ts', import.meta.url),
+  'utf-8',
+);
+const shareShellSource = readFileSync(
+  new URL('./share-dialog/share-dialog-shell.ts', import.meta.url),
+  'utf-8',
+);
 const shareDialogSource = [shareSource, shareShellSource].join('\n');
 const joinSource = readFileSync(new URL('./join-dialog.ts', import.meta.url), 'utf-8');
 const shareStyles = readFileSync(new URL('../styles/p2p-sharing.css', import.meta.url), 'utf-8');

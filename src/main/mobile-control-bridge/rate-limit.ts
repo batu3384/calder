@@ -3,7 +3,10 @@ import * as http from 'node:http';
 
 import type { PairingRecord } from './model';
 
-const requestRateLimits = new Map<string, { windowStartMs: number; count: number; blockedUntilMs: number }>();
+const requestRateLimits = new Map<
+  string,
+  { windowStartMs: number; count: number; blockedUntilMs: number }
+>();
 
 export interface PairingRateLimitConfig {
   windowMs: number;

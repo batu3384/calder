@@ -91,9 +91,9 @@ describe('resolveCliSurfaceLaunch', () => {
       allowPortFallback: false,
     });
 
-    await expect(resolveCliSurfaceLaunch('project-3', profile, new Set<number>([4800])))
-      .rejects
-      .toThrow('Port 4800 is already in use and fallback is disabled.');
+    await expect(
+      resolveCliSurfaceLaunch('project-3', profile, new Set<number>([4800])),
+    ).rejects.toThrow('Port 4800 is already in use and fallback is disabled.');
   });
 
   it('throws when fixed mode is used with an unsupported command profile', async () => {
@@ -107,9 +107,9 @@ describe('resolveCliSurfaceLaunch', () => {
       allowPortFallback: true,
     });
 
-    await expect(resolveCliSurfaceLaunch('project-unsupported', profile, new Set<number>()))
-      .rejects
-      .toThrow('Fixed port mode is not supported for this command profile.');
+    await expect(
+      resolveCliSurfaceLaunch('project-unsupported', profile, new Set<number>()),
+    ).rejects.toThrow('Fixed port mode is not supported for this command profile.');
   });
 
   it('keeps launch untouched when mode is off', async () => {
@@ -152,7 +152,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['dev'],
       portMode: 'auto',
     });
-    const astroResult = await resolveCliSurfaceLaunch('project-direct-astro', astroProfile, new Set<number>());
+    const astroResult = await resolveCliSurfaceLaunch(
+      'project-direct-astro',
+      astroProfile,
+      new Set<number>(),
+    );
     expect(astroResult.launch.args).toContain('--port');
     expect(astroResult.metadata.portReason).toContain('Direct framework CLI supports --port');
 
@@ -161,7 +165,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['dev'],
       portMode: 'auto',
     });
-    const nextResult = await resolveCliSurfaceLaunch('project-direct-next', nextProfile, new Set<number>());
+    const nextResult = await resolveCliSurfaceLaunch(
+      'project-direct-next',
+      nextProfile,
+      new Set<number>(),
+    );
     expect(nextResult.launch.args).toContain('-p');
     expect(nextResult.metadata.portReason).toContain('Direct framework CLI supports -p/--port');
   });
@@ -180,7 +188,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['dev'],
       portMode: 'auto',
     });
-    const pnpmResult = await resolveCliSurfaceLaunch('project-pnpm-dev', pnpmDev, new Set<number>());
+    const pnpmResult = await resolveCliSurfaceLaunch(
+      'project-pnpm-dev',
+      pnpmDev,
+      new Set<number>(),
+    );
     expect(pnpmResult.launch.args).toEqual(['dev']);
     expect(pnpmResult.launch.envPatch?.PORT).toBe(String(pnpmResult.metadata.resolvedPort));
     expect(pnpmResult.metadata.portReason).toContain('react-scripts');
@@ -191,9 +203,15 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['run', 'start'],
       portMode: 'auto',
     });
-    const yarnStartResult = await resolveCliSurfaceLaunch('project-yarn-start', yarnStart, new Set<number>());
+    const yarnStartResult = await resolveCliSurfaceLaunch(
+      'project-yarn-start',
+      yarnStart,
+      new Set<number>(),
+    );
     expect(yarnStartResult.launch.args).toEqual(['run', 'start']);
-    expect(yarnStartResult.launch.envPatch?.PORT).toBe(String(yarnStartResult.metadata.resolvedPort));
+    expect(yarnStartResult.launch.envPatch?.PORT).toBe(
+      String(yarnStartResult.metadata.resolvedPort),
+    );
     expect(yarnStartResult.metadata.portReason).toContain('Generic dev/start script');
 
     const yarnLint = makeProfile({
@@ -202,7 +220,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['run', 'lint'],
       portMode: 'auto',
     });
-    const yarnLintResult = await resolveCliSurfaceLaunch('project-yarn-lint', yarnLint, new Set<number>());
+    const yarnLintResult = await resolveCliSurfaceLaunch(
+      'project-yarn-lint',
+      yarnLint,
+      new Set<number>(),
+    );
     expect(yarnLintResult.metadata.resolvedPort).toBeUndefined();
     expect(yarnLintResult.metadata.portReason).toContain('does not look like a local web server');
 
@@ -212,7 +234,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['test'],
       portMode: 'auto',
     });
-    const npmNoScriptResult = await resolveCliSurfaceLaunch('project-npm-test', npmNoScriptTarget, new Set<number>());
+    const npmNoScriptResult = await resolveCliSurfaceLaunch(
+      'project-npm-test',
+      npmNoScriptTarget,
+      new Set<number>(),
+    );
     expect(npmNoScriptResult.metadata.resolvedPort).toBeUndefined();
     expect(npmNoScriptResult.metadata.portReason).toContain('does not target a script');
 
@@ -222,7 +248,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['--filter', 'web', 'run', 'dev'],
       portMode: 'auto',
     });
-    const pnpmFlagOnlyResult = await resolveCliSurfaceLaunch('project-pnpm-flag-only', pnpmFlagOnly, new Set<number>());
+    const pnpmFlagOnlyResult = await resolveCliSurfaceLaunch(
+      'project-pnpm-flag-only',
+      pnpmFlagOnly,
+      new Set<number>(),
+    );
     expect(pnpmFlagOnlyResult.metadata.resolvedPort).toBeUndefined();
     expect(pnpmFlagOnlyResult.metadata.portReason).toContain('does not target a script');
 
@@ -232,7 +262,11 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['--cwd', 'apps/web'],
       portMode: 'auto',
     });
-    const yarnFlagOnlyResult = await resolveCliSurfaceLaunch('project-yarn-flag-only', yarnFlagOnly, new Set<number>());
+    const yarnFlagOnlyResult = await resolveCliSurfaceLaunch(
+      'project-yarn-flag-only',
+      yarnFlagOnly,
+      new Set<number>(),
+    );
     expect(yarnFlagOnlyResult.metadata.resolvedPort).toBeUndefined();
     expect(yarnFlagOnlyResult.metadata.portReason).toContain('does not target a script');
   });
@@ -248,7 +282,11 @@ describe('resolveCliSurfaceLaunch', () => {
       portMode: 'auto',
     });
 
-    const result = await resolveCliSurfaceLaunch('project-broken-package-json', profile, new Set<number>());
+    const result = await resolveCliSurfaceLaunch(
+      'project-broken-package-json',
+      profile,
+      new Set<number>(),
+    );
     expect(result.launch.envPatch?.PORT).toBe(String(result.metadata.resolvedPort));
     expect(result.metadata.portReason).toContain('Generic dev/start script');
   });
@@ -264,7 +302,11 @@ describe('resolveCliSurfaceLaunch', () => {
       preferredPort: 5200,
     });
 
-    const result = await resolveCliSurfaceLaunch('project-fixed-explicit-port', profile, new Set<number>());
+    const result = await resolveCliSurfaceLaunch(
+      'project-fixed-explicit-port',
+      profile,
+      new Set<number>(),
+    );
     expect(result.launch.args).toEqual(['run', 'dev', '--', '--port', '5100']);
     expect(result.launch.envPatch?.PORT).toBe(String(result.metadata.resolvedPort));
   });
@@ -279,16 +321,30 @@ describe('resolveCliSurfaceLaunch', () => {
       args: ['dev'],
       portMode: 'auto',
     });
-    const pnpmResult = await resolveCliSurfaceLaunch('project-pnpm-append', pnpmProfile, new Set<number>());
-    expect(pnpmResult.launch.args?.slice(-2)).toEqual(['--port', String(pnpmResult.metadata.resolvedPort)]);
+    const pnpmResult = await resolveCliSurfaceLaunch(
+      'project-pnpm-append',
+      pnpmProfile,
+      new Set<number>(),
+    );
+    expect(pnpmResult.launch.args?.slice(-2)).toEqual([
+      '--port',
+      String(pnpmResult.metadata.resolvedPort),
+    ]);
 
     const directProfile = makeProfile({
       command: 'vite',
       args: undefined,
       portMode: 'auto',
     });
-    const directResult = await resolveCliSurfaceLaunch('project-direct-append', directProfile, new Set<number>());
-    expect(directResult.launch.args).toEqual(['--port', String(directResult.metadata.resolvedPort)]);
+    const directResult = await resolveCliSurfaceLaunch(
+      'project-direct-append',
+      directProfile,
+      new Set<number>(),
+    );
+    expect(directResult.launch.args).toEqual([
+      '--port',
+      String(directResult.metadata.resolvedPort),
+    ]);
   });
 
   it('validates fixed preferred ports and fails after fallback attempt exhaustion', async () => {
@@ -302,9 +358,9 @@ describe('resolveCliSurfaceLaunch', () => {
       portMode: 'fixed',
       preferredPort: 70000,
     });
-    await expect(resolveCliSurfaceLaunch('project-invalid-fixed-port', invalidPortProfile, new Set<number>()))
-      .rejects
-      .toThrow('Fixed port mode requires a valid preferred port (1-65535).');
+    await expect(
+      resolveCliSurfaceLaunch('project-invalid-fixed-port', invalidPortProfile, new Set<number>()),
+    ).rejects.toThrow('Fixed port mode requires a valid preferred port (1-65535).');
 
     const exhaustingProfile = makeProfile({
       cwd: root,
@@ -315,8 +371,8 @@ describe('resolveCliSurfaceLaunch', () => {
       allowPortFallback: true,
     });
     const reserved = new Set<number>(Array.from({ length: 201 }, (_value, index) => 4500 + index));
-    await expect(resolveCliSurfaceLaunch('project-fixed-exhaustion', exhaustingProfile, reserved))
-      .rejects
-      .toThrow('Could not allocate a free local port after checking 200 candidates.');
+    await expect(
+      resolveCliSurfaceLaunch('project-fixed-exhaustion', exhaustingProfile, reserved),
+    ).rejects.toThrow('Could not allocate a free local port after checking 200 candidates.');
   });
 });

@@ -62,6 +62,7 @@
 ### Task 1: Add The New Shell Contract And Inspector Scaffold
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index-shell.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-inspector.ts`
@@ -72,15 +73,15 @@
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index-shell.test.ts` to add:
 
 ```ts
-  it('exposes project rail, workspace shell, and context inspector anchors', () => {
-    expect(html).toContain('id="workspace-shell"');
-    expect(html).toContain('id="workspace-stack"');
-    expect(html).toContain('id="context-inspector"');
-    expect(html).toContain('id="btn-toggle-context-inspector"');
-    expect(html).toContain('id="context-inspector-sections"');
-    expect(html).toContain('class="command-deck-status"');
-    expect(html).toContain('id="workspace-spend"');
-  });
+it('exposes project rail, workspace shell, and context inspector anchors', () => {
+  expect(html).toContain('id="workspace-shell"');
+  expect(html).toContain('id="workspace-stack"');
+  expect(html).toContain('id="context-inspector"');
+  expect(html).toContain('id="btn-toggle-context-inspector"');
+  expect(html).toContain('id="context-inspector-sections"');
+  expect(html).toContain('class="command-deck-status"');
+  expect(html).toContain('id="workspace-spend"');
+});
 ```
 
 - [ ] **Step 2: Run the shell contract test to verify RED**
@@ -102,15 +103,37 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html` so the s
   <div id="sidebar">
     <div id="sidebar-header">
       <div class="sidebar-title-group">
-        <button id="btn-toggle-sidebar" class="icon-btn" title="Toggle Sidebar (Cmd+B)" aria-label="Toggle sidebar" style="font-size:13px;">&#x25E7;</button>
+        <button
+          id="btn-toggle-sidebar"
+          class="icon-btn"
+          title="Toggle Sidebar (Cmd+B)"
+          aria-label="Toggle sidebar"
+          style="font-size:13px;"
+        >
+          &#x25E7;
+        </button>
         <div class="sidebar-brand-block">
           <span class="sidebar-eyebrow">Calder</span>
           <span class="sidebar-title">Projects</span>
         </div>
       </div>
       <div class="sidebar-header-actions">
-        <button id="btn-preferences" class="icon-btn" title="Preferences" aria-label="Open preferences">&#x2699;</button>
-        <button id="btn-add-project" class="icon-btn" title="New Project (Ctrl+Shift+P)" aria-label="Create new project">+</button>
+        <button
+          id="btn-preferences"
+          class="icon-btn"
+          title="Preferences"
+          aria-label="Open preferences"
+        >
+          &#x2699;
+        </button>
+        <button
+          id="btn-add-project"
+          class="icon-btn"
+          title="New Project (Ctrl+Shift+P)"
+          aria-label="Create new project"
+        >
+          +
+        </button>
       </div>
     </div>
     <div id="sidebar-content">
@@ -131,10 +154,38 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html` so the s
             <div id="git-status"></div>
           </div>
           <div id="tab-actions">
-            <button id="btn-toggle-context-inspector" class="icon-btn" title="Toggle Context Inspector" aria-label="Toggle context inspector">&#9776;</button>
-            <button id="btn-toggle-swarm" class="icon-btn" title="Toggle Swarm Mode (Ctrl+\)" aria-label="Toggle swarm mode">&#x229E;</button>
-            <button id="btn-command-deck-more" class="icon-btn" title="More Tools" aria-label="Open command deck overflow">&#x22ef;</button>
-            <button id="btn-add-session" class="icon-btn" title="New Session (Ctrl+Shift+N)" aria-label="Create new session">+</button>
+            <button
+              id="btn-toggle-context-inspector"
+              class="icon-btn"
+              title="Toggle Context Inspector"
+              aria-label="Toggle context inspector"
+            >
+              &#9776;
+            </button>
+            <button
+              id="btn-toggle-swarm"
+              class="icon-btn"
+              title="Toggle Swarm Mode (Ctrl+\)"
+              aria-label="Toggle swarm mode"
+            >
+              &#x229E;
+            </button>
+            <button
+              id="btn-command-deck-more"
+              class="icon-btn"
+              title="More Tools"
+              aria-label="Open command deck overflow"
+            >
+              &#x22ef;
+            </button>
+            <button
+              id="btn-add-session"
+              class="icon-btn"
+              title="New Session (Ctrl+Shift+N)"
+              aria-label="Create new session"
+            >
+              +
+            </button>
           </div>
         </div>
         <div id="terminal-container"></div>
@@ -153,7 +204,14 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html` so the s
             <span class="context-inspector-eyebrow">Project Context</span>
             <span class="context-inspector-title">Signals</span>
           </div>
-          <button id="btn-close-context-inspector" class="icon-btn" title="Close Context Inspector" aria-label="Close context inspector">&times;</button>
+          <button
+            id="btn-close-context-inspector"
+            class="icon-btn"
+            title="Close Context Inspector"
+            aria-label="Close context inspector"
+          >
+            &times;
+          </button>
         </div>
         <div id="context-inspector-sections">
           <section class="context-inspector-section" data-section="health">
@@ -228,9 +286,9 @@ import { initContextInspector } from './components/context-inspector.js';
 and in `main()`:
 
 ```ts
-  initSidebar();
-  initContextInspector();
-  initTabBar();
+initSidebar();
+initContextInspector();
+initTabBar();
 ```
 
 - [ ] **Step 6: Run the shell contract test to verify GREEN**
@@ -257,6 +315,7 @@ Expected: commit succeeds.
 ### Task 2: Turn The Top Bar Into A Command Deck And Demote Utility Buttons
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar-command-deck.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/project-terminal.ts`
@@ -275,8 +334,8 @@ const source = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
 
 describe('tab bar command deck contract', () => {
   it('owns the command deck overflow and context inspector toggle', () => {
-    expect(source).toContain("btn-command-deck-more");
-    expect(source).toContain("btn-toggle-context-inspector");
+    expect(source).toContain('btn-command-deck-more');
+    expect(source).toContain('btn-toggle-context-inspector');
     expect(source).toContain('showUsageModal');
     expect(source).toContain('toggleProjectTerminal');
     expect(source).toContain('promptNewMcpInspector');
@@ -316,17 +375,17 @@ const btnToggleContextInspector = document.getElementById('btn-toggle-context-in
 In `initTabBar()` wire the new actions:
 
 ```ts
-  btnAddSession.classList.add('tab-action-primary');
-  btnToggleSwarm.classList.add('tab-action-toggle');
-  btnToggleContextInspector.classList.add('tab-action-secondary');
+btnAddSession.classList.add('tab-action-primary');
+btnToggleSwarm.classList.add('tab-action-toggle');
+btnToggleContextInspector.classList.add('tab-action-secondary');
 
-  btnAddSession.addEventListener('click', () => quickNewSession());
-  btnToggleSwarm.addEventListener('click', () => appState.toggleSwarm());
-  btnToggleContextInspector.addEventListener('click', () => toggleContextInspector());
-  btnCommandDeckMore.addEventListener('click', (e) => showCommandDeckOverflowMenu(e));
+btnAddSession.addEventListener('click', () => quickNewSession());
+btnToggleSwarm.addEventListener('click', () => appState.toggleSwarm());
+btnToggleContextInspector.addEventListener('click', () => toggleContextInspector());
+btnCommandDeckMore.addEventListener('click', (e) => showCommandDeckOverflowMenu(e));
 
-  onCostChange(renderWorkspaceSpend);
-  appState.on('project-changed', renderWorkspaceSpend);
+onCostChange(renderWorkspaceSpend);
+appState.on('project-changed', renderWorkspaceSpend);
 ```
 
 Add the new spend-chip renderer:
@@ -387,12 +446,12 @@ function showCommandDeckOverflowMenu(event: MouseEvent): void {
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/project-terminal.ts` so it no longer requires `btn-toggle-terminal`:
 
 ```ts
-  const closeBtn = document.getElementById('btn-close-terminal')!;
+const closeBtn = document.getElementById('btn-close-terminal')!;
 
-  closeBtn.addEventListener('click', () => {
-    hidePanel();
-    appState.setTerminalPanelOpen(false);
-  });
+closeBtn.addEventListener('click', () => {
+  hidePanel();
+  appState.setTerminalPanelOpen(false);
+});
 ```
 
 Remove the old button-title and click wiring block entirely.
@@ -436,6 +495,7 @@ Expected: commit succeeds.
 ### Task 3: Restyle The Shell Into Project Rail, Command Deck, And Context Inspector
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/layout-contract.test.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles.css`
@@ -457,7 +517,7 @@ const railCss = readFileSync(new URL('./sidebar.css', import.meta.url), 'utf-8')
 
 describe('layout stylesheet contract', () => {
   it('imports the context inspector stylesheet and command deck selectors', () => {
-    expect(imports).toContain("./styles/context-inspector.css");
+    expect(imports).toContain('./styles/context-inspector.css');
     expect(tabsCss).toContain('.command-deck-status');
     expect(tabsCss).toContain('.workspace-spend-value');
     expect(railCss).toContain('#sidebar-content');
@@ -500,7 +560,11 @@ Create `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspe
   border-left: 1px solid var(--border-subtle);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 92%, black), var(--surface-muted));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 92%, black),
+      var(--surface-muted)
+    );
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -617,7 +681,11 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/session-inspe
   border-left: 1px solid var(--border-subtle);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 92%, black), var(--surface-muted));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 92%, black),
+      var(--surface-muted)
+    );
 }
 ```
 
@@ -645,6 +713,7 @@ Expected: commit succeeds.
 ### Task 4: Reframe Preferences And Remove Provider-Specific Legacy Copy
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/help-dialog.ts`
@@ -655,11 +724,11 @@ Expected: commit succeeds.
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts` to assert:
 
 ```ts
-  it('uses shell language for layout controls', () => {
-    expect(source).toContain('Shell Layout');
-    expect(source).toContain('Project rail');
-    expect(source).toContain('Context inspector');
-  });
+it('uses shell language for layout controls', () => {
+  expect(source).toContain('Shell Layout');
+  expect(source).toContain('Project rail');
+  expect(source).toContain('Context inspector');
+});
 ```
 
 - [ ] **Step 2: Run the preferences contract test to verify RED**
@@ -677,24 +746,24 @@ Expected: FAIL because the modal still talks about “Sidebar” and left-rail b
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts` so the section label and descriptions change without renaming stored keys:
 
 ```ts
-      appendSectionIntro(
-        content,
-        'Chrome',
-        'Shell Layout',
-        'Control which project signals stay visible in the project rail versus the right-side context inspector.',
-      );
+appendSectionIntro(
+  content,
+  'Chrome',
+  'Shell Layout',
+  'Control which project signals stay visible in the project rail versus the right-side context inspector.',
+);
 ```
 
 and:
 
 ```ts
-      const toggles: { key: keyof typeof views; label: string }[] = [
-        { key: 'configSections', label: 'Context inspector: Capabilities' },
-        { key: 'readinessSection', label: 'Context inspector: AI Readiness' },
-        { key: 'gitPanel', label: 'Context inspector: Git' },
-        { key: 'sessionHistory', label: 'Context inspector: Session History' },
-        { key: 'costFooter', label: 'Command deck: Workspace Spend chip' },
-      ];
+const toggles: { key: keyof typeof views; label: string }[] = [
+  { key: 'configSections', label: 'Context inspector: Capabilities' },
+  { key: 'readinessSection', label: 'Context inspector: AI Readiness' },
+  { key: 'gitPanel', label: 'Context inspector: Git' },
+  { key: 'sessionHistory', label: 'Context inspector: Session History' },
+  { key: 'costFooter', label: 'Command deck: Workspace Spend chip' },
+];
 ```
 
 Also change the menu label from:
@@ -723,7 +792,8 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/help-dial
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/usage-modal.ts` empty state:
 
 ```ts
-  empty.textContent = 'No usage data found yet. Stats appear after supported CLI sessions record activity.';
+empty.textContent =
+  'No usage data found yet. Stats appear after supported CLI sessions record activity.';
 ```
 
 And make model names provider-neutral:
@@ -734,7 +804,7 @@ function prettyModelName(raw: string): string {
     .replace(/-\d{8,}$/, '')
     .split(/[-_]/)
     .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 }
 ```
@@ -763,6 +833,7 @@ Expected: commit succeeds.
 ### Task 5: Verify The Rearchitecture End-To-End
 
 **Files:**
+
 - No planned code changes unless verification exposes regressions.
 
 - [ ] **Step 1: Run the targeted shell contract suite**
@@ -808,6 +879,7 @@ npm run dev
 ```
 
 Expected visual checks:
+
 - Left side shows projects only.
 - Right side shows the new context inspector with Health, Git, Activity, and Capabilities sections.
 - Top chrome shows tabs, status chips, inspector toggle, overflow button, and a strong primary new-session action.
@@ -842,6 +914,7 @@ Expected: clean working tree. If not clean, inspect the remaining diff and commi
 ## Self-Review
 
 Spec coverage check:
+
 - Project Rail: covered by Tasks 1 and 3.
 - Command Deck: covered by Task 2 and Task 3.
 - Context Inspector: covered by Tasks 1 and 3.
@@ -850,9 +923,11 @@ Spec coverage check:
 - Verification and regression control: covered by Task 5.
 
 Placeholder scan:
+
 - No `TODO`, `TBD`, or deferred “implement later” steps remain.
 
 Type and naming consistency:
+
 - The persisted preference key remains `sidebarViews`; only the UI wording changes.
 - The new shell uses one name consistently: `context-inspector`.
 - The top chrome uses one name consistently: `command deck`.

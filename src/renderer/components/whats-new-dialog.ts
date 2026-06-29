@@ -46,8 +46,8 @@ function extractList(section: string, heading: string): string[] {
 
   return block
     .split('\n')
-    .map(line => line.replace(/^- /, '').trim())
-    .filter(line => line.length > 0);
+    .map((line) => line.replace(/^- /, '').trim())
+    .filter((line) => line.length > 0);
 }
 
 function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {

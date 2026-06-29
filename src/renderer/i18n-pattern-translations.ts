@@ -30,9 +30,10 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
     },
     {
       pattern: /^Downloading (.+)\.\.\.(?: (\d+)%)?$/u,
-      replace: (match) => (match[2]
-        ? `Güncelleme indiriliyor: ${match[1]} (%${match[2]})`
-        : `Güncelleme indiriliyor: ${match[1]}`),
+      replace: (match) =>
+        match[2]
+          ? `Güncelleme indiriliyor: ${match[1]} (%${match[2]})`
+          : `Güncelleme indiriliyor: ${match[1]}`,
     },
     {
       pattern: /^Update (.+) ready\.$/u,
@@ -108,11 +109,13 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
     },
     {
       pattern: /^Command not found:\s*(.+)\.\s*Install it and ensure PATH is configured\.$/u,
-      replace: (match) => `Komut bulunamadı: ${match[1]}. Kurun ve PATH'in doğru yapılandırıldığından emin olun.`,
+      replace: (match) =>
+        `Komut bulunamadı: ${match[1]}. Kurun ve PATH'in doğru yapılandırıldığından emin olun.`,
     },
     {
       pattern: /^(.+) was not found on PATH or known Android SDK locations\.$/u,
-      replace: (match) => `PATH üzerinde veya bilinen Android SDK konumlarında ${match[1]} bulunamadı.`,
+      replace: (match) =>
+        `PATH üzerinde veya bilinen Android SDK konumlarında ${match[1]} bulunamadı.`,
     },
     {
       pattern: /^Running step (\d+)\/(\d+)$/u,
@@ -285,7 +288,8 @@ function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslatio
     },
     {
       pattern: /^Global:\s*(.+)\s+·\s+Project:\s*(.+)\s+·\s+Session:\s*(.+)$/u,
-      replace: (match) => `Global: ${translate(match[1])} · Proje: ${translate(match[2])} · Oturum: ${translate(match[3])}`,
+      replace: (match) =>
+        `Global: ${translate(match[1])} · Proje: ${translate(match[2])} · Oturum: ${translate(match[3])}`,
     },
     {
       pattern: /^Routing to\s+(.+)$/u,
@@ -296,7 +300,10 @@ function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslatio
 
 function createRelativeTimePatterns(): PatternTranslation[] {
   return [
-    { pattern: /^(\d+) earlier events not shown$/u, replace: (match) => `${match[1]} önceki etkinlik gösterilmiyor` },
+    {
+      pattern: /^(\d+) earlier events not shown$/u,
+      replace: (match) => `${match[1]} önceki etkinlik gösterilmiyor`,
+    },
     { pattern: /^Updated (\d+)m ago$/u, replace: (match) => `${match[1]} dk önce güncellendi` },
     { pattern: /^Updated (\d+)h ago$/u, replace: (match) => `${match[1]} sa önce güncellendi` },
     { pattern: /^Updated (\d+)d ago$/u, replace: (match) => `${match[1]} gün önce güncellendi` },
@@ -314,7 +321,8 @@ function createCliSurfaceSummaryPatterns(translate: Translate): PatternTranslati
     },
     {
       pattern: /^Status:\s*(\S+)\s+Session:\s*(.+)\s+Drag to reorder$/u,
-      replace: (match) => `Durum: ${translate(match[1])} · Oturum: ${match[2]} · Yeniden sıralamak için sürükle`,
+      replace: (match) =>
+        `Durum: ${translate(match[1])} · Oturum: ${match[2]} · Yeniden sıralamak için sürükle`,
     },
     {
       pattern: /^CLI Surface\s+Profile:\s*(.+)$/u,
@@ -430,20 +438,26 @@ function createInspectorAndErrorPatterns(): PatternTranslation[] {
       replace: (match) => `Ekip arkadaşı boşta: ${match[1]}`,
     },
     {
-      pattern: /^(.+)\s+is not reachable right now\. Start the local app again, then reload or rescan localhost\.$/u,
-      replace: (match) => `${match[1]} şu anda erişilebilir değil. Yerel uygulamayı tekrar başlatın, sonra yeniden yükleyin veya localhost'u yeniden tarayın.`,
+      pattern:
+        /^(.+)\s+is not reachable right now\. Start the local app again, then reload or rescan localhost\.$/u,
+      replace: (match) =>
+        `${match[1]} şu anda erişilebilir değil. Yerel uygulamayı tekrar başlatın, sonra yeniden yükleyin veya localhost'u yeniden tarayın.`,
     },
     {
-      pattern: /^(.+)\s+could not be opened right now\. Try reloading, pasting a different URL, or choosing another local surface\.$/u,
-      replace: (match) => `${match[1]} şu anda açılamadı. Yeniden yüklemeyi, farklı bir URL yapıştırmayı veya başka bir yerel yüzey seçmeyi deneyin.`,
+      pattern:
+        /^(.+)\s+could not be opened right now\. Try reloading, pasting a different URL, or choosing another local surface\.$/u,
+      replace: (match) =>
+        `${match[1]} şu anda açılamadı. Yeniden yüklemeyi, farklı bir URL yapıştırmayı veya başka bir yerel yüzey seçmeyi deneyin.`,
     },
     {
       pattern: /^Launching (iOS Simulator|Android Emulator)…$/u,
-      replace: (match) => `${match[1] === 'iOS Simulator' ? 'iOS Simülatör' : 'Android Emülatör'} başlatılıyor…`,
+      replace: (match) =>
+        `${match[1] === 'iOS Simulator' ? 'iOS Simülatör' : 'Android Emülatör'} başlatılıyor…`,
     },
     {
       pattern: /^Capturing (iOS Simulator|Android Emulator) screenshot…$/u,
-      replace: (match) => `${match[1] === 'iOS Simulator' ? 'iOS Simülatör' : 'Android Emülatör'} ekran görüntüsü alınıyor…`,
+      replace: (match) =>
+        `${match[1] === 'iOS Simulator' ? 'iOS Simülatör' : 'Android Emülatör'} ekran görüntüsü alınıyor…`,
     },
     {
       pattern: /^Prompt sent to (.+)\.$/u,

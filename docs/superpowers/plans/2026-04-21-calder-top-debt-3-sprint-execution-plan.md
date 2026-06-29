@@ -205,4 +205,3 @@ Plan is successful when:
 2. No behavioral regressions in existing contract tests.
 3. Full build and full test remain green after each sprint.
 4. Debt concentration visibly shifts from orchestration code to modular helpers.
-

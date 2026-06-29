@@ -43,7 +43,6 @@ const RATE_LIMIT_WINDOW_MS = 10_000;
 const RATE_LIMIT_MAX_REQUESTS = 30;
 const RATE_LIMIT_BLOCK_MS = 20_000;
 
-
 let bridgeState: MobileBridgeState | null = null;
 
 function cleanupBridgeRecords(): void {

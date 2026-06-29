@@ -50,7 +50,11 @@ function assertString(value: unknown, label: string, maxLength: number): string 
   return trimmed;
 }
 
-function assertOptionalString(value: unknown, label: string, maxLength: number): string | undefined {
+function assertOptionalString(
+  value: unknown,
+  label: string,
+  maxLength: number,
+): string | undefined {
   if (value === undefined || value === null || value === '') return undefined;
   return assertString(value, label, maxLength);
 }
@@ -60,7 +64,10 @@ function resolveProjectPath(projectId: string, policy?: CliSurfaceIpcPolicy): st
   return projectPath ? path.resolve(projectPath) : undefined;
 }
 
-function assertProjectId(projectId: unknown, policy?: CliSurfaceIpcPolicy): {
+function assertProjectId(
+  projectId: unknown,
+  policy?: CliSurfaceIpcPolicy,
+): {
   projectId: string;
   projectPath?: string;
 } {
@@ -121,7 +128,11 @@ function sanitizeEnvPatch(value: unknown): Record<string, string> | undefined {
     if (!key || key.length > MAX_ENV_KEY_LENGTH || key.includes('\0')) {
       throw new Error('CLI surface environment key is invalid.');
     }
-    if (typeof entryValue !== 'string' || entryValue.length > MAX_ENV_VALUE_LENGTH || entryValue.includes('\0')) {
+    if (
+      typeof entryValue !== 'string' ||
+      entryValue.length > MAX_ENV_VALUE_LENGTH ||
+      entryValue.includes('\0')
+    ) {
       throw new Error(`CLI surface environment value for ${key} is invalid.`);
     }
     sanitized[key] = entryValue;
@@ -209,13 +220,13 @@ function sanitizeTerminalInput(data: unknown): string | undefined {
   return data;
 }
 
-export function registerCliSurfaceIpcHandlers(runtime: CliSurfaceRuntime, policy?: CliSurfaceIpcPolicy): void {
+export function registerCliSurfaceIpcHandlers(
+  runtime: CliSurfaceRuntime,
+  policy?: CliSurfaceIpcPolicy,
+): void {
   ipcMain.handle('cli-surface:start', async (_event, projectId: string, profile) => {
     const project = assertProjectId(projectId, policy);
-    await runtime.start(
-      project.projectId,
-      sanitizeProfile(project.projectPath, profile, policy),
-    );
+    await runtime.start(project.projectId, sanitizeProfile(project.projectPath, profile, policy));
   });
 
   ipcMain.handle('cli-surface:discover', (_event, projectPath: string) => {

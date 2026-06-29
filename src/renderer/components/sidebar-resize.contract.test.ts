@@ -26,7 +26,7 @@ describe('sidebar resize contract', () => {
   });
 
   it('always clears sidebar-resizing mode when focus or visibility is lost', () => {
-    expect(sidebarSource).toContain("const finishDrag = () => {");
+    expect(sidebarSource).toContain('const finishDrag = () => {');
     expect(sidebarSource).toContain("document.addEventListener('mouseup', finishDrag);");
     expect(sidebarSource).toContain("window.addEventListener('blur', finishDrag);");
     expect(sidebarSource).toContain("document.addEventListener('visibilitychange'");

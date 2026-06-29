@@ -80,6 +80,7 @@ Create or modify these files:
 ### Task 1: Create The UI Inventory Baseline
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-11-calder-ui-inventory.md`
 - Test: none
 
@@ -105,29 +106,29 @@ Create `/Users/batuhanyuksel/Documents/browser/docs/superpowers/specs/2026-04-11
 
 ## Inventory
 
-| Surface | Current Role | Decision | Required Change | Behavior Must Stay |
-|---|---|---|---|---|
-| Sidebar header | Brand, project navigation, preferences, new project | restyle | Tighten brand block, keep gear/new project obvious | Preferences and new project buttons still work |
-| Project list | Switch active project | restyle | More legible active row, better density | Project selection and sidebar resize |
-| Top tab strip | Session navigation and creation | restyle | Cleaner session strip, stronger active session state | Quick new session and tab reorder |
-| Workspace spend | Cost signal | restyle | Keep visible but less dashboard-like | Cost data display |
-| Git status | Repo branch/change signal | restyle | More compact status affordance | Existing git popover behavior |
-| Terminal panes | CLI sessions | restyle | Better pane chrome, focus, provider badge, unread/working states | PTY lifecycle and keyboard behavior |
-| Browser pane | Embedded browser workflow | restyle | Stronger toolbar hierarchy and local target clarity | Navigation, webview, inspect, draw, record |
-| Browser inspect popover | Send selected element context to a session | behavior-fix | Anchored, movable, non-clipping, selected target clear | Send to selected, custom, or new session |
-| Browser target menu | Select destination CLI session | behavior-fix | Use anchored menu and clearer session metadata | Existing target-session state |
-| Control Panel | AI Setup, Changes, Recent Sessions, Toolchain | restyle | Operational inspector with less card stacking | Section order and non-blocking warnings |
-| AI Setup | Readiness/tracking status | restyle | Plain-language utility copy and clearer scan state | Readiness scan behavior |
-| Changes | Git changes list | restyle | Dense list rows and clearer empty state | Existing file/diff actions |
-| Recent Sessions | Continue previous work | restyle | Better row hierarchy and destructive action clarity | Restore/archive/delete behavior |
-| Toolchain | MCP servers, agents, skills, commands | rename | Keep `MCP Servers`, clarify counts and empty states | Existing config open/add/remove behavior |
-| Shared modal | New project/session/branch/MCP inspector | behavior-fix | Shared accessible shell, focus restore, better field rows | Confirm/cancel callbacks |
-| Preferences | App settings | restyle | Flagship settings surface with stronger sections | Preferences persistence |
-| Usage Stats | Spend modal | restyle | Better table/chart density | Existing stats calculation |
-| Agents/Skills/Commands docs | Markdown/document reader | restyle | Better doc header, typography, and actions | File-reader session model |
-| Session Inspector | Timeline and session details | restyle | Token-aligned badges and readable dense lists | Inspector data flow |
-| Scratch Shell | Project utility terminal | restyle | Match terminal pane chrome | Shell PTY behavior |
-| Menus and dropdowns | Secondary actions | behavior-fix | Move fragile positioning to Floating UI | Existing menu actions |
+| Surface                     | Current Role                                        | Decision     | Required Change                                                  | Behavior Must Stay                             |
+| --------------------------- | --------------------------------------------------- | ------------ | ---------------------------------------------------------------- | ---------------------------------------------- |
+| Sidebar header              | Brand, project navigation, preferences, new project | restyle      | Tighten brand block, keep gear/new project obvious               | Preferences and new project buttons still work |
+| Project list                | Switch active project                               | restyle      | More legible active row, better density                          | Project selection and sidebar resize           |
+| Top tab strip               | Session navigation and creation                     | restyle      | Cleaner session strip, stronger active session state             | Quick new session and tab reorder              |
+| Workspace spend             | Cost signal                                         | restyle      | Keep visible but less dashboard-like                             | Cost data display                              |
+| Git status                  | Repo branch/change signal                           | restyle      | More compact status affordance                                   | Existing git popover behavior                  |
+| Terminal panes              | CLI sessions                                        | restyle      | Better pane chrome, focus, provider badge, unread/working states | PTY lifecycle and keyboard behavior            |
+| Browser pane                | Embedded browser workflow                           | restyle      | Stronger toolbar hierarchy and local target clarity              | Navigation, webview, inspect, draw, record     |
+| Browser inspect popover     | Send selected element context to a session          | behavior-fix | Anchored, movable, non-clipping, selected target clear           | Send to selected, custom, or new session       |
+| Browser target menu         | Select destination CLI session                      | behavior-fix | Use anchored menu and clearer session metadata                   | Existing target-session state                  |
+| Control Panel               | AI Setup, Changes, Recent Sessions, Toolchain       | restyle      | Operational inspector with less card stacking                    | Section order and non-blocking warnings        |
+| AI Setup                    | Readiness/tracking status                           | restyle      | Plain-language utility copy and clearer scan state               | Readiness scan behavior                        |
+| Changes                     | Git changes list                                    | restyle      | Dense list rows and clearer empty state                          | Existing file/diff actions                     |
+| Recent Sessions             | Continue previous work                              | restyle      | Better row hierarchy and destructive action clarity              | Restore/archive/delete behavior                |
+| Toolchain                   | MCP servers, agents, skills, commands               | rename       | Keep `MCP Servers`, clarify counts and empty states              | Existing config open/add/remove behavior       |
+| Shared modal                | New project/session/branch/MCP inspector            | behavior-fix | Shared accessible shell, focus restore, better field rows        | Confirm/cancel callbacks                       |
+| Preferences                 | App settings                                        | restyle      | Flagship settings surface with stronger sections                 | Preferences persistence                        |
+| Usage Stats                 | Spend modal                                         | restyle      | Better table/chart density                                       | Existing stats calculation                     |
+| Agents/Skills/Commands docs | Markdown/document reader                            | restyle      | Better doc header, typography, and actions                       | File-reader session model                      |
+| Session Inspector           | Timeline and session details                        | restyle      | Token-aligned badges and readable dense lists                    | Inspector data flow                            |
+| Scratch Shell               | Project utility terminal                            | restyle      | Match terminal pane chrome                                       | Shell PTY behavior                             |
+| Menus and dropdowns         | Secondary actions                                   | behavior-fix | Move fragile positioning to Floating UI                          | Existing menu actions                          |
 
 ## Non-Changes
 
@@ -161,6 +162,7 @@ Expected: no matches and exit code `1`.
 ### Task 2: Add Native UI System Contract Tests
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/native-ui-system.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/theme-contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/layout-contract.test.ts`
@@ -182,7 +184,9 @@ const terminal = readFileSync(new URL('./terminal.css', import.meta.url), 'utf-8
 
 describe('native-first UI system contract', () => {
   it('imports the shared primitives directly after cockpit tokens', () => {
-    expect(styles).toContain("@import url('./styles/cockpit.css');\n@import url('./styles/primitives.css');");
+    expect(styles).toContain(
+      "@import url('./styles/cockpit.css');\n@import url('./styles/primitives.css');",
+    );
   });
 
   it('defines the native-first token groups', () => {
@@ -233,7 +237,7 @@ expect(baseCss).toContain('--motion-panel');
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/layout-contract.test.ts` so it includes:
 
 ```ts
-expect(imports).toContain("./styles/primitives.css");
+expect(imports).toContain('./styles/primitives.css');
 expect(tabsCss).toContain('.tab-bar-surface');
 expect(railCss).toContain('.sidebar-project-row');
 ```
@@ -254,6 +258,7 @@ Expected: failures because `primitives.css`, new token names, and new shell sele
 ### Task 3: Implement Tokens And Shared Primitives
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/primitives.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/base.css`
@@ -278,27 +283,27 @@ Modify `/Users/batuhanyuksel/Documents/browser/src/renderer/styles.css` so the t
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/base.css`, keep existing compatibility aliases but add these tokens inside `:root`:
 
 ```css
-  --surface-shell: #090e14;
-  --surface-rail: #0d131b;
-  --surface-workspace: #070b10;
-  --surface-raised: #131b25;
-  --surface-glass: rgba(14, 22, 31, 0.86);
-  --border-hairline: rgba(255, 255, 255, 0.055);
-  --border-muted: #1a2633;
-  --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
-  --space-2: 2px;
-  --space-4: 4px;
-  --space-6: 6px;
-  --space-8: 8px;
-  --space-10: 10px;
-  --space-12: 12px;
-  --space-16: 16px;
-  --space-20: 20px;
-  --space-24: 24px;
-  --motion-fast: 120ms;
-  --motion-normal: 180ms;
-  --motion-panel: 220ms;
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+--surface-shell: #090e14;
+--surface-rail: #0d131b;
+--surface-workspace: #070b10;
+--surface-raised: #131b25;
+--surface-glass: rgba(14, 22, 31, 0.86);
+--border-hairline: rgba(255, 255, 255, 0.055);
+--border-muted: #1a2633;
+--accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
+--space-2: 2px;
+--space-4: 4px;
+--space-6: 6px;
+--space-8: 8px;
+--space-10: 10px;
+--space-12: 12px;
+--space-16: 16px;
+--space-20: 20px;
+--space-24: 24px;
+--motion-fast: 120ms;
+--motion-normal: 180ms;
+--motion-panel: 220ms;
+--ease-standard: cubic-bezier(0.2, 0, 0, 1);
 ```
 
 Add this reduced-motion block near the global base rules:
@@ -441,6 +446,7 @@ Expected: all selected tests pass.
 ### Task 4: Polish Shell And Workspace Chrome
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/terminal.css`
@@ -455,15 +461,15 @@ Expected: all selected tests pass.
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`, add class hooks:
 
 ```html
-<div id="sidebar" class="sidebar-surface">
+<div id="sidebar" class="sidebar-surface"></div>
 ```
 
 ```html
-<div id="tab-bar" class="tab-bar-surface">
+<div id="tab-bar" class="tab-bar-surface"></div>
 ```
 
 ```html
-<div id="workspace-shell" class="workspace-shell-surface">
+<div id="workspace-shell" class="workspace-shell-surface"></div>
 ```
 
 - [ ] **Step 2: Add sidebar row hook in renderer output**
@@ -484,13 +490,16 @@ Add these rules to the relevant stylesheets:
 /* sidebar.css */
 .sidebar-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)),
-    var(--surface-rail);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .sidebar-project-row.active {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 58%, transparent), transparent 72%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 58%, transparent),
+      transparent 72%
+    ),
     color-mix(in srgb, var(--surface-raised) 72%, transparent);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
 }
@@ -500,8 +509,7 @@ Add these rules to the relevant stylesheets:
 /* tabs.css */
 .tab-bar-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    var(--surface-shell);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)), var(--surface-shell);
 }
 ```
 
@@ -547,6 +555,7 @@ Expected: all selected tests pass.
 ### Task 5: Add Floating UI Dependency And Helper
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/package.json`
 - Modify: `/Users/batuhanyuksel/Documents/browser/package-lock.json`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/floating-surface.ts`
@@ -612,16 +621,15 @@ Expected: fails because `floating-surface.ts` does not exist.
 Create `/Users/batuhanyuksel/Documents/browser/src/renderer/components/floating-surface.ts`:
 
 ```ts
-import {
-  autoUpdate,
-  computePosition,
-  flip,
-  offset,
-  shift,
-  size,
-} from '@floating-ui/dom';
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom';
 
-export type FloatingPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | 'right-start' | 'left-start';
+export type FloatingPlacement =
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'top-start'
+  | 'top-end'
+  | 'right-start'
+  | 'left-start';
 
 export interface FloatingSurfaceOptions {
   placement?: FloatingPlacement;
@@ -635,12 +643,7 @@ export function anchorFloatingSurface(
   floating: HTMLElement,
   options: FloatingSurfaceOptions = {},
 ): () => void {
-  const {
-    placement = 'bottom-start',
-    offsetPx = 8,
-    maxWidthPx = 420,
-    maxHeightPx = 420,
-  } = options;
+  const { placement = 'bottom-start', offsetPx = 8, maxWidthPx = 420, maxHeightPx = 420 } = options;
 
   const update = async () => {
     const { x, y } = await computePosition(reference, floating, {
@@ -687,6 +690,7 @@ Expected: passes.
 ### Task 6: Migrate Custom Select To Floating UI
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/custom-select.ts`
 - Create or modify test: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/custom-select.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/modals.css`
@@ -706,10 +710,14 @@ vi.mock('./floating-surface.js', () => ({ anchorFloatingSurface }));
 describe('createCustomSelect', () => {
   it('anchors the dropdown when opened and cleans up when closed', async () => {
     const { createCustomSelect } = await import('./custom-select.js');
-    const select = createCustomSelect('provider', [
-      { value: 'claude', label: 'Claude' },
-      { value: 'codex', label: 'Codex' },
-    ], 'claude');
+    const select = createCustomSelect(
+      'provider',
+      [
+        { value: 'claude', label: 'Claude' },
+        { value: 'codex', label: 'Codex' },
+      ],
+      'claude',
+    );
 
     document.body.appendChild(select.element);
     const trigger = select.element.querySelector('.custom-select-trigger') as HTMLButtonElement;
@@ -756,7 +764,7 @@ function openDropdown(): void {
   trigger.classList.add('open');
   trigger.setAttribute('aria-expanded', 'true');
   wrapper.dataset.state = 'open';
-  activeIndex = options.findIndex(o => o.value === hidden.value);
+  activeIndex = options.findIndex((o) => o.value === hidden.value);
   floatingCleanup?.();
   floatingCleanup = anchorFloatingSurface(trigger, dropdown, {
     placement: 'bottom-start',
@@ -779,7 +787,7 @@ function closeDropdown(): void {
   trigger.setAttribute('aria-expanded', 'false');
   wrapper.dataset.state = 'closed';
   activeIndex = -1;
-  items.forEach(el => el.classList.remove('active'));
+  items.forEach((el) => el.classList.remove('active'));
 }
 ```
 
@@ -816,6 +824,7 @@ Expected: passes.
 ### Task 7: Migrate Browser Target Menu And Inspect Popovers
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/popover.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/popover.test.ts`
@@ -928,6 +937,7 @@ Expected: all selected tests pass and session integration tests confirm send beh
 ### Task 8: Rework Control Panel Into Operational Inspector
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/readiness-section.ts`
@@ -957,7 +967,7 @@ expect(configSectionsSource).not.toContain("'Integrations'");
 In `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`, update the aside:
 
 ```html
-<aside id="context-inspector" class="context-inspector-open control-panel-surface">
+<aside id="context-inspector" class="context-inspector-open control-panel-surface"></aside>
 ```
 
 - [ ] **Step 3: Make config sections use shared list-row language**
@@ -977,8 +987,7 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/context-inspector
 ```css
 .control-panel-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--surface-rail);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 #context-inspector .config-section,
@@ -1007,6 +1016,7 @@ Expected: all selected tests pass.
 ### Task 9: Polish Shared Modals And Preferences
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/modals.css`
@@ -1055,7 +1065,8 @@ let restoreFocusAfterClose: HTMLElement | null = null;
 At the start of `showModal()`:
 
 ```ts
-restoreFocusAfterClose = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+restoreFocusAfterClose =
+  document.activeElement instanceof HTMLElement ? document.activeElement : null;
 ```
 
 In `closeModal()` after `cleanup()`:
@@ -1082,8 +1093,7 @@ In `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/modals.css`, add:
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
-    var(--surface-glass);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), var(--surface-glass);
   box-shadow: var(--shadow-elevated);
 }
 ```
@@ -1121,6 +1131,7 @@ Expected: passes.
 ### Task 10: Improve Agents, Skills, Commands Document Reading
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/file-reader.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/file-reader-agent-doc.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/file-viewer.css`
@@ -1221,6 +1232,7 @@ Expected: passes.
 ### Task 11: Add Accessibility And Reduced-Motion Guardrails
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/custom-select.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/native-ui-system.contract.test.ts`
@@ -1232,7 +1244,10 @@ Update `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/native-ui-sys
 
 ```ts
 const modalSource = readFileSync(new URL('../components/modal.ts', import.meta.url), 'utf-8');
-const selectSource = readFileSync(new URL('../components/custom-select.ts', import.meta.url), 'utf-8');
+const selectSource = readFileSync(
+  new URL('../components/custom-select.ts', import.meta.url),
+  'utf-8',
+);
 
 expect(modalSource).toContain("role', 'dialog'");
 expect(modalSource).toContain("aria-modal', 'true'");
@@ -1298,6 +1313,7 @@ Expected: passes.
 ### Task 12: Final Verification And Visual Smoke Run
 
 **Files:**
+
 - No required source changes unless verification finds a regression.
 
 - [ ] **Step 1: Run full build**
@@ -1341,6 +1357,7 @@ npm start
 Expected: Calder opens.
 
 Manually verify:
+
 - Sidebar project switching still works.
 - New session button still creates the selected provider session.
 - Browser tab still stays left when browser is open.

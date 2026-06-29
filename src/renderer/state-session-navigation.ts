@@ -35,7 +35,5 @@ export function collectSessionIdsForRemoval(
   if (mode === 'left') {
     return sessions.slice(0, pivotIndex).map((session) => session.id);
   }
-  return sessions
-    .filter((session) => session.id !== pivotSessionId)
-    .map((session) => session.id);
+  return sessions.filter((session) => session.id !== pivotSessionId).map((session) => session.id);
 }

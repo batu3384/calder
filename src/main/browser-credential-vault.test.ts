@@ -41,7 +41,9 @@ describe('browser credential vault', () => {
       return root;
     });
     electronMocks.isEncryptionAvailable.mockReturnValue(true);
-    electronMocks.encryptString.mockImplementation((value: string) => Buffer.from(`enc:${value}`, 'utf8'));
+    electronMocks.encryptString.mockImplementation((value: string) =>
+      Buffer.from(`enc:${value}`, 'utf8'),
+    );
     electronMocks.decryptString.mockImplementation((payload: Buffer) => {
       const text = payload.toString('utf8');
       return text.startsWith('enc:') ? text.slice(4) : text;
@@ -70,7 +72,9 @@ describe('browser credential vault', () => {
     expect(saved.autoFill).toBe(true);
     expect(electronMocks.encryptString).toHaveBeenCalled();
 
-    const list = await vault.listBrowserCredentialSummariesForUrl('http://localhost:3000/dashboard');
+    const list = await vault.listBrowserCredentialSummariesForUrl(
+      'http://localhost:3000/dashboard',
+    );
     expect(list).toHaveLength(1);
     expect(list[0]?.id).toBe(saved.id);
     expect(list[0]?.username).toBe('admin@example.com');
@@ -87,7 +91,10 @@ describe('browser credential vault', () => {
       autoFill: false,
     });
 
-    const fillData = await vault.getBrowserCredentialForFill('http://localhost:4173/login', saved.id);
+    const fillData = await vault.getBrowserCredentialForFill(
+      'http://localhost:4173/login',
+      saved.id,
+    );
     expect(fillData).not.toBeNull();
     expect(fillData?.username).toBe('preview@example.com');
     expect(fillData?.password).toBe('pw-123');
@@ -144,37 +151,43 @@ describe('browser credential vault', () => {
 
   it('rejects non-http(s) URLs', async () => {
     const vault = await import('./browser-credential-vault.js');
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'file:///Users/me/index.html',
-      label: 'Invalid',
-      username: 'user',
-      password: 'pw',
-      autoFill: false,
-    })).rejects.toThrow('Credentials are supported only for HTTP(S) pages.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'file:///Users/me/index.html',
+        label: 'Invalid',
+        username: 'user',
+        password: 'pw',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Credentials are supported only for HTTP(S) pages.');
   });
 
   it('rejects invalid URL syntax before origin normalization', async () => {
     const vault = await import('./browser-credential-vault.js');
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'not a valid url',
-      label: 'Invalid URL',
-      username: 'user',
-      password: 'pw',
-      autoFill: false,
-    })).rejects.toThrow('The URL is invalid.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'not a valid url',
+        label: 'Invalid URL',
+        username: 'user',
+        password: 'pw',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('The URL is invalid.');
   });
 
   it('rejects saves when secure storage is unavailable', async () => {
     const vault = await import('./browser-credential-vault.js');
     electronMocks.isEncryptionAvailable.mockReturnValue(false);
 
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'https://example.com/login',
-      label: 'No Secure Storage',
-      username: 'user',
-      password: 'pw',
-      autoFill: false,
-    })).rejects.toThrow('Secure credential storage is unavailable on this device.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'https://example.com/login',
+        label: 'No Secure Storage',
+        username: 'user',
+        password: 'pw',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Secure credential storage is unavailable on this device.');
   });
 
   it('handles malformed vault files and decrypt failures gracefully', async () => {
@@ -184,24 +197,36 @@ describe('browser credential vault', () => {
     writeFileSync(vaultFilePath(), '{ not-json', 'utf8');
     expect(await vault.listBrowserCredentialSummariesForUrl('https://example.com')).toEqual([]);
 
-    writeFileSync(vaultFilePath(), JSON.stringify({ version: 2, credentials: [] }, null, 2), 'utf8');
+    writeFileSync(
+      vaultFilePath(),
+      JSON.stringify({ version: 2, credentials: [] }, null, 2),
+      'utf8',
+    );
     expect(await vault.listBrowserCredentialSummariesForUrl('https://example.com')).toEqual([]);
 
-    writeFileSync(vaultFilePath(), JSON.stringify({
-      version: 1,
-      credentials: [
-        { bad: true },
+    writeFileSync(
+      vaultFilePath(),
+      JSON.stringify(
         {
-          id: 'valid-1',
-          origin: 'https://example.com',
-          label: 'Valid shape',
-          usernameEncrypted: Buffer.from('enc:user', 'utf8').toString('base64'),
-          passwordEncrypted: Buffer.from('enc:pass', 'utf8').toString('base64'),
-          autoFill: false,
-          updatedAt: new Date().toISOString(),
+          version: 1,
+          credentials: [
+            { bad: true },
+            {
+              id: 'valid-1',
+              origin: 'https://example.com',
+              label: 'Valid shape',
+              usernameEncrypted: Buffer.from('enc:user', 'utf8').toString('base64'),
+              passwordEncrypted: Buffer.from('enc:pass', 'utf8').toString('base64'),
+              autoFill: false,
+              updatedAt: new Date().toISOString(),
+            },
+          ],
         },
-      ],
-    }, null, 2), 'utf8');
+        null,
+        2,
+      ),
+      'utf8',
+    );
 
     electronMocks.decryptString.mockImplementationOnce(() => {
       throw new Error('cannot decrypt');
@@ -213,21 +238,25 @@ describe('browser credential vault', () => {
 
   it('validates required username/password and origin constraints for id updates', async () => {
     const vault = await import('./browser-credential-vault.js');
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'https://example.com',
-      label: 'Missing username',
-      username: '   ',
-      password: 'pw',
-      autoFill: false,
-    })).rejects.toThrow('Username is required.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'https://example.com',
+        label: 'Missing username',
+        username: '   ',
+        password: 'pw',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Username is required.');
 
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'https://example.com',
-      label: 'Missing password',
-      username: 'user',
-      password: '',
-      autoFill: false,
-    })).rejects.toThrow('Password is required.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'https://example.com',
+        label: 'Missing password',
+        username: 'user',
+        password: '',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Password is required.');
 
     const saved = await vault.saveBrowserCredentialForUrl({
       url: 'https://example.com/login',
@@ -249,14 +278,16 @@ describe('browser credential vault', () => {
     expect(updated.label).toBe('Updated');
     expect(updated.username).toBe('updated@example.com');
 
-    await expect(vault.saveBrowserCredentialForUrl({
-      id: saved.id,
-      url: 'https://other.example.com/login',
-      label: 'Wrong origin',
-      username: 'x',
-      password: 'x',
-      autoFill: false,
-    })).rejects.toThrow('Selected credential does not belong to this site.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        id: saved.id,
+        url: 'https://other.example.com/login',
+        label: 'Wrong origin',
+        username: 'x',
+        password: 'x',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Selected credential does not belong to this site.');
   });
 
   it('throws when saved credentials cannot be decrypted into summaries', async () => {
@@ -265,13 +296,15 @@ describe('browser credential vault', () => {
       throw new Error('decrypt failed');
     });
 
-    await expect(vault.saveBrowserCredentialForUrl({
-      url: 'https://example.com/login',
-      label: 'Decrypt fail',
-      username: 'user',
-      password: 'pw',
-      autoFill: false,
-    })).rejects.toThrow('Credential was saved but could not be decrypted.');
+    await expect(
+      vault.saveBrowserCredentialForUrl({
+        url: 'https://example.com/login',
+        label: 'Decrypt fail',
+        username: 'user',
+        password: 'pw',
+        autoFill: false,
+      }),
+    ).rejects.toThrow('Credential was saved but could not be decrypted.');
   });
 
   it('returns null when decrypting fill payload fails and when ids are blank/missing', async () => {
@@ -287,38 +320,52 @@ describe('browser credential vault', () => {
     electronMocks.decryptString.mockImplementation(() => {
       throw new Error('decrypt failed');
     });
-    await expect(vault.getBrowserCredentialForFill('https://fill.example.com/login', saved.id)).resolves.toBeNull();
-    await expect(vault.getBrowserCredentialForFill('https://fill.example.com/login', '   ')).resolves.toBeNull();
-    await expect(vault.getBrowserCredentialForFill('https://fill.example.com/login', 'missing-id')).resolves.toBeNull();
+    await expect(
+      vault.getBrowserCredentialForFill('https://fill.example.com/login', saved.id),
+    ).resolves.toBeNull();
+    await expect(
+      vault.getBrowserCredentialForFill('https://fill.example.com/login', '   '),
+    ).resolves.toBeNull();
+    await expect(
+      vault.getBrowserCredentialForFill('https://fill.example.com/login', 'missing-id'),
+    ).resolves.toBeNull();
   });
 
   it('sorts auto-fill candidates by lastUsedAt then updatedAt', async () => {
     const vault = await import('./browser-credential-vault.js');
-    writeFileSync(vaultFilePath(), JSON.stringify({
-      version: 1,
-      credentials: [
+    writeFileSync(
+      vaultFilePath(),
+      JSON.stringify(
         {
-          id: 'auto-old',
-          origin: 'https://sort.example.com',
-          label: 'Old',
-          usernameEncrypted: Buffer.from('enc:old@example.com', 'utf8').toString('base64'),
-          passwordEncrypted: Buffer.from('enc:old-pass', 'utf8').toString('base64'),
-          autoFill: true,
-          updatedAt: '2026-01-01T00:00:00.000Z',
-          lastUsedAt: '2026-01-01T00:00:00.000Z',
+          version: 1,
+          credentials: [
+            {
+              id: 'auto-old',
+              origin: 'https://sort.example.com',
+              label: 'Old',
+              usernameEncrypted: Buffer.from('enc:old@example.com', 'utf8').toString('base64'),
+              passwordEncrypted: Buffer.from('enc:old-pass', 'utf8').toString('base64'),
+              autoFill: true,
+              updatedAt: '2026-01-01T00:00:00.000Z',
+              lastUsedAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              id: 'auto-new',
+              origin: 'https://sort.example.com',
+              label: 'New',
+              usernameEncrypted: Buffer.from('enc:new@example.com', 'utf8').toString('base64'),
+              passwordEncrypted: Buffer.from('enc:new-pass', 'utf8').toString('base64'),
+              autoFill: true,
+              updatedAt: '2026-01-02T00:00:00.000Z',
+              lastUsedAt: '2026-01-03T00:00:00.000Z',
+            },
+          ],
         },
-        {
-          id: 'auto-new',
-          origin: 'https://sort.example.com',
-          label: 'New',
-          usernameEncrypted: Buffer.from('enc:new@example.com', 'utf8').toString('base64'),
-          passwordEncrypted: Buffer.from('enc:new-pass', 'utf8').toString('base64'),
-          autoFill: true,
-          updatedAt: '2026-01-02T00:00:00.000Z',
-          lastUsedAt: '2026-01-03T00:00:00.000Z',
-        },
-      ],
-    }, null, 2), 'utf8');
+        null,
+        2,
+      ),
+      'utf8',
+    );
 
     const fill = await vault.getBrowserAutoFillCredentialForUrl('https://sort.example.com/login');
     expect(fill?.id).toBe('auto-new');
@@ -329,6 +376,8 @@ describe('browser credential vault', () => {
   it('returns deleted false for blank and unknown ids', async () => {
     const vault = await import('./browser-credential-vault.js');
     await expect(vault.deleteBrowserCredentialById('   ')).resolves.toEqual({ deleted: false });
-    await expect(vault.deleteBrowserCredentialById('missing-id')).resolves.toEqual({ deleted: false });
+    await expect(vault.deleteBrowserCredentialById('missing-id')).resolves.toEqual({
+      deleted: false,
+    });
   });
 });

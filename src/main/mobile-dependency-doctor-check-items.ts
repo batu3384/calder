@@ -1,17 +1,11 @@
-import type {
-  MobileDependencyCheck,
-} from '../shared/types/mobile';
-import {
-  resolveBinary,
-} from './mobile-dependency-doctor-binaries';
+import type { MobileDependencyCheck } from '../shared/types/mobile';
+import { resolveBinary } from './mobile-dependency-doctor-binaries';
 import {
   buildCheck,
   type CheckBinaryInput,
   type MobileDoctorCommandRunner,
 } from './mobile-dependency-doctor-check-types';
-import {
-  MOBILE_DOCTOR_DOCS as DOCS,
-} from './mobile-dependency-doctor-config';
+import { MOBILE_DOCTOR_DOCS as DOCS } from './mobile-dependency-doctor-config';
 import {
   firstNonEmptyLine,
   isMissingJavaRuntimeOutput,
@@ -62,7 +56,9 @@ export async function checkXcode(
       requiredFor: ['ios'],
       status: 'warning',
       description: 'Needed for iOS Simulator automation via Appium XCUITest.',
-      message: firstNonEmptyLine(result.stderr, result.stdout) || 'xcodebuild exists but version check failed.',
+      message:
+        firstNonEmptyLine(result.stderr, result.stdout) ||
+        'xcodebuild exists but version check failed.',
       installHint: 'Open Xcode once and complete first-run setup.',
       docsUrl: DOCS.appleXcode,
     });
@@ -127,7 +123,9 @@ export async function checkSimctl(
   });
 }
 
-export async function checkAppium(runner: MobileDoctorCommandRunner): Promise<MobileDependencyCheck> {
+export async function checkAppium(
+  runner: MobileDoctorCommandRunner,
+): Promise<MobileDependencyCheck> {
   const binaryPath = await resolveBinary(runner, 'appium');
   if (!binaryPath) {
     return buildCheck({
@@ -154,7 +152,9 @@ export async function checkAppium(runner: MobileDoctorCommandRunner): Promise<Mo
       requiredFor: ['ios', 'android'],
       status: 'warning',
       description: 'Core mobile automation server used by Calder mobile inspect.',
-      message: firstNonEmptyLine(result.stderr, result.stdout) || 'Appium was found but version check failed.',
+      message:
+        firstNonEmptyLine(result.stderr, result.stdout) ||
+        'Appium was found but version check failed.',
       installHint: 'Reinstall Appium globally.',
       installCommand: 'npm install -g appium',
       autoFixAvailable: true,
@@ -200,7 +200,9 @@ export async function checkAppiumDriver(
     });
   }
 
-  const jsonList = await runner.run('appium', ['driver', 'list', '--installed', '--json'], { timeoutMs: 10_000 });
+  const jsonList = await runner.run('appium', ['driver', 'list', '--installed', '--json'], {
+    timeoutMs: 10_000,
+  });
   if (jsonList.code === 0) {
     const parsed = parseInstalledDriverFromJson(`${jsonList.stdout}\n${jsonList.stderr}`, driver);
     if (parsed) {
@@ -243,7 +245,9 @@ export async function checkAppiumDriver(
       requiredFor: [scope],
       status: 'warning',
       description: `Required by Appium for ${scope === 'ios' ? 'iOS Simulator' : 'Android'} automation sessions.`,
-      message: firstNonEmptyLine(list.stderr, list.stdout, jsonList.stderr, jsonList.stdout) || 'Unable to read installed Appium drivers.',
+      message:
+        firstNonEmptyLine(list.stderr, list.stdout, jsonList.stderr, jsonList.stdout) ||
+        'Unable to read installed Appium drivers.',
       installHint,
       installCommand: `appium driver install ${driver}`,
       autoFixAvailable: true,
@@ -299,7 +303,9 @@ export async function checkJava(
       installHint: hostIsMac
         ? 'Install Java 17+ (for example `brew install openjdk && brew link --overwrite --force openjdk`).'
         : 'Install Java 17+ and ensure JAVA_HOME is configured.',
-      installCommand: hostIsMac ? 'brew install openjdk && brew link --overwrite --force openjdk' : undefined,
+      installCommand: hostIsMac
+        ? 'brew install openjdk && brew link --overwrite --force openjdk'
+        : undefined,
       autoFixAvailable: hostIsMac,
       docsUrl: DOCS.androidSdkManager,
     });
@@ -319,7 +325,9 @@ export async function checkJava(
       installHint: hostIsMac
         ? 'Install Java 17+ (for example `brew install openjdk && brew link --overwrite --force openjdk`).'
         : 'Install Java 17+ and ensure JAVA_HOME is configured.',
-      installCommand: hostIsMac ? 'brew install openjdk && brew link --overwrite --force openjdk' : undefined,
+      installCommand: hostIsMac
+        ? 'brew install openjdk && brew link --overwrite --force openjdk'
+        : undefined,
       autoFixAvailable: hostIsMac,
       docsUrl: DOCS.androidSdkManager,
     });
@@ -350,7 +358,9 @@ export async function checkJava(
       installHint: hostIsMac
         ? 'Upgrade Java with `brew install openjdk && brew link --overwrite --force openjdk`.'
         : 'Upgrade Java to 17+.',
-      installCommand: hostIsMac ? 'brew install openjdk && brew link --overwrite --force openjdk' : undefined,
+      installCommand: hostIsMac
+        ? 'brew install openjdk && brew link --overwrite --force openjdk'
+        : undefined,
       autoFixAvailable: hostIsMac,
       docsUrl: DOCS.androidSdkManager,
     });
@@ -369,15 +379,18 @@ export async function checkJava(
   });
 }
 
-export async function checkBinaryWithVersion(input: CheckBinaryInput): Promise<MobileDependencyCheck> {
+export async function checkBinaryWithVersion(
+  input: CheckBinaryInput,
+): Promise<MobileDependencyCheck> {
   const binaryPath = await resolveBinary(input.runner, input.binary, {
     fallbackPaths: input.fallbackPaths,
     probeArgs: input.versionArgs ?? ['--version'],
   });
   if (!binaryPath) {
-    const missingMessage = input.fallbackPaths && input.fallbackPaths.length > 0
-      ? `${input.binary} was not found on PATH or known Android SDK locations.`
-      : `${input.binary} was not found on PATH.`;
+    const missingMessage =
+      input.fallbackPaths && input.fallbackPaths.length > 0
+        ? `${input.binary} was not found on PATH or known Android SDK locations.`
+        : `${input.binary} was not found on PATH.`;
     return buildCheck({
       id: input.id,
       label: input.label,
@@ -403,7 +416,9 @@ export async function checkBinaryWithVersion(input: CheckBinaryInput): Promise<M
       requiredFor: input.requiredFor,
       status: 'warning',
       description: input.description,
-      message: firstNonEmptyLine(result.stderr, result.stdout) || `${input.binary} exists but version check failed.`,
+      message:
+        firstNonEmptyLine(result.stderr, result.stdout) ||
+        `${input.binary} exists but version check failed.`,
       docsUrl: input.docsUrl,
       installHint: input.installHint,
       installCommand: input.installCommand,

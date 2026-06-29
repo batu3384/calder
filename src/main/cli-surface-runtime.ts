@@ -1,4 +1,8 @@
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project-surface';
+import type {
+  CliSurfaceProfile,
+  CliSurfaceRuntimeState,
+  CliSurfaceStartupTiming,
+} from '../shared/types/project-surface';
 import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 import {
   appendStartupReadyOutput,
@@ -61,7 +65,10 @@ export function createCliSurfaceRuntimeManager(emit: CliSurfaceRuntimeEmit) {
     chunks.push(data);
     pendingData.set(projectId, chunks);
     if (dataFlushTimers.has(projectId)) return;
-    dataFlushTimers.set(projectId, setTimeout(() => flushData(projectId), 16));
+    dataFlushTimers.set(
+      projectId,
+      setTimeout(() => flushData(projectId), 16),
+    );
   }
 
   function markRunning(projectId: string, profile: CliSurfaceProfile): void {
@@ -90,15 +97,23 @@ export function createCliSurfaceRuntimeManager(emit: CliSurfaceRuntimeEmit) {
         launch = resolved.launch;
         runtimeLaunches.set(projectId, createResolvedRuntimeLaunchState(profile, resolved));
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to prepare CLI surface launch.';
+        const message =
+          error instanceof Error ? error.message : 'Failed to prepare CLI surface launch.';
         runningEmitted.delete(projectId);
         markStartupStopped(projectId, startupTimings);
         emit.error(projectId, message);
-        emit.status(projectId, createRuntimeState(projectId, profile, 'error', { lastError: message }));
+        emit.status(
+          projectId,
+          createRuntimeState(projectId, profile, 'error', { lastError: message }),
+        );
         return;
       }
 
-      const startupReadyPattern = compileStartupReadyPattern(projectId, profile.startupReadyPattern, emit);
+      const startupReadyPattern = compileStartupReadyPattern(
+        projectId,
+        profile.startupReadyPattern,
+        emit,
+      );
       spawnCommandPty(
         getCliSurfaceRuntimeId(projectId),
         launch,
@@ -124,7 +139,10 @@ export function createCliSurfaceRuntimeManager(emit: CliSurfaceRuntimeEmit) {
           flushData(projectId);
           runtimeLaunches.delete(projectId);
           emit.exit(projectId, exitCode, signal);
-          emit.status(projectId, createRuntimeState(projectId, profile, 'stopped', { lastExitCode: exitCode }));
+          emit.status(
+            projectId,
+            createRuntimeState(projectId, profile, 'stopped', { lastExitCode: exitCode }),
+          );
         },
       );
 

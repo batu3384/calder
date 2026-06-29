@@ -33,7 +33,11 @@ export async function createProjectReviewFile(
     throw new Error('Review title is required');
   }
 
-  const relativePath = path.posix.join('.calder', 'reviews', `${slugifyReviewTitle(trimmedTitle)}.md`);
+  const relativePath = path.posix.join(
+    '.calder',
+    'reviews',
+    `${slugifyReviewTitle(trimmedTitle)}.md`,
+  );
   const fullPath = path.join(projectPath, relativePath);
 
   let created = false;

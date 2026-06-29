@@ -79,8 +79,12 @@ class FakeElement {
 
   addEventListener(): void {}
   appendChild(): void {}
-  querySelector(): null { return null; }
-  contains(): boolean { return false; }
+  querySelector(): null {
+    return null;
+  }
+  contains(): boolean {
+    return false;
+  }
   scrollIntoView(): void {}
 }
 
@@ -210,7 +214,10 @@ vi.mock('./tab-bar-control-handlers.js', () => ({
 
 vi.mock('./tab-bar-render-blocks.js', () => ({
   buildActiveTabRailKey: vi.fn(() => 'active-key'),
-  buildTabBarRenderSurfaceState: vi.fn(() => ({ cliSurfaceTabActive: false, mobileSurfaceTabActive: false })),
+  buildTabBarRenderSurfaceState: vi.fn(() => ({
+    cliSurfaceTabActive: false,
+    mobileSurfaceTabActive: false,
+  })),
   renderGitStatusBlock,
   shouldSkipTabListRender: vi.fn(() => true),
 }));
@@ -257,6 +264,8 @@ describe('tab-bar init orchestration', () => {
     expect(providerSelectorController.syncSessionProviderSelector).toHaveBeenCalledWith('claude');
     expect(renderGitStatusBlock).toHaveBeenCalledTimes(1);
     expect(syncMobileControlButton).toHaveBeenCalledTimes(1);
-    expect(document.getElementById('btn-add-session')?.classList.contains('tab-action-primary')).toBe(true);
+    expect(
+      document.getElementById('btn-add-session')?.classList.contains('tab-action-primary'),
+    ).toBe(true);
   });
 });

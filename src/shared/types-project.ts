@@ -48,11 +48,7 @@ export type {
   ProjectReviewSource,
   ProjectReviewState,
 } from './types/project-review.js';
-export type {
-  PersistedState,
-  Preferences,
-  ProjectRecord,
-} from './types/project-state.js';
+export type { PersistedState, Preferences, ProjectRecord } from './types/project-state.js';
 export type {
   CliSurfaceDiscoveryCandidate,
   CliSurfaceDiscoveryConfidence,

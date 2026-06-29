@@ -1,7 +1,10 @@
 import { appState } from '../state.js';
-import { type FailureReason,onToolAlert, type ToolAlert } from '../tools/missing-tool-detector.js';
-import { removeAlertBanner,showAlertBanner } from './alert-banner.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
+import { type FailureReason, onToolAlert, type ToolAlert } from '../tools/missing-tool-detector.js';
+import { removeAlertBanner, showAlertBanner } from './alert-banner.js';
+import {
+  getProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch,
+} from './surface-services/provider-availability.js';
 import { dismissInsight } from './surface-services/session-insights.js';
 import { setPendingPrompt } from './terminal-pane.js';
 
@@ -24,17 +27,20 @@ const bannerConfig: Record<AlertableReason, ReasonConfig> = {
   'not-found': {
     icon: '\u2139',
     message: (name, cmd, desc) => `"${name}" (${cmd}) is not installed. Install it for ${desc}.`,
-    prompt: (name, cmd) => `The CLI tool "${name}" (${cmd}) is not installed on this system. Please install it and verify the installation works.`,
+    prompt: (name, cmd) =>
+      `The CLI tool "${name}" (${cmd}) is not installed on this system. Please install it and verify the installation works.`,
   },
   'permission-denied': {
     icon: '\u26A0',
     message: (name, cmd) => `"${name}" (${cmd}) cannot execute \u2014 permission denied.`,
-    prompt: (name, cmd) => `The CLI tool "${name}" (${cmd}) exists but has a permission issue. Please check file permissions (e.g., chmod +x) and verify it can execute.`,
+    prompt: (name, cmd) =>
+      `The CLI tool "${name}" (${cmd}) exists but has a permission issue. Please check file permissions (e.g., chmod +x) and verify it can execute.`,
   },
   'auth-required': {
     icon: '\uD83D\uDD12',
     message: (name, cmd) => `"${name}" (${cmd}) requires authentication setup.`,
-    prompt: (name, cmd) => `The CLI tool "${name}" (${cmd}) is installed but requires authentication. Please set up authentication/login and verify it works.`,
+    prompt: (name, cmd) =>
+      `The CLI tool "${name}" (${cmd}) is installed but requires authentication. Please set up authentication/login and verify it works.`,
   },
 };
 

@@ -9,7 +9,9 @@ function readMcpServersFromJson(filePath: string, scope: 'user' | 'project'): Mc
   if (!json?.mcpServers || typeof json.mcpServers !== 'object') return [];
 
   const servers: McpServer[] = [];
-  for (const [name, config] of Object.entries(json.mcpServers as Record<string, Record<string, unknown>>)) {
+  for (const [name, config] of Object.entries(
+    json.mcpServers as Record<string, Record<string, unknown>>,
+  )) {
     const url = (config?.url as string) || (config?.command as string) || '';
     if (url) {
       servers.push({ name, url, status: 'configured', scope, filePath });
@@ -25,7 +27,9 @@ function readMcpServersFromConfigFile(filePath: string, scope: 'user' | 'project
   if (!mcpServers || typeof mcpServers !== 'object') return [];
 
   const servers: McpServer[] = [];
-  for (const [name, config] of Object.entries(mcpServers as Record<string, Record<string, unknown>>)) {
+  for (const [name, config] of Object.entries(
+    mcpServers as Record<string, Record<string, unknown>>,
+  )) {
     const args = Array.isArray(config?.args) ? config.args.join(' ') : '';
     const url = (config?.url as string) || (config?.command as string) || args;
     if (!url) continue;

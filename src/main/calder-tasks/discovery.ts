@@ -1,7 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { ProjectBackgroundTaskSource, ProjectBackgroundTaskState, ProjectBackgroundTaskStatus } from '../../shared/types/project-background-task.js';
+import type {
+  ProjectBackgroundTaskSource,
+  ProjectBackgroundTaskState,
+  ProjectBackgroundTaskStatus,
+} from '../../shared/types/project-background-task.js';
 
 interface RawTaskDocument {
   title?: unknown;
@@ -23,7 +27,8 @@ function isFile(filePath: string): boolean {
 
 function listTaskFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.json'))
       .sort((left, right) => left.localeCompare(right));
   } catch {
@@ -34,14 +39,19 @@ function listTaskFiles(dirPath: string): string[] {
 function readTask(filePath: string): RawTaskDocument {
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return typeof parsed === 'object' && parsed ? parsed as RawTaskDocument : {};
+    return typeof parsed === 'object' && parsed ? (parsed as RawTaskDocument) : {};
   } catch {
     return {};
   }
 }
 
 function asStatus(value: unknown): ProjectBackgroundTaskStatus {
-  if (value === 'running' || value === 'blocked' || value === 'completed' || value === 'cancelled') {
+  if (
+    value === 'running' ||
+    value === 'blocked' ||
+    value === 'completed' ||
+    value === 'cancelled'
+  ) {
     return value;
   }
   return 'queued';
@@ -58,11 +68,13 @@ function asArtifacts(value: unknown): string[] {
 }
 
 function summarizePrompt(prompt: string): string {
-  return prompt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean)
-    ?.slice(0, 140) ?? '';
+  return (
+    prompt
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean)
+      ?.slice(0, 140) ?? ''
+  );
 }
 
 function buildTaskSource(filePath: string): ProjectBackgroundTaskSource {
@@ -82,15 +94,24 @@ function buildTaskSource(filePath: string): ProjectBackgroundTaskSource {
     createdAt: asString(raw.createdAt, lastUpdated),
     lastUpdated,
     artifactCount: asArtifacts(raw.artifacts).length,
-    handoffSummary: handoff.split(/\r?\n/).map((line) => line.trim()).find(Boolean) ?? '',
+    handoffSummary:
+      handoff
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find(Boolean) ?? '',
   };
 }
 
-function countStatus(tasks: ProjectBackgroundTaskSource[], status: ProjectBackgroundTaskStatus): number {
+function countStatus(
+  tasks: ProjectBackgroundTaskSource[],
+  status: ProjectBackgroundTaskStatus,
+): number {
   return tasks.filter((task) => task.status === status).length;
 }
 
-export async function discoverProjectBackgroundTasks(projectPath: string): Promise<ProjectBackgroundTaskState> {
+export async function discoverProjectBackgroundTasks(
+  projectPath: string,
+): Promise<ProjectBackgroundTaskState> {
   const taskDir = path.join(projectPath, '.calder', 'tasks');
   const tasks = listTaskFiles(taskDir)
     .map((entry) => path.join(taskDir, entry))
@@ -98,7 +119,10 @@ export async function discoverProjectBackgroundTasks(projectPath: string): Promi
     .map((filePath) => buildTaskSource(filePath))
     .sort((left, right) => right.lastUpdated.localeCompare(left.lastUpdated));
 
-  const lastUpdated = tasks.map((task) => task.lastUpdated).sort().at(-1);
+  const lastUpdated = tasks
+    .map((task) => task.lastUpdated)
+    .sort()
+    .at(-1);
 
   return {
     tasks,

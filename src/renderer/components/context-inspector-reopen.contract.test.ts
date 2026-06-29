@@ -4,7 +4,10 @@ import { describe, expect, it } from 'vitest';
 const htmlSource = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
 const source = readFileSync(new URL('./context-inspector.ts', import.meta.url), 'utf-8');
 const styles = readFileSync(new URL('../styles/context-inspector.css', import.meta.url), 'utf-8');
-const commandStudioStyles = readFileSync(new URL('../styles/theme-command-studio.css', import.meta.url), 'utf-8');
+const commandStudioStyles = readFileSync(
+  new URL('../styles/theme-command-studio.css', import.meta.url),
+  'utf-8',
+);
 
 function extractRuleBlock(sourceText: string, selector: string): string {
   const start = sourceText.indexOf(`${selector} {`);

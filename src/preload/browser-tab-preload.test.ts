@@ -3,7 +3,10 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(path.join(process.cwd(), 'src/preload/browser-tab-preload.ts'), 'utf-8');
+const source = readFileSync(
+  path.join(process.cwd(), 'src/preload/browser-tab-preload.ts'),
+  'utf-8',
+);
 
 describe('browser tab preload inspect contract', () => {
   it('guards inspect and flow handlers against non-element event targets', () => {
@@ -18,7 +21,7 @@ describe('browser tab preload inspect contract', () => {
     expect(source).toContain('void replayFlowClick(payload');
     expect(source).toContain("ipcRenderer.on('auth-fill-credentials'");
     expect(source).toContain("ipcRenderer.sendToHost('auth-fill-result'");
-    expect(source).toContain('document.addEventListener(\'load\', onFrameLoadCapture, true);');
+    expect(source).toContain("document.addEventListener('load', onFrameLoadCapture, true);");
     expect(source).not.toContain('browser-tab-open-intent');
     expect(source).not.toContain('browser-tab-popup');
   });

@@ -6,8 +6,8 @@ import {
 import { fitAllVisible } from '../terminal-pane.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { renderTimeline } from './session-inspector-timeline.js';
-import { canInspectSession,resetUIState } from './session-inspector-utils.js';
-import { renderContext,renderCosts, renderTools } from './session-inspector-views.js';
+import { canInspectSession, resetUIState } from './session-inspector-utils.js';
+import { renderContext, renderCosts, renderTools } from './session-inspector-views.js';
 
 let onInspectorLayoutChanged: (() => void) | null = null;
 
@@ -28,7 +28,7 @@ function notifyInspectorLayoutChanged(): void {
 }
 
 export function openInspector(sessionId: string): void {
-  const session = appState.activeProject?.sessions.find(s => s.id === sessionId);
+  const session = appState.activeProject?.sessions.find((s) => s.id === sessionId);
   if (!session || !canInspectSession(session)) return;
 
   if (inspectorState.inspectorPanel && inspectorState.inspectedSessionId === sessionId) {
@@ -70,7 +70,7 @@ export function closeInspector(): void {
 export function toggleInspector(): void {
   const project = appState.activeProject;
   if (!project?.activeSessionId) return;
-  const session = project.sessions.find(s => s.id === project.activeSessionId);
+  const session = project.sessions.find((s) => s.id === project.activeSessionId);
   if (!session || !canInspectSession(session)) return;
 
   if (isInspectorOpen()) {
@@ -85,11 +85,16 @@ export function initSessionInspector(): void {
   appState.on('session-changed', () => {
     const project = appState.activeProject;
     const activeSession = project?.activeSessionId
-      ? project.sessions.find(s => s.id === project.activeSessionId)
+      ? project.sessions.find((s) => s.id === project.activeSessionId)
       : undefined;
 
     if (!isInspectorOpen()) {
-      if (inspectorState.reopenOnNextSession && project?.activeSessionId && activeSession && canInspectSession(activeSession)) {
+      if (
+        inspectorState.reopenOnNextSession &&
+        project?.activeSessionId &&
+        activeSession &&
+        canInspectSession(activeSession)
+      ) {
         resetUIState();
         inspectorState.reopenOnNextSession = false;
         requestAnimationFrame(() => openInspector(project.activeSessionId!));
@@ -140,7 +145,9 @@ export function initSessionInspector(): void {
     if (!inspectorState.reopenOnNextSession) return;
     const d = data as { session?: { id: string; type?: string } } | undefined;
     const sessionId = d?.session?.id;
-    const session = sessionId ? appState.activeProject?.sessions.find(s => s.id === sessionId) : undefined;
+    const session = sessionId
+      ? appState.activeProject?.sessions.find((s) => s.id === sessionId)
+      : undefined;
     if (session && canInspectSession(session)) {
       inspectorState.reopenOnNextSession = false;
       const idToOpen = session.id;
@@ -154,13 +161,17 @@ export function initSessionInspector(): void {
     if (inspectorState.updateTimer) clearTimeout(inspectorState.updateTimer);
     inspectorState.updateTimer = setTimeout(() => {
       const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0 && !sel.isCollapsed && inspectorState.inspectorPanel?.contains(sel.anchorNode)) {
+      if (
+        sel &&
+        sel.rangeCount > 0 &&
+        !sel.isCollapsed &&
+        inspectorState.inspectorPanel?.contains(sel.anchorNode)
+      ) {
         return; // don't destroy DOM while user is selecting text
       }
       renderActiveTab();
     }, 200);
   });
-
 }
 
 function createPanel(): HTMLElement {
@@ -235,7 +246,7 @@ function createPanel(): HTMLElement {
     btn.dataset.tab = tab.id;
     btn.addEventListener('click', () => {
       inspectorState.activeTab = tab.id;
-      tabBar.querySelectorAll('.inspector-tab').forEach(t => t.classList.remove('active'));
+      tabBar.querySelectorAll('.inspector-tab').forEach((t) => t.classList.remove('active'));
       btn.classList.add('active');
       renderActiveTab();
     });
@@ -268,16 +279,26 @@ function renderActiveTab(): void {
   const content = inspectorState.inspectorPanel.querySelector('.inspector-content') as HTMLElement;
   if (!content) return;
 
-  const toggle = inspectorState.inspectorPanel.querySelector('.inspector-autoscroll-toggle') as HTMLElement;
+  const toggle = inspectorState.inspectorPanel.querySelector(
+    '.inspector-autoscroll-toggle',
+  ) as HTMLElement;
   if (toggle) toggle.style.display = inspectorState.activeTab === 'timeline' ? '' : 'none';
 
   content.innerHTML = '';
 
   switch (inspectorState.activeTab) {
-    case 'timeline': renderTimeline(content); break;
-    case 'costs': renderCosts(content); break;
-    case 'tools': renderTools(content); break;
-    case 'context': renderContext(content); break;
+    case 'timeline':
+      renderTimeline(content);
+      break;
+    case 'costs':
+      renderCosts(content);
+      break;
+    case 'tools':
+      renderTools(content);
+      break;
+    case 'context':
+      renderContext(content);
+      break;
   }
 }
 

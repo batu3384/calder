@@ -1,6 +1,11 @@
 import type { BrowserTabInstance, FlowPickerMetadata } from './types.js';
 
-export function showFlowPicker(instance: BrowserTabInstance, metadata: FlowPickerMetadata, x: number, y: number): void {
+export function showFlowPicker(
+  instance: BrowserTabInstance,
+  metadata: FlowPickerMetadata,
+  x: number,
+  y: number,
+): void {
   const webviewRect = (instance.webview as unknown as HTMLElement).getBoundingClientRect();
   const paneRect = instance.element.getBoundingClientRect();
   let left = webviewRect.left - paneRect.left + x;

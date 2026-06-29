@@ -1,5 +1,10 @@
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
-import { getContextHistory, getCostDeltas,getEvents, getToolStats } from '../surface-services/session-inspector-state.js';
+import {
+  getContextHistory,
+  getCostDeltas,
+  getEvents,
+  getToolStats,
+} from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
   badgeLabel,
@@ -36,7 +41,7 @@ export function renderCosts(container: HTMLElement): void {
     }
     if (totalCost !== 0 && totalTokens !== 0) break;
   }
-  const stepsWithCost = costDeltas.filter(d => d.delta > 0).length;
+  const stepsWithCost = costDeltas.filter((d) => d.delta > 0).length;
 
   const summary = document.createElement('div');
   summary.className = 'inspector-summary';
@@ -50,10 +55,11 @@ export function renderCosts(container: HTMLElement): void {
   // Cost table
   const table = document.createElement('table');
   table.className = 'inspector-table';
-  table.innerHTML = '<thead><tr><th>#</th><th>Event</th><th>Tool</th><th>Cost Delta</th><th>Cumulative</th></tr></thead>';
+  table.innerHTML =
+    '<thead><tr><th>#</th><th>Event</th><th>Tool</th><th>Cost Delta</th><th>Cumulative</th></tr></thead>';
   const tbody = document.createElement('tbody');
 
-  const deltaMap = new Map(costDeltas.map(d => [d.index, d.delta]));
+  const deltaMap = new Map(costDeltas.map((d) => [d.index, d.delta]));
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -184,14 +190,17 @@ export function renderContext(container: HTMLElement): void {
     const maxTime = history[history.length - 1].timestamp;
     const timeRange = maxTime - minTime || 1;
 
-    const points = history.map(p => {
+    const points = history.map((p) => {
       const x = padding.left + ((p.timestamp - minTime) / timeRange) * chartW;
       const y = padding.top + chartH - (p.usedPercentage / 100) * chartH;
       return { x, y };
     });
 
-    const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
-    const areaPoints = `${padding.left},${padding.top + chartH} ` + polylinePoints + ` ${points[points.length - 1].x},${padding.top + chartH}`;
+    const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+    const areaPoints =
+      `${padding.left},${padding.top + chartH} ` +
+      polylinePoints +
+      ` ${points[points.length - 1].x},${padding.top + chartH}`;
 
     // Time labels
     const durationMin = (maxTime - minTime) / 60000;

@@ -1,10 +1,16 @@
 import { SearchAddon } from '@xterm/addon-search';
 import { Terminal } from '@xterm/xterm';
 
-import { type ContextWindowInfo,removeSession as removeContextSession } from '../session-context.js';
-import { type CostInfo,removeSession as removeCostSession } from '../session-cost.js';
+import {
+  type ContextWindowInfo,
+  removeSession as removeContextSession,
+} from '../session-context.js';
+import { type CostInfo, removeSession as removeCostSession } from '../session-cost.js';
 import type { ProviderId } from '../types.js';
-import { getProviderCapabilities, getProviderDisplayName } from './surface-services/provider-availability.js';
+import {
+  getProviderCapabilities,
+  getProviderDisplayName,
+} from './surface-services/provider-availability.js';
 import { removeSession } from './surface-services/session-activity.js';
 import {
   attachTerminalInstanceToContainer,
@@ -32,7 +38,11 @@ import {
   showSpawnFailureOverlay,
 } from './terminal-pane-spawn-overlay.js';
 import { spawnPtySession } from './terminal-pane-spawn-session.js';
-import { renderContextDisplay, renderCostDisplay, revealSessionStatusBar } from './terminal-pane-status.js';
+import {
+  renderContextDisplay,
+  renderCostDisplay,
+  revealSessionStatusBar,
+} from './terminal-pane-status.js';
 import { showErrorToast } from './toast.js';
 
 interface TerminalInstance {
@@ -143,7 +153,7 @@ export function createTerminalPane(
   isResume: boolean = false,
   args: string = '',
   providerId: ProviderId = 'claude',
-  projectId?: string
+  projectId?: string,
 ): TerminalInstance {
   if (instances.has(sessionId)) {
     return instances.get(sessionId)!;
@@ -240,12 +250,17 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
       details: formatSpawnFailureMessage(error),
       onRetry: spawnTerminal,
     });
-    showErrorToast(`Failed to spawn terminal session: ${error instanceof Error ? error.message : String(error)}`);
+    showErrorToast(
+      `Failed to spawn terminal session: ${error instanceof Error ? error.message : String(error)}`,
+    );
     console.error(`[terminal-pane] Failed to spawn terminal session ${sessionId}`, error);
   }
 }
 
-export async function deliverPromptToTerminalSession(sessionId: string, prompt: string): Promise<boolean> {
+export async function deliverPromptToTerminalSession(
+  sessionId: string,
+  prompt: string,
+): Promise<boolean> {
   const instance = instances.get(sessionId);
   if (!instance) return false;
 

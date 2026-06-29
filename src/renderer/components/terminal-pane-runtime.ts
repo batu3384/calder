@@ -52,9 +52,11 @@ export function createTerminalCore(args: CreateTerminalCoreArgs): TerminalCore {
   const searchAddon = new SearchAddon();
   terminal.loadAddon(searchAddon);
 
-  terminal.loadAddon(new WebLinksAddon((event, url) => {
-    args.activateWebLink(event, url);
-  }));
+  terminal.loadAddon(
+    new WebLinksAddon((event, url) => {
+      args.activateWebLink(event, url);
+    }),
+  );
 
   return { terminal, fitAddon, searchAddon };
 }
@@ -68,7 +70,9 @@ interface BindTerminalInputAndFocusHandlersArgs {
   getFocusedSessionId: () => string | null;
 }
 
-export function bindTerminalInputAndFocusHandlers(args: BindTerminalInputAndFocusHandlersArgs): void {
+export function bindTerminalInputAndFocusHandlers(
+  args: BindTerminalInputAndFocusHandlersArgs,
+): void {
   // Send CSI u encoding for Shift+Enter so Claude CLI treats it as newline
   attachClipboardCopyHandler(args.terminal, (event) => {
     if (event.shiftKey && event.key === 'Enter') {

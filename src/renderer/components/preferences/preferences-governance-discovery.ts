@@ -142,7 +142,8 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
 
   const meta = document.createElement('div');
   meta.className = 'governance-discovery-item-meta';
-  const budget = typeof policy.budgetLimitUsd === 'number' ? ` · Budget limit: $${policy.budgetLimitUsd}` : '';
+  const budget =
+    typeof policy.budgetLimitUsd === 'number' ? ` · Budget limit: $${policy.budgetLimitUsd}` : '';
   meta.textContent = `${policy.summary}${budget}`;
   item.appendChild(meta);
 

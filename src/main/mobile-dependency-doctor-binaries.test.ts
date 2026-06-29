@@ -19,8 +19,9 @@ describe('mobile dependency doctor binary helpers', () => {
   });
 
   it('normalizes duplicate raw paths and exposes sdk root discovery helpers', () => {
-    expect(uniquePaths(['/tmp/android-sdk/', '/tmp/android-sdk', '', '  ']))
-      .toEqual(['/tmp/android-sdk']);
+    expect(uniquePaths(['/tmp/android-sdk/', '/tmp/android-sdk', '', '  '])).toEqual([
+      '/tmp/android-sdk',
+    ]);
 
     const roots = getAndroidSdkRoots({
       ANDROID_HOME: '/tmp/android-sdk',
@@ -37,7 +38,9 @@ describe('mobile dependency doctor binary helpers', () => {
     } as NodeJS.ProcessEnv;
 
     const candidates = getAndroidBinaryCandidates('adb', env, 'darwin');
-    expect(candidates.filter((candidate) => candidate === '/opt/android-sdk/platform-tools/adb')).toHaveLength(1);
+    expect(
+      candidates.filter((candidate) => candidate === '/opt/android-sdk/platform-tools/adb'),
+    ).toHaveLength(1);
   });
 
   it('resolves fallback binary path when shell lookup misses', async () => {

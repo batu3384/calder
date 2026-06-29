@@ -42,7 +42,10 @@ describe('hook-commands', () => {
     module.installEventScript('custom.py', 'print("ok")');
 
     expect(mockFs.mkdirSync).toHaveBeenCalledWith(STATUS_DIR, { recursive: true });
-    expect(mockFs.writeFileSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'custom.py'), 'print("ok")');
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      path.join(STATUS_DIR, 'custom.py'),
+      'print("ok")',
+    );
   });
 
   it('installs shared hook scripts once and skips reinstall when already present', async () => {

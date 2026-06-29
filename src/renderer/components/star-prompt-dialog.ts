@@ -29,7 +29,7 @@ function showStarPromptDialog(): void {
   const message = document.createElement('div');
   message.className = 'star-prompt-message';
   message.textContent =
-    "If Calder has been useful to you, consider giving it a star on GitHub. It helps others discover the project!";
+    'If Calder has been useful to you, consider giving it a star on GitHub. It helps others discover the project!';
   container.appendChild(message);
 
   const actions = document.createElement('div');

@@ -19,11 +19,16 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('../full-path', () => ({
-  getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
+  getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
 vi.mock('../antigravity-config', () => ({
-  getAntigravityConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
+  getAntigravityConfig: vi.fn(async () => ({
+    mcpServers: [],
+    agents: [],
+    skills: [],
+    commands: [],
+  })),
 }));
 
 vi.mock('../config-watcher', () => ({
@@ -33,7 +38,11 @@ vi.mock('../config-watcher', () => ({
 
 vi.mock('../antigravity-hooks', () => ({
   installAntigravityHooks: vi.fn(),
-  validateAntigravityHooks: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
+  validateAntigravityHooks: vi.fn(() => ({
+    statusLine: 'calder',
+    hooks: 'complete',
+    hookDetails: {},
+  })),
   cleanupAntigravityHooks: vi.fn(),
   SESSION_ID_VAR: 'CALDER_SESSION_ID',
 }));
@@ -42,9 +51,13 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 
 import { getAntigravityConfig } from '../antigravity-config';
-import { cleanupAntigravityHooks,installAntigravityHooks, validateAntigravityHooks } from '../antigravity-hooks';
+import {
+  cleanupAntigravityHooks,
+  installAntigravityHooks,
+  validateAntigravityHooks,
+} from '../antigravity-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { _resetCachedPath,AntigravityProvider } from './antigravity-provider';
+import { _resetCachedPath, AntigravityProvider } from './antigravity-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -110,7 +123,9 @@ describe('resolveBinaryPath', () => {
 
   it('falls back to bare "antigravity" when both candidate and which fail', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     expect(provider.resolveBinaryPath()).toBe('antigravity');
   });
 
@@ -140,7 +155,9 @@ describe('validatePrerequisites', () => {
 
   it('returns not ok when binary not found anywhere', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Antigravity CLI not found');
@@ -184,17 +201,30 @@ describe('buildArgs', () => {
   });
 
   it('splits extraArgs on whitespace and appends', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '--model gemini-2.5-flash  --sandbox' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '--model gemini-2.5-flash  --sandbox',
+    });
     expect(args).toEqual(['--model', 'gemini-2.5-flash', '--sandbox']);
   });
 
   it('combines resume args and extra args', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '--model gemini-2.5-flash' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: true,
+      extraArgs: '--model gemini-2.5-flash',
+    });
     expect(args).toEqual(['--conversation', 'sid-1', '--model', 'gemini-2.5-flash']);
   });
 
   it('appends -i flag when initialPrompt is provided', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '', initialPrompt: 'Fix the hooks config' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'Fix the hooks config',
+    });
     expect(args).toEqual(['-i', 'Fix the hooks config']);
   });
 
@@ -237,7 +267,14 @@ describe('hooks integration', () => {
 
 describe('other methods', () => {
   it('getConfig delegates to antigravity config reader', async () => {
-    const config = { mcpServers: [{ name: 'a', url: 'b', status: 'configured', scope: 'user' as const, filePath: '/x' }], agents: [], skills: [], commands: [] };
+    const config = {
+      mcpServers: [
+        { name: 'a', url: 'b', status: 'configured', scope: 'user' as const, filePath: '/x' },
+      ],
+      agents: [],
+      skills: [],
+      commands: [],
+    };
     mockGetAntigravityConfig.mockResolvedValueOnce(config);
     await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
     expect(mockGetAntigravityConfig).toHaveBeenCalledWith('/some/path');
@@ -279,7 +316,8 @@ describe('getTranscriptPath', () => {
     mockReaddirSync.mockImplementation((dir: any) => {
       const target = String(dir);
       if (target === tmpRoot) return ['project-a', 'project-b'] as any;
-      if (target === chatsDir) return ['session-1000-12345678.json', 'session-2000-12345678.json'] as any;
+      if (target === chatsDir)
+        return ['session-1000-12345678.json', 'session-2000-12345678.json'] as any;
       return [] as any;
     });
     mockReadFileSync.mockImplementation((file: any) => {
@@ -309,7 +347,8 @@ describe('getTranscriptPath', () => {
     mockReaddirSync.mockImplementation((dir: any) => {
       const target = String(dir);
       if (target === tmpRoot) return ['project-b'] as any;
-      if (target === chatsDir) return ['session-1000-abcdef12.json', 'session-2000-abcdef12.json'] as any;
+      if (target === chatsDir)
+        return ['session-1000-abcdef12.json', 'session-2000-abcdef12.json'] as any;
       return [] as any;
     });
     mockReadFileSync.mockImplementation((file: any) => {

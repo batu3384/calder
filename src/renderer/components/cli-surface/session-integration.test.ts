@@ -28,8 +28,18 @@ describe('cli surface session integration', () => {
     viewportText: 'Settings',
     appliedContext: {
       sources: [
-        { id: 'claude:memory:/tmp/demo/CLAUDE.md', provider: 'claude', displayName: 'CLAUDE.md', kind: 'memory' },
-        { id: 'shared:rules:/tmp/demo/.calder/rules/testing.hard.md', provider: 'shared', displayName: 'testing.hard.md', kind: 'rules' },
+        {
+          id: 'claude:memory:/tmp/demo/CLAUDE.md',
+          provider: 'claude',
+          displayName: 'CLAUDE.md',
+          kind: 'memory',
+        },
+        {
+          id: 'shared:rules:/tmp/demo/.calder/rules/testing.hard.md',
+          provider: 'shared',
+          displayName: 'testing.hard.md',
+          kind: 'rules',
+        },
       ],
       sharedRuleCount: 1,
       providerContextSummary: 'CLAUDE.md',
@@ -51,7 +61,10 @@ describe('cli surface session integration', () => {
       'project-1',
       expect.stringContaining('Selection: exact line'),
     );
-    expect(deliverSurfacePrompt).toHaveBeenCalledWith('project-1', expect.stringContaining('Theme: midnight'));
+    expect(deliverSurfacePrompt).toHaveBeenCalledWith(
+      'project-1',
+      expect.stringContaining('Theme: midnight'),
+    );
     expect(deliverSurfacePrompt).not.toHaveBeenCalledWith(
       'project-1',
       expect.stringContaining('Visible terminal viewport:'),

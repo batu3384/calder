@@ -1,8 +1,6 @@
 import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
-import {
-  setComposerPosition as setComposerPositionBehavior,
-} from './composer-position.js';
+import { setComposerPosition as setComposerPositionBehavior } from './composer-position.js';
 import { selectionFromViewport } from './inspect-geometry.js';
 import { openInspect } from './inspect-mode.js';
 import {
@@ -16,7 +14,7 @@ import {
   sendCliSelectionToNewSession,
   sendCliSelectionToSelectedSession,
 } from './session-integration.js';
-import { type CliTargetMenuController,createCliTargetMenuController } from './target-menu.js';
+import { type CliTargetMenuController, createCliTargetMenuController } from './target-menu.js';
 
 type CliSurfaceApi = {
   start(projectId: string, profile: unknown): Promise<void>;
@@ -59,7 +57,10 @@ interface CliSurfaceActionHelpers {
 interface CliSurfaceRuntimeHandlerOptions {
   projectId: string;
   context: CliSurfaceActionContext;
-  controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>;
+  controls: Pick<
+    CliSurfaceLayoutElements,
+    'startButton' | 'stopButton' | 'restartButton' | 'captureButton'
+  >;
   resolveSelectedProfile(projectId: string): unknown;
   getCliSurfaceApi(): CliSurfaceApi | null | undefined;
   renderInspectState(): void;
@@ -120,7 +121,9 @@ export function createCliSurfaceTargetMenuControllerWithHandlers(
   });
 }
 
-export function bindCliSurfaceRuntimeActionHandlers(options: CliSurfaceRuntimeHandlerOptions): void {
+export function bindCliSurfaceRuntimeActionHandlers(
+  options: CliSurfaceRuntimeHandlerOptions,
+): void {
   const {
     projectId,
     context,
@@ -155,12 +158,10 @@ export function bindCliSurfaceRuntimeActionHandlers(options: CliSurfaceRuntimeHa
   });
 }
 
-export function bindCliSurfaceInspectActionHandlers(options: CliSurfaceInspectHandlerOptions): void {
-  const {
-    context,
-    openInspectComposer,
-    helpers,
-  } = options;
+export function bindCliSurfaceInspectActionHandlers(
+  options: CliSurfaceInspectHandlerOptions,
+): void {
+  const { context, openInspectComposer, helpers } = options;
   bindInspectActionHandlersModule({
     instance: context as any,
     closeInspectComposer: () => helpers.closeInspectComposer(),
@@ -185,7 +186,9 @@ export function bindCliSurfaceInspectActionHandlers(options: CliSurfaceInspectHa
   });
 }
 
-export function bindCliSurfaceInspectPointerHandlers(options: CliSurfacePointerHandlerOptions): void {
+export function bindCliSurfaceInspectPointerHandlers(
+  options: CliSurfacePointerHandlerOptions,
+): void {
   const {
     context,
     renderInspectState,

@@ -1,4 +1,9 @@
-export type ProjectBackgroundTaskStatus = 'queued' | 'running' | 'blocked' | 'completed' | 'cancelled';
+export type ProjectBackgroundTaskStatus =
+  | 'queued'
+  | 'running'
+  | 'blocked'
+  | 'completed'
+  | 'cancelled';
 
 export interface ProjectBackgroundTaskSource {
   id: string;

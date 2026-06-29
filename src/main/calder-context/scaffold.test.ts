@@ -47,8 +47,16 @@ describe('createProjectContextStarterFiles', () => {
   it('does not overwrite files that already exist', async () => {
     const root = makeProject('context-scaffold-existing');
     await mkdir(dirname(join(root, '.calder/rules/testing.hard.md')), { recursive: true });
-    await writeFile(join(root, 'CALDER.shared.md'), '# Existing shared rules\nKeep this file.\n', 'utf8');
-    await writeFile(join(root, '.calder/rules/testing.hard.md'), '# Existing testing\nDo not overwrite.\n', 'utf8');
+    await writeFile(
+      join(root, 'CALDER.shared.md'),
+      '# Existing shared rules\nKeep this file.\n',
+      'utf8',
+    );
+    await writeFile(
+      join(root, '.calder/rules/testing.hard.md'),
+      '# Existing testing\nDo not overwrite.\n',
+      'utf8',
+    );
 
     const result = await createProjectContextStarterFiles(root);
 
@@ -56,12 +64,11 @@ describe('createProjectContextStarterFiles', () => {
       '.calder/rules/boundaries.soft.md',
       '.calder/rules/handoff.soft.md',
     ]);
-    expect(result.skipped).toEqual([
-      'CALDER.shared.md',
-      '.calder/rules/testing.hard.md',
-    ]);
+    expect(result.skipped).toEqual(['CALDER.shared.md', '.calder/rules/testing.hard.md']);
     expect(readFileSync(join(root, 'CALDER.shared.md'), 'utf8')).toContain('Existing shared rules');
-    expect(readFileSync(join(root, '.calder/rules/testing.hard.md'), 'utf8')).toContain('Do not overwrite');
+    expect(readFileSync(join(root, '.calder/rules/testing.hard.md'), 'utf8')).toContain(
+      'Do not overwrite',
+    );
   });
 });
 
@@ -74,20 +81,28 @@ describe('createProjectContextRuleFile', () => {
     expect(result.created).toBe(true);
     expect(result.relativePath).toBe('.calder/rules/review-checklist.hard.md');
     expect(existsSync(join(root, '.calder/rules/review-checklist.hard.md'))).toBe(true);
-    expect(readFileSync(join(root, '.calder/rules/review-checklist.hard.md'), 'utf8')).toContain('# Review Checklist');
+    expect(readFileSync(join(root, '.calder/rules/review-checklist.hard.md'), 'utf8')).toContain(
+      '# Review Checklist',
+    );
     expect(result.state.sharedRuleCount).toBe(1);
   });
 
   it('does not overwrite an existing shared rule file', async () => {
     const root = makeProject('context-create-rule-existing');
     await mkdir(dirname(join(root, '.calder/rules/review-checklist.hard.md')), { recursive: true });
-    await writeFile(join(root, '.calder/rules/review-checklist.hard.md'), '# Existing Review Checklist\nKeep me.\n', 'utf8');
+    await writeFile(
+      join(root, '.calder/rules/review-checklist.hard.md'),
+      '# Existing Review Checklist\nKeep me.\n',
+      'utf8',
+    );
 
     const result = await createProjectContextRuleFile(root, 'Review Checklist', 'hard');
 
     expect(result.created).toBe(false);
     expect(result.relativePath).toBe('.calder/rules/review-checklist.hard.md');
-    expect(readFileSync(join(root, '.calder/rules/review-checklist.hard.md'), 'utf8')).toContain('Keep me.');
+    expect(readFileSync(join(root, '.calder/rules/review-checklist.hard.md'), 'utf8')).toContain(
+      'Keep me.',
+    );
   });
 });
 
@@ -111,8 +126,12 @@ describe('renameProjectContextRuleFile', () => {
     expect(result.renamed).toBe(true);
     expect(result.relativePath).toBe('.calder/rules/verification-rules.soft.md');
     expect(existsSync(join(root, '.calder/rules/testing.hard.md'))).toBe(false);
-    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain('# Verification Rules');
-    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain('Keep the rest of this file.');
+    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain(
+      '# Verification Rules',
+    );
+    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain(
+      'Keep the rest of this file.',
+    );
     expect(result.state.sharedRuleCount).toBe(1);
   });
 
@@ -120,7 +139,11 @@ describe('renameProjectContextRuleFile', () => {
     const root = makeProject('context-rename-rule-existing');
     await mkdir(dirname(join(root, '.calder/rules/testing.hard.md')), { recursive: true });
     await writeFile(join(root, '.calder/rules/testing.hard.md'), '# Testing\nOriginal.\n', 'utf8');
-    await writeFile(join(root, '.calder/rules/verification-rules.soft.md'), '# Verification Rules\nKeep me.\n', 'utf8');
+    await writeFile(
+      join(root, '.calder/rules/verification-rules.soft.md'),
+      '# Verification Rules\nKeep me.\n',
+      'utf8',
+    );
 
     const result = await renameProjectContextRuleFile(
       root,
@@ -131,8 +154,12 @@ describe('renameProjectContextRuleFile', () => {
 
     expect(result.renamed).toBe(false);
     expect(result.relativePath).toBe('.calder/rules/verification-rules.soft.md');
-    expect(readFileSync(join(root, '.calder/rules/testing.hard.md'), 'utf8')).toContain('Original.');
-    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain('Keep me.');
+    expect(readFileSync(join(root, '.calder/rules/testing.hard.md'), 'utf8')).toContain(
+      'Original.',
+    );
+    expect(readFileSync(join(root, '.calder/rules/verification-rules.soft.md'), 'utf8')).toContain(
+      'Keep me.',
+    );
   });
 });
 

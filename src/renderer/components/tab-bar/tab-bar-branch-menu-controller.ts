@@ -27,7 +27,8 @@ export interface TabBarBranchMenuController {
 function constrainMenuToViewport(menu: HTMLElement): void {
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  if (rect.bottom > window.innerHeight)
+    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
 }
 
 function createBranchMenu(gitStatusEl: HTMLElement): HTMLDivElement {
@@ -49,10 +50,16 @@ function createBranchMenu(gitStatusEl: HTMLElement): HTMLDivElement {
   return menu;
 }
 
-async function switchBranch(gitPath: string, branchName: string, refreshGitStatus: () => void): Promise<void> {
+async function switchBranch(
+  gitPath: string,
+  branchName: string,
+  refreshGitStatus: () => void,
+): Promise<void> {
   const project = appState.activeProject;
   const freshStatus = project ? getGitStatus(project.id) : null;
-  const dirty = freshStatus ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted : 0;
+  const dirty = freshStatus
+    ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted
+    : 0;
   if (dirty > 0) {
     const confirmed = confirm(`You have uncommitted changes. Switch to "${branchName}" anyway?`);
     if (!confirmed) return;
@@ -67,26 +74,31 @@ async function switchBranch(gitPath: string, branchName: string, refreshGitStatu
 }
 
 function promptCreateBranch(gitPath: string, refreshGitStatus: () => void): void {
-  showModal('Create New Branch', [
-    { label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' },
-  ], async (values) => {
-    const name = values['branch-name']?.trim();
-    if (!name) {
-      setModalError('branch-name', 'Branch name is required');
-      return;
-    }
-    if (/\s/.test(name)) {
-      setModalError('branch-name', 'Branch name cannot contain spaces');
-      return;
-    }
-    try {
-      await window.calder.git.createBranch(gitPath, name);
-      closeModal();
-      refreshGitStatus();
-    } catch (err) {
-      setModalError('branch-name', err instanceof Error ? err.message : 'Failed to create branch');
-    }
-  });
+  showModal(
+    'Create New Branch',
+    [{ label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' }],
+    async (values) => {
+      const name = values['branch-name']?.trim();
+      if (!name) {
+        setModalError('branch-name', 'Branch name is required');
+        return;
+      }
+      if (/\s/.test(name)) {
+        setModalError('branch-name', 'Branch name cannot contain spaces');
+        return;
+      }
+      try {
+        await window.calder.git.createBranch(gitPath, name);
+        closeModal();
+        refreshGitStatus();
+      } catch (err) {
+        setModalError(
+          'branch-name',
+          err instanceof Error ? err.message : 'Failed to create branch',
+        );
+      }
+    },
+  );
 }
 
 function createShowBranchContextMenuHandler(
@@ -172,9 +184,10 @@ function createShowBranchContextMenuHandler(
         for (let index = 0; index < filteredBranches.length; index++) {
           const branch = filteredBranches[index];
           const item = document.createElement('div');
-          item.className = 'tab-context-menu-item'
-            + (branch.current ? ' active' : '')
-            + (index === activeIndex ? ' keyboard-active' : '');
+          item.className =
+            'tab-context-menu-item' +
+            (branch.current ? ' active' : '') +
+            (index === activeIndex ? ' keyboard-active' : '');
           item.textContent = (branch.current ? '\u2713 ' : '  ') + branch.name;
           item.setAttribute('role', 'menuitem');
           item.setAttribute('aria-disabled', branch.current ? 'true' : 'false');

@@ -51,7 +51,8 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   historyContextMenu = menu;
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  if (rect.bottom > window.innerHeight)
+    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
   applyTabContextMenuSemantics(menu, 'History actions', hideHistoryContextMenu);
 }
 
@@ -111,7 +112,9 @@ export function initSessionHistory(): void {
   appState.on('preferences-changed', () => applyHistoryVisibility());
   if (typeof document.addEventListener === 'function') {
     document.addEventListener('click', hideHistoryContextMenu);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideHistoryContextMenu(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideHistoryContextMenu();
+    });
   }
 }
 
@@ -150,7 +153,8 @@ function render(): void {
   const history = project ? appState.getSessionHistory(project.id) : [];
   const presentation = getSectionPresentation();
   const detailExpanded = isDetailExpanded(presentation);
-  const showCompactSummary = (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
+  const showCompactSummary =
+    (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
 
   if (!project) {
     container.innerHTML = '';
@@ -200,11 +204,12 @@ function render(): void {
     const summary = document.createElement('div');
     summary.className = 'history-compact-summary ops-rail-note';
     summary.dataset.tone = history.length === 0 ? 'muted' : 'default';
-    summary.textContent = history.length === 0
-      ? localizedText('No run history yet', 'Henüz çalışma geçmişi yok')
-      : history.length === 1
-        ? localizedText('1 recent run', '1 son çalışma')
-        : localizedText(`${history.length} recent runs`, `${history.length} son çalışma`);
+    summary.textContent =
+      history.length === 0
+        ? localizedText('No run history yet', 'Henüz çalışma geçmişi yok')
+        : history.length === 1
+          ? localizedText('1 recent run', '1 son çalışma')
+          : localizedText(`${history.length} recent runs`, `${history.length} son çalışma`);
     body.appendChild(summary);
     container.appendChild(body);
     return;
@@ -258,10 +263,15 @@ function render(): void {
   clearBtn.ariaLabel = localizedText('Clear run history', 'Çalışma geçmişini temizle');
   clearBtn.addEventListener('click', () => {
     if (!project) return;
-    if (!confirm(localizedText(
-      'Clear all session history for this project? This cannot be undone.',
-      'Bu projenin tüm oturum geçmişi temizlensin mi? Bu işlem geri alınamaz.',
-    ))) return;
+    if (
+      !confirm(
+        localizedText(
+          'Clear all session history for this project? This cannot be undone.',
+          'Bu projenin tüm oturum geçmişi temizlensin mi? Bu işlem geri alınamaz.',
+        ),
+      )
+    )
+      return;
     appState.clearSessionHistory(project.id);
   });
 
@@ -293,9 +303,10 @@ function renderList(history: ArchivedSession[]): void {
     .reverse(); // newest first
   if (resultCountEl) {
     resultCountEl.textContent = `${Math.min(filtered.length, MAX_VISIBLE)}/${history.length}`;
-    resultCountEl.title = filtered.length === 1
-      ? localizedText('1 matching run', '1 eşleşen çalışma')
-      : localizedText(`${filtered.length} matching runs`, `${filtered.length} eşleşen çalışma`);
+    resultCountEl.title =
+      filtered.length === 1
+        ? localizedText('1 matching run', '1 eşleşen çalışma')
+        : localizedText(`${filtered.length} matching runs`, `${filtered.length} eşleşen çalışma`);
   }
 
   listEl.innerHTML = '';

@@ -3,18 +3,32 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'), 'utf8');
-const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'), 'utf8');
-const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
-const teamContextSource = readFileSync(
-  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-team-context-discovery.ts'),
+const modalPrimarySource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'),
   'utf8',
 );
-const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
+const modalSectionsSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'),
+  'utf8',
+);
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
+const teamContextSource = readFileSync(
+  path.join(
+    process.cwd(),
+    'src/renderer/components/preferences/preferences-team-context-discovery.ts',
+  ),
+  'utf8',
+);
+const styles = readFileSync(
+  path.join(process.cwd(), 'src/renderer/styles/preferences.css'),
+  'utf8',
+);
 
 describe('project team context preferences contract', () => {
   it('surfaces shared team context inside the safety section', () => {
-    expect(modalSource).toContain("import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';");
+    expect(modalSource).toContain(
+      "import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';",
+    );
     expect(modalSource).toContain('renderProjectTeamContextSection({');
     expect(modalSource).toContain('container: memoryGroup');
     expect(modalSource).toContain('onRefreshProviders: rerenderSafety');

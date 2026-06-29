@@ -21,7 +21,10 @@ function renderPreviewDiscoveryEmpty(shell: HTMLElement, message: string): void 
   shell.appendChild(empty);
 }
 
-function createPreviewDiscoveryActions(projectId: string, onCloseModalWide: () => void): HTMLDivElement {
+function createPreviewDiscoveryActions(
+  projectId: string,
+  onCloseModalWide: () => void,
+): HTMLDivElement {
   const actions = document.createElement('div');
   actions.className = 'preview-discovery-actions';
 
@@ -69,7 +72,11 @@ function createPreviewDiscoveryActions(projectId: string, onCloseModalWide: () =
 function createPreviewSummary(project: ProjectRecord): HTMLDivElement {
   const surface = project.surface;
   const activeSurfaceLabel =
-    surface?.kind === 'cli' ? 'CLI Surface' : surface?.kind === 'mobile' ? 'Mobile Surface' : 'Live View';
+    surface?.kind === 'cli'
+      ? 'CLI Surface'
+      : surface?.kind === 'mobile'
+        ? 'Mobile Surface'
+        : 'Live View';
   const runtimeHealth = describePreviewRuntimeHealth(project.id);
 
   const summary = document.createElement('div');
@@ -217,7 +224,9 @@ function loadPreviewTargets(
     });
 }
 
-export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCenterSectionArgs): void {
+export function renderProjectPreviewCenterSection(
+  args: RenderProjectPreviewCenterSectionArgs,
+): void {
   const card = args.appendSectionCard(
     args.container,
     'Preview center',
@@ -229,7 +238,10 @@ export function renderProjectPreviewCenterSection(args: RenderProjectPreviewCent
   card.appendChild(shell);
 
   if (!args.project) {
-    renderPreviewDiscoveryEmpty(shell, 'Open a project to inspect local preview targets and connect them to Live View.');
+    renderPreviewDiscoveryEmpty(
+      shell,
+      'Open a project to inspect local preview targets and connect them to Live View.',
+    );
     return;
   }
   const project = args.project;

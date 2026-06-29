@@ -4,9 +4,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import type { FsReadFileResult } from '../shared/types/fs-read';
-import { setFileWatcherWindow,unwatchFile as unwatchFileForChanges, watchFile as watchFileForChanges } from './file-watcher';
+import {
+  setFileWatcherWindow,
+  unwatchFile as unwatchFileForChanges,
+  watchFile as watchFileForChanges,
+} from './file-watcher';
 import { expandUserPath } from './fs-utils';
-import { loadState, type PersistedState,saveState } from './store';
+import { loadState, type PersistedState, saveState } from './store';
 
 /** Maximum file size for fs:readFile (10 MiB). */
 export const FS_READ_FILE_MAX_BYTES = 10 * 1024 * 1024;
@@ -50,7 +54,12 @@ export function registerFsStoreIpcHandlers(policy: FsStorePolicy): void {
       }
       const entries = fs.readdirSync(resolved, { withFileTypes: true });
       return entries
-        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.') && (!lowerPrefix || entry.name.toLowerCase().startsWith(lowerPrefix)))
+        .filter(
+          (entry) =>
+            entry.isDirectory() &&
+            !entry.name.startsWith('.') &&
+            (!lowerPrefix || entry.name.toLowerCase().startsWith(lowerPrefix)),
+        )
         .map((entry) => path.join(resolved, entry.name))
         .sort((a, b) => a.localeCompare(b))
         .slice(0, 20);
@@ -86,7 +95,15 @@ export function registerFsStoreIpcHandlers(policy: FsStorePolicy): void {
       } catch {
         // Not a git repo — fallback to recursive readdir with depth limit
         files = [];
-        const IGNORE = new Set(['node_modules', '.git', 'dist', 'build', 'coverage', '.next', '__pycache__']);
+        const IGNORE = new Set([
+          'node_modules',
+          '.git',
+          'dist',
+          'build',
+          'coverage',
+          '.next',
+          '__pycache__',
+        ]);
         const MAX_DEPTH = 5;
         const MAX_FILES = 5000;
         function walk(dir: string, depth: number): void {
@@ -138,7 +155,11 @@ export function registerFsStoreIpcHandlers(policy: FsStorePolicy): void {
       const resolved = path.resolve(filePath);
       if (!policy.isAllowedReadPath(resolved)) {
         console.warn(`fs:readFile blocked: ${resolved} is not within an allowed path`);
-        return { ok: false, reason: 'blocked', message: 'Path is not within an allowed read location' };
+        return {
+          ok: false,
+          reason: 'blocked',
+          message: 'Path is not within an allowed read location',
+        };
       }
       let size = 0;
       try {
@@ -154,7 +175,11 @@ export function registerFsStoreIpcHandlers(policy: FsStorePolicy): void {
         console.warn(
           `fs:readFile blocked: ${resolved} exceeds ${FS_READ_FILE_MAX_BYTES} bytes (${size})`,
         );
-        return { ok: false, reason: 'too-large', message: `File exceeds ${FS_READ_FILE_MAX_BYTES} bytes` };
+        return {
+          ok: false,
+          reason: 'too-large',
+          message: `File exceeds ${FS_READ_FILE_MAX_BYTES} bytes`,
+        };
       }
       return { ok: true, content: fs.readFileSync(resolved, 'utf-8') };
     } catch (error) {

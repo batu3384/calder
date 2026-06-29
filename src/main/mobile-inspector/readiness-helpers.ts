@@ -1,8 +1,6 @@
 import { spawn } from 'child_process';
 
-import type {
-  MobileInspectLaunchResult,
-} from '../../shared/types/mobile';
+import type { MobileInspectLaunchResult } from '../../shared/types/mobile';
 import {
   choosePreferredIosDevice,
   isIosDeviceTransitionalState,
@@ -21,10 +19,7 @@ import {
   waitForIosDeviceToSettle,
 } from '../mobile-inspector-simulator-helpers';
 import { getFullPath } from '../pty-manager';
-import {
-  type AndroidCommandSet,
-  resolveAndroidCommandSet,
-} from './android-command-helpers';
+import { type AndroidCommandSet, resolveAndroidCommandSet } from './android-command-helpers';
 
 const IOS_BOOT_TIMEOUT_MS = 120_000;
 const IOS_BOOTED_READY_TIMEOUT_MS = 45_000;
@@ -54,7 +49,8 @@ export async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResu
     return {
       platform: 'ios',
       success: false,
-      message: 'No iOS simulator device is available. Install a simulator runtime from Xcode first.',
+      message:
+        'No iOS simulator device is available. Install a simulator runtime from Xcode first.',
     };
   }
 
@@ -64,7 +60,11 @@ export async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResu
   const targetDevice = settleResult ?? device;
 
   if (targetDevice.state === 'Booted') {
-    const bootStatusResult = await runCommand('xcrun', ['simctl', 'bootstatus', targetDevice.udid, '-b'], IOS_BOOTED_READY_TIMEOUT_MS);
+    const bootStatusResult = await runCommand(
+      'xcrun',
+      ['simctl', 'bootstatus', targetDevice.udid, '-b'],
+      IOS_BOOTED_READY_TIMEOUT_MS,
+    );
     if (bootStatusResult.code !== 0) {
       const merged = [bootStatusResult.stderr, bootStatusResult.stdout].filter(Boolean).join('\n');
       if (isRecoverableIosBootFailure(merged)) {
@@ -102,14 +102,19 @@ export async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResu
       const refreshedList = await runCommand('xcrun', ['simctl', 'list', 'devices', '--json']);
       if (refreshedList.code === 0) {
         const refreshedDevices = parseSimctlDevices(refreshedList.stdout).filter(
-          (entry: { isAvailable: boolean; udid: string }) => entry.isAvailable && entry.udid !== targetDevice.udid,
+          (entry: { isAvailable: boolean; udid: string }) =>
+            entry.isAvailable && entry.udid !== targetDevice.udid,
         );
         const fallback = choosePreferredIosDevice(refreshedDevices);
         if (fallback) {
           const retryBoot = await runCommand('xcrun', ['simctl', 'boot', fallback.udid], 30_000);
           const retryBootedByRace = /Booted|in current state: Booted/i.test(retryBoot.stderr);
           if (retryBoot.code === 0 || retryBootedByRace) {
-            const retryStatus = await runCommand('xcrun', ['simctl', 'bootstatus', fallback.udid, '-b'], IOS_BOOT_TIMEOUT_MS);
+            const retryStatus = await runCommand(
+              'xcrun',
+              ['simctl', 'bootstatus', fallback.udid, '-b'],
+              IOS_BOOT_TIMEOUT_MS,
+            );
             if (retryStatus.code === 0) {
               return {
                 platform: 'ios',
@@ -127,13 +132,19 @@ export async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResu
     return {
       platform: 'ios',
       success: false,
-      message: summarizeIosFailure(bootResult, `Failed to boot ${targetDevice.name}.`, { includeRecoveryHint: true }),
+      message: summarizeIosFailure(bootResult, `Failed to boot ${targetDevice.name}.`, {
+        includeRecoveryHint: true,
+      }),
       deviceId: targetDevice.udid,
       deviceName: targetDevice.name,
     };
   }
 
-  const bootStatusResult = await runCommand('xcrun', ['simctl', 'bootstatus', targetDevice.udid, '-b'], IOS_BOOT_TIMEOUT_MS);
+  const bootStatusResult = await runCommand(
+    'xcrun',
+    ['simctl', 'bootstatus', targetDevice.udid, '-b'],
+    IOS_BOOT_TIMEOUT_MS,
+  );
   if (bootStatusResult.code !== 0) {
     const merged = [bootStatusResult.stderr, bootStatusResult.stdout].filter(Boolean).join('\n');
     if (isRecoverableIosBootFailure(merged)) {
@@ -163,7 +174,9 @@ export async function ensureIosSimulatorReady(): Promise<MobileInspectLaunchResu
   };
 }
 
-export async function ensureAndroidEmulatorReady(commands?: AndroidCommandSet): Promise<MobileInspectLaunchResult> {
+export async function ensureAndroidEmulatorReady(
+  commands?: AndroidCommandSet,
+): Promise<MobileInspectLaunchResult> {
   const resolvedAndroid = commands ? { commands } : await resolveAndroidCommandSet();
   const resolvedCommands = resolvedAndroid.commands;
   if (!resolvedCommands) {
@@ -232,19 +245,15 @@ export async function ensureAndroidEmulatorReady(commands?: AndroidCommandSet): 
   }
 
   const avdName = avds[0];
-  const child = spawn(emulatorBinary, [
-    '-avd',
-    avdName,
-    '-no-window',
-    '-no-audio',
-    '-no-boot-anim',
-    '-gpu',
-    'swiftshader_indirect',
-  ], {
-    env: buildSpawnEnv(),
-    detached: true,
-    stdio: 'ignore',
-  });
+  const child = spawn(
+    emulatorBinary,
+    ['-avd', avdName, '-no-window', '-no-audio', '-no-boot-anim', '-gpu', 'swiftshader_indirect'],
+    {
+      env: buildSpawnEnv(),
+      detached: true,
+      stdio: 'ignore',
+    },
+  );
   child.unref();
 
   const startedAt = Date.now();

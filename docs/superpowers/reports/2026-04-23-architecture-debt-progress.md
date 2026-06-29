@@ -7,18 +7,21 @@ This slice continued desktop-first debt closure with behavior-preserving interna
 ## Changes Completed
 
 1. `hook-status` usage derivation extraction
+
 - Added `src/main/hooks/hook-status-derived-usage.ts`.
 - Moved derived usage/cost accumulation logic out of `src/main/hooks/hook-status.ts`.
 - Kept public API and IPC behavior unchanged.
 - Result: `src/main/hooks/hook-status.ts` reduced to `365` lines.
 
 2. Shared type coupling reduction (additional)
+
 - Updated `src/renderer/state.ts` to re-export domain types directly from:
   - `../shared/types/session.js`
   - `../shared/types/project.js`
 - Result: direct `shared/types.js` importer count reduced to `1` (`src/renderer/types.ts` only).
 
 3. `tab-bar` rail renderer extraction
+
 - Added `src/renderer/components/tab-bar/tab-bar-tab-list-renderer.ts`.
 - Moved session/surface tab-node assembly out of `tab-bar.ts`; kept `tab-bar.ts` as orchestrator.
 - Preserved source-contract assertions by adding explicit contract marker comments in `tab-bar.ts`.
@@ -50,10 +53,13 @@ This slice continued desktop-first debt closure with behavior-preserving interna
 ## Next Safe Priority Order
 
 1. `src/renderer/components/split-layout.ts`:
+
 - Extract pane composition helpers (`tab/swarm` composition) into dedicated module.
 
 2. `src/main/browser-bridge.ts`:
+
 - Extract request parsing + env composition helpers to isolate runtime bridge orchestration.
 
 3. `src/renderer/components/terminal-pane.ts`:
+
 - Extract spawn/retry overlay and prompt-delivery helpers into dedicated runtime helper module.

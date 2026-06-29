@@ -85,7 +85,8 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
 
   const subtitleEl = document.createElement('div');
   subtitleEl.className = 'browser-capture-subtitle';
-  subtitleEl.textContent = 'Click a page element to capture its selector and send a focused prompt.';
+  subtitleEl.textContent =
+    'Click a page element to capture its selector and send a focused prompt.';
 
   copy.appendChild(kicker);
   copy.appendChild(titleEl);
@@ -187,7 +188,8 @@ export function createDrawPanelElements(): BrowserDrawPanelElements {
 
   const subtitle = document.createElement('div');
   subtitle.className = 'browser-capture-subtitle';
-  subtitle.textContent = 'Sketch directly on the surface and send the annotated screenshot with your instructions.';
+  subtitle.textContent =
+    'Sketch directly on the surface and send the annotated screenshot with your instructions.';
 
   copy.appendChild(kicker);
   copy.appendChild(title);
@@ -291,7 +293,8 @@ export function createFlowPanelElements(): BrowserFlowPanelElements {
 
   const subtitle = document.createElement('div');
   subtitle.className = 'browser-capture-subtitle';
-  subtitle.textContent = 'Capture a short browser path and route it into an AI session as a reproducible handoff.';
+  subtitle.textContent =
+    'Capture a short browser path and route it into an AI session as a reproducible handoff.';
 
   copy.appendChild(kicker);
   copy.appendChild(labelEl);

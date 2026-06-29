@@ -12,12 +12,7 @@ import {
   createConnectHandler,
   createWebViewMessageHandler,
 } from './use-mobile-controller-session-bridge';
-import type {
-  ConnectionState,
-  LiveSessionItem,
-  MobileTab,
-  UiLanguage,
-} from './types';
+import type { ConnectionState, LiveSessionItem, MobileTab, UiLanguage } from './types';
 
 export function useMobileController() {
   const liveWebViewRef = useRef<WebViewRef | null>(null);
@@ -44,13 +39,14 @@ export function useMobileController() {
   const [bootstrapPayload, setBootstrapPayload] = useState<unknown>(null);
 
   const copy = COPY[language];
-  const statusText = connectionState === 'connected'
-    ? copy.connectedStatus
-    : connectionState === 'waiting'
-      ? copy.waitingStatus
-      : connectionState === 'error'
-        ? copy.errorStatus
-        : copy.idleStatus;
+  const statusText =
+    connectionState === 'connected'
+      ? copy.connectedStatus
+      : connectionState === 'waiting'
+        ? copy.waitingStatus
+        : connectionState === 'error'
+          ? copy.errorStatus
+          : copy.idleStatus;
 
   const bootstrapInjection = buildNativeBootstrapInjection(liveControlUrl, bootstrapPayload);
 

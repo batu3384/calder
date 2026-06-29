@@ -16,7 +16,13 @@ export async function captureAndroidScreenshot({
   deviceId,
   deviceName,
 }: AndroidScreenshotInput): Promise<MobileInspectScreenshotResult> {
-  const captureResult = await runBinaryCommand(adbBinary, ['-s', deviceId, 'exec-out', 'screencap', '-p']);
+  const captureResult = await runBinaryCommand(adbBinary, [
+    '-s',
+    deviceId,
+    'exec-out',
+    'screencap',
+    '-p',
+  ]);
   if (captureResult.code !== 0) {
     return {
       platform: 'android',

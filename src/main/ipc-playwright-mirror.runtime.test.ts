@@ -17,7 +17,11 @@ vi.mock('os', () => ({
 
 import { appendAutoApprovalAudit } from './ipc-playwright-mirror';
 
-function makeApprovalDecisionEvent(timestamp: number, decision: 'allow' | 'block', reason?: string): InspectorEvent {
+function makeApprovalDecisionEvent(
+  timestamp: number,
+  decision: 'allow' | 'block',
+  reason?: string,
+): InspectorEvent {
   return {
     type: 'approval_decision',
     timestamp,
@@ -52,9 +56,15 @@ describe('ipc playwright mirror runtime helpers', () => {
       } as InspectorEvent,
     ]);
 
-    expect(mockMkdirSync).toHaveBeenCalledWith('/tmp/test-home/.calder/runtime', { recursive: true });
+    expect(mockMkdirSync).toHaveBeenCalledWith('/tmp/test-home/.calder/runtime', {
+      recursive: true,
+    });
     expect(mockAppendFileSync).toHaveBeenCalledTimes(1);
-    const [auditPath, payload, encoding] = mockAppendFileSync.mock.calls[0] as [string, string, string];
+    const [auditPath, payload, encoding] = mockAppendFileSync.mock.calls[0] as [
+      string,
+      string,
+      string,
+    ];
     expect(auditPath).toBe('/tmp/test-home/.calder/runtime/session-1.auto_approval.log');
     expect(encoding).toBe('utf8');
     expect(payload).toContain('"type":"approval_decision"');
@@ -81,9 +91,9 @@ describe('ipc playwright mirror runtime helpers', () => {
       throw new Error('mkdir failed');
     });
 
-    expect(() => appendAutoApprovalAudit('session-3', [
-      makeApprovalDecisionEvent(5, 'block', 'denied'),
-    ])).not.toThrow();
+    expect(() =>
+      appendAutoApprovalAudit('session-3', [makeApprovalDecisionEvent(5, 'block', 'denied')]),
+    ).not.toThrow();
 
     expect(warnSpy).toHaveBeenCalled();
     warnSpy.mockRestore();

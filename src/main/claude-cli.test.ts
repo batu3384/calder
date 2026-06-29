@@ -22,10 +22,18 @@ vi.mock('./external-hook-policy', () => ({
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
-  statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > .status ${marker}`),
-  captureSessionIdCmd: vi.fn((_v: string, marker: string) => `capture-sessionid .sessionid ${marker}`),
-  captureToolFailureCmd: vi.fn((_v: string, marker: string) => `capture-toolfailure .toolfailure ${marker}`),
-  wrapPythonHookCmd: vi.fn((_name: string, _code: string, marker: string) => `capture-event .events ${marker}`),
+  statusCmd: vi.fn(
+    (e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > .status ${marker}`,
+  ),
+  captureSessionIdCmd: vi.fn(
+    (_v: string, marker: string) => `capture-sessionid .sessionid ${marker}`,
+  ),
+  captureToolFailureCmd: vi.fn(
+    (_v: string, marker: string) => `capture-toolfailure .toolfailure ${marker}`,
+  ),
+  wrapPythonHookCmd: vi.fn(
+    (_name: string, _code: string, marker: string) => `capture-event .events ${marker}`,
+  ),
   cleanupHookScripts: vi.fn(),
 }));
 
@@ -41,7 +49,9 @@ const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
 const mockLstatSync = vi.mocked(fs.lstatSync);
 const mockInstallEventScript = vi.mocked(hookCommands.installEventScript);
-const mockReaddirSyncAny = mockReaddirSync as unknown as { mockImplementation: (fn: (...args: any[]) => any) => void };
+const mockReaddirSyncAny = mockReaddirSync as unknown as {
+  mockImplementation: (fn: (...args: any[]) => any) => void;
+};
 
 // Normalize paths for cross-platform comparison
 const n = (p: string) => p.replace(/\\/g, '/');
@@ -49,8 +59,12 @@ const n = (p: string) => p.replace(/\\/g, '/');
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: all reads/dirs fail (empty state)
-  mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
-  mockReaddirSync.mockImplementation(() => { throw new Error('ENOENT'); });
+  mockReadFileSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
+  mockReaddirSync.mockImplementation(() => {
+    throw new Error('ENOENT');
+  });
   mockLstatSync.mockImplementation(() => ({ isSymbolicLink: () => false }) as fs.Stats);
 });
 
@@ -72,7 +86,13 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.mcpServers).toEqual([
-      { name: 'myServer', url: 'http://localhost:3000', status: 'configured', scope: 'user', filePath: path.join('/mock/home', '.claude', 'settings.json') },
+      {
+        name: 'myServer',
+        url: 'http://localhost:3000',
+        status: 'configured',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.claude', 'settings.json'),
+      },
     ]);
   });
 
@@ -88,7 +108,13 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.mcpServers).toEqual([
-      { name: 'projServer', url: 'npx server', status: 'configured', scope: 'project', filePath: path.join('/project', '.mcp.json') },
+      {
+        name: 'projServer',
+        url: 'npx server',
+        status: 'configured',
+        scope: 'project',
+        filePath: path.join('/project', '.mcp.json'),
+      },
     ]);
   });
 
@@ -126,7 +152,13 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.agents).toEqual([
-      { name: 'MyAgent', model: 'opus', category: 'plugin', scope: 'user', filePath: path.join('/mock/home', '.claude', 'agents', 'my-agent.md') },
+      {
+        name: 'MyAgent',
+        model: 'opus',
+        category: 'plugin',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.claude', 'agents', 'my-agent.md'),
+      },
     ]);
   });
 
@@ -169,8 +201,18 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.commands).toEqual([
-      { name: 'commit', description: 'Create a commit', scope: 'user', filePath: path.join('/mock/home', '.claude', 'commands', 'commit.md') },
-      { name: 'review', description: '', scope: 'user', filePath: path.join('/mock/home', '.claude', 'commands', 'review.md') },
+      {
+        name: 'commit',
+        description: 'Create a commit',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.claude', 'commands', 'commit.md'),
+      },
+      {
+        name: 'review',
+        description: '',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.claude', 'commands', 'review.md'),
+      },
     ]);
   });
 
@@ -190,7 +232,12 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.commands).toEqual([
-      { name: 'deploy', description: 'Deploy the app', scope: 'project', filePath: path.join('/project', '.claude', 'commands', 'deploy.md') },
+      {
+        name: 'deploy',
+        description: 'Deploy the app',
+        scope: 'project',
+        filePath: path.join('/project', '.claude', 'commands', 'deploy.md'),
+      },
     ]);
   });
 
@@ -234,7 +281,7 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.mcpServers).toContainEqual(
-      expect.objectContaining({ name: 'globalServer', url: 'http://global:3000', scope: 'user' })
+      expect.objectContaining({ name: 'globalServer', url: 'http://global:3000', scope: 'user' }),
     );
   });
 
@@ -254,7 +301,7 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.mcpServers).toContainEqual(
-      expect.objectContaining({ name: 'localServer', url: 'npx local', scope: 'project' })
+      expect.objectContaining({ name: 'localServer', url: 'npx local', scope: 'project' }),
     );
   });
 
@@ -271,7 +318,7 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.mcpServers).toContainEqual(
-      expect.objectContaining({ name: 'managedServer', url: 'http://managed:3000', scope: 'user' })
+      expect.objectContaining({ name: 'managedServer', url: 'http://managed:3000', scope: 'user' }),
     );
   });
 
@@ -302,7 +349,7 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.agents).toContainEqual(
-      expect.objectContaining({ name: 'PluginAgent', category: 'plugin', scope: 'user' })
+      expect.objectContaining({ name: 'PluginAgent', category: 'plugin', scope: 'user' }),
     );
   });
 
@@ -362,7 +409,12 @@ describe('getClaudeConfig', () => {
 
     const config = await getClaudeConfig('/project');
     expect(config.skills).toEqual([
-      { name: 'MySkill', description: 'Does stuff', scope: 'user', filePath: path.join('/mock/home', '.claude', 'skills', 'my-skill', 'SKILL.md') },
+      {
+        name: 'MySkill',
+        description: 'Does stuff',
+        scope: 'user',
+        filePath: path.join('/mock/home', '.claude', 'skills', 'my-skill', 'SKILL.md'),
+      },
     ]);
   });
 });
@@ -442,12 +494,19 @@ describe('installHooks', () => {
   });
 
   it('writes hooks to settings.json', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooks();
 
-    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), { recursive: true });
-    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.calder', 'runtime'), { recursive: true, mode: 0o700 });
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), {
+      recursive: true,
+    });
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.calder', 'runtime'), {
+      recursive: true,
+      mode: 0o700,
+    });
     // installHooks writes settings once, then creates the statusline helper pair,
     // then writes settings again with the managed command.
     expect(mockWriteFileSync).toHaveBeenCalledTimes(4);
@@ -461,22 +520,32 @@ describe('installHooks', () => {
     expect(written.hooks.PermissionRequest).toBeDefined();
     expect(written.hooks.SessionStart).toBeDefined();
 
-    expect(String(mockWriteFileSync.mock.calls[1][0])).toBe(path.join('/mock/home', '.calder', 'runtime', 'statusline.py'));
-    expect(String(mockWriteFileSync.mock.calls[2][0])).toBe(path.join('/mock/home', '.calder', 'runtime', statusLineScriptName));
+    expect(String(mockWriteFileSync.mock.calls[1][0])).toBe(
+      path.join('/mock/home', '.calder', 'runtime', 'statusline.py'),
+    );
+    expect(String(mockWriteFileSync.mock.calls[2][0])).toBe(
+      path.join('/mock/home', '.calder', 'runtime', statusLineScriptName),
+    );
 
     // Fourth write adds statusLine to Claude settings
     const withStatusLine = JSON.parse(String(mockWriteFileSync.mock.calls[3][1]));
     expect(withStatusLine.statusLine).toBeDefined();
     expect(withStatusLine.statusLine.type).toBe('command');
-    expect(withStatusLine.statusLine.command).toBe(path.join('/mock/home', '.calder', 'runtime', statusLineScriptName));
+    expect(withStatusLine.statusLine.command).toBe(
+      path.join('/mock/home', '.calder', 'runtime', statusLineScriptName),
+    );
   });
 
   it('writes only hooks when installHooksOnly is used directly', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooksOnly();
 
-    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), { recursive: true });
+    expect(mockMkdirSync).toHaveBeenCalledWith(path.join('/mock/home', '.claude'), {
+      recursive: true,
+    });
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
 
     const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]));
@@ -484,7 +553,9 @@ describe('installHooks', () => {
     expect(written.statusLine).toBeUndefined();
 
     expect(mockInstallEventScript).toHaveBeenCalledTimes(26);
-    const eventScripts = mockInstallEventScript.mock.calls.map(([scriptName]) => String(scriptName));
+    const eventScripts = mockInstallEventScript.mock.calls.map(([scriptName]) =>
+      String(scriptName),
+    );
     expect(eventScripts).toContain('claude_event_SessionStart.py');
     expect(eventScripts).toContain('claude_event_PostToolUse.py');
     expect(eventScripts).toContain('claude_event_PostToolUseFailure.py');
@@ -496,10 +567,12 @@ describe('installHooks', () => {
       if (n(String(filePath)) === '/mock/home/.claude/settings.json') {
         return JSON.stringify({
           hooks: {
-            UserPromptSubmit: [{
-              matcher: '',
-              hooks: [{ type: 'command', command: 'echo user-hook' }],
-            }],
+            UserPromptSubmit: [
+              {
+                matcher: '',
+                hooks: [{ type: 'command', command: 'echo user-hook' }],
+              },
+            ],
           },
         });
       }
@@ -513,7 +586,7 @@ describe('installHooks', () => {
     // Should have the existing user hook matcher + the new calder matcher
     expect(promptHooks.length).toBe(2);
     const userHook = promptHooks.find((m: { hooks: Array<{ command: string }> }) =>
-      m.hooks.some((h: { command: string }) => h.command === 'echo user-hook')
+      m.hooks.some((h: { command: string }) => h.command === 'echo user-hook'),
     );
     expect(userHook).toBeDefined();
   });
@@ -523,10 +596,12 @@ describe('installHooks', () => {
       if (n(String(filePath)) === '/mock/home/.claude/settings.json') {
         return JSON.stringify({
           hooks: {
-            Stop: [{
-              matcher: '',
-              hooks: [{ type: 'command', command: 'echo waiting # calder-hook' }],
-            }],
+            Stop: [
+              {
+                matcher: '',
+                hooks: [{ type: 'command', command: 'echo waiting # calder-hook' }],
+              },
+            ],
           },
         });
       }
@@ -538,15 +613,20 @@ describe('installHooks', () => {
     const written = JSON.parse(String(mockWriteFileSync.mock.calls[0][1]));
     // The old calder hook should be replaced, not duplicated
     const stopHooks = written.hooks.Stop;
-    const calderHookCount = stopHooks.reduce((count: number, m: { hooks: Array<{ command: string }> }) =>
-      count + m.hooks.filter((h: { command: string }) => h.command.includes('# calder-hook')).length, 0
+    const calderHookCount = stopHooks.reduce(
+      (count: number, m: { hooks: Array<{ command: string }> }) =>
+        count +
+        m.hooks.filter((h: { command: string }) => h.command.includes('# calder-hook')).length,
+      0,
     );
     // Should have exactly 2 calder hooks (status hook + inspector event capture hook)
     expect(calderHookCount).toBe(2);
   });
 
   it('installs all 26 hook events (7 core + 19 inspector-only)', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooks();
 
@@ -554,17 +634,39 @@ describe('installHooks', () => {
     const hookEvents = Object.keys(written.hooks);
 
     // Core 7 hooks
-    const coreEvents = ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'PostToolUseFailure', 'Stop', 'StopFailure', 'PermissionRequest'];
+    const coreEvents = [
+      'SessionStart',
+      'UserPromptSubmit',
+      'PostToolUse',
+      'PostToolUseFailure',
+      'Stop',
+      'StopFailure',
+      'PermissionRequest',
+    ];
     for (const event of coreEvents) {
       expect(hookEvents).toContain(event);
     }
 
     // Inspector-only 18 hooks
     const inspectorEvents = [
-      'PreToolUse', 'PermissionDenied', 'SubagentStart', 'SubagentStop', 'Notification',
-      'PreCompact', 'PostCompact', 'SessionEnd', 'TaskCreated', 'TaskCompleted',
-      'WorktreeCreate', 'WorktreeRemove', 'CwdChanged', 'FileChanged',
-      'ConfigChange', 'Elicitation', 'ElicitationResult', 'InstructionsLoaded',
+      'PreToolUse',
+      'PermissionDenied',
+      'SubagentStart',
+      'SubagentStop',
+      'Notification',
+      'PreCompact',
+      'PostCompact',
+      'SessionEnd',
+      'TaskCreated',
+      'TaskCompleted',
+      'WorktreeCreate',
+      'WorktreeRemove',
+      'CwdChanged',
+      'FileChanged',
+      'ConfigChange',
+      'Elicitation',
+      'ElicitationResult',
+      'InstructionsLoaded',
       'TeammateIdle',
     ];
     for (const event of inspectorEvents) {
@@ -582,18 +684,18 @@ describe('installHooks', () => {
     }
 
     // PostToolUseFailure should include dedicated tool failure capture
-    const failureHooks = written.hooks.PostToolUseFailure
-      .flatMap((m: { hooks: Array<{ command: string }> }) => m.hooks);
-    expect(failureHooks.some((h: { command: string }) =>
-      h.command.includes('.toolfailure')
-    )).toBe(true);
+    const failureHooks = written.hooks.PostToolUseFailure.flatMap(
+      (m: { hooks: Array<{ command: string }> }) => m.hooks,
+    );
+    expect(failureHooks.some((h: { command: string }) => h.command.includes('.toolfailure'))).toBe(
+      true,
+    );
 
     // PostToolUse event cmd should include event capture
-    const toolUseHooks = written.hooks.PostToolUse
-      .flatMap((m: { hooks: Array<{ command: string }> }) => m.hooks);
-    expect(toolUseHooks.some((h: { command: string }) =>
-      h.command.includes('.events')
-    )).toBe(true);
+    const toolUseHooks = written.hooks.PostToolUse.flatMap(
+      (m: { hooks: Array<{ command: string }> }) => m.hooks,
+    );
+    expect(toolUseHooks.some((h: { command: string }) => h.command.includes('.events'))).toBe(true);
 
     // Inspector-only hooks should have only event logger (no status writer)
     for (const event of inspectorEvents) {
@@ -605,11 +707,15 @@ describe('installHooks', () => {
   });
 
   it('generates PreToolUse hook script with subagent launch tracking and web-search guards', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooks();
 
-    const preToolUseScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_PreToolUse.py');
+    const preToolUseScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'claude_event_PreToolUse.py',
+    );
     expect(preToolUseScript).toBeDefined();
     const py = String(preToolUseScript![1]);
     expect(py).toContain('def _mark_subagent_launch_started');
@@ -626,13 +732,21 @@ describe('installHooks', () => {
   });
 
   it('generates SubagentStart/Stop and SessionEnd scripts with provider_sync state writes', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooks();
 
-    const startScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SubagentStart.py');
-    const stopScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SubagentStop.py');
-    const endScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_SessionEnd.py');
+    const startScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'claude_event_SubagentStart.py',
+    );
+    const stopScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'claude_event_SubagentStop.py',
+    );
+    const endScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'claude_event_SessionEnd.py',
+    );
     expect(startScript).toBeDefined();
     expect(stopScript).toBeDefined();
     expect(endScript).toBeDefined();
@@ -650,16 +764,26 @@ describe('installHooks', () => {
   });
 
   it('generates context snapshot logic that prefers current_usage input+cache totals', () => {
-    mockReadFileSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
 
     installHooks();
 
-    const postToolUseScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'claude_event_PostToolUse.py');
+    const postToolUseScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'claude_event_PostToolUse.py',
+    );
     expect(postToolUseScript).toBeDefined();
 
     const py = String(postToolUseScript![1]);
-    expect(py).toContain('cu=cw.get("current_usage") if isinstance(cw.get("current_usage"),dict) else None');
-    expect(py).toContain('tt=(cu.get("input_tokens",0) or 0)+(cu.get("cache_creation_input_tokens",0) or 0)+(cu.get("cache_read_input_tokens",0) or 0)');
-    expect(py).toContain('tt=(cw.get("total_input_tokens",0) or 0)+(cw.get("total_output_tokens",0) or 0)');
+    expect(py).toContain(
+      'cu=cw.get("current_usage") if isinstance(cw.get("current_usage"),dict) else None',
+    );
+    expect(py).toContain(
+      'tt=(cu.get("input_tokens",0) or 0)+(cu.get("cache_creation_input_tokens",0) or 0)+(cu.get("cache_read_input_tokens",0) or 0)',
+    );
+    expect(py).toContain(
+      'tt=(cw.get("total_input_tokens",0) or 0)+(cw.get("total_output_tokens",0) or 0)',
+    );
   });
 });

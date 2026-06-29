@@ -29,8 +29,14 @@ describe('classifyAutoApprovalOperation', () => {
     [{ tool: 'Bash', command: 'git show HEAD~1' }, 'safe_tool'],
     [{ tool: 'Bash', command: 'git diff -- src/main.ts' }, 'safe_tool'],
     [{ tool: 'Bash', command: 'rg "needle" src' }, 'safe_tool'],
-    [{ tool: 'Bash', command: 'find src -type f -name "*.tsx" | xargs -I {} basename {} | sort' }, 'safe_tool'],
-    [{ tool: 'Bash', command: 'find ~/.claude/projects -type f -name "*.md" | head -20' }, 'safe_tool'],
+    [
+      { tool: 'Bash', command: 'find src -type f -name "*.tsx" | xargs -I {} basename {} | sort' },
+      'safe_tool',
+    ],
+    [
+      { tool: 'Bash', command: 'find ~/.claude/projects -type f -name "*.md" | head -20' },
+      'safe_tool',
+    ],
   ] as const)('classifies read-only bash commands as safe_tool: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
@@ -87,14 +93,12 @@ describe('classifyAutoApprovalOperation', () => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
 
-  it.each([
-    [undefined],
-    [null],
-    [{}],
-    [{ tool: 'Bash' }],
-  ] as const)('returns unknown for missing data: %j', (input) => {
-    expect(classifyAutoApprovalOperation(input)).toBe('unknown');
-  });
+  it.each([[undefined], [null], [{}], [{ tool: 'Bash' }]] as const)(
+    'returns unknown for missing data: %j',
+    (input) => {
+      expect(classifyAutoApprovalOperation(input)).toBe('unknown');
+    },
+  );
 });
 
 describe('decideAutoApprovalAction', () => {

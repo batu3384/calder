@@ -27,7 +27,8 @@ interface PtyInstance {
 
 const ptys = new Map<string, PtyInstance>();
 const silencedExits = new Set<string>();
-const RESUME_SESSION_MISSING_PATTERN = /no\s+conversation\s+found\s+with\s+session\s+id|session(?:\s+id)?[\s\S]{0,160}?not\s+found/i;
+const RESUME_SESSION_MISSING_PATTERN =
+  /no\s+conversation\s+found\s+with\s+session\s+id|session(?:\s+id)?[\s\S]{0,160}?not\s+found/i;
 
 export function spawnPty(
   sessionId: string,
@@ -38,7 +39,7 @@ export function spawnPty(
   providerId: ProviderId,
   initialPrompt: string | undefined,
   onData: (data: string) => void,
-  onExit: (exitCode: number, signal?: number) => void
+  onExit: (exitCode: number, signal?: number) => void,
 ): void {
   const sessionIdResult = sanitizeSessionId(sessionId);
   if (!sessionIdResult.ok) {
@@ -95,14 +96,16 @@ export function spawnPty(
     ptyProcess.onData((data) => {
       onData(data);
       if (
-        !attemptedResumeFallback
-        && attemptIsResume
-        && !!attemptCliSessionId
-        && RESUME_SESSION_MISSING_PATTERN.test(data)
+        !attemptedResumeFallback &&
+        attemptIsResume &&
+        !!attemptCliSessionId &&
+        RESUME_SESSION_MISSING_PATTERN.test(data)
       ) {
         attemptedResumeFallback = true;
         shouldRetryWithoutResume = true;
-        onData('\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n');
+        onData(
+          '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
+        );
         ptyProcess.kill();
       }
     });
@@ -153,7 +156,10 @@ export function spawnCommandPty(
     throw new Error(`Invalid CLI surface command: ${commandResult.error}`);
   }
 
-  const baseEnv = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
+  const baseEnv = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<
+    string,
+    string
+  >;
   const env = buildBrowserBridgeEnv(launch.cwd, baseEnv);
   const sanitizedArgs = launch.args ? sanitizeArgs(launch.args) : [];
   const ptyProcess = pty.spawn(commandResult.command, sanitizedArgs, {
@@ -281,7 +287,7 @@ export function spawnShellPty(
   sessionId: string,
   cwd: string,
   onData: (data: string) => void,
-  onExit: (exitCode: number, signal?: number) => void
+  onExit: (exitCode: number, signal?: number) => void,
 ): void {
   const sessionIdResult = sanitizeSessionId(sessionId);
   if (!sessionIdResult.ok) {
@@ -292,9 +298,7 @@ export function spawnShellPty(
     killPty(sessionId);
   }
 
-  const shell = isWin
-    ? (process.env.COMSPEC || 'cmd.exe')
-    : (process.env.SHELL || '/bin/zsh');
+  const shell = isWin ? process.env.COMSPEC || 'cmd.exe' : process.env.SHELL || '/bin/zsh';
   const shellEnv = buildBrowserBridgeEnv(cwd, { ...process.env, PATH: getFullPath() });
   const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-256color',
@@ -361,7 +365,7 @@ export function getPtyCwd(sessionId: string): Promise<string | null> {
             }
           }
           resolve(null);
-        }
+        },
       );
     });
   });
@@ -374,23 +378,22 @@ function getPtyCwdWindows(_pid: number): Promise<string | null> {
 }
 
 function findDeepestChild(pid: number, callback: (deepestPid: number) => void): void {
-  execFile(
-    'pgrep',
-    ['-P', String(pid)],
-    { timeout: 3000 },
-    (err, stdout) => {
-      if (err || !stdout.trim()) {
-        // No children — this is the deepest
-        callback(pid);
-        return;
-      }
-      const children = stdout.trim().split('\n').map(s => parseInt(s, 10)).filter(n => !isNaN(n));
-      if (children.length === 0) {
-        callback(pid);
-        return;
-      }
-      // Recurse into the last child (most recent)
-      findDeepestChild(children[children.length - 1], callback);
+  execFile('pgrep', ['-P', String(pid)], { timeout: 3000 }, (err, stdout) => {
+    if (err || !stdout.trim()) {
+      // No children — this is the deepest
+      callback(pid);
+      return;
     }
-  );
+    const children = stdout
+      .trim()
+      .split('\n')
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !isNaN(n));
+    if (children.length === 0) {
+      callback(pid);
+      return;
+    }
+    // Recurse into the last child (most recent)
+    findDeepestChild(children[children.length - 1], callback);
+  });
 }

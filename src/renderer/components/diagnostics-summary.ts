@@ -48,17 +48,27 @@ function localized(language: UiLanguage, english: string, turkish: string): stri
   return language === 'tr' ? turkish : english;
 }
 
-function pickCliSession(project: ProjectRecord | undefined, activeSession: SessionRecord | undefined): SessionRecord | undefined {
+function pickCliSession(
+  project: ProjectRecord | undefined,
+  activeSession: SessionRecord | undefined,
+): SessionRecord | undefined {
   if (activeSession && !activeSession.type) return activeSession;
   return [...(project?.sessions ?? [])].reverse().find((session) => !session.type);
 }
 
-function summarizeGitStatus(status: GitStatus | undefined, language: UiLanguage): DiagnosticsSummaryCard {
+function summarizeGitStatus(
+  status: GitStatus | undefined,
+  language: UiLanguage,
+): DiagnosticsSummaryCard {
   if (!status || !status.isGitRepo) {
     return {
       label: localized(language, 'Git', 'Git'),
       value: localized(language, 'Not detected', 'Algılanmadı'),
-      detail: localized(language, 'No worktree signal for this project yet.', 'Bu proje için henüz worktree sinyali yok.'),
+      detail: localized(
+        language,
+        'No worktree signal for this project yet.',
+        'Bu proje için henüz worktree sinyali yok.',
+      ),
       tone: 'default',
     };
   }
@@ -66,7 +76,11 @@ function summarizeGitStatus(status: GitStatus | undefined, language: UiLanguage)
     return {
       label: localized(language, 'Git', 'Git'),
       value: localized(language, 'Conflicts', 'Çakışma'),
-      detail: localized(language, `${status.conflicted} conflicted file(s).`, `${status.conflicted} çakışmalı dosya.`),
+      detail: localized(
+        language,
+        `${status.conflicted} conflicted file(s).`,
+        `${status.conflicted} çakışmalı dosya.`,
+      ),
       tone: 'warning',
     };
   }
@@ -75,14 +89,22 @@ function summarizeGitStatus(status: GitStatus | undefined, language: UiLanguage)
     return {
       label: localized(language, 'Git', 'Git'),
       value: localized(language, 'Changed', 'Değişiklik var'),
-      detail: localized(language, `${changed} file(s) need attention.`, `${changed} dosya dikkat istiyor.`),
+      detail: localized(
+        language,
+        `${changed} file(s) need attention.`,
+        `${changed} dosya dikkat istiyor.`,
+      ),
       tone: 'active',
     };
   }
   return {
     label: localized(language, 'Git', 'Git'),
     value: localized(language, 'Clean', 'Temiz'),
-    detail: localized(language, status.branch ? `On ${status.branch}.` : 'Worktree is clean.', status.branch ? `${status.branch} dalında.` : 'Worktree temiz.'),
+    detail: localized(
+      language,
+      status.branch ? `On ${status.branch}.` : 'Worktree is clean.',
+      status.branch ? `${status.branch} dalında.` : 'Worktree temiz.',
+    ),
     tone: 'default',
   };
 }
@@ -96,7 +118,11 @@ function summarizeProviderRoute(
     return {
       label: localized(language, 'Route', 'Rota'),
       value: localized(language, 'No CLI', 'CLI yok'),
-      detail: localized(language, 'Open a CLI session to see model routing.', 'Model rotasını görmek için bir CLI oturumu aç.'),
+      detail: localized(
+        language,
+        'Open a CLI session to see model routing.',
+        'Model rotasını görmek için bir CLI oturumu aç.',
+      ),
       tone: 'default',
     };
   }
@@ -121,20 +147,33 @@ function summarizeProviderRoute(
   const isGateway = route.routeKind === 'gateway';
   return {
     label: localized(language, 'Route', 'Rota'),
-    value: isGateway ? localized(language, 'Gateway', 'Gateway') : localized(language, 'Native', 'Yerel'),
+    value: isGateway
+      ? localized(language, 'Gateway', 'Gateway')
+      : localized(language, 'Native', 'Yerel'),
     detail: isGateway
-      ? localized(language, `${displayName} -> ${backendLabel} · ${model}`, `${displayName} -> ${backendLabel} · ${model}`)
+      ? localized(
+          language,
+          `${displayName} -> ${backendLabel} · ${model}`,
+          `${displayName} -> ${backendLabel} · ${model}`,
+        )
       : localized(language, `${displayName} native · ${model}`, `${displayName} yerel · ${model}`),
     tone: isGateway ? 'active' : 'default',
   };
 }
 
-function summarizeTracking(session: SessionRecord | undefined, language: UiLanguage): DiagnosticsSummaryCard {
+function summarizeTracking(
+  session: SessionRecord | undefined,
+  language: UiLanguage,
+): DiagnosticsSummaryCard {
   if (!session) {
     return {
       label: localized(language, 'Tracking', 'İzleme'),
       value: localized(language, 'Idle', 'Boşta'),
-      detail: localized(language, 'No active CLI telemetry yet.', 'Henüz aktif CLI telemetrisi yok.'),
+      detail: localized(
+        language,
+        'No active CLI telemetry yet.',
+        'Henüz aktif CLI telemetrisi yok.',
+      ),
       tone: 'default',
     };
   }
@@ -144,7 +183,11 @@ function summarizeTracking(session: SessionRecord | undefined, language: UiLangu
     return {
       label: localized(language, 'Tracking', 'İzleme'),
       value: localized(language, 'Live', 'Canlı'),
-      detail: localized(language, `Cost + context at ${Math.round(session.contextWindow?.usedPercentage ?? 0)}%.`, `Maliyet + bağlam %${Math.round(session.contextWindow?.usedPercentage ?? 0)}.`),
+      detail: localized(
+        language,
+        `Cost + context at ${Math.round(session.contextWindow?.usedPercentage ?? 0)}%.`,
+        `Maliyet + bağlam %${Math.round(session.contextWindow?.usedPercentage ?? 0)}.`,
+      ),
       tone: 'default',
     };
   }
@@ -152,25 +195,40 @@ function summarizeTracking(session: SessionRecord | undefined, language: UiLangu
     return {
       label: localized(language, 'Tracking', 'İzleme'),
       value: localized(language, 'Partial', 'Kısmi'),
-      detail: localized(language, hasCost ? 'Cost is visible; context is pending.' : 'Context is visible; cost is pending.', hasCost ? 'Maliyet görünüyor; bağlam bekleniyor.' : 'Bağlam görünüyor; maliyet bekleniyor.'),
+      detail: localized(
+        language,
+        hasCost ? 'Cost is visible; context is pending.' : 'Context is visible; cost is pending.',
+        hasCost ? 'Maliyet görünüyor; bağlam bekleniyor.' : 'Bağlam görünüyor; maliyet bekleniyor.',
+      ),
       tone: 'active',
     };
   }
   return {
     label: localized(language, 'Tracking', 'İzleme'),
     value: localized(language, 'Limited', 'Sınırlı'),
-    detail: localized(language, 'Waiting for statusline telemetry.', 'Statusline telemetrisi bekleniyor.'),
+    detail: localized(
+      language,
+      'Waiting for statusline telemetry.',
+      'Statusline telemetrisi bekleniyor.',
+    ),
     tone: 'active',
   };
 }
 
-function summarizeAutoApproval(project: ProjectRecord | undefined, language: UiLanguage): DiagnosticsSummaryCard {
+function summarizeAutoApproval(
+  project: ProjectRecord | undefined,
+  language: UiLanguage,
+): DiagnosticsSummaryCard {
   const mode = project?.projectGovernance?.autoApproval?.effectiveMode;
   if (!mode) {
     return {
       label: localized(language, 'Approval', 'Onay'),
       value: localized(language, 'Unset', 'Ayarsız'),
-      detail: localized(language, 'Fallback policy will ask before actions.', 'Yedek politika işlemlerden önce sorar.'),
+      detail: localized(
+        language,
+        'Fallback policy will ask before actions.',
+        'Yedek politika işlemlerden önce sorar.',
+      ),
       tone: 'default',
     };
   }
@@ -179,7 +237,11 @@ function summarizeAutoApproval(project: ProjectRecord | undefined, language: UiL
     return {
       label: localized(language, 'Approval', 'Onay'),
       value: label,
-      detail: localized(language, 'Destructive actions can be auto-approved.', 'Yıkıcı işlemler otomatik onaylanabilir.'),
+      detail: localized(
+        language,
+        'Destructive actions can be auto-approved.',
+        'Yıkıcı işlemler otomatik onaylanabilir.',
+      ),
       tone: 'warning',
     };
   }
@@ -194,7 +256,11 @@ function summarizeAutoApproval(project: ProjectRecord | undefined, language: UiL
   return {
     label: localized(language, 'Approval', 'Onay'),
     value: label,
-    detail: localized(language, 'Risky actions still require confirmation.', 'Riskli işlemler hâlâ onay ister.'),
+    detail: localized(
+      language,
+      'Risky actions still require confirmation.',
+      'Riskli işlemler hâlâ onay ister.',
+    ),
     tone: 'default',
   };
 }
@@ -205,7 +271,9 @@ function strongestTone(cards: DiagnosticsSummaryCard[]): DiagnosticsTone {
   return 'default';
 }
 
-export function buildDiagnosticsSummaryModel(input: DiagnosticsSummaryInput): DiagnosticsSummaryModel {
+export function buildDiagnosticsSummaryModel(
+  input: DiagnosticsSummaryInput,
+): DiagnosticsSummaryModel {
   const { project, activeSession, gitStatus, language, providerLabel } = input;
   const cliSession = pickCliSession(project, activeSession);
   const cards = [
@@ -216,7 +284,11 @@ export function buildDiagnosticsSummaryModel(input: DiagnosticsSummaryInput): Di
   ];
   return {
     title: localized(language, 'Workspace Trust', 'Çalışma Güveni'),
-    subtitle: localized(language, 'Route, telemetry, approvals, and git risk at a glance.', 'Rota, telemetri, onay ve git riskini tek bakışta gösterir.'),
+    subtitle: localized(
+      language,
+      'Route, telemetry, approvals, and git risk at a glance.',
+      'Rota, telemetri, onay ve git riskini tek bakışta gösterir.',
+    ),
     tone: strongestTone(cards),
     cards,
   };

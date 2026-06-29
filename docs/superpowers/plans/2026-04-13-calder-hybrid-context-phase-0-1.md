@@ -70,6 +70,7 @@ It does not include workflows, checkpoints, background agents, or governance con
 ## Task 1: Extend Shared Contracts
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/shared/types.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/shared/project-context.contract.test.ts`
 
@@ -81,10 +82,7 @@ Add a new test file with assertions for:
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const source = readFileSync(
-  new URL('../../shared/types.ts', import.meta.url),
-  'utf8',
-);
+const source = readFileSync(new URL('../../shared/types.ts', import.meta.url), 'utf8');
 
 describe('project context contracts', () => {
   it('defines a discovered context source model', () => {
@@ -150,6 +148,7 @@ Expected: PASS
 ## Task 2: Build Project Context Discovery
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/discovery.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/discovery.test.ts`
 
@@ -204,6 +203,7 @@ Expected: PASS
 ## Task 3: Add Context Watcher And IPC
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/watcher.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/watcher.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`
@@ -255,6 +255,7 @@ Expected: PASS
 ## Task 4: Wire Renderer State To Project Context
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.project-context.test.ts`
 
@@ -297,6 +298,7 @@ Expected: PASS
 ## Task 5: Add Read-Only Context Visibility In The UI
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-inspector.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-inspector.contract.test.ts`
@@ -347,6 +349,7 @@ Expected: PASS
 ## Task 6: Add Shared Rules Support
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/discovery.ts`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/main/calder-context/discovery.test.ts`
 
@@ -390,6 +393,7 @@ Expected: PASS
 ## Task 7: Apply Compact Context In Browser And CLI Routing
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/session-integration.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/session-integration.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/applied-context.contract.test.ts`
@@ -436,6 +440,7 @@ Expected: PASS
 ## Task 8: Add Starter File Scaffolding
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
@@ -484,6 +489,7 @@ Expected: PASS
 ## Task 9: Align README With Shipped Reality
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/README.md`
 - Test: `/Users/batuhanyuksel/Documents/browser/src/main/readme-product-truth.contract.test.ts`
 
@@ -526,6 +532,7 @@ Expected: PASS
 ## Task 10: Final Verification
 
 **Files:**
+
 - Verify all files touched above
 
 - [ ] **Step 1: Run targeted tests**

@@ -24,8 +24,19 @@ export type ShareBrowserControlAction =
 
 // Protocol messages sent over the WebRTC data channel.
 export type ShareMessage =
-  | { type: 'init'; scrollback: string; mode: ShareMode; cols: number; rows: number; sessionName: string }
-  | { type: 'session-catalog'; activeSessionId: string; sessions: Array<{ id: string; name: string }> }
+  | {
+      type: 'init';
+      scrollback: string;
+      mode: ShareMode;
+      cols: number;
+      rows: number;
+      sessionName: string;
+    }
+  | {
+      type: 'session-catalog';
+      activeSessionId: string;
+      sessions: Array<{ id: string; name: string }>;
+    }
   | {
       type: 'session-switch-result';
       ok: boolean;
@@ -41,7 +52,12 @@ export type ShareMessage =
   | { type: 'session-switch'; sessionId: string }
   | { type: 'session-catalog-request' }
   | { type: 'browser-state-request' }
-  | { type: 'browser-control'; action: ShareBrowserControlAction; sessionId?: string; viewportLabel?: string }
+  | {
+      type: 'browser-control';
+      action: ShareBrowserControlAction;
+      sessionId?: string;
+      viewportLabel?: string;
+    }
   | {
       type: 'browser-state';
       activeBrowserSessionId: string;

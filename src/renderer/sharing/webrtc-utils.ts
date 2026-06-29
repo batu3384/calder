@@ -1,11 +1,9 @@
 // Shared WebRTC utilities for P2P session sharing.
 
 import type { ShareIceServer, ShareMessage, ShareRtcConfig } from '../../shared/sharing-types.js';
-import { decryptPayload,encryptPayload } from './share-crypto.js';
+import { decryptPayload, encryptPayload } from './share-crypto.js';
 
-const DEFAULT_ICE_SERVERS: ShareIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-];
+const DEFAULT_ICE_SERVERS: ShareIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 
 interface EncodedConnectionEnvelopeV2 {
   v: 2;
@@ -72,11 +70,11 @@ export function buildRtcConfiguration(
 
 function getDescriptionFromPayload(payload: unknown): DecodedConnectionEnvelope {
   if (
-    payload
-    && typeof payload === 'object'
-    && 'v' in payload
-    && (payload as Record<string, unknown>).v === 2
-    && 'description' in payload
+    payload &&
+    typeof payload === 'object' &&
+    'v' in payload &&
+    (payload as Record<string, unknown>).v === 2 &&
+    'description' in payload
   ) {
     const envelope = payload as EncodedConnectionEnvelopeV2;
     return {
@@ -137,10 +135,10 @@ export async function decodeConnectionEnvelope(
   const desc = parsedEnvelope.description;
 
   if (
-    typeof desc !== 'object'
-    || desc === null
-    || typeof desc.type !== 'string'
-    || typeof desc.sdp !== 'string'
+    typeof desc !== 'object' ||
+    desc === null ||
+    typeof desc.type !== 'string' ||
+    typeof desc.sdp !== 'string'
   ) {
     throw new Error('Invalid connection code: missing required fields');
   }
@@ -155,7 +153,9 @@ export async function decodeConnectionEnvelope(
 
   return {
     description: desc,
-    rtcConfig: parsedEnvelope.rtcConfig ? normalizeShareRtcConfig(parsedEnvelope.rtcConfig) : undefined,
+    rtcConfig: parsedEnvelope.rtcConfig
+      ? normalizeShareRtcConfig(parsedEnvelope.rtcConfig)
+      : undefined,
   };
 }
 

@@ -30,7 +30,8 @@ function extractCommand(cmd: string): string {
   return parts[0] || '';
 }
 
-const NOT_FOUND_RE = /command not found|:\s*not found(?!\s*\(HTTP\b)|status code 127|exit code 127/i;
+const NOT_FOUND_RE =
+  /command not found|:\s*not found(?!\s*\(HTTP\b)|status code 127|exit code 127/i;
 const PERMISSION_DENIED_RE = /permission denied|status code 126|exit code 126/i;
 
 export function classifyError(error: string, tool: ToolInfo): FailureReason {
@@ -38,7 +39,7 @@ export function classifyError(error: string, tool: ToolInfo): FailureReason {
   if (PERMISSION_DENIED_RE.test(error)) return 'permission-denied';
   if (tool.authPatterns && tool.authPatterns.length > 0) {
     const lower = error.toLowerCase();
-    if (tool.authPatterns.some(p => lower.includes(p))) return 'auth-required';
+    if (tool.authPatterns.some((p) => lower.includes(p))) return 'auth-required';
   }
   return 'other';
 }
@@ -47,9 +48,8 @@ export function handleToolFailure(sessionId: string, data: ToolFailureData): voi
   if (!appState.preferences.insightsEnabled) return;
   if (data.tool_name !== 'Bash') return;
 
-  const command = typeof data.tool_input?.command === 'string'
-    ? extractCommand(data.tool_input.command)
-    : '';
+  const command =
+    typeof data.tool_input?.command === 'string' ? extractCommand(data.tool_input.command) : '';
   if (!command) return;
 
   const tool = findTool(command);
@@ -66,12 +66,16 @@ export function handleToolFailure(sessionId: string, data: ToolFailureData): voi
   }
   if (alerted.has(dedupKey)) return;
 
-  const project = appState.projects.find(p => p.sessions.some(s => s.id === sessionId));
+  const project = appState.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
   if (!project) return;
 
   const insightId = `tool-issue:${command}:${reason}`;
   const legacyId = `missing-tool:${command}`;
-  if (appState.isInsightDismissed(project.id, insightId) || appState.isInsightDismissed(project.id, legacyId)) return;
+  if (
+    appState.isInsightDismissed(project.id, insightId) ||
+    appState.isInsightDismissed(project.id, legacyId)
+  )
+    return;
 
   alerted.add(dedupKey);
 

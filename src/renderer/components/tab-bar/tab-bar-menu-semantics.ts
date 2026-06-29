@@ -7,14 +7,12 @@ export function applyTabContextMenuSemantics(
   menu.setAttribute('role', 'menu');
   menu.setAttribute('aria-label', label);
 
-  const isInteractive = (item: HTMLElement): boolean => (
-    !item.classList.contains('disabled')
-    && !item.classList.contains('active')
-    && item.getAttribute('aria-disabled') !== 'true'
-  );
-  const getEnabledItems = (): HTMLElement[] => Array
-    .from(menu.querySelectorAll<HTMLElement>('.tab-context-menu-item'))
-    .filter(isInteractive);
+  const isInteractive = (item: HTMLElement): boolean =>
+    !item.classList.contains('disabled') &&
+    !item.classList.contains('active') &&
+    item.getAttribute('aria-disabled') !== 'true';
+  const getEnabledItems = (): HTMLElement[] =>
+    Array.from(menu.querySelectorAll<HTMLElement>('.tab-context-menu-item')).filter(isInteractive);
 
   for (const item of menu.querySelectorAll<HTMLElement>('.tab-context-menu-item')) {
     const interactive = isInteractive(item);
@@ -42,10 +40,11 @@ export function applyTabContextMenuSemantics(
 
     const target = event.target as HTMLElement | null;
     if (
-      target instanceof HTMLInputElement
-      || target instanceof HTMLTextAreaElement
-      || target instanceof HTMLSelectElement
-    ) return;
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
+    )
+      return;
 
     const enabledItems = getEnabledItems();
     if (enabledItems.length === 0) return;

@@ -19,7 +19,11 @@ export async function inspectAndroidPoint({
   point,
 }: AndroidInspectInput): Promise<MobileInspectPointInspectionResult> {
   const dumpPath = '/sdcard/calder-window-dump.xml';
-  const dumpResult = await runCommand(adbBinary, ['-s', deviceId, 'shell', 'uiautomator', 'dump', dumpPath], 30_000);
+  const dumpResult = await runCommand(
+    adbBinary,
+    ['-s', deviceId, 'shell', 'uiautomator', 'dump', dumpPath],
+    30_000,
+  );
   if (dumpResult.code !== 0) {
     return {
       platform: 'android',
@@ -31,7 +35,11 @@ export async function inspectAndroidPoint({
     };
   }
 
-  const readResult = await runCommand(adbBinary, ['-s', deviceId, 'shell', 'cat', dumpPath], 30_000);
+  const readResult = await runCommand(
+    adbBinary,
+    ['-s', deviceId, 'shell', 'cat', dumpPath],
+    30_000,
+  );
   if (readResult.code !== 0 || !readResult.stdout.trim()) {
     return {
       platform: 'android',

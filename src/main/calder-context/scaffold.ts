@@ -1,7 +1,12 @@
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult } from '../../shared/types/project-context.js';
+import type {
+  ProjectContextCreateRuleResult,
+  ProjectContextDeleteRuleResult,
+  ProjectContextRenameRuleResult,
+  ProjectContextStarterFilesResult,
+} from '../../shared/types/project-context.js';
 import { discoverProjectContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
@@ -44,7 +49,11 @@ const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
 ];
 const RULES_DIR_PREFIX = '.calder/rules/';
 
-async function writeStarterFile(rootPath: string, relativePath: string, contents: string): Promise<'created' | 'skipped'> {
+async function writeStarterFile(
+  rootPath: string,
+  relativePath: string,
+  contents: string,
+): Promise<'created' | 'skipped'> {
   const fullPath = path.join(rootPath, relativePath);
 
   try {
@@ -68,9 +77,10 @@ function slugifyRuleTitle(title: string): string {
 
 function buildSharedRuleContents(title: string, priority: 'hard' | 'soft'): string {
   const heading = title.trim();
-  const toneLine = priority === 'hard'
-    ? '- Treat this as a non-negotiable project rule.'
-    : '- Treat this as a preferred project guideline unless the task requires otherwise.';
+  const toneLine =
+    priority === 'hard'
+      ? '- Treat this as a non-negotiable project rule.'
+      : '- Treat this as a preferred project guideline unless the task requires otherwise.';
   return `# ${heading}
 
 ${toneLine}
@@ -81,7 +91,11 @@ ${toneLine}
 
 function normalizeRuleRelativePath(relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  if (!normalized.startsWith(RULES_DIR_PREFIX) || !normalized.endsWith('.md') || normalized.includes('..')) {
+  if (
+    !normalized.startsWith(RULES_DIR_PREFIX) ||
+    !normalized.endsWith('.md') ||
+    normalized.includes('..')
+  ) {
     throw new Error('Only shared rule files inside .calder/rules are supported');
   }
   return normalized;
@@ -103,7 +117,9 @@ function replaceRuleHeading(contents: string, title: string): string {
   return `${heading}\n\n${contents.trim()}\n`;
 }
 
-export async function createProjectContextStarterFiles(projectPath: string): Promise<ProjectContextStarterFilesResult> {
+export async function createProjectContextStarterFiles(
+  projectPath: string,
+): Promise<ProjectContextStarterFilesResult> {
   const created: string[] = [];
   const skipped: string[] = [];
 

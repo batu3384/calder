@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const shareDialogSource = readFileSync(new URL('./share-dialog.ts', import.meta.url), 'utf-8');
-const shareDialogCopySource = readFileSync(new URL('./share-dialog-copy.ts', import.meta.url), 'utf-8');
+const shareDialogCopySource = readFileSync(
+  new URL('./share-dialog-copy.ts', import.meta.url),
+  'utf-8',
+);
 const shareDialogFlowControllerSource = readFileSync(
   new URL('./share-dialog-flow-controller.ts', import.meta.url),
   'utf-8',

@@ -45,7 +45,12 @@ body {
     radial-gradient(circle at 18% -12%, rgba(102, 231, 223, 0.045), transparent 34%),
     radial-gradient(circle at 80% -12%, rgba(213, 175, 105, 0.04), transparent 30%),
     linear-gradient(180deg, #070d14 0%, var(--studio-canvas) 100%);
-  background-size: 42px 42px, 42px 42px, auto, auto, auto;
+  background-size:
+    42px 42px,
+    42px 42px,
+    auto,
+    auto,
+    auto;
 }
 
 #workspace-shell.workspace-shell-surface {
@@ -63,8 +68,7 @@ body {
   background:
     radial-gradient(circle at 48px 42px, rgba(102, 231, 223, 0.12), transparent 118px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent 34%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 42%),
-    rgba(6, 12, 19, 0.975);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018), transparent 42%), rgba(6, 12, 19, 0.975);
   box-shadow:
     inset -1px 0 0 rgba(255, 255, 255, 0.018),
     14px 0 34px rgba(0, 0, 0, 0.14);
@@ -114,7 +118,12 @@ body {
   height: 8px;
   bottom: 3px;
   opacity: 0.62;
-  background: radial-gradient(circle, rgba(102, 231, 223, 0.24), rgba(0, 0, 0, 0.04) 70%, transparent);
+  background: radial-gradient(
+    circle,
+    rgba(102, 231, 223, 0.24),
+    rgba(0, 0, 0, 0.04) 70%,
+    transparent
+  );
 }
 
 #sidebar-brand-stage .sidebar-mascot-shell {
@@ -128,8 +137,7 @@ body {
   transition:
     filter var(--motion-fast) var(--ease-standard),
     transform var(--motion-fast) var(--ease-standard);
-  filter:
-    drop-shadow(0 14px 20px rgba(0, 0, 0, 0.4))
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.4))
     drop-shadow(0 0 16px rgba(102, 231, 223, 0.13));
   transform-origin: 50% 84%;
 }
@@ -150,15 +158,19 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.92), rgba(102, 231, 223, 0.72) 42%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.92),
+    rgba(102, 231, 223, 0.72) 42%,
+    transparent 72%
+  );
   box-shadow: 0 0 14px rgba(102, 231, 223, 0.54);
   opacity: 0.58;
   transform: scale(0.9);
 }
 
 #sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-mascot-shell {
-  filter:
-    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.44))
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.44))
     drop-shadow(0 0 21px rgba(102, 231, 223, 0.18));
 }
 
@@ -172,10 +184,7 @@ body {
   margin: 0;
   object-fit: contain;
   image-rendering: auto;
-  filter:
-    saturate(1.18)
-    contrast(1.07)
-    brightness(1.07)
+  filter: saturate(1.18) contrast(1.07) brightness(1.07)
     drop-shadow(0 8px 14px rgba(5, 18, 44, 0.4));
 }
 
@@ -213,8 +222,8 @@ body {
 #sidebar-header .sidebar-header-primary {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "title toggle"
-    "actions actions";
+    'title toggle'
+    'actions actions';
   align-items: center;
   gap: 7px;
 }
@@ -232,8 +241,7 @@ body {
   border-radius: 999px;
   border-color: var(--studio-line-soft);
   background:
-    linear-gradient(90deg, rgba(102, 231, 223, 0.052), transparent 62%),
-    rgba(255, 255, 255, 0.022);
+    linear-gradient(90deg, rgba(102, 231, 223, 0.052), transparent 62%), rgba(255, 255, 255, 0.022);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
@@ -274,7 +282,13 @@ body {
   scrollbar-color: color-mix(in srgb, var(--studio-cyan) 26%, var(--studio-line)) transparent;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  mask-image: linear-gradient(to bottom, transparent 0, black 12px, black calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black 12px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
 }
 
 #sidebar-content::-webkit-scrollbar {
@@ -288,14 +302,12 @@ body {
 #sidebar-content::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(102, 231, 223, 0.36), rgba(102, 231, 223, 0.14))
+  background: linear-gradient(180deg, rgba(102, 231, 223, 0.36), rgba(102, 231, 223, 0.14))
     padding-box;
 }
 
 #sidebar-content::-webkit-scrollbar-thumb:hover {
-  background:
-    linear-gradient(180deg, rgba(102, 231, 223, 0.5), rgba(213, 175, 105, 0.18))
+  background: linear-gradient(180deg, rgba(102, 231, 223, 0.5), rgba(213, 175, 105, 0.18))
     padding-box;
 }
 
@@ -336,8 +348,7 @@ body {
 .project-item:hover {
   border-color: var(--studio-line-soft);
   background:
-    linear-gradient(90deg, rgba(102, 231, 223, 0.072), transparent 74%),
-    rgba(255, 255, 255, 0.022);
+    linear-gradient(90deg, rgba(102, 231, 223, 0.072), transparent 74%), rgba(255, 255, 255, 0.022);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -345,8 +356,7 @@ body {
   border-color: color-mix(in srgb, var(--studio-cyan) 18%, var(--studio-line));
   background:
     linear-gradient(90deg, rgba(102, 231, 223, 0.11), transparent 76%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent),
-    rgba(255, 255, 255, 0.02);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent), rgba(255, 255, 255, 0.02);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 7px 18px rgba(0, 0, 0, 0.1);
@@ -402,7 +412,7 @@ body {
 
 #sidebar.collapsed #sidebar-header .sidebar-header-primary {
   grid-template-columns: 1fr;
-  grid-template-areas: "toggle";
+  grid-template-areas: 'toggle';
 }
 
 #sidebar.collapsed .sidebar-toggle-btn {
@@ -431,8 +441,7 @@ body {
   min-height: 54px;
   padding: 8px 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent),
-    rgba(7, 12, 18, 0.94);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent), rgba(7, 12, 18, 0.94);
   border-bottom-color: var(--studio-line);
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.016);
 }
@@ -458,8 +467,8 @@ body {
   #tab-bar {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "main actions"
-      "meta meta";
+      'main actions'
+      'meta meta';
     height: auto;
     min-height: 58px;
   }
@@ -481,8 +490,7 @@ body {
   border-left-color: var(--studio-line);
   background:
     radial-gradient(circle at 100% -4%, rgba(102, 231, 223, 0.088), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 36%),
-    rgba(7, 13, 20, 0.972);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 36%), rgba(7, 13, 20, 0.972);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.016),
     -12px 0 34px rgba(0, 0, 0, 0.14);
@@ -515,8 +523,7 @@ body {
   border: 1px solid var(--studio-line-soft);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
-    rgba(255, 255, 255, 0.022);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent), rgba(255, 255, 255, 0.022);
 }
 
 .context-inspector-tab {
@@ -584,8 +591,7 @@ body {
   border-color: color-mix(in srgb, var(--studio-line-soft) 86%, transparent);
   background:
     radial-gradient(circle at 100% -10%, rgba(102, 231, 223, 0.064), transparent 40%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
-    rgba(11, 18, 26, 0.58);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent), rgba(11, 18, 26, 0.58);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.032);
 }
 
@@ -684,8 +690,8 @@ body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
-      "nav primary"
-      "tools tools";
+      'nav primary'
+      'tools tools';
     align-items: center;
   }
 
@@ -729,9 +735,9 @@ body {
   .browser-tab-toolbar {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "nav"
-      "primary"
-      "tools";
+      'nav'
+      'primary'
+      'tools';
   }
 
   .browser-toolbar-nav-shell,
@@ -770,8 +776,7 @@ body {
 .preferences-content-shell {
   border-color: var(--studio-line);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
-    rgba(9, 15, 23, 0.78);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent), rgba(9, 15, 23, 0.78);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.036);
 }
 
@@ -827,8 +832,7 @@ body {
   border-color: var(--studio-line-soft);
   border-radius: 15px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent),
-    rgba(13, 21, 30, 0.58);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent), rgba(13, 21, 30, 0.58);
   box-shadow: none;
 }
 
@@ -901,8 +905,7 @@ body {
   background:
     radial-gradient(circle at 44px 88px, rgba(102, 231, 223, 0.15), transparent 132px),
     radial-gradient(circle at 108% 16%, rgba(213, 175, 105, 0.08), transparent 122px),
-    linear-gradient(180deg, var(--studio-glass-top), transparent 35%),
-    rgba(6, 12, 19, 0.982);
+    linear-gradient(180deg, var(--studio-glass-top), transparent 35%), rgba(6, 12, 19, 0.982);
 }
 
 #sidebar.command-dock::after {
@@ -941,8 +944,7 @@ body {
 #sidebar-brand-stage .sidebar-mascot-shell {
   width: 82px;
   height: 74px;
-  filter:
-    drop-shadow(0 15px 24px rgba(0, 0, 0, 0.42))
+  filter: drop-shadow(0 15px 24px rgba(0, 0, 0, 0.42))
     drop-shadow(0 0 18px rgba(102, 231, 223, 0.16));
 }
 
@@ -950,10 +952,7 @@ body {
   width: 100%;
   height: 100%;
   margin: 0;
-  filter:
-    saturate(1.18)
-    contrast(1.1)
-    brightness(1.08)
+  filter: saturate(1.18) contrast(1.1) brightness(1.08)
     drop-shadow(0 7px 13px rgba(5, 18, 44, 0.42));
 }
 
@@ -993,16 +992,14 @@ body {
   border-radius: 15px;
   border-color: color-mix(in srgb, var(--studio-line-soft) 62%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent),
-    rgba(255, 255, 255, 0.006);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent), rgba(255, 255, 255, 0.006);
 }
 
 .project-item:hover {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 58%, var(--studio-line));
   background:
     linear-gradient(90deg, rgba(102, 231, 223, 0.095), transparent 74%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
-    rgba(255, 255, 255, 0.018);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), rgba(255, 255, 255, 0.018);
 }
 
 .project-item.active {
@@ -1057,8 +1054,7 @@ body {
   background:
     radial-gradient(circle at 110% -2%, rgba(102, 231, 223, 0.12), transparent 34%),
     radial-gradient(circle at 0% 18%, rgba(213, 175, 105, 0.055), transparent 30%),
-    linear-gradient(180deg, var(--studio-glass-top), transparent 38%),
-    rgba(7, 13, 20, 0.982);
+    linear-gradient(180deg, var(--studio-glass-top), transparent 38%), rgba(7, 13, 20, 0.982);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.018),
     -16px 0 42px rgba(0, 0, 0, 0.16);
@@ -1079,14 +1075,13 @@ body {
   border-radius: 18px;
   background:
     radial-gradient(circle at 100% -8%, rgba(102, 231, 223, 0.074), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
-    rgba(12, 20, 29, 0.64);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent), rgba(12, 20, 29, 0.64);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.038),
     0 12px 24px rgba(0, 0, 0, 0.08);
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] {
+#context-inspector .context-inspector-section[data-section='capabilities'] {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 62%, var(--studio-line));
 }
 
@@ -1106,15 +1101,13 @@ body {
   border: 1px solid transparent;
   border-radius: 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent),
-    rgba(255, 255, 255, 0.006);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent), rgba(255, 255, 255, 0.006);
 }
 
 #context-inspector .config-item:not(.auto-approval-item):hover {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 44%, var(--studio-line-soft));
   background:
-    linear-gradient(90deg, rgba(102, 231, 223, 0.07), transparent 76%),
-    rgba(255, 255, 255, 0.018);
+    linear-gradient(90deg, rgba(102, 231, 223, 0.07), transparent 76%), rgba(255, 255, 255, 0.018);
 }
 
 #context-inspector .toolchain-summary-chip,
@@ -1125,8 +1118,7 @@ body {
 #context-inspector .auto-approval-meta-card {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 34%, var(--studio-line-soft));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
-    rgba(255, 255, 255, 0.012);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent), rgba(255, 255, 255, 0.012);
 }
 
 #modal.preferences-modal.modal-wide {
@@ -1139,8 +1131,7 @@ body {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 44%, var(--studio-line));
   background:
     radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.075), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
-    rgba(9, 15, 23, 0.82);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), rgba(9, 15, 23, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
     var(--studio-rail-glow);
@@ -1160,15 +1151,18 @@ body {
   z-index: 1;
   margin: -2px -2px 4px;
   padding: 2px 2px 13px;
-  background:
-    linear-gradient(180deg, rgba(9, 15, 23, 0.98), rgba(9, 15, 23, 0.72) 74%, transparent);
+  background: linear-gradient(
+    180deg,
+    rgba(9, 15, 23, 0.98),
+    rgba(9, 15, 23, 0.72) 74%,
+    transparent
+  );
 }
 
 .preferences-menu-item {
   border-color: color-mix(in srgb, var(--studio-line-soft) 72%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent),
-    rgba(255, 255, 255, 0.006);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent), rgba(255, 255, 255, 0.006);
 }
 
 .preferences-menu-item:hover {
@@ -1188,8 +1182,7 @@ body {
 .modal-toggle-field {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 30%, var(--studio-line-soft));
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
-    rgba(13, 21, 30, 0.66);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent), rgba(13, 21, 30, 0.66);
 }
 
 .preferences-overview-card {
@@ -1217,8 +1210,7 @@ body {
 .preferences-content::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(102, 231, 223, 0.36), rgba(213, 175, 105, 0.16))
+  background: linear-gradient(180deg, rgba(102, 231, 223, 0.36), rgba(213, 175, 105, 0.16))
     padding-box;
 }
 
@@ -1269,7 +1261,11 @@ body {
   --studio-resonance-line: rgba(102, 231, 223, 0.14);
   --studio-resonance-glow: 0 0 24px rgba(102, 231, 223, 0.08);
   --studio-mascot-stage: rgba(10, 18, 28, 0.5);
-  --studio-card-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.004));
+  --studio-card-sheen: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.004)
+  );
 }
 
 #sidebar.command-dock {
@@ -1291,14 +1287,13 @@ body {
   width: 1px;
   pointer-events: none;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      transparent,
-      rgba(102, 231, 223, 0.18) 18%,
-      rgba(213, 175, 105, 0.12) 52%,
-      transparent 88%
-    );
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(102, 231, 223, 0.18) 18%,
+    rgba(213, 175, 105, 0.12) 52%,
+    transparent 88%
+  );
   opacity: 0.74;
 }
 
@@ -1372,8 +1367,7 @@ body {
   width: 78px;
   height: 72px;
   animation: none;
-  filter:
-    drop-shadow(0 13px 18px rgba(2, 9, 26, 0.42))
+  filter: drop-shadow(0 13px 18px rgba(2, 9, 26, 0.42))
     drop-shadow(0 0 18px rgba(102, 231, 223, 0.14));
 }
 
@@ -1413,10 +1407,7 @@ body {
   height: calc(100% + 6px);
   margin: -3px;
   transform: translateZ(0);
-  filter:
-    saturate(1.18)
-    contrast(1.08)
-    brightness(1.06)
+  filter: saturate(1.18) contrast(1.08) brightness(1.06)
     drop-shadow(0 7px 13px rgba(5, 18, 44, 0.4));
 }
 
@@ -1438,8 +1429,7 @@ body {
   border: 1px solid color-mix(in srgb, var(--studio-line-soft) 88%, transparent);
   border-radius: 18px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
-    rgba(255, 255, 255, 0.01);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent), rgba(255, 255, 255, 0.01);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.034);
 }
 
@@ -1473,8 +1463,7 @@ body {
   border-radius: 15px;
   border-color: color-mix(in srgb, var(--studio-line-soft) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
-    rgba(255, 255, 255, 0.006);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent), rgba(255, 255, 255, 0.006);
   overflow: hidden;
 }
 
@@ -1486,7 +1475,9 @@ body {
   border-radius: inherit;
   background: linear-gradient(90deg, rgba(102, 231, 223, 0.16), transparent);
   opacity: 0;
-  transition: opacity 0.18s ease, width 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    width 0.18s ease;
 }
 
 .project-item:hover::after,
@@ -1502,9 +1493,7 @@ body {
 
 .project-item:hover {
   border-color: color-mix(in srgb, var(--studio-cyan) 14%, var(--studio-line));
-  background:
-    var(--studio-card-sheen),
-    rgba(255, 255, 255, 0.018);
+  background: var(--studio-card-sheen), rgba(255, 255, 255, 0.018);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
     0 8px 18px rgba(0, 0, 0, 0.1);
@@ -1514,8 +1503,7 @@ body {
   border-color: color-mix(in srgb, var(--studio-cyan) 22%, var(--studio-line));
   background:
     radial-gradient(circle at 0% 0%, rgba(102, 231, 223, 0.16), transparent 52%),
-    var(--studio-card-sheen),
-    rgba(255, 255, 255, 0.022);
+    var(--studio-card-sheen), rgba(255, 255, 255, 0.022);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     0 10px 22px rgba(0, 0, 0, 0.13),
@@ -1580,8 +1568,7 @@ body {
   min-height: 56px;
   background:
     radial-gradient(circle at 12% -120%, rgba(102, 231, 223, 0.11), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.034), transparent),
-    rgba(7, 12, 18, 0.965);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.034), transparent), rgba(7, 12, 18, 0.965);
 }
 
 #tab-actions {
@@ -1607,8 +1594,7 @@ body {
   background:
     radial-gradient(circle at 106% -4%, rgba(102, 231, 223, 0.13), transparent 36%),
     radial-gradient(circle at -8% 22%, rgba(213, 175, 105, 0.06), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.036), transparent 34%),
-    rgba(7, 13, 20, 0.984);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.036), transparent 34%), rgba(7, 13, 20, 0.984);
 }
 
 #context-inspector-header {
@@ -1625,8 +1611,7 @@ body {
   padding: 3px;
   border-radius: 15px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
-    rgba(255, 255, 255, 0.012);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent), rgba(255, 255, 255, 0.012);
 }
 
 .context-inspector-tab {
@@ -1643,8 +1628,7 @@ body {
   border-radius: 20px;
   background:
     radial-gradient(circle at 96% -8%, rgba(102, 231, 223, 0.09), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.034), transparent),
-    rgba(12, 20, 30, 0.72);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.034), transparent), rgba(12, 20, 30, 0.72);
 }
 
 #context-inspector .config-item:not(.auto-approval-item) {
@@ -1685,8 +1669,7 @@ body {
   border-radius: 18px;
   background:
     radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.055), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent),
-    rgba(13, 21, 30, 0.7);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent), rgba(13, 21, 30, 0.7);
 }
 
 @container workspace-stack (max-width: 940px) {
@@ -1786,14 +1769,13 @@ body {
 }
 
 #sidebar.command-dock::before {
-  background:
-    linear-gradient(
-      180deg,
-      transparent,
-      rgba(138, 167, 255, 0.13) 18%,
-      rgba(216, 177, 106, 0.105) 52%,
-      transparent 88%
-    );
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(138, 167, 255, 0.13) 18%,
+    rgba(216, 177, 106, 0.105) 52%,
+    transparent 88%
+  );
 }
 
 #sidebar.command-dock::after {
@@ -1820,8 +1802,7 @@ body {
 }
 
 #sidebar-brand-stage .sidebar-mascot-shell {
-  filter:
-    drop-shadow(0 13px 18px rgba(2, 9, 26, 0.4))
+  filter: drop-shadow(0 13px 18px rgba(2, 9, 26, 0.4))
     drop-shadow(0 0 16px rgba(138, 167, 255, 0.105));
 }
 
@@ -1832,7 +1813,12 @@ body {
 }
 
 #sidebar-brand-stage .sidebar-mascot-shell::after {
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(138, 167, 255, 0.62) 42%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.9),
+    rgba(138, 167, 255, 0.62) 42%,
+    transparent 72%
+  );
   box-shadow:
     0 0 10px rgba(138, 167, 255, 0.36),
     0 0 18px rgba(138, 167, 255, 0.085);
@@ -1846,43 +1832,37 @@ body {
 .preferences-section-card,
 .modal-toggle-field {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent),
-    rgba(10, 19, 31, 0.66);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), transparent), rgba(10, 19, 31, 0.66);
 }
 
 .project-item:hover {
   background:
-    var(--studio-card-sheen),
-    linear-gradient(90deg, rgba(138, 167, 255, 0.055), transparent 78%),
+    var(--studio-card-sheen), linear-gradient(90deg, rgba(138, 167, 255, 0.055), transparent 78%),
     rgba(255, 255, 255, 0.016);
 }
 
 .project-item.active {
   background:
     radial-gradient(circle at 0% 0%, rgba(138, 167, 255, 0.1), transparent 52%),
-    var(--studio-card-sheen),
-    rgba(255, 255, 255, 0.02);
+    var(--studio-card-sheen), rgba(255, 255, 255, 0.02);
 }
 
 #tab-bar {
   background:
     radial-gradient(circle at 12% -120%, rgba(138, 167, 255, 0.068), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
-    rgba(8, 14, 23, 0.965);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), rgba(8, 14, 23, 0.965);
 }
 
 #context-inspector {
   background:
     radial-gradient(circle at 106% -4%, rgba(138, 167, 255, 0.082), transparent 36%),
     radial-gradient(circle at -8% 22%, rgba(216, 177, 106, 0.048), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent 34%),
-    rgba(8, 15, 25, 0.984);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), transparent 34%), rgba(8, 15, 25, 0.984);
 }
 
 .context-inspector-tabs {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.023), transparent),
-    rgba(255, 255, 255, 0.01);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.023), transparent), rgba(255, 255, 255, 0.01);
 }
 
 .context-inspector-tab.active,
@@ -1896,13 +1876,16 @@ body {
 .preferences-content-shell {
   background:
     radial-gradient(circle at 100% 0%, rgba(138, 167, 255, 0.05), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent),
-    rgba(9, 17, 28, 0.84);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent), rgba(9, 17, 28, 0.84);
 }
 
 .preferences-menu-header {
-  background:
-    linear-gradient(180deg, rgba(9, 17, 28, 0.98), rgba(9, 17, 28, 0.72) 74%, transparent);
+  background: linear-gradient(
+    180deg,
+    rgba(9, 17, 28, 0.98),
+    rgba(9, 17, 28, 0.72) 74%,
+    transparent
+  );
 }
 
 #sidebar-content,
@@ -1916,8 +1899,7 @@ body {
 #context-inspector-sections::-webkit-scrollbar-thumb,
 .preferences-menu::-webkit-scrollbar-thumb,
 .preferences-content::-webkit-scrollbar-thumb {
-  background:
-    linear-gradient(180deg, rgba(138, 167, 255, 0.26), rgba(216, 177, 106, 0.13))
+  background: linear-gradient(180deg, rgba(138, 167, 255, 0.26), rgba(216, 177, 106, 0.13))
     padding-box;
 }
 

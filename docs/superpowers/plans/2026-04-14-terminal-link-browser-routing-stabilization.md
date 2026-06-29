@@ -44,6 +44,7 @@
 ### Task 1: Build Shared Link Click-Intent Guard (TDD First)
 
 **Files:**
+
 - Create: `src/renderer/link-click-intent.ts`
 - Create: `src/renderer/link-click-intent.test.ts`
 
@@ -150,6 +151,7 @@ git commit -m "feat: add shared link click-intent guard"
 ### Task 2: Integrate Click-Intent Guard into Terminal and CLI Surface
 
 **Files:**
+
 - Modify: `src/renderer/components/terminal-pane.ts`
 - Modify: `src/renderer/components/cli-surface/pane.ts`
 - Modify: `src/renderer/components/terminal-pane.test.ts`
@@ -168,7 +170,10 @@ it('does not open link when terminal selection exists', async () => {
   // fake terminal already supports getSelection(); set it to non-empty
   // then trigger webLinks callback
   expect(webLinksActivateRef.current).toBeTypeOf('function');
-  webLinksActivateRef.current?.({ clientX: 100, clientY: 100 } as MouseEvent, 'http://localhost:3000');
+  webLinksActivateRef.current?.(
+    { clientX: 100, clientY: 100 } as MouseEvent,
+    'http://localhost:3000',
+  );
 
   expect(openExternal).not.toHaveBeenCalled();
 });
@@ -248,6 +253,7 @@ git commit -m "fix: gate terminal link opens behind click intent"
 ### Task 3: Stabilize Link Dispatch Dedupe for Dual Sources
 
 **Files:**
+
 - Modify: `src/renderer/link-routing.ts`
 - Modify: `src/renderer/link-routing.test.ts`
 
@@ -284,7 +290,13 @@ function specificityScore(url: string): number {
   return parsed.pathname.length + parsed.search.length + parsed.hash.length;
 }
 
-export function shouldDispatchLinkOpen(nextUrl: string, last: LinkDispatchSnapshot | null, source: LinkDispatchSnapshot['source'], now = Date.now(), dedupeWindowMs = 300): boolean {
+export function shouldDispatchLinkOpen(
+  nextUrl: string,
+  last: LinkDispatchSnapshot | null,
+  source: LinkDispatchSnapshot['source'],
+  now = Date.now(),
+  dedupeWindowMs = 300,
+): boolean {
   if (!last || now - last.at > dedupeWindowMs) return true;
   if (new URL(nextUrl).origin !== new URL(last.url).origin) return true;
   if (nextUrl === last.url) return false;
@@ -312,6 +324,7 @@ git commit -m "fix: stabilize dual-source terminal link dedupe"
 ### Task 4: Harden Embedded Browser Transaction to Block Revert
 
 **Files:**
+
 - Modify: `src/renderer/index.ts`
 - Modify: `src/renderer/components/browser-tab/pane.ts`
 - Modify: `src/renderer/index.browser-routing.contract.test.ts`
@@ -322,7 +335,9 @@ git commit -m "fix: stabilize dual-source terminal link dedupe"
 ```ts
 // index.browser-routing.contract.test.ts (assertions)
 expect(source).toContain('const EMBEDDED_REVERT_WINDOW_MS = 1800;');
-expect(source).toContain('shouldAcceptEmbeddedRoute(projectId: string, requestedUrl: string, now: number)');
+expect(source).toContain(
+  'shouldAcceptEmbeddedRoute(projectId: string, requestedUrl: string, now: number)',
+);
 expect(source).toContain('if (!shouldAcceptEmbeddedRoute(project.id, requestedUrl, now)) return;');
 ```
 
@@ -388,6 +403,7 @@ git commit -m "fix: guard embedded browser navigation against stale revert"
 ### Task 5: Full Verification and User Scenario Proof
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-04-14-terminal-link-browser-routing-design.md` (optional verification notes append only if needed)
 
 - [ ] **Step 1: Run full targeted regression suite**
@@ -457,4 +473,3 @@ No spec gaps found.
 - `createLinkClickIntent(thresholdPx)` API is consistently used across terminal and CLI surface tasks.
 
 Consistency check passed.
-

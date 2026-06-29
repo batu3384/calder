@@ -90,20 +90,34 @@ vi.mock('./copilot-session-watcher', () => ({
 
 vi.mock('./mcp-ipc-handlers', () => ({ registerMcpHandlers: mocks.registerMcpHandlers }));
 vi.mock('./ipc-fs-store', () => ({ registerFsStoreIpcHandlers: mocks.registerFsStoreIpcHandlers }));
-vi.mock('./ipc-maintenance', () => ({ registerMaintenanceIpcHandlers: mocks.registerMaintenanceIpcHandlers }));
-vi.mock('./ipc-mcp-governance', () => ({ registerMcpGovernanceIpcHandlers: mocks.registerMcpGovernanceIpcHandlers }));
+vi.mock('./ipc-maintenance', () => ({
+  registerMaintenanceIpcHandlers: mocks.registerMaintenanceIpcHandlers,
+}));
+vi.mock('./ipc-mcp-governance', () => ({
+  registerMcpGovernanceIpcHandlers: mocks.registerMcpGovernanceIpcHandlers,
+}));
 vi.mock('./ipc-git', () => ({ registerGitIpcHandlers: mocks.registerGitIpcHandlers }));
-vi.mock('./ipc-provider', () => ({ registerProviderIpcHandlers: mocks.registerProviderIpcHandlers }));
-vi.mock('./ipc-provider-update', () => ({ registerProviderUpdateIpcHandlers: mocks.registerProviderUpdateIpcHandlers }));
+vi.mock('./ipc-provider', () => ({
+  registerProviderIpcHandlers: mocks.registerProviderIpcHandlers,
+}));
+vi.mock('./ipc-provider-update', () => ({
+  registerProviderUpdateIpcHandlers: mocks.registerProviderUpdateIpcHandlers,
+}));
 vi.mock('./ipc-mobile', () => ({ registerMobileIpcHandlers: mocks.registerMobileIpcHandlers }));
 vi.mock('./ipc-calder', () => ({
   registerCalderIpcHandlers: mocks.registerCalderIpcHandlers,
   resetCalderProjectWatchers: mocks.resetCalderProjectWatchers,
 }));
-vi.mock('./ipc-app-browser', () => ({ registerAppBrowserIpcHandlers: mocks.registerAppBrowserIpcHandlers }));
-vi.mock('./ipc-cli-surface', () => ({ registerCliSurfaceIpcHandlers: mocks.registerCliSurfaceIpcHandlers }));
+vi.mock('./ipc-app-browser', () => ({
+  registerAppBrowserIpcHandlers: mocks.registerAppBrowserIpcHandlers,
+}));
+vi.mock('./ipc-cli-surface', () => ({
+  registerCliSurfaceIpcHandlers: mocks.registerCliSurfaceIpcHandlers,
+}));
 vi.mock('./ipc-pty', () => ({ registerPtyIpcHandlers: mocks.registerPtyIpcHandlers }));
-vi.mock('./ipc-state-sanitizer', () => ({ sanitizePersistedStateForSave: mocks.sanitizePersistedStateForSave }));
+vi.mock('./ipc-state-sanitizer', () => ({
+  sanitizePersistedStateForSave: mocks.sanitizePersistedStateForSave,
+}));
 vi.mock('./ipc-inspector-orchestration', () => ({
   clearInspectorOrchestrationSession: mocks.clearInspectorOrchestrationSession,
   createInspectorOrchestration: mocks.createInspectorOrchestration,
@@ -123,8 +137,12 @@ vi.mock('./ipc-auto-approval-governance', () => ({
 vi.mock('./menu', () => ({ createAppMenu: mocks.createAppMenu }));
 vi.mock('./providers/registry', () => ({ getProvider: mocks.getProvider }));
 vi.mock('../shared/tracking-health', () => ({ isTrackingHealthy: mocks.isTrackingHealthy }));
-vi.mock('./cli-surface-runtime', () => ({ createCliSurfaceRuntimeManager: mocks.createCliSurfaceRuntimeManager }));
-vi.mock('./calder-governance/enforcement', () => ({ assertProjectGovernanceAllows: mocks.assertProjectGovernanceAllows }));
+vi.mock('./cli-surface-runtime', () => ({
+  createCliSurfaceRuntimeManager: mocks.createCliSurfaceRuntimeManager,
+}));
+vi.mock('./calder-governance/enforcement', () => ({
+  assertProjectGovernanceAllows: mocks.assertProjectGovernanceAllows,
+}));
 vi.mock('./store', () => ({ loadState: mocks.loadState }));
 
 import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
@@ -157,7 +175,13 @@ describe('ipc-handlers runtime', () => {
     expect(mocks.registerPtyIpcHandlers).toHaveBeenCalledTimes(1);
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
       ensureHookWatcherStarted(win: unknown): void;
-      registerPendingProviderSessionWatchers(providerId: string, cliSessionId: string | null, sessionId: string, cwd: string, win: unknown): void;
+      registerPendingProviderSessionWatchers(
+        providerId: string,
+        cliSessionId: string | null,
+        sessionId: string,
+        cwd: string,
+        win: unknown,
+      ): void;
       handlePtySessionExit(sessionId: string): void;
     };
     expect(ptyOps).toBeTruthy();
@@ -173,7 +197,9 @@ describe('ipc-handlers runtime', () => {
 
     ptyOps.registerPendingProviderSessionWatchers('copilot', null, 's2', '/repo/project', win);
     expect(mocks.startCopilotSessionWatcher).toHaveBeenCalledWith(win);
-    expect(mocks.registerPendingCopilotSession).toHaveBeenCalledWith('s2', { cwd: '/repo/project' });
+    expect(mocks.registerPendingCopilotSession).toHaveBeenCalledWith('s2', {
+      cwd: '/repo/project',
+    });
 
     ptyOps.registerPendingProviderSessionWatchers('codex', 'cli-1', 's1', '/repo/project', win);
     ptyOps.registerPendingProviderSessionWatchers('copilot', 'cli-2', 's2', '/repo/project', win);
@@ -194,18 +220,24 @@ describe('ipc-handlers runtime', () => {
     menuHandler({}, true);
     expect(mocks.createAppMenu).toHaveBeenCalledWith(true);
 
-    expect(mocks.registerFsStoreIpcHandlers).toHaveBeenCalledWith(expect.objectContaining({
-      isAllowedDirectoryLookupPath: mocks.isAllowedDirectoryLookupPath,
-      isAllowedReadPath: mocks.isAllowedReadPath,
-      isWithinKnownProject: mocks.isWithinKnownProject,
-      sanitizePersistedStateForSave: mocks.sanitizePersistedStateForSave,
-    }));
+    expect(mocks.registerFsStoreIpcHandlers).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isAllowedDirectoryLookupPath: mocks.isAllowedDirectoryLookupPath,
+        isAllowedReadPath: mocks.isAllowedReadPath,
+        isWithinKnownProject: mocks.isWithinKnownProject,
+        sanitizePersistedStateForSave: mocks.sanitizePersistedStateForSave,
+      }),
+    );
   });
 
   it('validateProviderTrackingAndWarn skips Claude auto-heal when consent is declined for foreign statusline', () => {
     registerIpcHandlers();
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
-      validateProviderTrackingAndWarn(win: { webContents: { send: (channel: string, payload: unknown) => void } }, sessionId: string, providerId: string): void;
+      validateProviderTrackingAndWarn(
+        win: { webContents: { send: (channel: string, payload: unknown) => void } },
+        sessionId: string,
+        providerId: string,
+      ): void;
     };
 
     const provider = {
@@ -238,7 +270,11 @@ describe('ipc-handlers runtime', () => {
   it('validateProviderTrackingAndWarn auto-heals then warns when still unhealthy', () => {
     registerIpcHandlers();
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
-      validateProviderTrackingAndWarn(win: { webContents: { send: (channel: string, payload: unknown) => void } }, sessionId: string, providerId: string): void;
+      validateProviderTrackingAndWarn(
+        win: { webContents: { send: (channel: string, payload: unknown) => void } },
+        sessionId: string,
+        providerId: string,
+      ): void;
     };
 
     const provider = {

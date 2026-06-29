@@ -72,7 +72,11 @@ function createContextMenuRoot(x: number, y: number): HTMLDivElement {
   return menu;
 }
 
-function appendDebugMenuItems(menu: HTMLElement, session: SessionRecord, hideTabContextMenu: () => void): void {
+function appendDebugMenuItems(
+  menu: HTMLElement,
+  session: SessionRecord,
+  hideTabContextMenu: () => void,
+): void {
   if (!appState.preferences.debugMode) {
     return;
   }

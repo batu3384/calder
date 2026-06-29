@@ -1,4 +1,8 @@
-import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../../shared/types/provider';
+import type {
+  ProviderId,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+} from '../../shared/types/provider';
 import type { ProviderUpdaterRunner } from '../provider-updater-types';
 
 interface BaseProviderResultInput {
@@ -134,9 +138,7 @@ export function buildPostUpdateResult(
     hasVersionBump: boolean;
   },
 ): Omit<ProviderUpdateResult, 'durationMs'> {
-  const status: ProviderUpdateResult['status'] = input.hasVersionBump
-    ? 'updated'
-    : 'up_to_date';
+  const status: ProviderUpdateResult['status'] = input.hasVersionBump ? 'updated' : 'up_to_date';
 
   // Flag suspicious state: update claimed a version bump but afterVersion is missing.
   if (input.hasVersionBump && !input.afterVersion) {

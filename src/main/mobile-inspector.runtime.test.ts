@@ -74,41 +74,55 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.length = 0;
     spawnPlans.length = 0;
 
-    mockExecFile.mockImplementation((
-      command: string,
-      args: string[],
-      _options: Record<string, unknown>,
-      callback: (error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
-    ) => {
-      const next = execPlans[0];
-      if (!next) {
-        callback({
-          name: 'Error',
-          message: `${command} failed`,
-          code: 1,
-          stdout: '',
-          stderr: `${command} failed`,
-        }, '', `${command} failed`);
-        return;
-      }
-      expect(command).toBe(next.command);
-      expect(args).toEqual(next.args);
-      execPlans.shift();
-      const stdout = next.stdout ?? '';
-      const stderr = next.stderr ?? '';
-      const code = next.code ?? 0;
-      if (code === 0) {
-        callback(null, stdout, stderr);
-        return;
-      }
-      callback({
-        name: 'Error',
-        message: stderr || `Command failed: ${command}`,
-        code,
-        stdout,
-        stderr,
-      }, stdout, stderr);
-    });
+    mockExecFile.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _options: Record<string, unknown>,
+        callback: (
+          error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null,
+          stdout: string,
+          stderr: string,
+        ) => void,
+      ) => {
+        const next = execPlans[0];
+        if (!next) {
+          callback(
+            {
+              name: 'Error',
+              message: `${command} failed`,
+              code: 1,
+              stdout: '',
+              stderr: `${command} failed`,
+            },
+            '',
+            `${command} failed`,
+          );
+          return;
+        }
+        expect(command).toBe(next.command);
+        expect(args).toEqual(next.args);
+        execPlans.shift();
+        const stdout = next.stdout ?? '';
+        const stderr = next.stderr ?? '';
+        const code = next.code ?? 0;
+        if (code === 0) {
+          callback(null, stdout, stderr);
+          return;
+        }
+        callback(
+          {
+            name: 'Error',
+            message: stderr || `Command failed: ${command}`,
+            code,
+            stdout,
+            stderr,
+          },
+          stdout,
+          stderr,
+        );
+      },
+    );
 
     mockSpawn.mockImplementation((command: string, args: string[]) => {
       const next = spawnPlans.shift();
@@ -154,8 +168,16 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
     );
 
     const result = await launchMobileInspectSurface('android');
@@ -170,7 +192,12 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], code: 1, stderr: 'adb server unavailable' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        code: 1,
+        stderr: 'adb server unavailable',
+      },
     );
 
     const result = await launchMobileInspectSurface('android');
@@ -200,7 +227,12 @@ describe('mobile-inspector runtime android flows', () => {
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
       { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\n' },
-      { command: '/usr/local/bin/emulator', args: ['-list-avds'], code: 1, stderr: 'emulator list failed' },
+      {
+        command: '/usr/local/bin/emulator',
+        args: ['-list-avds'],
+        code: 1,
+        stderr: 'emulator list failed',
+      },
     );
 
     const result = await launchMobileInspectSurface('android');
@@ -215,8 +247,16 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
     );
     spawnPlans.push({
       command: '/usr/local/bin/adb',
@@ -239,8 +279,16 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
     );
     spawnPlans.push({
       command: '/usr/local/bin/adb',
@@ -262,7 +310,11 @@ describe('mobile-inspector runtime android flows', () => {
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], code: 1, stderr: 'emulator not found' },
     );
-    const emulatorFallbacks = _internal.getAndroidBinaryCandidates('emulator', process.env, process.platform);
+    const emulatorFallbacks = _internal.getAndroidBinaryCandidates(
+      'emulator',
+      process.env,
+      process.platform,
+    );
     for (const candidate of emulatorFallbacks) {
       execPlans.push({
         command: candidate,
@@ -308,21 +360,46 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierchary dumped' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'], stdout: xml },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: [
+          '-s',
+          'emulator-5554',
+          'shell',
+          'uiautomator',
+          'dump',
+          '/sdcard/calder-window-dump.xml',
+        ],
+        stdout: 'UI hierchary dumped',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'],
+        stdout: xml,
+      },
     );
 
     const result = await inspectMobilePoint('android', 500, 1450);
 
     expect(result.success).toBe(true);
-    expect(result.element).toEqual(expect.objectContaining({
-      className: 'android.widget.Button',
-      text: 'Login',
-      resourceId: 'app:id/login',
-      contentDesc: 'Login button',
-    }));
+    expect(result.element).toEqual(
+      expect.objectContaining({
+        className: 'android.widget.Button',
+        text: 'Login',
+        resourceId: 'app:id/login',
+        contentDesc: 'Login button',
+      }),
+    );
     expect(execPlans).toHaveLength(0);
   });
 
@@ -330,9 +407,22 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'input', 'tap', '32', '64'], code: 1, stderr: 'Permission denied' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'input', 'tap', '32', '64'],
+        code: 1,
+        stderr: 'Permission denied',
+      },
     );
 
     const result = await interactMobileInspectPoint('android', 32, 64);
@@ -347,7 +437,11 @@ describe('mobile-inspector runtime android flows', () => {
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], code: 1, stderr: 'emulator not found' },
     );
-    const emulatorFallbacks = _internal.getAndroidBinaryCandidates('emulator', process.env, process.platform);
+    const emulatorFallbacks = _internal.getAndroidBinaryCandidates(
+      'emulator',
+      process.env,
+      process.platform,
+    );
     for (const candidate of emulatorFallbacks) {
       execPlans.push({
         command: candidate,
@@ -382,9 +476,21 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'input', 'tap', '48', '72'], stdout: '' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'input', 'tap', '48', '72'],
+        stdout: '',
+      },
     );
 
     const result = await interactMobileInspectPoint('android', 48, 72);
@@ -908,7 +1014,12 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], code: 1, stderr: 'adb daemon unavailable' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        code: 1,
+        stderr: 'adb daemon unavailable',
+      },
     );
     const readinessFail = await inspectMobilePoint('android', 10, 20);
     expect(readinessFail.success).toBe(false);
@@ -917,9 +1028,29 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], code: 1, stderr: 'uiautomator dump failed' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: [
+          '-s',
+          'emulator-5554',
+          'shell',
+          'uiautomator',
+          'dump',
+          '/sdcard/calder-window-dump.xml',
+        ],
+        code: 1,
+        stderr: 'uiautomator dump failed',
+      },
     );
     const dumpFail = await inspectMobilePoint('android', 10, 20);
     expect(dumpFail.success).toBe(false);
@@ -928,10 +1059,34 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'], code: 1, stderr: 'cat failed' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: [
+          '-s',
+          'emulator-5554',
+          'shell',
+          'uiautomator',
+          'dump',
+          '/sdcard/calder-window-dump.xml',
+        ],
+        stdout: 'UI hierarchy dumped',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'],
+        code: 1,
+        stderr: 'cat failed',
+      },
     );
     const readFail = await inspectMobilePoint('android', 10, 20);
     expect(readFail.success).toBe(false);
@@ -940,10 +1095,33 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'], stdout: '<hierarchy></hierarchy>' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: [
+          '-s',
+          'emulator-5554',
+          'shell',
+          'uiautomator',
+          'dump',
+          '/sdcard/calder-window-dump.xml',
+        ],
+        stdout: 'UI hierarchy dumped',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'],
+        stdout: '<hierarchy></hierarchy>',
+      },
     );
     const emptyHierarchy = await inspectMobilePoint('android', 10, 20);
     expect(emptyHierarchy.success).toBe(false);
@@ -952,13 +1130,33 @@ describe('mobile-inspector runtime android flows', () => {
     execPlans.push(
       { command: 'which', args: ['adb'], stdout: '/usr/local/bin/adb\n' },
       { command: 'which', args: ['emulator'], stdout: '/usr/local/bin/emulator\n' },
-      { command: '/usr/local/bin/adb', args: ['devices'], stdout: 'List of devices attached\nemulator-5554\tdevice\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'], stdout: '1\n' },
-      { command: '/usr/local/bin/adb', args: ['-s', 'emulator-5554', 'shell', 'uiautomator', 'dump', '/sdcard/calder-window-dump.xml'], stdout: 'UI hierarchy dumped' },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['devices'],
+        stdout: 'List of devices attached\nemulator-5554\tdevice\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: ['-s', 'emulator-5554', 'shell', 'getprop', 'sys.boot_completed'],
+        stdout: '1\n',
+      },
+      {
+        command: '/usr/local/bin/adb',
+        args: [
+          '-s',
+          'emulator-5554',
+          'shell',
+          'uiautomator',
+          'dump',
+          '/sdcard/calder-window-dump.xml',
+        ],
+        stdout: 'UI hierarchy dumped',
+      },
       {
         command: '/usr/local/bin/adb',
         args: ['-s', 'emulator-5554', 'shell', 'cat', '/sdcard/calder-window-dump.xml'],
-        stdout: '<hierarchy><node class="android.widget.TextView" text="Header" bounds="[0,0][100,100]"/></hierarchy>',
+        stdout:
+          '<hierarchy><node class="android.widget.TextView" text="Header" bounds="[0,0][100,100]"/></hierarchy>',
       },
     );
     const noMatch = await inspectMobilePoint('android', 1000, 1800);

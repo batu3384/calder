@@ -65,6 +65,8 @@ describe('project workflow scaffold', () => {
     const root = makeProject('workflow-empty-title');
     roots.push(root);
 
-    await expect(createProjectWorkflowFile(root, '   ')).rejects.toThrow('Workflow title is required');
+    await expect(createProjectWorkflowFile(root, '   ')).rejects.toThrow(
+      'Workflow title is required',
+    );
   });
 });

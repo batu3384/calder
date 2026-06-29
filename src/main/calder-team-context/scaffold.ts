@@ -1,7 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult } from '../../shared/types/project-team-context.js';
+import type {
+  ProjectTeamContextCreateSpaceResult,
+  ProjectTeamContextStarterFilesResult,
+} from '../../shared/types/project-team-context.js';
 import { discoverProjectTeamContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
@@ -40,7 +43,11 @@ Purpose: keep release readiness checks shared by the whole team.
   },
 ];
 
-async function writeStarterFile(rootPath: string, relativePath: string, contents: string): Promise<'created' | 'skipped'> {
+async function writeStarterFile(
+  rootPath: string,
+  relativePath: string,
+  contents: string,
+): Promise<'created' | 'skipped'> {
   const fullPath = path.join(rootPath, relativePath);
 
   try {
@@ -73,7 +80,9 @@ Purpose: describe the shared team context this repo should keep visible across C
 `;
 }
 
-export async function createProjectTeamContextStarterFiles(projectPath: string): Promise<ProjectTeamContextStarterFilesResult> {
+export async function createProjectTeamContextStarterFiles(
+  projectPath: string,
+): Promise<ProjectTeamContextStarterFilesResult> {
   const created: string[] = [];
   const skipped: string[] = [];
 
@@ -99,7 +108,12 @@ export async function createProjectTeamContextSpaceFile(
     throw new Error('Team context title is required');
   }
 
-  const relativePath = path.posix.join('.calder', 'team', 'spaces', `${slugifySpaceTitle(trimmedTitle)}.md`);
+  const relativePath = path.posix.join(
+    '.calder',
+    'team',
+    'spaces',
+    `${slugifySpaceTitle(trimmedTitle)}.md`,
+  );
   const fullPath = path.join(projectPath, relativePath);
 
   let created = false;

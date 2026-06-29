@@ -55,29 +55,36 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   createSpaceBtn.type = 'button';
   createSpaceBtn.textContent = 'New shared space';
   createSpaceBtn.addEventListener('click', () => {
-    showModal('New Shared Team Space', [
-      {
-        label: 'Space title',
-        id: 'team-context-title',
-        placeholder: 'Frontend alignment',
-        defaultValue: 'Team Space',
+    showModal(
+      'New Shared Team Space',
+      [
+        {
+          label: 'Space title',
+          id: 'team-context-title',
+          placeholder: 'Frontend alignment',
+          defaultValue: 'Team Space',
+        },
+      ],
+      async (values) => {
+        const title = values['team-context-title']?.trim() ?? '';
+        if (!title) {
+          setModalError('team-context-title', 'Space title is required');
+          return;
+        }
+
+        const result = await window.calder.teamContext.createSpace(project.path, title);
+        appState.setProjectTeamContext(project.id, result.state);
+        args.onCloseModalWide();
+
+        const relativePath = toProjectRelativeContextPath(
+          project.path,
+          `${project.path}/${result.relativePath}`,
+        );
+        if (relativePath) {
+          await window.calder.git.openInEditor(project.path, relativePath);
+        }
       },
-    ], async (values) => {
-      const title = values['team-context-title']?.trim() ?? '';
-      if (!title) {
-        setModalError('team-context-title', 'Space title is required');
-        return;
-      }
-
-      const result = await window.calder.teamContext.createSpace(project.path, title);
-      appState.setProjectTeamContext(project.id, result.state);
-      args.onCloseModalWide();
-
-      const relativePath = toProjectRelativeContextPath(project.path, `${project.path}/${result.relativePath}`);
-      if (relativePath) {
-        await window.calder.git.openInEditor(project.path, relativePath);
-      }
-    });
+    );
   });
   actions.appendChild(createSpaceBtn);
   shell.appendChild(actions);
@@ -117,7 +124,8 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   if (projectTeamContext.spaces.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'team-context-discovery-empty';
-    empty.textContent = 'Shared rules or workflows exist, but no team context spaces have been created yet.';
+    empty.textContent =
+      'Shared rules or workflows exist, but no team context spaces have been created yet.';
     shell.appendChild(empty);
     return;
   }
@@ -176,9 +184,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
 
     const meta = document.createElement('div');
     meta.className = 'team-context-discovery-item-meta';
-    meta.textContent = space.summary
-      ? `Shared team space · ${space.summary}`
-      : 'Shared team space';
+    meta.textContent = space.summary ? `Shared team space · ${space.summary}` : 'Shared team space';
     item.appendChild(meta);
 
     list.appendChild(item);

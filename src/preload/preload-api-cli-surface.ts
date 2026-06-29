@@ -1,6 +1,10 @@
 import type { IpcRenderer } from 'electron';
 
-import type { CliSurfaceDiscoveryResult, CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface';
+import type {
+  CliSurfaceDiscoveryResult,
+  CliSurfaceProfile,
+  CliSurfaceRuntimeState,
+} from '../shared/types/project-surface';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 
@@ -22,29 +26,30 @@ export function createPreloadCliSurfaceApi(
   onChannel: OnChannel,
 ): PreloadCliSurfaceApi {
   return {
-    discover: (projectPath: string) =>
-      ipcRenderer.invoke('cli-surface:discover', projectPath),
+    discover: (projectPath: string) => ipcRenderer.invoke('cli-surface:discover', projectPath),
     start: (projectId: string, profile: CliSurfaceProfile) =>
       ipcRenderer.invoke('cli-surface:start', projectId, profile),
-    stop: (projectId: string) =>
-      ipcRenderer.invoke('cli-surface:stop', projectId),
-    restart: (projectId: string) =>
-      ipcRenderer.invoke('cli-surface:restart', projectId),
+    stop: (projectId: string) => ipcRenderer.invoke('cli-surface:stop', projectId),
+    restart: (projectId: string) => ipcRenderer.invoke('cli-surface:restart', projectId),
     write: (projectId: string, data: string) =>
       ipcRenderer.send('cli-surface:write', projectId, data),
     resize: (projectId: string, cols: number, rows: number) =>
       ipcRenderer.send('cli-surface:resize', projectId, cols, rows),
     onData: (callback) =>
       onChannel('cli-surface:data', (projectId, data) =>
-        callback(projectId as string, data as string)),
+        callback(projectId as string, data as string),
+      ),
     onExit: (callback) =>
       onChannel('cli-surface:exit', (projectId, exitCode, signal) =>
-        callback(projectId as string, exitCode as number, signal as number | undefined)),
+        callback(projectId as string, exitCode as number, signal as number | undefined),
+      ),
     onStatus: (callback) =>
       onChannel('cli-surface:status', (projectId, state) =>
-        callback(projectId as string, state as CliSurfaceRuntimeState)),
+        callback(projectId as string, state as CliSurfaceRuntimeState),
+      ),
     onError: (callback) =>
       onChannel('cli-surface:error', (projectId, message) =>
-        callback(projectId as string, message as string)),
+        callback(projectId as string, message as string),
+      ),
   };
 }

@@ -52,6 +52,8 @@ describe('readProjectReviewFile', () => {
       'README.md': '# Nope\n',
     });
 
-    await expect(readProjectReviewFile(root, '../README.md')).rejects.toThrow('Review path must stay within .calder/reviews');
+    await expect(readProjectReviewFile(root, '../README.md')).rejects.toThrow(
+      'Review path must stay within .calder/reviews',
+    );
   });
 });

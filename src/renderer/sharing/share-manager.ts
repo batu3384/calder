@@ -10,8 +10,15 @@ import {
   writeRemoteData,
 } from '../components/remote-terminal-pane.js';
 import { appState } from '../state.js';
-import { type InitData,type JoinHandle, joinShare } from './peer-guest.js';
-import { broadcastData, broadcastResize, isSharing, type ShareHandle,startShare, stopShare } from './peer-host.js';
+import { type InitData, type JoinHandle, joinShare } from './peer-guest.js';
+import {
+  broadcastData,
+  broadcastResize,
+  isSharing,
+  type ShareHandle,
+  startShare,
+  stopShare,
+} from './peer-host.js';
 
 const shareHandles = new Map<string, ShareHandle>();
 const guestHandles = new Map<string, JoinHandle>();
@@ -104,7 +111,12 @@ export function forwardResize(sessionId: string, cols: number, rows: number): vo
 
 // --- Guest side ---
 
-export async function joinRemoteSession(projectId: string, offer: string, passphrase: string, onConnected?: () => void): Promise<{ answer: string }> {
+export async function joinRemoteSession(
+  projectId: string,
+  offer: string,
+  passphrase: string,
+  onConnected?: () => void,
+): Promise<{ answer: string }> {
   const { handle } = joinShare(offer, passphrase);
   const answer = await handle.getAnswer();
 
@@ -121,15 +133,26 @@ export async function joinRemoteSession(projectId: string, offer: string, passph
 
     // Create the terminal pane BEFORE adding to state, because addRemoteSession
     // triggers a layout render that needs the pane to already exist.
-    createRemoteTerminalPane(localSessionId, initData.mode, initData.cols, initData.rows, (data: string) => {
-      handle.sendInput(data);
-    });
+    createRemoteTerminalPane(
+      localSessionId,
+      initData.mode,
+      initData.cols,
+      initData.rows,
+      (data: string) => {
+        handle.sendInput(data);
+      },
+    );
 
     if (initData.scrollback) {
       writeRemoteData(localSessionId, initData.scrollback);
     }
 
-    const session = appState.addRemoteSession(projectId, localSessionId, initData.sessionName, initData.mode);
+    const session = appState.addRemoteSession(
+      projectId,
+      localSessionId,
+      initData.sessionName,
+      initData.mode,
+    );
     if (!session) {
       console.error('Failed to create remote session');
       destroyRemoteTerminal(localSessionId);

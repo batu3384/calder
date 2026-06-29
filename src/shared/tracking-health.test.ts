@@ -45,7 +45,9 @@ describe('tracking health helpers', () => {
       contextWindow: false,
       hookStatus: false,
     });
-    expect(isTrackingHealthy(meta, createValidation({ statusLine: 'missing', hooks: 'missing' }))).toBe(true);
+    expect(
+      isTrackingHealthy(meta, createValidation({ statusLine: 'missing', hooks: 'missing' })),
+    ).toBe(true);
   });
 
   it('marks missing hooks as unhealthy when the provider depends on them', () => {
@@ -54,6 +56,8 @@ describe('tracking health helpers', () => {
       contextWindow: false,
       hookStatus: true,
     });
-    expect(isTrackingHealthy(meta, createValidation({ statusLine: 'calder', hooks: 'partial' }))).toBe(false);
+    expect(
+      isTrackingHealthy(meta, createValidation({ statusLine: 'calder', hooks: 'partial' })),
+    ).toBe(false);
   });
 });

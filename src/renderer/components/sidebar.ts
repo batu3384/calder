@@ -1,8 +1,15 @@
 import { appState, ProjectRecord } from '../state.js';
-import { closeModal,setModalError, showModal } from './modal.js';
+import { closeModal, setModalError, showModal } from './modal.js';
 import { showPreferencesModal } from './preferences/preferences-modal.js';
-import { getStatus, onChange as onSessionStatusChange } from './surface-services/session-activity.js';
-import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
+import {
+  getStatus,
+  onChange as onSessionStatusChange,
+} from './surface-services/session-activity.js';
+import {
+  hasUnreadInProject,
+  isUnread,
+  onChange as onUnreadChange,
+} from './surface-services/session-unread.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 import { enableTooltip } from './tooltip.js';
 
@@ -51,15 +58,20 @@ export function initSidebar(): void {
   initResizeHandle();
 
   // Enable tooltips for sidebar buttons
-  tooltipCleanups.push(enableTooltip(btnAddProject, { content: 'New Project (Ctrl+Shift+P)', placement: 'bottom' }));
-  tooltipCleanups.push(enableTooltip(btnPreferences, { content: 'Preferences', placement: 'bottom' }));
-  tooltipCleanups.push(enableTooltip(btnToggleSidebar, { content: 'Toggle Sidebar (Cmd+B)', placement: 'bottom' }));
+  tooltipCleanups.push(
+    enableTooltip(btnAddProject, { content: 'New Project (Ctrl+Shift+P)', placement: 'bottom' }),
+  );
+  tooltipCleanups.push(
+    enableTooltip(btnPreferences, { content: 'Preferences', placement: 'bottom' }),
+  );
+  tooltipCleanups.push(
+    enableTooltip(btnToggleSidebar, { content: 'Toggle Sidebar (Cmd+B)', placement: 'bottom' }),
+  );
 
   const onStateLoaded = () => {
     const preferredWidth = appState.sidebarWidth || SIDEBAR_DEFAULT;
-    const normalizedWidth = preferredWidth === LEGACY_SIDEBAR_DEFAULT
-      ? SIDEBAR_DEFAULT
-      : preferredWidth;
+    const normalizedWidth =
+      preferredWidth === LEGACY_SIDEBAR_DEFAULT ? SIDEBAR_DEFAULT : preferredWidth;
     const clampedWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, normalizedWidth));
     sidebarEl.style.width = clampedWidth + 'px';
     applySidebarCollapsed();
@@ -85,7 +97,9 @@ export function initSidebar(): void {
   unsubscribers.push(unsubStatus);
 
   document.addEventListener('click', hideProjectContextMenu);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideProjectContextMenu(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideProjectContextMenu();
+  });
 }
 
 export function destroySidebar(): void {
@@ -98,7 +112,9 @@ export function destroySidebar(): void {
   tooltipCleanups.forEach((fn) => fn());
   tooltipCleanups = [];
   document.removeEventListener('click', hideProjectContextMenu);
-  document.removeEventListener('keydown', (e) => { if (e.key === 'Escape') hideProjectContextMenu(); });
+  document.removeEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideProjectContextMenu();
+  });
   finishDragCleanup();
 }
 
@@ -132,7 +148,9 @@ function doRender(): void {
 
     const selectBtn = document.createElement('button');
     selectBtn.type = 'button';
-    selectBtn.className = 'project-item sidebar-project-row' + (project.id === appState.activeProjectId ? ' active' : '');
+    selectBtn.className =
+      'project-item sidebar-project-row' +
+      (project.id === appState.activeProjectId ? ' active' : '');
     selectBtn.setAttribute('title', titleParts.join(' • '));
     selectBtn.setAttribute('aria-label', titleParts.join(' • '));
     if (project.id === appState.activeProjectId) {
@@ -255,37 +273,45 @@ function shortProjectPath(fullPath: string): string {
 }
 
 export function promptNewProject(): void {
-  showModal('New Project', [
-    { label: 'Name', id: 'project-name', placeholder: 'My Project' },
-    {
-      label: 'Path', id: 'project-path', placeholder: '/path/to/project',
-      buttonLabel: 'Browse',
-      onButtonClick: async (input) => {
-        const dir = await window.calder.fs.browseDirectory();
-        if (!dir) return;
-        input.value = dir;
-        autoFillName(dir);
+  showModal(
+    'New Project',
+    [
+      { label: 'Name', id: 'project-name', placeholder: 'My Project' },
+      {
+        label: 'Path',
+        id: 'project-path',
+        placeholder: '/path/to/project',
+        buttonLabel: 'Browse',
+        onButtonClick: async (input) => {
+          const dir = await window.calder.fs.browseDirectory();
+          if (!dir) return;
+          input.value = dir;
+          autoFillName(dir);
+        },
       },
+    ],
+    async (values) => {
+      const name = values['project-name']?.trim();
+      const rawPath = values['project-path']?.trim();
+      if (!name || !rawPath) return;
+
+      const projectPath = await window.calder.fs.expandPath(rawPath);
+      const isDir = await window.calder.fs.isDirectory(projectPath);
+      if (!isDir) {
+        setModalError('project-path', 'Directory does not exist');
+        return;
+      }
+
+      closeModal();
+      appState.addProject(name, projectPath);
     },
-  ], async (values) => {
-    const name = values['project-name']?.trim();
-    const rawPath = values['project-path']?.trim();
-    if (!name || !rawPath) return;
-
-    const projectPath = await window.calder.fs.expandPath(rawPath);
-    const isDir = await window.calder.fs.isDirectory(projectPath);
-    if (!isDir) {
-      setModalError('project-path', 'Directory does not exist');
-      return;
-    }
-
-    closeModal();
-    appState.addProject(name, projectPath);
-  });
+  );
 
   const nameInput = document.getElementById('modal-project-name') as HTMLInputElement | null;
   let nameManuallyEdited = false;
-  nameInput?.addEventListener('input', () => { nameManuallyEdited = true; });
+  nameInput?.addEventListener('input', () => {
+    nameManuallyEdited = true;
+  });
 
   const autoFillName = (path: string) => {
     if (nameInput && !nameManuallyEdited) {
@@ -315,7 +341,10 @@ export function promptNewProject(): void {
     const showSuggestions = (dirs: string[], dirPart: string) => {
       dropdown.innerHTML = '';
       activeIndex = -1;
-      if (dirs.length === 0) { hideDropdown(); return; }
+      if (dirs.length === 0) {
+        hideDropdown();
+        return;
+      }
       for (const dir of dirs) {
         const item = document.createElement('div');
         item.className = 'path-autocomplete-item';
@@ -335,7 +364,10 @@ export function promptNewProject(): void {
       const value = pathInput.value;
       autoFillName(value);
       const lastSlash = value.lastIndexOf('/');
-      if (lastSlash === -1) { hideDropdown(); return; }
+      if (lastSlash === -1) {
+        hideDropdown();
+        return;
+      }
 
       const dirPart = value.substring(0, lastSlash + 1);
       const namePart = value.substring(lastSlash + 1).toLowerCase();
@@ -444,9 +476,10 @@ function renderCostFooter(): void {
 
 function confirmRemoveProject(project: ProjectRecord): void {
   const historyCount = project.sessionHistory?.length ?? 0;
-  const message = historyCount > 0
-    ? `Remove project "${project.name}"? This will delete all sessions and history (${historyCount} entries) from Calder. No files on disk will be affected.`
-    : `Remove project "${project.name}"? No files on disk will be affected.`;
+  const message =
+    historyCount > 0
+      ? `Remove project "${project.name}"? This will delete all sessions and history (${historyCount} entries) from Calder. No files on disk will be affected.`
+      : `Remove project "${project.name}"? No files on disk will be affected.`;
   if (!confirm(message)) return;
   appState.removeProject(project.id);
 }
@@ -493,7 +526,8 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
 
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  if (rect.bottom > window.innerHeight)
+    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
   applyTabContextMenuSemantics(menu, 'Project actions', hideProjectContextMenu);
 }
 

@@ -1,9 +1,16 @@
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointDocument,
+  ProjectCheckpointRestoreMode,
+} from '../shared/types/project-checkpoint.js';
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { deriveBrowserSessionName, normalizeProjectSurface } from './state-normalizers.js';
-import { findProjectSession, isCliSessionRecord, repairProjectSurface } from './state-project-surface.js';
+import {
+  findProjectSession,
+  isCliSessionRecord,
+  repairProjectSurface,
+} from './state-project-surface.js';
 
 interface RestoreProjectCheckpointOptions {
   project: ProjectRecord;
@@ -43,7 +50,11 @@ function resetProjectForReplaceMode(
   project.surface = normalizeProjectSurface(project);
 }
 
-function mapRestoredSession(runtime: RestoreCheckpointRuntime, snapshotId: string, sessionId: string): void {
+function mapRestoredSession(
+  runtime: RestoreCheckpointRuntime,
+  snapshotId: string,
+  sessionId: string,
+): void {
   runtime.restoredIdMap.set(snapshotId, sessionId);
 }
 
@@ -57,7 +68,10 @@ function pushCreatedSession(
   runtime.createdSessions.push(session);
 }
 
-function tryRestoreBrowserSnapshot(snapshot: CheckpointSessionSnapshot, runtime: RestoreCheckpointRuntime): boolean {
+function tryRestoreBrowserSnapshot(
+  snapshot: CheckpointSessionSnapshot,
+  runtime: RestoreCheckpointRuntime,
+): boolean {
   if (snapshot.type !== 'browser-tab') return false;
   if (!snapshot.browserTabUrl) return true;
 
@@ -81,12 +95,16 @@ function tryRestoreBrowserSnapshot(snapshot: CheckpointSessionSnapshot, runtime:
   return true;
 }
 
-function tryRestoreFileReaderSnapshot(snapshot: CheckpointSessionSnapshot, runtime: RestoreCheckpointRuntime): boolean {
+function tryRestoreFileReaderSnapshot(
+  snapshot: CheckpointSessionSnapshot,
+  runtime: RestoreCheckpointRuntime,
+): boolean {
   if (snapshot.type !== 'file-reader') return false;
   if (!snapshot.fileReaderPath) return true;
 
   const existingReader = runtime.project.sessions.find(
-    (session) => session.type === 'file-reader' && session.fileReaderPath === snapshot.fileReaderPath,
+    (session) =>
+      session.type === 'file-reader' && session.fileReaderPath === snapshot.fileReaderPath,
   );
   if (existingReader) {
     existingReader.fileReaderLine = snapshot.fileReaderLine;
@@ -107,16 +125,19 @@ function tryRestoreFileReaderSnapshot(snapshot: CheckpointSessionSnapshot, runti
   return true;
 }
 
-function tryRestoreDiffSnapshot(snapshot: CheckpointSessionSnapshot, runtime: RestoreCheckpointRuntime): boolean {
+function tryRestoreDiffSnapshot(
+  snapshot: CheckpointSessionSnapshot,
+  runtime: RestoreCheckpointRuntime,
+): boolean {
   if (snapshot.type !== 'diff-viewer') return false;
   if (!snapshot.diffFilePath || !snapshot.diffArea) return true;
 
   const existingDiff = runtime.project.sessions.find(
     (session) =>
-      session.type === 'diff-viewer'
-      && session.diffFilePath === snapshot.diffFilePath
-      && session.diffArea === snapshot.diffArea
-      && session.worktreePath === snapshot.worktreePath,
+      session.type === 'diff-viewer' &&
+      session.diffFilePath === snapshot.diffFilePath &&
+      session.diffArea === snapshot.diffArea &&
+      session.worktreePath === snapshot.worktreePath,
   );
   if (existingDiff) {
     mapRestoredSession(runtime, snapshot.id, existingDiff.id);
@@ -143,16 +164,23 @@ function findExistingCliSession(
   defaultProviderId: ProviderId,
 ): SessionRecord | undefined {
   if (snapshot.cliSessionId) {
-    return project.sessions.find((session) => isCliSessionRecord(session) && session.cliSessionId === snapshot.cliSessionId);
+    return project.sessions.find(
+      (session) => isCliSessionRecord(session) && session.cliSessionId === snapshot.cliSessionId,
+    );
   }
-  return project.sessions.find((session) =>
-    isCliSessionRecord(session)
-    && session.cliSessionId === null
-    && session.name === snapshot.name
-    && (session.providerId ?? defaultProviderId) === (snapshot.providerId ?? defaultProviderId));
+  return project.sessions.find(
+    (session) =>
+      isCliSessionRecord(session) &&
+      session.cliSessionId === null &&
+      session.name === snapshot.name &&
+      (session.providerId ?? defaultProviderId) === (snapshot.providerId ?? defaultProviderId),
+  );
 }
 
-function restoreCliSnapshot(snapshot: CheckpointSessionSnapshot, runtime: RestoreCheckpointRuntime): void {
+function restoreCliSnapshot(
+  snapshot: CheckpointSessionSnapshot,
+  runtime: RestoreCheckpointRuntime,
+): void {
   if (snapshot.type && snapshot.type !== 'claude') {
     return;
   }
@@ -179,7 +207,10 @@ function restoreCliSnapshot(snapshot: CheckpointSessionSnapshot, runtime: Restor
   runtime.createdSessions.push(restoredCli);
 }
 
-function restoreSnapshotSession(snapshot: CheckpointSessionSnapshot, runtime: RestoreCheckpointRuntime): void {
+function restoreSnapshotSession(
+  snapshot: CheckpointSessionSnapshot,
+  runtime: RestoreCheckpointRuntime,
+): void {
   if (tryRestoreBrowserSnapshot(snapshot, runtime)) return;
   if (tryRestoreFileReaderSnapshot(snapshot, runtime)) return;
   if (tryRestoreDiffSnapshot(snapshot, runtime)) return;
@@ -225,8 +256,11 @@ function applyCheckpointSurface(
     const mappedWebSessionId = checkpointSurface.webSessionId
       ? restoredIdMap.get(checkpointSurface.webSessionId)
       : undefined;
-    const webUrl = checkpointSurface.webUrl
-      ?? (mappedWebSessionId ? findProjectSession(project, mappedWebSessionId)?.browserTabUrl : undefined);
+    const webUrl =
+      checkpointSurface.webUrl ??
+      (mappedWebSessionId
+        ? findProjectSession(project, mappedWebSessionId)?.browserTabUrl
+        : undefined);
     project.surface.web = {
       sessionId: mappedWebSessionId,
       url: webUrl,
@@ -239,7 +273,8 @@ function applyCheckpointSurface(
   if (project.surface.cli) {
     project.surface.cli = {
       ...project.surface.cli,
-      selectedProfileId: checkpointSurface.cliSelectedProfileId ?? project.surface.cli.selectedProfileId,
+      selectedProfileId:
+        checkpointSurface.cliSelectedProfileId ?? project.surface.cli.selectedProfileId,
       runtime: {
         ...(project.surface.cli.runtime ?? { status: 'idle' }),
         status: checkpointSurface.cliStatus ?? project.surface.cli.runtime?.status ?? 'idle',
@@ -255,9 +290,7 @@ export function restoreProjectCheckpointState(
 
   const restoredIdMap = new Map<string, string>();
   const createdSessions: SessionRecord[] = [];
-  const removedSessions = mode === 'replace'
-    ? [...project.sessions]
-    : [];
+  const removedSessions = mode === 'replace' ? [...project.sessions] : [];
 
   if (mode === 'replace') {
     resetProjectForReplaceMode(project, removedSessions, pruneNav);

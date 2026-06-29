@@ -23,7 +23,9 @@ describe('custom select floating surface contract', () => {
     expect(source).toContain('eventTargetsCurrentSelect');
     expect(source).toContain('dropdown.contains(target)');
     expect(source).toContain("const outsidePressEventName: 'pointerdown' | 'mousedown'");
-    expect(source).toContain("document.addEventListener(outsidePressEventName, onOutsidePointerDown);");
+    expect(source).toContain(
+      'document.addEventListener(outsidePressEventName, onOutsidePointerDown);',
+    );
     expect(source).toContain("document.removeEventListener('pointerdown', onOutsidePointerDown);");
     expect(source).toContain("document.removeEventListener('mousedown', onOutsidePointerDown);");
     expect(source).toContain("logDebugEvent('uiDropdown'");
@@ -34,7 +36,7 @@ describe('custom select floating surface contract', () => {
   it('portals floating dropdowns to document body to avoid clip/stacking bugs', () => {
     expect(source).toContain('ensureFloatingDropdownHost');
     expect(source).toContain('restoreDropdownHost');
-    expect(source).toContain("document.body.appendChild(dropdown)");
+    expect(source).toContain('document.body.appendChild(dropdown)');
     expect(source).toContain("dropdown.classList.add('custom-select-dropdown-floating');");
   });
 
@@ -45,8 +47,10 @@ describe('custom select floating surface contract', () => {
 
   it('lets fast inline controls opt out of floating-ui and update value in place', () => {
     expect(source).toContain('floating?: FloatingSurfaceOptions | false;');
-    expect(source).toContain("wrapper.dataset.floating = config.floating === false ? 'inline' : 'floating';");
-    expect(source).toContain("wrapper.dataset.value = hidden.value;");
+    expect(source).toContain(
+      "wrapper.dataset.floating = config.floating === false ? 'inline' : 'floating';",
+    );
+    expect(source).toContain('wrapper.dataset.value = hidden.value;');
     expect(source).toContain('setValue(value: string): void;');
     expect(source).toContain('const usesFloatingSurface = config.floating !== false;');
   });

@@ -15,10 +15,10 @@ function createQuickSetupButton(
   button.className = options?.primary
     ? 'modal-btn primary cli-surface-quick-setup-btn cli-surface-quick-setup-btn-primary'
     : `modal-btn cli-surface-quick-setup-btn ${
-      options?.tone === 'ghost'
-        ? 'cli-surface-quick-setup-btn-ghost'
-        : 'cli-surface-quick-setup-btn-neutral'
-    }`;
+        options?.tone === 'ghost'
+          ? 'cli-surface-quick-setup-btn-ghost'
+          : 'cli-surface-quick-setup-btn-neutral'
+      }`;
   button.classList.add('cli-surface-quick-setup-control');
   button.textContent = label;
   button.setAttribute('aria-label', label);
@@ -169,7 +169,9 @@ export function showCliSurfaceQuickSetup(
 
   bodyEl.querySelectorAll('[data-action="run"]').forEach((button) => {
     button.addEventListener('click', () => {
-      const candidate = candidates.find((entry) => entry.id === (button as HTMLElement).dataset.candidateId)!;
+      const candidate = candidates.find(
+        (entry) => entry.id === (button as HTMLElement).dataset.candidateId,
+      )!;
       hideQuickSetupModal();
       handlers.onRun(candidate);
     });
@@ -177,7 +179,9 @@ export function showCliSurfaceQuickSetup(
 
   bodyEl.querySelectorAll('[data-action="edit"]').forEach((button) => {
     button.addEventListener('click', () => {
-      const candidate = candidates.find((entry) => entry.id === (button as HTMLElement).dataset.candidateId)!;
+      const candidate = candidates.find(
+        (entry) => entry.id === (button as HTMLElement).dataset.candidateId,
+      )!;
       hideQuickSetupModal();
       handlers.onEdit(candidate);
     });
@@ -196,7 +200,10 @@ export function showCliSurfaceQuickSetup(
   });
   footerLeft.appendChild(cancelButton);
 
-  const manualButton = createQuickSetupButton('Manual setup', { action: 'manual-setup', tone: 'neutral' });
+  const manualButton = createQuickSetupButton('Manual setup', {
+    action: 'manual-setup',
+    tone: 'neutral',
+  });
   manualButton.classList.add('cli-surface-quick-setup-footer-btn');
   manualButton.addEventListener('click', () => {
     hideQuickSetupModal();

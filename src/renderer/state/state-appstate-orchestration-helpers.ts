@@ -36,14 +36,7 @@ interface UpdateProjectSurfaceForStateArgs {
 }
 
 export function createAppStateRuntimeBridge(args: RuntimeBridgeFactoryArgs): AppStateRuntimeBridge {
-  const {
-    state,
-    pushNav,
-    pruneNav,
-    persist,
-    emit,
-    buildResumePrompt,
-  } = args;
+  const { state, pushNav, pruneNav, persist, emit, buildResumePrompt } = args;
   return {
     projects: state.projects,
     defaultProviderId: state.preferences.defaultProvider,
@@ -59,16 +52,7 @@ export function createAppStateRuntimeBridge(args: RuntimeBridgeFactoryArgs): App
 export function setProjectDomainForState<K extends ProjectDomainStateKey>(
   args: SetProjectDomainForStateArgs<K>,
 ): void {
-  const {
-    projects,
-    activeProjectId,
-    projectId,
-    key,
-    incoming,
-    normalize,
-    persist,
-    emit,
-  } = args;
+  const { projects, activeProjectId, projectId, key, incoming, normalize, persist, emit } = args;
   const project = projects.find((entry) => entry.id === projectId);
   if (!project) return;
   if (!setProjectDomainState(project, key, incoming, normalize)) return;
@@ -77,13 +61,7 @@ export function setProjectDomainForState<K extends ProjectDomainStateKey>(
 }
 
 export function updateProjectSurfaceForState(args: UpdateProjectSurfaceForStateArgs): void {
-  const {
-    projects,
-    projectId,
-    mutate,
-    persist,
-    emit,
-  } = args;
+  const { projects, projectId, mutate, persist, emit } = args;
   const project = projects.find((entry) => entry.id === projectId);
   if (!project || !mutate(project)) return;
   persist();

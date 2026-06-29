@@ -1,4 +1,8 @@
-import type { CliProviderCapabilities,CliProviderMeta, ProviderId } from '../shared/types/provider.js';
+import type {
+  CliProviderCapabilities,
+  CliProviderMeta,
+  ProviderId,
+} from '../shared/types/provider.js';
 
 export interface ProviderAvailabilitySnapshot {
   providers: CliProviderMeta[];
@@ -26,9 +30,12 @@ export async function loadProviderAvailability(): Promise<void> {
   await loadProviderMetas();
   const providers = cachedProviders ?? [];
   const checks = await Promise.all(
-    providers.map(async p => ({ id: p.id, ok: (await window.calder.provider.checkBinary(p.id)).ok }))
+    providers.map(async (p) => ({
+      id: p.id,
+      ok: (await window.calder.provider.checkBinary(p.id)).ok,
+    })),
   );
-  cachedAvailability = new Map(checks.map(c => [c.id, c.ok]));
+  cachedAvailability = new Map(checks.map((c) => [c.id, c.ok]));
 }
 
 export function hasMultipleAvailableProviders(): boolean {
@@ -49,7 +56,9 @@ export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot 
   };
 }
 
-export function shouldRenderInlineProviderSelector(snapshot: ProviderAvailabilitySnapshot | null): boolean {
+export function shouldRenderInlineProviderSelector(
+  snapshot: ProviderAvailabilitySnapshot | null,
+): boolean {
   if (!snapshot) return false;
   let count = 0;
   for (const provider of snapshot.providers) {
@@ -71,10 +80,12 @@ export function resolvePreferredProviderForLaunch(
     return preferredProvider;
   }
 
-  return snapshot.providers.find(provider => snapshot.availability.get(provider.id))?.id
-    ?? preferredProvider
-    ?? snapshot.providers[0]?.id
-    ?? 'claude';
+  return (
+    snapshot.providers.find((provider) => snapshot.availability.get(provider.id))?.id ??
+    preferredProvider ??
+    snapshot.providers[0]?.id ??
+    'claude'
+  );
 }
 
 export function resolveProviderForCheck(
@@ -90,7 +101,11 @@ export function resolveProviderForCheck(
     return candidateProviderIds[0];
   }
 
-  if (preferredProvider && candidateProviderIds.includes(preferredProvider) && snapshot.availability.get(preferredProvider)) {
+  if (
+    preferredProvider &&
+    candidateProviderIds.includes(preferredProvider) &&
+    snapshot.availability.get(preferredProvider)
+  ) {
     return preferredProvider;
   }
 
@@ -109,10 +124,12 @@ export function getCachedProviderMetas(): CliProviderMeta[] {
 
 export function getProviderCapabilities(providerId: ProviderId): CliProviderCapabilities | null {
   if (!cachedProviders) return null;
-  return cachedProviders.find(provider => provider.id === providerId)?.capabilities ?? null;
+  return cachedProviders.find((provider) => provider.id === providerId)?.capabilities ?? null;
 }
 
 export function getProviderDisplayName(providerId: ProviderId): string {
-  return cachedProviders?.find((provider) => provider.id === providerId)?.displayName
-    ?? DEFAULT_PROVIDER_DISPLAY_NAMES[providerId];
+  return (
+    cachedProviders?.find((provider) => provider.id === providerId)?.displayName ??
+    DEFAULT_PROVIDER_DISPLAY_NAMES[providerId]
+  );
 }

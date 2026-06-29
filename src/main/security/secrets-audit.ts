@@ -10,22 +10,22 @@ import * as path from 'path';
 const CALDER_DIR = path.join(os.homedir(), '.calder');
 
 const SENSITIVE_PATTERNS = [
-  /sk-[a-zA-Z0-9]{20,}/,                          // OpenAI API key
-  /sk-ant-[a-zA-Z0-9-]{20,}/i,                   // Anthropic API key
-  /xpx[ac]-[a-zA-Z0-9-]{30,}/i,                  // Google API key pattern
-  /AIza[a-zA-Z0-9_-]{30,}/,                      // Google API key
-  /ghp_[a-zA-Z0-9]{36}/i,                        // GitHub token
-  /gho_[a-zA-Z0-9]{36}/i,                        // GitHub OAuth
-  /ghu_[a-zA-Z0-9]{36}/i,                        // GitHub user token
-  /ghs_[a-zA-Z0-9]{36}/i,                        // GitHub server token
-  /ghr_[a-zA-Z0-9]{36}/i,                        // GitHub refresh token
+  /sk-[a-zA-Z0-9]{20,}/, // OpenAI API key
+  /sk-ant-[a-zA-Z0-9-]{20,}/i, // Anthropic API key
+  /xpx[ac]-[a-zA-Z0-9-]{30,}/i, // Google API key pattern
+  /AIza[a-zA-Z0-9_-]{30,}/, // Google API key
+  /ghp_[a-zA-Z0-9]{36}/i, // GitHub token
+  /gho_[a-zA-Z0-9]{36}/i, // GitHub OAuth
+  /ghu_[a-zA-Z0-9]{36}/i, // GitHub user token
+  /ghs_[a-zA-Z0-9]{36}/i, // GitHub server token
+  /ghr_[a-zA-Z0-9]{36}/i, // GitHub refresh token
   /Bearer\s+[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/, // JWT
   /password\s*[:=]\s*['"]?[\w!@#$%^&*()+-]{4,}/i, // password=PASSWORD patterns
   /api[_-]?key\s*[:=]\s*['"]?[a-zA-Z0-9]{16,}['"]?/i, // generic API key patterns
-  /token\s*[:=]\s*['"]?[a-zA-Z0-9]{20,}['"]?/i,   // generic token patterns
-  /-----BEGIN.*PRIVATE KEY-----/,                // PEM private key
-  /-----BEGIN.*RSA.*PRIVATE KEY-----/,           // RSA private key
-  /AKIA[A-Z0-9]{16}/i,                           // AWS access key ID
+  /token\s*[:=]\s*['"]?[a-zA-Z0-9]{20,}['"]?/i, // generic token patterns
+  /-----BEGIN.*PRIVATE KEY-----/, // PEM private key
+  /-----BEGIN.*RSA.*PRIVATE KEY-----/, // RSA private key
+  /AKIA[A-Z0-9]{16}/i, // AWS access key ID
 ];
 
 const BLOCKED_FILE_NAMES = [

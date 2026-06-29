@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { ProjectCheckpointSource, ProjectCheckpointState } from '../../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointSource,
+  ProjectCheckpointState,
+} from '../../shared/types/project-checkpoint.js';
 
 interface RawCheckpointFile {
   schemaVersion?: number;
@@ -66,7 +69,8 @@ function isFile(filePath: string): boolean {
 
 function listCheckpointFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.json'))
       .sort((left, right) => right.localeCompare(left));
   } catch {
@@ -94,7 +98,9 @@ function readCheckpoint(filePath: string): ProjectCheckpointSource | null {
   }
 }
 
-export async function discoverProjectCheckpoints(projectPath: string): Promise<ProjectCheckpointState> {
+export async function discoverProjectCheckpoints(
+  projectPath: string,
+): Promise<ProjectCheckpointState> {
   const checkpointDir = path.join(projectPath, '.calder', 'checkpoints');
   const checkpoints = listCheckpointFiles(checkpointDir)
     .map((entry) => path.join(checkpointDir, entry))

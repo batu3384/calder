@@ -17,15 +17,18 @@ const {
   mockSanitizeExtraArgs: vi.fn((args: string) => (args ? args.split(/\s+/) : [])),
 }));
 
-const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync } = vi.hoisted(() => ({
-  mockSpawn: vi.fn(),
-  mockWrite: vi.fn(),
-  mockResize: vi.fn(),
-  mockKill: vi.fn(),
-  mockExecFile: vi.fn(),
-  mockExecFileSync: vi.fn(),
-  mockExecSync: vi.fn(() => { throw new Error('not found'); }),
-}));
+const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync } =
+  vi.hoisted(() => ({
+    mockSpawn: vi.fn(),
+    mockWrite: vi.fn(),
+    mockResize: vi.fn(),
+    mockKill: vi.fn(),
+    mockExecFile: vi.fn(),
+    mockExecFileSync: vi.fn(),
+    mockExecSync: vi.fn(() => {
+      throw new Error('not found');
+    }),
+  }));
 
 const { mockBuildBrowserBridgeEnv } = vi.hoisted(() => ({
   mockBuildBrowserBridgeEnv: vi.fn((cwd: string, env: Record<string, string>) => ({
@@ -56,8 +59,12 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(() => false),
   mkdirSync: vi.fn(),
   writeFileSync: vi.fn(),
-  readFileSync: vi.fn(() => { throw new Error('ENOENT'); }),
-  readdirSync: vi.fn(() => { throw new Error('ENOENT'); }),
+  readFileSync: vi.fn(() => {
+    throw new Error('ENOENT');
+  }),
+  readdirSync: vi.fn(() => {
+    throw new Error('ENOENT');
+  }),
 }));
 
 vi.mock('./browser-bridge', () => ({
@@ -95,13 +102,18 @@ function createMockPtyProcess() {
   const dataCallbacks: ((data: string) => void)[] = [];
   const exitCallbacks: ((info: { exitCode: number; signal?: number }) => void)[] = [];
   const proc = {
-    onData: vi.fn((cb: (data: string) => void) => { dataCallbacks.push(cb); }),
-    onExit: vi.fn((cb: (info: { exitCode: number; signal?: number }) => void) => { exitCallbacks.push(cb); }),
+    onData: vi.fn((cb: (data: string) => void) => {
+      dataCallbacks.push(cb);
+    }),
+    onExit: vi.fn((cb: (info: { exitCode: number; signal?: number }) => void) => {
+      exitCallbacks.push(cb);
+    }),
     write: mockWrite,
     resize: mockResize,
     kill: mockKill,
-    _emitData: (data: string) => dataCallbacks.forEach(cb => cb(data)),
-    _emitExit: (exitCode: number, signal?: number) => exitCallbacks.forEach(cb => cb({ exitCode, signal })),
+    _emitData: (data: string) => dataCallbacks.forEach((cb) => cb(data)),
+    _emitExit: (exitCode: number, signal?: number) =>
+      exitCallbacks.forEach((cb) => cb({ exitCode, signal })),
   };
   return proc;
 }
@@ -139,11 +151,7 @@ describe('spawnPty', () => {
 
     spawnPty('s1', '/project', 'claude-123', true, '', 'claude', undefined, vi.fn(), vi.fn());
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      'claude',
-      ['-r', 'claude-123'],
-      expect.any(Object),
-    );
+    expect(mockSpawn).toHaveBeenCalledWith('claude', ['-r', 'claude-123'], expect.any(Object));
   });
 
   it('falls back to a fresh spawn when restored conversation is missing', () => {
@@ -153,7 +161,17 @@ describe('spawnPty', () => {
     const onData = vi.fn();
     const onExit = vi.fn();
 
-    spawnPty('s1', '/project', 'missing-conversation', true, '', 'claude', undefined, onData, onExit);
+    spawnPty(
+      's1',
+      '/project',
+      'missing-conversation',
+      true,
+      '',
+      'claude',
+      undefined,
+      onData,
+      onExit,
+    );
 
     expect(mockSpawn).toHaveBeenNthCalledWith(
       1,
@@ -163,7 +181,9 @@ describe('spawnPty', () => {
     );
 
     firstProc._emitData('Error: no conversation found with session ID: missing-conversation');
-    expect(onData).toHaveBeenCalledWith('Error: no conversation found with session ID: missing-conversation');
+    expect(onData).toHaveBeenCalledWith(
+      'Error: no conversation found with session ID: missing-conversation',
+    );
     expect(onData).toHaveBeenCalledWith(
       '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
     );
@@ -173,12 +193,7 @@ describe('spawnPty', () => {
     firstProc._emitExit(1, 0);
     expect(onExit).not.toHaveBeenCalled();
 
-    expect(mockSpawn).toHaveBeenNthCalledWith(
-      2,
-      'claude',
-      [],
-      expect.any(Object),
-    );
+    expect(mockSpawn).toHaveBeenNthCalledWith(2, 'claude', [], expect.any(Object));
 
     secondProc._emitExit(0, 0);
     expect(onExit).toHaveBeenCalledWith(0, 0);
@@ -191,9 +206,21 @@ describe('spawnPty', () => {
     const onData = vi.fn();
     const onExit = vi.fn();
 
-    spawnPty('s1', '/project', '01fd5576-db97-4939-b722-41c11acb22da', true, '', 'claude', undefined, onData, onExit);
+    spawnPty(
+      's1',
+      '/project',
+      '01fd5576-db97-4939-b722-41c11acb22da',
+      true,
+      '',
+      'claude',
+      undefined,
+      onData,
+      onExit,
+    );
 
-    firstProc._emitData('No conversation found with\n session ID: 01fd5576-db97\n-4939-b722-41c11acb22da');
+    firstProc._emitData(
+      'No conversation found with\n session ID: 01fd5576-db97\n-4939-b722-41c11acb22da',
+    );
     expect(onData).toHaveBeenCalledWith(
       'No conversation found with\n session ID: 01fd5576-db97\n-4939-b722-41c11acb22da',
     );
@@ -224,13 +251,19 @@ describe('spawnPty', () => {
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
 
-    spawnPty('s1', '/project', null, false, '--verbose --debug', 'claude', undefined, vi.fn(), vi.fn());
-
-    expect(mockSpawn).toHaveBeenCalledWith(
+    spawnPty(
+      's1',
+      '/project',
+      null,
+      false,
+      '--verbose --debug',
       'claude',
-      ['--verbose', '--debug'],
-      expect.any(Object),
+      undefined,
+      vi.fn(),
+      vi.fn(),
     );
+
+    expect(mockSpawn).toHaveBeenCalledWith('claude', ['--verbose', '--debug'], expect.any(Object));
   });
 
   it('forwards PTY data to callback', () => {
@@ -270,11 +303,7 @@ describe('spawnPty', () => {
     freshInit();
     freshSpawnPty('s1', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
 
-    expect(mockSpawn).toHaveBeenCalledWith(
-      expectedPath,
-      [],
-      expect.any(Object),
-    );
+    expect(mockSpawn).toHaveBeenCalledWith(expectedPath, [], expect.any(Object));
   });
 
   it('sets required env vars', () => {
@@ -294,10 +323,9 @@ describe('spawnPty', () => {
     delete process.env.ANTHROPIC_BASE_URL;
     delete process.env.ANTHROPIC_AUTH_TOKEN;
     mockExecFileSync.mockReturnValue(
-      [
-        'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',
-        'ANTHROPIC_AUTH_TOKEN=test-token',
-      ].join('\n')
+      ['ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic', 'ANTHROPIC_AUTH_TOKEN=test-token'].join(
+        '\n',
+      ),
     );
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
@@ -437,8 +465,8 @@ describe('spawnShellPty', () => {
     proc._emitExit(0, 0);
 
     const expectedShell = isWin
-      ? (process.env.COMSPEC || 'cmd.exe')
-      : (process.env.SHELL || '/bin/zsh');
+      ? process.env.COMSPEC || 'cmd.exe'
+      : process.env.SHELL || '/bin/zsh';
 
     expect(mockSpawn).toHaveBeenCalledWith(
       expectedShell,
@@ -594,22 +622,43 @@ describe('getPtyCwd', () => {
     }
 
     // pgrep for pid 1000 returns child 2000
-    mockExecFile.mockImplementationOnce((_cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      if (args[1] === '1000') callback(null, '2000\n');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        if (args[1] === '1000') callback(null, '2000\n');
+        return undefined as never;
+      },
+    );
 
     // pgrep for pid 2000 returns no children (error)
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(new Error('no children'), '');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(new Error('no children'), '');
+        return undefined as never;
+      },
+    );
 
     // lsof for pid 2000
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(null, 'p2000\nfcwd\nn/some/worktree/path\n');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(null, 'p2000\nfcwd\nn/some/worktree/path\n');
+        return undefined as never;
+      },
+    );
 
     const result = await getPtyCwd('s1');
     expect(result).toBe('/some/worktree/path');
@@ -622,16 +671,30 @@ describe('getPtyCwd', () => {
     spawnPty('s2', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
 
     // pgrep returns no children
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(new Error('no children'), '');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(new Error('no children'), '');
+        return undefined as never;
+      },
+    );
 
     // lsof fails
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(new Error('lsof failed'), '');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(new Error('lsof failed'), '');
+        return undefined as never;
+      },
+    );
 
     const result = await getPtyCwd('s2');
     expect(result).toBeNull();
@@ -650,16 +713,30 @@ describe('getPtyCwd', () => {
     }
 
     // No children
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(new Error('no children'), '');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(new Error('no children'), '');
+        return undefined as never;
+      },
+    );
 
     // lsof output missing n<path> entry
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(null, 'p3000\nfcwd\n');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(null, 'p3000\nfcwd\n');
+        return undefined as never;
+      },
+    );
 
     const result = await getPtyCwd('s3');
     expect(result).toBeNull();
@@ -678,17 +755,31 @@ describe('getPtyCwd', () => {
     }
 
     // pgrep reports invalid child output -> parseInt NaN path
-    mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      callback(null, 'abc\n');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        callback(null, 'abc\n');
+        return undefined as never;
+      },
+    );
 
     // lsof for original pid
-    mockExecFile.mockImplementationOnce((_cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, stdout: string) => void) => {
-      expect(args).toContain('4000');
-      callback(null, 'p4000\nfcwd\nn/project/from-parent\n');
-      return undefined as never;
-    });
+    mockExecFile.mockImplementationOnce(
+      (
+        _cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, stdout: string) => void,
+      ) => {
+        expect(args).toContain('4000');
+        callback(null, 'p4000\nfcwd\nn/project/from-parent\n');
+        return undefined as never;
+      },
+    );
 
     const result = await getPtyCwd('s4');
     expect(result).toBe('/project/from-parent');

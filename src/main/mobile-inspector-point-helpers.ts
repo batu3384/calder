@@ -85,7 +85,8 @@ export async function inspectMobilePointWithDependencies(
   return {
     platform: 'ios',
     success: false,
-    message: 'iOS native hierarchy inspection is not available yet. Point-based routing is still applied.',
+    message:
+      'iOS native hierarchy inspection is not available yet. Point-based routing is still applied.',
     point,
     deviceId: ready.deviceId,
     deviceName: ready.deviceName,

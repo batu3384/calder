@@ -36,11 +36,11 @@ describe('buildStatusLineWrapper platform branches', () => {
     const wrapper = buildStatusLineWrapper('/tmp/statusline.py', '/tmp/statusline.log');
 
     expect(wrapper).toBe(
-      '#!/bin/sh\n'
-      + 'if [ "${CALDER_RUNTIME:-}" != "1" ]; then\n'
-      + '  exit 0\n'
-      + 'fi\n'
-      + '/usr/bin/python3 "/tmp/statusline.py" render 2>>"/tmp/statusline.log"\n',
+      '#!/bin/sh\n' +
+        'if [ "${CALDER_RUNTIME:-}" != "1" ]; then\n' +
+        '  exit 0\n' +
+        'fi\n' +
+        '/usr/bin/python3 "/tmp/statusline.py" render 2>>"/tmp/statusline.log"\n',
     );
   });
 });

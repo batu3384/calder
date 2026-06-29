@@ -56,7 +56,9 @@ describe('dom-utils', () => {
       createElement: vi.fn(() => makeSpan()),
     });
 
-    expect(esc(`<script>alert("x")</script> &'`)).toBe('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp;&#39;');
+    expect(esc(`<script>alert("x")</script> &'`)).toBe(
+      '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp;&#39;',
+    );
   });
 
   it('areaLabel maps known areas and falls back for unknown values', () => {

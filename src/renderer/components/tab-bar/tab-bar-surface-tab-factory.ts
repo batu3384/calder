@@ -20,9 +20,10 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
   tab.className = 'tab-item tab-surface-item' + (options.active ? ' active' : '');
   tab.dataset.surfaceTab = options.kind;
   tab.title = options.title;
-  const reorderHandle = options.project.sessions.length > 0
-    ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
-    : '';
+  const reorderHandle =
+    options.project.sessions.length > 0
+      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
+      : '';
   tab.innerHTML = `
     ${reorderHandle}
     <span class="tab-name">
@@ -87,12 +88,13 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
       if (draggedId.startsWith('__surface:')) {
         const draggedKind = draggedId.replace('__surface:', '') as 'cli' | 'mobile';
         if (draggedKind === options.kind) return;
-        const baseOrder: Array<'cli' | 'mobile'> = Array.isArray(currentSurface.tabOrder)
-          && currentSurface.tabOrder.length === 2
-          && currentSurface.tabOrder.includes('cli')
-          && currentSurface.tabOrder.includes('mobile')
-          ? [...currentSurface.tabOrder]
-          : ['cli', 'mobile'];
+        const baseOrder: Array<'cli' | 'mobile'> =
+          Array.isArray(currentSurface.tabOrder) &&
+          currentSurface.tabOrder.length === 2 &&
+          currentSurface.tabOrder.includes('cli') &&
+          currentSurface.tabOrder.includes('mobile')
+            ? [...currentSurface.tabOrder]
+            : ['cli', 'mobile'];
         const filtered = baseOrder.filter((entry) => entry !== draggedKind);
         const targetIndex = filtered.indexOf(options.kind);
         const insertIndex = event.clientX < midX ? targetIndex : targetIndex + 1;

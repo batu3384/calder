@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { ProjectTeamContextSpaceSource, ProjectTeamContextState } from '../../shared/types/project-team-context.js';
+import type {
+  ProjectTeamContextSpaceSource,
+  ProjectTeamContextState,
+} from '../../shared/types/project-team-context.js';
 
 function isFile(filePath: string): boolean {
   try {
@@ -13,7 +16,8 @@ function isFile(filePath: string): boolean {
 
 function listMarkdownFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.md'))
       .sort((left, right) => left.localeCompare(right));
   } catch {
@@ -38,11 +42,14 @@ function readSummary(filePath: string): string {
 function countMarkdownFiles(dirPath: string): number {
   return listMarkdownFiles(dirPath)
     .map((entry) => path.join(dirPath, entry))
-    .filter(isFile)
-    .length;
+    .filter(isFile).length;
 }
 
-function buildSpace(filePath: string, linkedRuleCount: number, linkedWorkflowCount: number): ProjectTeamContextSpaceSource {
+function buildSpace(
+  filePath: string,
+  linkedRuleCount: number,
+  linkedWorkflowCount: number,
+): ProjectTeamContextSpaceSource {
   const stat = fs.statSync(filePath);
   return {
     id: `team-context:${filePath}`,
@@ -55,7 +62,9 @@ function buildSpace(filePath: string, linkedRuleCount: number, linkedWorkflowCou
   };
 }
 
-export async function discoverProjectTeamContext(projectPath: string): Promise<ProjectTeamContextState> {
+export async function discoverProjectTeamContext(
+  projectPath: string,
+): Promise<ProjectTeamContextState> {
   const spaceDir = path.join(projectPath, '.calder', 'team', 'spaces');
   const ruleDir = path.join(projectPath, '.calder', 'rules');
   const workflowDir = path.join(projectPath, '.calder', 'workflows');

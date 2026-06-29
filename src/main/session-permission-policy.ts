@@ -1,16 +1,8 @@
 import type { Session, WebContents } from 'electron';
 
-const LOOPBACK_HOSTS = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-  '[::1]',
-]);
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
-const LOCAL_ALLOWED_PERMISSIONS = new Set([
-  'clipboard-sanitized-write',
-  'fullscreen',
-]);
+const LOCAL_ALLOWED_PERMISSIONS = new Set(['clipboard-sanitized-write', 'fullscreen']);
 
 interface PermissionRequestDetailsLike {
   requestingUrl?: string;
@@ -48,11 +40,11 @@ function resolvePermissionOrigin(
   details: PermissionRequestDetailsLike | undefined,
 ): string {
   return (
-    details?.requestingUrl
-    || details?.requestingOrigin
-    || requestingOrigin
-    || webContents?.getURL?.()
-    || ''
+    details?.requestingUrl ||
+    details?.requestingOrigin ||
+    requestingOrigin ||
+    webContents?.getURL?.() ||
+    ''
   );
 }
 

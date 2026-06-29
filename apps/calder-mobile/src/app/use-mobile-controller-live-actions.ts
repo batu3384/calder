@@ -62,7 +62,10 @@ type RunInLiveWebViewDeps = {
   liveControlVisible: boolean;
 };
 
-export function runInLiveWebView({ liveWebViewRef, liveControlVisible }: RunInLiveWebViewDeps, script: string): boolean {
+export function runInLiveWebView(
+  { liveWebViewRef, liveControlVisible }: RunInLiveWebViewDeps,
+  script: string,
+): boolean {
   const webView = liveWebViewRef.current;
   if (!webView || !liveControlVisible) return false;
   webView.injectJavaScript(`${script}\ntrue;`);
@@ -217,10 +220,7 @@ export function createLiveActionHandlers({
   const sendInspectPrompt = (): void => {
     const instruction = getInspectInstructionDraft().trim();
     if (!instruction) {
-      writeMessage(
-        'Inspect talimati bos olamaz.',
-        'Inspect instruction cannot be empty.',
-      );
+      writeMessage('Inspect talimati bos olamaz.', 'Inspect instruction cannot be empty.');
       return;
     }
     const payload = JSON.stringify(instruction);

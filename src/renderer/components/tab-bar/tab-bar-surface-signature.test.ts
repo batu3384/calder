@@ -52,6 +52,8 @@ describe('tab-bar-surface-signature', () => {
   it('includes default surface when project surface is missing', () => {
     const project = makeProject();
     delete project.surface;
-    expect(buildSurfaceControlsSignatureForProject(project)).toContain('project-1::web::0::session');
+    expect(buildSurfaceControlsSignatureForProject(project)).toContain(
+      'project-1::web::0::session',
+    );
   });
 });

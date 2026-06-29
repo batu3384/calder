@@ -63,10 +63,7 @@ export function validatePrerequisites(): { ok: boolean; message: string } {
   try {
     const currentPath = process.env.PATH || '';
     const extraDirs = isWin
-      ? [
-          path.join(home, 'AppData', 'Roaming', 'npm'),
-          path.join(home, '.local', 'bin'),
-        ]
+      ? [path.join(home, 'AppData', 'Roaming', 'npm'), path.join(home, '.local', 'bin')]
       : [
           '/usr/local/bin',
           '/opt/homebrew/bin',

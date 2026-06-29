@@ -7,7 +7,11 @@ const SWARM_PANE_SELECTORS = [
   '.file-reader-pane',
   '.mcp-inspector-pane',
 ];
-const SWARM_REORDER_HEADER_SELECTORS = ['.terminal-pane-chrome', '.file-viewer-header', '.mcp-inspector-header'];
+const SWARM_REORDER_HEADER_SELECTORS = [
+  '.terminal-pane-chrome',
+  '.file-viewer-header',
+  '.mcp-inspector-header',
+];
 export const SWARM_PANE_SELECTOR = SWARM_PANE_SELECTORS.join(', ');
 export const SWARM_REORDER_HEADER_SELECTOR = SWARM_REORDER_HEADER_SELECTORS.join(', ');
 
@@ -15,11 +19,15 @@ let draggingSwarmSessionId: string | null = null;
 
 export function getVisibleSwarmSessions(project: ProjectRecord): ProjectRecord['sessions'] {
   const visibleIds = new Set(project.layout.splitPanes);
-  return project.sessions.filter((session) => visibleIds.has(session.id) && (!session.type || session.type === 'claude'));
+  return project.sessions.filter(
+    (session) => visibleIds.has(session.id) && (!session.type || session.type === 'claude'),
+  );
 }
 
 function getPaneCandidates(root: ParentNode): HTMLElement[] {
-  return SWARM_PANE_SELECTORS.flatMap((selector) => Array.from(root.querySelectorAll(selector)) as HTMLElement[]);
+  return SWARM_PANE_SELECTORS.flatMap(
+    (selector) => Array.from(root.querySelectorAll(selector)) as HTMLElement[],
+  );
 }
 
 function findPaneBySessionId(sessionId: string, root: ParentNode): HTMLElement | null {
@@ -101,12 +109,19 @@ export function bindSwarmReorderInteractions(options: BindSwarmReorderInteractio
   container.addEventListener('dragstart', (e) => {
     const project = getProject();
     if (!project || !isMosaicMode(project)) return;
-    const handle = (e.target as HTMLElement).closest(SWARM_REORDER_HEADER_SELECTOR) as HTMLElement | null;
+    const handle = (e.target as HTMLElement).closest(
+      SWARM_REORDER_HEADER_SELECTOR,
+    ) as HTMLElement | null;
     if (!handle) return;
 
     const paneEl = handle.closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const sessionId = paneEl?.dataset.sessionId;
-    if (!sessionId || !getVisibleSwarmSessions(project).some((session) => session.id === sessionId) || !e.dataTransfer) return;
+    if (
+      !sessionId ||
+      !getVisibleSwarmSessions(project).some((session) => session.id === sessionId) ||
+      !e.dataTransfer
+    )
+      return;
 
     draggingSwarmSessionId = sessionId;
     e.dataTransfer.effectAllowed = 'move';
@@ -121,12 +136,19 @@ export function bindSwarmReorderInteractions(options: BindSwarmReorderInteractio
     const paneEl = (e.target as HTMLElement).closest(SWARM_PANE_SELECTOR) as HTMLElement | null;
     const targetSessionId = paneEl?.dataset.sessionId;
     const visibleSessions = getVisibleSwarmSessions(project);
-    if (!paneEl || !targetSessionId || targetSessionId === draggingSwarmSessionId || !visibleSessions.some((session) => session.id === targetSessionId)) {
+    if (
+      !paneEl ||
+      !targetSessionId ||
+      targetSessionId === draggingSwarmSessionId ||
+      !visibleSessions.some((session) => session.id === targetSessionId)
+    ) {
       return;
     }
 
     e.preventDefault();
-    getPaneCandidates(container).forEach((pane) => pane.classList.toggle('swarm-reorder-target', pane === paneEl));
+    getPaneCandidates(container).forEach((pane) =>
+      pane.classList.toggle('swarm-reorder-target', pane === paneEl),
+    );
   });
 
   container.addEventListener('dragleave', (e) => {
@@ -148,7 +170,10 @@ export function bindSwarmReorderInteractions(options: BindSwarmReorderInteractio
       return;
     }
     const visibleSessions = getVisibleSwarmSessions(project);
-    if (!visibleSessions.some((session) => session.id === targetSessionId) || !visibleSessions.some((session) => session.id === draggedSessionId)) {
+    if (
+      !visibleSessions.some((session) => session.id === targetSessionId) ||
+      !visibleSessions.some((session) => session.id === draggedSessionId)
+    ) {
       clearSwarmReorderIndicators(container);
       return;
     }

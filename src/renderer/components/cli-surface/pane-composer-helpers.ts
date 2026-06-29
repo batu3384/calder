@@ -5,13 +5,8 @@ import {
   syncComposerContextControl as syncComposerContextControlBehavior,
   syncComposerContextTrace as syncComposerContextTraceBehavior,
 } from './context-controls.js';
-import {
-  pointerToCell,
-  selectionFromCells,
-} from './inspect-geometry.js';
-import {
-  closeInspect,
-} from './inspect-mode.js';
+import { pointerToCell, selectionFromCells } from './inspect-geometry.js';
+import { closeInspect } from './inspect-mode.js';
 import type { CliSurfaceInstance } from './pane-instance.js';
 
 type BuildInspectPayloadFn = (
@@ -89,12 +84,19 @@ export function setInspectPayloadFromPointer(
   setInspectPayloadFromSelection: (selection: SurfaceSelectionRange | null) => void,
 ): void {
   if (!instance.selectionAnchor) return;
-  const current = pointerToCell(instance.viewport, instance.terminal.cols, instance.terminal.rows, event);
+  const current = pointerToCell(
+    instance.viewport,
+    instance.terminal.cols,
+    instance.terminal.rows,
+    event,
+  );
   if (!current) return;
-  setInspectPayloadFromSelection(selectionFromCells({
-    viewportLineCount: instance.viewportLines.length,
-    terminalCols: instance.terminal.cols,
-    start: instance.selectionAnchor,
-    end: current,
-  }));
+  setInspectPayloadFromSelection(
+    selectionFromCells({
+      viewportLineCount: instance.viewportLines.length,
+      terminalCols: instance.terminal.cols,
+      start: instance.selectionAnchor,
+      end: current,
+    }),
+  );
 }

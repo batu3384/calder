@@ -52,12 +52,18 @@ export function getSectionPresentation(container: HTMLElement): SectionPresentat
 export function getCompactSummary(total: number, conflicted: number): string {
   if (total === 0) return 'Git is clean';
   if (conflicted > 0) {
-    return conflicted === 1 ? '1 conflicted file needs review' : `${conflicted} conflicted files need review`;
+    return conflicted === 1
+      ? '1 conflicted file needs review'
+      : `${conflicted} conflicted files need review`;
   }
   return total === 1 ? '1 file changed' : `${total} files changed`;
 }
 
-export function renderGitBodyState(body: HTMLElement, message: string, tone: GitNoteTone = 'muted'): void {
+export function renderGitBodyState(
+  body: HTMLElement,
+  message: string,
+  tone: GitNoteTone = 'muted',
+): void {
   body.innerHTML = '';
   const empty = document.createElement('div');
   empty.className = 'config-empty ops-rail-note';
@@ -96,14 +102,7 @@ function updateGitHeader(
 }
 
 export function ensureGitSection(args: EnsureGitSectionArgs): HTMLElement {
-  const {
-    container,
-    total,
-    headerSuffix,
-    detailExpanded,
-    showCompactSummary,
-    onToggle,
-  } = args;
+  const { container, total, headerSuffix, detailExpanded, showCompactSummary, onToggle } = args;
   const existingSection = container.querySelector('.config-section');
   if (existingSection) {
     const body = existingSection.querySelector('.config-section-body') as HTMLElement | null;
@@ -134,13 +133,7 @@ export function ensureGitSection(args: EnsureGitSectionArgs): HTMLElement {
 }
 
 export function renderWorktreeSelector(args: RenderWorktreeSelectorArgs): void {
-  const {
-    container,
-    project,
-    worktrees,
-    activeGitPath,
-    onSelectWorktree,
-  } = args;
+  const { container, project, worktrees, activeGitPath, onSelectWorktree } = args;
 
   const existing = container.querySelector('.git-worktree-selector');
   if (existing) existing.remove();

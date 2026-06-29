@@ -1,8 +1,6 @@
 import type { ShareIceServer, ShareRtcConfig } from '../shared/sharing-types';
 
-const DEFAULT_ICE_SERVERS: ShareIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-];
+const DEFAULT_ICE_SERVERS: ShareIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -48,7 +46,9 @@ function parseIceServersFromJson(raw: string, issues: string[]): ShareIceServer[
     .filter((entry): entry is ShareIceServer => Boolean(entry));
 
   if (normalized.length === 0) {
-    issues.push('CALDER_SHARE_ICE_SERVERS did not contain valid ICE server entries. Falling back to default STUN server.');
+    issues.push(
+      'CALDER_SHARE_ICE_SERVERS did not contain valid ICE server entries. Falling back to default STUN server.',
+    );
   }
   return normalized;
 }
@@ -70,29 +70,33 @@ function parseIceServersFromCsv(raw: string, issues: string[]): ShareIceServer[]
 function parseIceServers(raw: string | undefined, issues: string[]): ShareIceServer[] {
   if (!isNonEmptyString(raw)) return DEFAULT_ICE_SERVERS;
   const trimmed = raw.trim();
-  const parsed = trimmed.startsWith('[') || trimmed.startsWith('{')
-    ? parseIceServersFromJson(trimmed, issues)
-    : parseIceServersFromCsv(trimmed, issues);
+  const parsed =
+    trimmed.startsWith('[') || trimmed.startsWith('{')
+      ? parseIceServersFromJson(trimmed, issues)
+      : parseIceServersFromCsv(trimmed, issues);
   return parsed.length > 0 ? parsed : DEFAULT_ICE_SERVERS;
 }
 
-function parseIceTransportPolicy(raw: string | undefined, issues: string[]): 'all' | 'relay' | undefined {
+function parseIceTransportPolicy(
+  raw: string | undefined,
+  issues: string[],
+): 'all' | 'relay' | undefined {
   if (!isNonEmptyString(raw)) return undefined;
   const normalized = raw.trim().toLowerCase();
   if (normalized === 'all' || normalized === 'relay') return normalized;
-  issues.push(`CALDER_SHARE_ICE_POLICY value "${raw}" is invalid. Allowed values are "all" or "relay".`);
+  issues.push(
+    `CALDER_SHARE_ICE_POLICY value "${raw}" is invalid. Allowed values are "all" or "relay".`,
+  );
   return undefined;
 }
 
-export function resolveShareRtcConfigFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): ShareRtcConfig {
+export function resolveShareRtcConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ShareRtcConfig {
   const issues: string[] = [];
   const iceServers = parseIceServers(env.CALDER_SHARE_ICE_SERVERS, issues);
   const iceTransportPolicy = parseIceTransportPolicy(env.CALDER_SHARE_ICE_POLICY, issues);
 
-  const hasEnvOverrides = isNonEmptyString(env.CALDER_SHARE_ICE_SERVERS)
-    || isNonEmptyString(env.CALDER_SHARE_ICE_POLICY);
+  const hasEnvOverrides =
+    isNonEmptyString(env.CALDER_SHARE_ICE_SERVERS) || isNonEmptyString(env.CALDER_SHARE_ICE_POLICY);
 
   return {
     iceServers,
@@ -101,4 +105,3 @@ export function resolveShareRtcConfigFromEnv(
     issues,
   };
 }
-

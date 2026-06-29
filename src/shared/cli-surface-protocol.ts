@@ -10,7 +10,9 @@ export interface CalderProtocolMessage {
 }
 
 export type CalderProtocolPayload = Omit<CalderProtocolMessage, 'type'>;
-export type CliSurfaceProtocolWriter = ((chunk: string) => void) | { write(chunk: string): unknown };
+export type CliSurfaceProtocolWriter =
+  | ((chunk: string) => void)
+  | { write(chunk: string): unknown };
 
 export const OSC_PREFIX = '\u001b]8970;calder=';
 export const OSC_SUFFIX = '\u0007';
@@ -52,12 +54,18 @@ export function extractCalderOscMessages(input: string): {
   messages: CalderProtocolMessage[];
   remainder: string;
 };
-export function extractCalderOscMessages(input: string, carryover: string): {
+export function extractCalderOscMessages(
+  input: string,
+  carryover: string,
+): {
   plainText: string;
   messages: CalderProtocolMessage[];
   remainder: string;
 };
-export function extractCalderOscMessages(input: string, carryover = ''): {
+export function extractCalderOscMessages(
+  input: string,
+  carryover = '',
+): {
   plainText: string;
   messages: CalderProtocolMessage[];
   remainder: string;
@@ -123,7 +131,10 @@ function writeProtocolChunk(writer: CliSurfaceProtocolWriter, chunk: string): vo
   writer.write(chunk);
 }
 
-export function emitCalderOsc(writer: CliSurfaceProtocolWriter, message: CalderProtocolMessage): string {
+export function emitCalderOsc(
+  writer: CliSurfaceProtocolWriter,
+  message: CalderProtocolMessage,
+): string {
   const encoded = encodeCalderOsc(message);
   writeProtocolChunk(writer, encoded);
   return encoded;

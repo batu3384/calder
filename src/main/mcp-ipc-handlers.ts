@@ -7,7 +7,10 @@ import {
   MCP_GOVERNANCE_ERROR_CODES,
   type McpGovernanceOperation,
 } from './ipc-mcp-governance';
-import { getActiveProjectPath as getActiveProjectPathFromPolicy, requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
+import {
+  getActiveProjectPath as getActiveProjectPathFromPolicy,
+  requireKnownProjectPath as requireKnownProjectPathFromPolicy,
+} from './ipc-path-policy';
 import * as mcpClient from './mcp-client';
 
 interface McpRuntimeGovernanceOps {
@@ -73,44 +76,42 @@ async function withMcpRuntimeGovernance<T>(
   return run();
 }
 
-export function registerMcpHandlers(ops: McpRuntimeGovernanceOps = defaultMcpRuntimeGovernanceOps): void {
+export function registerMcpHandlers(
+  ops: McpRuntimeGovernanceOps = defaultMcpRuntimeGovernanceOps,
+): void {
   ipcMain.handle('mcp:connect', (_event, id: string, url: string) =>
-    withMcpRuntimeGovernance(
-      ops,
-      { kind: 'mcp', label: 'Connect MCP server' },
-      () => mcpClient.connect(id, url),
-    ));
+    withMcpRuntimeGovernance(ops, { kind: 'mcp', label: 'Connect MCP server' }, () =>
+      mcpClient.connect(id, url),
+    ),
+  );
 
-  ipcMain.handle('mcp:disconnect', (_event, id: string) =>
-    mcpClient.disconnect(id));
+  ipcMain.handle('mcp:disconnect', (_event, id: string) => mcpClient.disconnect(id));
 
-  ipcMain.handle('mcp:listTools', (_event, id: string) =>
-    mcpClient.listTools(id));
+  ipcMain.handle('mcp:listTools', (_event, id: string) => mcpClient.listTools(id));
 
-  ipcMain.handle('mcp:listResources', (_event, id: string) =>
-    mcpClient.listResources(id));
+  ipcMain.handle('mcp:listResources', (_event, id: string) => mcpClient.listResources(id));
 
-  ipcMain.handle('mcp:listPrompts', (_event, id: string) =>
-    mcpClient.listPrompts(id));
+  ipcMain.handle('mcp:listPrompts', (_event, id: string) => mcpClient.listPrompts(id));
 
-  ipcMain.handle('mcp:callTool', (_event, id: string, name: string, args: Record<string, unknown>) =>
-    withMcpRuntimeGovernance(
-      ops,
-      { kind: 'mcp', label: 'Call MCP tool' },
-      () => mcpClient.callTool(id, name, args),
-    ));
+  ipcMain.handle(
+    'mcp:callTool',
+    (_event, id: string, name: string, args: Record<string, unknown>) =>
+      withMcpRuntimeGovernance(ops, { kind: 'mcp', label: 'Call MCP tool' }, () =>
+        mcpClient.callTool(id, name, args),
+      ),
+  );
 
   ipcMain.handle('mcp:readResource', (_event, id: string, uri: string) =>
-    withMcpRuntimeGovernance(
-      ops,
-      { kind: 'mcp', label: 'Read MCP resource' },
-      () => mcpClient.readResource(id, uri),
-    ));
+    withMcpRuntimeGovernance(ops, { kind: 'mcp', label: 'Read MCP resource' }, () =>
+      mcpClient.readResource(id, uri),
+    ),
+  );
 
-  ipcMain.handle('mcp:getPrompt', (_event, id: string, name: string, args: Record<string, string>) =>
-    withMcpRuntimeGovernance(
-      ops,
-      { kind: 'mcp', label: 'Get MCP prompt' },
-      () => mcpClient.getPrompt(id, name, args),
-    ));
+  ipcMain.handle(
+    'mcp:getPrompt',
+    (_event, id: string, name: string, args: Record<string, string>) =>
+      withMcpRuntimeGovernance(ops, { kind: 'mcp', label: 'Get MCP prompt' }, () =>
+        mcpClient.getPrompt(id, name, args),
+      ),
+  );
 }

@@ -13,6 +13,7 @@
 ### Task 1: Lock The Launch Rules In Tests
 
 **Files:**
+
 - Modify: `src/renderer/state.test.ts`
 - Modify: `src/renderer/components/tab-bar-command-deck.test.ts`
 - Create: `src/renderer/components/tab-bar-provider-selector.test.ts`
@@ -20,6 +21,7 @@
 - [ ] **Step 1: Write the failing state tests**
 
 Add tests that prove:
+
 - `addSession()` uses `preferences.defaultProvider` when no explicit provider is passed
 - `addSession()` still respects an explicit provider when one is passed
 
@@ -40,12 +42,14 @@ Expected: FAIL because the selector and helper do not exist yet
 ### Task 2: Implement Shared Provider Resolution
 
 **Files:**
+
 - Modify: `src/renderer/components/tab-bar.ts`
 - Modify: `src/renderer/components/custom-select.ts`
 
 - [ ] **Step 1: Add a pure helper for effective command-deck provider selection**
 
 Implement helper logic that:
+
 - reads the preferred provider
 - falls back to the first available installed provider when the preferred one is unavailable
 - falls back to the preferred ID or `claude` only when no availability snapshot exists
@@ -62,6 +66,7 @@ Expected: PASS for the helper/state expectations
 ### Task 3: Render The Inline Command Deck Selector
 
 **Files:**
+
 - Modify: `src/renderer/index.html`
 - Modify: `src/renderer/components/tab-bar.ts`
 - Modify: `src/renderer/styles/tabs.css`
@@ -94,6 +99,7 @@ Expected: PASS
 ### Task 4: Full Verification And Commit
 
 **Files:**
+
 - Verify only
 
 - [ ] **Step 1: Run the full test suite**

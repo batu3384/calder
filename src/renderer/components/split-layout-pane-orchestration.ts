@@ -86,7 +86,12 @@ export function ensureSplitLayoutSessionInstances(project: ProjectRecord): void 
       }
     } else if (session.type === 'diff-viewer') {
       if (!getFileViewerInstance(session.id)) {
-        createFileViewerPane(session.id, session.diffFilePath || '', session.diffArea || '', session.worktreePath);
+        createFileViewerPane(
+          session.id,
+          session.diffFilePath || '',
+          session.diffArea || '',
+          session.worktreePath,
+        );
       }
     } else if (session.type === 'mcp-inspector') {
       if (!getInspectorInstance(session.id)) {
@@ -128,7 +133,12 @@ export function handleSplitLayoutSessionAdded(data: unknown, renderLayout: Rende
     return;
   }
   if (session.type === 'diff-viewer') {
-    createFileViewerPane(session.id, session.diffFilePath || '', session.diffArea || '', session.worktreePath);
+    createFileViewerPane(
+      session.id,
+      session.diffFilePath || '',
+      session.diffArea || '',
+      session.worktreePath,
+    );
     renderLayout();
     return;
   }
@@ -197,7 +207,11 @@ export function handleSplitLayoutSessionRemoved(data: unknown, renderLayout: Ren
 
 type DisplaySession = Pick<SessionRecord, 'id' | 'type' | 'fileReaderLine'>;
 
-export function attachSplitLayoutNonCliPane(session: DisplaySession, target: HTMLElement, inSplit: boolean): void {
+export function attachSplitLayoutNonCliPane(
+  session: DisplaySession,
+  target: HTMLElement,
+  inSplit: boolean,
+): void {
   if (session.type === 'file-reader') {
     attachFileReaderToContainer(session.id, target);
     showFileReaderPane(session.id, inSplit);
@@ -219,7 +233,11 @@ export function attachSplitLayoutNonCliPane(session: DisplaySession, target: HTM
   }
 }
 
-export function showSplitLayoutPanes(project: ProjectRecord, paneIds: string[], target: HTMLElement): void {
+export function showSplitLayoutPanes(
+  project: ProjectRecord,
+  paneIds: string[],
+  target: HTMLElement,
+): void {
   for (const paneId of paneIds) {
     const session = project.sessions.find((entry) => entry.id === paneId);
     if (session?.type && session.type !== 'claude') {

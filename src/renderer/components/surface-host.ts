@@ -16,17 +16,15 @@ function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefi
 
 function isCliSurfaceFocused(project: ProjectRecord): boolean {
   return Boolean(
-    project.surface?.active
-    && project.surface.kind === 'cli'
-    && project.surface.tabFocus === 'cli',
+    project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli',
   );
 }
 
 function isMobileSurfaceFocused(project: ProjectRecord): boolean {
   return Boolean(
-    project.surface?.active
-    && project.surface.kind === 'mobile'
-    && project.surface.tabFocus === 'mobile',
+    project.surface?.active &&
+    project.surface.kind === 'mobile' &&
+    project.surface.tabFocus === 'mobile',
   );
 }
 

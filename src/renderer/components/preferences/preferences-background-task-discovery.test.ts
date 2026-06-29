@@ -55,7 +55,9 @@ describe('preferences-background-task-discovery helpers', () => {
 
   it('formats task meta with summary and artifact plurality', () => {
     expect(
-      buildBackgroundTaskMetaText(task({ status: 'running', artifactCount: 2, summary: 'Investigating flaky tests' })),
+      buildBackgroundTaskMetaText(
+        task({ status: 'running', artifactCount: 2, summary: 'Investigating flaky tests' }),
+      ),
     ).toBe('running · 2 artifacts · Investigating flaky tests');
 
     expect(buildBackgroundTaskMetaText(task({ status: 'completed', artifactCount: 1 }))).toBe(

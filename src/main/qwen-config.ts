@@ -27,7 +27,9 @@ function readMcpServersFromJson(filePath: string, scope: 'user' | 'project'): Mc
   if (!json?.mcpServers || typeof json.mcpServers !== 'object') return [];
 
   const servers: McpServer[] = [];
-  for (const [name, config] of Object.entries(json.mcpServers as Record<string, Record<string, unknown>>)) {
+  for (const [name, config] of Object.entries(
+    json.mcpServers as Record<string, Record<string, unknown>>,
+  )) {
     const url = (config?.url as string) || (config?.command as string) || '';
     if (url) {
       servers.push({ name, url, status: 'configured', scope, filePath });
@@ -93,13 +95,15 @@ function readRuntimeBaseDir(projectPath: string): string {
 
   const userSettings = readJsonSafe(path.join(homedir(), '.qwen', 'settings.json'));
   const projectSettings = readJsonSafe(path.join(projectPath, '.qwen', 'settings.json'));
-  const projectRuntime = projectSettings?.advanced && typeof projectSettings.advanced === 'object'
-    ? (projectSettings.advanced as Record<string, unknown>).runtimeOutputDir
-    : undefined;
+  const projectRuntime =
+    projectSettings?.advanced && typeof projectSettings.advanced === 'object'
+      ? (projectSettings.advanced as Record<string, unknown>).runtimeOutputDir
+      : undefined;
   if (typeof projectRuntime === 'string' && projectRuntime.trim()) return projectRuntime;
-  const userRuntime = userSettings?.advanced && typeof userSettings.advanced === 'object'
-    ? (userSettings.advanced as Record<string, unknown>).runtimeOutputDir
-    : undefined;
+  const userRuntime =
+    userSettings?.advanced && typeof userSettings.advanced === 'object'
+      ? (userSettings.advanced as Record<string, unknown>).runtimeOutputDir
+      : undefined;
   if (typeof userRuntime === 'string' && userRuntime.trim()) return userRuntime;
   return path.join(homedir(), '.qwen');
 }
@@ -209,4 +213,3 @@ export function findQwenTranscriptPath(cliSessionId: string, projectPath: string
     return null;
   }
 }
-

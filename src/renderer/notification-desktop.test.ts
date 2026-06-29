@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockAppState = vi.hoisted(() => {
   const state = {
@@ -17,7 +17,7 @@ const mockAppState = vi.hoisted(() => {
       notificationsDesktop: true,
     },
     get activeProject() {
-      return state.projects.find(p => p.id === state.activeProjectId);
+      return state.projects.find((p) => p.id === state.activeProjectId);
     },
     setActiveProject: vi.fn(),
     setActiveSession: vi.fn(),
@@ -30,12 +30,22 @@ vi.mock('./state.js', () => ({
   appState: mockAppState,
 }));
 
-import { _resetForTesting as resetDesktopNotif, initNotificationDesktop } from './notification-desktop.js';
-import { _resetForTesting as resetActivity, initSession,setHookStatus } from './session-activity.js';
-
+import {
+  _resetForTesting as resetDesktopNotif,
+  initNotificationDesktop,
+} from './notification-desktop.js';
+import {
+  _resetForTesting as resetActivity,
+  initSession,
+  setHookStatus,
+} from './session-activity.js';
 
 // Track Notification constructor calls
-let notificationInstances: Array<{ title: string; options: NotificationOptions; onclick: (() => void) | null }> = [];
+let notificationInstances: Array<{
+  title: string;
+  options: NotificationOptions;
+  onclick: (() => void) | null;
+}> = [];
 let mockHasFocus = false;
 
 class MockNotification {
@@ -52,7 +62,11 @@ class MockNotification {
 }
 
 // Set up globals before imports use them
-Object.defineProperty(globalThis, 'Notification', { value: MockNotification, writable: true, configurable: true });
+Object.defineProperty(globalThis, 'Notification', {
+  value: MockNotification,
+  writable: true,
+  configurable: true,
+});
 if (typeof globalThis.document === 'undefined') {
   (globalThis as any).document = { hasFocus: () => mockHasFocus };
 } else {
@@ -100,7 +114,9 @@ describe('notification-desktop', () => {
     setHookStatus('bg-session', 'input');
 
     expect(notificationInstances).toHaveLength(1);
-    expect(notificationInstances[0].options.body).toBe('Background Session needs your input to continue');
+    expect(notificationInstances[0].options.body).toBe(
+      'Background Session needs your input to continue',
+    );
   });
 
   it('should not notify when preference is disabled', () => {

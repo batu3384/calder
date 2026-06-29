@@ -3,7 +3,7 @@ import {
   createCliSurfaceLayout,
   createCliSurfaceTerminal,
 } from './pane-elements.js';
-import { type CliSurfaceInstance,createCliSurfaceInstance } from './pane-instance.js';
+import { type CliSurfaceInstance, createCliSurfaceInstance } from './pane-instance.js';
 import type { CliSurfacePaneStore } from './pane-store.js';
 
 interface EnsureCliSurfaceInstanceOptions {
@@ -20,7 +20,9 @@ interface EnsureCliSurfaceInstanceOptions {
   openExternal(url: string, cwd?: string): void;
 }
 
-export function ensureCliSurfacePaneInstance(options: EnsureCliSurfaceInstanceOptions): CliSurfaceInstance {
+export function ensureCliSurfacePaneInstance(
+  options: EnsureCliSurfaceInstanceOptions,
+): CliSurfaceInstance {
   const existing = options.store.instances.get(options.projectId);
   if (existing) return existing;
 

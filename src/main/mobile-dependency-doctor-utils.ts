@@ -46,7 +46,9 @@ export function parsePercentFromLine(line: string): number | null {
   return clampPercent(raw);
 }
 
-export function parseBytePairFromLine(line: string): { downloadedBytes: number; totalBytes: number; remainingBytes: number } | null {
+export function parseBytePairFromLine(
+  line: string,
+): { downloadedBytes: number; totalBytes: number; remainingBytes: number } | null {
   const match = line.match(
     /(\d+(?:\.\d+)?)\s*(B|bytes?|KiB|KB|MiB|MB|GiB|GB|TiB|TB)\s*\/\s*(\d+(?:\.\d+)?)\s*(B|bytes?|KiB|KB|MiB|MB|GiB|GB|TiB|TB)/i,
   );
@@ -56,7 +58,8 @@ export function parseBytePairFromLine(line: string): { downloadedBytes: number; 
   if (!Number.isFinite(downloadedRaw) || !Number.isFinite(totalRaw) || totalRaw <= 0) return null;
   const downloadedBytes = toBytes(downloadedRaw, match[2]);
   const totalBytes = toBytes(totalRaw, match[4]);
-  if (!Number.isFinite(downloadedBytes) || !Number.isFinite(totalBytes) || totalBytes <= 0) return null;
+  if (!Number.isFinite(downloadedBytes) || !Number.isFinite(totalBytes) || totalBytes <= 0)
+    return null;
   const remainingBytes = Math.max(0, totalBytes - downloadedBytes);
   return { downloadedBytes, totalBytes, remainingBytes };
 }
@@ -83,7 +86,11 @@ export function normalizeInstallFailureMessage(raw: string, command: string): st
   if (!message) {
     return 'Install command failed.';
   }
-  if (/ENOENT/i.test(message) || /command not found/i.test(message) || /not recognized as an internal or external command/i.test(message)) {
+  if (
+    /ENOENT/i.test(message) ||
+    /command not found/i.test(message) ||
+    /not recognized as an internal or external command/i.test(message)
+  ) {
     return `Command not found: ${command}. Install it and ensure PATH is configured.`;
   }
   return message;
@@ -103,7 +110,10 @@ export function getAppiumDriverInstallTarget(step: DoctorInstallStepLike): strin
   return step.args[2] || null;
 }
 
-export function isDriverAlreadyInstalledFailure(step: DoctorInstallStepLike, result: DoctorCommandResultLike): boolean {
+export function isDriverAlreadyInstalledFailure(
+  step: DoctorInstallStepLike,
+  result: DoctorCommandResultLike,
+): boolean {
   const target = getAppiumDriverInstallTarget(step);
   if (!target) return false;
   const message = `${result.stderr}\n${result.stdout}`.toLowerCase();
@@ -132,9 +142,11 @@ export function parseJavaMajor(output: string): number | null {
 
 export function isMissingJavaRuntimeOutput(output: string): boolean {
   const lowered = output.toLowerCase();
-  return lowered.includes('unable to locate a java runtime')
-    || lowered.includes('no java runtime present')
-    || lowered.includes('could not find java');
+  return (
+    lowered.includes('unable to locate a java runtime') ||
+    lowered.includes('no java runtime present') ||
+    lowered.includes('could not find java')
+  );
 }
 
 function escapeRegExp(input: string): string {
@@ -148,9 +160,14 @@ function resolveDriverAliases(driverName: 'xcuitest' | 'uiautomator2'): string[]
   return ['uiautomator2', 'appium-uiautomator2-driver'];
 }
 
-export function parseInstalledDriverVersion(stdout: string, driverName: 'xcuitest' | 'uiautomator2'): string | undefined {
+export function parseInstalledDriverVersion(
+  stdout: string,
+  driverName: 'xcuitest' | 'uiautomator2',
+): string | undefined {
   const cleaned = stripAnsi(stdout);
-  const aliases = resolveDriverAliases(driverName).map((alias) => escapeRegExp(alias)).join('|');
+  const aliases = resolveDriverAliases(driverName)
+    .map((alias) => escapeRegExp(alias))
+    .join('|');
   const pattern = new RegExp(`\\b(?:${aliases})\\b\\s*(?:@|\\s)\\s*([0-9A-Za-z._-]+)\\b`, 'i');
   const match = cleaned.match(pattern);
   return match?.[1];
@@ -182,13 +199,19 @@ export function parseInstalledDriverFromJson(
     return undefined;
   };
   const asRecord = (value: unknown): Record<string, unknown> | null =>
-    value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : null;
 
-  const evaluateMatch = (entryName: string, meta: unknown): { installed: boolean; version?: string } | null => {
+  const evaluateMatch = (
+    entryName: string,
+    meta: unknown,
+  ): { installed: boolean; version?: string } | null => {
     const metaRecord = asRecord(meta);
     const normalizedName = entryName.toLowerCase();
     const pkgName = typeof metaRecord?.pkgName === 'string' ? metaRecord.pkgName.toLowerCase() : '';
-    const installSpec = typeof metaRecord?.installSpec === 'string' ? metaRecord.installSpec.toLowerCase() : '';
+    const installSpec =
+      typeof metaRecord?.installSpec === 'string' ? metaRecord.installSpec.toLowerCase() : '';
     if (!aliases.has(normalizedName) && !aliases.has(pkgName) && !aliases.has(installSpec)) {
       return null;
     }

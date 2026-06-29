@@ -7,9 +7,8 @@ import * as graphGapAuditLib from './graph-gap-audit-lib.mjs';
 const repoRoot = process.cwd();
 const baseRef = process.env.CALDER_GRAPH_BASE ?? 'HEAD';
 
-const testFiles = graphGapAuditLib.walkFiles(
-  path.join(repoRoot, 'src'),
-  (filePath) => /\.test\.[cm]?[jt]sx?$/.test(filePath)
+const testFiles = graphGapAuditLib.walkFiles(path.join(repoRoot, 'src'), (filePath) =>
+  /\.test\.[cm]?[jt]sx?$/.test(filePath),
 );
 const testContents = testFiles.map((filePath) => ({
   filePath,

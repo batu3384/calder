@@ -1,4 +1,7 @@
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointDocument,
+  ProjectCheckpointRestoreMode,
+} from '../../shared/types/project-checkpoint.js';
 import type { ProjectWorkflowDocument } from '../../shared/types/project-workflow.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 import type { SessionRecord } from '../../shared/types/session.js';
@@ -122,7 +125,8 @@ export function addDiffViewerSessionWithBridge(
       area,
       worktreePath,
       pushNav: bridge.pushNav,
-    }));
+    }),
+  );
 }
 
 export function addRemoteSessionWithBridge(
@@ -156,7 +160,8 @@ export function addBrowserTabSessionWithBridge(
       url,
       dedupeByUrl,
       pushNav: bridge.pushNav,
-    }));
+    }),
+  );
 }
 
 export function addFileReaderSessionWithBridge(
@@ -171,7 +176,8 @@ export function addFileReaderSessionWithBridge(
       filePath,
       lineNumber,
       pushNav: bridge.pushNav,
-    }));
+    }),
+  );
 }
 
 export function addMcpInspectorSessionWithBridge(

@@ -133,7 +133,8 @@ export function buildShareDialogSections(args: BuildShareDialogSectionsArgs): Sh
   statusEl.className = 'share-status';
   dialog.appendChild(statusEl);
 
-  const { actions, closeBtn, backBtn, nextBtn, startBtn, connectBtn } = createShareDialogActions(copy);
+  const { actions, closeBtn, backBtn, nextBtn, startBtn, connectBtn } =
+    createShareDialogActions(copy);
   closeBtn.addEventListener('click', onClose);
   dialog.appendChild(actions);
 
@@ -169,7 +170,9 @@ export function buildShareDialogSections(args: BuildShareDialogSectionsArgs): Sh
   };
 }
 
-export function wireShareDialogInteractions(args: WireShareDialogInteractionsArgs): ShareDialogFlowController {
+export function wireShareDialogInteractions(
+  args: WireShareDialogInteractionsArgs,
+): ShareDialogFlowController {
   const {
     sessionId,
     copy,

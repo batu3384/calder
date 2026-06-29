@@ -2,10 +2,7 @@ import type { ProjectRecord } from '../../shared/types/project-state.js';
 import type { SessionRecord } from '../../shared/types/session.js';
 import { clampRatio } from '../components/mosaic-layout-model.js';
 import { DEFAULT_BROWSER_WIDTH_RATIO } from '../state-normalizers.js';
-import {
-  isCliSessionRecord,
-  resolveSurfaceTargetFromProject,
-} from '../state-project-surface.js';
+import { isCliSessionRecord, resolveSurfaceTargetFromProject } from '../state-project-surface.js';
 import {
   passivateBrowserTabSession as passivateBrowserTabSessionRecord,
   setSurfaceTargetSession as setSurfaceTargetSessionOnProject,
@@ -49,7 +46,9 @@ export function updateBrowserTabSessionUrlById(
   sessionId: string,
   url: string,
 ): boolean {
-  const project = projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+  const project = projects.find((entry) =>
+    entry.sessions.some((session) => session.id === sessionId),
+  );
   const session = project?.sessions.find((entry) => entry.id === sessionId);
   if (!session) return false;
   return updateBrowserTabUrl(project, session, url);
@@ -60,7 +59,9 @@ export function passivateBrowserTabSessionById(
   sessionId: string,
   failedUrl?: string,
 ): boolean {
-  const project = projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+  const project = projects.find((entry) =>
+    entry.sessions.some((session) => session.id === sessionId),
+  );
   const session = project?.sessions.find((entry) => entry.id === sessionId);
   if (!project || !session) return false;
   return passivateBrowserTabSessionRecord(project, session, failedUrl);

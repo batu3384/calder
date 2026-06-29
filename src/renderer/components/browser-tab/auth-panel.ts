@@ -35,7 +35,8 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
 
   const authSubtitle = document.createElement('div');
   authSubtitle.className = 'browser-capture-subtitle';
-  authSubtitle.textContent = 'Save credentials securely, fill them in one click, and remove them whenever you want.';
+  authSubtitle.textContent =
+    'Save credentials securely, fill them in one click, and remove them whenever you want.';
 
   const authOriginEl = document.createElement('div');
   authOriginEl.className = 'browser-auth-origin';

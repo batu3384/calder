@@ -9,7 +9,9 @@ import { loadState } from './store';
  */
 export function isWithinKnownProject(resolvedPath: string): boolean {
   const state = loadState();
-  return state.projects.some(p => resolvedPath.startsWith(p.path + path.sep) || resolvedPath === p.path);
+  return state.projects.some(
+    (p) => resolvedPath.startsWith(p.path + path.sep) || resolvedPath === p.path,
+  );
 }
 
 export function requireKnownProjectPath(projectPath: string, contextLabel: string): string {
@@ -88,7 +90,10 @@ export function isAllowedDirectoryLookupPath(resolvedPath: string): boolean {
   }
 
   if (!isWin) {
-    return isWithinPrefix(resolvedPath, path.resolve('/mnt')) || isWithinPrefix(resolvedPath, path.resolve('/media'));
+    return (
+      isWithinPrefix(resolvedPath, path.resolve('/mnt')) ||
+      isWithinPrefix(resolvedPath, path.resolve('/media'))
+    );
   }
 
   return false;

@@ -47,7 +47,7 @@ export function renderSchemaForm(schema: JsonSchema): SchemaForm {
       if (prop.default !== undefined) input.value = String(prop.default);
       if (prop.description) input.placeholder = prop.description;
       field.appendChild(input);
-      inputs.set(key, () => input.value === '' ? undefined : Number(input.value));
+      inputs.set(key, () => (input.value === '' ? undefined : Number(input.value)));
     } else if (type === 'object' || type === 'array') {
       const textarea = document.createElement('textarea');
       textarea.className = 'mcp-form-input mcp-form-json';
@@ -58,7 +58,11 @@ export function renderSchemaForm(schema: JsonSchema): SchemaForm {
       inputs.set(key, () => {
         const val = textarea.value.trim();
         if (!val) return undefined;
-        try { return JSON.parse(val); } catch { return val; }
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
       });
     } else if (prop.enum && prop.enum.length > 0) {
       const select = document.createElement('select');
@@ -79,7 +83,7 @@ export function renderSchemaForm(schema: JsonSchema): SchemaForm {
       if (prop.default !== undefined) input.value = String(prop.default);
       if (prop.description) input.placeholder = prop.description;
       field.appendChild(input);
-      inputs.set(key, () => input.value === '' ? undefined : input.value);
+      inputs.set(key, () => (input.value === '' ? undefined : input.value));
     }
 
     container.appendChild(field);

@@ -67,7 +67,9 @@ class FakeElement {
 
   remove(): void {
     if (!this.parentElement) return;
-    this.parentElement.children = this.parentElement.children.filter((candidate) => candidate !== this);
+    this.parentElement.children = this.parentElement.children.filter(
+      (candidate) => candidate !== this,
+    );
     this.parentElement = null;
   }
 
@@ -79,7 +81,10 @@ class FakeElement {
 
   removeEventListener(event: string, cb: (event?: any) => void): void {
     const current = this.listeners.get(event) ?? [];
-    this.listeners.set(event, current.filter((listener) => listener !== cb));
+    this.listeners.set(
+      event,
+      current.filter((listener) => listener !== cb),
+    );
   }
 
   dispatch(event: string, payload: any): void {
@@ -115,7 +120,10 @@ class FakeElement {
   }
 
   closest(selector: string): FakeElement | null {
-    const selectors = selector.split(',').map((part) => part.trim()).filter(Boolean);
+    const selectors = selector
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
     let current: FakeElement | null = this;
     while (current) {
       for (const item of selectors) {
@@ -212,11 +220,12 @@ function makePane(className: string, sessionId: string): FakeElement {
   const el = new FakeElement('div');
   el.className = className;
   el.dataset.sessionId = sessionId;
-  const headerClass = className === 'terminal-pane'
-    ? 'terminal-pane-chrome'
-    : className === 'browser-tab-pane'
-      ? 'browser-pane-chrome'
-      : null;
+  const headerClass =
+    className === 'terminal-pane'
+      ? 'terminal-pane-chrome'
+      : className === 'browser-tab-pane'
+        ? 'browser-pane-chrome'
+        : null;
   if (headerClass) {
     const header = new FakeElement('div');
     header.className = headerClass;
@@ -365,7 +374,9 @@ describe('split-layout mosaic behavior', () => {
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, browserColumn);
     expect(browserPanes.get(browser.id)?.parentElement).toBe(browserColumn);
     expect(terminalPanes.get(firstCli.id)?.parentElement).toBe(canvas);
-    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.38fr) 10px minmax(0, 0.62fr)');
+    expect(container.style.gridTemplateColumns).toBe(
+      'minmax(288px, 0.38fr) 10px minmax(0, 0.62fr)',
+    );
     expect(canvas.className).toContain('mosaic-single');
   });
 
@@ -395,7 +406,9 @@ describe('split-layout mosaic behavior', () => {
     expect(terminalPanes.get(second.id)?.parentElement?.className).toContain('mosaic-slot');
     expect(browserDivider).toBeTruthy();
     expect(sessionDivider).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.44fr) 10px minmax(0, 0.56fr)');
+    expect(container.style.gridTemplateColumns).toBe(
+      'minmax(288px, 0.44fr) 10px minmax(0, 0.56fr)',
+    );
     expect(canvas.className).toContain('mosaic-columns-2');
     expect(canvas.style.gridTemplateColumns).toBe('minmax(0, 0.5fr) 10px minmax(0, 0.5fr)');
     expect(canvas.style.gridTemplateRows).toBe('1fr');
@@ -484,7 +497,9 @@ describe('split-layout mosaic behavior', () => {
     expect(mockSetFocused).toHaveBeenLastCalledWith(second.id);
     expect(terminalPanes.get(first.id)?.classList.contains('swarm-dimmed')).toBe(true);
     expect(terminalPanes.get(second.id)?.classList.contains('swarm-dimmed')).toBe(false);
-    expect(browserPanes.get(browser.id)?.parentElement?.className).toContain('mosaic-browser-column');
+    expect(browserPanes.get(browser.id)?.parentElement?.className).toContain(
+      'mosaic-browser-column',
+    );
   });
 
   it('does not activate a pane on reorder-header mousedown before drag can start', async () => {
@@ -528,10 +543,21 @@ describe('split-layout mosaic behavior', () => {
     const transfer = new FakeDataTransfer();
 
     container.dispatch('dragstart', { target: firstHeader, dataTransfer: transfer });
-    container.dispatch('dragover', { target: secondPane, dataTransfer: transfer, preventDefault: vi.fn() });
-    container.dispatch('drop', { target: secondPane, dataTransfer: transfer, preventDefault: vi.fn() });
+    container.dispatch('dragover', {
+      target: secondPane,
+      dataTransfer: transfer,
+      preventDefault: vi.fn(),
+    });
+    container.dispatch('drop', {
+      target: secondPane,
+      dataTransfer: transfer,
+      preventDefault: vi.fn(),
+    });
 
-    expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([second.id, first.id]);
+    expect(appState.activeProject!.sessions.map((session) => session.id)).toEqual([
+      second.id,
+      first.id,
+    ]);
     expect(appState.activeProject!.layout.splitPanes).toEqual([second.id, first.id]);
   });
 
@@ -553,7 +579,9 @@ describe('split-layout mosaic behavior', () => {
     const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
     expect(divider).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.61fr) 10px minmax(0, 0.39fr)');
+    expect(container.style.gridTemplateColumns).toBe(
+      'minmax(288px, 0.61fr) 10px minmax(0, 0.39fr)',
+    );
 
     const preventDefault = vi.fn();
     divider.dispatch('pointerdown', { clientX: 610, clientY: 10, preventDefault });
@@ -585,8 +613,9 @@ describe('split-layout mosaic behavior', () => {
     const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
     expect(divider).toBeTruthy();
-    expect(container.style.gridTemplateColumns)
-      .toBe('minmax(288px, 0.5fr) 10px minmax(0, 0.5fr) var(--inspector-width, 350px)');
+    expect(container.style.gridTemplateColumns).toBe(
+      'minmax(288px, 0.5fr) 10px minmax(0, 0.5fr) var(--inspector-width, 350px)',
+    );
 
     const preventDefault = vi.fn();
     divider.dispatch('pointerdown', { clientX: 325, clientY: 10, preventDefault });

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { closeInspect, createInitialInspectState, openInspect, setInspectPayload } from './inspect-mode.js';
+import {
+  closeInspect,
+  createInitialInspectState,
+  openInspect,
+  setInspectPayload,
+} from './inspect-mode.js';
 
 describe('cli surface inspect mode', () => {
   it('starts closed with no selection payload', () => {

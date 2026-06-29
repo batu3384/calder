@@ -1,4 +1,8 @@
-import type { ContextWindowInfo, CostInfo, InitialContextSnapshot } from '../../shared/types/session.js';
+import type {
+  ContextWindowInfo,
+  CostInfo,
+  InitialContextSnapshot,
+} from '../../shared/types/session.js';
 import {
   addInsightSnapshotInAppState,
   dismissInsightInAppState,
@@ -97,12 +101,8 @@ export function setBrowserWidthRatioWithBridge(
   projectId: string,
   ratio: number,
 ): void {
-  setBrowserWidthRatioInAppState(
-    bridge.projects,
-    projectId,
-    ratio,
-    bridge.persist,
-    () => bridge.emit('layout-changed'),
+  setBrowserWidthRatioInAppState(bridge.projects, projectId, ratio, bridge.persist, () =>
+    bridge.emit('layout-changed'),
   );
 }
 
@@ -112,13 +112,8 @@ export function setMosaicRatioWithBridge(
   key: string,
   ratio: number,
 ): void {
-  setMosaicRatioInAppState(
-    bridge.projects,
-    projectId,
-    key,
-    ratio,
-    bridge.persist,
-    () => bridge.emit('layout-changed'),
+  setMosaicRatioInAppState(bridge.projects, projectId, key, ratio, bridge.persist, () =>
+    bridge.emit('layout-changed'),
   );
 }
 
@@ -156,12 +151,7 @@ export function reorderSessionWithBridge(
   sessionId: string,
   toIndex: number,
 ): void {
-  reorderSessionInAppState(
-    bridge.projects,
-    projectId,
-    sessionId,
-    toIndex,
-    bridge.persist,
-    () => bridge.emit('session-changed'),
+  reorderSessionInAppState(bridge.projects, projectId, sessionId, toIndex, bridge.persist, () =>
+    bridge.emit('session-changed'),
   );
 }

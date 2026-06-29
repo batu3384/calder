@@ -38,7 +38,9 @@ function getProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
               runtime: project.surface.cli.runtime
                 ? {
                     ...project.surface.cli.runtime,
-                    args: project.surface.cli.runtime.args ? [...project.surface.cli.runtime.args] : undefined,
+                    args: project.surface.cli.runtime.args
+                      ? [...project.surface.cli.runtime.args]
+                      : undefined,
                   }
                 : { status: 'idle' },
             }
@@ -86,9 +88,10 @@ export function describePreviewRuntimeHealth(projectId: string): PreviewRuntimeH
   const runtime = project?.surface?.cli?.runtime;
   const status = runtime?.status ?? 'idle';
   const commandLine = formatRuntimeCommand(runtime?.command, runtime?.args);
-  const lastExitLabel = typeof runtime?.lastExitCode === 'number'
-    ? `Exited with code ${runtime.lastExitCode}`
-    : undefined;
+  const lastExitLabel =
+    typeof runtime?.lastExitCode === 'number'
+      ? `Exited with code ${runtime.lastExitCode}`
+      : undefined;
 
   if (status === 'error') {
     return {
@@ -129,7 +132,9 @@ export function describePreviewRuntimeHealth(projectId: string): PreviewRuntimeH
   };
 }
 
-export async function restartPreviewRuntime(projectId: string): Promise<{ ok: boolean; error?: string }> {
+export async function restartPreviewRuntime(
+  projectId: string,
+): Promise<{ ok: boolean; error?: string }> {
   const project = appState.projects.find((entry) => entry.id === projectId);
   if (!project) {
     return { ok: false, error: 'Project not found.' };

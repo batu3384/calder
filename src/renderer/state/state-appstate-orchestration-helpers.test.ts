@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ProjectContextState } from '../../shared/types/project-context.js';
 import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
 import { normalizeProjectLayout } from '../state-normalizers.js';
-import { createAppStateRuntimeBridge, setProjectDomainForState, updateProjectSurfaceForState } from './state-appstate-orchestration-helpers.js';
+import {
+  createAppStateRuntimeBridge,
+  setProjectDomainForState,
+  updateProjectSurfaceForState,
+} from './state-appstate-orchestration-helpers.js';
 import { defaultPreferences } from './state-contracts.js';
 
 function makeProject(id = 'project-1'): ProjectRecord {
@@ -19,16 +23,18 @@ function makeProject(id = 'project-1'): ProjectRecord {
 
 function makeContext(id: string): ProjectContextState {
   return {
-    sources: [{
-      id,
-      provider: 'shared',
-      scope: 'project',
-      kind: 'rules',
-      path: `${id}.md`,
-      displayName: id,
-      summary: id,
-      lastUpdated: '2026-04-23T00:00:00Z',
-    }],
+    sources: [
+      {
+        id,
+        provider: 'shared',
+        scope: 'project',
+        kind: 'rules',
+        path: `${id}.md`,
+        displayName: id,
+        summary: id,
+        lastUpdated: '2026-04-23T00:00:00Z',
+      },
+    ],
     sharedRuleCount: 1,
     providerSourceCount: 0,
   };

@@ -20,17 +20,30 @@ vi.mock('./external-hook-policy', () => ({
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
-  statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`),
-  captureSessionIdCmd: vi.fn((_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`),
+  statusCmd: vi.fn(
+    (e: string, s: string, _v: string, marker: string) =>
+      `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`,
+  ),
+  captureSessionIdCmd: vi.fn(
+    (_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`,
+  ),
   captureToolFailureCmd: vi.fn((_v: string, marker: string) => `capture-toolfailure ${marker}`),
-  wrapPythonHookCmd: vi.fn((_name: string, _code: string, marker: string) => `capture-event $CALDER_SESSION_ID .events ${marker}`),
+  wrapPythonHookCmd: vi.fn(
+    (_name: string, _code: string, marker: string) =>
+      `capture-event $CALDER_SESSION_ID .events ${marker}`,
+  ),
   cleanupHookScripts: vi.fn(),
 }));
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { cleanupCodexHooks, CODEX_HOOK_MARKER,installCodexHooks, validateCodexHooks } from './codex-hooks';
+import {
+  cleanupCodexHooks,
+  CODEX_HOOK_MARKER,
+  installCodexHooks,
+  validateCodexHooks,
+} from './codex-hooks';
 import * as hookCommands from './hooks/hook-commands';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -63,7 +76,7 @@ describe('ensureCodexHooksFeatureFlag (via installCodexHooks)', () => {
     installCodexHooks();
 
     // First writeFileSync call is config.toml, second is hooks.json
-    const tomlCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === CONFIG_TOML);
+    const tomlCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === CONFIG_TOML);
     expect(tomlCall).toBeDefined();
     expect(String(tomlCall![1])).toContain('[features]');
     expect(String(tomlCall![1])).toContain('codex_hooks = true');
@@ -75,7 +88,7 @@ describe('ensureCodexHooksFeatureFlag (via installCodexHooks)', () => {
     });
     installCodexHooks();
 
-    const tomlCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === CONFIG_TOML);
+    const tomlCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === CONFIG_TOML);
     const content = String(tomlCall![1]);
     expect(content).toContain('model = "o3"');
     expect(content).toContain('[features]');
@@ -88,7 +101,7 @@ describe('ensureCodexHooksFeatureFlag (via installCodexHooks)', () => {
     });
     installCodexHooks();
 
-    const tomlCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === CONFIG_TOML);
+    const tomlCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === CONFIG_TOML);
     const content = String(tomlCall![1]);
     expect(content).toContain('codex_hooks = true');
     expect(content).not.toContain('codex_hooks = false');
@@ -100,7 +113,7 @@ describe('ensureCodexHooksFeatureFlag (via installCodexHooks)', () => {
     });
     installCodexHooks();
 
-    const tomlCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === CONFIG_TOML);
+    const tomlCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === CONFIG_TOML);
     const content = String(tomlCall![1]);
     expect(content).toContain('codex_hooks = true');
     expect(content).toContain('other_flag = true');
@@ -113,7 +126,7 @@ describe('ensureCodexHooksFeatureFlag (via installCodexHooks)', () => {
     installCodexHooks();
 
     // config.toml should NOT be written (only hooks.json)
-    const tomlCalls = mockWriteFileSync.mock.calls.filter(c => String(c[0]) === CONFIG_TOML);
+    const tomlCalls = mockWriteFileSync.mock.calls.filter((c) => String(c[0]) === CONFIG_TOML);
     expect(tomlCalls).toHaveLength(0);
   });
 });
@@ -129,7 +142,7 @@ describe('installCodexHooks', () => {
   it('creates hooks.json with all 5 events on fresh install', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     expect(hooksCall).toBeDefined();
     const written = JSON.parse(String(hooksCall![1]));
     const hooks = written.hooks;
@@ -145,12 +158,13 @@ describe('installCodexHooks', () => {
   it('writes correct status values for each event', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
 
     // Check status commands contain correct event:status
     const getStatusCmd = (event: string) =>
-      hooks[event].find((m: any) => m.hooks.some((h: any) => h.command.includes('.status')))
+      hooks[event]
+        .find((m: any) => m.hooks.some((h: any) => h.command.includes('.status')))
         ?.hooks.find((h: any) => h.command.includes('.status'))?.command;
 
     expect(getStatusCmd('SessionStart')).toContain('SessionStart:waiting');
@@ -163,13 +177,11 @@ describe('installCodexHooks', () => {
   it('includes session ID capture on SessionStart and UserPromptSubmit only', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
 
     const hasSessionIdCapture = (event: string) =>
-      hooks[event]?.some((m: any) =>
-        m.hooks.some((h: any) => h.command.includes('.sessionid'))
-      );
+      hooks[event]?.some((m: any) => m.hooks.some((h: any) => h.command.includes('.sessionid')));
 
     expect(hasSessionIdCapture('SessionStart')).toBe(true);
     expect(hasSessionIdCapture('UserPromptSubmit')).toBe(true);
@@ -181,7 +193,7 @@ describe('installCodexHooks', () => {
   it('all hook commands contain the calder marker', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
 
     for (const [, matchers] of Object.entries(hooks) as [string, any[]][]) {
@@ -196,7 +208,7 @@ describe('installCodexHooks', () => {
   it('all hook commands reference $CALDER_SESSION_ID', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
 
     for (const [, matchers] of Object.entries(hooks) as [string, any[]][]) {
@@ -211,7 +223,9 @@ describe('installCodexHooks', () => {
   it('captures usage payloads in generated event scripts for token accounting', () => {
     installCodexHooks();
 
-    const postToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'codex_event_PostToolUse.py');
+    const postToolScript = mockInstallEventScript.mock.calls.find(
+      ([name]) => name === 'codex_event_PostToolUse.py',
+    );
     expect(postToolScript).toBeDefined();
     const py = String(postToolScript![1]);
 
@@ -223,10 +237,12 @@ describe('installCodexHooks', () => {
   it('installs RTK pre-tool hook for Bash command rewrites', () => {
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
     const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook codex'));
+    const rtkHook = preToolHooks.find((hook: any) =>
+      String(hook.command).includes('rtk hook codex'),
+    );
 
     expect(rtkHook).toBeDefined();
     expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
@@ -236,10 +252,12 @@ describe('installCodexHooks', () => {
   it('preserves existing user hooks', () => {
     const existingHooks = {
       hooks: {
-        SessionStart: [{
-          matcher: 'startup',
-          hooks: [{ type: 'command', command: 'echo user-hook' }],
-        }],
+        SessionStart: [
+          {
+            matcher: 'startup',
+            hooks: [{ type: 'command', command: 'echo user-hook' }],
+          },
+        ],
       },
     };
 
@@ -250,18 +268,18 @@ describe('installCodexHooks', () => {
 
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
 
     // User hook preserved
-    const userMatcher = hooks.SessionStart.find(
-      (m: any) => m.hooks.some((h: any) => h.command === 'echo user-hook')
+    const userMatcher = hooks.SessionStart.find((m: any) =>
+      m.hooks.some((h: any) => h.command === 'echo user-hook'),
     );
     expect(userMatcher).toBeDefined();
 
     // Calder hooks also present
-    const calderMatcher = hooks.SessionStart.find(
-      (m: any) => m.hooks.some((h: any) => h.command.includes(CODEX_HOOK_MARKER))
+    const calderMatcher = hooks.SessionStart.find((m: any) =>
+      m.hooks.some((h: any) => h.command.includes(CODEX_HOOK_MARKER)),
     );
     expect(calderMatcher).toBeDefined();
   });
@@ -269,7 +287,7 @@ describe('installCodexHooks', () => {
   it('is idempotent — no duplicate hooks on second run', () => {
     // First run
     installCodexHooks();
-    const firstCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const firstCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const firstOutput = String(firstCall![1]);
 
     // Setup the written output as the file content for second run
@@ -281,12 +299,19 @@ describe('installCodexHooks', () => {
 
     // Second run
     installCodexHooks();
-    const secondCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const secondCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const secondOutput = JSON.parse(String(secondCall![1]));
     const firstParsed = JSON.parse(firstOutput);
 
     // Same number of matcher groups per event
-    for (const event of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'PermissionRequest', 'PreToolUse']) {
+    for (const event of [
+      'SessionStart',
+      'UserPromptSubmit',
+      'PostToolUse',
+      'Stop',
+      'PermissionRequest',
+      'PreToolUse',
+    ]) {
       expect(secondOutput.hooks[event]?.length).toBe(firstParsed.hooks[event]?.length);
     }
   });
@@ -304,7 +329,7 @@ describe('installCodexHooks', () => {
 
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const written = JSON.parse(String(hooksCall![1]));
     expect(written.version).toBe('1.0');
   });
@@ -318,7 +343,7 @@ describe('validateCodexHooks', () => {
     });
     installCodexHooks();
 
-    const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const hooksCall = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const hooksContent = String(hooksCall![1]);
 
     mockFiles({
@@ -364,8 +389,12 @@ describe('validateCodexHooks', () => {
   it('returns partial when some hooks are missing', () => {
     const partial = {
       hooks: {
-        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${CODEX_HOOK_MARKER}` }] }],
-        UserPromptSubmit: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${CODEX_HOOK_MARKER}` }] }],
+        SessionStart: [
+          { matcher: '', hooks: [{ type: 'command', command: `echo test ${CODEX_HOOK_MARKER}` }] },
+        ],
+        UserPromptSubmit: [
+          { matcher: '', hooks: [{ type: 'command', command: `echo test ${CODEX_HOOK_MARKER}` }] },
+        ],
       },
     };
 
@@ -386,11 +415,19 @@ describe('validateCodexHooks', () => {
   it('does not treat unknown legacy hooks as installed', () => {
     const legacyOnly = {
       hooks: {
-        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        UserPromptSubmit: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        PostToolUse: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
+        SessionStart: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        UserPromptSubmit: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
+        PostToolUse: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
         Stop: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
-        PermissionRequest: [{ matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] }],
+        PermissionRequest: [
+          { matcher: '', hooks: [{ type: 'command', command: 'echo legacy # old-hook' }] },
+        ],
       },
     };
 
@@ -415,7 +452,10 @@ describe('cleanupCodexHooks', () => {
       hooks: {
         SessionStart: [
           { matcher: 'startup', hooks: [{ type: 'command', command: 'echo user-hook' }] },
-          { matcher: '', hooks: [{ type: 'command', command: `echo status ${CODEX_HOOK_MARKER}` }] },
+          {
+            matcher: '',
+            hooks: [{ type: 'command', command: `echo status ${CODEX_HOOK_MARKER}` }],
+          },
         ],
       },
     };
@@ -423,7 +463,7 @@ describe('cleanupCodexHooks', () => {
     mockFiles({ [HOOKS_JSON]: JSON.stringify(existing) });
     cleanupCodexHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const written = JSON.parse(String(call![1]));
 
     expect(written.hooks.SessionStart).toHaveLength(1);
@@ -443,7 +483,7 @@ describe('cleanupCodexHooks', () => {
     mockFiles({ [HOOKS_JSON]: JSON.stringify(existing) });
     cleanupCodexHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === HOOKS_JSON);
     const written = JSON.parse(String(call![1]));
     expect(written.hooks).toBeUndefined();
     expect(written.version).toBe('1.0');

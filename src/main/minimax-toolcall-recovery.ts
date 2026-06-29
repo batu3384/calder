@@ -34,4 +34,3 @@ export function buildMiniMaxToolCallRecoveryPrompt(): string {
     'Retry your last intended action now using real tool_use/function calls.',
   ].join(' ');
 }
-

@@ -11,6 +11,7 @@
 Calder is a desktop command workspace for AI-assisted development. It is not a generic chat app, marketing dashboard, or decorative AI wrapper.
 
 The interface should feel like:
+
 - a serious macOS developer cockpit
 - dense but calm
 - terminal-native
@@ -22,6 +23,7 @@ The redesign must improve clarity, confidence, and product identity without chan
 ## Current Architecture Findings
 
 The renderer is currently built with:
+
 - Electron
 - TypeScript
 - esbuild
@@ -33,6 +35,7 @@ The renderer is currently built with:
 This is an important constraint. Calder already owns a lot of desktop-specific behavior: PTY lifecycle, webview routing, browser inspection, mosaic layout, panel resize, context sidebars, IPC, provider validation, and session state. A full React/Vue rewrite would add major regression risk without directly solving the biggest UI problems.
 
 The current UI has a good macro-structure but inconsistent visual systems:
+
 - `base.css` and `cockpit.css` contain useful tokens, but older aliases and newer surface tokens coexist.
 - Panels often use repeated card styling even when the content should be plain operational layout.
 - Dropdowns, modals, custom selects, popovers, and context menus are implemented separately.
@@ -44,6 +47,7 @@ The current UI has a good macro-structure but inconsistent visual systems:
 The recommended modernization path uses current browser and Electron capabilities rather than a large framework migration.
 
 References:
+
 - Floating UI supports vanilla DOM positioning and is designed for popovers, dropdowns, tooltips, and collision handling: https://floating-ui.com/docs/getting-started
 - Electron `BrowserWindow` remains the main window primitive and supports macOS window customization options: https://www.electronjs.org/docs/latest/api/browser-window
 - Electron documents `WebContentsView` as the modern embedded web contents primitive, while Calder currently uses `webview`; this should be studied before any browser-surface rewrite: https://www.electronjs.org/docs/latest/api/web-contents-view
@@ -59,6 +63,7 @@ References:
 Calder should become a graphite-and-coral desktop cockpit: matte, technical, compact, and calm, with one clear accent color used only for action, focus, selection, and meaningful state.
 
 The design should avoid:
+
 - glossy AI app gradients
 - dashboard-card mosaics
 - oversized SaaS surfaces
@@ -91,12 +96,14 @@ This is an app UI, not a landing page. The information hierarchy should be opera
 Motion should improve orientation, not decorate the app.
 
 Use:
+
 - fast panel open/close transitions for sidebar, Control Panel, modals, and inspector surfaces
 - subtle active-session focus transitions when switching panes
 - anchored popover/dropdown motion that reinforces where the surface came from
 - `prefers-reduced-motion` support for users who disable motion
 
 Avoid:
+
 - long hero-like animations
 - bouncing, springy, or playful motion
 - animated gradients behind routine work surfaces
@@ -107,6 +114,7 @@ Avoid:
 ### Approved Foundation
 
 Keep the renderer native-first:
+
 - TypeScript modules
 - DOM-driven components
 - CSS design tokens
@@ -116,6 +124,7 @@ Keep the renderer native-first:
 ### Add Carefully
 
 Add `@floating-ui/dom` for:
+
 - tab/session context menus
 - browser inspect popovers
 - browser target session picker
@@ -127,6 +136,7 @@ This directly addresses overflow, collision, and anchored-positioning bugs witho
 ### Evaluate Before Adding
 
 Evaluate Web Awesome only for isolated primitives:
+
 - select
 - dialog
 - split panel
@@ -146,6 +156,7 @@ Do not replace Electron `webview` with `WebContentsView` during the visual redes
 ### Tokens
 
 Create a stricter token system:
+
 - surface tokens: canvas, shell, panel, raised, overlay
 - border tokens: hairline, subtle, normal, focus
 - text tokens: primary, secondary, muted, dim
@@ -162,6 +173,7 @@ Keep the product visually compact. Do not increase spacing globally until the wo
 Use the macOS system stack for UI text and a reliable monospace for terminal/system labels. Typography should feel precise, not editorial.
 
 Improve:
+
 - label casing
 - line-height consistency
 - count/status typography
@@ -178,6 +190,7 @@ Reduce unnecessary card treatment. Use cards only when they are actual interacti
 ### App Shell
 
 Improve:
+
 - sidebar density and active project treatment
 - top session strip rhythm
 - workspace identity placement
@@ -185,6 +198,7 @@ Improve:
 - empty workspace state
 
 Keep:
+
 - project/session model
 - quick new-session action
 - sidebar resizing
@@ -193,6 +207,7 @@ Keep:
 ### Workspace Layout
 
 Improve:
+
 - browser-left framing
 - session grid clarity
 - pane focus state
@@ -201,6 +216,7 @@ Improve:
 - split resizing feedback
 
 Keep:
+
 - browser always left when a browser session exists
 - sessions fit to the right side
 - current layout state model unless the implementation plan identifies a concrete layout-state defect that requires a small model change
@@ -208,6 +224,7 @@ Keep:
 ### Terminal Panes
 
 Improve:
+
 - pane chrome hierarchy
 - provider badge consistency
 - status/focus affordance
@@ -215,6 +232,7 @@ Improve:
 - xterm integration contrast
 
 Keep:
+
 - xterm lifecycle
 - PTY APIs
 - provider launch APIs
@@ -223,6 +241,7 @@ Keep:
 ### Browser Surface
 
 Improve:
+
 - toolbar hierarchy
 - URL field sizing
 - inspect/draw/record controls
@@ -236,6 +255,7 @@ Use Floating UI for anchored menus and inspect popovers instead of manual clamp 
 ### Control Panel
 
 Improve:
+
 - clearer section language
 - less card stacking
 - better information density
@@ -244,6 +264,7 @@ Improve:
 - stronger distinction between setup warnings, git changes, recent sessions, and toolchain configuration
 
 Keep:
+
 - AI Setup
 - Changes
 - Recent Sessions
@@ -253,6 +274,7 @@ Keep:
 ### Modals and Preferences
 
 Improve:
+
 - shared modal shell
 - focus trap and keyboard behavior
 - button hierarchy
@@ -265,6 +287,7 @@ Preferences should feel like a flagship product surface, not a debug form.
 ### Agents, Skills, Commands, File Reading
 
 Improve:
+
 - markdown/document viewing layout
 - table of contents or compact metadata header where useful
 - readable typography
@@ -272,12 +295,14 @@ Improve:
 - search and copy behavior if already supported by current architecture
 
 Keep:
+
 - existing file-reader/session behavior
 - no new editor features unless needed for readability
 
 ## Accessibility Requirements
 
 Follow WAI-ARIA APG behavior for:
+
 - dialogs
 - tabs
 - menu buttons
@@ -287,6 +312,7 @@ Follow WAI-ARIA APG behavior for:
 - listbox/select-like controls
 
 Every interactive control must have:
+
 - visible focus state
 - keyboard path
 - accessible label
@@ -297,6 +323,7 @@ Motion must respect `prefers-reduced-motion`.
 ## Testing and Verification Strategy
 
 Every implementation phase should include:
+
 - targeted Vitest contract tests for changed DOM/CSS/renderer behavior
 - `npm run build`
 - `npm test`
@@ -304,6 +331,7 @@ Every implementation phase should include:
 - source search for removed/renamed labels where relevant
 
 For UI-specific phases, add tests that protect:
+
 - no reintroduction of old removed toolbar buttons
 - Control Panel labels
 - session targeting copy
@@ -317,6 +345,7 @@ For UI-specific phases, add tests that protect:
 ### Phase 0: Interface Inventory
 
 Create a full UI inventory covering every visible region, control, modal, menu, and panel. Classify each item as:
+
 - keep
 - rename
 - restyle
@@ -329,6 +358,7 @@ This prevents random beautification and keeps the redesign surgical.
 ### Phase 1: Token and Primitive Cleanup
 
 Unify the token system and create shared primitive classes for:
+
 - buttons
 - icon buttons
 - chips
@@ -346,6 +376,7 @@ Restyle the sidebar, top session strip, workspace container, terminal pane frame
 ### Phase 3: Floating Surfaces
 
 Introduce `@floating-ui/dom` and migrate the most fragile menus/popovers first:
+
 - browser target menu
 - inspect element popover
 - custom select dropdown
@@ -358,6 +389,7 @@ Rework AI Setup, Changes, Recent Sessions, and Toolchain as a coherent operation
 ### Phase 5: Browser Workflow Polish
 
 Make browser inspection and prompt routing feel first-class:
+
 - movable popovers
 - selected target session clarity
 - compact toolbar grouping
@@ -371,6 +403,7 @@ Make Preferences and shared modals consistent, accessible, and visually premium.
 ### Phase 7: Final Product Pass
 
 Run a full visual pass across:
+
 - empty state
 - active project
 - browser + 1 session
@@ -385,6 +418,7 @@ Run a full visual pass across:
 ## Non-Goals
 
 This redesign does not include:
+
 - changing provider launch APIs
 - changing PTY/session lifecycle
 - replacing `webview`
@@ -396,6 +430,7 @@ This redesign does not include:
 ## Risks
 
 Main risks:
+
 - visual polish accidentally changes behavior
 - adding a component library creates theme or packaging problems
 - spacing increases reduce terminal productivity
@@ -404,6 +439,7 @@ Main risks:
 - accessibility gets worse if custom controls are restyled without keyboard tests
 
 Controls:
+
 - preserve DOM behavior where possible
 - make one phase testable at a time
 - prefer contract tests before visual refactors
@@ -414,6 +450,7 @@ Controls:
 ## Success Criteria
 
 The redesign succeeds when:
+
 - Calder feels clearly owned and distinct
 - the app no longer reads like a recolored fork
 - all primary workflows still behave the same

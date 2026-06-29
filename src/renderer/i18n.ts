@@ -20,7 +20,6 @@ const EXCLUDED_SELECTOR = [
 
 const ATTRIBUTES_TO_LOCALIZE = ['title', 'aria-label', 'placeholder'] as const;
 
-
 let activeLanguage: UiLanguage = DEFAULT_LANGUAGE;
 let observer: MutationObserver | null = null;
 let suppressObserver = false;
@@ -31,14 +30,17 @@ function normalizeTranslationKey(value: string): string {
   return value
     .replace(/\u00a0/gu, ' ')
     .replace(/\s+/gu, ' ')
-    .replace(/[’‘]/gu, '\'')
+    .replace(/[’‘]/gu, "'")
     .replace(/[“”]/gu, '"')
     .replace(/…/gu, '...')
     .trim();
 }
 
 const NORMALIZED_DIRECT_TRANSLATIONS = new Map<string, string>(
-  [...DIRECT_TRANSLATIONS.entries()].map(([source, target]) => [normalizeTranslationKey(source), target]),
+  [...DIRECT_TRANSLATIONS.entries()].map(([source, target]) => [
+    normalizeTranslationKey(source),
+    target,
+  ]),
 );
 
 function normalizeLanguage(input: unknown): UiLanguage {
@@ -69,8 +71,7 @@ function shouldSkipAttributeElement(element: Element | null): boolean {
 
 function translateScalar(value: string): string {
   const normalized = normalizeTranslationKey(value);
-  const direct = DIRECT_TRANSLATIONS.get(value)
-    ?? NORMALIZED_DIRECT_TRANSLATIONS.get(normalized);
+  const direct = DIRECT_TRANSLATIONS.get(value) ?? NORMALIZED_DIRECT_TRANSLATIONS.get(normalized);
   if (direct) return direct;
 
   for (const entry of patternTranslations) {
@@ -90,7 +91,7 @@ function translate(value: string): string {
   if (!value.includes('\n')) return value;
 
   const lines = value.split('\n');
-  const translatedLines = lines.map(line => line.trim() ? translateScalar(line) : line);
+  const translatedLines = lines.map((line) => (line.trim() ? translateScalar(line) : line));
   return translatedLines.some((line, index) => line !== lines[index])
     ? translatedLines.join('\n')
     : value;

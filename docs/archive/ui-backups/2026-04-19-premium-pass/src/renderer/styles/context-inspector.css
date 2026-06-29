@@ -29,21 +29,23 @@
   contain: inline-size;
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.025);
   background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 30%),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--accent-soft) 22%, transparent),
+      transparent 30%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-ops) 96%, black);
 }
 
 .control-panel-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
-    var(--surface-rail);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .ops-rail-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)),
-    var(--surface-ops);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
 }
 
 #context-inspector.context-inspector-closed {
@@ -160,7 +162,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
   border-radius: 14px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 44%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 22%, transparent),
+      transparent 44%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, black);
   box-shadow:
@@ -373,12 +379,16 @@
   padding-bottom: 12px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] {
+#context-inspector .context-inspector-section[data-section='capabilities'] {
   padding: 12px 12px 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 42%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 18%, transparent),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 80%, black);
   box-shadow:
@@ -386,15 +396,19 @@
     0 12px 26px rgba(2, 4, 10, 0.12);
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .context-inspector-block-title {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .context-inspector-block-title {
   color: color-mix(in srgb, var(--accent) 72%, var(--text-primary));
 }
 
-#context-inspector .context-inspector-section[data-section="git"] .context-inspector-block-title {
+#context-inspector .context-inspector-section[data-section='git'] .context-inspector-block-title {
   color: color-mix(in srgb, var(--info) 68%, var(--text-primary));
 }
 
-#context-inspector .context-inspector-section[data-section="activity"] .context-inspector-block-title {
+#context-inspector
+  .context-inspector-section[data-section='activity']
+  .context-inspector-block-title {
   color: color-mix(in srgb, var(--bookmark) 65%, var(--text-primary));
 }
 
@@ -427,7 +441,9 @@
   gap: 7px 9px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary-chips {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .toolchain-summary-chips {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -499,15 +515,22 @@
   padding: 9px 10px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 76%, transparent), color-mix(in srgb, var(--surface-muted) 62%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 76%, transparent),
+    color-mix(in srgb, var(--surface-muted) 62%, transparent)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #context-inspector .toolchain-summary-chip:hover {
   color: var(--text-primary);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 54%, transparent);
 }
 
@@ -941,7 +964,9 @@
   padding: 0 9px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .config-item:not(.auto-approval-item) {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .config-item:not(.auto-approval-item) {
   margin-top: 0;
 }
 
@@ -1150,28 +1175,34 @@
   line-height: 1.5;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 74%, transparent), color-mix(in srgb, var(--surface-muted) 60%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 74%, transparent),
+    color-mix(in srgb, var(--surface-muted) 60%, transparent)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-#context-inspector .ops-rail-note[data-tone="healthy"] {
+#context-inspector .ops-rail-note[data-tone='healthy'] {
   border-color: color-mix(in srgb, var(--accent-positive) 26%, var(--border-subtle));
   background: color-mix(in srgb, var(--accent-positive) 10%, var(--surface-muted));
 }
 
-#context-inspector .ops-rail-note[data-tone="warning"] {
+#context-inspector .ops-rail-note[data-tone='warning'] {
   border-color: color-mix(in srgb, var(--accent-warning) 24%, var(--border-subtle));
   background: color-mix(in srgb, var(--accent-warning) 9%, var(--surface-muted));
 }
 
-#context-inspector .ops-rail-note[data-tone="default"] {
+#context-inspector .ops-rail-note[data-tone='default'] {
   background: color-mix(in srgb, var(--surface-panel) 68%, transparent);
 }
 
-#context-inspector .ops-rail-note[data-tone="muted"] {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 74%, transparent), color-mix(in srgb, var(--surface-muted) 60%, transparent));
+#context-inspector .ops-rail-note[data-tone='muted'] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 74%, transparent),
+    color-mix(in srgb, var(--surface-muted) 60%, transparent)
+  );
 }
 
 #context-inspector .history-result-count {
@@ -1193,8 +1224,8 @@
   font-weight: 680;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary,
-#context-inspector .context-inspector-section[data-section="activity"] .history-body {
+#context-inspector .context-inspector-section[data-section='capabilities'] .toolchain-summary,
+#context-inspector .context-inspector-section[data-section='activity'] .history-body {
   padding-bottom: 12px;
 }
 
@@ -1274,11 +1305,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  #context-inspector .context-inspector-section[data-section="capabilities"] {
+  #context-inspector .context-inspector-section[data-section='capabilities'] {
     padding: 10px 10px 9px;
   }
 
-  #context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary-chips {
+  #context-inspector
+    .context-inspector-section[data-section='capabilities']
+    .toolchain-summary-chips {
     grid-template-columns: minmax(0, 1fr);
   }
 

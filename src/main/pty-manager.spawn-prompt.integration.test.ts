@@ -43,7 +43,7 @@ vi.mock('./browser-bridge', () => ({
 
 import { _resetLoginShellEnvCache } from './provider-env';
 import { initProviders } from './providers/registry';
-import { killAllPtys,spawnPty } from './pty-manager';
+import { killAllPtys, spawnPty } from './pty-manager';
 
 function createMockPtyProcess() {
   const proc = {
@@ -79,7 +79,17 @@ describe('spawnPty initialPrompt integration', () => {
 
   it('rejects initialPrompt with shell metacharacters', () => {
     expect(() =>
-      spawnPty('session-1', '/project', null, false, '', 'claude', 'fix; rm -rf /', vi.fn(), vi.fn()),
+      spawnPty(
+        'session-1',
+        '/project',
+        null,
+        false,
+        '',
+        'claude',
+        'fix; rm -rf /',
+        vi.fn(),
+        vi.fn(),
+      ),
     ).toThrow(/Invalid initial prompt/i);
     expect(mockSpawn).not.toHaveBeenCalled();
   });

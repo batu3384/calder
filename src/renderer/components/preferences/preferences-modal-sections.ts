@@ -14,18 +14,18 @@ import type {
 } from './preferences-modal-sections-types.js';
 import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';
 import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';
-import {
-  renderMobileSetupSection,
-  renderSetupSection,
-} from './preferences-provider-setup.js';
+import { renderMobileSetupSection, renderSetupSection } from './preferences-provider-setup.js';
 import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
 
 const PROVIDER_UNAVAILABLE_SUFFIX = ' (not installed)';
-const PROVIDER_DEFAULT_MISSING_MESSAGE = 'Calder falls back to the next installed tool if this one is missing.';
-const PROVIDER_DEFAULT_INSTALLED_MESSAGE = 'New sessions use this tool unless a workflow picks a different one.';
-const PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE = 'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
+const PROVIDER_DEFAULT_MISSING_MESSAGE =
+  'Calder falls back to the next installed tool if this one is missing.';
+const PROVIDER_DEFAULT_INSTALLED_MESSAGE =
+  'New sessions use this tool unless a workflow picks a different one.';
+const PROVIDER_DEFAULT_UNAVAILABLE_MESSAGE =
+  'This default is not installed on this Mac. Calder will fall back to the next installed tool until you install it.';
 const LAYOUT_OPS_RAIL_TITLE = 'Ops Rail modules';
 const LAYOUT_LIVE_VIEW_TITLE = 'Live View behavior';
 const LAYOUT_SESSION_DECK_TITLE = 'Session Deck defaults';
@@ -117,8 +117,16 @@ export function renderToolsPreferencesSection({
     },
   ]);
 
-  const providerHealthGroup = appendSectionCard(content, 'Provider health', 'Installed tools, defaults, and repair actions.');
-  const mobileHealthGroup = appendSectionCard(content, 'Mobile automation readiness', 'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.');
+  const providerHealthGroup = appendSectionCard(
+    content,
+    'Provider health',
+    'Installed tools, defaults, and repair actions.',
+  );
+  const mobileHealthGroup = appendSectionCard(
+    content,
+    'Mobile automation readiness',
+    'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
+  );
 
   void renderSetupSection({
     container: providerHealthGroup,

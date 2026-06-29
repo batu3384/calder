@@ -1,6 +1,11 @@
 import type { ProjectGovernanceState } from '../types-governance.js';
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../types-provider.js';
-import type { ArchivedSession, ProjectInsightsData, ProjectLayoutState, SessionRecord } from '../types-session.js';
+import type {
+  ArchivedSession,
+  ProjectInsightsData,
+  ProjectLayoutState,
+  SessionRecord,
+} from '../types-session.js';
 import type { ProjectBackgroundTaskState } from './project-background-task.js';
 import type { ProjectCheckpointState } from './project-checkpoint.js';
 import type { ProjectContextState } from './project-context.js';

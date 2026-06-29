@@ -44,7 +44,8 @@ function renderTypeFields(type: 'stdio' | 'sse'): string {
 }
 
 function rebuildTypeFields(overlay: HTMLElement): void {
-  const type = (overlay.querySelector('input[name="mcp-add-type"]:checked') as HTMLInputElement).value as 'stdio' | 'sse';
+  const type = (overlay.querySelector('input[name="mcp-add-type"]:checked') as HTMLInputElement)
+    .value as 'stdio' | 'sse';
   const container = overlay.querySelector('#mcp-add-type-fields')!;
   container.innerHTML = renderTypeFields(type);
 }
@@ -83,9 +84,9 @@ export function showMcpAddModal(onAdded: () => void): void {
     </div>
     <div id="mcp-add-error" class="modal-error" style="display:none"></div>`;
 
-  body.querySelectorAll('input[name="mcp-add-type"]').forEach(r =>
-    r.addEventListener('change', () => rebuildTypeFields(overlay)),
-  );
+  body
+    .querySelectorAll('input[name="mcp-add-type"]')
+    .forEach((r) => r.addEventListener('change', () => rebuildTypeFields(overlay)));
 
   overlay.style.display = '';
   requestAnimationFrame(() => (overlay.querySelector('#mcp-add-name') as HTMLInputElement).focus());
@@ -97,8 +98,13 @@ export function showMcpAddModal(onAdded: () => void): void {
   const handleConfirm = () => submit(overlay);
   const handleKeydown = (e: Event) => {
     const ke = e as KeyboardEvent;
-    if (ke.key === 'Escape') { ke.preventDefault(); closeMcpAddModal(); }
-    else if (ke.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) { ke.preventDefault(); submit(overlay); }
+    if (ke.key === 'Escape') {
+      ke.preventDefault();
+      closeMcpAddModal();
+    } else if (ke.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+      ke.preventDefault();
+      submit(overlay);
+    }
   };
 
   cancel.addEventListener('click', handleCancel);
@@ -120,21 +126,32 @@ function showError(overlay: HTMLElement, msg: string): void {
 
 async function submit(overlay: HTMLElement): Promise<void> {
   const name = (overlay.querySelector('#mcp-add-name') as HTMLInputElement).value.trim();
-  if (!name) { showError(overlay, 'Name is required'); return; }
+  if (!name) {
+    showError(overlay, 'Name is required');
+    return;
+  }
 
-  const type = (overlay.querySelector('input[name="mcp-add-type"]:checked') as HTMLInputElement).value;
-  const scope = (overlay.querySelector('input[name="mcp-add-scope"]:checked') as HTMLInputElement).value as 'user' | 'project';
+  const type = (overlay.querySelector('input[name="mcp-add-type"]:checked') as HTMLInputElement)
+    .value;
+  const scope = (overlay.querySelector('input[name="mcp-add-scope"]:checked') as HTMLInputElement)
+    .value as 'user' | 'project';
 
   let config: Record<string, unknown>;
 
   if (type === 'stdio') {
     const command = (overlay.querySelector('#mcp-add-command') as HTMLInputElement).value.trim();
-    if (!command) { showError(overlay, 'Command is required'); return; }
+    if (!command) {
+      showError(overlay, 'Command is required');
+      return;
+    }
     const argsStr = (overlay.querySelector('#mcp-add-args') as HTMLInputElement).value.trim();
     config = { command, args: argsStr ? argsStr.split(/\s+/) : [] };
   } else {
     const url = (overlay.querySelector('#mcp-add-url') as HTMLInputElement).value.trim();
-    if (!url) { showError(overlay, 'URL is required'); return; }
+    if (!url) {
+      showError(overlay, 'URL is required');
+      return;
+    }
     config = { url };
   }
 
@@ -145,7 +162,10 @@ async function submit(overlay: HTMLElement): Promise<void> {
       const trimmed = line.trim();
       if (!trimmed) continue;
       const eqIdx = trimmed.indexOf('=');
-      if (eqIdx === -1) { showError(overlay, `Invalid env var: ${trimmed}`); return; }
+      if (eqIdx === -1) {
+        showError(overlay, `Invalid env var: ${trimmed}`);
+        return;
+      }
       env[trimmed.slice(0, eqIdx)] = trimmed.slice(eqIdx + 1);
     }
     if (Object.keys(env).length > 0) config.env = env;

@@ -7,11 +7,7 @@ import { promisify } from 'node:util';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  buildBrowserBridgeEnv,
-  startBrowserBridge,
-  stopBrowserBridge,
-} from './browser-bridge';
+import { buildBrowserBridgeEnv, startBrowserBridge, stopBrowserBridge } from './browser-bridge';
 
 const execFileAsync = promisify(execFile);
 
@@ -181,7 +177,10 @@ describe('browser-bridge', () => {
     expect(base.NODE_OPTIONS).toContain('--require=');
     expect(base.NODE_OPTIONS).toContain(path.dirname(base.BROWSER));
 
-    const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin', NODE_OPTIONS: base.NODE_OPTIONS });
+    const env = buildBrowserBridgeEnv('/repo/project', {
+      PATH: '/usr/bin',
+      NODE_OPTIONS: base.NODE_OPTIONS,
+    });
     expect(env.NODE_OPTIONS).toBe(base.NODE_OPTIONS);
   });
 
@@ -209,7 +208,9 @@ describe('browser-bridge', () => {
     const markerPath = path.join(tmpDir, 'external-open.marker');
     const openScriptPath = path.join(tmpDir, 'open');
     try {
-      fs.writeFileSync(openScriptPath, `#!/bin/sh\necho external > "${markerPath}"\nexit 0\n`, { mode: 0o755 });
+      fs.writeFileSync(openScriptPath, `#!/bin/sh\necho external > "${markerPath}"\nexit 0\n`, {
+        mode: 0o755,
+      });
 
       const nodeScript = `
         const { spawn } = require('node:child_process');
@@ -291,7 +292,9 @@ describe('browser-bridge', () => {
     const launchOptionsLog = path.join(tmpDir, 'launch-options.json');
     try {
       fs.mkdirSync(playwrightModuleDir, { recursive: true });
-      fs.writeFileSync(path.join(playwrightModuleDir, 'index.js'), `
+      fs.writeFileSync(
+        path.join(playwrightModuleDir, 'index.js'),
+        `
         const fs = require('node:fs');
         module.exports = {
           chromium: {
@@ -311,7 +314,8 @@ describe('browser-bridge', () => {
             },
           },
         };
-      `);
+      `,
+      );
 
       const nodeScript = `
         process.env.NODE_PATH = process.argv[1];
@@ -376,19 +380,29 @@ describe('browser-bridge', () => {
     await startBrowserBridge(() => {});
     const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin' });
 
-    const markerPath = path.join(os.tmpdir(), `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`);
-    const fallbackScript = path.join(os.tmpdir(), `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`);
-    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, { mode: 0o755 });
+    const markerPath = path.join(
+      os.tmpdir(),
+      `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`,
+    );
+    const fallbackScript = path.join(
+      os.tmpdir(),
+      `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`,
+    );
+    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, {
+      mode: 0o755,
+    });
 
     const shimPath = path.join(path.dirname(env.BROWSER), 'open');
-    await expect(execFileAsync(shimPath, ['https://example.com/docs'], {
-      env: {
-        ...process.env,
-        ...env,
-        CALDER_BROWSER_BRIDGE_TOKEN: 'invalid-token',
-        CALDER_BROWSER_BRIDGE_REAL_OPEN: fallbackScript,
-      },
-    })).rejects.toMatchObject({ code: 1 });
+    await expect(
+      execFileAsync(shimPath, ['https://example.com/docs'], {
+        env: {
+          ...process.env,
+          ...env,
+          CALDER_BROWSER_BRIDGE_TOKEN: 'invalid-token',
+          CALDER_BROWSER_BRIDGE_REAL_OPEN: fallbackScript,
+        },
+      }),
+    ).rejects.toMatchObject({ code: 1 });
 
     expect(fs.existsSync(markerPath)).toBe(false);
 
@@ -402,9 +416,17 @@ describe('browser-bridge', () => {
     await startBrowserBridge(() => {});
     const env = buildBrowserBridgeEnv('/repo/project', { PATH: '/usr/bin' });
 
-    const markerPath = path.join(os.tmpdir(), `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`);
-    const fallbackScript = path.join(os.tmpdir(), `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`);
-    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, { mode: 0o755 });
+    const markerPath = path.join(
+      os.tmpdir(),
+      `calder-bridge-marker-${Date.now()}-${Math.random()}.txt`,
+    );
+    const fallbackScript = path.join(
+      os.tmpdir(),
+      `calder-bridge-fallback-${Date.now()}-${Math.random()}.sh`,
+    );
+    fs.writeFileSync(fallbackScript, `#!/bin/sh\necho fallback > "${markerPath}"\nexit 0\n`, {
+      mode: 0o755,
+    });
 
     const shimPath = path.join(path.dirname(env.BROWSER), 'open');
     await execFileAsync(shimPath, ['https://example.com/docs'], {

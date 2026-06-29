@@ -29,13 +29,16 @@ vi.mock('./cli-surface-port-orchestrator', () => ({
 
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 
-function mockResolvedLaunch(profile: CliSurfaceProfile, overrides?: {
-  portMode?: 'auto' | 'fixed' | 'off';
-  resolvedPort?: number;
-  resolvedUrl?: string;
-  portFallbackUsed?: boolean;
-  portReason?: string;
-}) {
+function mockResolvedLaunch(
+  profile: CliSurfaceProfile,
+  overrides?: {
+    portMode?: 'auto' | 'fixed' | 'off';
+    resolvedPort?: number;
+    resolvedUrl?: string;
+    portFallbackUsed?: boolean;
+    portReason?: string;
+  },
+) {
   const cwd = profile.cwd ?? process.cwd();
   return {
     launch: {
@@ -47,7 +50,7 @@ function mockResolvedLaunch(profile: CliSurfaceProfile, overrides?: {
       rows: profile.rows,
     },
     metadata: {
-      portMode: overrides?.portMode ?? (profile.portMode ?? 'auto'),
+      portMode: overrides?.portMode ?? profile.portMode ?? 'auto',
       resolvedPort: overrides?.resolvedPort,
       resolvedUrl: overrides?.resolvedUrl,
       portFallbackUsed: overrides?.portFallbackUsed,
@@ -67,12 +70,14 @@ describe('cli surface runtime manager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
-    mockResolveCliSurfaceLaunch.mockImplementation(async (_projectId: string, profile: CliSurfaceProfile) => {
-      return mockResolvedLaunch(profile, {
-        resolvedPort: 5173,
-        resolvedUrl: 'http://localhost:5173/',
-      });
-    });
+    mockResolveCliSurfaceLaunch.mockImplementation(
+      async (_projectId: string, profile: CliSurfaceProfile) => {
+        return mockResolvedLaunch(profile, {
+          resolvedPort: 5173,
+          resolvedUrl: 'http://localhost:5173/',
+        });
+      },
+    );
   });
 
   it('starts one runtime per project using a generic command PTY', async () => {
@@ -219,7 +224,9 @@ describe('cli surface runtime manager', () => {
         resolvedUrl: 'http://localhost:5173/',
       }),
     );
-    expect(emit.status.mock.calls.filter(([, state]) => state.status === 'running')).toHaveLength(1);
+    expect(emit.status.mock.calls.filter(([, state]) => state.status === 'running')).toHaveLength(
+      1,
+    );
   });
 
   it('emits startup timing diagnostics across spawn, first output, and stop', async () => {
@@ -295,7 +302,10 @@ describe('cli surface runtime manager', () => {
     });
 
     const onData = mockSpawnCommandPty.mock.calls[0][2] as (data: string) => void;
-    const onExit = mockSpawnCommandPty.mock.calls[0][3] as (exitCode: number, signal?: number) => void;
+    const onExit = mockSpawnCommandPty.mock.calls[0][3] as (
+      exitCode: number,
+      signal?: number,
+    ) => void;
 
     onData('pending');
     expect(emit.data).not.toHaveBeenCalled();
@@ -341,7 +351,9 @@ describe('cli surface runtime manager', () => {
   });
 
   it('emits error status when launch orchestration fails before spawn', async () => {
-    mockResolveCliSurfaceLaunch.mockRejectedValueOnce(new Error('Port 5173 is already in use and fallback is disabled.'));
+    mockResolveCliSurfaceLaunch.mockRejectedValueOnce(
+      new Error('Port 5173 is already in use and fallback is disabled.'),
+    );
     const manager = createCliSurfaceRuntimeManager(emit);
 
     await manager.start('project-1', {
@@ -356,7 +368,10 @@ describe('cli surface runtime manager', () => {
     });
 
     expect(mockSpawnCommandPty).not.toHaveBeenCalled();
-    expect(emit.error).toHaveBeenCalledWith('project-1', 'Port 5173 is already in use and fallback is disabled.');
+    expect(emit.error).toHaveBeenCalledWith(
+      'project-1',
+      'Port 5173 is already in use and fallback is disabled.',
+    );
     expect(emit.status).toHaveBeenCalledWith(
       'project-1',
       expect.objectContaining({

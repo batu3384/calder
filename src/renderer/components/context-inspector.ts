@@ -14,8 +14,12 @@ function queryInspectorChildren<T extends HTMLElement>(selector: string): T[] {
   return Array.from(inspectorEl.querySelectorAll<T>(selector));
 }
 
-const inspectorTabButtons = queryInspectorChildren<HTMLButtonElement>('.context-inspector-tab[data-inspector-tab]');
-const inspectorSections = queryInspectorChildren<HTMLElement>('.context-inspector-section[data-section]');
+const inspectorTabButtons = queryInspectorChildren<HTMLButtonElement>(
+  '.context-inspector-tab[data-inspector-tab]',
+);
+const inspectorSections = queryInspectorChildren<HTMLElement>(
+  '.context-inspector-section[data-section]',
+);
 
 type RailSignal = 'default' | 'active' | 'warning';
 type InspectorTab = 'capabilities' | 'git' | 'activity';
@@ -26,9 +30,11 @@ let inspectorOpen = true;
 let renderQueued = false;
 let activeInspectorTab: InspectorTab = 'capabilities';
 
-const queueFrame = typeof requestAnimationFrame === 'function'
-  ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
+const queueFrame =
+  typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : (callback: FrameRequestCallback): number =>
+        globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 function syncRailSignal(): void {
   const project = appState.activeProject;
@@ -40,15 +46,13 @@ function syncRailSignal(): void {
   const gitStatus = getGitStatus(project.id);
   const autoApprovalMode = project.projectGovernance?.autoApproval?.effectiveMode;
   const hasDirtyGit = Boolean(
-    gitStatus?.isGitRepo && (gitStatus.staged + gitStatus.modified + gitStatus.untracked) > 0,
+    gitStatus?.isGitRepo && gitStatus.staged + gitStatus.modified + gitStatus.untracked > 0,
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
-  const hasRiskyApproval = autoApprovalMode === 'full_auto' || autoApprovalMode === 'full_auto_unsafe';
-  const nextSignal: RailSignal = hasGitConflicts || hasRiskyApproval
-    ? 'warning'
-    : hasDirtyGit
-      ? 'active'
-      : 'default';
+  const hasRiskyApproval =
+    autoApprovalMode === 'full_auto' || autoApprovalMode === 'full_auto_unsafe';
+  const nextSignal: RailSignal =
+    hasGitConflicts || hasRiskyApproval ? 'warning' : hasDirtyGit ? 'active' : 'default';
   if (inspectorEl.dataset.railSignal !== nextSignal) {
     inspectorEl.dataset.railSignal = nextSignal;
   }

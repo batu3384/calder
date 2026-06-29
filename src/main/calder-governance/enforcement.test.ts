@@ -1,10 +1,13 @@
-import { mkdirSync,mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { assertProjectGovernanceAllows, evaluateProjectGovernanceOperation } from './enforcement.js';
+import {
+  assertProjectGovernanceAllows,
+  evaluateProjectGovernanceOperation,
+} from './enforcement.js';
 
 const roots: string[] = [];
 
@@ -29,7 +32,9 @@ describe('project governance enforcement', () => {
 
   it('allows operations when no policy exists or policy is advisory', async () => {
     const root = tempRoot();
-    expect(await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create workflow' })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create workflow' }),
+    ).toMatchObject({
       allowed: true,
       status: 'allow',
     });
@@ -40,7 +45,9 @@ describe('project governance enforcement', () => {
       networkPolicy: 'block',
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create workflow' })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create workflow' }),
+    ).toMatchObject({
       allowed: true,
       status: 'advisory',
     });
@@ -54,7 +61,9 @@ describe('project governance enforcement', () => {
       networkPolicy: 'allow',
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create checkpoint' })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, { kind: 'write', label: 'Create checkpoint' }),
+    ).toMatchObject({
       allowed: false,
       status: 'ask',
     });
@@ -65,8 +74,9 @@ describe('project governance enforcement', () => {
       networkPolicy: 'allow',
     });
 
-    await expect(assertProjectGovernanceAllows(root, { kind: 'write', label: 'Create checkpoint' }))
-      .rejects.toThrow('Governance policy blocked Create checkpoint');
+    await expect(
+      assertProjectGovernanceAllows(root, { kind: 'write', label: 'Create checkpoint' }),
+    ).rejects.toThrow('Governance policy blocked Create checkpoint');
   });
 
   it('blocks project MCP additions outside an enforced allowlist', async () => {
@@ -79,11 +89,23 @@ describe('project governance enforcement', () => {
       mcpAllowlist: ['memory'],
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, { kind: 'mcp', label: 'Add MCP server', target: 'memory' })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'memory',
+      }),
+    ).toMatchObject({
       allowed: true,
       status: 'allow',
     });
-    expect(await evaluateProjectGovernanceOperation(root, { kind: 'mcp', label: 'Add MCP server', target: 'browser' })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'mcp',
+        label: 'Add MCP server',
+        target: 'browser',
+      }),
+    ).toMatchObject({
       allowed: false,
       status: 'block',
     });
@@ -98,11 +120,13 @@ describe('project governance enforcement', () => {
       networkPolicy: 'ask',
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, {
-      kind: 'network',
-      label: 'Open external URL',
-      target: 'https://example.com',
-    })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'network',
+        label: 'Open external URL',
+        target: 'https://example.com',
+      }),
+    ).toMatchObject({
       allowed: false,
       status: 'ask',
     });
@@ -114,11 +138,13 @@ describe('project governance enforcement', () => {
       networkPolicy: 'block',
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, {
-      kind: 'network',
-      label: 'Open external URL',
-      target: 'https://example.com',
-    })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'network',
+        label: 'Open external URL',
+        target: 'https://example.com',
+      }),
+    ).toMatchObject({
       allowed: false,
       status: 'block',
     });
@@ -134,20 +160,24 @@ describe('project governance enforcement', () => {
       budgetLimitUsd: 5,
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, {
-      kind: 'budget',
-      label: 'Run premium automation',
-      estimatedCostUsd: 3,
-    })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'budget',
+        label: 'Run premium automation',
+        estimatedCostUsd: 3,
+      }),
+    ).toMatchObject({
       allowed: true,
       status: 'allow',
     });
 
-    expect(await evaluateProjectGovernanceOperation(root, {
-      kind: 'budget',
-      label: 'Run premium automation',
-      estimatedCostUsd: 7.5,
-    })).toMatchObject({
+    expect(
+      await evaluateProjectGovernanceOperation(root, {
+        kind: 'budget',
+        label: 'Run premium automation',
+        estimatedCostUsd: 7.5,
+      }),
+    ).toMatchObject({
       allowed: false,
       status: 'block',
     });

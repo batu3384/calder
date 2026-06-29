@@ -36,7 +36,9 @@ function getPhaseStatusLabel(tone: OrchestrationPhaseTone): string {
   }
 }
 
-function buildOrchestrationHealthState(phases: OrchestrationPhaseState[]): OrchestrationHealthState {
+function buildOrchestrationHealthState(
+  phases: OrchestrationPhaseState[],
+): OrchestrationHealthState {
   const activeCount = phases.filter((phase) => phase.tone === 'active').length;
   const partialCount = phases.filter((phase) => phase.tone === 'partial').length;
   const emptyCount = phases.length - activeCount - partialCount;
@@ -96,7 +98,9 @@ function buildOrchestrationPhaseStates(project: ProjectRecord): OrchestrationPha
 
   const reviewCount = project.projectReviews?.reviews.length ?? 0;
   const previewRuntimeStatus = project.surface?.cli?.runtime?.status ?? 'idle';
-  const hasPreviewTarget = Boolean(project.surface?.web?.url || project.surface?.web?.history?.length);
+  const hasPreviewTarget = Boolean(
+    project.surface?.web?.url || project.surface?.web?.history?.length,
+  );
   const reviewPreviewTone: OrchestrationPhaseTone =
     reviewCount > 0 && (previewRuntimeStatus === 'running' || hasPreviewTarget)
       ? 'active'
@@ -115,11 +119,7 @@ function buildOrchestrationPhaseStates(project: ProjectRecord): OrchestrationPha
   const runningTasks = project.projectBackgroundTasks?.runningCount ?? 0;
   const completedTasks = project.projectBackgroundTasks?.completedCount ?? 0;
   const backgroundTaskTone: OrchestrationPhaseTone =
-    runningTasks > 0 || completedTasks > 0
-      ? 'active'
-      : queuedTasks > 0
-        ? 'partial'
-        : 'empty';
+    runningTasks > 0 || completedTasks > 0 ? 'active' : queuedTasks > 0 ? 'partial' : 'empty';
 
   const teamSpaceCount = project.projectTeamContext?.spaces.length ?? 0;
   const teamRuleCount = project.projectTeamContext?.sharedRuleCount ?? 0;
@@ -138,7 +138,8 @@ function buildOrchestrationPhaseStates(project: ProjectRecord): OrchestrationPha
       tone: contextTone,
       statusLabel: getPhaseStatusLabel(contextTone),
       summary: `${providerSourceCount} provider memory · ${sharedRuleCount} shared rules`,
-      detail: 'Discovers repo context and appends compact applied-context summaries to routed prompts.',
+      detail:
+        'Discovers repo context and appends compact applied-context summaries to routed prompts.',
       updatedAt: projectContext?.lastUpdated,
     },
     {
@@ -279,14 +280,16 @@ export function renderOrchestrationOverviewSection(args: RenderOrchestrationOver
 
   const status = document.createElement('div');
   status.className = 'orchestration-overview-status';
-  status.textContent = 'Starter files are optional. Use them to make each phase immediately visible in this repo.';
+  status.textContent =
+    'Starter files are optional. Use them to make each phase immediately visible in this repo.';
   actions.appendChild(status);
   shell.appendChild(actions);
 
   bootstrapBtn.addEventListener('click', async () => {
     bootstrapBtn.disabled = true;
     bootstrapBtn.textContent = 'Bootstrapping…';
-    status.textContent = 'Creating starter files for context, workflows, team spaces, and governance…';
+    status.textContent =
+      'Creating starter files for context, workflows, team spaces, and governance…';
     try {
       status.textContent = await args.onBootstrapStarters(project);
     } catch (error) {

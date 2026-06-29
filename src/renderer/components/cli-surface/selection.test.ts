@@ -11,15 +11,21 @@ const lines = [
 
 describe('cli surface selection helpers', () => {
   it('returns full lines for line mode', () => {
-    expect(buildSelectionText(lines, { mode: 'line', startRow: 1, endRow: 2, startCol: 0, endCol: 80 })).toBe(
-      '│ Theme: midnight         │\n│ Accent: amber           │',
-    );
+    expect(
+      buildSelectionText(lines, { mode: 'line', startRow: 1, endRow: 2, startCol: 0, endCol: 80 }),
+    ).toBe('│ Theme: midnight         │\n│ Accent: amber           │');
   });
 
   it('clips a rectangular region by columns', () => {
-    expect(buildSelectionText(lines, { mode: 'region', startRow: 1, endRow: 2, startCol: 2, endCol: 15 })).toBe(
-      'Theme: midnig\nAccent: amber',
-    );
+    expect(
+      buildSelectionText(lines, {
+        mode: 'region',
+        startRow: 1,
+        endRow: 2,
+        startCol: 2,
+        endCol: 15,
+      }),
+    ).toBe('Theme: midnig\nAccent: amber');
   });
 
   it('returns the full visible viewport for viewport mode', () => {

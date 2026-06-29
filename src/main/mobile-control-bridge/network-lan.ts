@@ -1,9 +1,6 @@
 import * as os from 'node:os';
 
-import {
-  isInvalidIpv4HostAddress,
-  isPrivateIpv4,
-} from './network-ipv4';
+import { isInvalidIpv4HostAddress, isPrivateIpv4 } from './network-ipv4';
 
 function isUsableLanIpv4Candidate(entry: os.NetworkInterfaceInfoIPv4): boolean {
   if (entry.internal) return false;
@@ -14,19 +11,18 @@ function isUsableLanIpv4Candidate(entry: os.NetworkInterfaceInfoIPv4): boolean {
   return true;
 }
 
-export function listLanHosts(nets: NodeJS.Dict<os.NetworkInterfaceInfo[]> = os.networkInterfaces()): string[] {
+export function listLanHosts(
+  nets: NodeJS.Dict<os.NetworkInterfaceInfo[]> = os.networkInterfaces(),
+): string[] {
   const preferred: string[] = [];
   const secondary: string[] = [];
   const fallback: string[] = [];
   const seen = new Set<string>();
 
-  const isProbablyLanInterface = (name: string): boolean => (
-    /^(en|eth|wlan|wifi|wl|lan)/i.test(name)
-    || /wi-?fi/i.test(name)
-  );
-  const isUsuallyVirtualInterface = (name: string): boolean => (
-    /^(lo|loopback|docker|veth|br-|bridge|vmnet|utun|tailscale|wg|awdl)/i.test(name)
-  );
+  const isProbablyLanInterface = (name: string): boolean =>
+    /^(en|eth|wlan|wifi|wl|lan)/i.test(name) || /wi-?fi/i.test(name);
+  const isUsuallyVirtualInterface = (name: string): boolean =>
+    /^(lo|loopback|docker|veth|br-|bridge|vmnet|utun|tailscale|wg|awdl)/i.test(name);
 
   for (const [interfaceName, values] of Object.entries(nets)) {
     if (!values) continue;

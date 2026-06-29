@@ -1,7 +1,10 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const workflowSource = readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf-8');
+const workflowSource = readFileSync(
+  new URL('../../.github/workflows/release.yml', import.meta.url),
+  'utf-8',
+);
 
 describe('release workflow contract', () => {
   it('validates and quotes the manual version input before running npm version', () => {

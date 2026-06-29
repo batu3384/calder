@@ -46,7 +46,9 @@ export function resolveCredentialOrigin(url: string | undefined): string | null 
   }
 }
 
-export function resolveCaptureModeState(instance: BrowserTabInstance): 'inspect' | 'draw' | 'flow' | 'idle' {
+export function resolveCaptureModeState(
+  instance: BrowserTabInstance,
+): 'inspect' | 'draw' | 'flow' | 'idle' {
   if (instance.inspectMode) return 'inspect';
   if (instance.drawMode) return 'draw';
   if (instance.flowMode || instance.flowSteps.length > 0) return 'flow';

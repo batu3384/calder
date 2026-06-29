@@ -13,12 +13,14 @@ export interface DoctorInstallSpec {
 
 export const MOBILE_DOCTOR_DOCS = {
   appiumInstall: 'https://appium.io/docs/en/latest/quickstart/install/',
-  appiumXcuitest: 'https://appium.github.io/appium-xcuitest-driver/latest/getting-started/system-requirements/',
+  appiumXcuitest:
+    'https://appium.github.io/appium-xcuitest-driver/latest/getting-started/system-requirements/',
   appiumUiauto2: 'https://appium.io/docs/en/3.3/quickstart/uiauto2-driver/',
   androidSdkManager: 'https://developer.android.com/tools/sdkmanager',
   androidAvdManager: 'https://developer.android.com/tools/avdmanager',
   androidEmulator: 'https://developer.android.com/studio/run/emulator-commandline',
-  appleXcode: 'https://developer.apple.com/documentation/safari-developer-tools/installing-xcode-and-simulators',
+  appleXcode:
+    'https://developer.apple.com/documentation/safari-developer-tools/installing-xcode-and-simulators',
   maestroInstall: 'https://docs.maestro.dev/maestro-cli/how-to-install-maestro-cli',
 } as const;
 

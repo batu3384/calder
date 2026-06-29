@@ -40,13 +40,22 @@ describe('ipc MCP governance handlers', () => {
     const addServer = getHandleHandler('mcp:addServer');
     const removeServer = getHandleHandler('mcp:removeServer');
 
-    const addResult = await addServer({}, 'docs', { command: 'npx', args: ['-y', 'docs'] }, 'project');
+    const addResult = await addServer(
+      {},
+      'docs',
+      { command: 'npx', args: ['-y', 'docs'] },
+      'project',
+    );
     const removeResult = await removeServer({}, 'docs', '/tmp/.mcp.json', 'project');
 
     expect(addResult.success).toBe(false);
     expect(removeResult.success).toBe(false);
-    expect(String(addResult.error)).toContain(`${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`);
-    expect(String(removeResult.error)).toContain(`${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`);
+    expect(String(addResult.error)).toContain(
+      `${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`,
+    );
+    expect(String(removeResult.error)).toContain(
+      `${MCP_GOVERNANCE_ERROR_CODES.MISSING_PROJECT_PATH}:`,
+    );
     expect(String(addResult.error)).toContain('projectPath is required');
     expect(String(removeResult.error)).toContain('projectPath is required');
     expect(mockAddMcpServer).not.toHaveBeenCalled();
@@ -68,14 +77,16 @@ describe('ipc MCP governance handlers', () => {
 
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Add project MCP server');
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Remove project MCP server');
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith(
-      '/repo',
-      { kind: 'mcp', label: 'Add project MCP server', target: 'docs' },
-    );
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith(
-      '/repo',
-      { kind: 'mcp', label: 'Remove project MCP server', target: 'docs' },
-    );
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'mcp',
+      label: 'Add project MCP server',
+      target: 'docs',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'mcp',
+      label: 'Remove project MCP server',
+      target: 'docs',
+    });
     expect(mockAddMcpServer).toHaveBeenCalledWith('docs', { command: 'npx' }, 'project', '/repo');
     expect(mockRemoveMcpServer).toHaveBeenCalledWith('docs', '/repo/.mcp.json', 'project', '/repo');
     expect(addResult).toEqual({ success: true });
@@ -98,7 +109,12 @@ describe('ipc MCP governance handlers', () => {
     expect(ops.requireKnownProjectPath).not.toHaveBeenCalled();
     expect(ops.assertProjectGovernanceAllows).not.toHaveBeenCalled();
     expect(mockAddMcpServer).toHaveBeenCalledWith('docs', { command: 'npx' }, 'user', undefined);
-    expect(mockRemoveMcpServer).toHaveBeenCalledWith('docs', '/home/test/.mcp.json', 'user', undefined);
+    expect(mockRemoveMcpServer).toHaveBeenCalledWith(
+      'docs',
+      '/home/test/.mcp.json',
+      'user',
+      undefined,
+    );
   });
 
   it('returns deterministic typed denial errors when project governance blocks add/remove', async () => {

@@ -109,7 +109,9 @@ export function renderInspectCapabilityPanel(
   return panel;
 }
 
-export function buildMobileDependencyCheckRow(options: BuildMobileDependencyCheckRowOptions): HTMLDivElement {
+export function buildMobileDependencyCheckRow(
+  options: BuildMobileDependencyCheckRowOptions,
+): HTMLDivElement {
   const {
     instance,
     check,
@@ -214,7 +216,11 @@ export function buildMobileDependencyCheckRow(options: BuildMobileDependencyChec
             if (result.command) installState.command = result.command;
             renderInstallProgress(instance.progressEl, instance.installState);
           }
-          setPaneStatus(instance, result.message || `${check.label} installed successfully.`, 'success');
+          setPaneStatus(
+            instance,
+            result.message || `${check.label} installed successfully.`,
+            'success',
+          );
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Install command failed.';

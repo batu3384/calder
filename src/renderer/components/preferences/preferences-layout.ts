@@ -92,10 +92,7 @@ export function appendSectionGroup(
   return body;
 }
 
-export function appendOverviewGrid(
-  container: HTMLElement,
-  items: PreferencesOverviewItem[],
-): void {
+export function appendOverviewGrid(container: HTMLElement, items: PreferencesOverviewItem[]): void {
   const grid = document.createElement('div');
   grid.className = 'preferences-overview-grid';
 

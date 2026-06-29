@@ -13,7 +13,8 @@ function isFile(filePath: string): boolean {
 
 function listMarkdownFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.md'))
       .sort((left, right) => left.localeCompare(right));
   } catch {

@@ -15,12 +15,17 @@ export function shouldSkipTabListRender(tabListEl: HTMLElement): boolean {
 export function buildTabBarRenderSurfaceState(project: ProjectRecord): TabBarRenderSurfaceState {
   const surfaceState = getProjectSurface(project);
   return {
-    cliSurfaceTabActive: surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli',
-    mobileSurfaceTabActive: surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile',
+    cliSurfaceTabActive:
+      surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli',
+    mobileSurfaceTabActive:
+      surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile',
   };
 }
 
-export function buildActiveTabRailKey(activeProjectId: string | null, project: ProjectRecord): string {
+export function buildActiveTabRailKey(
+  activeProjectId: string | null,
+  project: ProjectRecord,
+): string {
   return [
     activeProjectId,
     project.activeSessionId,
@@ -40,18 +45,8 @@ interface RenderGitStatusBlockOptions {
 }
 
 export function renderGitStatusBlock(options: RenderGitStatusBlockOptions): void {
-  const {
-    gitStatusEl,
-    project,
-    gitStatus,
-    escapeHtml,
-    refreshGitStatus,
-  } = options;
-  const view = buildGitStatusView(
-    Boolean(project),
-    gitStatus,
-    escapeHtml,
-  );
+  const { gitStatusEl, project, gitStatus, escapeHtml, refreshGitStatus } = options;
+  const view = buildGitStatusView(Boolean(project), gitStatus, escapeHtml);
   gitStatusEl.innerHTML = view.html;
   gitStatusEl.dataset.state = view.state;
   if (view.busy) {

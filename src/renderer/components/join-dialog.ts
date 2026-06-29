@@ -33,7 +33,8 @@ export function showJoinDialog(): void {
 
   const copy = document.createElement('div');
   copy.className = 'share-dialog-copy';
-  copy.textContent = 'Enter the host passphrase, paste the connection code, and Calder will generate the response you send back.';
+  copy.textContent =
+    'Enter the host passphrase, paste the connection code, and Calder will generate the response you send back.';
 
   hero.appendChild(kicker);
   hero.appendChild(title);
@@ -51,7 +52,8 @@ export function showJoinDialog(): void {
 
   const legacyHint = document.createElement('div');
   legacyHint.className = 'share-notice calder-inline-notice';
-  legacyHint.textContent = 'Legacy 8-digit PINs are still supported when you connect to an older app version.';
+  legacyHint.textContent =
+    'Legacy 8-digit PINs are still supported when you connect to an older app version.';
   offerSection.appendChild(legacyHint);
 
   const passphraseInput = createPassphraseInput({ placeholder: 'Passphrase or legacy PIN' });
@@ -59,7 +61,7 @@ export function showJoinDialog(): void {
 
   const offerLabel = document.createElement('div');
   offerLabel.className = 'share-label share-label-spaced';
-  offerLabel.textContent = 'Paste the host\'s connection code';
+  offerLabel.textContent = "Paste the host's connection code";
   offerSection.appendChild(offerLabel);
 
   const offerTextarea = document.createElement('textarea');
@@ -95,7 +97,9 @@ export function showJoinDialog(): void {
   copyAnswerBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(answerTextarea.value);
     copyAnswerBtn.textContent = 'Copied!';
-    setTimeout(() => { copyAnswerBtn.textContent = 'Copy Response'; }, 1500);
+    setTimeout(() => {
+      copyAnswerBtn.textContent = 'Copy Response';
+    }, 1500);
   });
   answerSection.appendChild(copyAnswerBtn);
   dialog.appendChild(answerSection);
@@ -153,12 +157,14 @@ export function showJoinDialog(): void {
 
       answerTextarea.value = answer;
       answerSection.classList.remove('hidden');
-      statusEl.textContent = 'Send the response code to the host. The session will appear once they connect.';
+      statusEl.textContent =
+        'Send the response code to the host. The session will appear once they connect.';
 
       closeBtn.textContent = 'Close';
     } catch (err) {
       if (err instanceof DecryptionError) {
-        statusEl.textContent = 'Could not decrypt connection code. Check the passphrase and try again.';
+        statusEl.textContent =
+          'Could not decrypt connection code. Check the passphrase and try again.';
       } else {
         statusEl.textContent = `Error: ${err instanceof Error ? err.message : 'Invalid code'}`;
       }

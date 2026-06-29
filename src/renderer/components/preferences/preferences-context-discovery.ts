@@ -32,40 +32,51 @@ function createActionButton(label: string, onClick: () => void | Promise<void>):
   return button;
 }
 
-function openCreateSharedRuleModal(project: ProjectRecord, args: RenderProjectContextSectionArgs): void {
-  showModal('New Shared Rule', [
-    {
-      label: 'Rule name',
-      id: 'context-rule-name',
-      placeholder: 'Review checklist',
-      defaultValue: 'Review checklist',
-    },
-    {
-      label: 'Priority',
-      id: 'context-rule-priority',
-      type: 'select',
-      defaultValue: 'soft',
-      options: [
-        { value: 'soft', label: 'Soft guideline' },
-        { value: 'hard', label: 'Hard requirement' },
-      ],
-    },
-  ], async (values) => {
-    const title = values['context-rule-name']?.trim() ?? '';
-    if (!title) {
-      setModalError('context-rule-name', 'Rule name is required');
-      return;
-    }
+function openCreateSharedRuleModal(
+  project: ProjectRecord,
+  args: RenderProjectContextSectionArgs,
+): void {
+  showModal(
+    'New Shared Rule',
+    [
+      {
+        label: 'Rule name',
+        id: 'context-rule-name',
+        placeholder: 'Review checklist',
+        defaultValue: 'Review checklist',
+      },
+      {
+        label: 'Priority',
+        id: 'context-rule-priority',
+        type: 'select',
+        defaultValue: 'soft',
+        options: [
+          { value: 'soft', label: 'Soft guideline' },
+          { value: 'hard', label: 'Hard requirement' },
+        ],
+      },
+    ],
+    async (values) => {
+      const title = values['context-rule-name']?.trim() ?? '';
+      if (!title) {
+        setModalError('context-rule-name', 'Rule name is required');
+        return;
+      }
 
-    const priority = values['context-rule-priority'] === 'hard' ? 'hard' : 'soft';
-    const result = await window.calder.context.createSharedRule(project.path, title, priority);
-    appState.setProjectContext(project.id, result.state);
-    args.onCloseModalWide();
-    void window.calder.git.openInEditor(project.path, result.relativePath);
-  });
+      const priority = values['context-rule-priority'] === 'hard' ? 'hard' : 'soft';
+      const result = await window.calder.context.createSharedRule(project.path, title, priority);
+      appState.setProjectContext(project.id, result.state);
+      args.onCloseModalWide();
+      void window.calder.git.openInEditor(project.path, result.relativePath);
+    },
+  );
 }
 
-function appendDiscoveryActions(shell: HTMLElement, project: ProjectRecord, args: RenderProjectContextSectionArgs): void {
+function appendDiscoveryActions(
+  shell: HTMLElement,
+  project: ProjectRecord,
+  args: RenderProjectContextSectionArgs,
+): void {
   const actions = document.createElement('div');
   actions.className = 'context-discovery-actions';
 
@@ -96,7 +107,9 @@ function appendDiscoverySummary(
   project: ProjectRecord,
   projectContext: ProjectContextData,
 ): void {
-  const providerMemoryCount = projectContext.sources.filter((source) => source.provider !== 'shared').length;
+  const providerMemoryCount = projectContext.sources.filter(
+    (source) => source.provider !== 'shared',
+  ).length;
   const summary = document.createElement('div');
   summary.className = 'context-discovery-summary';
   summary.innerHTML = `
@@ -162,38 +175,48 @@ function openRenameSharedRuleModal(
   source: ProjectContextSource,
   args: RenderProjectContextSectionArgs,
 ): void {
-  const initialTitle = source.summary?.trim() || source.displayName.replace(/\.(hard|soft)\.md$/i, '');
+  const initialTitle =
+    source.summary?.trim() || source.displayName.replace(/\.(hard|soft)\.md$/i, '');
   const currentPriority = source.priority === 'hard' ? 'hard' : 'soft';
-  showModal('Rename Shared Rule', [
-    {
-      label: 'Rule name',
-      id: 'context-rule-rename-name',
-      placeholder: 'Review checklist',
-      defaultValue: initialTitle,
-    },
-    {
-      label: 'Priority',
-      id: 'context-rule-rename-priority',
-      type: 'select',
-      defaultValue: currentPriority,
-      options: [
-        { value: 'soft', label: 'Soft guideline' },
-        { value: 'hard', label: 'Hard requirement' },
-      ],
-    },
-  ], async (values) => {
-    const title = values['context-rule-rename-name']?.trim() ?? '';
-    if (!title) {
-      setModalError('context-rule-rename-name', 'Rule name is required');
-      return;
-    }
+  showModal(
+    'Rename Shared Rule',
+    [
+      {
+        label: 'Rule name',
+        id: 'context-rule-rename-name',
+        placeholder: 'Review checklist',
+        defaultValue: initialTitle,
+      },
+      {
+        label: 'Priority',
+        id: 'context-rule-rename-priority',
+        type: 'select',
+        defaultValue: currentPriority,
+        options: [
+          { value: 'soft', label: 'Soft guideline' },
+          { value: 'hard', label: 'Hard requirement' },
+        ],
+      },
+    ],
+    async (values) => {
+      const title = values['context-rule-rename-name']?.trim() ?? '';
+      if (!title) {
+        setModalError('context-rule-rename-name', 'Rule name is required');
+        return;
+      }
 
-    const priority = values['context-rule-rename-priority'] === 'hard' ? 'hard' : 'soft';
-    const result = await window.calder.context.renameSharedRule(project.path, relativePath, title, priority);
-    appState.setProjectContext(project.id, result.state);
-    args.onCloseModalWide();
-    void window.calder.git.openInEditor(project.path, result.relativePath);
-  });
+      const priority = values['context-rule-rename-priority'] === 'hard' ? 'hard' : 'soft';
+      const result = await window.calder.context.renameSharedRule(
+        project.path,
+        relativePath,
+        title,
+        priority,
+      );
+      appState.setProjectContext(project.id, result.state);
+      args.onCloseModalWide();
+      void window.calder.git.openInEditor(project.path, result.relativePath);
+    },
+  );
 }
 
 function createRenameRuleButton(
@@ -255,11 +278,9 @@ function createSharedRuleStatus(
   checkbox.addEventListener('change', () => {
     const nextState = {
       ...projectContext,
-      sources: projectContext.sources.map((entry) => (
-        entry.id === source.id
-          ? { ...entry, enabled: checkbox.checked }
-          : entry
-      )),
+      sources: projectContext.sources.map((entry) =>
+        entry.id === source.id ? { ...entry, enabled: checkbox.checked } : entry,
+      ),
     };
     appState.setProjectContext(project.id, nextState);
     args.onRefreshProviders();

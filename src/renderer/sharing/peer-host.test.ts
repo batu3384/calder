@@ -5,15 +5,21 @@ const mockDeliverPromptToTerminalSession = vi.hoisted(() => vi.fn());
 const mockSendMessage = vi.hoisted(() => vi.fn());
 const mockWaitForIceGathering = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockEncodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue('encoded-offer'));
-const mockDecodeConnectionCode = vi.hoisted(() => vi.fn().mockResolvedValue({ type: 'answer', sdp: 'answer-sdp' }));
+const mockDecodeConnectionCode = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ type: 'answer', sdp: 'answer-sdp' }),
+);
 const mockBuildRtcConfiguration = vi.hoisted(() => vi.fn().mockReturnValue({ iceServers: [] }));
 const mockGenerateChallenge = vi.hoisted(() => vi.fn().mockReturnValue(new Uint8Array([1, 2, 3])));
-const mockComputeChallengeResponse = vi.hoisted(() => vi.fn().mockResolvedValue('expected-response'));
+const mockComputeChallengeResponse = vi.hoisted(() =>
+  vi.fn().mockResolvedValue('expected-response'),
+);
 const mockBytesToHex = vi.hoisted(() => vi.fn().mockReturnValue('deadbeef'));
 const mockGetBrowserTabInstance = vi.hoisted(() => vi.fn());
 const mockToggleInspectMode = vi.hoisted(() => vi.fn());
 const mockApplyViewport = vi.hoisted(() => vi.fn());
-const serializeAddonInstances = vi.hoisted(() => [] as Array<{ serialize: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }>);
+const serializeAddonInstances = vi.hoisted(
+  () => [] as Array<{ serialize: ReturnType<typeof vi.fn>; dispose: ReturnType<typeof vi.fn> }>,
+);
 
 vi.mock('../components/terminal-pane.js', () => ({
   getTerminalInstance: mockGetTerminalInstance,
@@ -64,7 +70,7 @@ vi.mock('../components/browser-tab/types.js', () => ({
   ],
 }));
 
-import { _resetForTesting as resetAppState,appState } from '../state.js';
+import { _resetForTesting as resetAppState, appState } from '../state.js';
 import {
   broadcastData,
   broadcastResize,
@@ -118,7 +124,9 @@ beforeEach(() => {
   resetAppState();
 
   vi.stubGlobal('RTCPeerConnection', FakePeerConnection as any);
-  vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(desc: RTCSessionDescriptionInit) {
+  vi.stubGlobal('RTCSessionDescription', function RTCSessionDescription(
+    desc: RTCSessionDescriptionInit,
+  ) {
     return desc;
   } as any);
   vi.stubGlobal('window', {
@@ -181,9 +189,14 @@ describe('peer-host', () => {
 
     dc.onopen?.();
     expect(mockBytesToHex).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]));
-    expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-challenge', challenge: 'deadbeef' });
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, {
+      type: 'auth-challenge',
+      challenge: 'deadbeef',
+    });
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-result', ok: true });
@@ -223,13 +236,16 @@ describe('peer-host', () => {
 
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'wrong-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'wrong-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      dc,
-      { type: 'auth-result', ok: false, reason: 'Passphrase mismatch' },
-    );
+    expect(mockSendMessage).toHaveBeenCalledWith(dc, {
+      type: 'auth-result',
+      ok: false,
+      reason: 'Passphrase mismatch',
+    });
     expect(authFailedSpy).toHaveBeenCalledWith('Passphrase mismatch');
     expect(isSharing('session-2')).toBe(false);
   });
@@ -244,9 +260,13 @@ describe('peer-host', () => {
     dc.onopen?.();
     expect(isConnected('session-2')).toBe(true);
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'should-not-write' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'input', payload: 'should-not-write' }),
+    } as MessageEvent);
     expect(mockPtyWrite).not.toHaveBeenCalled();
 
     pc.iceConnectionState = 'failed';
@@ -288,18 +308,24 @@ describe('peer-host', () => {
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }),
+    } as MessageEvent);
 
     const snapshot = getShareConnectionSnapshot(sessionB.id);
-    expect(snapshot).toEqual(expect.objectContaining({
-      ownerSessionId: sessionA.id,
-      activeSessionId: sessionB.id,
-      mode: 'readwrite',
-      connected: true,
-      authState: 'verified',
-    }));
+    expect(snapshot).toEqual(
+      expect.objectContaining({
+        ownerSessionId: sessionA.id,
+        activeSessionId: sessionB.id,
+        mode: 'readwrite',
+        connected: true,
+        authState: 'verified',
+      }),
+    );
     expect(snapshot?.connectedAtMs).toBeTypeOf('number');
     expect(snapshot?.verifiedAtMs).toBeTypeOf('number');
     expect(isConnected(sessionB.id)).toBe(true);
@@ -331,11 +357,15 @@ describe('peer-host', () => {
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }),
+    } as MessageEvent);
 
     expect(mockSendMessage).toHaveBeenCalledWith(
       dc,
@@ -376,7 +406,9 @@ describe('peer-host', () => {
     expect(mockSendMessage).not.toHaveBeenCalled();
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     return Promise.resolve().then(() => {
       stopShare('session-2');
       mockSendMessage.mockClear();
@@ -422,10 +454,14 @@ describe('peer-host', () => {
     const dc = pc.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }),
+    } as MessageEvent);
 
     expect(mockSendMessage).toHaveBeenCalledWith(
       dc,
@@ -438,7 +474,9 @@ describe('peer-host', () => {
     );
     expect(appState.activeProject?.activeSessionId).toBe(sessionB.id);
 
-    dc.onmessage?.({ data: JSON.stringify({ type: 'input', payload: 'whoami\r' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'input', payload: 'whoami\r' }),
+    } as MessageEvent);
     expect(mockPtyWrite).toHaveBeenCalledWith(sessionB.id, 'whoami\r');
 
     mockSendMessage.mockClear();
@@ -496,13 +534,16 @@ describe('peer-host', () => {
       },
     };
     mockGetBrowserTabInstance.mockImplementation((id: string) =>
-      (id === browserSession.id ? fakeBrowserInstance : undefined));
+      id === browserSession.id ? fakeBrowserInstance : undefined,
+    );
 
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
@@ -635,7 +676,9 @@ describe('peer-host', () => {
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
@@ -696,7 +739,9 @@ describe('peer-host', () => {
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
@@ -744,7 +789,9 @@ describe('peer-host', () => {
       const dc = FakePeerConnection.instances[0]!.dc;
 
       dc.onopen?.();
-      dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+      dc.onmessage?.({
+        data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+      } as MessageEvent);
       await Promise.resolve();
 
       vi.advanceTimersByTime(30_000);
@@ -786,13 +833,13 @@ describe('peer-host', () => {
 
     dc.onopen?.();
     mockGetTerminalInstance.mockReturnValue(undefined);
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     expect(mockSendMessage).toHaveBeenCalledWith(dc, { type: 'auth-result', ok: true });
-    expect(
-      mockSendMessage.mock.calls.some(([, payload]) => payload.type === 'init'),
-    ).toBe(false);
+    expect(mockSendMessage.mock.calls.some(([, payload]) => payload.type === 'init')).toBe(false);
 
     mockSendMessage.mockClear();
     dc.onmessage?.({ data: JSON.stringify({ type: 'session-catalog-request' }) } as MessageEvent);
@@ -838,7 +885,9 @@ describe('peer-host', () => {
     const dc = FakePeerConnection.instances[0]!.dc;
 
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockGetTerminalInstance.mockImplementation((id: string) => {
@@ -865,8 +914,14 @@ describe('peer-host', () => {
   it('builds browser state using available sessions and survives webview history probe errors', async () => {
     const project = appState.addProject('Browser Catalog Repair', '/tmp/browser-catalog-repair');
     const cliSession = appState.addSession(project.id, 'CLI Session', undefined, 'claude')!;
-    const staleBrowserSession = appState.addBrowserTabSession(project.id, 'https://stale.example.com/')!;
-    const readyBrowserSession = appState.addBrowserTabSession(project.id, 'https://ready.example.com/')!;
+    const staleBrowserSession = appState.addBrowserTabSession(
+      project.id,
+      'https://stale.example.com/',
+    )!;
+    const readyBrowserSession = appState.addBrowserTabSession(
+      project.id,
+      'https://ready.example.com/',
+    )!;
     appState.setActiveSession(project.id, staleBrowserSession.id);
 
     mockGetTerminalInstance.mockImplementation((id: string) => {
@@ -904,7 +959,9 @@ describe('peer-host', () => {
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
@@ -965,7 +1022,9 @@ describe('peer-host', () => {
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockGetBrowserTabInstance.mockReturnValue(undefined);
@@ -1086,7 +1145,9 @@ describe('peer-host', () => {
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();
@@ -1229,7 +1290,9 @@ describe('peer-host', () => {
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockGetBrowserTabInstance.mockReturnValue(browserInstance);
@@ -1354,10 +1417,14 @@ describe('peer-host', () => {
       expect(isSharing('session-1')).toBe(false);
 
       const keepaliveHandle = startShare('session-2', 'readwrite', 'secret-1234');
-      serializeAddonInstances[serializeAddonInstances.length - 1]!.serialize.mockReturnValue(longScrollback);
+      serializeAddonInstances[serializeAddonInstances.length - 1]!.serialize.mockReturnValue(
+        longScrollback,
+      );
       const keepaliveDc = FakePeerConnection.instances[1]!.dc;
       keepaliveDc.onopen?.();
-      keepaliveDc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+      keepaliveDc.onmessage?.({
+        data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+      } as MessageEvent);
       await Promise.resolve();
 
       const initCalls = mockSendMessage.mock.calls.filter(([, payload]) => payload.type === 'init');
@@ -1415,7 +1482,9 @@ describe('peer-host', () => {
     const handle = startShare(sessionA.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     simulateVanishedTerminal = true;
@@ -1480,7 +1549,9 @@ describe('peer-host', () => {
     const handle = startShare(cliSession.id, 'readwrite', 'secret-1234');
     const dc = FakePeerConnection.instances[0]!.dc;
     dc.onopen?.();
-    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    dc.onmessage?.({
+      data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }),
+    } as MessageEvent);
     await Promise.resolve();
 
     mockSendMessage.mockClear();

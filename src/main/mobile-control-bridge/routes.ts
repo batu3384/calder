@@ -11,10 +11,9 @@ interface BridgeRouteConfig extends PairingPostHandlersConfig {
   cleanupBridgeRecords: () => void;
 }
 
-export function createBridgeRequestHandler(config: BridgeRouteConfig): (
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-) => void {
+export function createBridgeRequestHandler(
+  config: BridgeRouteConfig,
+): (req: http.IncomingMessage, res: http.ServerResponse) => void {
   const postHandlers = createPairingPostHandlers(config);
 
   return function handleBridgeRequest(req: http.IncomingMessage, res: http.ServerResponse): void {

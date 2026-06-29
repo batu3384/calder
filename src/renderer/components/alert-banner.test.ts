@@ -18,7 +18,9 @@ function makeElement() {
     classList: {
       add() {},
       remove() {},
-      toggle() { return false; },
+      toggle() {
+        return false;
+      },
     },
     appendChild() {},
     addEventListener() {},
@@ -54,7 +56,8 @@ describe('alert banner', () => {
       message: 'Tracking is off',
     });
 
-    expect(mockQuerySelector).toHaveBeenCalledWith('.terminal-pane[data-session-id="warned-session"]');
+    expect(mockQuerySelector).toHaveBeenCalledWith(
+      '.terminal-pane[data-session-id="warned-session"]',
+    );
   });
 });
-

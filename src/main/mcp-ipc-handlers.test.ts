@@ -104,26 +104,22 @@ describe('mcp IPC runtime governance handlers', () => {
     expect(ops.requireKnownProjectPath).toHaveBeenNthCalledWith(2, '/repo', 'Call MCP tool');
     expect(ops.requireKnownProjectPath).toHaveBeenNthCalledWith(3, '/repo', 'Read MCP resource');
     expect(ops.requireKnownProjectPath).toHaveBeenNthCalledWith(4, '/repo', 'Get MCP prompt');
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(
-      1,
-      '/repo',
-      { kind: 'mcp', label: 'Connect MCP server' },
-    );
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(
-      2,
-      '/repo',
-      { kind: 'mcp', label: 'Call MCP tool' },
-    );
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(
-      3,
-      '/repo',
-      { kind: 'mcp', label: 'Read MCP resource' },
-    );
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(
-      4,
-      '/repo',
-      { kind: 'mcp', label: 'Get MCP prompt' },
-    );
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(1, '/repo', {
+      kind: 'mcp',
+      label: 'Connect MCP server',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(2, '/repo', {
+      kind: 'mcp',
+      label: 'Call MCP tool',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(3, '/repo', {
+      kind: 'mcp',
+      label: 'Read MCP resource',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenNthCalledWith(4, '/repo', {
+      kind: 'mcp',
+      label: 'Get MCP prompt',
+    });
   });
 
   it('returns deterministic no-active-project errors for governed runtime calls', async () => {
@@ -163,7 +159,9 @@ describe('mcp IPC runtime governance handlers', () => {
 
   it('returns deterministic deny errors when governance blocks runtime operations', async () => {
     const ops = createGovernanceOps();
-    ops.assertProjectGovernanceAllows.mockRejectedValue(new Error('Governance policy blocked runtime MCP operation'));
+    ops.assertProjectGovernanceAllows.mockRejectedValue(
+      new Error('Governance policy blocked runtime MCP operation'),
+    );
     registerMcpHandlers(ops);
 
     for (const testCase of runtimeCases) {

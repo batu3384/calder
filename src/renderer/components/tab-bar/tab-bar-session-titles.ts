@@ -7,16 +7,17 @@ export function buildSessionTooltip(status: SessionStatus, cliSessionId?: string
 }
 
 export function buildSessionTabTitle(session: SessionRecord, status: SessionStatus): string {
-  const baseTitle = session.type === 'diff-viewer'
-    ? `Diff: ${session.diffFilePath || session.name}`
-    : session.type === 'mcp-inspector'
-      ? 'MCP Inspector'
-      : session.type === 'file-reader'
-        ? `File: ${session.fileReaderPath || session.name}`
-        : session.type === 'remote-terminal'
-          ? `Remote: ${session.remoteHostName || session.name}`
-          : session.type === 'browser-tab'
-            ? `Browser: ${session.browserTabUrl || 'New Tab'}`
-            : buildSessionTooltip(status, session.cliSessionId);
+  const baseTitle =
+    session.type === 'diff-viewer'
+      ? `Diff: ${session.diffFilePath || session.name}`
+      : session.type === 'mcp-inspector'
+        ? 'MCP Inspector'
+        : session.type === 'file-reader'
+          ? `File: ${session.fileReaderPath || session.name}`
+          : session.type === 'remote-terminal'
+            ? `Remote: ${session.remoteHostName || session.name}`
+            : session.type === 'browser-tab'
+              ? `Browser: ${session.browserTabUrl || 'New Tab'}`
+              : buildSessionTooltip(status, session.cliSessionId);
   return `${baseTitle}\nDrag to reorder`;
 }

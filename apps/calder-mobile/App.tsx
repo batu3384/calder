@@ -32,8 +32,15 @@ export default function App() {
               <Text style={styles.languageButtonText}>{copy.languageButton}</Text>
             </Pressable>
           </View>
-          <View style={[styles.statusPill, { borderColor: statusColor(controller.connectionState) }]}>
-            <View style={[styles.statusDot, { backgroundColor: statusColor(controller.connectionState) }]} />
+          <View
+            style={[styles.statusPill, { borderColor: statusColor(controller.connectionState) }]}
+          >
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: statusColor(controller.connectionState) },
+              ]}
+            />
             <Text style={[styles.statusText, { color: statusColor(controller.connectionState) }]}>
               {controller.statusText}
             </Text>

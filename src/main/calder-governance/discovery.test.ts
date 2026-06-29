@@ -48,38 +48,44 @@ describe('discoverProjectGovernance', () => {
     const root = makeProject('governance-discovery');
     roots.push(root);
     writeFiles(root, {
-      '.calder/governance/policy.json': JSON.stringify({
-        schemaVersion: 1,
-        profileName: 'Team safe mode',
-        mode: 'enforced',
-        toolPolicy: 'block',
-        writePolicy: 'ask',
-        networkPolicy: 'block',
-        mcpAllowlist: ['github', 'figma'],
-        providerProfiles: {
-          codex: { defaultArgs: '--approval-mode=plan' },
-          claude: { defaultArgs: '--permission-mode=plan' },
+      '.calder/governance/policy.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          profileName: 'Team safe mode',
+          mode: 'enforced',
+          toolPolicy: 'block',
+          writePolicy: 'ask',
+          networkPolicy: 'block',
+          mcpAllowlist: ['github', 'figma'],
+          providerProfiles: {
+            codex: { defaultArgs: '--approval-mode=plan' },
+            claude: { defaultArgs: '--permission-mode=plan' },
+          },
+          budgetLimitUsd: 8,
+          autoApproval: {
+            mode: 'edit_only',
+            safeToolProfile: 'default-read-only',
+          },
         },
-        budgetLimitUsd: 8,
-        autoApproval: {
-          mode: 'edit_only',
-          safeToolProfile: 'default-read-only',
-        },
-      }, null, 2),
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectGovernance(root);
 
-    expect(result.policy).toEqual(expect.objectContaining({
-      displayName: 'Team safe mode',
-      mode: 'enforced',
-      toolPolicy: 'block',
-      writePolicy: 'ask',
-      networkPolicy: 'block',
-      mcpAllowlistCount: 2,
-      providerProfileCount: 2,
-      budgetLimitUsd: 8,
-    }));
+    expect(result.policy).toEqual(
+      expect.objectContaining({
+        displayName: 'Team safe mode',
+        mode: 'enforced',
+        toolPolicy: 'block',
+        writePolicy: 'ask',
+        networkPolicy: 'block',
+        mcpAllowlistCount: 2,
+        providerProfileCount: 2,
+        budgetLimitUsd: 8,
+      }),
+    );
     expect(result.autoApproval).toEqual({
       globalMode: 'off',
       projectMode: 'edit_only',
@@ -114,14 +120,18 @@ describe('discoverProjectGovernance', () => {
     mockedGlobalMode = 'edit_plus_safe_tools';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
-      '.calder/governance/policy.json': JSON.stringify({
-        schemaVersion: 1,
-        profileName: 'Legacy policy',
-        mode: 'advisory',
-        toolPolicy: 'ask',
-        writePolicy: 'ask',
-        networkPolicy: 'ask',
-      }, null, 2),
+      '.calder/governance/policy.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          profileName: 'Legacy policy',
+          mode: 'advisory',
+          toolPolicy: 'ask',
+          writePolicy: 'ask',
+          networkPolicy: 'ask',
+        },
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectGovernance(root);
@@ -142,18 +152,22 @@ describe('discoverProjectGovernance', () => {
     mockedGlobalMode = 'edit_plus_safe_tools';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
-      '.calder/governance/policy.json': JSON.stringify({
-        schemaVersion: 1,
-        profileName: 'Project override',
-        mode: 'advisory',
-        toolPolicy: 'ask',
-        writePolicy: 'ask',
-        networkPolicy: 'ask',
-        autoApproval: {
-          mode: 'off',
-          safeToolProfile: 'default-read-only',
+      '.calder/governance/policy.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          profileName: 'Project override',
+          mode: 'advisory',
+          toolPolicy: 'ask',
+          writePolicy: 'ask',
+          networkPolicy: 'ask',
+          autoApproval: {
+            mode: 'off',
+            safeToolProfile: 'default-read-only',
+          },
         },
-      }, null, 2),
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectGovernance(root);
@@ -174,18 +188,22 @@ describe('discoverProjectGovernance', () => {
     mockedGlobalMode = 'off';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
-      '.calder/governance/policy.json': JSON.stringify({
-        schemaVersion: 1,
-        profileName: 'Project full auto',
-        mode: 'advisory',
-        toolPolicy: 'ask',
-        writePolicy: 'ask',
-        networkPolicy: 'ask',
-        autoApproval: {
-          mode: 'full_auto',
-          safeToolProfile: 'default-read-only',
+      '.calder/governance/policy.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          profileName: 'Project full auto',
+          mode: 'advisory',
+          toolPolicy: 'ask',
+          writePolicy: 'ask',
+          networkPolicy: 'ask',
+          autoApproval: {
+            mode: 'full_auto',
+            safeToolProfile: 'default-read-only',
+          },
         },
-      }, null, 2),
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectGovernance(root);
@@ -206,18 +224,22 @@ describe('discoverProjectGovernance', () => {
     mockedGlobalMode = 'off';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
-      '.calder/governance/policy.json': JSON.stringify({
-        schemaVersion: 1,
-        profileName: 'Project full auto unsafe',
-        mode: 'advisory',
-        toolPolicy: 'ask',
-        writePolicy: 'ask',
-        networkPolicy: 'ask',
-        autoApproval: {
-          mode: 'full_auto_unsafe',
-          safeToolProfile: 'default-read-only',
+      '.calder/governance/policy.json': JSON.stringify(
+        {
+          schemaVersion: 1,
+          profileName: 'Project full auto unsafe',
+          mode: 'advisory',
+          toolPolicy: 'ask',
+          writePolicy: 'ask',
+          networkPolicy: 'ask',
+          autoApproval: {
+            mode: 'full_auto_unsafe',
+            safeToolProfile: 'default-read-only',
+          },
         },
-      }, null, 2),
+        null,
+        2,
+      ),
     });
 
     const result = await discoverProjectGovernance(root);

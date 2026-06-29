@@ -162,7 +162,10 @@ describe('ipc provider handlers', () => {
     const result = await handler({}, 'claude', 'cli-s1', '/repo', 'Session One');
 
     expect(provider.getTranscriptPath).toHaveBeenCalledWith('cli-s1', '/repo');
-    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Build session handoff prompt');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith(
+      '/repo',
+      'Build session handoff prompt',
+    );
     expect(mockBuildHandoffPrompt).toHaveBeenCalledWith({
       fromProviderLabel: 'Claude',
       sessionName: 'Session One',

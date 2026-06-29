@@ -3,18 +3,32 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'), 'utf8');
-const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'), 'utf8');
-const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
-const orchestrationSource = readFileSync(
-  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-orchestration-overview.ts'),
+const modalPrimarySource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'),
   'utf8',
 );
-const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
+const modalSectionsSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'),
+  'utf8',
+);
+const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
+const orchestrationSource = readFileSync(
+  path.join(
+    process.cwd(),
+    'src/renderer/components/preferences/preferences-orchestration-overview.ts',
+  ),
+  'utf8',
+);
+const styles = readFileSync(
+  path.join(process.cwd(), 'src/renderer/styles/preferences.css'),
+  'utf8',
+);
 
 describe('project orchestration overview preferences contract', () => {
   it('surfaces a compact phase map inside integrations', () => {
-    expect(modalSource).toContain("import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';");
+    expect(modalSource).toContain(
+      "import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';",
+    );
     expect(modalSource).toContain('renderOrchestrationOverviewSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
     expect(modalSource).toContain('context.createStarterFiles');

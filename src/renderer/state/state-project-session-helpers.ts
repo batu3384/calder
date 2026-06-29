@@ -1,10 +1,21 @@
 import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
 import type { SessionRecord } from '../../shared/types/session.js';
-import { createProjectRecord, removeProjectAndCollectSessions } from '../state-appstate-extracts.js';
-import { collectSessionIdsForRemoval, resolveCycledSessionId, resolveSessionIdAtIndex } from '../state-session-navigation.js';
+import {
+  createProjectRecord,
+  removeProjectAndCollectSessions,
+} from '../state-appstate-extracts.js';
+import {
+  collectSessionIdsForRemoval,
+  resolveCycledSessionId,
+  resolveSessionIdAtIndex,
+} from '../state-session-navigation.js';
 import type { SessionRemovalScope } from './state-contracts.js';
 
-export function addProjectToState(state: PersistedState, name: string, path: string): ProjectRecord {
+export function addProjectToState(
+  state: PersistedState,
+  name: string,
+  path: string,
+): ProjectRecord {
   const project = createProjectRecord(name, path);
   state.projects.push(project);
   state.activeProjectId = project.id;
@@ -33,13 +44,20 @@ export function cycleActiveProjectSession(
   direction: 1 | -1,
 ): string | undefined {
   if (!project) return undefined;
-  const nextSessionId = resolveCycledSessionId(project.sessions, project.activeSessionId, direction);
+  const nextSessionId = resolveCycledSessionId(
+    project.sessions,
+    project.activeSessionId,
+    direction,
+  );
   if (!nextSessionId) return undefined;
   project.activeSessionId = nextSessionId;
   return nextSessionId;
 }
 
-export function gotoProjectSession(project: ProjectRecord | undefined, index: number): string | undefined {
+export function gotoProjectSession(
+  project: ProjectRecord | undefined,
+  index: number,
+): string | undefined {
   if (!project) return undefined;
   const nextSessionId = resolveSessionIdAtIndex(project.sessions, index);
   if (!nextSessionId) return undefined;

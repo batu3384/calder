@@ -2,20 +2,27 @@ import type { CliSurfacePortMode } from '../../../shared/types/project-surface.j
 
 export function parseCliSurfaceArgs(raw: string): string[] | undefined {
   const matches = raw.match(/"[^"]*"|'[^']*'|\S+/g) ?? [];
-  const args = matches
-    .map((token) => token.replace(/^['"]|['"]$/g, ''))
-    .filter(Boolean);
+  const args = matches.map((token) => token.replace(/^['"]|['"]$/g, '')).filter(Boolean);
   return args.length > 0 ? args : undefined;
 }
 
-export function parseCliSurfacePortMode(raw: string | undefined, fallback: CliSurfacePortMode = 'auto'): CliSurfacePortMode {
+export function parseCliSurfacePortMode(
+  raw: string | undefined,
+  fallback: CliSurfacePortMode = 'auto',
+): CliSurfacePortMode {
   if (raw === 'auto' || raw === 'fixed' || raw === 'off') return raw;
   return fallback;
 }
 
 export function isLikelyFixedPortCompatible(command: string, args: string[] | undefined): boolean {
   const normalized = normalizeCliSurfaceCommand(command);
-  if (normalized === 'vite' || normalized === 'astro' || normalized === 'next' || normalized === 'nuxt' || normalized === 'nuxi') {
+  if (
+    normalized === 'vite' ||
+    normalized === 'astro' ||
+    normalized === 'next' ||
+    normalized === 'nuxt' ||
+    normalized === 'nuxi'
+  ) {
     return true;
   }
   if (normalized === 'npm' || normalized === 'pnpm' || normalized === 'yarn') {
@@ -31,7 +38,10 @@ function normalizeCliSurfaceCommand(command: string): string {
   return base.toLowerCase();
 }
 
-function parsePackageManagerScriptName(command: string, args: string[] | undefined): string | undefined {
+function parsePackageManagerScriptName(
+  command: string,
+  args: string[] | undefined,
+): string | undefined {
   if (!args || args.length === 0) return undefined;
   if (command === 'npm') {
     if (args[0] === 'run' || args[0] === 'run-script') return args[1];

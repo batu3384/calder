@@ -8,7 +8,7 @@ function stripMatchingQuotes(value: string): string {
   while (current.length >= 2) {
     const first = current[0];
     const last = current[current.length - 1];
-    if ((first === '"' && last === '"') || (first === '\'' && last === '\'')) {
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
       current = current.slice(1, -1).trim();
       continue;
     }

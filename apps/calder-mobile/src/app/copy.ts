@@ -3,7 +3,8 @@ import type { Copy, MobileTab, UiLanguage } from './types';
 export const COPY: Record<UiLanguage, Copy> = {
   en: {
     appTitle: 'Calder Mobile',
-    appSubtitle: 'Native control companion for sessions, CLI routing, browser tools, and inspect workflows.',
+    appSubtitle:
+      'Native control companion for sessions, CLI routing, browser tools, and inspect workflows.',
     pairingLinkLabel: 'Desktop pairing link',
     pairingLinkPlaceholder: 'https://.../m/<pairing-id>?t=<token>',
     otpLabel: 'One-time code',
@@ -74,7 +75,8 @@ export const COPY: Record<UiLanguage, Copy> = {
   },
   tr: {
     appTitle: 'Calder Mobil',
-    appSubtitle: 'Oturumlar, CLI yonlendirme, tarayici araclari ve inspect akislari icin native kontrol esligi.',
+    appSubtitle:
+      'Oturumlar, CLI yonlendirme, tarayici araclari ve inspect akislari icin native kontrol esligi.',
     pairingLinkLabel: 'Masaustu eslestirme baglantisi',
     pairingLinkPlaceholder: 'https://.../m/<pairing-id>?t=<token>',
     otpLabel: 'Tek kullanimlik kod',
@@ -135,7 +137,8 @@ export const COPY: Record<UiLanguage, Copy> = {
       live: 'Canli Kontrol Konsolu',
     },
     sectionCopy: {
-      overview: 'Masaustu saglik durumu, guvenilen cihaz ve kontrol hazir olma bilgisini tek yerde gosterir.',
+      overview:
+        'Masaustu saglik durumu, guvenilen cihaz ve kontrol hazir olma bilgisini tek yerde gosterir.',
       sessions: 'Mobilden cikmadan oturum listesi, aktif oturum degistirme ve giris gonderme.',
       cli: 'Saglayici hedefini secip promptlari secilen CLI oturumuna yonlendir.',
       browser: 'Telefondan tarayici hizli aksiyonlarini tetikle ve viewport durumunu izle.',

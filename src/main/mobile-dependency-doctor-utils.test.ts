@@ -21,10 +21,10 @@ describe('mobile dependency doctor utils', () => {
   });
 
   it('normalizes command-not-found install failures', () => {
-    expect(normalizeInstallFailureMessage('spawn ENOENT npm', 'npm'))
-      .toContain('Command not found: npm');
-    expect(normalizeInstallFailureMessage('plain failure', 'npm'))
-      .toBe('plain failure');
+    expect(normalizeInstallFailureMessage('spawn ENOENT npm', 'npm')).toContain(
+      'Command not found: npm',
+    );
+    expect(normalizeInstallFailureMessage('plain failure', 'npm')).toBe('plain failure');
   });
 
   it('parses java major versions and driver metadata from JSON payloads', () => {

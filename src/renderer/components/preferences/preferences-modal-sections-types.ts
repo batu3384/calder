@@ -15,7 +15,11 @@ export type AppendOverviewGrid = (
   items: Array<{ label: string; value: string; note?: string }>,
 ) => void;
 
-export type AppendSectionCard = (container: HTMLElement, title: string, description?: string) => HTMLElement;
+export type AppendSectionCard = (
+  container: HTMLElement,
+  title: string,
+  description?: string,
+) => HTMLElement;
 export type AppendSectionGroup = (
   container: HTMLElement,
   eyebrow: string,

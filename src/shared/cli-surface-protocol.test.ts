@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  createCliSurfaceEmitter,
-  parseCalderOsc,
-} from './cli-surface-protocol.js';
+import { createCliSurfaceEmitter, parseCalderOsc } from './cli-surface-protocol.js';
 
 describe('shared cli surface protocol helpers', () => {
   it('emits node, focus, and state messages through a stream-like writer', () => {

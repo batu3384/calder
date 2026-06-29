@@ -11,10 +11,10 @@ function normalizeWorkflowRelativePath(projectPath: string, workflowPath: string
   const relativePath = path.relative(resolvedProjectPath, resolvedWorkflowPath).replace(/\\/g, '/');
 
   if (
-    relativePath.startsWith('..')
-    || path.isAbsolute(relativePath)
-    || !relativePath.startsWith('.calder/workflows/')
-    || !relativePath.endsWith('.md')
+    relativePath.startsWith('..') ||
+    path.isAbsolute(relativePath) ||
+    !relativePath.startsWith('.calder/workflows/') ||
+    !relativePath.endsWith('.md')
   ) {
     throw new Error('Only workflow files inside .calder/workflows are supported');
   }

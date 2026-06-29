@@ -75,6 +75,7 @@ Expected: commands can be passed for the current working tree; The goal is to ge
 ## Task 1: Lock Settings + Locale Regression Contracts
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/i18n.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/preferences.css`
@@ -98,7 +99,9 @@ it('covers settings shell subgroup copy in Turkish', () => {
   expect(source).toContain("['Provider health', 'Provider health']");
   expect(source).toContain("['Orchestration phases', 'Orchestration phases']");
   expect(source).toContain("['Tracking & fixes', 'Tracking & fixes']");
-  expect(source).toContain("['Installed tools, defaults, and repair actions.', 'Installed tools, defaults, and repair actions.']");
+  expect(source).toContain(
+    "['Installed tools, defaults, and repair actions.', 'Installed tools, defaults, and repair actions.']",
+  );
 });
 ```
 
@@ -155,6 +158,7 @@ git commit -m "test(renderer): lock settings scroll and locale shell contracts"
 ## Task 2: Refactor Settings Into Calmer Subsection Shells
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/preferences.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences-modal.contract.test.ts`
@@ -271,6 +275,7 @@ git commit -m "feat(renderer): group settings content into calmer shells"
 ## Task 3: Lock Shell Chrome Stability Contracts
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar-cli-surface.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-inspector-reopen.contract.test.ts`
@@ -374,6 +379,7 @@ git commit -m "test(renderer): lock stable shell chrome behavior"
 ## Task 4: Implement Sidebar, Tab Bar, Surface, and Right Rail Polish
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
@@ -483,6 +489,7 @@ git commit -m "feat(renderer): polish shell chrome consistency"
 ## Task 5: Responsive Tightening + Final Verification
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/preferences.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
@@ -540,8 +547,8 @@ Expected: FAIL because the new constrained-height/width rules are not all presen
   #tab-bar {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "main actions"
-      "meta actions";
+      'main actions'
+      'meta actions';
     height: auto;
     min-height: 0;
   }

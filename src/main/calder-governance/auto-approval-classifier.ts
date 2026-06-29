@@ -19,9 +19,7 @@ export interface AutoApprovalDecisionResult {
 
 const EDIT_TOOLS = new Set(['write', 'edit', 'multiedit']);
 const SHELL_TOOLS = new Set(['bash', 'sh']);
-const SAFE_NON_SHELL_TOOLS = new Set([
-  'exitplanmode',
-]);
+const SAFE_NON_SHELL_TOOLS = new Set(['exitplanmode']);
 
 const DESTRUCTIVE_PATTERNS: RegExp[] = [
   /\brm\s+(?:"|')?-rf(?:"|')?(?=\s|$)/i,
@@ -298,7 +296,9 @@ function splitUnquotedPipes(command: string): string[] {
 }
 
 function isSafeReadOnlyXargs(command: string): boolean {
-  return /^xargs(?:\s+-0)?(?:\s+-r)?(?:\s+-I\s+\{\})?\s+(?:basename|dirname)(?:\s|$)/i.test(command);
+  return /^xargs(?:\s+-0)?(?:\s+-r)?(?:\s+-I\s+\{\})?\s+(?:basename|dirname)(?:\s|$)/i.test(
+    command,
+  );
 }
 
 function isSafeReadOnlyCommandSegment(command: string): boolean {
@@ -308,7 +308,10 @@ function isSafeReadOnlyCommandSegment(command: string): boolean {
     return false;
   }
 
-  if (SAFE_COMMAND_PATTERNS.some((pattern) => pattern.test(command)) || isClearlyReadOnlyFind(command)) {
+  if (
+    SAFE_COMMAND_PATTERNS.some((pattern) => pattern.test(command)) ||
+    isClearlyReadOnlyFind(command)
+  ) {
     return true;
   }
 
@@ -356,7 +359,9 @@ function isSafeReadOnlyCommand(command: string): boolean {
   return segments.every((segment) => isSafeReadOnlyCommandSegment(segment));
 }
 
-export function classifyAutoApprovalOperation(input: AutoApprovalOperationInput | undefined | null): AutoApprovalOperationClass {
+export function classifyAutoApprovalOperation(
+  input: AutoApprovalOperationInput | undefined | null,
+): AutoApprovalOperationClass {
   if (!input || !normalize(input.tool)) {
     return 'unknown';
   }

@@ -6,7 +6,13 @@ import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import { readJsonSafe } from './fs-utils';
-import { captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import {
+  captureSessionIdCmd as mkCaptureSessionIdCmd,
+  installEventScript,
+  installHookScripts,
+  statusCmd as mkStatusCmd,
+  wrapPythonHookCmd,
+} from './hooks/hook-commands';
 import { STATUS_DIR } from './hooks/hook-status';
 
 export const ANTIGRAVITY_HOOK_MARKER = '# calder-hook';
@@ -16,7 +22,15 @@ const SETTINGS_PATH = path.join(PROVIDER_HOME_DIR, 'settings.json');
 
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
 
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'BeforeTool', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest'];
+const EXPECTED_HOOK_EVENTS = [
+  'SessionStart',
+  'BeforeAgent',
+  'BeforeTool',
+  'AfterTool',
+  'AfterAgent',
+  'SessionEnd',
+  'PermissionRequest',
+];
 
 interface HookHandler {
   type: string;
@@ -142,7 +156,11 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
     if (event === 'BeforeTool') {
       hooks.push({ type: 'command', command: rtkBeforeToolCmd, name: 'calder-rtk' });
     }
-    hooks.push({ type: 'command', command: captureEventCmd(event, eventTypeMap[event]), name: 'calder-events' });
+    hooks.push({
+      type: 'command',
+      command: captureEventCmd(event, eventTypeMap[event]),
+      name: 'calder-events',
+    });
     existing.push({ matcher: '', hooks });
     cleaned[event] = existing;
   }
@@ -158,12 +176,14 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
 export function validateAntigravityHooks(): SettingsValidationResult {
   const settings = readJsonSafe(SETTINGS_PATH);
   const existingHooks: HooksConfig = (settings?.hooks ?? {}) as HooksConfig;
-  const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map(e => [e, false]));
+  const hookDetails: Record<string, boolean> = Object.fromEntries(
+    EXPECTED_HOOK_EVENTS.map((e) => [e, false]),
+  );
   let found = 0;
 
   for (const event of EXPECTED_HOOK_EVENTS) {
     const matchers = existingHooks[event];
-    const installed = matchers?.some(m => m.hooks?.some(h => isIdeHook(h))) ?? false;
+    const installed = matchers?.some((m) => m.hooks?.some((h) => isIdeHook(h))) ?? false;
     hookDetails[event] = installed;
     if (installed) found++;
   }

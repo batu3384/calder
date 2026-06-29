@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DIRECT_TRANSLATION_ENTRIES,DIRECT_TRANSLATIONS } from './i18n-translations.js';
+import { DIRECT_TRANSLATION_ENTRIES, DIRECT_TRANSLATIONS } from './i18n-translations.js';
 import { ERROR_TRANSLATION_ENTRIES } from './i18n-translations-errors.js';
 import { MOBILE_TRANSLATION_ENTRIES } from './i18n-translations-mobile.js';
 import { PREFERENCES_TRANSLATION_ENTRIES } from './i18n-translations-preferences.js';
@@ -14,7 +14,9 @@ describe('i18n translations module', () => {
 
   it('keeps core Turkish glossary entries available', () => {
     expect(DIRECT_TRANSLATIONS.get('Hybrid context')).toBe('Hibrit bağlam');
-    expect(DIRECT_TRANSLATIONS.get('Workflows & checkpoints')).toBe('İş akışları ve kontrol noktaları');
+    expect(DIRECT_TRANSLATIONS.get('Workflows & checkpoints')).toBe(
+      'İş akışları ve kontrol noktaları',
+    );
     expect(DIRECT_TRANSLATIONS.get('Mobile Dependency Doctor')).toBe('Mobil Bağımlılık Doktoru');
   });
 

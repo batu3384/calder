@@ -10,7 +10,10 @@ function findProjectIdByPath(projectPath: string): string | undefined {
   return appState.projects.find((project) => project.path === projectPath)?.id;
 }
 
-function applyProjectCheckpoints(projectPath: string, projectCheckpoints: ProjectCheckpointState): void {
+function applyProjectCheckpoints(
+  projectPath: string,
+  projectCheckpoints: ProjectCheckpointState,
+): void {
   const projectId = findProjectIdByPath(projectPath);
   if (!projectId) return;
   appState.setProjectCheckpoints(projectId, projectCheckpoints);

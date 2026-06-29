@@ -5,7 +5,12 @@ export function esc(s: string): string {
   return el.innerHTML;
 }
 
-const AREA_LABELS: Record<string, string> = { staged: 'Staged', working: 'Changes', untracked: 'Untracked', conflicted: 'Conflicted' };
+const AREA_LABELS: Record<string, string> = {
+  staged: 'Staged',
+  working: 'Changes',
+  untracked: 'Untracked',
+  conflicted: 'Conflicted',
+};
 
 /** Return a user-friendly label for a git area value. */
 export function areaLabel(area: string): string {

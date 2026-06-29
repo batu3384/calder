@@ -32,8 +32,10 @@ vi.mock('./pane-layout.js', () => ({
 }));
 
 vi.mock('./pane-artifacts.js', () => ({
-  createBrowserPaneCaptureArtifacts: (...args: unknown[]) => mockCreateBrowserPaneCaptureArtifacts(...args),
-  createBrowserAuthPanelArtifacts: (...args: unknown[]) => mockCreateBrowserAuthPanelArtifacts(...args),
+  createBrowserPaneCaptureArtifacts: (...args: unknown[]) =>
+    mockCreateBrowserPaneCaptureArtifacts(...args),
+  createBrowserAuthPanelArtifacts: (...args: unknown[]) =>
+    mockCreateBrowserAuthPanelArtifacts(...args),
 }));
 
 vi.mock('./pane-runtime.js', () => ({
@@ -42,15 +44,18 @@ vi.mock('./pane-runtime.js', () => ({
 }));
 
 vi.mock('./pane-viewport-menu.js', () => ({
-  createBrowserViewportMenuController: (...args: unknown[]) => mockCreateBrowserViewportMenuController(...args),
+  createBrowserViewportMenuController: (...args: unknown[]) =>
+    mockCreateBrowserViewportMenuController(...args),
 }));
 
 vi.mock('./pane-shell.js', () => ({
-  createBrowserTabShellArtifacts: (...args: unknown[]) => mockCreateBrowserTabShellArtifacts(...args),
+  createBrowserTabShellArtifacts: (...args: unknown[]) =>
+    mockCreateBrowserTabShellArtifacts(...args),
 }));
 
 vi.mock('./pane-runtime-bindings.js', () => ({
-  initializeBrowserTabRuntimeBindings: (...args: unknown[]) => mockInitializeBrowserTabRuntimeBindings(...args),
+  initializeBrowserTabRuntimeBindings: (...args: unknown[]) =>
+    mockInitializeBrowserTabRuntimeBindings(...args),
 }));
 
 vi.mock('./pane-interactions.js', () => ({

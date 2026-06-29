@@ -1,4 +1,7 @@
-import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
+import type {
+  SurfacePromptPayload,
+  SurfaceSelectionRange,
+} from '../../../shared/types/project-surface.js';
 import type { InferredCliRegion } from './heuristics.js';
 import { selectionsMatchBounds } from './inspect-geometry.js';
 import { setInspectPayload } from './inspect-mode.js';
@@ -12,7 +15,10 @@ import {
 import type { CliSurfaceInstance } from './pane-instance.js';
 
 interface CliSurfaceInspectStateDeps {
-  buildInspectPayload: (instance: CliSurfaceInstance, selection: SurfaceSelectionRange) => SurfacePromptPayload;
+  buildInspectPayload: (
+    instance: CliSurfaceInstance,
+    selection: SurfaceSelectionRange,
+  ) => SurfacePromptPayload;
   getInferredRegions: (instance: CliSurfaceInstance) => InferredCliRegion[];
   showHoverRegion: (instance: CliSurfaceInstance, region: SelectableCliRegion | null) => void;
 }
@@ -21,8 +27,9 @@ export function createCliSurfaceInspectStateHelpers(deps: CliSurfaceInspectState
   const syncViewportLines = (instance: CliSurfaceInstance): void => {
     const buffer = instance.terminal.buffer.active;
     const start = buffer.viewportY;
-    instance.viewportLines = Array.from({ length: instance.terminal.rows }, (_, index) =>
-      buffer.getLine(start + index)?.translateToString(true) ?? '',
+    instance.viewportLines = Array.from(
+      { length: instance.terminal.rows },
+      (_, index) => buffer.getLine(start + index)?.translateToString(true) ?? '',
     );
     deps.getInferredRegions(instance);
   };
@@ -31,14 +38,21 @@ export function createCliSurfaceInspectStateHelpers(deps: CliSurfaceInspectState
     const hasPayload = Boolean(instance.inspectState.payload);
     showElement(instance.composerEl, hasPayload);
     showElement(instance.selectionOverlayEl, instance.inspectState.active);
-    deps.showHoverRegion(instance, instance.inspectState.active && !instance.selectionAnchor ? instance.hoveredRegion : null);
+    deps.showHoverRegion(
+      instance,
+      instance.inspectState.active && !instance.selectionAnchor ? instance.hoveredRegion : null,
+    );
     showElement(instance.inspectButton, true);
     instance.inspectButton.textContent = instance.inspectState.active ? 'Exit Inspect' : 'Inspect';
     instance.inspectButton.classList.toggle('active', instance.inspectState.active);
-    instance.inspectButton.setAttribute('aria-pressed', instance.inspectState.active ? 'true' : 'false');
+    instance.inspectButton.setAttribute(
+      'aria-pressed',
+      instance.inspectState.active ? 'true' : 'false',
+    );
 
     if (!instance.inspectState.active && !hasPayload) {
-      instance.composerHintEl.textContent = 'Press Inspect, then drag over terminal output. Use Capture only when you want the whole screen.';
+      instance.composerHintEl.textContent =
+        'Press Inspect, then drag over terminal output. Use Capture only when you want the whole screen.';
       instance.composerPreviewEl.textContent = '';
       syncComposerContextControl(instance, 'selection-only');
       syncComposerContextTrace(instance);
@@ -94,12 +108,15 @@ export function createCliSurfaceInspectStateHelpers(deps: CliSurfaceInspectState
     renderInspectState(instance);
   };
 
-  const setHoverRegion = (instance: CliSurfaceInstance, region: SelectableCliRegion | null): void => {
+  const setHoverRegion = (
+    instance: CliSurfaceInstance,
+    region: SelectableCliRegion | null,
+  ): void => {
     if (
-      instance.hoveredRegion?.label === region?.label
-      && instance.hoveredRegion
-      && region
-      && selectionsMatchBounds(instance.hoveredRegion.selection, region.selection)
+      instance.hoveredRegion?.label === region?.label &&
+      instance.hoveredRegion &&
+      region &&
+      selectionsMatchBounds(instance.hoveredRegion.selection, region.selection)
     ) {
       return;
     }

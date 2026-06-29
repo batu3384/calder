@@ -2,7 +2,10 @@ import type { BrowserWindow } from 'electron';
 
 import type { PersistedState } from '../shared/types/project-state';
 import type { ProviderId } from '../shared/types/provider';
-import { cleanupAllExternalProviderHooks, EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
+import {
+  cleanupAllExternalProviderHooks,
+  EXTERNAL_HOOK_INJECTION_ENABLED,
+} from './external-hook-policy';
 import type { CliProvider } from './providers/provider';
 
 type ProviderPrereq = ReturnType<CliProvider['validatePrerequisites']>;
@@ -24,10 +27,15 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function collectReferencedProviders(state: PersistedState): Map<ProviderId, Set<'default-provider' | 'saved-session'>> {
+function collectReferencedProviders(
+  state: PersistedState,
+): Map<ProviderId, Set<'default-provider' | 'saved-session'>> {
   const reasons = new Map<ProviderId, Set<'default-provider' | 'saved-session'>>();
 
-  const addReason = (providerId: ProviderId | undefined, reason: 'default-provider' | 'saved-session'): void => {
+  const addReason = (
+    providerId: ProviderId | undefined,
+    reason: 'default-provider' | 'saved-session',
+  ): void => {
     if (!providerId) return;
     if (!reasons.has(providerId)) {
       reasons.set(providerId, new Set());
@@ -45,23 +53,27 @@ function collectReferencedProviders(state: PersistedState): Map<ProviderId, Set<
   return reasons;
 }
 
-export function analyzeProviderStartup(providers: CliProvider[], state: PersistedState): ProviderStartupAnalysis {
+export function analyzeProviderStartup(
+  providers: CliProvider[],
+  state: PersistedState,
+): ProviderStartupAnalysis {
   const references = collectReferencedProviders(state);
-  const results: ProviderStartupStatus[] = providers.map(provider => ({
+  const results: ProviderStartupStatus[] = providers.map((provider) => ({
     provider,
     prereq: provider.validatePrerequisites(),
     reasons: Array.from(references.get(provider.meta.id) ?? []),
   }));
 
-  const available = results.filter(result => result.prereq.ok);
-  const unavailable = results.filter(result => !result.prereq.ok);
+  const available = results.filter((result) => result.prereq.ok);
+  const unavailable = results.filter((result) => !result.prereq.ok);
 
   return {
     available,
     unavailable,
-    relevantUnavailable: available.length === 0
-      ? unavailable
-      : unavailable.filter(result => result.reasons.length > 0),
+    relevantUnavailable:
+      available.length === 0
+        ? unavailable
+        : unavailable.filter((result) => result.reasons.length > 0),
     blocking: available.length === 0,
   };
 }
@@ -93,14 +105,13 @@ function formatReason(reason: 'default-provider' | 'saved-session'): string {
 }
 
 export function formatProviderStartupWarning(result: ProviderStartupStatus): string {
-  const reasonSummary = result.reasons.length > 0
-    ? result.reasons.map(formatReason).join(' and ')
-    : 'Calder startup';
+  const reasonSummary =
+    result.reasons.length > 0 ? result.reasons.map(formatReason).join(' and ') : 'Calder startup';
   return `${result.provider.meta.displayName} is unavailable for ${reasonSummary}: ${result.prereq.message}`;
 }
 
 export function formatMissingProviderDialog(unavailable: ProviderStartupStatus[]): string {
   return unavailable
-    .map(result => `- ${result.provider.meta.displayName}:\n${result.prereq.message}`)
+    .map((result) => `- ${result.provider.meta.displayName}:\n${result.prereq.message}`)
     .join('\n\n');
 }

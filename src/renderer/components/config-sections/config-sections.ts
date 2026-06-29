@@ -11,8 +11,15 @@ import type {
   SettingsValidationResult,
   Skill,
 } from '../../types.js';
-import { type ConfigMetadataKind,localizeConfigMetadataSummary } from '../config-metadata-localization.js';
-import { getVisibleToolchainSections, sectionSummaryText, type ToolchainSummarySection } from '../config-toolchain-summary.js';
+import {
+  type ConfigMetadataKind,
+  localizeConfigMetadataSummary,
+} from '../config-metadata-localization.js';
+import {
+  getVisibleToolchainSections,
+  sectionSummaryText,
+  type ToolchainSummarySection,
+} from '../config-toolchain-summary.js';
 import { showMcpAddModal } from '../mcp-add-modal.js';
 import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import {
@@ -75,7 +82,14 @@ export function scopeBadge(scope: 'user' | 'project'): string {
   return `<span class="scope-badge control-chip ${scope}">${scope}</span>`;
 }
 
-function renderSection(id: string, title: string, items: HTMLElement[], count: number, onAdd?: () => void, emptyText = 'None configured'): HTMLElement {
+function renderSection(
+  id: string,
+  title: string,
+  items: HTMLElement[],
+  count: number,
+  onAdd?: () => void,
+  emptyText = 'None configured',
+): HTMLElement {
   const section = document.createElement('div');
   section.className = 'config-section';
 
@@ -111,7 +125,10 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
     addBtn.textContent = '+';
     addBtn.title = addLabel;
     addBtn.ariaLabel = addLabel;
-    addBtn.addEventListener('click', (e) => { e.stopPropagation(); onAdd(); });
+    addBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onAdd();
+    });
     meta.appendChild(addBtn);
   }
   header.appendChild(meta);
@@ -126,7 +143,7 @@ function renderSection(id: string, title: string, items: HTMLElement[], count: n
     empty.textContent = localizedEmptyText(emptyText);
     body.appendChild(empty);
   } else {
-    items.forEach(el => body.appendChild(el));
+    items.forEach((el) => body.appendChild(el));
   }
 
   button.addEventListener('click', () => {
@@ -154,10 +171,7 @@ function createConfigOpenButton(filePath: string): HTMLButtonElement {
   openBtn.type = 'button';
   openBtn.className = 'config-item-open-btn config-item-action-btn';
   openBtn.textContent = '↗';
-  const openLabel = localizedText(
-    'Open source file',
-    'Kaynak dosyayı aç',
-  );
+  const openLabel = localizedText('Open source file', 'Kaynak dosyayı aç');
   openBtn.title = openLabel;
   openBtn.setAttribute('aria-label', openLabel);
   openBtn.addEventListener('click', (e) => {
@@ -177,9 +191,7 @@ function createConfigActionGroup(...buttons: HTMLButtonElement[]): HTMLDivElemen
 function mcpItem(server: McpServer): HTMLElement {
   const el = document.createElement('div');
   el.className = 'config-item calder-list-row';
-  const detail = server.url
-    ? `${server.status} · ${server.url}`
-    : server.status;
+  const detail = server.url ? `${server.status} · ${server.url}` : server.status;
   el.innerHTML = `<span class="config-item-name">${esc(server.name)}</span><span class="config-item-detail" title="${esc(detail)}">${esc(detail)}</span>${scopeBadge(server.scope)}`;
 
   const removeBtn = document.createElement('button');
@@ -319,7 +331,7 @@ export function getConfigProviderId(): ProviderId {
     return (activeSession.providerId || 'claude') as ProviderId;
   }
 
-  const recentCliSession = [...project.sessions].reverse().find(session => !session.type);
+  const recentCliSession = [...project.sessions].reverse().find((session) => !session.type);
   return (recentCliSession?.providerId || 'claude') as ProviderId;
 }
 
@@ -337,7 +349,8 @@ const refreshController = createConfigSectionsRefreshController({
   applyVisibility,
   getActiveProjectPath: () => appState.activeProject?.path,
   getProviderId: getConfigProviderId,
-  watchProject: (providerId, projectPath) => window.calder.provider.watchProject(providerId, projectPath),
+  watchProject: (providerId, projectPath) =>
+    window.calder.provider.watchProject(providerId, projectPath),
   onConfigChanged: (listener) => window.calder.provider.onConfigChanged(listener),
   onAppStateEvent: (event, listener) => {
     appState.on(event, listener);
@@ -391,7 +404,8 @@ async function refresh(): Promise<void> {
       items: config.mcpServers.map(mcpItem),
       count: config.mcpServers.length,
       onAdd: providerId === 'claude' ? () => showMcpAddModal(() => refresh()) : undefined,
-      emptyText: 'No MCP servers configured. Model Context Protocol servers connect coding tools to external data and actions.',
+      emptyText:
+        'No MCP servers configured. Model Context Protocol servers connect coding tools to external data and actions.',
     },
     {
       id: 'agents',
@@ -434,14 +448,16 @@ async function refresh(): Promise<void> {
   const visibleSections = getVisibleToolchainSections(sections);
   container.appendChild(renderToolchainSummary(providerId, visibleSections, trackingHealthy));
   for (const section of visibleSections) {
-    container.appendChild(renderSection(
-      section.id,
-      section.title,
-      section.items,
-      section.count,
-      section.onAdd,
-      section.emptyText,
-    ));
+    container.appendChild(
+      renderSection(
+        section.id,
+        section.title,
+        section.items,
+        section.count,
+        section.onAdd,
+        section.emptyText,
+      ),
+    );
   }
 }
 

@@ -44,20 +44,22 @@ export function parseAdbDevices(stdout: string): AdbDeviceRecord[] {
 }
 
 export function resolveRunningAndroidEmulator(devices: AdbDeviceRecord[]): AdbDeviceRecord | null {
-  return devices.find((entry) => entry.id.startsWith('emulator-') && entry.state === 'device') ?? null;
+  return (
+    devices.find((entry) => entry.id.startsWith('emulator-') && entry.state === 'device') ?? null
+  );
 }
 
 function isPngBuffer(buffer: Buffer): boolean {
   return (
-    buffer.length >= 24
-    && buffer[0] === 0x89
-    && buffer[1] === 0x50
-    && buffer[2] === 0x4e
-    && buffer[3] === 0x47
-    && buffer[4] === 0x0d
-    && buffer[5] === 0x0a
-    && buffer[6] === 0x1a
-    && buffer[7] === 0x0a
+    buffer.length >= 24 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
   );
 }
 
@@ -111,7 +113,11 @@ export function parseAndroidHierarchyNodes(xml: string): AndroidHierarchyNode[] 
   return nodes;
 }
 
-export function resolveAndroidNodeAtPoint(nodes: AndroidHierarchyNode[], x: number, y: number): AndroidHierarchyNode | null {
+export function resolveAndroidNodeAtPoint(
+  nodes: AndroidHierarchyNode[],
+  x: number,
+  y: number,
+): AndroidHierarchyNode | null {
   const candidates = nodes
     .filter((node) => node.bounds)
     .filter((node) => {
@@ -122,17 +128,25 @@ export function resolveAndroidNodeAtPoint(nodes: AndroidHierarchyNode[], x: numb
       const leftBounds = left.bounds!;
       const rightBounds = right.bounds!;
       const leftArea = (leftBounds.right - leftBounds.left) * (leftBounds.bottom - leftBounds.top);
-      const rightArea = (rightBounds.right - rightBounds.left) * (rightBounds.bottom - rightBounds.top);
+      const rightArea =
+        (rightBounds.right - rightBounds.left) * (rightBounds.bottom - rightBounds.top);
       return leftArea - rightArea;
     });
 
   return candidates[0] ?? null;
 }
 
-export async function waitForAndroidBootCompleted(adbBinary: string, deviceId: string): Promise<boolean> {
+export async function waitForAndroidBootCompleted(
+  adbBinary: string,
+  deviceId: string,
+): Promise<boolean> {
   const startedAt = Date.now();
   while (Date.now() - startedAt < ANDROID_BOOT_TIMEOUT_MS) {
-    const bootCompleted = await runCommand(adbBinary, ['-s', deviceId, 'shell', 'getprop', 'sys.boot_completed'], 10_000);
+    const bootCompleted = await runCommand(
+      adbBinary,
+      ['-s', deviceId, 'shell', 'getprop', 'sys.boot_completed'],
+      10_000,
+    );
     if (bootCompleted.code === 0 && /\b1\b/.test(bootCompleted.stdout.trim())) {
       return true;
     }

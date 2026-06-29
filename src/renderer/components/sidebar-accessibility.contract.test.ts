@@ -15,7 +15,9 @@ describe('sidebar accessibility contract', () => {
     expect(sidebarSource).toContain("selectBtn.setAttribute('aria-current', 'page')");
     expect(sidebarSource).toContain("const deleteBtn = document.createElement('button');");
     expect(sidebarSource).toContain("deleteBtn.type = 'button';");
-    expect(sidebarSource).toContain("deleteBtn.setAttribute('aria-label', `Remove project ${project.name}`)");
+    expect(sidebarSource).toContain(
+      "deleteBtn.setAttribute('aria-label', `Remove project ${project.name}`)",
+    );
   });
 
   it('keeps the delete affordance visible on hover and keyboard focus without breaking the rail look', () => {

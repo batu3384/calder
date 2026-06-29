@@ -1,11 +1,51 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const providerCaps = new Map([
-  ['claude', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['copilot', { sessionResume: true, costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['antigravity', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['codex', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
-  ['qwen', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  [
+    'claude',
+    {
+      sessionResume: true,
+      costTracking: true,
+      contextWindow: true,
+      pendingPromptTrigger: 'startup-arg',
+    },
+  ],
+  [
+    'copilot',
+    {
+      sessionResume: true,
+      costTracking: false,
+      contextWindow: false,
+      pendingPromptTrigger: 'startup-arg',
+    },
+  ],
+  [
+    'antigravity',
+    {
+      sessionResume: true,
+      costTracking: true,
+      contextWindow: true,
+      pendingPromptTrigger: 'startup-arg',
+    },
+  ],
+  [
+    'codex',
+    {
+      sessionResume: true,
+      costTracking: true,
+      contextWindow: true,
+      pendingPromptTrigger: 'startup-arg',
+    },
+  ],
+  [
+    'qwen',
+    {
+      sessionResume: true,
+      costTracking: true,
+      contextWindow: true,
+      pendingPromptTrigger: 'startup-arg',
+    },
+  ],
 ]);
 const providerNames = new Map([
   ['claude', 'Claude Code'],
@@ -41,11 +81,8 @@ class FakeTerminal {
   buffer = {
     active: {
       viewportY: 0,
-      getLine: (_lineIndex: number) => (
-        this._viewportLine
-          ? { translateToString: () => this._viewportLine }
-          : null
-      ),
+      getLine: (_lineIndex: number) =>
+        this._viewportLine ? { translateToString: () => this._viewportLine } : null,
     },
   };
 
@@ -62,9 +99,15 @@ class FakeTerminal {
   simulateKey(event: Partial<KeyboardEvent>): boolean {
     return this.keyHandler ? this.keyHandler(event as KeyboardEvent) : true;
   }
-  setViewportLine(text: string): void { this._viewportLine = text; }
-  getSelection(): string { return this._selection; }
-  setSelection(s: string): void { this._selection = s; }
+  setViewportLine(text: string): void {
+    this._viewportLine = text;
+  }
+  getSelection(): string {
+    return this._selection;
+  }
+  setSelection(s: string): void {
+    this._selection = s;
+  }
   clearSelection = vi.fn(() => {
     this._selection = '';
   });
@@ -121,7 +164,9 @@ vi.mock('../session-context.js', () => ({
 
 vi.mock('./surface-services/provider-availability.js', () => ({
   getProviderCapabilities: vi.fn((providerId: string) => providerCaps.get(providerId) ?? null),
-  getProviderDisplayName: vi.fn((providerId: string) => providerNames.get(providerId) ?? providerId),
+  getProviderDisplayName: vi.fn(
+    (providerId: string) => providerNames.get(providerId) ?? providerId,
+  ),
 }));
 
 vi.mock('./terminal-link-provider.js', () => ({
@@ -204,7 +249,10 @@ class FakeElement {
   querySelector(selector: string): FakeElement | null {
     if (selector.startsWith('.')) {
       const className = selector.slice(1);
-      return this.find((child) => child.className.split(/\s+/).includes(className) || child.classList.contains(className));
+      return this.find(
+        (child) =>
+          child.className.split(/\s+/).includes(className) || child.classList.contains(className),
+      );
     }
     return null;
   }
@@ -275,50 +323,86 @@ describe('terminal pending prompt injection', () => {
   });
 
   it('passes pending prompt as initialPrompt to pty.create for claude', async () => {
-    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } =
+      await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
     createTerminalPane('claude-1', '/project', null, false, '', 'claude');
     setPendingPrompt('claude-1', 'fix the bug');
     await spawnTerminal('claude-1');
 
-    expect(mockPtyCreate).toHaveBeenCalledWith('claude-1', '/project', null, false, '', 'claude', 'fix the bug');
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'claude-1',
+      '/project',
+      null,
+      false,
+      '',
+      'claude',
+      'fix the bug',
+    );
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
   it('passes pending prompt as initialPrompt to pty.create for codex', async () => {
-    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } =
+      await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
     createTerminalPane('codex-1', '/project', null, false, '', 'codex');
     setPendingPrompt('codex-1', 'fix the bug');
     await spawnTerminal('codex-1');
 
-    expect(mockPtyCreate).toHaveBeenCalledWith('codex-1', '/project', null, false, '', 'codex', 'fix the bug');
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'codex-1',
+      '/project',
+      null,
+      false,
+      '',
+      'codex',
+      'fix the bug',
+    );
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
   it('passes pending prompt as initialPrompt to pty.create for copilot', async () => {
-    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } =
+      await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
     createTerminalPane('copilot-1', '/project', null, false, '', 'copilot');
     setPendingPrompt('copilot-1', 'fix the bug');
     await spawnTerminal('copilot-1');
 
-    expect(mockPtyCreate).toHaveBeenCalledWith('copilot-1', '/project', null, false, '', 'copilot', 'fix the bug');
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'copilot-1',
+      '/project',
+      null,
+      false,
+      '',
+      'copilot',
+      'fix the bug',
+    );
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
   it('passes pending prompt as initialPrompt to pty.create for qwen', async () => {
-    const { createTerminalPane, setPendingPrompt, spawnTerminal } = await import('./terminal-pane.js');
+    const { createTerminalPane, setPendingPrompt, spawnTerminal } =
+      await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
     createTerminalPane('qwen-1', '/project', null, false, '', 'qwen');
     setPendingPrompt('qwen-1', 'fix the bug');
     await spawnTerminal('qwen-1');
 
-    expect(mockPtyCreate).toHaveBeenCalledWith('qwen-1', '/project', null, false, '', 'qwen', 'fix the bug');
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'qwen-1',
+      '/project',
+      null,
+      false,
+      '',
+      'qwen',
+      'fix the bug',
+    );
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
@@ -329,7 +413,15 @@ describe('terminal pending prompt injection', () => {
     createTerminalPane('claude-2', '/project', null, false, '', 'claude');
     await spawnTerminal('claude-2');
 
-    expect(mockPtyCreate).toHaveBeenCalledWith('claude-2', '/project', null, false, '', 'claude', undefined);
+    expect(mockPtyCreate).toHaveBeenCalledWith(
+      'claude-2',
+      '/project',
+      null,
+      false,
+      '',
+      'claude',
+      undefined,
+    );
   });
 
   it('launches restored Copilot sessions in native resume mode once a cliSessionId exists', async () => {
@@ -351,12 +443,11 @@ describe('terminal pending prompt injection', () => {
   });
 
   it('recovers from spawn failures without leaving the session stuck', async () => {
-    const { createTerminalPane, spawnTerminal, getTerminalInstance } = await import('./terminal-pane.js');
+    const { createTerminalPane, spawnTerminal, getTerminalInstance } =
+      await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
-    mockPtyCreate
-      .mockRejectedValueOnce(new Error('spawn failed'))
-      .mockResolvedValueOnce(undefined);
+    mockPtyCreate.mockRejectedValueOnce(new Error('spawn failed')).mockResolvedValueOnce(undefined);
 
     createTerminalPane('recover-1', '/missing/project', null, true, '', 'claude');
 
@@ -365,7 +456,9 @@ describe('terminal pending prompt injection', () => {
     expect(afterFailure?.spawned).toBe(false);
     expect(afterFailure?.exited).toBe(true);
     expect(afterFailure?.element.querySelector('.terminal-exit-overlay')).not.toBeNull();
-    expect(afterFailure?.element.querySelector('.terminal-exit-title')?.textContent).toBe('Session failed to start');
+    expect(afterFailure?.element.querySelector('.terminal-exit-title')?.textContent).toBe(
+      'Session failed to start',
+    );
     const retryButton = afterFailure?.element.querySelector('.respawn-btn') as FakeElement | null;
     expect(retryButton).not.toBeNull();
 
@@ -379,7 +472,8 @@ describe('terminal pending prompt injection', () => {
   });
 
   it('does not inject pending prompt from PTY output', async () => {
-    const { createTerminalPane, setPendingPrompt, handlePtyData, spawnTerminal } = await import('./terminal-pane.js');
+    const { createTerminalPane, setPendingPrompt, handlePtyData, spawnTerminal } =
+      await import('./terminal-pane.js');
 
     createTerminalPane('codex-2', '/project', null, false, '', 'codex');
     setPendingPrompt('codex-2', 'some prompt');
@@ -391,23 +485,32 @@ describe('terminal pending prompt injection', () => {
   });
 
   it('delivers a prompt into an already spawned terminal session', async () => {
-    const { createTerminalPane, spawnTerminal, deliverPromptToTerminalSession } = await import('./terminal-pane.js');
+    const { createTerminalPane, spawnTerminal, deliverPromptToTerminalSession } =
+      await import('./terminal-pane.js');
 
     createTerminalPane('codex-live', '/project', null, false, '', 'codex');
     await spawnTerminal('codex-live');
     mockPtyWrite.mockClear();
 
-    const delivered = await (deliverPromptToTerminalSession as any)('codex-live', 'Fix the auth modal');
+    const delivered = await (deliverPromptToTerminalSession as any)(
+      'codex-live',
+      'Fix the auth modal',
+    );
 
     expect(delivered).toBe(true);
-    expect(mockPtyWrite).toHaveBeenCalledWith('codex-live', '\u001b[200~Fix the auth modal\u001b[201~\r');
+    expect(mockPtyWrite).toHaveBeenCalledWith(
+      'codex-live',
+      '\u001b[200~Fix the auth modal\u001b[201~\r',
+    );
   });
 
   it('marks the provider badge with the active provider id for provider-aware styling', async () => {
     const { createTerminalPane } = await import('./terminal-pane.js');
 
     const instance = createTerminalPane('claude-themed', '/project', null, false, '', 'claude');
-    const providerBadge = instance.element.querySelector('.terminal-pane-provider') as FakeElement | null;
+    const providerBadge = instance.element.querySelector(
+      '.terminal-pane-provider',
+    ) as FakeElement | null;
 
     expect(providerBadge?.dataset.provider).toBe('claude');
   });
@@ -475,7 +578,10 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     const terminal = instance.terminal as unknown as FakeTerminal;
 
     expect(webLinksActivateRef.current).toBeTypeOf('function');
-    webLinksActivateRef.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
+    webLinksActivateRef.current?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:8000/docs',
+    );
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', '/project');
     expect(terminal.clearSelection).toHaveBeenCalled();
@@ -487,7 +593,10 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     createTerminalPane('links-2', '/project', null);
     const openExternal = (window as any).calder.app.openExternal;
 
-    webLinksActivateRef.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'localhost:5173/preview');
+    webLinksActivateRef.current?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'localhost:5173/preview',
+    );
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:5173/preview', '/project');
   });
@@ -501,7 +610,11 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
       | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
       | undefined;
 
-    linkHandler?.activate?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard', {});
+    linkHandler?.activate?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:3000/dashboard',
+      {},
+    );
 
     expect(linkHandler?.activate).toBeTypeOf('function');
     expect(openExternal).toHaveBeenCalledWith('http://localhost:3000/dashboard', '/project');
@@ -515,11 +628,17 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     const sessionALink = webLinksActivateRef.current;
 
     const openExternal = (window as any).calder.app.openExternal;
-    sessionALink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+    sessionALink?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:3000/dashboard',
+    );
 
     createTerminalPane('links-scope-b', '/project', null);
     const sessionBLink = webLinksActivateRef.current;
-    sessionBLink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+    sessionBLink?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:3000/dashboard',
+    );
 
     expect(openExternal).toHaveBeenCalledTimes(2);
     expect(openExternal).toHaveBeenNthCalledWith(1, 'http://localhost:3000/dashboard', '/project');
@@ -548,7 +667,9 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
     } as unknown as MouseEvent;
     xtermWrap.emit('mousedown', mousedown);
 
-    expect((mousedown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+    expect(
+      (mousedown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).toHaveBeenCalled();
   });
 
   it('opens link anchors when pointer-based URL detection misses', async () => {
@@ -594,7 +715,9 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     xtermWrap.emit('mousedown', linkMouseDown);
-    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+    expect(
+      (linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).toHaveBeenCalled();
 
     const nonLinkMouseDown = {
       button: 0,
@@ -605,7 +728,10 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     xtermWrap.emit('mousedown', nonLinkMouseDown);
-    expect((nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+    expect(
+      (nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> })
+        .preventDefault,
+    ).not.toHaveBeenCalled();
 
     const dragMove = {
       buttons: 1,
@@ -617,7 +743,9 @@ describe('terminal Ctrl+Shift+C clipboard copy', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     xtermWrap.emit('mousemove', dragMove);
-    expect((dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+    expect(
+      (dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).not.toHaveBeenCalled();
   });
 });
 
@@ -734,7 +862,11 @@ describe('terminal helper extractions', () => {
     elementA.appendChild(wrapA);
     const terminalA = new FakeTerminal();
     const fitA = { fit: vi.fn() };
-    const instanceA = { terminal: terminalA as unknown as any, fitAddon: fitA as any, element: elementA as unknown as any };
+    const instanceA = {
+      terminal: terminalA as unknown as any,
+      fitAddon: fitA as any,
+      element: elementA as unknown as any,
+    };
     const writeResize: Array<[string, number, number]> = [];
 
     attachTerminalInstanceToContainer(instanceA, container as unknown as HTMLElement);
@@ -760,7 +892,11 @@ describe('terminal helper extractions', () => {
 
     const elementB = new FakeElement('div');
     const terminalB = new FakeTerminal();
-    const instanceB = { terminal: terminalB as unknown as any, fitAddon: { fit: vi.fn() } as any, element: elementB as unknown as any };
+    const instanceB = {
+      terminal: terminalB as unknown as any,
+      fitAddon: { fit: vi.fn() } as any,
+      element: elementB as unknown as any,
+    };
 
     elementA.classList.remove('hidden');
     fitTerminalInstance('runtime-3', instanceA, (sessionId, cols, rows) => {

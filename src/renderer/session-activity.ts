@@ -20,9 +20,13 @@ function setStatus(sessionId: string, status: SessionStatus): void {
 /**
  * Called when a hook-based status event is received from the main process.
  */
-export function setHookStatus(sessionId: string, status: 'working' | 'waiting' | 'completed' | 'input', hookName?: string): void {
+export function setHookStatus(
+  sessionId: string,
+  status: 'working' | 'waiting' | 'completed' | 'input',
+  hookName?: string,
+): void {
   const state = sessions.get(sessionId);
-  if (!state) return;  // Ignore events for sessions not managed by Calder
+  if (!state) return; // Ignore events for sessions not managed by Calder
 
   // Don't let Stop/StopFailure ('waiting') overwrite a just-set 'completed' status.
   // Completed is sticky until a new prompt ('working') or PTY exit ('idle').

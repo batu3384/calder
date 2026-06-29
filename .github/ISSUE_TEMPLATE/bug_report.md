@@ -6,6 +6,7 @@ labels: bug
 ---
 
 **Environment**
+
 - OS: (e.g., macOS 15.3, Ubuntu 24.04)
 - Calder version: (from title bar or package.json)
 - Claude Code CLI version: (`claude --version`)
@@ -14,6 +15,7 @@ labels: bug
 A clear description of what the bug is.
 
 **Steps to reproduce**
+
 1. ...
 2. ...
 3. ...

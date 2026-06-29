@@ -26,7 +26,9 @@ export function buildRendererPersistSnapshot(state: PersistedState): PersistedSt
               : project.surface.cli,
           }
         : undefined,
-      sessions: project.sessions.map(({ pendingInitialPrompt: _pendingInitialPrompt, ...rest }) => rest),
+      sessions: project.sessions.map(
+        ({ pendingInitialPrompt: _pendingInitialPrompt, ...rest }) => rest,
+      ),
     })),
   };
 }

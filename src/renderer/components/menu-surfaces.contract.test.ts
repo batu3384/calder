@@ -2,8 +2,14 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
-const menuSemanticsSource = readFileSync(new URL('./tab-bar/tab-bar-menu-semantics.ts', import.meta.url), 'utf-8');
-const sessionContextMenuSource = readFileSync(new URL('./tab-bar/tab-bar-session-context-menu.ts', import.meta.url), 'utf-8');
+const menuSemanticsSource = readFileSync(
+  new URL('./tab-bar/tab-bar-menu-semantics.ts', import.meta.url),
+  'utf-8',
+);
+const sessionContextMenuSource = readFileSync(
+  new URL('./tab-bar/tab-bar-session-context-menu.ts', import.meta.url),
+  'utf-8',
+);
 const providerSelectorSource = readFileSync(
   new URL('./tab-bar/tab-bar-provider-selector-controller.ts', import.meta.url),
   'utf-8',
@@ -45,8 +51,8 @@ describe('menu surface contract', () => {
     expect(sessionMenuSource).toContain('tab-context-menu calder-floating-list');
     expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
     expect(sessionMenuSource).toContain('Join Remote Session');
-    expect(providerSelectorSource).toContain("floating: {");
-    expect(surfaceControlsSource).toContain("floating: {");
+    expect(providerSelectorSource).toContain('floating: {');
+    expect(surfaceControlsSource).toContain('floating: {');
     expect(providerSelectorSource).not.toContain('floating: false');
     expect(surfaceControlsSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');

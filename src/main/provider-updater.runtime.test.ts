@@ -61,10 +61,7 @@ type ExecPlan = {
   stderr?: string;
   error?: NodeJS.ErrnoException & { code?: number | string; stdout?: string; stderr?: string };
   delayMs?: number;
-  onChild?: (child: {
-    killed: boolean;
-    kill: ReturnType<typeof vi.fn>;
-  }) => void;
+  onChild?: (child: { killed: boolean; kill: ReturnType<typeof vi.fn> }) => void;
 };
 
 describe('provider updater default runner runtime', () => {
@@ -76,43 +73,50 @@ describe('provider updater default runner runtime', () => {
     plans.length = 0;
     capturedExecOptions.length = 0;
 
-    mockExecFile.mockImplementation((command: string, args: string[], options: Record<string, unknown>, callback: (...cbArgs: any[]) => void) => {
-      const next = plans.shift();
-      if (!next) {
-        throw new Error(`Unexpected execFile call: ${command} ${args.join(' ')}`);
-      }
-      expect(command).toBe(next.command);
-      expect(args).toEqual(next.args);
-      capturedExecOptions.push(options);
-
-      const closeHandlers: Array<() => void> = [];
-      const child = {
-        killed: false,
-        kill: vi.fn((signal: string) => {
-          if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-            child.killed = true;
-          }
-          return true;
-        }),
-        once: vi.fn((event: string, handler: () => void) => {
-          if (event === 'close') {
-            closeHandlers.push(handler);
-          }
-          return child;
-        }),
-      };
-      next.onChild?.(child);
-
-      const delayMs = next.delayMs ?? 0;
-      setTimeout(() => {
-        callback(next.error ?? null, next.stdout ?? '', next.stderr ?? '');
-        for (const handler of closeHandlers) {
-          handler();
+    mockExecFile.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        options: Record<string, unknown>,
+        callback: (...cbArgs: any[]) => void,
+      ) => {
+        const next = plans.shift();
+        if (!next) {
+          throw new Error(`Unexpected execFile call: ${command} ${args.join(' ')}`);
         }
-      }, delayMs);
+        expect(command).toBe(next.command);
+        expect(args).toEqual(next.args);
+        capturedExecOptions.push(options);
 
-      return child;
-    });
+        const closeHandlers: Array<() => void> = [];
+        const child = {
+          killed: false,
+          kill: vi.fn((signal: string) => {
+            if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+              child.killed = true;
+            }
+            return true;
+          }),
+          once: vi.fn((event: string, handler: () => void) => {
+            if (event === 'close') {
+              closeHandlers.push(handler);
+            }
+            return child;
+          }),
+        };
+        next.onChild?.(child);
+
+        const delayMs = next.delayMs ?? 0;
+        setTimeout(() => {
+          callback(next.error ?? null, next.stdout ?? '', next.stderr ?? '');
+          for (const handler of closeHandlers) {
+            handler();
+          }
+        }, delayMs);
+
+        return child;
+      },
+    );
   });
 
   it('runs successful updates through the default exec runner', async () => {
@@ -124,10 +128,9 @@ describe('provider updater default runner runtime', () => {
       { command: codexBinary, args: ['--version'], stdout: 'codex 0.121.0' },
     );
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { now: (() => 10_000) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      now: (() => 10_000) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].status).toBe('updated');
@@ -155,10 +158,9 @@ describe('provider updater default runner runtime', () => {
       },
     );
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { now: (() => 10_100) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      now: (() => 10_100) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].status).toBe('error');
@@ -187,12 +189,9 @@ describe('provider updater default runner runtime', () => {
       },
     });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
@@ -217,12 +216,9 @@ describe('provider updater default runner runtime', () => {
       },
     };
 
-    const summary = await updateProviders(
-      [target],
-      {
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([target], {
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);

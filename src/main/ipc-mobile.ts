@@ -1,6 +1,10 @@
 import { ipcMain } from 'electron';
 
-import type { MobileDependencyId, MobileDependencyInstallProgressEvent, MobileInspectPlatform } from '../shared/types/mobile';
+import type {
+  MobileDependencyId,
+  MobileDependencyInstallProgressEvent,
+  MobileInspectPlatform,
+} from '../shared/types/mobile';
 import type { ShareConnectionDescription } from '../shared/types/project-core';
 import {
   consumeMobileControlPairingAnswer,
@@ -29,35 +33,56 @@ export function registerMobileIpcHandlers(): void {
     return checkMobileDependencies();
   });
 
-  ipcMain.handle('mobileSetup:installDependency', async (event, dependencyId: string, installId?: string) => {
-    const resolvedInstallId = typeof installId === 'string' && installId.trim().length > 0
-      ? installId.trim()
-      : `mobile-install-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    return installMobileDependency(dependencyId as MobileDependencyId, {
-      installId: resolvedInstallId,
-      onProgress: (progressEvent: MobileDependencyInstallProgressEvent) => {
-        if (!event.sender.isDestroyed()) {
-          event.sender.send('mobileSetup:installProgress', progressEvent);
-        }
-      },
-    });
-  });
+  ipcMain.handle(
+    'mobileSetup:installDependency',
+    async (event, dependencyId: string, installId?: string) => {
+      const resolvedInstallId =
+        typeof installId === 'string' && installId.trim().length > 0
+          ? installId.trim()
+          : `mobile-install-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      return installMobileDependency(dependencyId as MobileDependencyId, {
+        installId: resolvedInstallId,
+        onProgress: (progressEvent: MobileDependencyInstallProgressEvent) => {
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('mobileSetup:installProgress', progressEvent);
+          }
+        },
+      });
+    },
+  );
 
   ipcMain.handle('mobileInspect:launch', async (_event, platform: MobileInspectPlatform) => {
     return launchMobileInspectSurface(resolvePlatform(platform));
   });
 
-  ipcMain.handle('mobileInspect:captureScreenshot', async (_event, platform: MobileInspectPlatform) => {
-    return captureMobileInspectScreenshot(resolvePlatform(platform));
-  });
+  ipcMain.handle(
+    'mobileInspect:captureScreenshot',
+    async (_event, platform: MobileInspectPlatform) => {
+      return captureMobileInspectScreenshot(resolvePlatform(platform));
+    },
+  );
 
-  ipcMain.handle('mobileInspect:inspectPoint', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
-    return inspectMobilePoint(resolvePlatform(platform), toFiniteCoordinate(x), toFiniteCoordinate(y));
-  });
+  ipcMain.handle(
+    'mobileInspect:inspectPoint',
+    async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
+      return inspectMobilePoint(
+        resolvePlatform(platform),
+        toFiniteCoordinate(x),
+        toFiniteCoordinate(y),
+      );
+    },
+  );
 
-  ipcMain.handle('mobileInspect:interact', async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
-    return interactMobileInspectPoint(resolvePlatform(platform), toFiniteCoordinate(x), toFiniteCoordinate(y));
-  });
+  ipcMain.handle(
+    'mobileInspect:interact',
+    async (_event, platform: MobileInspectPlatform, x: number, y: number) => {
+      return interactMobileInspectPoint(
+        resolvePlatform(platform),
+        toFiniteCoordinate(x),
+        toFiniteCoordinate(y),
+      );
+    },
+  );
 
   ipcMain.handle('sharing:getRtcConfig', () => resolveShareRtcConfigFromEnv());
   ipcMain.handle(
@@ -71,10 +96,18 @@ export function registerMobileIpcHandlers(): void {
       language?: 'en' | 'tr',
       offerDescription?: ShareConnectionDescription,
     ) =>
-      createMobileControlPairing({ sessionId, offer, passphrase, mode, language, offerDescription }),
+      createMobileControlPairing({
+        sessionId,
+        offer,
+        passphrase,
+        mode,
+        language,
+        offerDescription,
+      }),
   );
   ipcMain.handle('mobile:consumeControlAnswer', (_event, pairingId: string) =>
-    consumeMobileControlPairingAnswer(pairingId));
+    consumeMobileControlPairingAnswer(pairingId),
+  );
   ipcMain.handle('mobile:revokeControlPairing', (_event, pairingId: string) => {
     revokeMobileControlPairing(pairingId);
     return { ok: true };

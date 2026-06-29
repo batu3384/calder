@@ -2,15 +2,23 @@ import { showCommandPalette } from '../components/command-palette.js';
 import { toggleContextInspector } from '../components/context-inspector.js';
 import { toggleDebugPanel } from '../components/debug-panel.js';
 import { DomSearchBackend } from '../components/dom-search-backend.js';
-import { getFileReaderInstance, getFileReaderTextSelector, showGoToLineBar } from '../components/file-reader.js';
+import {
+  getFileReaderInstance,
+  getFileReaderTextSelector,
+  showGoToLineBar,
+} from '../components/file-reader.js';
 import { getFileViewerInstance } from '../components/file-viewer.js';
 import { toggleGitPanel } from '../components/git-panel.js';
 import { showHelpDialog } from '../components/help-dialog.js';
 import { closeModal, showModal } from '../components/modal.js';
 import { showPreferencesModal } from '../components/preferences/preferences-modal.js';
-import { getActiveShellSessionId,toggleProjectTerminal } from '../components/project-terminal.js';
+import { getActiveShellSessionId, toggleProjectTerminal } from '../components/project-terminal.js';
 import { showQuickOpen } from '../components/quick-open.js';
-import { ShellTerminalSearchBackend,showSearchBar, TerminalSearchBackend } from '../components/search-bar.js';
+import {
+  ShellTerminalSearchBackend,
+  showSearchBar,
+  TerminalSearchBackend,
+} from '../components/search-bar.js';
 import { toggleInspector } from '../components/session-inspector/session-inspector.js';
 import { promptNewProject, toggleSidebar } from '../components/sidebar.js';
 import { quickNewSession } from '../components/tab-bar/tab-bar.js';
@@ -79,8 +87,11 @@ export function createKeybindingActionBridge(): KeybindingActionBridge {
 
 function findInTerminal(): void {
   const shellPanel = document.getElementById('project-terminal-panel');
-  if (shellPanel && !shellPanel.classList.contains('hidden')
-      && shellPanel.contains(document.activeElement)) {
+  if (
+    shellPanel &&
+    !shellPanel.classList.contains('hidden') &&
+    shellPanel.contains(document.activeElement)
+  ) {
     const shellSessionId = getActiveShellSessionId();
     if (shellSessionId) {
       showSearchBar(shellSessionId, ShellTerminalSearchBackend(shellSessionId));
@@ -120,16 +131,26 @@ function promptNewMcpInspector(): void {
   const project = appState.activeProject;
   if (!project) return;
 
-  const inspectorNum = project.sessions.filter((session) => session.type === 'mcp-inspector').length + 1;
-  showModal('New MCP Inspector', [
-    { label: 'Name', id: 'inspector-name', placeholder: `Inspector ${inspectorNum}`, defaultValue: `Inspector ${inspectorNum}` },
-  ], (values) => {
-    const name = values['inspector-name']?.trim();
-    if (!name) return;
+  const inspectorNum =
+    project.sessions.filter((session) => session.type === 'mcp-inspector').length + 1;
+  showModal(
+    'New MCP Inspector',
+    [
+      {
+        label: 'Name',
+        id: 'inspector-name',
+        placeholder: `Inspector ${inspectorNum}`,
+        defaultValue: `Inspector ${inspectorNum}`,
+      },
+    ],
+    (values) => {
+      const name = values['inspector-name']?.trim();
+      if (!name) return;
 
-    closeModal();
-    appState.addMcpInspectorSession(project.id, name);
-  });
+      closeModal();
+      appState.addMcpInspectorSession(project.id, name);
+    },
+  );
 }
 
 function cycleProject(direction: 1 | -1): void {

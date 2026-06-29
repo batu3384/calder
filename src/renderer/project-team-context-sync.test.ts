@@ -33,8 +33,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectTeamContextSyncForTesting, initProjectTeamContextSync } from './project-team-context-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectTeamContextSyncForTesting,
+  initProjectTeamContextSync,
+} from './project-team-context-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 async function flushTasks(): Promise<void> {
   await Promise.resolve();
@@ -70,7 +73,10 @@ describe('project team context sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.sharedRuleCount).toBe(0);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext
+        ?.sharedRuleCount,
+    ).toBe(0);
   });
 
   it('applies live team context updates to the matching project', async () => {
@@ -97,7 +103,9 @@ describe('project team context sync', () => {
       lastUpdated: '2026-04-13T20:00:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.spaces.length).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.spaces.length,
+    ).toBe(1);
   });
 
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
@@ -114,7 +122,9 @@ describe('project team context sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
@@ -140,11 +150,17 @@ describe('project team context sync', () => {
       workflowCount: 0,
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.spaces).toEqual([]);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.spaces,
+    ).toEqual([]);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
-    const firstResponse = createDeferred<{ spaces: unknown[]; sharedRuleCount: number; workflowCount: number }>();
+    const firstResponse = createDeferred<{
+      spaces: unknown[];
+      sharedRuleCount: number;
+      workflowCount: number;
+    }>();
     let pendingFirstRequest = true;
 
     mockGetProjectState.mockImplementation((projectPath: string) => {
@@ -178,11 +194,17 @@ describe('project team context sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.sharedRuleCount).toBe(2);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext
+        ?.sharedRuleCount,
+    ).toBe(2);
 
     firstResponse.resolve({ spaces: [], sharedRuleCount: 0, workflowCount: 0 });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext?.sharedRuleCount).toBe(2);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectTeamContext
+        ?.sharedRuleCount,
+    ).toBe(2);
   });
 });

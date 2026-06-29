@@ -1,7 +1,10 @@
 import { appendProjectTeamContextToPrompt } from '../project-team-context-prompt.js';
 import { appState } from '../state.js';
 import { appendProjectGovernanceToPrompt } from './surface-services/project-governance-prompt.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch,
+} from './surface-services/provider-availability.js';
 import { promptNewSession } from './tab-bar/tab-bar.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './terminal-pane.js';
 
@@ -26,8 +29,9 @@ function appendStrictRoutingContract(prompt: string): string {
 function applyProjectRoutingContext(projectId: string | undefined, prompt: string): string {
   const strictPrompt = appendStrictRoutingContract(prompt);
   if (!projectId) return strictPrompt;
-  const project = appState.projects.find((entry) => entry.id === projectId)
-    ?? (appState.activeProject?.id === projectId ? appState.activeProject : undefined);
+  const project =
+    appState.projects.find((entry) => entry.id === projectId) ??
+    (appState.activeProject?.id === projectId ? appState.activeProject : undefined);
   return appendProjectGovernanceToPrompt(
     appendProjectTeamContextToPrompt(strictPrompt, project?.projectTeamContext),
     project?.projectGovernance,
@@ -38,12 +42,17 @@ export async function deliverSurfacePrompt(
   projectId: string,
   prompt: string,
 ): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId, { requireExplicitTarget: true });
+  const targetSession = appState.resolveSurfaceTargetSession(projectId, {
+    requireExplicitTarget: true,
+  });
   if (!targetSession) {
     return { ok: false, error: 'Select an open session target first.' };
   }
 
-  const delivered = await deliverPromptToTerminalSession(targetSession.id, applyProjectRoutingContext(projectId, prompt));
+  const delivered = await deliverPromptToTerminalSession(
+    targetSession.id,
+    applyProjectRoutingContext(projectId, prompt),
+  );
   if (!delivered) {
     return { ok: false, error: 'Failed to deliver prompt to the selected session.' };
   }
@@ -69,7 +78,11 @@ export function queueSurfacePromptInNewSession(
   return session;
 }
 
-export function queueSurfacePromptInCustomSession(prompt: string, onReady: () => void, projectId?: string): void {
+export function queueSurfacePromptInCustomSession(
+  prompt: string,
+  onReady: () => void,
+  projectId?: string,
+): void {
   promptNewSession((session) => {
     setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));
     onReady();

@@ -61,7 +61,11 @@ function statusBadge(entry: GitFileEntry): string {
   return `<span class="git-file-badge calder-status-pill ${entry.status}">${letter}</span>`;
 }
 
-function createActionButton(title: string, icon: string, onClick: (event: Event) => void): HTMLButtonElement {
+function createActionButton(
+  title: string,
+  icon: string,
+  onClick: (event: Event) => void,
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'git-action-btn';
@@ -91,56 +95,62 @@ function showGitFileContextMenu(
   menu.addEventListener('click', (event) => event.stopPropagation());
 
   if (entry.area === 'staged') {
-    menu.appendChild(createMenuItem('Unstage', async () => {
-      await window.calder.git.unstageFile(gitPath, entry.path);
-      onAfterAction();
-    }));
+    menu.appendChild(
+      createMenuItem('Unstage', async () => {
+        await window.calder.git.unstageFile(gitPath, entry.path);
+        onAfterAction();
+      }),
+    );
   } else {
-    menu.appendChild(createMenuItem('Stage', async () => {
-      await window.calder.git.stageFile(gitPath, entry.path);
-      onAfterAction();
-    }));
+    menu.appendChild(
+      createMenuItem('Stage', async () => {
+        await window.calder.git.stageFile(gitPath, entry.path);
+        onAfterAction();
+      }),
+    );
   }
 
   if (entry.area !== 'staged' && entry.area !== 'conflicted') {
-    menu.appendChild(createMenuItem('Discard Changes', async () => {
-      const message = entry.area === 'untracked'
-        ? `Delete untracked file "${entry.path}"?`
-        : `Discard changes to "${entry.path}"? This cannot be undone.`;
-      if (confirm(message)) {
-        await window.calder.git.discardFile(gitPath, entry.path, entry.area);
-        onAfterAction();
-      }
-    }));
+    menu.appendChild(
+      createMenuItem('Discard Changes', async () => {
+        const message =
+          entry.area === 'untracked'
+            ? `Delete untracked file "${entry.path}"?`
+            : `Discard changes to "${entry.path}"? This cannot be undone.`;
+        if (confirm(message)) {
+          await window.calder.git.discardFile(gitPath, entry.path, entry.area);
+          onAfterAction();
+        }
+      }),
+    );
   }
 
   menu.appendChild(createSeparator());
 
-  menu.appendChild(createMenuItem('Open in Editor', async () => {
-    await window.calder.git.openInEditor(gitPath, entry.path);
-  }));
+  menu.appendChild(
+    createMenuItem('Open in Editor', async () => {
+      await window.calder.git.openInEditor(gitPath, entry.path);
+    }),
+  );
 
-  menu.appendChild(createMenuItem('Copy Path', () => {
-    navigator.clipboard.writeText(entry.path);
-  }));
+  menu.appendChild(
+    createMenuItem('Copy Path', () => {
+      navigator.clipboard.writeText(entry.path);
+    }),
+  );
 
   document.body.appendChild(menu);
   activeContextMenu = menu;
 
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-  if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+  if (rect.bottom > window.innerHeight)
+    menu.style.top = `${window.innerHeight - rect.height - 4}px`;
   applyTabContextMenuSemantics(menu, 'Git file actions', hideGitContextMenu);
 }
 
 export function renderGitFilesList(args: RenderGitFilesListArgs): void {
-  const {
-    body,
-    files,
-    gitPath,
-    maxFiles,
-    onAfterAction,
-  } = args;
+  const { body, files, gitPath, maxFiles, onAfterAction } = args;
   const fragment = document.createDocumentFragment();
   const order: string[] = ['conflicted', 'staged', 'working', 'untracked'];
   const groups = new Map<string, GitFileEntry[]>();
@@ -172,26 +182,33 @@ export function renderGitFilesList(args: RenderGitFilesListArgs): void {
       actions.className = 'git-item-actions';
 
       if (entry.area === 'staged') {
-        actions.appendChild(createActionButton('Unstage', '−', async () => {
-          await window.calder.git.unstageFile(gitPath, entry.path);
-          onAfterAction();
-        }));
+        actions.appendChild(
+          createActionButton('Unstage', '−', async () => {
+            await window.calder.git.unstageFile(gitPath, entry.path);
+            onAfterAction();
+          }),
+        );
       } else {
         if (entry.area !== 'conflicted') {
-          actions.appendChild(createActionButton('Discard Changes', '↩', async () => {
-            const message = entry.area === 'untracked'
-              ? `Delete untracked file "${entry.path}"?`
-              : `Discard changes to "${entry.path}"? This cannot be undone.`;
-            if (confirm(message)) {
-              await window.calder.git.discardFile(gitPath, entry.path, entry.area);
-              onAfterAction();
-            }
-          }));
+          actions.appendChild(
+            createActionButton('Discard Changes', '↩', async () => {
+              const message =
+                entry.area === 'untracked'
+                  ? `Delete untracked file "${entry.path}"?`
+                  : `Discard changes to "${entry.path}"? This cannot be undone.`;
+              if (confirm(message)) {
+                await window.calder.git.discardFile(gitPath, entry.path, entry.area);
+                onAfterAction();
+              }
+            }),
+          );
         }
-        actions.appendChild(createActionButton('Stage', '+', async () => {
-          await window.calder.git.stageFile(gitPath, entry.path);
-          onAfterAction();
-        }));
+        actions.appendChild(
+          createActionButton('Stage', '+', async () => {
+            await window.calder.git.stageFile(gitPath, entry.path);
+            onAfterAction();
+          }),
+        );
       }
 
       item.appendChild(actions);

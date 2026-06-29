@@ -13,6 +13,7 @@
 ### Task 1: Lock The New Launcher Contract In Tests
 
 **Files:**
+
 - Modify: `src/renderer/components/tab-bar-command-deck.test.ts`
 - Modify: `src/renderer/styles/command-deck.contract.test.ts`
 - Modify: `src/renderer/components/tab-bar-provider-selector.test.ts`
@@ -68,6 +69,7 @@ Expected: FAIL because the codebase still contains the multi-chip implementation
 ### Task 2: Simplify Launcher State To One Active Provider
 
 **Files:**
+
 - Modify: `src/renderer/components/tab-bar.ts`
 - Modify: `src/renderer/provider-availability.ts`
 
@@ -100,7 +102,7 @@ but build only one visible trigger for that provider.
 Where the launcher builds the select options, switch to:
 
 ```ts
-label: available ? provider.displayName : `${provider.displayName} (not installed)`
+label: available ? provider.displayName : `${provider.displayName} (not installed)`;
 ```
 
 Do not derive launcher labels from hand-written short aliases.
@@ -124,6 +126,7 @@ Expected: PASS for the new single-active-provider contract.
 ### Task 3: Rebuild The Top Launcher Visual Shell
 
 **Files:**
+
 - Modify: `src/renderer/index.html`
 - Modify: `src/renderer/styles/tabs.css`
 - Modify: `src/renderer/styles/theme-aurora.css`
@@ -195,6 +198,7 @@ Expected: PASS
 ### Task 4: Unify Provider Labels Across Secondary Surfaces
 
 **Files:**
+
 - Modify: `src/renderer/components/context-inspector.ts`
 - Modify: `src/renderer/components/terminal-pane.ts`
 - Modify: `src/renderer/components/cli-surface/pane.ts`
@@ -252,6 +256,7 @@ Expected: PASS
 ### Task 5: Manual Smoke Proof And Final Verification
 
 **Files:**
+
 - Verify only
 
 - [ ] **Step 1: Run the complete focused verification bundle**

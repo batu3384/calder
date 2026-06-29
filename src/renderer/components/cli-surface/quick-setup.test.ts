@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const quickSetupSource = readFileSync(new URL('./quick-setup.ts', import.meta.url), 'utf-8');
-const cliSurfaceCss = readFileSync(new URL('../../styles/cli-surface.css', import.meta.url), 'utf-8');
+const cliSurfaceCss = readFileSync(
+  new URL('../../styles/cli-surface.css', import.meta.url),
+  'utf-8',
+);
 
 describe('cli surface quick setup contract', () => {
   it('renders run, edit, and manual setup actions for discovered candidates', () => {
@@ -10,12 +13,18 @@ describe('cli surface quick setup contract', () => {
     expect(quickSetupSource).toContain('cli-surface-quick-setup-summary');
     expect(quickSetupSource).toContain('Best match');
     expect(quickSetupSource).toContain('Node workspace');
-    expect(quickSetupSource).toContain("createQuickSetupButton('Run', { primary: true, action: 'run' })");
+    expect(quickSetupSource).toContain(
+      "createQuickSetupButton('Run', { primary: true, action: 'run' })",
+    );
     expect(quickSetupSource).toContain("createQuickSetupButton('Edit', { action: 'edit' })");
     expect(quickSetupSource).toContain('summaryPreview.textContent = formatCommand(candidates[0])');
-    expect(quickSetupSource).toContain('cwd.textContent = candidate.cwd ?? \'\'');
-    expect(quickSetupSource).toContain("createQuickSetupButton('Manual setup', { action: 'manual-setup', tone: 'neutral' })");
-    expect(quickSetupSource).toContain("createQuickSetupButton('Cancel', { tone: 'ghost', action: 'cancel' })");
+    expect(quickSetupSource).toContain("cwd.textContent = candidate.cwd ?? ''");
+    expect(quickSetupSource).toContain("createQuickSetupButton('Manual setup', {");
+    expect(quickSetupSource).toContain("action: 'manual-setup'");
+    expect(quickSetupSource).toContain("tone: 'neutral'");
+    expect(quickSetupSource).toContain(
+      "createQuickSetupButton('Cancel', { tone: 'ghost', action: 'cancel' })",
+    );
     expect(quickSetupSource).toContain('cli-surface-quick-setup-btn-primary');
     expect(quickSetupSource).toContain('cli-surface-quick-setup-btn-neutral');
     expect(quickSetupSource).toContain('cli-surface-quick-setup-btn-ghost');

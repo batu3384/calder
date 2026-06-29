@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { _resetForTesting,captureInitialContext, dismissInsight, markFreshSession, onAlert } from './session-insights.js';
-import { _resetForTesting as resetState,appState } from './state.js';
+import {
+  _resetForTesting,
+  captureInitialContext,
+  dismissInsight,
+  markFreshSession,
+  onAlert,
+} from './session-insights.js';
+import { _resetForTesting as resetState, appState } from './state.js';
 
 // Mock the window.calder API
 vi.stubGlobal('window', {
@@ -20,7 +26,11 @@ function setupProject(): string {
   return project.id;
 }
 
-function makeContextWindow(usedPercentage: number, totalTokens = 30000, contextWindowSize = 200000) {
+function makeContextWindow(
+  usedPercentage: number,
+  totalTokens = 30000,
+  contextWindowSize = 200000,
+) {
   return {
     total_input_tokens: totalTokens,
     total_output_tokens: 0,
@@ -38,7 +48,7 @@ describe('session-insights', () => {
       markFreshSession(session.id);
       captureInitialContext(session.id, makeContextWindow(20));
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights?.initialContextSnapshots).toHaveLength(1);
       expect(project.insights!.initialContextSnapshots[0].usedPercentage).toBe(20);
     });
@@ -51,7 +61,7 @@ describe('session-insights', () => {
       captureInitialContext(session.id, makeContextWindow(20));
       captureInitialContext(session.id, makeContextWindow(30));
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights?.initialContextSnapshots).toHaveLength(1);
       expect(project.insights!.initialContextSnapshots[0].usedPercentage).toBe(20);
     });
@@ -63,7 +73,7 @@ describe('session-insights', () => {
       // Don't call markFreshSession — simulates a resumed session
       captureInitialContext(session.id, makeContextWindow(20));
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights).toBeUndefined();
     });
 
@@ -74,7 +84,7 @@ describe('session-insights', () => {
       markFreshSession(session.id);
       captureInitialContext(session.id, undefined);
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights).toBeUndefined();
     });
 
@@ -94,7 +104,7 @@ describe('session-insights', () => {
         captureInitialContext(session.id, makeContextWindow(20));
       }
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights?.initialContextSnapshots).toHaveLength(50);
     });
 
@@ -108,7 +118,7 @@ describe('session-insights', () => {
       captureInitialContext(s1.id, makeContextWindow(20));
       captureInitialContext(s2.id, makeContextWindow(10));
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights?.initialContextSnapshots).toHaveLength(2);
       expect(project.insights!.initialContextSnapshots[0].usedPercentage).toBe(20);
       expect(project.insights!.initialContextSnapshots[1].usedPercentage).toBe(10);
@@ -121,7 +131,7 @@ describe('session-insights', () => {
       markFreshSession(session.id);
       captureInitialContext(session.id, makeContextWindow(5));
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       const snapshot = project.insights!.initialContextSnapshots[0];
       expect(snapshot.sessionId).toBe(session.id);
       expect(snapshot.timestamp).toBeTruthy();
@@ -146,7 +156,7 @@ describe('session-insights', () => {
         },
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].totalTokens).toBe(100_000);
     });
 
@@ -162,7 +172,7 @@ describe('session-insights', () => {
         used_percentage: 50,
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].totalTokens).toBe(100_000);
     });
 
@@ -178,7 +188,7 @@ describe('session-insights', () => {
         used_percentage: 10,
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].contextWindowSize).toBe(100_000);
     });
 
@@ -193,7 +203,7 @@ describe('session-insights', () => {
         used_percentage: 5,
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].contextWindowSize).toBe(200_000);
     });
 
@@ -209,7 +219,7 @@ describe('session-insights', () => {
         // no used_percentage
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].usedPercentage).toBe(25);
     });
 
@@ -224,7 +234,7 @@ describe('session-insights', () => {
         context_window_size: 0,
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].usedPercentage).toBe(0);
     });
 
@@ -239,7 +249,7 @@ describe('session-insights', () => {
         current_usage: {},
       });
 
-      const project = appState.projects.find(p => p.id === projectId)!;
+      const project = appState.projects.find((p) => p.id === projectId)!;
       expect(project.insights!.initialContextSnapshots[0].totalTokens).toBe(0);
     });
   });
@@ -292,7 +302,9 @@ describe('session-insights', () => {
       const session = appState.addSession(projectId, 'Session 1')!;
 
       let alertResults: unknown[] = [];
-      onAlert((_pid, results) => { alertResults = results; });
+      onAlert((_pid, results) => {
+        alertResults = results;
+      });
 
       markFreshSession(session.id);
       captureInitialContext(session.id, makeContextWindow(20));
@@ -309,8 +321,12 @@ describe('session-insights', () => {
       const session = appState.addSession(projectId, 'Session 1')!;
 
       let count = 0;
-      onAlert(() => { count++; });
-      onAlert(() => { count++; });
+      onAlert(() => {
+        count++;
+      });
+      onAlert(() => {
+        count++;
+      });
 
       markFreshSession(session.id);
       captureInitialContext(session.id, makeContextWindow(20));

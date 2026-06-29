@@ -11,19 +11,13 @@ import {
   flushInstallRemainder,
   pushChunkLines,
 } from './mobile-dependency-doctor/install-helpers';
-import {
-  getAndroidBinaryCandidates,
-  resolveBinary,
-} from './mobile-dependency-doctor-binaries';
+import { getAndroidBinaryCandidates, resolveBinary } from './mobile-dependency-doctor-binaries';
 import {
   type DoctorInstallSpec as InstallSpec,
   type DoctorInstallStep as InstallStep,
   MOBILE_DOCTOR_INSTALL_SPECS as INSTALL_SPECS,
 } from './mobile-dependency-doctor-config';
-import {
-  createInstallId,
-  runCommandStreaming,
-} from './mobile-dependency-doctor-install-runner';
+import { createInstallId, runCommandStreaming } from './mobile-dependency-doctor-install-runner';
 import {
   firstNonEmptyLine,
   getAppiumDriverInstallTarget,
@@ -46,11 +40,7 @@ interface CommandResult {
 }
 
 interface CommandRunner {
-  run(
-    command: string,
-    args: string[],
-    options?: { timeoutMs?: number },
-  ): Promise<CommandResult>;
+  run(command: string, args: string[], options?: { timeoutMs?: number }): Promise<CommandResult>;
 }
 
 interface DoctorOptions {
@@ -144,12 +134,14 @@ type InstallProgressInput = Omit<
 >;
 
 function emitInstallProgress(context: InstallExecutionContext, input: InstallProgressInput): void {
-  context.onProgress?.(buildProgressEvent({
-    ...input,
-    installId: context.installId,
-    dependencyId: context.dependencyId,
-    startedAt: context.startedAt,
-  }));
+  context.onProgress?.(
+    buildProgressEvent({
+      ...input,
+      installId: context.installId,
+      dependencyId: context.dependencyId,
+      startedAt: context.startedAt,
+    }),
+  );
 }
 
 function createInstallExecutionState(): InstallExecutionState {
@@ -214,9 +206,7 @@ async function resolveInstallSteps(
   }
 
   return spec.steps.map((step) =>
-    step.command === 'sdkmanager'
-      ? { ...step, command: resolvedSdkManager }
-      : step,
+    step.command === 'sdkmanager' ? { ...step, command: resolvedSdkManager } : step,
   );
 }
 

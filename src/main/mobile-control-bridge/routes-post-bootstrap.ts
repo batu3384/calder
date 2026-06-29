@@ -6,17 +6,11 @@ import { sendJson, sendText } from './http';
 import type { PairingRecord } from './model';
 import { verifyPairingToken } from './rate-limit';
 import type { PairingPostHandlersConfig } from './routes-post-shared';
-import {
-  failExpiredPairing,
-  failRateLimited,
-  parsePairingBody,
-} from './routes-post-shared';
+import { failExpiredPairing, failRateLimited, parsePairingBody } from './routes-post-shared';
 
-export function createBootstrapPostHandler(config: PairingPostHandlersConfig): (
-  record: PairingRecord,
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-) => Promise<void> {
+export function createBootstrapPostHandler(
+  config: PairingPostHandlersConfig,
+): (record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void> {
   return async function handleBootstrapRequest(
     record: PairingRecord,
     req: http.IncomingMessage,
@@ -24,9 +18,24 @@ export function createBootstrapPostHandler(config: PairingPostHandlersConfig): (
   ): Promise<void> {
     const copy = getMobileCopy(record.language);
     if (failExpiredPairing(record, res)) return;
-    if (failRateLimited(record, req, res, 'bootstrap', config.rateLimit, copy.serverMessage.tooManyPairingAttempts)) return;
+    if (
+      failRateLimited(
+        record,
+        req,
+        res,
+        'bootstrap',
+        config.rateLimit,
+        copy.serverMessage.tooManyPairingAttempts,
+      )
+    )
+      return;
 
-    const body = await parsePairingBody<{ token?: unknown; otp?: unknown }>(record, req, res, config.maxBodyBytes);
+    const body = await parsePairingBody<{ token?: unknown; otp?: unknown }>(
+      record,
+      req,
+      res,
+      config.maxBodyBytes,
+    );
     if (!body) return;
     if (!verifyPairingToken(record, body.token)) {
       sendText(res, 403, copy.serverMessage.pairingTokenInvalid);

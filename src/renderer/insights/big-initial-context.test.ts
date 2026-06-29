@@ -1,9 +1,13 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { InitialContextSnapshot } from '../../shared/types/session.js';
 import { bigInitialContext } from './big-initial-context.js';
 
-function makeSnapshot(usedPercentage: number, totalTokens = 30000, contextWindowSize = 200000): InitialContextSnapshot {
+function makeSnapshot(
+  usedPercentage: number,
+  totalTokens = 30000,
+  contextWindowSize = 200000,
+): InitialContextSnapshot {
   return {
     sessionId: 'test-session',
     timestamp: new Date().toISOString(),

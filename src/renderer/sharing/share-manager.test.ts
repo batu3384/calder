@@ -107,13 +107,15 @@ function createHostHandle(): HostHandleMock {
 }
 
 function createGuestHandle(): GuestHandleMock {
-  let initCb: ((payload: {
-    scrollback: string;
-    mode: 'readonly' | 'readwrite';
-    cols: number;
-    rows: number;
-    sessionName: string;
-  }) => void) | undefined;
+  let initCb:
+    | ((payload: {
+        scrollback: string;
+        mode: 'readonly' | 'readwrite';
+        cols: number;
+        rows: number;
+        sessionName: string;
+      }) => void)
+    | undefined;
   let dataCb: ((payload: string) => void) | undefined;
   let disconnectedCb: (() => void) | undefined;
 
@@ -233,7 +235,12 @@ describe('share-manager guest flow', () => {
       mockAddRemoteSession.mock.invocationCallOrder[0],
     );
     expect(mockWriteRemoteData).toHaveBeenCalledWith('remote-session-1', 'boot log');
-    expect(mockAddRemoteSession).toHaveBeenCalledWith('project-1', 'remote-session-1', 'Shared shell', 'readwrite');
+    expect(mockAddRemoteSession).toHaveBeenCalledWith(
+      'project-1',
+      'remote-session-1',
+      'Shared shell',
+      'readwrite',
+    );
     expect(onConnected).toHaveBeenCalledTimes(1);
     expect(isRemoteSession('remote-session-1')).toBe(true);
 

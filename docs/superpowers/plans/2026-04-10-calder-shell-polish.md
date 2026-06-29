@@ -13,6 +13,7 @@
 ### Task 1: Initialize Git And Ignore Working Artifacts
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/.gitignore`
 - Create: `/Users/batuhanyuksel/Documents/browser/.git/` (via `git init -b main`)
 
@@ -49,6 +50,7 @@ Expected: output starts with `## main` and does not show ignored temp folders.
 ### Task 2: Write Failing Tests For Hard Brand Break
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/store.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/codex-hooks.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/hook-status.test.ts`
@@ -92,6 +94,7 @@ Expected: failing assertions showing the code still accepts or exposes legacy pr
 ### Task 3: Remove Legacy Identity From Runtime And Storage
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/state.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/types.ts`
@@ -116,7 +119,9 @@ interface Window {
 }
 
 // renderer/types.ts
-export interface CalderApi { /* existing shape */ }
+export interface CalderApi {
+  /* existing shape */
+}
 ```
 
 Delete deprecated renderer compatibility exposures and API alias types.
@@ -166,6 +171,7 @@ Expected: all selected tests pass.
 ### Task 4: Polish Shared Shell Tokens
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/base.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/dom-utils.ts`
 
@@ -208,6 +214,7 @@ Expected: build succeeds.
 ### Task 5: Apply Surgical Shell Polish
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/sidebar.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/modals.css`
@@ -244,6 +251,7 @@ Expected: build succeeds after the shell polish changes.
 ### Task 6: Remove Remaining Product Residue And Verify
 
 **Files:**
+
 - Delete: previous-name root ignore artifact
 - Create: `/Users/batuhanyuksel/Documents/browser/.calderignore`
 - Modify: `/Users/batuhanyuksel/Documents/browser/CHANGELOG.md` (only if non-archival runtime-facing residue remains)
@@ -274,6 +282,7 @@ git -C /Users/batuhanyuksel/Documents/browser status --short --branch
 ```
 
 Expected:
+
 - build passes
 - full test suite passes
 - git status shows the intended tracked changes on `main`

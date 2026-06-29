@@ -22,8 +22,8 @@ export interface PlaywrightMirrorTarget {
 
 export function appendAutoApprovalAudit(sessionId: string, events: InspectorEvent[]): void {
   if (!events.length) return;
-  const auditEvents = events.filter((event) =>
-    event.type === 'approval_decision' && event.auto_approval !== undefined
+  const auditEvents = events.filter(
+    (event) => event.type === 'approval_decision' && event.auto_approval !== undefined,
   );
   if (!auditEvents.length) return;
 
@@ -32,10 +32,12 @@ export function appendAutoApprovalAudit(sessionId: string, events: InspectorEven
 
   try {
     fs.mkdirSync(runtimeDir, { recursive: true });
-    const lines = auditEvents.map((event) => JSON.stringify({
-      emittedAt: new Date().toISOString(),
-      event,
-    }));
+    const lines = auditEvents.map((event) =>
+      JSON.stringify({
+        emittedAt: new Date().toISOString(),
+        event,
+      }),
+    );
     fs.appendFileSync(auditPath, `${lines.join('\n')}\n`, 'utf8');
   } catch (error) {
     console.warn('Failed to append auto-approval audit log:', error);
@@ -58,7 +60,9 @@ function isPlaywrightNavigateToolName(toolName: string | undefined): boolean {
   return /(?:^|[^a-z0-9])navigate([^a-z0-9]|$)/.test(normalized);
 }
 
-export function extractPlaywrightNavigateUrl(toolInput: InspectorEvent['tool_input']): string | null {
+export function extractPlaywrightNavigateUrl(
+  toolInput: InspectorEvent['tool_input'],
+): string | null {
   if (!toolInput || typeof toolInput !== 'object') return null;
   const urlCandidate = (toolInput as Record<string, unknown>).url;
   return normalizePlaywrightNavigateUrl(typeof urlCandidate === 'string' ? urlCandidate : null);
@@ -90,7 +94,11 @@ export function shouldMirrorPlaywrightNavigateUrl(
   nowMs = Date.now(),
 ): boolean {
   const previous = stateBySession.get(sessionId);
-  if (previous && previous.lastUrl === url && nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS) {
+  if (
+    previous &&
+    previous.lastUrl === url &&
+    nowMs - previous.lastMirroredAtMs < PLAYWRIGHT_MIRROR_COOLDOWN_MS
+  ) {
     return false;
   }
   stateBySession.set(sessionId, { lastUrl: url, lastMirroredAtMs: nowMs });

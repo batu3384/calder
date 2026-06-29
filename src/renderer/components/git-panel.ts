@@ -1,9 +1,6 @@
 import { appState } from '../state.js';
 import type { GitFileEntry } from '../types.js';
-import {
-  hideGitContextMenu,
-  renderGitFilesList,
-} from './git-panel-file-actions-helpers.js';
+import { hideGitContextMenu, renderGitFilesList } from './git-panel-file-actions-helpers.js';
 import type { SectionPresentation } from './git-panel-presentation-helpers.js';
 import {
   ensureGitSection,
@@ -13,7 +10,14 @@ import {
   renderGitBodyState,
   renderWorktreeSelector,
 } from './git-panel-presentation-helpers.js';
-import { getActiveGitPath, getGitStatus, getWorktrees, onChange as onGitStatusChange, onWorktreeChange,setActiveWorktree } from './surface-services/git-status.js';
+import {
+  getActiveGitPath,
+  getGitStatus,
+  getWorktrees,
+  onChange as onGitStatusChange,
+  onWorktreeChange,
+  setActiveWorktree,
+} from './surface-services/git-status.js';
 import { onChange as onStatusChange } from './surface-services/session-activity.js';
 
 /*
@@ -32,9 +36,11 @@ let compactExpanded = false;
 let lastCountKey = '';
 let lastFilesKey = '';
 let refreshQueued = false;
-const queueFrame = typeof requestAnimationFrame === 'function'
-  ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
+const queueFrame =
+  typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : (callback: FrameRequestCallback): number =>
+        globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 function afterAction(): void {
   lastFilesKey = '';
@@ -85,12 +91,13 @@ async function refresh(): Promise<void> {
     : 0;
   const presentation = getSectionPresentation(container);
   const detailExpanded = isDetailExpanded(presentation);
-  const showCompactSummary = (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
+  const showCompactSummary =
+    (presentation === 'compact' || presentation === 'ultra') && !detailExpanded;
 
   // Find active worktree branch for header
   let headerSuffix = '';
   if (hasMultipleWorktrees) {
-    const activeWt = worktrees!.find(w => w.path === activeGitPath);
+    const activeWt = worktrees!.find((w) => w.path === activeGitPath);
     if (activeWt?.branch) {
       headerSuffix = ` · ${esc(activeWt.branch)}`;
     }
@@ -104,7 +111,8 @@ async function refresh(): Promise<void> {
     showCompactSummary,
     onToggle: () => {
       if (presentation === 'promoted') return;
-      if (presentation === 'compact' || presentation === 'ultra') compactExpanded = !compactExpanded;
+      if (presentation === 'compact' || presentation === 'ultra')
+        compactExpanded = !compactExpanded;
       else collapsed = !collapsed;
       lastFilesKey = '';
       void refresh();
@@ -131,7 +139,11 @@ async function refresh(): Promise<void> {
   }
 
   if (total === 0) {
-    renderGitBodyState(body, showCompactSummary ? 'Git is clean' : 'Working tree clean.', 'healthy');
+    renderGitBodyState(
+      body,
+      showCompactSummary ? 'Git is clean' : 'Working tree clean.',
+      'healthy',
+    );
     return;
   }
 
@@ -157,7 +169,7 @@ async function loadFiles(body: HTMLElement, gitPath: string): Promise<void> {
 
   let files: GitFileEntry[];
   try {
-    files = await window.calder.git.getFiles(gitPath) as GitFileEntry[];
+    files = (await window.calder.git.getFiles(gitPath)) as GitFileEntry[];
   } catch {
     body.innerHTML = '';
     lastFilesKey = '';
@@ -193,10 +205,18 @@ export function toggleGitPanel(): void {
 
 export function initGitPanel(): void {
   document.addEventListener('click', hideGitContextMenu);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideGitContextMenu(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideGitContextMenu();
+  });
 
-  appState.on('project-changed', () => { lastFilesKey = ''; scheduleRefresh(); });
-  appState.on('state-loaded', () => { lastFilesKey = ''; scheduleRefresh(); });
+  appState.on('project-changed', () => {
+    lastFilesKey = '';
+    scheduleRefresh();
+  });
+  appState.on('state-loaded', () => {
+    lastFilesKey = '';
+    scheduleRefresh();
+  });
 
   // Refresh when git status counts change
   onGitStatusChange((projectId, status) => {
@@ -218,8 +238,13 @@ export function initGitPanel(): void {
   });
 
   // Refresh when worktree list or active worktree changes
-  onWorktreeChange(() => { lastFilesKey = ''; scheduleRefresh(); });
+  onWorktreeChange(() => {
+    lastFilesKey = '';
+    scheduleRefresh();
+  });
 
-  appState.on('session-changed', () => { scheduleRefresh(); });
+  appState.on('session-changed', () => {
+    scheduleRefresh();
+  });
   appState.on('preferences-changed', () => applyGitPanelVisibility());
 }

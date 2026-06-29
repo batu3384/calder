@@ -2,17 +2,26 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const indexSource = readFileSync(new URL('../index.ts', import.meta.url), 'utf-8');
-const orchestratorSource = readFileSync(new URL('./renderer-session-orchestrator.ts', import.meta.url), 'utf-8');
+const orchestratorSource = readFileSync(
+  new URL('./renderer-session-orchestrator.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('index session bootstrap contract', () => {
   it('delegates PTY/session event wiring through the renderer session orchestrator', () => {
     expect(indexSource).toContain("from './bootstrap/renderer-session-orchestrator.js'");
-    expect(indexSource).toContain('const sessionOrchestrator = createRendererSessionOrchestrator({');
+    expect(indexSource).toContain(
+      'const sessionOrchestrator = createRendererSessionOrchestrator({',
+    );
     expect(indexSource).toContain('sessionOrchestrator.handlePtyData(sessionId, data);');
     expect(indexSource).toContain('sessionOrchestrator.handleCostData(sessionId, costData);');
-    expect(indexSource).toContain('sessionOrchestrator.handleHookStatus(sessionId, status, hookName);');
+    expect(indexSource).toContain(
+      'sessionOrchestrator.handleHookStatus(sessionId, status, hookName);',
+    );
     expect(indexSource).toContain('sessionOrchestrator.handleInspectorEvents(sessionId, events);');
-    expect(indexSource).toContain('sessionOrchestrator.handleCliSessionId(sessionId, cliSessionId);');
+    expect(indexSource).toContain(
+      'sessionOrchestrator.handleCliSessionId(sessionId, cliSessionId);',
+    );
     expect(indexSource).toContain('sessionOrchestrator.handlePtyExit(sessionId, exitCode);');
     expect(indexSource).toContain('await sessionOrchestrator.initialize();');
   });

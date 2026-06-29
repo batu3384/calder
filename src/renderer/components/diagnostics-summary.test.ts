@@ -4,7 +4,10 @@ import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import type { ProjectRecord, SessionRecord } from '../state.js';
 import { buildDiagnosticsSummaryModel } from './diagnostics-summary.js';
 
-function makeProject(session: SessionRecord, effectiveMode: AutoApprovalMode = 'off'): ProjectRecord {
+function makeProject(
+  session: SessionRecord,
+  effectiveMode: AutoApprovalMode = 'off',
+): ProjectRecord {
   return {
     id: 'p1',
     name: 'Browser',

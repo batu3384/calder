@@ -39,29 +39,36 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
   createBtn.type = 'button';
   createBtn.textContent = 'New findings file';
   createBtn.addEventListener('click', () => {
-    showModal('New Review Findings', [
-      {
-        label: 'Findings title',
-        id: 'review-title',
-        placeholder: 'PR 42 Findings',
-        defaultValue: 'PR Review Findings',
+    showModal(
+      'New Review Findings',
+      [
+        {
+          label: 'Findings title',
+          id: 'review-title',
+          placeholder: 'PR 42 Findings',
+          defaultValue: 'PR Review Findings',
+        },
+      ],
+      async (values) => {
+        const title = values['review-title']?.trim() ?? '';
+        if (!title) {
+          setModalError('review-title', 'Findings title is required');
+          return;
+        }
+
+        const result = await window.calder.review.createFile(project.path, title);
+        appState.setProjectReviews(project.id, result.state);
+        args.onCloseModalWide();
+
+        const relativePath = toProjectRelativeContextPath(
+          project.path,
+          `${project.path}/${result.relativePath}`,
+        );
+        if (relativePath) {
+          await window.calder.git.openInEditor(project.path, relativePath);
+        }
       },
-    ], async (values) => {
-      const title = values['review-title']?.trim() ?? '';
-      if (!title) {
-        setModalError('review-title', 'Findings title is required');
-        return;
-      }
-
-      const result = await window.calder.review.createFile(project.path, title);
-      appState.setProjectReviews(project.id, result.state);
-      args.onCloseModalWide();
-
-      const relativePath = toProjectRelativeContextPath(project.path, `${project.path}/${result.relativePath}`);
-      if (relativePath) {
-        await window.calder.git.openInEditor(project.path, relativePath);
-      }
-    });
+    );
   });
   actions.appendChild(createBtn);
   shell.appendChild(actions);
@@ -113,7 +120,9 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
 
     const status = document.createElement('div');
     status.className = 'review-discovery-item-status';
-    status.textContent = selectedFixSession ? `Selected: ${selectedFixSession.name}` : 'Open a CLI session first';
+    status.textContent = selectedFixSession
+      ? `Selected: ${selectedFixSession.name}`
+      : 'Open a CLI session first';
 
     const fixBtn = document.createElement('button');
     fixBtn.className = 'review-discovery-item-btn';
@@ -169,7 +178,9 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
 
     const meta = document.createElement('div');
     meta.className = 'review-discovery-item-meta';
-    meta.textContent = review.summary ? `Saved PR review notes · ${review.summary}` : 'Saved PR review notes';
+    meta.textContent = review.summary
+      ? `Saved PR review notes · ${review.summary}`
+      : 'Saved PR review notes';
     item.appendChild(meta);
 
     list.appendChild(item);

@@ -85,8 +85,10 @@ export function enableComposerDragging(options: ComposerDraggingOptions): () => 
   handleEl.addEventListener('mousedown', onMouseDown);
   return () => {
     stopDragging();
-    (handleEl as unknown as {
-      removeEventListener?: (type: string, listener: (event: MouseEvent) => void) => void;
-    }).removeEventListener?.('mousedown', onMouseDown);
+    (
+      handleEl as unknown as {
+        removeEventListener?: (type: string, listener: (event: MouseEvent) => void) => void;
+      }
+    ).removeEventListener?.('mousedown', onMouseDown);
   };
 }

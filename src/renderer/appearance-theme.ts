@@ -20,7 +20,9 @@ export function applyAppearanceTheme(theme: AppearanceTheme | undefined): void {
   document.documentElement.removeAttribute('data-theme');
 }
 
-export function bindAppearanceThemeListener(onChange: (theme: AppearanceTheme | undefined) => void): () => void {
+export function bindAppearanceThemeListener(
+  onChange: (theme: AppearanceTheme | undefined) => void,
+): () => void {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return () => {};
   }

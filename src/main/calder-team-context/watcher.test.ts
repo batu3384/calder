@@ -44,9 +44,7 @@ beforeEach(() => {
     optionsOrListener: { recursive: boolean } | (() => void),
     maybeListener?: () => void,
   ) => {
-    const listener = typeof optionsOrListener === 'function'
-      ? optionsOrListener
-      : maybeListener;
+    const listener = typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
     if (!listener) {
       throw new Error('listener is required');
     }
@@ -121,9 +119,12 @@ describe('project team context watcher', () => {
 
   it('ignores in-flight discovery results after disposer is called', async () => {
     let resolveDiscovery: ((value: unknown) => void) | null = null;
-    mockDiscoverProjectTeamContext.mockImplementation(() => new Promise<unknown>((resolve) => {
-      resolveDiscovery = resolve;
-    }));
+    mockDiscoverProjectTeamContext.mockImplementation(
+      () =>
+        new Promise<unknown>((resolve) => {
+          resolveDiscovery = resolve;
+        }),
+    );
     const onChange = vi.fn();
 
     const cleanup = startProjectTeamContextWatcher('/repo', onChange);
@@ -133,7 +134,10 @@ describe('project team context watcher', () => {
     expect(mockDiscoverProjectTeamContext).toHaveBeenCalledWith('/repo');
 
     cleanup();
-    requireValue<(value: unknown) => void>(resolveDiscovery, 'Expected discovery resolver to be registered')({
+    requireValue<(value: unknown) => void>(
+      resolveDiscovery,
+      'Expected discovery resolver to be registered',
+    )({
       spaces: [],
       sharedRuleCount: 0,
       workflowCount: 0,
@@ -165,9 +169,7 @@ describe('project team context watcher', () => {
       optionsOrListener: { recursive: boolean } | (() => void),
       maybeListener?: () => void,
     ) => {
-      const listener = typeof optionsOrListener === 'function'
-        ? optionsOrListener
-        : maybeListener;
+      const listener = typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
       if (!listener) {
         throw new Error('listener is required');
       }

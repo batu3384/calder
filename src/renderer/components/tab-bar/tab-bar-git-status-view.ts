@@ -46,7 +46,8 @@ export function buildGitStatusView(
   if (status.staged > 0) parts.push(`<span class="git-staged">+${status.staged}</span>`);
   if (status.modified > 0) parts.push(`<span class="git-modified">~${status.modified}</span>`);
   if (status.untracked > 0) parts.push(`<span class="git-untracked">?${status.untracked}</span>`);
-  if (status.conflicted > 0) parts.push(`<span class="git-conflicted">!${status.conflicted}</span>`);
+  if (status.conflicted > 0)
+    parts.push(`<span class="git-conflicted">!${status.conflicted}</span>`);
 
   const dirtyCount = status.staged + status.modified + status.untracked + status.conflicted;
   return {

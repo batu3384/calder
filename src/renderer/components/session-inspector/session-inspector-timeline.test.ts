@@ -181,12 +181,18 @@ describe('session-inspector timeline MCP badges', () => {
 
     expect(badges).toContain('Approval');
     expect(desc?.textContent).toContain('Auto-approval block: destructive');
-    expect(meta?.textContent).toContain('Reason: Destructive operations are not auto-approved in this mode.');
+    expect(meta?.textContent).toContain(
+      'Reason: Destructive operations are not auto-approved in this mode.',
+    );
   });
 });
 
 // Helper to create minimal InspectorEvent
-function ev(type: InspectorEvent['type'], timestamp: number, extra?: Partial<InspectorEvent>): InspectorEvent {
+function ev(
+  type: InspectorEvent['type'],
+  timestamp: number,
+  extra?: Partial<InspectorEvent>,
+): InspectorEvent {
   return { type, timestamp, hookEvent: type, ...extra };
 }
 
@@ -315,7 +321,9 @@ describe('buildAgentModel', () => {
 describe('session-inspector timeline helper exports', () => {
   it('prefers a provided tool label for tool events', () => {
     const event = ev('tool_use', 1000, { tool_name: 'mcp__memory__create_entities' });
-    expect(describeTimelineEvent(event, [event], 0, 'memory / create_entities')).toBe('memory / create_entities');
+    expect(describeTimelineEvent(event, [event], 0, 'memory / create_entities')).toBe(
+      'memory / create_entities',
+    );
     expect(describeTimelineEvent(event, [event], 0)).toBe('mcp__memory__create_entities');
   });
 
@@ -366,8 +374,8 @@ describe('renderTimeline agent grouping', () => {
     renderTimeline(container);
 
     const timeline = (container as unknown as FakeElement).querySelector('.inspector-timeline');
-    const topGroups = timeline!.children.filter(
-      (c) => c.className.includes('inspector-agent-group')
+    const topGroups = timeline!.children.filter((c) =>
+      c.className.includes('inspector-agent-group'),
     );
     expect(topGroups.length).toBe(2);
     expect(topGroups[0].querySelectorAll('.inspector-agent-group')).toHaveLength(0);
@@ -392,8 +400,8 @@ describe('renderTimeline agent grouping', () => {
     renderTimeline(container);
 
     const timeline = (container as unknown as FakeElement).querySelector('.inspector-timeline');
-    const topGroups = timeline!.children.filter(
-      (c) => c.className.includes('inspector-agent-group')
+    const topGroups = timeline!.children.filter((c) =>
+      c.className.includes('inspector-agent-group'),
     );
     expect(topGroups.length).toBe(2);
 
@@ -403,7 +411,10 @@ describe('renderTimeline agent grouping', () => {
     expect(topLevelDescs).toContain('top-level notice');
 
     const groupTexts = topGroups.map((group) =>
-      group.querySelectorAll('.inspector-desc').map((row) => row.textContent).join(' | ')
+      group
+        .querySelectorAll('.inspector-desc')
+        .map((row) => row.textContent)
+        .join(' | '),
     );
     expect(groupTexts[0]).toContain('Bash');
     expect(groupTexts[0]).not.toContain('Read');
@@ -420,7 +431,9 @@ describe('renderTimeline agent grouping', () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
     renderTimeline(container);
 
-    const firstGroup = (container as unknown as FakeElement).querySelector('.inspector-agent-group');
+    const firstGroup = (container as unknown as FakeElement).querySelector(
+      '.inspector-agent-group',
+    );
     expect(firstGroup?.querySelector('.inspector-agent-children')).not.toBeNull();
     expect(inspectorState.expandedRows.has('agent-group:A')).toBe(true);
     expect(inspectorState.autoExpandedAgentGroups.has('session-1:agent-group:A')).toBe(true);
@@ -438,7 +451,9 @@ describe('renderTimeline agent grouping', () => {
     const rerenderedContainer = new FakeElement('div') as unknown as HTMLElement;
     renderTimeline(rerenderedContainer);
 
-    const rerenderedGroup = (rerenderedContainer as unknown as FakeElement).querySelector('.inspector-agent-group');
+    const rerenderedGroup = (rerenderedContainer as unknown as FakeElement).querySelector(
+      '.inspector-agent-group',
+    );
     expect(rerenderedGroup?.querySelector('.inspector-agent-children')).toBeNull();
     expect(inspectorState.expandedRows.has('agent-group:A')).toBe(false);
   });
@@ -468,7 +483,9 @@ describe('renderTimeline agent grouping', () => {
     const rerenderedContainer = new FakeElement('div') as unknown as HTMLElement;
     renderTimeline(rerenderedContainer);
 
-    const rerenderedGroup = (rerenderedContainer as unknown as FakeElement).querySelector('.inspector-agent-group');
+    const rerenderedGroup = (rerenderedContainer as unknown as FakeElement).querySelector(
+      '.inspector-agent-group',
+    );
     expect(rerenderedGroup?.querySelector('.inspector-agent-children')).not.toBeNull();
     expect(inspectorState.expandedRows.has('agent-group:A')).toBe(true);
   });

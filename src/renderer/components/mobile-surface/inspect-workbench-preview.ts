@@ -1,7 +1,9 @@
 import { formatCaptureMeta } from './dependency-scoping.js';
 import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 
-export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchOptions): HTMLDivElement {
+export function renderInspectPreviewPanel(
+  options: RenderMobileInspectWorkbenchOptions,
+): HTMLDivElement {
   const { instance, platformLabels, handlers } = options;
   const inspect = instance.inspectState;
   const preview = document.createElement('div');
@@ -17,7 +19,11 @@ export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchO
     image.addEventListener('click', (event) => {
       if (inspect.interacting) return;
       if (inspect.liveMode) {
-        handlers.stopInspectLiveMode(instance, 'Live paused for precise point inspection.', 'default');
+        handlers.stopInspectLiveMode(
+          instance,
+          'Live paused for precise point inspection.',
+          'default',
+        );
       }
       const rect = image.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
@@ -44,7 +50,11 @@ export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchO
       const api = window.calder?.mobileInspect;
       if (!api) {
         inspect.inspectingPoint = false;
-        handlers.setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
+        handlers.setInspectStatus(
+          instance,
+          'Mobile inspect API is unavailable in this build.',
+          'error',
+        );
         handlers.rerenderFromState(instance);
         return;
       }
@@ -78,15 +88,17 @@ export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchO
 
     frame.appendChild(image);
 
-    const bounds = inspect.selectedElement?.success ? inspect.selectedElement.element?.bounds : undefined;
+    const bounds = inspect.selectedElement?.success
+      ? inspect.selectedElement.element?.bounds
+      : undefined;
     const screenshotWidth = inspect.screenshot?.width;
     const screenshotHeight = inspect.screenshot?.height;
     if (
-      bounds
-      && typeof screenshotWidth === 'number'
-      && screenshotWidth > 0
-      && typeof screenshotHeight === 'number'
-      && screenshotHeight > 0
+      bounds &&
+      typeof screenshotWidth === 'number' &&
+      screenshotWidth > 0 &&
+      typeof screenshotHeight === 'number' &&
+      screenshotHeight > 0
     ) {
       const overlay = document.createElement('span');
       overlay.className = 'mobile-surface-inspect-bounds-overlay';
@@ -141,9 +153,8 @@ export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchO
             ? `Bounds: [${element.bounds.left},${element.bounds.top}]–[${element.bounds.right},${element.bounds.bottom}]`
             : null,
         ].filter((entry): entry is string => Boolean(entry));
-        elementInfo.textContent = lines.length > 0
-          ? lines.join('\n')
-          : inspect.selectedElement.message;
+        elementInfo.textContent =
+          lines.length > 0 ? lines.join('\n') : inspect.selectedElement.message;
       } else {
         elementInfo.textContent = inspect.selectedElement.message;
       }

@@ -28,7 +28,10 @@ describe('share-dialog copy helpers', () => {
       'Parola en az 16 karakter olmalıdır',
     );
     expect(
-      localizePassphraseError('Passphrase may contain only letters, numbers, spaces, or hyphens', 'tr'),
+      localizePassphraseError(
+        'Passphrase may contain only letters, numbers, spaces, or hyphens',
+        'tr',
+      ),
     ).toBe('Parola yalnızca harf, sayı, boşluk veya tire içerebilir');
     expect(localizePassphraseError('Passphrase must include both letters and numbers', 'tr')).toBe(
       'Parola hem harf hem sayı içermelidir',

@@ -5,12 +5,7 @@ interface BrowserGuestOpenRoutingHandlers {
   openExternal: (url: string) => Promise<void> | void;
 }
 
-const ALLOWED_EXTERNAL_PROTOCOLS = new Set([
-  'http:',
-  'https:',
-  'mailto:',
-  'tel:',
-]);
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 function isGuestNavigableUrl(url: string): boolean {
   try {

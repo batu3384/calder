@@ -29,7 +29,8 @@ interface CreateSessionTabOptions {
 export function createSessionTab(options: CreateSessionTabOptions): HTMLElement {
   const { project, session, cliSurfaceTabActive, mobileSurfaceTabActive } = options;
   const tab = document.createElement('div');
-  const isActive = !cliSurfaceTabActive && !mobileSurfaceTabActive && session.id === project.activeSessionId;
+  const isActive =
+    !cliSurfaceTabActive && !mobileSurfaceTabActive && session.id === project.activeSessionId;
   const unread = !isActive && isUnread(session.id);
   const isMcp = session.type === 'mcp-inspector';
   const isDiff = session.type === 'diff-viewer';
@@ -38,11 +39,12 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
   const isBrowserTab = session.type === 'browser-tab';
   const isSpecial = isMcp || isDiff || isFileReader || isRemoteTab || isBrowserTab;
   const sharing = isSharing(session.id);
-  tab.className = 'tab-item'
-    + (isActive ? ' active' : '')
-    + (unread ? ' unread' : '')
-    + (sharing ? ' tab-sharing' : '')
-    + (isRemoteTab ? ' tab-remote' : '');
+  tab.className =
+    'tab-item' +
+    (isActive ? ' active' : '') +
+    (unread ? ' unread' : '') +
+    (sharing ? ' tab-sharing' : '') +
+    (isRemoteTab ? ' tab-remote' : '');
   tab.dataset.sessionId = session.id;
   tab.title = buildSessionTabTitle(session, getStatus(session.id));
   const providerId = session.providerId || 'claude';
@@ -64,9 +66,10 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
     ? '<span class="tab-share-indicator calder-status-pill" title="Sharing">Live</span>'
     : '';
   const statusDot = isSpecial ? '' : `<span class="tab-status ${getStatus(session.id)}"></span>`;
-  const reorderHandle = project.sessions.length > 1
-    ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
-    : '';
+  const reorderHandle =
+    project.sessions.length > 1
+      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
+      : '';
   const nameContent = `
     <span class="tab-name-prefix">${namePrefix}</span>
     <span class="tab-name-label">${options.escapeHtml(session.name)}</span>
@@ -82,12 +85,11 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
   tab.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).classList.contains('tab-close')) return;
     if (tab.querySelector('.tab-name input')) return;
-    const shouldReturnSurfaceFocusToSession = session.id === project.activeSessionId
-      && Boolean(project.surface?.active)
-      && (
-        (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli')
-        || (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
-      );
+    const shouldReturnSurfaceFocusToSession =
+      session.id === project.activeSessionId &&
+      Boolean(project.surface?.active) &&
+      ((project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') ||
+        (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile'));
     if (session.id !== project.activeSessionId || shouldReturnSurfaceFocusToSession) {
       appState.setActiveSession(project.id, session.id);
     }

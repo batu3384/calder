@@ -59,10 +59,14 @@ function getToastContainer(): HTMLElement | null {
 
 function getToastIcon(type: ToastType): string {
   switch (type) {
-    case 'success': return '\u2713';
-    case 'error': return '\u2717';
-    case 'warning': return '!';
-    case 'info': return 'i';
+    case 'success':
+      return '\u2713';
+    case 'error':
+      return '\u2717';
+    case 'warning':
+      return '!';
+    case 'info':
+      return 'i';
   }
 }
 
@@ -142,7 +146,7 @@ export function showToast(options: ToastOptions): ToastInstance {
         toastEl.classList.add('removing');
         setTimeout(() => {
           toastEl.remove();
-          activeToasts = activeToasts.filter(t => t !== toastInstance);
+          activeToasts = activeToasts.filter((t) => t !== toastInstance);
         }, 150);
       }
     },
@@ -184,7 +188,7 @@ export function showInfoToast(message: string, duration?: number): ToastInstance
 
 export function dismissAllToasts(): void {
   // Copy the array before iterating — dismiss() mutates activeToasts.
-  [...activeToasts].forEach(t => t.dismiss());
+  [...activeToasts].forEach((t) => t.dismiss());
 }
 
 export function resetToastForTesting(): void {

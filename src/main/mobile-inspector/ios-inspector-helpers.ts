@@ -13,15 +13,17 @@ export interface SimctlDeviceRecord {
 
 export function isNoBootedIosDeviceOutput(message: string): boolean {
   const lowered = message.toLowerCase();
-  return /no devices are booted|unable to find a booted|unable to locate .*booted|no booted/.test(lowered);
+  return /no devices are booted|unable to find a booted|unable to locate .*booted|no booted/.test(
+    lowered,
+  );
 }
 
 export function isIosScreenshotStdoutUnsupported(message: string): boolean {
   const lowered = message.toLowerCase();
   return (
-    /you can.t save the file “-” because the volume/i.test(message)
-    || /you can't save the file \"-\" because the volume/i.test(lowered)
-    || /read only/.test(lowered)
+    /you can.t save the file “-” because the volume/i.test(message) ||
+    /you can't save the file \"-\" because the volume/i.test(lowered) ||
+    /read only/.test(lowered)
   );
 }
 
@@ -57,7 +59,11 @@ export function summarizeIosFailure(
   if (isNoBootedIosDeviceOutput(merged)) {
     return 'No booted iOS simulator detected. Launch iOS Simulator and retry.';
   }
-  if (/unable to locate device set|coresimulator service|device set unavailable|failed to initialize simulator/.test(lowered)) {
+  if (
+    /unable to locate device set|coresimulator service|device set unavailable|failed to initialize simulator/.test(
+      lowered,
+    )
+  ) {
     return 'iOS Simulator service is unavailable. Open Xcode and Simulator once, then retry.';
   }
   if (/dyld_shared_cache|shared cache/.test(lowered)) {
@@ -69,7 +75,10 @@ export function summarizeIosFailure(
 
   const base = getMeaningfulErrorLine(output.stderr, output.stdout) || fallback;
   if (!options?.includeRecoveryHint) return base;
-  if (/dyld_shared_cache|shared cache/i.test(base) || /dyld_shared_cache|shared cache/.test(lowered)) {
+  if (
+    /dyld_shared_cache|shared cache/i.test(base) ||
+    /dyld_shared_cache|shared cache/.test(lowered)
+  ) {
     return `${base} Run \`xcrun simctl runtime dyld_shared_cache update --all\` and retry.`;
   }
   return base;
@@ -148,7 +157,9 @@ function sortIosDeviceCandidates(devices: SimctlDeviceRecord[]): SimctlDeviceRec
 export function choosePreferredIosDevice(devices: SimctlDeviceRecord[]): SimctlDeviceRecord | null {
   if (devices.length === 0) return null;
 
-  const bootedIPhone = devices.find((entry) => entry.state === 'Booted' && /iPhone/i.test(entry.name));
+  const bootedIPhone = devices.find(
+    (entry) => entry.state === 'Booted' && /iPhone/i.test(entry.name),
+  );
   if (bootedIPhone) return bootedIPhone;
 
   const bootedAny = devices.find((entry) => entry.state === 'Booted');
@@ -165,11 +176,11 @@ export function isIosDeviceTransitionalState(state: string): boolean {
 export function isRecoverableIosBootFailure(message: string): boolean {
   const lowered = message.toLowerCase();
   return (
-    /nscocoaerrordomain,\s*code=642/i.test(message)
-    || /unable to boot in current state/.test(lowered)
-    || /device is in transition/.test(lowered)
-    || /failed to boot in allotted time/.test(lowered)
-    || /operation timed out/.test(lowered)
+    /nscocoaerrordomain,\s*code=642/i.test(message) ||
+    /unable to boot in current state/.test(lowered) ||
+    /device is in transition/.test(lowered) ||
+    /failed to boot in allotted time/.test(lowered) ||
+    /operation timed out/.test(lowered)
   );
 }
 

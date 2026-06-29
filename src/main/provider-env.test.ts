@@ -16,7 +16,7 @@ vi.mock('./platform', () => ({
   isWin: false,
 }));
 
-import { _resetLoginShellEnvCache,buildProviderBaseEnv } from './provider-env';
+import { _resetLoginShellEnvCache, buildProviderBaseEnv } from './provider-env';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -31,7 +31,7 @@ describe('buildProviderBaseEnv', () => {
         'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',
         'ANTHROPIC_AUTH_TOKEN=test-token',
         'UNRELATED=value',
-      ].join('\n')
+      ].join('\n'),
     );
 
     const env = buildProviderBaseEnv('claude', { PATH: '/usr/bin' });
@@ -46,7 +46,7 @@ describe('buildProviderBaseEnv', () => {
       [
         'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',
         'ANTHROPIC_AUTH_TOKEN=shell-token',
-      ].join('\n')
+      ].join('\n'),
     );
 
     const env = buildProviderBaseEnv('claude', {
@@ -64,7 +64,7 @@ describe('buildProviderBaseEnv', () => {
         'OPENAI_API_KEY=openai-key',
         'OPENAI_BASE_URL=https://api.openai.com/v1',
         'ANTHROPIC_AUTH_TOKEN=anthropic-token',
-      ].join('\n')
+      ].join('\n'),
     );
 
     const env = buildProviderBaseEnv('codex', { PATH: '/usr/bin' });

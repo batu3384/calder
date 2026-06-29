@@ -1,8 +1,16 @@
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointDocument,
+  ProjectCheckpointRestoreMode,
+} from '../shared/types/project-checkpoint.js';
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
 import type { ProviderId } from '../shared/types/provider.js';
-import type { ContextWindowInfo, CostInfo, InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
+import type {
+  ContextWindowInfo,
+  CostInfo,
+  InitialContextSnapshot,
+  SessionRecord,
+} from '../shared/types/session.js';
 import {
   addInsightSnapshotForProject,
   addStandardProjectSession,

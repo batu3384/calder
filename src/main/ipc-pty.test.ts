@@ -51,7 +51,9 @@ function getOnHandler(channel: string): (...args: any[]) => any {
   return call[1] as (...args: any[]) => any;
 }
 
-function createOps(overrides?: Partial<Parameters<typeof registerPtyIpcHandlers>[0]>): Parameters<typeof registerPtyIpcHandlers>[0] {
+function createOps(
+  overrides?: Partial<Parameters<typeof registerPtyIpcHandlers>[0]>,
+): Parameters<typeof registerPtyIpcHandlers>[0] {
   return {
     assertProjectGovernanceAllows: vi.fn(async () => {}),
     isWithinKnownProject: vi.fn(() => true),
@@ -73,7 +75,9 @@ describe('ipc pty handlers', () => {
 
   it('rejects pty:create when cwd is outside known projects', async () => {
     const ops = createOps({ isWithinKnownProject: vi.fn(() => false) });
-    mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send: vi.fn() } }]);
+    mockGetAllWindows.mockReturnValue([
+      { isDestroyed: () => false, webContents: { send: vi.fn() } },
+    ]);
     registerPtyIpcHandlers(ops);
 
     const createHandler = getHandleHandler('pty:create');
@@ -88,31 +92,48 @@ describe('ipc pty handlers', () => {
     const win = { isDestroyed: () => false, webContents: { send } };
     mockGetAllWindows.mockReturnValue([win]);
     mockIsSilencedExit.mockReturnValue(false);
-    mockSpawnPty.mockImplementation((
-      _sessionId: string,
-      _cwd: string,
-      _cliSessionId: string | null,
-      _isResume: boolean,
-      _extraArgs: string,
-      _providerId: string,
-      _initialPrompt: string | undefined,
-      onData: (data: string) => void,
-      onExit: (exitCode: number, signal?: number) => void,
-    ) => {
-      onData('stdout-chunk');
-      onExit(0, 15);
-    });
+    mockSpawnPty.mockImplementation(
+      (
+        _sessionId: string,
+        _cwd: string,
+        _cliSessionId: string | null,
+        _isResume: boolean,
+        _extraArgs: string,
+        _providerId: string,
+        _initialPrompt: string | undefined,
+        onData: (data: string) => void,
+        onExit: (exitCode: number, signal?: number) => void,
+      ) => {
+        onData('stdout-chunk');
+        onExit(0, 15);
+      },
+    );
     const ops = createOps();
     registerPtyIpcHandlers(ops);
 
     const createHandler = getHandleHandler('pty:create');
-    await createHandler({}, 's2', '/repo', 'cli-s2', false, '--dangerously-skip-permissions', 'codex', 'hello');
+    await createHandler(
+      {},
+      's2',
+      '/repo',
+      'cli-s2',
+      false,
+      '--dangerously-skip-permissions',
+      'codex',
+      'hello',
+    );
 
     const resolved = path.resolve('/repo');
     expect(ops.ensureHookWatcherStarted).toHaveBeenCalledWith(win);
     expect(ops.registerAutoApprovalSession).toHaveBeenCalledWith('s2', 'codex', resolved);
     expect(ops.validateProviderTrackingAndWarn).toHaveBeenCalledWith(win, 's2', 'codex');
-    expect(ops.registerPendingProviderSessionWatchers).toHaveBeenCalledWith('codex', 'cli-s2', 's2', resolved, win);
+    expect(ops.registerPendingProviderSessionWatchers).toHaveBeenCalledWith(
+      'codex',
+      'cli-s2',
+      's2',
+      resolved,
+      win,
+    );
     expect(ops.mirrorPlaywrightFromPtyData).toHaveBeenCalledWith('s2', resolved, 'stdout-chunk');
     expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s2');
     expect(send).toHaveBeenCalledWith('pty:data', 's2', 'stdout-chunk');
@@ -123,19 +144,21 @@ describe('ipc pty handlers', () => {
     const send = vi.fn();
     mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send } }]);
     mockIsSilencedExit.mockReturnValue(true);
-    mockSpawnPty.mockImplementation((
-      _sessionId: string,
-      _cwd: string,
-      _cliSessionId: string | null,
-      _isResume: boolean,
-      _extraArgs: string,
-      _providerId: string,
-      _initialPrompt: string | undefined,
-      _onData: (data: string) => void,
-      onExit: (exitCode: number, signal?: number) => void,
-    ) => {
-      onExit(0, undefined);
-    });
+    mockSpawnPty.mockImplementation(
+      (
+        _sessionId: string,
+        _cwd: string,
+        _cliSessionId: string | null,
+        _isResume: boolean,
+        _extraArgs: string,
+        _providerId: string,
+        _initialPrompt: string | undefined,
+        _onData: (data: string) => void,
+        onExit: (exitCode: number, signal?: number) => void,
+      ) => {
+        onExit(0, undefined);
+      },
+    );
     const ops = createOps();
     registerPtyIpcHandlers(ops);
 
@@ -161,15 +184,17 @@ describe('ipc pty handlers', () => {
     );
 
     (ops.isWithinKnownProject as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    mockSpawnShellPty.mockImplementation((
-      _sessionId: string,
-      _cwd: string,
-      onData: (data: string) => void,
-      onExit: (exitCode: number, signal?: number) => void,
-    ) => {
-      onData('shell-data');
-      onExit(3, 9);
-    });
+    mockSpawnShellPty.mockImplementation(
+      (
+        _sessionId: string,
+        _cwd: string,
+        onData: (data: string) => void,
+        onExit: (exitCode: number, signal?: number) => void,
+      ) => {
+        onData('shell-data');
+        onExit(3, 9);
+      },
+    );
     await createShellHandler({}, 'shell-2', '/repo');
 
     expect(mockSpawnShellPty).toHaveBeenCalled();

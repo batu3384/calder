@@ -1,7 +1,4 @@
-export {
-  computeShareChallengeResponse,
-  isEncryptedChallengePayload,
-} from './security-challenge';
+export { computeShareChallengeResponse, isEncryptedChallengePayload } from './security-challenge';
 export {
   decodeShareConnectionCode,
   encodeShareConnectionDescription,

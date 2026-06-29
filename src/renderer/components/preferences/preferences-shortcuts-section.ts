@@ -1,4 +1,4 @@
-import { displayKeys, eventToAccelerator,shortcutManager } from '../surface-services/shortcuts.js';
+import { displayKeys, eventToAccelerator, shortcutManager } from '../surface-services/shortcuts.js';
 
 export interface RenderShortcutsSectionArgs {
   container: HTMLElement;
@@ -83,7 +83,9 @@ export function renderShortcutsSection(args: RenderShortcutsSectionArgs): void {
 
         const onBlur = () => {
           cleanup();
-          keyBtn.textContent = displayKeys(shortcutManager.getKeys(shortcut.id, args.shortcutOverridesDraft));
+          keyBtn.textContent = displayKeys(
+            shortcutManager.getKeys(shortcut.id, args.shortcutOverridesDraft),
+          );
           keyBtn.classList.remove('recording');
         };
 

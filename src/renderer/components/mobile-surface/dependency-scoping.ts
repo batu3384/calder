@@ -19,7 +19,9 @@ function includesAnyPath(entries: string[], patterns: string[]): boolean {
   });
 }
 
-function deriveProjectProfileFromFileMatches(matches: Record<string, string[]>): MobileProjectProfile {
+function deriveProjectProfileFromFileMatches(
+  matches: Record<string, string[]>,
+): MobileProjectProfile {
   const iosEntries = [
     ...matches.xcodeproj,
     ...matches.xcworkspace,
@@ -101,7 +103,10 @@ export async function detectProjectProfile(projectId: string): Promise<MobilePro
   });
 }
 
-export function getProfileScopedChecks(report: MobileDependencyReport, profile: MobileProjectProfile): MobileDependencyCheck[] {
+export function getProfileScopedChecks(
+  report: MobileDependencyReport,
+  profile: MobileProjectProfile,
+): MobileDependencyCheck[] {
   if (profile === 'ios') {
     return report.checks.filter((check) => check.requiredFor.includes('ios'));
   }
@@ -111,7 +116,10 @@ export function getProfileScopedChecks(report: MobileDependencyReport, profile: 
   return report.checks;
 }
 
-export function getScopedSummary(report: MobileDependencyReport, profile: MobileProjectProfile): {
+export function getScopedSummary(
+  report: MobileDependencyReport,
+  profile: MobileProjectProfile,
+): {
   ready: number;
   warnings: number;
   requiredMissing: number;
@@ -120,10 +128,11 @@ export function getScopedSummary(report: MobileDependencyReport, profile: Mobile
   return {
     ready: scopedChecks.filter((check) => check.status === 'ready').length,
     warnings: scopedChecks.filter((check) => check.status === 'warning').length,
-    requiredMissing: scopedChecks.filter((check) => (
-      check.requiredFor.length > 0
-      && (check.status === 'missing' || check.status === 'unsupported')
-    )).length,
+    requiredMissing: scopedChecks.filter(
+      (check) =>
+        check.requiredFor.length > 0 &&
+        (check.status === 'missing' || check.status === 'unsupported'),
+    ).length,
   };
 }
 
@@ -141,18 +150,26 @@ export function getProjectProfileStatusPrefix(profile: MobileProjectProfile): st
   return 'Mobile surface';
 }
 
-export function hasBlockingChecks(report: MobileDependencyReport, platform: MobileInspectPlatform): boolean {
-  return report.checks.some((entry) => (
-    entry.requiredFor.includes(platform)
-    && (entry.status === 'missing' || entry.status === 'unsupported')
-  ));
+export function hasBlockingChecks(
+  report: MobileDependencyReport,
+  platform: MobileInspectPlatform,
+): boolean {
+  return report.checks.some(
+    (entry) =>
+      entry.requiredFor.includes(platform) &&
+      (entry.status === 'missing' || entry.status === 'unsupported'),
+  );
 }
 
-export function getBlockingChecks(report: MobileDependencyReport, platform: MobileInspectPlatform): MobileDependencyCheck[] {
-  return report.checks.filter((entry) => (
-    entry.requiredFor.includes(platform)
-    && (entry.status === 'missing' || entry.status === 'unsupported')
-  ));
+export function getBlockingChecks(
+  report: MobileDependencyReport,
+  platform: MobileInspectPlatform,
+): MobileDependencyCheck[] {
+  return report.checks.filter(
+    (entry) =>
+      entry.requiredFor.includes(platform) &&
+      (entry.status === 'missing' || entry.status === 'unsupported'),
+  );
 }
 
 export function formatPointLabel(point: {
@@ -185,7 +202,9 @@ export function getStatusLabel(check: MobileDependencyCheck): string {
 }
 
 export function isInstallable(check: MobileDependencyCheck): boolean {
-  return Boolean(check.autoFixAvailable) && check.status !== 'ready' && check.status !== 'unsupported';
+  return (
+    Boolean(check.autoFixAvailable) && check.status !== 'ready' && check.status !== 'unsupported'
+  );
 }
 
 export function getInspectInteractionHint(): string {
@@ -203,7 +222,9 @@ export interface MobileInspectCapability {
   tone: MobileInspectCapabilityTone;
 }
 
-export function getMobileInspectCapabilities(platform: MobileInspectPlatform): MobileInspectCapability[] {
+export function getMobileInspectCapabilities(
+  platform: MobileInspectPlatform,
+): MobileInspectCapability[] {
   if (platform === 'android') {
     return [
       {
@@ -215,7 +236,8 @@ export function getMobileInspectCapabilities(platform: MobileInspectPlatform): M
       {
         label: 'Element match',
         status: 'Ready',
-        detail: 'Uses adb uiautomator dump to resolve the selected screenshot point to a native node.',
+        detail:
+          'Uses adb uiautomator dump to resolve the selected screenshot point to a native node.',
         tone: 'ready',
       },
       {
@@ -237,7 +259,8 @@ export function getMobileInspectCapabilities(platform: MobileInspectPlatform): M
     {
       label: 'Element match',
       status: 'Limited',
-      detail: 'iOS native hierarchy inspection is not wired yet; selected point and screenshot context are still sent.',
+      detail:
+        'iOS native hierarchy inspection is not wired yet; selected point and screenshot context are still sent.',
       tone: 'limited',
     },
     {

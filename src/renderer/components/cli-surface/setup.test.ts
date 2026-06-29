@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
-import type { CliSurfaceDiscoveryResult, CliSurfaceProfile } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceDiscoveryResult,
+  CliSurfaceProfile,
+} from '../../../shared/types/project-surface.js';
 import { openCliSurfaceWithSetup } from './setup.js';
 
 function makeProject(): ProjectRecord {
@@ -40,7 +43,13 @@ describe('openCliSurfaceWithSetup', () => {
     const showQuickSetup = vi.fn();
     const showManualSetup = vi.fn();
 
-    await openCliSurfaceWithSetup(project, { discover, start, persist, showQuickSetup, showManualSetup });
+    await openCliSurfaceWithSetup(project, {
+      discover,
+      start,
+      persist,
+      showQuickSetup,
+      showManualSetup,
+    });
 
     expect(discover).not.toHaveBeenCalled();
     expect(start).toHaveBeenCalledWith(profile);
@@ -52,15 +61,17 @@ describe('openCliSurfaceWithSetup', () => {
     const project = makeProject();
     const discover = vi.fn<() => Promise<CliSurfaceDiscoveryResult>>().mockResolvedValue({
       confidence: 'high',
-      candidates: [{
-        id: 'node:dev:tui',
-        command: 'npm',
-        args: ['run', 'dev:tui'],
-        cwd: project.path,
-        source: 'package.json:scripts.dev:tui',
-        reason: 'Found dev:tui in package.json scripts',
-        confidence: 'high',
-      }],
+      candidates: [
+        {
+          id: 'node:dev:tui',
+          command: 'npm',
+          args: ['run', 'dev:tui'],
+          cwd: project.path,
+          source: 'package.json:scripts.dev:tui',
+          reason: 'Found dev:tui in package.json scripts',
+          confidence: 'high',
+        },
+      ],
     });
     const start = vi.fn();
     const persist = vi.fn();
@@ -73,32 +84,38 @@ describe('openCliSurfaceWithSetup', () => {
       showManualSetup: vi.fn(),
     });
 
-    expect(persist).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'node:dev:tui',
-      name: 'npm run dev:tui',
-      command: 'npm',
-      args: ['run', 'dev:tui'],
-    }));
-    expect(start).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'node:dev:tui',
-      command: 'npm',
-      args: ['run', 'dev:tui'],
-    }));
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'node:dev:tui',
+        name: 'npm run dev:tui',
+        command: 'npm',
+        args: ['run', 'dev:tui'],
+      }),
+    );
+    expect(start).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'node:dev:tui',
+        command: 'npm',
+        args: ['run', 'dev:tui'],
+      }),
+    );
   });
 
   it('uses the full discovered command as the default profile name for go projects', async () => {
     const project = makeProject();
     const discover = vi.fn<() => Promise<CliSurfaceDiscoveryResult>>().mockResolvedValue({
       confidence: 'high',
-      candidates: [{
-        id: 'go:cmd:aegis',
-        command: 'go',
-        args: ['run', './cmd/aegis'],
-        cwd: project.path,
-        source: 'go:cmd-entry',
-        reason: 'Detected cmd/aegis as the primary Go entrypoint',
-        confidence: 'high',
-      }],
+      candidates: [
+        {
+          id: 'go:cmd:aegis',
+          command: 'go',
+          args: ['run', './cmd/aegis'],
+          cwd: project.path,
+          source: 'go:cmd-entry',
+          reason: 'Detected cmd/aegis as the primary Go entrypoint',
+          confidence: 'high',
+        },
+      ],
     });
     const persist = vi.fn();
 
@@ -110,12 +127,14 @@ describe('openCliSurfaceWithSetup', () => {
       showManualSetup: vi.fn(),
     });
 
-    expect(persist).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'go:cmd:aegis',
-      name: 'go run ./cmd/aegis',
-      command: 'go',
-      args: ['run', './cmd/aegis'],
-    }));
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'go:cmd:aegis',
+        name: 'go run ./cmd/aegis',
+        command: 'go',
+        args: ['run', './cmd/aegis'],
+      }),
+    );
   });
 
   it('shows quick setup for medium-confidence discovery', async () => {

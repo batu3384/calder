@@ -14,8 +14,7 @@
   background:
     radial-gradient(circle at 0% 0%, rgba(127, 212, 255, 0.05), transparent 24%),
     radial-gradient(circle at 100% 0%, rgba(213, 169, 79, 0.035), transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    var(--bg-primary);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)), var(--bg-primary);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
     0 18px 38px rgba(2, 8, 18, 0.18);
@@ -231,7 +230,11 @@
 .browser-toolbar-nav-shell:hover,
 .browser-toolbar-address-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 68%, var(--surface-panel));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -253,7 +256,11 @@
 .browser-toolbar-address-shell:focus-within {
   border-color: var(--border-focus);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 70%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -301,7 +308,11 @@
 .browser-toolbar-presence-shell:hover,
 .browser-toolbar-tools-shell:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 10%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 68%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -676,7 +687,11 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-record-btn:hover,
 .browser-viewport-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 68%, transparent);
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
@@ -735,8 +750,11 @@ html[lang='tr'] .browser-viewport-btn {
 
 .browser-go-btn {
   min-width: 40px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, white), color-mix(in srgb, var(--accent) 76%, var(--accent-warm)));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 82%, white),
+    color-mix(in srgb, var(--accent) 76%, var(--accent-warm))
+  );
   border-color: transparent;
   border-radius: 999px;
   color: #17120d;
@@ -747,8 +765,11 @@ html[lang='tr'] .browser-viewport-btn {
 }
 
 .browser-go-btn:hover {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-dim) 76%, white), color-mix(in srgb, var(--accent-warm) 58%, var(--accent-dim)));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-dim) 76%, white),
+    color-mix(in srgb, var(--accent-warm) 58%, var(--accent-dim))
+  );
   color: #130f0b;
 }
 
@@ -780,7 +801,11 @@ html[lang='tr'] .browser-viewport-btn {
 .browser-auth-btn.active,
 .browser-viewport-btn.active {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--accent-soft) 24%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
   color: var(--text-primary);
@@ -812,7 +837,9 @@ html[lang='tr'] .browser-viewport-btn {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='inspect'] .browser-inspect-btn,
+  .browser-tab-pane.split
+    .browser-toolbar-cluster[data-capture-mode='inspect']
+    .browser-inspect-btn,
   .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='draw'] .browser-draw-btn,
   .browser-tab-pane.split .browser-toolbar-cluster[data-capture-mode='flow'] .browser-record-btn {
     animation: none;
@@ -871,8 +898,7 @@ body.sidebar-resizing .browser-webview {
 
 .live-view-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
-    var(--surface-live);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)), var(--surface-live);
 }
 
 /* New Tab Page */
@@ -890,7 +916,11 @@ body.sidebar-resizing .browser-webview {
     radial-gradient(circle at top left, rgba(201, 154, 92, 0.12), transparent 22%),
     radial-gradient(circle at bottom right, rgba(96, 75, 53, 0.12), transparent 24%),
     radial-gradient(circle at 50% 100%, rgba(58, 47, 37, 0.12), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 76%, black), var(--surface-canvas));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 76%, black),
+      var(--surface-canvas)
+    );
 }
 
 .browser-ntp-eyebrow {
@@ -902,7 +932,11 @@ body.sidebar-resizing .browser-webview {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 64%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 64%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     transparent;
   color: var(--accent);
 }
@@ -915,8 +949,11 @@ body.sidebar-resizing .browser-webview {
   font-weight: 680;
   letter-spacing: -0.03em;
   color: transparent;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 92%, white), color-mix(in srgb, var(--accent) 46%, var(--text-primary)));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--text-primary) 92%, white),
+    color-mix(in srgb, var(--accent) 46%, var(--text-primary))
+  );
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -942,7 +979,11 @@ body.sidebar-resizing .browser-webview {
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 58%, rgba(255, 255, 255, 0.03)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-panel) 82%, transparent);
   color: var(--text-primary);
   font-size: 12px;
@@ -1265,7 +1306,11 @@ body.sidebar-resizing .browser-webview {
 
 .browser-ntp-targets {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 22%, rgba(255, 255, 255, 0.01)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 22%, rgba(255, 255, 255, 0.01)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-panel) 72%, transparent);
 }
 
@@ -1342,7 +1387,11 @@ body.sidebar-resizing .browser-webview {
 
 .browser-ntp-link:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 40%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 40%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
@@ -1380,7 +1429,11 @@ body.sidebar-resizing .browser-webview {
   min-height: 32px;
   border-radius: 999px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 70%, rgba(255, 255, 255, 0.03)),
+      rgba(255, 255, 255, 0)
+    ),
     transparent;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
   color: var(--accent);
@@ -1455,8 +1508,7 @@ body.sidebar-resizing .browser-webview {
   top: calc(100% + 4px);
   left: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    var(--bg-secondary);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)), var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   min-width: 180px;
@@ -1745,7 +1797,9 @@ body.sidebar-resizing .browser-webview {
   cursor: pointer;
   font-size: 11px;
   color: var(--text-secondary);
-  transition: background var(--motion-fast), border-color var(--motion-fast);
+  transition:
+    background var(--motion-fast),
+    border-color var(--motion-fast);
 }
 
 .inspect-selector-option::before {
@@ -1756,7 +1810,9 @@ body.sidebar-resizing .browser-webview {
   border: 1.5px solid var(--text-muted);
   background: transparent;
   flex-shrink: 0;
-  transition: border-color var(--motion-fast), background var(--motion-fast);
+  transition:
+    border-color var(--motion-fast),
+    background var(--motion-fast);
 }
 
 .inspect-selector-option:hover {
@@ -1795,11 +1851,19 @@ body.sidebar-resizing .browser-webview {
   color: #fff;
 }
 
-.selector-badge-qa { color: #4caf50; }
-.inspect-selector-option.active .selector-badge-qa { color: #fff; }
+.selector-badge-qa {
+  color: #4caf50;
+}
+.inspect-selector-option.active .selector-badge-qa {
+  color: #fff;
+}
 
-.selector-badge-attr { color: #6aa0d8; }
-.inspect-selector-option.active .selector-badge-attr { color: #fff; }
+.selector-badge-attr {
+  color: #6aa0d8;
+}
+.inspect-selector-option.active .selector-badge-attr {
+  color: #fff;
+}
 
 .selector-value {
   overflow: hidden;
@@ -1943,7 +2007,11 @@ body.sidebar-resizing .browser-webview {
 }
 
 .browser-target-menu-item.active {
-  background: color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 46%, var(--surface-panel));
+  background: color-mix(
+    in srgb,
+    var(--provider-accent-soft, var(--accent-soft)) 46%,
+    var(--surface-panel)
+  );
   border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 34%, var(--border-subtle));
 }
 

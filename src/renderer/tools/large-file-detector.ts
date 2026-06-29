@@ -1,6 +1,10 @@
 import picomatch from 'picomatch';
 
-import { DEFAULT_SCAN_IGNORE, EXCLUDED_DIRECTORIES, EXTRA_ALERT_IGNORE } from '../../shared/constants.js';
+import {
+  DEFAULT_SCAN_IGNORE,
+  EXCLUDED_DIRECTORIES,
+  EXTRA_ALERT_IGNORE,
+} from '../../shared/constants.js';
 import type { ToolFailureData } from '../../shared/types/session.js';
 import { appState } from '../state.js';
 
@@ -15,7 +19,9 @@ type LargeFileAlertCallback = (alert: LargeFileAlert) => void;
 const TOKEN_LIMIT_RE = /file content \(\d+ tokens\) exceeds maximum allowed tokens/i;
 
 const excludedDirSet = new Set(EXCLUDED_DIRECTORIES);
-const hardcodedMatcher = picomatch([...DEFAULT_SCAN_IGNORE, ...EXTRA_ALERT_IGNORE], { basename: true });
+const hardcodedMatcher = picomatch([...DEFAULT_SCAN_IGNORE, ...EXTRA_ALERT_IGNORE], {
+  basename: true,
+});
 
 function getRelativePath(filePath: string, projectPath: string): string | null {
   const base = projectPath.endsWith('/') ? projectPath : projectPath + '/';
@@ -80,9 +86,7 @@ export async function handleToolFailure(sessionId: string, data: ToolFailureData
   if (data.tool_name !== 'Read') return;
   if (!TOKEN_LIMIT_RE.test(data.error)) return;
 
-  const filePath = typeof data.tool_input?.file_path === 'string'
-    ? data.tool_input.file_path
-    : '';
+  const filePath = typeof data.tool_input?.file_path === 'string' ? data.tool_input.file_path : '';
   if (!filePath) return;
 
   let alerted = alertedPerSession.get(sessionId);
@@ -92,7 +96,7 @@ export async function handleToolFailure(sessionId: string, data: ToolFailureData
   }
   if (alerted.has(filePath)) return;
 
-  const project = appState.projects.find(p => p.sessions.some(s => s.id === sessionId));
+  const project = appState.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
   if (!project) return;
 
   const relative = getRelativePath(filePath, project.path);
@@ -113,7 +117,10 @@ export async function handleToolFailure(sessionId: string, data: ToolFailureData
 export function initLargeFileDetector(): void {
   window.calder.session.onToolFailure((sessionId, data) => {
     handleToolFailure(sessionId, data).catch((error) => {
-      console.warn('[large-file-detector] Failed to process tool failure payload', { sessionId, error });
+      console.warn('[large-file-detector] Failed to process tool failure payload', {
+        sessionId,
+        error,
+      });
     });
   });
 

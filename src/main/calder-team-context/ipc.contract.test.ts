@@ -14,12 +14,13 @@ const rendererTypesSource = readFileSync(path.join(process.cwd(), 'src/renderer/
 describe('project team context IPC contract', () => {
   it('delegates team context ipc handlers to calder module', () => {
     expect(ipcSource).toContain('registerCalderIpcHandlers({');
-    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:getProjectState'");
-    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:createStarterFiles'");
-    expect(calderIpcSource).toContain("ipcMain.handle('teamContext:createSpace'");
-    expect(calderIpcSource).toContain("ipcMain.on('teamContext:watchProject'");
-    expect(calderIpcSource).toContain("bindProjectWatcher(projectTeamContextBindings");
-    expect(calderIpcSource).toContain("startProjectTeamContextWatcher");
+    expect(calderIpcSource).toContain("'teamContext:getProjectState'");
+    expect(calderIpcSource).toContain("'teamContext:createStarterFiles'");
+    expect(calderIpcSource).toContain("'teamContext:createSpace'");
+    expect(calderIpcSource).toContain("'teamContext:watchProject'");
+    expect(calderIpcSource).toContain('bindProjectWatcher(');
+    expect(calderIpcSource).toContain('projectTeamContextBindings');
+    expect(calderIpcSource).toContain('startProjectTeamContextWatcher');
     expect(calderIpcSource).toContain("'teamContext:changed'");
   });
 
@@ -33,8 +34,14 @@ describe('project team context IPC contract', () => {
 
   it('declares team context APIs in renderer types', () => {
     expect(rendererTypesSource).toContain('teamContext: {');
-    expect(rendererTypesSource).toContain('getProjectState(projectPath: string): Promise<ProjectTeamContextState>;');
-    expect(rendererTypesSource).toContain('createStarterFiles(projectPath: string): Promise<ProjectTeamContextStarterFilesResult>;');
-    expect(rendererTypesSource).toContain('createSpace(projectPath: string, title: string): Promise<ProjectTeamContextCreateSpaceResult>;');
+    expect(rendererTypesSource).toContain(
+      'getProjectState(projectPath: string): Promise<ProjectTeamContextState>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'createStarterFiles(projectPath: string): Promise<ProjectTeamContextStarterFilesResult>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'createSpace(projectPath: string, title: string): Promise<ProjectTeamContextCreateSpaceResult>;',
+    );
   });
 });

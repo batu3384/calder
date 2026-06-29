@@ -6,7 +6,10 @@ export const TAB_AND_TERMINAL_TRANSLATION_ENTRIES: ReadonlyArray<readonly [strin
   ['inherit', 'devral'],
   ['Drag to reorder', 'Yeniden sıralamak için sürükle'],
   ['Drag to reorder pane', 'Paneli yeniden sıralamak için sürükle'],
-  ['Drag to resize Live View and sessions', 'Canlı Görünüm ve oturumları yeniden boyutlandırmak için sürükle'],
+  [
+    'Drag to resize Live View and sessions',
+    'Canlı Görünüm ve oturumları yeniden boyutlandırmak için sürükle',
+  ],
   ['Quick Terminal', 'Hızlı Terminal'],
   ['Close Terminal', 'Terminali Kapat'],
   ['Close terminal', 'Terminali kapat'],

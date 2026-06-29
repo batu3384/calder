@@ -26,13 +26,48 @@ let highlightedIndex = 0;
 function getCommandEntries(): CommandPaletteEntry[] {
   const actions = createKeybindingActionBridge();
   return [
-    { id: 'new-session', label: 'New Session', keywords: 'session tab', run: () => actions.newSession() },
-    { id: 'new-project', label: 'New Project', keywords: 'workspace folder', run: () => actions.newProject() },
-    { id: 'preferences', label: 'Open Preferences', keywords: 'settings config', run: () => actions.showPreferences() },
-    { id: 'quick-open', label: 'Quick Open File', keywords: 'file search', run: () => actions.quickOpen() },
-    { id: 'toggle-sidebar', label: 'Toggle Sidebar', keywords: 'panel', run: () => actions.toggleSidebar() },
-    { id: 'toggle-git', label: 'Toggle Git Panel', keywords: 'source control', run: () => actions.toggleGitPanel() },
-    { id: 'toggle-inspector', label: 'Toggle Session Inspector', keywords: 'timeline tools', run: () => actions.toggleInspector() },
+    {
+      id: 'new-session',
+      label: 'New Session',
+      keywords: 'session tab',
+      run: () => actions.newSession(),
+    },
+    {
+      id: 'new-project',
+      label: 'New Project',
+      keywords: 'workspace folder',
+      run: () => actions.newProject(),
+    },
+    {
+      id: 'preferences',
+      label: 'Open Preferences',
+      keywords: 'settings config',
+      run: () => actions.showPreferences(),
+    },
+    {
+      id: 'quick-open',
+      label: 'Quick Open File',
+      keywords: 'file search',
+      run: () => actions.quickOpen(),
+    },
+    {
+      id: 'toggle-sidebar',
+      label: 'Toggle Sidebar',
+      keywords: 'panel',
+      run: () => actions.toggleSidebar(),
+    },
+    {
+      id: 'toggle-git',
+      label: 'Toggle Git Panel',
+      keywords: 'source control',
+      run: () => actions.toggleGitPanel(),
+    },
+    {
+      id: 'toggle-inspector',
+      label: 'Toggle Session Inspector',
+      keywords: 'timeline tools',
+      run: () => actions.toggleInspector(),
+    },
     { id: 'help', label: 'Open Help', keywords: 'docs shortcuts', run: () => actions.help() },
   ];
 }

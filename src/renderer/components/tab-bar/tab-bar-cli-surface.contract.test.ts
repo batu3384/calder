@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 const htmlSource = readFileSync(new URL('../../index.html', import.meta.url), 'utf-8');
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const surfaceControlsSource = readFileSync(new URL('./tab-bar-surface-controls.ts', import.meta.url), 'utf-8');
+const surfaceControlsSource = readFileSync(
+  new URL('./tab-bar-surface-controls.ts', import.meta.url),
+  'utf-8',
+);
 const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar cli surface contract', () => {

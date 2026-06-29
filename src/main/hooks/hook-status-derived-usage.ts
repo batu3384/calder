@@ -36,11 +36,14 @@ function toNumber(value: unknown): number | null {
 
 function toObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : null;
 }
 
-function pickUsageObject(payload: Record<string, unknown>, keys: string[]): Record<string, unknown> | null {
+function pickUsageObject(
+  payload: Record<string, unknown>,
+  keys: string[],
+): Record<string, unknown> | null {
   for (const key of keys) {
     const candidate = toObject(payload[key]);
     if (candidate) return candidate;
@@ -63,10 +66,10 @@ function parseCodexUsage(event: InspectorEvent): {
   const rawCached = Math.max(
     0,
     toNumber(
-      usage.cached_input_tokens
-      ?? usage.cachedInputTokens
-      ?? usage.cache_read_input_tokens
-      ?? usage.cacheReadInputTokens,
+      usage.cached_input_tokens ??
+        usage.cachedInputTokens ??
+        usage.cache_read_input_tokens ??
+        usage.cacheReadInputTokens,
     ) ?? 0,
   );
   const nonCachedInput = Math.max(0, rawInput - rawCached);
@@ -91,9 +94,18 @@ function parseAntigravityUsage(event: InspectorEvent): {
   if (!usage) return null;
 
   const promptTokens = Math.max(0, toNumber(usage.promptTokenCount ?? usage.prompt_tokens) ?? 0);
-  const cachedTokens = Math.max(0, toNumber(usage.cachedContentTokenCount ?? usage.cached_content_token_count) ?? 0);
-  const candidateTokens = Math.max(0, toNumber(usage.candidatesTokenCount ?? usage.candidates_token_count) ?? 0);
-  const thoughtTokens = Math.max(0, toNumber(usage.thoughtsTokenCount ?? usage.thoughts_token_count) ?? 0);
+  const cachedTokens = Math.max(
+    0,
+    toNumber(usage.cachedContentTokenCount ?? usage.cached_content_token_count) ?? 0,
+  );
+  const candidateTokens = Math.max(
+    0,
+    toNumber(usage.candidatesTokenCount ?? usage.candidates_token_count) ?? 0,
+  );
+  const thoughtTokens = Math.max(
+    0,
+    toNumber(usage.thoughtsTokenCount ?? usage.thoughts_token_count) ?? 0,
+  );
   const totalTokens = Math.max(0, toNumber(usage.totalTokenCount ?? usage.total_token_count) ?? 0);
 
   let outputTokens = candidateTokens + thoughtTokens;
@@ -148,7 +160,10 @@ export function resetDerivedUsageState(): void {
   derivedUsageBySession.clear();
 }
 
-export function deriveCostDataFromEvents(sessionId: string, events: InspectorEvent[]): CostData | null {
+export function deriveCostDataFromEvents(
+  sessionId: string,
+  events: InspectorEvent[],
+): CostData | null {
   const providerId = sessionProviders.get(sessionId);
   if (providerId !== 'codex' && providerId !== 'antigravity') {
     return null;
@@ -165,7 +180,8 @@ export function deriveCostDataFromEvents(sessionId: string, events: InspectorEve
       changed = true;
     }
 
-    const parsedUsage = providerId === 'codex' ? parseCodexUsage(event) : parseAntigravityUsage(event);
+    const parsedUsage =
+      providerId === 'codex' ? parseCodexUsage(event) : parseAntigravityUsage(event);
     if (parsedUsage) {
       usage.totalInputTokens += parsedUsage.totalInputTokens;
       usage.totalOutputTokens += parsedUsage.totalOutputTokens;
@@ -193,11 +209,15 @@ export function deriveCostDataFromEvents(sessionId: string, events: InspectorEve
 
     const contextSnapshot = toObject(payload.context_snapshot);
     const contextWindowSize = toNumber(
-      contextSnapshot?.context_window_size
-      ?? payload.context_window_size
-      ?? payload.contextWindowSize,
+      contextSnapshot?.context_window_size ??
+        payload.context_window_size ??
+        payload.contextWindowSize,
     );
-    if (contextWindowSize !== null && contextWindowSize > 0 && contextWindowSize !== usage.contextWindowSize) {
+    if (
+      contextWindowSize !== null &&
+      contextWindowSize > 0 &&
+      contextWindowSize !== usage.contextWindowSize
+    ) {
       usage.contextWindowSize = contextWindowSize;
       changed = true;
     }
@@ -207,9 +227,8 @@ export function deriveCostDataFromEvents(sessionId: string, events: InspectorEve
   derivedUsageBySession.set(sessionId, usage);
 
   const usedTokens = usage.nonCachedInputTokens + usage.cacheCreationTokens + usage.cacheReadTokens;
-  const usedPercentage = usage.contextWindowSize > 0
-    ? (usedTokens / usage.contextWindowSize) * 100
-    : 0;
+  const usedPercentage =
+    usage.contextWindowSize > 0 ? (usedTokens / usage.contextWindowSize) * 100 : 0;
 
   return {
     source: 'derived',

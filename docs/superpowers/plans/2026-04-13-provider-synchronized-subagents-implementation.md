@@ -61,6 +61,7 @@ This plan covers only provider-synchronized routing for Claude Code sessions and
 ## Task 1: Create The Pure Routing Module
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/.litellm/provider_sync.py`
 - Create: `/Users/batuhanyuksel/.litellm/provider_sync_test.py`
 
@@ -239,6 +240,7 @@ Expected: a new timestamped folder exists under `/Users/batuhanyuksel/.litellm/c
 ## Task 2: Bridge Session Headers To The Existing Runtime Sidecar
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/.litellm/provider_sync_runtime.py`
 - Create: `/Users/batuhanyuksel/.litellm/provider_sync_runtime_test.py`
 
@@ -378,6 +380,7 @@ Expected: checkpoint folder contains both modules and both test files.
 ## Task 3: Wire The Gateway In Observe Mode First
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/.litellm/gateway_integration_test.py`
 - Modify: `/Users/batuhanyuksel/.litellm/tiny_gateway.py`
 
@@ -600,6 +603,7 @@ Expected: new checkpoint contains the gateway and test harness.
 ## Task 4: Turn On Enforce-Mode Rewrites For Session-Relative Agent Traffic
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/.litellm/gateway_integration_test.py`
 - Modify: `/Users/batuhanyuksel/.litellm/tiny_gateway.py`
 
@@ -747,6 +751,7 @@ Expected: a restore-ready checkpoint exists before regression hardening.
 ## Task 5: Lock Current Provider-Specific Behavior With Regression Tests
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/.litellm/provider_sync_test.py`
 - Modify: `/Users/batuhanyuksel/.litellm/gateway_integration_test.py`
 - Modify: `/Users/batuhanyuksel/.litellm/tiny_gateway.py`
@@ -847,6 +852,7 @@ Expected: PASS with all unit and integration tests green.
 ## Task 6: Flip The Wrapper Default And Run Live Smoke Verification
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/.litellm/claude-gateway.sh`
 - Modify: `/Users/batuhanyuksel/.litellm/tiny_gateway.py` (only if logs need final polish)
 

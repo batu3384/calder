@@ -9,9 +9,21 @@ import type { PairingPostHandlersConfig } from './routes-post-shared';
 export type { PairingPostHandlersConfig } from './routes-post-shared';
 
 export function createPairingPostHandlers(config: PairingPostHandlersConfig): {
-  handleBootstrapRequest: (record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
-  handleAnswerRequest: (record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
-  handleChallengeRequest: (record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
+  handleBootstrapRequest: (
+    record: PairingRecord,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
+  handleAnswerRequest: (
+    record: PairingRecord,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
+  handleChallengeRequest: (
+    record: PairingRecord,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
 } {
   return {
     handleBootstrapRequest: createBootstrapPostHandler(config),

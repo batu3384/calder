@@ -1,18 +1,12 @@
 import { createBrowserAuthController } from './auth-controller.js';
 import { addFlowStep } from './flow-recording.js';
 import { populateLocalTargets } from './local-targets.js';
-import {
-  type BrowserPageState,
-  navigateTo,
-} from './navigation.js';
+import { type BrowserPageState, navigateTo } from './navigation.js';
 import {
   syncAddressBarState as syncBrowserAddressBarState,
   syncNavigationControls as syncBrowserNavigationControls,
 } from './navigation-chrome.js';
-import type {
-  BrowserAuthPanelArtifacts,
-  BrowserPaneCaptureArtifacts,
-} from './pane-artifacts.js';
+import type { BrowserAuthPanelArtifacts, BrowserPaneCaptureArtifacts } from './pane-artifacts.js';
 import { resolveCredentialOrigin } from './pane-helpers.js';
 import {
   attachBrowserCaptureInteractions,
@@ -22,10 +16,7 @@ import {
   bindBrowserToolbarState,
   type BrowserCaptureToolbarCluster,
 } from './pane-interactions.js';
-import {
-  attachBrowserWebviewBindings,
-  type BrowserNewTabStateBindings,
-} from './pane-runtime.js';
+import { attachBrowserWebviewBindings, type BrowserNewTabStateBindings } from './pane-runtime.js';
 import { type BrowserTabInstance, VIEWPORT_PRESETS, type WebviewElement } from './types.js';
 import { applyViewport } from './viewport.js';
 
@@ -121,7 +112,10 @@ function createSyncAddressBarState(
   };
 }
 
-function createReloadCurrentPage(instance: BrowserTabInstance, webview: WebviewElement): () => void {
+function createReloadCurrentPage(
+  instance: BrowserTabInstance,
+  webview: WebviewElement,
+): () => void {
   return () => {
     if (!instance.webviewReady) return;
     webview.reload();
@@ -166,7 +160,9 @@ function createRecordNavigationStep(instance: BrowserTabInstance): (url: string)
   };
 }
 
-export function initializeBrowserTabRuntimeBindings(params: BrowserTabRuntimeInitializationParams): void {
+export function initializeBrowserTabRuntimeBindings(
+  params: BrowserTabRuntimeInitializationParams,
+): void {
   const {
     instance,
     sessionId,
@@ -293,7 +289,12 @@ export function initializeBrowserTabRuntimeBindings(params: BrowserTabRuntimeIni
     openBrowserHome,
   });
 
-  const applyCustomSize = createApplyCustomSize(instance, customWInput, customHInput, closeViewportMenu);
+  const applyCustomSize = createApplyCustomSize(
+    instance,
+    customWInput,
+    customHInput,
+    closeViewportMenu,
+  );
 
   attachBrowserViewportInteractions({
     instance,

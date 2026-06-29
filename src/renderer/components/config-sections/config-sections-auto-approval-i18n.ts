@@ -56,7 +56,10 @@ export function autoApprovalScopeHelp(): { global: string; project: string; sess
   return {
     global: localizedText('Default policy for this Mac.', 'Bu Mac için varsayılan politika.'),
     project: localizedText('Repository-level policy.', 'Depo düzeyinde politika.'),
-    session: localizedText('Temporary policy for the active session.', 'Aktif oturum için geçici politika.'),
+    session: localizedText(
+      'Temporary policy for the active session.',
+      'Aktif oturum için geçici politika.',
+    ),
   };
 }
 
@@ -102,18 +105,24 @@ export function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
     : 'Auto-runs every operation, including destructive actions.';
 }
 
-export function autoApprovalModePlainLanguageDetails(mode: AutoApprovalMode): AutoApprovalModePlainLanguageDetails {
+export function autoApprovalModePlainLanguageDetails(
+  mode: AutoApprovalMode,
+): AutoApprovalModePlainLanguageDetails {
   const tr = isTurkishUiLanguage();
   if (mode === 'off') {
     return {
       autoRuns: tr ? 'Hiçbir şey.' : 'Nothing.',
-      stillAsks: tr ? 'Her düzenleme, komut ve araç çalıştırma.' : 'Every edit, command, and tool run.',
+      stillAsks: tr
+        ? 'Her düzenleme, komut ve araç çalıştırma.'
+        : 'Every edit, command, and tool run.',
     };
   }
   if (mode === 'edit_only') {
     return {
       autoRuns: tr ? 'Dosya düzenlemeleri.' : 'File edits.',
-      stillAsks: tr ? 'Komutlar, araçlar ve yıkıcı işlemler.' : 'Commands, tools, and destructive actions.',
+      stillAsks: tr
+        ? 'Komutlar, araçlar ve yıkıcı işlemler.'
+        : 'Commands, tools, and destructive actions.',
     };
   }
   if (mode === 'edit_plus_safe_tools') {

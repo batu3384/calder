@@ -18,8 +18,7 @@ export function buildStatusLinePythonTemplate(statusDir: string): string {
     qwenFallback: fallbackQuotaStatus('qwen'),
   });
 
-  return STATUSLINE_PYTHON_TEMPLATE
-    .replace(CONFIG_PLACEHOLDER, config)
+  return STATUSLINE_PYTHON_TEMPLATE.replace(CONFIG_PLACEHOLDER, config)
     .replace(STATUS_DIR_PLACEHOLDER, statusDir)
     .replace(QUOTA_CACHE_FILE_PLACEHOLDER, getProviderQuotaCacheFile('anthropic'));
 }

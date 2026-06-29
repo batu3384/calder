@@ -170,4 +170,3 @@ Success criteria:
 - xterm.js terminal options / linkHandler docs: https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/
 - Electron webContents navigation events: https://www.electronjs.org/docs/latest/api/web-contents
 - Electron shell API: https://www.electronjs.org/docs/latest/api/shell
-

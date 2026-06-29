@@ -9,11 +9,11 @@ export function runDetectChanges({
   env = process.env,
   command = 'code-review-graph',
 }) {
-  const result = spawn(
-    command,
-    ['detect-changes', '--repo', repoRoot, '--base', baseRef],
-    { encoding: 'utf8', shell: false, env }
-  );
+  const result = spawn(command, ['detect-changes', '--repo', repoRoot, '--base', baseRef], {
+    encoding: 'utf8',
+    shell: false,
+    env,
+  });
 
   if (result.error) {
     if (result.error.code === 'ENOENT') return { kind: 'missing' };
@@ -40,7 +40,7 @@ export function runDetectChanges({
     return { kind: 'ok', data: JSON.parse(output.slice(jsonStart, jsonEnd + 1)) };
   } catch (error) {
     throw new Error(
-      `[graph-gap-audit] JSON parse error: ${error instanceof Error ? error.message : String(error)}`
+      `[graph-gap-audit] JSON parse error: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }

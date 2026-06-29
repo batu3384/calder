@@ -45,11 +45,15 @@ function attachCopyFeedback(
     void copyToClipboard(value)
       .then(() => {
         button.textContent = copy.copied;
-        setTimeout(() => { button.textContent = defaultText; }, 1500);
+        setTimeout(() => {
+          button.textContent = defaultText;
+        }, 1500);
       })
       .catch(() => {
         button.textContent = copy.copyFailed;
-        setTimeout(() => { button.textContent = defaultText; }, 1800);
+        setTimeout(() => {
+          button.textContent = defaultText;
+        }, 1800);
       });
   });
 }
@@ -172,7 +176,10 @@ function createAnswerSection(copy: ShareDialogCopy): {
   return { answerSection, answerTextarea };
 }
 
-function createManualSection(copy: ShareDialogCopy, pinSection: HTMLDivElement): ManualSectionElements {
+function createManualSection(
+  copy: ShareDialogCopy,
+  pinSection: HTMLDivElement,
+): ManualSectionElements {
   const manualSection = document.createElement('div');
   manualSection.className = 'share-manual-section hidden';
   manualSection.appendChild(pinSection);
@@ -195,7 +202,11 @@ function createManualSection(copy: ShareDialogCopy, pinSection: HTMLDivElement):
 function createMobileSteps(copy: ShareDialogCopy): HTMLOListElement {
   const mobileSteps = document.createElement('ol');
   mobileSteps.className = 'share-mobile-steps';
-  for (const step of [copy.quickHandoffStepScan, copy.quickHandoffStepOtp, copy.quickHandoffStepAuto]) {
+  for (const step of [
+    copy.quickHandoffStepScan,
+    copy.quickHandoffStepOtp,
+    copy.quickHandoffStepAuto,
+  ]) {
     const item = document.createElement('li');
     item.textContent = step;
     mobileSteps.appendChild(item);
@@ -249,7 +260,12 @@ function createMobileFallbackRow(copy: ShareDialogCopy): {
   const copyMobileFallbackBtn = document.createElement('button');
   copyMobileFallbackBtn.className = 'share-btn share-btn-secondary calder-button';
   copyMobileFallbackBtn.textContent = copy.copyFallback;
-  attachCopyFeedback(copyMobileFallbackBtn, () => mobileFallbackInput.value, copy.copyFallback, copy);
+  attachCopyFeedback(
+    copyMobileFallbackBtn,
+    () => mobileFallbackInput.value,
+    copy.copyFallback,
+    copy,
+  );
 
   mobileFallbackRow.appendChild(mobileFallbackInput);
   mobileFallbackRow.appendChild(useMobileFallbackBtn);
@@ -329,7 +345,8 @@ function createMobileQrSection(copy: ShareDialogCopy): {
 
   const retryMobilePairingBtn = document.createElement('button');
   retryMobilePairingBtn.type = 'button';
-  retryMobilePairingBtn.className = 'share-btn share-btn-secondary calder-button share-mobile-retry hidden';
+  retryMobilePairingBtn.className =
+    'share-btn share-btn-secondary calder-button share-mobile-retry hidden';
   retryMobilePairingBtn.textContent = copy.retryQr;
   mobileStatusRow.appendChild(retryMobilePairingBtn);
 
@@ -365,26 +382,18 @@ function createMobileSection(copy: ShareDialogCopy): MobileSectionElements {
   const { mobileLinkRow, mobileLinkInput } = createMobileLinkRow(copy);
   mobileSection.appendChild(mobileLinkRow);
 
-  const {
-    mobileFallbackRow,
-    mobileFallbackInput,
-    useMobileFallbackBtn,
-    copyMobileFallbackBtn,
-  } = createMobileFallbackRow(copy);
+  const { mobileFallbackRow, mobileFallbackInput, useMobileFallbackBtn, copyMobileFallbackBtn } =
+    createMobileFallbackRow(copy);
   mobileSection.appendChild(mobileFallbackRow);
 
-  const { mobileOtpLabel, mobileOtpRow, mobileOtpBadge, mobileOtpHint } = createMobileOtpSection(copy);
+  const { mobileOtpLabel, mobileOtpRow, mobileOtpBadge, mobileOtpHint } =
+    createMobileOtpSection(copy);
   mobileSection.appendChild(mobileOtpLabel);
   mobileSection.appendChild(mobileOtpRow);
   mobileSection.appendChild(mobileOtpHint);
 
-  const {
-    mobileQrWrap,
-    mobileQrImg,
-    mobileStatusRow,
-    mobileStatus,
-    retryMobilePairingBtn,
-  } = createMobileQrSection(copy);
+  const { mobileQrWrap, mobileQrImg, mobileStatusRow, mobileStatus, retryMobilePairingBtn } =
+    createMobileQrSection(copy);
   mobileSection.appendChild(mobileQrWrap);
   mobileSection.appendChild(mobileStatusRow);
 
@@ -412,13 +421,8 @@ export function createShareDialogPhaseTwo(copy: ShareDialogCopy): ShareDialogPha
   phase2.appendChild(manualToggleRow);
   phase2.appendChild(manualHint);
 
-  const {
-    manualSection,
-    offerSection,
-    offerTextarea,
-    answerSection,
-    answerTextarea,
-  } = createManualSection(copy, pinSection);
+  const { manualSection, offerSection, offerTextarea, answerSection, answerTextarea } =
+    createManualSection(copy, pinSection);
   phase2.appendChild(manualSection);
 
   const {

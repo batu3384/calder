@@ -17,10 +17,7 @@ vi.mock('./discovery.js', () => ({
   discoverProjectCheckpoints: mockDiscoverProjectCheckpoints,
 }));
 
-import {
-  startProjectCheckpointWatcher,
-  stopProjectCheckpointWatcher,
-} from './watcher.js';
+import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './watcher.js';
 
 const watchCallbacks = new Map<string, () => void>();
 const closeFns: Array<ReturnType<typeof vi.fn>> = [];

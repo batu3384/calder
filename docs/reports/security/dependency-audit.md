@@ -15,10 +15,11 @@
 
 ## Current Security Posture
 
-- `npm audit --omit=dev --json`: 0 findings
-- `npm audit --json`: 0 findings
+- `npm audit --omit=dev --audit-level=high`: 0 high/critical findings (verified 2026-06-05)
+- `npm run audit:secrets`: tracked-file secret scan in CI
+- See root `SECURITY.md` for reporting and env-file policy
 
-Latest verification timestamp: 2026-04-17.
+Latest verification timestamp: 2026-06-05.
 
 ## Scope and Limitations
 
@@ -33,44 +34,44 @@ For defense-in-depth, keep additional feeds in place:
 
 ### Production
 
-| Package | Version | Security Note |
-|---|---|---|
-| `@floating-ui/dom` | `^1.7.6` | Actively maintained |
-| `@modelcontextprotocol/sdk` | `^1.29.0` | High-impact network-facing integration |
-| `@xterm/addon-fit` | `^0.11.0` | Actively maintained |
-| `@xterm/addon-search` | `^0.16.0` | Actively maintained |
-| `@xterm/addon-serialize` | `^0.14.0` | Actively maintained |
-| `@xterm/addon-web-links` | `^0.12.0` | Link handling should stay policy-guarded |
-| `@xterm/addon-webgl` | `^0.19.0` | Actively maintained |
-| `@xterm/xterm` | `^6.0.0` | Critical UI/runtime terminal surface |
-| `dompurify` | `^3.3.3` | Core XSS control |
-| `electron-updater` | `^6.8.3` | High trust impact (update path) |
-| `marked` | `^17.0.5` | Must remain paired with sanitization |
-| `node-pty` | `^1.1.0` | Native process boundary package |
-| `picomatch` | `^4.0.4` | Low risk utility dependency |
+| Package                     | Version   | Security Note                            |
+| --------------------------- | --------- | ---------------------------------------- |
+| `@floating-ui/dom`          | `^1.7.6`  | Actively maintained                      |
+| `@modelcontextprotocol/sdk` | `^1.29.0` | High-impact network-facing integration   |
+| `@xterm/addon-fit`          | `^0.11.0` | Actively maintained                      |
+| `@xterm/addon-search`       | `^0.16.0` | Actively maintained                      |
+| `@xterm/addon-serialize`    | `^0.14.0` | Actively maintained                      |
+| `@xterm/addon-web-links`    | `^0.12.0` | Link handling should stay policy-guarded |
+| `@xterm/addon-webgl`        | `^0.19.0` | Actively maintained                      |
+| `@xterm/xterm`              | `^6.0.0`  | Critical UI/runtime terminal surface     |
+| `dompurify`                 | `^3.3.3`  | Core XSS control                         |
+| `electron-updater`          | `^6.8.3`  | High trust impact (update path)          |
+| `marked`                    | `^17.0.5` | Must remain paired with sanitization     |
+| `node-pty`                  | `^1.1.0`  | Native process boundary package          |
+| `picomatch`                 | `^4.0.4`  | Low risk utility dependency              |
 
 ### Development
 
-| Package | Version | Security Note |
-|---|---|---|
-| `@types/dompurify` | `^3.0.5` | Deprecated, removable |
-| `@types/picomatch` | `^4.0.3` | Actively maintained |
-| `@vitest/coverage-v8` | `^4.1.4` | Actively maintained |
-| `electron` | `^41.2.0` | High-impact runtime |
-| `electron-builder` | `^26.8.1` | Packaging and install-path impact |
-| `esbuild` | `^0.27.7` | Minor update available |
-| `typescript` | `^5.7.0` | Major upgrade path available |
-| `vitest` | `^4.1.4` | Actively maintained |
+| Package               | Version   | Security Note                     |
+| --------------------- | --------- | --------------------------------- |
+| `@types/dompurify`    | `^3.0.5`  | Deprecated, removable             |
+| `@types/picomatch`    | `^4.0.3`  | Actively maintained               |
+| `@vitest/coverage-v8` | `^4.1.4`  | Actively maintained               |
+| `electron`            | `^41.2.0` | High-impact runtime               |
+| `electron-builder`    | `^26.8.1` | Packaging and install-path impact |
+| `esbuild`             | `^0.27.7` | Minor update available            |
+| `typescript`          | `^5.7.0`  | Major upgrade path available      |
+| `vitest`              | `^4.1.4`  | Actively maintained               |
 
 ## Outdated Snapshot
 
 From `npm outdated --json`:
 
-| Package | Current | Wanted | Latest | Action |
-|---|---:|---:|---:|---|
-| `esbuild` | `0.27.7` | `0.27.7` | `0.28.0` | Track and schedule upgrade |
-| `marked` | `17.0.5` | `17.0.6` | `18.0.0` | Track closely due to render pipeline relevance |
-| `typescript` | `5.9.3` | `5.9.3` | `6.0.2` | Toolchain planning item |
+| Package      |  Current |   Wanted |   Latest | Action                                         |
+| ------------ | -------: | -------: | -------: | ---------------------------------------------- |
+| `esbuild`    | `0.27.7` | `0.27.7` | `0.28.0` | Track and schedule upgrade                     |
+| `marked`     | `17.0.5` | `17.0.6` | `18.0.0` | Track closely due to render pipeline relevance |
+| `typescript` |  `5.9.3` |  `5.9.3` |  `6.0.2` | Toolchain planning item                        |
 
 ## Supply Chain Assessment
 

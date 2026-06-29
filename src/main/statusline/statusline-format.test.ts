@@ -79,27 +79,39 @@ describe('deriveQuotaFreshness', () => {
 describe('deriveProviderQuotaConfidence', () => {
   it('returns unavailable when snapshot is absent or syncing', () => {
     expect(deriveProviderQuotaConfidence(null, 1_500, 60_000)).toBe('unavailable');
-    expect(deriveProviderQuotaConfidence({
-      provider: 'zai',
-      model: 'glm-5.1',
-      fiveHour: null,
-      weekly: null,
-      status: 'syncing',
-      updatedAt: 1_000,
-      source: 'zai:pending',
-    }, 1_500, 60_000)).toBe('unavailable');
+    expect(
+      deriveProviderQuotaConfidence(
+        {
+          provider: 'zai',
+          model: 'glm-5.1',
+          fiveHour: null,
+          weekly: null,
+          status: 'syncing',
+          updatedAt: 1_000,
+          source: 'zai:pending',
+        },
+        1_500,
+        60_000,
+      ),
+    ).toBe('unavailable');
   });
 
   it('returns verified for fresh snapshots with visible quota values', () => {
-    expect(deriveProviderQuotaConfidence({
-      provider: 'zai',
-      model: 'glm-5.1',
-      fiveHour: '60% left',
-      weekly: null,
-      status: 'unknown',
-      updatedAt: 1_000,
-      source: 'zai:quota-limit',
-    }, 1_500, 60_000)).toBe('verified');
+    expect(
+      deriveProviderQuotaConfidence(
+        {
+          provider: 'zai',
+          model: 'glm-5.1',
+          fiveHour: '60% left',
+          weekly: null,
+          status: 'unknown',
+          updatedAt: 1_000,
+          source: 'zai:quota-limit',
+        },
+        1_500,
+        60_000,
+      ),
+    ).toBe('verified');
   });
 });
 
@@ -116,10 +128,12 @@ describe('formatHybridStatusLine', () => {
       nowMs: 1_500,
     });
 
-    expect(out).toBe([
-      'Unknown Model  Qwen  --  project',
-      'Ctx --%  Cost --  5h unsupported  Week unsupported  Unavailable',
-    ].join('\n'));
+    expect(out).toBe(
+      [
+        'Unknown Model  Qwen  --  project',
+        'Ctx --%  Cost --  5h unsupported  Week unsupported  Unavailable',
+      ].join('\n'),
+    );
   });
 
   it('renders honest unknown quota values with an estimated confidence badge', () => {
@@ -142,10 +156,12 @@ describe('formatHybridStatusLine', () => {
       nowMs: 1_500,
     });
 
-    expect(out).toBe([
-      'Claude Sonnet 4.6  Anthropic  High  browser',
-      'Ctx 38%  Cost --  5h unknown  Week unknown  Estimated',
-    ].join('\n'));
+    expect(out).toBe(
+      [
+        'Claude Sonnet 4.6  Anthropic  High  browser',
+        'Ctx 38%  Cost --  5h unknown  Week unknown  Estimated',
+      ].join('\n'),
+    );
   });
 
   it('shows Z.ai five-hour quota with reset time and omits the secondary window', () => {
@@ -170,10 +186,11 @@ describe('formatHybridStatusLine', () => {
       nowMs: 1_500,
     });
 
-    expect(out).toBe([
-      'glm-5.1  Z.ai  --  aa',
-      'Ctx 25%  Cost $0.22  5h 60% left · resets 22:10  Verified',
-    ].join('\n'));
+    expect(out).toBe(
+      ['glm-5.1  Z.ai  --  aa', 'Ctx 25%  Cost $0.22  5h 60% left · resets 22:10  Verified'].join(
+        '\n',
+      ),
+    );
   });
 
   it('shows MiniMax request quotas with reset time and weekly allowance', () => {
@@ -198,10 +215,12 @@ describe('formatHybridStatusLine', () => {
       nowMs: 1_500,
     });
 
-    expect(out).toBe([
-      'MiniMax-M2.7  MiniMax  --  aa',
-      'Ctx 25%  Cost $0.07  5h 5/4500 left · resets 17:00  Week 5/45000 left  Verified',
-    ].join('\n'));
+    expect(out).toBe(
+      [
+        'MiniMax-M2.7  MiniMax  --  aa',
+        'Ctx 25%  Cost $0.07  5h 5/4500 left · resets 17:00  Week 5/45000 left  Verified',
+      ].join('\n'),
+    );
   });
 });
 

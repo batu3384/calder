@@ -48,17 +48,19 @@ describe('state normalizers', () => {
 
   it('preserves previous source enabled state while recomputing context counts', () => {
     const previous: ProjectContextState = {
-      sources: [{
-        id: 'shared-rules',
-        provider: 'shared',
-        scope: 'project',
-        kind: 'rules',
-        path: '.agents/rules.md',
-        displayName: 'Rules',
-        summary: 'Shared rules',
-        lastUpdated: '2026-04-21T00:00:00Z',
-        enabled: false,
-      }],
+      sources: [
+        {
+          id: 'shared-rules',
+          provider: 'shared',
+          scope: 'project',
+          kind: 'rules',
+          path: '.agents/rules.md',
+          displayName: 'Rules',
+          summary: 'Shared rules',
+          lastUpdated: '2026-04-21T00:00:00Z',
+          enabled: false,
+        },
+      ],
       sharedRuleCount: 0,
       providerSourceCount: 0,
     };
@@ -92,15 +94,17 @@ describe('state normalizers', () => {
 
   it('hydrates browser-backed surfaces and strips transient cli runtime fields', () => {
     const project = makeProject({
-      sessions: [{
-        id: 'browser-1',
-        name: 'Browser',
-        type: 'browser-tab',
-        browserTabUrl: 'http://localhost:3000',
-        browserTargetSessionId: 'cli-1',
-        cliSessionId: null,
-        createdAt: '2026-04-21T00:00:00Z',
-      }],
+      sessions: [
+        {
+          id: 'browser-1',
+          name: 'Browser',
+          type: 'browser-tab',
+          browserTabUrl: 'http://localhost:3000',
+          browserTargetSessionId: 'cli-1',
+          cliSessionId: null,
+          createdAt: '2026-04-21T00:00:00Z',
+        },
+      ],
       surface: {
         kind: 'cli',
         active: true,
@@ -193,22 +197,28 @@ describe('state normalizers', () => {
   it('derives browser names, workflow prompts, and persistable runtimes', () => {
     expect(deriveBrowserSessionName('https://example.com/path')).toBe('example.com');
     expect(deriveBrowserSessionName('not a url', 'Fallback')).toBe('Fallback');
-    expect(buildWorkflowLaunchPrompt({
-      path: '/tmp/.agents/workflows/fix.md',
-      relativePath: '.agents/workflows/fix.md',
-      title: 'Fix Tests',
-      contents: '  Run the failing test first.  ',
-    })).toBe([
-      'Follow this reusable project workflow for the current task.',
-      'Workflow: Fix Tests',
-      'Source: .agents/workflows/fix.md',
-      'Run the failing test first.',
-    ].join('\n\n'));
-    expect(stripTransientRuntimeFields({
-      status: 'running',
-      runtimeId: 'runtime-1',
-      startupTiming: { startedAtMs: 1 },
-      resolvedUrl: 'http://localhost:3000',
-    })).toEqual({ status: 'running', resolvedUrl: 'http://localhost:3000' });
+    expect(
+      buildWorkflowLaunchPrompt({
+        path: '/tmp/.agents/workflows/fix.md',
+        relativePath: '.agents/workflows/fix.md',
+        title: 'Fix Tests',
+        contents: '  Run the failing test first.  ',
+      }),
+    ).toBe(
+      [
+        'Follow this reusable project workflow for the current task.',
+        'Workflow: Fix Tests',
+        'Source: .agents/workflows/fix.md',
+        'Run the failing test first.',
+      ].join('\n\n'),
+    );
+    expect(
+      stripTransientRuntimeFields({
+        status: 'running',
+        runtimeId: 'runtime-1',
+        startupTiming: { startedAtMs: 1 },
+        resolvedUrl: 'http://localhost:3000',
+      }),
+    ).toEqual({ status: 'running', resolvedUrl: 'http://localhost:3000' });
   });
 });

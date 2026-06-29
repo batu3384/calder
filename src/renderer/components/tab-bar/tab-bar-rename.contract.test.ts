@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
-const renameControllerSource = readFileSync(new URL('./tab-bar-rename-controller.ts', import.meta.url), 'utf-8');
+const renameControllerSource = readFileSync(
+  new URL('./tab-bar-rename-controller.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('tab bar rename contract', () => {
   it('routes tab rename behavior through dedicated rename controller module', () => {

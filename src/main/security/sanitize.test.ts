@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   sanitizeArg,
@@ -16,11 +16,17 @@ describe('sanitize', () => {
     it('accepts alphanumeric args', () => {
       expect(sanitizeArg('claude')).toEqual({ ok: true, value: 'claude' });
       expect(sanitizeArg('session-123')).toEqual({ ok: true, value: 'session-123' });
-      expect(sanitizeArg('arg_with_underscore')).toEqual({ ok: true, value: 'arg_with_underscore' });
+      expect(sanitizeArg('arg_with_underscore')).toEqual({
+        ok: true,
+        value: 'arg_with_underscore',
+      });
     });
 
     it('accepts args with allowed special chars', () => {
-      expect(sanitizeArg('--session-id=abc123')).toEqual({ ok: true, value: '--session-id=abc123' });
+      expect(sanitizeArg('--session-id=abc123')).toEqual({
+        ok: true,
+        value: '--session-id=abc123',
+      });
       expect(sanitizeArg('/path/to/file')).toEqual({ ok: true, value: '/path/to/file' });
       expect(sanitizeArg('-r')).toEqual({ ok: true, value: '-r' });
     });
@@ -60,7 +66,11 @@ describe('sanitize', () => {
 
   describe('sanitizeArgs', () => {
     it('passes through clean args', () => {
-      expect(sanitizeArgs(['-r', 'session-123', '--verbose'])).toEqual(['-r', 'session-123', '--verbose']);
+      expect(sanitizeArgs(['-r', 'session-123', '--verbose'])).toEqual([
+        '-r',
+        'session-123',
+        '--verbose',
+      ]);
     });
 
     it('throws on dangerous args', () => {
@@ -154,7 +164,10 @@ describe('sanitize', () => {
     });
 
     it('rejects empty prompt', () => {
-      expect(sanitizeInitialPrompt('')).toEqual({ ok: false, error: 'Initial prompt cannot be empty' });
+      expect(sanitizeInitialPrompt('')).toEqual({
+        ok: false,
+        error: 'Initial prompt cannot be empty',
+      });
     });
   });
 

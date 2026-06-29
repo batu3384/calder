@@ -1,7 +1,10 @@
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { createCustomSelect } from '../custom-select.js';
-import { getProviderAvailabilitySnapshot,loadProviderAvailability } from '../surface-services/provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  loadProviderAvailability,
+} from '../surface-services/provider-availability.js';
 import {
   appendPreferencesToggleField,
   buildProviderNote,
@@ -89,7 +92,7 @@ function appendDefaultProviderField({
   providerCopy,
 }: Pick<
   RenderGeneralSectionContentArgs,
-  'content'
+  | 'content'
   | 'preferenceDraft'
   | 'isGeneralSectionActive'
   | 'getDefaultProviderSelect'
@@ -112,7 +115,11 @@ function appendDefaultProviderField({
     const select = getDefaultProviderSelect();
     if (!select) return;
     preferenceDraft.defaultProvider = select.getValue() as ProviderId;
-    providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider, providerCopy);
+    providerNote.textContent = buildDefaultProviderNote(
+      providerSnapshot.current,
+      preferenceDraft.defaultProvider,
+      providerCopy,
+    );
   };
 
   const bindProviderSelectChange = (): void => {
@@ -152,7 +159,11 @@ function appendDefaultProviderField({
       providerRow.querySelector('.custom-select')?.remove();
       providerRow.appendChild(refreshedSelect.element);
       preferenceDraft.defaultProvider = refreshedSelect.getValue() as ProviderId;
-      providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider, providerCopy);
+      providerNote.textContent = buildDefaultProviderNote(
+        providerSnapshot.current,
+        preferenceDraft.defaultProvider,
+        providerCopy,
+      );
       bindProviderSelectChange();
     });
   }
@@ -160,7 +171,11 @@ function appendDefaultProviderField({
   const providerSelect = getDefaultProviderSelect();
   if (!providerSelect) return;
 
-  providerNote.textContent = buildDefaultProviderNote(providerSnapshot.current, preferenceDraft.defaultProvider, providerCopy);
+  providerNote.textContent = buildDefaultProviderNote(
+    providerSnapshot.current,
+    preferenceDraft.defaultProvider,
+    providerCopy,
+  );
   bindProviderSelectChange();
   providerRow.appendChild(providerLabel);
   providerRow.appendChild(providerSelect.element);

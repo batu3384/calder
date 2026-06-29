@@ -14,15 +14,15 @@ Overall Risk Score: **4/10 (Medium)**
 
 ## Metrics
 
-| Metric | Value |
-|---|---:|
-| Total Findings | 4 |
-| Critical | 0 |
-| High | 3 |
-| Medium | 1 |
-| Low | 0 |
-| Info | 0 |
-| Rejected False Positives | 1 |
+| Metric                   | Value |
+| ------------------------ | ----: |
+| Total Findings           |     4 |
+| Critical                 |     0 |
+| High                     |     3 |
+| Medium                   |     1 |
+| Low                      |     0 |
+| Info                     |     0 |
+| Rejected False Positives |     1 |
 
 ## Top Risks
 
@@ -32,15 +32,15 @@ Overall Risk Score: **4/10 (Medium)**
 
 ## Scan Statistics
 
-| Statistic | Value |
-|---|---:|
-| Scanned Files | 388 |
-| Scanned LOC | 60,873 |
-| Languages | TypeScript, JavaScript, HTML, CSS |
-| Frameworks | Electron, node-pty, xterm, MCP SDK |
-| Raw Findings | 5 |
-| Confirmed Findings | 4 |
-| Rejected False Positives | 1 |
+| Statistic                |                              Value |
+| ------------------------ | ---------------------------------: |
+| Scanned Files            |                                388 |
+| Scanned LOC              |                             60,873 |
+| Languages                |  TypeScript, JavaScript, HTML, CSS |
+| Frameworks               | Electron, node-pty, xterm, MCP SDK |
+| Raw Findings             |                                  5 |
+| Confirmed Findings       |                                  4 |
+| Rejected False Positives |                                  1 |
 
 ## Confirmed Findings
 

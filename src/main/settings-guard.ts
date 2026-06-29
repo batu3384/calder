@@ -1,9 +1,14 @@
-import { BrowserWindow,ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import { homedir } from 'os';
 import * as path from 'path';
 
 import type { SettingsValidationResult } from '../shared/types/provider';
-import { cleanupClaudeHooksOnly, HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
+import {
+  cleanupClaudeHooksOnly,
+  HOOK_MARKER,
+  installHooksOnly,
+  installStatusLine,
+} from './claude-cli';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import { readJsonSafe } from './fs-utils';
 import { getStatusLineScriptPath } from './hooks/hook-status';
@@ -11,8 +16,13 @@ import { isManagedStatusLineCommand } from './statusline/statusline-command';
 import { loadState, saveState } from './store';
 
 const EXPECTED_HOOK_EVENTS = [
-  'SessionStart', 'UserPromptSubmit', 'PostToolUse',
-  'PostToolUseFailure', 'Stop', 'StopFailure', 'PermissionRequest',
+  'SessionStart',
+  'UserPromptSubmit',
+  'PostToolUse',
+  'PostToolUseFailure',
+  'Stop',
+  'StopFailure',
+  'PermissionRequest',
 ];
 
 function warnSettingsInstallFailure(step: 'hooks' | 'statusLine', error: unknown): void {
@@ -60,18 +70,25 @@ export function validateSettings(): SettingsValidationResult {
     } else {
       statusLine = 'foreign';
       const sl = settings.statusLine as Record<string, unknown>;
-      foreignStatusLineCommand = String(sl.command ?? sl.url ?? JSON.stringify(settings.statusLine));
+      foreignStatusLineCommand = String(
+        sl.command ?? sl.url ?? JSON.stringify(settings.statusLine),
+      );
     }
   }
 
   let hooks: SettingsValidationResult['hooks'] = 'missing';
-  const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map(e => [e, false]));
-  const existingHooks = settings.hooks as Record<string, Array<{ hooks?: Array<{ command?: string }> }>> | undefined;
+  const hookDetails: Record<string, boolean> = Object.fromEntries(
+    EXPECTED_HOOK_EVENTS.map((e) => [e, false]),
+  );
+  const existingHooks = settings.hooks as
+    | Record<string, Array<{ hooks?: Array<{ command?: string }> }>>
+    | undefined;
   if (existingHooks) {
     let found = 0;
     for (const event of EXPECTED_HOOK_EVENTS) {
       const matchers = existingHooks[event];
-      const installed = matchers?.some(m => m.hooks?.some(h => h.command?.includes(HOOK_MARKER))) ?? false;
+      const installed =
+        matchers?.some((m) => m.hooks?.some((h) => h.command?.includes(HOOK_MARKER))) ?? false;
       hookDetails[event] = installed;
       if (installed) found++;
     }
@@ -123,7 +140,7 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
 
   // Wait for renderer to be ready before sending IPC
   if (win.webContents.isLoading()) {
-    await new Promise<void>(resolve => win.webContents.once('did-finish-load', resolve));
+    await new Promise<void>((resolve) => win.webContents.once('did-finish-load', resolve));
   }
 
   const foreignCmd = validation.foreignStatusLineCommand ?? '(unknown)';

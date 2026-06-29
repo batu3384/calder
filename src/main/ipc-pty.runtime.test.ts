@@ -64,7 +64,9 @@ describe('ipc pty runtime handlers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send: vi.fn() } }]);
+    mockGetAllWindows.mockReturnValue([
+      { isDestroyed: () => false, webContents: { send: vi.fn() } },
+    ]);
     registerPtyIpcHandlers(ops);
   });
 
@@ -74,9 +76,9 @@ describe('ipc pty runtime handlers', () => {
     );
     const create = getHandleHandler('pty:create');
 
-    await expect(
-      create({}, 'sess-1', '/repo/project', null, false, '', 'claude'),
-    ).rejects.toThrow('Governance policy blocked Spawn CLI session');
+    await expect(create({}, 'sess-1', '/repo/project', null, false, '', 'claude')).rejects.toThrow(
+      'Governance policy blocked Spawn CLI session',
+    );
 
     expect(mockSpawnPty).not.toHaveBeenCalled();
     expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo/project', {

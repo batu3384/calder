@@ -84,7 +84,10 @@ function buildCheckpointSnapshot(project: ProjectRecord, label: string) {
   };
 }
 
-function createCheckpointActionBar(args: RenderProjectCheckpointSectionArgs, project: ProjectRecord): HTMLElement {
+function createCheckpointActionBar(
+  args: RenderProjectCheckpointSectionArgs,
+  project: ProjectRecord,
+): HTMLElement {
   const actions = document.createElement('div');
   actions.className = 'checkpoint-discovery-actions';
 
@@ -93,26 +96,30 @@ function createCheckpointActionBar(args: RenderProjectCheckpointSectionArgs, pro
   createBtn.type = 'button';
   createBtn.textContent = 'Create checkpoint';
   createBtn.addEventListener('click', () => {
-    showModal('New Checkpoint', [
-      {
-        label: 'Checkpoint label',
-        id: 'checkpoint-label',
-        placeholder: 'Before risky refactor',
-        defaultValue: 'Manual checkpoint',
-      },
-    ], async (values) => {
-      const label = values['checkpoint-label']?.trim() ?? '';
-      if (!label) {
-        setModalError('checkpoint-label', 'Checkpoint label is required');
-        return;
-      }
+    showModal(
+      'New Checkpoint',
+      [
+        {
+          label: 'Checkpoint label',
+          id: 'checkpoint-label',
+          placeholder: 'Before risky refactor',
+          defaultValue: 'Manual checkpoint',
+        },
+      ],
+      async (values) => {
+        const label = values['checkpoint-label']?.trim() ?? '';
+        if (!label) {
+          setModalError('checkpoint-label', 'Checkpoint label is required');
+          return;
+        }
 
-      const snapshot = buildCheckpointSnapshot(project, label);
-      const result = await window.calder.checkpoint.create(project.path, snapshot);
-      appState.setProjectCheckpoints(project.id, result.state);
-      args.onCloseModalWide();
-      args.onRefreshProviders();
-    });
+        const snapshot = buildCheckpointSnapshot(project, label);
+        const result = await window.calder.checkpoint.create(project.path, snapshot);
+        appState.setProjectCheckpoints(project.id, result.state);
+        args.onCloseModalWide();
+        args.onRefreshProviders();
+      },
+    );
   });
   actions.appendChild(createBtn);
   return actions;
@@ -159,33 +166,42 @@ function openCheckpointRestoreModal(
   checkpoint: ProjectCheckpointEntry,
   checkpointDocument: ProjectCheckpointDocument,
 ): void {
-  showModal('Restore Checkpoint', [
-    {
-      label: 'Restore mode',
-      id: 'checkpoint-restore-mode',
-      type: 'select',
-      defaultValue: 'additive',
-      options: [
-        { value: 'additive', label: 'Keep current layout (additive)' },
-        { value: 'replace', label: 'Replace current layout' },
-      ],
+  showModal(
+    'Restore Checkpoint',
+    [
+      {
+        label: 'Restore mode',
+        id: 'checkpoint-restore-mode',
+        type: 'select',
+        defaultValue: 'additive',
+        options: [
+          { value: 'additive', label: 'Keep current layout (additive)' },
+          { value: 'replace', label: 'Replace current layout' },
+        ],
+      },
+    ],
+    async (values) => {
+      const restoreMode = values['checkpoint-restore-mode'] === 'replace' ? 'replace' : 'additive';
+      args.confirmButton.disabled = true;
+      args.cancelButton.disabled = true;
+      try {
+        appState.restoreProjectCheckpoint(project.id, checkpointDocument, restoreMode);
+        args.onCloseModalWide();
+      } finally {
+        args.confirmButton.disabled = false;
+        args.cancelButton.disabled = false;
+      }
     },
-  ], async (values) => {
-    const restoreMode = values['checkpoint-restore-mode'] === 'replace' ? 'replace' : 'additive';
-    args.confirmButton.disabled = true;
-    args.cancelButton.disabled = true;
-    try {
-      appState.restoreProjectCheckpoint(project.id, checkpointDocument, restoreMode);
-      args.onCloseModalWide();
-    } finally {
-      args.confirmButton.disabled = false;
-      args.cancelButton.disabled = false;
-    }
-  });
+  );
 
   registerRestoreModalCleanup(args);
   args.modalBody.appendChild(
-    args.buildCheckpointRestoreConfirm(project.id, project.path, checkpointDocument, checkpoint.restoreSummary),
+    args.buildCheckpointRestoreConfirm(
+      project.id,
+      project.path,
+      checkpointDocument,
+      checkpoint.restoreSummary,
+    ),
   );
   requestAnimationFrame(() => args.confirmButton.focus());
 }
@@ -207,7 +223,11 @@ function appendPreviewAction(
   itemActions.appendChild(previewBtn);
 }
 
-function appendOpenAction(project: ProjectRecord, checkpoint: ProjectCheckpointEntry, itemActions: HTMLElement): void {
+function appendOpenAction(
+  project: ProjectRecord,
+  checkpoint: ProjectCheckpointEntry,
+  itemActions: HTMLElement,
+): void {
   const relativePath = toProjectRelativeContextPath(project.path, checkpoint.path);
   if (!relativePath) {
     return;
@@ -250,7 +270,10 @@ function appendRestoreAction(
   itemActions.appendChild(restoreBtn);
 }
 
-function appendCheckpointStatus(checkpoint: ProjectCheckpointEntry, itemActions: HTMLElement): void {
+function appendCheckpointStatus(
+  checkpoint: ProjectCheckpointEntry,
+  itemActions: HTMLElement,
+): void {
   const status = document.createElement('div');
   status.className = 'checkpoint-discovery-item-status';
   status.textContent = `${checkpoint.sessionCount} session${checkpoint.sessionCount === 1 ? '' : 's'} · ${checkpoint.changedFileCount} changed file${checkpoint.changedFileCount === 1 ? '' : 's'}`;

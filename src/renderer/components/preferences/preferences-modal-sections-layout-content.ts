@@ -1,4 +1,7 @@
-import type { LayoutSidebarViews, RenderLayoutSectionArgs } from './preferences-modal-sections-types.js';
+import type {
+  LayoutSidebarViews,
+  RenderLayoutSectionArgs,
+} from './preferences-modal-sections-types.js';
 
 export interface LayoutSectionCopy {
   opsRailTitle: string;
@@ -44,12 +47,13 @@ export function renderLayoutPreferencesSectionContent({
     },
   ]);
 
-  const toggles: Array<{ key: keyof LayoutSidebarViews; label: string; group: 'ops' | 'session' }> = [
-    { key: 'configSections', label: 'Toolkit', group: 'ops' },
-    { key: 'gitPanel', label: 'Git', group: 'ops' },
-    { key: 'sessionHistory', label: 'Run log', group: 'ops' },
-    { key: 'costFooter', label: 'Spend chip', group: 'session' },
-  ];
+  const toggles: Array<{ key: keyof LayoutSidebarViews; label: string; group: 'ops' | 'session' }> =
+    [
+      { key: 'configSections', label: 'Toolkit', group: 'ops' },
+      { key: 'gitPanel', label: 'Git', group: 'ops' },
+      { key: 'sessionHistory', label: 'Run log', group: 'ops' },
+      { key: 'costFooter', label: 'Spend chip', group: 'session' },
+    ];
 
   const opsCard = appendSectionCard(
     content,
@@ -94,6 +98,7 @@ export function renderLayoutPreferencesSectionContent({
 
   const pinnedNote = document.createElement('div');
   pinnedNote.className = 'preferences-card-note';
-  pinnedNote.textContent = 'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
+  pinnedNote.textContent =
+    'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
   liveViewCard.appendChild(pinnedNote);
 }

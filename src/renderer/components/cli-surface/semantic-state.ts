@@ -26,10 +26,11 @@ export function getSemanticNodeForSelection(
   projectId: string,
   selection: SurfaceSelectionRange,
 ): CalderProtocolMessage | undefined {
-  return [...(semanticNodes.get(projectId)?.values() ?? [])].find((node) =>
-    node.bounds
-    && node.bounds.startRow <= selection.startRow
-    && node.bounds.endRow >= selection.endRow,
+  return [...(semanticNodes.get(projectId)?.values() ?? [])].find(
+    (node) =>
+      node.bounds &&
+      node.bounds.startRow <= selection.startRow &&
+      node.bounds.endRow >= selection.endRow,
   );
 }
 

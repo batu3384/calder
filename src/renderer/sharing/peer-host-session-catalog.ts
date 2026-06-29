@@ -38,10 +38,15 @@ function isShareableBrowserSession(sessionType?: string): boolean {
 }
 
 export function findProjectForShare(ownerSessionId: string) {
-  return appState.projects.find((project) => project.sessions.some((session) => session.id === ownerSessionId));
+  return appState.projects.find((project) =>
+    project.sessions.some((session) => session.id === ownerSessionId),
+  );
 }
 
-export function getSessionSnapshot(hostPeer: HostPeerCatalogState, sessionId: string): SessionSnapshot | null {
+export function getSessionSnapshot(
+  hostPeer: HostPeerCatalogState,
+  sessionId: string,
+): SessionSnapshot | null {
   const instance = getTerminalInstance(sessionId);
   if (!instance) return null;
 
@@ -137,7 +142,9 @@ export function buildBrowserSessionCatalog(ownerSessionId: string): {
     .filter((entry): entry is BrowserSessionSnapshot => entry !== null);
 
   let activeBrowserSessionId = '';
-  const activeProjectSession = project.sessions.find((session) => session.id === project.activeSessionId);
+  const activeProjectSession = project.sessions.find(
+    (session) => session.id === project.activeSessionId,
+  );
   if (activeProjectSession && isShareableBrowserSession(activeProjectSession.type)) {
     activeBrowserSessionId = activeProjectSession.id;
   } else {
@@ -146,7 +153,10 @@ export function buildBrowserSessionCatalog(ownerSessionId: string): {
       activeBrowserSessionId = firstSession.id;
     }
   }
-  if (activeBrowserSessionId && !sessions.some((session) => session.id === activeBrowserSessionId)) {
+  if (
+    activeBrowserSessionId &&
+    !sessions.some((session) => session.id === activeBrowserSessionId)
+  ) {
     activeBrowserSessionId = sessions[0]?.id ?? '';
   }
 
@@ -156,14 +166,23 @@ export function buildBrowserSessionCatalog(ownerSessionId: string): {
   };
 }
 
-export function resolveBrowserTargetSessionId(ownerSessionId: string, requestedSessionId?: string): string | null {
+export function resolveBrowserTargetSessionId(
+  ownerSessionId: string,
+  requestedSessionId?: string,
+): string | null {
   const catalog = buildBrowserSessionCatalog(ownerSessionId);
   if (catalog.sessions.length === 0) return null;
   const normalizedRequested = String(requestedSessionId || '').trim();
-  if (normalizedRequested && catalog.sessions.some((session) => session.id === normalizedRequested)) {
+  if (
+    normalizedRequested &&
+    catalog.sessions.some((session) => session.id === normalizedRequested)
+  ) {
     return normalizedRequested;
   }
-  if (catalog.activeBrowserSessionId && catalog.sessions.some((session) => session.id === catalog.activeBrowserSessionId)) {
+  if (
+    catalog.activeBrowserSessionId &&
+    catalog.sessions.some((session) => session.id === catalog.activeBrowserSessionId)
+  ) {
     return catalog.activeBrowserSessionId;
   }
   return catalog.sessions[0]?.id ?? null;

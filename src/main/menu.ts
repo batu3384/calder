@@ -1,32 +1,40 @@
-import { BrowserWindow,Menu } from 'electron';
+import { BrowserWindow, Menu } from 'electron';
 
 import { isMac } from './platform';
 
 export function createAppMenu(debugMode = false): void {
-
   const template: Electron.MenuItemConstructorOptions[] = [
-    ...(isMac ? [{
-      label: 'Calder',
-      submenu: [
-        { role: 'about' as const },
-        { type: 'separator' as const },
-        {
-          label: 'Preferences…',
-          accelerator: 'CmdOrCtrl+,',
-          click: () => sendToRenderer('menu:preferences'),
-        },
-        { type: 'separator' as const },
-        { role: 'quit' as const },
-      ],
-    }] : []),
+    ...(isMac
+      ? [
+          {
+            label: 'Calder',
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              {
+                label: 'Preferences…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => sendToRenderer('menu:preferences'),
+              },
+              { type: 'separator' as const },
+              { role: 'quit' as const },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'File',
       submenu: [
-        ...(!isMac ? [{
-          label: 'Preferences…',
-          accelerator: 'CmdOrCtrl+,',
-          click: () => sendToRenderer('menu:preferences'),
-        }, { type: 'separator' as const }] : []),
+        ...(!isMac
+          ? [
+              {
+                label: 'Preferences…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => sendToRenderer('menu:preferences'),
+              },
+              { type: 'separator' as const },
+            ]
+          : []),
         {
           label: 'New Project',
           accelerator: 'CmdOrCtrl+Shift+P',
@@ -38,16 +46,24 @@ export function createAppMenu(debugMode = false): void {
           click: () => sendToRenderer('menu:new-session'),
         },
         { type: 'separator' },
-        isMac ? {
-          label: 'Close Session',
-          accelerator: 'CmdOrCtrl+W',
-          click: () => sendToRenderer('menu:close-session'),
-        } : { role: 'quit' as const },
-        ...(isMac ? [{
-          label: 'Close Window',
-          accelerator: 'CmdOrCtrl+Shift+W',
-          click: () => { BrowserWindow.getFocusedWindow()?.close(); },
-        }] : []),
+        isMac
+          ? {
+              label: 'Close Session',
+              accelerator: 'CmdOrCtrl+W',
+              click: () => sendToRenderer('menu:close-session'),
+            }
+          : { role: 'quit' as const },
+        ...(isMac
+          ? [
+              {
+                label: 'Close Window',
+                accelerator: 'CmdOrCtrl+Shift+W',
+                click: () => {
+                  BrowserWindow.getFocusedWindow()?.close();
+                },
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -90,16 +106,18 @@ export function createAppMenu(debugMode = false): void {
           accelerator: 'CmdOrCtrl+Shift+I',
           click: () => sendToRenderer('menu:toggle-inspector'),
         },
-        ...(debugMode ? [
-          {
-            label: 'Toggle Debug Panel',
-            accelerator: 'CmdOrCtrl+Shift+D',
-            click: () => sendToRenderer('menu:toggle-debug'),
-          },
-          { type: 'separator' as const },
-          { role: 'toggleDevTools' as const },
-          { role: 'reload' as const },
-        ] : []),
+        ...(debugMode
+          ? [
+              {
+                label: 'Toggle Debug Panel',
+                accelerator: 'CmdOrCtrl+Shift+D',
+                click: () => sendToRenderer('menu:toggle-debug'),
+              },
+              { type: 'separator' as const },
+              { role: 'toggleDevTools' as const },
+              { role: 'reload' as const },
+            ]
+          : []),
         // Hidden session-switching shortcuts (no visible menu)
         {
           label: 'Next Session',

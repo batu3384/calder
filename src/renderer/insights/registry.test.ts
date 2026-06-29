@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect,it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { InitialContextSnapshot } from '../../shared/types/session.js';
 import { _resetAnalyzersForTest, analyzeInitialContext, registerAnalyzer } from './registry.js';
@@ -33,19 +33,21 @@ describe('insight registry', () => {
   it('aggregates results from multiple registered analyzers', () => {
     const customAnalyzer: InsightAnalyzer = {
       id: 'test-analyzer',
-      analyze: () => [{
-        id: 'test-insight',
-        severity: 'info',
-        title: 'Test',
-        description: 'Test insight',
-      }],
+      analyze: () => [
+        {
+          id: 'test-insight',
+          severity: 'info',
+          title: 'Test',
+          description: 'Test insight',
+        },
+      ],
     };
     registerAnalyzer(customAnalyzer);
 
     // With usedPercentage >= 15, bigInitialContext also fires
     const results = analyzeInitialContext(makeSnapshot(20));
     expect(results.length).toBeGreaterThanOrEqual(2);
-    expect(results.some(r => r.id === 'test-insight')).toBe(true);
-    expect(results.some(r => r.id === 'big-initial-context')).toBe(true);
+    expect(results.some((r) => r.id === 'test-insight')).toBe(true);
+    expect(results.some((r) => r.id === 'big-initial-context')).toBe(true);
   });
 });

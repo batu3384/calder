@@ -1,4 +1,8 @@
-import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalPolicySource } from '../../shared/types/governance.js';
+import type {
+  AutoApprovalDecision,
+  AutoApprovalMode,
+  AutoApprovalPolicySource,
+} from '../../shared/types/governance.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 import type { InspectorEvent } from '../../shared/types/session.js';
 import {
@@ -25,7 +29,11 @@ interface ResolvedAutoApprovalState {
 }
 
 export interface AutoApprovalOrchestrator {
-  registerSession(sessionId: string, providerId: ProviderId | null | undefined, projectPath: string | null | undefined): void;
+  registerSession(
+    sessionId: string,
+    providerId: ProviderId | null | undefined,
+    projectPath: string | null | undefined,
+  ): void;
   unregisterSession(sessionId: string): void;
   setSessionOverride(sessionId: string, mode: AutoApprovalMode | null): void;
   getSessionOverride(sessionId: string): AutoApprovalMode | undefined;
@@ -87,13 +95,14 @@ function extractOperationInput(event: InspectorEvent): AutoApprovalOperationInpu
 
 function isPermissionRequestEvent(event: InspectorEvent): boolean {
   if (event.type === 'permission_request') return true;
-  const normalizedHookEvent = typeof event.hookEvent === 'string'
-    ? event.hookEvent.replace(/[\s_-]/g, '').toLowerCase()
-    : '';
+  const normalizedHookEvent =
+    typeof event.hookEvent === 'string' ? event.hookEvent.replace(/[\s_-]/g, '').toLowerCase() : '';
   return normalizedHookEvent === 'permissionrequest';
 }
 
-async function resolveAutoApprovalStateFromProject(projectPath: string | null): Promise<ResolvedAutoApprovalState> {
+async function resolveAutoApprovalStateFromProject(
+  projectPath: string | null,
+): Promise<ResolvedAutoApprovalState> {
   if (!projectPath) {
     return { effectiveMode: 'off', policySource: 'fallback' };
   }
@@ -110,13 +119,16 @@ async function resolveAutoApprovalStateFromProject(projectPath: string | null): 
   };
 }
 
-export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestratorOptions): AutoApprovalOrchestrator {
+export function createAutoApprovalOrchestrator(
+  options: AutoApprovalOrchestratorOptions,
+): AutoApprovalOrchestrator {
   const sessions = new Map<string, SessionRegistration>();
   const sessionOverrides = new Map<string, AutoApprovalMode>();
   const lastAutoApproval = new Map<string, AutoApprovalRecord>();
   const now = options.now ?? (() => Date.now());
   const rateLimitMs = options.rateLimitMs ?? DEFAULT_RATE_LIMIT_MS;
-  const resolveAutoApprovalState = options.resolveAutoApprovalState ?? resolveAutoApprovalStateFromProject;
+  const resolveAutoApprovalState =
+    options.resolveAutoApprovalState ?? resolveAutoApprovalStateFromProject;
 
   return {
     registerSession(sessionId, providerId, projectPath) {
@@ -178,7 +190,8 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
 
         if (finalDecision === 'allow' && !providerSupported) {
           finalDecision = 'ask';
-          finalReason = 'Provider is missing or unsupported for auto-approval; manual approval required.';
+          finalReason =
+            'Provider is missing or unsupported for auto-approval; manual approval required.';
         }
 
         if (policyResolutionFailure) {
@@ -189,9 +202,10 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
           const requestTimestamp = now();
           const operationFingerprint = buildApprovalFingerprint(event);
           const lastApproval = lastAutoApproval.get(sessionId);
-          const isRapidDuplicate = lastApproval !== undefined
-            && requestTimestamp - lastApproval.timestamp < rateLimitMs
-            && lastApproval.fingerprint === operationFingerprint;
+          const isRapidDuplicate =
+            lastApproval !== undefined &&
+            requestTimestamp - lastApproval.timestamp < rateLimitMs &&
+            lastApproval.fingerprint === operationFingerprint;
           if (isRapidDuplicate) {
             finalReason = `Duplicate permission request detected within ${rateLimitMs}ms; reused prior auto-approval.`;
           } else {
@@ -208,20 +222,22 @@ export function createAutoApprovalOrchestrator(options: AutoApprovalOrchestrator
           }
         }
 
-        options.emitInspectorEvents(sessionId, [{
-          type: 'approval_decision',
-          timestamp: now(),
-          hookEvent: 'AutoApprovalOrchestrator',
-          tool_name: event.tool_name,
-          tool_input: event.tool_input,
-          auto_approval: {
-            policy_source: policySource,
-            effective_mode: effectiveMode,
-            operation_class: operationClass,
-            decision: finalDecision,
-            reason: finalReason,
+        options.emitInspectorEvents(sessionId, [
+          {
+            type: 'approval_decision',
+            timestamp: now(),
+            hookEvent: 'AutoApprovalOrchestrator',
+            tool_name: event.tool_name,
+            tool_input: event.tool_input,
+            auto_approval: {
+              policy_source: policySource,
+              effective_mode: effectiveMode,
+              operation_class: operationClass,
+              decision: finalDecision,
+              reason: finalReason,
+            },
           },
-        }]);
+        ]);
       }
     },
   };

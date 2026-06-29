@@ -51,7 +51,9 @@ describe('calder cli surface protocol', () => {
     expect(extracted.plainText).toBe('helloworld!');
     expect(extracted.messages).toHaveLength(2);
     expect(extracted.messages[0]).toEqual(expect.objectContaining({ nodeId: 'menu.root' }));
-    expect(extracted.messages[1]).toEqual(expect.objectContaining({ type: 'focus', nodeId: 'menu.item.2' }));
+    expect(extracted.messages[1]).toEqual(
+      expect.objectContaining({ type: 'focus', nodeId: 'menu.item.2' }),
+    );
   });
 
   it('keeps incomplete OSC fragments buffered until the next chunk arrives', () => {
@@ -67,10 +69,15 @@ describe('calder cli surface protocol', () => {
     expect(firstPass.messages).toHaveLength(0);
     expect(firstPass.remainder).toBe(message.slice(0, splitIndex));
 
-    const secondPass = extractCalderOscMessages(`${message.slice(splitIndex)}world!`, firstPass.remainder);
+    const secondPass = extractCalderOscMessages(
+      `${message.slice(splitIndex)}world!`,
+      firstPass.remainder,
+    );
     expect(secondPass.plainText).toBe('world!');
     expect(secondPass.messages).toHaveLength(1);
-    expect(secondPass.messages[0]).toEqual(expect.objectContaining({ type: 'state', nodeId: 'menu.root' }));
+    expect(secondPass.messages[0]).toEqual(
+      expect.objectContaining({ type: 'state', nodeId: 'menu.root' }),
+    );
     expect(secondPass.remainder).toBe('');
   });
 });

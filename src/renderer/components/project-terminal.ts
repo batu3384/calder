@@ -5,7 +5,10 @@ import { Terminal } from '@xterm/xterm';
 
 import { appState } from '../state.js';
 import { destroySearchBar, hideSearchBar } from './search-bar.js';
-import { registerShellTerminalInstance, unregisterShellTerminalInstance } from './shell-terminal-registry.js';
+import {
+  registerShellTerminalInstance,
+  unregisterShellTerminalInstance,
+} from './shell-terminal-registry.js';
 import { fitAllVisible } from './terminal-pane.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
@@ -103,7 +106,7 @@ async function spawnShell(instance: ShellTerminalInstance, projectPath: string):
 }
 
 function showPanel(projectId: string): void {
-  const project = appState.projects.find(p => p.id === projectId);
+  const project = appState.projects.find((p) => p.id === projectId);
   if (!project) return;
 
   const instance = ensureShell(projectId, project.path);
@@ -212,7 +215,7 @@ export function handleShellPtyExit(sessionId: string, exitCode: number): void {
       `;
       overlay.querySelector('.respawn-btn')!.addEventListener('click', () => {
         overlay.remove();
-        const project = appState.projects.find(p => p.id === instance.projectId);
+        const project = appState.projects.find((p) => p.id === instance.projectId);
         if (project) {
           spawnShell(instance, project.path);
         }

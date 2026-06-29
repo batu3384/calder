@@ -5,7 +5,7 @@ const previousStatus = new Map<string, SessionStatus>();
 
 function getSessionName(sessionId: string): string {
   for (const project of appState.projects) {
-    const session = project.sessions.find(s => s.id === sessionId);
+    const session = project.sessions.find((s) => s.id === sessionId);
     if (session) return session.name;
   }
   return 'Session';
@@ -28,9 +28,7 @@ function showNotification(sessionId: string, status: SessionStatus): void {
 
   notification.onclick = () => {
     window.calder.app.focus();
-    const project = appState.projects.find(p =>
-      p.sessions.some(s => s.id === sessionId),
-    );
+    const project = appState.projects.find((p) => p.sessions.some((s) => s.id === sessionId));
     if (project) {
       appState.setActiveProject(project.id);
       appState.setActiveSession(project.id, sessionId);

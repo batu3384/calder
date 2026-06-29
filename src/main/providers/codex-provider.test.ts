@@ -17,7 +17,7 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('../full-path', () => ({
-  getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
+  getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
 vi.mock('../codex-config', () => ({
@@ -45,10 +45,10 @@ import * as fs from 'fs';
 
 import type { ProviderConfig } from '../../shared/types/provider';
 import { getCodexConfig } from '../codex-config';
-import { cleanupCodexHooks,installCodexHooks, validateCodexHooks } from '../codex-hooks';
+import { cleanupCodexHooks, installCodexHooks, validateCodexHooks } from '../codex-hooks';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { _resetCachedPath,CodexProvider } from './codex-provider';
+import { _resetCachedPath, CodexProvider } from './codex-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -112,7 +112,9 @@ describe('resolveBinaryPath', () => {
 
   it('falls back to bare "codex" when both candidate and which fail', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     expect(provider.resolveBinaryPath()).toBe('codex');
   });
 
@@ -142,7 +144,9 @@ describe('validatePrerequisites', () => {
 
   it('returns not ok when binary not found anywhere', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Codex CLI not found');
@@ -186,22 +190,40 @@ describe('buildArgs', () => {
   });
 
   it('passes initialPrompt as positional arg when not resuming', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['fix the bug']);
   });
 
   it('does not pass initialPrompt when resuming', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: true,
+      extraArgs: '',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['resume', 'sid-1']);
   });
 
   it('splits extraArgs on whitespace and appends', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '--model gpt-4o  --full-auto' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '--model gpt-4o  --full-auto',
+    });
     expect(args).toEqual(['--model', 'gpt-4o', '--full-auto']);
   });
 
   it('combines resume args and extra args', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '--model gpt-4o' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: true,
+      extraArgs: '--model gpt-4o',
+    });
     expect(args).toEqual(['resume', 'sid-1', '--model', 'gpt-4o']);
   });
 });

@@ -16,7 +16,7 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('../full-path', () => ({
-  getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
+  getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
 vi.mock('../hooks/hook-status', () => ({
@@ -48,7 +48,7 @@ import { getClaudeConfig } from '../claude-cli';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
 import { guardedInstall, validateSettings as validateGuardedSettings } from '../settings-guard';
-import { _resetCachedPath,ClaudeProvider } from './claude-provider';
+import { _resetCachedPath, ClaudeProvider } from './claude-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -121,7 +121,9 @@ describe('resolveBinaryPath', () => {
 
   it('falls back to bare "claude" when both candidate and which fail', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     expect(provider.resolveBinaryPath()).toBe('claude');
   });
 
@@ -159,7 +161,9 @@ describe('validatePrerequisites', () => {
 
   it('returns not ok when binary not found anywhere', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockImplementation(() => { throw new Error('not found'); });
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('Claude Code CLI not found');
@@ -202,22 +206,40 @@ describe('buildArgs', () => {
   });
 
   it('splits extraArgs on whitespace and appends', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '--verbose  --debug' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '--verbose  --debug',
+    });
     expect(args).toEqual(['--verbose', '--debug']);
   });
 
   it('combines session args and extra args', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '--verbose' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: true,
+      extraArgs: '--verbose',
+    });
     expect(args).toEqual(['-r', 'sid-1', '--verbose']);
   });
 
   it('passes initialPrompt as positional arg', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '', initialPrompt: 'fix the linter' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'fix the linter',
+    });
     expect(args).toEqual(['fix the linter']);
   });
 
   it('passes initialPrompt after session-id args', () => {
-    const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: false, extraArgs: '', initialPrompt: 'fix the linter' });
+    const args = provider.buildArgs({
+      cliSessionId: 'sid-1',
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'fix the linter',
+    });
     expect(args).toEqual(['--session-id', 'sid-1', 'fix the linter']);
   });
 });
@@ -233,7 +255,9 @@ describe('getTranscriptPath', () => {
     mockExistsSync.mockReturnValue(true);
     const out = provider.getTranscriptPath('abc-123', '/Users/me/dev/my repo');
     // Non-alphanumeric chars all collapse to '-'
-    expect(out).toBe(path.join('/mock/home', '.claude', 'projects', '-Users-me-dev-my-repo', 'abc-123.jsonl'));
+    expect(out).toBe(
+      path.join('/mock/home', '.claude', 'projects', '-Users-me-dev-my-repo', 'abc-123.jsonl'),
+    );
   });
 
   it('returns null when the file does not exist', () => {
@@ -245,7 +269,9 @@ describe('getTranscriptPath', () => {
     mockExistsSync.mockReturnValue(true);
     const out = provider.getTranscriptPath('sid', 'C:\\Users\\me\\proj');
     // ':' and '\' each collapse to '-', producing 'C--Users-me-proj'
-    expect(out).toBe(path.join('/mock/home', '.claude', 'projects', 'C--Users-me-proj', 'sid.jsonl'));
+    expect(out).toBe(
+      path.join('/mock/home', '.claude', 'projects', 'C--Users-me-proj', 'sid.jsonl'),
+    );
   });
 });
 
@@ -261,7 +287,7 @@ describe('parseCostFromOutput', () => {
 
   it('handles multiple cost values and picks last one', () => {
     const result = provider.parseCostFromOutput('Cost: $0.50 then $1.75 then $3.20');
-    expect(result).toEqual({ totalCostUsd: 3.20 });
+    expect(result).toEqual({ totalCostUsd: 3.2 });
   });
 });
 
@@ -314,7 +340,11 @@ describe('hooks, settings, and config integration', () => {
   });
 
   it('validateSettings delegates to settings guard', () => {
-    expect(provider.validateSettings()).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
+    expect(provider.validateSettings()).toEqual({
+      statusLine: 'calder',
+      hooks: 'complete',
+      hookDetails: {},
+    });
     expect(mockValidateGuardedSettings).toHaveBeenCalled();
   });
 });

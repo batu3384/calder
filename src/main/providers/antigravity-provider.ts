@@ -3,10 +3,22 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
 import { getAntigravityConfig } from '../antigravity-config';
-import { cleanupAntigravityHooks, installAntigravityHooks, SESSION_ID_VAR,validateAntigravityHooks } from '../antigravity-hooks';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import {
+  cleanupAntigravityHooks,
+  installAntigravityHooks,
+  SESSION_ID_VAR,
+  validateAntigravityHooks,
+} from '../antigravity-hooks';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
 import { getFullPath } from '../full-path';
 import { sanitizeExtraArgs } from '../security/sanitize';
@@ -44,9 +56,17 @@ export class AntigravityProvider extends BaseCliProvider {
   }
 
   validatePrerequisites(): { ok: boolean; message: string } {
-    const agyCheck = validateBinaryExists('agy', 'Antigravity CLI', 'brew install --cask antigravity-cli');
+    const agyCheck = validateBinaryExists(
+      'agy',
+      'Antigravity CLI',
+      'brew install --cask antigravity-cli',
+    );
     if (agyCheck.ok) return agyCheck;
-    return validateBinaryExists('antigravity', 'Antigravity CLI', 'brew install --cask antigravity-cli');
+    return validateBinaryExists(
+      'antigravity',
+      'Antigravity CLI',
+      'brew install --cask antigravity-cli',
+    );
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
@@ -58,7 +78,12 @@ export class AntigravityProvider extends BaseCliProvider {
     return env;
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.isResume && opts.cliSessionId) {
       args.push('--conversation', opts.cliSessionId);
@@ -132,12 +157,17 @@ export class AntigravityProvider extends BaseCliProvider {
 
       const shortId = cliSessionId.slice(0, 8);
       const suffix = `-${shortId}.json`;
-      const candidates = fs.readdirSync(chatsDir)
+      const candidates = fs
+        .readdirSync(chatsDir)
         .filter((f) => f.startsWith('session-') && f.endsWith(suffix))
         .map((f) => {
           const full = path.join(chatsDir!, f);
           let mtime = 0;
-          try { mtime = fs.statSync(full).mtimeMs; } catch { /* ignore missing file */ }
+          try {
+            mtime = fs.statSync(full).mtimeMs;
+          } catch {
+            /* ignore missing file */
+          }
           return { full, mtime };
         })
         .sort((a, b) => b.mtime - a.mtime);

@@ -50,12 +50,9 @@ export function bindMosaicDivider(
   options: { axis: 'x' | 'y'; min: number; max: number; fallback: number },
   registerResizeCleanup: RegisterMosaicResizeCleanup,
 ): void {
-  const getBounds = typeof boundsTarget === 'function'
-    ? boundsTarget
-    : () => boundsTarget.getBoundingClientRect();
-  registerResizeCleanup(
-    attachRatioHandle(handle, getBounds, callbacks, options),
-  );
+  const getBounds =
+    typeof boundsTarget === 'function' ? boundsTarget : () => boundsTarget.getBoundingClientRect();
+  registerResizeCleanup(attachRatioHandle(handle, getBounds, callbacks, options));
 }
 
 interface RenderSwarmMosaicPresetParams {
@@ -91,15 +88,21 @@ function renderColumns2MosaicPreset(params: RenderSwarmMosaicPresetParams): void
   canvas.appendChild(primaryDivider);
   appendMosaicSlot(project, canvas, [paneIds[1]], showPanes);
 
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyColumns2(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'columns-2-primary', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    primaryDivider,
+    canvas,
+    {
+      onPreview: (ratio) => applyColumns2(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'columns-2-primary', ratio),
+    },
+    {
+      axis: 'x',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.5,
+    },
+    registerResizeCleanup,
+  );
 }
 
 function renderRows2MosaicPreset(params: RenderSwarmMosaicPresetParams): void {
@@ -117,15 +120,21 @@ function renderRows2MosaicPreset(params: RenderSwarmMosaicPresetParams): void {
   canvas.appendChild(primaryDivider);
   appendMosaicSlot(project, canvas, [paneIds[1]], showPanes);
 
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyRows2(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'rows-2-primary', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    primaryDivider,
+    canvas,
+    {
+      onPreview: (ratio) => applyRows2(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'rows-2-primary', ratio),
+    },
+    {
+      axis: 'y',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.5,
+    },
+    registerResizeCleanup,
+  );
 }
 
 function renderFocusLeftMosaicPreset(params: RenderSwarmMosaicPresetParams): void {
@@ -159,25 +168,37 @@ function renderFocusLeftMosaicPreset(params: RenderSwarmMosaicPresetParams): voi
   stack.appendChild(secondaryDivider);
   appendMosaicSlot(project, stack, [paneIds[2]], showPanes);
 
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyFocusLeftMain(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-main', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.58,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    primaryDivider,
+    canvas,
+    {
+      onPreview: (ratio) => applyFocusLeftMain(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-main', ratio),
+    },
+    {
+      axis: 'x',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.58,
+    },
+    registerResizeCleanup,
+  );
 
-  bindMosaicDivider(secondaryDivider, stack, {
-    onPreview: (ratio) => applyFocusLeftStack(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-stack', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    secondaryDivider,
+    stack,
+    {
+      onPreview: (ratio) => applyFocusLeftStack(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-left-stack', ratio),
+    },
+    {
+      axis: 'y',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.5,
+    },
+    registerResizeCleanup,
+  );
 }
 
 function renderFocusTopMosaicPreset(params: RenderSwarmMosaicPresetParams): void {
@@ -211,25 +232,37 @@ function renderFocusTopMosaicPreset(params: RenderSwarmMosaicPresetParams): void
   row.appendChild(secondaryDivider);
   appendMosaicSlot(project, row, [paneIds[2]], showPanes);
 
-  bindMosaicDivider(primaryDivider, canvas, {
-    onPreview: (ratio) => applyFocusTopMain(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-main', ratio),
-  }, {
-    axis: 'y',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.58,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    primaryDivider,
+    canvas,
+    {
+      onPreview: (ratio) => applyFocusTopMain(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-main', ratio),
+    },
+    {
+      axis: 'y',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.58,
+    },
+    registerResizeCleanup,
+  );
 
-  bindMosaicDivider(secondaryDivider, row, {
-    onPreview: (ratio) => applyFocusTopRow(ratio),
-    onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-row', ratio),
-  }, {
-    axis: 'x',
-    min: 0.2,
-    max: 0.8,
-    fallback: 0.5,
-  }, registerResizeCleanup);
+  bindMosaicDivider(
+    secondaryDivider,
+    row,
+    {
+      onPreview: (ratio) => applyFocusTopRow(ratio),
+      onCommit: (ratio) => appState.setMosaicRatio(project.id, 'focus-top-row', ratio),
+    },
+    {
+      axis: 'x',
+      min: 0.2,
+      max: 0.8,
+      fallback: 0.5,
+    },
+    registerResizeCleanup,
+  );
 }
 
 function renderGridMosaicPreset(params: RenderSwarmMosaicPresetParams): void {

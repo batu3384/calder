@@ -1,7 +1,7 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState, type SessionRecord } from '../../state.js';
 import { showJoinDialog } from '../join-dialog.js';
-import { closeModal, type FieldDef,showModal } from '../modal.js';
+import { closeModal, type FieldDef, showModal } from '../modal.js';
 import {
   getProviderAvailabilitySnapshot,
   loadProviderAvailability,
@@ -36,7 +36,10 @@ export function createTabBarSessionMenuController(
           await loadProviderAvailability();
           providerSnapshot = getProviderAvailabilitySnapshot();
         } catch (error) {
-          console.warn('[tab-bar] Failed to refresh provider availability for quick session launch', error);
+          console.warn(
+            '[tab-bar] Failed to refresh provider availability for quick session launch',
+            error,
+          );
         }
       }
       const refreshedProject = appState.projects.find((entry) => entry.id === project.id);
@@ -65,8 +68,18 @@ export function createTabBarSessionMenuController(
     const availabilityMap = providerSnapshot?.availability ?? new Map();
 
     const fields: FieldDef[] = [
-      { label: 'Name', id: 'session-name', placeholder: `Session ${sessionNum}`, defaultValue: `Session ${sessionNum}` },
-      { label: 'Arguments', id: 'session-args', placeholder: 'e.g. --model sonnet', defaultValue: project.defaultArgs ?? '' },
+      {
+        label: 'Name',
+        id: 'session-name',
+        placeholder: `Session ${sessionNum}`,
+        defaultValue: `Session ${sessionNum}`,
+      },
+      {
+        label: 'Arguments',
+        id: 'session-args',
+        placeholder: 'e.g. --model sonnet',
+        defaultValue: project.defaultArgs ?? '',
+      },
       {
         label: 'Keep args for future sessions',
         id: 'keep-args',
@@ -76,7 +89,10 @@ export function createTabBarSessionMenuController(
     ];
 
     if (providers.length > 1) {
-      const preferred = resolvePreferredProviderForLaunch(appState.preferences.defaultProvider, providerSnapshot);
+      const preferred = resolvePreferredProviderForLaunch(
+        appState.preferences.defaultProvider,
+        providerSnapshot,
+      );
       fields.unshift({
         label: 'Provider',
         id: 'provider',
@@ -99,7 +115,7 @@ export function createTabBarSessionMenuController(
         closeModal();
         const args = values['session-args']?.trim() || undefined;
         const keepArgs = values['keep-args'] === 'true';
-        project.defaultArgs = keepArgs ? (args || undefined) : undefined;
+        project.defaultArgs = keepArgs ? args || undefined : undefined;
         const providerId = (values['provider'] || 'claude') as ProviderId;
         const session = appState.addSession(project.id, name, args, providerId);
         if (session && onCreated) onCreated(session);
@@ -166,7 +182,8 @@ export function createTabBarSessionMenuController(
 
     const rect = menu.getBoundingClientRect();
     if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
-    if (rect.bottom > window.innerHeight) menu.style.top = `${window.innerHeight - rect.height - 4}px`;
+    if (rect.bottom > window.innerHeight)
+      menu.style.top = `${window.innerHeight - rect.height - 4}px`;
     applyContextMenuSemantics(menu, 'New session actions');
   }
 

@@ -8,7 +8,12 @@ interface BuildMobileInspectPromptOptions {
 
 export function buildMobileInspectPrompt(options: BuildMobileInspectPromptOptions): string | null {
   const { inspectState, platformLabel } = options;
-  if (!inspectState.screenshot || !inspectState.screenshot.success || !inspectState.screenshot.dataUrl) return null;
+  if (
+    !inspectState.screenshot ||
+    !inspectState.screenshot.success ||
+    !inspectState.screenshot.dataUrl
+  )
+    return null;
   if (!inspectState.selectedPoint) return null;
   const instruction = inspectState.instruction.trim();
   if (!instruction) return null;
@@ -17,8 +22,13 @@ export function buildMobileInspectPrompt(options: BuildMobileInspectPromptOption
     `Mobile inspect task (${platformLabel}).`,
     `Selected point: ${formatPointLabel(inspectState.selectedPoint)}.`,
   ];
-  if (typeof inspectState.screenshot.width === 'number' && typeof inspectState.screenshot.height === 'number') {
-    lines.push(`Screenshot size: ${inspectState.screenshot.width}x${inspectState.screenshot.height}.`);
+  if (
+    typeof inspectState.screenshot.width === 'number' &&
+    typeof inspectState.screenshot.height === 'number'
+  ) {
+    lines.push(
+      `Screenshot size: ${inspectState.screenshot.width}x${inspectState.screenshot.height}.`,
+    );
   }
   if (inspectState.screenshot.deviceName) {
     lines.push(`Device: ${inspectState.screenshot.deviceName}.`);

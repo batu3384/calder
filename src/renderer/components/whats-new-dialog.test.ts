@@ -5,7 +5,9 @@ vi.mock('./modal.js', () => ({
   runModalCleanup: vi.fn(),
   registerModalCleanup: vi.fn(),
 }));
-vi.mock('../state.js', () => ({ appState: { lastSeenVersion: undefined, setLastSeenVersion: vi.fn() } }));
+vi.mock('../state.js', () => ({
+  appState: { lastSeenVersion: undefined, setLastSeenVersion: vi.fn() },
+}));
 
 import { parseChangelog } from './whats-new-dialog';
 
@@ -54,10 +56,7 @@ describe('parseChangelog', () => {
     const notes = parseChangelog(SAMPLE_CHANGELOG, '0.2.11');
     expect(notes).not.toBeNull();
     expect(notes!.date).toBe('2026-03-24');
-    expect(notes!.features).toEqual([
-      'Demo GIF to README',
-      'Smarter tool failure classification',
-    ]);
+    expect(notes!.features).toEqual(['Demo GIF to README', 'Smarter tool failure classification']);
     expect(notes!.fixes).toEqual(['Sidebar flickering']);
     expect(notes!.changes).toEqual([]);
   });

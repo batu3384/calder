@@ -41,7 +41,8 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
+  ntpSubtitle.textContent =
+    'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
   ntpHero.appendChild(ntpSubtitle);
 
   const ntpActions = document.createElement('div');
@@ -112,8 +113,16 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
   ntpWorkflowList.className = 'browser-ntp-flow';
   const flowSteps = [
     ['01', 'Open a surface', 'Start with a running app, a localhost surface, or any manual URL.'],
-    ['02', 'Capture the right context', 'Inspect an element, draw on the page, or record a reproducible browser flow.'],
-    ['03', 'Hand off to session', 'Route the page context into a new or open session without leaving Calder.'],
+    [
+      '02',
+      'Capture the right context',
+      'Inspect an element, draw on the page, or record a reproducible browser flow.',
+    ],
+    [
+      '03',
+      'Hand off to session',
+      'Route the page context into a new or open session without leaving Calder.',
+    ],
   ] as const;
 
   for (const [index, title, copy] of flowSteps) {

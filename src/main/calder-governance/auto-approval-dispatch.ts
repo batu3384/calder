@@ -8,7 +8,9 @@ const AUTO_APPROVAL_INPUT_BY_PROVIDER: Partial<Record<ProviderId, string>> = {
   copilot: 'y\n',
 };
 
-export function supportsAutoApprovalDispatch(providerId: ProviderId | null | undefined): providerId is ProviderId {
+export function supportsAutoApprovalDispatch(
+  providerId: ProviderId | null | undefined,
+): providerId is ProviderId {
   if (!providerId) return false;
   return AUTO_APPROVAL_INPUT_BY_PROVIDER[providerId] !== undefined;
 }

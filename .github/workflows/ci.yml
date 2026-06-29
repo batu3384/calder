@@ -24,13 +24,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
         env:
-          CALDER_SKIP_APP_DEPS: "1"
+          CALDER_SKIP_APP_DEPS: '1'
 
       - name: Build
         run: npm run build
 
       - name: Structure guardrails
         run: npm run audit:structure
+
+      - name: Tracked secrets scan
+        run: npm run audit:secrets
 
       - name: Lint
         run: npm run lint
@@ -56,8 +59,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        env:
-          CALDER_SKIP_APP_DEPS: "1"
 
       - name: Deep system audit
         run: npm run audit:deep

@@ -9,7 +9,7 @@ import {
 import { dismissFlowPicker } from './flow-picker.js';
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { sendGuestMessage } from './guest-messaging.js';
-import { dismissInspect,toggleInspectMode } from './inspect-mode.js';
+import { dismissInspect, toggleInspectMode } from './inspect-mode.js';
 import { populateLocalTargets } from './local-targets.js';
 import {
   type BrowserPageState,
@@ -19,10 +19,7 @@ import {
 } from './navigation.js';
 import { resolveCaptureModeState } from './pane-helpers.js';
 import { enablePopoverDragging } from './popover.js';
-import {
-  sendFlowToSelectedSession,
-  sendToSelectedSession,
-} from './session-integration.js';
+import { sendFlowToSelectedSession, sendToSelectedSession } from './session-integration.js';
 import {
   closeBrowserTargetMenu,
   openBrowserTargetMenu,
@@ -116,7 +113,9 @@ export interface BrowserNewTabTargetingBindingParams {
   };
 }
 
-export function attachBrowserViewportInteractions(params: BrowserViewportInteractionBindingParams): void {
+export function attachBrowserViewportInteractions(
+  params: BrowserViewportInteractionBindingParams,
+): void {
   const {
     instance,
     viewportWrapper,
@@ -171,24 +170,23 @@ export function attachBrowserViewportInteractions(params: BrowserViewportInterac
 
   instance.viewportOutsideClickHandler = (e: MouseEvent) => {
     if (
-      !eventPathContains(e, viewportWrapper)
-      && !eventPathContains(e, viewportBtn)
-      && !eventPathContains(e, viewportDropdown)
+      !eventPathContains(e, viewportWrapper) &&
+      !eventPathContains(e, viewportBtn) &&
+      !eventPathContains(e, viewportDropdown)
     ) {
       closeViewportMenu('outside-press');
     }
   };
-  const outsidePressEventName: 'pointerdown' | 'mousedown' = (
-    typeof window !== 'undefined' && 'PointerEvent' in window
-  ) ? 'pointerdown' : 'mousedown';
+  const outsidePressEventName: 'pointerdown' | 'mousedown' =
+    typeof window !== 'undefined' && 'PointerEvent' in window ? 'pointerdown' : 'mousedown';
   document.addEventListener(outsidePressEventName, instance.viewportOutsideClickHandler);
 
   instance.targetMenuOutsideClickHandler = (e: MouseEvent) => {
     if (
-      !eventPathContains(e, instance.targetMenu)
-      && !eventPathContains(e, instance.inspectTargetBtn)
-      && !eventPathContains(e, instance.drawTargetBtn)
-      && !eventPathContains(e, instance.flowTargetBtn)
+      !eventPathContains(e, instance.targetMenu) &&
+      !eventPathContains(e, instance.inspectTargetBtn) &&
+      !eventPathContains(e, instance.drawTargetBtn) &&
+      !eventPathContains(e, instance.flowTargetBtn)
     ) {
       closeBrowserTargetMenu(instance, 'outside-press');
     }
@@ -252,15 +250,20 @@ export function attachBrowserViewportInteractions(params: BrowserViewportInterac
 
   function focusViewportMenuItem(index: number): void {
     if (viewportMenuItems.length === 0) return;
-    const normalized = ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
-    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
+    const normalized =
+      ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
+    viewportMenuItems.forEach((item) => {
+      item.tabIndex = -1;
+    });
     const nextItem = viewportMenuItems[normalized];
     nextItem.tabIndex = 0;
     nextItem.focus();
   }
 }
 
-export function attachBrowserCaptureInteractions(params: BrowserCaptureInteractionBindingParams): void {
+export function attachBrowserCaptureInteractions(
+  params: BrowserCaptureInteractionBindingParams,
+): void {
   const {
     instance,
     inspectBtn,
@@ -284,17 +287,27 @@ export function attachBrowserCaptureInteractions(params: BrowserCaptureInteracti
   recordBtn.addEventListener('click', () => toggleFlowMode(instance));
   drawBtn.addEventListener('click', () => toggleDrawMode(instance));
   drawClearBtn.addEventListener('click', () => clearDrawing(instance));
-  drawSubmitBtn.addEventListener('click', () => { void sendDrawToSelectedSession(instance); });
-  drawCustomBtn.addEventListener('click', () => openBrowserTargetMenu(instance, drawCustomBtn, 'draw'));
+  drawSubmitBtn.addEventListener('click', () => {
+    void sendDrawToSelectedSession(instance);
+  });
+  drawCustomBtn.addEventListener('click', () =>
+    openBrowserTargetMenu(instance, drawCustomBtn, 'draw'),
+  );
   drawInstructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       void sendDrawToSelectedSession(instance);
-    } else if (e.key === 'Escape') { dismissDraw(instance); }
+    } else if (e.key === 'Escape') {
+      dismissDraw(instance);
+    }
   });
   flowClearBtn.addEventListener('click', () => clearFlow(instance));
-  flowSubmitBtn.addEventListener('click', () => { void sendFlowToSelectedSession(instance); });
-  flowCustomBtn.addEventListener('click', () => openBrowserTargetMenu(instance, flowCustomBtn, 'flow'));
+  flowSubmitBtn.addEventListener('click', () => {
+    void sendFlowToSelectedSession(instance);
+  });
+  flowCustomBtn.addEventListener('click', () =>
+    openBrowserTargetMenu(instance, flowCustomBtn, 'flow'),
+  );
 
   flowPickerMenu.addEventListener('click', (e: MouseEvent) => {
     const item = (e.target as HTMLElement).closest<HTMLButtonElement>('.flow-picker-item');
@@ -305,7 +318,9 @@ export function attachBrowserCaptureInteractions(params: BrowserCaptureInteracti
     if (action === 'click' || action === 'click-and-record') {
       const selectorValues = metadata.selectorValues?.length
         ? metadata.selectorValues
-        : metadata.selectors.map((selector) => selector.value).filter((value) => value.trim().length > 0);
+        : metadata.selectors
+            .map((selector) => selector.value)
+            .filter((value) => value.trim().length > 0);
       const replayPayload: FlowReplayPayload = {
         selectors: selectorValues,
         shadowHostSelectors: metadata.shadowHostSelectors,
@@ -334,7 +349,9 @@ export function attachBrowserCaptureInteractions(params: BrowserCaptureInteracti
     if (e.target === flowPickerOverlay) dismissFlowPicker(instance);
   });
 
-  submitBtn.addEventListener('click', () => { void sendToSelectedSession(instance); });
+  submitBtn.addEventListener('click', () => {
+    void sendToSelectedSession(instance);
+  });
   customBtn.addEventListener('click', () => openBrowserTargetMenu(instance, customBtn, 'inspect'));
   instructionInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -344,7 +361,9 @@ export function attachBrowserCaptureInteractions(params: BrowserCaptureInteracti
   });
 }
 
-export function attachBrowserNavigationInteractions(params: BrowserNavigationInteractionBindingParams): void {
+export function attachBrowserNavigationInteractions(
+  params: BrowserNavigationInteractionBindingParams,
+): void {
   const {
     instance,
     webview,
@@ -368,9 +387,16 @@ export function attachBrowserNavigationInteractions(params: BrowserNavigationInt
 
   goBtn.addEventListener('click', () => {
     if (instance.isLoading) {
-      try { webview.stop(); } catch { /* webview may already be stopped */ }
+      try {
+        webview.stop();
+      } catch {
+        /* webview may already be stopped */
+      }
       instance.isLoading = false;
-      syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false), urlInput.value.trim());
+      syncBrowserStatus(
+        resolveBrowserPageState(urlInput.value.trim(), false, false),
+        urlInput.value.trim(),
+      );
       syncNavigationControls();
       syncAddressBarState();
       return;
@@ -378,9 +404,9 @@ export function attachBrowserNavigationInteractions(params: BrowserNavigationInt
 
     const normalizedDraft = normalizeUrl(urlInput.value);
     if (
-      normalizedDraft
-      && normalizedDraft === instance.committedUrl
-      && instance.committedUrl !== 'about:blank'
+      normalizedDraft &&
+      normalizedDraft === instance.committedUrl &&
+      instance.committedUrl !== 'about:blank'
     ) {
       if (!instance.webviewReady) {
         navigateTo(instance, instance.committedUrl);
@@ -412,20 +438,17 @@ export function attachBrowserNavigationInteractions(params: BrowserNavigationInt
 }
 
 export function bindBrowserToolbarState(params: BrowserToolbarStateBindingParams): void {
-  const {
-    instance,
-    captureCluster,
-    inspectBtn,
-    drawBtn,
-    recordBtn,
-  } = params;
+  const { instance, captureCluster, inspectBtn, drawBtn, recordBtn } = params;
 
   instance.syncToolbarState = () => {
     const mode = resolveCaptureModeState(instance);
     const modeText =
-      mode === 'inspect' ? 'Inspecting'
-        : mode === 'draw' ? 'Drawing'
-          : mode === 'flow' ? 'Recording'
+      mode === 'inspect'
+        ? 'Inspecting'
+        : mode === 'draw'
+          ? 'Drawing'
+          : mode === 'flow'
+            ? 'Recording'
             : 'Idle';
     captureCluster.label.textContent = 'Capture';
     captureCluster.element.dataset.captureMode = mode;
@@ -437,9 +460,7 @@ export function bindBrowserToolbarState(params: BrowserToolbarStateBindingParams
 
     inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';
     inspectBtn.dataset.state = instance.inspectMode ? 'active' : 'idle';
-    inspectBtn.title = instance.inspectMode
-      ? 'Inspect mode is active'
-      : 'Inspect element';
+    inspectBtn.title = instance.inspectMode ? 'Inspect mode is active' : 'Inspect element';
     inspectBtn.ariaLabel = inspectBtn.title;
 
     drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';
@@ -451,14 +472,14 @@ export function bindBrowserToolbarState(params: BrowserToolbarStateBindingParams
 
     recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';
     recordBtn.dataset.state = instance.flowMode ? 'active' : 'idle';
-    recordBtn.title = instance.flowMode
-      ? 'Flow recording is active'
-      : 'Record browser flow';
+    recordBtn.title = instance.flowMode ? 'Flow recording is active' : 'Record browser flow';
     recordBtn.ariaLabel = recordBtn.title;
   };
 }
 
-export function attachBrowserNewTabTargetingBindings(params: BrowserNewTabTargetingBindingParams): void {
+export function attachBrowserNewTabTargetingBindings(
+  params: BrowserNewTabTargetingBindingParams,
+): void {
   const {
     instance,
     inspectPanel,

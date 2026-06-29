@@ -41,7 +41,7 @@ const mockAppState = vi.hoisted(() => {
     removeHistoryEntry: vi.fn(),
     resumeFromHistory: vi.fn(),
     emit(event: string) {
-      listeners.get(event)?.forEach(cb => cb());
+      listeners.get(event)?.forEach((cb) => cb());
     },
     reset() {
       listeners.clear();
@@ -79,7 +79,7 @@ class FakeClassList {
     const removeSet = new Set(tokens);
     this.owner.className = this.owner.className
       .split(/\s+/)
-      .filter(token => token && !removeSet.has(token))
+      .filter((token) => token && !removeSet.has(token))
       .join(' ');
   }
 
@@ -114,7 +114,10 @@ class FakeElement {
   listeners = new Map<string, Array<(event?: unknown) => void>>();
   classList = new FakeClassList(this);
 
-  constructor(public tagName: string, public ownerDocument: FakeDocument) {}
+  constructor(
+    public tagName: string,
+    public ownerDocument: FakeDocument,
+  ) {}
 
   set innerHTML(value: string) {
     this.textContent = value;
@@ -215,7 +218,9 @@ describe('initSessionHistory', () => {
     expect(details).not.toBeNull();
     expect(details?.textContent).toContain('$0.42');
     expect(details?.textContent).toContain('Codex CLI');
-    expect(details?.textContent?.indexOf('$0.42')).toBeLessThan(details?.textContent?.indexOf('Codex CLI') ?? -1);
+    expect(details?.textContent?.indexOf('$0.42')).toBeLessThan(
+      details?.textContent?.indexOf('Codex CLI') ?? -1,
+    );
   });
 
   it('renders the provider name even when cost is missing', async () => {
@@ -248,7 +253,9 @@ describe('initSessionHistory', () => {
     const clearBtn = container.querySelector('.history-clear-btn');
     clearBtn?.dispatch('click');
 
-    expect(confirmMock).toHaveBeenCalledWith('Clear all session history for this project? This cannot be undone.');
+    expect(confirmMock).toHaveBeenCalledWith(
+      'Clear all session history for this project? This cannot be undone.',
+    );
     expect(mockAppState.clearSessionHistory).not.toHaveBeenCalled();
   });
 

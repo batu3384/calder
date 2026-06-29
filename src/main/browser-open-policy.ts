@@ -7,20 +7,9 @@ interface BrowserWindowLike {
   };
 }
 
-const EMBEDDED_BROWSER_HOSTS = new Set([
-  'localhost',
-  '127.0.0.1',
-  '0.0.0.0',
-  '::1',
-  '[::1]',
-]);
+const EMBEDDED_BROWSER_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]']);
 
-const ALLOWED_EXTERNAL_PROTOCOLS = new Set([
-  'http:',
-  'https:',
-  'mailto:',
-  'tel:',
-]);
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 export function isEmbeddedBrowserCandidate(url: string): boolean {
   try {
@@ -57,9 +46,7 @@ export async function openUrlWithBrowserPolicy(
   mainWindow: BrowserWindowLike | null | undefined,
   openExternal: (target: string) => Promise<void> | void,
 ): Promise<'embedded' | 'external'> {
-  const normalizedPayload = typeof payload === 'string'
-    ? { url: payload }
-    : payload;
+  const normalizedPayload = typeof payload === 'string' ? { url: payload } : payload;
   const shouldEmbed = normalizedPayload.preferEmbedded
     ? isHttpUrl(normalizedPayload.url)
     : isEmbeddedBrowserCandidate(normalizedPayload.url);

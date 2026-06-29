@@ -33,8 +33,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectBackgroundTaskSyncForTesting, initProjectBackgroundTaskSync } from './project-background-task-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectBackgroundTaskSyncForTesting,
+  initProjectBackgroundTaskSync,
+} from './project-background-task-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 async function flushTasks(): Promise<void> {
   await Promise.resolve();
@@ -71,11 +74,19 @@ describe('project background task sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks?.queuedCount).toBe(0);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks
+        ?.queuedCount,
+    ).toBe(0);
   });
 
   it('applies live task queue updates to the matching project', async () => {
-    mockGetProjectState.mockResolvedValue({ tasks: [], queuedCount: 0, runningCount: 0, completedCount: 0 });
+    mockGetProjectState.mockResolvedValue({
+      tasks: [],
+      queuedCount: 0,
+      runningCount: 0,
+      completedCount: 0,
+    });
     const project = appState.addProject('Calder', '/proj');
 
     initProjectBackgroundTaskSync();
@@ -101,7 +112,10 @@ describe('project background task sync', () => {
       lastUpdated: '2026-04-13T20:00:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks?.queuedCount).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks
+        ?.queuedCount,
+    ).toBe(1);
   });
 
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
@@ -112,17 +126,29 @@ describe('project background task sync', () => {
     expect(mockWatchProject).not.toHaveBeenCalled();
     expect(mockGetProjectState).not.toHaveBeenCalled();
 
-    mockGetProjectState.mockResolvedValue({ tasks: [], queuedCount: 0, runningCount: 0, completedCount: 0 });
+    mockGetProjectState.mockResolvedValue({
+      tasks: [],
+      queuedCount: 0,
+      runningCount: 0,
+      completedCount: 0,
+    });
     appState.addProject('Calder', '/proj');
     await flushTasks();
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
-    mockGetProjectState.mockResolvedValue({ tasks: [], queuedCount: 0, runningCount: 0, completedCount: 0 });
+    mockGetProjectState.mockResolvedValue({
+      tasks: [],
+      queuedCount: 0,
+      runningCount: 0,
+      completedCount: 0,
+    });
     const project = appState.addProject('Calder', '/proj');
 
     initProjectBackgroundTaskSync();
@@ -136,7 +162,10 @@ describe('project background task sync', () => {
       lastUpdated: '2026-04-13T20:10:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks?.queuedCount).toBe(0);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks
+        ?.queuedCount,
+    ).toBe(0);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
@@ -165,11 +194,17 @@ describe('project background task sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks?.queuedCount).toBe(7);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks
+        ?.queuedCount,
+    ).toBe(7);
 
     firstResponse.resolve({ tasks: [], queuedCount: 1, runningCount: 0, completedCount: 0 });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks?.queuedCount).toBe(7);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectBackgroundTasks
+        ?.queuedCount,
+    ).toBe(7);
   });
 });

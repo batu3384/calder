@@ -1,16 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockLoad,
-  mockSave,
-  mockDeliverPromptToTerminalSession,
-  mockSetPendingPrompt,
-} = vi.hoisted(() => ({
-  mockLoad: vi.fn(),
-  mockSave: vi.fn(),
-  mockDeliverPromptToTerminalSession: vi.fn(),
-  mockSetPendingPrompt: vi.fn(),
-}));
+const { mockLoad, mockSave, mockDeliverPromptToTerminalSession, mockSetPendingPrompt } = vi.hoisted(
+  () => ({
+    mockLoad: vi.fn(),
+    mockSave: vi.fn(),
+    mockDeliverPromptToTerminalSession: vi.fn(),
+    mockSetPendingPrompt: vi.fn(),
+  }),
+);
 
 vi.stubGlobal('window', {
   calder: {
@@ -36,8 +33,12 @@ vi.mock('./components/terminal-pane.js', () => ({
   setPendingPrompt: mockSetPendingPrompt,
 }));
 
-import { buildProjectBackgroundTaskPrompt, resumeProjectBackgroundTaskInNewSession, sendProjectBackgroundTaskToSelectedSession } from './project-background-task-actions.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  buildProjectBackgroundTaskPrompt,
+  resumeProjectBackgroundTaskInNewSession,
+  sendProjectBackgroundTaskToSelectedSession,
+} from './project-background-task-actions.js';
+import { _resetForTesting, appState } from './state.js';
 
 describe('project background task actions', () => {
   beforeEach(() => {

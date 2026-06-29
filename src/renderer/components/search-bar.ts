@@ -32,7 +32,10 @@ export class XtermSearchBackend implements SearchBackend {
   private listeners = new Set<(state: SearchResultState) => void>();
   private disposeSearchResultsListener: (() => void) | null = null;
 
-  constructor(private sessionId: string, private resolve: InstanceResolver) {}
+  constructor(
+    private sessionId: string,
+    private resolve: InstanceResolver,
+  ) {}
 
   findNext(query: string, options: { caseSensitive: boolean; regex: boolean }): void {
     this.ensureSubscription();
@@ -119,7 +122,10 @@ export function ShellTerminalSearchBackend(sessionId: string): XtermSearchBacken
   return new XtermSearchBackend(sessionId, (id) => getShellTerminalInstance(id));
 }
 
-const searchBars = new Map<string, { bar: HTMLDivElement; backend: SearchBackend; unsubscribe: () => void }>();
+const searchBars = new Map<
+  string,
+  { bar: HTMLDivElement; backend: SearchBackend; unsubscribe: () => void }
+>();
 
 export function showSearchBar(sessionId: string, backend: SearchBackend): void {
   const existing = searchBars.get(sessionId);

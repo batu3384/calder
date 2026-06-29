@@ -29,15 +29,20 @@ export function createPreloadProviderApi(
   onChannel: OnChannel,
 ): PreloadProviderApi {
   return {
-    getConfig: (providerId, projectPath) => ipcRenderer.invoke('provider:getConfig', providerId, projectPath),
+    getConfig: (providerId, projectPath) =>
+      ipcRenderer.invoke('provider:getConfig', providerId, projectPath),
     getMeta: (providerId) => ipcRenderer.invoke('provider:getMeta', providerId),
     listProviders: () => ipcRenderer.invoke('provider:listProviders'),
     checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
     updateAll: () => ipcRenderer.invoke('provider:updateAll'),
     updateProvider: (providerId) => ipcRenderer.invoke('provider:updateProvider', providerId),
     cancelUpdateAll: () => ipcRenderer.invoke('provider:cancelUpdateAll'),
-    onUpdateProgress: (callback) => onChannel('provider:update-progress', (event) => callback(event as ProviderUpdateProgressEvent)),
-    watchProject: (providerId, projectPath) => ipcRenderer.send('config:watchProject', providerId, projectPath),
+    onUpdateProgress: (callback) =>
+      onChannel('provider:update-progress', (event) =>
+        callback(event as ProviderUpdateProgressEvent),
+      ),
+    watchProject: (providerId, projectPath) =>
+      ipcRenderer.send('config:watchProject', providerId, projectPath),
     onConfigChanged: (callback) => onChannel('config:changed', callback),
   };
 }

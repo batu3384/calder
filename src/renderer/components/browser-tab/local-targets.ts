@@ -19,14 +19,16 @@ export async function populateLocalTargets(
     if (targets.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'browser-ntp-empty';
-      empty.textContent = 'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
+      empty.textContent =
+        'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
       grid.appendChild(empty);
       copy.textContent = 'Only running localhost surfaces are listed here.';
       meta.textContent = '0 running';
       return;
     }
 
-    copy.textContent = 'Only running localhost surfaces appear here. Pick one or paste any URL above.';
+    copy.textContent =
+      'Only running localhost surfaces appear here. Pick one or paste any URL above.';
     meta.textContent = `${targets.length} running`;
     for (const target of targets) {
       const btn = document.createElement('button');
@@ -48,7 +50,8 @@ export async function populateLocalTargets(
     if (!instances.has(instance.sessionId)) return;
     const empty = document.createElement('div');
     empty.className = 'browser-ntp-empty';
-    empty.textContent = 'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
+    empty.textContent =
+      'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
     grid.appendChild(empty);
     copy.textContent = 'Only running localhost surfaces are listed here.';
     meta.textContent = 'Unavailable';

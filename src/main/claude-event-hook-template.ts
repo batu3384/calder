@@ -10,8 +10,10 @@ export function buildClaudeEventHookPython(
   eventType: InspectorEventType,
   statusDir: string,
 ): string {
-  return CLAUDE_EVENT_HOOK_TEMPLATE
-    .split(STATUS_DIR_PLACEHOLDER).join(statusDir)
-    .split(EVENT_TYPE_PLACEHOLDER).join(eventType)
-    .split(HOOK_EVENT_PLACEHOLDER).join(hookEvent);
+  return CLAUDE_EVENT_HOOK_TEMPLATE.split(STATUS_DIR_PLACEHOLDER)
+    .join(statusDir)
+    .split(EVENT_TYPE_PLACEHOLDER)
+    .join(eventType)
+    .split(HOOK_EVENT_PLACEHOLDER)
+    .join(hookEvent);
 }

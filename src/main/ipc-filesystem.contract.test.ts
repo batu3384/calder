@@ -5,10 +5,19 @@ import { describe, expect, it } from 'vitest';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
 const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');
-const ipcAppBrowserSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-app-browser.ts'), 'utf8');
+const ipcAppBrowserSource = readFileSync(
+  path.join(process.cwd(), 'src/main/ipc-app-browser.ts'),
+  'utf8',
+);
 const ipcPtySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-pty.ts'), 'utf8');
-const ipcStateSanitizerSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-state-sanitizer.ts'), 'utf8');
-const ipcPathPolicySource = readFileSync(path.join(process.cwd(), 'src/main/ipc-path-policy.ts'), 'utf8');
+const ipcStateSanitizerSource = readFileSync(
+  path.join(process.cwd(), 'src/main/ipc-state-sanitizer.ts'),
+  'utf8',
+);
+const ipcPathPolicySource = readFileSync(
+  path.join(process.cwd(), 'src/main/ipc-path-policy.ts'),
+  'utf8',
+);
 
 describe('ipc filesystem contract', () => {
   it('restricts directory metadata lookups to allowed locations', () => {
@@ -21,8 +30,12 @@ describe('ipc filesystem contract', () => {
   });
 
   it('requires prefix-based listing outside known projects to reduce enumeration', () => {
-    expect(ipcFsStoreSource).toContain('if (!policy.isWithinKnownProject(resolved) && !lowerPrefix)');
-    expect(ipcFsStoreSource).toContain('Avoid broad directory enumeration outside known project roots.');
+    expect(ipcFsStoreSource).toContain(
+      'if (!policy.isWithinKnownProject(resolved) && !lowerPrefix)',
+    );
+    expect(ipcFsStoreSource).toContain(
+      'Avoid broad directory enumeration outside known project roots.',
+    );
   });
 
   it('requires known project cwd for PTY creation entry points', () => {

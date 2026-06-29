@@ -7,11 +7,13 @@
 ## Product Decision
 
 The approved behavior is:
+
 - the visible model selection flow stays the same
 - all subagents and helper agents follow the active provider for the current session
 - the system should not require separate subagent model setup from the user
 
 This means:
+
 - if the user is working on Claude, all subagent/helper traffic stays on Claude
 - if the user switches to Z.ai, all subagent/helper traffic moves to Z.ai
 - if the user switches to MiniMax, all subagent/helper traffic moves to MiniMax
@@ -21,6 +23,7 @@ No helper-agent exception path will remain in the final design.
 ## Current Problem
 
 The current hybrid gateway correctly routes explicit provider-native models:
+
 - `claude-*` -> Anthropic
 - `glm-*` -> Z.ai
 - `MiniMax-*` -> MiniMax
@@ -28,17 +31,21 @@ The current hybrid gateway correctly routes explicit provider-native models:
 But that is not enough to guarantee end-to-end provider coherence inside Claude Code.
 
 Observed issue from the live gateway log:
+
 - MiniMax sessions still generate requests for `claude-haiku-4-5-20251001`
 - this shows that some built-in subagent/helper flows are still using Claude defaults instead of the active session provider
 
 Additional live probe result:
+
 - an explicit top-level Claude selection such as `/model sonnet` also reaches the gateway as `claude-sonnet-4-6`
 
 This means model string alone is not sufficient to distinguish:
+
 - a user’s explicit top-level Claude model choice
 - a helper/subagent default emitted by Claude Code
 
 So the current system is:
+
 - correct for main-session explicit model selection
 - not yet correct for hidden subagent/helper alias resolution
 
@@ -49,6 +56,7 @@ The user-facing model selection contract must remain stable.
 ### Claude
 
 Users continue to select Claude through the existing short names:
+
 - `/model opus`
 - `/model sonnet`
 - `/model haiku`
@@ -56,6 +64,7 @@ Users continue to select Claude through the existing short names:
 ### Z.ai
 
 Users continue to select Z.ai through:
+
 - `custom` -> `glm-5.1`
 - `/model glm-5-turbo`
 - `/model glm-4.7`
@@ -63,6 +72,7 @@ Users continue to select Z.ai through:
 ### MiniMax
 
 Users continue to select MiniMax through:
+
 - `/model MiniMax-M2.7`
 
 The design must not introduce a separate “subagent model” control.
@@ -70,6 +80,7 @@ The design must not introduce a separate “subagent model” control.
 ## Non-Goals
 
 This design does not attempt to:
+
 - redesign the visible model picker UI
 - add new provider families
 - introduce separate user-facing agent model settings
@@ -85,6 +96,7 @@ The implementation should move provider resolution into a dedicated **session-aw
 Explicit provider-native model names always win.
 
 Examples:
+
 - `glm-5.1` remains `glm-5.1`
 - `glm-5-turbo` remains `glm-5-turbo`
 - `MiniMax-M2.7` remains `MiniMax-M2.7`
@@ -93,6 +105,7 @@ Examples:
 Aliases and Claude defaults become **session-relative**.
 
 Examples:
+
 - `haiku`
 - `sonnet`
 - `opus`
@@ -105,6 +118,7 @@ These should be rewritten according to the active provider for that session.
 The gateway should maintain a small in-memory registry keyed by Claude IDE session identity.
 
 Required state per session:
+
 - `sessionId`
 - `activeProvider`: `anthropic | zai | minimax`
 - `activeMainModel`: the most recent explicit top-level user-selected model
@@ -125,6 +139,7 @@ This means the implementation must first inspect real request metadata and choos
 ### Rule 1: Explicit third-party model names never change
 
 If the request model is one of:
+
 - `glm-*`
 - `MiniMax-*`
 
@@ -133,6 +148,7 @@ the gateway should route it directly to the corresponding provider.
 ### Rule 2: Claude short aliases become provider-relative inside an active session
 
 If the request model is one of:
+
 - `opus`
 - `sonnet`
 - `haiku`
@@ -140,16 +156,19 @@ If the request model is one of:
 the gateway should resolve it against the session’s `activeProvider`.
 
 #### When active provider is Claude
+
 - `opus` -> Claude Opus
 - `sonnet` -> Claude Sonnet
 - `haiku` -> Claude Haiku
 
 #### When active provider is Z.ai
+
 - `opus` -> `glm-5.1`
 - `sonnet` -> `glm-5-turbo`
 - `haiku` -> `glm-4.7`
 
 #### When active provider is MiniMax
+
 - `opus` -> `MiniMax-M2.7`
 - `sonnet` -> `MiniMax-M2.7`
 - `haiku` -> `MiniMax-M2.7`
@@ -161,6 +180,7 @@ MiniMax currently has only one supported text model in this setup, so all three 
 This is the key fix for hidden agent/helper traffic.
 
 Requests such as:
+
 - `claude-haiku-4-5-20251001`
 - `claude-sonnet-*`
 - `claude-opus-*`
@@ -168,12 +188,14 @@ Requests such as:
 cannot be treated as always-explicit Claude selections.
 
 The gateway must first determine whether a Claude full-model-family request is:
+
 - an explicit top-level user model selection
 - or a helper/subagent default emitted inside an already-established non-Claude session
 
 Only the second category should be rewritten when the active provider is not Claude.
 
 They should be normalized into the corresponding provider-relative alias tier:
+
 - Claude Haiku-like default -> provider `haiku` tier
 - Claude Sonnet-like default -> provider `sonnet` tier
 - Claude Opus-like default -> provider `opus` tier
@@ -185,6 +207,7 @@ This is what allows hidden helper agents to follow the active provider without c
 ### Rule 4: If the active provider is unknown, preserve current behavior
 
 If the gateway cannot confidently determine the active provider for a request:
+
 - preserve current explicit upstream behavior
 - do not guess
 - log the unresolved request for diagnostics
@@ -196,9 +219,11 @@ This protects unrelated sessions and avoids surprising model switches.
 ### Claude active
 
 Main session:
+
 - `opus`, `sonnet`, `haiku` remain Claude
 
 Subagent/helper traffic:
+
 - `haiku` tier -> Claude Haiku
 - `sonnet` tier -> Claude Sonnet
 - `opus` tier -> Claude Opus
@@ -206,23 +231,28 @@ Subagent/helper traffic:
 ### Z.ai active
 
 Main session:
+
 - `glm-5.1`, `glm-5-turbo`, `glm-4.7`
 
 Subagent/helper traffic:
+
 - `haiku` tier -> `glm-4.7`
 - `sonnet` tier -> `glm-5-turbo`
 - `opus` tier -> `glm-5.1`
 
 Fallback chain remains:
+
 - `glm-5.1` -> `glm-5-turbo` -> `glm-4.7`
 - `glm-5-turbo` -> `glm-4.7`
 
 ### MiniMax active
 
 Main session:
+
 - `MiniMax-M2.7`
 
 Subagent/helper traffic:
+
 - `haiku` tier -> `MiniMax-M2.7`
 - `sonnet` tier -> `MiniMax-M2.7`
 - `opus` tier -> `MiniMax-M2.7`
@@ -232,12 +262,14 @@ No unsupported MiniMax variants should be surfaced or auto-selected.
 ## Request Classification
 
 The gateway does need a lightweight request classifier, but only for one narrow reason:
+
 - to identify which requests are allowed to establish or replace the active session provider
 - and which requests should instead inherit the existing active provider
 
 This is necessary because a user’s explicit Claude selection and a helper agent default can both appear as `claude-*` model ids.
 
 The implementation should avoid broad “helper vs non-helper” branching. It only needs one reliable distinction:
+
 - **provider-establishing requests**
 - **provider-inheriting requests**
 
@@ -246,6 +278,7 @@ The implementation should avoid broad “helper vs non-helper” branching. It o
 These are requests that are allowed to define or replace the session’s active provider.
 
 They include:
+
 - explicit `glm-*`
 - explicit `MiniMax-*`
 - explicit top-level Claude model selections, once positively identified via request metadata
@@ -255,6 +288,7 @@ They include:
 These are requests that should follow the session’s existing provider state.
 
 They include:
+
 - `opus`
 - `sonnet`
 - `haiku`
@@ -265,6 +299,7 @@ They include:
 Phase 1 instrumentation must capture real request metadata to discover the narrowest stable signal for top-level model selection.
 
 Examples of acceptable classification inputs:
+
 - a dedicated request header
 - a stable request body field
 - another request-shape marker proven by live traces
@@ -276,10 +311,12 @@ If no reliable positive signal exists, the gateway must not rewrite ambiguous `c
 ### Claude unavailable
 
 If Anthropic is unavailable but the session is already running on Z.ai or MiniMax:
+
 - no special handling is needed
 - all helper/subagent traffic is already provider-synchronized
 
 If the active session provider is Claude and Anthropic becomes unavailable:
+
 - the gateway should not silently change the user’s selected top-level provider
 - the request should fail explicitly
 
@@ -288,6 +325,7 @@ This design is about provider synchronization, not silent provider failover.
 ### Unknown session mapping
 
 If the gateway cannot map a request to a session:
+
 - preserve current direct resolution
 - log the request model, request path, and relevant session identifiers
 - avoid rewriting the request
@@ -295,14 +333,17 @@ If the gateway cannot map a request to a session:
 ### Provider-specific issues
 
 Z.ai:
+
 - continue existing malformed tool-use fallback behavior
 - continue thinking-block stripping
 
 MiniMax:
+
 - continue thinking-block stripping
 - preserve existing direct model routing for `MiniMax-M2.7`
 
 Anthropic:
+
 - continue current mixed-provider thinking sanitization
 
 ## Observability
@@ -310,6 +351,7 @@ Anthropic:
 The gateway should log enough data to explain routing decisions without exposing secrets.
 
 For each rewritten request, log:
+
 - session key
 - incoming model
 - normalized tier (`haiku`, `sonnet`, `opus`, explicit)
@@ -317,6 +359,7 @@ For each rewritten request, log:
 - resolved provider
 
 Example shape:
+
 - `session=abc incoming=claude-haiku-4-5-20251001 tier=haiku provider=minimax resolved=MiniMax-M2.7`
 
 This logging is essential for verifying the design in real sessions before and after rollout.
@@ -328,6 +371,7 @@ The implementation should be covered at three levels.
 ### 1. Pure routing unit tests
 
 Add unit tests for:
+
 - explicit `glm-*` pass-through
 - explicit `MiniMax-*` pass-through
 - alias resolution for Claude-active sessions
@@ -339,6 +383,7 @@ Add unit tests for:
 ### 2. Gateway integration tests
 
 Add request-level tests that simulate:
+
 - top-level session starts on Claude
 - top-level session switches to Z.ai
 - a following `claude-haiku-*` request is rewritten to `glm-4.7`
@@ -348,11 +393,13 @@ Add request-level tests that simulate:
 ### 3. Manual log verification
 
 Run live smoke checks in Claude Code:
+
 - Claude main model + subagent activity
 - Z.ai main model + subagent activity
 - MiniMax main model + subagent activity
 
 Success condition:
+
 - no subagent/helper request escapes to the wrong provider for that session
 
 ## Rollout Plan
@@ -362,6 +409,7 @@ Implement in two phases.
 ### Phase 1: Safe instrumentation
 
 Add:
+
 - session registry
 - alias-tier inference
 - diagnostic logs
@@ -370,6 +418,7 @@ Add:
 But keep rewriting disabled behind a flag.
 
 Goal:
+
 - confirm session-key quality
 - confirm full-model default patterns
 - confirm how top-level model selections are distinguishable from helper defaults
@@ -378,6 +427,7 @@ Goal:
 ### Phase 2: Routing activation
 
 Enable provider-synchronized rewriting for:
+
 - `opus`
 - `sonnet`
 - `haiku`

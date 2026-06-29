@@ -95,22 +95,104 @@ export type {
   StatsCache,
   ToolFailureData,
 } from '../shared/types/session.js';
-import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult,ProjectGovernanceState } from '../shared/types/governance.js';
-import type { MobileControlAnswerResult,MobileControlPairingResult, MobileDependencyId, MobileDependencyInstallProgressEvent, MobileDependencyInstallResult, MobileDependencyReport, MobileInspectInteractionResult, MobileInspectLaunchResult, MobileInspectPlatform, MobileInspectPointInspectionResult, MobileInspectScreenshotResult } from '../shared/types/mobile.js';
-import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument,ProjectBackgroundTaskState } from '../shared/types/project-background-task.js';
-import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument,ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint.js';
-import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult,ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState } from '../shared/types/project-context.js';
-import type { BrowserCredentialFillData, BrowserCredentialSaveInput,BrowserCredentialSummary, EmbeddedBrowserOpenPayload, GitFileEntry, GitWorktree, McpResult, ShareConnectionDescription, ShareRtcConfig } from '../shared/types/project-core.js';
-import type { ProjectReviewCreateResult, ProjectReviewDocument,ProjectReviewState } from '../shared/types/project-review.js';
-import type { CliSurfaceDiscoveryResult,CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface.js';
-import type { ProjectTeamContextCreateSpaceResult,ProjectTeamContextStarterFilesResult, ProjectTeamContextState } from '../shared/types/project-team-context.js';
-import type { ProjectWorkflowCreateResult, ProjectWorkflowDocument,ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project-workflow.js';
-import type { CliProviderMeta, ProviderConfig, ProviderId, ProviderUpdateCancelResult, ProviderUpdateProgressEvent, ProviderUpdateSummary, SettingsValidationResult, SettingsWarningData, StatusLineConflictData,UiLanguage } from '../shared/types/provider.js';
-import type { CostData, InspectorEvent,StatsCache, ToolFailureData } from '../shared/types/session.js';
+import type {
+  AutoApprovalMode,
+  ProjectGovernanceStarterPolicyResult,
+  ProjectGovernanceState,
+} from '../shared/types/governance.js';
+import type {
+  MobileControlAnswerResult,
+  MobileControlPairingResult,
+  MobileDependencyId,
+  MobileDependencyInstallProgressEvent,
+  MobileDependencyInstallResult,
+  MobileDependencyReport,
+  MobileInspectInteractionResult,
+  MobileInspectLaunchResult,
+  MobileInspectPlatform,
+  MobileInspectPointInspectionResult,
+  MobileInspectScreenshotResult,
+} from '../shared/types/mobile.js';
+import type {
+  ProjectBackgroundTaskCreateResult,
+  ProjectBackgroundTaskDocument,
+  ProjectBackgroundTaskState,
+} from '../shared/types/project-background-task.js';
+import type {
+  ProjectCheckpointCreateResult,
+  ProjectCheckpointDocument,
+  ProjectCheckpointSnapshotInput,
+  ProjectCheckpointState,
+} from '../shared/types/project-checkpoint.js';
+import type {
+  ProjectContextCreateRuleResult,
+  ProjectContextDeleteRuleResult,
+  ProjectContextRenameRuleResult,
+  ProjectContextStarterFilesResult,
+  ProjectContextState,
+} from '../shared/types/project-context.js';
+import type {
+  BrowserCredentialFillData,
+  BrowserCredentialSaveInput,
+  BrowserCredentialSummary,
+  EmbeddedBrowserOpenPayload,
+  GitFileEntry,
+  GitWorktree,
+  McpResult,
+  ShareConnectionDescription,
+  ShareRtcConfig,
+} from '../shared/types/project-core.js';
+import type {
+  ProjectReviewCreateResult,
+  ProjectReviewDocument,
+  ProjectReviewState,
+} from '../shared/types/project-review.js';
+import type {
+  CliSurfaceDiscoveryResult,
+  CliSurfaceProfile,
+  CliSurfaceRuntimeState,
+} from '../shared/types/project-surface.js';
+import type {
+  ProjectTeamContextCreateSpaceResult,
+  ProjectTeamContextStarterFilesResult,
+  ProjectTeamContextState,
+} from '../shared/types/project-team-context.js';
+import type {
+  ProjectWorkflowCreateResult,
+  ProjectWorkflowDocument,
+  ProjectWorkflowStarterFilesResult,
+  ProjectWorkflowState,
+} from '../shared/types/project-workflow.js';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  ProviderId,
+  ProviderUpdateCancelResult,
+  ProviderUpdateProgressEvent,
+  ProviderUpdateSummary,
+  SettingsValidationResult,
+  SettingsWarningData,
+  StatusLineConflictData,
+  UiLanguage,
+} from '../shared/types/provider.js';
+import type {
+  CostData,
+  InspectorEvent,
+  StatsCache,
+  ToolFailureData,
+} from '../shared/types/session.js';
 
 export interface CalderApi {
   pty: {
-    create(sessionId: string, cwd: string, cliSessionId: string | null, isResume: boolean, extraArgs?: string, providerId?: ProviderId, initialPrompt?: string): Promise<void>;
+    create(
+      sessionId: string,
+      cwd: string,
+      cliSessionId: string | null,
+      isResume: boolean,
+      extraArgs?: string,
+      providerId?: ProviderId,
+      initialPrompt?: string,
+    ): Promise<void>;
     createShell(sessionId: string, cwd: string): Promise<void>;
     write(sessionId: string, data: string): void;
     resize(sessionId: string, cols: number, rows: number): void;
@@ -120,8 +202,19 @@ export interface CalderApi {
     onExit(callback: (sessionId: string, exitCode: number, signal?: number) => void): () => void;
   };
   session: {
-    buildResumeWithPrompt(sourceProviderId: ProviderId, sourceCliSessionId: string | null, projectPath: string, sessionName: string): Promise<string>;
-    onHookStatus(callback: (sessionId: string, status: 'working' | 'waiting' | 'completed' | 'input', hookName: string) => void): () => void;
+    buildResumeWithPrompt(
+      sourceProviderId: ProviderId,
+      sourceCliSessionId: string | null,
+      projectPath: string,
+      sessionName: string,
+    ): Promise<string>;
+    onHookStatus(
+      callback: (
+        sessionId: string,
+        status: 'working' | 'waiting' | 'completed' | 'input',
+        hookName: string,
+      ) => void,
+    ): () => void;
     onCliSessionId(callback: (sessionId: string, cliSessionId: string) => void): () => void;
     /** @deprecated Use onCliSessionId */
     onClaudeSessionId(callback: (sessionId: string, claudeSessionId: string) => void): () => void;
@@ -159,9 +252,21 @@ export interface CalderApi {
   context: {
     getProjectState(projectPath: string): Promise<ProjectContextState>;
     createStarterFiles(projectPath: string): Promise<ProjectContextStarterFilesResult>;
-    createSharedRule(projectPath: string, title: string, priority: 'hard' | 'soft'): Promise<ProjectContextCreateRuleResult>;
-    renameSharedRule(projectPath: string, relativePath: string, title: string, priority: 'hard' | 'soft'): Promise<ProjectContextRenameRuleResult>;
-    deleteSharedRule(projectPath: string, relativePath: string): Promise<ProjectContextDeleteRuleResult>;
+    createSharedRule(
+      projectPath: string,
+      title: string,
+      priority: 'hard' | 'soft',
+    ): Promise<ProjectContextCreateRuleResult>;
+    renameSharedRule(
+      projectPath: string,
+      relativePath: string,
+      title: string,
+      priority: 'hard' | 'soft',
+    ): Promise<ProjectContextRenameRuleResult>;
+    deleteSharedRule(
+      projectPath: string,
+      relativePath: string,
+    ): Promise<ProjectContextDeleteRuleResult>;
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectContextState) => void): () => void;
   };
@@ -189,22 +294,39 @@ export interface CalderApi {
   };
   governance: {
     getProjectState(projectPath: string, sessionId?: string): Promise<ProjectGovernanceState>;
-    setAutoApprovalMode(projectPath: string, scope: 'global' | 'project', mode: AutoApprovalMode | null, sessionId?: string): Promise<ProjectGovernanceState>;
-    setSessionAutoApprovalOverride(sessionId: string, mode: AutoApprovalMode | null): Promise<{ ok: boolean }>;
+    setAutoApprovalMode(
+      projectPath: string,
+      scope: 'global' | 'project',
+      mode: AutoApprovalMode | null,
+      sessionId?: string,
+    ): Promise<ProjectGovernanceState>;
+    setSessionAutoApprovalOverride(
+      sessionId: string,
+      mode: AutoApprovalMode | null,
+    ): Promise<{ ok: boolean }>;
     createStarterPolicy(projectPath: string): Promise<ProjectGovernanceStarterPolicyResult>;
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectGovernanceState) => void): () => void;
   };
   task: {
     getProjectState(projectPath: string): Promise<ProjectBackgroundTaskState>;
-    create(projectPath: string, title: string, prompt: string): Promise<ProjectBackgroundTaskCreateResult>;
+    create(
+      projectPath: string,
+      title: string,
+      prompt: string,
+    ): Promise<ProjectBackgroundTaskCreateResult>;
     read(projectPath: string, taskPath: string): Promise<ProjectBackgroundTaskDocument>;
     watchProject(projectPath: string): void;
-    onChanged(callback: (projectPath: string, state: ProjectBackgroundTaskState) => void): () => void;
+    onChanged(
+      callback: (projectPath: string, state: ProjectBackgroundTaskState) => void,
+    ): () => void;
   };
   checkpoint: {
     getProjectState(projectPath: string): Promise<ProjectCheckpointState>;
-    create(projectPath: string, snapshot: ProjectCheckpointSnapshotInput): Promise<ProjectCheckpointCreateResult>;
+    create(
+      projectPath: string,
+      snapshot: ProjectCheckpointSnapshotInput,
+    ): Promise<ProjectCheckpointCreateResult>;
     read(projectPath: string, checkpointPath: string): Promise<ProjectCheckpointDocument>;
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectCheckpointState) => void): () => void;
@@ -242,7 +364,11 @@ export interface CalderApi {
     getVersion(): Promise<string>;
     openExternal(url: string, cwd?: string): Promise<void>;
     getBrowserPreloadPath(): Promise<string>;
-    sendToGuestWebContents(webContentsId: number, channel: string, ...args: unknown[]): Promise<boolean>;
+    sendToGuestWebContents(
+      webContentsId: number,
+      channel: string,
+      ...args: unknown[]
+    ): Promise<boolean>;
     onOpenEmbeddedBrowserUrl(callback: (payload: EmbeddedBrowserOpenPayload) => void): () => void;
     onQuitting(callback: () => void): () => void;
   };
@@ -274,14 +400,25 @@ export interface CalderApi {
   };
   mobileSetup: {
     checkDependencies(): Promise<MobileDependencyReport>;
-    installDependency(dependencyId: MobileDependencyId, installId?: string): Promise<MobileDependencyInstallResult>;
+    installDependency(
+      dependencyId: MobileDependencyId,
+      installId?: string,
+    ): Promise<MobileDependencyInstallResult>;
     onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void): () => void;
   };
   mobileInspect: {
     launch(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult>;
     captureScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult>;
-    inspectPoint(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectPointInspectionResult>;
-    interact(platform: MobileInspectPlatform, x: number, y: number): Promise<MobileInspectInteractionResult>;
+    inspectPoint(
+      platform: MobileInspectPlatform,
+      x: number,
+      y: number,
+    ): Promise<MobileInspectPointInspectionResult>;
+    interact(
+      platform: MobileInspectPlatform,
+      x: number,
+      y: number,
+    ): Promise<MobileInspectInteractionResult>;
   };
   cliSurface: {
     discover(projectPath: string): Promise<CliSurfaceDiscoveryResult>;
@@ -304,8 +441,18 @@ export interface CalderApi {
     callTool(id: string, name: string, args: Record<string, unknown>): Promise<McpResult>;
     readResource(id: string, uri: string): Promise<McpResult>;
     getPrompt(id: string, name: string, args: Record<string, string>): Promise<McpResult>;
-    addServer(name: string, config: unknown, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
-    removeServer(name: string, filePath: string, scope: 'user' | 'project', projectPath?: string): Promise<McpResult>;
+    addServer(
+      name: string,
+      config: unknown,
+      scope: 'user' | 'project',
+      projectPath?: string,
+    ): Promise<McpResult>;
+    removeServer(
+      name: string,
+      filePath: string,
+      scope: 'user' | 'project',
+      projectPath?: string,
+    ): Promise<McpResult>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;

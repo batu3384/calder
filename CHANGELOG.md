@@ -199,20 +199,24 @@ All notable changes to this project will be documented in this file.
 ## [0.2.12] - 2026-03-26
 
 ### Features
+
 - File system watcher for real-time git panel updates
 - Current model name to session status line
 - GitHub stars badge and star CTA to README
 
 ### Fixes
+
 - Session terminal stealing focus from project terminal panel
 - Tab rename losing focus when other sessions update
 
 ### Changes
+
 - Update failure notification banner
 
 ## [0.2.11] - 2026-03-24
 
 ### Features
+
 - Demo GIF to README
 - Smarter tool failure classification (not-found, permission-denied, auth-required)
 - Confirmation warning when removing a project with session history
@@ -222,10 +226,12 @@ All notable changes to this project will be documented in this file.
 - Planning guidance to check for preferences configurability
 
 ### Fixes
+
 - Sidebar flickering from config watcher and readiness rescan
 - AI Readiness modal resizing when expanding category items
 
 ### Changes
+
 - Rescan AI Readiness on startup and project switch
 - .cursorrules, AGENTS.md, and copilot-instructions checks from AI Readiness
 - Native statusLine conflict dialog with in-app modal
@@ -233,6 +239,7 @@ All notable changes to this project will be documented in this file.
 ## [0.2.10] - 2026-03-23
 
 ### Features
+
 - Per-hook status breakdown to preferences setup section
 - MCP server management to config sections sidebar
 - Session bookmark feature to history panel
@@ -242,6 +249,7 @@ All notable changes to this project will be documented in this file.
 - Files field to package.json for npm publishing
 
 ### Fixes
+
 - Bookmark and delete targeting wrong history entry after /clear
 - History list jumping to top on bookmark or delete
 - Swarm session order not preserved when toggling modes
@@ -249,17 +257,20 @@ All notable changes to this project will be documented in this file.
 - Auto session naming extracting prompt text instead of title
 
 ### Changes
+
 - Remove deprecated CLAUDE_CODE_STATUSLINE references
 - Update README to be concise and marketing-focused
 
 ## [0.2.9] - 2026-03-22
 
 ### Fixes
+
 - Add picomatch to production dependencies for release builds
 
 ## [0.2.8] - 2026-03-22
 
 ### Features
+
 - MacOS code signing and notarization for CI builds
 - Logo and shields.io badges to README
 - App icon for all platforms
@@ -274,11 +285,13 @@ All notable changes to this project will be documented in this file.
 - Swarm mode to display all sessions simultaneously in a grid
 
 ### Fixes
+
 - Empty sessions being saved to history on close
 - Swarm mode not showing sessions resumed from history
 - Swarm mode grid order not persisting across restarts
 
 ### Changes
+
 - README logo to transparent background version
 - SoundOnSessionWaiting default to enabled
 - Rename app from CCIDE to Calder
@@ -290,6 +303,7 @@ All notable changes to this project will be documented in this file.
 ## [0.2.7] - 2026-03-22
 
 ### Features
+
 - Copy session ID option to tab context menu
 - Auto-naming sessions from CLI conversation title
 - Collapsible sidebar with toggle button and Cmd+B shortcut
@@ -305,6 +319,7 @@ All notable changes to this project will be documented in this file.
 - Preference to disable session history archiving
 
 ### Fixes
+
 - Cost details text overlapping labels in help modal
 - Empty gap between terminal and debug panel
 - Session stuck on working state after Escape interrupt
@@ -316,6 +331,7 @@ All notable changes to this project will be documented in this file.
 - Tab drag reorder and add move left/right context menu options
 
 ### Changes
+
 - Remove ptyData logging from debug panel for better performance
 - Remove red focus stroke from terminal panes
 - Remove stale scan badge from AI Readiness section
@@ -328,19 +344,23 @@ All notable changes to this project will be documented in this file.
 ## [0.2.6] - 2026-03-20
 
 ### Features
+
 - Session archiving on /clear (CLI session ID change)
 
 ### Fixes
+
 - Capture CLI session ID on SessionStart hook for /clear detection
 - Map Stop hook event to completed instead of waiting
 
 ### Changes
+
 - Make history item row clickable instead of resume button
 - Remove Linux build target from release workflow
 
 ## [0.2.5] - 2026-03-20
 
 ### Features
+
 - Sidebar view visibility preferences
 - Session history UI, sidebar panel, and resume bug fix
 - Session history with archiving, resume, and duplicate tab prevention
@@ -354,6 +374,7 @@ All notable changes to this project will be documented in this file.
 - Git worktree support, PTY cwd tracking, and fix PATH resolution in release builds
 
 ### Fixes
+
 - Atomic state file writes to prevent corruption on crash
 - Completed status dot being immediately overwritten by Stop hook
 - Tab close activating adjacent tab instead of first tab
@@ -365,6 +386,7 @@ All notable changes to this project will be documented in this file.
 - Incorrect Gatekeeper instructions in README
 
 ### Changes
+
 - Improve help and preferences dialog width
 - Improve open-source readiness with README overhaul, community files, and naming fixes
 - Update README with build-from-source instructions
@@ -375,32 +397,38 @@ All notable changes to this project will be documented in this file.
 ## [0.2.4] - 2026-03-19
 
 ### Fixes
+
 - GitHub releases being draft and missing release notes
 
 ## [0.2.3] - 2026-03-19
 
 ### Changes
+
 - Build and release to macOS-only with unsigned app and add README
 
 ## [0.2.2] - 2026-03-19
 
 ### Features
+
 - Test run step to commit command before staging and committing
 - Git workflow section to CLAUDE.md requiring /commit command
 - Test step to release command before version bump
 
 ### Fixes
+
 - Release workflow git push 403 by granting write permissions to GITHUB_TOKEN
 - Claude prompt passed via heredoc stdin to avoid shell parsing issues
 - Test assertions to include filePath property added to config objects
 
 ### Changes
+
 - Extract deterministic steps from Claude prompt in release workflow
 - Release workflow to CI-driven process via workflow_dispatch and Claude Code CLI
 
 ## [0.2.1] - 2026-03-19
 
 ### Features
+
 - Clickable file viewer for agents, MCP, skills, and commands in sidebar
 - Commands section to sidebar for custom slash commands
 - Release slash command for version bump, changelog, tag, and push
@@ -410,7 +438,9 @@ All notable changes to this project will be documented in this file.
 - Diff viewer for git panel files
 
 ### Fixes
+
 - MCP server listing to read from all Claude CLI config sources
 
 ### Changes
+
 - Claude code custom commands and changelog

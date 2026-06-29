@@ -16,7 +16,9 @@ export function getSwarmBrowserSession(project: ProjectRecord) {
 
   const rememberedId = lastSwarmBrowserSessionIds.get(project.id);
   if (rememberedId) {
-    const remembered = project.sessions.find((session) => session.id === rememberedId && session.type === 'browser-tab');
+    const remembered = project.sessions.find(
+      (session) => session.id === rememberedId && session.type === 'browser-tab',
+    );
     if (remembered) return remembered;
   }
 
@@ -42,9 +44,10 @@ export function registerMosaicResizeCleanup(cleanup: () => void): void {
 
 function readInspectorWidth(target: HTMLElement): number {
   const inlineStyle = target.style as CSSStyleDeclaration & Record<string, string | undefined>;
-  const inlineWidthValue = typeof inlineStyle.getPropertyValue === 'function'
-    ? target.style.getPropertyValue('--inspector-width')
-    : inlineStyle.getPropertyValue?.('--inspector-width') ?? inlineStyle['--inspector-width'];
+  const inlineWidthValue =
+    typeof inlineStyle.getPropertyValue === 'function'
+      ? target.style.getPropertyValue('--inspector-width')
+      : (inlineStyle.getPropertyValue?.('--inspector-width') ?? inlineStyle['--inspector-width']);
   const inlineWidth = Number.parseFloat(inlineWidthValue ?? '');
   if (Number.isFinite(inlineWidth) && inlineWidth > 0) return inlineWidth;
 

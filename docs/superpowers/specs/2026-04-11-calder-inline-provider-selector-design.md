@@ -9,6 +9,7 @@
 Calder already supports multiple providers at the session level, but the main creation flow still hides provider choice behind preferences or the custom session modal.
 
 Current behavior:
+
 - the primary `New Session` button creates a session with `preferences.defaultProvider`
 - the custom session modal exposes provider choice only when multiple providers are available
 - changing the default provider today is effectively a settings task, not a session-launch task
@@ -20,6 +21,7 @@ This creates friction for users who actively switch between Claude, Codex, Gemin
 Add a **persistent inline provider selector** immediately next to the primary `New Session` action in the Command Deck.
 
 Behavior:
+
 - the provider selector is always visible when more than one provider is available
 - the selected provider becomes the launch target for the one-click `New Session` button
 - the selection is persisted through the existing `preferences.defaultProvider` field
@@ -27,6 +29,7 @@ Behavior:
 - unavailable providers remain visible but cannot be selected
 
 This keeps Calder fast:
+
 - one click still starts a session
 - the provider decision becomes explicit and local to session creation
 - no extra modal is forced into the primary flow
@@ -52,6 +55,7 @@ This is the best balance of speed, visibility, and low implementation risk.
 Add a compact provider selector adjacent to `New Session`.
 
 The selector should:
+
 - feel like part of the Command Deck, not like a settings control
 - show the active provider display name, not raw internal IDs
 - support disabled entries for missing binaries
@@ -60,6 +64,7 @@ The selector should:
 ### One-Click Launch
 
 Pressing `New Session` should:
+
 - create `Session N` as today
 - use the currently selected provider instead of silently reading an unseen JSON/default-only setting
 - preserve existing args behavior
@@ -67,6 +72,7 @@ Pressing `New Session` should:
 ### Custom Session Modal
 
 `New Custom Session…` should:
+
 - open with the current inline provider preselected
 - still allow choosing another provider inside the modal
 - remain compatible with projects that only have one available provider
@@ -74,6 +80,7 @@ Pressing `New Session` should:
 ### Persistence
 
 Changing the inline selector should:
+
 - update `preferences.defaultProvider`
 - survive reload/relaunch
 - immediately affect the next quick session launch
@@ -89,6 +96,7 @@ Changing the inline selector should:
 ## Technical Touchpoints
 
 Primary files expected to change:
+
 - `src/renderer/index.html`
 - `src/renderer/components/tab-bar.ts`
 - `src/renderer/state.ts`
@@ -96,6 +104,7 @@ Primary files expected to change:
 - related contract tests for Command Deck behavior
 
 Expected implementation shape:
+
 - add a dedicated Command Deck provider control near `btn-add-session`
 - reuse provider availability data already loaded in `tab-bar.ts`
 - route quick session creation through the selected provider
@@ -104,11 +113,13 @@ Expected implementation shape:
 ## Risk Management
 
 Main risks:
+
 - making the Command Deck too crowded
 - creating disagreement between the inline selector and modal defaults
 - allowing selection of unavailable providers
 
 Mitigation:
+
 - render the selector only when multiple providers exist
 - derive both quick launch and modal defaults from the same persisted selection
 - disable unavailable providers in both surfaces
@@ -116,6 +127,7 @@ Mitigation:
 ## Acceptance Criteria
 
 This design is complete when:
+
 - the shell shows an inline provider selector next to `New Session` when applicable
 - one-click session launch uses the visible selection
 - `New Custom Session…` inherits the same selected provider
@@ -126,6 +138,7 @@ This design is complete when:
 ## Verification Plan
 
 Minimum verification after implementation:
+
 - targeted contract test for the inline provider selector
 - targeted interaction test for quick session provider selection
 - `npm test`

@@ -1,4 +1,7 @@
-export function toProjectRelativeContextPath(projectPath: string, sourcePath: string): string | null {
+export function toProjectRelativeContextPath(
+  projectPath: string,
+  sourcePath: string,
+): string | null {
   if (!projectPath || !sourcePath) return null;
 
   if (sourcePath === projectPath) {

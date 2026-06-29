@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type ProviderUpdaterRunner, type ProviderUpdaterTarget,updateProviders } from '../main/provider-updater';
+import {
+  type ProviderUpdaterRunner,
+  type ProviderUpdaterTarget,
+  updateProviders,
+} from '../main/provider-updater';
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {
@@ -21,7 +25,11 @@ function createProviderMeta(id: ProviderId, displayName: string): CliProviderMet
   };
 }
 
-function createTarget(id: ProviderId, displayName: string, binaryPath: string): ProviderUpdaterTarget {
+function createTarget(
+  id: ProviderId,
+  displayName: string,
+  binaryPath: string,
+): ProviderUpdaterTarget {
   return {
     meta: createProviderMeta(id, displayName),
     resolveBinaryPath: () => binaryPath,
@@ -31,16 +39,26 @@ function createTarget(id: ProviderId, displayName: string, binaryPath: string): 
 
 class FakeRunner implements ProviderUpdaterRunner {
   readonly calls: Array<{ command: string; args: string[] }> = [];
-  private readonly queued = new Map<string, Array<{ code: number; stdout: string; stderr: string }>>();
+  private readonly queued = new Map<
+    string,
+    Array<{ code: number; stdout: string; stderr: string }>
+  >();
 
-  enqueue(command: string, args: string[], result: { code: number; stdout?: string; stderr?: string }): void {
+  enqueue(
+    command: string,
+    args: string[],
+    result: { code: number; stdout?: string; stderr?: string },
+  ): void {
     const key = `${command}\u0000${args.join('\u0000')}`;
     const bucket = this.queued.get(key) ?? [];
     bucket.push({ code: result.code, stdout: result.stdout ?? '', stderr: result.stderr ?? '' });
     this.queued.set(key, bucket);
   }
 
-  async run(command: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+  async run(
+    command: string,
+    args: string[],
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
     this.calls.push({ command, args: [...args] });
     const key = `${command}\u0000${args.join('\u0000')}`;
     const bucket = this.queued.get(key) ?? [];
@@ -60,7 +78,10 @@ describe('provider update fallbacks', () => {
       code: 1,
       stdout: JSON.stringify({ casks: [{ name: 'claude-code', current_version: '1.0.1' }] }),
     });
-    runner.enqueue('brew', ['upgrade', '--cask', 'claude-code'], { code: 1, stderr: 'brew route failed' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'claude-code'], {
+      code: 1,
+      stderr: 'brew route failed',
+    });
     runner.enqueue(claudeBinary, ['update'], { code: 0, stdout: 'updated' });
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: 'claude 1.0.1' });
 
@@ -90,16 +111,25 @@ describe('provider update fallbacks', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.0' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'antigravity-cli'], {
       code: 1,
-      stdout: JSON.stringify({ formulae: [], casks: [{ name: 'antigravity-cli', current_version: '0.38.1' }] }),
+      stdout: JSON.stringify({
+        formulae: [],
+        casks: [{ name: 'antigravity-cli', current_version: '0.38.1' }],
+      }),
     });
-    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], { code: 1, stderr: 'brew route failed' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], {
+      code: 1,
+      stderr: 'brew route failed',
+    });
     runner.enqueue(geminiBinary, ['update'], { code: 0, stdout: 'updated' });
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
 
-    const summary = await updateProviders([createTarget('antigravity', 'Antigravity CLI', geminiBinary)], {
-      runner,
-      now: (() => 1_250) as () => number,
-    });
+    const summary = await updateProviders(
+      [createTarget('antigravity', 'Antigravity CLI', geminiBinary)],
+      {
+        runner,
+        now: (() => 1_250) as () => number,
+      },
+    );
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('antigravity');

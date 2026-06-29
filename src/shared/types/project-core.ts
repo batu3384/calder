@@ -42,7 +42,10 @@ export interface BrowserCredentialSaveInput {
 
 export type SurfaceKind = 'web' | 'cli' | 'mobile';
 export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
-export type CliSurfacePromptContextMode = 'selection-only' | 'selection-nearby' | 'selection-nearby-viewport';
+export type CliSurfacePromptContextMode =
+  | 'selection-only'
+  | 'selection-nearby'
+  | 'selection-nearby-viewport';
 
 export interface WebSurfaceState {
   sessionId?: string;

@@ -52,7 +52,7 @@ describe('graph-gap-audit-lib', () => {
           repoRoot: '/repo',
           baseRef: 'HEAD',
           spawn: () => ({ status: 0, stdout: '{invalid' }),
-        })
+        }),
       ).toThrow('Unable to parse detect-changes output as JSON');
     });
   });
@@ -67,7 +67,7 @@ describe('graph-gap-audit-lib', () => {
         writeFileSync(path.join(root, 'nested', 'ignore.txt'), 'nope');
 
         const files = walkFiles(root, (filePath) => filePath.endsWith('.test.ts')).map((filePath) =>
-          path.relative(root, filePath)
+          path.relative(root, filePath),
         );
         expect(files.sort()).toEqual(['nested/child.test.ts', 'root.test.ts']);
       } finally {
@@ -120,8 +120,12 @@ describe('graph-gap-audit-lib', () => {
           content: 'runDetectChanges(); // graph-gap-audit-lib',
         },
       ];
-      expect(appearsInTestContent('runDetectChanges', '/tmp/graph-gap-audit-lib.mjs', testContents)).toBe(true);
-      expect(appearsInTestContent('runDetectChanges', '/tmp/other-file.mjs', testContents)).toBe(false);
+      expect(
+        appearsInTestContent('runDetectChanges', '/tmp/graph-gap-audit-lib.mjs', testContents),
+      ).toBe(true);
+      expect(appearsInTestContent('runDetectChanges', '/tmp/other-file.mjs', testContents)).toBe(
+        false,
+      );
     });
   });
 });

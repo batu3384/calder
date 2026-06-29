@@ -60,11 +60,46 @@ describe('browser tab pane helpers', () => {
   it('derives capture mode precedence from inspect/draw/flow state', async () => {
     const { resolveCaptureModeState } = await import('./pane-helpers.js');
 
-    expect(resolveCaptureModeState({ inspectMode: true, drawMode: true, flowMode: true, flowSteps: [] } as any)).toBe('inspect');
-    expect(resolveCaptureModeState({ inspectMode: false, drawMode: true, flowMode: true, flowSteps: [] } as any)).toBe('draw');
-    expect(resolveCaptureModeState({ inspectMode: false, drawMode: false, flowMode: true, flowSteps: [] } as any)).toBe('flow');
-    expect(resolveCaptureModeState({ inspectMode: false, drawMode: false, flowMode: false, flowSteps: [{ type: 'navigate' }] } as any)).toBe('flow');
-    expect(resolveCaptureModeState({ inspectMode: false, drawMode: false, flowMode: false, flowSteps: [] } as any)).toBe('idle');
+    expect(
+      resolveCaptureModeState({
+        inspectMode: true,
+        drawMode: true,
+        flowMode: true,
+        flowSteps: [],
+      } as any),
+    ).toBe('inspect');
+    expect(
+      resolveCaptureModeState({
+        inspectMode: false,
+        drawMode: true,
+        flowMode: true,
+        flowSteps: [],
+      } as any),
+    ).toBe('draw');
+    expect(
+      resolveCaptureModeState({
+        inspectMode: false,
+        drawMode: false,
+        flowMode: true,
+        flowSteps: [],
+      } as any),
+    ).toBe('flow');
+    expect(
+      resolveCaptureModeState({
+        inspectMode: false,
+        drawMode: false,
+        flowMode: false,
+        flowSteps: [{ type: 'navigate' }],
+      } as any),
+    ).toBe('flow');
+    expect(
+      resolveCaptureModeState({
+        inspectMode: false,
+        drawMode: false,
+        flowMode: false,
+        flowSteps: [],
+      } as any),
+    ).toBe('idle');
   });
 
   it('uses project-scoped partitions when resolving browser session storage', async () => {
@@ -75,7 +110,11 @@ describe('browser tab pane helpers', () => {
       { id: 'proj-2', sessions: [{ id: 'session-2' }] },
     ];
 
-    expect(resolveBrowserPartitionForSession('session-2')).toBe(buildBrowserSessionPartition('proj-2'));
-    expect(resolveBrowserPartitionForSession('missing-session')).toBe(buildBrowserSessionPartition(undefined));
+    expect(resolveBrowserPartitionForSession('session-2')).toBe(
+      buildBrowserSessionPartition('proj-2'),
+    );
+    expect(resolveBrowserPartitionForSession('missing-session')).toBe(
+      buildBrowserSessionPartition(undefined),
+    );
   });
 });

@@ -5,7 +5,7 @@ import * as path from 'path';
 import type { PersistedState } from '../shared/types/project-state';
 import { SUPPORTED_PROVIDER_IDS } from './providers/registry';
 
-export type { PersistedState,Preferences, ProjectRecord } from '../shared/types/project-state';
+export type { PersistedState, Preferences, ProjectRecord } from '../shared/types/project-state';
 export type { SessionRecord } from '../shared/types/session';
 
 const STATE_DIR = path.join(os.homedir(), '.calder');
@@ -30,7 +30,14 @@ function defaultState(): PersistedState {
     version: 1,
     projects: [],
     activeProjectId: null,
-    preferences: { soundOnSessionWaiting: true, notificationsDesktop: true, debugMode: false, sessionHistoryEnabled: true, insightsEnabled: true, autoTitleEnabled: true },
+    preferences: {
+      soundOnSessionWaiting: true,
+      notificationsDesktop: true,
+      debugMode: false,
+      sessionHistoryEnabled: true,
+      insightsEnabled: true,
+      autoTitleEnabled: true,
+    },
   };
 }
 
@@ -87,9 +94,9 @@ function migrateSessionIds(state: PersistedState): void {
       }
       s.providerId = normalizeProviderId(s.providerId);
       if (
-        s.providerId === 'copilot'
-        && (s.cliSessionId === undefined || s.cliSessionId === null || s.cliSessionId === '')
-        && typeof s.createdAt === 'string'
+        s.providerId === 'copilot' &&
+        (s.cliSessionId === undefined || s.cliSessionId === null || s.cliSessionId === '') &&
+        typeof s.createdAt === 'string'
       ) {
         const inferredId = inferCopilotSessionId(project.path, s.createdAt, usedCliSessionIds);
         if (inferredId) {
@@ -101,14 +108,19 @@ function migrateSessionIds(state: PersistedState): void {
   }
 
   if (state.preferences.defaultProvider !== undefined) {
-    state.preferences.defaultProvider = normalizeProviderId(state.preferences.defaultProvider) as PersistedState['preferences']['defaultProvider'];
+    state.preferences.defaultProvider = normalizeProviderId(
+      state.preferences.defaultProvider,
+    ) as PersistedState['preferences']['defaultProvider'];
   }
 }
 
 function normalizePathHint(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  return path.normalize(trimmed).replace(/[\\/]+$/, '').toLowerCase();
+  return path
+    .normalize(trimmed)
+    .replace(/[\\/]+$/, '')
+    .toLowerCase();
 }
 
 function parseYamlScalar(contents: string, key: string): string | null {
@@ -120,7 +132,11 @@ function parseYamlScalar(contents: string, key: string): string | null {
   return raw.replace(/^['"]|['"]$/g, '');
 }
 
-function inferCopilotSessionId(projectPath: string, createdAt: string, usedIds: Set<string>): string | null {
+function inferCopilotSessionId(
+  projectPath: string,
+  createdAt: string,
+  usedIds: Set<string>,
+): string | null {
   const sessionCreatedAtMs = Date.parse(createdAt);
   if (!Number.isFinite(sessionCreatedAtMs)) return null;
   const projectPathHint = normalizePathHint(projectPath);

@@ -32,7 +32,12 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
                     style={[styles.sessionChip, isSelected ? styles.sessionChipActive : null]}
                     onPress={() => controller.setSelectedLiveSessionId(session.id)}
                   >
-                    <Text style={[styles.sessionChipText, isSelected ? styles.sessionChipTextActive : null]}>
+                    <Text
+                      style={[
+                        styles.sessionChipText,
+                        isSelected ? styles.sessionChipTextActive : null,
+                      ]}
+                    >
                       {session.name || session.id}
                     </Text>
                   </Pressable>
@@ -49,7 +54,9 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
           >
             <Text style={styles.actionButtonText}>{copy.switchSessionButton}</Text>
           </Pressable>
-          <Text style={styles.inlineHint}>{controller.liveSwitchNote || copy.switchSessionHint}</Text>
+          <Text style={styles.inlineHint}>
+            {controller.liveSwitchNote || copy.switchSessionHint}
+          </Text>
         </View>
       ) : null}
 
@@ -70,16 +77,28 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
           </Pressable>
           <Text style={styles.liveFieldLabel}>{copy.quickControlsLabel}</Text>
           <View style={styles.quickControlRow}>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.triggerQuickControl('ctrl-c')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.triggerQuickControl('ctrl-c')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.quickControlCtrlC}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.triggerQuickControl('ctrl-l')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.triggerQuickControl('ctrl-l')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.quickControlCtrlL}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.triggerQuickControl('enter')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.triggerQuickControl('enter')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.quickControlEnter}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.triggerQuickControl('tab')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.triggerQuickControl('tab')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.quickControlTab}</Text>
             </Pressable>
           </View>
@@ -99,7 +118,12 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
                     style={[styles.sessionChip, isSelected ? styles.sessionChipActive : null]}
                     onPress={() => controller.switchBrowserSession(session.id)}
                   >
-                    <Text style={[styles.sessionChipText, isSelected ? styles.sessionChipTextActive : null]}>
+                    <Text
+                      style={[
+                        styles.sessionChipText,
+                        isSelected ? styles.sessionChipTextActive : null,
+                      ]}
+                    >
                       {session.name || session.id}
                     </Text>
                   </Pressable>
@@ -109,26 +133,48 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
           ) : (
             <Text style={styles.inlineHint}>{copy.liveSessionEmpty}</Text>
           )}
-          <Text style={styles.inlineHint}>{controller.browserStatusLine || copy.browserStatusWaiting}</Text>
+          <Text style={styles.inlineHint}>
+            {controller.browserStatusLine || copy.browserStatusWaiting}
+          </Text>
           <Text style={styles.liveFieldLabel}>{copy.inspectSelectionLabel}</Text>
-          <Text style={styles.inlineHint}>{controller.inspectSelectionLine || copy.inspectSelectionNone}</Text>
+          <Text style={styles.inlineHint}>
+            {controller.inspectSelectionLine || copy.inspectSelectionNone}
+          </Text>
           <View style={styles.quickControlRow}>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserControl('back')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserControl('back')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserBackButton}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserControl('forward')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserControl('forward')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserForwardButton}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserControl('reload')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserControl('reload')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserReloadButton}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserControl('toggle-inspect')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserControl('toggle-inspect')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserInspectButton}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserViewport('Responsive')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserViewport('Responsive')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserResponsiveButton}</Text>
             </Pressable>
-            <Pressable style={styles.quickControlButton} onPress={() => controller.sendBrowserViewport('iPhone 14')}>
+            <Pressable
+              style={styles.quickControlButton}
+              onPress={() => controller.sendBrowserViewport('iPhone 14')}
+            >
               <Text style={styles.quickControlButtonText}>{copy.browserPhoneButton}</Text>
             </Pressable>
           </View>
@@ -138,11 +184,16 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
       {activeTab === 'inspect' ? (
         <View style={styles.liveActionBlock}>
           <Text style={styles.inlineHint}>{copy.inspectPhaseHint}</Text>
-          <Pressable style={styles.actionButton} onPress={() => controller.sendBrowserControl('toggle-inspect')}>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => controller.sendBrowserControl('toggle-inspect')}
+          >
             <Text style={styles.actionButtonText}>{copy.browserInspectButton}</Text>
           </Pressable>
           <Text style={styles.liveFieldLabel}>{copy.inspectSelectionLabel}</Text>
-          <Text style={styles.inlineHint}>{controller.inspectSelectionLine || copy.inspectSelectionNone}</Text>
+          <Text style={styles.inlineHint}>
+            {controller.inspectSelectionLine || copy.inspectSelectionNone}
+          </Text>
           <Text style={styles.liveFieldLabel}>{copy.inspectInstructionLabel}</Text>
           <TextInput
             value={controller.inspectInstructionDraft}
@@ -156,7 +207,9 @@ export function MobileTabPanel({ controller }: MobileTabPanelProps) {
           <Pressable style={styles.actionButton} onPress={controller.sendInspectPrompt}>
             <Text style={styles.actionButtonText}>{copy.inspectSendButton}</Text>
           </Pressable>
-          <Text style={styles.inlineHint}>{controller.browserStatusLine || copy.browserStatusWaiting}</Text>
+          <Text style={styles.inlineHint}>
+            {controller.browserStatusLine || copy.browserStatusWaiting}
+          </Text>
         </View>
       ) : null}
 

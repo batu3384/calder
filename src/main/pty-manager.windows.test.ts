@@ -7,13 +7,18 @@ function createMockPtyProcess() {
   const exitCallbacks: Array<(event: { exitCode: number; signal?: number }) => void> = [];
   return {
     pid: 1234,
-    onData: vi.fn((cb: (data: string) => void) => { dataCallbacks.push(cb); }),
-    onExit: vi.fn((cb: (event: { exitCode: number; signal?: number }) => void) => { exitCallbacks.push(cb); }),
+    onData: vi.fn((cb: (data: string) => void) => {
+      dataCallbacks.push(cb);
+    }),
+    onExit: vi.fn((cb: (event: { exitCode: number; signal?: number }) => void) => {
+      exitCallbacks.push(cb);
+    }),
     write: vi.fn(),
     resize: vi.fn(),
     kill: vi.fn(),
     _emitData: (data: string) => dataCallbacks.forEach((cb) => cb(data)),
-    _emitExit: (exitCode: number, signal?: number) => exitCallbacks.forEach((cb) => cb({ exitCode, signal })),
+    _emitExit: (exitCode: number, signal?: number) =>
+      exitCallbacks.forEach((cb) => cb({ exitCode, signal })),
   };
 }
 
@@ -127,7 +132,8 @@ describe('pty-manager windows behaviors', () => {
   });
 
   it('spawns shell PTY with COMSPEC when present', async () => {
-    const { spawnShellPty, mockSpawn, mockBuildBrowserBridgeEnv, killAllPtys } = await setupWindowsPtyHarness();
+    const { spawnShellPty, mockSpawn, mockBuildBrowserBridgeEnv, killAllPtys } =
+      await setupWindowsPtyHarness();
     const proc = createMockPtyProcess();
     mockSpawn.mockReturnValue(proc);
     const originalComspec = process.env.COMSPEC;

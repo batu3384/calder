@@ -72,7 +72,12 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
     for (const event of events) {
       const now = Date.now();
 
-      const mirroredTarget = shouldMirrorPlaywrightNavigate(sessionId, event, playwrightMirrorBySession, now);
+      const mirroredTarget = shouldMirrorPlaywrightNavigate(
+        sessionId,
+        event,
+        playwrightMirrorBySession,
+        now,
+      );
       if (mirroredTarget) {
         const win = BrowserWindow.getAllWindows()[0];
         if (win && !win.isDestroyed()) {
@@ -101,11 +106,17 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
       }
 
       if (event.type !== 'stop') continue;
-      const lastMessage = typeof event.last_assistant_message === 'string'
-        ? event.last_assistant_message
-        : '';
+      const lastMessage =
+        typeof event.last_assistant_message === 'string' ? event.last_assistant_message : '';
       const previousState = miniMaxToolCallRecoveryBySession.get(sessionId);
-      if (!shouldTriggerMiniMaxToolCallRecovery(lastMessage, previousState, now, MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS)) {
+      if (
+        !shouldTriggerMiniMaxToolCallRecovery(
+          lastMessage,
+          previousState,
+          now,
+          MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS,
+        )
+      ) {
         continue;
       }
 
@@ -128,16 +139,22 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
           type: 'status_update',
           timestamp: now,
           hookEvent: 'MiniMaxToolCallRecovery',
-          message: 'MiniMax pseudo tool-call markup detected; recovery prompt was sent automatically.',
+          message:
+            'MiniMax pseudo tool-call markup detected; recovery prompt was sent automatically.',
         },
       ];
     }
     return finalEvents;
   });
 
-  const getGovernanceState = async (projectPath: string, sessionId?: string): Promise<ProjectGovernanceState> => {
+  const getGovernanceState = async (
+    projectPath: string,
+    sessionId?: string,
+  ): Promise<ProjectGovernanceState> => {
     const baseState = await discoverProjectGovernance(projectPath);
-    const sessionMode = sessionId ? autoApprovalOrchestrator.getSessionOverride(sessionId) : undefined;
+    const sessionMode = sessionId
+      ? autoApprovalOrchestrator.getSessionOverride(sessionId)
+      : undefined;
     return applySessionOverrideToGovernanceState(baseState, sessionMode);
   };
 
@@ -145,9 +162,10 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
     if (!chunk || chunk.length === 0) return;
     const previous = playwrightTranscriptBufferBySession.get(sessionId) ?? '';
     const combined = `${previous}${chunk}`;
-    const buffer = combined.length > PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS
-      ? combined.slice(-PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS)
-      : combined;
+    const buffer =
+      combined.length > PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS
+        ? combined.slice(-PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS)
+        : combined;
     playwrightTranscriptBufferBySession.set(sessionId, buffer);
 
     const urls = extractPlaywrightNavigateUrlsFromTerminalChunk(buffer);
@@ -162,20 +180,20 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
         continue;
       }
 
-      void openUrlWithBrowserPolicy(
-        { url, cwd, sessionId, preferEmbedded: true },
-        win,
-        (target) => shell.openExternal(target),
+      void openUrlWithBrowserPolicy({ url, cwd, sessionId, preferEmbedded: true }, win, (target) =>
+        shell.openExternal(target),
       ).catch((error) => {
         console.warn('Playwright transcript mirror open failed:', error);
       });
 
-      win.webContents.send('session:inspectorEvents', sessionId, [{
-        type: 'status_update',
-        timestamp: now,
-        hookEvent: 'PlaywrightMirror',
-        message: `Mirrored Playwright navigate from terminal output: ${url}`,
-      } satisfies InspectorEvent]);
+      win.webContents.send('session:inspectorEvents', sessionId, [
+        {
+          type: 'status_update',
+          timestamp: now,
+          hookEvent: 'PlaywrightMirror',
+          message: `Mirrored Playwright navigate from terminal output: ${url}`,
+        } satisfies InspectorEvent,
+      ]);
     }
   };
 

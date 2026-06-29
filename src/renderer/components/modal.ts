@@ -44,7 +44,9 @@ function getFocusableModalElements(): HTMLElement[] {
     modal.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     ),
-  ).filter((element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+  ).filter(
+    (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+  );
 }
 
 function focusInitialModalTarget(): void {
@@ -95,7 +97,8 @@ export function registerModalSelectCleanup(handler: () => void): void {
 }
 
 export function prepareModalSurface(): void {
-  restoreFocusAfterClose = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  restoreFocusAfterClose =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.classList.add('modal-surface');
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
@@ -133,7 +136,7 @@ export function closeModal(): void {
 export function showModal(
   title: string,
   fields: FieldDef[],
-  onConfirm: (values: Record<string, string>) => void | Promise<void>
+  onConfirm: (values: Record<string, string>) => void | Promise<void>,
 ): void {
   // Clean up previous listeners before building a new modal body.
   runModalCleanup();
@@ -198,7 +201,9 @@ export function showModal(
   const handleConfirm = async () => {
     const values: Record<string, string> = {};
     for (const field of fields) {
-      const el = document.getElementById(`modal-${field.id}`) as HTMLInputElement | HTMLSelectElement;
+      const el = document.getElementById(`modal-${field.id}`) as
+        | HTMLInputElement
+        | HTMLSelectElement;
       if (field.type === 'checkbox') {
         values[field.id] = String((el as HTMLInputElement)?.checked ?? false);
       } else {

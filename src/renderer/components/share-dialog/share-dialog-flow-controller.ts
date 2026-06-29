@@ -75,7 +75,9 @@ interface GenerateShareDialogMobilePairingParams {
   startMobileAnswerPolling: () => void;
 }
 
-async function generateShareDialogMobilePairing(params: GenerateShareDialogMobilePairingParams): Promise<void> {
+async function generateShareDialogMobilePairing(
+  params: GenerateShareDialogMobilePairingParams,
+): Promise<void> {
   const {
     sessionId,
     mobileApi,
@@ -108,7 +110,11 @@ async function generateShareDialogMobilePairing(params: GenerateShareDialogMobil
   clearPendingMobilePairing(true);
 
   try {
-    const decodedOffer = await decodeConnectionEnvelope(currentShareOffer, 'offer', currentSharePassphrase);
+    const decodedOffer = await decodeConnectionEnvelope(
+      currentShareOffer,
+      'offer',
+      currentSharePassphrase,
+    );
     const offerDescription = decodedOffer.description;
     if (offerDescription.type !== 'offer' || typeof offerDescription.sdp !== 'string') {
       throw new Error(copy.mobileHandoffFailedFallback);
@@ -132,9 +138,10 @@ async function generateShareDialogMobilePairing(params: GenerateShareDialogMobil
     setPendingMobilePairingId(pairing.pairingId);
     setMobilePollingErrorCount(0);
 
-    const localFallbackLinks = Array.isArray(pairing.localPairingUrls) && pairing.localPairingUrls.length > 0
-      ? pairing.localPairingUrls
-      : [pairing.localPairingUrl];
+    const localFallbackLinks =
+      Array.isArray(pairing.localPairingUrls) && pairing.localPairingUrls.length > 0
+        ? pairing.localPairingUrls
+        : [pairing.localPairingUrl];
     const primaryLink = pairing.pairingUrl || localFallbackLinks[0] || pairing.localPairingUrl;
     setShareDialogMobileFallbackLinks({
       links: localFallbackLinks,
@@ -180,7 +187,9 @@ async function generateShareDialogMobilePairing(params: GenerateShareDialogMobil
   }
 }
 
-export function createShareDialogFlowController(params: CreateShareDialogFlowControllerParams): ShareDialogFlowController {
+export function createShareDialogFlowController(
+  params: CreateShareDialogFlowControllerParams,
+): ShareDialogFlowController {
   const {
     sessionId,
     copy,

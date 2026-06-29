@@ -16,8 +16,12 @@ class FakeTerminal {
   simulateKey(event: Partial<KeyboardEvent>): boolean {
     return this.keyHandler ? this.keyHandler(event as KeyboardEvent) : true;
   }
-  getSelection(): string { return this._selection; }
-  setSelection(s: string): void { this._selection = s; }
+  getSelection(): string {
+    return this._selection;
+  }
+  setSelection(s: string): void {
+    this._selection = s;
+  }
   onData(_cb: (data: string) => void): void {}
   open(): void {}
   write(): void {}
@@ -26,7 +30,11 @@ class FakeTerminal {
 }
 
 vi.mock('@xterm/xterm', () => ({ Terminal: FakeTerminal }));
-vi.mock('@xterm/addon-fit', () => ({ FitAddon: class { fit(): void {} } }));
+vi.mock('@xterm/addon-fit', () => ({
+  FitAddon: class {
+    fit(): void {}
+  },
+}));
 vi.mock('@xterm/addon-webgl', () => ({ WebglAddon: class {} }));
 vi.mock('@xterm/addon-search', () => ({ SearchAddon: class {} }));
 
@@ -56,9 +64,16 @@ class FakeEl {
   offsetHeight = 200;
 
   addEventListener(): void {}
-  appendChild(child: FakeEl): FakeEl { this.children.push(child); return child; }
-  contains(): boolean { return false; }
-  querySelector(): null { return null; }
+  appendChild(child: FakeEl): FakeEl {
+    this.children.push(child);
+    return child;
+  }
+  contains(): boolean {
+    return false;
+  }
+  querySelector(): null {
+    return null;
+  }
   observe(): void {}
 }
 
@@ -95,7 +110,12 @@ describe('project-terminal Ctrl+Shift+C clipboard copy', () => {
       },
     });
     vi.stubGlobal('navigator', { clipboard: { writeText: mockClipboardWrite } });
-    vi.stubGlobal('ResizeObserver', class { observe(): void {} });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+      },
+    );
     vi.stubGlobal('requestAnimationFrame', (cb: () => void) => cb());
   });
 
@@ -103,14 +123,20 @@ describe('project-terminal Ctrl+Shift+C clipboard copy', () => {
     const { appState } = await import('../state.js');
     const { initProjectTerminal, getShellTerminalInstance } = await import('./project-terminal.js');
 
-    const project = { id: 'proj1', path: '/project', terminalPanelOpen: true, terminalPanelHeight: 200, sessions: [] };
+    const project = {
+      id: 'proj1',
+      path: '/project',
+      terminalPanelOpen: true,
+      terminalPanelHeight: 200,
+      sessions: [],
+    };
     (appState as any).activeProject = project;
     (appState as any).projects = [project];
 
     initProjectTerminal();
 
     // Trigger state-loaded → showPanel → ensureShell
-    stateHandlers['state-loaded']?.forEach(cb => cb());
+    stateHandlers['state-loaded']?.forEach((cb) => cb());
 
     return getShellTerminalInstance('shell-proj1');
   }

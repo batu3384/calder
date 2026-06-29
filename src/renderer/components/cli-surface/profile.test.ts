@@ -16,15 +16,17 @@ describe('cli surface profile helpers', () => {
   });
 
   it('uses the full command string as the default name for discovered profiles', () => {
-    expect(createDiscoveredCliSurfaceProfile({
-      id: 'go:cmd:aegis',
-      command: 'go',
-      args: ['run', './cmd/aegis'],
-      cwd: '/tmp/aegis',
-      source: 'go:cmd-entry',
-      reason: 'Detected cmd/aegis as the primary Go entrypoint',
-      confidence: 'high',
-    })).toMatchObject({
+    expect(
+      createDiscoveredCliSurfaceProfile({
+        id: 'go:cmd:aegis',
+        command: 'go',
+        args: ['run', './cmd/aegis'],
+        cwd: '/tmp/aegis',
+        source: 'go:cmd-entry',
+        reason: 'Detected cmd/aegis as the primary Go entrypoint',
+        confidence: 'high',
+      }),
+    ).toMatchObject({
       id: 'go:cmd:aegis',
       name: 'go run ./cmd/aegis',
       command: 'go',
@@ -35,22 +37,26 @@ describe('cli surface profile helpers', () => {
   });
 
   it('shows the full command for legacy auto-generated profile names', () => {
-    expect(getCliSurfaceProfileLabel({
-      id: 'go:cmd:aegis',
-      name: './cmd/aegis',
-      command: 'go',
-      args: ['run', './cmd/aegis'],
-      cwd: '/tmp/aegis',
-    })).toBe('go run ./cmd/aegis');
+    expect(
+      getCliSurfaceProfileLabel({
+        id: 'go:cmd:aegis',
+        name: './cmd/aegis',
+        command: 'go',
+        args: ['run', './cmd/aegis'],
+        cwd: '/tmp/aegis',
+      }),
+    ).toBe('go run ./cmd/aegis');
   });
 
   it('preserves custom profile names that do not look auto-generated', () => {
-    expect(getCliSurfaceProfileLabel({
-      id: 'custom',
-      name: 'Security TUI',
-      command: 'go',
-      args: ['run', './cmd/ironsentinel'],
-      cwd: '/tmp/security',
-    })).toBe('Security TUI');
+    expect(
+      getCliSurfaceProfileLabel({
+        id: 'custom',
+        name: 'Security TUI',
+        command: 'go',
+        args: ['run', './cmd/ironsentinel'],
+        cwd: '/tmp/security',
+      }),
+    ).toBe('Security TUI');
   });
 });

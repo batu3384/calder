@@ -1,4 +1,4 @@
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   statSync: vi.fn(),
@@ -91,7 +91,9 @@ describe('registerPendingCodexSession', () => {
   });
 
   it('handles missing history file gracefully', () => {
-    mockStatSync.mockImplementation(() => { throw new Error('ENOENT'); });
+    mockStatSync.mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
     expect(() => registerPendingCodexSession('ui-1')).not.toThrow();
   });
 });
@@ -105,10 +107,7 @@ describe('startCodexSessionWatcher', () => {
     startCodexSessionWatcher(win);
 
     const { join } = require('path');
-    expect(mockWatch).toHaveBeenCalledWith(
-      join('/mock/home', '.codex'),
-      expect.any(Function)
-    );
+    expect(mockWatch).toHaveBeenCalledWith(join('/mock/home', '.codex'), expect.any(Function));
   });
 
   it('does not start a second watcher if already started', () => {
@@ -182,7 +181,7 @@ describe('session ID assignment via polling', () => {
     expect(mockMkdirSync).toHaveBeenCalledWith(MOCK_STATUS_DIR, { recursive: true, mode: 0o700 });
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       path.join(MOCK_STATUS_DIR, 'ui-session-1.sessionid'),
-      'codex-abc-123'
+      'codex-abc-123',
     );
     expect(mockCloseSync).toHaveBeenCalledWith(42);
   });
@@ -215,7 +214,7 @@ describe('session ID assignment via polling', () => {
     // Should assign to the older session
     expect(mockWriteFileSync).toHaveBeenCalledWith(
       path.join(MOCK_STATUS_DIR, 'ui-older.sessionid'),
-      'codex-first'
+      'codex-first',
     );
   });
 
@@ -394,9 +393,7 @@ describe('session ID assignment via polling', () => {
 
     registerPendingCodexSession('ui-session-1');
 
-    mockOpenSync
-      .mockReturnValueOnce(71 as any)
-      .mockReturnValueOnce(72 as any);
+    mockOpenSync.mockReturnValueOnce(71 as any).mockReturnValueOnce(72 as any);
     mockReadSync
       .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
         Buffer.from(partialLine, 'utf-8').copy(target as Uint8Array);
@@ -424,7 +421,8 @@ describe('session ID assignment via polling', () => {
     const win = createMockWin();
     startCodexSessionWatcher(win);
 
-    const firstLine = '{"session_id":"codex-old","ts":1774904000,"text":"line-that-makes-this-entry-longer"}\n';
+    const firstLine =
+      '{"session_id":"codex-old","ts":1774904000,"text":"line-that-makes-this-entry-longer"}\n';
     const secondLine = '{"session_id":"codex-new"}\n';
     const firstSize = Buffer.byteLength(firstLine);
     const secondSize = Buffer.byteLength(secondLine);
@@ -441,9 +439,7 @@ describe('session ID assignment via polling', () => {
 
     registerPendingCodexSession('ui-1');
 
-    mockOpenSync
-      .mockReturnValueOnce(81 as any)
-      .mockReturnValueOnce(82 as any);
+    mockOpenSync.mockReturnValueOnce(81 as any).mockReturnValueOnce(82 as any);
     mockReadSync
       .mockImplementationOnce((_fd, target: ArrayBufferView<ArrayBufferLike>) => {
         Buffer.from(firstLine, 'utf-8').copy(target as Uint8Array);

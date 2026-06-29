@@ -32,8 +32,14 @@ describe('ipc-path-policy platform guards', () => {
   it('allows only the ClaudeCode support directory prefix on macOS', async () => {
     const policy = await loadPolicyModule({ isMac: true, isWin: false, home: '/Users/test' });
 
-    expect(policy.isAllowedReadPath('/Library/Application Support/ClaudeCode/settings.json')).toBe(true);
-    expect(policy.isAllowedReadPath('/Library/Application Support/ClaudeCode/plugins/cache.json')).toBe(true);
-    expect(policy.isAllowedReadPath('/Library/Application Support/ClaudeCode Backup/settings.json')).toBe(false);
+    expect(policy.isAllowedReadPath('/Library/Application Support/ClaudeCode/settings.json')).toBe(
+      true,
+    );
+    expect(
+      policy.isAllowedReadPath('/Library/Application Support/ClaudeCode/plugins/cache.json'),
+    ).toBe(true);
+    expect(
+      policy.isAllowedReadPath('/Library/Application Support/ClaudeCode Backup/settings.json'),
+    ).toBe(false);
   });
 });

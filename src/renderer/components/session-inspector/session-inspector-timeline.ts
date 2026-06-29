@@ -1,5 +1,5 @@
 import type { InspectorEvent } from '../../../shared/types/session.js';
-import { getCostDeltas,getEvents } from '../surface-services/session-inspector-state.js';
+import { getCostDeltas, getEvents } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
   agentLabel,
@@ -21,17 +21,17 @@ import {
 export interface AgentSpan {
   agentId: string;
   startIdx: number;
-  stopIdx: number;          // events.length if still running
+  stopIdx: number; // events.length if still running
   isRunning: boolean;
   parentAgentId: string | null;
   childEventIndices: number[]; // sorted event indices belonging to this agent
 }
 
 export interface AgentModel {
-  spans: Map<string, AgentSpan>;       // agentId → span
-  eventOwner: Map<number, string>;     // event index → owning agentId
-  stopIndices: Set<number>;            // all stop event indices (to skip in rendering)
-  startToAgent: Map<number, string>;   // startIdx → agentId (for render dispatch)
+  spans: Map<string, AgentSpan>; // agentId → span
+  eventOwner: Map<number, string>; // event index → owning agentId
+  stopIndices: Set<number>; // all stop event indices (to skip in rendering)
+  startToAgent: Map<number, string>; // startIdx → agentId (for render dispatch)
 }
 
 interface TimelineRenderContext {
@@ -124,12 +124,16 @@ function markAgentSpanRendered(span: AgentSpan, renderedIndices: Set<number>): v
   }
 }
 
-function maybeAutoExpandRunningGroup(sessionId: string, groupKey: string, isRunning: boolean): void {
+function maybeAutoExpandRunningGroup(
+  sessionId: string,
+  groupKey: string,
+  isRunning: boolean,
+): void {
   const autoExpandKey = `${sessionId}:${groupKey}`;
   if (
-    isRunning
-    && !inspectorState.expandedRows.has(groupKey)
-    && !inspectorState.autoExpandedAgentGroups.has(autoExpandKey)
+    isRunning &&
+    !inspectorState.expandedRows.has(groupKey) &&
+    !inspectorState.autoExpandedAgentGroups.has(autoExpandKey)
   ) {
     inspectorState.expandedRows.add(groupKey);
     inspectorState.autoExpandedAgentGroups.add(autoExpandKey);
@@ -156,7 +160,12 @@ function createAgentChildren(span: AgentSpan, context: TimelineRenderContext): H
   return children;
 }
 
-function toggleAgentGroup(group: HTMLElement, groupKey: string, toggleEl: HTMLElement, renderChildren: () => HTMLElement): void {
+function toggleAgentGroup(
+  group: HTMLElement,
+  groupKey: string,
+  toggleEl: HTMLElement,
+  renderChildren: () => HTMLElement,
+): void {
   if (inspectorState.expandedRows.has(groupKey)) {
     inspectorState.expandedRows.delete(groupKey);
   } else {
@@ -171,13 +180,19 @@ function toggleAgentGroup(group: HTMLElement, groupKey: string, toggleEl: HTMLEl
   group.appendChild(renderChildren());
 }
 
-function renderAgentGroup(agentId: string, parent: HTMLElement, context: TimelineRenderContext): void {
+function renderAgentGroup(
+  agentId: string,
+  parent: HTMLElement,
+  context: TimelineRenderContext,
+): void {
   const span = context.model.spans.get(agentId);
   if (!span) return;
 
   const startEvent = context.events[span.startIdx];
   const stopEvent = span.isRunning ? null : context.events[span.stopIdx];
-  const duration = span.isRunning ? Date.now() - startEvent.timestamp : stopEvent!.timestamp - startEvent.timestamp;
+  const duration = span.isRunning
+    ? Date.now() - startEvent.timestamp
+    : stopEvent!.timestamp - startEvent.timestamp;
   const childCount = countVisibleChildEvents(context.events, span);
   markAgentSpanRendered(span, context.renderedIndices);
 
@@ -231,14 +246,23 @@ function renderAgentGroup(agentId: string, parent: HTMLElement, context: Timelin
   parent.appendChild(group);
 }
 
-function shouldSkipEvent(index: number, event: InspectorEvent, context: TimelineRenderContext): boolean {
+function shouldSkipEvent(
+  index: number,
+  event: InspectorEvent,
+  context: TimelineRenderContext,
+): boolean {
   if (context.renderedIndices.has(index)) return true;
   if (event.type === 'status_update') return true;
   if (context.model.stopIndices.has(index)) return true;
   return false;
 }
 
-function renderEventsRange(from: number, to: number, parent: HTMLElement, context: TimelineRenderContext): void {
+function renderEventsRange(
+  from: number,
+  to: number,
+  parent: HTMLElement,
+  context: TimelineRenderContext,
+): void {
   for (let i = from; i < to; i++) {
     const event = context.events[i];
     if (shouldSkipEvent(i, event, context)) continue;
@@ -283,13 +307,16 @@ export function describeTimelineEvent(
   if (event.type === 'notification') return event.message || 'Notification';
   if (event.type === 'pre_compact') return 'Context compaction starting';
   if (event.type === 'post_compact') return 'Context compaction complete';
-  if (event.type === 'task_created') return event.task_id ? `Task created: ${event.task_id}` : 'Task created';
-  if (event.type === 'task_completed') return event.task_id ? `Task completed: ${event.task_id}` : 'Task completed';
+  if (event.type === 'task_created')
+    return event.task_id ? `Task created: ${event.task_id}` : 'Task created';
+  if (event.type === 'task_completed')
+    return event.task_id ? `Task completed: ${event.task_id}` : 'Task completed';
   if (event.type === 'worktree_create') return event.worktree_path || 'Worktree created';
   if (event.type === 'worktree_remove') return event.worktree_path || 'Worktree removed';
   if (event.type === 'cwd_changed') return event.cwd || 'Working directory changed';
   if (event.type === 'file_changed') return event.file_path || 'File changed';
-  if (event.type === 'config_change') return event.config_key ? `Config: ${event.config_key}` : 'Config changed';
+  if (event.type === 'config_change')
+    return event.config_key ? `Config: ${event.config_key}` : 'Config changed';
   if (event.type === 'elicitation') return event.question || 'Elicitation requested';
   if (event.type === 'elicitation_result') return 'Elicitation answered';
   if (event.type === 'instructions_loaded') return 'Instructions loaded';
@@ -311,7 +338,11 @@ export function buildApprovalDecisionMetaText(event: InspectorEvent): string | n
   return details.join(' · ');
 }
 
-function renderEventRow(index: number, event: InspectorEvent, context: TimelineRenderContext): HTMLDivElement {
+function renderEventRow(
+  index: number,
+  event: InspectorEvent,
+  context: TimelineRenderContext,
+): HTMLDivElement {
   const row = document.createElement('div');
   row.className = 'inspector-timeline-row';
 
@@ -376,7 +407,8 @@ function renderEventRow(index: number, event: InspectorEvent, context: TimelineR
   }
 
   if (isAgentEvent(event)) {
-    const duration = event.type === 'subagent_stop' ? findAgentDuration(context.events, index) : null;
+    const duration =
+      event.type === 'subagent_stop' ? findAgentDuration(context.events, index) : null;
     makeExpandable(
       row,
       `${event.timestamp}:${event.type}:${event.agent_id || ''}`,
@@ -388,7 +420,8 @@ function renderEventRow(index: number, event: InspectorEvent, context: TimelineR
   if (event.error) {
     const errorEl = document.createElement('div');
     errorEl.className = 'inspector-error-text';
-    errorEl.textContent = event.error.length > 200 ? event.error.slice(0, 200) + '...' : event.error;
+    errorEl.textContent =
+      event.error.length > 200 ? event.error.slice(0, 200) + '...' : event.error;
     row.appendChild(errorEl);
   }
 

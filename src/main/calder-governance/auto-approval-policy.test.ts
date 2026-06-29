@@ -110,7 +110,14 @@ describe('resolveEffectiveAutoApprovalMode', () => {
   });
 
   it('honors precedence across global, project, and session mode combinations', () => {
-    const modeOptions = [undefined, 'off', 'edit_only', 'edit_plus_safe_tools', 'full_auto', 'full_auto_unsafe'] as const;
+    const modeOptions = [
+      undefined,
+      'off',
+      'edit_only',
+      'edit_plus_safe_tools',
+      'full_auto',
+      'full_auto_unsafe',
+    ] as const;
 
     for (const globalMode of modeOptions) {
       for (const projectMode of modeOptions) {
@@ -122,13 +129,14 @@ describe('resolveEffectiveAutoApprovalMode', () => {
           });
 
           const expectedMode = sessionMode ?? projectMode ?? globalMode ?? 'off';
-          const expectedSource = sessionMode !== undefined
-            ? 'session'
-            : projectMode !== undefined
-              ? 'project'
-              : globalMode !== undefined
-                ? 'global'
-                : 'fallback';
+          const expectedSource =
+            sessionMode !== undefined
+              ? 'session'
+              : projectMode !== undefined
+                ? 'project'
+                : globalMode !== undefined
+                  ? 'global'
+                  : 'fallback';
 
           expect(result.effectiveMode).toBe(expectedMode);
           expect(result.policySource).toBe(expectedSource);

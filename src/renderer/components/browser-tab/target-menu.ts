@@ -26,7 +26,10 @@ function setProviderAccentTarget(element: HTMLElement, providerId?: ProviderId):
   delete element.dataset.provider;
 }
 
-export function closeBrowserTargetMenu(instance: BrowserTabInstance, reason = 'programmatic'): void {
+export function closeBrowserTargetMenu(
+  instance: BrowserTabInstance,
+  reason = 'programmatic',
+): void {
   const wasOpen = instance.targetMenu.style.display !== 'none';
   instance.targetMenuFloatingCleanup?.();
   instance.targetMenuFloatingCleanup = null;
@@ -137,7 +140,7 @@ function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
 export function syncBrowserTargetControls(instance: BrowserTabInstance): void {
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
   const selectedProviderId: ProviderId | undefined = selectedTarget
-    ? selectedTarget.providerId ?? 'claude'
+    ? (selectedTarget.providerId ?? 'claude')
     : undefined;
   const hasTarget = !!selectedTarget;
   const primaryButtons = [instance.submitBtn, instance.drawSubmitBtn, instance.flowSubmitBtn];

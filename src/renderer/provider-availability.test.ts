@@ -53,7 +53,9 @@ const providers: CliProviderMeta[] = [
 async function loadModule(checks: Partial<Record<(typeof providers)[number]['id'], boolean>> = {}) {
   vi.resetModules();
   const listProviders = vi.fn().mockResolvedValue(providers);
-  const checkBinary = vi.fn(async (providerId: string) => ({ ok: checks[providerId as keyof typeof checks] ?? false }));
+  const checkBinary = vi.fn(async (providerId: string) => ({
+    ok: checks[providerId as keyof typeof checks] ?? false,
+  }));
 
   vi.stubGlobal('window', {
     calder: {
@@ -95,7 +97,11 @@ describe('provider-availability', () => {
   });
 
   it('builds an availability snapshot and resolves inline selector visibility', async () => {
-    const { module, checkBinary } = await loadModule({ claude: true, codex: true, antigravity: false });
+    const { module, checkBinary } = await loadModule({
+      claude: true,
+      codex: true,
+      antigravity: false,
+    });
 
     await module.loadProviderAvailability();
 
@@ -107,14 +113,16 @@ describe('provider-availability', () => {
     expect(snapshot?.availability.get('claude')).toBe(true);
     expect(snapshot?.availability.get('antigravity')).toBe(false);
     expect(module.shouldRenderInlineProviderSelector(snapshot)).toBe(true);
-    expect(module.shouldRenderInlineProviderSelector({
-      providers,
-      availability: new Map([
-        ['claude', true],
-        ['codex', false],
-        ['antigravity', false],
-      ]),
-    })).toBe(false);
+    expect(
+      module.shouldRenderInlineProviderSelector({
+        providers,
+        availability: new Map([
+          ['claude', true],
+          ['codex', false],
+          ['antigravity', false],
+        ]),
+      }),
+    ).toBe(false);
   });
 
   it('resolves preferred launch and check providers from availability state', async () => {
@@ -128,9 +136,15 @@ describe('provider-availability', () => {
     expect(module.resolvePreferredProviderForLaunch(undefined, null)).toBe('claude');
 
     expect(module.resolveProviderForCheck('codex', ['claude', 'codex'], snapshot)).toBe('codex');
-    expect(module.resolveProviderForCheck('claude', ['claude', 'antigravity'], snapshot)).toBe('claude');
-    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], snapshot)).toBe('antigravity');
-    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], null)).toBe('antigravity');
+    expect(module.resolveProviderForCheck('claude', ['claude', 'antigravity'], snapshot)).toBe(
+      'claude',
+    );
+    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], snapshot)).toBe(
+      'antigravity',
+    );
+    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], null)).toBe(
+      'antigravity',
+    );
     expect(module.resolveProviderForCheck(undefined, undefined, snapshot)).toBe('codex');
   });
 });

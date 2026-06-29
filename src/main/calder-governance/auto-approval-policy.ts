@@ -31,11 +31,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
-  return value === 'off'
-    || value === 'edit_only'
-    || value === 'edit_plus_safe_tools'
-    || value === 'full_auto'
-    || value === 'full_auto_unsafe'
+  return value === 'off' ||
+    value === 'edit_only' ||
+    value === 'edit_plus_safe_tools' ||
+    value === 'full_auto' ||
+    value === 'full_auto_unsafe'
     ? value
     : undefined;
 }
@@ -62,7 +62,10 @@ export function readGlobalAutoApprovalPolicy(): AutoApprovalPolicyModeReadResult
   return readAutoApprovalPolicyMode(GLOBAL_AUTO_APPROVAL_POLICY_PATH);
 }
 
-export function setAutoApprovalModeInPolicyFile(filePath: string, mode: AutoApprovalMode | null): void {
+export function setAutoApprovalModeInPolicyFile(
+  filePath: string,
+  mode: AutoApprovalMode | null,
+): void {
   let existing: Record<string, unknown> | undefined;
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -81,9 +84,7 @@ export function setAutoApprovalModeInPolicyFile(filePath: string, mode: AutoAppr
   }
 
   const rawAutoApproval = existing.autoApproval;
-  const autoApproval = isRecord(rawAutoApproval)
-    ? { ...rawAutoApproval }
-    : {};
+  const autoApproval = isRecord(rawAutoApproval) ? { ...rawAutoApproval } : {};
 
   if (mode === null) {
     delete autoApproval.mode;

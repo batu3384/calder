@@ -14,13 +14,15 @@ export function archiveSessionToHistory(
     cliSessionId: session.cliSessionId,
     createdAt: session.createdAt,
     closedAt: new Date().toISOString(),
-    cost: costInfo ? {
-      totalCostUsd: costInfo.totalCostUsd,
-      totalInputTokens: costInfo.totalInputTokens,
-      totalOutputTokens: costInfo.totalOutputTokens,
-      totalDurationMs: costInfo.totalDurationMs,
-      source: costInfo.source,
-    } : null,
+    cost: costInfo
+      ? {
+          totalCostUsd: costInfo.totalCostUsd,
+          totalInputTokens: costInfo.totalInputTokens,
+          totalOutputTokens: costInfo.totalOutputTokens,
+          totalDurationMs: costInfo.totalDurationMs,
+          source: costInfo.source,
+        }
+      : null,
   };
 
   if (!project.sessionHistory) project.sessionHistory = [];
@@ -42,13 +44,19 @@ export function archiveSessionToHistory(
     let nonBookmarkedToRemove = project.sessionHistory.length - 500;
     project.sessionHistory = project.sessionHistory.filter((entry) => {
       if (entry.bookmarked) return true;
-      if (nonBookmarkedToRemove > 0) { nonBookmarkedToRemove--; return false; }
+      if (nonBookmarkedToRemove > 0) {
+        nonBookmarkedToRemove--;
+        return false;
+      }
       return true;
     });
   }
 }
 
-export function removeHistoryEntryFromProject(project: ProjectRecord, archivedSessionId: string): boolean {
+export function removeHistoryEntryFromProject(
+  project: ProjectRecord,
+  archivedSessionId: string,
+): boolean {
   if (!project.sessionHistory) return false;
   const next = project.sessionHistory.filter((entry) => entry.id !== archivedSessionId);
   if (next.length === project.sessionHistory.length) return false;
@@ -56,7 +64,10 @@ export function removeHistoryEntryFromProject(project: ProjectRecord, archivedSe
   return true;
 }
 
-export function toggleProjectHistoryBookmark(project: ProjectRecord, archivedSessionId: string): boolean {
+export function toggleProjectHistoryBookmark(
+  project: ProjectRecord,
+  archivedSessionId: string,
+): boolean {
   if (!project.sessionHistory) return false;
   const entry = project.sessionHistory.find((record) => record.id === archivedSessionId);
   if (!entry) return false;
@@ -84,7 +95,9 @@ export function resumeSessionFromHistory(
   const archived = project.sessionHistory?.find((entry) => entry.id === archivedSessionId);
   if (!archived || !archived.cliSessionId) return { created: false };
 
-  const existing = project.sessions.find((session) => session.cliSessionId === archived.cliSessionId);
+  const existing = project.sessions.find(
+    (session) => session.cliSessionId === archived.cliSessionId,
+  );
   if (existing) {
     project.activeSessionId = existing.id;
     pushNav(existing.id);

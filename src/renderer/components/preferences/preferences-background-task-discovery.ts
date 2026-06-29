@@ -1,4 +1,8 @@
-import type { ProjectBackgroundTaskDocument, ProjectBackgroundTaskSource, ProjectBackgroundTaskState } from '../../../shared/types/project-background-task.js';
+import type {
+  ProjectBackgroundTaskDocument,
+  ProjectBackgroundTaskSource,
+  ProjectBackgroundTaskState,
+} from '../../../shared/types/project-background-task.js';
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import {
   resumeProjectBackgroundTaskInNewSession,
@@ -111,7 +115,10 @@ function createTaskDetailsArtifactList(
   return artifactBlock;
 }
 
-function renderBackgroundTaskDetails(taskDocument: ProjectBackgroundTaskDocument, context: BackgroundTaskDetailsContext): void {
+function renderBackgroundTaskDetails(
+  taskDocument: ProjectBackgroundTaskDocument,
+  context: BackgroundTaskDetailsContext,
+): void {
   showModal('Background Task Details', [], async () => {
     context.onCloseModalWide();
   });
@@ -212,7 +219,10 @@ function createNewQueuedTaskButton(
         appState.setProjectBackgroundTasks(project.id, result.state);
         onCloseModalWide();
 
-        const relativePath = toProjectRelativeContextPath(project.path, `${project.path}/${result.relativePath}`);
+        const relativePath = toProjectRelativeContextPath(
+          project.path,
+          `${project.path}/${result.relativePath}`,
+        );
         if (relativePath) {
           await window.calder.git.openInEditor(project.path, relativePath);
         }
@@ -223,23 +233,25 @@ function createNewQueuedTaskButton(
   return createBtn;
 }
 
+function appendTaskStat(parent: HTMLElement, label: string, value: number): void {
+  const stat = document.createElement('div');
+  stat.className = 'task-discovery-stat';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'task-discovery-stat-label';
+  labelEl.textContent = label;
+  const valueEl = document.createElement('span');
+  valueEl.className = 'task-discovery-stat-value';
+  valueEl.textContent = String(value);
+  stat.append(labelEl, valueEl);
+  parent.appendChild(stat);
+}
+
 function appendTaskSummary(shell: HTMLElement, state: ProjectBackgroundTaskState): void {
   const summary = document.createElement('div');
   summary.className = 'task-discovery-summary';
-  summary.innerHTML = `
-      <div class="task-discovery-stat">
-        <span class="task-discovery-stat-label">Queued</span>
-        <span class="task-discovery-stat-value">${state.queuedCount}</span>
-      </div>
-      <div class="task-discovery-stat">
-        <span class="task-discovery-stat-label">Running</span>
-        <span class="task-discovery-stat-value">${state.runningCount}</span>
-      </div>
-      <div class="task-discovery-stat">
-        <span class="task-discovery-stat-label">Completed</span>
-        <span class="task-discovery-stat-value">${state.completedCount}</span>
-      </div>
-    `;
+  appendTaskStat(summary, 'Queued', state.queuedCount);
+  appendTaskStat(summary, 'Running', state.runningCount);
+  appendTaskStat(summary, 'Completed', state.completedCount);
   shell.appendChild(summary);
 }
 
@@ -248,7 +260,9 @@ function createTaskStatusLabel(
 ): HTMLDivElement {
   const status = document.createElement('div');
   status.className = 'task-discovery-item-status';
-  status.textContent = selectedTaskSession ? `Selected: ${selectedTaskSession.name}` : 'Open a CLI session first';
+  status.textContent = selectedTaskSession
+    ? `Selected: ${selectedTaskSession.name}`
+    : 'Open a CLI session first';
   return status;
 }
 
@@ -266,7 +280,10 @@ function createTakeOverButton(
     button.disabled = true;
     try {
       const taskDocument = await window.calder.task.read(context.project.path, task.path);
-      const result = await sendProjectBackgroundTaskToSelectedSession(context.project.id, taskDocument);
+      const result = await sendProjectBackgroundTaskToSelectedSession(
+        context.project.id,
+        taskDocument,
+      );
       if (!result.ok) {
         status.textContent = result.error ?? 'Unable to send queued task.';
         return;
@@ -305,7 +322,10 @@ function createResumeButton(
   return button;
 }
 
-function createPreviewButton(task: ProjectBackgroundTaskSource, context: BackgroundTaskListContext): HTMLButtonElement {
+function createPreviewButton(
+  task: ProjectBackgroundTaskSource,
+  context: BackgroundTaskListContext,
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
@@ -317,7 +337,10 @@ function createPreviewButton(task: ProjectBackgroundTaskSource, context: Backgro
   return button;
 }
 
-function createArtifactsButton(task: ProjectBackgroundTaskSource, context: BackgroundTaskListContext): HTMLButtonElement {
+function createArtifactsButton(
+  task: ProjectBackgroundTaskSource,
+  context: BackgroundTaskListContext,
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
@@ -334,7 +357,10 @@ function createArtifactsButton(task: ProjectBackgroundTaskSource, context: Backg
   return button;
 }
 
-function createOpenButton(relativePath: string, context: BackgroundTaskListContext): HTMLButtonElement {
+function createOpenButton(
+  relativePath: string,
+  context: BackgroundTaskListContext,
+): HTMLButtonElement {
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
@@ -352,10 +378,15 @@ function createOpenButton(relativePath: string, context: BackgroundTaskListConte
 
 export function buildBackgroundTaskMetaText(task: ProjectBackgroundTaskSource): string {
   const artifactLabel = task.artifactCount === 1 ? '1 artifact' : `${task.artifactCount} artifacts`;
-  return task.summary ? `${task.status} · ${artifactLabel} · ${task.summary}` : `${task.status} · ${artifactLabel}`;
+  return task.summary
+    ? `${task.status} · ${artifactLabel} · ${task.summary}`
+    : `${task.status} · ${artifactLabel}`;
 }
 
-function createTaskListItem(task: ProjectBackgroundTaskSource, context: BackgroundTaskListContext): HTMLElement {
+function createTaskListItem(
+  task: ProjectBackgroundTaskSource,
+  context: BackgroundTaskListContext,
+): HTMLElement {
   const item = document.createElement('div');
   item.className = 'task-discovery-item';
 
@@ -403,7 +434,10 @@ function createTaskListItem(task: ProjectBackgroundTaskSource, context: Backgrou
   return item;
 }
 
-function createTaskList(tasks: ProjectBackgroundTaskSource[], context: BackgroundTaskListContext): HTMLElement {
+function createTaskList(
+  tasks: ProjectBackgroundTaskSource[],
+  context: BackgroundTaskListContext,
+): HTMLElement {
   const list = document.createElement('div');
   list.className = 'task-discovery-list';
   for (const task of tasks.slice(0, 6)) {
@@ -412,7 +446,9 @@ function createTaskList(tasks: ProjectBackgroundTaskSource[], context: Backgroun
   return list;
 }
 
-export function renderProjectBackgroundTaskSection(args: RenderProjectBackgroundTaskSectionArgs): void {
+export function renderProjectBackgroundTaskSection(
+  args: RenderProjectBackgroundTaskSectionArgs,
+): void {
   const card = args.appendSectionCard(
     args.container,
     'Background agents',
@@ -432,7 +468,10 @@ export function renderProjectBackgroundTaskSection(args: RenderProjectBackground
 
   const projectBackgroundTasks = project.projectBackgroundTasks;
   if (!projectBackgroundTasks || projectBackgroundTasks.tasks.length === 0) {
-    appendTaskDiscoveryEmptyState(shell, 'No queued background tasks have been discovered for this repo yet.');
+    appendTaskDiscoveryEmptyState(
+      shell,
+      'No queued background tasks have been discovered for this repo yet.',
+    );
     return;
   }
 
@@ -451,7 +490,8 @@ export function renderProjectBackgroundTaskSection(args: RenderProjectBackground
     project,
     selectedTaskSession: appState.resolveSurfaceTargetSession(project.id),
     onCloseModalWide: args.onCloseModalWide,
-    showBackgroundTaskDetails: (taskDocument) => renderBackgroundTaskDetails(taskDocument, detailsContext),
+    showBackgroundTaskDetails: (taskDocument) =>
+      renderBackgroundTaskDetails(taskDocument, detailsContext),
   };
   shell.appendChild(createTaskList(projectBackgroundTasks.tasks, listContext));
 }

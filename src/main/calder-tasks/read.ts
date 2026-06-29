@@ -1,7 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ProjectBackgroundTaskDocument, ProjectBackgroundTaskStatus } from '../../shared/types/project-background-task.js';
+import type {
+  ProjectBackgroundTaskDocument,
+  ProjectBackgroundTaskStatus,
+} from '../../shared/types/project-background-task.js';
 
 const TASKS_DIR_PREFIX = `.calder${path.posix.sep}tasks${path.posix.sep}`;
 
@@ -17,14 +20,23 @@ interface RawTaskDocument {
 
 function normalizeTaskRelativePath(taskPath: string): string {
   const normalized = taskPath.replace(/\\/g, '/').replace(/^\.?\//, '');
-  if (!normalized.startsWith(TASKS_DIR_PREFIX) || !normalized.endsWith('.json') || normalized.includes('..')) {
+  if (
+    !normalized.startsWith(TASKS_DIR_PREFIX) ||
+    !normalized.endsWith('.json') ||
+    normalized.includes('..')
+  ) {
     throw new Error('Task path must stay within .calder/tasks');
   }
   return normalized;
 }
 
 function asStatus(value: unknown): ProjectBackgroundTaskStatus {
-  if (value === 'running' || value === 'blocked' || value === 'completed' || value === 'cancelled') {
+  if (
+    value === 'running' ||
+    value === 'blocked' ||
+    value === 'completed' ||
+    value === 'cancelled'
+  ) {
     return value;
   }
   return 'queued';

@@ -63,7 +63,8 @@ export function deriveQuotaConfidence(
 ): QuotaConfidence {
   if (!snapshot) return 'unavailable';
   if (snapshot.status === 'syncing' || snapshot.status === 'unsupported') return 'unavailable';
-  if (typeof snapshot.updatedAt === 'number' && nowMs - snapshot.updatedAt > staleAfterMs) return 'stale';
+  if (typeof snapshot.updatedAt === 'number' && nowMs - snapshot.updatedAt > staleAfterMs)
+    return 'stale';
   return snapshot.hasMeasuredValues ? 'verified' : 'estimated';
 }
 

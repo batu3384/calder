@@ -8,13 +8,7 @@ export interface BrowserTrustZone {
   title: string;
 }
 
-const LOCAL_HOSTNAMES = new Set([
-  'localhost',
-  '127.0.0.1',
-  '::1',
-  '[::1]',
-  '0.0.0.0',
-]);
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0']);
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const BARE_HOST_PORT = /^[a-z0-9.-]+:\d+(?:[/?#]|$)/i;
 
@@ -53,9 +47,10 @@ function isLocalHostname(hostname: string): boolean {
 export function classifyBrowserTrustZone(value: string | undefined | null): BrowserTrustZone {
   const candidate = value?.trim();
   if (!candidate || candidate === 'about:blank') return TRUST_ZONES.unknown;
-  const parseableCandidate = HAS_SCHEME.test(candidate) && !BARE_HOST_PORT.test(candidate)
-    ? candidate
-    : `http://${candidate}`;
+  const parseableCandidate =
+    HAS_SCHEME.test(candidate) && !BARE_HOST_PORT.test(candidate)
+      ? candidate
+      : `http://${candidate}`;
 
   try {
     const parsed = new URL(parseableCandidate);

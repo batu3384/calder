@@ -21,10 +21,9 @@ describe('state project lookup', () => {
     const child = makeProject('child', '/workspace/root/packages/app');
     const sibling = makeProject('sibling', '/workspace/other');
 
-    expect(findProjectForPath(
-      [parent, child, sibling],
-      '/workspace/root/packages/app/src/pages',
-    )).toBe(child);
+    expect(
+      findProjectForPath([parent, child, sibling], '/workspace/root/packages/app/src/pages'),
+    ).toBe(child);
   });
 
   it('normalizes backslashes and trailing slashes before matching', () => {

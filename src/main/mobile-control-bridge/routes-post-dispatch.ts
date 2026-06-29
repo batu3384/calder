@@ -3,9 +3,21 @@ import * as http from 'node:http';
 import { getPairingFromPath } from './store';
 
 export interface PairingPostHandlers {
-  handleBootstrapRequest: (record: NonNullable<ReturnType<typeof getPairingFromPath>>, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
-  handleChallengeRequest: (record: NonNullable<ReturnType<typeof getPairingFromPath>>, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
-  handleAnswerRequest: (record: NonNullable<ReturnType<typeof getPairingFromPath>>, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
+  handleBootstrapRequest: (
+    record: NonNullable<ReturnType<typeof getPairingFromPath>>,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
+  handleChallengeRequest: (
+    record: NonNullable<ReturnType<typeof getPairingFromPath>>,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
+  handleAnswerRequest: (
+    record: NonNullable<ReturnType<typeof getPairingFromPath>>,
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ) => Promise<void>;
 }
 
 export function dispatchPairingPostRequest(

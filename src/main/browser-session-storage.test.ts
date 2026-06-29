@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync,rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import { describe, expect, it, vi } from 'vitest';
@@ -82,7 +82,9 @@ describe('browser session storage prep', () => {
       expect(result.migratedLegacyServiceWorker).toBe(true);
       expect(existsSync(path.join(root, 'Service Worker'))).toBe(false);
       expect(existsSync(path.join(root, '.browser-session-storage-v1'))).toBe(true);
-      expect(existsSync(path.join(root, 'Legacy Browser Storage', 'Service Worker-123456789'))).toBe(true);
+      expect(
+        existsSync(path.join(root, 'Legacy Browser Storage', 'Service Worker-123456789')),
+      ).toBe(true);
 
       const backupEntries = readdirSync(path.join(root, 'Legacy Browser Storage')).sort();
       expect(backupEntries).toEqual(['Service Worker', 'Service Worker-123456789']);

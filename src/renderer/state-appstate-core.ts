@@ -1,11 +1,17 @@
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
+import type {
+  ProjectCheckpointDocument,
+  ProjectCheckpointRestoreMode,
+} from '../shared/types/project-checkpoint.js';
 import type { PersistedState, ProjectRecord } from '../shared/types/project-state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
 import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
-import { getProviderAvailabilitySnapshot,getProviderCapabilities } from './provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  getProviderCapabilities,
+} from './provider-availability.js';
 import { getCost } from './session-cost.js';
 import { findProjectById } from './state/state-appstate-core-project-access.js';
 import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
@@ -19,7 +25,10 @@ import {
 import { buildWorkflowLaunchPrompt, normalizeProjectLayout } from './state-normalizers.js';
 import { repairProjectSurface } from './state-project-surface.js';
 import { resumeProjectWithProvider } from './state-resume-with-provider.js';
-import { createStandardSessionRecord, createWorkflowLaunchSessionRecord } from './state-session-factory.js';
+import {
+  createStandardSessionRecord,
+  createWorkflowLaunchSessionRecord,
+} from './state-session-factory.js';
 import {
   addMcpInspectorSession as addMcpInspectorSessionToProject,
   addRemoteSession as addRemoteSessionToProject,
@@ -64,11 +73,18 @@ export function createProjectRecord(name: string, path: string): ProjectRecord {
       web: { history: [] },
       cli: { profiles: [], runtime: { status: 'idle' } },
     },
-    layout: normalizeProjectLayout({ mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' }),
+    layout: normalizeProjectLayout({
+      mode: 'mosaic',
+      splitPanes: [],
+      splitDirection: 'horizontal',
+    }),
   };
 }
 
-export function removeProjectAndCollectSessions(state: PersistedState, projectId: string): SessionRecord[] {
+export function removeProjectAndCollectSessions(
+  state: PersistedState,
+  projectId: string,
+): SessionRecord[] {
   const project = findProjectById(state.projects, projectId);
   const sessions = project?.sessions ?? [];
   state.projects = state.projects.filter((entry) => entry.id !== projectId);
@@ -93,7 +109,6 @@ export function resolvePlanSessionConfig(options: {
   return { providerId, args };
 }
 
-
 export function addWorkflowLaunchSession(options: {
   project: ProjectRecord;
   workflow: ProjectWorkflowDocument;
@@ -107,14 +122,16 @@ export function addWorkflowLaunchSession(options: {
     providerId: providerOverride ?? defaultProviderId ?? 'claude',
     args: project.defaultArgs,
     pendingInitialPrompt: appendProjectGovernanceToPrompt(
-      appendProjectTeamContextToPrompt(buildWorkflowLaunchPrompt(workflow), project.projectTeamContext),
+      appendProjectTeamContextToPrompt(
+        buildWorkflowLaunchPrompt(workflow),
+        project.projectTeamContext,
+      ),
       project.projectGovernance,
     ),
   });
   addSessionToProject(project, session, pushNav, { includeInMosaic: true });
   return session;
 }
-
 
 export function addStandardProjectSession(options: {
   project: ProjectRecord;
@@ -134,7 +151,6 @@ export function addStandardProjectSession(options: {
   addSessionToProject(project, session, pushNav, { includeInMosaic: true });
   return session;
 }
-
 
 export function upsertDiffViewerProjectSession(options: {
   project: ProjectRecord;
@@ -159,7 +175,11 @@ export function addRemoteProjectSession(options: {
 }): SessionRecord {
   return addRemoteSessionToProject(
     options.project,
-    { sessionId: options.sessionId, hostSessionName: options.hostSessionName, shareMode: options.shareMode },
+    {
+      sessionId: options.sessionId,
+      hostSessionName: options.hostSessionName,
+      shareMode: options.shareMode,
+    },
     options.pushNav,
   );
 }
@@ -235,7 +255,8 @@ export function removeProjectSession(options: {
   pushNav: (sessionId: string) => void;
   onHistoryChanged: (projectId: string) => void;
 }): void {
-  const { project, sessionId, sessionHistoryEnabled, pruneNav, pushNav, onHistoryChanged } = options;
+  const { project, sessionId, sessionHistoryEnabled, pruneNav, pushNav, onHistoryChanged } =
+    options;
 
   // Archive CLI sessions before removing (cost data must be captured before session-removed triggers destroyTerminal)
   const session = project.sessions.find((entry) => entry.id === sessionId);
@@ -337,7 +358,9 @@ export function renameProjectSession(options: {
 
   // Keep history entry in sync if this session was resumed from history
   if (session.cliSessionId && project.sessionHistory) {
-    const historyEntry = project.sessionHistory.find((entry) => entry.cliSessionId === session.cliSessionId);
+    const historyEntry = project.sessionHistory.find(
+      (entry) => entry.cliSessionId === session.cliSessionId,
+    );
     if (historyEntry) {
       historyEntry.name = session.name;
       return { renamed: true, historyRenamed: true };

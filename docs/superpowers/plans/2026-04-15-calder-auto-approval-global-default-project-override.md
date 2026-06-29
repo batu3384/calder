@@ -76,6 +76,7 @@ This plan focuses on one sub-system: Calder governance + hook + right-rail auto-
 ## Task 1: Shared Contracts For Auto Approval
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/shared/types.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/shared/project-governance.contract.test.ts`
 
@@ -83,10 +84,14 @@ This plan focuses on one sub-system: Calder governance + hook + right-rail auto-
 
 ```ts
 // Expectations to be added in src/shared/project-governance.contract.test.ts
-expect(source).toContain("export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools'");
-expect(source).toContain("export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback'");
+expect(source).toContain(
+  "export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools'",
+);
+expect(source).toContain(
+  "export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback'",
+);
 expect(source).toContain('export interface ProjectGovernanceAutoApprovalState');
-expect(source).toContain("effectiveMode: AutoApprovalMode");
+expect(source).toContain('effectiveMode: AutoApprovalMode');
 expect(source).toContain("| 'approval_decision'");
 ```
 
@@ -101,7 +106,12 @@ Expected: FAIL because new `AutoApproval*` types do not exist yet.
 // src/shared/types.ts
 export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools';
 export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
-export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';
+export type AutoApprovalOperationClass =
+  | 'edit'
+  | 'safe_tool'
+  | 'risky_tool'
+  | 'unknown'
+  | 'destructive';
 export type AutoApprovalDecision = 'allow' | 'ask' | 'block';
 
 export interface ProjectGovernanceAutoApprovalState {
@@ -126,11 +136,16 @@ export interface ProjectGovernanceState {
 }
 
 export type InspectorEventType =
-  | 'session_start' | 'user_prompt' | 'tool_use' | 'tool_failure'
-  | 'stop' | 'stop_failure' | 'permission_request'
+  | 'session_start'
+  | 'user_prompt'
+  | 'tool_use'
+  | 'tool_failure'
+  | 'stop'
+  | 'stop_failure'
+  | 'permission_request'
   | 'approval_decision'
-  | 'permission_denied'
-  // ...
+  | 'permission_denied';
+// ...
 
 export interface InspectorEvent {
   // ...
@@ -159,6 +174,7 @@ git commit -m "feat(governance): add shared auto-approval contracts"
 ## Task 2: Policy Resolver (Global + Project + Session)
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-policy.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-policy.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/discovery.ts`
@@ -278,6 +294,7 @@ git commit -m "feat(governance): resolve auto-approval mode from global project 
 ## Task 3: Command Classification + Decision Matrix + Rate Guard
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-classifier.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-classifier.test.ts`
 
@@ -294,17 +311,24 @@ describe('classifyOperation', () => {
   });
 
   it('classifies safe bash read commands as safe_tool', () => {
-    expect(classifyOperation({ toolName: 'Bash', toolInput: { command: 'rg --files src' } })).toBe('safe_tool');
+    expect(classifyOperation({ toolName: 'Bash', toolInput: { command: 'rg --files src' } })).toBe(
+      'safe_tool',
+    );
   });
 
   it('classifies destructive bash commands as destructive', () => {
-    expect(classifyOperation({ toolName: 'Bash', toolInput: { command: 'rm -rf .git' } })).toBe('destructive');
+    expect(classifyOperation({ toolName: 'Bash', toolInput: { command: 'rm -rf .git' } })).toBe(
+      'destructive',
+    );
   });
 });
 
 describe('decideAutoApproval', () => {
   it('allows edit in edit_only mode', () => {
-    expect(decideAutoApproval('edit_only', 'edit')).toEqual({ decision: 'allow', reason: expect.any(String) });
+    expect(decideAutoApproval('edit_only', 'edit')).toEqual({
+      decision: 'allow',
+      reason: expect.any(String),
+    });
   });
 
   it('asks safe_tool in edit_only mode', () => {
@@ -326,13 +350,31 @@ Expected: FAIL because the classifier does not exist yet.
 
 ```ts
 // src/main/calder-governance/auto-approval-classifier.ts
-import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalOperationClass } from '../../shared/types.js';
+import type {
+  AutoApprovalDecision,
+  AutoApprovalMode,
+  AutoApprovalOperationClass,
+} from '../../shared/types.js';
 
 const EDIT_TOOLS = new Set(['Write', 'Edit', 'MultiEdit']);
-const SAFE_BASH = [/^rg(\s|$)/, /^ls(\s|$)/, /^pwd$/, /^cat(\s|$)/, /^sed\s+-n(\s|$)/, /^head(\s|$)/, /^tail(\s|$)/, /^wc(\s|$)/, /^find(\s|$)/, /^git\s+(status|log|show|diff)(\s|$)/];
+const SAFE_BASH = [
+  /^rg(\s|$)/,
+  /^ls(\s|$)/,
+  /^pwd$/,
+  /^cat(\s|$)/,
+  /^sed\s+-n(\s|$)/,
+  /^head(\s|$)/,
+  /^tail(\s|$)/,
+  /^wc(\s|$)/,
+  /^find(\s|$)/,
+  /^git\s+(status|log|show|diff)(\s|$)/,
+];
 const DESTRUCTIVE_BASH = [/rm\s+-rf/, /git\s+reset\s+--hard/, /git\s+checkout\s+--/];
 
-export function classifyOperation(input: { toolName?: string; toolInput?: Record<string, unknown> }): AutoApprovalOperationClass {
+export function classifyOperation(input: {
+  toolName?: string;
+  toolInput?: Record<string, unknown>;
+}): AutoApprovalOperationClass {
   const toolName = (input.toolName ?? '').trim();
   if (!toolName) return 'unknown';
   if (EDIT_TOOLS.has(toolName)) return 'edit';
@@ -348,8 +390,10 @@ export function decideAutoApproval(
   mode: AutoApprovalMode,
   operationClass: AutoApprovalOperationClass,
 ): { decision: AutoApprovalDecision; reason: string } {
-  if (operationClass === 'destructive') return { decision: 'block', reason: 'Destructive command is hard-blocked.' };
-  if (operationClass === 'unknown' || operationClass === 'risky_tool') return { decision: 'ask', reason: 'Unknown/risky operation requires manual approval.' };
+  if (operationClass === 'destructive')
+    return { decision: 'block', reason: 'Destructive command is hard-blocked.' };
+  if (operationClass === 'unknown' || operationClass === 'risky_tool')
+    return { decision: 'ask', reason: 'Unknown/risky operation requires manual approval.' };
   if (mode === 'off') return { decision: 'ask', reason: 'Auto approval is off.' };
   if (mode === 'edit_only') {
     return operationClass === 'edit'
@@ -375,6 +419,7 @@ git commit -m "feat(governance): add auto-approval operation classifier and deci
 ## Task 4: Orchestrator + Provider Adapter Execution
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-orchestrator.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-orchestrator.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`
@@ -394,12 +439,14 @@ describe('auto approval orchestrator', () => {
       resolvePolicy: () => ({ effectiveMode: 'edit_only', policySource: 'project' }),
     });
 
-    const events = await orchestrator.handleInspectorEvents('sess-1', 'claude', [{
-      type: 'permission_request',
-      timestamp: Date.now(),
-      hookEvent: 'PermissionRequest',
-      tool_name: 'Write',
-    }]);
+    const events = await orchestrator.handleInspectorEvents('sess-1', 'claude', [
+      {
+        type: 'permission_request',
+        timestamp: Date.now(),
+        hookEvent: 'PermissionRequest',
+        tool_name: 'Write',
+      },
+    ]);
 
     expect(sendApproval).toHaveBeenCalledWith('sess-1', 'claude');
     expect(events.some((event) => event.type === 'approval_decision')).toBe(true);
@@ -421,15 +468,25 @@ import { classifyOperation, decideAutoApproval } from './auto-approval-classifie
 
 export function createAutoApprovalOrchestrator(deps: {
   sendApproval: (sessionId: string, providerId: ProviderId) => void;
-  resolvePolicy: (sessionId: string) => { effectiveMode: 'off' | 'edit_only' | 'edit_plus_safe_tools'; policySource: 'global' | 'project' | 'session' | 'fallback' };
+  resolvePolicy: (sessionId: string) => {
+    effectiveMode: 'off' | 'edit_only' | 'edit_plus_safe_tools';
+    policySource: 'global' | 'project' | 'session' | 'fallback';
+  };
 }) {
   return {
-    async handleInspectorEvents(sessionId: string, providerId: ProviderId, events: InspectorEvent[]): Promise<InspectorEvent[]> {
+    async handleInspectorEvents(
+      sessionId: string,
+      providerId: ProviderId,
+      events: InspectorEvent[],
+    ): Promise<InspectorEvent[]> {
       const output: InspectorEvent[] = [...events];
       for (const event of events) {
         if (event.type !== 'permission_request') continue;
         const policy = deps.resolvePolicy(sessionId);
-        const operationClass = classifyOperation({ toolName: event.tool_name, toolInput: event.tool_input });
+        const operationClass = classifyOperation({
+          toolName: event.tool_name,
+          toolInput: event.tool_input,
+        });
         const result = decideAutoApproval(policy.effectiveMode, operationClass);
 
         if (result.decision === 'allow') {
@@ -462,7 +519,8 @@ export function createAutoApprovalOrchestrator(deps: {
 ```ts
 // src/main/ipc-handlers.ts (summary)
 const autoApproval = createAutoApprovalOrchestrator({
-  sendApproval: (sessionId, providerId) => writePty(sessionId, providerId === 'codex' ? '1\n' : '\n'),
+  sendApproval: (sessionId, providerId) =>
+    writePty(sessionId, providerId === 'codex' ? '1\n' : '\n'),
   resolvePolicy: (sessionId) => sessionPolicyResolver(sessionId),
 });
 
@@ -486,6 +544,7 @@ git commit -m "feat(governance): add auto-approval orchestrator and session wiri
 ## Task 5: Hook Event Middleware Integration
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/hook-status.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/hook-status.test.ts`
 
@@ -509,9 +568,7 @@ Expected: FAIL because there is no middleware API.
 
 ```ts
 // src/main/hook-status.ts
-let inspectorEventsMiddleware:
-  | ((sessionId: string, events: unknown[]) => unknown[])
-  | null = null;
+let inspectorEventsMiddleware: ((sessionId: string, events: unknown[]) => unknown[]) | null = null;
 
 export function setInspectorEventsMiddleware(
   middleware: ((sessionId: string, events: unknown[]) => unknown[]) | null,
@@ -543,6 +600,7 @@ git commit -m "feat(hooks): support inspector event middleware for auto-approval
 ## Task 6: Governance IPC + Preload + Renderer Sync
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers-governance.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts`
@@ -567,14 +625,25 @@ Expected: FAIL.
 
 ```ts
 // src/main/ipc-handlers.ts
-ipcMain.handle('governance:setAutoApprovalMode', async (_event, projectPath: string, scope: 'global' | 'project', mode: 'off' | 'edit_only' | 'edit_plus_safe_tools') => {
-  return updateAutoApprovalMode(projectPath, scope, mode);
-});
+ipcMain.handle(
+  'governance:setAutoApprovalMode',
+  async (
+    _event,
+    projectPath: string,
+    scope: 'global' | 'project',
+    mode: 'off' | 'edit_only' | 'edit_plus_safe_tools',
+  ) => {
+    return updateAutoApprovalMode(projectPath, scope, mode);
+  },
+);
 
-ipcMain.handle('governance:setSessionAutoApprovalOverride', async (_event, sessionId: string, mode: 'off' | 'edit_only' | 'edit_plus_safe_tools' | null) => {
-  autoApproval.setSessionOverride(sessionId, mode);
-  return { ok: true };
-});
+ipcMain.handle(
+  'governance:setSessionAutoApprovalOverride',
+  async (_event, sessionId: string, mode: 'off' | 'edit_only' | 'edit_plus_safe_tools' | null) => {
+    autoApproval.setSessionOverride(sessionId, mode);
+    return { ok: true };
+  },
+);
 ```
 
 ```ts
@@ -590,10 +659,12 @@ governance: {
 
 ```ts
 // src/renderer/project-governance-sync.ts
-const activeCliSessionId = appState.activeSession && !appState.activeSession.type
-  ? appState.activeSession.id
-  : null;
-const projectGovernance = await window.calder.governance.getProjectState(project.path, activeCliSessionId ?? undefined);
+const activeCliSessionId =
+  appState.activeSession && !appState.activeSession.type ? appState.activeSession.id : null;
+const projectGovernance = await window.calder.governance.getProjectState(
+  project.path,
+  activeCliSessionId ?? undefined,
+);
 ```
 
 Run: `npm test -- src/main/ipc-handlers-governance.contract.test.ts src/renderer/project-governance-sync.test.ts`  
@@ -609,6 +680,7 @@ git commit -m "feat(governance): expose auto-approval controls via ipc preload a
 ## Task 7: Right Rail Auto Approval Block
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/context-language.contract.test.ts`
@@ -686,6 +758,7 @@ git commit -m "feat(renderer): add right-rail auto-approval controls and status 
 ## Task 8: Codex + Gemini PermissionRequest Hook Coverage
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/codex-hooks.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/codex-hooks.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/gemini-hooks.ts`
@@ -714,7 +787,13 @@ Expected: FAIL.
 
 ```ts
 // src/main/codex-hooks.ts
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'PermissionRequest'];
+const EXPECTED_HOOK_EVENTS = [
+  'SessionStart',
+  'UserPromptSubmit',
+  'PostToolUse',
+  'Stop',
+  'PermissionRequest',
+];
 // ...
 const ideEvents: Record<string, string> = {
   SessionStart: 'waiting',
@@ -731,7 +810,14 @@ const eventTypeMap: Record<string, InspectorEventType> = {
 
 ```ts
 // src/main/gemini-hooks.ts
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'BeforeAgent', 'AfterTool', 'AfterAgent', 'SessionEnd', 'PermissionRequest'];
+const EXPECTED_HOOK_EVENTS = [
+  'SessionStart',
+  'BeforeAgent',
+  'AfterTool',
+  'AfterAgent',
+  'SessionEnd',
+  'PermissionRequest',
+];
 // ...
 const ideEvents: Record<string, string> = {
   SessionStart: 'waiting',
@@ -762,6 +848,7 @@ git commit -m "feat(hooks): add permission_request coverage for codex and gemini
 ## Task 9: End-to-End Verification Sweep
 
 **Files:**
+
 - Modify (if needed): `/Users/batuhanyuksel/Documents/browser/src/main/calder-governance/auto-approval-orchestrator.test.ts`
 - Modify (if needed): `/Users/batuhanyuksel/Documents/browser/src/renderer/project-governance-sync.test.ts`
 
@@ -784,6 +871,7 @@ Expected: PASS should not do silent regression to the old stream when the new be
 
 Run: `npm run dev`  
 Expected:
+
 - 'Auto Approval' card appears on the right rail.
 - In 'Off' mode, permission request remains manual.
 - In 'Edits' mode, the edit becomes auto-approve, the safe tool remains manual.
@@ -808,6 +896,7 @@ Suggested changelog entry:
 
 ```md
 ### Added
+
 - Calder auto-approval with global default + project override + session pause.
 - Unified `approval_decision` inspector events for auditability.
 - Permission request hook coverage for Codex and Gemini CLIs.

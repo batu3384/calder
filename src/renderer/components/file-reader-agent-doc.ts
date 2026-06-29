@@ -30,11 +30,13 @@ function stripMarkdownDecorators(input: string): string {
 }
 
 export function slugifyHeading(text: string): string {
-  return stripMarkdownDecorators(text)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64) || 'section';
+  return (
+    stripMarkdownDecorators(text)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 64) || 'section'
+  );
 }
 
 export function getConfigDocumentKind(filePath: string): ConfigDocumentKind | null {
@@ -61,13 +63,13 @@ function normalizeFrontmatterValue(value: string): string {
 }
 
 function collapseBlockLines(lines: string[]): string {
-  return lines
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return lines.join(' ').replace(/\s+/g, ' ').trim();
 }
 
-export function parseMarkdownFrontmatter(content: string): { metadata: Record<string, string>; body: string } {
+export function parseMarkdownFrontmatter(content: string): {
+  metadata: Record<string, string>;
+  body: string;
+} {
   const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
   if (!match) {
     return { metadata: {}, body: content };
@@ -186,7 +188,11 @@ function extractFirstParagraph(content: string): string | null {
   return paragraph.length > 0 ? paragraph.join(' ').replace(/\s+/g, ' ').trim() : null;
 }
 
-function deriveDocumentName(kind: ConfigDocumentKind, filePath: string, metadata: Record<string, string>): string | null {
+function deriveDocumentName(
+  kind: ConfigDocumentKind,
+  filePath: string,
+  metadata: Record<string, string>,
+): string | null {
   if (kind === 'command') {
     return `/${getFileStem(filePath)}`;
   }
@@ -223,7 +229,7 @@ export function buildConfigDocModel(filePath: string, content: string): AgentDoc
     summary: {
       name: deriveDocumentName(kind, filePath, metadata),
       description: metadata.description ?? extractFirstParagraph(body),
-      model: kind === 'agent' ? metadata.model ?? null : null,
+      model: kind === 'agent' ? (metadata.model ?? null) : null,
       tools: deriveDocumentTools(kind, metadata),
     },
     outline: extractMarkdownOutline(body),

@@ -5,7 +5,12 @@ import { VIEWPORT_PRESETS } from '../components/browser-tab/types.js';
 import { applyViewport } from '../components/browser-tab/viewport.js';
 import { deliverPromptToTerminalSession } from '../components/terminal-pane.js';
 import { appState } from '../state.js';
-import { buildBrowserSessionCatalog, buildInspectPromptFromSelection, findProjectForShare, resolveBrowserTargetSessionId } from './peer-host-session-catalog.js';
+import {
+  buildBrowserSessionCatalog,
+  buildInspectPromptFromSelection,
+  findProjectForShare,
+  resolveBrowserTargetSessionId,
+} from './peer-host-session-catalog.js';
 import { sendMessage } from './webrtc-utils.js';
 
 interface BrowserHostPeerState {
@@ -40,7 +45,12 @@ function sendBrowserControlResult(
   });
 }
 
-function sendBrowserInspectResult(hostPeer: BrowserHostPeerState, ok: boolean, sessionId?: string, reason?: string): void {
+function sendBrowserInspectResult(
+  hostPeer: BrowserHostPeerState,
+  ok: boolean,
+  sessionId?: string,
+  reason?: string,
+): void {
   sendMessage(hostPeer.dc, {
     type: 'browser-inspect-result',
     ok,
@@ -55,15 +65,30 @@ function handleBrowserControl(
   requestedSessionId?: string,
   viewportLabel?: string,
 ): void {
-  const targetSessionId = resolveBrowserTargetSessionId(hostPeer.ownerSessionId, requestedSessionId);
+  const targetSessionId = resolveBrowserTargetSessionId(
+    hostPeer.ownerSessionId,
+    requestedSessionId,
+  );
   if (!targetSessionId) {
-    sendBrowserControlResult(hostPeer, action, false, undefined, 'No browser session is currently available.');
+    sendBrowserControlResult(
+      hostPeer,
+      action,
+      false,
+      undefined,
+      'No browser session is currently available.',
+    );
     return;
   }
 
   const instance = getBrowserTabInstance(targetSessionId);
   if (!instance) {
-    sendBrowserControlResult(hostPeer, action, false, targetSessionId, 'Browser surface is not ready.');
+    sendBrowserControlResult(
+      hostPeer,
+      action,
+      false,
+      targetSessionId,
+      'Browser surface is not ready.',
+    );
     return;
   }
 
@@ -95,8 +120,12 @@ function handleBrowserControl(
         toggleInspectMode(instance);
         break;
       case 'set-viewport': {
-        const requestedLabel = String(viewportLabel || '').trim().toLowerCase();
-        const preset = VIEWPORT_PRESETS.find((entry) => entry.label.toLowerCase() === requestedLabel);
+        const requestedLabel = String(viewportLabel || '')
+          .trim()
+          .toLowerCase();
+        const preset = VIEWPORT_PRESETS.find(
+          (entry) => entry.label.toLowerCase() === requestedLabel,
+        );
         if (!preset) {
           ok = false;
           reason = 'Viewport preset is not recognized.';
@@ -130,35 +159,63 @@ async function handleBrowserInspectSubmit(
 ): Promise<void> {
   const normalizedInstruction = String(instruction || '').trim();
   if (!normalizedInstruction) {
-    sendBrowserInspectResult(hostPeer, false, requestedSessionId, 'Inspect instruction is required.');
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      requestedSessionId,
+      'Inspect instruction is required.',
+    );
     sendBrowserState(hostPeer);
     return;
   }
 
-  const targetBrowserSessionId = resolveBrowserTargetSessionId(hostPeer.ownerSessionId, requestedSessionId);
+  const targetBrowserSessionId = resolveBrowserTargetSessionId(
+    hostPeer.ownerSessionId,
+    requestedSessionId,
+  );
   if (!targetBrowserSessionId) {
-    sendBrowserInspectResult(hostPeer, false, undefined, 'No browser session is currently available.');
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      undefined,
+      'No browser session is currently available.',
+    );
     sendBrowserState(hostPeer);
     return;
   }
 
   const browserInstance = getBrowserTabInstance(targetBrowserSessionId);
   if (!browserInstance) {
-    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Browser surface is not ready.');
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      targetBrowserSessionId,
+      'Browser surface is not ready.',
+    );
     sendBrowserState(hostPeer);
     return;
   }
 
   const prompt = buildInspectPromptFromSelection(browserInstance, normalizedInstruction);
   if (!prompt) {
-    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Select an element in inspect mode first.');
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      targetBrowserSessionId,
+      'Select an element in inspect mode first.',
+    );
     sendBrowserState(hostPeer);
     return;
   }
 
   const routed = await deliverPromptToTerminalSession(hostPeer.activeSessionId, prompt);
   if (!routed) {
-    sendBrowserInspectResult(hostPeer, false, targetBrowserSessionId, 'Target CLI session is not available.');
+    sendBrowserInspectResult(
+      hostPeer,
+      false,
+      targetBrowserSessionId,
+      'Target CLI session is not available.',
+    );
     sendBrowserState(hostPeer);
     return;
   }

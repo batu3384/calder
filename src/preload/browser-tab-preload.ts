@@ -7,7 +7,10 @@ import { ipcRenderer } from 'electron';
 
 import { getElementMetadata } from './browser-tab-element-metadata';
 import { replayFlowClick } from './browser-tab-flow-replay';
-import { type AuthFillPayload,fillCredentialsAcrossDocuments } from './browser-tab-preload-auth-fill';
+import {
+  type AuthFillPayload,
+  fillCredentialsAcrossDocuments,
+} from './browser-tab-preload-auth-fill';
 // Contract marker for preload source-based tests:
 // escapeCssIdentifier, escapeCssAttributeValue are now resolved in browser-tab-element-metadata.ts.
 
@@ -17,7 +20,6 @@ interface BrowserGuestOpenPayload {
   url: string;
   source: BrowserGuestOpenSource;
 }
-
 
 function shouldRouteBrowserOpenIntent(input: {
   targetAttr?: string | null;
@@ -145,7 +147,7 @@ function ensureDrawCanvas(): HTMLCanvasElement {
       "<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 -960 960 960'>" +
       "<path fill='black' stroke='white' stroke-width='90' stroke-linejoin='round' paint-order='stroke' " +
       "d='M180.18-144q-15.18 0-25.68-10.3-10.5-10.29-10.5-25.52v-86.85q0-14.33 5-27.33 5-13 16-24l477-477q11-11 23.84-16 12.83-5 27-5 14.16 0 27.16 5t24 16l51 51q11 11 16 24t5 26.54q0 14.45-5.02 27.54T795-642L318-165q-11 11-23.95 16t-27.24 5h-86.63ZM693-642l51-51-51-51-51 51 51 51Z'/>" +
-      "</svg>";
+      '</svg>';
     drawCanvas.style.cssText =
       'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
       'z-index:2147483646;pointer-events:auto;' +
@@ -291,7 +293,10 @@ function hideOverlay(doc?: Document): void {
   }
 }
 
-function fillCredentialsAcrossFrames(payload: AuthFillPayload): { filledUsername: boolean; filledPassword: boolean } {
+function fillCredentialsAcrossFrames(payload: AuthFillPayload): {
+  filledUsername: boolean;
+  filledPassword: boolean;
+} {
   return fillCredentialsAcrossDocuments(collectSameOriginFrameDocuments(document), payload);
 }
 
@@ -325,14 +330,16 @@ function onPopupAnchorClick(e: MouseEvent): void {
   const target = resolveEventElementTarget(e);
   const anchor = findPopupAnchor(target);
   if (!anchor) return;
-  if (!shouldRouteBrowserOpenIntent({
-    targetAttr: anchor.getAttribute('target'),
-    button: e.button,
-    metaKey: e.metaKey,
-    ctrlKey: e.ctrlKey,
-    shiftKey: e.shiftKey,
-    altKey: e.altKey,
-  })) {
+  if (
+    !shouldRouteBrowserOpenIntent({
+      targetAttr: anchor.getAttribute('target'),
+      button: e.button,
+      metaKey: e.metaKey,
+      ctrlKey: e.ctrlKey,
+      shiftKey: e.shiftKey,
+      altKey: e.altKey,
+    })
+  ) {
     return;
   }
   const href = anchor.getAttribute('href') || anchor.href;
@@ -473,7 +480,7 @@ document.addEventListener('click', onPopupAnchorClick, true);
 document.addEventListener('auxclick', onPopupAnchorClick, true);
 
 window.open = ((url?: string | URL, target?: string) => {
-  const requestedUrl = typeof url === 'string' ? url : url?.toString() ?? '';
+  const requestedUrl = typeof url === 'string' ? url : (url?.toString() ?? '');
   if (!requestedUrl) return null;
 
   const targetValue = (target || '').trim().toLowerCase();

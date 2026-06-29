@@ -21,7 +21,9 @@ export function buildProjectGovernancePromptBlock(
     lines.push(`Budget limit: $${policy.budgetLimitUsd}`);
   }
 
-  lines.push('If a requested action conflicts with this policy, pause and explain the conflict before proceeding.');
+  lines.push(
+    'If a requested action conflicts with this policy, pause and explain the conflict before proceeding.',
+  );
   return lines.join('\n');
 }
 

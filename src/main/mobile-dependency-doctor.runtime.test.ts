@@ -56,29 +56,37 @@ describe('mobile-dependency-doctor runtime default runner paths', () => {
     execPlans.length = 0;
     spawnPlans.length = 0;
 
-    mockExecFile.mockImplementation((
-      command: string,
-      args: string[],
-      _options: Record<string, unknown>,
-      callback: (error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null, stdout: string, stderr: string) => void,
-    ) => {
-      const index = execPlans.findIndex((plan) => plan.command === command && JSON.stringify(plan.args) === JSON.stringify(args));
-      const plan = index >= 0 ? execPlans.splice(index, 1)[0] : undefined;
-      const code = plan?.code ?? 1;
-      const stdout = plan?.stdout ?? '';
-      const stderr = plan?.stderr ?? `${command} failed`;
-      if (code === 0) {
-        callback(null, stdout, stderr);
-        return;
-      }
+    mockExecFile.mockImplementation(
+      (
+        command: string,
+        args: string[],
+        _options: Record<string, unknown>,
+        callback: (
+          error: (Error & { code?: number | string; stdout?: string; stderr?: string }) | null,
+          stdout: string,
+          stderr: string,
+        ) => void,
+      ) => {
+        const index = execPlans.findIndex(
+          (plan) => plan.command === command && JSON.stringify(plan.args) === JSON.stringify(args),
+        );
+        const plan = index >= 0 ? execPlans.splice(index, 1)[0] : undefined;
+        const code = plan?.code ?? 1;
+        const stdout = plan?.stdout ?? '';
+        const stderr = plan?.stderr ?? `${command} failed`;
+        if (code === 0) {
+          callback(null, stdout, stderr);
+          return;
+        }
 
-      const error = Object.assign(new Error(plan?.errorMessage ?? stderr), {
-        code,
-        stdout,
-        stderr,
-      });
-      callback(error, stdout, stderr);
-    });
+        const error = Object.assign(new Error(plan?.errorMessage ?? stderr), {
+          code,
+          stdout,
+          stderr,
+        });
+        callback(error, stdout, stderr);
+      },
+    );
 
     mockSpawn.mockImplementation((command: string, args: string[]) => {
       const plan = spawnPlans.shift();
@@ -147,8 +155,9 @@ describe('mobile-dependency-doctor runtime default runner paths', () => {
     } as never);
 
     expect(result.success).toBe(true);
-    const progress = events.find((event) =>
-      event.phase === 'step_progress' && event.source === 'stdout');
+    const progress = events.find(
+      (event) => event.phase === 'step_progress' && event.source === 'stdout',
+    );
     expect(progress).toBeDefined();
     expect(progress?.stepPercent).toBe(50);
     expect(progress?.downloadedBytes).toBe(1 * 1024 * 1024);

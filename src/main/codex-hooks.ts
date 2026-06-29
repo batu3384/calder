@@ -6,7 +6,13 @@ import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import { readFileSafe, readJsonSafe } from './fs-utils';
-import { captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import {
+  captureSessionIdCmd as mkCaptureSessionIdCmd,
+  installEventScript,
+  installHookScripts,
+  statusCmd as mkStatusCmd,
+  wrapPythonHookCmd,
+} from './hooks/hook-commands';
 import { STATUS_DIR } from './hooks/hook-status';
 
 export const CODEX_HOOK_MARKER = '# calder-hook';
@@ -17,7 +23,13 @@ const CONFIG_TOML_PATH = path.join(CODEX_DIR, 'config.toml');
 
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
 
-const EXPECTED_HOOK_EVENTS = ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'PermissionRequest'];
+const EXPECTED_HOOK_EVENTS = [
+  'SessionStart',
+  'UserPromptSubmit',
+  'PostToolUse',
+  'Stop',
+  'PermissionRequest',
+];
 
 interface HookHandler {
   type: string;
@@ -229,19 +241,23 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
 
 export function validateCodexHooks(): SettingsValidationResult {
   if (!isCodexHooksFeatureEnabled()) {
-    const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map(e => [e, false]));
+    const hookDetails: Record<string, boolean> = Object.fromEntries(
+      EXPECTED_HOOK_EVENTS.map((e) => [e, false]),
+    );
     return { statusLine: 'calder', hooks: 'missing', hookDetails };
   }
 
   // Check hooks.json
   const raw = readJsonSafe(HOOKS_JSON_PATH);
   const existingHooks: HooksConfig = (raw?.hooks ?? {}) as HooksConfig;
-  const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map(e => [e, false]));
+  const hookDetails: Record<string, boolean> = Object.fromEntries(
+    EXPECTED_HOOK_EVENTS.map((e) => [e, false]),
+  );
   let found = 0;
 
   for (const event of EXPECTED_HOOK_EVENTS) {
     const matchers = existingHooks[event];
-    const installed = matchers?.some(m => m.hooks?.some(h => isIdeHook(h))) ?? false;
+    const installed = matchers?.some((m) => m.hooks?.some((h) => isIdeHook(h))) ?? false;
     hookDetails[event] = installed;
     if (installed) found++;
   }

@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { ProjectContextSource, ProjectContextState } from '../../shared/types/project-context.js';
+import type {
+  ProjectContextSource,
+  ProjectContextState,
+} from '../../shared/types/project-context.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 
 function isFile(filePath: string): boolean {
@@ -14,7 +17,8 @@ function isFile(filePath: string): boolean {
 
 function listMarkdownFiles(dirPath: string): string[] {
   try {
-    return fs.readdirSync(dirPath)
+    return fs
+      .readdirSync(dirPath)
       .filter((entry) => entry.endsWith('.md'))
       .sort((left, right) => left.localeCompare(right));
   } catch {
@@ -24,7 +28,8 @@ function listMarkdownFiles(dirPath: string): string[] {
 
 function listFilesRecursive(dirPath: string, predicate: (entryName: string) => boolean): string[] {
   try {
-    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    const entries = fs
+      .readdirSync(dirPath, { withFileTypes: true })
       .sort((left, right) => left.name.localeCompare(right.name));
     const results: string[] = [];
     for (const entry of entries) {
@@ -101,7 +106,11 @@ const PROJECT_PROVIDER_CONTEXT_FILES: Array<{
   { relativePath: 'AGENTS.md', provider: 'codex', kind: 'instructions' },
   { relativePath: 'GEMINI.md', provider: 'antigravity', kind: 'instructions' },
   { relativePath: 'QWEN.md', provider: 'qwen', kind: 'instructions' },
-  { relativePath: path.join('.github', 'copilot-instructions.md'), provider: 'copilot', kind: 'instructions' },
+  {
+    relativePath: path.join('.github', 'copilot-instructions.md'),
+    provider: 'copilot',
+    kind: 'instructions',
+  },
 ];
 
 export async function discoverProjectContext(projectPath: string): Promise<ProjectContextState> {
@@ -130,7 +139,9 @@ export async function discoverProjectContext(projectPath: string): Promise<Proje
 
   try {
     const copilotInstructionDir = path.join(projectPath, '.github', 'instructions');
-    for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) => entryName.endsWith('.instructions.md'))) {
+    for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) =>
+      entryName.endsWith('.instructions.md'),
+    )) {
       try {
         sources.push(
           buildSource(filePath, {
@@ -150,7 +161,13 @@ export async function discoverProjectContext(projectPath: string): Promise<Proje
   const sharedPath = path.join(projectPath, 'CALDER.shared.md');
   try {
     if (isFile(sharedPath)) {
-      sources.push(buildSource(sharedPath, { provider: 'shared', scope: 'project', kind: 'rules' }, { priority: 'soft' }));
+      sources.push(
+        buildSource(
+          sharedPath,
+          { provider: 'shared', scope: 'project', kind: 'rules' },
+          { priority: 'soft' },
+        ),
+      );
     }
   } catch (err) {
     console.warn(`[discovery] sharedPath check/buildSource failed:`, err);
@@ -192,7 +209,9 @@ export async function discoverProjectContext(projectPath: string): Promise<Proje
 
   return {
     sources,
-    sharedRuleCount: sources.filter((source) => source.provider === 'shared' && source.kind === 'rules').length,
+    sharedRuleCount: sources.filter(
+      (source) => source.provider === 'shared' && source.kind === 'rules',
+    ).length,
     providerSourceCount: sources.filter((source) => source.provider !== 'shared').length,
     lastUpdated,
   };

@@ -55,7 +55,12 @@ function renderFileContent(content: string): HTMLElement {
 }
 
 function renderConfigDocSummary(configDoc: AgentDocModel): HTMLElement | null {
-  if (!configDoc.summary.name && !configDoc.summary.description && !configDoc.summary.model && configDoc.summary.tools.length === 0) {
+  if (
+    !configDoc.summary.name &&
+    !configDoc.summary.description &&
+    !configDoc.summary.model &&
+    configDoc.summary.tools.length === 0
+  ) {
     return null;
   }
 
@@ -110,7 +115,10 @@ function applyConfigDocAnchors(container: HTMLElement, outline: AgentDocModel['o
   });
 }
 
-function renderConfigDocOutline(configDoc: AgentDocModel, markdownBody: HTMLElement): HTMLElement | null {
+function renderConfigDocOutline(
+  configDoc: AgentDocModel,
+  markdownBody: HTMLElement,
+): HTMLElement | null {
   if (configDoc.outline.length === 0) return null;
 
   const nav = document.createElement('nav');
@@ -185,6 +193,20 @@ function resolveFilePath(instance: FileReaderInstance): string {
   return project ? `${project.path}/${instance.filePath}` : instance.filePath;
 }
 
+function appendFileReaderMessage(body: HTMLElement, message: string): void {
+  body.replaceChildren();
+  const content = document.createElement('div');
+  content.className = 'file-reader-content';
+  const line = document.createElement('div');
+  line.className = 'file-reader-line';
+  const text = document.createElement('span');
+  text.className = 'file-reader-line-text';
+  text.textContent = message;
+  line.appendChild(text);
+  content.appendChild(line);
+  body.appendChild(content);
+}
+
 async function loadFile(instance: FileReaderInstance): Promise<void> {
   if (instance.loaded) return;
 
@@ -192,36 +214,43 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
   if (!project) return;
 
   const body = instance.element.querySelector('.file-reader-body')!;
-  body.innerHTML = '';
+  body.replaceChildren();
   const loading = document.createElement('div');
   loading.className = 'file-reader-content';
-  loading.innerHTML = '<div class="file-reader-line"><span class="file-reader-line-text">Loading...</span></div>';
+  const loadingLine = document.createElement('div');
+  loadingLine.className = 'file-reader-line';
+  const loadingText = document.createElement('span');
+  loadingText.className = 'file-reader-line-text';
+  loadingText.textContent = 'Loading...';
+  loadingLine.appendChild(loadingText);
+  loading.appendChild(loadingLine);
   body.appendChild(loading);
 
   try {
     const fullPath = resolveFilePath(instance);
     const result = await window.calder.fs.readFile(fullPath);
     if (!result.ok) {
-      const reasonText = result.reason === 'blocked'
-        ? 'Access to this file is blocked'
-        : result.reason === 'too-large'
-          ? 'File is too large to preview'
-          : result.reason === 'not-found'
-            ? 'File not found'
-            : 'Failed to load file';
-      body.innerHTML = `<div class="file-reader-content"><div class="file-reader-line"><span class="file-reader-line-text">${reasonText}</span></div></div>`;
+      const reasonText =
+        result.reason === 'blocked'
+          ? 'Access to this file is blocked'
+          : result.reason === 'too-large'
+            ? 'File is too large to preview'
+            : result.reason === 'not-found'
+              ? 'File not found'
+              : 'Failed to load file';
+      appendFileReaderMessage(body, reasonText);
       return;
     }
     instance.rawContent = result.content;
     instance.configDoc = buildConfigDocModel(instance.filePath, content);
-    body.innerHTML = '';
+    body.replaceChildren();
     renderBody(instance);
     instance.loaded = true;
     if (instance.targetLine && instance.viewMode === 'raw') {
       scrollToLine(instance);
     }
   } catch {
-    body.innerHTML = '<div class="file-reader-content"><div class="file-reader-line"><span class="file-reader-line-text">Failed to load file</span></div></div>';
+    appendFileReaderMessage(body, 'Failed to load file');
   }
 }
 
@@ -243,7 +272,11 @@ export function reloadFileReader(sessionId: string): void {
   loadFile(instance);
 }
 
-export function createFileReaderPane(sessionId: string, filePath: string, targetLine?: number): void {
+export function createFileReaderPane(
+  sessionId: string,
+  filePath: string,
+  targetLine?: number,
+): void {
   if (instances.has(sessionId)) return;
 
   const el = document.createElement('div');
@@ -282,7 +315,11 @@ export function createFileReaderPane(sessionId: string, filePath: string, target
 
   const isMd = isMarkdownFile(filePath);
   const instance: FileReaderInstance = {
-    element: el, filePath, resolvedPath: null, loaded: false, targetLine,
+    element: el,
+    filePath,
+    resolvedPath: null,
+    loaded: false,
+    targetLine,
     viewMode: isMd ? 'rendered' : 'raw',
     configDoc: null,
   };
@@ -411,8 +448,21 @@ export function getFileReaderInstance(sessionId: string): FileReaderInstance | u
 }
 
 const MARKDOWN_TEXT_SELECTOR = [
-  'p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'td', 'th', 'pre', 'blockquote',
-].map((tag) => `.file-reader-markdown ${tag}`).join(', ');
+  'p',
+  'li',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'td',
+  'th',
+  'pre',
+  'blockquote',
+]
+  .map((tag) => `.file-reader-markdown ${tag}`)
+  .join(', ');
 
 const RAW_TEXT_SELECTOR = '.file-reader-line-text';
 

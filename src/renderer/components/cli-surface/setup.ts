@@ -1,5 +1,9 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
-import type { CliSurfaceDiscoveryCandidate, CliSurfaceDiscoveryResult, CliSurfaceProfile } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceDiscoveryCandidate,
+  CliSurfaceDiscoveryResult,
+  CliSurfaceProfile,
+} from '../../../shared/types/project-surface.js';
 import { createDiscoveredCliSurfaceProfile } from './profile.js';
 
 interface SetupDeps {
@@ -10,9 +14,14 @@ interface SetupDeps {
   showManualSetup: (project: ProjectRecord) => void;
 }
 
-export async function openCliSurfaceWithSetup(project: ProjectRecord, deps: SetupDeps): Promise<void> {
+export async function openCliSurfaceWithSetup(
+  project: ProjectRecord,
+  deps: SetupDeps,
+): Promise<void> {
   const cliState = project.surface?.cli;
-  const saved = cliState?.profiles.find((profile) => profile.id === cliState.selectedProfileId) ?? cliState?.profiles[0];
+  const saved =
+    cliState?.profiles.find((profile) => profile.id === cliState.selectedProfileId) ??
+    cliState?.profiles[0];
   if (saved) {
     await deps.start(saved);
     return;

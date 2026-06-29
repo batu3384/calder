@@ -10,15 +10,14 @@
 #tab-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas: "main meta actions";
+  grid-template-areas: 'main meta actions';
   align-items: center;
   gap: var(--space-10);
   padding: var(--space-8) var(--space-12) var(--space-10);
   background:
     radial-gradient(circle at 14% -90%, rgba(127, 212, 255, 0.08), transparent 34%),
     radial-gradient(circle at 88% -120%, rgba(213, 169, 79, 0.05), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
-    var(--surface-deck);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)), var(--surface-deck);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   height: 56px;
   min-height: 56px;
@@ -28,14 +27,12 @@
 
 .tab-bar-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    var(--surface-shell);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)), var(--surface-shell);
 }
 
 .session-deck-surface {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
-    var(--surface-deck);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)), var(--surface-deck);
 }
 
 .tab-bar-main {
@@ -104,8 +101,7 @@
   border: 1px solid transparent;
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
-    transparent;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)), transparent;
   position: relative;
   transition:
     background-color 0.15s ease,
@@ -117,7 +113,11 @@
 
 .tab-item:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 82%, transparent);
   border-color: color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
   transform: none;
@@ -128,8 +128,16 @@
 
 .tab-item.active {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 20%, transparent), transparent 44%),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 20%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     var(--tab-active);
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
@@ -196,8 +204,13 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .tab-status.working {
@@ -378,7 +391,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
   border-radius: 999px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 52%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 18%, transparent),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 68%, transparent);
   box-shadow:
@@ -424,8 +441,16 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 30%, transparent), transparent 48%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 34%, transparent), transparent 70%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 30%, transparent),
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 34%, transparent),
+      transparent 70%
+    ),
     color-mix(in srgb, var(--surface-panel) 96%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -485,7 +510,11 @@
 .cli-update-panel-update-all {
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 28%, transparent), transparent 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 28%, transparent),
+      transparent 100%
+    ),
     color-mix(in srgb, var(--surface-raised) 44%, transparent);
   color: var(--text-primary);
 }
@@ -567,7 +596,11 @@
 }
 
 .cli-update-panel-progress-fill.is-running {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #fff), color-mix(in srgb, var(--info) 66%, #fff));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 70%, #fff),
+    color-mix(in srgb, var(--info) 66%, #fff)
+  );
 }
 
 .cli-update-panel-stats {
@@ -613,7 +646,11 @@
 .cli-update-provider-row.is-active {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 24%, transparent), transparent 54%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 24%, transparent),
+      transparent 54%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 94%, transparent);
   box-shadow:
@@ -703,7 +740,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 36%, transparent), transparent 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 36%, transparent),
+      transparent 100%
+    ),
     color-mix(in srgb, var(--surface-panel) 74%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
@@ -717,8 +758,11 @@
   padding: 0 var(--space-10);
   border: 1px solid transparent;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 36%, transparent), transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 36%, transparent),
+    transparent
+  );
   color: var(--text-secondary);
   font-family: var(--font-ui);
   font-size: var(--type-xs);
@@ -743,7 +787,11 @@
 
 .surface-mode-button.active {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 46%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 46%, rgba(255, 255, 255, 0.03)),
+      rgba(255, 255, 255, 0)
+    ),
     var(--tab-active);
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
@@ -766,7 +814,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 34%, transparent), transparent 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 34%, transparent),
+      transparent 100%
+    ),
     color-mix(in srgb, var(--surface-panel) 72%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
@@ -783,8 +835,11 @@
   padding: 0 30px 0 11px;
   border-radius: 999px;
   border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 38%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 38%, transparent),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent)
+  );
   color: var(--text-primary);
   font-size: var(--type-xs);
   font-weight: 650;
@@ -813,8 +868,11 @@
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 46%, transparent), color-mix(in srgb, var(--surface-panel) 84%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 46%, transparent),
+    color-mix(in srgb, var(--surface-panel) 84%, transparent)
+  );
   color: var(--text-primary);
   font-family: var(--font-ui);
   font-size: var(--type-xs);
@@ -839,8 +897,11 @@
 
 .surface-profile-config[data-role='setup-profile'] {
   border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 40%, transparent), color-mix(in srgb, var(--surface-panel) 84%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 40%, transparent),
+    color-mix(in srgb, var(--surface-panel) 84%, transparent)
+  );
 }
 
 .command-deck-provider-select {
@@ -856,8 +917,11 @@
   padding: 0 28px 0 28px;
   border-radius: 999px;
   border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-raised) 38%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 38%, transparent),
+    color-mix(in srgb, var(--surface-panel) 82%, transparent)
+  );
   color: var(--text-primary);
   font-size: var(--type-xs);
   font-weight: 650;
@@ -887,7 +951,11 @@
   border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 24%, var(--border-subtle));
   color: var(--text-primary);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 34%, transparent), transparent 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--provider-accent-soft, var(--accent-soft)) 34%, transparent),
+      transparent 100%
+    ),
     color-mix(in srgb, var(--surface-hover) 76%, transparent);
 }
 
@@ -1018,20 +1086,32 @@
 
 .session-launcher-group .icon-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 68%, transparent);
 }
 
 .session-launcher-group .tab-action-primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)), transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.02)),
+    transparent
+  );
   border-color: color-mix(in srgb, var(--accent) 16%, transparent);
   min-height: 34px;
   height: 34px;
 }
 
 @keyframes tab-launcher-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .icon-btn {
@@ -1057,7 +1137,11 @@
 
 .icon-btn:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
@@ -1074,7 +1158,11 @@
 }
 
 .tab-action-primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 28%, rgba(255, 255, 255, 0.02)), var(--surface-panel));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 28%, rgba(255, 255, 255, 0.02)),
+    var(--surface-panel)
+  );
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
   color: var(--text-primary);
   min-height: 34px;
@@ -1099,7 +1187,11 @@
   padding: 0;
   position: relative;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)), transparent),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)),
+      transparent
+    ),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
 }
@@ -1180,7 +1272,11 @@
   border-color: color-mix(in srgb, var(--status-success-border) 85%, var(--border-subtle));
   color: var(--status-success-text);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--status-success-bg) 35%, rgba(255, 255, 255, 0.02)), transparent),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--status-success-bg) 35%, rgba(255, 255, 255, 0.02)),
+      transparent
+    ),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--status-success-border) 62%, transparent),
@@ -1234,8 +1330,8 @@
   #tab-bar {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "main actions"
-      "meta actions";
+      'main actions'
+      'meta actions';
     align-items: start;
     gap: 8px 10px;
     padding: 9px 10px;
@@ -1323,9 +1419,9 @@
   #tab-bar {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "main"
-      "meta"
-      "actions";
+      'main'
+      'meta'
+      'actions';
   }
 
   .tab-bar-meta,
@@ -1368,7 +1464,10 @@
   color: var(--text-primary);
   cursor: pointer;
   border-radius: 12px;
-  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .tab-context-menu-item:hover:not(.disabled):not(.active) {

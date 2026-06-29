@@ -92,7 +92,9 @@ describe('prepareBrowserSessionStorage runtime fallbacks', () => {
         partition: BROWSER_SESSION_PARTITION,
         migratedLegacyServiceWorker: true,
       });
-      expect(mockMkdir).toHaveBeenCalledWith('/tmp/calder/Legacy Browser Storage', { recursive: true });
+      expect(mockMkdir).toHaveBeenCalledWith('/tmp/calder/Legacy Browser Storage', {
+        recursive: true,
+      });
       expect(mockRename).toHaveBeenCalledWith(
         '/tmp/calder/Service Worker',
         '/tmp/calder/Legacy Browser Storage/Service Worker',

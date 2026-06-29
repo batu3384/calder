@@ -72,7 +72,10 @@ export function parsePairingLink(rawLink: string): ParsedPairingLink | null {
   };
 }
 
-export async function bootstrapPairing(pairingLink: string, otpCode: string): Promise<BootstrapResult> {
+export async function bootstrapPairing(
+  pairingLink: string,
+  otpCode: string,
+): Promise<BootstrapResult> {
   const parsed = parsePairingLink(pairingLink);
   if (!parsed) {
     return {
@@ -115,9 +118,10 @@ export async function bootstrapPairing(pairingLink: string, otpCode: string): Pr
   }
 
   if (!response.ok) {
-    const errorMessage = typeof payload === 'object' && payload && 'error' in payload
-      ? String((payload as { error: unknown }).error ?? 'Bootstrap failed.')
-      : 'Bootstrap failed.';
+    const errorMessage =
+      typeof payload === 'object' && payload && 'error' in payload
+        ? String((payload as { error: unknown }).error ?? 'Bootstrap failed.')
+        : 'Bootstrap failed.';
     return {
       ok: false,
       error: errorMessage,

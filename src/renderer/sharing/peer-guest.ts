@@ -1,9 +1,15 @@
 // Guest-side WebRTC logic for P2P session sharing.
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
-import type { ShareMessage,ShareMode } from '../../shared/sharing-types.js';
+import type { ShareMessage, ShareMode } from '../../shared/sharing-types.js';
 import { computeChallengeResponse, hexToBytes } from './share-crypto.js';
-import { buildRtcConfiguration, decodeConnectionEnvelope,encodeConnectionCode, sendMessage, waitForIceGathering } from './webrtc-utils.js';
+import {
+  buildRtcConfiguration,
+  decodeConnectionEnvelope,
+  encodeConnectionCode,
+  sendMessage,
+  waitForIceGathering,
+} from './webrtc-utils.js';
 
 export interface InitData {
   scrollback: string;
@@ -38,7 +44,10 @@ interface GuestPeer {
 const guestPeers = new Map<string, GuestPeer>();
 let guestIdCounter = 0;
 
-export function joinShare(offer: string, passphrase: string): { guestId: string; handle: JoinHandle } {
+export function joinShare(
+  offer: string,
+  passphrase: string,
+): { guestId: string; handle: JoinHandle } {
   const guestId = `guest-${++guestIdCounter}`;
 
   let initCb: ((data: InitData) => void) | null = null;

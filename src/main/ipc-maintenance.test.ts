@@ -121,4 +121,3 @@ describe('ipc maintenance handlers', () => {
     errorSpy.mockRestore();
   });
 });
-

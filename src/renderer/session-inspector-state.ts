@@ -1,4 +1,4 @@
-import type { ContextDataPoint,InspectorEvent, ToolUsageStats } from '../shared/types/session';
+import type { ContextDataPoint, InspectorEvent, ToolUsageStats } from '../shared/types/session';
 
 type ChangeCallback = (sessionId: string) => void;
 
@@ -7,7 +7,10 @@ const sessionEvents = new Map<string, InspectorEvent[]>();
 const listeners: ChangeCallback[] = [];
 
 // Cached cost deltas, invalidated when events change
-const costDeltaCache = new Map<string, { length: number; deltas: { index: number; delta: number }[] }>();
+const costDeltaCache = new Map<
+  string,
+  { length: number; deltas: { index: number; delta: number }[] }
+>();
 
 export function addEvents(sessionId: string, events: InspectorEvent[]): void {
   const existing = sessionEvents.get(sessionId) ?? [];
@@ -31,7 +34,7 @@ export function getToolStats(sessionId: string): ToolUsageStats[] {
   const statsMap = new Map<string, ToolUsageStats>();
 
   // Use cached deltas for O(1) lookup instead of O(n) backward scan per event
-  const deltaMap = new Map(getCostDeltas(sessionId).map(d => [d.index, d.delta]));
+  const deltaMap = new Map(getCostDeltas(sessionId).map((d) => [d.index, d.delta]));
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
@@ -88,9 +91,8 @@ export function getCostDeltas(sessionId: string): { index: number; delta: number
   for (let i = 0; i < events.length; i++) {
     const snapshot = events[i].cost_snapshot;
     if (snapshot) {
-      const delta = prevCost !== null
-        ? snapshot.total_cost_usd - prevCost
-        : snapshot.total_cost_usd;
+      const delta =
+        prevCost !== null ? snapshot.total_cost_usd - prevCost : snapshot.total_cost_usd;
       deltas.push({ index: i, delta });
       prevCost = snapshot.total_cost_usd;
     }

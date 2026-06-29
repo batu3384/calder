@@ -30,21 +30,23 @@
   contain: inline-size;
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.025);
   background:
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 30%),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--accent-soft) 22%, transparent),
+      transparent 30%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-ops) 96%, black);
 }
 
 .control-panel-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)),
-    var(--surface-rail);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .ops-rail-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)),
-    var(--surface-ops);
+    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
 }
 
 #context-inspector.context-inspector-closed {
@@ -206,7 +208,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 14px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 14%, transparent), transparent 46%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 14%, transparent),
+      transparent 46%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 74%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -223,7 +229,11 @@
 .diagnostics-summary[data-tone='warning'] {
   border-color: color-mix(in srgb, var(--accent-warning) 30%, var(--border-subtle));
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-warning) 12%, transparent), transparent 46%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-warning) 12%, transparent),
+      transparent 46%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 74%, transparent);
 }
@@ -320,12 +330,16 @@
   padding-bottom: 12px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] {
+#context-inspector .context-inspector-section[data-section='capabilities'] {
   padding: 12px 12px 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 42%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 18%, transparent),
+      transparent 42%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 80%, black);
   box-shadow:
@@ -333,27 +347,37 @@
     0 12px 26px rgba(2, 4, 10, 0.12);
 }
 
-#context-inspector[data-rail-signal='active'] .context-inspector-section[data-section="capabilities"] {
+#context-inspector[data-rail-signal='active']
+  .context-inspector-section[data-section='capabilities'] {
   border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
 }
 
-#context-inspector[data-rail-signal='warning'] .context-inspector-section[data-section="capabilities"] {
+#context-inspector[data-rail-signal='warning']
+  .context-inspector-section[data-section='capabilities'] {
   border-color: color-mix(in srgb, var(--accent-warning) 30%, var(--border-subtle));
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-warning) 12%, transparent), transparent 40%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-warning) 12%, transparent),
+      transparent 40%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 80%, black);
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .context-inspector-block-title {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .context-inspector-block-title {
   color: color-mix(in srgb, var(--accent) 72%, var(--text-primary));
 }
 
-#context-inspector .context-inspector-section[data-section="git"] .context-inspector-block-title {
+#context-inspector .context-inspector-section[data-section='git'] .context-inspector-block-title {
   color: color-mix(in srgb, var(--info) 68%, var(--text-primary));
 }
 
-#context-inspector .context-inspector-section[data-section="activity"] .context-inspector-block-title {
+#context-inspector
+  .context-inspector-section[data-section='activity']
+  .context-inspector-block-title {
   color: color-mix(in srgb, var(--bookmark) 65%, var(--text-primary));
 }
 
@@ -386,7 +410,9 @@
   gap: 7px 9px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary-chips {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .toolchain-summary-chips {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -458,15 +484,22 @@
   padding: 9px 10px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 76%, transparent), color-mix(in srgb, var(--surface-muted) 62%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 76%, transparent),
+    color-mix(in srgb, var(--surface-muted) 62%, transparent)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #context-inspector .toolchain-summary-chip:hover {
   color: var(--text-primary);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 54%, transparent);
 }
 
@@ -900,7 +933,9 @@
   padding: 0 9px;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .config-item:not(.auto-approval-item) {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .config-item:not(.auto-approval-item) {
   margin-top: 0;
 }
 
@@ -1109,28 +1144,34 @@
   line-height: 1.5;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 74%, transparent), color-mix(in srgb, var(--surface-muted) 60%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 74%, transparent),
+    color-mix(in srgb, var(--surface-muted) 60%, transparent)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-#context-inspector .ops-rail-note[data-tone="healthy"] {
+#context-inspector .ops-rail-note[data-tone='healthy'] {
   border-color: color-mix(in srgb, var(--accent-positive) 26%, var(--border-subtle));
   background: color-mix(in srgb, var(--accent-positive) 10%, var(--surface-muted));
 }
 
-#context-inspector .ops-rail-note[data-tone="warning"] {
+#context-inspector .ops-rail-note[data-tone='warning'] {
   border-color: color-mix(in srgb, var(--accent-warning) 24%, var(--border-subtle));
   background: color-mix(in srgb, var(--accent-warning) 9%, var(--surface-muted));
 }
 
-#context-inspector .ops-rail-note[data-tone="default"] {
+#context-inspector .ops-rail-note[data-tone='default'] {
   background: color-mix(in srgb, var(--surface-panel) 68%, transparent);
 }
 
-#context-inspector .ops-rail-note[data-tone="muted"] {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 74%, transparent), color-mix(in srgb, var(--surface-muted) 60%, transparent));
+#context-inspector .ops-rail-note[data-tone='muted'] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 74%, transparent),
+    color-mix(in srgb, var(--surface-muted) 60%, transparent)
+  );
 }
 
 #context-inspector .history-result-count {
@@ -1152,8 +1193,8 @@
   font-weight: 680;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary,
-#context-inspector .context-inspector-section[data-section="activity"] .history-body {
+#context-inspector .context-inspector-section[data-section='capabilities'] .toolchain-summary,
+#context-inspector .context-inspector-section[data-section='activity'] .history-body {
   padding-bottom: 12px;
 }
 
@@ -1209,11 +1250,13 @@
     padding: 7px 7px 9px;
   }
 
-  #context-inspector .context-inspector-section[data-section="capabilities"] {
+  #context-inspector .context-inspector-section[data-section='capabilities'] {
     padding: 10px 10px 9px;
   }
 
-  #context-inspector .context-inspector-section[data-section="capabilities"] .toolchain-summary-chips {
+  #context-inspector
+    .context-inspector-section[data-section='capabilities']
+    .toolchain-summary-chips {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1242,9 +1285,21 @@
   --ops-rail-line: color-mix(in srgb, var(--border-subtle) 74%, transparent);
   --ops-rail-line-strong: color-mix(in srgb, var(--border-subtle) 86%, transparent);
   background:
-    radial-gradient(circle at 100% -8%, color-mix(in srgb, var(--accent-soft) 14%, transparent), transparent 34%),
-    radial-gradient(circle at 0% 112%, color-mix(in srgb, var(--accent-warning) 10%, transparent), transparent 30%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-ops) 98%, black), color-mix(in srgb, var(--surface-ops) 93%, black));
+    radial-gradient(
+      circle at 100% -8%,
+      color-mix(in srgb, var(--accent-soft) 14%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 0% 112%,
+      color-mix(in srgb, var(--accent-warning) 10%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-ops) 98%, black),
+      color-mix(in srgb, var(--surface-ops) 93%, black)
+    );
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.03),
     -20px 0 36px rgba(2, 8, 16, 0.1);
@@ -1326,20 +1381,32 @@
   border-top: none;
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] {
+#context-inspector .context-inspector-section[data-section='capabilities'] {
   padding: 12px;
   border-color: var(--ops-rail-line-strong);
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 16%, transparent), transparent 44%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 94%, transparent), color-mix(in srgb, var(--surface-panel) 82%, transparent));
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 16%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 94%, transparent),
+      color-mix(in srgb, var(--surface-panel) 82%, transparent)
+    );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 9px 22px rgba(2, 8, 16, 0.1);
 }
 
-#context-inspector .context-inspector-section[data-section="capabilities"] .context-inspector-block-title,
-#context-inspector .context-inspector-section[data-section="git"] .context-inspector-block-title,
-#context-inspector .context-inspector-section[data-section="activity"] .context-inspector-block-title {
+#context-inspector
+  .context-inspector-section[data-section='capabilities']
+  .context-inspector-block-title,
+#context-inspector .context-inspector-section[data-section='git'] .context-inspector-block-title,
+#context-inspector
+  .context-inspector-section[data-section='activity']
+  .context-inspector-block-title {
   color: var(--text-primary);
 }
 
@@ -1367,15 +1434,22 @@
 
 #context-inspector .toolchain-summary-chip:hover {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 11%, rgba(255, 255, 255, 0.018)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 11%, rgba(255, 255, 255, 0.018)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 58%, transparent);
 }
 
 #context-inspector .toolchain-summary-empty {
   border-radius: 14px;
   border-color: var(--ops-rail-line);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 88%, transparent), color-mix(in srgb, var(--surface-muted) 68%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 88%, transparent),
+    color-mix(in srgb, var(--surface-muted) 68%, transparent)
+  );
 }
 
 #context-inspector .config-section-header {
@@ -1398,7 +1472,11 @@
 
 #context-inspector .config-item:not(.auto-approval-item):hover {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 10%, transparent), transparent 76%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent-soft) 10%, transparent),
+      transparent 76%
+    ),
     color-mix(in srgb, var(--surface-hover) 34%, transparent);
 }
 
@@ -1481,8 +1559,11 @@
 #context-inspector .ops-rail-note {
   border-radius: 14px;
   border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-panel) 82%, transparent), color-mix(in srgb, var(--surface-muted) 66%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-panel) 82%, transparent),
+    color-mix(in srgb, var(--surface-muted) 66%, transparent)
+  );
 }
 
 #context-inspector .history-search-shell {
@@ -1534,8 +1615,16 @@
     inset 1px 0 0 rgba(255, 255, 255, 0.024),
     -14px 0 24px rgba(2, 8, 16, 0.1);
   background:
-    radial-gradient(circle at 102% -6%, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 38%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-ops) 98%, black), color-mix(in srgb, var(--surface-ops) 94%, black));
+    radial-gradient(
+      circle at 102% -6%,
+      color-mix(in srgb, var(--accent-soft) 18%, transparent),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-ops) 98%, black),
+      color-mix(in srgb, var(--surface-ops) 94%, black)
+    );
 }
 
 :where(#context-inspector) #context-inspector-header {
@@ -1588,21 +1677,19 @@
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent) 38%, transparent),
-      color-mix(in srgb, var(--accent) 16%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 38%, transparent),
+    color-mix(in srgb, var(--accent) 16%, transparent)
+  );
 }
 
 :where(#context-inspector) #context-inspector-sections::-webkit-scrollbar-thumb:hover {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent) 52%, transparent),
-      color-mix(in srgb, var(--accent) 22%, transparent)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 52%, transparent),
+    color-mix(in srgb, var(--accent) 22%, transparent)
+  );
 }
 
 :where(#context-inspector) .context-inspector-section {
@@ -1710,19 +1797,23 @@
   line-height: 1.34;
 }
 
-:where(#context-inspector) .context-inspector-section[data-section="capabilities"] {
+:where(#context-inspector) .context-inspector-section[data-section='capabilities'] {
   border-color: var(--ops-rail-line);
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 11%, transparent), transparent 44%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 11%, transparent),
+      transparent 44%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 62%, transparent);
 }
 
-:where(#context-inspector) .context-inspector-section[data-section="git"] {
+:where(#context-inspector) .context-inspector-section[data-section='git'] {
   border-left: 2px solid color-mix(in srgb, var(--info) 38%, transparent);
 }
 
-:where(#context-inspector) .context-inspector-section[data-section="activity"] {
+:where(#context-inspector) .context-inspector-section[data-section='activity'] {
   border-left: 2px solid color-mix(in srgb, var(--bookmark) 34%, transparent);
 }
 
@@ -1737,8 +1828,16 @@
   --ops-rail-line: color-mix(in srgb, var(--border-subtle) 58%, transparent);
   --ops-rail-line-soft: color-mix(in srgb, var(--border-subtle) 42%, transparent);
   background:
-    radial-gradient(circle at 100% -4%, color-mix(in srgb, var(--accent-soft) 16%, transparent), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-ops) 98%, black), color-mix(in srgb, #050a10 90%, black));
+    radial-gradient(
+      circle at 100% -4%,
+      color-mix(in srgb, var(--accent-soft) 16%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-ops) 98%, black),
+      color-mix(in srgb, #050a10 90%, black)
+    );
 }
 
 :where(#context-inspector) #context-inspector-header {
@@ -1782,11 +1881,11 @@
   opacity: 0.58;
 }
 
-:where(#context-inspector) .context-inspector-section[data-section="git"]::before {
+:where(#context-inspector) .context-inspector-section[data-section='git']::before {
   background: color-mix(in srgb, var(--info) 50%, transparent);
 }
 
-:where(#context-inspector) .context-inspector-section[data-section="activity"]::before {
+:where(#context-inspector) .context-inspector-section[data-section='activity']::before {
   background: color-mix(in srgb, var(--bookmark) 44%, transparent);
 }
 
@@ -1870,7 +1969,11 @@
   border-radius: 16px;
   padding: 12px;
   background:
-    radial-gradient(circle at 100% -8%, color-mix(in srgb, var(--accent-soft) 10%, transparent), transparent 38%),
+    radial-gradient(
+      circle at 100% -8%,
+      color-mix(in srgb, var(--accent-soft) 10%, transparent),
+      transparent 38%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 54%, transparent);
 }
@@ -1899,8 +2002,8 @@
 :where(#context-inspector) .config-item:not(.auto-approval-item) {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "name badge"
-    "detail actions";
+    'name badge'
+    'detail actions';
   column-gap: 10px;
   row-gap: 5px;
   padding: 10px 2px 10px 7px;
@@ -1956,10 +2059,10 @@
   :where(#context-inspector) .config-item:not(.auto-approval-item) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "name"
-      "detail"
-      "badge"
-      "actions";
+      'name'
+      'detail'
+      'badge'
+      'actions';
   }
 
   :where(#context-inspector) .config-item:not(.auto-approval-item) .scope-badge,

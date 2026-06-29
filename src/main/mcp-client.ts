@@ -83,7 +83,11 @@ export async function listPrompts(id: string): Promise<McpResult> {
   }
 }
 
-export async function callTool(id: string, name: string, args: Record<string, unknown>): Promise<McpResult> {
+export async function callTool(
+  id: string,
+  name: string,
+  args: Record<string, unknown>,
+): Promise<McpResult> {
   const conn = connections.get(id);
   if (!conn) return { success: false, error: 'Not connected' };
   try {
@@ -105,7 +109,11 @@ export async function readResource(id: string, uri: string): Promise<McpResult> 
   }
 }
 
-export async function getPrompt(id: string, name: string, args: Record<string, string>): Promise<McpResult> {
+export async function getPrompt(
+  id: string,
+  name: string,
+  args: Record<string, string>,
+): Promise<McpResult> {
   const conn = connections.get(id);
   if (!conn) return { success: false, error: 'Not connected' };
   try {

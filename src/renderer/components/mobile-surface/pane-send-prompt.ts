@@ -23,7 +23,9 @@ function buildMobileAppliedContext(projectId: string, providerId?: ProviderId) {
   return buildAppliedContextSummary(projectId, providerId);
 }
 
-export async function sendInspectPromptToSelectedSession(options: SendInspectPromptOptions): Promise<void> {
+export async function sendInspectPromptToSelectedSession(
+  options: SendInspectPromptOptions,
+): Promise<void> {
   const { instance, platformLabels, setInspectStatus, rerenderFromState } = options;
   const prompt = buildMobileInspectPrompt({
     inspectState: instance.inspectState,
@@ -35,14 +37,19 @@ export async function sendInspectPromptToSelectedSession(options: SendInspectPro
     return;
   }
 
-  const target = appState.resolveSurfaceTargetSession(instance.projectId, { requireExplicitTarget: true });
+  const target = appState.resolveSurfaceTargetSession(instance.projectId, {
+    requireExplicitTarget: true,
+  });
   if (!target) {
     instance.inspectState.sendError = 'Select an open session target first.';
     rerenderFromState(instance);
     return;
   }
 
-  const appliedContext = buildMobileAppliedContext(instance.projectId, target.providerId ?? 'claude');
+  const appliedContext = buildMobileAppliedContext(
+    instance.projectId,
+    target.providerId ?? 'claude',
+  );
   instance.inspectState.contextTrace = formatAppliedContextTrace(appliedContext);
   const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
 

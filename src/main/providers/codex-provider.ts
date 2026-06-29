@@ -3,11 +3,23 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
 import { getCodexConfig } from '../codex-config';
-import { cleanupCodexHooks, installCodexHooks, SESSION_ID_VAR,validateCodexHooks } from '../codex-hooks';
+import {
+  cleanupCodexHooks,
+  installCodexHooks,
+  SESSION_ID_VAR,
+  validateCodexHooks,
+} from '../codex-hooks';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
 import { getFullPath } from '../full-path';
 import { sanitizeExtraArgs } from '../security/sanitize';
@@ -54,7 +66,12 @@ export class CodexProvider extends BaseCliProvider {
     return env;
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.isResume && opts.cliSessionId) {
       args.push('resume', opts.cliSessionId);
@@ -130,7 +147,11 @@ export class CodexProvider extends BaseCliProvider {
 }
 
 function descSortedReaddir(dir: string): string[] {
-  try { return fs.readdirSync(dir).sort().reverse(); } catch { return []; }
+  try {
+    return fs.readdirSync(dir).sort().reverse();
+  } catch {
+    return [];
+  }
 }
 
 /** @internal Test-only: reset cached binary path */

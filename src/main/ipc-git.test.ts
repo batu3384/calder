@@ -136,11 +136,26 @@ describe('ipc git handlers', () => {
     await checkoutBranch({}, '/repo', 'feature/x');
     await createBranch({}, '/repo', 'feature/y');
 
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Stage git file' });
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Unstage git file' });
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Discard git file changes' });
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Checkout git branch' });
-    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', { kind: 'write', label: 'Create git branch' });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'write',
+      label: 'Stage git file',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'write',
+      label: 'Unstage git file',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'write',
+      label: 'Discard git file changes',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'write',
+      label: 'Checkout git branch',
+    });
+    expect(ops.assertProjectGovernanceAllows).toHaveBeenCalledWith('/repo', {
+      kind: 'write',
+      label: 'Create git branch',
+    });
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Stage git file');
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Create git branch');
     expect(mockGitStageFile).toHaveBeenCalledWith('/repo', 'src/a.ts');

@@ -27,7 +27,10 @@ function buildBracketedPastePayload(prompt: string): string {
 }
 
 export function consumeStartupPrompt(state: StartupPromptState): string | undefined {
-  if (state.pendingPrompt && getProviderCapabilities(state.providerId)?.pendingPromptTrigger === 'startup-arg') {
+  if (
+    state.pendingPrompt &&
+    getProviderCapabilities(state.providerId)?.pendingPromptTrigger === 'startup-arg'
+  ) {
     const startupPrompt = state.pendingPrompt;
     state.pendingPrompt = null;
     return startupPrompt;

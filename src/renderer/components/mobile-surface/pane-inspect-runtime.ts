@@ -1,4 +1,7 @@
-import type { MobileInspectPlatform, MobileInspectScreenshotResult } from '../../../shared/types/mobile.js';
+import type {
+  MobileInspectPlatform,
+  MobileInspectScreenshotResult,
+} from '../../../shared/types/mobile.js';
 import { isInstallRunning } from './install-progress.js';
 import type { MobileSurfaceInspectState, MobileSurfacePaneInstance } from './types.js';
 
@@ -15,7 +18,11 @@ interface MobileInspectRuntimeHandlers {
   isInspectBusy(instance: MobileSurfacePaneInstance): boolean;
   setActionAvailability(instance: MobileSurfacePaneInstance): void;
   setInspectStatus(instance: MobileSurfacePaneInstance, message: string, tone?: StatusTone): void;
-  stopInspectLiveMode(instance: MobileSurfacePaneInstance, statusMessage?: string, tone?: StatusTone): void;
+  stopInspectLiveMode(
+    instance: MobileSurfacePaneInstance,
+    statusMessage?: string,
+    tone?: StatusTone,
+  ): void;
   captureInspectFrame(instance: MobileSurfacePaneInstance, source: CaptureSource): Promise<boolean>;
   startInspectLiveMode(instance: MobileSurfacePaneInstance): Promise<void>;
 }
@@ -51,18 +58,23 @@ function clearInspectLiveTimer(inspect: MobileSurfaceInspectState): void {
   inspect.liveTimer = null;
 }
 
-export function createMobileInspectRuntime(options: CreateMobileInspectRuntimeOptions): MobileInspectRuntimeHandlers {
+export function createMobileInspectRuntime(
+  options: CreateMobileInspectRuntimeOptions,
+): MobileInspectRuntimeHandlers {
   const { platformLabels, rerenderFromState } = options;
 
   function isInspectBusy(instance: MobileSurfacePaneInstance): boolean {
-    return instance.inspectState.launching
-      || instance.inspectState.capturing
-      || instance.inspectState.inspectingPoint
-      || instance.inspectState.interacting;
+    return (
+      instance.inspectState.launching ||
+      instance.inspectState.capturing ||
+      instance.inspectState.inspectingPoint ||
+      instance.inspectState.interacting
+    );
   }
 
   function setActionAvailability(instance: MobileSurfacePaneInstance): void {
-    instance.refreshBtn.disabled = instance.loading || isInstallRunning(instance.installState) || isInspectBusy(instance);
+    instance.refreshBtn.disabled =
+      instance.loading || isInstallRunning(instance.installState) || isInspectBusy(instance);
   }
 
   function setInspectStatus(
@@ -88,7 +100,10 @@ export function createMobileInspectRuntime(options: CreateMobileInspectRuntimeOp
     }
   }
 
-  async function captureInspectFrame(instance: MobileSurfacePaneInstance, source: CaptureSource): Promise<boolean> {
+  async function captureInspectFrame(
+    instance: MobileSurfacePaneInstance,
+    source: CaptureSource,
+  ): Promise<boolean> {
     const inspect = instance.inspectState;
     const api = window.calder?.mobileInspect;
     if (!api) {
@@ -102,7 +117,11 @@ export function createMobileInspectRuntime(options: CreateMobileInspectRuntimeOp
     inspect.sendError = '';
     if (source === 'manual') {
       inspect.contextTrace = [];
-      setInspectStatus(instance, `Capturing ${platformLabels[inspect.platform]} screenshot…`, 'default');
+      setInspectStatus(
+        instance,
+        `Capturing ${platformLabels[inspect.platform]} screenshot…`,
+        'default',
+      );
     }
     rerenderFromState(instance);
 
@@ -140,29 +159,32 @@ export function createMobileInspectRuntime(options: CreateMobileInspectRuntimeOp
     clearInspectLiveTimer(inspect);
     if (!inspect.liveMode) return;
     const token = inspect.liveLoopToken;
-    inspect.liveTimer = window.setTimeout(async () => {
-      if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
-      if (
-        instance.loading
-        || isInstallRunning(instance.installState)
-        || inspect.launching
-        || inspect.inspectingPoint
-        || inspect.interacting
-        || inspect.capturing
-      ) {
-        scheduleInspectLiveLoop(instance);
-        return;
-      }
+    inspect.liveTimer = window.setTimeout(
+      async () => {
+        if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
+        if (
+          instance.loading ||
+          isInstallRunning(instance.installState) ||
+          inspect.launching ||
+          inspect.inspectingPoint ||
+          inspect.interacting ||
+          inspect.capturing
+        ) {
+          scheduleInspectLiveLoop(instance);
+          return;
+        }
 
-      const ok = await captureInspectFrame(instance, 'live');
-      if (!ok && inspect.liveMode && inspect.liveLoopToken === token) {
-        // Keep loop alive; transient failures are common during boot transitions.
-        setInspectStatus(instance, 'Live frame capture failed. Retrying…', 'error');
-        rerenderFromState(instance);
-      }
-      if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
-      scheduleInspectLiveLoop(instance);
-    }, Math.max(400, inspect.liveIntervalMs));
+        const ok = await captureInspectFrame(instance, 'live');
+        if (!ok && inspect.liveMode && inspect.liveLoopToken === token) {
+          // Keep loop alive; transient failures are common during boot transitions.
+          setInspectStatus(instance, 'Live frame capture failed. Retrying…', 'error');
+          rerenderFromState(instance);
+        }
+        if (!inspect.liveMode || inspect.liveLoopToken !== token) return;
+        scheduleInspectLiveLoop(instance);
+      },
+      Math.max(400, inspect.liveIntervalMs),
+    );
   }
 
   async function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promise<void> {

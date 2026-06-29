@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isWin } from '../platform';
 
@@ -155,7 +155,12 @@ describe('hook-status', () => {
       vi.mocked(fs.readFileSync).mockReturnValue('PostToolUse:working');
       watchCallback!('change', 'abc123.status');
 
-      expect(mockSend).toHaveBeenCalledWith('session:hookStatus', 'abc123', 'working', 'PostToolUse');
+      expect(mockSend).toHaveBeenCalledWith(
+        'session:hookStatus',
+        'abc123',
+        'working',
+        'PostToolUse',
+      );
     });
 
     it('.status with invalid content does not send', () => {
@@ -178,7 +183,11 @@ describe('hook-status', () => {
       watchCallback!('change', 'abc123.sessionid');
 
       expect(mockSend).toHaveBeenCalledWith('session:cliSessionId', 'abc123', 'claude-session-xyz');
-      expect(mockSend).toHaveBeenCalledWith('session:claudeSessionId', 'abc123', 'claude-session-xyz');
+      expect(mockSend).toHaveBeenCalledWith(
+        'session:claudeSessionId',
+        'abc123',
+        'claude-session-xyz',
+      );
     });
 
     it('.cost parses JSON and sends session:costData', () => {
@@ -198,12 +207,18 @@ describe('hook-status', () => {
       startWatching(win);
       registerSession('abc123');
 
-      const failureData = { tool_name: 'Bash', tool_input: { command: 'gh pr list' }, error: 'exit 127' };
+      const failureData = {
+        tool_name: 'Bash',
+        tool_input: { command: 'gh pr list' },
+        error: 'exit 127',
+      };
       vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(failureData));
       watchCallback!('change', 'abc123-xyzabc.toolfailure');
 
       expect(mockSend).toHaveBeenCalledWith('session:toolFailure', 'abc123', failureData);
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'abc123-xyzabc.toolfailure'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'abc123-xyzabc.toolfailure'),
+      );
     });
 
     it('.toolfailure extracts session ID from filename with random suffix', () => {
@@ -227,7 +242,9 @@ describe('hook-status', () => {
       watchCallback!('change', 'abc123-xyzabc.toolfailure');
 
       expect(mockSend).not.toHaveBeenCalled();
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'abc123-xyzabc.toolfailure'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'abc123-xyzabc.toolfailure'),
+      );
     });
 
     it('handles read errors gracefully', () => {
@@ -258,7 +275,10 @@ describe('hook-status', () => {
 
       // Now make the window appear destroyed for the handleFileChange check
       // We need a win whose isDestroyed flips, so create a mutable one
-      const destroyableWin = { isDestroyed: vi.fn().mockReturnValue(false), webContents: { send: mockSend } } as any;
+      const destroyableWin = {
+        isDestroyed: vi.fn().mockReturnValue(false),
+        webContents: { send: mockSend },
+      } as any;
       // Re-start watching with the destroyable win
       startWatching(destroyableWin);
 
@@ -487,7 +507,8 @@ describe('hook-status', () => {
       const win = createMockWin();
       startWatching(win);
       registerSession('abc123', 'codex');
-      const payload = '{"type":"tool_use","model":"gpt-5.1","usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10}}\n';
+      const payload =
+        '{"type":"tool_use","model":"gpt-5.1","usage":{"input_tokens":100,"cached_input_tokens":20,"output_tokens":10}}\n';
       const payloadSize = Buffer.byteLength(payload);
 
       vi.mocked(fs.openSync).mockReturnValue(71 as any);
@@ -521,7 +542,11 @@ describe('hook-status', () => {
         },
       });
       expect(mockSend).toHaveBeenNthCalledWith(2, 'session:inspectorEvents', 'abc123', [
-        { type: 'tool_use', model: 'gpt-5.1', usage: { input_tokens: 100, cached_input_tokens: 20, output_tokens: 10 } },
+        {
+          type: 'tool_use',
+          model: 'gpt-5.1',
+          usage: { input_tokens: 100, cached_input_tokens: 20, output_tokens: 10 },
+        },
       ]);
     });
 
@@ -529,7 +554,8 @@ describe('hook-status', () => {
       const win = createMockWin();
       startWatching(win);
       registerSession('abc123', 'antigravity');
-      const payload = '{"type":"tool_use","model":"gemini-2.5-pro","usage_metadata":{"promptTokenCount":120,"cachedContentTokenCount":30,"candidatesTokenCount":40,"totalTokenCount":160}}\n';
+      const payload =
+        '{"type":"tool_use","model":"gemini-2.5-pro","usage_metadata":{"promptTokenCount":120,"cachedContentTokenCount":30,"candidatesTokenCount":40,"totalTokenCount":160}}\n';
       const payloadSize = Buffer.byteLength(payload);
 
       vi.mocked(fs.openSync).mockReturnValue(72 as any);
@@ -591,8 +617,8 @@ describe('hook-status', () => {
       ] as any);
 
       vi.mocked(fs.readFileSync)
-        .mockReturnValueOnce('waiting')         // s1.status
-        .mockReturnValueOnce('claude-sess-1')   // s2.sessionid
+        .mockReturnValueOnce('waiting') // s1.status
+        .mockReturnValueOnce('claude-sess-1') // s2.sessionid
         .mockReturnValueOnce(JSON.stringify({ cost: {} })); // s3.cost
 
       resyncAllSessions(win);
@@ -643,7 +669,9 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.cost'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.toolfailure'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.events'));
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.provider_sync.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'sess-1.provider_sync.json'),
+      );
       expect(fs.unlinkSync).toHaveBeenCalledTimes(6);
     });
 
@@ -656,8 +684,12 @@ describe('hook-status', () => {
 
       cleanupSessionStatus('sess-1');
 
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1-ab12cd.toolfailure'));
-      expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-2-ef34gh.toolfailure'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'sess-1-ab12cd.toolfailure'),
+      );
+      expect(fs.unlinkSync).not.toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'sess-2-ef34gh.toolfailure'),
+      );
     });
 
     it('handles errors when files do not exist', () => {
@@ -701,14 +733,19 @@ describe('hook-status', () => {
 
       vi.mocked(fs.readdirSync).mockReturnValue(['unknown.cost', 's1.cost'] as any);
       vi.mocked(fs.statSync).mockReturnValue({ mtimeMs: 1000 } as any);
-      vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ cost: { total: 1 }, context_window: {} }));
+      vi.mocked(fs.readFileSync).mockReturnValue(
+        JSON.stringify({ cost: { total: 1 }, context_window: {} }),
+      );
 
       startWatching(win);
       vi.advanceTimersByTime(2000);
 
       expect(fs.statSync).toHaveBeenCalledTimes(1);
       expect(fs.statSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 's1.cost'));
-      expect(mockSend).toHaveBeenCalledWith('session:costData', 's1', { cost: { total: 1 }, context_window: {} });
+      expect(mockSend).toHaveBeenCalledWith('session:costData', 's1', {
+        cost: { total: 1 },
+        context_window: {},
+      });
     });
 
     it('processes first-seen session files during polling when watch misses the event', () => {
@@ -782,10 +819,7 @@ describe('hook-status', () => {
       startWatching(win);
       registerSession('abc123');
 
-      setInspectorEventsMiddleware((_, events) => [
-        ...events,
-        { type: 'marker' } as any,
-      ]);
+      setInspectorEventsMiddleware((_, events) => [...events, { type: 'marker' } as any]);
 
       stopWatching();
       startWatching(win);
@@ -823,7 +857,9 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'anthropic.quota.json'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'zai.quota.json'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.lock'));
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.refresh.zai.lock'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'statusline.refresh.zai.lock'),
+      );
     });
 
     it('closes watcher and removes transient runtime artifacts only', () => {
@@ -848,7 +884,9 @@ describe('hook-status', () => {
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'a.status'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'b.sessionid'));
       expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'c.cost'));
-      expect(fs.unlinkSync).toHaveBeenCalledWith(path.join(STATUS_DIR, 'sess-1.provider_sync.json'));
+      expect(fs.unlinkSync).toHaveBeenCalledWith(
+        path.join(STATUS_DIR, 'sess-1.provider_sync.json'),
+      );
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'status_writer.py'));
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(path.join(STATUS_DIR, 'statusline.py'));
       expect(fs.unlinkSync).not.toHaveBeenCalledWith(STATUSLINE_SCRIPT);

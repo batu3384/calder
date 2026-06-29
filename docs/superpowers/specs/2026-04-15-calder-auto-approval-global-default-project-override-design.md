@@ -45,10 +45,12 @@ The requested solution is:
 Rely entirely on each CLI’s own approval settings.
 
 Pros:
+
 - Minimal Calder changes.
 - Low implementation complexity.
 
 Cons:
+
 - Inconsistent semantics across providers.
 - Poor central observability and no unified audit layer.
 - Hard to maintain common user expectations.
@@ -58,10 +60,12 @@ Cons:
 Add a right-rail toggle and route behavior through ad hoc provider logic.
 
 Pros:
+
 - Faster to ship.
 - Good immediate UX.
 
 Cons:
+
 - Logic duplication across providers.
 - High long-term drift risk.
 - Hard to enforce consistent safety guardrails.
@@ -71,11 +75,13 @@ Cons:
 Implement one canonical policy resolver and decision engine in Calder core, with thin provider adapters.
 
 Pros:
+
 - Consistent behavior across CLIs.
 - Strong auditability and safety controls.
 - Scales cleanly for new provider integrations.
 
 Cons:
+
 - Slightly higher upfront implementation effort.
 - Requires careful event normalization.
 
@@ -276,4 +282,3 @@ Audit stream:
 - Default rate-guard threshold values.
 - Exact safe-tool allowlist profile versioning strategy.
 - Whether project-level policy edits should require explicit governance write confirmation under enforced mode.
-

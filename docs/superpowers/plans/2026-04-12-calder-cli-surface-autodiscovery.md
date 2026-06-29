@@ -52,6 +52,7 @@
 ### Task 1: Add Discovery Types And The Main-Process Discovery Engine
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/shared/types.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/cli-surface-discovery.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/cli-surface-discovery.test.ts`
@@ -264,22 +265,22 @@ function detectPackageManager(projectPath: string): 'npm' | 'pnpm' | 'yarn' {
 function discoverNodeCandidates(projectPath: string): CliSurfaceDiscoveryCandidate[] {
   const packageJsonPath = join(projectPath, 'package.json');
   if (!existsSync(packageJsonPath)) return [];
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { scripts?: Record<string, string> };
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+    scripts?: Record<string, string>;
+  };
   const scripts = packageJson.scripts ?? {};
   const pm = detectPackageManager(projectPath);
-  return NODE_SCRIPT_ORDER
-    .filter((name) => typeof scripts[name] === 'string')
-    .map((name, index) =>
-      makeCandidate(
-        `node:${name}`,
-        pm,
-        pm === 'yarn' ? [name] : ['run', name],
-        projectPath,
-        `package.json:scripts.${name}`,
-        `Found ${name} in package.json scripts`,
-        index === 0 && NODE_SCRIPT_ORDER[0] === name ? 'high' : 'medium',
-      ),
-    );
+  return NODE_SCRIPT_ORDER.filter((name) => typeof scripts[name] === 'string').map((name, index) =>
+    makeCandidate(
+      `node:${name}`,
+      pm,
+      pm === 'yarn' ? [name] : ['run', name],
+      projectPath,
+      `package.json:scripts.${name}`,
+      `Found ${name} in package.json scripts`,
+      index === 0 && NODE_SCRIPT_ORDER[0] === name ? 'high' : 'medium',
+    ),
+  );
 }
 
 function discoverPythonCandidates(projectPath: string): CliSurfaceDiscoveryCandidate[] {
@@ -307,7 +308,15 @@ function discoverRustCandidates(projectPath: string): CliSurfaceDiscoveryCandida
   if (!existsSync(join(projectPath, 'Cargo.toml'))) return [];
   if (existsSync(join(projectPath, 'src', 'main.rs'))) {
     return [
-      makeCandidate('cargo:main-bin', 'cargo', ['run'], projectPath, 'cargo:main-bin', 'Detected Cargo main binary', 'high'),
+      makeCandidate(
+        'cargo:main-bin',
+        'cargo',
+        ['run'],
+        projectPath,
+        'cargo:main-bin',
+        'Detected Cargo main binary',
+        'high',
+      ),
     ];
   }
   return [];
@@ -317,10 +326,22 @@ function discoverGoCandidates(projectPath: string): CliSurfaceDiscoveryCandidate
   if (!existsSync(join(projectPath, 'go.mod'))) return [];
   const cmdDir = join(projectPath, 'cmd');
   if (!existsSync(cmdDir)) {
-    return [makeCandidate('go:module-root', 'go', ['run', '.'], projectPath, 'go:module-root', 'Detected go.mod at project root', 'medium')];
+    return [
+      makeCandidate(
+        'go:module-root',
+        'go',
+        ['run', '.'],
+        projectPath,
+        'go:module-root',
+        'Detected go.mod at project root',
+        'medium',
+      ),
+    ];
   }
 
-  const cmdEntry = readdirSync(cmdDir, { withFileTypes: true }).find((entry) => entry.isDirectory());
+  const cmdEntry = readdirSync(cmdDir, { withFileTypes: true }).find((entry) =>
+    entry.isDirectory(),
+  );
   if (!cmdEntry) return [];
   return [
     makeCandidate(
@@ -371,6 +392,7 @@ git commit -m "feat: add cli surface autodiscovery engine"
 ### Task 2: Wire Discovery Through IPC And Preload
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/main/cli-surface-discovery-ipc.contract.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/main/ipc-handlers.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts`
@@ -394,7 +416,7 @@ describe('cli surface discovery IPC contract', () => {
   });
 
   it('exposes discover on window.calder.cliSurface', () => {
-    expect(preloadSource).toContain("discover: (projectPath: string)");
+    expect(preloadSource).toContain('discover: (projectPath: string)');
     expect(preloadSource).toContain("ipcRenderer.invoke('cli-surface:discover', projectPath)");
   });
 });
@@ -421,9 +443,9 @@ import { discoverCliSurface } from './cli-surface-discovery';
 and add:
 
 ```ts
-  ipcMain.handle('cli-surface:discover', async (_event, projectPath: string) => {
-    return discoverCliSurface(projectPath);
-  });
+ipcMain.handle('cli-surface:discover', async (_event, projectPath: string) => {
+  return discoverCliSurface(projectPath);
+});
 ```
 
 - [ ] **Step 4: Expose the preload API**
@@ -437,7 +459,7 @@ Modify `/Users/batuhanyuksel/Documents/browser/src/preload/preload.ts` inside th
 and ensure the preload type declaration includes:
 
 ```ts
-      discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
+discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
 ```
 
 - [ ] **Step 5: Run the contract test again**
@@ -470,6 +492,7 @@ git commit -m "feat: expose cli surface discovery over ipc"
 ### Task 3: Add Renderer Setup Orchestration For Saved, Automatic, And Fallback Flows
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/setup.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/setup.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar.ts`
@@ -481,7 +504,11 @@ Create `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surfa
 
 ```ts
 import { describe, expect, it, vi } from 'vitest';
-import type { CliSurfaceDiscoveryResult, CliSurfaceProfile, ProjectRecord } from '../../../shared/types';
+import type {
+  CliSurfaceDiscoveryResult,
+  CliSurfaceProfile,
+  ProjectRecord,
+} from '../../../shared/types';
 import { openCliSurfaceWithSetup } from './setup';
 
 function makeProject(): ProjectRecord {
@@ -504,7 +531,13 @@ function makeProject(): ProjectRecord {
 describe('openCliSurfaceWithSetup', () => {
   it('reuses and starts an existing saved profile without running discovery', async () => {
     const project = makeProject();
-    const profile: CliSurfaceProfile = { id: 'saved', name: 'Saved', command: 'npm', args: ['run', 'dev:tui'], cwd: project.path };
+    const profile: CliSurfaceProfile = {
+      id: 'saved',
+      name: 'Saved',
+      command: 'npm',
+      args: ['run', 'dev:tui'],
+      cwd: project.path,
+    };
     project.surface!.cli!.profiles = [profile];
     project.surface!.cli!.selectedProfileId = profile.id;
 
@@ -514,7 +547,13 @@ describe('openCliSurfaceWithSetup', () => {
     const showQuickSetup = vi.fn();
     const showManualSetup = vi.fn();
 
-    await openCliSurfaceWithSetup(project, { discover, start, persist, showQuickSetup, showManualSetup });
+    await openCliSurfaceWithSetup(project, {
+      discover,
+      start,
+      persist,
+      showQuickSetup,
+      showManualSetup,
+    });
 
     expect(discover).not.toHaveBeenCalled();
     expect(start).toHaveBeenCalledWith(profile);
@@ -526,15 +565,17 @@ describe('openCliSurfaceWithSetup', () => {
     const project = makeProject();
     const discover = vi.fn<() => Promise<CliSurfaceDiscoveryResult>>().mockResolvedValue({
       confidence: 'high',
-      candidates: [{
-        id: 'node:dev:tui',
-        command: 'npm',
-        args: ['run', 'dev:tui'],
-        cwd: project.path,
-        source: 'package.json:scripts.dev:tui',
-        reason: 'Found dev:tui in package.json scripts',
-        confidence: 'high',
-      }],
+      candidates: [
+        {
+          id: 'node:dev:tui',
+          command: 'npm',
+          args: ['run', 'dev:tui'],
+          cwd: project.path,
+          source: 'package.json:scripts.dev:tui',
+          reason: 'Found dev:tui in package.json scripts',
+          confidence: 'high',
+        },
+      ],
     });
     const start = vi.fn();
     const persist = vi.fn();
@@ -547,11 +588,13 @@ describe('openCliSurfaceWithSetup', () => {
       showManualSetup: vi.fn(),
     });
 
-    expect(persist).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'dev:tui',
-      command: 'npm',
-      args: ['run', 'dev:tui'],
-    }));
+    expect(persist).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'dev:tui',
+        command: 'npm',
+        args: ['run', 'dev:tui'],
+      }),
+    );
     expect(start).toHaveBeenCalled();
   });
 
@@ -640,9 +683,14 @@ function candidateToProfile(candidate: CliSurfaceDiscoveryCandidate): CliSurface
   };
 }
 
-export async function openCliSurfaceWithSetup(project: ProjectRecord, deps: SetupDeps): Promise<void> {
+export async function openCliSurfaceWithSetup(
+  project: ProjectRecord,
+  deps: SetupDeps,
+): Promise<void> {
   const cliState = project.surface?.cli;
-  const saved = cliState?.profiles.find((profile) => profile.id === cliState.selectedProfileId) ?? cliState?.profiles[0];
+  const saved =
+    cliState?.profiles.find((profile) => profile.id === cliState.selectedProfileId) ??
+    cliState?.profiles[0];
   if (saved) {
     await deps.start(saved);
     return;
@@ -711,7 +759,8 @@ async function activateCliSurface(project: ProjectRecord): Promise<void> {
         },
       });
     },
-    showQuickSetup: (activeProject, candidates) => showCliSurfaceQuickSetup(activeProject, candidates, promptCliSurfaceProfile),
+    showQuickSetup: (activeProject, candidates) =>
+      showCliSurfaceQuickSetup(activeProject, candidates, promptCliSurfaceProfile),
     showManualSetup: (activeProject) => promptCliSurfaceProfile(activeProject),
   });
 }
@@ -737,6 +786,7 @@ git commit -m "feat: add cli surface setup orchestration"
 ### Task 4: Add Quick Setup UI And End-To-End Renderer Integration
 
 **Files:**
+
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/quick-setup.ts`
 - Create: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/quick-setup.test.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts`
@@ -801,10 +851,18 @@ describe('showCliSurfaceQuickSetup', () => {
     expect(document.body.textContent).toContain('npm run dev');
     expect(document.body.textContent).toContain('Found cli in package.json scripts');
 
-    (document.querySelector('[data-action="run"][data-candidate-id="node:cli"]') as HTMLButtonElement).click();
+    (
+      document.querySelector(
+        '[data-action="run"][data-candidate-id="node:cli"]',
+      ) as HTMLButtonElement
+    ).click();
     expect(onRun).toHaveBeenCalledWith(candidates[0]);
 
-    (document.querySelector('[data-action="edit"][data-candidate-id="node:dev"]') as HTMLButtonElement).click();
+    (
+      document.querySelector(
+        '[data-action="edit"][data-candidate-id="node:dev"]',
+      ) as HTMLButtonElement
+    ).click();
     expect(onEdit).toHaveBeenCalledWith(candidates[1]);
 
     (document.querySelector('[data-action="manual-setup"]') as HTMLButtonElement).click();
@@ -873,7 +931,9 @@ export function showCliSurfaceQuickSetup(
 
   bodyEl.querySelectorAll('[data-action="run"]').forEach((button) => {
     button.addEventListener('click', () => {
-      const candidate = candidates.find((entry) => entry.id === (button as HTMLElement).dataset.candidateId)!;
+      const candidate = candidates.find(
+        (entry) => entry.id === (button as HTMLElement).dataset.candidateId,
+      )!;
       handlers.onRun(candidate);
       closeModal();
     });
@@ -881,7 +941,9 @@ export function showCliSurfaceQuickSetup(
 
   bodyEl.querySelectorAll('[data-action="edit"]').forEach((button) => {
     button.addEventListener('click', () => {
-      const candidate = candidates.find((entry) => entry.id === (button as HTMLElement).dataset.candidateId)!;
+      const candidate = candidates.find(
+        (entry) => entry.id === (button as HTMLElement).dataset.candidateId,
+      )!;
       handlers.onEdit(candidate);
       closeModal();
     });
@@ -948,7 +1010,8 @@ showQuickSetup: (activeProject, candidates) => showCliSurfaceQuickSetup(candidat
 Modify `/Users/batuhanyuksel/Documents/browser/src/renderer/components/cli-surface/pane.ts` so empty/error copy becomes:
 
 ```ts
-  instance.emptyEl.textContent = 'Calder can run a detected CLI or TUI command here. If startup fails, edit the command or try another suggestion.';
+instance.emptyEl.textContent =
+  'Calder can run a detected CLI or TUI command here. If startup fails, edit the command or try another suggestion.';
 ```
 
 - [ ] **Step 5: Add the quick setup styles and contract expectations**
@@ -986,10 +1049,10 @@ Add these styles to `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/
 Update `/Users/batuhanyuksel/Documents/browser/src/renderer/components/tab-bar-cli-surface.contract.test.ts`:
 
 ```ts
-  it('delegates cli surface entry to setup and quick-setup helpers', () => {
-    expect(tabBarSource).toContain('openCliSurfaceWithSetup');
-    expect(tabBarSource).toContain('showCliSurfaceQuickSetup');
-  });
+it('delegates cli surface entry to setup and quick-setup helpers', () => {
+  expect(tabBarSource).toContain('openCliSurfaceWithSetup');
+  expect(tabBarSource).toContain('showCliSurfaceQuickSetup');
+});
 ```
 
 - [ ] **Step 6: Run the renderer tests and broader verification**
@@ -1002,6 +1065,7 @@ npm run build && npm test
 ```
 
 Expected:
+
 - targeted renderer tests PASS
 - full build PASS
 - full test suite PASS

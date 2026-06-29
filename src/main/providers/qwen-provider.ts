@@ -1,12 +1,24 @@
 import type { BrowserWindow } from 'electron';
 
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import type {
+  CliProviderMeta,
+  ProviderConfig,
+  SettingsValidationResult,
+} from '../../shared/types/provider';
+import {
+  startConfigWatcher as startConfigWatch,
+  stopConfigWatcher as stopConfigWatch,
+} from '../config-watcher';
 import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
 import { getFullPath } from '../full-path';
 import { installStatusLineScript } from '../hooks/hook-status';
-import { findQwenTranscriptPath,getQwenConfig } from '../qwen-config';
-import { cleanupQwenHooks, installQwenHooks, SESSION_ID_VAR,validateQwenHooks } from '../qwen-hooks';
+import { findQwenTranscriptPath, getQwenConfig } from '../qwen-config';
+import {
+  cleanupQwenHooks,
+  installQwenHooks,
+  SESSION_ID_VAR,
+  validateQwenHooks,
+} from '../qwen-hooks';
 import { sanitizeExtraArgs } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
@@ -53,7 +65,12 @@ export class QwenProvider extends BaseCliProvider {
     };
   }
 
-  buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
+  buildArgs(opts: {
+    cliSessionId: string | null;
+    isResume: boolean;
+    extraArgs: string;
+    initialPrompt?: string;
+  }): string[] {
     const args: string[] = [];
     if (opts.isResume && opts.cliSessionId) {
       args.push('-r', opts.cliSessionId);

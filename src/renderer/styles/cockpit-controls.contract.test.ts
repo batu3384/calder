@@ -8,6 +8,8 @@ describe('cockpit shared controls contract', () => {
     expect(cockpitCss).toContain('.control-chip');
     expect(cockpitCss).toContain('border-radius: 10px;');
     expect(cockpitCss).toContain('min-height: 22px;');
-    expect(cockpitCss).toContain('background: color-mix(in srgb, var(--surface-raised) 58%, transparent);');
+    expect(cockpitCss).toContain(
+      'background: color-mix(in srgb, var(--surface-raised) 58%, transparent);',
+    );
   });
 });

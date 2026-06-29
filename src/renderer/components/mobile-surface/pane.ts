@@ -40,7 +40,11 @@ const MOBILE_PLATFORM_LABEL: Record<MobileInspectPlatform, string> = {
   android: 'Android Emulator',
 };
 
-function setPaneStatus(instance: MobileSurfacePaneInstance, text: string, tone: StatusTone = 'default'): void {
+function setPaneStatus(
+  instance: MobileSurfacePaneInstance,
+  text: string,
+  tone: StatusTone = 'default',
+): void {
   instance.statusEl.textContent = text;
   instance.statusEl.dataset.tone = tone;
 }
@@ -48,7 +52,9 @@ function setPaneStatus(instance: MobileSurfacePaneInstance, text: string, tone: 
 function rerenderFromState(instance: MobileSurfacePaneInstance): void {
   if (!instance.lastReport) return;
   const inspectSection = renderInspectWorkbench(instance, instance.lastReport);
-  const previousInspectSection = instance.bodyEl.querySelector<HTMLElement>('.mobile-surface-inspect-group');
+  const previousInspectSection = instance.bodyEl.querySelector<HTMLElement>(
+    '.mobile-surface-inspect-group',
+  );
   if (previousInspectSection) {
     previousInspectSection.replaceWith(inspectSection);
   } else {
@@ -90,7 +96,10 @@ function stopInspectLiveMode(
   inspectRuntime.stopInspectLiveMode(instance, statusMessage, tone);
 }
 
-function captureInspectFrame(instance: MobileSurfacePaneInstance, source: 'manual' | 'live'): Promise<boolean> {
+function captureInspectFrame(
+  instance: MobileSurfacePaneInstance,
+  source: 'manual' | 'live',
+): Promise<boolean> {
   return inspectRuntime.captureInspectFrame(instance, source);
 }
 
@@ -98,7 +107,9 @@ function startInspectLiveMode(instance: MobileSurfacePaneInstance): Promise<void
   return inspectRuntime.startInspectLiveMode(instance);
 }
 
-export async function sendInspectToSelectedSession(instance: MobileSurfacePaneInstance): Promise<void> {
+export async function sendInspectToSelectedSession(
+  instance: MobileSurfacePaneInstance,
+): Promise<void> {
   await sendInspectPromptToSelectedSession({
     instance,
     platformLabels: MOBILE_PLATFORM_LABEL,
@@ -107,7 +118,10 @@ export async function sendInspectToSelectedSession(instance: MobileSurfacePaneIn
   });
 }
 
-export function renderInspectWorkbench(instance: MobileSurfacePaneInstance, report: MobileDependencyReport): HTMLElement {
+export function renderInspectWorkbench(
+  instance: MobileSurfacePaneInstance,
+  report: MobileDependencyReport,
+): HTMLElement {
   return renderMobileInspectWorkbench({
     instance,
     report,
@@ -242,18 +256,22 @@ export async function refreshMobileSurfacePane(projectId: string, force = false)
     instance.projectProfile = detectedProfile;
 
     if (
-      (detectedProfile === 'ios' || detectedProfile === 'android')
-      && instance.autoDetectedPlatform === null
-      && !instance.inspectState.screenshot
-      && !instance.inspectState.liveMode
-      && !instance.inspectState.launching
-      && !instance.inspectState.capturing
-      && !instance.inspectState.inspectingPoint
-      && !instance.inspectState.interacting
+      (detectedProfile === 'ios' || detectedProfile === 'android') &&
+      instance.autoDetectedPlatform === null &&
+      !instance.inspectState.screenshot &&
+      !instance.inspectState.liveMode &&
+      !instance.inspectState.launching &&
+      !instance.inspectState.capturing &&
+      !instance.inspectState.inspectingPoint &&
+      !instance.inspectState.interacting
     ) {
       instance.inspectState.platform = detectedProfile;
       instance.autoDetectedPlatform = detectedProfile;
-      setInspectStatus(instance, `Platform auto-selected from project profile: ${MOBILE_PLATFORM_LABEL[detectedProfile]}.`, 'default');
+      setInspectStatus(
+        instance,
+        `Platform auto-selected from project profile: ${MOBILE_PLATFORM_LABEL[detectedProfile]}.`,
+        'default',
+      );
     }
 
     const report = await api.checkDependencies();
@@ -297,7 +315,7 @@ export function showMobileSurfacePane(projectId: string): void {
   const instance = ensureMobileSurfacePane(projectId);
   instance.el.classList.remove('hidden');
   instance.el.classList.add('split');
-  const needsRefresh = !instance.lastReport || (Date.now() - instance.lastRefreshedAtMs) > 60_000;
+  const needsRefresh = !instance.lastReport || Date.now() - instance.lastRefreshedAtMs > 60_000;
   if (needsRefresh) {
     void refreshMobileSurfacePane(projectId);
   }

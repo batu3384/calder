@@ -1,7 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { ProjectWorkflowCreateResult, ProjectWorkflowStarterFilesResult } from '../../shared/types/project-workflow.js';
+import type {
+  ProjectWorkflowCreateResult,
+  ProjectWorkflowStarterFilesResult,
+} from '../../shared/types/project-workflow.js';
 import { discoverProjectWorkflows } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
@@ -40,7 +43,11 @@ Goal: verify the repo is ready to ship and call out any blocking risks clearly.
   },
 ];
 
-async function writeStarterFile(rootPath: string, relativePath: string, contents: string): Promise<'created' | 'skipped'> {
+async function writeStarterFile(
+  rootPath: string,
+  relativePath: string,
+  contents: string,
+): Promise<'created' | 'skipped'> {
   const fullPath = path.join(rootPath, relativePath);
 
   try {
@@ -73,7 +80,9 @@ Goal: describe the repeatable task outcome in one or two lines.
 `;
 }
 
-export async function createProjectWorkflowStarterFiles(projectPath: string): Promise<ProjectWorkflowStarterFilesResult> {
+export async function createProjectWorkflowStarterFiles(
+  projectPath: string,
+): Promise<ProjectWorkflowStarterFilesResult> {
   const created: string[] = [];
   const skipped: string[] = [];
 
@@ -99,7 +108,11 @@ export async function createProjectWorkflowFile(
     throw new Error('Workflow title is required');
   }
 
-  const relativePath = path.posix.join('.calder', 'workflows', `${slugifyWorkflowTitle(trimmedTitle)}.md`);
+  const relativePath = path.posix.join(
+    '.calder',
+    'workflows',
+    `${slugifyWorkflowTitle(trimmedTitle)}.md`,
+  );
   const fullPath = path.join(projectPath, relativePath);
 
   let created = false;

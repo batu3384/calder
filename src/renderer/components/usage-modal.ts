@@ -24,7 +24,7 @@ function prettyModelName(raw: string): string {
     .replace(/-\d{8,}$/, '')
     .split(/[-_]/)
     .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 }
 
@@ -92,7 +92,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
     sectionTitle.textContent = 'Last 7 Days';
     sectionShell.appendChild(sectionTitle);
 
-    const maxMsg = Math.max(...recent.map(d => d.messageCount), 1);
+    const maxMsg = Math.max(...recent.map((d) => d.messageCount), 1);
 
     const chart = document.createElement('div');
     chart.className = 'usage-activity-chart';
@@ -182,7 +182,8 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 
     const hourLabels = document.createElement('div');
     hourLabels.className = 'usage-hour-labels';
-    hourLabels.innerHTML = '<span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>';
+    hourLabels.innerHTML =
+      '<span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>12a</span>';
     sectionShell.appendChild(hourLabels);
     container.appendChild(sectionShell);
   }
@@ -213,7 +214,8 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 function renderEmpty(container: HTMLElement): void {
   const empty = document.createElement('div');
   empty.className = 'usage-empty';
-  empty.textContent = 'No usage data found yet. Stats appear after supported CLI sessions record activity.';
+  empty.textContent =
+    'No usage data found yet. Stats appear after supported CLI sessions record activity.';
   container.appendChild(empty);
 }
 

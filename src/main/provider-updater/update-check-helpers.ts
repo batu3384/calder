@@ -1,14 +1,11 @@
-import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../../shared/types/provider';
-import type { ProviderUpdaterRunner,ProviderUpdateSpec } from '../provider-updater-types';
-import {
-  brewEntryMatchesToken,
-  parseVersion,
-  shouldUpdate,
-} from '../provider-updater-version';
-import {
-  buildCancelledResult,
-  buildUpToDateResult,
-} from './update-result-helpers';
+import type {
+  ProviderId,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+} from '../../shared/types/provider';
+import type { ProviderUpdaterRunner, ProviderUpdateSpec } from '../provider-updater-types';
+import { brewEntryMatchesToken, parseVersion, shouldUpdate } from '../provider-updater-version';
+import { buildCancelledResult, buildUpToDateResult } from './update-result-helpers';
 
 const CHECK_TIMEOUT_MS = 20_000;
 
@@ -42,7 +39,8 @@ async function readBrewLatestVersion(
   token: string,
   signal?: AbortSignal,
 ): Promise<string | undefined> {
-  const args = kind === 'cask' ? ['info', '--json=v2', '--cask', token] : ['info', '--json=v2', token];
+  const args =
+    kind === 'cask' ? ['info', '--json=v2', '--cask', token] : ['info', '--json=v2', token];
   const result = await runner.run('brew', args, { timeoutMs: CHECK_TIMEOUT_MS, signal });
   if (result.code !== 0) return undefined;
   try {
@@ -65,9 +63,10 @@ async function readBrewOutdatedStatus(
   token: string,
   signal?: AbortSignal,
 ): Promise<{ updateNeeded: boolean; latestVersion?: string } | undefined> {
-  const args = kind === 'cask'
-    ? ['outdated', '--json=v2', '--cask', token]
-    : ['outdated', '--json=v2', '--formula', token];
+  const args =
+    kind === 'cask'
+      ? ['outdated', '--json=v2', '--cask', token]
+      : ['outdated', '--json=v2', '--formula', token];
   const result = await runner.run('brew', args, { timeoutMs: CHECK_TIMEOUT_MS, signal });
   if (result.code !== 0 && result.code !== 1) return undefined;
   if (!result.stdout.trim()) return undefined;
@@ -129,7 +128,8 @@ export async function resolveProviderUpdateCheck(input: {
     checkCommand = `brew outdated --json=v2 --formula ${brewFormula}`;
     const outdatedStatus = await readBrewOutdatedStatus(runner, 'formula', brewFormula, signal);
     if (outdatedStatus) {
-      latestVersion = outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
+      latestVersion =
+        outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
       updateNeeded = outdatedStatus.updateNeeded;
     } else {
       onStage?.('Falling back to Homebrew metadata check…');
@@ -143,7 +143,8 @@ export async function resolveProviderUpdateCheck(input: {
     checkCommand = `brew outdated --json=v2 --cask ${brewCask}`;
     const outdatedStatus = await readBrewOutdatedStatus(runner, 'cask', brewCask, signal);
     if (outdatedStatus) {
-      latestVersion = outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
+      latestVersion =
+        outdatedStatus.latestVersion ?? (outdatedStatus.updateNeeded ? undefined : beforeVersion);
       updateNeeded = outdatedStatus.updateNeeded;
     } else {
       onStage?.('Falling back to Homebrew metadata check…');
@@ -206,10 +207,14 @@ async function buildBrewSyncPendingResult(input: {
     return null;
   }
 
-  const packageToken = sourcePackageToken ?? getPrimaryToken(source === 'brew-formula' ? spec.brewFormula : spec.brewCask);
+  const packageToken =
+    sourcePackageToken ??
+    getPrimaryToken(source === 'brew-formula' ? spec.brewFormula : spec.brewCask);
   const brewKindLabel = source === 'brew-formula' ? 'formula' : 'cask';
   const npmCheckCommand = `npm view ${spec.npmPackage} version --silent`;
-  const combinedCheckCommand = checkCommand ? `${checkCommand}; ${npmCheckCommand}` : npmCheckCommand;
+  const combinedCheckCommand = checkCommand
+    ? `${checkCommand}; ${npmCheckCommand}`
+    : npmCheckCommand;
   return {
     providerId,
     providerName,
@@ -220,9 +225,10 @@ async function buildBrewSyncPendingResult(input: {
     checkCommand: combinedCheckCommand,
     beforeVersion,
     latestVersion: npmLatestVersion,
-    message: `${providerName} upstream has ${npmLatestVersion}, but Homebrew ${brewKindLabel}`
-      + `${packageToken ? ` "${packageToken}"` : ''} has not synced yet. `
-      + 'Run `brew update` and retry later, or switch to npm install for immediate updates.',
+    message:
+      `${providerName} upstream has ${npmLatestVersion}, but Homebrew ${brewKindLabel}` +
+      `${packageToken ? ` "${packageToken}"` : ''} has not synced yet. ` +
+      'Run `brew update` and retry later, or switch to npm install for immediate updates.',
   };
 }
 

@@ -15,9 +15,10 @@ export function getLayoutRenderSignature(project: ProjectRecord | undefined): st
   if (!project) return 'no-project';
   return JSON.stringify({
     projectId: project.id,
-    activeLayoutKey: project.layout.mode === 'mosaic'
-      ? getMosaicActiveLayoutKey(project)
-      : `tab:${project.activeSessionId ?? 'none'}`,
+    activeLayoutKey:
+      project.layout.mode === 'mosaic'
+        ? getMosaicActiveLayoutKey(project)
+        : `tab:${project.activeSessionId ?? 'none'}`,
     layout: {
       mode: project.layout.mode,
       splitPanes: project.layout.splitPanes,

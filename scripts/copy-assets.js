@@ -48,19 +48,16 @@ copyDir(path.join(root, 'src', 'renderer', 'styles'), path.join(dist, 'styles'),
 
 copyFile(
   path.join(root, 'node_modules', '@xterm', 'xterm', 'css', 'xterm.css'),
-  path.join(dist, 'xterm.css')
+  path.join(dist, 'xterm.css'),
 );
 copyFile(path.join(root, 'build', 'icon.png'), path.join(dist, 'icon.png'));
 copyFile(path.join(root, 'CHANGELOG.md'), path.join(dist, 'CHANGELOG.md'));
 
 copyDir(
   path.join(root, 'src', 'renderer', 'assets', 'providers'),
-  path.join(dist, 'assets', 'providers')
+  path.join(dist, 'assets', 'providers'),
 );
 
-copyDir(
-  path.join(root, 'src', 'renderer', 'assets', 'brand'),
-  path.join(dist, 'assets', 'brand')
-);
+copyDir(path.join(root, 'src', 'renderer', 'assets', 'brand'), path.join(dist, 'assets', 'brand'));
 
 console.log('Assets copied.');

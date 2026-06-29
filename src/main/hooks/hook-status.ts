@@ -6,7 +6,11 @@ import * as path from 'path';
 import type { ProviderId } from '../../shared/types/provider';
 import type { InspectorEvent } from '../../shared/types/session';
 import { isWin } from '../platform';
-import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from '../statusline/statusline-template';
+import {
+  buildStatusLinePython,
+  buildStatusLineWrapper,
+  STATUSLINE_PYTHON_HELPER,
+} from '../statusline/statusline-template';
 import {
   clearDerivedUsageSession,
   deriveCostDataFromEvents,
@@ -46,13 +50,15 @@ export function setInspectorEventsMiddleware(middleware: InspectorEventsMiddlewa
 }
 
 function isKnownExtension(filename: string): boolean {
-  return KNOWN_EXTENSIONS.some(ext => filename.endsWith(ext));
+  return KNOWN_EXTENSIONS.some((ext) => filename.endsWith(ext));
 }
 
 function isStatuslineArtifact(filename: string): boolean {
-  return filename.endsWith('.quota.json')
-    || (filename.startsWith('statusline.refresh') && filename.endsWith('.lock'))
-    || filename === 'statusline.log';
+  return (
+    filename.endsWith('.quota.json') ||
+    (filename.startsWith('statusline.refresh') && filename.endsWith('.lock')) ||
+    filename === 'statusline.log'
+  );
 }
 
 function isProviderSyncArtifact(filename: string): boolean {
@@ -65,11 +71,7 @@ export function getStatusLineScriptPath(): string {
 
 export function installStatusLineScript(): void {
   fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(
-    STATUSLINE_PYTHON_PATH,
-    buildStatusLinePython(STATUS_DIR),
-    { mode: 0o755 },
-  );
+  fs.writeFileSync(STATUSLINE_PYTHON_PATH, buildStatusLinePython(STATUS_DIR), { mode: 0o755 });
   fs.writeFileSync(
     STATUSLINE_SCRIPT,
     buildStatusLineWrapper(STATUSLINE_PYTHON_PATH, path.join(STATUS_DIR, 'statusline.log')),
@@ -103,7 +105,12 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
       const colonIdx = raw.indexOf(':');
       const hookName = colonIdx !== -1 ? raw.slice(0, colonIdx) : '';
       const content = colonIdx !== -1 ? raw.slice(colonIdx + 1) : raw;
-      if (content === 'working' || content === 'waiting' || content === 'completed' || content === 'input') {
+      if (
+        content === 'working' ||
+        content === 'waiting' ||
+        content === 'completed' ||
+        content === 'input'
+      ) {
         if (!win.isDestroyed()) {
           win.webContents.send('session:hookStatus', sessionId, content, hookName);
         }
@@ -152,7 +159,11 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
       // File may have been deleted or contain invalid JSON
     }
     // Always attempt cleanup — each failure is a one-shot event
-    try { fs.unlinkSync(filePath); } catch { /* already gone */ }
+    try {
+      fs.unlinkSync(filePath);
+    } catch {
+      /* already gone */
+    }
   } else if (filename.endsWith('.events')) {
     const sessionId = filename.replace('.events', '');
     const filePath = path.join(STATUS_DIR, filename);
@@ -184,7 +195,11 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
         }
         const events: InspectorEvent[] = [];
         for (const line of lines) {
-          try { events.push(JSON.parse(line)); } catch { /* skip malformed */ }
+          try {
+            events.push(JSON.parse(line));
+          } catch {
+            /* skip malformed */
+          }
         }
         if (events.length > 0) {
           const derivedCostData = deriveCostDataFromEvents(sessionId, events);
@@ -208,7 +223,11 @@ function handleFileChange(win: BrowserWindow, filename: string): void {
       // File may not exist yet
     } finally {
       if (fd !== null) {
-        try { fs.closeSync(fd); } catch { /* already closed */ }
+        try {
+          fs.closeSync(fd);
+        } catch {
+          /* already closed */
+        }
       }
     }
   }
@@ -357,7 +376,11 @@ export function cleanupAll(): void {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
       if (isKnownExtension(file) || isStatuslineArtifact(file) || isProviderSyncArtifact(file)) {
-        try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch { /* already gone */ }
+        try {
+          fs.unlinkSync(path.join(STATUS_DIR, file));
+        } catch {
+          /* already gone */
+        }
       }
     }
   } catch {

@@ -1,7 +1,10 @@
 import type { ProjectBackgroundTaskDocument } from '../shared/types/project-background-task.js';
 import type { ProviderId } from '../shared/types/provider.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './components/terminal-pane.js';
-import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
+import {
+  appendAppliedContextToPrompt,
+  buildAppliedContextSummary,
+} from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 import { appState } from './state.js';
@@ -14,9 +17,13 @@ export function buildProjectBackgroundTaskPrompt(task: ProjectBackgroundTaskDocu
     `Status: ${task.status}`,
     task.prompt,
     task.handoff ? `Handoff:\n${task.handoff}` : null,
-    task.artifacts.length > 0 ? `Known artifacts:\n${task.artifacts.map((artifact) => `- ${artifact}`).join('\n')}` : null,
+    task.artifacts.length > 0
+      ? `Known artifacts:\n${task.artifacts.map((artifact) => `- ${artifact}`).join('\n')}`
+      : null,
     'Work through the task carefully. If the task is stale or unsafe, explain why before making changes.',
-  ].filter(Boolean).join('\n\n');
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 function buildProjectBackgroundTaskRoutedPrompt(
@@ -40,7 +47,9 @@ export async function sendProjectBackgroundTaskToSelectedSession(
   projectId: string,
   task: ProjectBackgroundTaskDocument,
 ): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
-  const targetSession = appState.resolveSurfaceTargetSession(projectId, { requireExplicitTarget: true });
+  const targetSession = appState.resolveSurfaceTargetSession(projectId, {
+    requireExplicitTarget: true,
+  });
   if (!targetSession) {
     return { ok: false, error: 'Open or select a CLI session first.' };
   }
@@ -66,6 +75,9 @@ export function resumeProjectBackgroundTaskInNewSession(
     return { ok: false, error: 'Unable to create a new CLI session for this task.' };
   }
 
-  setPendingPrompt(session.id, buildProjectBackgroundTaskRoutedPrompt(projectId, session.providerId, task));
+  setPendingPrompt(
+    session.id,
+    buildProjectBackgroundTaskRoutedPrompt(projectId, session.providerId, task),
+  );
   return { ok: true, targetSessionId: session.id };
 }

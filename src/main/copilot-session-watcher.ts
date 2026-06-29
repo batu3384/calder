@@ -37,7 +37,10 @@ let currentWindow: BrowserWindow | null = null;
 function normalizePathHint(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
-  return path.normalize(trimmed).replace(/[\\/]+$/, '').toLowerCase();
+  return path
+    .normalize(trimmed)
+    .replace(/[\\/]+$/, '')
+    .toLowerCase();
 }
 
 function parseYamlScalar(contents: string, key: string): string | null {
@@ -73,19 +76,27 @@ function readCopilotSessionState(sessionDir: string): CopilotSessionState | null
 
 function listCopilotSessionIds(): Set<string> {
   try {
-    return new Set(fs.readdirSync(SESSION_STATE_DIR, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name));
+    return new Set(
+      fs
+        .readdirSync(SESSION_STATE_DIR, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name),
+    );
   } catch {
     return new Set();
   }
 }
 
-function isCandidateNewEnough(candidate: CopilotSessionState, pending: PendingSessionMetadata): boolean {
+function isCandidateNewEnough(
+  candidate: CopilotSessionState,
+  pending: PendingSessionMetadata,
+): boolean {
   const candidateTime = candidate.createdAtMs ?? candidate.updatedAtMs;
   if (candidateTime === null) return true;
-  return candidateTime >= pending.registeredAtMs - 30_000
-    && candidateTime <= pending.registeredAtMs + MATCH_WINDOW_MS;
+  return (
+    candidateTime >= pending.registeredAtMs - 30_000 &&
+    candidateTime <= pending.registeredAtMs + MATCH_WINDOW_MS
+  );
 }
 
 function scoreCandidate(candidate: CopilotSessionState, pending: PendingSessionMetadata): number {
@@ -127,7 +138,8 @@ function scanCopilotSessions(): void {
 
   let candidates: CopilotSessionState[] = [];
   try {
-    candidates = fs.readdirSync(SESSION_STATE_DIR, { withFileTypes: true })
+    candidates = fs
+      .readdirSync(SESSION_STATE_DIR, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => readCopilotSessionState(entry.name))
       .filter((entry): entry is CopilotSessionState => !!entry);
@@ -142,14 +154,12 @@ function scanCopilotSessions(): void {
   });
 
   while (pendingSessions.size > 0 && remaining.length > 0) {
-    let selected:
-      | {
-        remainingIndex: number;
-        sessionId: string;
-        metadata: PendingSessionMetadata;
-        score: number;
-      }
-      | null = null;
+    let selected: {
+      remainingIndex: number;
+      sessionId: string;
+      metadata: PendingSessionMetadata;
+      score: number;
+    } | null = null;
 
     for (let i = 0; i < remaining.length; i += 1) {
       const candidate = remaining[i];
@@ -180,9 +190,10 @@ export function registerPendingCopilotSession(
   sessionId: string,
   hints: PendingCopilotSessionHints = {},
 ): void {
-  const registeredAtMs = typeof hints.registeredAtMs === 'number' && Number.isFinite(hints.registeredAtMs)
-    ? Math.trunc(hints.registeredAtMs)
-    : Date.now();
+  const registeredAtMs =
+    typeof hints.registeredAtMs === 'number' && Number.isFinite(hints.registeredAtMs)
+      ? Math.trunc(hints.registeredAtMs)
+      : Date.now();
   const normalizedCwd = hints.cwd ? normalizePathHint(hints.cwd) : null;
 
   pendingSessions.set(sessionId, {

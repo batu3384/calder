@@ -24,9 +24,11 @@ vi.mock('./session-context.js', () => ({
 }));
 
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
-import { _resetForTesting,appState } from './state.js';
+import { _resetForTesting, appState } from './state.js';
 
-function buildWorkflowDocument(overrides: Partial<ProjectWorkflowDocument> = {}): ProjectWorkflowDocument {
+function buildWorkflowDocument(
+  overrides: Partial<ProjectWorkflowDocument> = {},
+): ProjectWorkflowDocument {
   return {
     path: '/proj/.calder/workflows/review-pr.md',
     relativePath: '.calder/workflows/review-pr.md',
@@ -46,11 +48,7 @@ describe('project workflow launch', () => {
   it('creates a new session seeded with the workflow prompt', () => {
     const project = appState.addProject('Calder', '/proj');
 
-    const session = appState.launchWorkflowSession(
-      project.id,
-      buildWorkflowDocument(),
-      'codex',
-    )!;
+    const session = appState.launchWorkflowSession(project.id, buildWorkflowDocument(), 'codex')!;
 
     expect(session.name).toBe('Review PR');
     expect(session.providerId).toBe('codex');

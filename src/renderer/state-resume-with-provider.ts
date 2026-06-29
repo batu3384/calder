@@ -47,7 +47,9 @@ function resolveSourceSession(
   return null;
 }
 
-export async function resumeProjectWithProvider(options: ResumeWithProviderOptions): Promise<SessionRecord | undefined> {
+export async function resumeProjectWithProvider(
+  options: ResumeWithProviderOptions,
+): Promise<SessionRecord | undefined> {
   const { project, source, targetProviderId, buildResumePrompt, pushNav } = options;
   const sourceSession = resolveSourceSession(project, source);
   if (!sourceSession) return undefined;

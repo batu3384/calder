@@ -1,6 +1,11 @@
 // Shared session and telemetry type definitions.
 
-import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalOperationClass, AutoApprovalPolicySource } from './types-governance';
+import type {
+  AutoApprovalDecision,
+  AutoApprovalMode,
+  AutoApprovalOperationClass,
+  AutoApprovalPolicySource,
+} from './types-governance';
 import type { ProviderId } from './types-provider';
 
 // --- Cost / Context (shared with renderer modules) ---
@@ -28,7 +33,13 @@ export interface ContextWindowInfo {
 export interface SessionRecord {
   id: string;
   name: string;
-  type?: 'claude' | 'mcp-inspector' | 'diff-viewer' | 'file-reader' | 'remote-terminal' | 'browser-tab';
+  type?:
+    | 'claude'
+    | 'mcp-inspector'
+    | 'diff-viewer'
+    | 'file-reader'
+    | 'remote-terminal'
+    | 'browser-tab';
   providerId?: ProviderId;
   args?: string;
   cliSessionId: string | null;
@@ -53,7 +64,13 @@ export interface SessionRecord {
 }
 
 export type ProjectLayoutMode = 'tabs' | 'mosaic';
-export type MosaicPreset = 'single' | 'columns-2' | 'rows-2' | 'focus-left' | 'focus-top' | 'grid-2x2';
+export type MosaicPreset =
+  | 'single'
+  | 'columns-2'
+  | 'rows-2'
+  | 'focus-left'
+  | 'focus-top'
+  | 'grid-2x2';
 
 export interface ProjectLayoutState {
   mode: ProjectLayoutMode;
@@ -126,19 +143,31 @@ export interface ToolFailureData {
 
 export type InspectorEventType =
   // Core 7 (status + inspector)
-  | 'session_start' | 'user_prompt' | 'tool_use' | 'tool_failure'
-  | 'stop' | 'stop_failure' | 'permission_request'
+  | 'session_start'
+  | 'user_prompt'
+  | 'tool_use'
+  | 'tool_failure'
+  | 'stop'
+  | 'stop_failure'
+  | 'permission_request'
   // Inspector-only events
   | 'permission_denied'
   | 'pre_tool_use'
-  | 'subagent_start' | 'subagent_stop'
+  | 'subagent_start'
+  | 'subagent_stop'
   | 'notification'
-  | 'pre_compact' | 'post_compact'
+  | 'pre_compact'
+  | 'post_compact'
   | 'session_end'
-  | 'task_created' | 'task_completed'
-  | 'worktree_create' | 'worktree_remove'
-  | 'cwd_changed' | 'file_changed' | 'config_change'
-  | 'elicitation' | 'elicitation_result'
+  | 'task_created'
+  | 'task_completed'
+  | 'worktree_create'
+  | 'worktree_remove'
+  | 'cwd_changed'
+  | 'file_changed'
+  | 'config_change'
+  | 'elicitation'
+  | 'elicitation_result'
   | 'instructions_loaded'
   | 'approval_decision'
   | 'teammate_idle'

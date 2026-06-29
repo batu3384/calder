@@ -38,7 +38,10 @@ export function formatMcpGovernanceError(code: McpGovernanceErrorCode, message: 
   return `${code}: ${message}`;
 }
 
-export function buildMcpGovernanceFailure(code: McpGovernanceErrorCode, message: string): { success: false; error: string } {
+export function buildMcpGovernanceFailure(
+  code: McpGovernanceErrorCode,
+  message: string,
+): { success: false; error: string } {
   return {
     success: false,
     error: formatMcpGovernanceError(code, message),
@@ -93,47 +96,76 @@ export function buildMcpGovernanceFailureFromError(
 }
 
 export function registerMcpGovernanceIpcHandlers(ops: McpGovernanceOps): void {
-  ipcMain.handle('mcp:addServer', async (_event, name: string, config: McpServerConfig, scope: 'user' | 'project', projectPath?: string) => {
-    try {
-      let validatedProjectPath: string | undefined;
-      if (scope === 'project') {
-        if (!projectPath) {
-          throw new Error('projectPath is required for project MCP scope');
+  ipcMain.handle(
+    'mcp:addServer',
+    async (
+      _event,
+      name: string,
+      config: McpServerConfig,
+      scope: 'user' | 'project',
+      projectPath?: string,
+    ) => {
+      try {
+        let validatedProjectPath: string | undefined;
+        if (scope === 'project') {
+          if (!projectPath) {
+            throw new Error('projectPath is required for project MCP scope');
+          }
+          validatedProjectPath = ops.requireKnownProjectPath(projectPath, 'Add project MCP server');
+          await ops.assertProjectGovernanceAllows(validatedProjectPath, {
+            kind: 'mcp',
+            label: 'Add project MCP server',
+            target: name,
+          });
         }
-        validatedProjectPath = ops.requireKnownProjectPath(projectPath, 'Add project MCP server');
-        await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'mcp', label: 'Add project MCP server', target: name });
+        addMcpServer(name, config, scope, validatedProjectPath);
+        return { success: true };
+      } catch (error) {
+        console.error('mcp:addServer failed:', error);
+        return buildMcpGovernanceFailureFromError(
+          error,
+          MCP_GOVERNANCE_ERROR_CODES.DENIED,
+          'Add project MCP server is blocked by project governance policy.',
+        );
       }
-      addMcpServer(name, config, scope, validatedProjectPath);
-      return { success: true };
-    } catch (error) {
-      console.error('mcp:addServer failed:', error);
-      return buildMcpGovernanceFailureFromError(
-        error,
-        MCP_GOVERNANCE_ERROR_CODES.DENIED,
-        'Add project MCP server is blocked by project governance policy.',
-      );
-    }
-  });
+    },
+  );
 
-  ipcMain.handle('mcp:removeServer', async (_event, name: string, filePath: string, scope: 'user' | 'project', projectPath?: string) => {
-    try {
-      let validatedProjectPath: string | undefined;
-      if (scope === 'project') {
-        if (!projectPath) {
-          throw new Error('projectPath is required for project MCP scope');
+  ipcMain.handle(
+    'mcp:removeServer',
+    async (
+      _event,
+      name: string,
+      filePath: string,
+      scope: 'user' | 'project',
+      projectPath?: string,
+    ) => {
+      try {
+        let validatedProjectPath: string | undefined;
+        if (scope === 'project') {
+          if (!projectPath) {
+            throw new Error('projectPath is required for project MCP scope');
+          }
+          validatedProjectPath = ops.requireKnownProjectPath(
+            projectPath,
+            'Remove project MCP server',
+          );
+          await ops.assertProjectGovernanceAllows(validatedProjectPath, {
+            kind: 'mcp',
+            label: 'Remove project MCP server',
+            target: name,
+          });
         }
-        validatedProjectPath = ops.requireKnownProjectPath(projectPath, 'Remove project MCP server');
-        await ops.assertProjectGovernanceAllows(validatedProjectPath, { kind: 'mcp', label: 'Remove project MCP server', target: name });
+        removeMcpServer(name, filePath, scope, validatedProjectPath);
+        return { success: true };
+      } catch (error) {
+        console.error('mcp:removeServer failed:', error);
+        return buildMcpGovernanceFailureFromError(
+          error,
+          MCP_GOVERNANCE_ERROR_CODES.DENIED,
+          'Remove project MCP server is blocked by project governance policy.',
+        );
       }
-      removeMcpServer(name, filePath, scope, validatedProjectPath);
-      return { success: true };
-    } catch (error) {
-      console.error('mcp:removeServer failed:', error);
-      return buildMcpGovernanceFailureFromError(
-        error,
-        MCP_GOVERNANCE_ERROR_CODES.DENIED,
-        'Remove project MCP server is blocked by project governance policy.',
-      );
-    }
-  });
+    },
+  );
 }

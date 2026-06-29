@@ -1,6 +1,7 @@
 import type { BrowserTabInstance } from './types.js';
 
-const KNOWN_SCHEMES = /^(https?|file|ftp|ftps|about|chrome|data|blob|view-source|javascript|mailto):/i;
+const KNOWN_SCHEMES =
+  /^(https?|file|ftp|ftps|about|chrome|data|blob|view-source|javascript|mailto):/i;
 export const STALE_NAVIGATION_REVERT_WINDOW_MS = 1800;
 export type BrowserPageState = 'ready' | 'loading' | 'local' | 'remote' | 'offline';
 type PendingNavigationInstance = Pick<
@@ -21,7 +22,10 @@ export function canonicalizeNavigationUrl(value: string | undefined): string {
   if (!url) return '';
   try {
     const parsed = new URL(url);
-    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.pathname.length > 1) {
+    if (
+      (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+      parsed.pathname.length > 1
+    ) {
       parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
     }
     return parsed.href;
@@ -33,13 +37,19 @@ export function canonicalizeNavigationUrl(value: string | undefined): string {
 export function isLocalBrowserUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(parsed.hostname.toLowerCase());
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(
+      parsed.hostname.toLowerCase(),
+    );
   } catch {
     return /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])([/:]|$)/i.test(url);
   }
 }
 
-export function resolveBrowserPageState(url: string, isLoading: boolean, offline: boolean): BrowserPageState {
+export function resolveBrowserPageState(
+  url: string,
+  isLoading: boolean,
+  offline: boolean,
+): BrowserPageState {
   if (offline) return 'offline';
   if (isLoading) return 'loading';
 
@@ -51,7 +61,9 @@ export function resolveBrowserPageState(url: string, isLoading: boolean, offline
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
       return 'remote';
     }
-  } catch { /* ignore navigation errors */ }
+  } catch {
+    /* ignore navigation errors */
+  }
 
   return 'ready';
 }

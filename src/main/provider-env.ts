@@ -11,12 +11,7 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'ANTHROPIC_BASE_URL',
     'ANTHROPIC_CUSTOM_HEADERS',
   ],
-  codex: [
-    'OPENAI_API_KEY',
-    'OPENAI_BASE_URL',
-    'OPENAI_ORG_ID',
-    'OPENAI_PROJECT_ID',
-  ],
+  codex: ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_ORG_ID', 'OPENAI_PROJECT_ID'],
   copilot: [],
   antigravity: [
     'ANTIGRAVITY_API_KEY',
@@ -24,10 +19,7 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'GOOGLE_API_KEY',
     'GOOGLE_GENERATIVE_AI_API_KEY',
   ],
-  qwen: [
-    'DASHSCOPE_API_KEY',
-    'QWEN_API_KEY',
-  ],
+  qwen: ['DASHSCOPE_API_KEY', 'QWEN_API_KEY'],
 };
 
 let cachedLoginShellEnv: Record<string, string> | null = null;
@@ -68,7 +60,7 @@ function getLoginShellEnv(): Record<string, string> {
 
 export function buildProviderBaseEnv(
   providerId: ProviderId,
-  baseEnv: Record<string, string>
+  baseEnv: Record<string, string>,
 ): Record<string, string> {
   const keys = PROVIDER_LOGIN_ENV_KEYS[providerId] ?? [];
   if (keys.length === 0) return { ...baseEnv };

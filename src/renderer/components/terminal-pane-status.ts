@@ -1,5 +1,5 @@
 import type { ContextWindowInfo } from '../session-context.js';
-import { type CostInfo,isDerivedCost, isEstimatedCost } from '../session-cost.js';
+import { type CostInfo, isDerivedCost, isEstimatedCost } from '../session-cost.js';
 
 function formatTokens(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
@@ -14,14 +14,8 @@ export function revealSessionStatusBar(container: HTMLElement): void {
 export function renderCostDisplay(el: Element, cost: CostInfo): void {
   const derived = isDerivedCost(cost);
   const estimated = isEstimatedCost(cost);
-  const estimatedPrefix = !estimated
-    ? ''
-    : derived
-      ? 'Derived · '
-      : 'Estimated · ';
-  const costStr = derived && cost.totalCostUsd <= 0
-    ? '--'
-    : `$${cost.totalCostUsd.toFixed(4)}`;
+  const estimatedPrefix = !estimated ? '' : derived ? 'Derived · ' : 'Estimated · ';
+  const costStr = derived && cost.totalCostUsd <= 0 ? '--' : `$${cost.totalCostUsd.toFixed(4)}`;
   const modelPrefix = cost.model ? `${cost.model}  \u00b7  ` : '';
   if (cost.totalInputTokens > 0 || cost.totalOutputTokens > 0) {
     el.textContent = `${modelPrefix}${estimatedPrefix}${costStr}  \u00b7  ${formatTokens(cost.totalInputTokens)} in / ${formatTokens(cost.totalOutputTokens)} out`;
@@ -32,7 +26,8 @@ export function renderCostDisplay(el: Element, cost: CostInfo): void {
       : derived
         ? 'Derived from hook usage metadata · '
         : 'Estimated from terminal output · ';
-    (el as HTMLElement).title = `${estimateNote}Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
+    (el as HTMLElement).title =
+      `${estimateNote}Cache read: ${formatTokens(cost.cacheReadTokens)} · Cache create: ${formatTokens(cost.cacheCreationTokens)} · Duration: ${durationSec}s · API: ${apiDurationSec}s`;
     return;
   }
 

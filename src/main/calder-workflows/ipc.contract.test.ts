@@ -32,9 +32,17 @@ describe('project workflow IPC contract', () => {
 
   it('declares workflow APIs in renderer types', () => {
     expect(rendererTypesSource).toContain('workflow: {');
-    expect(rendererTypesSource).toContain('getProjectState(projectPath: string): Promise<ProjectWorkflowState>;');
-    expect(rendererTypesSource).toContain('createStarterFiles(projectPath: string): Promise<ProjectWorkflowStarterFilesResult>;');
-    expect(rendererTypesSource).toContain('createFile(projectPath: string, title: string): Promise<ProjectWorkflowCreateResult>;');
-    expect(rendererTypesSource).toContain('readFile(projectPath: string, workflowPath: string): Promise<ProjectWorkflowDocument>;');
+    expect(rendererTypesSource).toContain(
+      'getProjectState(projectPath: string): Promise<ProjectWorkflowState>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'createStarterFiles(projectPath: string): Promise<ProjectWorkflowStarterFilesResult>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'createFile(projectPath: string, title: string): Promise<ProjectWorkflowCreateResult>;',
+    );
+    expect(rendererTypesSource).toContain(
+      'readFile(projectPath: string, workflowPath: string): Promise<ProjectWorkflowDocument>;',
+    );
   });
 });

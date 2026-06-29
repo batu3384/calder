@@ -68,7 +68,8 @@ export async function createIosTapSession(
 
   return {
     success: false,
-    message: 'Failed to create iOS Appium session. Verify Appium XCUITest driver setup and simulator availability.',
+    message:
+      'Failed to create iOS Appium session. Verify Appium XCUITest driver setup and simulator availability.',
   };
 }
 
@@ -136,7 +137,10 @@ export async function runIosTapAction(
   return { success: false, message: 'iOS tap request was rejected by Appium.' };
 }
 
-export async function cleanupIosTapSession(sessionId: string, basePath: '' | '/wd/hub'): Promise<void> {
+export async function cleanupIosTapSession(
+  sessionId: string,
+  basePath: '' | '/wd/hub',
+): Promise<void> {
   try {
     await fetch(`${APPIUM_BASE_URL}${basePath}/session/${sessionId}`, { method: 'DELETE' });
   } catch {

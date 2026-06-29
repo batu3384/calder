@@ -70,11 +70,11 @@ export interface ViewportPreset {
 
 export const VIEWPORT_PRESETS: ViewportPreset[] = [
   { label: 'Responsive', width: null, height: null },
-  { label: 'iPhone SE',  width: 375,  height: 667  },
-  { label: 'iPhone 14',  width: 393,  height: 852  },
-  { label: 'Pixel 7',    width: 412,  height: 915  },
-  { label: 'iPad Air',   width: 820,  height: 1180 },
-  { label: 'iPad Pro',   width: 1024, height: 1366 },
+  { label: 'iPhone SE', width: 375, height: 667 },
+  { label: 'iPhone 14', width: 393, height: 852 },
+  { label: 'Pixel 7', width: 412, height: 915 },
+  { label: 'iPad Air', width: 820, height: 1180 },
+  { label: 'iPad Pro', width: 1024, height: 1366 },
 ];
 
 export interface WebviewElement extends HTMLElement {

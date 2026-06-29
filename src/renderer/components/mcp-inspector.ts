@@ -1,4 +1,4 @@
-import { type JsonSchema,renderSchemaForm } from './mcp-schema-form.js';
+import { type JsonSchema, renderSchemaForm } from './mcp-schema-form.js';
 
 type NavTab = 'tools' | 'resources' | 'prompts';
 
@@ -34,9 +34,10 @@ function renderMcpEmptyState(
   tone: 'empty' | 'error' = 'empty',
 ): void {
   const shell = document.createElement('div');
-  shell.className = tone === 'error'
-    ? 'mcp-empty-content mcp-empty-state mcp-error-state'
-    : 'mcp-empty-content mcp-empty-state';
+  shell.className =
+    tone === 'error'
+      ? 'mcp-empty-content mcp-empty-state mcp-error-state'
+      : 'mcp-empty-content mcp-empty-state';
 
   const titleEl = document.createElement('div');
   titleEl.className = 'mcp-empty-title';
@@ -108,11 +109,29 @@ export function createInspectorPane(sessionId: string): void {
 
   connectBtn.addEventListener('click', async () => {
     if (instance.connected) {
-      await doDisconnect(sessionId, instance, connectBtn, statusPill, statusDot, statusLabel, content);
+      await doDisconnect(
+        sessionId,
+        instance,
+        connectBtn,
+        statusPill,
+        statusDot,
+        statusLabel,
+        content,
+      );
     } else {
       const url = urlInput.value.trim();
       if (!url) return;
-      await doConnect(sessionId, url, instance, connectBtn, statusPill, statusDot, statusLabel, urlInput, content);
+      await doConnect(
+        sessionId,
+        url,
+        instance,
+        connectBtn,
+        statusPill,
+        statusDot,
+        statusLabel,
+        urlInput,
+        content,
+      );
     }
   });
 
@@ -125,7 +144,7 @@ export function createInspectorPane(sessionId: string): void {
   for (const tab of navTabs) {
     tab.addEventListener('click', () => {
       instance.activeTab = (tab as HTMLElement).dataset.tab as NavTab;
-      navTabs.forEach(t => t.classList.remove('active'));
+      navTabs.forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
       renderContent(sessionId, instance, content);
     });
@@ -158,12 +177,7 @@ async function doConnect(
   } else {
     btn.textContent = 'Connect';
     setMcpStatus(pill, dot, statusLabel, 'disconnected', 'Disconnected');
-    renderMcpEmptyState(
-      content,
-      'Connection failed',
-      result.error || 'Unknown error',
-      'error',
-    );
+    renderMcpEmptyState(content, 'Connection failed', result.error || 'Unknown error', 'error');
   }
   btn.disabled = false;
 }
@@ -187,14 +201,14 @@ async function doDisconnect(
   const urlInput = instance.element.querySelector('.mcp-url-input') as HTMLInputElement;
   urlInput.disabled = false;
   updateCounts(instance);
-  renderMcpEmptyState(
-    content,
-    'Disconnected',
-    'Reconnect to inspect MCP capabilities again.',
-  );
+  renderMcpEmptyState(content, 'Disconnected', 'Reconnect to inspect MCP capabilities again.');
 }
 
-async function refreshLists(sessionId: string, instance: McpInspectorInstance, content: HTMLElement): Promise<void> {
+async function refreshLists(
+  sessionId: string,
+  instance: McpInspectorInstance,
+  content: HTMLElement,
+): Promise<void> {
   const [tools, resources, prompts] = await Promise.all([
     window.calder.mcp.listTools(sessionId),
     window.calder.mcp.listResources(sessionId),
@@ -216,7 +230,11 @@ function updateCounts(instance: McpInspectorInstance): void {
   counts[2].textContent = String(instance.promptsList.length);
 }
 
-function renderContent(sessionId: string, instance: McpInspectorInstance, content: HTMLElement): void {
+function renderContent(
+  sessionId: string,
+  instance: McpInspectorInstance,
+  content: HTMLElement,
+): void {
   content.innerHTML = '';
 
   if (!instance.connected) {
@@ -251,7 +269,11 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
     return;
   }
 
-  for (const tool of tools as Array<{ name: string; description?: string; inputSchema?: Record<string, unknown> }>) {
+  for (const tool of tools as Array<{
+    name: string;
+    description?: string;
+    inputSchema?: Record<string, unknown>;
+  }>) {
     const card = document.createElement('div');
     card.className = 'mcp-card';
 
@@ -293,7 +315,11 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
 
           const args = formRef ? formRef.getValues() : {};
           const res = await window.calder.mcp.callTool(sessionId, tool.name, args);
-          resultPre.textContent = JSON.stringify(res.success ? res.data : { error: res.error }, null, 2);
+          resultPre.textContent = JSON.stringify(
+            res.success ? res.data : { error: res.error },
+            null,
+            2,
+          );
           execBtn.disabled = false;
           execBtn.textContent = 'Execute';
         });
@@ -309,7 +335,11 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
   }
 }
 
-function renderResourcesList(sessionId: string, resources: unknown[], container: HTMLElement): void {
+function renderResourcesList(
+  sessionId: string,
+  resources: unknown[],
+  container: HTMLElement,
+): void {
   if (resources.length === 0) {
     renderMcpEmptyState(
       container,
@@ -343,7 +373,11 @@ function renderResourcesList(sessionId: string, resources: unknown[], container:
         body.appendChild(resultPre);
 
         const res = await window.calder.mcp.readResource(sessionId, resource.uri);
-        resultPre.textContent = JSON.stringify(res.success ? res.data : { error: res.error }, null, 2);
+        resultPre.textContent = JSON.stringify(
+          res.success ? res.data : { error: res.error },
+          null,
+          2,
+        );
       }
     });
 
@@ -363,7 +397,11 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
     return;
   }
 
-  for (const prompt of prompts as Array<{ name: string; description?: string; arguments?: Array<{ name: string; description?: string; required?: boolean }> }>) {
+  for (const prompt of prompts as Array<{
+    name: string;
+    description?: string;
+    arguments?: Array<{ name: string; description?: string; required?: boolean }>;
+  }>) {
     const card = document.createElement('div');
     card.className = 'mcp-card';
 
@@ -426,7 +464,11 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
             }
           }
           const res = await window.calder.mcp.getPrompt(sessionId, prompt.name, args);
-          resultPre.textContent = JSON.stringify(res.success ? res.data : { error: res.error }, null, 2);
+          resultPre.textContent = JSON.stringify(
+            res.success ? res.data : { error: res.error },
+            null,
+            2,
+          );
           execBtn.disabled = false;
           execBtn.textContent = 'Run';
         });

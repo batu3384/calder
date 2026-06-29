@@ -120,7 +120,7 @@ describe('mosaic-resize', () => {
 
     const cleanup = attachRatioHandle(
       handle as unknown as HTMLElement,
-      () => ({ left: 100, top: 20, width: 400, height: 300 } as DOMRect),
+      () => ({ left: 100, top: 20, width: 400, height: 300 }) as DOMRect,
       { onPreview, onCommit },
       { axis: 'x', min: 0.25, max: 0.7, fallback: 0.38 },
     );
@@ -152,7 +152,7 @@ describe('mosaic-resize', () => {
 
     attachRatioHandle(
       handle as unknown as HTMLElement,
-      () => ({ left: 100, top: 20, width: 400, height: 300 } as DOMRect),
+      () => ({ left: 100, top: 20, width: 400, height: 300 }) as DOMRect,
       { onPreview, onCommit },
       { axis: 'x', min: 0.25, max: 0.7, fallback: 0.38 },
     );

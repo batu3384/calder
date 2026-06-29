@@ -46,9 +46,7 @@ function buildCssPath(el: Element): string {
     }
     const parent = current.parentElement;
     if (parent) {
-      const siblings = Array.from(parent.children).filter(
-        (c) => c.tagName === current!.tagName
-      );
+      const siblings = Array.from(parent.children).filter((c) => c.tagName === current!.tagName);
       if (siblings.length > 1) {
         const index = siblings.indexOf(current) + 1;
         selector += `:nth-of-type(${index})`;
@@ -119,7 +117,11 @@ function buildShadowHostSelectorChain(el: Element): string[][] {
   return chain;
 }
 
-function buildRelativeClickPoint(el: Element, clientX: number, clientY: number): RelativeClickPoint | undefined {
+function buildRelativeClickPoint(
+  el: Element,
+  clientX: number,
+  clientY: number,
+): RelativeClickPoint | undefined {
   const rect = el.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return undefined;
   const normalizedX = (clientX - rect.left) / rect.width;

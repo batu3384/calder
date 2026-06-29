@@ -42,6 +42,7 @@
 ### Task 1: Codify Provider Detection, Quota Semantics, and Two-Line Formatting
 
 **Files:**
+
 - Create: `src/main/statusline-format.ts`
 - Test: `src/main/statusline-format.test.ts`
 
@@ -119,10 +120,12 @@ describe('formatHybridStatusLine', () => {
       nowMs: 1_500,
     });
 
-    expect(out).toBe([
-      'Claude Sonnet 4.6  Anthropic  High  browser',
-      'Ctx 38%  Cost --  5h unknown  Week unknown  Live',
-    ].join('\n'));
+    expect(out).toBe(
+      [
+        'Claude Sonnet 4.6  Anthropic  High  browser',
+        'Ctx 38%  Cost --  5h unknown  Week unknown  Live',
+      ].join('\n'),
+    );
   });
 });
 ```
@@ -232,6 +235,7 @@ git commit -m "add hybrid statusline formatting helpers"
 ### Task 2: Generate Managed Python Runtime and Stable Wrapper Script
 
 **Files:**
+
 - Create: `src/main/statusline-template.ts`
 - Create: `src/main/statusline-template.test.ts`
 - Modify: `src/main/hook-status.ts`
@@ -254,15 +258,18 @@ describe('buildStatusLinePython', () => {
 
   it('includes a render entrypoint and a background refresh entrypoint', () => {
     const py = buildStatusLinePython('/tmp/calder');
-    expect(py).toContain("def render_statusline");
-    expect(py).toContain("def refresh_provider_cache");
+    expect(py).toContain('def render_statusline');
+    expect(py).toContain('def refresh_provider_cache');
     expect(py).toContain("if __name__ == '__main__':");
   });
 });
 
 describe('buildStatusLineWrapper', () => {
   it('invokes the managed python helper instead of inlining python', () => {
-    const wrapper = buildStatusLineWrapper('/tmp/calder/statusline.py', '/tmp/calder/statusline.log');
+    const wrapper = buildStatusLineWrapper(
+      '/tmp/calder/statusline.py',
+      '/tmp/calder/statusline.log',
+    );
     expect(wrapper).toContain('statusline.py');
     expect(wrapper).toContain('statusline.log');
   });
@@ -300,10 +307,7 @@ Create `src/main/statusline-template.ts` so `hook-status.ts` can write determini
 
 ```ts
 import { pythonBin, isWin } from './platform';
-import {
-  DEFAULT_STATUSLINE_STALE_MS,
-  fallbackQuotaStatus,
-} from './statusline-format';
+import { DEFAULT_STATUSLINE_STALE_MS, fallbackQuotaStatus } from './statusline-format';
 
 export const STATUSLINE_PYTHON_HELPER = 'statusline.py';
 
@@ -384,18 +388,18 @@ export function buildStatusLineWrapper(pythonPath: string, logPath: string): str
 Update `src/main/hook-status.ts` so the stable wrapper path stays the same while the heavy logic moves into the managed Python helper:
 
 ```ts
-import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from './statusline-template';
+import {
+  buildStatusLinePython,
+  buildStatusLineWrapper,
+  STATUSLINE_PYTHON_HELPER,
+} from './statusline-template';
 
 const STATUSLINE_PYTHON_PATH = path.join(STATUS_DIR, STATUSLINE_PYTHON_HELPER);
 
 export function installStatusLineScript(): void {
   fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
 
-  fs.writeFileSync(
-    STATUSLINE_PYTHON_PATH,
-    buildStatusLinePython(STATUS_DIR),
-    { mode: 0o755 },
-  );
+  fs.writeFileSync(STATUSLINE_PYTHON_PATH, buildStatusLinePython(STATUS_DIR), { mode: 0o755 });
 
   fs.writeFileSync(
     STATUSLINE_SCRIPT,
@@ -421,6 +425,7 @@ git commit -m "generate managed hybrid statusline runtime"
 ### Task 3: Add Honest Provider Cache Refresh and Cache Cleanup
 
 **Files:**
+
 - Modify: `src/main/statusline-format.ts`
 - Modify: `src/main/statusline-template.ts`
 - Modify: `src/main/hook-status.ts`
@@ -444,9 +449,9 @@ it('uses provider-specific cache file names', () => {
 // src/main/statusline-template.test.ts
 it('seeds honest fallback snapshots for unsupported or syncing providers', () => {
   const py = buildStatusLinePython('/tmp/calder');
-  expect(py).toContain("calder:no-supported-anthropic-quota-api");
-  expect(py).toContain("zai:quota-surface-pending");
-  expect(py).toContain("subprocess.Popen");
+  expect(py).toContain('calder:no-supported-anthropic-quota-api');
+  expect(py).toContain('zai:quota-surface-pending');
+  expect(py).toContain('subprocess.Popen');
 });
 ```
 
@@ -486,7 +491,7 @@ export function getProviderQuotaCacheFile(provider: StatuslineProvider): string 
 Fill in `src/main/statusline-template.ts` so the Python helper writes honest fallback snapshots and refreshes in the background without blocking render:
 
 ```ts
-  return `import json, os, subprocess, sys, time
+return `import json, os, subprocess, sys, time
 CONFIG = json.loads(r'''${config}''')
 STATUS_DIR = r'''${statusDir}'''
 REFRESH_LOCK = os.path.join(STATUS_DIR, 'statusline.refresh.lock')
@@ -584,9 +589,11 @@ Update `src/main/hook-status.ts` cleanup logic so cache artifacts are removed on
 
 ```ts
 function isStatuslineArtifact(filename: string): boolean {
-  return filename.endsWith('.quota.json')
-    || filename === 'statusline.refresh.lock'
-    || filename === 'statusline.log';
+  return (
+    filename.endsWith('.quota.json') ||
+    filename === 'statusline.refresh.lock' ||
+    filename === 'statusline.log'
+  );
 }
 
 export function cleanupAll(): void {
@@ -599,11 +606,21 @@ export function cleanupAll(): void {
   try {
     const files = fs.readdirSync(STATUS_DIR);
     for (const file of files) {
-      if (isKnownExtension(file) || isStatuslineArtifact(file) || file.endsWith('.py') || file.endsWith('.cmd') || file.endsWith('.sh')) {
-        try { fs.unlinkSync(path.join(STATUS_DIR, file)); } catch {}
+      if (
+        isKnownExtension(file) ||
+        isStatuslineArtifact(file) ||
+        file.endsWith('.py') ||
+        file.endsWith('.cmd') ||
+        file.endsWith('.sh')
+      ) {
+        try {
+          fs.unlinkSync(path.join(STATUS_DIR, file));
+        } catch {}
       }
     }
-    try { fs.rmSync(STATUS_DIR, { recursive: true }); } catch {}
+    try {
+      fs.rmSync(STATUS_DIR, { recursive: true });
+    } catch {}
   } catch {}
 }
 ```
@@ -624,6 +641,7 @@ git commit -m "add honest provider quota cache handling"
 ### Task 4: Pin Settings and Claude Provider Compatibility Around the Stable Wrapper Path
 
 **Files:**
+
 - Modify: `src/main/claude-cli.test.ts`
 - Modify: `src/main/settings-guard.test.ts`
 - Modify: `src/main/providers/claude-provider.test.ts`
@@ -720,6 +738,7 @@ git commit -m "pin hybrid statusline integration contracts"
 ### Task 5: Verify End-to-End Behavior and Manual Smoke Cases
 
 **Files:**
+
 - Modify: `src/main/statusline-template.ts`
 - Modify: `src/main/hook-status.ts`
 
@@ -750,6 +769,7 @@ Expected: PASS with `tsc`, renderer bundling, and `copy-assets` succeeding.
 Run: `npm start`
 
 Expected manual results:
+
 - open a Claude session on a Claude model and confirm line 1 includes `Anthropic`
 - confirm line 2 shows `5h unsupported` or `5h unknown`, `Week unsupported` or `Week unknown`, and a final freshness badge such as `Live`
 - switch to a `glm-*` model and confirm line 1 flips to `Z.ai`

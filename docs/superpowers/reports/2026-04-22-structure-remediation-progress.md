@@ -197,37 +197,39 @@ Scope: Sequential execution progress for project structure/foldering debt.
     - `src/renderer/components/session-inspector/session-inspector-timeline.test.ts`
 
 23. **Calder mobile app decomposition (P1)**
-   - Refactored:
-     - `apps/calder-mobile/App.tsx`
-   - Extracted mobile app internals into dedicated modules:
-     - `apps/calder-mobile/src/app/types.ts`
-     - `apps/calder-mobile/src/app/copy.ts`
-     - `apps/calder-mobile/src/app/live-bridge.ts`
-     - `apps/calder-mobile/src/app/styles.ts`
-     - `apps/calder-mobile/src/app/use-mobile-controller.ts`
-     - `apps/calder-mobile/src/app/mobile-tab-panel.tsx`
-   - Result:
-     - App shell became orchestrator-first.
-     - Mobile interaction logic moved into dedicated controller + tab-panel modules.
-     - `apps/calder-mobile/App.tsx` reduced to a thin container (`122` lines).
+
+- Refactored:
+  - `apps/calder-mobile/App.tsx`
+- Extracted mobile app internals into dedicated modules:
+  - `apps/calder-mobile/src/app/types.ts`
+  - `apps/calder-mobile/src/app/copy.ts`
+  - `apps/calder-mobile/src/app/live-bridge.ts`
+  - `apps/calder-mobile/src/app/styles.ts`
+  - `apps/calder-mobile/src/app/use-mobile-controller.ts`
+  - `apps/calder-mobile/src/app/mobile-tab-panel.tsx`
+- Result:
+  - App shell became orchestrator-first.
+  - Mobile interaction logic moved into dedicated controller + tab-panel modules.
+  - `apps/calder-mobile/App.tsx` reduced to a thin container (`122` lines).
 
 24. **Parallel monolith closure wave with subagents (P0/P1)**
-   - Completed in one parallel pass across desktop + mobile ownership slices.
-   - Function-size closures achieved:
-     - `useMobileController`: `386 -> 163` lines
-     - `createTabBarCliUpdatePanel`: `289 -> 114` lines
-     - `createCustomSelect`: `279 -> 229` lines
-     - `createCliSurfaceRuntimeManager`: `264 -> 147` lines
-     - `startShare`: `262 -> 67` lines
-     - `renderProjectContextSection`: `258 -> 34` lines
-     - `installMobileDependency`: `255 -> 59` lines
-     - `showSessionTabContextMenu`: `254 -> 247` lines
-   - New helper modules added:
-     - `apps/calder-mobile/src/app/use-mobile-controller-live-actions.ts`
-     - `apps/calder-mobile/src/app/use-mobile-controller-session-bridge.ts`
-     - `src/main/cli-surface-runtime-helpers.ts`
-   - Result:
-     - `code-review-graph find_large_functions(min_lines=250)` now reports **0** remaining functions.
+
+- Completed in one parallel pass across desktop + mobile ownership slices.
+- Function-size closures achieved:
+  - `useMobileController`: `386 -> 163` lines
+  - `createTabBarCliUpdatePanel`: `289 -> 114` lines
+  - `createCustomSelect`: `279 -> 229` lines
+  - `createCliSurfaceRuntimeManager`: `264 -> 147` lines
+  - `startShare`: `262 -> 67` lines
+  - `renderProjectContextSection`: `258 -> 34` lines
+  - `installMobileDependency`: `255 -> 59` lines
+  - `showSessionTabContextMenu`: `254 -> 247` lines
+- New helper modules added:
+  - `apps/calder-mobile/src/app/use-mobile-controller-live-actions.ts`
+  - `apps/calder-mobile/src/app/use-mobile-controller-session-bridge.ts`
+  - `src/main/cli-surface-runtime-helpers.ts`
+- Result:
+  - `code-review-graph find_large_functions(min_lines=250)` now reports **0** remaining functions.
 
 ## Metric impact
 

@@ -18,9 +18,10 @@ export function setProjectDomainState<K extends ProjectDomainStateKey>(
     previous: ProjectRecord[K],
   ) => ProjectRecord[K],
 ): boolean {
-  const nextState = incoming === undefined
-    ? undefined
-    : normalize(incoming as NonNullable<ProjectRecord[K]>, project[key]);
+  const nextState =
+    incoming === undefined
+      ? undefined
+      : normalize(incoming as NonNullable<ProjectRecord[K]>, project[key]);
 
   const before = JSON.stringify(project[key] ?? null);
   const after = JSON.stringify(nextState ?? null);

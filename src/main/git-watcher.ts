@@ -4,7 +4,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const DEBOUNCE_MS = 300;
-const IGNORE_SEGMENTS = new Set(['.git', 'node_modules', 'dist', 'build', '.next', '.cache', 'coverage', '__pycache__']);
+const IGNORE_SEGMENTS = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  'build',
+  '.next',
+  '.cache',
+  'coverage',
+  '__pycache__',
+]);
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let dirWatchers: fs.FSWatcher[] = [];
@@ -42,15 +51,20 @@ function watchDir(dirPath: string, shouldSkip?: (filename: string | null) => boo
 
 function resolveGitDir(projectPath: string): Promise<string> {
   return new Promise((resolve) => {
-    execFile('git', ['rev-parse', '--git-dir'], { cwd: projectPath, timeout: 3000 }, (err, stdout) => {
-      if (err) {
-        resolve(path.join(projectPath, '.git'));
-        return;
-      }
-      const gitDir = stdout.trim();
-      // Could be absolute or relative
-      resolve(path.isAbsolute(gitDir) ? gitDir : path.join(projectPath, gitDir));
-    });
+    execFile(
+      'git',
+      ['rev-parse', '--git-dir'],
+      { cwd: projectPath, timeout: 3000 },
+      (err, stdout) => {
+        if (err) {
+          resolve(path.join(projectPath, '.git'));
+          return;
+        }
+        const gitDir = stdout.trim();
+        // Could be absolute or relative
+        resolve(path.isAbsolute(gitDir) ? gitDir : path.join(projectPath, gitDir));
+      },
+    );
   });
 }
 

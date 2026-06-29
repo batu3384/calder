@@ -5,22 +5,16 @@ import { sendText } from './http';
 import type { PairingRecord } from './model';
 import { safeCompareToken, verifyPairingToken } from './rate-limit';
 import type { PairingPostHandlersConfig } from './routes-post-shared';
-import {
-  failExpiredPairing,
-  failRateLimited,
-  parsePairingBody,
-} from './routes-post-shared';
+import { failExpiredPairing, failRateLimited, parsePairingBody } from './routes-post-shared';
 import {
   decodeShareConnectionCode,
   encodeShareConnectionDescription,
   normalizeShareConnectionDescription,
 } from './security';
 
-export function createAnswerPostHandler(config: PairingPostHandlersConfig): (
-  record: PairingRecord,
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-) => Promise<void> {
+export function createAnswerPostHandler(
+  config: PairingPostHandlersConfig,
+): (record: PairingRecord, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void> {
   return async function handleAnswerRequest(
     record: PairingRecord,
     req: http.IncomingMessage,
@@ -28,7 +22,17 @@ export function createAnswerPostHandler(config: PairingPostHandlersConfig): (
   ): Promise<void> {
     const copy = getMobileCopy(record.language);
     if (failExpiredPairing(record, res)) return;
-    if (failRateLimited(record, req, res, 'answer', config.rateLimit, copy.serverMessage.tooManyAnswerSubmissions)) return;
+    if (
+      failRateLimited(
+        record,
+        req,
+        res,
+        'answer',
+        config.rateLimit,
+        copy.serverMessage.tooManyAnswerSubmissions,
+      )
+    )
+      return;
 
     const body = await parsePairingBody<{
       token?: unknown;
@@ -50,9 +54,9 @@ export function createAnswerPostHandler(config: PairingPostHandlersConfig): (
       return;
     }
     if (
-      typeof body.submitToken !== 'string'
-      || !record.submitToken
-      || !safeCompareToken(record.submitToken, body.submitToken)
+      typeof body.submitToken !== 'string' ||
+      !record.submitToken ||
+      !safeCompareToken(record.submitToken, body.submitToken)
     ) {
       sendText(res, 403, copy.serverMessage.submitTokenInvalid);
       return;
@@ -69,7 +73,10 @@ export function createAnswerPostHandler(config: PairingPostHandlersConfig): (
         return;
       }
     } else {
-      const answerDescription = normalizeShareConnectionDescription(body.answerDescription, 'answer');
+      const answerDescription = normalizeShareConnectionDescription(
+        body.answerDescription,
+        'answer',
+      );
       if (answerDescription) {
         answerCode = encodeShareConnectionDescription(answerDescription, record.passphrase);
       }

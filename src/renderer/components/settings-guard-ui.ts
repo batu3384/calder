@@ -1,6 +1,6 @@
 import { isTrackingHealthy } from '../../shared/tracking-health.js';
 import type { SettingsWarningData } from '../../shared/types/provider';
-import { removeAlertBanner,showAlertBanner } from './alert-banner.js';
+import { removeAlertBanner, showAlertBanner } from './alert-banner.js';
 import { showStatusLineConflictModal } from './statusline-conflict-modal.js';
 
 let initialized = false;
@@ -23,13 +23,15 @@ export function initSettingsGuard(): void {
 
     let message: string;
     if (hasStatusLineIssue && hasHooksIssue) {
-      message = 'Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.';
+      message =
+        'Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.';
     } else if (hasStatusLineIssue) {
-      message = data.statusLine === 'foreign'
-        ? 'Tracking is off for this coding tool because another status line command is installed. Calder cannot show cost or context usage.'
-        : 'Tracking is off for this coding tool. Calder cannot show cost or context usage until its status line is enabled.';
+      message =
+        data.statusLine === 'foreign'
+          ? 'Tracking is off for this coding tool because another status line command is installed. Calder cannot show cost or context usage.'
+          : 'Tracking is off for this coding tool. Calder cannot show cost or context usage until its status line is enabled.';
     } else {
-      message = 'Activity tracking is off for this coding tool because Calder\'s hooks are missing.';
+      message = "Activity tracking is off for this coding tool because Calder's hooks are missing.";
     }
 
     showAlertBanner({

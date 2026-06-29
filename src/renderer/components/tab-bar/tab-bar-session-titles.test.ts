@@ -21,13 +21,17 @@ describe('tab-bar-session-titles', () => {
 
   it('builds CLI tab title from status tooltip', () => {
     const session = makeCliSession({ name: 'Chat', cliSessionId: 'cli-1' });
-    expect(buildSessionTabTitle(session, 'working')).toBe('Status: working\nSession: cli-1\nDrag to reorder');
+    expect(buildSessionTabTitle(session, 'working')).toBe(
+      'Status: working\nSession: cli-1\nDrag to reorder',
+    );
   });
 
   it('builds browser and remote titles', () => {
     const browser = makeCliSession({ type: 'browser-tab', browserTabUrl: 'https://example.com' });
     const remote = makeCliSession({ type: 'remote-terminal', remoteHostName: 'Host A' });
-    expect(buildSessionTabTitle(browser, 'idle')).toBe('Browser: https://example.com\nDrag to reorder');
+    expect(buildSessionTabTitle(browser, 'idle')).toBe(
+      'Browser: https://example.com\nDrag to reorder',
+    );
     expect(buildSessionTabTitle(remote, 'idle')).toBe('Remote: Host A\nDrag to reorder');
   });
 

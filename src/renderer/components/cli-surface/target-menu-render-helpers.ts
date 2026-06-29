@@ -35,7 +35,9 @@ export function buildCliTargetButtonLabel(label: string | undefined): string {
 }
 
 export function getCliProviderLabel(providerId: string): string {
-  const displayName = getProviderDisplayName(providerId as Parameters<typeof getProviderDisplayName>[0]);
+  const displayName = getProviderDisplayName(
+    providerId as Parameters<typeof getProviderDisplayName>[0],
+  );
   if (displayName !== providerId) return displayName;
   return providerId.charAt(0).toUpperCase() + providerId.slice(1);
 }
@@ -122,7 +124,8 @@ export function renderCliTargetMenuList(args: RenderCliTargetMenuListArgs): void
 
       if (activeSessionId === session.id) {
         const activeBadge = document.createElement('span');
-        activeBadge.className = 'cli-surface-target-session-badge cli-surface-target-session-badge-active';
+        activeBadge.className =
+          'cli-surface-target-session-badge cli-surface-target-session-badge-active';
         activeBadge.textContent = 'Active';
         badges.appendChild(activeBadge);
       }
@@ -176,16 +179,10 @@ export function renderCliTargetMenuList(args: RenderCliTargetMenuListArgs): void
 }
 
 export function syncCliTargetControls(args: SyncCliTargetControlsArgs): void {
-  const {
-    composerEl,
-    selectedButton,
-    newButton,
-    customButton,
-    selectedTarget,
-    payloadReady,
-  } = args;
+  const { composerEl, selectedButton, newButton, customButton, selectedTarget, payloadReady } =
+    args;
   const selectedProviderId: ProviderId | undefined = selectedTarget
-    ? selectedTarget.providerId ?? 'claude'
+    ? (selectedTarget.providerId ?? 'claude')
     : undefined;
   const hasTarget = Boolean(selectedTarget);
 

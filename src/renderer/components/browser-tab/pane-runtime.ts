@@ -75,7 +75,9 @@ interface BrowserInstanceCreationParams {
   capture: BrowserPaneCaptureArtifacts;
 }
 
-export function createBrowserTabInstance(params: BrowserInstanceCreationParams): BrowserTabInstance {
+export function createBrowserTabInstance(
+  params: BrowserInstanceCreationParams,
+): BrowserTabInstance {
   const {
     sessionId,
     url,
@@ -185,10 +187,19 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     recordNavigationStep,
   } = params;
 
-  webview.addEventListener('before-input-event', ((e: CustomEvent & {
-    preventDefault(): void;
-    input: { type: string; key: string; shift: boolean; control: boolean; alt: boolean; meta: boolean };
-  }) => {
+  webview.addEventListener('before-input-event', ((
+    e: CustomEvent & {
+      preventDefault(): void;
+      input: {
+        type: string;
+        key: string;
+        shift: boolean;
+        control: boolean;
+        alt: boolean;
+        meta: boolean;
+      };
+    },
+  ) => {
     if (e.input.type !== 'keyDown') return;
     if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l') {
       e.preventDefault();
@@ -263,7 +274,10 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     if (instance.flowMode) void sendGuestMessage(instance.webview, 'enter-flow-mode');
     if (instance.drawMode) void sendGuestMessage(instance.webview, 'enter-draw-mode');
     void authController.maybeAutoFillCredentials().catch((error) => {
-      authController.setStatus(error instanceof Error ? error.message : 'Auto-fill failed.', 'error');
+      authController.setStatus(
+        error instanceof Error ? error.message : 'Auto-fill failed.',
+        'error',
+      );
     });
     syncNavigationControls();
     syncAddressBarState();
@@ -287,12 +301,14 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
     handleCommittedNavigation(e.url);
   }) as EventListener);
 
-  webview.addEventListener('did-fail-load', ((e: Event & {
-    isMainFrame?: boolean;
-    validatedURL?: string;
-    errorCode?: number;
-    errorDescription?: string;
-  }) => {
+  webview.addEventListener('did-fail-load', ((
+    e: Event & {
+      isMainFrame?: boolean;
+      validatedURL?: string;
+      errorCode?: number;
+      errorDescription?: string;
+    },
+  ) => {
     const normalizedError = e.errorDescription?.toUpperCase() ?? '';
     if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;
     if (e.isMainFrame === false) return;
@@ -312,7 +328,11 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
       // Keep the failed URL visible in the address bar while stopping the
       // guest view, instead of bouncing through about:blank and emitting
       // another noisy Electron load failure.
-      try { webview.stop(); } catch { /* webview may already be stopped */ }
+      try {
+        webview.stop();
+      } catch {
+        /* webview may already be stopped */
+      }
     }
     clearPendingNavigation(instance);
   }) as EventListener);
@@ -325,14 +345,26 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
 
   webview.addEventListener('ipc-message', ((e: Event & { channel: string; args: unknown[] }) => {
     if (e.channel === 'element-selected') {
-      const { metadata, x, y } = e.args[0] as { metadata: Omit<ElementInfo, 'activeSelector'>; x: number; y: number };
+      const { metadata, x, y } = e.args[0] as {
+        metadata: Omit<ElementInfo, 'activeSelector'>;
+        x: number;
+        y: number;
+      };
       const info: ElementInfo = {
         ...metadata,
-        activeSelector: metadata.selectors[0] ?? { type: 'css', label: 'css', value: metadata.tagName },
+        activeSelector: metadata.selectors[0] ?? {
+          type: 'css',
+          label: 'css',
+          value: metadata.tagName,
+        },
       };
       showElementInfo(instance, info, x, y);
     } else if (e.channel === 'flow-element-picked') {
-      const { metadata, x, y } = e.args[0] as { metadata: FlowPickerMetadata; x: number; y: number };
+      const { metadata, x, y } = e.args[0] as {
+        metadata: FlowPickerMetadata;
+        x: number;
+        y: number;
+      };
       showFlowPicker(instance, metadata, x, y);
     } else if (e.channel === 'draw-stroke-end') {
       const { x, y } = e.args[0] as { x: number; y: number };

@@ -12,11 +12,14 @@ interface ProviderIpcOps {
 export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
   const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
 
-  ipcMain.handle('provider:getConfig', async (_event, providerId: ProviderId, projectPath: string) => {
-    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Load provider config');
-    const provider = getProvider(providerId);
-    return provider.getConfig(validatedProjectPath);
-  });
+  ipcMain.handle(
+    'provider:getConfig',
+    async (_event, providerId: ProviderId, projectPath: string) => {
+      const validatedProjectPath = requireKnownProjectPath(projectPath, 'Load provider config');
+      const provider = getProvider(providerId);
+      return provider.getConfig(validatedProjectPath);
+    },
+  );
 
   // Backward compatibility alias
   ipcMain.handle('claude:getConfig', async (_event, projectPath: string) => {
@@ -58,26 +61,35 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
     return getAllProviderMetas();
   });
 
-  ipcMain.handle('session:buildResumeWithPrompt', async (
-    _event,
-    sourceProviderId: ProviderId,
-    sourceCliSessionId: string | null,
-    projectPath: string,
-    sessionName: string,
-  ) => {
-    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Build session handoff prompt');
-    const sourceProvider = getProvider(sourceProviderId);
-    const fromProviderLabel = sourceProvider.meta.displayName;
-    let transcriptPath: string | null = null;
-    if (sourceCliSessionId && sourceProvider.getTranscriptPath) {
-      try {
-        transcriptPath = sourceProvider.getTranscriptPath(sourceCliSessionId, validatedProjectPath);
-      } catch (error) {
-        console.warn('getTranscriptPath failed:', error);
+  ipcMain.handle(
+    'session:buildResumeWithPrompt',
+    async (
+      _event,
+      sourceProviderId: ProviderId,
+      sourceCliSessionId: string | null,
+      projectPath: string,
+      sessionName: string,
+    ) => {
+      const validatedProjectPath = requireKnownProjectPath(
+        projectPath,
+        'Build session handoff prompt',
+      );
+      const sourceProvider = getProvider(sourceProviderId);
+      const fromProviderLabel = sourceProvider.meta.displayName;
+      let transcriptPath: string | null = null;
+      if (sourceCliSessionId && sourceProvider.getTranscriptPath) {
+        try {
+          transcriptPath = sourceProvider.getTranscriptPath(
+            sourceCliSessionId,
+            validatedProjectPath,
+          );
+        } catch (error) {
+          console.warn('getTranscriptPath failed:', error);
+        }
       }
-    }
-    return buildHandoffPrompt({ fromProviderLabel, sessionName, transcriptPath });
-  });
+      return buildHandoffPrompt({ fromProviderLabel, sessionName, transcriptPath });
+    },
+  );
 
   ipcMain.handle('provider:checkBinary', (_event, providerId: ProviderId = 'claude') => {
     const provider = getProvider(providerId);

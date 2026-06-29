@@ -5,8 +5,15 @@ import {
 } from '../../project-context-prompt.js';
 import { appState } from '../../state.js';
 import type { ProviderId } from '../../types.js';
-import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
+import {
+  deliverSurfacePrompt,
+  queueSurfacePromptInCustomSession,
+  queueSurfacePromptInNewSession,
+} from '../surface-routing.js';
+import {
+  getProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch,
+} from '../surface-services/provider-availability.js';
 import { buildFlowPrompt, dismissFlow } from './flow-recording.js';
 import { buildPrompt, dismissInspect } from './inspect-mode.js';
 import type { BrowserTabInstance } from './types.js';
@@ -16,12 +23,18 @@ function hideSendError(errorEl: { textContent: string; style: { display: string 
   errorEl.style.display = 'none';
 }
 
-function showSendError(errorEl: { textContent: string; style: { display: string } }, message: string): void {
+function showSendError(
+  errorEl: { textContent: string; style: { display: string } },
+  message: string,
+): void {
   errorEl.textContent = message;
   errorEl.style.display = 'block';
 }
 
-function showContextTrace(traceEl: { textContent: string; style: { display: string } }, contextLines: string[]): void {
+function showContextTrace(
+  traceEl: { textContent: string; style: { display: string } },
+  contextLines: string[],
+): void {
   traceEl.textContent = `Applied context:\n${contextLines.join('\n')}`;
   traceEl.style.display = 'block';
 }
@@ -68,7 +81,13 @@ export async function sendFlowToSelectedSession(instance: BrowserTabInstance): P
   const prompt = buildFlowPrompt(instance);
   if (!prompt) return;
   hideSendError(instance.flowErrorEl);
-  await sendPromptToSelectedSession(instance, prompt, () => dismissFlow(instance), instance.flowErrorEl, instance.flowContextTraceEl);
+  await sendPromptToSelectedSession(
+    instance,
+    prompt,
+    () => dismissFlow(instance),
+    instance.flowErrorEl,
+    instance.flowContextTraceEl,
+  );
 }
 
 export function sendFlowToNewSession(instance: BrowserTabInstance): void {
@@ -79,10 +98,7 @@ export function sendFlowToNewSession(instance: BrowserTabInstance): void {
   if (!project) return;
   const launchProvider = getPreferredLaunchProvider();
   const appliedContext = buildBrowserAppliedContext(launchProvider);
-  const routedPrompt = appendAppliedContextToPrompt(
-    prompt,
-    appliedContext,
-  );
+  const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
   showContextTrace(instance.flowContextTraceEl, formatAppliedContextTrace(appliedContext));
 
   queueSurfacePromptInNewSession(
@@ -102,9 +118,13 @@ export function sendFlowToCustomSession(instance: BrowserTabInstance): void {
   const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
   showContextTrace(instance.flowContextTraceEl, formatAppliedContextTrace(appliedContext));
 
-  queueSurfacePromptInCustomSession(routedPrompt, () => {
-    dismissFlow(instance);
-  }, project?.id);
+  queueSurfacePromptInCustomSession(
+    routedPrompt,
+    () => {
+      dismissFlow(instance);
+    },
+    project?.id,
+  );
 }
 
 export async function sendToSelectedSession(instance: BrowserTabInstance): Promise<void> {
@@ -130,10 +150,7 @@ export function sendToNewSession(instance: BrowserTabInstance): void {
   if (!project) return;
   const launchProvider = getPreferredLaunchProvider();
   const appliedContext = buildBrowserAppliedContext(launchProvider);
-  const routedPrompt = appendAppliedContextToPrompt(
-    prompt,
-    appliedContext,
-  );
+  const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
   showContextTrace(instance.inspectContextTraceEl, formatAppliedContextTrace(appliedContext));
 
   queueSurfacePromptInNewSession(
@@ -153,7 +170,11 @@ export function sendToCustomSession(instance: BrowserTabInstance): void {
   const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
   showContextTrace(instance.inspectContextTraceEl, formatAppliedContextTrace(appliedContext));
 
-  queueSurfacePromptInCustomSession(routedPrompt, () => {
-    dismissInspect(instance);
-  }, project?.id);
+  queueSurfacePromptInCustomSession(
+    routedPrompt,
+    () => {
+      dismissInspect(instance);
+    },
+    project?.id,
+  );
 }

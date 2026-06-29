@@ -1,9 +1,15 @@
-import type { CliSurfaceRuntimeState, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceRuntimeState,
+  SurfaceSelectionRange,
+} from '../../../shared/types/project-surface.js';
 import type { CliSurfaceInstance } from './pane-instance.js';
 import type { CliSurfacePaneStore } from './pane-store.js';
 import type { CalderProtocolMessage } from './protocol.js';
 import { extractCalderOscMessages } from './protocol.js';
-import { attachCliSurfaceRuntimeBindings, attachCliSurfaceStateBindings } from './runtime-bindings.js';
+import {
+  attachCliSurfaceRuntimeBindings,
+  attachCliSurfaceStateBindings,
+} from './runtime-bindings.js';
 import {
   getSemanticBucket as getSemanticBucketBehavior,
   normalizeSemanticAdapterHint as normalizeSemanticAdapterHintBehavior,
@@ -32,7 +38,10 @@ interface AttachCliSurfacePaneBindingsOptions {
   store: CliSurfacePaneStore;
   renderRuntimeMeta(instance: CliSurfaceInstance): void;
   renderInspectState(instance: CliSurfaceInstance): void;
-  setInspectPayloadFromSelection(instance: CliSurfaceInstance, selection: SurfaceSelectionRange): void;
+  setInspectPayloadFromSelection(
+    instance: CliSurfaceInstance,
+    selection: SurfaceSelectionRange,
+  ): void;
   scheduleTerminalDataFlush(instance: CliSurfaceInstance): void;
   updateRuntimeState(projectId: string, state: CliSurfaceRuntimeState): void;
   getRuntimeState(projectId: string): CliSurfaceRuntimeState | undefined;
@@ -60,9 +69,10 @@ export function attachCliSurfacePaneBindings(options: AttachCliSurfacePaneBindin
             bucket.set(message.nodeId, message);
             options.store.semanticFocusNodes.set(projectId, bucket);
           } else {
-            const store = message.type === 'state'
-              ? options.store.semanticStateNodes
-              : options.store.semanticNodes;
+            const store =
+              message.type === 'state'
+                ? options.store.semanticStateNodes
+                : options.store.semanticNodes;
             getSemanticBucketBehavior(store, projectId).set(message.nodeId, message);
           }
           const adapterHint = normalizeSemanticAdapterHintBehavior(message.meta?.framework);
@@ -80,7 +90,8 @@ export function attachCliSurfacePaneBindings(options: AttachCliSurfacePaneBindin
       if (!instance) return;
       if (messages.length > 0) {
         options.renderRuntimeMeta(instance);
-        const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
+        const selection =
+          instance.inspectState.selection ?? instance.inspectState.payload?.selection;
         if (selection) {
           options.setInspectPayloadFromSelection(instance, selection);
         }

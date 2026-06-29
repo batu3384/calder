@@ -25,10 +25,12 @@ function readMcpServersFromJson(filePath: string, scope: 'user' | 'project'): Mc
   const json = readJsonSafe(filePath);
   if (!json || typeof json !== 'object') return [];
 
-  const rawServers = (
-    ('mcpServers' in json && typeof json.mcpServers === 'object' && json.mcpServers)
-    || ('servers' in json && typeof json.servers === 'object' && json.servers)
-  ) as Record<string, Record<string, unknown>> | undefined;
+  const rawServers = (('mcpServers' in json &&
+    typeof json.mcpServers === 'object' &&
+    json.mcpServers) ||
+    ('servers' in json && typeof json.servers === 'object' && json.servers)) as
+    | Record<string, Record<string, unknown>>
+    | undefined;
 
   if (!rawServers) return [];
 
@@ -61,12 +63,14 @@ function readSkillsFromRoot(dirPath: string, scope: 'user' | 'project'): Skill[]
 function readConfiguredSkillRoots(copilotDir: string): string[] {
   const config = readJsonSafe(path.join(copilotDir, 'config.json'));
   const configured = Array.isArray(config?.skillDirectories)
-    ? config.skillDirectories.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    ? config.skillDirectories.filter(
+        (value): value is string => typeof value === 'string' && value.trim().length > 0,
+      )
     : [];
 
   const envConfigured = (process.env.COPILOT_CUSTOM_INSTRUCTIONS_DIRS || '')
     .split(path.delimiter)
-    .map(value => value.trim())
+    .map((value) => value.trim())
     .filter(Boolean);
 
   const seen = new Set<string>();
@@ -94,7 +98,7 @@ export async function getCopilotConfig(projectPath: string): Promise<ProviderCon
   const skillGroups = [
     readSkillsFromRoot(path.join(copilotDir, 'skills'), 'user'),
     readSkillsFromRoot(path.join(projectPath, '.github', 'skills'), 'project'),
-    ...readConfiguredSkillRoots(copilotDir).map(dirPath => readSkillsFromRoot(dirPath, 'user')),
+    ...readConfiguredSkillRoots(copilotDir).map((dirPath) => readSkillsFromRoot(dirPath, 'user')),
   ];
 
   for (const group of skillGroups) {

@@ -46,7 +46,9 @@ describe('ipc path policy helpers', () => {
   });
 
   it('enforces known project path requirement', () => {
-    expect(requireKnownProjectPath('/repo/main/src', 'Test op')).toBe(path.resolve('/repo/main/src'));
+    expect(requireKnownProjectPath('/repo/main/src', 'Test op')).toBe(
+      path.resolve('/repo/main/src'),
+    );
     expect(() => requireKnownProjectPath('/repo/elsewhere', 'Test op')).toThrow(
       'Test op requires a known project path',
     );

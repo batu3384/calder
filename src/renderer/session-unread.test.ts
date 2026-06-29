@@ -12,7 +12,9 @@ const { statusChangeCallbacks, eventCallbacks, mockAppState } = vi.hoisted(() =>
 }));
 
 vi.mock('./session-activity', () => ({
-  onChange: (cb: (sessionId: string, status: string) => void) => { statusChangeCallbacks.push(cb); },
+  onChange: (cb: (sessionId: string, status: string) => void) => {
+    statusChangeCallbacks.push(cb);
+  },
   getStatus: vi.fn(),
 }));
 
@@ -70,7 +72,9 @@ function setupProjects(): void {
       layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
     },
   ] as ProjectRecord[];
-  mockAppState.activeProject = mockAppState.projects.find((project) => project.id === mockAppState.activeProjectId);
+  mockAppState.activeProject = mockAppState.projects.find(
+    (project) => project.id === mockAppState.activeProjectId,
+  );
 }
 
 function simulateStatusChange(sessionId: string, status: string): void {
@@ -112,10 +116,7 @@ describe('session-unread', () => {
         id: 'p1',
         name: 'Project 1',
         path: '/tmp/p1',
-        sessions: [
-          makeSession('s1', 'Session 1'),
-          makeSession('s2', 'Session 2'),
-        ],
+        sessions: [makeSession('s1', 'Session 1'), makeSession('s2', 'Session 2')],
         activeSessionId: 's1', // s1 is active, not s2
         layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
       },

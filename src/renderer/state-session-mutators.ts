@@ -1,7 +1,10 @@
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { InitialContextSnapshot } from '../shared/types/session.js';
 
-export function addInsightSnapshotToProject(project: ProjectRecord, snapshot: InitialContextSnapshot): void {
+export function addInsightSnapshotToProject(
+  project: ProjectRecord,
+  snapshot: InitialContextSnapshot,
+): void {
   if (!project.insights) {
     project.insights = { initialContextSnapshots: [], dismissed: [] };
   }
@@ -24,7 +27,11 @@ export function isInsightDismissedForProject(project: ProjectRecord, insightId: 
   return project.insights?.dismissed.includes(insightId) ?? false;
 }
 
-export function reorderProjectSession(project: ProjectRecord, sessionId: string, toIndex: number): boolean {
+export function reorderProjectSession(
+  project: ProjectRecord,
+  sessionId: string,
+  toIndex: number,
+): boolean {
   const fromIndex = project.sessions.findIndex((session) => session.id === sessionId);
   if (fromIndex === -1 || fromIndex === toIndex) return false;
 

@@ -16,7 +16,7 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('../full-path', () => ({
-  getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
+  getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
 vi.mock('../copilot-config', () => ({
@@ -38,7 +38,7 @@ import * as fs from 'fs';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
-import { _resetCachedPath,CopilotProvider } from './copilot-provider';
+import { _resetCachedPath, CopilotProvider } from './copilot-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
@@ -128,7 +128,12 @@ describe('buildArgs', () => {
   });
 
   it('starts interactively with the initial prompt via -i', () => {
-    const args = provider.buildArgs({ cliSessionId: null, isResume: false, extraArgs: '', initialPrompt: 'fix the bug' });
+    const args = provider.buildArgs({
+      cliSessionId: null,
+      isResume: false,
+      extraArgs: '',
+      initialPrompt: 'fix the bug',
+    });
     expect(args).toEqual(['-i', 'fix the bug']);
   });
 
@@ -139,18 +144,37 @@ describe('buildArgs', () => {
       extraArgs: '--agent coding-agent --output-format json',
       initialPrompt: 'fix the bug',
     });
-    expect(args).toEqual(['--agent', 'coding-agent', '--output-format', 'json', '-i', 'fix the bug']);
+    expect(args).toEqual([
+      '--agent',
+      'coding-agent',
+      '--output-format',
+      'json',
+      '-i',
+      'fix the bug',
+    ]);
   });
 });
 
 describe('settings and config', () => {
   it('reports hook/status tracking as unavailable for now', () => {
-    expect(provider.validateSettings()).toEqual({ statusLine: 'missing', hooks: 'missing', hookDetails: {} });
+    expect(provider.validateSettings()).toEqual({
+      statusLine: 'missing',
+      hooks: 'missing',
+      hookDetails: {},
+    });
   });
 
   it('returns parsed provider config', async () => {
     const config = {
-      mcpServers: [{ name: 'github', url: 'docker', status: 'configured', scope: 'user' as const, filePath: '/tmp/mcp-config.json' }],
+      mcpServers: [
+        {
+          name: 'github',
+          url: 'docker',
+          status: 'configured',
+          scope: 'user' as const,
+          filePath: '/tmp/mcp-config.json',
+        },
+      ],
       agents: [],
       skills: [],
       commands: [],

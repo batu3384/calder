@@ -14,7 +14,12 @@ describe('tab-bar-cli-surface-profile-utils', () => {
     });
 
     it('parses quoted and unquoted arguments', () => {
-      expect(parseCliSurfaceArgs(`-m textual run "app file.py"`)).toEqual(['-m', 'textual', 'run', 'app file.py']);
+      expect(parseCliSurfaceArgs(`-m textual run "app file.py"`)).toEqual([
+        '-m',
+        'textual',
+        'run',
+        'app file.py',
+      ]);
       expect(parseCliSurfaceArgs(`'--port' 3000`)).toEqual(['--port', '3000']);
     });
   });

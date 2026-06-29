@@ -10,19 +10,20 @@ npm start
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run build` | Build all targets (main, preload, renderer) |
-| `npm run build:main` | Build main process only (fast) |
-| `npm run build:preload` | Build preload scripts |
-| `npm start` | Build and run Electron app |
-| `npm test` | Run all tests |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
+| Script                  | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `npm run build`         | Build all targets (main, preload, renderer) |
+| `npm run build:main`    | Build main process only (fast)              |
+| `npm run build:preload` | Build preload scripts                       |
+| `npm start`             | Build and run Electron app                  |
+| `npm test`              | Run all tests                               |
+| `npm run lint`          | Run ESLint                                  |
+| `npm run format`        | Format code with Prettier                   |
 
 ### Verifying Installed CLI provider version(s)
 
 After setup, verify providers are installed:
+
 ```bash
 claude --version   # Claude Code
 codex --version    # Codex CLI
@@ -40,6 +41,7 @@ qwen --version     # Qwen Code
 3. **Lint** — Run ESLint
 
 Keybindings:
+
 - `F5` — Start debugging
 - `Cmd+Shift+P` → "Tasks: Run Task" → `build:main` for fast rebuilds
 

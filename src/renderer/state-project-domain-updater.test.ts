@@ -18,16 +18,18 @@ function makeProject(): ProjectRecord {
 
 function makeContext(id: string): ProjectContextState {
   return {
-    sources: [{
-      id,
-      provider: 'shared',
-      scope: 'project',
-      kind: 'rules',
-      path: `${id}.md`,
-      displayName: id,
-      summary: id,
-      lastUpdated: '2026-04-21T00:00:00Z',
-    }],
+    sources: [
+      {
+        id,
+        provider: 'shared',
+        scope: 'project',
+        kind: 'rules',
+        path: `${id}.md`,
+        displayName: id,
+        summary: id,
+        lastUpdated: '2026-04-21T00:00:00Z',
+      },
+    ],
     sharedRuleCount: 1,
     providerSourceCount: 0,
   };

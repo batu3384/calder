@@ -6,15 +6,18 @@ const baseCss = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 
 describe('modal surface stylesheet contract', () => {
   it('renders modals as compact control sheets instead of glossy popups', () => {
-    expect(modalCss).toContain('#modal-overlay, .modal-overlay');
+    expect(modalCss).toContain('#modal-overlay');
+    expect(modalCss).toContain('.modal-overlay');
     expect(modalCss).toContain('backdrop-filter: blur(14px);');
-    expect(modalCss).toContain('#modal, .modal-box');
+    expect(modalCss).toContain('#modal');
+    expect(modalCss).toContain('.modal-box');
     expect(modalCss).toContain('border-radius: 16px;');
     expect(modalCss).toContain('padding: 20px;');
   });
 
   it('keeps modal actions and fields in the same tighter rhythm', () => {
-    expect(modalCss).toContain('#modal-actions, .modal-actions');
+    expect(modalCss).toContain('#modal-actions');
+    expect(modalCss).toContain('.modal-actions');
     expect(modalCss).toContain('justify-content: flex-end;');
     expect(modalCss).toContain('.modal-btn');
     expect(modalCss).toContain('min-width: 112px;');

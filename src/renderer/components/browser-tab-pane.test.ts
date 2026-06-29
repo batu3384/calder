@@ -2,14 +2,38 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
-const paneRuntimeSource = readFileSync(new URL('./browser-tab/pane-runtime.ts', import.meta.url), 'utf-8');
-const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
-const paneViewportMenuSource = readFileSync(new URL('./browser-tab/pane-viewport-menu.ts', import.meta.url), 'utf-8');
-const paneShellSource = readFileSync(new URL('./browser-tab/pane-shell.ts', import.meta.url), 'utf-8');
-const paneRuntimeBindingsSource = readFileSync(new URL('./browser-tab/pane-runtime-bindings.ts', import.meta.url), 'utf-8');
-const paneInteractionsSource = readFileSync(new URL('./browser-tab/pane-interactions.ts', import.meta.url), 'utf-8');
-const captureElementsSource = readFileSync(new URL('./browser-tab/pane-capture-elements.ts', import.meta.url), 'utf-8');
-const paneArtifactsSource = readFileSync(new URL('./browser-tab/pane-artifacts.ts', import.meta.url), 'utf-8');
+const paneRuntimeSource = readFileSync(
+  new URL('./browser-tab/pane-runtime.ts', import.meta.url),
+  'utf-8',
+);
+const paneLayoutSource = readFileSync(
+  new URL('./browser-tab/pane-layout.ts', import.meta.url),
+  'utf-8',
+);
+const paneViewportMenuSource = readFileSync(
+  new URL('./browser-tab/pane-viewport-menu.ts', import.meta.url),
+  'utf-8',
+);
+const paneShellSource = readFileSync(
+  new URL('./browser-tab/pane-shell.ts', import.meta.url),
+  'utf-8',
+);
+const paneRuntimeBindingsSource = readFileSync(
+  new URL('./browser-tab/pane-runtime-bindings.ts', import.meta.url),
+  'utf-8',
+);
+const paneInteractionsSource = readFileSync(
+  new URL('./browser-tab/pane-interactions.ts', import.meta.url),
+  'utf-8',
+);
+const captureElementsSource = readFileSync(
+  new URL('./browser-tab/pane-capture-elements.ts', import.meta.url),
+  'utf-8',
+);
+const paneArtifactsSource = readFileSync(
+  new URL('./browser-tab/pane-artifacts.ts', import.meta.url),
+  'utf-8',
+);
 const source = [
   paneSource,
   paneRuntimeSource,
@@ -21,16 +45,43 @@ const source = [
   captureElementsSource,
   paneArtifactsSource,
 ].join('\n');
-const navigationSource = readFileSync(new URL('./browser-tab/navigation.ts', import.meta.url), 'utf-8');
+const navigationSource = readFileSync(
+  new URL('./browser-tab/navigation.ts', import.meta.url),
+  'utf-8',
+);
 const viewportSource = readFileSync(new URL('./browser-tab/viewport.ts', import.meta.url), 'utf-8');
-const authPanelSource = readFileSync(new URL('./browser-tab/auth-panel.ts', import.meta.url), 'utf-8');
-const authControllerSource = readFileSync(new URL('./browser-tab/auth-controller.ts', import.meta.url), 'utf-8');
-const localTargetsSource = readFileSync(new URL('./browser-tab/local-targets.ts', import.meta.url), 'utf-8');
-const targetMenuSource = readFileSync(new URL('./browser-tab/target-menu.ts', import.meta.url), 'utf-8');
-const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
-const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
-const paneHelpersSource = readFileSync(new URL('./browser-tab/pane-helpers.ts', import.meta.url), 'utf-8');
-const navigationChromeSource = readFileSync(new URL('./browser-tab/navigation-chrome.ts', import.meta.url), 'utf-8');
+const authPanelSource = readFileSync(
+  new URL('./browser-tab/auth-panel.ts', import.meta.url),
+  'utf-8',
+);
+const authControllerSource = readFileSync(
+  new URL('./browser-tab/auth-controller.ts', import.meta.url),
+  'utf-8',
+);
+const localTargetsSource = readFileSync(
+  new URL('./browser-tab/local-targets.ts', import.meta.url),
+  'utf-8',
+);
+const targetMenuSource = readFileSync(
+  new URL('./browser-tab/target-menu.ts', import.meta.url),
+  'utf-8',
+);
+const newTabStateSource = readFileSync(
+  new URL('./browser-tab/new-tab-state.ts', import.meta.url),
+  'utf-8',
+);
+const newTabUiSource = readFileSync(
+  new URL('./browser-tab/new-tab-ui.ts', import.meta.url),
+  'utf-8',
+);
+const paneHelpersSource = readFileSync(
+  new URL('./browser-tab/pane-helpers.ts', import.meta.url),
+  'utf-8',
+);
+const navigationChromeSource = readFileSync(
+  new URL('./browser-tab/navigation-chrome.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('browser tab pane contract', () => {
   it('groups the toolbar into nav, address, and tools regions', () => {
@@ -50,15 +101,17 @@ describe('browser tab pane contract', () => {
     expect(source).toContain("captureCluster.label.textContent = 'Capture';");
     expect(source).toContain('captureCluster.element.dataset.captureMode = mode;');
     expect(source).toContain('captureCluster.label.title = selectedTarget');
-    expect(source).toContain("inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';");
+    expect(source).toContain(
+      "inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';",
+    );
     expect(source).toContain("drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';");
     expect(source).toContain("recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';");
   });
 
   it('keeps target session selection inside capture composer controls', () => {
-    expect(source).toContain('drawCustomBtn.addEventListener(\'click\'');
-    expect(source).toContain('flowCustomBtn.addEventListener(\'click\'');
-    expect(source).toContain('customBtn.addEventListener(\'click\'');
+    expect(source).toContain("drawCustomBtn.addEventListener('click'");
+    expect(source).toContain("flowCustomBtn.addEventListener('click'");
+    expect(source).toContain("customBtn.addEventListener('click'");
     expect(source).toContain("openBrowserTargetMenu(instance, drawCustomBtn, 'draw')");
     expect(source).toContain("openBrowserTargetMenu(instance, flowCustomBtn, 'flow')");
     expect(source).toContain("openBrowserTargetMenu(instance, customBtn, 'inspect')");
@@ -67,36 +120,42 @@ describe('browser tab pane contract', () => {
   it('tracks loading state in the chrome and toggles the primary button behavior', () => {
     expect(source).toContain('statusBadge.dataset.state = state');
     expect(source).toContain("goBtn.textContent = state === 'loading' ? 'Stop' : 'Go'");
-    expect(source).toContain("if (instance.isLoading) {");
-    expect(source).toContain('webview.addEventListener(\'did-start-loading\'');
-    expect(source).toContain('webview.addEventListener(\'did-stop-loading\'');
+    expect(source).toContain('if (instance.isLoading) {');
+    expect(source).toContain("webview.addEventListener('did-start-loading'");
+    expect(source).toContain("webview.addEventListener('did-stop-loading'");
   });
 
   it('keeps nav controls honest and makes the address field easier to recover', () => {
-    expect(source).toContain("import {\n  syncAddressBarState as syncBrowserAddressBarState,\n  syncNavigationControls as syncBrowserNavigationControls,\n} from './navigation-chrome.js';");
+    expect(source).toContain(
+      "import {\n  syncAddressBarState as syncBrowserAddressBarState,\n  syncNavigationControls as syncBrowserNavigationControls,\n} from './navigation-chrome.js';",
+    );
     expect(source).toContain('syncNavigationControls(instance)');
     expect(navigationChromeSource).toContain('if (!instance.webviewReady) {');
     expect(navigationChromeSource).toContain('backBtn.disabled = !instance.webview.canGoBack()');
     expect(navigationChromeSource).toContain('fwdBtn.disabled = !instance.webview.canGoForward()');
     expect(source).toContain("webview.addEventListener('dom-ready'");
-    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-inspect-mode\')');
-    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-flow-mode\')');
-    expect(source).toContain('sendGuestMessage(instance.webview, \'enter-draw-mode\')');
-    expect(source).toContain('urlInput.addEventListener(\'focus\'');
+    expect(source).toContain("sendGuestMessage(instance.webview, 'enter-inspect-mode')");
+    expect(source).toContain("sendGuestMessage(instance.webview, 'enter-flow-mode')");
+    expect(source).toContain("sendGuestMessage(instance.webview, 'enter-draw-mode')");
+    expect(source).toContain("urlInput.addEventListener('focus'");
     expect(source).toContain('urlInput.select()');
     expect(source).toContain("e.key === 'Escape'");
   });
 
   it('adapts go and reload actions to unapplied address changes', () => {
     expect(source).toContain('syncAddressBarState(instance)');
-    expect(navigationChromeSource).toContain("urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false'");
+    expect(navigationChromeSource).toContain(
+      "urlInput.dataset.dirty = hasUnappliedAddressChange ? 'true' : 'false'",
+    );
     expect(navigationChromeSource).toContain("goBtn.dataset.state = 'reload'");
     expect(navigationChromeSource).toContain("goBtn.dataset.state = 'open'");
     expect(navigationChromeSource).toContain("goBtn.dataset.state = 'stop'");
     expect(source).toContain('function reloadCurrentPage(): void {');
     expect(source).toContain('if (!instance.webviewReady) return;');
-    expect(navigationChromeSource).toContain('reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange');
-    expect(source).toContain('urlInput.addEventListener(\'input\'');
+    expect(navigationChromeSource).toContain(
+      'reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange',
+    );
+    expect(source).toContain("urlInput.addEventListener('input'");
   });
 
   it('adds a compact home button beside reload to reopen the localhost start surface', () => {
@@ -105,13 +164,19 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('toolbarNavShell.appendChild(homeBtn);');
     expect(source).toContain('function openBrowserHome(): void {');
     expect(source).toContain("navigateTo(instance, 'about:blank');");
-    expect(source).toContain('void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);');
+    expect(source).toContain(
+      'void populateLocalTargets(instance, ntpGrid, ntpTargetsText, ntpTargetsMeta);',
+    );
     expect(source).toContain("homeBtn.addEventListener('click', () => openBrowserHome());");
   });
 
   it('supports browser-like keyboard flow for address focus and reload', () => {
-    expect(source).toContain("if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l')");
-    expect(source).toContain("if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'r')");
+    expect(source).toContain(
+      "if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'l')",
+    );
+    expect(source).toContain(
+      "if ((e.input.meta || e.input.control) && e.input.key.toLowerCase() === 'r')",
+    );
     expect(source).toContain('urlInput.focus()');
     expect(source).toContain('urlInput.select()');
     expect(source).toContain('webview.focus()');
@@ -121,11 +186,15 @@ describe('browser tab pane contract', () => {
 
   it('isolates browser guests into a dedicated live-view partition', () => {
     expect(source).toContain("from './pane-helpers.js';");
-    expect(source).toContain('resolveBrowserPartitionForSession,');
-    expect(paneHelpersSource).toContain("import { buildBrowserSessionPartition } from '../../../shared/constants.js';");
-    expect(paneHelpersSource).toContain('function resolveBrowserPartitionForSession(sessionId: string): string {');
+    expect(source).toContain('resolveBrowserPartitionForSession');
+    expect(paneHelpersSource).toContain(
+      "import { buildBrowserSessionPartition } from '../../../shared/constants.js';",
+    );
+    expect(paneHelpersSource).toContain(
+      'function resolveBrowserPartitionForSession(sessionId: string): string {',
+    );
     expect(paneHelpersSource).toContain('return buildBrowserSessionPartition(owningProject?.id);');
-    expect(source).toContain("webview.setAttribute('partition', resolveBrowserPartitionForSession(sessionId));");
+    expect(source).toContain("'partition', resolveBrowserPartitionForSession(sessionId)");
     expect(source).not.toContain("webview.setAttribute('allowpopups', '');");
   });
 
@@ -142,25 +211,37 @@ describe('browser tab pane contract', () => {
   });
 
   it('re-synchronizes a browser pane with the latest stored url when it is reattached and shown', () => {
-    expect(paneHelpersSource).toContain('function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {');
-    expect(source).toContain('attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void');
+    expect(paneHelpersSource).toContain(
+      'function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {',
+    );
+    expect(source).toContain(
+      'attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void',
+    );
     expect(source).toContain('syncBrowserTabToSessionState(instance);');
-    expect(source).toContain('requestAnimationFrame(() => syncBrowserTabToSessionState(instance));');
+    expect(source).toContain(
+      'requestAnimationFrame(() => syncBrowserTabToSessionState(instance));',
+    );
   });
 
   it('ignores benign aborted loads instead of forcing offline fallback', () => {
-    expect(source).toContain("if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;");
+    expect(source).toContain(
+      "if (e.errorCode === -3 || normalizedError.includes('ERR_ABORTED')) return;",
+    );
   });
 
   it('ignores stale navigation events that try to revert to the previous url', () => {
     expect(navigationSource).toContain('isStaleNavigationRevert(');
-    expect(navigationSource).toContain('canonicalizeNavigationUrl(value: string | undefined): string');
+    expect(navigationSource).toContain(
+      'canonicalizeNavigationUrl(value: string | undefined): string',
+    );
     expect(source).toContain('if (isStaleNavigationRevert(instance, e.url)) return;');
     expect(source).toContain('if (isStaleNavigationRevert(instance, failedUrl)) return;');
   });
 
   it('anchors the viewport picker with floating placement and cleans it up', () => {
-    expect(viewportSource).toContain("import { anchorFloatingSurface } from '../floating-surface.js';");
+    expect(viewportSource).toContain(
+      "import { anchorFloatingSurface } from '../floating-surface.js';",
+    );
     expect(source).toContain("viewportBtn.setAttribute('aria-haspopup', 'menu')");
     expect(source).toContain("viewportBtn.setAttribute('aria-expanded', 'false')");
     expect(source).toContain("viewportDropdown.setAttribute('role', 'menu')");
@@ -174,10 +255,18 @@ describe('browser tab pane contract', () => {
     expect(viewportSource).toContain("placement: 'bottom-end'");
     expect(source).toContain('event.composedPath');
     expect(source).toContain("const outsidePressEventName: 'pointerdown' | 'mousedown'");
-    expect(source).toContain('document.addEventListener(outsidePressEventName, instance.viewportOutsideClickHandler);');
-    expect(source).toContain('document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);');
-    expect(viewportSource).toContain("openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
-    expect(viewportSource).toContain("closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')");
+    expect(source).toContain(
+      'document.addEventListener(outsidePressEventName, instance.viewportOutsideClickHandler);',
+    );
+    expect(source).toContain(
+      'document.addEventListener(outsidePressEventName, instance.targetMenuOutsideClickHandler);',
+    );
+    expect(viewportSource).toContain(
+      "openViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')",
+    );
+    expect(viewportSource).toContain(
+      "closeViewportDropdown(instance: BrowserTabInstance, reason = 'programmatic')",
+    );
     expect(viewportSource).toContain("instance.viewportBtn.setAttribute('aria-expanded', 'true')");
     expect(viewportSource).toContain("instance.viewportBtn.setAttribute('aria-expanded', 'false')");
     expect(viewportSource).toContain("item.setAttribute('aria-checked', String(isSelected))");
@@ -186,10 +275,18 @@ describe('browser tab pane contract', () => {
     expect(viewportSource).toContain('instance.viewportDropdownFloatingCleanup?.();');
     expect(source).toContain('viewportDropdownFloatingCleanup: null');
     expect(source).toContain('instance.viewportDropdownFloatingCleanup?.();');
-    expect(source).toContain("document.removeEventListener('pointerdown', instance.viewportOutsideClickHandler);");
-    expect(source).toContain("document.removeEventListener('pointerdown', instance.targetMenuOutsideClickHandler);");
-    expect(source).toContain("document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);");
-    expect(source).toContain("document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);");
+    expect(source).toContain(
+      "document.removeEventListener('pointerdown', instance.viewportOutsideClickHandler);",
+    );
+    expect(source).toContain(
+      "document.removeEventListener('pointerdown', instance.targetMenuOutsideClickHandler);",
+    );
+    expect(source).toContain(
+      "document.removeEventListener('mousedown', instance.viewportOutsideClickHandler);",
+    );
+    expect(source).toContain(
+      "document.removeEventListener('mousedown', instance.targetMenuOutsideClickHandler);",
+    );
   });
 
   it('routes popup requests through the host instead of enabling webview popups', () => {
@@ -249,14 +346,20 @@ describe('browser tab pane contract', () => {
     expect(source).not.toContain('viewportContainer.appendChild(newTabPage);');
     expect(source).toContain('function handleCommittedNavigation(url: string): void {');
     expect(source).toContain("if (url === 'about:blank')");
-    expect(navigationSource).toContain("instance.newTabPage.dataset.mode = normalizedUrl === 'about:blank' ? 'default' : 'hidden'");
-    expect(navigationSource).toContain("instance.syncSurfaceVisibility(normalizedUrl === 'about:blank');");
+    expect(navigationSource).toContain(
+      "instance.newTabPage.dataset.mode = normalizedUrl === 'about:blank' ? 'default' : 'hidden'",
+    );
+    expect(navigationSource).toContain(
+      "instance.syncSurfaceVisibility(normalizedUrl === 'about:blank');",
+    );
   });
 
   it('renders a compact session picker beside browser send actions', () => {
     expect(source).toContain('browser-target-trigger');
     expect(source).toContain('browser-target-menu');
-    expect(source).toContain("import {\n  closeBrowserTargetMenu,\n  openBrowserTargetMenu,\n  syncBrowserTargetControls,\n} from './target-menu.js';");
+    expect(source).toContain(
+      "import {\n  closeBrowserTargetMenu,\n  openBrowserTargetMenu,\n  syncBrowserTargetControls,\n} from './target-menu.js';",
+    );
     expect(source).toContain("import { sendGuestMessage } from './guest-messaging.js';");
     expect(source).toContain('targetMenuFloatingCleanup');
     expect(targetMenuSource).toContain('anchorFloatingSurface(trigger, instance.targetMenu');
@@ -274,7 +377,9 @@ describe('browser tab pane contract', () => {
     expect(source).toContain("import { createBrowserAuthController } from './auth-controller.js';");
     expect(source).toContain('createBrowserAuthPanelArtifacts(el)');
     expect(source).toContain('const authController = createBrowserAuthController({');
-    expect(authPanelSource).toContain("authPanel.className = 'browser-capture-panel browser-auth-panel'");
+    expect(authPanelSource).toContain(
+      "authPanel.className = 'browser-capture-panel browser-auth-panel'",
+    );
     expect(authPanelSource).toContain("authCloseBtn.className = 'browser-auth-close-btn'");
     expect(authPanelSource).toContain("authCloseBtn.textContent = 'Close'");
     expect(authPanelSource).toContain("authFillBtn.textContent = 'Fill now'");
@@ -288,7 +393,9 @@ describe('browser tab pane contract', () => {
     expect(authControllerSource).toContain('window.calder.browserCredential.deleteById');
     expect(authControllerSource).toContain('window.calder.browserCredential.getForFill');
     expect(authControllerSource).toContain('window.calder.browserCredential.getAutoFillForUrl');
-    expect(authControllerSource).toContain("sendGuestMessage(instance.webview, 'auth-fill-credentials'");
+    expect(authControllerSource).toContain(
+      "sendGuestMessage(instance.webview, 'auth-fill-credentials'",
+    );
     expect(source).toContain('authController.handleFillResult(payload);');
   });
 

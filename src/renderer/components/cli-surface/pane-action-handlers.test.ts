@@ -107,12 +107,14 @@ describe('cli surface pane action handlers', () => {
       startCol: 0,
       endCol: 80,
     });
-    expect(mockSetComposerPosition).toHaveBeenCalledWith(expect.objectContaining({
-      paneEl: context.element,
-      composerEl: context.composerEl,
-      left: 16,
-      top: 72,
-    }));
+    expect(mockSetComposerPosition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paneEl: context.element,
+        composerEl: context.composerEl,
+        left: 16,
+        top: 72,
+      }),
+    );
   });
 
   it('rerenders on cleared pointer selection and forwards valid selections', async () => {

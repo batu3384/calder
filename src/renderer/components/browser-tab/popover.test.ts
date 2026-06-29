@@ -33,7 +33,10 @@ class FakeElement {
 
   removeEventListener(event: string, cb: (event: any) => void): void {
     const current = this.listeners.get(event) ?? [];
-    this.listeners.set(event, current.filter((listener) => listener !== cb));
+    this.listeners.set(
+      event,
+      current.filter((listener) => listener !== cb),
+    );
   }
 
   dispatch(event: string, payload: any): void {
@@ -61,7 +64,10 @@ class FakeDocument {
 
   removeEventListener(event: string, cb: (event: any) => void): void {
     const current = this.listeners.get(event) ?? [];
-    this.listeners.set(event, current.filter((listener) => listener !== cb));
+    this.listeners.set(
+      event,
+      current.filter((listener) => listener !== cb),
+    );
   }
 
   dispatch(event: string, payload: any): void {

@@ -24,18 +24,26 @@ afterEach(() => {
 describe('project background task files', () => {
   it('rejects blank task title', async () => {
     const root = makeProject('background-task-empty-title');
-    await expect(createProjectBackgroundTaskFile(root, '   ', 'prompt')).rejects.toThrow('Task title is required');
+    await expect(createProjectBackgroundTaskFile(root, '   ', 'prompt')).rejects.toThrow(
+      'Task title is required',
+    );
   });
 
   it('rejects blank task prompt', async () => {
     const root = makeProject('background-task-empty-prompt');
-    await expect(createProjectBackgroundTaskFile(root, 'Task title', '   ')).rejects.toThrow('Task prompt is required');
+    await expect(createProjectBackgroundTaskFile(root, 'Task title', '   ')).rejects.toThrow(
+      'Task prompt is required',
+    );
   });
 
   it('creates and reads queued task documents', async () => {
     const root = makeProject('background-task-create');
 
-    const result = await createProjectBackgroundTaskFile(root, 'Review UI', 'Check the preferences modal.');
+    const result = await createProjectBackgroundTaskFile(
+      root,
+      'Review UI',
+      'Check the preferences modal.',
+    );
     expect(result.created).toBe(true);
     expect(result.relativePath).toBe('.calder/tasks/review-ui.json');
     expect(readFileSync(join(root, result.relativePath), 'utf8')).toContain('"status": "queued"');

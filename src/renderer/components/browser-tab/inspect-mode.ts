@@ -19,7 +19,12 @@ export function toggleInspectMode(instance: BrowserTabInstance): void {
   instance.syncToolbarState();
 }
 
-export function showElementInfo(instance: BrowserTabInstance, info: ElementInfo, x: number, y: number): void {
+export function showElementInfo(
+  instance: BrowserTabInstance,
+  info: ElementInfo,
+  x: number,
+  y: number,
+): void {
   instance.selectedElement = info;
   instance.inspectPanel.style.display = 'flex';
   positionPopover(instance, instance.inspectPanel, x, y);
@@ -49,11 +54,9 @@ export function showElementInfo(instance: BrowserTabInstance, info: ElementInfo,
   selectorLabel.textContent = 'Selector';
   instance.elementInfoEl.appendChild(selectorLabel);
 
-  const selectorOptions = buildSelectorOptions(
-    info.selectors,
-    info.activeSelector,
-    (sel) => { instance.selectedElement!.activeSelector = sel; }
-  );
+  const selectorOptions = buildSelectorOptions(info.selectors, info.activeSelector, (sel) => {
+    instance.selectedElement!.activeSelector = sel;
+  });
   selectorOptions.className = 'inspect-selector-options';
   instance.elementInfoEl.appendChild(selectorOptions);
 
@@ -85,7 +88,8 @@ export function dismissInspect(instance: BrowserTabInstance): void {
   instance.instructionInput.value = '';
   instance.selectedElement = null;
   instance.inspectTitleEl.textContent = 'Select an element';
-  instance.inspectSubtitleEl.textContent = 'Click a page element to capture its selector and send a focused prompt.';
+  instance.inspectSubtitleEl.textContent =
+    'Click a page element to capture its selector and send a focused prompt.';
   instance.inspectPanel.style.display = 'none';
   if (instance.inspectMode) {
     toggleInspectMode(instance);

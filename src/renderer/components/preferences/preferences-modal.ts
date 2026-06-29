@@ -3,21 +3,14 @@ import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/ty
 import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { appState } from '../../state.js';
 import type { CustomSelectInstance } from '../custom-select.js';
-import {
-  extendModalCleanup,
-  prepareModalSurface,
-  runModalCleanup,
-} from '../modal.js';
+import { extendModalCleanup, prepareModalSurface, runModalCleanup } from '../modal.js';
 import {
   appendOverviewGrid as appendOverviewGridLayout,
   appendSectionCard as appendSectionCardLayout,
   appendSectionGroup as appendSectionGroupLayout,
   appendSectionIntro as appendSectionIntroLayout,
 } from './preferences-layout.js';
-import {
-  bindPreferencesModalActions,
-  savePreferenceDraft,
-} from './preferences-modal-actions.js';
+import { bindPreferencesModalActions, savePreferenceDraft } from './preferences-modal-actions.js';
 import {
   bindPreferencesMenuNavigation,
   renderAutomationPreferencesContent,
@@ -31,11 +24,8 @@ import {
   renderLayoutPreferencesSection,
 } from './preferences-modal-sections.js';
 import { createPreferencesModalShell } from './preferences-modal-shell.js';
-import {
-  resolveSetupBadgeHasIssue,
-} from './preferences-provider-setup.js';
+import { resolveSetupBadgeHasIssue } from './preferences-provider-setup.js';
 import { formatRelativeTimestamp } from './preferences-time.js';
-
 
 const overlay = document.getElementById('modal-overlay')!;
 const modal = document.getElementById('modal')!;
@@ -50,7 +40,11 @@ const PREFERENCE_SECTIONS: Array<{ id: Section; label: string; caption: string }
   { id: 'general', label: 'Session', caption: 'Startup, language, and session memory' },
   { id: 'interface', label: 'Interface', caption: 'Shell layout, rails, and live view behavior' },
   { id: 'tools', label: 'Tools', caption: 'CLI providers and mobile dependency health' },
-  { id: 'automation', label: 'Automation', caption: 'Project workflows, previews, and background tasks' },
+  {
+    id: 'automation',
+    label: 'Automation',
+    caption: 'Project workflows, previews, and background tasks',
+  },
   { id: 'safety', label: 'Safety', caption: 'Context, governance, reviews, and checkpoints' },
   { id: 'shortcuts', label: 'Keys', caption: 'Command bindings and overrides' },
   { id: 'about', label: 'About', caption: 'Version, updates, and project links' },
@@ -94,12 +88,21 @@ function createPreferenceDraft(): PreferenceDraft {
   };
 }
 
-function appendSectionIntro(container: HTMLElement, eyebrow: string, title: string, description: string): void {
+function appendSectionIntro(
+  container: HTMLElement,
+  eyebrow: string,
+  title: string,
+  description: string,
+): void {
   // preferences-section-intro
   appendSectionIntroLayout(container, eyebrow, title, description);
 }
 
-function appendSectionCard(container: HTMLElement, title: string, description?: string): HTMLElement {
+function appendSectionCard(
+  container: HTMLElement,
+  title: string,
+  description?: string,
+): HTMLElement {
   // preferences-section-card
   return appendSectionCardLayout(container, title, description);
 }
@@ -199,7 +202,10 @@ function renderPreferencesSectionById(args: {
       isGeneralSectionActive: () => args.state.currentSection === 'general',
       getDefaultProviderSelect: () => args.state.defaultProviderSelect,
       replaceDefaultProviderSelect: (select) => {
-        args.state.defaultProviderSelect = replaceCustomSelect(args.state.defaultProviderSelect, select);
+        args.state.defaultProviderSelect = replaceCustomSelect(
+          args.state.defaultProviderSelect,
+          select,
+        );
       },
       replaceLanguageSelect: (select) => {
         args.state.languageSelect = replaceCustomSelect(args.state.languageSelect, select);
@@ -308,11 +314,7 @@ function renderPreferencesModalContent(): void {
   modal.classList.add('preferences-modal');
   bodyEl.classList.add('preferences-body');
 
-  const {
-    menu,
-    menuItems,
-    content,
-  } = createPreferencesModalShell({
+  const { menu, menuItems, content } = createPreferencesModalShell({
     body: bodyEl,
     sections: PREFERENCE_SECTIONS,
   });
@@ -320,14 +322,18 @@ function renderPreferencesModalContent(): void {
   const state = createPreferencesModalState();
   const preferenceDraft: PreferenceDraft = createPreferenceDraft();
   const savedAppearanceTheme = appState.preferences.appearanceTheme ?? 'system';
-  const shortcutOverridesDraft: Record<string, string> = { ...(appState.preferences.keybindings ?? {}) };
+  const shortcutOverridesDraft: Record<string, string> = {
+    ...(appState.preferences.keybindings ?? {}),
+  };
 
   async function fixAndRerender(providerId?: ProviderId) {
     await window.calder.settings.reinstall(providerId);
     renderSection('tools');
   }
 
-  async function installMobileDependencyAndRerender(dependencyId: MobileDependencyId): Promise<void> {
+  async function installMobileDependencyAndRerender(
+    dependencyId: MobileDependencyId,
+  ): Promise<void> {
     const result = await window.calder.mobileSetup.installDependency(dependencyId);
     if (!result.success) {
       throw new Error(result.message || 'Install command failed.');

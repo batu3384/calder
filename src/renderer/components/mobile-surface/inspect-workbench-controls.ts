@@ -3,10 +3,17 @@ import type {
   MobileInspectLaunchResult,
 } from '../../../shared/types/mobile.js';
 import { appState } from '../../state.js';
-import { formatPointLabel, getProjectProfileLabel, hasBlockingChecks } from './dependency-scoping.js';
+import {
+  formatPointLabel,
+  getProjectProfileLabel,
+  hasBlockingChecks,
+} from './dependency-scoping.js';
 import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 
-export function appendInspectSendControls(options: RenderMobileInspectWorkbenchOptions, section: HTMLElement): void {
+export function appendInspectSendControls(
+  options: RenderMobileInspectWorkbenchOptions,
+  section: HTMLElement,
+): void {
   const { instance, handlers } = options;
   const inspect = instance.inspectState;
   const instruction = document.createElement('textarea');
@@ -25,11 +32,14 @@ export function appendInspectSendControls(options: RenderMobileInspectWorkbenchO
   const targetSelect = document.createElement('select');
   targetSelect.className = 'mobile-surface-inspect-target';
   const targetSessions = appState.listSurfaceTargetSessions(instance.projectId);
-  const currentTarget = appState.resolveSurfaceTargetSession(instance.projectId, { requireExplicitTarget: true });
+  const currentTarget = appState.resolveSurfaceTargetSession(instance.projectId, {
+    requireExplicitTarget: true,
+  });
 
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
-  defaultOption.textContent = targetSessions.length > 0 ? 'Select session target…' : 'Open a CLI session first';
+  defaultOption.textContent =
+    targetSessions.length > 0 ? 'Select session target…' : 'Open a CLI session first';
   targetSelect.appendChild(defaultOption);
   for (const session of targetSessions) {
     const option = document.createElement('option');
@@ -52,7 +62,13 @@ export function appendInspectSendControls(options: RenderMobileInspectWorkbenchO
   sendSelectedBtn.className = 'mobile-surface-refresh-btn';
   sendSelectedBtn.textContent = 'Send to selected';
   const canSendPrompt = Boolean(inspect.selectedPoint && inspect.instruction.trim().length > 0);
-  sendSelectedBtn.disabled = !currentTarget || !canSendPrompt || inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting;
+  sendSelectedBtn.disabled =
+    !currentTarget ||
+    !canSendPrompt ||
+    inspect.launching ||
+    inspect.capturing ||
+    inspect.inspectingPoint ||
+    inspect.interacting;
   sendSelectedBtn.addEventListener('click', () => {
     void handlers.sendInspectToSelectedSession(instance);
   });
@@ -75,7 +91,9 @@ export function appendInspectSendControls(options: RenderMobileInspectWorkbenchO
   }
 }
 
-export function renderInspectWorkbenchHeader(options: RenderMobileInspectWorkbenchOptions): HTMLDivElement {
+export function renderInspectWorkbenchHeader(
+  options: RenderMobileInspectWorkbenchOptions,
+): HTMLDivElement {
   const { instance, report, platformLabels, handlers } = options;
   const inspect = instance.inspectState;
   const header = document.createElement('div');
@@ -99,12 +117,24 @@ export function renderInspectWorkbenchHeader(options: RenderMobileInspectWorkben
     btn.className = `mobile-surface-platform-btn${inspect.platform === platform ? ' active' : ''}`;
     btn.textContent = platformLabels[platform];
     const blocked = hasBlockingChecks(report, platform);
-    btn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || blocked;
+    btn.disabled =
+      inspect.launching ||
+      inspect.capturing ||
+      inspect.inspectingPoint ||
+      inspect.interacting ||
+      blocked;
     if (blocked) {
       btn.title = `${platformLabels[platform]} has missing required dependencies below.`;
     }
     btn.addEventListener('click', () => {
-      if (inspect.platform === platform || inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting) return;
+      if (
+        inspect.platform === platform ||
+        inspect.launching ||
+        inspect.capturing ||
+        inspect.inspectingPoint ||
+        inspect.interacting
+      )
+        return;
       handlers.stopInspectLiveMode(instance);
       inspect.platform = platform;
       inspect.screenshot = null;
@@ -115,7 +145,11 @@ export function renderInspectWorkbenchHeader(options: RenderMobileInspectWorkben
       inspect.pointInspectToken += 1;
       inspect.sendError = '';
       inspect.contextTrace = [];
-      handlers.setInspectStatus(instance, `Platform switched to ${platformLabels[platform]}.`, 'default');
+      handlers.setInspectStatus(
+        instance,
+        `Platform switched to ${platformLabels[platform]}.`,
+        'default',
+      );
       handlers.rerenderFromState(instance);
     });
     platformToggle.appendChild(btn);
@@ -125,7 +159,10 @@ export function renderInspectWorkbenchHeader(options: RenderMobileInspectWorkben
   return header;
 }
 
-export function appendInspectActionControls(options: RenderMobileInspectWorkbenchOptions, section: HTMLElement): void {
+export function appendInspectActionControls(
+  options: RenderMobileInspectWorkbenchOptions,
+  section: HTMLElement,
+): void {
   const { instance, report, platformLabels, handlers } = options;
   const inspect = instance.inspectState;
   const actionRow = document.createElement('div');
@@ -134,12 +171,23 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
   const launchBtn = document.createElement('button');
   launchBtn.type = 'button';
   launchBtn.className = 'mobile-surface-refresh-btn';
-  launchBtn.textContent = inspect.launching ? 'Launching…' : `Launch ${platformLabels[inspect.platform]}`;
-  launchBtn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
+  launchBtn.textContent = inspect.launching
+    ? 'Launching…'
+    : `Launch ${platformLabels[inspect.platform]}`;
+  launchBtn.disabled =
+    inspect.launching ||
+    inspect.capturing ||
+    inspect.inspectingPoint ||
+    inspect.interacting ||
+    hasBlockingChecks(report, inspect.platform);
   launchBtn.addEventListener('click', async () => {
     const api = window.calder?.mobileInspect;
     if (!api) {
-      handlers.setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
+      handlers.setInspectStatus(
+        instance,
+        'Mobile inspect API is unavailable in this build.',
+        'error',
+      );
       handlers.rerenderFromState(instance);
       return;
     }
@@ -147,7 +195,11 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
     handlers.stopInspectLiveMode(instance);
     inspect.launching = true;
     inspect.sendError = '';
-    handlers.setInspectStatus(instance, `Launching ${platformLabels[inspect.platform]}…`, 'default');
+    handlers.setInspectStatus(
+      instance,
+      `Launching ${platformLabels[inspect.platform]}…`,
+      'default',
+    );
     handlers.rerenderFromState(instance);
     try {
       const result: MobileInspectLaunchResult = await api.launch(inspect.platform);
@@ -168,7 +220,12 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
   captureBtn.type = 'button';
   captureBtn.className = 'mobile-surface-refresh-btn';
   captureBtn.textContent = inspect.capturing ? 'Capturing…' : 'Capture frame';
-  captureBtn.disabled = inspect.launching || inspect.capturing || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
+  captureBtn.disabled =
+    inspect.launching ||
+    inspect.capturing ||
+    inspect.inspectingPoint ||
+    inspect.interacting ||
+    hasBlockingChecks(report, inspect.platform);
   captureBtn.addEventListener('click', () => {
     void handlers.captureInspectFrame(instance, 'manual');
   });
@@ -177,7 +234,11 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
   liveBtn.type = 'button';
   liveBtn.className = 'mobile-surface-refresh-btn';
   liveBtn.textContent = inspect.liveMode ? 'Stop live' : 'Start live';
-  liveBtn.disabled = inspect.launching || inspect.inspectingPoint || inspect.interacting || hasBlockingChecks(report, inspect.platform);
+  liveBtn.disabled =
+    inspect.launching ||
+    inspect.inspectingPoint ||
+    inspect.interacting ||
+    hasBlockingChecks(report, inspect.platform);
   liveBtn.addEventListener('click', () => {
     if (inspect.liveMode) {
       handlers.stopInspectLiveMode(instance, 'Embedded live view stopped.', 'default');
@@ -191,12 +252,13 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
   tapSelectedBtn.type = 'button';
   tapSelectedBtn.className = 'mobile-surface-refresh-btn';
   tapSelectedBtn.textContent = inspect.interacting ? 'Tapping…' : 'Tap selected';
-  tapSelectedBtn.disabled = !inspect.selectedPoint
-    || inspect.launching
-    || inspect.capturing
-    || inspect.inspectingPoint
-    || inspect.interacting
-    || hasBlockingChecks(report, inspect.platform);
+  tapSelectedBtn.disabled =
+    !inspect.selectedPoint ||
+    inspect.launching ||
+    inspect.capturing ||
+    inspect.inspectingPoint ||
+    inspect.interacting ||
+    hasBlockingChecks(report, inspect.platform);
   tapSelectedBtn.addEventListener('click', async () => {
     const selectedPoint = inspect.selectedPoint;
     if (!selectedPoint) {
@@ -207,7 +269,11 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
 
     const api = window.calder?.mobileInspect;
     if (!api) {
-      handlers.setInspectStatus(instance, 'Mobile inspect API is unavailable in this build.', 'error');
+      handlers.setInspectStatus(
+        instance,
+        'Mobile inspect API is unavailable in this build.',
+        'error',
+      );
       handlers.rerenderFromState(instance);
       return;
     }
@@ -221,7 +287,11 @@ export function appendInspectActionControls(options: RenderMobileInspectWorkbenc
     handlers.setInspectStatus(instance, 'Dispatching tap to selected point…', 'default');
     handlers.rerenderFromState(instance);
     try {
-      const result: MobileInspectInteractionResult = await api.interact(inspect.platform, selectedPoint.x, selectedPoint.y);
+      const result: MobileInspectInteractionResult = await api.interact(
+        inspect.platform,
+        selectedPoint.x,
+        selectedPoint.y,
+      );
       handlers.setInspectStatus(instance, result.message, result.success ? 'success' : 'error');
       if (result.success) {
         await handlers.captureInspectFrame(instance, 'live');

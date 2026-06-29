@@ -10,11 +10,7 @@ vi.mock('../../state.js', () => ({
   appState: { projects: [] },
 }));
 
-import {
-  getShareConnectionSnapshot,
-  isConnected,
-  isSharing,
-} from '../../sharing/peer-host.js';
+import { getShareConnectionSnapshot, isConnected, isSharing } from '../../sharing/peer-host.js';
 import {
   buildShareDialogMobilePresence,
   formatShareConnectionDuration,

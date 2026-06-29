@@ -35,8 +35,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectWorkflowSyncForTesting, initProjectWorkflowSync } from './project-workflow-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectWorkflowSyncForTesting,
+  initProjectWorkflowSync,
+} from './project-workflow-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -79,7 +82,9 @@ describe('project workflow sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows,
+    ).toHaveLength(1);
   });
 
   it('applies live workflow updates to the matching project', async () => {
@@ -105,7 +110,10 @@ describe('project workflow sync', () => {
       lastUpdated: '2026-04-13T15:05:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows[0]?.displayName).toBe('fix-tests.md');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows[0]
+        ?.displayName,
+    ).toBe('fix-tests.md');
   });
 
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
@@ -122,7 +130,9 @@ describe('project workflow sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
@@ -144,7 +154,9 @@ describe('project workflow sync', () => {
       ],
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows).toEqual([]);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows,
+    ).toEqual([]);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
@@ -178,11 +190,15 @@ describe('project workflow sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows,
+    ).toHaveLength(1);
 
     firstResponse.resolve({ workflows: [] });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectWorkflows?.workflows,
+    ).toHaveLength(1);
   });
 });

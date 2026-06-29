@@ -12,9 +12,7 @@ const APP_DIR = path.join(os.homedir(), '.calder', 'app');
 const VERSION_FILE = path.join(APP_DIR, 'version.json');
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
-const APP_PATH = isWin
-  ? path.join(APP_DIR, 'Calder.exe')
-  : path.join(APP_DIR, 'Calder.app');
+const APP_PATH = isWin ? path.join(APP_DIR, 'Calder.exe') : path.join(APP_DIR, 'Calder.app');
 const REPO = 'batuhanyuksel/calder';
 const RELEASES_URL = `https://github.com/${REPO}/releases`;
 const RELEASE_CHECKSUMS_PATH = path.join(__dirname, 'release-checksums.json');
@@ -58,9 +56,8 @@ function sha256File(filePath) {
 function assertDownloadChecksum(assetName, filePath) {
   const checksums = loadReleaseChecksums();
   const versionEntry = checksums[version];
-  const expected = versionEntry && typeof versionEntry === 'object'
-    ? versionEntry[assetName]
-    : undefined;
+  const expected =
+    versionEntry && typeof versionEntry === 'object' ? versionEntry[assetName] : undefined;
 
   const actual = sha256File(filePath);
   if (typeof expected === 'string' && expected.length > 0) {
@@ -78,9 +75,7 @@ function assertDownloadChecksum(assetName, filePath) {
     );
   }
 
-  console.warn(
-    `Warning: no pinned checksum for ${assetName}. Stored SHA-256: ${actual}`,
-  );
+  console.warn(`Warning: no pinned checksum for ${assetName}. Stored SHA-256: ${actual}`);
   return actual;
 }
 
@@ -90,13 +85,15 @@ function followRedirects(url, maxRedirects = 10) {
       return reject(new Error('Too many redirects'));
     }
     const mod = url.startsWith('https') ? https : require('http');
-    mod.get(url, { headers: { 'User-Agent': 'calder-cli' } }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        resolve(followRedirects(res.headers.location, maxRedirects - 1));
-      } else {
-        resolve(res);
-      }
-    }).on('error', reject);
+    mod
+      .get(url, { headers: { 'User-Agent': 'calder-cli' } }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          resolve(followRedirects(res.headers.location, maxRedirects - 1));
+        } else {
+          resolve(res);
+        }
+      })
+      .on('error', reject);
   });
 }
 
@@ -164,7 +161,10 @@ function extract(zipPath, sha256) {
 
   if (isWin) {
     const psEscape = (p) => p.replace(/'/g, "''");
-    execSync(`powershell -NoProfile -Command "Expand-Archive -Force -Path '${psEscape(zipPath)}' -DestinationPath '${psEscape(APP_DIR)}'"`, { stdio: 'ignore' });
+    execSync(
+      `powershell -NoProfile -Command "Expand-Archive -Force -Path '${psEscape(zipPath)}' -DestinationPath '${psEscape(APP_DIR)}'"`,
+      { stdio: 'ignore' },
+    );
   } else {
     execSync(`unzip -oq "${zipPath}" -d "${APP_DIR}"`);
   }

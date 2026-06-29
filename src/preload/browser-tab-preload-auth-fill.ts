@@ -25,13 +25,16 @@ function isLikelyUsernameInput(input: HTMLInputElement): boolean {
   const type = (input.type || '').toLowerCase();
   if (type && !['text', 'email', 'search', 'tel', 'url', 'number'].includes(type)) return false;
 
-  const name = `${input.name || ''} ${input.id || ''} ${input.getAttribute('autocomplete') || ''}`.toLowerCase();
+  const name =
+    `${input.name || ''} ${input.id || ''} ${input.getAttribute('autocomplete') || ''}`.toLowerCase();
   if (name.includes('user') || name.includes('login') || name.includes('email')) return true;
   return true;
 }
 
 function findPrimaryPasswordInput(doc: Document): HTMLInputElement | null {
-  return doc.querySelector<HTMLInputElement>('input[type="password"]:not([disabled]):not([readonly])');
+  return doc.querySelector<HTMLInputElement>(
+    'input[type="password"]:not([disabled]):not([readonly])',
+  );
 }
 
 function isPrecedingNode(candidate: Node, reference: Node): boolean {
@@ -41,17 +44,25 @@ function isPrecedingNode(candidate: Node, reference: Node): boolean {
 
 function findUsernameNearPassword(passwordInput: HTMLInputElement): HTMLInputElement | null {
   const scope = passwordInput.form ?? passwordInput.ownerDocument;
-  const candidates = Array.from(scope.querySelectorAll<HTMLInputElement>('input')).filter(isLikelyUsernameInput);
+  const candidates = Array.from(scope.querySelectorAll<HTMLInputElement>('input')).filter(
+    isLikelyUsernameInput,
+  );
   const beforePassword = candidates.find((candidate) => isPrecedingNode(candidate, passwordInput));
   if (beforePassword) return beforePassword;
   return candidates[0] ?? null;
 }
 
-function fillCredentialsInDocument(doc: Document, username: string, password: string): FillCredentialsResult {
+function fillCredentialsInDocument(
+  doc: Document,
+  username: string,
+  password: string,
+): FillCredentialsResult {
   const passwordInput = findPrimaryPasswordInput(doc);
   const usernameInput = passwordInput
     ? findUsernameNearPassword(passwordInput)
-    : doc.querySelector<HTMLInputElement>('input[autocomplete="username"], input[type="email"], input[type="text"]');
+    : doc.querySelector<HTMLInputElement>(
+        'input[autocomplete="username"], input[type="email"], input[type="text"]',
+      );
 
   let filledUsername = false;
   let filledPassword = false;

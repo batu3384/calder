@@ -84,4 +84,3 @@ describe('project context watcher race safety', () => {
     }
   });
 });
-

@@ -6,7 +6,11 @@
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   background:
-    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%),
+    radial-gradient(
+      120% 120% at 0% 0%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 55%
+    ),
     color-mix(in srgb, var(--surface-panel) 92%, var(--surface-canvas));
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -233,7 +237,11 @@
   height: 100%;
   width: 0;
   border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 65%, #0d9488), color-mix(in srgb, var(--accent) 70%, #2dd4bf));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 65%, #0d9488),
+    color-mix(in srgb, var(--accent) 70%, #2dd4bf)
+  );
   transition: width 220ms ease;
 }
 
@@ -389,7 +397,11 @@
 
 .mobile-surface-inspect-group {
   background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      transparent 62%
+    ),
     color-mix(in srgb, var(--surface-canvas) 92%, transparent);
   gap: 10px;
 }

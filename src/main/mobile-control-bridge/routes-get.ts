@@ -3,15 +3,8 @@ import * as http from 'node:http';
 import { getMobileCopy } from './copy';
 import { sendJson, sendText } from './http';
 import { renderMobilePage } from './page';
-import {
-  clearRateLimitEntriesForPairing,
-  verifyPairingToken,
-} from './rate-limit';
-import {
-  deletePairingRecord,
-  getPagePairing,
-  isExpired,
-} from './store';
+import { clearRateLimitEntriesForPairing, verifyPairingToken } from './rate-limit';
+import { deletePairingRecord, getPagePairing, isExpired } from './store';
 
 type MobileCopy = ReturnType<typeof getMobileCopy>;
 

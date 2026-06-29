@@ -1,5 +1,5 @@
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
-import { displayKeys,shortcutManager } from './surface-services/shortcuts.js';
+import { displayKeys, shortcutManager } from './surface-services/shortcuts.js';
 
 const overlay = document.getElementById('modal-overlay')!;
 const modal = document.getElementById('modal')!;
@@ -128,33 +128,105 @@ export function showHelpDialog(): void {
   `;
   container.appendChild(hero);
 
-  container.appendChild(buildSection('Tab Status Dot', [
-    { visual: () => dot('#e94560', true), label: 'Working', description: 'Active session is generating output' },
-    { visual: () => dot('#f4b400'), label: 'Waiting', description: 'Session is paused between turns' },
-    { visual: () => dot('#34a853'), label: 'Completed', description: 'Session finished its task' },
-    { visual: () => dot('#e67e22', true), label: 'Input', description: 'Session is waiting for user input' },
-    { visual: () => dot('#606070'), label: 'Idle', description: 'Session is inactive (CLI exited)' },
-  ]));
+  container.appendChild(
+    buildSection('Tab Status Dot', [
+      {
+        visual: () => dot('#e94560', true),
+        label: 'Working',
+        description: 'Active session is generating output',
+      },
+      {
+        visual: () => dot('#f4b400'),
+        label: 'Waiting',
+        description: 'Session is paused between turns',
+      },
+      {
+        visual: () => dot('#34a853'),
+        label: 'Completed',
+        description: 'Session finished its task',
+      },
+      {
+        visual: () => dot('#e67e22', true),
+        label: 'Input',
+        description: 'Session is waiting for user input',
+      },
+      {
+        visual: () => dot('#606070'),
+        label: 'Idle',
+        description: 'Session is inactive (CLI exited)',
+      },
+    ]),
+  );
 
-  container.appendChild(buildSection('Tab Badges', [
-    { visual: () => badge('Session 1', '#e94560'), label: 'Unread', description: 'Background session needs attention' },
-  ]));
+  container.appendChild(
+    buildSection('Tab Badges', [
+      {
+        visual: () => badge('Session 1', '#e94560'),
+        label: 'Unread',
+        description: 'Background session needs attention',
+      },
+    ]),
+  );
 
-  container.appendChild(buildSection('Status Bar', [
-    { visual: () => mono('$1.23 \u00b7 5k in / 2k out'), label: 'Cost details', description: 'Detailed cost with token counts' },
-    { visual: () => mono('[====------] 50%'), label: 'Context usage', description: 'How full the context window is' },
-    { visual: () => mono('[=======---] 75%', '#f4b400'), label: 'Context warning', description: 'Context usage above 70%' },
-    { visual: () => mono('[=========\u2010] 95%', '#e94560'), label: 'Context critical', description: 'Context usage above 90%' },
-  ]));
+  container.appendChild(
+    buildSection('Status Bar', [
+      {
+        visual: () => mono('$1.23 \u00b7 5k in / 2k out'),
+        label: 'Cost details',
+        description: 'Detailed cost with token counts',
+      },
+      {
+        visual: () => mono('[====------] 50%'),
+        label: 'Context usage',
+        description: 'How full the context window is',
+      },
+      {
+        visual: () => mono('[=======---] 75%', '#f4b400'),
+        label: 'Context warning',
+        description: 'Context usage above 70%',
+      },
+      {
+        visual: () => mono('[=========\u2010] 95%', '#e94560'),
+        label: 'Context critical',
+        description: 'Context usage above 90%',
+      },
+    ]),
+  );
 
-  container.appendChild(buildSection('Git Status', [
-    { visual: () => mono('\u2387 main', '#a0a0b0'), label: 'Branch', description: 'Current git branch' },
-    { visual: () => mono('+3', '#34a853'), label: 'Staged', description: 'Files staged for commit' },
-    { visual: () => mono('~2', '#f4b400'), label: 'Modified', description: 'Modified tracked files' },
-    { visual: () => mono('?1', '#606070'), label: 'Untracked', description: 'New untracked files' },
-    { visual: () => mono('!1', '#e94560'), label: 'Conflicted', description: 'Files with merge conflicts' },
-    { visual: () => mono('\u21912 \u21933', '#606070'), label: 'Ahead/Behind', description: 'Commits ahead/behind remote' },
-  ]));
+  container.appendChild(
+    buildSection('Git Status', [
+      {
+        visual: () => mono('\u2387 main', '#a0a0b0'),
+        label: 'Branch',
+        description: 'Current git branch',
+      },
+      {
+        visual: () => mono('+3', '#34a853'),
+        label: 'Staged',
+        description: 'Files staged for commit',
+      },
+      {
+        visual: () => mono('~2', '#f4b400'),
+        label: 'Modified',
+        description: 'Modified tracked files',
+      },
+      {
+        visual: () => mono('?1', '#606070'),
+        label: 'Untracked',
+        description: 'New untracked files',
+      },
+      {
+        visual: () => mono('!1', '#e94560'),
+        label: 'Conflicted',
+        description: 'Files with merge conflicts',
+      },
+      {
+        visual: () => mono('\u21912 \u21933', '#606070'),
+        label: 'Ahead/Behind',
+        description: 'Commits ahead/behind remote',
+      },
+    ]),
+  );
 
   // Keyboard shortcuts sections
   for (const section of buildShortcutSections()) {

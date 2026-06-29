@@ -35,8 +35,11 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetProjectContextSyncForTesting,initProjectContextSync } from './project-context-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import {
+  _resetProjectContextSyncForTesting,
+  initProjectContextSync,
+} from './project-context-sync.js';
+import { _resetForTesting, appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -84,7 +87,10 @@ describe('project context sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectContext?.providerSourceCount).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectContext
+        ?.providerSourceCount,
+    ).toBe(1);
   });
 
   it('applies live context updates to the matching project path', async () => {
@@ -118,7 +124,9 @@ describe('project context sync', () => {
       lastUpdated: '2026-04-13T12:10:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount,
+    ).toBe(1);
     expect(appState.activeProject?.projectContext?.sources[0]?.displayName).toBe('testing.md');
   });
 
@@ -178,17 +186,27 @@ describe('project context sync', () => {
     expect(mockWatchProject).not.toHaveBeenCalled();
     expect(mockGetProjectState).not.toHaveBeenCalled();
 
-    mockGetProjectState.mockResolvedValue({ sources: [], sharedRuleCount: 0, providerSourceCount: 0 });
+    mockGetProjectState.mockResolvedValue({
+      sources: [],
+      sharedRuleCount: 0,
+      providerSourceCount: 0,
+    });
     appState.addProject('Calder', '/proj');
     await flushTasks();
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
-    mockGetProjectState.mockResolvedValue({ sources: [], sharedRuleCount: 0, providerSourceCount: 0 });
+    mockGetProjectState.mockResolvedValue({
+      sources: [],
+      sharedRuleCount: 0,
+      providerSourceCount: 0,
+    });
     const project = appState.addProject('Calder', '/proj');
 
     initProjectContextSync();
@@ -212,11 +230,17 @@ describe('project context sync', () => {
       providerSourceCount: 0,
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount).toBe(0);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount,
+    ).toBe(0);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
-    const firstResponse = createDeferred<{ sources: unknown[]; sharedRuleCount: number; providerSourceCount: number }>();
+    const firstResponse = createDeferred<{
+      sources: unknown[];
+      sharedRuleCount: number;
+      providerSourceCount: number;
+    }>();
     let pendingFirstRequest = true;
 
     mockGetProjectState.mockImplementation((projectPath: string) => {
@@ -252,11 +276,15 @@ describe('project context sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount,
+    ).toBe(1);
 
     firstResponse.resolve({ sources: [], sharedRuleCount: 0, providerSourceCount: 0 });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount).toBe(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectContext?.sharedRuleCount,
+    ).toBe(1);
   });
 });

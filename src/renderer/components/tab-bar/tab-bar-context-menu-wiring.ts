@@ -21,7 +21,11 @@ export function createTabBarContextMenuWiring(): TabBarContextMenuWiring {
     }
   }
 
-  function applyContextMenuSemantics(menu: HTMLElement, label: string, focusFirstItem = true): void {
+  function applyContextMenuSemantics(
+    menu: HTMLElement,
+    label: string,
+    focusFirstItem = true,
+  ): void {
     applyTabContextMenuSemantics(menu, label, hideTabContextMenu, focusFirstItem);
   }
 

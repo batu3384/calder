@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
-import { type ProviderUpdaterRunner, type ProviderUpdaterTarget,updateProvider, updateProviders } from './provider-updater';
+import {
+  type ProviderUpdaterRunner,
+  type ProviderUpdaterTarget,
+  updateProvider,
+  updateProviders,
+} from './provider-updater';
 import { runProviderUpdate } from './provider-updater-update-helpers';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {
@@ -31,24 +36,33 @@ function createTarget(
   return {
     meta: createProviderMeta(id, displayName),
     resolveBinaryPath: () => binaryPath,
-    validatePrerequisites: () => (installed
-      ? { ok: true, message: '' }
-      : { ok: false, message: `${displayName} missing` }),
+    validatePrerequisites: () =>
+      installed ? { ok: true, message: '' } : { ok: false, message: `${displayName} missing` },
   };
 }
 
 class FakeRunner implements ProviderUpdaterRunner {
   readonly calls: Array<{ command: string; args: string[] }> = [];
-  private readonly queued = new Map<string, Array<{ code: number; stdout: string; stderr: string }>>();
+  private readonly queued = new Map<
+    string,
+    Array<{ code: number; stdout: string; stderr: string }>
+  >();
 
-  enqueue(command: string, args: string[], result: { code: number; stdout?: string; stderr?: string }): void {
+  enqueue(
+    command: string,
+    args: string[],
+    result: { code: number; stdout?: string; stderr?: string },
+  ): void {
     const key = this.key(command, args);
     const bucket = this.queued.get(key) ?? [];
     bucket.push({ code: result.code, stdout: result.stdout ?? '', stderr: result.stderr ?? '' });
     this.queued.set(key, bucket);
   }
 
-  async run(command: string, args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+  async run(
+    command: string,
+    args: string[],
+  ): Promise<{ code: number; stdout: string; stderr: string }> {
     this.calls.push({ command, args: [...args] });
     const key = this.key(command, args);
     const bucket = this.queued.get(key) ?? [];
@@ -70,14 +84,20 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.120.0' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
-    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 1_000) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 1_000) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -94,20 +114,28 @@ describe('updateProviders', () => {
     const claudeBinary = '/opt/tools/claude';
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.109' });
     runner.enqueue(claudeBinary, ['update'], { code: 1, stderr: 'update not supported' });
-    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], { code: 0, stdout: '2.1.110' });
-    runner.enqueue('npm', ['install', '-g', '@anthropic-ai/claude-code@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], {
+      code: 0,
+      stdout: '2.1.110',
+    });
+    runner.enqueue('npm', ['install', '-g', '@anthropic-ai/claude-code@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue('claude', ['--version'], { code: 0, stdout: '2.1.110' });
 
-    const summary = await updateProviders(
-      [createTarget('claude', 'Claude Code', claudeBinary)],
-      { runner, now: (() => 4_570) as () => number },
-    );
+    const summary = await updateProviders([createTarget('claude', 'Claude Code', claudeBinary)], {
+      runner,
+      now: (() => 4_570) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('claude');
     expect(summary.results[0].source).toBe('npm');
     expect(summary.results[0].status).toBe('updated');
-    expect(summary.results[0].updateCommand).toBe('npm install -g @anthropic-ai/claude-code@latest');
+    expect(summary.results[0].updateCommand).toBe(
+      'npm install -g @anthropic-ai/claude-code@latest',
+    );
     expect(runner.calls.map((call) => `${call.command} ${call.args.join(' ')}`)).toEqual([
       `${claudeBinary} --version`,
       `${claudeBinary} update`,
@@ -139,7 +167,10 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], { code: 0, stdout: '0.37.1' });
+    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.37.1',
+    });
 
     const summary = await updateProviders(
       [createTarget('antigravity', 'Antigravity CLI', geminiBinary)],
@@ -161,9 +192,15 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'antigravity-cli'], {
       code: 1,
-      stdout: JSON.stringify({ formulae: [], casks: [{ name: 'antigravity-cli', current_version: '0.38.2' }] }),
+      stdout: JSON.stringify({
+        formulae: [],
+        casks: [{ name: 'antigravity-cli', current_version: '0.38.2' }],
+      }),
     });
-    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], { code: 1, stderr: 'brew route failed' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], {
+      code: 1,
+      stderr: 'brew route failed',
+    });
     runner.enqueue(geminiBinary, ['update'], { code: 0, stdout: 'updated' });
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.2' });
 
@@ -196,7 +233,10 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], { code: 1, stderr: 'network error' });
+    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], {
+      code: 1,
+      stderr: 'network error',
+    });
 
     const summary = await updateProviders(
       [createTarget('antigravity', 'Antigravity CLI', geminiBinary)],
@@ -216,10 +256,10 @@ describe('updateProviders', () => {
     runner.enqueue(claudeBinary, ['update'], { code: 0, stdout: 'updated' });
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.110' });
 
-    const summary = await updateProviders(
-      [createTarget('claude', 'Claude Code', claudeBinary)],
-      { runner, now: (() => 4_000) as () => number },
-    );
+    const summary = await updateProviders([createTarget('claude', 'Claude Code', claudeBinary)], {
+      runner,
+      now: (() => 4_000) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('claude');
@@ -230,29 +270,41 @@ describe('updateProviders', () => {
 
   it('prefers npm updates for providers installed from npm even when self-update exists', async () => {
     const runner = new FakeRunner();
-    const claudeBinary = '/Users/test/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js';
+    const claudeBinary =
+      '/Users/test/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.js';
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.109' });
-    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], { code: 0, stdout: '2.1.110' });
-    runner.enqueue('npm', ['install', '-g', '@anthropic-ai/claude-code@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], {
+      code: 0,
+      stdout: '2.1.110',
+    });
+    runner.enqueue('npm', ['install', '-g', '@anthropic-ai/claude-code@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: '2.1.110' });
 
-    const summary = await updateProviders(
-      [createTarget('claude', 'Claude Code', claudeBinary)],
-      { runner, now: (() => 4_250) as () => number },
-    );
+    const summary = await updateProviders([createTarget('claude', 'Claude Code', claudeBinary)], {
+      runner,
+      now: (() => 4_250) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('claude');
     expect(summary.results[0].source).toBe('npm');
     expect(summary.results[0].status).toBe('updated');
-    expect(summary.results[0].updateCommand).toBe('npm install -g @anthropic-ai/claude-code@latest');
+    expect(summary.results[0].updateCommand).toBe(
+      'npm install -g @anthropic-ai/claude-code@latest',
+    );
   });
 
   it('uses npm-based checks for Copilot instead of self-update commands', async () => {
     const runner = new FakeRunner();
     const copilotBinary = '/Users/test/.npm-global/lib/node_modules/@github/copilot/bin/copilot.js';
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
-    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], { code: 0, stdout: '1.0.30' });
+    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], {
+      code: 0,
+      stdout: '1.0.30',
+    });
 
     const summary = await updateProviders(
       [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
@@ -276,12 +328,15 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_550) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_550) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -299,22 +354,29 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], { code: 0, stdout: '2.1.109' });
+    runner.enqueue('npm', ['view', '@anthropic-ai/claude-code', 'version', '--silent'], {
+      code: 0,
+      stdout: '2.1.109',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('claude', 'Claude Code', claudeBinary)],
-      { runner, now: (() => 4_565) as () => number },
-    );
+    const summary = await updateProviders([createTarget('claude', 'Claude Code', claudeBinary)], {
+      runner,
+      now: (() => 4_565) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('claude');
     expect(summary.results[0].source).toBe('brew-cask');
     expect(summary.results[0].status).toBe('up_to_date');
     expect(summary.results[0].updateAttempted).toBe(false);
-    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask claude-code@latest');
-    expect(runner.calls.some((call) => (
-      call.command === claudeBinary && call.args.join(' ') === 'update'
-    ))).toBe(false);
+    expect(summary.results[0].checkCommand).toBe(
+      'brew outdated --json=v2 --cask claude-code@latest',
+    );
+    expect(
+      runner.calls.some(
+        (call) => call.command === claudeBinary && call.args.join(' ') === 'update',
+      ),
+    ).toBe(false);
   });
 
   it('marks brew cask providers as sync_pending when npm upstream is newer than Homebrew metadata', async () => {
@@ -325,12 +387,15 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.122.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.122.0',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_560) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_560) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -339,9 +404,9 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateAttempted).toBe(false);
     expect(summary.results[0].latestVersion).toBe('0.122.0');
     expect(summary.results[0].message).toContain('Homebrew');
-    expect(runner.calls.some((call) => (
-      call.command === 'brew' && call.args[0] === 'upgrade'
-    ))).toBe(false);
+    expect(runner.calls.some((call) => call.command === 'brew' && call.args[0] === 'upgrade')).toBe(
+      false,
+    );
   });
 
   it('continues update flow when brew check payloads cannot be parsed', async () => {
@@ -356,7 +421,10 @@ describe('updateProviders', () => {
       code: 0,
       stdout: '{ not valid json',
     });
-    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], { code: 0, stdout: 'already up to date' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], {
+      code: 0,
+      stdout: 'already up to date',
+    });
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.37.1' });
 
     const summary = await updateProviders(
@@ -379,9 +447,17 @@ describe('updateProviders', () => {
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.0' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'antigravity-cli'], {
       code: 1,
-      stdout: JSON.stringify({ formulae: [], casks: [{ name: 'antigravity-cli', installed_versions: ['0.38.0'], current_version: '0.38.1' }] }),
+      stdout: JSON.stringify({
+        formulae: [],
+        casks: [
+          { name: 'antigravity-cli', installed_versions: ['0.38.0'], current_version: '0.38.1' },
+        ],
+      }),
     });
-    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], { code: 0, stdout: 'upgraded' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], {
+      code: 0,
+      stdout: 'upgraded',
+    });
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
 
     const summary = await updateProviders(
@@ -395,9 +471,9 @@ describe('updateProviders', () => {
     expect(summary.results[0].status).toBe('updated');
     expect(summary.results[0].latestVersion).toBe('0.38.1');
     expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask antigravity-cli');
-    expect(runner.calls.some((call) => (
-      call.command === 'brew' && call.args[0] === 'info'
-    ))).toBe(false);
+    expect(runner.calls.some((call) => call.command === 'brew' && call.args[0] === 'info')).toBe(
+      false,
+    );
   });
 
   it('detects Copilot installed from Homebrew cask and applies cask update strategy', async () => {
@@ -408,7 +484,10 @@ describe('updateProviders', () => {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], { code: 0, stdout: '1.0.30' });
+    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], {
+      code: 0,
+      stdout: '1.0.30',
+    });
 
     const summary = await updateProviders(
       [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
@@ -427,12 +506,15 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/usr/local/bin/codex';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_580) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_580) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -452,7 +534,13 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
 
     const summary = await updateProviders(
-      [createTarget('unknown-provider' as ProviderId, 'Unknown Provider', '/usr/local/bin/unknown')],
+      [
+        createTarget(
+          'unknown-provider' as ProviderId,
+          'Unknown Provider',
+          '/usr/local/bin/unknown',
+        ),
+      ],
       { runner, now: (() => 4_590) as () => number },
     );
 
@@ -473,10 +561,10 @@ describe('updateProviders', () => {
     runner.enqueue(claudeBinary, ['update'], { code: 0, stdout: 'already up to date' });
     runner.enqueue(claudeBinary, ['--version'], { code: 0, stdout: 'Claude Code v2.1' });
 
-    const summary = await updateProviders(
-      [createTarget('claude', 'Claude Code', claudeBinary)],
-      { runner, now: (() => 4_600) as () => number },
-    );
+    const summary = await updateProviders([createTarget('claude', 'Claude Code', claudeBinary)], {
+      runner,
+      now: (() => 4_600) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('2.1');
@@ -488,12 +576,15 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0+build.42' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_700) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_700) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('0.121.0+build.42');
@@ -506,14 +597,20 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.1' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
-    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_750) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_750) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('0.121.0-rc.1');
@@ -526,12 +623,15 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0-rc.2' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0-rc.2',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_800) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_800) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('0.121.0');
@@ -544,14 +644,20 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.1' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0-rc.2' });
-    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0-rc.2',
+    });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.2' });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_850) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_850) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('0.121.0-rc.1');
@@ -564,12 +670,15 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0-rc.1' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0-rc.1' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0-rc.1',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_875) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_875) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].beforeVersion).toBe('0.121.0-rc.1');
@@ -618,10 +727,10 @@ describe('updateProviders', () => {
     runner.enqueue('brew', ['upgrade', '--cask', 'codex'], { code: 0, stdout: 'upgraded' });
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.122.0' });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_925) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_925) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -636,7 +745,9 @@ describe('updateProviders', () => {
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
       code: 1,
-      stdout: JSON.stringify({ casks: [{ name: ['copilot', 'copilot-cli'], current_version: '1.0.31' }] }),
+      stdout: JSON.stringify({
+        casks: [{ name: ['copilot', 'copilot-cli'], current_version: '1.0.31' }],
+      }),
     });
     runner.enqueue('brew', ['upgrade', '--cask', 'copilot-cli'], { code: 0, stdout: 'upgraded' });
     runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.31.' });
@@ -657,13 +768,19 @@ describe('updateProviders', () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.120.0' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
-    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 1, stderr: 'permission denied' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], {
+      code: 1,
+      stderr: 'permission denied',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      { runner, now: (() => 4_975) as () => number },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 4_975) as () => number,
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].providerId).toBe('codex');
@@ -684,13 +801,10 @@ describe('updateProviders', () => {
       },
     };
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        runner,
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
@@ -714,13 +828,10 @@ describe('updateProviders', () => {
       },
     };
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        runner,
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
@@ -751,13 +862,10 @@ describe('updateProviders', () => {
       },
     };
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        runner,
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
@@ -791,14 +899,21 @@ describe('updateProviders', () => {
 
   it('updates a single selected provider without running every provider', async () => {
     const runner = new FakeRunner();
-    const progressEvents: Array<{ phase: string; totalProviders: number; providerId?: ProviderId }> = [];
+    const progressEvents: Array<{
+      phase: string;
+      totalProviders: number;
+      providerId?: ProviderId;
+    }> = [];
     const geminiBinary = '/opt/homebrew/Caskroom/antigravity-cli/0.38.1/agy';
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
     runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'antigravity-cli'], {
       code: 0,
       stdout: JSON.stringify({ formulae: [], casks: [] }),
     });
-    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
+    runner.enqueue('npm', ['view', '@google/antigravity-cli', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.38.1',
+    });
 
     const summary = await updateProvider(
       createTarget('antigravity', 'Antigravity CLI', geminiBinary),
@@ -829,27 +944,33 @@ describe('updateProviders', () => {
     }> = [];
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
     runner.enqueue(codexBinary, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        runner,
-        now: (() => 5_250) as () => number,
-        onProgress: (event) => {
-          progressEvents.push({
-            phase: event.phase,
-            providerMessage: event.providerMessage,
-          });
-        },
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      now: (() => 5_250) as () => number,
+      onProgress: (event) => {
+        progressEvents.push({
+          phase: event.phase,
+          providerMessage: event.providerMessage,
+        });
       },
-    );
+    });
 
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].status).toBe('up_to_date');
-    expect(progressEvents.some((event) => event.providerMessage === 'Checking installed version…')).toBe(true);
-    expect(progressEvents.some((event) => event.providerMessage === 'Checking latest npm version…')).toBe(true);
-    expect(progressEvents.some((event) => event.providerMessage === 'Already up to date.')).toBe(true);
+    expect(
+      progressEvents.some((event) => event.providerMessage === 'Checking installed version…'),
+    ).toBe(true);
+    expect(
+      progressEvents.some((event) => event.providerMessage === 'Checking latest npm version…'),
+    ).toBe(true);
+    expect(progressEvents.some((event) => event.providerMessage === 'Already up to date.')).toBe(
+      true,
+    );
   });
 
   it('marks summary as cancelled when update run is aborted', async () => {
@@ -875,13 +996,10 @@ describe('updateProviders', () => {
       },
     };
 
-    const summary = await updateProviders(
-      [createTarget('codex', 'Codex CLI', codexBinary)],
-      {
-        runner,
-        signal: abortController.signal,
-      },
-    );
+    const summary = await updateProviders([createTarget('codex', 'Codex CLI', codexBinary)], {
+      runner,
+      signal: abortController.signal,
+    });
 
     expect(summary.cancelled).toBe(true);
     expect(summary.results).toHaveLength(1);
@@ -974,8 +1092,14 @@ describe('runProviderUpdate', () => {
     const binaryPath = '/usr/local/bin/codex';
     const stageMessages: string[] = [];
 
-    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], { code: 0, stdout: '0.121.0' });
-    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], { code: 0, stdout: 'updated' });
+    runner.enqueue('npm', ['view', '@openai/codex', 'version', '--silent'], {
+      code: 0,
+      stdout: '0.121.0',
+    });
+    runner.enqueue('npm', ['install', '-g', '@openai/codex@latest'], {
+      code: 0,
+      stdout: 'updated',
+    });
     runner.enqueue(binaryPath, ['--version'], { code: 0, stdout: 'codex 0.121.0' });
 
     const result = await runProviderUpdate({

@@ -1,28 +1,18 @@
 import { sendGuestMessage } from './guest-messaging.js';
 import { instances } from './instance.js';
-import {
-  isLocalBrowserUrl,
-} from './navigation.js';
+import { isLocalBrowserUrl } from './navigation.js';
 import {
   createBrowserAuthPanelArtifacts,
   createBrowserPaneCaptureArtifacts,
 } from './pane-artifacts.js';
-import {
-  syncBrowserTabToSessionState,
-} from './pane-helpers.js';
+import { syncBrowserTabToSessionState } from './pane-helpers.js';
 import { createBrowserTabPaneLayout } from './pane-layout.js';
-import {
-  createBrowserTabInstance,
-} from './pane-runtime.js';
+import { createBrowserTabInstance } from './pane-runtime.js';
 import { initializeBrowserTabRuntimeBindings } from './pane-runtime-bindings.js';
 import { createBrowserTabShellArtifacts } from './pane-shell.js';
 import { createBrowserViewportMenuController } from './pane-viewport-menu.js';
-import {
-  closeBrowserTargetMenu,
-} from './target-menu.js';
-import {
-  type BrowserTabInstance,
-} from './types.js';
+import { closeBrowserTargetMenu } from './target-menu.js';
+import { type BrowserTabInstance } from './types.js';
 
 export function createBrowserTabPane(sessionId: string, url?: string): void {
   initializeBrowserTabPane(sessionId, url);
@@ -198,7 +188,11 @@ export function destroyBrowserTabPane(sessionId: string): void {
   if (instance.inspectMode) void sendGuestMessage(instance.webview, 'exit-inspect-mode');
   if (instance.flowMode) void sendGuestMessage(instance.webview, 'exit-flow-mode');
   if (instance.drawMode) void sendGuestMessage(instance.webview, 'exit-draw-mode');
-  try { instance.webview.stop(); } catch { /* webview may already be stopped */ }
+  try {
+    instance.webview.stop();
+  } catch {
+    /* webview may already be stopped */
+  }
 
   instance.element.remove();
 }

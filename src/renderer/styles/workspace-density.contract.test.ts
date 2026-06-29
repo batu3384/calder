@@ -5,7 +5,10 @@ const tabsCss = readFileSync(new URL('./tabs.css', import.meta.url), 'utf-8');
 const terminalCss = readFileSync(new URL('./terminal.css', import.meta.url), 'utf-8');
 const contextCss = readFileSync(new URL('./context-inspector.css', import.meta.url), 'utf-8');
 const browserCss = readFileSync(new URL('./browser-tab.css', import.meta.url), 'utf-8');
-const splitLayoutSource = readFileSync(new URL('../components/split-layout.ts', import.meta.url), 'utf-8');
+const splitLayoutSource = readFileSync(
+  new URL('../components/split-layout.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('workspace density contract', () => {
   it('treats the shell and workspace stack as responsive containers', () => {
@@ -19,9 +22,9 @@ describe('workspace density contract', () => {
 
   it('lets the command deck reflow before the middle workspace gets crushed', () => {
     expect(tabsCss).toContain('grid-template-areas:');
-    expect(tabsCss).toContain('"main meta actions"');
-    expect(tabsCss).toContain('"main actions"');
-    expect(tabsCss).toContain('"meta actions"');
+    expect(tabsCss).toContain("'main meta actions'");
+    expect(tabsCss).toContain("'main actions'");
+    expect(tabsCss).toContain("'meta actions'");
     expect(tabsCss).not.toContain('#workspace-identity');
     expect(tabsCss).toContain('.tab-bar-main');
   });

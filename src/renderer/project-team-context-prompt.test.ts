@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { appendProjectTeamContextToPrompt, buildProjectTeamContextPromptBlock } from './project-team-context-prompt.js';
+import {
+  appendProjectTeamContextToPrompt,
+  buildProjectTeamContextPromptBlock,
+} from './project-team-context-prompt.js';
 
 describe('project team context prompt', () => {
   it('builds a compact shared team context prompt block', () => {
@@ -50,6 +53,12 @@ describe('project team context prompt', () => {
   });
 
   it('leaves prompts unchanged when no team context exists', () => {
-    expect(appendProjectTeamContextToPrompt('Fix this flow', { spaces: [], sharedRuleCount: 0, workflowCount: 0 })).toBe('Fix this flow');
+    expect(
+      appendProjectTeamContextToPrompt('Fix this flow', {
+        spaces: [],
+        sharedRuleCount: 0,
+        workflowCount: 0,
+      }),
+    ).toBe('Fix this flow');
   });
 });

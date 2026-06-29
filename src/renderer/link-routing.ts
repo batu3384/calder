@@ -2,7 +2,8 @@ const ANSI_CSI_SEQUENCE = /\u001B\[[0-?]*[ -/]*[@-~]/g;
 const ANSI_OSC_SEQUENCE = /\u001B\][^\u0007]*(?:\u0007|\u001B\\)/g;
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g;
 const HTTP_URL_PATTERN = /https?:\/\/[^\s<>()\[\]{}"']+/i;
-const LOCALHOST_PATTERN = /(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?/i;
+const LOCALHOST_PATTERN =
+  /(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(?::\d+)?(?:[/?#][^\s<>()\[\]{}"']*)?/i;
 const MARKDOWN_LINK_TARGET = /\]\(\s*(https?:\/\/[^\s)]+)\s*\)/i;
 
 function stripEdgeWrappers(value: string): string {
@@ -45,7 +46,8 @@ export function resolveNavigableHttpUrl(raw: string): string | null {
   if (!candidate) return null;
 
   const hasHttpScheme = /^https?:\/\//i.test(candidate);
-  const looksLikeLocalHost = /^(localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(:\d+)?([/?#].*)?$/i.test(candidate);
+  const looksLikeLocalHost =
+    /^(localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|::1)(:\d+)?([/?#].*)?$/i.test(candidate);
   const hasOtherScheme = /^[a-z][a-z0-9+.-]*:/i.test(candidate);
 
   if (!hasHttpScheme) {

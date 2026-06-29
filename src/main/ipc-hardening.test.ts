@@ -81,7 +81,9 @@ describe('ipc hardening helpers', () => {
     const state = makeBaseState();
     state.projects[0].sessions[1].browserTargetSessionId = 'missing-session';
 
-    expect(() => sanitizePersistedStateForSave(state)).toThrow(/browserTargetSessionId is missing/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(
+      /browserTargetSessionId is missing/i,
+    );
   });
 
   it('rejects unsupported provider ids in sessions', () => {
@@ -95,7 +97,9 @@ describe('ipc hardening helpers', () => {
     const state = makeBaseState();
     state.preferences.defaultProvider = 'not-a-provider' as never;
 
-    expect(() => sanitizePersistedStateForSave(state)).toThrow(/unsupported preferences.defaultProvider/i);
+    expect(() => sanitizePersistedStateForSave(state)).toThrow(
+      /unsupported preferences.defaultProvider/i,
+    );
   });
 
   it('rejects duplicate project paths after normalization', () => {
@@ -105,10 +109,12 @@ describe('ipc hardening helpers', () => {
       id: 'project-2',
       name: 'Browser 2',
       path: state.projects[0].path,
-      sessions: [{
-        ...state.projects[0].sessions[0],
-        id: 'session-3',
-      }],
+      sessions: [
+        {
+          ...state.projects[0].sessions[0],
+          id: 'session-3',
+        },
+      ],
       activeSessionId: 'session-3',
     });
     state.activeProjectId = 'project-2';
@@ -136,11 +142,15 @@ describe('ipc hardening helpers', () => {
   it('rejects invalid session metadata values', () => {
     const invalidDateState = makeBaseState();
     invalidDateState.projects[0].sessions[0].createdAt = 'not-a-date';
-    expect(() => sanitizePersistedStateForSave(invalidDateState)).toThrow(/session.createdAt must be a valid date/i);
+    expect(() => sanitizePersistedStateForSave(invalidDateState)).toThrow(
+      /session.createdAt must be a valid date/i,
+    );
 
     const invalidTypeState = makeBaseState();
     invalidTypeState.projects[0].sessions[0].type = 'invalid-type' as never;
-    expect(() => sanitizePersistedStateForSave(invalidTypeState)).toThrow(/unsupported session.type/i);
+    expect(() => sanitizePersistedStateForSave(invalidTypeState)).toThrow(
+      /unsupported session.type/i,
+    );
   });
 
   it('validates optional session string fields when present', () => {
@@ -188,32 +198,44 @@ describe('ipc hardening helpers', () => {
       id: `project-${index}`,
       name: `Project ${index}`,
       path: `./tmp/project-${index}`,
-      sessions: [{
-        ...makeBaseState().projects[0].sessions[0],
-        id: `session-${index}`,
-      }],
+      sessions: [
+        {
+          ...makeBaseState().projects[0].sessions[0],
+          id: `session-${index}`,
+        },
+      ],
       activeSessionId: `session-${index}`,
     }));
     tooManyProjects.activeProjectId = tooManyProjects.projects[0].id;
-    expect(() => sanitizePersistedStateForSave(tooManyProjects)).toThrow(/project count exceeds limit/i);
+    expect(() => sanitizePersistedStateForSave(tooManyProjects)).toThrow(
+      /project count exceeds limit/i,
+    );
 
     const malformedProjects = makeBaseState() as unknown as Record<string, unknown>;
-    malformedProjects.projects = [{
-      id: 'project-x',
-      name: 'Broken',
-      path: './tmp/broken',
-      activeSessionId: null,
-      sessions: [{ id: 's1' }],
-    }];
-    expect(() => sanitizePersistedStateForSave(malformedProjects)).toThrow(/projects are malformed/i);
+    malformedProjects.projects = [
+      {
+        id: 'project-x',
+        name: 'Broken',
+        path: './tmp/broken',
+        activeSessionId: null,
+        sessions: [{ id: 's1' }],
+      },
+    ];
+    expect(() => sanitizePersistedStateForSave(malformedProjects)).toThrow(
+      /projects are malformed/i,
+    );
 
     const invalidActiveProjectIdType = makeBaseState() as unknown as Record<string, unknown>;
     invalidActiveProjectIdType.activeProjectId = 123;
-    expect(() => sanitizePersistedStateForSave(invalidActiveProjectIdType)).toThrow(/activeProjectId must be string or null/i);
+    expect(() => sanitizePersistedStateForSave(invalidActiveProjectIdType)).toThrow(
+      /activeProjectId must be string or null/i,
+    );
 
     const invalidPreferences = makeBaseState() as unknown as Record<string, unknown>;
     invalidPreferences.preferences = { soundOnSessionWaiting: true };
-    expect(() => sanitizePersistedStateForSave(invalidPreferences)).toThrow(/preferences are malformed/i);
+    expect(() => sanitizePersistedStateForSave(invalidPreferences)).toThrow(
+      /preferences are malformed/i,
+    );
   });
 
   it('rejects oversized serialized payloads', () => {
@@ -236,17 +258,25 @@ describe('ipc hardening helpers', () => {
   });
 
   it('accepts auth-fill payloads with bounded string fields', () => {
-    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
-      username: 'demo@example.com',
-      password: 'secret',
-    }])).toBe(true);
+    expect(
+      isAllowedGuestMessagePayload('auth-fill-credentials', [
+        {
+          username: 'demo@example.com',
+          password: 'secret',
+        },
+      ]),
+    ).toBe(true);
   });
 
   it('rejects auth-fill payloads with non-string fields', () => {
-    expect(isAllowedGuestMessagePayload('auth-fill-credentials', [{
-      username: 123,
-      password: 'secret',
-    }])).toBe(false);
+    expect(
+      isAllowedGuestMessagePayload('auth-fill-credentials', [
+        {
+          username: 123,
+          password: 'secret',
+        },
+      ]),
+    ).toBe(false);
   });
 
   it('rejects oversized flow replay payloads', () => {

@@ -46,6 +46,7 @@
 ## Task 1: Sidebar Hierarchy And Density
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/index.html`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/sidebar.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/config-sections.ts`
@@ -62,6 +63,7 @@
 ## Task 2: Browser Chrome Hierarchy
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/tabs.css`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
@@ -73,6 +75,7 @@
 ## Task 3: Calder Empty-State Differentiation
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/browser-tab/pane.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/browser-tab.css`
 
@@ -83,6 +86,7 @@
 ## Task 4: Utility Surface Cleanup
 
 **Files:**
+
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/session-history.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/components/git-panel.ts`
 - Modify: `/Users/batuhanyuksel/Documents/browser/src/renderer/styles/base.css`
@@ -98,6 +102,7 @@
 ## Task 5: Verification
 
 **Files:**
+
 - No code changes expected unless verification reveals regressions.
 
 - [ ] Run `npm run build`.

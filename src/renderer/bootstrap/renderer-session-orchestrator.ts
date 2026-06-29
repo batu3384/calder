@@ -8,7 +8,12 @@ import { initGitPanel } from '../components/git-panel.js';
 import { initInsightAlert } from '../components/insight-alert.js';
 import { initLargeFileAlert } from '../components/large-file-alert.js';
 import { shouldShowOnboarding, showOnboardingDialog } from '../components/onboarding-dialog.js';
-import { handleShellPtyData, handleShellPtyExit, initProjectTerminal, isShellSessionId } from '../components/project-terminal.js';
+import {
+  handleShellPtyData,
+  handleShellPtyExit,
+  initProjectTerminal,
+  isShellSessionId,
+} from '../components/project-terminal.js';
 import { initSessionHistory } from '../components/session-history.js';
 import { initSessionInspector } from '../components/session-inspector/session-inspector.js';
 import { initSettingsGuard } from '../components/settings-guard-ui.js';
@@ -16,7 +21,12 @@ import { destroySidebar, initSidebar, promptNewProject } from '../components/sid
 import { initSplitLayout } from '../components/split-layout.js';
 import { checkStarPrompt } from '../components/star-prompt-dialog.js';
 import { initTabBar } from '../components/tab-bar/tab-bar.js';
-import { destroyTerminal, handlePtyData, updateContextDisplay,updateCostDisplay } from '../components/terminal-pane.js';
+import {
+  destroyTerminal,
+  handlePtyData,
+  updateContextDisplay,
+  updateCostDisplay,
+} from '../components/terminal-pane.js';
 import { dismissAllToasts } from '../components/toast.js';
 import { initToolAlert } from '../components/tool-alert.js';
 import { initUpdateBanner } from '../components/update-banner.js';
@@ -34,15 +44,30 @@ import { initProjectReviewSync } from '../project-review-sync.js';
 import { initProjectTeamContextSync } from '../project-team-context-sync.js';
 import { initProjectWorkflowSync } from '../project-workflow-sync.js';
 import { loadProviderMetas } from '../provider-availability.js';
-import { notifyInterrupt,setHookStatus } from '../session-activity.js';
-import { type ContextWindowInfo,getContext, onChange as onContextChange, setContextData } from '../session-context.js';
-import { type CostInfo,onChange as onCostChange, parseCost, setCostData } from '../session-cost.js';
+import { notifyInterrupt, setHookStatus } from '../session-activity.js';
+import {
+  type ContextWindowInfo,
+  getContext,
+  onChange as onContextChange,
+  setContextData,
+} from '../session-context.js';
+import {
+  type CostInfo,
+  onChange as onCostChange,
+  parseCost,
+  setCostData,
+} from '../session-cost.js';
 import { captureInitialContext } from '../session-insights.js';
 import { addEvents as addInspectorEvents } from '../session-inspector-state.js';
-import { clearSession as clearTitleSession,parseTitle } from '../session-title.js';
+import { clearSession as clearTitleSession, parseTitle } from '../session-title.js';
 import { init as initSessionUnread } from '../session-unread.js';
 import { isSharing } from '../sharing/peer-host.js';
-import { cleanupAllShares,endShare, forwardPtyData, initShareManager } from '../sharing/share-manager.js';
+import {
+  cleanupAllShares,
+  endShare,
+  forwardPtyData,
+  initShareManager,
+} from '../sharing/share-manager.js';
 import { appState } from '../state.js';
 import { initLargeFileDetector } from '../tools/large-file-detector.js';
 import { initToolDetector } from '../tools/missing-tool-detector.js';
@@ -151,7 +176,9 @@ export function createRendererSessionOrchestrator(
   function handleCliSessionIdEvent(sessionId: string, cliSessionId: string): void {
     logDebugEvent('cliSessionId', sessionId, cliSessionId);
     // Find the project containing this session and persist the CLI session ID
-    const project = appState.projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+    const project = appState.projects.find((entry) =>
+      entry.sessions.some((session) => session.id === sessionId),
+    );
     if (project) {
       clearTitleSession(sessionId);
       appState.updateSessionCliId(project.id, sessionId, cliSessionId);
@@ -168,7 +195,9 @@ export function createRendererSessionOrchestrator(
         endShare(sessionId);
       }
       // Auto-close the session when CLI exits (skip during app quit to preserve session state)
-      const project = appState.projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
+      const project = appState.projects.find((entry) =>
+        entry.sessions.some((session) => session.id === sessionId),
+      );
       if (project) {
         destroyTerminal(sessionId);
         clearTitleSession(sessionId);
@@ -191,9 +220,16 @@ export function createRendererSessionOrchestrator(
 
   function registerStateDebugEvents(): void {
     const stateEvents = [
-      'project-added', 'project-removed', 'project-changed',
-      'session-added', 'session-removed', 'session-changed',
-      'layout-changed', 'history-changed', 'insights-changed', 'state-loaded',
+      'project-added',
+      'project-removed',
+      'project-changed',
+      'session-added',
+      'session-removed',
+      'session-changed',
+      'layout-changed',
+      'history-changed',
+      'insights-changed',
+      'state-loaded',
     ] as const;
     for (const evt of stateEvents) {
       appState.on(evt as Parameters<typeof appState.on>[0], (data) => {

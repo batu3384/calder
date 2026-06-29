@@ -1,4 +1,4 @@
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   bytesToHex,
@@ -71,7 +71,9 @@ describe('encryptPayload / decryptPayload', () => {
   });
 
   it('throws DecryptionError on corrupted ciphertext', async () => {
-    await expect(decryptPayload('not-valid-base64!!!', 'ABCD-EF12-GH34-JK56')).rejects.toThrow(DecryptionError);
+    await expect(decryptPayload('not-valid-base64!!!', 'ABCD-EF12-GH34-JK56')).rejects.toThrow(
+      DecryptionError,
+    );
   });
 
   it('throws DecryptionError on truncated data', async () => {

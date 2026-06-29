@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { appendProjectGovernanceToPrompt, buildProjectGovernancePromptBlock } from './project-governance-prompt.js';
+import {
+  appendProjectGovernanceToPrompt,
+  buildProjectGovernancePromptBlock,
+} from './project-governance-prompt.js';
 
 describe('project governance prompt helpers', () => {
   it('builds a compact governance block from the active project policy', () => {

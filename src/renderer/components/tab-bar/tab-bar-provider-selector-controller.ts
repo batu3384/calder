@@ -30,15 +30,21 @@ export function createTabBarProviderSelectorController(
 
   function syncQuickSessionButtonMeta(providerId: ProviderId): void {
     const snapshot = getProviderAvailabilitySnapshot();
-    const providerLabel = snapshot?.providers.find(provider => provider.id === providerId)?.displayName ?? providerId;
+    const providerLabel =
+      snapshot?.providers.find((provider) => provider.id === providerId)?.displayName ?? providerId;
     addSessionButtonEl.title = `New ${providerLabel} Session (Ctrl+Shift+N)`;
     addSessionButtonEl.setAttribute('aria-label', `Create new ${providerLabel} session`);
   }
 
-  function buildSessionProviderSelectorSignature(snapshot: ProviderAvailabilitySnapshot | null): string {
+  function buildSessionProviderSelectorSignature(
+    snapshot: ProviderAvailabilitySnapshot | null,
+  ): string {
     if (!snapshot) return 'hidden';
     return snapshot.providers
-      .map(provider => `${provider.id}:${provider.displayName}:${snapshot.availability.get(provider.id) ? '1' : '0'}`)
+      .map(
+        (provider) =>
+          `${provider.id}:${provider.displayName}:${snapshot.availability.get(provider.id) ? '1' : '0'}`,
+      )
       .join('|');
   }
 
@@ -74,7 +80,7 @@ export function createTabBarProviderSelectorController(
 
     const select = createCustomSelect(
       'command-deck-provider',
-      snapshot.providers.map(provider => {
+      snapshot.providers.map((provider) => {
         const available = snapshot.availability.get(provider.id);
         return {
           value: provider.id,
@@ -97,7 +103,9 @@ export function createTabBarProviderSelectorController(
     );
     select.element.classList.add('command-deck-provider-select');
 
-    const hiddenInput = select.element.querySelector('#command-deck-provider') as HTMLInputElement | null;
+    const hiddenInput = select.element.querySelector(
+      '#command-deck-provider',
+    ) as HTMLInputElement | null;
     hiddenInput?.addEventListener('change', () => {
       const providerId = hiddenInput.value as ProviderId;
       syncQuickSessionButtonMeta(providerId);

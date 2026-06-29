@@ -1,5 +1,9 @@
 import { getBlockingChecks, getInspectInteractionHint } from './dependency-scoping.js';
-import { appendInspectActionControls, appendInspectSendControls, renderInspectWorkbenchHeader } from './inspect-workbench-controls.js';
+import {
+  appendInspectActionControls,
+  appendInspectSendControls,
+  renderInspectWorkbenchHeader,
+} from './inspect-workbench-controls.js';
 import { renderInspectPreviewPanel } from './inspect-workbench-preview.js';
 import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 import {
@@ -8,7 +12,9 @@ import {
   renderInspectCapabilityPanel,
 } from './workbench-sections.js';
 
-export function renderMobileInspectWorkbench(options: RenderMobileInspectWorkbenchOptions): HTMLElement {
+export function renderMobileInspectWorkbench(
+  options: RenderMobileInspectWorkbenchOptions,
+): HTMLElement {
   const { instance, report, platformLabels, handlers } = options;
   const inspect = instance.inspectState;
   const blockingChecks = getBlockingChecks(report, inspect.platform);
@@ -31,14 +37,15 @@ export function renderMobileInspectWorkbench(options: RenderMobileInspectWorkben
   section.appendChild(renderInspectCapabilityPanel(inspect.platform, platformLabels));
   const blockerPanel = buildMobileInspectBlockingPanel({
     checks: blockingChecks,
-    renderCheckRow: (check) => buildMobileDependencyCheckRow({
-      instance,
-      check,
-      isInspectBusy: handlers.isInspectBusy,
-      setPaneStatus: handlers.setPaneStatus,
-      setActionAvailability: handlers.setActionAvailability,
-      refreshMobileSurfacePane: handlers.refreshMobileSurfacePane,
-    }),
+    renderCheckRow: (check) =>
+      buildMobileDependencyCheckRow({
+        instance,
+        check,
+        isInspectBusy: handlers.isInspectBusy,
+        setPaneStatus: handlers.setPaneStatus,
+        setActionAvailability: handlers.setActionAvailability,
+        refreshMobileSurfacePane: handlers.refreshMobileSurfacePane,
+      }),
   });
   if (blockerPanel) section.appendChild(blockerPanel);
 

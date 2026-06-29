@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolFailureData } from '../../shared/types/session.js';
-import { _resetForTesting as resetState,appState } from '../state.js';
-import { _resetForTesting, classifyError, handleToolFailure, onToolAlert, type ToolAlert } from './missing-tool-detector.js';
+import { _resetForTesting as resetState, appState } from '../state.js';
+import {
+  _resetForTesting,
+  classifyError,
+  handleToolFailure,
+  onToolAlert,
+  type ToolAlert,
+} from './missing-tool-detector.js';
 import type { ToolInfo } from './tool-catalog.js';
 
 vi.stubGlobal('window', {
@@ -22,7 +28,10 @@ function setupProject(): string {
   return project.id;
 }
 
-function makeFailure(command: string, error = 'Command exited with non-zero status code 127'): ToolFailureData {
+function makeFailure(
+  command: string,
+  error = 'Command exited with non-zero status code 127',
+): ToolFailureData {
   return {
     tool_name: 'Bash',
     tool_input: { command },
@@ -39,7 +48,9 @@ describe('classifyError', () => {
   });
 
   it('classifies exit code 127 as not-found', () => {
-    expect(classifyError('Command exited with non-zero status code 127', baseTool)).toBe('not-found');
+    expect(classifyError('Command exited with non-zero status code 127', baseTool)).toBe(
+      'not-found',
+    );
   });
 
   it('classifies "/usr/bin/thing: not found" as not-found', () => {
@@ -47,23 +58,33 @@ describe('classifyError', () => {
   });
 
   it('classifies "Permission denied" as permission-denied', () => {
-    expect(classifyError('bash: ./script.sh: Permission denied', baseTool)).toBe('permission-denied');
+    expect(classifyError('bash: ./script.sh: Permission denied', baseTool)).toBe(
+      'permission-denied',
+    );
   });
 
   it('classifies exit code 126 as permission-denied', () => {
-    expect(classifyError('Command exited with non-zero status code 126', baseTool)).toBe('permission-denied');
+    expect(classifyError('Command exited with non-zero status code 126', baseTool)).toBe(
+      'permission-denied',
+    );
   });
 
   it('classifies auth error with matching pattern as auth-required', () => {
-    expect(classifyError('To get started with GitHub CLI, please run: gh auth login', toolWithAuth)).toBe('auth-required');
+    expect(
+      classifyError('To get started with GitHub CLI, please run: gh auth login', toolWithAuth),
+    ).toBe('auth-required');
   });
 
   it('classifies auth status pattern as auth-required', () => {
-    expect(classifyError('Try authenticating with: gh auth status', toolWithAuth)).toBe('auth-required');
+    expect(classifyError('Try authenticating with: gh auth status', toolWithAuth)).toBe(
+      'auth-required',
+    );
   });
 
   it('does not classify auth error when tool has no authPatterns', () => {
-    expect(classifyError('To get started with GitHub CLI, please run: gh auth login', baseTool)).toBe('other');
+    expect(
+      classifyError('To get started with GitHub CLI, please run: gh auth login', baseTool),
+    ).toBe('other');
   });
 
   it('classifies "sh: gh: not found" as not-found', () => {
@@ -71,7 +92,12 @@ describe('classifyError', () => {
   });
 
   it('does not classify GitHub API 404 as not-found', () => {
-    expect(classifyError('Exit code 1 --- {"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}', baseTool)).toBe('other');
+    expect(
+      classifyError(
+        'Exit code 1 --- {"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}',
+        baseTool,
+      ),
+    ).toBe('other');
   });
 
   it('does not classify HTTP 404 as not-found', () => {
@@ -79,11 +105,18 @@ describe('classifyError', () => {
   });
 
   it('does not classify "gh: Not Found (HTTP 404)" as not-found', () => {
-    expect(classifyError('Exit code 1 gh: Not Found (HTTP 404) base64: stdin: (null): error decoding base64 input stream', baseTool)).toBe('other');
+    expect(
+      classifyError(
+        'Exit code 1 gh: Not Found (HTTP 404) base64: stdin: (null): error decoding base64 input stream',
+        baseTool,
+      ),
+    ).toBe('other');
   });
 
   it('classifies generic errors as other', () => {
-    expect(classifyError("error: pathspec 'foo' did not match any file(s)", baseTool)).toBe('other');
+    expect(classifyError("error: pathspec 'foo' did not match any file(s)", baseTool)).toBe(
+      'other',
+    );
   });
 
   it('classifies empty error as other', () => {
@@ -91,7 +124,12 @@ describe('classifyError', () => {
   });
 
   it('auth pattern matching is case-insensitive', () => {
-    const tool: ToolInfo = { command: 'gcloud', name: 'Google Cloud CLI', description: 'test', authPatterns: ['unauthenticated'] };
+    const tool: ToolInfo = {
+      command: 'gcloud',
+      name: 'Google Cloud CLI',
+      description: 'test',
+      authPatterns: ['unauthenticated'],
+    };
     expect(classifyError('Error: UNAUTHENTICATED request', tool)).toBe('auth-required');
   });
 });
@@ -356,7 +394,10 @@ describe('handleToolFailure', () => {
     const alerts: ToolAlert[] = [];
     onToolAlert((alert) => alerts.push(alert));
 
-    handleToolFailure(session.id, makeFailure('gh pr list', 'bash: /usr/local/bin/gh: Permission denied'));
+    handleToolFailure(
+      session.id,
+      makeFailure('gh pr list', 'bash: /usr/local/bin/gh: Permission denied'),
+    );
 
     expect(alerts).toHaveLength(1);
     expect(alerts[0].reason).toBe('permission-denied');
@@ -369,7 +410,10 @@ describe('handleToolFailure', () => {
     const alerts: ToolAlert[] = [];
     onToolAlert((alert) => alerts.push(alert));
 
-    handleToolFailure(session.id, makeFailure('gh pr list', 'To get started with GitHub CLI, please run: gh auth login'));
+    handleToolFailure(
+      session.id,
+      makeFailure('gh pr list', 'To get started with GitHub CLI, please run: gh auth login'),
+    );
 
     expect(alerts).toHaveLength(1);
     expect(alerts[0].reason).toBe('auth-required');

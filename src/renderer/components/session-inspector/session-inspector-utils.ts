@@ -1,7 +1,10 @@
-import type { CliProviderCapabilities,ProviderId } from '../../../shared/types/provider.js';
+import type { CliProviderCapabilities, ProviderId } from '../../../shared/types/provider.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
 import { appState, type SessionRecord } from '../../state.js';
-import { getProviderCapabilities, getProviderDisplayName } from '../surface-services/provider-availability.js';
+import {
+  getProviderCapabilities,
+  getProviderDisplayName,
+} from '../surface-services/provider-availability.js';
 import { getTerminalInstance } from '../terminal-pane.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 
@@ -17,7 +20,9 @@ export function canInspectSession(session: Pick<SessionRecord, 'type' | 'provide
 }
 
 export function getInspectedProviderId(): ProviderId {
-  const session = appState.activeProject?.sessions.find(s => s.id === inspectorState.inspectedSessionId);
+  const session = appState.activeProject?.sessions.find(
+    (s) => s.id === inspectorState.inspectedSessionId,
+  );
   return session?.providerId || 'claude';
 }
 
@@ -64,7 +69,11 @@ export function emptyMessage(fallback: string): string {
   if (!inspectorState.inspectedSessionId) return fallback;
   const instance = getTerminalInstance(inspectorState.inspectedSessionId);
   if (!instance?.wasResumed) return fallback;
-  const label = fallback.toLowerCase().includes('tool') ? 'tools' : fallback.toLowerCase().includes('context') ? 'context' : 'history';
+  const label = fallback.toLowerCase().includes('tool')
+    ? 'tools'
+    : fallback.toLowerCase().includes('context')
+      ? 'context'
+      : 'history';
   return `Session resumed — ${label} not available`;
 }
 
@@ -103,11 +112,13 @@ export function parseMcpToolName(toolName?: string): McpToolInfo | null {
 
 export function isMcpToolEvent(ev: Pick<InspectorEvent, 'type' | 'tool_name'>): boolean {
   if (!parseMcpToolName(ev.tool_name)) return false;
-  return ev.type === 'pre_tool_use'
-    || ev.type === 'tool_use'
-    || ev.type === 'tool_failure'
-    || ev.type === 'permission_request'
-    || ev.type === 'permission_denied';
+  return (
+    ev.type === 'pre_tool_use' ||
+    ev.type === 'tool_use' ||
+    ev.type === 'tool_failure' ||
+    ev.type === 'permission_request' ||
+    ev.type === 'permission_denied'
+  );
 }
 
 export function createToolDetailEl(toolInput: unknown, rawToolName?: string): HTMLDivElement {
@@ -136,7 +147,12 @@ export function createToolDetailEl(toolInput: unknown, rawToolName?: string): HT
   return el;
 }
 
-export function makeExpandable(row: HTMLElement, key: string, selector: string, create: () => HTMLElement): void {
+export function makeExpandable(
+  row: HTMLElement,
+  key: string,
+  selector: string,
+  create: () => HTMLElement,
+): void {
   row.classList.add('inspector-expandable');
   if (inspectorState.expandedRows.has(key)) {
     row.appendChild(create());
@@ -185,9 +201,10 @@ export function createAgentDetailEl(ev: InspectorEvent, duration: number | null)
     if (duration !== null) entries.push(['Duration', formatDuration(duration)]);
     if (ev.agent_transcript_path) entries.push(['Transcript', ev.agent_transcript_path]);
     if (ev.last_assistant_message) {
-      const msg = ev.last_assistant_message.length > 500
-        ? ev.last_assistant_message.slice(0, 500) + '...'
-        : ev.last_assistant_message;
+      const msg =
+        ev.last_assistant_message.length > 500
+          ? ev.last_assistant_message.slice(0, 500) + '...'
+          : ev.last_assistant_message;
       entries.push(['Result', msg]);
     }
   }
@@ -228,7 +245,11 @@ export function formatDuration(ms: number): string {
 }
 
 export function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export function formatTokenCount(n: number): string {
@@ -239,52 +260,110 @@ export function formatTokenCount(n: number): string {
 
 export function badgeClass(type: string): string {
   switch (type) {
-    case 'user_prompt': return 'prompt';
-    case 'tool_use': case 'pre_tool_use': return 'tool';
-    case 'tool_failure': case 'stop_failure': return 'failure';
-    case 'stop': return 'stop';
-    case 'session_start': return 'start';
-    case 'permission_request': case 'permission_denied': case 'elicitation': case 'elicitation_result': return 'input';
-    case 'subagent_start': case 'subagent_stop': case 'teammate_idle': return 'agent';
-    case 'session_end': case 'pre_compact': case 'post_compact': case 'instructions_loaded': return 'lifecycle';
-    case 'task_created': case 'task_completed': return 'task';
-    case 'cwd_changed': case 'file_changed': case 'config_change': case 'worktree_create': case 'worktree_remove': case 'status_update': return 'system';
-    case 'approval_decision': return 'approval';
-    case 'notification': return 'notify';
-    default: return 'default';
+    case 'user_prompt':
+      return 'prompt';
+    case 'tool_use':
+    case 'pre_tool_use':
+      return 'tool';
+    case 'tool_failure':
+    case 'stop_failure':
+      return 'failure';
+    case 'stop':
+      return 'stop';
+    case 'session_start':
+      return 'start';
+    case 'permission_request':
+    case 'permission_denied':
+    case 'elicitation':
+    case 'elicitation_result':
+      return 'input';
+    case 'subagent_start':
+    case 'subagent_stop':
+    case 'teammate_idle':
+      return 'agent';
+    case 'session_end':
+    case 'pre_compact':
+    case 'post_compact':
+    case 'instructions_loaded':
+      return 'lifecycle';
+    case 'task_created':
+    case 'task_completed':
+      return 'task';
+    case 'cwd_changed':
+    case 'file_changed':
+    case 'config_change':
+    case 'worktree_create':
+    case 'worktree_remove':
+    case 'status_update':
+      return 'system';
+    case 'approval_decision':
+      return 'approval';
+    case 'notification':
+      return 'notify';
+    default:
+      return 'default';
   }
 }
 
 export function badgeLabel(type: string): string {
   switch (type) {
-    case 'user_prompt': return 'Prompt';
-    case 'tool_use': return 'Tool';
-    case 'pre_tool_use': return 'Pre-Tool';
-    case 'tool_failure': return 'Failure';
-    case 'stop': return 'Done';
-    case 'stop_failure': return 'Error';
-    case 'session_start': return 'Start';
-    case 'session_end': return 'End';
-    case 'permission_request': return 'Input';
-    case 'permission_denied': return 'Denied';
-    case 'subagent_start': return 'Agent';
-    case 'subagent_stop': return 'Agent';
-    case 'notification': return 'Notify';
-    case 'pre_compact': return 'Compact';
-    case 'post_compact': return 'Compact';
-    case 'task_created': return 'Task+';
-    case 'task_completed': return 'Task OK';
-    case 'worktree_create': return 'Worktree+';
-    case 'worktree_remove': return 'Worktree-';
-    case 'cwd_changed': return 'CWD';
-    case 'file_changed': return 'File';
-    case 'config_change': return 'Config';
-    case 'approval_decision': return 'Approval';
-    case 'elicitation': return 'Ask';
-    case 'elicitation_result': return 'Answer';
-    case 'instructions_loaded': return 'Instr';
-    case 'teammate_idle': return 'Idle';
-    case 'status_update': return 'Status';
-    default: return escapeHtml(type);
+    case 'user_prompt':
+      return 'Prompt';
+    case 'tool_use':
+      return 'Tool';
+    case 'pre_tool_use':
+      return 'Pre-Tool';
+    case 'tool_failure':
+      return 'Failure';
+    case 'stop':
+      return 'Done';
+    case 'stop_failure':
+      return 'Error';
+    case 'session_start':
+      return 'Start';
+    case 'session_end':
+      return 'End';
+    case 'permission_request':
+      return 'Input';
+    case 'permission_denied':
+      return 'Denied';
+    case 'subagent_start':
+      return 'Agent';
+    case 'subagent_stop':
+      return 'Agent';
+    case 'notification':
+      return 'Notify';
+    case 'pre_compact':
+      return 'Compact';
+    case 'post_compact':
+      return 'Compact';
+    case 'task_created':
+      return 'Task+';
+    case 'task_completed':
+      return 'Task OK';
+    case 'worktree_create':
+      return 'Worktree+';
+    case 'worktree_remove':
+      return 'Worktree-';
+    case 'cwd_changed':
+      return 'CWD';
+    case 'file_changed':
+      return 'File';
+    case 'config_change':
+      return 'Config';
+    case 'approval_decision':
+      return 'Approval';
+    case 'elicitation':
+      return 'Ask';
+    case 'elicitation_result':
+      return 'Answer';
+    case 'instructions_loaded':
+      return 'Instr';
+    case 'teammate_idle':
+      return 'Idle';
+    case 'status_update':
+      return 'Status';
+    default:
+      return escapeHtml(type);
   }
 }

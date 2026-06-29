@@ -97,7 +97,8 @@ function renderResults(): void {
     const fileName = parts.pop() || filePath;
     const dir = parts.join('/');
 
-    item.innerHTML = `<span class="quick-open-filename">${escapeHtml(fileName)}</span>` +
+    item.innerHTML =
+      `<span class="quick-open-filename">${escapeHtml(fileName)}</span>` +
       (dir ? `<span class="quick-open-dir">${escapeHtml(dir)}</span>` : '');
 
     item.addEventListener('mouseenter', () => {

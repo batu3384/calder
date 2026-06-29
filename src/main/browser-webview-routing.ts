@@ -9,7 +9,10 @@ type NavigateEvent = { preventDefault(): void };
 interface WebContentsLike {
   setWindowOpenHandler(handler: WindowOpenHandler): void;
   on(event: 'will-navigate', listener: (event: NavigateEvent, url: string) => void): this;
-  on(event: 'did-attach-webview', listener: (event: unknown, guestContents: WebContentsLike) => void): this;
+  on(
+    event: 'did-attach-webview',
+    listener: (event: unknown, guestContents: WebContentsLike) => void,
+  ): this;
   loadURL?(url: string): Promise<void> | void;
 }
 
@@ -63,7 +66,9 @@ function redirectGuestWindowToCurrentView(
 
 export function attachBrowserWebviewRouting(
   mainWindow: BrowserWindowLike,
-  openExternal: (url: string) => void = (url) => { void shell.openExternal(url); },
+  openExternal: (url: string) => void = (url) => {
+    void shell.openExternal(url);
+  },
 ): void {
   const routeExternal = createExternalRouteDispatcher(openExternal);
 

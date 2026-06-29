@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { clampRatio, defaultPresetForCount, resolveMosaicPreset, validPresetsForCount } from './mosaic-layout-model.js';
+import {
+  clampRatio,
+  defaultPresetForCount,
+  resolveMosaicPreset,
+  validPresetsForCount,
+} from './mosaic-layout-model.js';
 
 describe('mosaic-layout-model', () => {
   it('returns the default preset for each supported session count', () => {

@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
@@ -23,8 +23,8 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { _resetForTesting,clearSession, parseTitle } from './session-title';
-import { _resetForTesting as resetAppState,appState } from './state';
+import { _resetForTesting, clearSession, parseTitle } from './session-title';
+import { _resetForTesting as resetAppState, appState } from './state';
 
 beforeEach(() => {
   _resetForTesting();
@@ -63,7 +63,10 @@ describe('parseTitle', () => {
 
   it('does not extract text spanning across separate separator lines', () => {
     const { project, session } = addProjectAndSession();
-    parseTitle(session.id, '────────────────────\r\n› i got a feedback from a user\r\n────────────────────');
+    parseTitle(
+      session.id,
+      '────────────────────\r\n› i got a feedback from a user\r\n────────────────────',
+    );
     const updated = project.sessions.find((s) => s.id === session.id)!;
     expect(updated.name).toBe('Session 1');
   });

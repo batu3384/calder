@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolFailureData } from '../../shared/types/session.js';
-import { _resetForTesting as resetState,appState } from '../state.js';
-import { _resetForTesting, handleToolFailure, type LargeFileAlert,onLargeFileAlert } from './large-file-detector.js';
+import { _resetForTesting as resetState, appState } from '../state.js';
+import {
+  _resetForTesting,
+  handleToolFailure,
+  type LargeFileAlert,
+  onLargeFileAlert,
+} from './large-file-detector.js';
 
 const mockReadFile = vi.fn().mockResolvedValue({ ok: true, content: '' });
 
@@ -130,7 +135,10 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    await handleToolFailure(session.id, makeReadFailure('/Users/someone/.claude/projects/-foo/tool-results/b2r1bcdof.txt'));
+    await handleToolFailure(
+      session.id,
+      makeReadFailure('/Users/someone/.claude/projects/-foo/tool-results/b2r1bcdof.txt'),
+    );
 
     expect(alerts).toHaveLength(0);
   });
@@ -278,7 +286,10 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    await handleToolFailure(session.id, makeReadFailure('/tmp/test/packages/web/node_modules/react/index.js'));
+    await handleToolFailure(
+      session.id,
+      makeReadFailure('/tmp/test/packages/web/node_modules/react/index.js'),
+    );
     expect(alerts).toHaveLength(0);
   });
 
@@ -322,7 +333,10 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    mockReadFile.mockResolvedValue({ ok: true, content: '# Large generated files\nsrc/generated/**\n' });
+    mockReadFile.mockResolvedValue({
+      ok: true,
+      content: '# Large generated files\nsrc/generated/**\n',
+    });
 
     await handleToolFailure(session.id, makeReadFailure('/tmp/test/src/generated/schema.ts'));
     expect(alerts).toHaveLength(0);

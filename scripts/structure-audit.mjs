@@ -148,7 +148,12 @@ function main() {
       violations.push({
         type: 'line-budget-regression',
         subject: file,
-        details: [`rule: ${rule.name}`, `lines: ${lines}`, `baseline: ${baselineLines}`, `max: ${rule.max}`],
+        details: [
+          `rule: ${rule.name}`,
+          `lines: ${lines}`,
+          `baseline: ${baselineLines}`,
+          `max: ${rule.max}`,
+        ],
       });
       continue;
     }
@@ -175,7 +180,9 @@ function main() {
     }
     const lines = lineCountCache.get(file) ?? countFileLines(file);
     if (lines <= rule.max) {
-      staleBaselineEntries.push(`${file} (resolved at ${lines}; max=${rule.max}; baseline=${baselineLines})`);
+      staleBaselineEntries.push(
+        `${file} (resolved at ${lines}; max=${rule.max}; baseline=${baselineLines})`,
+      );
     }
   }
 
@@ -189,9 +196,13 @@ function main() {
   for (const rule of LINE_BUDGET_RULES) {
     console.log(`  - ${rule.name}: <= ${rule.max}`);
   }
-  console.log(`[structure-audit] Legacy over-budget files (frozen): ${legacyLineBudgetEntries.length}`);
+  console.log(
+    `[structure-audit] Legacy over-budget files (frozen): ${legacyLineBudgetEntries.length}`,
+  );
   for (const item of legacyLineBudgetEntries.slice(0, 10)) {
-    console.log(`  - ${item.file}: ${item.lines} (baseline=${item.baseline}, max=${item.max}, rule=${item.rule})`);
+    console.log(
+      `  - ${item.file}: ${item.lines} (baseline=${item.baseline}, max=${item.max}, rule=${item.rule})`,
+    );
   }
   if (legacyLineBudgetEntries.length > 10) {
     console.log(`  - ...and ${legacyLineBudgetEntries.length - 10} more`);

@@ -1,4 +1,4 @@
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockAppState = {
   preferences: { keybindings: {} as Record<string, string> },
@@ -92,17 +92,23 @@ describe('shortcuts (Mac)', () => {
 
   it('eventToAccelerator includes Shift modifier', async () => {
     const { eventToAccelerator } = await import('./shortcuts');
-    expect(eventToAccelerator(makeKeyEvent({ key: 'n', metaKey: true, shiftKey: true }))).toBe('CmdOrCtrl+Shift+N');
+    expect(eventToAccelerator(makeKeyEvent({ key: 'n', metaKey: true, shiftKey: true }))).toBe(
+      'CmdOrCtrl+Shift+N',
+    );
   });
 
   it('eventToAccelerator includes Alt modifier', async () => {
     const { eventToAccelerator } = await import('./shortcuts');
-    expect(eventToAccelerator(makeKeyEvent({ key: 'x', metaKey: true, altKey: true }))).toBe('CmdOrCtrl+Alt+X');
+    expect(eventToAccelerator(makeKeyEvent({ key: 'x', metaKey: true, altKey: true }))).toBe(
+      'CmdOrCtrl+Alt+X',
+    );
   });
 
   it('eventToAccelerator handles both ctrl and meta pressed', async () => {
     const { eventToAccelerator } = await import('./shortcuts');
-    expect(eventToAccelerator(makeKeyEvent({ key: 'a', ctrlKey: true, metaKey: true }))).toBe('Ctrl+Cmd+A');
+    expect(eventToAccelerator(makeKeyEvent({ key: 'a', ctrlKey: true, metaKey: true }))).toBe(
+      'Ctrl+Cmd+A',
+    );
   });
 
   it('eventToAccelerator uppercases single char keys', async () => {
@@ -290,7 +296,9 @@ describe('ShortcutManager', () => {
     const { ShortcutManager } = await import('./shortcuts');
     const mgr = new ShortcutManager();
     mgr.setOverride('new-session', 'CmdOrCtrl+K');
-    expect(mockAppState.setPreference).toHaveBeenCalledWith('keybindings', { 'new-session': 'CmdOrCtrl+K' });
+    expect(mockAppState.setPreference).toHaveBeenCalledWith('keybindings', {
+      'new-session': 'CmdOrCtrl+K',
+    });
   });
 
   it('setOverride preserves existing overrides', async () => {

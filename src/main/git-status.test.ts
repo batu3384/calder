@@ -190,7 +190,9 @@ describe('getGitDiff', () => {
   });
 
   it('returns error message when untracked file cannot be read', async () => {
-    mockReadFileSync.mockImplementationOnce(() => { throw new Error('ENOENT'); });
+    mockReadFileSync.mockImplementationOnce(() => {
+      throw new Error('ENOENT');
+    });
     const diff = await getGitDiff('/test', 'missing.ts', 'untracked');
     expect(diff).toBe('(unable to read file)');
   });
@@ -316,12 +318,7 @@ describe('getGitWorktrees', () => {
   });
 
   it('handles single worktree (no linked)', async () => {
-    const output = [
-      'worktree /repo',
-      'HEAD abc123',
-      'branch refs/heads/main',
-      '',
-    ].join('\n');
+    const output = ['worktree /repo', 'HEAD abc123', 'branch refs/heads/main', ''].join('\n');
 
     simulateExecFile(null, output);
     const worktrees = await getGitWorktrees('/repo');
@@ -389,7 +386,9 @@ describe('branch and file mutation commands', () => {
 
   it('rejects mutation commands when git returns an error', async () => {
     mockExecFile.mockImplementationOnce((_cmd, _args, _opts, callback) => {
-      (callback as (err: ExecFileException) => void)(new Error('checkout failed') as ExecFileException);
+      (callback as (err: ExecFileException) => void)(
+        new Error('checkout failed') as ExecFileException,
+      );
       return undefined as never;
     });
 

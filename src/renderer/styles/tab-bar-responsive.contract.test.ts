@@ -16,9 +16,9 @@ describe('tab bar responsive command deck contract', () => {
     expect(tabsCss).toContain('display: none;');
     expect(tabsCss).toContain('max-width: 110px;');
     expect(tabsCss).toContain('@container workspace-stack (max-width: 820px)');
-    expect(tabsCss).toContain('"main"');
-    expect(tabsCss).toContain('"meta"');
-    expect(tabsCss).toContain('"actions"');
+    expect(tabsCss).toContain("'main'");
+    expect(tabsCss).toContain("'meta'");
+    expect(tabsCss).toContain("'actions'");
   });
 
   it('keeps shell controls readable on constrained width and height', () => {

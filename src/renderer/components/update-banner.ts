@@ -33,7 +33,11 @@ export function initUpdateBanner(): void {
     autoHideTimer = null;
   }
 
-  function show(msg: string, btn?: { label: string; action: () => void }, autoHideMs?: number): void {
+  function show(
+    msg: string,
+    btn?: { label: string; action: () => void },
+    autoHideMs?: number,
+  ): void {
     clearAutoHideTimer();
     messageSpan.textContent = msg;
     banner.classList.remove('hidden');
@@ -60,12 +64,15 @@ export function initUpdateBanner(): void {
   let previousPhase = getUpdateCenterState().app.phase;
 
   const render = (appUpdateState: ReturnType<typeof getUpdateCenterState>['app']) => {
-    const targetLabel = appUpdateState.targetVersion ? `v${appUpdateState.targetVersion}` : 'update';
+    const targetLabel = appUpdateState.targetVersion
+      ? `v${appUpdateState.targetVersion}`
+      : 'update';
 
     if (appUpdateState.phase === 'downloading') {
-      const percent = typeof appUpdateState.downloadPercent === 'number'
-        ? ` ${appUpdateState.downloadPercent}%`
-        : '';
+      const percent =
+        typeof appUpdateState.downloadPercent === 'number'
+          ? ` ${appUpdateState.downloadPercent}%`
+          : '';
       show(`Downloading ${targetLabel}...${percent}`);
     } else if (appUpdateState.phase === 'ready_to_restart') {
       show(`Update ${targetLabel} ready.`, {
@@ -75,15 +82,21 @@ export function initUpdateBanner(): void {
         },
       });
     } else if (
-      appUpdateState.phase === 'up_to_date'
-      && (previousPhase === 'checking' || previousPhase === 'downloading')
+      appUpdateState.phase === 'up_to_date' &&
+      (previousPhase === 'checking' || previousPhase === 'downloading')
     ) {
       show('You’re up to date.', undefined, 3600);
     } else if (
-      appUpdateState.phase === 'error'
-      && (previousPhase === 'checking' || previousPhase === 'downloading')
+      appUpdateState.phase === 'error' &&
+      (previousPhase === 'checking' || previousPhase === 'downloading')
     ) {
-      show(appUpdateState.errorMessage ? `Update failed: ${appUpdateState.errorMessage}` : 'Update check failed.', undefined, 7000);
+      show(
+        appUpdateState.errorMessage
+          ? `Update failed: ${appUpdateState.errorMessage}`
+          : 'Update check failed.',
+        undefined,
+        7000,
+      );
     }
 
     previousPhase = appUpdateState.phase;
@@ -93,8 +106,12 @@ export function initUpdateBanner(): void {
   const unsubscribe = onUpdateCenterChange((snapshot) => {
     render(snapshot.app);
   });
-  window.addEventListener('beforeunload', () => {
-    clearAutoHideTimer();
-    unsubscribe();
-  }, { once: true });
+  window.addEventListener(
+    'beforeunload',
+    () => {
+      clearAutoHideTimer();
+      unsubscribe();
+    },
+    { once: true },
+  );
 }

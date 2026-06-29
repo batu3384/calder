@@ -422,7 +422,10 @@ export async function startBrowserBridge(
   const nodeHookPath = path.join(shimDir, 'calder-node-open-hook.cjs');
   writeExecutable(launcherPath, createLauncherScript());
   writeExecutable(path.join(shimDir, 'open'), createUrlShim('CALDER_BROWSER_BRIDGE_REAL_OPEN'));
-  writeExecutable(path.join(shimDir, 'xdg-open'), createUrlShim('CALDER_BROWSER_BRIDGE_REAL_XDG_OPEN'));
+  writeExecutable(
+    path.join(shimDir, 'xdg-open'),
+    createUrlShim('CALDER_BROWSER_BRIDGE_REAL_XDG_OPEN'),
+  );
   fs.writeFileSync(nodeHookPath, createNodeOpenHookScript(), { mode: 0o644 });
 
   const token = randomBytes(16).toString('hex');
@@ -454,7 +457,10 @@ export async function startBrowserBridge(
   };
 }
 
-export function buildBrowserBridgeEnv(cwd: string, env: Record<string, string>): Record<string, string> {
+export function buildBrowserBridgeEnv(
+  cwd: string,
+  env: Record<string, string>,
+): Record<string, string> {
   if (!bridgeState) return { ...env };
 
   return buildBrowserBridgeEnvFromState(cwd, env, bridgeState);

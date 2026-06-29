@@ -83,7 +83,11 @@ describe('state appstate core resumeHistorySessionForProject', () => {
     const pushNav = vi.fn();
     const project = makeProject({
       sessionHistory: [makeArchivedSession()],
-      layout: normalizeProjectLayout({ mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' }),
+      layout: normalizeProjectLayout({
+        mode: 'mosaic',
+        splitPanes: [],
+        splitDirection: 'horizontal',
+      }),
     });
 
     const result = resumeHistorySessionForProject({

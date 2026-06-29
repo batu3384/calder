@@ -186,17 +186,21 @@
 }
 
 @keyframes spinner-rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-button[data-loading="true"] {
+button[data-loading='true'] {
   position: relative;
   pointer-events: none;
   opacity: 0.7;
 }
 
-button[data-loading="true"]::after {
+button[data-loading='true']::after {
   content: '';
   position: absolute;
   top: 50%;

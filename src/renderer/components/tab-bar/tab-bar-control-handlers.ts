@@ -1,9 +1,6 @@
 import type { ProjectRecord, SessionRecord } from '../../state.js';
 import { showShareDialog } from '../share-dialog/share-dialog.js';
-import {
-  getPreferredCliSession,
-  syncMobileControlButton,
-} from './tab-bar-mobile-control.js';
+import { getPreferredCliSession, syncMobileControlButton } from './tab-bar-mobile-control.js';
 import { getProjectSurface, updateProjectSurface } from './tab-bar-surface-state.js';
 
 interface HandleMobileControlClickOptions {
@@ -14,12 +11,7 @@ interface HandleMobileControlClickOptions {
 }
 
 export function handleMobileControlClick(options: HandleMobileControlClickOptions): void {
-  const {
-    project,
-    btnMobileControl,
-    mobileControlPresenceEl,
-    promptNewSession,
-  } = options;
+  const { project, btnMobileControl, mobileControlPresenceEl, promptNewSession } = options;
   if (!project) return;
 
   const targetCliSession = getPreferredCliSession(project);
@@ -39,7 +31,9 @@ export function activateLiveViewSurface(
   project: ProjectRecord,
   onMissingBrowserSession: (projectId: string) => void,
 ): void {
-  const existingBrowser = [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
+  const existingBrowser = [...project.sessions]
+    .reverse()
+    .find((session) => session.type === 'browser-tab');
   if (!existingBrowser) {
     onMissingBrowserSession(project.id);
     return;
@@ -53,7 +47,9 @@ export function activateLiveViewSurface(
     web: {
       sessionId: existingBrowser.id,
       url: existingBrowser.browserTabUrl,
-      history: surface.web?.history ?? (existingBrowser.browserTabUrl ? [existingBrowser.browserTabUrl] : []),
+      history:
+        surface.web?.history ??
+        (existingBrowser.browserTabUrl ? [existingBrowser.browserTabUrl] : []),
     },
   });
 }

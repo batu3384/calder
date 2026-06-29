@@ -2,11 +2,23 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
-const paneLayoutSource = readFileSync(new URL('./browser-tab/pane-layout.ts', import.meta.url), 'utf-8');
-const paneShellSource = readFileSync(new URL('./browser-tab/pane-shell.ts', import.meta.url), 'utf-8');
+const paneLayoutSource = readFileSync(
+  new URL('./browser-tab/pane-layout.ts', import.meta.url),
+  'utf-8',
+);
+const paneShellSource = readFileSync(
+  new URL('./browser-tab/pane-shell.ts', import.meta.url),
+  'utf-8',
+);
 const source = [paneSource, paneLayoutSource, paneShellSource].join('\n');
-const newTabStateSource = readFileSync(new URL('./browser-tab/new-tab-state.ts', import.meta.url), 'utf-8');
-const newTabUiSource = readFileSync(new URL('./browser-tab/new-tab-ui.ts', import.meta.url), 'utf-8');
+const newTabStateSource = readFileSync(
+  new URL('./browser-tab/new-tab-state.ts', import.meta.url),
+  'utf-8',
+);
+const newTabUiSource = readFileSync(
+  new URL('./browser-tab/new-tab-ui.ts', import.meta.url),
+  'utf-8',
+);
 const css = readFileSync(new URL('../styles/browser-tab.css', import.meta.url), 'utf-8');
 
 describe('browser stage contract', () => {
@@ -32,11 +44,13 @@ describe('browser stage contract', () => {
     expect(css).toContain('padding: 8px 12px 9px;');
     expect(css).toContain('border-radius: 999px;');
     expect(css).toContain('.browser-url-input');
-    expect(css).toContain('border-left: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);');
+    expect(css).toContain(
+      'border-left: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);',
+    );
     expect(css).toContain('.browser-go-btn');
     expect(css).toContain('min-width: 40px;');
     expect(css).toContain('.browser-go-btn.loading');
-    expect(css).toContain('.browser-pane-status[data-state=\'loading\']');
+    expect(css).toContain(".browser-pane-status[data-state='loading']");
   });
 
   it('wraps nav and address controls in quieter toolbar shells', () => {
@@ -44,7 +58,9 @@ describe('browser stage contract', () => {
     expect(source).toContain('browser-toolbar-address-shell');
     expect(css).toContain('.browser-toolbar-nav-shell');
     expect(css).toContain('.browser-toolbar-address-shell');
-    expect(css).toContain('border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
+    expect(css).toContain(
+      'border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);',
+    );
     expect(css).toContain('color-mix(in srgb, var(--surface-panel) 58%, transparent);');
   });
 

@@ -20,7 +20,11 @@
 .calder-icon-button:hover {
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.03)), rgba(255, 255, 255, 0)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.03)),
+      rgba(255, 255, 255, 0)
+    ),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
   color: var(--text-primary);
   box-shadow:
@@ -70,9 +74,12 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: var(--radius-lg);
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 44%),
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
-    var(--surface-glass);
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 22%, transparent),
+      transparent 44%
+    ),
+    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)), var(--surface-glass);
   box-shadow: var(--shadow-elevated);
   backdrop-filter: blur(18px);
 }
@@ -81,7 +88,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 22%, transparent), transparent 46%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 22%, transparent),
+      transparent 46%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.032), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, black);
   box-shadow: 0 20px 48px rgba(8, 5, 3, 0.3);
@@ -92,7 +103,11 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 18%, transparent), transparent 48%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--accent-soft) 18%, transparent),
+      transparent 48%
+    ),
     linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 95%, black);
   box-shadow:

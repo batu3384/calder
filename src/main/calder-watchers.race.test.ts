@@ -86,9 +86,8 @@ describe('calder watchers race safety', () => {
         optionsOrListener: { recursive: boolean } | (() => void),
         maybeListener?: () => void,
       ) => {
-        const listener = typeof optionsOrListener === 'function'
-          ? optionsOrListener
-          : maybeListener;
+        const listener =
+          typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
         if (!listener) {
           throw new Error('listener is required');
         }
@@ -109,15 +108,24 @@ describe('calder watchers race safety', () => {
       }));
 
       let resolveDiscovery: ((value: unknown) => void) | null = null;
-      const discoverySpy = vi.fn(async () => new Promise<unknown>((resolve) => {
-        resolveDiscovery = resolve;
-      }));
+      const discoverySpy = vi.fn(
+        async () =>
+          new Promise<unknown>((resolve) => {
+            resolveDiscovery = resolve;
+          }),
+      );
       vi.doMock(testCase.discoveryModule, () => ({
         [testCase.discoveryExport]: discoverySpy,
       }));
 
-      const watcherModule = await import(testCase.watcherModule) as Record<string, (...args: unknown[]) => unknown>;
-      const startWatcher = watcherModule[testCase.startExport] as (projectPath: string, onChange: (state: unknown) => void) => void;
+      const watcherModule = (await import(testCase.watcherModule)) as Record<
+        string,
+        (...args: unknown[]) => unknown
+      >;
+      const startWatcher = watcherModule[testCase.startExport] as (
+        projectPath: string,
+        onChange: (state: unknown) => void,
+      ) => void;
       const stopWatcher = watcherModule[testCase.stopExport] as () => void;
 
       const seen: unknown[] = [];
@@ -142,7 +150,10 @@ describe('calder watchers race safety', () => {
 
         // Stop while discovery promise is still unresolved.
         stopWatcher();
-        requireValue<(value: unknown) => void>(resolveDiscovery, 'Expected discovery resolver to be registered')({});
+        requireValue<(value: unknown) => void>(
+          resolveDiscovery,
+          'Expected discovery resolver to be registered',
+        )({});
         await Promise.resolve();
 
         expect(seen).toEqual([]);

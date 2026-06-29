@@ -51,7 +51,10 @@ interface CliSurfaceBindingsInstance {
 
 interface BindRuntimeHandlersArgs {
   projectId: string;
-  controls: Pick<CliSurfaceLayoutElements, 'startButton' | 'stopButton' | 'restartButton' | 'captureButton'>;
+  controls: Pick<
+    CliSurfaceLayoutElements,
+    'startButton' | 'stopButton' | 'restartButton' | 'captureButton'
+  >;
   resolveSelectedProfile: (projectId: string) => unknown;
   showComposerError: (message: string) => void;
   clearComposerError: () => void;
@@ -165,9 +168,7 @@ export function bindInspectPointerHandlers({
 }: BindPointerHandlersArgs): void {
   instance.composerContextSelectEl.addEventListener('change', () => {
     const nextValue = instance.composerContextSelectEl.value;
-    const override = nextValue === 'auto'
-      ? null
-      : nextValue as CliSurfacePromptContextMode;
+    const override = nextValue === 'auto' ? null : (nextValue as CliSurfacePromptContextMode);
     onContextModeOverrideChange(override);
     const selection = instance.inspectState.selection ?? instance.inspectState.payload?.selection;
     if (selection) {
@@ -203,9 +204,10 @@ export function bindInspectPointerHandlers({
     if (!instance.inspectState.active || !instance.selectionAnchor) return;
     event.preventDefault();
     const current = pointerToCell(event);
-    const singleClick = current
-      && current.row === instance.selectionAnchor.row
-      && current.col === instance.selectionAnchor.col;
+    const singleClick =
+      current &&
+      current.row === instance.selectionAnchor.row &&
+      current.col === instance.selectionAnchor.col;
 
     if (singleClick && current) {
       const region = findSelectableRegionAtCell(current);

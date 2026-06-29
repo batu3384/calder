@@ -59,7 +59,9 @@ export function bindUseMobileFallbackButton(params: BindUseMobileFallbackButtonP
       mobileLinkInput,
       mobileQrImg,
     }).then((hasQr) => {
-      setMobileStatus(hasQr ? copy.usingLanFallback : `${copy.usingLanFallback} ${copy.qrUnavailableUseLink}`);
+      setMobileStatus(
+        hasQr ? copy.usingLanFallback : `${copy.usingLanFallback} ${copy.qrUnavailableUseLink}`,
+      );
     });
   });
 }

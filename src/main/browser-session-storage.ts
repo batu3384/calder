@@ -11,10 +11,10 @@ const MIGRATION_MARKER = '.browser-session-storage-v1';
 
 function isErrnoCode(error: unknown, code: string): boolean {
   return Boolean(
-    error
-    && typeof error === 'object'
-    && 'code' in error
-    && (error as { code?: unknown }).code === code,
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: unknown }).code === code,
   );
 }
 
@@ -27,7 +27,9 @@ export interface BrowserSessionStoragePrepResult {
   migratedLegacyServiceWorker: boolean;
 }
 
-export async function prepareBrowserSessionStorage(userDataPath: string): Promise<BrowserSessionStoragePrepResult> {
+export async function prepareBrowserSessionStorage(
+  userDataPath: string,
+): Promise<BrowserSessionStoragePrepResult> {
   const markerPath = path.join(userDataPath, MIGRATION_MARKER);
   const legacyPath = path.join(userDataPath, LEGACY_SERVICE_WORKER_DIR);
   const backupRoot = path.join(userDataPath, LEGACY_BACKUP_DIR);
@@ -40,7 +42,10 @@ export async function prepareBrowserSessionStorage(userDataPath: string): Promis
     };
   } catch (error) {
     if (!isErrnoCode(error, 'ENOENT')) {
-      logStoragePrepWarning('Failed to read migration marker; continuing with migration checks.', error);
+      logStoragePrepWarning(
+        'Failed to read migration marker; continuing with migration checks.',
+        error,
+      );
     }
   }
 
@@ -65,7 +70,10 @@ export async function prepareBrowserSessionStorage(userDataPath: string): Promis
         destination = path.join(backupRoot, `${LEGACY_SERVICE_WORKER_DIR}-${Date.now()}`);
       } catch (error) {
         if (!isErrnoCode(error, 'ENOENT')) {
-          logStoragePrepWarning('Failed while probing backup destination; using default destination.', error);
+          logStoragePrepWarning(
+            'Failed while probing backup destination; using default destination.',
+            error,
+          );
         }
       }
 
@@ -85,12 +93,16 @@ export async function prepareBrowserSessionStorage(userDataPath: string): Promis
 
   await fs.writeFile(
     markerPath,
-    JSON.stringify({
-      version: 1,
-      migratedLegacyServiceWorker,
-      createdAt: new Date().toISOString(),
-      partition: BROWSER_SESSION_PARTITION,
-    }, null, 2),
+    JSON.stringify(
+      {
+        version: 1,
+        migratedLegacyServiceWorker,
+        createdAt: new Date().toISOString(),
+        partition: BROWSER_SESSION_PARTITION,
+      },
+      null,
+      2,
+    ),
     'utf-8',
   );
 

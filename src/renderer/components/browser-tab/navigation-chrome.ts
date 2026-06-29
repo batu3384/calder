@@ -33,13 +33,7 @@ export function syncNavigationControls(options: NavigationControlsOptions): void
 }
 
 export function syncAddressBarState(options: AddressBarStateOptions): void {
-  const {
-    instance,
-    urlInput,
-    toolbarAddressShell,
-    goBtn,
-    reloadBtn,
-  } = options;
+  const { instance, urlInput, toolbarAddressShell, goBtn, reloadBtn } = options;
 
   const normalizedDraft = normalizeUrl(urlInput.value);
   const hasUnappliedAddressChange = normalizedDraft !== instance.committedUrl;
@@ -51,7 +45,11 @@ export function syncAddressBarState(options: AddressBarStateOptions): void {
     goBtn.textContent = 'Stop';
     goBtn.title = 'Stop the current page load';
     goBtn.ariaLabel = 'Stop page load';
-  } else if (!hasUnappliedAddressChange && instance.committedUrl && instance.committedUrl !== 'about:blank') {
+  } else if (
+    !hasUnappliedAddressChange &&
+    instance.committedUrl &&
+    instance.committedUrl !== 'about:blank'
+  ) {
     goBtn.dataset.state = 'reload';
     goBtn.textContent = 'Reload';
     goBtn.title = 'Reload current page';

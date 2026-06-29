@@ -1,5 +1,9 @@
-import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../../shared/types/provider';
-import type { ProviderUpdaterRunner,ProviderUpdateSpec } from '../provider-updater-types';
+import type {
+  ProviderId,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+} from '../../shared/types/provider';
+import type { ProviderUpdaterRunner, ProviderUpdateSpec } from '../provider-updater-types';
 import {
   buildCancelledResult,
   buildPostUpdateResult,
@@ -26,10 +30,16 @@ export function resolveUpdateCommand(
     return { command: 'npm', args: ['install', '-g', `${spec.npmPackage}@latest`] };
   }
   if (source === 'brew-formula' && spec.brewFormula) {
-    return { command: 'brew', args: ['upgrade', sourcePackageToken ?? getPrimaryToken(spec.brewFormula)!] };
+    return {
+      command: 'brew',
+      args: ['upgrade', sourcePackageToken ?? getPrimaryToken(spec.brewFormula)!],
+    };
   }
   if (source === 'brew-cask' && spec.brewCask) {
-    return { command: 'brew', args: ['upgrade', '--cask', sourcePackageToken ?? getPrimaryToken(spec.brewCask)!] };
+    return {
+      command: 'brew',
+      args: ['upgrade', '--cask', sourcePackageToken ?? getPrimaryToken(spec.brewCask)!],
+    };
   }
   return null;
 }
@@ -71,7 +81,12 @@ export async function applyUpdateCommandAndVerify(input: {
   const updateCommand = `${updateCommandInput.command} ${updateCommandInput.args.join(' ')}`.trim();
 
   // Build rollback command for failed npm updates — save package@version before update.
-  const rollbackCommandStr = buildRollbackCommand(updateCommandInput, beforeVersion, latestVersion, source);
+  const rollbackCommandStr = buildRollbackCommand(
+    updateCommandInput,
+    beforeVersion,
+    latestVersion,
+    source,
+  );
 
   onStage?.('Applying update command…');
   const updateExec = await runner.run(updateCommandInput.command, updateCommandInput.args, {
@@ -104,9 +119,13 @@ export async function applyUpdateCommandAndVerify(input: {
           signal,
         });
         if (rollbackResult.code === 0) {
-          console.warn(`[provider-updater] rollback succeeded for ${providerId} after failed update: ${errorMessage}`);
+          console.warn(
+            `[provider-updater] rollback succeeded for ${providerId} after failed update: ${errorMessage}`,
+          );
         } else {
-          console.error(`[provider-updater] rollback FAILED for ${providerId}. Original error: ${errorMessage}. Rollback error: ${rollbackResult.stderr || rollbackResult.stdout}`);
+          console.error(
+            `[provider-updater] rollback FAILED for ${providerId}. Original error: ${errorMessage}. Rollback error: ${rollbackResult.stderr || rollbackResult.stdout}`,
+          );
         }
       } catch (rollbackErr) {
         console.error(`[provider-updater] rollback threw for ${providerId}:`, rollbackErr);
@@ -166,7 +185,7 @@ function buildRollbackCommand(
 ): string | null {
   if (source === 'npm' && updateCommandInput.command === 'npm' && beforeVersion) {
     // Reconstruct package@version from the args, replacing @latest with @<beforeVersion>.
-    const pkgArg = updateCommandInput.args.find((a) => a.startsWith('@') || (!a.startsWith('-')));
+    const pkgArg = updateCommandInput.args.find((a) => a.startsWith('@') || !a.startsWith('-'));
     if (pkgArg) {
       const pkg = pkgArg.replace(/@\w+$/, ''); // strip any existing version
       const version = beforeVersion.replace(/^[\^~]|latest$/, '');

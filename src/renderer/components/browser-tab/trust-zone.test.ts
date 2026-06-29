@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  classifyBrowserTrustZone,
-  syncBrowserTrustZoneBadge,
-} from './trust-zone.js';
+import { classifyBrowserTrustZone, syncBrowserTrustZoneBadge } from './trust-zone.js';
 
 function createFakeBadge(): HTMLSpanElement {
   const attributes = new Map<string, string>();

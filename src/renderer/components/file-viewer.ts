@@ -54,7 +54,8 @@ function onSelectionChange(): void {
 function ensureSelectionListener(): void {
   if (removeSelectionListener) return;
   document.addEventListener('selectionchange', onSelectionChange);
-  removeSelectionListener = () => document.removeEventListener('selectionchange', onSelectionChange);
+  removeSelectionListener = () =>
+    document.removeEventListener('selectionchange', onSelectionChange);
 }
 
 function escapeHtml(s: string): string {
@@ -91,9 +92,7 @@ function parseDiffLines(diff: string): HTMLElement {
 function resolveFilePath(instance: FileViewerInstance): string {
   const project = appState.activeProject;
   const basePath = instance.worktreePath ?? project?.path ?? '';
-  return instance.filePath.startsWith('/')
-    ? instance.filePath
-    : `${basePath}/${instance.filePath}`;
+  return instance.filePath.startsWith('/') ? instance.filePath : `${basePath}/${instance.filePath}`;
 }
 
 let loadGeneration = 0;
@@ -117,7 +116,11 @@ async function loadDiff(instance: FileViewerInstance): Promise<void> {
   const gen = ++loadGeneration;
 
   try {
-    const diff = await window.calder.git.getDiff(instance.worktreePath ?? project.path, instance.filePath, instance.area);
+    const diff = await window.calder.git.getDiff(
+      instance.worktreePath ?? project.path,
+      instance.filePath,
+      instance.area,
+    );
     if (gen !== loadGeneration) return; // superseded by a newer load
     body.innerHTML = '';
     body.appendChild(parseDiffLines(diff));
@@ -143,7 +146,12 @@ function ensureFileChangedListener(): void {
   });
 }
 
-export function createFileViewerPane(sessionId: string, filePath: string, area: string, worktreePath?: string): void {
+export function createFileViewerPane(
+  sessionId: string,
+  filePath: string,
+  area: string,
+  worktreePath?: string,
+): void {
   if (instances.has(sessionId)) return;
 
   const el = document.createElement('div');
@@ -187,7 +195,14 @@ export function createFileViewerPane(sessionId: string, filePath: string, area: 
   body.className = 'file-viewer-body';
   el.appendChild(body);
 
-  const instance: FileViewerInstance = { element: el, filePath, area, worktreePath, resolvedPath: null, loaded: false };
+  const instance: FileViewerInstance = {
+    element: el,
+    filePath,
+    area,
+    worktreePath,
+    resolvedPath: null,
+    loaded: false,
+  };
   instances.set(sessionId, instance);
 }
 

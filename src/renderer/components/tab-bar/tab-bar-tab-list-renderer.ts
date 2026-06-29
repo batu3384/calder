@@ -10,7 +10,13 @@ interface RenderTabListOptions {
   mobileSurfaceTabActive: boolean;
   escapeHtml: (value: string) => string;
   startRename: (tab: HTMLElement, project: ProjectRecord, session: SessionRecord) => void;
-  showTabContextMenu: (x: number, y: number, project: ProjectRecord, session: SessionRecord, tab: HTMLElement) => void;
+  showTabContextMenu: (
+    x: number,
+    y: number,
+    project: ProjectRecord,
+    session: SessionRecord,
+    tab: HTMLElement,
+  ) => void;
   buildCliSurfaceTabTitle: (project: ProjectRecord) => string;
   focusCliSurfaceTab: (projectId: string) => void;
   closeCliSurface: (projectId: string) => void;
@@ -36,29 +42,32 @@ export function renderTabList(options: RenderTabListOptions): void {
 
   const surfaceState = getProjectSurface(project);
   const surfaceTabPlacement = surfaceState.tabPlacement === 'start' ? 'start' : 'end';
-  const surfaceTabOrder: Array<'cli' | 'mobile'> = Array.isArray(surfaceState.tabOrder)
-    && surfaceState.tabOrder.length === 2
-    && surfaceState.tabOrder.includes('cli')
-    && surfaceState.tabOrder.includes('mobile')
-    ? surfaceState.tabOrder
-    : ['cli', 'mobile'];
+  const surfaceTabOrder: Array<'cli' | 'mobile'> =
+    Array.isArray(surfaceState.tabOrder) &&
+    surfaceState.tabOrder.length === 2 &&
+    surfaceState.tabOrder.includes('cli') &&
+    surfaceState.tabOrder.includes('mobile')
+      ? surfaceState.tabOrder
+      : ['cli', 'mobile'];
 
   const sessionTabNodes: HTMLElement[] = [];
   const surfaceTabNodes: HTMLElement[] = [];
 
   for (const session of project.sessions) {
-    sessionTabNodes.push(createSessionTab({
-      project,
-      session,
-      tabListEl,
-      cliSurfaceTabActive,
-      mobileSurfaceTabActive,
-      escapeHtml,
-      startRename,
-      showTabContextMenu,
-      getProjectSurface,
-      updateProjectSurface,
-    }));
+    sessionTabNodes.push(
+      createSessionTab({
+        project,
+        session,
+        tabListEl,
+        cliSurfaceTabActive,
+        mobileSurfaceTabActive,
+        escapeHtml,
+        startRename,
+        showTabContextMenu,
+        getProjectSurface,
+        updateProjectSurface,
+      }),
+    );
   }
 
   const surfaceTabFactories: Record<'cli' | 'mobile', () => HTMLElement | null> = {

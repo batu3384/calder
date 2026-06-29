@@ -11,7 +11,9 @@ const listeners: CostChangeCallback[] = [];
 // Search for dollar cost patterns (fallback)
 const COST_RE = /\$(\d+\.\d{2,})/g;
 
-function getCostSource(cost: Pick<CostInfo, 'source'> | null | undefined): NonNullable<CostInfo['source']> {
+function getCostSource(
+  cost: Pick<CostInfo, 'source'> | null | undefined,
+): NonNullable<CostInfo['source']> {
   return cost?.source ?? 'structured';
 }
 
@@ -40,15 +42,19 @@ export function setCostData(sessionId: string, rawData: CostData): void {
     source: source ?? 'structured',
   };
 
-  if (existing && existing.totalCostUsd === info.totalCostUsd
-    && existing.totalInputTokens === info.totalInputTokens
-    && existing.totalOutputTokens === info.totalOutputTokens
-    && existing.cacheReadTokens === info.cacheReadTokens
-    && existing.cacheCreationTokens === info.cacheCreationTokens
-    && existing.totalDurationMs === info.totalDurationMs
-    && existing.totalApiDurationMs === info.totalApiDurationMs
-    && existing.model === info.model
-    && existing.source === info.source) return;
+  if (
+    existing &&
+    existing.totalCostUsd === info.totalCostUsd &&
+    existing.totalInputTokens === info.totalInputTokens &&
+    existing.totalOutputTokens === info.totalOutputTokens &&
+    existing.cacheReadTokens === info.cacheReadTokens &&
+    existing.cacheCreationTokens === info.cacheCreationTokens &&
+    existing.totalDurationMs === info.totalDurationMs &&
+    existing.totalApiDurationMs === info.totalApiDurationMs &&
+    existing.model === info.model &&
+    existing.source === info.source
+  )
+    return;
 
   costs.set(sessionId, info);
   for (const cb of listeners) cb(sessionId, info);
@@ -71,22 +77,23 @@ export function parseCost(sessionId: string, rawData: string): void {
   if (lastCost) {
     const usd = parseFloat(lastCost.replace('$', ''));
     if (!existing || existing.totalCostUsd !== usd) {
-      const info: CostInfo = existing?.source === 'derived'
-        ? {
-            ...existing,
-            totalCostUsd: usd,
-            source: 'derived',
-          }
-        : {
-            totalCostUsd: usd,
-            totalInputTokens: 0,
-            totalOutputTokens: 0,
-            cacheReadTokens: 0,
-            cacheCreationTokens: 0,
-            totalDurationMs: 0,
-            totalApiDurationMs: 0,
-            source: 'fallback',
-          };
+      const info: CostInfo =
+        existing?.source === 'derived'
+          ? {
+              ...existing,
+              totalCostUsd: usd,
+              source: 'derived',
+            }
+          : {
+              totalCostUsd: usd,
+              totalInputTokens: 0,
+              totalOutputTokens: 0,
+              cacheReadTokens: 0,
+              cacheCreationTokens: 0,
+              totalDurationMs: 0,
+              totalApiDurationMs: 0,
+              source: 'fallback',
+            };
       costs.set(sessionId, info);
       for (const cb of listeners) cb(sessionId, info);
     }

@@ -20,10 +20,18 @@ vi.mock('./external-hook-policy', () => ({
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
-  statusCmd: vi.fn((e: string, s: string, _v: string, marker: string) => `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`),
-  captureSessionIdCmd: vi.fn((_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`),
+  statusCmd: vi.fn(
+    (e: string, s: string, _v: string, marker: string) =>
+      `echo ${e}:${s} > $CALDER_SESSION_ID.status ${marker}`,
+  ),
+  captureSessionIdCmd: vi.fn(
+    (_v: string, marker: string) => `capture .sessionid $CALDER_SESSION_ID ${marker}`,
+  ),
   captureToolFailureCmd: vi.fn((_v: string, marker: string) => `capture-toolfailure ${marker}`),
-  wrapPythonHookCmd: vi.fn((_name: string, _code: string, marker: string) => `capture-event $CALDER_SESSION_ID .events ${marker}`),
+  wrapPythonHookCmd: vi.fn(
+    (_name: string, _code: string, marker: string) =>
+      `capture-event $CALDER_SESSION_ID .events ${marker}`,
+  ),
 }));
 
 vi.mock('./hooks/hook-status', () => ({
@@ -66,7 +74,7 @@ describe('installQwenHooks', () => {
     mockFiles({});
     installQwenHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     expect(call).toBeDefined();
     const written = JSON.parse(String(call![1]));
 
@@ -89,17 +97,21 @@ describe('installQwenHooks', () => {
       [SETTINGS_PATH]: JSON.stringify({
         theme: 'dark',
         hooks: {
-          SessionStart: [{ matcher: 'startup', hooks: [{ type: 'command', command: 'echo user-hook' }] }],
+          SessionStart: [
+            { matcher: 'startup', hooks: [{ type: 'command', command: 'echo user-hook' }] },
+          ],
         },
       }),
     });
     installQwenHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
     expect(written.theme).toBe('dark');
     expect(
-      written.hooks.SessionStart.some((m: any) => m.hooks.some((h: any) => h.command === 'echo user-hook'))
+      written.hooks.SessionStart.some((m: any) =>
+        m.hooks.some((h: any) => h.command === 'echo user-hook'),
+      ),
     ).toBe(true);
   });
 
@@ -107,7 +119,7 @@ describe('installQwenHooks', () => {
     mockFiles({});
     installQwenHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
     for (const matchers of Object.values(hooks) as any[]) {
       for (const matcher of matchers) {
@@ -122,10 +134,12 @@ describe('installQwenHooks', () => {
     mockFiles({});
     installQwenHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
     const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook qwen'));
+    const rtkHook = preToolHooks.find((hook: any) =>
+      String(hook.command).includes('rtk hook qwen'),
+    );
 
     expect(rtkHook).toBeDefined();
     expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
@@ -137,7 +151,7 @@ describe('validateQwenHooks', () => {
   it('returns complete when managed hooks and statusline are installed', () => {
     mockFiles({});
     installQwenHooks();
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     mockFiles({ [SETTINGS_PATH]: String(call![1]) });
 
     const result = validateQwenHooks();
@@ -151,7 +165,9 @@ describe('validateQwenHooks', () => {
   it('accepts quoted managed status line commands', () => {
     mockFiles({
       [SETTINGS_PATH]: JSON.stringify({
-        ui: { statusLine: { type: 'command', command: '"/mock/home/.calder/runtime/statusline.sh"' } },
+        ui: {
+          statusLine: { type: 'command', command: '"/mock/home/.calder/runtime/statusline.sh"' },
+        },
       }),
     });
 
@@ -162,7 +178,12 @@ describe('validateQwenHooks', () => {
   it('accepts wrapper commands that execute Calder status line', () => {
     mockFiles({
       [SETTINGS_PATH]: JSON.stringify({
-        ui: { statusLine: { type: 'command', command: 'sh -lc \'/mock/home/.calder/runtime/statusline.sh\'' } },
+        ui: {
+          statusLine: {
+            type: 'command',
+            command: "sh -lc '/mock/home/.calder/runtime/statusline.sh'",
+          },
+        },
       }),
     });
 
@@ -187,7 +208,9 @@ describe('validateQwenHooks', () => {
       [SETTINGS_PATH]: JSON.stringify({
         disableAllHooks: true,
         hooks: {
-          SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: `echo ${QWEN_HOOK_MARKER}` }] }],
+          SessionStart: [
+            { matcher: '', hooks: [{ type: 'command', command: `echo ${QWEN_HOOK_MARKER}` }] },
+          ],
         },
       }),
     });
@@ -216,7 +239,7 @@ describe('cleanupQwenHooks', () => {
     });
     cleanupQwenHooks();
 
-    const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
+    const call = mockWriteFileSync.mock.calls.find((c) => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
     expect(written.ui.theme).toBe('dark');
     expect(written.ui.statusLine).toBeUndefined();

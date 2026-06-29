@@ -6,7 +6,10 @@ export function isCliSessionRecord(session: SessionRecord): boolean {
   return !session.type || session.type === 'claude';
 }
 
-export function findProjectSession(project: ProjectRecord, sessionId: string): SessionRecord | undefined {
+export function findProjectSession(
+  project: ProjectRecord,
+  sessionId: string,
+): SessionRecord | undefined {
   return project.sessions.find((session) => session.id === sessionId);
 }
 
@@ -17,7 +20,11 @@ export function findActiveCliSession(
   const activeSession = project.activeSessionId
     ? findProjectSession(project, project.activeSessionId)
     : undefined;
-  if (activeSession && activeSession.id !== excludingSessionId && isCliSessionRecord(activeSession)) {
+  if (
+    activeSession &&
+    activeSession.id !== excludingSessionId &&
+    isCliSessionRecord(activeSession)
+  ) {
     return activeSession;
   }
   return undefined;

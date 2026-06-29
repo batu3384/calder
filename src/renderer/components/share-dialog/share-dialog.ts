@@ -1,13 +1,10 @@
 // Share dialog — host-side UI for sharing a session via P2P.
 
-import { isConnected,isSharing } from '../../sharing/peer-host.js';
+import { isConnected, isSharing } from '../../sharing/peer-host.js';
 import { endShare } from '../../sharing/share-manager.js';
 import { appState } from '../../state.js';
 import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
-import {
-  getShareDialogCopy,
-  resolveShareDialogLanguage,
-} from './share-dialog-copy.js';
+import { getShareDialogCopy, resolveShareDialogLanguage } from './share-dialog-copy.js';
 import type { ShareDialogFlowController } from './share-dialog-flow-controller.js';
 import { buildShareDialogMobilePresence } from './share-dialog-mobile-presence.js';
 import {
@@ -16,7 +13,10 @@ import {
 } from './share-dialog-render-helpers.js';
 
 export type { ShareDialogCopy } from './share-dialog-copy.js';
-export type { ShareDialogMobilePresenceCopy, ShareDialogMobilePresenceView } from './share-dialog-mobile-presence.js';
+export type {
+  ShareDialogMobilePresenceCopy,
+  ShareDialogMobilePresenceView,
+} from './share-dialog-mobile-presence.js';
 export {
   buildShareDialogMobilePresence,
   formatShareConnectionDuration,
@@ -104,8 +104,15 @@ function renderShareDialog(sessionId: string): void {
   mobilePresenceRefreshTimer = setInterval(updateMobileConnectionNotice, 1000);
   hero.appendChild(mobileConnectionNotice);
 
-  const project = appState.projects.find((entry) => entry.sessions.some((session) => session.id === sessionId));
-  if (project?.projectTeamContext && (project.projectTeamContext.spaces.length > 0 || project.projectTeamContext.sharedRuleCount > 0 || project.projectTeamContext.workflowCount > 0)) {
+  const project = appState.projects.find((entry) =>
+    entry.sessions.some((session) => session.id === sessionId),
+  );
+  if (
+    project?.projectTeamContext &&
+    (project.projectTeamContext.spaces.length > 0 ||
+      project.projectTeamContext.sharedRuleCount > 0 ||
+      project.projectTeamContext.workflowCount > 0)
+  ) {
     const collaborationNote = document.createElement('div');
     collaborationNote.className = 'share-notice calder-inline-notice';
     collaborationNote.textContent = copy.sharedTeamContext(
@@ -185,7 +192,11 @@ export function closeShareDialog(): void {
     activeOverlay.remove();
     activeOverlay = null;
   }
-  if (pendingShareSessionId && isSharing(pendingShareSessionId) && !isConnected(pendingShareSessionId)) {
+  if (
+    pendingShareSessionId &&
+    isSharing(pendingShareSessionId) &&
+    !isConnected(pendingShareSessionId)
+  ) {
     endShare(pendingShareSessionId);
   }
   pendingShareSessionId = null;

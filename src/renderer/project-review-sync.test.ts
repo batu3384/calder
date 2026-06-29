@@ -36,7 +36,7 @@ vi.mock('./session-context.js', () => ({
 }));
 
 import { _resetProjectReviewSyncForTesting, initProjectReviewSync } from './project-review-sync.js';
-import { _resetForTesting,appState } from './state.js';
+import { _resetForTesting, appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -79,7 +79,9 @@ describe('project review sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledWith('/proj');
     expect(mockGetProjectState).toHaveBeenCalledWith('/proj');
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews,
+    ).toHaveLength(1);
   });
 
   it('applies live review updates to the matching project', async () => {
@@ -105,7 +107,10 @@ describe('project review sync', () => {
       lastUpdated: '2026-04-13T18:05:00.000Z',
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews[0]?.displayName).toBe('restore-pass.md');
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews[0]
+        ?.displayName,
+    ).toBe('restore-pass.md');
   });
 
   it('handles initialization without an active project and ignores duplicate init calls', async () => {
@@ -122,7 +127,9 @@ describe('project review sync', () => {
 
     expect(mockWatchProject).toHaveBeenCalledTimes(1);
     expect(mockGetProjectState).toHaveBeenCalled();
-    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(true);
+    expect(mockGetProjectState.mock.calls.every(([projectPath]) => projectPath === '/proj')).toBe(
+      true,
+    );
   });
 
   it('ignores live updates for unknown project paths', async () => {
@@ -144,7 +151,9 @@ describe('project review sync', () => {
       ],
     });
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews).toEqual([]);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews,
+    ).toEqual([]);
   });
 
   it('keeps only the latest async response when active project changes rapidly', async () => {
@@ -178,11 +187,15 @@ describe('project review sync', () => {
     appState.setActiveProject(project.id);
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews,
+    ).toHaveLength(1);
 
     firstResponse.resolve({ reviews: [] });
     await flushTasks();
 
-    expect(appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews).toHaveLength(1);
+    expect(
+      appState.projects.find((entry) => entry.id === project.id)?.projectReviews?.reviews,
+    ).toHaveLength(1);
   });
 });

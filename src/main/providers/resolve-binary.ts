@@ -54,7 +54,10 @@ function expandHomePath(input: string): string {
   return input;
 }
 
-function findAliasLauncher(binaryName: string, timeoutMs = DEFAULT_BINARY_PROBE_TIMEOUT_MS): string | null {
+function findAliasLauncher(
+  binaryName: string,
+  timeoutMs = DEFAULT_BINARY_PROBE_TIMEOUT_MS,
+): string | null {
   if (isWin) return null;
 
   validateBinaryName(binaryName);
@@ -156,7 +159,7 @@ export function validateBinaryExists(
   const nowMs = Date.now();
   const cached = prereqCheckCache.get(cacheKey);
 
-  if (cached && cached.ok && (nowMs - cached.checkedAtMs) < PREREQ_CACHE_TTL_MS) {
+  if (cached && cached.ok && nowMs - cached.checkedAtMs < PREREQ_CACHE_TTL_MS) {
     return { ok: true, message: '' };
   }
 

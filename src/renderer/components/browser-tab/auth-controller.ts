@@ -1,4 +1,8 @@
-import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../../../shared/types/project-core.js';
+import type {
+  BrowserCredentialFillData,
+  BrowserCredentialSaveInput,
+  BrowserCredentialSummary,
+} from '../../../shared/types/project-core.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
 import type { BrowserAuthPanelElements } from './auth-panel.js';
 import { sendGuestMessage } from './guest-messaging.js';
@@ -69,24 +73,37 @@ function currentCredentialOriginLabel(runtime: BrowserAuthControllerRuntime): st
   }
 }
 
-function setStatus(runtime: BrowserAuthControllerRuntime, message: string, tone: AuthStatusTone = 'neutral'): void {
+function setStatus(
+  runtime: BrowserAuthControllerRuntime,
+  message: string,
+  tone: AuthStatusTone = 'neutral',
+): void {
   const { authStatusEl } = runtime.options.authElements;
   authStatusEl.textContent = message;
   authStatusEl.dataset.tone = tone;
 }
 
 function syncActionsEnabledState(runtime: BrowserAuthControllerRuntime): void {
-  const { authUsernameInput, authPasswordInput, authSaveBtn, authFillBtn, authDeleteBtn } = runtime.options.authElements;
+  const { authUsernameInput, authPasswordInput, authSaveBtn, authFillBtn, authDeleteBtn } =
+    runtime.options.authElements;
   const { instance, resolveCredentialOrigin } = runtime.options;
-  const hasOrigin = Boolean(resolveCredentialOrigin(resolveCredentialCandidateUrl(runtime) || instance.committedUrl));
-  const hasManualCredentials = authUsernameInput.value.trim().length > 0 && authPasswordInput.value.length > 0;
+  const hasOrigin = Boolean(
+    resolveCredentialOrigin(resolveCredentialCandidateUrl(runtime) || instance.committedUrl),
+  );
+  const hasManualCredentials =
+    authUsernameInput.value.trim().length > 0 && authPasswordInput.value.length > 0;
   authSaveBtn.disabled = !hasOrigin || !hasManualCredentials;
-  authFillBtn.disabled = !hasOrigin || (!runtime.state.authSelectedCredentialId && !hasManualCredentials);
+  authFillBtn.disabled =
+    !hasOrigin || (!runtime.state.authSelectedCredentialId && !hasManualCredentials);
   authDeleteBtn.disabled = !runtime.state.authSelectedCredentialId;
 }
 
-function applySelectionToInputs(runtime: BrowserAuthControllerRuntime, summary: BrowserCredentialSummary | null): void {
-  const { authLabelInput, authUsernameInput, authPasswordInput, authAutoFillCheckbox } = runtime.options.authElements;
+function applySelectionToInputs(
+  runtime: BrowserAuthControllerRuntime,
+  summary: BrowserCredentialSummary | null,
+): void {
+  const { authLabelInput, authUsernameInput, authPasswordInput, authAutoFillCheckbox } =
+    runtime.options.authElements;
   if (!summary) {
     authLabelInput.value = '';
     authUsernameInput.value = '';
@@ -111,7 +128,10 @@ function closePanel(runtime: BrowserAuthControllerRuntime): void {
   authBtn.dataset.state = 'idle';
 }
 
-async function refreshCredentialProfiles(runtime: BrowserAuthControllerRuntime, preferredId?: string | null): Promise<void> {
+async function refreshCredentialProfiles(
+  runtime: BrowserAuthControllerRuntime,
+  preferredId?: string | null,
+): Promise<void> {
   const { authOriginEl, authProfileSelect } = runtime.options.authElements;
   const targetUrl = getCredentialTargetUrl(runtime);
 
@@ -142,13 +162,18 @@ async function refreshCredentialProfiles(runtime: BrowserAuthControllerRuntime, 
     authProfileSelect.appendChild(option);
   }
 
-  const nextSelectedId = preferredId
-    ?? runtime.state.authCredentialList.find((entry) => entry.autoFill)?.id
-    ?? null;
-  if (nextSelectedId && runtime.state.authCredentialList.some((entry) => entry.id === nextSelectedId)) {
+  const nextSelectedId =
+    preferredId ?? runtime.state.authCredentialList.find((entry) => entry.autoFill)?.id ?? null;
+  if (
+    nextSelectedId &&
+    runtime.state.authCredentialList.some((entry) => entry.id === nextSelectedId)
+  ) {
     authProfileSelect.value = nextSelectedId;
     runtime.state.authSelectedCredentialId = nextSelectedId;
-    applySelectionToInputs(runtime, runtime.state.authCredentialList.find((entry) => entry.id === nextSelectedId) ?? null);
+    applySelectionToInputs(
+      runtime,
+      runtime.state.authCredentialList.find((entry) => entry.id === nextSelectedId) ?? null,
+    );
     return;
   }
 
@@ -156,7 +181,10 @@ async function refreshCredentialProfiles(runtime: BrowserAuthControllerRuntime, 
   applySelectionToInputs(runtime, null);
 }
 
-async function fillCredentialPayload(runtime: BrowserAuthControllerRuntime, payload: BrowserCredentialFillData): Promise<void> {
+async function fillCredentialPayload(
+  runtime: BrowserAuthControllerRuntime,
+  payload: BrowserCredentialFillData,
+): Promise<void> {
   const { instance } = runtime.options;
   if (!payload.username || !payload.password) {
     setStatus(runtime, 'Selected profile is missing username or password.', 'error');
@@ -178,7 +206,8 @@ async function maybeAutoFillCredentials(runtime: BrowserAuthControllerRuntime): 
 }
 
 async function saveCredentialFromForm(runtime: BrowserAuthControllerRuntime): Promise<void> {
-  const { authLabelInput, authUsernameInput, authPasswordInput, authAutoFillCheckbox } = runtime.options.authElements;
+  const { authLabelInput, authUsernameInput, authPasswordInput, authAutoFillCheckbox } =
+    runtime.options.authElements;
   const targetUrl = getCredentialTargetUrl(runtime);
   if (!targetUrl) {
     setStatus(runtime, 'Open an HTTP(S) page before saving credentials.', 'error');
@@ -204,7 +233,9 @@ async function deleteSelectedCredential(runtime: BrowserAuthControllerRuntime): 
     setStatus(runtime, 'Select a saved profile first.', 'error');
     return;
   }
-  const result = await window.calder.browserCredential.deleteById(runtime.state.authSelectedCredentialId);
+  const result = await window.calder.browserCredential.deleteById(
+    runtime.state.authSelectedCredentialId,
+  );
   if (!result.deleted) {
     setStatus(runtime, 'Selected profile could not be deleted.', 'error');
     return;
@@ -225,7 +256,10 @@ async function fillFromProfileOrForm(runtime: BrowserAuthControllerRuntime): Pro
   }
 
   if (runtime.state.authSelectedCredentialId) {
-    const payload = await window.calder.browserCredential.getForFill(targetUrl, runtime.state.authSelectedCredentialId);
+    const payload = await window.calder.browserCredential.getForFill(
+      targetUrl,
+      runtime.state.authSelectedCredentialId,
+    );
     if (!payload) {
       setStatus(runtime, 'Selected profile is unavailable for this page.', 'error');
       return;
@@ -279,16 +313,26 @@ function openPanelAndLoadProfiles(runtime: BrowserAuthControllerRuntime): void {
 
   void refreshCredentialProfiles(runtime)
     .then(() => {
-      setStatus(runtime, runtime.state.authCredentialList.length > 0
-        ? 'Saved profiles ready.'
-        : 'No saved profiles for this page yet.');
+      setStatus(
+        runtime,
+        runtime.state.authCredentialList.length > 0
+          ? 'Saved profiles ready.'
+          : 'No saved profiles for this page yet.',
+      );
     })
     .catch((error) => {
-      setStatus(runtime, error instanceof Error ? error.message : 'Failed to load saved profiles.', 'error');
+      setStatus(
+        runtime,
+        error instanceof Error ? error.message : 'Failed to load saved profiles.',
+        'error',
+      );
     });
 }
 
-function handleFillResult(runtime: BrowserAuthControllerRuntime, payload: AuthFillResultPayload): void {
+function handleFillResult(
+  runtime: BrowserAuthControllerRuntime,
+  payload: AuthFillResultPayload,
+): void {
   const filledUsername = Boolean(payload.filledUsername);
   const filledPassword = Boolean(payload.filledPassword);
   const filledAnyField = filledUsername || filledPassword;
@@ -310,7 +354,9 @@ function handleFillResult(runtime: BrowserAuthControllerRuntime, payload: AuthFi
   }
 }
 
-export function createBrowserAuthController(options: BrowserAuthControllerOptions): BrowserAuthController {
+export function createBrowserAuthController(
+  options: BrowserAuthControllerOptions,
+): BrowserAuthController {
   const runtime: BrowserAuthControllerRuntime = {
     options,
     state: {
@@ -336,11 +382,17 @@ export function createBrowserAuthController(options: BrowserAuthControllerOption
 
   authProfileSelect.addEventListener('change', () => {
     runtime.state.authSelectedCredentialId = authProfileSelect.value || null;
-    const selected = runtime.state.authCredentialList.find(
-      (entry) => entry.id === runtime.state.authSelectedCredentialId,
-    ) ?? null;
+    const selected =
+      runtime.state.authCredentialList.find(
+        (entry) => entry.id === runtime.state.authSelectedCredentialId,
+      ) ?? null;
     applySelectionToInputs(runtime, selected);
-    setStatus(runtime, selected ? `Selected profile: ${selected.label}.` : 'Create a new profile or choose an existing one.');
+    setStatus(
+      runtime,
+      selected
+        ? `Selected profile: ${selected.label}.`
+        : 'Create a new profile or choose an existing one.',
+    );
   });
 
   authLabelInput.addEventListener('input', () => syncActionsEnabledState(runtime));
@@ -349,10 +401,18 @@ export function createBrowserAuthController(options: BrowserAuthControllerOption
   authAutoFillCheckbox.addEventListener('change', () => syncActionsEnabledState(runtime));
 
   authSaveBtn.addEventListener('click', () => {
-    runActionWithErrorHandling(runtime, () => saveCredentialFromForm(runtime), 'Failed to save credentials.');
+    runActionWithErrorHandling(
+      runtime,
+      () => saveCredentialFromForm(runtime),
+      'Failed to save credentials.',
+    );
   });
   authDeleteBtn.addEventListener('click', () => {
-    runActionWithErrorHandling(runtime, () => deleteSelectedCredential(runtime), 'Failed to delete credentials.');
+    runActionWithErrorHandling(
+      runtime,
+      () => deleteSelectedCredential(runtime),
+      'Failed to delete credentials.',
+    );
   });
   authFillBtn.addEventListener('click', () => {
     runActionWithErrorHandling(
@@ -384,7 +444,8 @@ export function createBrowserAuthController(options: BrowserAuthControllerOption
 
   return {
     syncActionsEnabledState: () => syncActionsEnabledState(runtime),
-    setStatus: (message: string, tone: AuthStatusTone = 'neutral') => setStatus(runtime, message, tone),
+    setStatus: (message: string, tone: AuthStatusTone = 'neutral') =>
+      setStatus(runtime, message, tone),
     maybeAutoFillCredentials: () => maybeAutoFillCredentials(runtime),
     refreshProfilesIfPanelOpen: () => {
       if (authPanel.style.display === 'none') return;

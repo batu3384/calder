@@ -5,7 +5,7 @@ export function buildProviderOptions(
   snapshot: ProviderAvailabilitySnapshot,
   unavailableSuffix: string,
 ): Array<{ value: ProviderId; label: string; disabled: boolean }> {
-  return snapshot.providers.map(provider => {
+  return snapshot.providers.map((provider) => {
     const available = snapshot.availability.get(provider.id) ?? true;
     return {
       value: provider.id,

@@ -1,5 +1,8 @@
 import type { SurfaceKind } from '../../../shared/types/project-core.js';
-import type { CliSurfaceProfile, ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceProfile,
+  ProjectSurfaceRecord,
+} from '../../../shared/types/project-surface.js';
 import type { ProjectRecord } from '../../state.js';
 import { createCustomSelect, type CustomSelectInstance } from '../custom-select.js';
 
@@ -10,7 +13,11 @@ interface CreateTabBarSurfaceControlsControllerOptions {
   buildSurfaceControlsSignature: (project: ProjectRecord) => string;
   getProjectSurface: (project: ProjectRecord) => ProjectSurfaceRecord;
   getCliSurfaceProfileLabel: (profile: CliSurfaceProfile) => string;
-  selectCliSurfaceProfile: (project: ProjectRecord, profiles: CliSurfaceProfile[], selectedProfileId: string) => void;
+  selectCliSurfaceProfile: (
+    project: ProjectRecord,
+    profiles: CliSurfaceProfile[],
+    selectedProfileId: string,
+  ) => void;
   activateLiveViewSurface: (project: ProjectRecord) => void;
   activateCliSurface: (project: ProjectRecord) => void | Promise<void>;
   activateMobileSurface: (project: ProjectRecord) => void;
@@ -60,7 +67,12 @@ export function createTabBarSurfaceControlsController(
     surfaceProfileSlotEl.hidden = true;
   }
 
-  function createModeButton(project: ProjectRecord, activeKind: SurfaceKind, kind: SurfaceKind, label: string): HTMLButtonElement {
+  function createModeButton(
+    project: ProjectRecord,
+    activeKind: SurfaceKind,
+    kind: SurfaceKind,
+    label: string,
+  ): HTMLButtonElement {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'surface-mode-button';
@@ -78,7 +90,11 @@ export function createTabBarSurfaceControlsController(
   function renderSurfaceControls(): void {
     const project = getActiveProject();
     if (!project) {
-      if (surfaceControlsSignature || surfaceModeSlotEl.childElementCount > 0 || surfaceProfileSlotEl.childElementCount > 0) {
+      if (
+        surfaceControlsSignature ||
+        surfaceModeSlotEl.childElementCount > 0 ||
+        surfaceProfileSlotEl.childElementCount > 0
+      ) {
         destroySurfaceProfileSelector();
       }
       return;
@@ -94,11 +110,11 @@ export function createTabBarSurfaceControlsController(
     const switcher = document.createElement('div');
     switcher.className = 'surface-mode-switcher';
 
-    ([
+    [
       { kind: 'web' as const, label: 'Live View' },
       { kind: 'cli' as const, label: 'CLI Surface' },
       { kind: 'mobile' as const, label: 'Mobile' },
-    ]).forEach(({ kind, label }) => {
+    ].forEach(({ kind, label }) => {
       switcher.appendChild(createModeButton(project, surface.kind, kind, label));
     });
 
@@ -110,13 +126,17 @@ export function createTabBarSurfaceControlsController(
     const group = document.createElement('div');
     group.className = 'surface-profile-group';
     const profiles = surface.cli?.profiles ?? [];
-    const selectedProfile = profiles.find((profile) => profile.id === surface.cli?.selectedProfileId) ?? profiles[0];
+    const selectedProfile =
+      profiles.find((profile) => profile.id === surface.cli?.selectedProfileId) ?? profiles[0];
 
     if (profiles.length > 0) {
       const select = createCustomSelect(
         'command-deck-cli-profile',
         [
-          ...profiles.map((profile) => ({ value: profile.id, label: getCliSurfaceProfileLabel(profile) })),
+          ...profiles.map((profile) => ({
+            value: profile.id,
+            label: getCliSurfaceProfileLabel(profile),
+          })),
           { value: '__new__', label: '+ New profile\u2026' },
         ],
         selectedProfile?.id,
@@ -132,7 +152,9 @@ export function createTabBarSurfaceControlsController(
         },
       );
       select.element.classList.add('command-deck-cli-profile-select');
-      const hiddenInput = select.element.querySelector('#command-deck-cli-profile') as HTMLInputElement | null;
+      const hiddenInput = select.element.querySelector(
+        '#command-deck-cli-profile',
+      ) as HTMLInputElement | null;
       hiddenInput?.addEventListener('change', () => {
         const value = hiddenInput.value;
         if (value === '__new__') {

@@ -108,7 +108,9 @@ describe('browser pane artifacts', () => {
     expect(host.contains(artifacts.flowPickerOverlay as unknown as FakeElement)).toBe(true);
     expect(host.contains(artifacts.targetMenu as unknown as FakeElement)).toBe(true);
     expect((artifacts.flowPickerMenu as unknown as FakeElement).children.length).toBeGreaterThan(0);
-    expect((artifacts.targetMenuList as unknown as FakeElement).className).toContain('browser-target-menu-list');
+    expect((artifacts.targetMenuList as unknown as FakeElement).className).toContain(
+      'browser-target-menu-list',
+    );
   });
 
   it('builds and appends auth panel controls into the host pane', () => {

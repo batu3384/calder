@@ -100,7 +100,11 @@
   justify-content: center;
   border-radius: 10px;
   flex-shrink: 0;
-  transition: background var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
+  transition:
+    background var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .search-toggle-btn:hover,

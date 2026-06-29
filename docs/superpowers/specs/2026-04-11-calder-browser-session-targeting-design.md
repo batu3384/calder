@@ -9,12 +9,14 @@
 Calder's browser workspace currently supports sending page context into AI sessions, but the handoff model is incomplete.
 
 Current problems:
+
 - browser handoff defaults to creating a new session instead of targeting an already open working session
 - the browser surface does not show a persistent target session, so users cannot build a stable "inspect here, send there" workflow
 - "new session" handoff can inherit the active CLI session provider instead of the visible Command Deck provider selection
 - this creates a misleading state where the shell shows one provider, but browser handoff opens or targets another
 
 This is not just a UI gap. It is a product-model mismatch:
+
 - the Command Deck provider selector represents **which provider a new session should launch with**
 - the browser workspace needs its own explicit concept of **which existing session should receive browser prompts**
 
@@ -25,6 +27,7 @@ Those are different decisions and must be modeled separately.
 Add a **browser-local target rail** to the browser workspace that lists open CLI sessions and lets the user select one persistent target session per browser tab.
 
 Behavior:
+
 - inspect, draw, and flow handoff sends to the selected open CLI session by default
 - browser/file/diff/remote inspector tabs are excluded from the target list
 - the selected target is visibly shown in the browser UI at all times
@@ -32,6 +35,7 @@ Behavior:
 - `Send to New Session` always uses the visible Command Deck provider selector, never the active CLI session provider
 
 This separates the two mental models cleanly:
+
 - **Command Deck provider selector** answers: "If I open a new session, which CLI should it use?"
 - **Browser target rail** answers: "Which existing session should receive this browser context?"
 
@@ -56,6 +60,7 @@ This is the best balance of speed, clarity, and low mistake rate. It gives the b
 Add a compact side surface inside the browser workspace labeled `Open Sessions`.
 
 The rail should:
+
 - show only open local CLI sessions for the active project
 - display session name and provider badge together
 - clearly mark the currently selected target
@@ -65,15 +70,18 @@ The rail should:
 ### Target Summary
 
 The browser toolbar should show a small summary such as:
+
 - `Sending to Codex CLI · Session 3`
 - `Sending to Gemini CLI · Fix auth modal`
 
 If no target is selected, the toolbar should show an empty-state warning such as:
+
 - `No target session selected`
 
 ### Default Browser Handoff
 
 Primary send actions in inspect, draw, and flow should:
+
 - send the generated prompt into the selected browser target session
 - activate that target session after handoff so the user can immediately continue there
 - avoid opening a new session unless the user explicitly chooses the new-session path
@@ -83,6 +91,7 @@ Primary send actions in inspect, draw, and flow should:
 Inspect, draw, and flow should retain a secondary action for creating a new session.
 
 This path should:
+
 - create a new session using the Command Deck provider selector
 - no longer derive provider choice from the currently active CLI tab
 - continue to use the existing custom/new-session naming patterns
@@ -92,15 +101,18 @@ This path should:
 The target session choice belongs to the browser tab, not to the whole project and not to the global shell.
 
 Add a persisted browser-target field on browser-tab session records:
+
 - `browserTargetSessionId?: string`
 
 Rules:
+
 - this field is only meaningful for `type: 'browser-tab'`
 - each browser tab can remember its own target session
 - when the target session still exists, reopening that browser tab restores the target
 - when the target session is removed, the browser tab must re-resolve its target instead of silently drifting to another provider
 
 Fallback rules:
+
 1. if `browserTargetSessionId` points to a valid open CLI session, use it
 2. else if the active project has an active open CLI session, adopt it as the new browser target
 3. else leave the target empty and require explicit selection before default handoff
@@ -112,6 +124,7 @@ Fallback rules:
 Browser handoff to an existing session needs a real live-send path rather than the current pending-startup prompt flow.
 
 Execution:
+
 1. build the inspect/draw/flow prompt
 2. resolve the selected browser target session
 3. ensure the target session terminal exists and is spawned
@@ -123,6 +136,7 @@ If the target session exists but is not yet spawned, Calder may still use the st
 ### Send To New Session
 
 Browser handoff to a new session should:
+
 1. read the visible Command Deck provider selection
 2. create a new session with that explicit provider
 3. inject the prompt through the existing startup-prompt mechanism
@@ -135,6 +149,7 @@ This removes the current bug where browser handoff can follow the active CLI ses
 The browser workspace must fail clearly, not silently.
 
 Rules:
+
 - if no browser target is selected and no valid fallback exists, primary send actions should stop and show a clear inline error
 - if the selected target session was closed, the UI should clear or re-resolve the target before the next send attempt
 - if PTY delivery to an existing session fails, surface an inline browser error and do not create a surprise replacement session
@@ -143,6 +158,7 @@ Rules:
 ## Technical Touchpoints
 
 Primary files expected to change:
+
 - `src/shared/types.ts`
 - `src/renderer/state.ts`
 - `src/renderer/components/browser-tab/types.ts`
@@ -153,6 +169,7 @@ Primary files expected to change:
 - browser-related styles and contract tests
 
 Expected implementation shape:
+
 - extend browser-tab session state with a persisted target session id
 - add state helpers to resolve valid browser target sessions
 - add a browser-side target rail renderer and target summary UI
@@ -163,6 +180,7 @@ Expected implementation shape:
 ## Non-Goals
 
 This design does not:
+
 - convert readiness/tool/insight alerts to the same targeting model in this pass
 - redesign the Command Deck provider selector again
 - add cross-project session targeting
@@ -171,6 +189,7 @@ This design does not:
 ## Acceptance Criteria
 
 This design is complete when:
+
 - the browser workspace shows a persistent `Open Sessions` target rail
 - only open local CLI sessions appear in that target list
 - inspect, draw, and flow primary send actions target the selected open session
@@ -184,6 +203,7 @@ This design is complete when:
 ## Verification Plan
 
 Minimum verification after implementation:
+
 - targeted state tests for browser target persistence and fallback
 - targeted browser-session handoff tests for:
   - send to selected existing session

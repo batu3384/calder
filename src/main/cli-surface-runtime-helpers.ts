@@ -1,4 +1,8 @@
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project-surface';
+import type {
+  CliSurfaceProfile,
+  CliSurfaceRuntimeState,
+  CliSurfaceStartupTiming,
+} from '../shared/types/project-surface';
 import type { CliSurfaceLaunchResolution } from './cli-surface-port-orchestrator';
 
 export interface CliSurfaceRuntimeEmit {
@@ -46,7 +50,9 @@ export function resolveRuntimeLaunch(profile: CliSurfaceProfile): CliSurfaceRunt
   };
 }
 
-export function createInitialRuntimeLaunchState(profile: CliSurfaceProfile): CliSurfaceRuntimeLaunchState {
+export function createInitialRuntimeLaunchState(
+  profile: CliSurfaceProfile,
+): CliSurfaceRuntimeLaunchState {
   return {
     selectedProfileId: profile.id,
     command: profile.command,

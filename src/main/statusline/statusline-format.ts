@@ -83,13 +83,17 @@ export function deriveProviderQuotaConfidence(
 
 export function formatHybridStatusLine(view: HybridStatuslineView): string {
   const quotaStatus = view.quota?.status ?? fallbackQuotaStatus(view.provider);
-  const quotaConfidence = formatQuotaConfidenceLabel(deriveProviderQuotaConfidence(view.quota, view.nowMs));
+  const quotaConfidence = formatQuotaConfidenceLabel(
+    deriveProviderQuotaConfidence(view.quota, view.nowMs),
+  );
   const contextLabel = view.contextPercent == null ? '--' : String(view.contextPercent);
   const costLabel = view.costLabel?.trim() || '--';
   const weeklyLabel = view.quota?.weeklyLabel?.trim() || 'Week';
   const fiveHourReset = view.quota?.fiveHourReset?.trim();
   const fiveHourValue = view.quota?.fiveHour ?? quotaStatus;
-  const fiveHourLabel = fiveHourReset ? `${fiveHourValue} · resets ${fiveHourReset}` : fiveHourValue;
+  const fiveHourLabel = fiveHourReset
+    ? `${fiveHourValue} · resets ${fiveHourReset}`
+    : fiveHourValue;
   const line1 = [
     view.modelDisplayName || 'Unknown Model',
     PROVIDER_LABELS[view.provider],
@@ -100,11 +104,8 @@ export function formatHybridStatusLine(view: HybridStatuslineView): string {
   if (view.provider !== 'zai') {
     quotaParts.push(`${weeklyLabel} ${view.quota?.weekly ?? quotaStatus}`);
   }
-  const line2 = [
-    `Ctx ${contextLabel}%`,
-    `Cost ${costLabel}`,
-    ...quotaParts,
-    quotaConfidence,
-  ].join('  ');
+  const line2 = [`Ctx ${contextLabel}%`, `Cost ${costLabel}`, ...quotaParts, quotaConfidence].join(
+    '  ',
+  );
   return `${line1}\n${line2}`;
 }

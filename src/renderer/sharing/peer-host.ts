@@ -3,18 +3,28 @@
 
 import { SerializeAddon } from '@xterm/addon-serialize';
 
-import type { ShareMessage,ShareMode } from '../../shared/sharing-types.js';
+import type { ShareMessage, ShareMode } from '../../shared/sharing-types.js';
 import type { ShareRtcConfig } from '../../shared/types/project-core.js';
 import { getTerminalInstance } from '../components/terminal-pane.js';
 import { appState } from '../state.js';
-import { handleBrowserControlMessage, handleBrowserInspectSubmitMessage, sendBrowserState } from './peer-host-browser.js';
+import {
+  handleBrowserControlMessage,
+  handleBrowserInspectSubmitMessage,
+  sendBrowserState,
+} from './peer-host-browser.js';
 import {
   buildSessionCatalog,
   findProjectForShare,
   getSessionSnapshot,
 } from './peer-host-session-catalog.js';
-import { bytesToHex,computeChallengeResponse, generateChallenge } from './share-crypto.js';
-import { buildRtcConfiguration, decodeConnectionCode,encodeConnectionCode, sendMessage, waitForIceGathering } from './webrtc-utils.js';
+import { bytesToHex, computeChallengeResponse, generateChallenge } from './share-crypto.js';
+import {
+  buildRtcConfiguration,
+  decodeConnectionCode,
+  encodeConnectionCode,
+  sendMessage,
+  waitForIceGathering,
+} from './webrtc-utils.js';
 
 interface HostPeer {
   ownerSessionId: string;
@@ -144,7 +154,10 @@ function sendInitAndStartKeepalive(
   if (snapshot.scrollback.length > CHUNK_SIZE) {
     sendMessage(hostPeer.dc, initMsg);
     for (let i = 0; i < snapshot.scrollback.length; i += CHUNK_SIZE) {
-      sendMessage(hostPeer.dc, { type: 'data', payload: snapshot.scrollback.slice(i, i + CHUNK_SIZE) });
+      sendMessage(hostPeer.dc, {
+        type: 'data',
+        payload: snapshot.scrollback.slice(i, i + CHUNK_SIZE),
+      });
     }
   } else {
     initMsg.scrollback = snapshot.scrollback;
@@ -213,7 +226,11 @@ async function verifyAuthResponse(
   stopShare(ownerSessionId);
 }
 
-function handleSessionSwitchMessage(hostPeer: HostPeer, mode: ShareMode, requestedSessionId: string): void {
+function handleSessionSwitchMessage(
+  hostPeer: HostPeer,
+  mode: ShareMode,
+  requestedSessionId: string,
+): void {
   if (mode === 'readonly' && requestedSessionId !== hostPeer.ownerSessionId) {
     sendMessage(hostPeer.dc, {
       type: 'session-switch-result',
@@ -226,13 +243,21 @@ function handleSessionSwitchMessage(hostPeer: HostPeer, mode: ShareMode, request
   const catalog = buildSessionCatalog(hostPeer);
   const exists = catalog.sessions.some((session) => session.id === requestedSessionId);
   if (!exists) {
-    sendMessage(hostPeer.dc, { type: 'session-switch-result', ok: false, reason: 'Session not available.' });
+    sendMessage(hostPeer.dc, {
+      type: 'session-switch-result',
+      ok: false,
+      reason: 'Session not available.',
+    });
     return;
   }
 
   const snapshot = getSessionSnapshot(hostPeer, requestedSessionId);
   if (!snapshot) {
-    sendMessage(hostPeer.dc, { type: 'session-switch-result', ok: false, reason: 'Session terminal is not available.' });
+    sendMessage(hostPeer.dc, {
+      type: 'session-switch-result',
+      ok: false,
+      reason: 'Session terminal is not available.',
+    });
     return;
   }
 
@@ -418,7 +443,11 @@ export function stopShare(sessionId: string): void {
   if (!hostPeer) return;
 
   if (hostPeer.connected) {
-    try { sendMessage(hostPeer.dc, { type: 'end' }); } catch { /* ignore */ }
+    try {
+      sendMessage(hostPeer.dc, { type: 'end' });
+    } catch {
+      /* ignore */
+    }
   }
   cleanup(sessionId);
   hostPeer.dc.close();

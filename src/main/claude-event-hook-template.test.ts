@@ -4,11 +4,7 @@ import { buildClaudeEventHookPython } from './claude-event-hook-template.js';
 
 describe('buildClaudeEventHookPython', () => {
   it('injects status directory, event type, and hook event placeholders', () => {
-    const rendered = buildClaudeEventHookPython(
-      'PostToolUse',
-      'tool_use',
-      '/tmp/calder-status',
-    );
+    const rendered = buildClaudeEventHookPython('PostToolUse', 'tool_use', '/tmp/calder-status');
 
     expect(rendered).toContain('/tmp/calder-status');
     expect(rendered).toContain('tool_use');
@@ -19,11 +15,7 @@ describe('buildClaudeEventHookPython', () => {
   });
 
   it('guards execution to Calder-managed sessions only', () => {
-    const rendered = buildClaudeEventHookPython(
-      'PreToolUse',
-      'pre_tool_use',
-      '/tmp/calder-status',
-    );
+    const rendered = buildClaudeEventHookPython('PreToolUse', 'pre_tool_use', '/tmp/calder-status');
 
     expect(rendered).toContain('CALDER_RUNTIME');
     expect(rendered).toContain('sid=os.environ.get("CLAUDE_IDE_SESSION_ID","")');

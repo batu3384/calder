@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { buildMobileInspectPrompt, resolveMobileInspectPromptError } from './inspect-prompt.js';
 import type { MobileSurfaceInspectState } from './types.js';
 
-function createInspectState(overrides: Partial<MobileSurfaceInspectState> = {}): MobileSurfaceInspectState {
+function createInspectState(
+  overrides: Partial<MobileSurfaceInspectState> = {},
+): MobileSurfaceInspectState {
   return {
     platform: 'ios',
     launching: false,
@@ -31,17 +33,26 @@ function createInspectState(overrides: Partial<MobileSurfaceInspectState> = {}):
 
 describe('mobile inspect prompt helpers', () => {
   it('returns null when required prompt inputs are missing', () => {
-    expect(buildMobileInspectPrompt({
-      inspectState: createInspectState(),
-      platformLabel: 'iOS Simulator',
-    })).toBeNull();
-
-    expect(buildMobileInspectPrompt({
-      inspectState: createInspectState({
-        screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
+    expect(
+      buildMobileInspectPrompt({
+        inspectState: createInspectState(),
+        platformLabel: 'iOS Simulator',
       }),
-      platformLabel: 'iOS Simulator',
-    })).toBeNull();
+    ).toBeNull();
+
+    expect(
+      buildMobileInspectPrompt({
+        inspectState: createInspectState({
+          screenshot: {
+            platform: 'ios',
+            success: true,
+            message: 'ok',
+            dataUrl: 'data:image/png;base64,AA==',
+          },
+        }),
+        platformLabel: 'iOS Simulator',
+      }),
+    ).toBeNull();
   });
 
   it('builds a rich prompt when screenshot, point, and instruction exist', () => {
@@ -88,17 +99,36 @@ describe('mobile inspect prompt helpers', () => {
   });
 
   it('returns deterministic validation reasons', () => {
-    expect(resolveMobileInspectPromptError(createInspectState()))
-      .toBe('Capture a simulator frame first.');
+    expect(resolveMobileInspectPromptError(createInspectState())).toBe(
+      'Capture a simulator frame first.',
+    );
 
-    expect(resolveMobileInspectPromptError(createInspectState({
-      screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
-    }))).toBe('Pick a point on the captured frame first.');
+    expect(
+      resolveMobileInspectPromptError(
+        createInspectState({
+          screenshot: {
+            platform: 'ios',
+            success: true,
+            message: 'ok',
+            dataUrl: 'data:image/png;base64,AA==',
+          },
+        }),
+      ),
+    ).toBe('Pick a point on the captured frame first.');
 
-    expect(resolveMobileInspectPromptError(createInspectState({
-      screenshot: { platform: 'ios', success: true, message: 'ok', dataUrl: 'data:image/png;base64,AA==' },
-      selectedPoint: { x: 5, y: 8, normalizedX: 0.1, normalizedY: 0.2 },
-      instruction: '   ',
-    }))).toBe('Write an instruction before sending.');
+    expect(
+      resolveMobileInspectPromptError(
+        createInspectState({
+          screenshot: {
+            platform: 'ios',
+            success: true,
+            message: 'ok',
+            dataUrl: 'data:image/png;base64,AA==',
+          },
+          selectedPoint: { x: 5, y: 8, normalizedX: 0.1, normalizedY: 0.2 },
+          instruction: '   ',
+        }),
+      ),
+    ).toBe('Write an instruction before sending.');
   });
 });

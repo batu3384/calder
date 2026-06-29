@@ -1,9 +1,6 @@
 import { appState } from '../../state.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
-import {
-  renderCliTargetMenuList,
-  syncCliTargetControls,
-} from './target-menu-render-helpers.js';
+import { renderCliTargetMenuList, syncCliTargetControls } from './target-menu-render-helpers.js';
 
 interface CliTargetMenuElements {
   composerEl: HTMLDivElement;
@@ -28,22 +25,12 @@ export interface CliTargetMenuController {
   syncControls: () => void;
 }
 
-export function createCliTargetMenuController(options: CliTargetMenuControllerOptions): CliTargetMenuController {
-  const {
-    projectId,
-    elements,
-    hasPayload,
-    onSendToNew,
-    onSendToCustom,
-  } = options;
-  const {
-    composerEl,
-    selectedButton,
-    newButton,
-    customButton,
-    targetMenuEl,
-    targetMenuListEl,
-  } = elements;
+export function createCliTargetMenuController(
+  options: CliTargetMenuControllerOptions,
+): CliTargetMenuController {
+  const { projectId, elements, hasPayload, onSendToNew, onSendToCustom } = options;
+  const { composerEl, selectedButton, newButton, customButton, targetMenuEl, targetMenuListEl } =
+    elements;
   let targetMenuCleanup: (() => void) | undefined;
 
   const closeMenu = (): void => {

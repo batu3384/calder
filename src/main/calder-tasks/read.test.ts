@@ -78,15 +78,15 @@ describe('readProjectBackgroundTaskFile', () => {
     await expect(readProjectBackgroundTaskFile('/repo', '../outside.json')).rejects.toThrow(
       'Task path must stay within .calder/tasks',
     );
-    await expect(readProjectBackgroundTaskFile('/repo', '.calder/tasks/../../outside.json')).rejects.toThrow(
-      'Task path must stay within .calder/tasks',
-    );
-    await expect(readProjectBackgroundTaskFile('/repo', '.calder/tasks/release.txt')).rejects.toThrow(
-      'Task path must stay within .calder/tasks',
-    );
-    await expect(readProjectBackgroundTaskFile('/repo', '.calder/reviews/item.json')).rejects.toThrow(
-      'Task path must stay within .calder/tasks',
-    );
+    await expect(
+      readProjectBackgroundTaskFile('/repo', '.calder/tasks/../../outside.json'),
+    ).rejects.toThrow('Task path must stay within .calder/tasks');
+    await expect(
+      readProjectBackgroundTaskFile('/repo', '.calder/tasks/release.txt'),
+    ).rejects.toThrow('Task path must stay within .calder/tasks');
+    await expect(
+      readProjectBackgroundTaskFile('/repo', '.calder/reviews/item.json'),
+    ).rejects.toThrow('Task path must stay within .calder/tasks');
   });
 
   it('allows all supported status values', async () => {

@@ -3,10 +3,7 @@ import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import {
-  startProjectContextWatcher,
-  stopProjectContextWatcher,
-} from './watcher.js';
+import { startProjectContextWatcher, stopProjectContextWatcher } from './watcher.js';
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));
@@ -78,7 +75,11 @@ describe('project context watcher', () => {
       }
     });
 
-    writeFileSync(join(root, 'AGENTS.md'), '# Updated codex summary\nUse AGENTS defaults.\n', 'utf8');
+    writeFileSync(
+      join(root, 'AGENTS.md'),
+      '# Updated codex summary\nUse AGENTS defaults.\n',
+      'utf8',
+    );
     await updateSeen;
 
     expect(seen).toContain('Updated codex summary');
@@ -100,8 +101,12 @@ describe('project context watcher', () => {
     }, 1800);
 
     startProjectContextWatcher(root, (state) => {
-      const sharedRule = state.sources.find((source) =>
-        source.provider === 'shared' && source.kind === 'rules' && source.displayName === 'new-guideline.soft.md');
+      const sharedRule = state.sources.find(
+        (source) =>
+          source.provider === 'shared' &&
+          source.kind === 'rules' &&
+          source.displayName === 'new-guideline.soft.md',
+      );
       const summary = sharedRule?.summary ?? '';
       seen.push(summary);
       if (summary === 'New guideline') {
@@ -153,7 +158,11 @@ describe('project context watcher', () => {
     // Calling unsubscribe twice should stay a no-op after watcher teardown.
     unsubscribe();
 
-    writeFileSync(join(root, '.github', 'instructions', 'team', 'copilot.md'), '# Updated guidance\nFollow local instructions.\n', 'utf8');
+    writeFileSync(
+      join(root, '.github', 'instructions', 'team', 'copilot.md'),
+      '# Updated guidance\nFollow local instructions.\n',
+      'utf8',
+    );
     await new Promise((resolve) => setTimeout(resolve, 650));
 
     expect(seen).toEqual([]);

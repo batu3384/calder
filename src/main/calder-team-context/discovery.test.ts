@@ -31,7 +31,8 @@ describe('discoverProjectTeamContext', () => {
     const root = makeProject('team-context-discovery');
     roots.push(root);
     writeFiles(root, {
-      '.calder/team/spaces/frontend.md': '# Frontend Agreements\nUse stable surface routing first.\n',
+      '.calder/team/spaces/frontend.md':
+        '# Frontend Agreements\nUse stable surface routing first.\n',
       '.calder/team/spaces/release.md': '\nRelease handoff belongs here.\n',
       '.calder/rules/accessibility.md': '# Accessibility\n',
       '.calder/workflows/review-pr.md': '# Review PR\n',

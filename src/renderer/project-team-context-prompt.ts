@@ -9,7 +9,11 @@ export function buildProjectTeamContextPromptBlock(
 ): string | undefined {
   if (!projectTeamContext) return undefined;
   const spaces = projectTeamContext.spaces.slice(0, 3);
-  if (spaces.length === 0 && projectTeamContext.sharedRuleCount === 0 && projectTeamContext.workflowCount === 0) {
+  if (
+    spaces.length === 0 &&
+    projectTeamContext.sharedRuleCount === 0 &&
+    projectTeamContext.workflowCount === 0
+  ) {
     return undefined;
   }
 

@@ -52,7 +52,9 @@ describe('command deck provider selector helpers', () => {
   });
 
   it('keeps the preferred provider when it is one of the failing check providers', () => {
-    expect(resolveProviderForCheck('antigravity', ['codex', 'antigravity'], snapshot)).toBe('antigravity');
+    expect(resolveProviderForCheck('antigravity', ['codex', 'antigravity'], snapshot)).toBe(
+      'antigravity',
+    );
   });
 
   it('shows the inline selector when multiple providers are actually available', () => {
@@ -60,13 +62,15 @@ describe('command deck provider selector helpers', () => {
   });
 
   it('hides the inline selector when only one provider is available', () => {
-    expect(shouldRenderInlineProviderSelector({
-      ...snapshot,
-      availability: new Map<ProviderId, boolean>([
-        ['claude', false],
-        ['codex', true],
-        ['antigravity', false],
-      ]),
-    })).toBe(false);
+    expect(
+      shouldRenderInlineProviderSelector({
+        ...snapshot,
+        availability: new Map<ProviderId, boolean>([
+          ['claude', false],
+          ['codex', true],
+          ['antigravity', false],
+        ]),
+      }),
+    ).toBe(false);
   });
 });

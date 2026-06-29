@@ -1,7 +1,11 @@
-import { existsSync, readdirSync,readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
-import type { CliSurfaceDiscoveryCandidate, CliSurfaceDiscoveryConfidence, CliSurfaceDiscoveryResult } from '../shared/types/project-surface';
+import type {
+  CliSurfaceDiscoveryCandidate,
+  CliSurfaceDiscoveryConfidence,
+  CliSurfaceDiscoveryResult,
+} from '../shared/types/project-surface';
 
 const NODE_SCRIPT_ORDER = ['dev:tui', 'dev:cli', 'tui', 'cli', 'dev', 'start'] as const;
 
@@ -27,23 +31,23 @@ function discoverNodeCandidates(projectPath: string): CliSurfaceDiscoveryCandida
   const packageJsonPath = join(projectPath, 'package.json');
   if (!existsSync(packageJsonPath)) return [];
 
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { scripts?: Record<string, string> };
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+    scripts?: Record<string, string>;
+  };
   const scripts = packageJson.scripts ?? {};
   const packageManager = detectPackageManager(projectPath);
 
-  return NODE_SCRIPT_ORDER
-    .filter((name) => typeof scripts[name] === 'string')
-    .map((name) =>
-      makeCandidate(
-        `node:${name}`,
-        packageManager,
-        packageManager === 'yarn' ? [name] : ['run', name],
-        projectPath,
-        `package.json:scripts.${name}`,
-        `Found ${name} in package.json scripts`,
-        name === 'dev:tui' ? 'high' : 'medium',
-      ),
-    );
+  return NODE_SCRIPT_ORDER.filter((name) => typeof scripts[name] === 'string').map((name) =>
+    makeCandidate(
+      `node:${name}`,
+      packageManager,
+      packageManager === 'yarn' ? [name] : ['run', name],
+      projectPath,
+      `package.json:scripts.${name}`,
+      `Found ${name} in package.json scripts`,
+      name === 'dev:tui' ? 'high' : 'medium',
+    ),
+  );
 }
 
 function discoverPythonCandidates(projectPath: string): CliSurfaceDiscoveryCandidate[] {

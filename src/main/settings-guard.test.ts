@@ -51,7 +51,12 @@ vi.mock('./store', () => ({
 }));
 
 import { installHooksOnly, installStatusLine } from './claude-cli';
-import { guardedInstall, isCalderStatusLine, reinstallSettings, validateSettings } from './settings-guard';
+import {
+  guardedInstall,
+  isCalderStatusLine,
+  reinstallSettings,
+  validateSettings,
+} from './settings-guard';
 
 const mockInstallHooksOnly = vi.mocked(installHooksOnly);
 const mockInstallStatusLine = vi.mocked(installStatusLine);
@@ -73,11 +78,15 @@ describe('isCalderStatusLine', () => {
   });
 
   it('accepts quoted managed commands', () => {
-    expect(isCalderStatusLine({ command: '"/mock/home/.calder/runtime/statusline.sh"' })).toBe(true);
+    expect(isCalderStatusLine({ command: '"/mock/home/.calder/runtime/statusline.sh"' })).toBe(
+      true,
+    );
   });
 
   it('accepts wrapper commands that execute the managed script', () => {
-    expect(isCalderStatusLine({ command: 'sh -lc \'/mock/home/.calder/runtime/statusline.sh\'' })).toBe(true);
+    expect(
+      isCalderStatusLine({ command: "sh -lc '/mock/home/.calder/runtime/statusline.sh'" }),
+    ).toBe(true);
   });
 
   it('rejects the managed helper path directly', () => {
@@ -110,7 +119,10 @@ describe('guardedInstall conflict flow', () => {
 
     await guardedInstall(win as any);
 
-    expect(win.webContents.send).not.toHaveBeenCalledWith('settings:showConflictDialog', expect.anything());
+    expect(win.webContents.send).not.toHaveBeenCalledWith(
+      'settings:showConflictDialog',
+      expect.anything(),
+    );
     expect(mockIpcMainOnce).not.toHaveBeenCalled();
     expect(mockInstallStatusLine).toHaveBeenCalled();
   });
@@ -134,9 +146,11 @@ describe('guardedInstall conflict flow', () => {
     await installPromise;
 
     expect(mockInstallStatusLine).not.toHaveBeenCalled();
-    expect(mockSaveState).toHaveBeenCalledWith(expect.objectContaining({
-      preferences: expect.objectContaining({ statusLineConsent: 'declined' }),
-    }));
+    expect(mockSaveState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ statusLineConsent: 'declined' }),
+      }),
+    );
   });
 
   it('installs status line directly when no status line exists', async () => {
@@ -207,7 +221,9 @@ describe('guardedInstall conflict flow', () => {
     const win = {
       webContents: {
         isLoading: vi.fn(() => true),
-        once: vi.fn((_event: string, cb: () => void) => { finishLoadCb = cb; }),
+        once: vi.fn((_event: string, cb: () => void) => {
+          finishLoadCb = cb;
+        }),
         send: vi.fn(),
       },
       once: vi.fn(),
@@ -242,7 +258,9 @@ describe('guardedInstall conflict flow', () => {
         once: vi.fn(),
         send: vi.fn(),
       },
-      once: vi.fn((_event: string, cb: () => void) => { closeHandler = cb; }),
+      once: vi.fn((_event: string, cb: () => void) => {
+        closeHandler = cb;
+      }),
       removeListener: vi.fn(),
     };
 
@@ -250,11 +268,16 @@ describe('guardedInstall conflict flow', () => {
     closeHandler?.();
     await installPromise;
 
-    expect(mockIpcMainRemoveListener).toHaveBeenCalledWith('settings:conflictDialogResponse', expect.any(Function));
+    expect(mockIpcMainRemoveListener).toHaveBeenCalledWith(
+      'settings:conflictDialogResponse',
+      expect.any(Function),
+    );
     expect(mockInstallStatusLine).not.toHaveBeenCalled();
-    expect(mockSaveState).toHaveBeenCalledWith(expect.objectContaining({
-      preferences: expect.objectContaining({ statusLineConsent: 'declined' }),
-    }));
+    expect(mockSaveState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ statusLineConsent: 'declined' }),
+      }),
+    );
   });
 
   it('installs Calder status line when the user chooses Use Calder', async () => {
@@ -272,9 +295,11 @@ describe('guardedInstall conflict flow', () => {
     await installPromise;
 
     expect(mockInstallStatusLine).toHaveBeenCalled();
-    expect(mockSaveState).toHaveBeenCalledWith(expect.objectContaining({
-      preferences: expect.objectContaining({ statusLineConsent: 'granted' }),
-    }));
+    expect(mockSaveState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ statusLineConsent: 'granted' }),
+      }),
+    );
   });
 });
 
@@ -313,9 +338,11 @@ describe('settings install failures', () => {
 
     expect(() => reinstallSettings()).not.toThrow();
     expect(warn).toHaveBeenCalled();
-    expect(mockSaveState).toHaveBeenCalledWith(expect.objectContaining({
-      preferences: expect.objectContaining({ statusLineConsent: 'granted' }),
-    }));
+    expect(mockSaveState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferences: expect.objectContaining({ statusLineConsent: 'granted' }),
+      }),
+    );
     warn.mockRestore();
   });
 });

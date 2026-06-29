@@ -15,43 +15,47 @@ function makeState(): PersistedState {
       insightsEnabled: true,
       autoTitleEnabled: true,
     },
-    projects: [{
-      id: 'project-1',
-      name: 'Project',
-      path: '/tmp/project',
-      activeSessionId: 'session-1',
-      layout: {
-        mode: 'mosaic',
-        splitPanes: ['session-1'],
-        splitDirection: 'horizontal',
-      },
-      surface: {
-        kind: 'cli',
-        active: true,
-        web: {
-          sessionId: 'browser-1',
-          url: 'http://localhost:3000',
-          history: ['http://localhost:3000'],
+    projects: [
+      {
+        id: 'project-1',
+        name: 'Project',
+        path: '/tmp/project',
+        activeSessionId: 'session-1',
+        layout: {
+          mode: 'mosaic',
+          splitPanes: ['session-1'],
+          splitDirection: 'horizontal',
         },
-        cli: {
-          selectedProfileId: 'profile-1',
-          profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
-          runtime: {
-            status: 'running',
-            runtimeId: 'runtime-1',
-            startupTiming: { startedAtMs: 1 },
-            resolvedUrl: 'http://localhost:3000',
+        surface: {
+          kind: 'cli',
+          active: true,
+          web: {
+            sessionId: 'browser-1',
+            url: 'http://localhost:3000',
+            history: ['http://localhost:3000'],
+          },
+          cli: {
+            selectedProfileId: 'profile-1',
+            profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
+            runtime: {
+              status: 'running',
+              runtimeId: 'runtime-1',
+              startupTiming: { startedAtMs: 1 },
+              resolvedUrl: 'http://localhost:3000',
+            },
           },
         },
+        sessions: [
+          {
+            id: 'session-1',
+            name: 'Session',
+            cliSessionId: null,
+            createdAt: '2026-04-21T00:00:00Z',
+            pendingInitialPrompt: 'Transient prompt',
+          },
+        ],
       },
-      sessions: [{
-        id: 'session-1',
-        name: 'Session',
-        cliSessionId: null,
-        createdAt: '2026-04-21T00:00:00Z',
-        pendingInitialPrompt: 'Transient prompt',
-      }],
-    }],
+    ],
   };
 }
 
@@ -71,8 +75,14 @@ describe('state persist snapshot', () => {
     const snapshot = buildRendererPersistSnapshot(state);
 
     expect(snapshot.projects[0].surface?.web?.history).toEqual(['http://localhost:3000']);
-    expect(snapshot.projects[0].surface?.web?.history).not.toBe(state.projects[0].surface?.web?.history);
-    expect(snapshot.projects[0].surface?.cli?.profiles).toEqual([{ id: 'profile-1', name: 'Dev', command: 'npm' }]);
-    expect(snapshot.projects[0].surface?.cli?.profiles).not.toBe(state.projects[0].surface?.cli?.profiles);
+    expect(snapshot.projects[0].surface?.web?.history).not.toBe(
+      state.projects[0].surface?.web?.history,
+    );
+    expect(snapshot.projects[0].surface?.cli?.profiles).toEqual([
+      { id: 'profile-1', name: 'Dev', command: 'npm' },
+    ]);
+    expect(snapshot.projects[0].surface?.cli?.profiles).not.toBe(
+      state.projects[0].surface?.cli?.profiles,
+    );
   });
 });

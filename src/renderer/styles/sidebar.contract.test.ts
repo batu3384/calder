@@ -27,15 +27,16 @@ describe('sidebar rail stylesheet contract', () => {
 
   it('treats sidebar actions and project rows like a refined navigation rail', () => {
     expect(sidebarCss).toContain('.sidebar-header-actions');
-    expect(sidebarCss).toContain('border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);');
+    expect(sidebarCss).toContain(
+      'border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);',
+    );
     expect(sidebarCss).toContain('.project-item:hover');
     expect(sidebarCss).toContain('inset 0 1px 0 rgba(255, 255, 255, 0.04)');
     expect(sidebarCss).toContain('.project-item-main');
     expect(sidebarCss).toContain('gap: 4px;');
     expect(sidebarCss).toContain('min-height: 52px;');
     expect(
-      sidebarCss.includes('font-size: 9px;')
-      || sidebarCss.includes('font-size: var(--type-2xs);'),
+      sidebarCss.includes('font-size: 9px;') || sidebarCss.includes('font-size: var(--type-2xs);'),
     ).toBe(true);
   });
 
@@ -49,8 +50,8 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('.sidebar-header-actions');
     expect(sidebarCss).toContain('.project-item.active');
     expect(
-      sidebarCss.includes('border-radius: 14px;')
-      || sidebarCss.includes('border-radius: var(--radius-md);'),
+      sidebarCss.includes('border-radius: 14px;') ||
+        sidebarCss.includes('border-radius: var(--radius-md);'),
     ).toBe(true);
   });
 

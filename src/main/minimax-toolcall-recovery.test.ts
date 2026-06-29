@@ -9,7 +9,11 @@ import {
 
 describe('isMiniMaxToolCallMarkupMessage', () => {
   it('detects minimax pseudo tool-call markup', () => {
-    expect(isMiniMaxToolCallMarkupMessage('<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>')).toBe(true);
+    expect(
+      isMiniMaxToolCallMarkupMessage(
+        '<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>',
+      ),
+    ).toBe(true);
     expect(isMiniMaxToolCallMarkupMessage('<MINIMAX:TOOL_CALL>')).toBe(true);
   });
 
@@ -25,7 +29,11 @@ describe('shouldTriggerMiniMaxToolCallRecovery', () => {
 
   it('triggers when markup appears for the first time', () => {
     expect(
-      shouldTriggerMiniMaxToolCallRecovery('<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>', undefined, now),
+      shouldTriggerMiniMaxToolCallRecovery(
+        '<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>',
+        undefined,
+        now,
+      ),
     ).toBe(true);
   });
 
@@ -35,9 +43,9 @@ describe('shouldTriggerMiniMaxToolCallRecovery', () => {
       lastMessage: '<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>',
       attempts: 1,
     };
-    expect(
-      shouldTriggerMiniMaxToolCallRecovery(previous.lastMessage, previous, now, 45_000),
-    ).toBe(false);
+    expect(shouldTriggerMiniMaxToolCallRecovery(previous.lastMessage, previous, now, 45_000)).toBe(
+      false,
+    );
   });
 
   it('retries after cooldown or when message changes', () => {
@@ -46,11 +54,16 @@ describe('shouldTriggerMiniMaxToolCallRecovery', () => {
       lastMessage: '<minimax:tool_call><invoke name="Read"></invoke></minimax:tool_call>',
       attempts: 1,
     };
+    expect(shouldTriggerMiniMaxToolCallRecovery(previous.lastMessage, previous, now, 45_000)).toBe(
+      true,
+    );
     expect(
-      shouldTriggerMiniMaxToolCallRecovery(previous.lastMessage, previous, now, 45_000),
-    ).toBe(true);
-    expect(
-      shouldTriggerMiniMaxToolCallRecovery('<minimax:tool_call><invoke name="Bash"></invoke></minimax:tool_call>', previous, now, 45_000),
+      shouldTriggerMiniMaxToolCallRecovery(
+        '<minimax:tool_call><invoke name="Bash"></invoke></minimax:tool_call>',
+        previous,
+        now,
+        45_000,
+      ),
     ).toBe(true);
   });
 });
@@ -63,4 +76,3 @@ describe('buildMiniMaxToolCallRecoveryPrompt', () => {
     expect(prompt).toContain('tool_use');
   });
 });
-

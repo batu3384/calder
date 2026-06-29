@@ -1,5 +1,5 @@
 import type { ViewportMenuFocusMode } from './pane-interactions.js';
-import { type BrowserTabInstance,VIEWPORT_PRESETS } from './types.js';
+import { type BrowserTabInstance, VIEWPORT_PRESETS } from './types.js';
 import { applyViewport, closeViewportDropdown, openViewportDropdown } from './viewport.js';
 
 interface BrowserViewportMenuControllerOptions {
@@ -19,27 +19,26 @@ export interface BrowserViewportMenuController {
 export function createBrowserViewportMenuController(
   options: BrowserViewportMenuControllerOptions,
 ): BrowserViewportMenuController {
-  const {
-    instance,
-    viewportBtn,
-    viewportDropdown,
-    customItem,
-    customForm,
-  } = options;
+  const { instance, viewportBtn, viewportDropdown, customItem, customForm } = options;
 
   const viewportMenuItems: HTMLButtonElement[] = [];
 
   const focusViewportMenuItem = (index: number): void => {
     if (viewportMenuItems.length === 0) return;
-    const normalized = ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
-    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
+    const normalized =
+      ((index % viewportMenuItems.length) + viewportMenuItems.length) % viewportMenuItems.length;
+    viewportMenuItems.forEach((item) => {
+      item.tabIndex = -1;
+    });
     const nextItem = viewportMenuItems[normalized];
     nextItem.tabIndex = 0;
     nextItem.focus();
   };
 
   const focusSelectedViewportMenuItem = (): void => {
-    const selectedIndex = viewportMenuItems.findIndex((item) => item.getAttribute('aria-checked') === 'true');
+    const selectedIndex = viewportMenuItems.findIndex(
+      (item) => item.getAttribute('aria-checked') === 'true',
+    );
     focusViewportMenuItem(selectedIndex >= 0 ? selectedIndex : 0);
   };
 
@@ -69,7 +68,9 @@ export function createBrowserViewportMenuController(
     closeViewportDropdown(instance, reason);
     customForm.style.display = 'none';
     customItem.setAttribute('aria-expanded', 'false');
-    viewportMenuItems.forEach((item) => { item.tabIndex = -1; });
+    viewportMenuItems.forEach((item) => {
+      item.tabIndex = -1;
+    });
     if (returnFocus) {
       requestAnimationFrame(() => viewportBtn.focus());
     }
@@ -80,9 +81,8 @@ export function createBrowserViewportMenuController(
     item.type = 'button';
     item.className = 'browser-viewport-item';
     item.dataset.viewportKey = preset.label;
-    item.textContent = preset.width !== null
-      ? `${preset.label} — ${preset.width}×${preset.height}`
-      : preset.label;
+    item.textContent =
+      preset.width !== null ? `${preset.label} — ${preset.width}×${preset.height}` : preset.label;
     item.setAttribute('role', 'menuitemradio');
     item.setAttribute('aria-checked', 'false');
     item.tabIndex = -1;

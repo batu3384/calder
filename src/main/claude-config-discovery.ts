@@ -2,8 +2,8 @@ import * as fs from 'fs';
 import { homedir } from 'os';
 import * as path from 'path';
 
-import type { Agent, ClaudeConfig,Command, McpServer, Skill } from '../shared/types/provider';
-import { readDirSafe,readJsonSafe } from './fs-utils';
+import type { Agent, ClaudeConfig, Command, McpServer, Skill } from '../shared/types/provider';
+import { readDirSafe, readJsonSafe } from './fs-utils';
 
 /** Parse YAML-ish frontmatter from an .md file (between --- delimiters) */
 function parseFrontmatter(filePath: string): Record<string, string> {
@@ -26,7 +26,11 @@ function parseFrontmatter(filePath: string): Record<string, string> {
 }
 
 /** Read MCP servers from settings.json mcpServers key and .mcp.json files */
-function readMcpServers(settingsPath: string, mcpJsonPath: string, scope: 'user' | 'project'): McpServer[] {
+function readMcpServers(
+  settingsPath: string,
+  mcpJsonPath: string,
+  scope: 'user' | 'project',
+): McpServer[] {
   const servers: McpServer[] = [];
 
   // Read from settings.json mcpServers
@@ -57,13 +61,23 @@ function readMcpServers(settingsPath: string, mcpJsonPath: string, scope: 'user'
 }
 
 /** Read agents from .md files in an agents directory */
-function readAgentsFromDir(dirPath: string, scope: 'user' | 'project', category: 'plugin' | 'built-in'): Agent[] {
+function readAgentsFromDir(
+  dirPath: string,
+  scope: 'user' | 'project',
+  category: 'plugin' | 'built-in',
+): Agent[] {
   const agents: Agent[] = [];
   for (const file of readDirSafe(dirPath)) {
     if (!file.endsWith('.md')) continue;
     const fm = parseFrontmatter(path.join(dirPath, file));
     if (fm.name) {
-      agents.push({ name: fm.name, model: fm.model || '', category, scope, filePath: path.join(dirPath, file) });
+      agents.push({
+        name: fm.name,
+        model: fm.model || '',
+        category,
+        scope,
+        filePath: path.join(dirPath, file),
+      });
     }
   }
   return agents;
@@ -72,11 +86,19 @@ function readAgentsFromDir(dirPath: string, scope: 'user' | 'project', category:
 /** Get set of enabled plugin IDs from user settings */
 function getEnabledPlugins(): Set<string> {
   const settings = readJsonSafe(path.join(homedir(), '.claude', 'settings.json'));
-  if (!settings || typeof settings.enabledPlugins !== 'object' || settings.enabledPlugins === null) {
+  if (
+    !settings ||
+    typeof settings.enabledPlugins !== 'object' ||
+    settings.enabledPlugins === null
+  ) {
     return new Set();
   }
   const enabled = settings.enabledPlugins as Record<string, boolean>;
-  return new Set(Object.entries(enabled).filter(([, isEnabled]) => isEnabled).map(([pluginId]) => pluginId));
+  return new Set(
+    Object.entries(enabled)
+      .filter(([, isEnabled]) => isEnabled)
+      .map(([pluginId]) => pluginId),
+  );
 }
 
 /** Read agents from installed plugins */
@@ -86,7 +108,10 @@ function readPluginAgents(): Agent[] {
   if (!installed || typeof installed.plugins !== 'object' || installed.plugins === null) return [];
 
   const agents: Agent[] = [];
-  const plugins = installed.plugins as Record<string, Array<{ installPath: string; scope?: string }>>;
+  const plugins = installed.plugins as Record<
+    string,
+    Array<{ installPath: string; scope?: string }>
+  >;
   const enabledPlugins = getEnabledPlugins();
 
   for (const [pluginId, versions] of Object.entries(plugins)) {
@@ -107,7 +132,10 @@ function readPluginSkills(): Skill[] {
   if (!installed || typeof installed.plugins !== 'object' || installed.plugins === null) return [];
 
   const skills: Skill[] = [];
-  const plugins = installed.plugins as Record<string, Array<{ installPath: string; scope?: string }>>;
+  const plugins = installed.plugins as Record<
+    string,
+    Array<{ installPath: string; scope?: string }>
+  >;
   const enabledPlugins = getEnabledPlugins();
 
   for (const [pluginId, versions] of Object.entries(plugins)) {
@@ -139,7 +167,12 @@ function readCommandsFromDir(dirPath: string, scope: 'user' | 'project'): Comman
     if (!file.endsWith('.md')) continue;
     const name = file.slice(0, -3);
     const fm = parseFrontmatter(path.join(dirPath, file));
-    commands.push({ name, description: fm.description || '', scope, filePath: path.join(dirPath, file) });
+    commands.push({
+      name,
+      description: fm.description || '',
+      scope,
+      filePath: path.join(dirPath, file),
+    });
   }
   return commands;
 }
@@ -151,7 +184,12 @@ function readSkillsFromDir(dirPath: string, scope: 'user' | 'project'): Skill[] 
     const skillMd = path.join(dirPath, skillName, 'SKILL.md');
     const fm = parseFrontmatter(skillMd);
     if (fm.name || skillName) {
-      skills.push({ name: fm.name || skillName, description: fm.description || '', scope, filePath: skillMd });
+      skills.push({
+        name: fm.name || skillName,
+        description: fm.description || '',
+        scope,
+        filePath: skillMd,
+      });
     }
   }
   return skills;
@@ -176,8 +214,14 @@ function readMcpFromClaudeJson(filePath: string, projectPath?: string): McpServe
   if (projectPath && typeof json.projects === 'object' && json.projects !== null) {
     const projects = json.projects as Record<string, Record<string, unknown>>;
     const projectEntry = projects[projectPath];
-    if (projectEntry && typeof projectEntry.mcpServers === 'object' && projectEntry.mcpServers !== null) {
-      for (const [name, config] of Object.entries(projectEntry.mcpServers as Record<string, unknown>)) {
+    if (
+      projectEntry &&
+      typeof projectEntry.mcpServers === 'object' &&
+      projectEntry.mcpServers !== null
+    ) {
+      for (const [name, config] of Object.entries(
+        projectEntry.mcpServers as Record<string, unknown>,
+      )) {
         const cfg = config as Record<string, unknown>;
         const url = (cfg.url as string) || (cfg.command as string) || '';
         servers.push({ name, url, status: 'configured', scope: 'project', filePath });
@@ -190,11 +234,12 @@ function readMcpFromClaudeJson(filePath: string, projectPath?: string): McpServe
 
 /** Read managed MCP servers from system-level config */
 function readManagedMcpServers(): McpServer[] {
-  const managedPath = process.platform === 'darwin'
-    ? '/Library/Application Support/ClaudeCode/managed-mcp.json'
-    : process.platform === 'win32'
-      ? 'C:\\Program Files\\ClaudeCode\\managed-mcp.json'
-      : '/etc/claude-code/managed-mcp.json';
+  const managedPath =
+    process.platform === 'darwin'
+      ? '/Library/Application Support/ClaudeCode/managed-mcp.json'
+      : process.platform === 'win32'
+        ? 'C:\\Program Files\\ClaudeCode\\managed-mcp.json'
+        : '/etc/claude-code/managed-mcp.json';
 
   const json = readJsonSafe(managedPath);
   if (!json || typeof json.mcpServers !== 'object' || json.mcpServers === null) return [];
@@ -241,7 +286,11 @@ export async function getClaudeConfig(projectPath: string): Promise<ClaudeConfig
   // Agents
   const pluginAgents = readPluginAgents();
   const userAgents = readAgentsFromDir(path.join(claudeDir, 'agents'), 'user', 'plugin');
-  const projectAgents = readAgentsFromDir(path.join(projectPath, '.claude', 'agents'), 'project', 'plugin');
+  const projectAgents = readAgentsFromDir(
+    path.join(projectPath, '.claude', 'agents'),
+    'project',
+    'plugin',
+  );
 
   const agentNames = new Set<string>();
   const agents: Agent[] = [];
@@ -272,7 +321,10 @@ export async function getClaudeConfig(projectPath: string): Promise<ClaudeConfig
 
   // Commands
   const userCommands = readCommandsFromDir(path.join(claudeDir, 'commands'), 'user');
-  const projectCommands = readCommandsFromDir(path.join(projectPath, '.claude', 'commands'), 'project');
+  const projectCommands = readCommandsFromDir(
+    path.join(projectPath, '.claude', 'commands'),
+    'project',
+  );
 
   const commandNames = new Set<string>();
   const commands: Command[] = [];

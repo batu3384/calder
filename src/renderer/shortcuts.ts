@@ -17,30 +17,125 @@ interface ShortcutDefault {
 
 export const SHORTCUT_DEFAULTS: ShortcutDefault[] = [
   { id: 'new-session', label: 'New Session', category: 'Sessions', defaultKeys: 'CmdOrCtrl+T' },
-  { id: 'new-session-alt', label: 'New Session (Alt)', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Shift+N' },
-  { id: 'new-project', label: 'New Project', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Shift+P' },
-  { id: 'goto-session-1', label: 'Go to Session 1', category: 'Sessions', defaultKeys: 'CmdOrCtrl+1' },
-  { id: 'goto-session-2', label: 'Go to Session 2', category: 'Sessions', defaultKeys: 'CmdOrCtrl+2' },
-  { id: 'goto-session-3', label: 'Go to Session 3', category: 'Sessions', defaultKeys: 'CmdOrCtrl+3' },
-  { id: 'goto-session-4', label: 'Go to Session 4', category: 'Sessions', defaultKeys: 'CmdOrCtrl+4' },
-  { id: 'goto-session-5', label: 'Go to Session 5', category: 'Sessions', defaultKeys: 'CmdOrCtrl+5' },
-  { id: 'goto-session-6', label: 'Go to Session 6', category: 'Sessions', defaultKeys: 'CmdOrCtrl+6' },
-  { id: 'goto-session-7', label: 'Go to Session 7', category: 'Sessions', defaultKeys: 'CmdOrCtrl+7' },
-  { id: 'goto-session-8', label: 'Go to Session 8', category: 'Sessions', defaultKeys: 'CmdOrCtrl+8' },
-  { id: 'goto-session-9', label: 'Go to Session 9', category: 'Sessions', defaultKeys: 'CmdOrCtrl+9' },
-  { id: 'next-session', label: 'Next Session', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Shift+]' },
-  { id: 'prev-session', label: 'Previous Session', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Shift+[' },
-  { id: 'next-project', label: 'Next Project', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Alt+N' },
-  { id: 'prev-project', label: 'Previous Project', category: 'Sessions', defaultKeys: 'CmdOrCtrl+Alt+P' },
+  {
+    id: 'new-session-alt',
+    label: 'New Session (Alt)',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Shift+N',
+  },
+  {
+    id: 'new-project',
+    label: 'New Project',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Shift+P',
+  },
+  {
+    id: 'goto-session-1',
+    label: 'Go to Session 1',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+1',
+  },
+  {
+    id: 'goto-session-2',
+    label: 'Go to Session 2',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+2',
+  },
+  {
+    id: 'goto-session-3',
+    label: 'Go to Session 3',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+3',
+  },
+  {
+    id: 'goto-session-4',
+    label: 'Go to Session 4',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+4',
+  },
+  {
+    id: 'goto-session-5',
+    label: 'Go to Session 5',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+5',
+  },
+  {
+    id: 'goto-session-6',
+    label: 'Go to Session 6',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+6',
+  },
+  {
+    id: 'goto-session-7',
+    label: 'Go to Session 7',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+7',
+  },
+  {
+    id: 'goto-session-8',
+    label: 'Go to Session 8',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+8',
+  },
+  {
+    id: 'goto-session-9',
+    label: 'Go to Session 9',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+9',
+  },
+  {
+    id: 'next-session',
+    label: 'Next Session',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Shift+]',
+  },
+  {
+    id: 'prev-session',
+    label: 'Previous Session',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Shift+[',
+  },
+  {
+    id: 'next-project',
+    label: 'Next Project',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Alt+N',
+  },
+  {
+    id: 'prev-project',
+    label: 'Previous Project',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+Alt+P',
+  },
   { id: 'tab-back', label: 'Back (Tab History)', category: 'Sessions', defaultKeys: 'CmdOrCtrl+[' },
-  { id: 'tab-forward', label: 'Forward (Tab History)', category: 'Sessions', defaultKeys: 'CmdOrCtrl+]' },
+  {
+    id: 'tab-forward',
+    label: 'Forward (Tab History)',
+    category: 'Sessions',
+    defaultKeys: 'CmdOrCtrl+]',
+  },
   { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'Panels', defaultKeys: 'CmdOrCtrl+B' },
   { id: 'project-terminal', label: 'Project Terminal', category: 'Panels', defaultKeys: 'Ctrl+`' },
-  { id: 'project-terminal-alt', label: 'Project Terminal (Alt)', category: 'Panels', defaultKeys: 'CmdOrCtrl+J' },
+  {
+    id: 'project-terminal-alt',
+    label: 'Project Terminal (Alt)',
+    category: 'Panels',
+    defaultKeys: 'CmdOrCtrl+J',
+  },
   { id: 'debug-panel', label: 'Debug Panel', category: 'Panels', defaultKeys: 'CmdOrCtrl+Shift+D' },
   { id: 'git-panel', label: 'Git Panel', category: 'Panels', defaultKeys: 'CmdOrCtrl+Shift+G' },
-  { id: 'quick-open', label: 'Quick Open File', category: 'Search & Help', defaultKeys: 'CmdOrCtrl+P' },
-  { id: 'command-palette', label: 'Command Palette', category: 'Search & Help', defaultKeys: 'CmdOrCtrl+Shift+O' },
+  {
+    id: 'quick-open',
+    label: 'Quick Open File',
+    category: 'Search & Help',
+    defaultKeys: 'CmdOrCtrl+P',
+  },
+  {
+    id: 'command-palette',
+    label: 'Command Palette',
+    category: 'Search & Help',
+    defaultKeys: 'CmdOrCtrl+Shift+O',
+  },
   { id: 'find-in-terminal', label: 'Find', category: 'Search & Help', defaultKeys: 'CmdOrCtrl+F' },
   { id: 'goto-line', label: 'Go to Line', category: 'Search & Help', defaultKeys: 'CmdOrCtrl+L' },
   { id: 'help', label: 'Help', category: 'Search & Help', defaultKeys: 'F1' },
@@ -69,7 +164,13 @@ export function displayKeys(accelerator: string): string {
 }
 
 /** Parse an accelerator string into modifier flags and a key */
-function parseAccelerator(accelerator: string): { ctrl: boolean; meta: boolean; shift: boolean; alt: boolean; key: string } {
+function parseAccelerator(accelerator: string): {
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  alt: boolean;
+  key: string;
+} {
   const parts = accelerator.split('+');
   let ctrl = false;
   let meta = false;
@@ -119,7 +220,12 @@ function matchesAccelerator(e: KeyboardEvent, accelerator: string): boolean {
   // Direct match
   if (eventKey === parsedKey) return true;
   // Case-insensitive for letters
-  if (eventKey.length === 1 && parsedKey.length === 1 && eventKey.toLowerCase() === parsedKey.toLowerCase()) return true;
+  if (
+    eventKey.length === 1 &&
+    parsedKey.length === 1 &&
+    eventKey.toLowerCase() === parsedKey.toLowerCase()
+  )
+    return true;
   // Number keys
   if (/^\d$/.test(parsedKey) && eventKey === parsedKey) return true;
   // F-keys
@@ -174,14 +280,19 @@ export class ShortcutManager {
   }
 
   /** Get resolved keys (override or default) for a shortcut */
-  getKeys(id: string, overrides: Record<string, string> = appState.preferences.keybindings ?? {}): string {
+  getKeys(
+    id: string,
+    overrides: Record<string, string> = appState.preferences.keybindings ?? {},
+  ): string {
     const shortcut = this.shortcuts.find((s) => s.id === id);
     if (!shortcut) return '';
     return overrides[id] ?? shortcut.defaultKeys;
   }
 
   /** Get all shortcuts with resolved keys, grouped by category */
-  getAll(overrides: Record<string, string> = appState.preferences.keybindings ?? {}): Map<string, Array<ShortcutDef & { resolvedKeys: string }>> {
+  getAll(
+    overrides: Record<string, string> = appState.preferences.keybindings ?? {},
+  ): Map<string, Array<ShortcutDef & { resolvedKeys: string }>> {
     const groups = new Map<string, Array<ShortcutDef & { resolvedKeys: string }>>();
 
     for (const shortcut of this.shortcuts) {
@@ -211,7 +322,10 @@ export class ShortcutManager {
   }
 
   /** Check if a shortcut has a custom override */
-  hasOverride(id: string, overrides: Record<string, string> = appState.preferences.keybindings ?? {}): boolean {
+  hasOverride(
+    id: string,
+    overrides: Record<string, string> = appState.preferences.keybindings ?? {},
+  ): boolean {
     return id in overrides;
   }
 

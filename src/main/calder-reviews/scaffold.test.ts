@@ -30,7 +30,9 @@ describe('createProjectReviewFile', () => {
 
     expect(result.created).toBe(true);
     expect(result.relativePath).toBe('.calder/reviews/pr-42-findings.md');
-    expect(readFileSync(join(root, '.calder/reviews/pr-42-findings.md'), 'utf8')).toContain('# PR 42 Findings');
+    expect(readFileSync(join(root, '.calder/reviews/pr-42-findings.md'), 'utf8')).toContain(
+      '# PR 42 Findings',
+    );
     expect(result.state.reviews).toHaveLength(1);
   });
 
@@ -54,6 +56,8 @@ describe('createProjectReviewFile', () => {
 
     expect(result.created).toBe(true);
     expect(result.relativePath).toBe('.calder/reviews/review-findings.md');
-    expect(readFileSync(join(root, '.calder/reviews/review-findings.md'), 'utf8')).toContain('# !!!');
+    expect(readFileSync(join(root, '.calder/reviews/review-findings.md'), 'utf8')).toContain(
+      '# !!!',
+    );
   });
 });

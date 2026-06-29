@@ -22,9 +22,11 @@ export interface ConfigSectionsRefreshController {
   init: () => void;
 }
 
-const defaultQueueFrame: QueueFrame = typeof requestAnimationFrame === 'function'
-  ? requestAnimationFrame
-  : (callback: FrameRequestCallback): number => globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
+const defaultQueueFrame: QueueFrame =
+  typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : (callback: FrameRequestCallback): number =>
+        globalThis.setTimeout(() => callback(Date.now()), 0) as unknown as number;
 
 export function createConfigSectionsRefreshController(
   options: ConfigSectionsRefreshControllerOptions,
@@ -53,9 +55,18 @@ export function createConfigSectionsRefreshController(
   };
 
   const init = (): void => {
-    options.onAppStateEvent('project-changed', () => { watchActiveProject(); scheduleRefresh(); });
-    options.onAppStateEvent('state-loaded', () => { watchActiveProject(); scheduleRefresh(); });
-    options.onAppStateEvent('session-changed', () => { watchActiveProject(); scheduleRefresh(); });
+    options.onAppStateEvent('project-changed', () => {
+      watchActiveProject();
+      scheduleRefresh();
+    });
+    options.onAppStateEvent('state-loaded', () => {
+      watchActiveProject();
+      scheduleRefresh();
+    });
+    options.onAppStateEvent('session-changed', () => {
+      watchActiveProject();
+      scheduleRefresh();
+    });
     options.onAppStateEvent('preferences-changed', () => {
       options.applyVisibility();
       scheduleRefresh();

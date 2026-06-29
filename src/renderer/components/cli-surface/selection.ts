@@ -1,6 +1,9 @@
 import type { AppliedContextSummary } from '../../../shared/types/project-context.js';
 import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
-import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
+import type {
+  SurfacePromptPayload,
+  SurfaceSelectionRange,
+} from '../../../shared/types/project-surface.js';
 
 export function buildViewportText(lines: string[]): string {
   return lines.join('\n');
@@ -12,9 +15,7 @@ export function buildSelectionText(lines: string[], selection: SurfaceSelectionR
     return relevant.join('\n');
   }
 
-  return relevant
-    .map((line) => line.slice(selection.startCol, selection.endCol))
-    .join('\n');
+  return relevant.map((line) => line.slice(selection.startCol, selection.endCol)).join('\n');
 }
 
 export function buildNearbyText(lines: string[], selection: SurfaceSelectionRange): string {

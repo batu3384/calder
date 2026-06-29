@@ -1,4 +1,7 @@
-import type { CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../../../shared/types/project-surface.js';
+import type {
+  CliSurfaceRuntimeState,
+  CliSurfaceStartupTiming,
+} from '../../../shared/types/project-surface.js';
 import { appState } from '../../state.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { getCliSurfaceProfileLabel } from './profile.js';
@@ -106,7 +109,8 @@ export function renderCliSurfaceRuntimeMeta(params: RenderCliSurfaceRuntimeMetaP
   instance.targetMenuController?.syncControls();
 
   if (runtime?.status === 'running') {
-    instance.emptyEl.textContent = 'Runtime is live. Select text or capture the viewport to send context.';
+    instance.emptyEl.textContent =
+      'Runtime is live. Select text or capture the viewport to send context.';
     showElement(instance.emptyEl, instance.viewportLines.length === 0);
     return;
   }
@@ -120,11 +124,14 @@ export function renderCliSurfaceRuntimeMeta(params: RenderCliSurfaceRuntimeMetaP
   }
 
   if (runtime?.status === 'error') {
-    instance.emptyEl.textContent = runtime?.lastError || 'CLI surface failed to start. Edit the command or try another suggestion.';
+    instance.emptyEl.textContent =
+      runtime?.lastError ||
+      'CLI surface failed to start. Edit the command or try another suggestion.';
     showElement(instance.emptyEl, true);
     return;
   }
 
-  instance.emptyEl.textContent = 'Calder can run a detected CLI or TUI command here. If startup fails, edit the command or try another suggestion.';
+  instance.emptyEl.textContent =
+    'Calder can run a detected CLI or TUI command here. If startup fails, edit the command or try another suggestion.';
   showElement(instance.emptyEl, true);
 }

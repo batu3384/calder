@@ -7,7 +7,11 @@ const REVIEWS_DIR_PREFIX = `.calder${path.posix.sep}reviews${path.posix.sep}`;
 
 function normalizeReviewRelativePath(reviewPath: string): string {
   const normalized = reviewPath.replace(/\\/g, '/').replace(/^\.?\//, '');
-  if (!normalized.startsWith(REVIEWS_DIR_PREFIX) || !normalized.endsWith('.md') || normalized.includes('..')) {
+  if (
+    !normalized.startsWith(REVIEWS_DIR_PREFIX) ||
+    !normalized.endsWith('.md') ||
+    normalized.includes('..')
+  ) {
     throw new Error('Review path must stay within .calder/reviews');
   }
   return normalized;

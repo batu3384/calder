@@ -23,7 +23,8 @@ export function migrateLoadedRendererState(
     didMigrateState = true;
   }
   state.preferences = normalizedPreferences;
-  delete (state.preferences as Preferences & { readinessExcludedProviders?: ProviderId[] }).readinessExcludedProviders;
+  delete (state.preferences as Preferences & { readinessExcludedProviders?: ProviderId[] })
+    .readinessExcludedProviders;
   if (state.preferences.sidebarViews) {
     delete (
       state.preferences.sidebarViews as Preferences['sidebarViews'] & { readinessSection?: boolean }

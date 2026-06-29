@@ -5,7 +5,10 @@ import {
 } from '../../project-context-prompt.js';
 import { appState } from '../../state.js';
 import type { ProviderId } from '../../types.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
+import {
+  getProviderAvailabilitySnapshot,
+  resolvePreferredProviderForLaunch,
+} from '../surface-services/provider-availability.js';
 import { promptNewSession } from '../tab-bar/tab-bar.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
 import { sendGuestMessage } from './guest-messaging.js';

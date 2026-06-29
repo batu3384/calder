@@ -3,18 +3,29 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const modalPrimarySource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'), 'utf8');
-const modalSectionsSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'), 'utf8');
+const modalPrimarySource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal.ts'),
+  'utf8',
+);
+const modalSectionsSource = readFileSync(
+  path.join(process.cwd(), 'src/renderer/components/preferences/preferences-modal-sections.ts'),
+  'utf8',
+);
 const modalSource = [modalPrimarySource, modalSectionsSource].join('\n');
 const previewSource = readFileSync(
   path.join(process.cwd(), 'src/renderer/components/preferences/preferences-preview-discovery.ts'),
   'utf8',
 );
-const styles = readFileSync(path.join(process.cwd(), 'src/renderer/styles/preferences.css'), 'utf8');
+const styles = readFileSync(
+  path.join(process.cwd(), 'src/renderer/styles/preferences.css'),
+  'utf8',
+);
 
 describe('project preview preferences contract', () => {
   it('surfaces a preview center inside the integrations section', () => {
-    expect(modalSource).toContain("import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';");
+    expect(modalSource).toContain(
+      "import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';",
+    );
     expect(modalSource).toContain('renderProjectPreviewCenterSection({');
     expect(modalSource).toContain('container: orchestrationGroup');
     expect(modalSource).toContain('onCloseModalWide: closeWideModal');

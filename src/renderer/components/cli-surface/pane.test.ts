@@ -141,8 +141,13 @@ const {
   const mockLoadAddon = vi.fn();
   const mockSerialize = vi.fn(() => '');
   const mockDomSelectionClear = vi.fn();
-  const mockSendCliSelectionToSelectedSession = vi.fn(async () => ({ ok: true, targetSessionId: 'session-1' }));
-  const webLinksActivate: { current: ((event: MouseEvent, url: string) => void) | null } = { current: null };
+  const mockSendCliSelectionToSelectedSession = vi.fn(async () => ({
+    ok: true,
+    targetSessionId: 'session-1',
+  }));
+  const webLinksActivate: { current: ((event: MouseEvent, url: string) => void) | null } = {
+    current: null,
+  };
   const terminalOptionsRef: { current: Record<string, unknown> | null } = { current: null };
 
   return {
@@ -292,7 +297,9 @@ describe('cli surface pane', () => {
       endCol: 1,
     };
 
-    const contextControl = instance.composerContextSelectEl as unknown as FakeElement & { value?: string };
+    const contextControl = instance.composerContextSelectEl as unknown as FakeElement & {
+      value?: string;
+    };
     contextControl.value = 'selection-nearby';
     const listeners = contextControl.listeners.get('change') ?? [];
     listeners.forEach((listener) => listener({}));
@@ -328,7 +335,10 @@ describe('cli surface pane', () => {
     const openExternal = (window as any).calder.app.openExternal;
 
     expect(webLinksActivate.current).toBeTypeOf('function');
-    webLinksActivate.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:8000/docs');
+    webLinksActivate.current?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:8000/docs',
+    );
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:8000/docs', undefined);
     expect(instance.terminal.clearSelection).toHaveBeenCalled();
@@ -342,7 +352,10 @@ describe('cli surface pane', () => {
     attachCliSurfacePane('project-1', container);
     const openExternal = (window as any).calder.app.openExternal;
 
-    webLinksActivate.current?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'localhost:4173/health');
+    webLinksActivate.current?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'localhost:4173/health',
+    );
 
     expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
   });
@@ -360,7 +373,11 @@ describe('cli surface pane', () => {
       | { activate?: (event: MouseEvent, text: string, range: unknown) => void }
       | undefined;
 
-    linkHandler?.activate?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:4173/health', {});
+    linkHandler?.activate?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:4173/health',
+      {},
+    );
 
     expect(linkHandler?.activate).toBeTypeOf('function');
     expect(openExternal).toHaveBeenCalledWith('http://localhost:4173/health', undefined);
@@ -379,14 +396,24 @@ describe('cli surface pane', () => {
     attachCliSurfacePane(projectA.id, containerA);
     const projectALink = webLinksActivate.current;
     const openExternal = (window as any).calder.app.openExternal;
-    projectALink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+    projectALink?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:3000/dashboard',
+    );
 
     attachCliSurfacePane(projectB.id, containerB);
     const projectBLink = webLinksActivate.current;
-    projectBLink?.({ metaKey: false, ctrlKey: false } as MouseEvent, 'http://localhost:3000/dashboard');
+    projectBLink?.(
+      { metaKey: false, ctrlKey: false } as MouseEvent,
+      'http://localhost:3000/dashboard',
+    );
 
     expect(openExternal).toHaveBeenCalledTimes(2);
-    expect(openExternal).toHaveBeenNthCalledWith(1, 'http://localhost:3000/dashboard', '/tmp/alpha');
+    expect(openExternal).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:3000/dashboard',
+      '/tmp/alpha',
+    );
     expect(openExternal).toHaveBeenNthCalledWith(2, 'http://localhost:3000/dashboard', '/tmp/beta');
   });
 
@@ -419,7 +446,9 @@ describe('cli surface pane', () => {
     } as unknown as MouseEvent;
     mousedown?.(linkMouseDown);
 
-    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+    expect(
+      (linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).toHaveBeenCalled();
   });
 
   it('opens link anchors when inline pointer detection misses in CLI surface', async () => {
@@ -495,7 +524,9 @@ describe('cli surface pane', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     mousedown?.(linkMouseDown);
-    expect((linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).toHaveBeenCalled();
+    expect(
+      (linkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).toHaveBeenCalled();
 
     const nonLinkMouseDown = {
       button: 0,
@@ -506,7 +537,10 @@ describe('cli surface pane', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     mousedown?.(nonLinkMouseDown);
-    expect((nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+    expect(
+      (nonLinkMouseDown as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> })
+        .preventDefault,
+    ).not.toHaveBeenCalled();
 
     const dragMove = {
       buttons: 1,
@@ -518,7 +552,9 @@ describe('cli surface pane', () => {
       stopImmediatePropagation: vi.fn(),
     } as unknown as MouseEvent;
     mousemove?.(dragMove);
-    expect((dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault).not.toHaveBeenCalled();
+    expect(
+      (dragMove as MouseEvent & { preventDefault: ReturnType<typeof vi.fn> }).preventDefault,
+    ).not.toHaveBeenCalled();
   });
 
   it('opens inspect mode without auto-selecting the full viewport', async () => {
@@ -661,7 +697,8 @@ describe('cli surface pane', () => {
     expect(instance.terminal.write).toHaveBeenCalledTimes(2);
     expect(instance.terminal.write).toHaveBeenLastCalledWith('world');
 
-    const badges = (container as unknown as FakeElement).querySelectorAll('.cli-surface-adapter-badge')
+    const badges = (container as unknown as FakeElement)
+      .querySelectorAll('.cli-surface-adapter-badge')
       .map((entry) => entry.textContent);
     expect(badges).toContain('Blessed');
   });
@@ -705,9 +742,21 @@ describe('cli surface pane', () => {
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerPreviewEl.textContent).toBe('alpha\ngamma');
     expect(instance.composerHintEl.textContent).toContain('Selected region');
@@ -745,9 +794,21 @@ describe('cli surface pane', () => {
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 108, clientY: 40, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 108, clientY: 40, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 108,
+      clientY: 40,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 108,
+      clientY: 40,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerHintEl.textContent).toContain('Inferred panel');
     expect(instance.composerHintEl.textContent).toContain('settings panel');
@@ -796,8 +857,16 @@ describe('cli surface pane', () => {
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerHintEl.textContent).toContain('Inferred panel');
     expect(instance.composerHintEl.textContent).toContain('settings panel');
@@ -827,16 +896,22 @@ describe('cli surface pane', () => {
       '│ Accent: amber           │',
       '╰─────────────────────────╯',
     ];
-    instance.inferredRegions = [{
-      label: 'settings panel',
-      selection: { mode: 'region', startRow: 0, endRow: 3, startCol: 0, endCol: 27 },
-    }];
+    instance.inferredRegions = [
+      {
+        label: 'settings panel',
+        selection: { mode: 'region', startRow: 0, endRow: 3, startCol: 0, endCol: 27 },
+      },
+    ];
     instance.terminal.cols = 27;
     instance.terminal.rows = 4;
     instance.viewport.rect = { left: 0, top: 0, width: 108, height: 40 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.hoverOverlayEl.classList.contains('hidden')).toBe(false);
     expect(instance.hoverLabelEl.textContent).toBe('settings panel');
@@ -848,16 +923,18 @@ describe('cli surface pane', () => {
   });
 
   it('reuses cached inferred regions during hover and click selection', async () => {
-    const inferSpy = vi.fn((lines: string[]) => [{
-      label: 'settings panel',
-      selection: {
-        mode: 'region' as const,
-        startRow: 0,
-        endRow: Math.max(0, lines.length - 1),
-        startCol: 0,
-        endCol: Math.max(1, lines[0]?.length ?? 1),
+    const inferSpy = vi.fn((lines: string[]) => [
+      {
+        label: 'settings panel',
+        selection: {
+          mode: 'region' as const,
+          startRow: 0,
+          endRow: Math.max(0, lines.length - 1),
+          startCol: 0,
+          endCol: Math.max(1, lines[0]?.length ?? 1),
+        },
       },
-    }]);
+    ]);
     vi.doMock('./heuristics.js', () => ({
       inferCliRegions: inferSpy,
     }));
@@ -889,9 +966,21 @@ describe('cli surface pane', () => {
 
     inferSpy.mockClear();
 
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 40, clientY: 10, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 40,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
 
     expect(inferSpy).toHaveBeenCalledTimes(1);
   });
@@ -919,9 +1008,21 @@ describe('cli surface pane', () => {
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
 
     expect(mockSerialize).not.toHaveBeenCalled();
 
@@ -960,9 +1061,21 @@ describe('cli surface pane', () => {
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerScopeEl.textContent).toContain('Selection only');
 
@@ -997,7 +1110,9 @@ describe('cli surface pane', () => {
     const { attachCliSurfacePane } = await import('./pane.js');
     attachCliSurfacePane(project.id, container);
 
-    expect((container as unknown as FakeElement).querySelector('.cli-surface-route')?.textContent).toContain('Codex Main');
+    expect(
+      (container as unknown as FakeElement).querySelector('.cli-surface-route')?.textContent,
+    ).toContain('Codex Main');
   });
 
   it('shows the selected open session on the inspect target button', async () => {
@@ -1089,8 +1204,9 @@ describe('cli surface pane', () => {
     instance.customButton.listeners.get('click')?.[0]?.();
     expect(instance.targetMenuEl.style.display).toBe('flex');
 
-    const mousedownHandler = (document.addEventListener as any).mock.calls
-      .find(([eventName]: [string]) => eventName === 'mousedown')?.[1];
+    const mousedownHandler = (document.addEventListener as any).mock.calls.find(
+      ([eventName]: [string]) => eventName === 'mousedown',
+    )?.[1];
     expect(typeof mousedownHandler).toBe('function');
 
     mousedownHandler({ target: new FakeElement('div') });
@@ -1138,9 +1254,21 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 100, height: 30 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 15, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 15,
+      preventDefault: vi.fn(),
+    });
 
     instance.customButton.listeners.get('click')?.[0]?.();
 
@@ -1194,19 +1322,33 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 100, height: 20 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 10, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 10, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
 
     instance.customButton.listeners.get('click')?.[0]?.();
 
-    const badges = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
+    const badges = instance.targetMenuListEl
+      .querySelectorAll('.cli-surface-target-session-badge')
       .map((entry) => entry.textContent);
     expect(badges).toContain('Codex CLI');
     expect(badges).toContain('Antigravity CLI');
     expect(badges).toContain('Active');
 
-    const providerBadgeTokens = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
+    const providerBadgeTokens = instance.targetMenuListEl
+      .querySelectorAll('.cli-surface-target-session-badge')
       .map((entry) => entry.dataset.provider)
       .filter(Boolean);
     expect(providerBadgeTokens).toContain('codex');
@@ -1261,15 +1403,30 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 100, height: 20 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 50, clientY: 10, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 50, clientY: 10, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 50,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 50,
+      clientY: 10,
+      preventDefault: vi.fn(),
+    });
 
     instance.customButton.listeners.get('click')?.[0]?.();
 
-    const statusBadges = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-status')
+    const statusBadges = instance.targetMenuListEl
+      .querySelectorAll('.cli-surface-target-session-status')
       .map((entry) => entry.children[1]?.textContent ?? entry.textContent);
-    const dots = instance.targetMenuListEl.querySelectorAll('.tab-status').map((entry) => entry.className);
+    const dots = instance.targetMenuListEl
+      .querySelectorAll('.tab-status')
+      .map((entry) => entry.className);
 
     expect(statusBadges).toContain('Working');
     expect(statusBadges).toContain('Completed');
@@ -1287,7 +1444,14 @@ describe('cli surface pane', () => {
       active: true,
       cli: {
         selectedProfileId: 'preview',
-        profiles: [{ id: 'preview', name: 'Preview', command: 'python', args: ['-m', 'textual', 'run', 'app.py'] }],
+        profiles: [
+          {
+            id: 'preview',
+            name: 'Preview',
+            command: 'python',
+            args: ['-m', 'textual', 'run', 'app.py'],
+          },
+        ],
         runtime: { status: 'idle', command: 'python', args: ['-m', 'textual', 'run', 'app.py'] },
       },
     });
@@ -1295,7 +1459,8 @@ describe('cli surface pane', () => {
     const { attachCliSurfacePane } = await import('./pane.js');
     attachCliSurfacePane(project.id, container);
 
-    const badges = (container as unknown as FakeElement).querySelectorAll('.cli-surface-adapter-badge')
+    const badges = (container as unknown as FakeElement)
+      .querySelectorAll('.cli-surface-adapter-badge')
       .map((entry) => entry.textContent);
 
     expect(badges).toContain('Textual');
@@ -1337,7 +1502,8 @@ describe('cli surface pane', () => {
     cliSurfaceDataCallbacks[0]?.(project.id, `hello${message}`);
     rafQueue.shift()?.(0);
 
-    const badges = (container as unknown as FakeElement).querySelectorAll('.cli-surface-adapter-badge')
+    const badges = (container as unknown as FakeElement)
+      .querySelectorAll('.cli-surface-adapter-badge')
       .map((entry) => entry.textContent);
 
     expect(badges).toContain('Blessed');
@@ -1380,30 +1546,51 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 120, height: 30 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'node',
-      nodeId: 'menu.root',
-      label: 'command menu',
-      bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
-      sourceFile: 'src/ui/menu.ts',
-      meta: { framework: 'Blessed', widgetType: 'list' },
-    }));
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'focus',
-      nodeId: 'menu.root',
-      label: 'command menu',
-      meta: { framework: 'Blessed', focusPath: ['screen', 'menu', 'command menu'] },
-    }));
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'state',
-      nodeId: 'menu.root',
-      meta: { framework: 'Blessed', stateSummary: '3 items focused' },
-    }));
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'node',
+        nodeId: 'menu.root',
+        label: 'command menu',
+        bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
+        sourceFile: 'src/ui/menu.ts',
+        meta: { framework: 'Blessed', widgetType: 'list' },
+      }),
+    );
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'focus',
+        nodeId: 'menu.root',
+        label: 'command menu',
+        meta: { framework: 'Blessed', focusPath: ['screen', 'menu', 'command menu'] },
+      }),
+    );
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'state',
+        nodeId: 'menu.root',
+        meta: { framework: 'Blessed', stateSummary: '3 items focused' },
+      }),
+    );
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 0, clientY: 0, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 120, clientY: 9, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 120, clientY: 9, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 0,
+      clientY: 0,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 120,
+      clientY: 9,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 120,
+      clientY: 9,
+      preventDefault: vi.fn(),
+    });
 
     await instance.selectedButton.listeners.get('click')?.[0]?.();
 
@@ -1461,24 +1648,39 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 120, height: 30 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'node',
-      nodeId: 'menu.root',
-      label: 'command menu',
-      bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
-      sourceFile: 'src/ui/menu.ts',
-      meta: { framework: 'Blessed', widgetType: 'list' },
-    }));
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'node',
+        nodeId: 'menu.root',
+        label: 'command menu',
+        bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
+        sourceFile: 'src/ui/menu.ts',
+        meta: { framework: 'Blessed', widgetType: 'list' },
+      }),
+    );
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 40, clientY: 5, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 40,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.hoverOverlayEl.classList.contains('hidden')).toBe(false);
     expect(instance.hoverLabelEl.textContent).toBe('command menu');
     expect(instance.composerHintEl.textContent).toContain('Click to select command menu');
 
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 40, clientY: 5, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 40, clientY: 5, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 40,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 40,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerHintEl.textContent).toContain('Semantic target: command menu');
     expect(instance.composerPreviewEl.textContent).toBe('Command menu');
@@ -1524,29 +1726,42 @@ describe('cli surface pane', () => {
     instance.viewport.rect = { left: 0, top: 0, width: 120, height: 120 };
     instance.composerEl.rect = { left: 0, top: 0, width: 220, height: 140 };
 
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'node',
-      nodeId: 'menu.root',
-      label: 'command menu',
-      bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
-      meta: { framework: 'Blessed', widgetType: 'list' },
-    }));
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'node',
-      nodeId: 'menu.search',
-      label: 'search input',
-      bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
-      meta: { framework: 'Blessed', widgetType: 'textbox' },
-    }));
-    cliSurfaceDataCallbacks[0]?.(project.id, encodeCalderOsc({
-      type: 'focus',
-      nodeId: 'menu.search',
-      label: 'search input',
-      meta: { framework: 'Blessed', focusPath: ['screen', 'menu', 'search input'] },
-    }));
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'node',
+        nodeId: 'menu.root',
+        label: 'command menu',
+        bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
+        meta: { framework: 'Blessed', widgetType: 'list' },
+      }),
+    );
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'node',
+        nodeId: 'menu.search',
+        label: 'search input',
+        bounds: { mode: 'line', startRow: 0, endRow: 0, startCol: 0, endCol: 24 },
+        meta: { framework: 'Blessed', widgetType: 'textbox' },
+      }),
+    );
+    cliSurfaceDataCallbacks[0]?.(
+      project.id,
+      encodeCalderOsc({
+        type: 'focus',
+        nodeId: 'menu.search',
+        label: 'search input',
+        meta: { framework: 'Blessed', focusPath: ['screen', 'menu', 'search input'] },
+      }),
+    );
 
     instance.inspectButton.listeners.get('click')?.[0]();
-    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({ clientX: 20, clientY: 5, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointermove')?.[0]({
+      clientX: 20,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.hoverOverlayEl.classList.contains('semantic')).toBe(true);
     expect(instance.hoverOverlayEl.classList.contains('focused')).toBe(true);
@@ -1561,8 +1776,16 @@ describe('cli surface pane', () => {
     expect(instance.hoverMetaEl.textContent).toContain('textbox');
     expect(instance.hoverPreviewEl.textContent).toBe('Search query');
 
-    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({ clientX: 20, clientY: 5, preventDefault: vi.fn() });
-    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({ clientX: 20, clientY: 5, preventDefault: vi.fn() });
+    instance.selectionOverlayEl.listeners.get('pointerdown')?.[0]({
+      clientX: 20,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
+    instance.selectionOverlayEl.listeners.get('pointerup')?.[0]({
+      clientX: 20,
+      clientY: 5,
+      preventDefault: vi.fn(),
+    });
 
     expect(instance.composerHintEl.textContent).toContain('Semantic target: search input');
     expect(instance.composerPreviewEl.textContent).toBe('Search query');
@@ -1616,10 +1839,16 @@ describe('cli surface pane', () => {
       cli: {
         selectedProfileId: 'preview',
         profiles: [{ id: 'preview', name: 'Preview', command: 'python', args: ['app.py'] }],
-        runtime: { status: 'running', command: 'python', args: ['app.py'], cwd: '/tmp/inspect-payload' },
+        runtime: {
+          status: 'running',
+          command: 'python',
+          args: ['app.py'],
+          cwd: '/tmp/inspect-payload',
+        },
       },
     });
-    const { attachCliSurfacePane, getCliSurfacePaneInstance, buildInspectPayload } = await import('./pane.js');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, buildInspectPayload } =
+      await import('./pane.js');
 
     attachCliSurfacePane(project.id, container);
     const instance = getCliSurfacePaneInstance(project.id) as unknown as {
@@ -1663,7 +1892,8 @@ describe('cli surface pane', () => {
       },
     });
 
-    const { attachCliSurfacePane, getCliSurfacePaneInstance, renderRuntimeMeta } = await import('./pane.js');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, renderRuntimeMeta } =
+      await import('./pane.js');
     attachCliSurfacePane(project.id, container);
     const instance = getCliSurfacePaneInstance(project.id) as unknown as {
       metaEl: FakeElement;
@@ -1676,7 +1906,8 @@ describe('cli surface pane', () => {
 
   it('wires instance handlers through the internal binder', async () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
-    const { attachCliSurfacePane, getCliSurfacePaneInstance, bindCliSurfaceInstanceHandlers } = await import('./pane.js');
+    const { attachCliSurfacePane, getCliSurfacePaneInstance, bindCliSurfaceInstanceHandlers } =
+      await import('./pane.js');
 
     attachCliSurfacePane('project-1', container);
     const instance = getCliSurfacePaneInstance('project-1') as unknown as {

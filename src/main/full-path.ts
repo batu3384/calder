@@ -46,7 +46,9 @@ export function getFullPath(): string {
       cachedFullPath = match[1].trim();
       return cachedFullPath;
     }
-  } catch (err) { console.warn('Failed to resolve PATH from login shell:', err); }
+  } catch (err) {
+    console.warn('Failed to resolve PATH from login shell:', err);
+  }
 
   // Fallback: merge current PATH with common directories
   const home = os.homedir();

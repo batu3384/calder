@@ -2,7 +2,7 @@ name: PR Security Review Run
 
 on:
   workflow_run:
-    workflows: ["PR Security Review Collect"]
+    workflows: ['PR Security Review Collect']
     types: [completed]
 
 permissions:

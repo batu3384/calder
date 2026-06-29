@@ -97,9 +97,7 @@ describe('getCopilotConfig', () => {
       const filePath = n(String(inputPath));
       if (filePath === '/mock/home/.copilot/config.json') {
         return JSON.stringify({
-          skillDirectories: [
-            '/shared/copilot-skills',
-          ],
+          skillDirectories: ['/shared/copilot-skills'],
         }) as any;
       }
       if (filePath === '/mock/home/.copilot/skills/user-skill/SKILL.md') {
@@ -125,9 +123,9 @@ describe('getCopilotConfig', () => {
     mockStatSync.mockImplementation((inputPath) => {
       const filePath = n(String(inputPath));
       if (
-        filePath === '/mock/home/.copilot/skills/user-skill/SKILL.md'
-        || filePath === '/project/.github/skills/project-skill/SKILL.md'
-        || filePath === '/shared/copilot-skills/shared-skill/SKILL.md'
+        filePath === '/mock/home/.copilot/skills/user-skill/SKILL.md' ||
+        filePath === '/project/.github/skills/project-skill/SKILL.md' ||
+        filePath === '/shared/copilot-skills/shared-skill/SKILL.md'
       ) {
         return { isFile: () => true } as any;
       }
@@ -187,26 +185,17 @@ describe('getCopilotConfig', () => {
   });
 
   it('handles hidden/missing skills and deduplicates configured skill roots from config + env', async () => {
-    vi.stubEnv('COPILOT_CUSTOM_INSTRUCTIONS_DIRS', [
-      '/shared/a',
-      '/shared/c',
-      '/shared/a',
-      '',
-    ].join(path.delimiter));
+    vi.stubEnv(
+      'COPILOT_CUSTOM_INSTRUCTIONS_DIRS',
+      ['/shared/a', '/shared/c', '/shared/a', ''].join(path.delimiter),
+    );
 
     try {
       mockReadFileSync.mockImplementation((inputPath) => {
         const filePath = n(String(inputPath));
         if (filePath === '/mock/home/.copilot/config.json') {
           return JSON.stringify({
-            skillDirectories: [
-              '/shared/a',
-              '/shared/b',
-              '/shared/b',
-              '',
-              '   ',
-              42,
-            ],
+            skillDirectories: ['/shared/a', '/shared/b', '/shared/b', '', '   ', 42],
           }) as any;
         }
         if (filePath === '/mock/home/.copilot/skills/nofm/SKILL.md') {
@@ -245,12 +234,12 @@ describe('getCopilotConfig', () => {
       mockStatSync.mockImplementation((inputPath) => {
         const filePath = n(String(inputPath));
         if (
-          filePath === '/mock/home/.copilot/skills/nofm/SKILL.md'
-          || filePath === '/mock/home/.copilot/skills/empty/SKILL.md'
-          || filePath === '/mock/home/.copilot/skills/invalid/SKILL.md'
-          || filePath === '/project/.github/skills/shared/SKILL.md'
-          || filePath === '/shared/a/shared/SKILL.md'
-          || filePath === '/shared/b/fallback/SKILL.md'
+          filePath === '/mock/home/.copilot/skills/nofm/SKILL.md' ||
+          filePath === '/mock/home/.copilot/skills/empty/SKILL.md' ||
+          filePath === '/mock/home/.copilot/skills/invalid/SKILL.md' ||
+          filePath === '/project/.github/skills/shared/SKILL.md' ||
+          filePath === '/shared/a/shared/SKILL.md' ||
+          filePath === '/shared/b/fallback/SKILL.md'
         ) {
           return { isFile: () => true } as any;
         }

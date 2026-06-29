@@ -5,7 +5,10 @@ const source = [
   readFileSync(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('../config-toolchain-summary.ts', import.meta.url), 'utf-8'),
 ].join('\n');
-const inspectorCss = readFileSync(new URL('../../styles/context-inspector.css', import.meta.url), 'utf-8');
+const inspectorCss = readFileSync(
+  new URL('../../styles/context-inspector.css', import.meta.url),
+  'utf-8',
+);
 
 describe('config sections compact contract', () => {
   it('renders a compact toolchain summary before detailed sections', () => {
@@ -33,6 +36,6 @@ describe('config sections compact contract', () => {
     expect(inspectorCss).toContain('.toolchain-provider');
     expect(source).toContain("empty.className = 'config-empty ops-rail-note'");
     expect(inspectorCss).toContain('.toolchain-summary-empty');
-    expect(inspectorCss).toContain('.ops-rail-note[data-tone=\"muted\"]');
+    expect(inspectorCss).toContain(".ops-rail-note[data-tone='muted']");
   });
 });

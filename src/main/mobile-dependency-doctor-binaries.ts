@@ -76,7 +76,9 @@ export function getAndroidBinaryCandidates(
   }
 
   if (binary === 'adb') {
-    return uniquePaths(sdkRoots.map((sdkRoot) => path.join(sdkRoot, 'platform-tools', commandName)));
+    return uniquePaths(
+      sdkRoots.map((sdkRoot) => path.join(sdkRoot, 'platform-tools', commandName)),
+    );
   }
 
   return uniquePaths(sdkRoots.map((sdkRoot) => path.join(sdkRoot, 'emulator', commandName)));

@@ -60,6 +60,7 @@ Rollback protocol:
 ## Phase 0 - Guardrails and Measurement (Do First)
 
 ### Objective
+
 Freeze behavior and add measurement before structural refactors.
 
 ### Tasks
@@ -83,6 +84,7 @@ Freeze behavior and add measurement before structural refactors.
 ## Phase 1 - Remove Import Cycles (Low-Risk Structural Cleanup)
 
 ### Objective
+
 Eliminate known direct cycles first to reduce hidden initialization/order risks.
 
 ### Slice 1.1 - CLI Adapter Registry Cycle Removal
@@ -116,6 +118,7 @@ Eliminate known direct cycles first to reduce hidden initialization/order risks.
 ## Phase 2 - Reduce Coupling Hubs Safely
 
 ### Objective
+
 Lower blast radius around `shared/types.ts` and `renderer/state.ts` without API breakage.
 
 ### Slice 2.1 - `shared/types.ts` Domain Split with Compatibility Barrel
@@ -154,6 +157,7 @@ Migration snapshot (2026-04-21):
 ## Phase 3 - Remove Unsafe Test Reset Pattern
 
 ### Objective
+
 Replace `as any` private mutation with a typed, explicit test hook.
 
 ### Tasks
@@ -174,6 +178,7 @@ Replace `as any` private mutation with a typed, explicit test hook.
 ## Phase 4 - Monolith Decomposition in Controlled Slices
 
 ### Objective
+
 Reduce maintenance risk from very large files via behavior-preserving extraction.
 
 Execution rule:
@@ -245,6 +250,7 @@ Execution rule:
 ## Phase 5 - Coverage Gate Introduction (Fail-Safe Ratchet)
 
 ### Objective
+
 Add minimum coverage thresholds safely, without causing noisy false failures.
 
 ### Tasks
@@ -274,6 +280,7 @@ Add minimum coverage thresholds safely, without causing noisy false failures.
 ## Phase 6 - Final Verification and Sign-off
 
 ### Objective
+
 Prove debt closure is stable and no behavior was broken.
 
 ### Tasks
@@ -313,12 +320,12 @@ No phase jumping unless blocker documented in the report with mitigation.
 
 ## 6) Status Board
 
-| Workstream | Status | Owner | Updated | Next Action |
-|---|---|---|---|---|
-| Phase 0 Guardrails | Done | Main agent | 2026-04-21 | Move to Phase 2 coupling reduction |
-| Phase 1 Cycle removal | Done | Main agent | 2026-04-21 | Move to Phase 2 coupling reduction |
-| Phase 2 Coupling reduction | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
-| Phase 3 Test reset safety | Done | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition |
+| Workstream                     | Status      | Owner      | Updated    | Next Action                                                                                       |
+| ------------------------------ | ----------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| Phase 0 Guardrails             | Done        | Main agent | 2026-04-21 | Move to Phase 2 coupling reduction                                                                |
+| Phase 1 Cycle removal          | Done        | Main agent | 2026-04-21 | Move to Phase 2 coupling reduction                                                                |
+| Phase 2 Coupling reduction     | Done        | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition                                                              |
+| Phase 3 Test reset safety      | Done        | Main agent | 2026-04-21 | Start Phase 4 monolith decomposition                                                              |
 | Phase 4 Monolith decomposition | In Progress | Main agent | 2026-04-21 | Continue residual monolith cleanup after state normalizer split (`state.ts` `1906 -> 1701` lines) |
-| Phase 5 Coverage gates | Done | Main agent | 2026-04-21 | Move to Phase 6 final sign-off after remaining monolith work |
-| Phase 6 Final sign-off | Planned | Main agent | 2026-04-21 | Run full comparison report |
+| Phase 5 Coverage gates         | Done        | Main agent | 2026-04-21 | Move to Phase 6 final sign-off after remaining monolith work                                      |
+| Phase 6 Final sign-off         | Planned     | Main agent | 2026-04-21 | Run full comparison report                                                                        |

@@ -7,7 +7,9 @@ const source = readFileSync(path.join(process.cwd(), 'src/shared/types.ts'), 'ut
 
 describe('project background task contracts', () => {
   it('defines local background task queue models', () => {
-    expect(source).toContain("export type ProjectBackgroundTaskStatus = 'queued' | 'running' | 'blocked' | 'completed' | 'cancelled'");
+    expect(source).toContain(
+      "export type ProjectBackgroundTaskStatus = 'queued' | 'running' | 'blocked' | 'completed' | 'cancelled'",
+    );
     expect(source).toContain('export interface ProjectBackgroundTaskSource');
     expect(source).toContain('artifactCount: number');
     expect(source).toContain('handoffSummary: string');

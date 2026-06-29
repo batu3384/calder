@@ -47,9 +47,7 @@ function asDecisionPolicy(value: unknown): ProjectGovernanceDecisionPolicy {
 }
 
 function asBudgetLimit(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? value
-    : undefined;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
 function countAllowlist(value: unknown): number {
@@ -60,15 +58,17 @@ function countAllowlist(value: unknown): number {
 
 function countProviderProfiles(value: unknown): number {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 0;
-  return Object.values(value).filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry)).length;
+  return Object.values(value).filter(
+    (entry) => entry && typeof entry === 'object' && !Array.isArray(entry),
+  ).length;
 }
 
 function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
-  return value === 'off'
-    || value === 'edit_only'
-    || value === 'edit_plus_safe_tools'
-    || value === 'full_auto'
-    || value === 'full_auto_unsafe'
+  return value === 'off' ||
+    value === 'edit_only' ||
+    value === 'edit_plus_safe_tools' ||
+    value === 'full_auto' ||
+    value === 'full_auto_unsafe'
     ? value
     : undefined;
 }
@@ -76,7 +76,7 @@ function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
 function readPolicy(filePath: string): RawGovernancePolicy {
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return typeof parsed === 'object' && parsed ? parsed as RawGovernancePolicy : {};
+    return typeof parsed === 'object' && parsed ? (parsed as RawGovernancePolicy) : {};
   } catch {
     return {};
   }
@@ -90,9 +90,10 @@ function buildPolicySource(filePath: string): ProjectGovernancePolicySource {
   const writePolicy = asDecisionPolicy(raw.writePolicy);
   const networkPolicy = asDecisionPolicy(raw.networkPolicy);
   const budgetLimitUsd = asBudgetLimit(raw.budgetLimitUsd);
-  const displayName = typeof raw.profileName === 'string' && raw.profileName.trim()
-    ? raw.profileName.trim()
-    : 'Project guardrails';
+  const displayName =
+    typeof raw.profileName === 'string' && raw.profileName.trim()
+      ? raw.profileName.trim()
+      : 'Project guardrails';
 
   return {
     id: `governance:${filePath}`,
@@ -110,7 +111,9 @@ function buildPolicySource(filePath: string): ProjectGovernancePolicySource {
   };
 }
 
-export async function discoverProjectGovernance(projectPath: string): Promise<ProjectGovernanceState> {
+export async function discoverProjectGovernance(
+  projectPath: string,
+): Promise<ProjectGovernanceState> {
   const policyPath = path.join(projectPath, POLICY_RELATIVE_PATH);
   const globalPolicy = readGlobalAutoApprovalPolicy();
   const globalMode = globalPolicy.mode;
