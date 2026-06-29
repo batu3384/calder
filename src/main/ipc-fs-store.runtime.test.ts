@@ -201,6 +201,7 @@ describe('ipc fs/store runtime branches', () => {
     registerFsStoreIpcHandlers(readPolicy);
     const readFile = getHandleHandler('fs:readFile');
 
+    mockStatSync.mockReturnValue({ size: 100 });
     mockReadFileSync.mockImplementation(() => {
       throw new Error('read failed');
     });
