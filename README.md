@@ -1,18 +1,29 @@
 <p align="center">
-  <img src="build/calder-logo.png" alt="Calder" width="240" />
+  <img src="docs/images/calder-mark.png" alt="Calder" width="160" />
 </p>
 
 <h1 align="center">Calder</h1>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License" /></a>
+  <a href="https://github.com/batu3384/calder/actions/workflows/ci.yml"><img src="https://github.com/batu3384/calder/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/batu3384/calder"><img src="https://img.shields.io/badge/GitHub-calder-181717?logo=github" alt="GitHub Repository" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-0A7" alt="Platforms" />
 </p>
 
 <p align="center">
-  <strong>Desktop workspace across modern AI coding CLIs.</strong><br/>
-  Run multiple agent sessions in parallel, inspect costs/context, route browser + terminal signals to the right session, and keep project workflows organized.
+  <strong>Terminal-centric desktop workspace across modern AI coding CLIs.</strong><br/>
+  Run multiple agent sessions in parallel, inspect costs and context, route browser + terminal signals to the right session, and keep project workflows organized.
+</p>
+
+<p align="center">
+  <img src="build/calder-logo.png" alt="Calder workspace branding" width="720" />
+</p>
+
+<p align="center">
+  <img src="docs/images/calder-mascot.png" alt="Calder mascot" width="120" />
+  <br/>
+  <sub>Calder mascot — the little helper inside the workspace UI.</sub>
 </p>
 
 ---
@@ -88,7 +99,7 @@ You can set defaults per project and run mixed-provider sessions side-by-side.
 
 ### Option A: Prebuilt Releases
 
-Use assets published in GitHub Releases when available.
+Use assets published in [GitHub Releases](https://github.com/batu3384/calder/releases) when available.
 
 - macOS: `.dmg` / `.zip`
 - Linux: `.deb` / `.AppImage`
