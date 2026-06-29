@@ -257,14 +257,18 @@ function renderCliUpdatePanelStatusAndMeta(
         ? t(`${completed}/${total} providers finished before cancellation.`)
         : t(`${completed} provider${completed === 1 ? '' : 's'} finished before cancellation.`);
     statusEl.textContent = t('CLI update cancelled.');
-    metaEl.textContent = t(`Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`);
+    metaEl.textContent = t(
+      `Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`,
+    );
     return;
   }
 
   if (cliState.phase === 'completed' && cliState.lastSummary) {
     const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
     if (counters.error > 0) {
-      statusEl.textContent = t(`Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`);
+      statusEl.textContent = t(
+        `Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`,
+      );
     } else if (counters.syncPending > 0) {
       statusEl.textContent = t(
         `${counters.syncPending} provider${counters.syncPending === 1 ? '' : 's'} waiting for package sync.`,
@@ -420,8 +424,14 @@ function renderCliUpdatePanelContent(
 export function createTabBarCliUpdatePanel(
   options: CreateTabBarCliUpdatePanelOptions,
 ): TabBarCliUpdatePanelController {
-  const { tabActionsEl, updateButtonEl, onCancelUpdate, onRunProviderUpdate, onRunProviderInstall, onRunAllUpdates } =
-    options;
+  const {
+    tabActionsEl,
+    updateButtonEl,
+    onCancelUpdate,
+    onRunProviderUpdate,
+    onRunProviderInstall,
+    onRunAllUpdates,
+  } = options;
   let cliUpdatePanelEl: HTMLElement | null = null;
   let cliUpdatePanelVisible = false;
   let cliUpdatePanelStatusEl: HTMLElement | null = null;

@@ -545,7 +545,10 @@ export function runCliProviderInstall(providerId: ProviderId): Promise<ProviderU
   if (typeof installProvider !== 'function') {
     return Promise.reject(new Error('Provider install is not available.'));
   }
-  return runCliProviderUpdateRequest(() => installProvider.call(currentBridge.provider, providerId), providerId);
+  return runCliProviderUpdateRequest(
+    () => installProvider.call(currentBridge.provider, providerId),
+    providerId,
+  );
 }
 
 export async function cancelCliProviderUpdates(): Promise<ProviderUpdateCancelResult> {

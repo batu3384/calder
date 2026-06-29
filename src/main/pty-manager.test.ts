@@ -17,19 +17,27 @@ const {
   mockSanitizeExtraArgs: vi.fn((args: string) => (args ? args.split(/\s+/) : [])),
 }));
 
-const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync, mockSpawnSync } =
-  vi.hoisted(() => ({
-    mockSpawn: vi.fn(),
-    mockWrite: vi.fn(),
-    mockResize: vi.fn(),
-    mockKill: vi.fn(),
-    mockExecFile: vi.fn(),
-    mockExecFileSync: vi.fn(),
-    mockExecSync: vi.fn(() => {
-      throw new Error('not found');
-    }),
-    mockSpawnSync: vi.fn(() => ({ status: 0 })),
-  }));
+const {
+  mockSpawn,
+  mockWrite,
+  mockResize,
+  mockKill,
+  mockExecFile,
+  mockExecFileSync,
+  mockExecSync,
+  mockSpawnSync,
+} = vi.hoisted(() => ({
+  mockSpawn: vi.fn(),
+  mockWrite: vi.fn(),
+  mockResize: vi.fn(),
+  mockKill: vi.fn(),
+  mockExecFile: vi.fn(),
+  mockExecFileSync: vi.fn(),
+  mockExecSync: vi.fn(() => {
+    throw new Error('not found');
+  }),
+  mockSpawnSync: vi.fn(() => ({ status: 0 })),
+}));
 
 const { mockBuildBrowserBridgeEnv } = vi.hoisted(() => ({
   mockBuildBrowserBridgeEnv: vi.fn((cwd: string, env: Record<string, string>) => ({

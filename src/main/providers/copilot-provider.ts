@@ -81,9 +81,7 @@ export class CopilotProvider extends BaseCliProvider {
       buildProviderBaseEnv('copilot', { ...process.env } as Record<string, string>),
     );
     const byokActive = Boolean(env.COPILOT_PROVIDER_BASE_URL?.trim());
-    const hasModel = Boolean(
-      env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim(),
-    );
+    const hasModel = Boolean(env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim());
     if (byokActive && !hasModel) {
       return {
         ok: false,

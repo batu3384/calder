@@ -85,9 +85,7 @@ export function spawnPty(
       delete env[key];
     }
     const byokActive = Boolean(env.COPILOT_PROVIDER_BASE_URL?.trim());
-    const hasModel = Boolean(
-      env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim(),
-    );
+    const hasModel = Boolean(env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim());
     if (byokActive && !hasModel) {
       const message =
         '\r\nGitHub Copilot BYOK is configured but no model is set.\r\n\r\n' +

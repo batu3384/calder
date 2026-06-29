@@ -186,8 +186,13 @@ describe('resolve-binary', () => {
   });
 
   it('re-checks binary detection when cached result is stale and binary becomes available', async () => {
-    const { validateBinaryExists, _resetPrereqCheckCache, mockExecSync, mockExistsSync, mockSpawnSync } =
-      await loadResolveBinaryModule(false);
+    const {
+      validateBinaryExists,
+      _resetPrereqCheckCache,
+      mockExecSync,
+      mockExistsSync,
+      mockSpawnSync,
+    } = await loadResolveBinaryModule(false);
 
     _resetPrereqCheckCache();
     mockExistsSync.mockReturnValue(false);

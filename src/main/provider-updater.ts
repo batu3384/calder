@@ -400,7 +400,14 @@ async function runConfiguredProviderUpdate(
       sourceResolution: sourceAttempts[index],
     });
     const hasFallback = index < sourceAttempts.length - 1;
-    if (!hasFallback || !shouldRetryWithFallback(finalResult, sourceAttempts[index].source, sourceAttempts[index + 1]?.source)) {
+    if (
+      !hasFallback ||
+      !shouldRetryWithFallback(
+        finalResult,
+        sourceAttempts[index].source,
+        sourceAttempts[index + 1]?.source,
+      )
+    ) {
       break;
     }
     emitProviderMessage(describeFallbackAttempt(providerName, sourceAttempts[index + 1].source));
@@ -565,7 +572,8 @@ async function runProviderInstall(
     };
   }
 
-  const updateCommand = `${installCommandInput.command} ${installCommandInput.args.join(' ')}`.trim();
+  const updateCommand =
+    `${installCommandInput.command} ${installCommandInput.args.join(' ')}`.trim();
   emitProviderMessage('Installing CLI package…');
   const installExec = await runner.run(installCommandInput.command, installCommandInput.args, {
     timeoutMs: INSTALL_TIMEOUT_MS,
@@ -587,7 +595,11 @@ async function runProviderInstall(
   }
 
   if (installExec.code !== 0) {
-    const errorMessage = (installExec.stderr || installExec.stdout || 'Install command failed').trim();
+    const errorMessage = (
+      installExec.stderr ||
+      installExec.stdout ||
+      'Install command failed'
+    ).trim();
     return {
       providerId,
       providerName,

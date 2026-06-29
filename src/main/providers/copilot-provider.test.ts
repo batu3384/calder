@@ -34,7 +34,9 @@ vi.mock('../copilot-session-watcher', () => ({
 }));
 
 vi.mock('../provider-env', () => ({
-  buildProviderBaseEnv: vi.fn((_providerId: string, baseEnv: Record<string, string>) => ({ ...baseEnv })),
+  buildProviderBaseEnv: vi.fn((_providerId: string, baseEnv: Record<string, string>) => ({
+    ...baseEnv,
+  })),
 }));
 
 import { execSync, spawnSync } from 'child_process';
@@ -98,7 +100,9 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} copilot when no candidate exists`, () => {
-    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/copilot');
+    mockExistsSync.mockImplementation(
+      (candidate) => String(candidate) === '/some/other/path/copilot',
+    );
     mockExecSync.mockReturnValue('/some/other/path/copilot\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/copilot');
   });

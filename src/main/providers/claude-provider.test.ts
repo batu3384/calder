@@ -118,7 +118,9 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} claude when no candidate exists`, () => {
-    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/claude');
+    mockExistsSync.mockImplementation(
+      (candidate) => String(candidate) === '/some/other/path/claude',
+    );
     mockExecSync.mockReturnValue('/some/other/path/claude\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/claude');
   });
