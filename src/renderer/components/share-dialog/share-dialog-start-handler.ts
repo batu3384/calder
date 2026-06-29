@@ -1,14 +1,14 @@
 import type { ShareMode } from '../../../shared/sharing-types.js';
 import type { ShareRtcConfig } from '../../../shared/types/project-core.js';
-import { shareSession, endShare } from '../../sharing/share-manager.js';
 import { isSharing } from '../../sharing/peer-host.js';
 import { validateSharePassphrase } from '../../sharing/share-crypto.js';
+import { endShare,shareSession } from '../../sharing/share-manager.js';
+import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
 import {
   localizePassphraseError,
   type ShareDialogCopy,
   type ShareDialogLanguage,
 } from './share-dialog-copy.js';
-import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
 
 interface ShareDialogFlowController {
   setManualFallbackVisible(visible: boolean): void;

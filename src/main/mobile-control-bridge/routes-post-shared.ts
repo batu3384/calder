@@ -1,4 +1,5 @@
 import * as http from 'node:http';
+
 import { getMobileCopy } from './copy';
 import { readBody, sendText } from './http';
 import type { PairingRecord } from './model';

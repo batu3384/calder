@@ -1,5 +1,5 @@
-import { getMobileCopy } from './copy';
 import type { MobileUiLanguage } from './copy';
+import { getMobileCopy } from './copy';
 import { renderHeroPanel } from './page-panel-hero';
 import { renderMainPanel } from './page-panel-main';
 import { renderMobilePageScript } from './page-script';

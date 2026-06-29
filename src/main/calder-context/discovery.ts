@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ProviderId } from '../../shared/types/provider.js';
+
 import type { ProjectContextSource, ProjectContextState } from '../../shared/types/project-context.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 
 function isFile(filePath: string): boolean {
   try {
@@ -98,7 +99,7 @@ const PROJECT_PROVIDER_CONTEXT_FILES: Array<{
   { relativePath: 'CLAUDE.local.md', provider: 'claude', kind: 'memory' },
   { relativePath: path.join('.claude', 'CLAUDE.md'), provider: 'claude', kind: 'memory' },
   { relativePath: 'AGENTS.md', provider: 'codex', kind: 'instructions' },
-  { relativePath: 'GEMINI.md', provider: 'gemini', kind: 'instructions' },
+  { relativePath: 'GEMINI.md', provider: 'antigravity', kind: 'instructions' },
   { relativePath: 'QWEN.md', provider: 'qwen', kind: 'instructions' },
   { relativePath: path.join('.github', 'copilot-instructions.md'), provider: 'copilot', kind: 'instructions' },
 ];
@@ -108,47 +109,80 @@ export async function discoverProjectContext(projectPath: string): Promise<Proje
 
   for (const descriptor of PROJECT_PROVIDER_CONTEXT_FILES) {
     const filePath = path.join(projectPath, descriptor.relativePath);
-    if (!isFile(filePath)) continue;
-    sources.push(
-      buildSource(filePath, {
-        provider: descriptor.provider,
-        scope: 'project',
-        kind: descriptor.kind,
-      }),
-    );
+    try {
+      if (!isFile(filePath)) continue;
+    } catch (err) {
+      console.warn(`[discovery] isFile(${filePath}) failed:`, err);
+      continue;
+    }
+    try {
+      sources.push(
+        buildSource(filePath, {
+          provider: descriptor.provider,
+          scope: 'project',
+          kind: descriptor.kind,
+        }),
+      );
+    } catch (err) {
+      console.warn(`[discovery] buildSource(${filePath}) failed:`, err);
+    }
   }
 
-  const copilotInstructionDir = path.join(projectPath, '.github', 'instructions');
-  for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) => entryName.endsWith('.instructions.md'))) {
-    sources.push(
-      buildSource(filePath, {
-        provider: 'copilot',
-        scope: 'project',
-        kind: 'instructions',
-      }),
-    );
+  try {
+    const copilotInstructionDir = path.join(projectPath, '.github', 'instructions');
+    for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) => entryName.endsWith('.instructions.md'))) {
+      try {
+        sources.push(
+          buildSource(filePath, {
+            provider: 'copilot',
+            scope: 'project',
+            kind: 'instructions',
+          }),
+        );
+      } catch (err) {
+        console.warn(`[discovery] buildSource(${filePath}) failed:`, err);
+      }
+    }
+  } catch (err) {
+    console.warn(`[discovery] listFilesRecursive(.github/instructions) failed:`, err);
   }
 
   const sharedPath = path.join(projectPath, 'CALDER.shared.md');
-  if (isFile(sharedPath)) {
-    sources.push(buildSource(sharedPath, { provider: 'shared', scope: 'project', kind: 'rules' }, { priority: 'soft' }));
+  try {
+    if (isFile(sharedPath)) {
+      sources.push(buildSource(sharedPath, { provider: 'shared', scope: 'project', kind: 'rules' }, { priority: 'soft' }));
+    }
+  } catch (err) {
+    console.warn(`[discovery] sharedPath check/buildSource failed:`, err);
   }
 
   const rulesDir = path.join(projectPath, '.calder', 'rules');
-  for (const ruleFile of listMarkdownFiles(rulesDir)) {
-    const fullPath = path.join(rulesDir, ruleFile);
-    sources.push(
-      buildSource(
-        fullPath,
-        { provider: 'shared', scope: 'project', kind: 'rules' },
-        { priority: inferRulePriority(fullPath) },
-      ),
-    );
+  try {
+    for (const ruleFile of listMarkdownFiles(rulesDir)) {
+      const fullPath = path.join(rulesDir, ruleFile);
+      try {
+        sources.push(
+          buildSource(
+            fullPath,
+            { provider: 'shared', scope: 'project', kind: 'rules' },
+            { priority: inferRulePriority(fullPath) },
+          ),
+        );
+      } catch (err) {
+        console.warn(`[discovery] buildSource(${fullPath}) failed:`, err);
+      }
+    }
+  } catch (err) {
+    console.warn(`[discovery] listMarkdownFiles(${rulesDir}) failed:`, err);
   }
 
   const mcpPath = path.join(projectPath, '.mcp.json');
-  if (isFile(mcpPath)) {
-    sources.push(buildSource(mcpPath, { provider: 'shared', scope: 'project', kind: 'mcp' }));
+  try {
+    if (isFile(mcpPath)) {
+      sources.push(buildSource(mcpPath, { provider: 'shared', scope: 'project', kind: 'mcp' }));
+    }
+  } catch (err) {
+    console.warn(`[discovery] mcpPath check/buildSource failed:`, err);
   }
 
   const lastUpdated = sources

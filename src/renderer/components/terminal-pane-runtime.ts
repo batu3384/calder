@@ -1,9 +1,10 @@
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { attachClipboardCopyHandler } from './terminal-utils.js';
+import { Terminal } from '@xterm/xterm';
+
 import { FilePathLinkProvider, GithubLinkProvider } from './terminal-link-provider.js';
+import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 export interface TerminalCore {
   terminal: Terminal;

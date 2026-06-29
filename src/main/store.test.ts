@@ -15,8 +15,9 @@ vi.mock('os', () => ({
 
 import * as fs from 'fs';
 import path from 'path';
-import { loadState, saveState, flushState, saveStateSync } from './store';
+
 import type { PersistedState } from './store';
+import { __resetStoreCacheForTests, flushState, loadState, saveState, saveStateSync } from './store';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -33,6 +34,7 @@ const DEFAULT_STATE: PersistedState = {
 };
 
 beforeEach(() => {
+  __resetStoreCacheForTests();
   vi.clearAllMocks();
   vi.useFakeTimers();
   mockRenameSync.mockReset();
@@ -97,6 +99,29 @@ describe('loadState', () => {
 
     expect(loadState()).toEqual(DEFAULT_STATE);
     expect(infoSpy).toHaveBeenCalledWith('Recovered state from temp file');
+  });
+
+  it('prefers in-memory cached state after saveState before disk flush', () => {
+    const newState: PersistedState = {
+      ...DEFAULT_STATE,
+      projects: [{
+        id: 'proj-1',
+        name: 'Repo',
+        path: '/repo',
+        sessions: [],
+        activeSessionId: null,
+        layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
+      }],
+      activeProjectId: 'proj-1',
+    };
+    saveState(newState);
+
+    // Even if disk still has stale contents, loadState should expose the latest accepted snapshot.
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify(DEFAULT_STATE));
+
+    expect(loadState()).toEqual(newState);
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 });
 

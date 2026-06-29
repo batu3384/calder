@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import type { CliSurfaceDiscoveryResult, CliSurfaceProfile } from '../../../shared/types/project-surface.js';
 import { openCliSurfaceWithSetup } from './setup.js';

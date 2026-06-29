@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 describe('app/browser IPC delegation contract', () => {
@@ -15,6 +16,5 @@ describe('app/browser IPC delegation contract', () => {
     expect(appBrowserSource).toContain("ipcMain.handle('browser:saveScreenshot'");
     expect(appBrowserSource).toContain("ipcMain.handle('browser:listLocalTargets'");
     expect(appBrowserSource).toContain("ipcMain.handle('app:openExternal'");
-    expect(appBrowserSource).toContain("ipcMain.handle('pty:getCwd'");
   });
 });

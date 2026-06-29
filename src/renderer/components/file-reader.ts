@@ -1,14 +1,15 @@
-import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { marked } from 'marked';
+
 import { appState } from '../state.js';
-import { destroySearchBar } from './search-bar.js';
 import { escapeHtml } from './dom-search-backend.js';
 import {
+  type AgentDocModel,
   buildConfigDocModel,
   getConfigDocumentKind,
   isConfigDocumentPath,
-  type AgentDocModel,
 } from './file-reader-agent-doc.js';
+import { destroySearchBar } from './search-bar.js';
 
 interface FileReaderInstance {
   element: HTMLElement;
@@ -199,8 +200,19 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
 
   try {
     const fullPath = resolveFilePath(instance);
-    const content = await window.calder.fs.readFile(fullPath);
-    instance.rawContent = content;
+    const result = await window.calder.fs.readFile(fullPath);
+    if (!result.ok) {
+      const reasonText = result.reason === 'blocked'
+        ? 'Access to this file is blocked'
+        : result.reason === 'too-large'
+          ? 'File is too large to preview'
+          : result.reason === 'not-found'
+            ? 'File not found'
+            : 'Failed to load file';
+      body.innerHTML = `<div class="file-reader-content"><div class="file-reader-line"><span class="file-reader-line-text">${reasonText}</span></div></div>`;
+      return;
+    }
+    instance.rawContent = result.content;
     instance.configDoc = buildConfigDocModel(instance.filePath, content);
     body.innerHTML = '';
     renderBody(instance);

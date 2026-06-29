@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const sidebarCss = readFileSync(new URL('./sidebar.css', import.meta.url), 'utf-8');
 const cockpitCss = readFileSync(new URL('./cockpit.css', import.meta.url), 'utf-8');

@@ -1,5 +1,5 @@
-import { shortcutManager } from './shortcuts.js';
 import { createKeybindingActionBridge } from './bootstrap/keybindings-action-bridge.js';
+import { shortcutManager } from './shortcuts.js';
 
 let initialized = false;
 
@@ -44,6 +44,7 @@ export function initKeybindings(): void {
   shortcutManager.registerHandler('debug-panel', () => actions.toggleDebug());
   shortcutManager.registerHandler('git-panel', () => actions.toggleGitPanel());
   shortcutManager.registerHandler('quick-open', () => actions.quickOpen());
+  shortcutManager.registerHandler('command-palette', () => actions.commandPalette());
   shortcutManager.registerHandler('find-in-terminal', () => actions.findInTerminal());
   shortcutManager.registerHandler('goto-line', () => actions.gotoLine());
   shortcutManager.registerHandler('help', () => actions.help());

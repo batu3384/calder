@@ -1,9 +1,10 @@
 // Remote terminal pane — xterm.js instance with no backing PTY,
 // receiving data from a WebRTC data channel (P2P session sharing).
 
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
+import { Terminal } from '@xterm/xterm';
+
 import type { ShareMode } from '../../shared/sharing-types.js';
 
 interface RemoteTerminalInstance {

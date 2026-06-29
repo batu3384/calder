@@ -12,6 +12,11 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
+}));
+
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
@@ -24,8 +29,9 @@ vi.mock('./hooks/hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { cleanupCodexHooks, CODEX_HOOK_MARKER,installCodexHooks, validateCodexHooks } from './codex-hooks';
 import * as hookCommands from './hooks/hook-commands';
-import { installCodexHooks, validateCodexHooks, cleanupCodexHooks, CODEX_HOOK_MARKER } from './codex-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
@@ -220,9 +226,10 @@ describe('installCodexHooks', () => {
     const hooksCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === HOOKS_JSON);
     const hooks = JSON.parse(String(hooksCall![1])).hooks;
     const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook claude'));
+    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook codex'));
 
     expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
     expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
   });
 

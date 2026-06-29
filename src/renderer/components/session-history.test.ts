@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ArchivedSession } from '../../shared/types/session.js';
 
 function createArchivedSession(overrides: Partial<ArchivedSession> = {}): ArchivedSession {

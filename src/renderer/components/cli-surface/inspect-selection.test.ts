@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CalderProtocolMessage } from './protocol.js';
+
 import {
   deriveSemanticRegions,
   findContainingInferredRegion,
@@ -9,6 +9,7 @@ import {
   resolveSelectionSource,
   type SelectableCliRegion,
 } from './inspect-selection.js';
+import type { CalderProtocolMessage } from './protocol.js';
 
 function selection(
   startRow: number,

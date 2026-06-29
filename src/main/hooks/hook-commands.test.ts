@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockFs = vi.hoisted(() => ({
   existsSync: vi.fn(),
@@ -50,6 +51,9 @@ describe('hook-commands', () => {
 
     module.installHookScripts();
     expect(mockFs.writeFileSync).toHaveBeenCalledTimes(3);
+    for (const [, contents] of mockFs.writeFileSync.mock.calls) {
+      expect(String(contents)).toContain('CALDER_RUNTIME');
+    }
 
     mockFs.writeFileSync.mockClear();
     mockFs.existsSync.mockReturnValue(true);
@@ -61,7 +65,7 @@ describe('hook-commands', () => {
     const module = await loadHookCommands();
 
     expect(module.statusCmd('pre_tool_use', 'pending', 'SESSION_ID', '# hook')).toBe(
-      `sh -c 'sid="${'$'}{SESSION_ID:-}"; if [ -n "${'$'}sid" ]; then mkdir -p ${STATUS_DIR} && echo pre_tool_use:pending > ${STATUS_DIR}/${'$'}sid.status; fi # hook'`,
+      `sh -c 'if [ "${'$'}{CALDER_RUNTIME:-}" != "1" ]; then exit 0; fi; sid="${'$'}{SESSION_ID:-}"; if [ -n "${'$'}sid" ]; then mkdir -p ${STATUS_DIR} && echo pre_tool_use:pending > ${STATUS_DIR}/${'$'}sid.status; fi # hook'`,
     );
   });
 

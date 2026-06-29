@@ -112,13 +112,13 @@ describe('ipc provider-update handlers', () => {
     const updateProviderHandler = getHandleHandler('provider:updateProvider');
     const sender = { isDestroyed: () => false, send: vi.fn() };
 
-    await expect(updateProviderHandler({ sender }, 'gemini')).resolves.toEqual({ results: [{ providerId: 'gemini' }] });
+    await expect(updateProviderHandler({ sender }, 'antigravity')).resolves.toEqual({ results: [{ providerId: 'antigravity' }] });
 
-    expect(mockUpdateProviderById).toHaveBeenCalledWith('gemini', expect.objectContaining({
+    expect(mockUpdateProviderById).toHaveBeenCalledWith('antigravity', expect.objectContaining({
       signal: expect.any(AbortSignal),
       onProgress: expect.any(Function),
     }));
-    expect(sender.send).toHaveBeenCalledWith('provider:update-progress', { phase: 'provider_started', providerId: 'gemini' });
+    expect(sender.send).toHaveBeenCalledWith('provider:update-progress', { phase: 'provider_started', providerId: 'antigravity' });
     expect(requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted).toBe(false);
   });
 });

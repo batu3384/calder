@@ -1,10 +1,15 @@
-import { BrowserWindow, ipcMain } from 'electron';
 import { execSync } from 'child_process';
+import { BrowserWindow, ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import type { FsReadFileResult } from '../shared/types/fs-read';
+import { setFileWatcherWindow,unwatchFile as unwatchFileForChanges, watchFile as watchFileForChanges } from './file-watcher';
 import { expandUserPath } from './fs-utils';
-import { watchFile as watchFileForChanges, unwatchFile as unwatchFileForChanges, setFileWatcherWindow } from './file-watcher';
-import { loadState, saveState, type PersistedState } from './store';
+import { loadState, type PersistedState,saveState } from './store';
+
+/** Maximum file size for fs:readFile (10 MiB). */
+export const FS_READ_FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 interface FsStorePolicy {
   isAllowedDirectoryLookupPath: (resolvedPath: string) => boolean;
@@ -128,18 +133,34 @@ export function registerFsStoreIpcHandlers(policy: FsStorePolicy): void {
     }
   });
 
-  ipcMain.handle('fs:readFile', (_event, filePath: string) => {
+  ipcMain.handle('fs:readFile', (_event, filePath: string): FsReadFileResult => {
     try {
-      // Security: resolve to absolute and check it's within a known project directory
       const resolved = path.resolve(filePath);
       if (!policy.isAllowedReadPath(resolved)) {
         console.warn(`fs:readFile blocked: ${resolved} is not within an allowed path`);
-        return '';
+        return { ok: false, reason: 'blocked', message: 'Path is not within an allowed read location' };
       }
-      return fs.readFileSync(resolved, 'utf-8');
+      let size = 0;
+      try {
+        size = fs.statSync(resolved).size;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'ENOENT') {
+          return { ok: false, reason: 'not-found', message: 'File does not exist' };
+        }
+        throw error;
+      }
+      if (size > FS_READ_FILE_MAX_BYTES) {
+        console.warn(
+          `fs:readFile blocked: ${resolved} exceeds ${FS_READ_FILE_MAX_BYTES} bytes (${size})`,
+        );
+        return { ok: false, reason: 'too-large', message: `File exceeds ${FS_READ_FILE_MAX_BYTES} bytes` };
+      }
+      return { ok: true, content: fs.readFileSync(resolved, 'utf-8') };
     } catch (error) {
       console.warn('fs:readFile failed:', error);
-      return '';
+      const message = error instanceof Error ? error.message : 'Read failed';
+      return { ok: false, reason: 'read-error', message };
     }
   });
 

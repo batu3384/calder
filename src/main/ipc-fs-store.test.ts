@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
@@ -50,7 +51,7 @@ vi.mock('./store', () => ({
   saveState: mockSaveState,
 }));
 
-import { registerFsStoreIpcHandlers } from './ipc-fs-store';
+import { FS_READ_FILE_MAX_BYTES, registerFsStoreIpcHandlers } from './ipc-fs-store';
 
 function getHandleHandler(channel: string): (...args: any[]) => any {
   const call = mockIpcHandle.mock.calls.find(([name]) => name === channel);
@@ -161,17 +162,39 @@ describe('ipc fs/store handlers', () => {
     registerFsStoreIpcHandlers(denyPolicy);
     const readFileHandler = getHandleHandler('fs:readFile');
 
-    expect(readFileHandler({}, '/outside/file.txt')).toBe('');
+    expect(readFileHandler({}, '/outside/file.txt')).toEqual({
+      ok: false,
+      reason: 'blocked',
+      message: 'Path is not within an allowed read location',
+    });
     expect(mockReadFileSync).not.toHaveBeenCalled();
 
     mockIpcHandle.mockClear();
     const allowPolicy = createPolicy({ isAllowedReadPath: vi.fn(() => true) });
     registerFsStoreIpcHandlers(allowPolicy);
+    mockStatSync.mockReturnValue({ size: 12 });
     mockReadFileSync.mockReturnValue('hello');
     const allowedReadFileHandler = getHandleHandler('fs:readFile');
 
-    expect(allowedReadFileHandler({}, '/repo/file.txt')).toBe('hello');
+    expect(allowedReadFileHandler({}, '/repo/file.txt')).toEqual({ ok: true, content: 'hello' });
     expect(mockReadFileSync).toHaveBeenCalledWith(path.resolve('/repo/file.txt'), 'utf-8');
+  });
+
+  it('blocks fs:readFile when file exceeds max size', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const policy = createPolicy({ isAllowedReadPath: vi.fn(() => true) });
+    registerFsStoreIpcHandlers(policy);
+    mockStatSync.mockReturnValue({ size: FS_READ_FILE_MAX_BYTES + 1 });
+    const readFileHandler = getHandleHandler('fs:readFile');
+
+    expect(readFileHandler({}, '/repo/large.txt')).toEqual({
+      ok: false,
+      reason: 'too-large',
+      message: `File exceeds ${FS_READ_FILE_MAX_BYTES} bytes`,
+    });
+    expect(mockReadFileSync).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('exceeds'));
+    warnSpy.mockRestore();
   });
 
   it('watches/unwatches files with resolved paths and attaches watcher window', () => {

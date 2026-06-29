@@ -1,5 +1,6 @@
-import * as http from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
+import * as http from 'node:http';
+
 import type { PairingRecord } from './model';
 
 const requestRateLimits = new Map<string, { windowStartMs: number; count: number; blockedUntilMs: number }>();

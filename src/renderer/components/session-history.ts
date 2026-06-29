@@ -1,9 +1,9 @@
-import { appState, ArchivedSession } from '../state.js';
-import { loadProviderAvailability } from './surface-services/provider-availability.js';
-import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
-import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
-import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 import type { ProviderId } from '../../shared/types/provider.js';
+import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
+import { appState, ArchivedSession } from '../state.js';
+import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
+import { loadProviderAvailability } from './surface-services/provider-availability.js';
+import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
 type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 
 let historyContextMenu: HTMLElement | null = null;
@@ -60,7 +60,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   claude: 'Claude Code',
   codex: 'Codex CLI',
   copilot: 'GitHub Copilot',
-  gemini: 'Gemini CLI',
+  antigravity: 'Antigravity CLI',
   qwen: 'Qwen Code',
 };
 

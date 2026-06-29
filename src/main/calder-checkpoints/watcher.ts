@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type { ProjectCheckpointState } from '../../shared/types/project-checkpoint.js';
 import { discoverProjectCheckpoints } from './discovery.js';
 

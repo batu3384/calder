@@ -5,20 +5,14 @@ export async function sendGuestMessage(
   channel: string,
   ...args: unknown[]
 ): Promise<void> {
-  try {
-    const sent = await window.calder.app.sendToGuestWebContents(
-      webview.getWebContentsId(),
-      channel,
-      ...args,
-    );
-    if (sent) return;
-  } catch (err) {
-    console.warn(`Failed to send guest message via main bridge (${channel})`, err);
-  }
+  const sent = await window.calder.app.sendToGuestWebContents(
+    webview.getWebContentsId(),
+    channel,
+    ...args,
+  );
+  if (sent) return;
 
-  try {
-    webview.send(channel, ...args);
-  } catch (err) {
-    console.warn(`Failed to send guest message directly (${channel})`, err);
-  }
+  console.warn(
+    `Guest message blocked or failed (${channel}). Main-process mediation is required for guest IPC.`,
+  );
 }

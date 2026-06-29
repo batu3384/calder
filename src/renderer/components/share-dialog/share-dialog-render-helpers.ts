@@ -1,17 +1,17 @@
 import type { ShareMode } from '../../../shared/sharing-types.js';
+import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
+import type { ShareDialogCopy, ShareDialogLanguage } from './share-dialog-copy.js';
 import {
   createShareDialogFlowController,
   type ShareDialogFlowController,
 } from './share-dialog-flow-controller.js';
 import { createShareDialogPhaseTwo } from './share-dialog-phase-two.js';
-import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
-import type { ShareDialogCopy, ShareDialogLanguage } from './share-dialog-copy.js';
-import { bindStartSharingHandler } from './share-dialog-start-handler.js';
 import {
   bindShareDialogPhaseNavigation,
   createShareDialogActions,
   createShareDialogPhaseOne,
 } from './share-dialog-shell.js';
+import { bindStartSharingHandler } from './share-dialog-start-handler.js';
 
 interface BuildShareDialogSectionsArgs {
   dialog: HTMLDivElement;

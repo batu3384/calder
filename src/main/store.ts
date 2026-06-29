@@ -1,10 +1,12 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import * as os from 'os';
-import type { PersistedState } from '../shared/types/project-state';
+import * as path from 'path';
 
+import type { PersistedState } from '../shared/types/project-state';
+import { SUPPORTED_PROVIDER_IDS } from './providers/registry';
+
+export type { PersistedState,Preferences, ProjectRecord } from '../shared/types/project-state';
 export type { SessionRecord } from '../shared/types/session';
-export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state';
 
 const STATE_DIR = path.join(os.homedir(), '.calder');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
@@ -12,7 +14,16 @@ const COPILOT_SESSION_STATE_DIR = path.join(os.homedir(), '.copilot', 'session-s
 const COPILOT_BACKFILL_WINDOW_MS = 2 * 60 * 1000;
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
-const SUPPORTED_PROVIDER_IDS = new Set(['claude', 'codex', 'copilot', 'gemini', 'qwen']);
+let cachedState: PersistedState | null = null;
+
+export function __resetStoreCacheForTests(): void {
+  cachedState = null;
+  lastState = null;
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+}
 
 function defaultState(): PersistedState {
   return {
@@ -24,6 +35,10 @@ function defaultState(): PersistedState {
 }
 
 export function loadState(): PersistedState {
+  if (cachedState) {
+    return cachedState;
+  }
+
   let sawCandidate = false;
   for (const file of [STATE_FILE, STATE_FILE + '.tmp']) {
     try {
@@ -36,6 +51,7 @@ export function loadState(): PersistedState {
       if (file !== STATE_FILE) {
         console.info('Recovered state from temp file');
       }
+      cachedState = parsed;
       return parsed;
     } catch {
       continue;
@@ -44,14 +60,17 @@ export function loadState(): PersistedState {
   if (sawCandidate) {
     console.warn('No valid state file found, using defaults');
   }
-  return defaultState();
+  const fallback = defaultState();
+  cachedState = fallback;
+  return fallback;
 }
 
 /** Migrate legacy claudeSessionId fields to cliSessionId */
 function migrateSessionIds(state: PersistedState): void {
   const normalizeProviderId = (value: unknown): string => {
     if (typeof value !== 'string') return 'claude';
-    return SUPPORTED_PROVIDER_IDS.has(value) ? value : 'claude';
+    if (value === 'gemini') return 'antigravity';
+    return (SUPPORTED_PROVIDER_IDS as readonly string[]).includes(value) ? value : 'claude';
   };
 
   for (const project of state.projects) {
@@ -136,6 +155,7 @@ export function saveState(state: PersistedState): void {
     clearTimeout(saveTimer);
   }
   lastState = state;
+  cachedState = state;
   saveTimer = setTimeout(() => {
     writeStateAtomically(state);
     saveTimer = null;
@@ -151,6 +171,7 @@ export function flushState(): void {
 }
 
 export function saveStateSync(state: PersistedState): void {
+  cachedState = state;
   writeStateAtomically(state);
 }
 

@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import type { ProjectBackgroundTaskDocument, ProjectBackgroundTaskStatus } from '../../shared/types/project-background-task.js';
 
 const TASKS_DIR_PREFIX = `.calder${path.posix.sep}tasks${path.posix.sep}`;

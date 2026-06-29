@@ -2,17 +2,17 @@ import type { AppliedContextSummary } from '../../../shared/types/project-contex
 import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import {
-  closeInspect,
-} from './inspect-mode.js';
+  syncComposerContextControl as syncComposerContextControlBehavior,
+  syncComposerContextTrace as syncComposerContextTraceBehavior,
+} from './context-controls.js';
 import {
   pointerToCell,
   selectionFromCells,
 } from './inspect-geometry.js';
-import type { CliSurfaceInstance } from './pane-instance.js';
 import {
-  syncComposerContextControl as syncComposerContextControlBehavior,
-  syncComposerContextTrace as syncComposerContextTraceBehavior,
-} from './context-controls.js';
+  closeInspect,
+} from './inspect-mode.js';
+import type { CliSurfaceInstance } from './pane-instance.js';
 
 type BuildInspectPayloadFn = (
   instance: CliSurfaceInstance,

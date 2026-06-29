@@ -1,5 +1,7 @@
-import { ipcMain } from 'electron';
 import * as path from 'node:path';
+
+import { ipcMain } from 'electron';
+
 import type { CliSurfaceProfile } from '../shared/types/project-surface';
 import { discoverCliSurface } from './cli-surface-discovery';
 

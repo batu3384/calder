@@ -1,5 +1,3 @@
-export type { AppStateRuntimeBridge } from './state-appstate-runtime-bridge-types.js';
-
 export {
   addBrowserTabSessionWithBridge,
   addDiffViewerSessionWithBridge,
@@ -17,7 +15,6 @@ export {
   setActiveSessionWithBridge,
   setSurfaceTargetSessionWithBridge,
 } from './state-appstate-runtime-bridge-session-lifecycle.js';
-
 export {
   addInsightSnapshotWithBridge,
   dismissInsightWithBridge,
@@ -31,3 +28,4 @@ export {
   updateSessionContextWithBridge,
   updateSessionCostWithBridge,
 } from './state-appstate-runtime-bridge-session-updates.js';
+export type { AppStateRuntimeBridge } from './state-appstate-runtime-bridge-types.js';

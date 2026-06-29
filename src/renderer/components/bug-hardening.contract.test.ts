@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(path.join(process.cwd(), 'src/renderer/components/tab-bar/tab-bar.ts'), 'utf8');
 const largeFileDetectorSource = readFileSync(path.join(process.cwd(), 'src/renderer/tools/large-file-detector.ts'), 'utf8');

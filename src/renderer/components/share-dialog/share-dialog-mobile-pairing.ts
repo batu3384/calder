@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+
 import type { MobileControlApi } from './share-dialog-api.js';
 import type { ShareDialogCopy } from './share-dialog-copy.js';
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const helpSource = readFileSync(new URL('./help-dialog.ts', import.meta.url), 'utf-8');
 const shareSource = readFileSync(new URL('./share-dialog/share-dialog.ts', import.meta.url), 'utf-8');

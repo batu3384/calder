@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { closeInspect, createInitialInspectState, openInspect, setInspectPayload } from './inspect-mode.js';
 
 describe('cli surface inspect mode', () => {

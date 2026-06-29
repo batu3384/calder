@@ -1,5 +1,5 @@
-import { stripAnsi } from './ansi';
 import type { CostData, CostInfo } from '../shared/types/session';
+import { stripAnsi } from './ansi';
 
 export type { CostInfo } from '../shared/types/session';
 

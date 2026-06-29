@@ -1,10 +1,10 @@
-import { getFullPath } from '../pty-manager';
-import { whichCmd } from '../platform';
 import {
   firstNonEmptyLine,
   getAndroidBinaryCandidates,
   runCommand,
 } from '../mobile-inspector-helpers';
+import { whichCmd } from '../platform';
+import { getFullPath } from '../pty-manager';
 
 export interface AndroidCommandSet {
   adbBinary: string;

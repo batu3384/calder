@@ -23,7 +23,7 @@ describe('buildStatusLineWrapper platform branches', () => {
     const wrapper = buildStatusLineWrapper('C:\\tmp\\statusline.py', 'C:\\tmp\\statusline.log');
 
     expect(wrapper).toBe(
-      '@echo off\r\npython "C:\\tmp\\statusline.py" render 2>>"C:\\tmp\\statusline.log"\r\n',
+      '@echo off\r\nif /I not "%CALDER_RUNTIME%"=="1" exit /b 0\r\npython "C:\\tmp\\statusline.py" render 2>>"C:\\tmp\\statusline.log"\r\n',
     );
   });
 
@@ -35,6 +35,12 @@ describe('buildStatusLineWrapper platform branches', () => {
 
     const wrapper = buildStatusLineWrapper('/tmp/statusline.py', '/tmp/statusline.log');
 
-    expect(wrapper).toBe('#!/bin/sh\n/usr/bin/python3 "/tmp/statusline.py" render 2>>"/tmp/statusline.log"\n');
+    expect(wrapper).toBe(
+      '#!/bin/sh\n'
+      + 'if [ "${CALDER_RUNTIME:-}" != "1" ]; then\n'
+      + '  exit 0\n'
+      + 'fi\n'
+      + '/usr/bin/python3 "/tmp/statusline.py" render 2>>"/tmp/statusline.log"\n',
+    );
   });
 });

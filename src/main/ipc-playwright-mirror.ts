@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as os from 'os';
+
 import type { InspectorEvent } from '../shared/types/session';
 
 const PLAYWRIGHT_NAVIGATE_TOOL = 'mcp__plugin_playwright_playwright__browser_navigate';

@@ -1,6 +1,6 @@
 import {
-  describeBrowserPageState,
   type BrowserPageState,
+  describeBrowserPageState,
 } from './navigation.js';
 import { createNewTabStateController } from './new-tab-state.js';
 import { createBrowserNewTabUi } from './new-tab-ui.js';
@@ -8,7 +8,7 @@ import {
   resolveBrowserPartitionForSession,
 } from './pane-helpers.js';
 import { syncBrowserTrustZoneBadge } from './trust-zone.js';
-import type { BrowserTabInstance, WebviewElement } from './types.js';
+import type { WebviewElement } from './types.js';
 
 interface BrowserTabShellArtifactsParams {
   sessionId: string;

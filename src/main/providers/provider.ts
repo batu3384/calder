@@ -1,4 +1,5 @@
 import type { BrowserWindow } from 'electron';
+
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
 
 export interface CliProvider {

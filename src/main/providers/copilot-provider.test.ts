@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
@@ -31,13 +32,14 @@ vi.mock('../copilot-session-watcher', () => ({
   stopCopilotSessionWatcher: vi.fn(),
 }));
 
-import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { CopilotProvider, _resetCachedPath } from './copilot-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
-import { getCopilotConfig } from '../copilot-config';
+import * as fs from 'fs';
+
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
+import { _resetCachedPath,CopilotProvider } from './copilot-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);

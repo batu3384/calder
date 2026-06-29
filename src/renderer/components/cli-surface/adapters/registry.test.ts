@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { detectCliAdapter } from './registry.js';
 
 describe('cli surface adapters', () => {

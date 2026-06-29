@@ -1,39 +1,39 @@
 import { appState } from '../../state.js';
 import { getProviderDisplayName } from '../surface-services/provider-availability.js';
+import {
+  clearDrawing,
+  dismissDraw,
+  sendDrawToSelectedSession,
+  toggleDrawMode,
+} from './draw-mode.js';
+import { dismissFlowPicker } from './flow-picker.js';
+import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
+import { sendGuestMessage } from './guest-messaging.js';
+import { dismissInspect,toggleInspectMode } from './inspect-mode.js';
+import { populateLocalTargets } from './local-targets.js';
+import {
+  type BrowserPageState,
+  navigateTo,
+  normalizeUrl,
+  resolveBrowserPageState,
+} from './navigation.js';
+import { resolveCaptureModeState } from './pane-helpers.js';
+import { enablePopoverDragging } from './popover.js';
+import {
+  sendFlowToSelectedSession,
+  sendToSelectedSession,
+} from './session-integration.js';
+import {
+  closeBrowserTargetMenu,
+  openBrowserTargetMenu,
+  syncBrowserTargetControls,
+} from './target-menu.js';
 import type {
   BrowserTabInstance,
   FlowPickerAction,
   FlowReplayPayload,
   WebviewElement,
 } from './types.js';
-import {
-  navigateTo,
-  normalizeUrl,
-  resolveBrowserPageState,
-  type BrowserPageState,
-} from './navigation.js';
-import { enablePopoverDragging } from './popover.js';
-import { toggleInspectMode, dismissInspect } from './inspect-mode.js';
-import {
-  toggleDrawMode,
-  clearDrawing,
-  dismissDraw,
-  sendDrawToSelectedSession,
-} from './draw-mode.js';
-import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
-import { dismissFlowPicker } from './flow-picker.js';
-import { sendGuestMessage } from './guest-messaging.js';
-import {
-  sendFlowToSelectedSession,
-  sendToSelectedSession,
-} from './session-integration.js';
-import { populateLocalTargets } from './local-targets.js';
-import {
-  closeBrowserTargetMenu,
-  openBrowserTargetMenu,
-  syncBrowserTargetControls,
-} from './target-menu.js';
-import { resolveCaptureModeState } from './pane-helpers.js';
 
 export type ViewportMenuFocusMode = 'selected' | 'first' | 'last' | 'none';
 
@@ -368,7 +368,7 @@ export function attachBrowserNavigationInteractions(params: BrowserNavigationInt
 
   goBtn.addEventListener('click', () => {
     if (instance.isLoading) {
-      try { webview.stop(); } catch {}
+      try { webview.stop(); } catch { /* webview may already be stopped */ }
       instance.isLoading = false;
       syncBrowserStatus(resolveBrowserPageState(urlInput.value.trim(), false, false), urlInput.value.trim());
       syncNavigationControls();

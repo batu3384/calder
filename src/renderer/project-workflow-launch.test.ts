@@ -23,8 +23,8 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
+import { _resetForTesting,appState } from './state.js';
 
 function buildWorkflowDocument(overrides: Partial<ProjectWorkflowDocument> = {}): ProjectWorkflowDocument {
   return {

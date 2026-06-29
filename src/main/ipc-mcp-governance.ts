@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
-import { addMcpServer, removeMcpServer } from './claude-cli';
+
 import type { McpServerConfig } from './claude-cli';
+import { addMcpServer, removeMcpServer } from './claude-cli';
 
 export const MCP_GOVERNANCE_ERROR_CODES = {
   DENIED: 'MCP_GOVERNANCE_DENIED',

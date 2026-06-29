@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { getAndroidBinaryCandidates as getInspectorCandidates } from './mobile-inspector-helpers';
+
 import { getAndroidBinaryCandidates as getDoctorCandidates } from './mobile-dependency-doctor-binaries';
+import { getAndroidBinaryCandidates as getInspectorCandidates } from './mobile-inspector-helpers';
 
 describe('mobile-inspector Android binary candidate wiring', () => {
   it('reuses dependency doctor candidate expansion for adb', () => {

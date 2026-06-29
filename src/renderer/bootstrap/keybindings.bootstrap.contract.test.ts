@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const keybindingsSource = readFileSync(new URL('../keybindings.ts', import.meta.url), 'utf-8');
 const bridgeSource = readFileSync(new URL('./keybindings-action-bridge.ts', import.meta.url), 'utf-8');

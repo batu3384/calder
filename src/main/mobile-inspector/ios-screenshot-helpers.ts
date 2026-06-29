@@ -1,6 +1,11 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
+import type {
+  MobileInspectLaunchResult,
+  MobileInspectScreenshotResult,
+} from '../../shared/types/mobile';
 import {
   isIosScreenshotStdoutUnsupported,
   isNoBootedIosDeviceOutput,
@@ -8,10 +13,6 @@ import {
   runCommand,
   summarizeIosFailure,
 } from '../mobile-inspector-helpers';
-import type {
-  MobileInspectLaunchResult,
-  MobileInspectScreenshotResult,
-} from '../../shared/types/mobile';
 
 interface CaptureIosScreenshotOptions {
   ensureIosSimulatorReady: () => Promise<MobileInspectLaunchResult>;

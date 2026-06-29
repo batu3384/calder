@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 // Mock peer-host before importing share-dialog
 const mockIsSharing = vi.fn<(sessionId: unknown) => boolean>(() => false);
@@ -96,7 +96,7 @@ function installGlobalStubs() {
 
 installGlobalStubs();
 
-import { showShareDialog, closeShareDialog } from './share-dialog.js';
+import { closeShareDialog,showShareDialog } from './share-dialog.js';
 
 beforeEach(() => {
   vi.useRealTimers();

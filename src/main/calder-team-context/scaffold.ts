@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import type { ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult } from '../../shared/types/project-team-context.js';
 import { discoverProjectTeamContext } from './discovery.js';
 

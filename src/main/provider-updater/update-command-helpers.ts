@@ -1,5 +1,5 @@
 import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../../shared/types/provider';
-import type { ProviderUpdateSpec, ProviderUpdaterRunner } from '../provider-updater-types';
+import type { ProviderUpdaterRunner,ProviderUpdateSpec } from '../provider-updater-types';
 import {
   buildCancelledResult,
   buildPostUpdateResult,
@@ -70,6 +70,9 @@ export async function applyUpdateCommandAndVerify(input: {
   } = input;
   const updateCommand = `${updateCommandInput.command} ${updateCommandInput.args.join(' ')}`.trim();
 
+  // Build rollback command for failed npm updates — save package@version before update.
+  const rollbackCommandStr = buildRollbackCommand(updateCommandInput, beforeVersion, latestVersion, source);
+
   onStage?.('Applying update command…');
   const updateExec = await runner.run(updateCommandInput.command, updateCommandInput.args, {
     timeoutMs: UPDATE_TIMEOUT_MS,
@@ -90,6 +93,26 @@ export async function applyUpdateCommandAndVerify(input: {
   }
   if (updateExec.code !== 0) {
     const errorMessage = (updateExec.stderr || updateExec.stdout || 'Update command failed').trim();
+
+    // Attempt rollback if update failed and we have enough info to restore.
+    if (rollbackCommandStr) {
+      onStage?.('Update failed — attempting rollback…');
+      try {
+        const [rollbackCmd, rollbackArgs] = parseRollbackCommand(rollbackCommandStr);
+        const rollbackResult = await runner.run(rollbackCmd, rollbackArgs, {
+          timeoutMs: UPDATE_TIMEOUT_MS,
+          signal,
+        });
+        if (rollbackResult.code === 0) {
+          console.warn(`[provider-updater] rollback succeeded for ${providerId} after failed update: ${errorMessage}`);
+        } else {
+          console.error(`[provider-updater] rollback FAILED for ${providerId}. Original error: ${errorMessage}. Rollback error: ${rollbackResult.stderr || rollbackResult.stdout}`);
+        }
+      } catch (rollbackErr) {
+        console.error(`[provider-updater] rollback threw for ${providerId}:`, rollbackErr);
+      }
+    }
+
     return buildUpdateErrorResult({
       providerId,
       providerName,
@@ -129,4 +152,35 @@ export async function applyUpdateCommandAndVerify(input: {
     afterVersion,
     hasVersionBump: hasDifferentVersion(beforeVersion, afterVersion),
   });
+}
+
+/**
+ * Builds a rollback install command from the original update command + version snapshot.
+ * Only supports npm for now — Homebrew rollback requires more complex version resolution.
+ */
+function buildRollbackCommand(
+  updateCommandInput: { command: string; args: string[] },
+  beforeVersion?: string,
+  latestVersion?: string,
+  source?: ProviderUpdateSource,
+): string | null {
+  if (source === 'npm' && updateCommandInput.command === 'npm' && beforeVersion) {
+    // Reconstruct package@version from the args, replacing @latest with @<beforeVersion>.
+    const pkgArg = updateCommandInput.args.find((a) => a.startsWith('@') || (!a.startsWith('-')));
+    if (pkgArg) {
+      const pkg = pkgArg.replace(/@\w+$/, ''); // strip any existing version
+      const version = beforeVersion.replace(/^[\^~]|latest$/, '');
+      if (version && version !== 'latest') {
+        return `npm install -g ${pkg}@${version}`;
+      }
+    }
+  }
+  return null;
+}
+
+function parseRollbackCommand(cmd: string): [string, string[]] {
+  const parts = cmd.split(/\s+/);
+  const command = parts[0];
+  const args = parts.slice(1);
+  return [command, args];
 }

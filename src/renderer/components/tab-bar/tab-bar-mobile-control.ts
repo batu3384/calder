@@ -1,6 +1,6 @@
+import { isConnected,isSharing } from '../../sharing/peer-host.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildShareDialogMobilePresence } from '../share-dialog/share-dialog.js';
-import { isSharing, isConnected } from '../../sharing/peer-host.js';
 
 function getActiveCliSession(project: ProjectRecord): SessionRecord | null {
   const activeSession = project.sessions.find((session) => session.id === project.activeSessionId) ?? null;

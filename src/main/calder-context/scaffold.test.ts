@@ -1,11 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
 import {
-  createProjectContextStarterFiles,
   createProjectContextRuleFile,
+  createProjectContextStarterFiles,
   deleteProjectContextRuleFile,
   renameProjectContextRuleFile,
 } from './scaffold.js';

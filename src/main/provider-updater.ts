@@ -1,7 +1,12 @@
 import { execFile } from 'child_process';
-import type { CliProvider } from './providers/provider';
-import { getAllProviders, getProvider } from './providers/registry';
-import { getFullPath } from './pty-manager';
+
+import type {
+  ProviderId,
+  ProviderUpdateProgressEvent,
+  ProviderUpdateResult,
+  ProviderUpdateSource,
+  ProviderUpdateSummary,
+} from '../shared/types/provider';
 import {
   buildProviderUpdateSummary,
   buildSkippedProviderResult,
@@ -10,20 +15,16 @@ import {
   emitUpdateStarted,
   type ProviderProgressContext,
 } from './provider-updater/progress-helpers';
+import type { ProviderUpdaterRunner,ProviderUpdateSpec } from './provider-updater-types';
 import {
   detectUpdateSource,
   readBinaryVersion,
   resolveRealPath,
   runProviderUpdate,
 } from './provider-updater-update-helpers';
-import type { ProviderUpdateSpec, ProviderUpdaterRunner } from './provider-updater-types';
-import type {
-  ProviderId,
-  ProviderUpdateProgressEvent,
-  ProviderUpdateResult,
-  ProviderUpdateSummary,
-  ProviderUpdateSource,
-} from '../shared/types/provider';
+import type { CliProvider } from './providers/provider';
+import { getAllProviders, getProvider } from './providers/registry';
+import { getFullPath } from './pty-manager';
 
 export type { ProviderUpdaterRunner } from './provider-updater-types';
 
@@ -91,20 +92,15 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
     npmPackage: '@github/copilot',
     brewCask: 'copilot-cli',
   },
-  gemini: {
-    npmPackage: '@google/gemini-cli',
-    brewFormula: 'gemini-cli',
+  antigravity: {
+    brewCask: 'antigravity-cli',
+    selfUpdateArgs: ['update'],
   },
   qwen: {
     npmPackage: '@qwen-code/qwen-code',
     brewFormula: 'qwen-code',
   },
 };
-
-function getPrimaryToken(tokenOrTokens?: string | string[]): string | undefined {
-  if (!tokenOrTokens) return undefined;
-  return Array.isArray(tokenOrTokens) ? tokenOrTokens[0] : tokenOrTokens;
-}
 
 function buildProviderUpdateSourceAttempts(
   spec: ProviderUpdateSpec,
@@ -119,6 +115,12 @@ function buildProviderUpdateSourceAttempts(
   };
 
   if (primary.source === 'unknown') {
+    if (spec.selfUpdateArgs) {
+      pushAttempt({ source: 'self' });
+    }
+    if (spec.npmPackage) {
+      pushAttempt({ source: 'npm' });
+    }
     return attempts;
   }
 

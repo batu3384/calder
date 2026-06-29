@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const paneCoreSource = readFileSync(new URL('./mobile-surface/pane.ts', import.meta.url), 'utf8');
 const paneWorkbenchSource = readFileSync(new URL('./mobile-surface/inspect-workbench.ts', import.meta.url), 'utf8');

@@ -1,60 +1,60 @@
-import { appState, type ProjectRecord } from '../state.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 import type { SessionRecord } from '../../shared/types/session.js';
+import { appState, type ProjectRecord } from '../state.js';
 import {
-  createTerminalPane,
-  attachToContainer,
-  showPane,
-  hideAllPanes,
-  fitAllVisible,
-  spawnTerminal,
-  setPendingPrompt,
-  destroyTerminal,
-  getTerminalInstance,
-} from './terminal-pane.js';
-import {
-  createInspectorPane,
-  destroyInspectorPane,
-  showInspectorPane,
-  hideAllInspectorPanes,
-  attachInspectorToContainer,
-  getInspectorInstance,
-  disconnectInspector,
-} from './mcp-inspector.js';
-import {
-  createFileViewerPane,
-  destroyFileViewerPane,
-  showFileViewerPane,
-  hideAllFileViewerPanes,
-  attachFileViewerToContainer,
-  getFileViewerInstance,
-} from './file-viewer.js';
-import {
-  createFileReaderPane,
-  destroyFileReaderPane,
-  showFileReaderPane,
-  hideAllFileReaderPanes,
-  attachFileReaderToContainer,
-  getFileReaderInstance,
-  setFileReaderLine,
-} from './file-reader.js';
-import {
-  getRemoteTerminalInstance,
-  destroyRemoteTerminal,
-  attachRemoteToContainer,
-  showRemotePane,
-  hideAllRemotePanes,
-} from './remote-terminal-pane.js';
-import {
+  attachBrowserTabToContainer,
   createBrowserTabPane,
   destroyBrowserTabPane,
-  showBrowserTabPane,
-  hideAllBrowserTabPanes,
-  attachBrowserTabToContainer,
   getBrowserTabInstance,
+  hideAllBrowserTabPanes,
+  showBrowserTabPane,
 } from './browser-tab-pane.js';
 import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
+import {
+  attachFileReaderToContainer,
+  createFileReaderPane,
+  destroyFileReaderPane,
+  getFileReaderInstance,
+  hideAllFileReaderPanes,
+  setFileReaderLine,
+  showFileReaderPane,
+} from './file-reader.js';
+import {
+  attachFileViewerToContainer,
+  createFileViewerPane,
+  destroyFileViewerPane,
+  getFileViewerInstance,
+  hideAllFileViewerPanes,
+  showFileViewerPane,
+} from './file-viewer.js';
+import {
+  attachInspectorToContainer,
+  createInspectorPane,
+  destroyInspectorPane,
+  disconnectInspector,
+  getInspectorInstance,
+  hideAllInspectorPanes,
+  showInspectorPane,
+} from './mcp-inspector.js';
 import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
+import {
+  attachRemoteToContainer,
+  destroyRemoteTerminal,
+  getRemoteTerminalInstance,
+  hideAllRemotePanes,
+  showRemotePane,
+} from './remote-terminal-pane.js';
+import {
+  attachToContainer,
+  createTerminalPane,
+  destroyTerminal,
+  fitAllVisible,
+  getTerminalInstance,
+  hideAllPanes,
+  setPendingPrompt,
+  showPane,
+  spawnTerminal,
+} from './terminal-pane.js';
 
 type RenderLayout = () => void;
 

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { enablePopoverDragging, positionPopover, setPopoverPosition } from './popover.js';
 
 class FakeClassList {

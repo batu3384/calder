@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));

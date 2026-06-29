@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { checkMobileDependencies, installMobileDependency, _internal } from './mobile-dependency-doctor';
+
+import { _internal,checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
 
 interface CommandResult {
   code: number;

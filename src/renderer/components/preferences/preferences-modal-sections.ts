@@ -3,6 +3,15 @@ import { renderProjectBackgroundTaskSection } from './preferences-background-tas
 import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
 import { renderProjectContextSection } from './preferences-context-discovery.js';
 import { renderProjectGovernanceSection } from './preferences-governance-discovery.js';
+import { renderGeneralPreferencesSectionContent } from './preferences-modal-sections-general-content.js';
+import { renderLayoutPreferencesSectionContent } from './preferences-modal-sections-layout-content.js';
+import type {
+  RenderAutomationSectionArgs,
+  RenderGeneralSectionArgs,
+  RenderLayoutSectionArgs,
+  RenderSafetySectionArgs,
+  RenderToolsSectionArgs,
+} from './preferences-modal-sections-types.js';
 import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';
 import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';
 import {
@@ -12,15 +21,6 @@ import {
 import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
-import { renderGeneralPreferencesSectionContent } from './preferences-modal-sections-general-content.js';
-import { renderLayoutPreferencesSectionContent } from './preferences-modal-sections-layout-content.js';
-import type {
-  RenderGeneralSectionArgs,
-  RenderLayoutSectionArgs,
-  RenderAutomationSectionArgs,
-  RenderSafetySectionArgs,
-  RenderToolsSectionArgs,
-} from './preferences-modal-sections-types.js';
 
 const PROVIDER_UNAVAILABLE_SUFFIX = ' (not installed)';
 const PROVIDER_DEFAULT_MISSING_MESSAGE = 'Calder falls back to the next installed tool if this one is missing.';
@@ -113,7 +113,7 @@ export function renderToolsPreferencesSection({
     {
       label: 'Scope',
       value: 'All CLIs',
-      note: 'Claude, Codex, Gemini, Qwen, Minimax, and the rest share one health view.',
+      note: 'Claude, Codex, Antigravity, Qwen, Minimax, and the rest share one health view.',
     },
   ]);
 
@@ -182,25 +182,50 @@ export function renderAutomationPreferencesSection({
     project: appState.activeProject,
     appendSectionCard,
     onBootstrapStarters: async (project) => {
-      const contextResult = await window.calder.context.createStarterFiles(project.path);
-      appState.setProjectContext(project.id, contextResult.state);
+      const bootstrapErrors: string[] = [];
 
-      const workflowResult = await window.calder.workflow.createStarterFiles(project.path);
-      appState.setProjectWorkflows(project.id, workflowResult.state);
+      try {
+        const contextResult = await window.calder.context.createStarterFiles(project.path);
+        appState.setProjectContext(project.id, contextResult.state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn('[preferences] createStarterFiles(context) failed:', msg);
+        bootstrapErrors.push(`Context: ${msg}`);
+      }
 
-      const teamResult = await window.calder.teamContext.createStarterFiles(project.path);
-      appState.setProjectTeamContext(project.id, teamResult.state);
+      try {
+        const workflowResult = await window.calder.workflow.createStarterFiles(project.path);
+        appState.setProjectWorkflows(project.id, workflowResult.state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn('[preferences] createStarterFiles(workflow) failed:', msg);
+        bootstrapErrors.push(`Workflows: ${msg}`);
+      }
 
-      const governanceResult = await window.calder.governance.createStarterPolicy(project.path);
-      appState.setProjectGovernance(project.id, governanceResult.state);
+      try {
+        const teamResult = await window.calder.teamContext.createStarterFiles(project.path);
+        appState.setProjectTeamContext(project.id, teamResult.state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn('[preferences] createStarterFiles(teamContext) failed:', msg);
+        bootstrapErrors.push(`Team spaces: ${msg}`);
+      }
+
+      try {
+        const governanceResult = await window.calder.governance.createStarterPolicy(project.path);
+        appState.setProjectGovernance(project.id, governanceResult.state);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn('[preferences] createStarterPolicy failed:', msg);
+        bootstrapErrors.push(`Governance: ${msg}`);
+      }
 
       rerenderAutomation();
-      return [
-        `Context +${contextResult.created.length}`,
-        `Workflows +${workflowResult.created.length}`,
-        `Team spaces +${teamResult.created.length}`,
-        governanceResult.created ? 'Governance policy created' : 'Governance policy already present',
-      ].join(' · ');
+
+      if (bootstrapErrors.length > 0) {
+        return `[Partial] ${bootstrapErrors.join(' · ')}`;
+      }
+      return 'All starter files created successfully.';
     },
   });
 

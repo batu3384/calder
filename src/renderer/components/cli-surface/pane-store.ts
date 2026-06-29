@@ -1,6 +1,6 @@
-import type { CalderProtocolMessage } from './protocol.js';
-import type { CliSurfaceInstance } from './pane-instance.js';
 import { clearCliSurfaceLinkDispatch } from './link-dispatch.js';
+import type { CliSurfaceInstance } from './pane-instance.js';
+import type { CalderProtocolMessage } from './protocol.js';
 
 export interface CliSurfacePaneStore {
   instances: Map<string, CliSurfaceInstance>;

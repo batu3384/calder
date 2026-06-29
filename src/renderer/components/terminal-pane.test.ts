@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const providerCaps = new Map([
   ['claude', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['copilot', { sessionResume: true, costTracking: false, contextWindow: false, pendingPromptTrigger: 'startup-arg' }],
-  ['gemini', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
+  ['antigravity', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['codex', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
   ['qwen', { sessionResume: true, costTracking: true, contextWindow: true, pendingPromptTrigger: 'startup-arg' }],
 ]);
 const providerNames = new Map([
   ['claude', 'Claude Code'],
   ['copilot', 'GitHub Copilot'],
-  ['gemini', 'Gemini CLI'],
+  ['antigravity', 'Antigravity CLI'],
   ['codex', 'Codex CLI'],
   ['qwen', 'Qwen Code'],
 ]);

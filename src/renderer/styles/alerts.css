@@ -64,7 +64,7 @@
     linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 72%, rgba(255, 255, 255, 0.04)), rgba(255, 255, 255, 0)),
     var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
-  color: #fff;
+  color: var(--text-inverse, #fff);
   font-size: 12px;
   min-height: var(--control-height-sm);
   padding: 0 12px;

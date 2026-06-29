@@ -1,12 +1,22 @@
-import * as pty from 'node-pty';
 import { execFile, execFileSync } from 'child_process';
+import * as pty from 'node-pty';
+
 import type { ProviderId } from '../shared/types/provider';
-import { getProvider } from './providers/registry';
-import { registerSession } from './hooks/hook-status';
-import { buildProviderBaseEnv } from './provider-env';
-import { getFullPath } from './full-path';
-import { isWin } from './platform';
 import { buildBrowserBridgeEnv } from './browser-bridge';
+import { getFullPath } from './full-path';
+import { registerSession } from './hooks/hook-status';
+import { isWin } from './platform';
+import { buildProviderBaseEnv } from './provider-env';
+import { getProvider } from './providers/registry';
+import {
+  sanitizeArgs,
+  sanitizeExtraArgs,
+  sanitizeInitialPrompt,
+  sanitizeSessionId,
+  sanitizeSpawnArgs,
+  validateCwd,
+} from './security/sanitize';
+import { validateSpawnCommand } from './security/spawn-command';
 
 export { getFullPath } from './full-path';
 
@@ -30,6 +40,16 @@ export function spawnPty(
   onData: (data: string) => void,
   onExit: (exitCode: number, signal?: number) => void
 ): void {
+  const sessionIdResult = sanitizeSessionId(sessionId);
+  if (!sessionIdResult.ok) {
+    throw new Error(`Invalid session ID: ${sessionIdResult.error}`);
+  }
+
+  const cwdResult = validateCwd(cwd);
+  if (!cwdResult.ok) {
+    throw new Error(`Invalid CWD: ${cwdResult.error}`);
+  }
+
   if (ptys.has(sessionId)) {
     // Silence the old PTY's exit event so it doesn't remove the new session
     silencedExits.add(sessionId);
@@ -37,6 +57,17 @@ export function spawnPty(
   }
 
   registerSession(sessionId, providerId);
+
+  const sanitizedExtraArgs = sanitizeExtraArgs(extraArgs);
+
+  let sanitizedInitialPrompt: string | undefined;
+  if (initialPrompt !== undefined && initialPrompt !== '') {
+    const promptResult = sanitizeInitialPrompt(initialPrompt);
+    if (!promptResult.ok) {
+      throw new Error(`Invalid initial prompt: ${promptResult.error}`);
+    }
+    sanitizedInitialPrompt = promptResult.value;
+  }
 
   const provider = getProvider(providerId);
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
@@ -48,10 +79,11 @@ export function spawnPty(
     const args = provider.buildArgs({
       cliSessionId: attemptCliSessionId,
       isResume: attemptIsResume,
-      extraArgs,
-      initialPrompt,
+      extraArgs: sanitizedExtraArgs.join(' '),
+      initialPrompt: sanitizedInitialPrompt,
     });
-    const ptyProcess = pty.spawn(shell, args, {
+    const sanitizedArgs = sanitizeSpawnArgs(args, sanitizedInitialPrompt);
+    const ptyProcess = pty.spawn(shell, sanitizedArgs, {
       name: 'xterm-256color',
       cols: 120,
       rows: 30,
@@ -106,14 +138,25 @@ export function spawnCommandPty(
   onData: (data: string) => void,
   onExit: (exitCode: number, signal?: number) => void,
 ): void {
+  const sessionIdResult = sanitizeSessionId(sessionId);
+  if (!sessionIdResult.ok) {
+    throw new Error(`Invalid session ID: ${sessionIdResult.error}`);
+  }
+
   if (ptys.has(sessionId)) {
     silencedExits.add(sessionId);
     killPty(sessionId);
   }
 
+  const commandResult = validateSpawnCommand(launch.command);
+  if (!commandResult.ok) {
+    throw new Error(`Invalid CLI surface command: ${commandResult.error}`);
+  }
+
   const baseEnv = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<string, string>;
   const env = buildBrowserBridgeEnv(launch.cwd, baseEnv);
-  const ptyProcess = pty.spawn(launch.command, launch.args ?? [], {
+  const sanitizedArgs = launch.args ? sanitizeArgs(launch.args) : [];
+  const ptyProcess = pty.spawn(commandResult.command, sanitizedArgs, {
     name: 'xterm-256color',
     cols: launch.cols ?? 120,
     rows: launch.rows ?? 30,
@@ -142,10 +185,18 @@ export function writePty(sessionId: string, data: string): boolean {
   return true;
 }
 
+export function hasPtySession(sessionId: string): boolean {
+  return ptys.has(sessionId);
+}
+
 export function resizePty(sessionId: string, cols: number, rows: number): void {
   const instance = ptys.get(sessionId);
   if (instance) {
-    instance.process.resize(cols, rows);
+    try {
+      instance.process.resize(cols, rows);
+    } catch (err) {
+      console.warn(`[pty-manager] resize(${sessionId}, cols=${cols}, rows=${rows}) threw:`, err);
+    }
   }
 }
 
@@ -156,8 +207,17 @@ export function killPty(sessionId: string): void {
     if (Number.isFinite(rootPid) && rootPid > 0) {
       terminateProcessTree(rootPid);
     }
-    instance.process.kill();
+    try {
+      instance.process.kill();
+    } catch (err) {
+      console.warn(`[pty-manager] kill(${sessionId}) process.kill threw:`, err);
+    }
     ptys.delete(sessionId);
+    // Note: silencedExits.delete(sessionId) is intentionally NOT called here.
+    // silencedExits tracks whether the exit event for THIS PTY should be silenced.
+    // That decision is made at spawn time, not at kill time.
+    // The exit handler itself removes the sessionId from silencedExits when it fires.
+    // Adding delete here would break the silencing of old PTY exits during session respawn.
   }
 }
 
@@ -223,6 +283,11 @@ export function spawnShellPty(
   onData: (data: string) => void,
   onExit: (exitCode: number, signal?: number) => void
 ): void {
+  const sessionIdResult = sanitizeSessionId(sessionId);
+  if (!sessionIdResult.ok) {
+    throw new Error(`Invalid session ID: ${sessionIdResult.error}`);
+  }
+
   if (ptys.has(sessionId)) {
     killPty(sessionId);
   }
@@ -248,9 +313,12 @@ export function spawnShellPty(
   ptys.set(sessionId, { process: ptyProcess, sessionId });
 }
 
-export function isSilencedExit(sessionId: string): boolean {
+export function consumeSilencedExitFlag(sessionId: string): boolean {
   return silencedExits.delete(sessionId);
 }
+
+/** @deprecated Use consumeSilencedExitFlag — name reflects delete side-effect. */
+export const isSilencedExit = consumeSilencedExitFlag;
 
 export function killAllPtys(): void {
   for (const [id] of ptys) {

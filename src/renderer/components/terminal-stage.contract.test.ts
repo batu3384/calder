@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(new URL('./terminal-pane.ts', import.meta.url), 'utf-8');
 const css = readFileSync(new URL('../styles/terminal.css', import.meta.url), 'utf-8');

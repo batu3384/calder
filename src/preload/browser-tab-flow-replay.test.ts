@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { normalizeFlowReplayPayload } from './browser-tab-flow-replay';
 
 describe('browser tab flow replay payload normalization', () => {

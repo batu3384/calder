@@ -1,12 +1,12 @@
-import { appState } from '../../state.js';
 import { buildBrowserSessionPartition } from '../../../shared/constants.js';
-import type { BrowserTabInstance } from './types.js';
+import { appState } from '../../state.js';
 import {
   clearPendingNavigation,
   isStaleNavigationRevert,
   navigateTo,
   normalizeUrl,
 } from './navigation.js';
+import type { BrowserTabInstance } from './types.js';
 
 export function createBrowserToolbarCluster(labelText: string): {
   element: HTMLDivElement;

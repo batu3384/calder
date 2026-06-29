@@ -1,40 +1,41 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron';
+import { BrowserWindow, dialog,ipcMain } from 'electron';
+
 import type { AutoApprovalMode, ProjectGovernanceState } from '../shared/types/governance';
+import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
+import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
+import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './calder-checkpoints/watcher';
 import { discoverProjectContext } from './calder-context/discovery';
 import {
-  createProjectContextStarterFiles,
   createProjectContextRuleFile,
+  createProjectContextStarterFiles,
   deleteProjectContextRuleFile,
   renameProjectContextRuleFile,
 } from './calder-context/scaffold';
 import { startProjectContextWatcher, stopProjectContextWatcher } from './calder-context/watcher';
-import { discoverProjectWorkflows } from './calder-workflows/discovery';
-import {
-  createProjectWorkflowFile,
-  createProjectWorkflowStarterFiles,
-} from './calder-workflows/scaffold';
-import { readProjectWorkflowFile } from './calder-workflows/read';
-import { startProjectWorkflowWatcher, stopProjectWorkflowWatcher } from './calder-workflows/watcher';
+import type { ProjectGovernanceOperation } from './calder-governance/enforcement';
+import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
+import { startProjectGovernanceWatcher, stopProjectGovernanceWatcher } from './calder-governance/watcher';
+import { discoverProjectReviews } from './calder-reviews/discovery';
+import { readProjectReviewFile } from './calder-reviews/read';
+import { createProjectReviewFile } from './calder-reviews/scaffold';
+import { startProjectReviewWatcher, stopProjectReviewWatcher } from './calder-reviews/watcher';
+import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
+import { readProjectBackgroundTaskFile } from './calder-tasks/read';
+import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
+import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } from './calder-tasks/watcher';
 import { discoverProjectTeamContext } from './calder-team-context/discovery';
 import {
   createProjectTeamContextSpaceFile,
   createProjectTeamContextStarterFiles,
 } from './calder-team-context/scaffold';
 import { startProjectTeamContextWatcher, stopProjectTeamContextWatcher } from './calder-team-context/watcher';
-import { discoverProjectReviews } from './calder-reviews/discovery';
-import { createProjectReviewFile } from './calder-reviews/scaffold';
-import { readProjectReviewFile } from './calder-reviews/read';
-import { startProjectReviewWatcher, stopProjectReviewWatcher } from './calder-reviews/watcher';
-import { createProjectGovernanceStarterPolicy } from './calder-governance/scaffold';
-import { startProjectGovernanceWatcher, stopProjectGovernanceWatcher } from './calder-governance/watcher';
-import type { ProjectGovernanceOperation } from './calder-governance/enforcement';
-import { discoverProjectBackgroundTasks } from './calder-tasks/discovery';
-import { createProjectBackgroundTaskFile } from './calder-tasks/scaffold';
-import { readProjectBackgroundTaskFile } from './calder-tasks/read';
-import { startProjectBackgroundTaskWatcher, stopProjectBackgroundTaskWatcher } from './calder-tasks/watcher';
-import { discoverProjectCheckpoints } from './calder-checkpoints/discovery';
-import { createProjectCheckpointFile, readProjectCheckpointFile } from './calder-checkpoints/scaffold';
-import { startProjectCheckpointWatcher, stopProjectCheckpointWatcher } from './calder-checkpoints/watcher';
+import { discoverProjectWorkflows } from './calder-workflows/discovery';
+import { readProjectWorkflowFile } from './calder-workflows/read';
+import {
+  createProjectWorkflowFile,
+  createProjectWorkflowStarterFiles,
+} from './calder-workflows/scaffold';
+import { startProjectWorkflowWatcher, stopProjectWorkflowWatcher } from './calder-workflows/watcher';
 import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
 
 export interface CalderIpcOps {

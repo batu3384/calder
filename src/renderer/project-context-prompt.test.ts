@@ -22,12 +22,12 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import {
   appendAppliedContextToPrompt,
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from './project-context-prompt.js';
+import { _resetForTesting,appState } from './state.js';
 
 describe('project context prompt helpers', () => {
   beforeEach(() => {

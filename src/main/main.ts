@@ -1,27 +1,28 @@
 import { app, BrowserWindow, dialog, nativeImage, powerMonitor, session, shell } from 'electron';
 import * as path from 'path';
-import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
-import { killAllPtys } from './pty-manager';
-import { flushState, loadState } from './store';
-import { createAppMenu } from './menu';
-import { restartAndResync } from './hooks/hook-status';
-import { initProviders, getAllProviders } from './providers/registry';
+
 import { initAutoUpdater } from './auto-updater';
-import { stopGitWatcher } from './git-watcher';
-import { checkPythonAvailable } from './prerequisites';
-import { isMac } from './platform';
+import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
+import { openUrlWithBrowserPolicy } from './browser-open-policy';
+import { prepareBrowserSessionStorage } from './browser-session-storage';
 import { attachBrowserWebviewRouting } from './browser-webview-routing';
+import { stopGitWatcher } from './git-watcher';
+import { restartAndResync } from './hooks/hook-status';
+import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
+import { createAppMenu } from './menu';
+import { stopMobileControlBridge } from './mobile-control-bridge';
+import { isMac } from './platform';
+import { checkPythonAvailable } from './prerequisites';
 import {
   analyzeProviderStartup,
   formatMissingProviderDialog,
   formatProviderStartupWarning,
   installProviderStartupArtifacts,
 } from './provider-startup';
-import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
-import { prepareBrowserSessionStorage } from './browser-session-storage';
-import { stopMobileControlBridge } from './mobile-control-bridge';
+import { getAllProviders,initProviders } from './providers/registry';
+import { killAllPtys } from './pty-manager';
 import { installSessionPermissionPolicy } from './session-permission-policy';
+import { flushState, loadState } from './store';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -66,7 +67,6 @@ function createWindow(): void {
   });
 
   mainWindow.on('closed', () => {
-    killAllPtys();
     resetHookWatcher();
     mainWindow = null;
   });

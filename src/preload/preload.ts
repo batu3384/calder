@@ -1,8 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProviderId, UiLanguage, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, SettingsWarningData, SettingsValidationResult, StatusLineConflictData, ProviderConfig } from '../shared/types/provider';
-import type { CostData, StatsCache, ToolFailureData, InspectorEvent } from '../shared/types/session';
-import type { MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, MobileDependencyInstallProgressEvent, MobileInspectPlatform, MobileInspectLaunchResult, MobileInspectScreenshotResult, MobileInspectPointInspectionResult, MobileInspectInteractionResult, MobileControlPairingResult, MobileControlAnswerResult } from '../shared/types/mobile';
-import type { AutoApprovalMode, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult } from '../shared/types/governance';
+
+import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult,ProjectGovernanceState } from '../shared/types/governance';
+import type { MobileControlAnswerResult,MobileControlPairingResult, MobileDependencyId, MobileDependencyInstallProgressEvent, MobileDependencyInstallResult, MobileDependencyReport, MobileInspectInteractionResult, MobileInspectLaunchResult, MobileInspectPlatform, MobileInspectPointInspectionResult, MobileInspectScreenshotResult } from '../shared/types/mobile';
 import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState } from '../shared/types/project-background-task';
 import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint';
 import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult, ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState } from '../shared/types/project-context';
@@ -11,17 +10,19 @@ import type { ProjectReviewCreateResult, ProjectReviewDocument, ProjectReviewSta
 import type { CliSurfaceDiscoveryResult, CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface';
 import type { ProjectTeamContextCreateSpaceResult, ProjectTeamContextStarterFilesResult, ProjectTeamContextState } from '../shared/types/project-team-context';
 import type { ProjectWorkflowCreateResult, ProjectWorkflowDocument, ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project-workflow';
-import { createPreloadMcpApi } from './preload-api-mcp.js';
+import type { CliProviderMeta, ProviderConfig,ProviderId, ProviderUpdateCancelResult, ProviderUpdateProgressEvent, ProviderUpdateSummary, SettingsValidationResult, SettingsWarningData, StatusLineConflictData, UiLanguage } from '../shared/types/provider';
+import type { CostData, InspectorEvent,StatsCache, ToolFailureData } from '../shared/types/session';
 import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
+import { createPreloadGitApi } from './preload-api-git.js';
+import { createPreloadMcpApi } from './preload-api-mcp.js';
 import {
   createPreloadMobileApi,
   createPreloadMobileInspectApi,
   createPreloadMobileSetupApi,
 } from './preload-api-mobile.js';
-import { createPreloadProviderApi } from './preload-api-provider.js';
-import { createPreloadGitApi } from './preload-api-git.js';
-import { createPreloadPtyApi } from './preload-api-pty.js';
 import { createPreloadProjectDomainApi } from './preload-api-project-domains.js';
+import { createPreloadProviderApi } from './preload-api-provider.js';
+import { createPreloadPtyApi } from './preload-api-pty.js';
 
 export type { CostData } from '../shared/types/session';
 
@@ -52,7 +53,7 @@ export interface CalderApi {
     listDirs(dirPath: string, prefix?: string): Promise<string[]>;
     browseDirectory(): Promise<string | null>;
     listFiles(cwd: string, query: string): Promise<string[]>;
-    readFile(filePath: string): Promise<string>;
+    readFile(filePath: string): Promise<import('../shared/types/fs-read').FsReadFileResult>;
     watchFile(filePath: string): void;
     unwatchFile(filePath: string): void;
     onFileChanged(callback: (filePath: string) => void): () => void;

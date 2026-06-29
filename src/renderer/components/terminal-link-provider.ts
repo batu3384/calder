@@ -1,4 +1,5 @@
-import type { ILinkProvider, ILink, IBufferRange, Terminal } from '@xterm/xterm';
+import type { IBufferRange, ILink, ILinkProvider, Terminal } from '@xterm/xterm';
+
 import { appState } from '../state.js';
 
 // Matches GitHub issue/PR references like #123

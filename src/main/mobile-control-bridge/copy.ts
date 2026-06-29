@@ -1,4 +1,5 @@
 import * as http from 'node:http';
+
 import { MOBILE_PAGE_COPY } from './copy-data';
 import type { MobilePageCopy, MobileUiLanguage } from './copy-types';
 

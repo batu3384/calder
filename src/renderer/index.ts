@@ -1,11 +1,11 @@
-import { appState } from './state.js';
-import { initKeybindings } from './keybindings.js';
-import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
-import { navigateTo } from './components/browser-tab/navigation.js';
 import {
-  createRendererSessionOrchestrator,
   cleanupRendererSessionResourcesOnQuit,
+  createRendererSessionOrchestrator,
 } from './bootstrap/renderer-session-orchestrator.js';
+import { navigateTo } from './components/browser-tab/navigation.js';
+import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
+import { initKeybindings } from './keybindings.js';
+import { appState } from './state.js';
 
 let isQuitting = false;
 const EMBEDDED_REVERT_WINDOW_MS = 1800;

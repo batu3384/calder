@@ -1,12 +1,12 @@
 import type { ShareBrowserControlAction, ShareMode } from '../../shared/sharing-types.js';
-import { deliverPromptToTerminalSession } from '../components/terminal-pane.js';
-import { getBrowserTabInstance } from '../components/browser-tab/instance.js';
 import { toggleInspectMode } from '../components/browser-tab/inspect-mode.js';
+import { getBrowserTabInstance } from '../components/browser-tab/instance.js';
 import { VIEWPORT_PRESETS } from '../components/browser-tab/types.js';
 import { applyViewport } from '../components/browser-tab/viewport.js';
-import { sendMessage } from './webrtc-utils.js';
-import { buildBrowserSessionCatalog, buildInspectPromptFromSelection, findProjectForShare, resolveBrowserTargetSessionId } from './peer-host-session-catalog.js';
+import { deliverPromptToTerminalSession } from '../components/terminal-pane.js';
 import { appState } from '../state.js';
+import { buildBrowserSessionCatalog, buildInspectPromptFromSelection, findProjectForShare, resolveBrowserTargetSessionId } from './peer-host-session-catalog.js';
+import { sendMessage } from './webrtc-utils.js';
 
 interface BrowserHostPeerState {
   ownerSessionId: string;

@@ -2,9 +2,9 @@ import type { ProviderId } from '../../../shared/types/provider.js';
 import { createCustomSelect, type CustomSelectInstance } from '../custom-select.js';
 import {
   getProviderAvailabilitySnapshot,
+  type ProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
   shouldRenderInlineProviderSelector,
-  type ProviderAvailabilitySnapshot,
 } from '../surface-services/provider-availability.js';
 
 interface CreateTabBarProviderSelectorControllerOptions {

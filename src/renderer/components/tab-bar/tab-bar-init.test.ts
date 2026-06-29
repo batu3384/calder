@@ -226,6 +226,7 @@ describe('tab-bar init orchestration', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    wireTabBarStateSubscriptions.mockReturnValue({ unsubscribe: vi.fn() });
 
     const documentMock = new FakeDocument();
     documentMock.register('tab-list');

@@ -1,4 +1,5 @@
 import type { IpcRenderer } from 'electron';
+
 import type { CliSurfaceDiscoveryResult, CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface';
 
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;

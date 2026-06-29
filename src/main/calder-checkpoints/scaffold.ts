@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ProjectCheckpointDocument, ProjectCheckpointCreateResult, ProjectCheckpointSnapshotInput } from '../../shared/types/project-checkpoint.js';
+
+import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput } from '../../shared/types/project-checkpoint.js';
 import { getGitFiles, getGitStatus } from '../git-status.js';
 import { discoverProjectCheckpoints } from './discovery.js';
 

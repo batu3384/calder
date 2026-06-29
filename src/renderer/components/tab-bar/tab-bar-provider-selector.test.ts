@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+
 import type { CliProviderMeta, ProviderId } from '../../../shared/types/provider.js';
 import {
-  resolveProviderForCheck,
   resolvePreferredProviderForLaunch,
+  resolveProviderForCheck,
   shouldRenderInlineProviderSelector,
 } from '../surface-services/provider-availability.js';
 
@@ -29,12 +30,12 @@ describe('command deck provider selector helpers', () => {
     providers: [
       createProvider('claude', 'Claude Code'),
       createProvider('codex', 'OpenAI Codex'),
-      createProvider('gemini', 'Gemini CLI'),
+      createProvider('antigravity', 'Antigravity CLI'),
     ],
     availability: new Map<ProviderId, boolean>([
       ['claude', false],
       ['codex', true],
-      ['gemini', true],
+      ['antigravity', true],
     ]),
   };
 
@@ -43,15 +44,15 @@ describe('command deck provider selector helpers', () => {
   });
 
   it('keeps the preferred provider when it is available', () => {
-    expect(resolvePreferredProviderForLaunch('gemini', snapshot)).toBe('gemini');
+    expect(resolvePreferredProviderForLaunch('antigravity', snapshot)).toBe('antigravity');
   });
 
   it('prefers a failing check provider over unrelated available defaults', () => {
-    expect(resolveProviderForCheck('claude', ['gemini'], snapshot)).toBe('gemini');
+    expect(resolveProviderForCheck('claude', ['antigravity'], snapshot)).toBe('antigravity');
   });
 
   it('keeps the preferred provider when it is one of the failing check providers', () => {
-    expect(resolveProviderForCheck('gemini', ['codex', 'gemini'], snapshot)).toBe('gemini');
+    expect(resolveProviderForCheck('antigravity', ['codex', 'antigravity'], snapshot)).toBe('antigravity');
   });
 
   it('shows the inline selector when multiple providers are actually available', () => {
@@ -64,7 +65,7 @@ describe('command deck provider selector helpers', () => {
       availability: new Map<ProviderId, boolean>([
         ['claude', false],
         ['codex', true],
-        ['gemini', false],
+        ['antigravity', false],
       ]),
     })).toBe(false);
   });

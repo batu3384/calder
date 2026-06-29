@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 vi.mock('electron-updater', () => ({
   autoUpdater: {
@@ -20,7 +20,8 @@ vi.mock('electron', () => ({
 }));
 
 import { autoUpdater } from 'electron-updater';
-import { initAutoUpdater, checkForUpdates, quitAndInstall } from './auto-updater';
+
+import { checkForUpdates, initAutoUpdater, quitAndInstall } from './auto-updater';
 
 describe('auto-updater', () => {
   beforeEach(() => {

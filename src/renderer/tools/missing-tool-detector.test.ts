@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { handleToolFailure, onToolAlert, classifyError, _resetForTesting, type ToolAlert } from './missing-tool-detector.js';
-import { appState, _resetForTesting as resetState } from '../state.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ToolFailureData } from '../../shared/types/session.js';
+import { _resetForTesting as resetState,appState } from '../state.js';
+import { _resetForTesting, classifyError, handleToolFailure, onToolAlert, type ToolAlert } from './missing-tool-detector.js';
 import type { ToolInfo } from './tool-catalog.js';
 
 vi.stubGlobal('window', {

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DIRECT_TRANSLATIONS, DIRECT_TRANSLATION_ENTRIES } from './i18n-translations.js';
-import { TAB_AND_TERMINAL_TRANSLATION_ENTRIES } from './i18n-translations-tab-terminal.js';
-import { PREFERENCES_TRANSLATION_ENTRIES } from './i18n-translations-preferences.js';
-import { MOBILE_TRANSLATION_ENTRIES } from './i18n-translations-mobile.js';
+
+import { DIRECT_TRANSLATION_ENTRIES,DIRECT_TRANSLATIONS } from './i18n-translations.js';
 import { ERROR_TRANSLATION_ENTRIES } from './i18n-translations-errors.js';
+import { MOBILE_TRANSLATION_ENTRIES } from './i18n-translations-mobile.js';
+import { PREFERENCES_TRANSLATION_ENTRIES } from './i18n-translations-preferences.js';
+import { TAB_AND_TERMINAL_TRANSLATION_ENTRIES } from './i18n-translations-tab-terminal.js';
 
 describe('i18n translations module', () => {
   it('exports direct translations as a map', () => {

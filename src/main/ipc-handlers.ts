@@ -1,25 +1,28 @@
-import { ipcMain, BrowserWindow } from 'electron';
-import { startWatching, cleanupSessionStatus, stopWatching as stopHookWatching } from './hooks/hook-status';
-import { startCodexSessionWatcher, registerPendingCodexSession, unregisterCodexSession, stopCodexSessionWatcher } from './codex-session-watcher';
-import { startCopilotSessionWatcher, registerPendingCopilotSession, unregisterCopilotSession, stopCopilotSessionWatcher } from './copilot-session-watcher';
-import { registerMcpHandlers } from './mcp-ipc-handlers';
-import { registerFsStoreIpcHandlers } from './ipc-fs-store';
-import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
-import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
-import { registerGitIpcHandlers } from './ipc-git';
-import { registerProviderIpcHandlers } from './ipc-provider';
-import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
-import { registerMobileIpcHandlers } from './ipc-mobile';
-import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
+import { BrowserWindow,ipcMain } from 'electron';
+
+import { isTrackingHealthy } from '../shared/tracking-health';
+import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
+import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
+import { registerPendingCodexSession, startCodexSessionWatcher, stopCodexSessionWatcher,unregisterCodexSession } from './codex-session-watcher';
+import { registerPendingCopilotSession, startCopilotSessionWatcher, stopCopilotSessionWatcher,unregisterCopilotSession } from './copilot-session-watcher';
+import { cleanupSessionStatus, startWatching, stopWatching as stopHookWatching } from './hooks/hook-status';
 import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
+import {
+  isAutoApprovalMode,
+  updateAutoApprovalMode,
+} from './ipc-auto-approval-governance';
+import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
-import { registerPtyIpcHandlers } from './ipc-pty';
-import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
+import { registerFsStoreIpcHandlers } from './ipc-fs-store';
+import { registerGitIpcHandlers } from './ipc-git';
 import {
   clearInspectorOrchestrationSession,
   createInspectorOrchestration,
   resetInspectorOrchestrationCaches,
 } from './ipc-inspector-orchestration';
+import { registerMaintenanceIpcHandlers } from './ipc-maintenance';
+import { registerMcpGovernanceIpcHandlers } from './ipc-mcp-governance';
+import { registerMobileIpcHandlers } from './ipc-mobile';
 import {
   getActiveProjectPath,
   isAllowedDirectoryLookupPath,
@@ -27,15 +30,13 @@ import {
   isWithinKnownProject,
   requireKnownProjectPath,
 } from './ipc-path-policy';
-import {
-  isAutoApprovalMode,
-  updateAutoApprovalMode,
-} from './ipc-auto-approval-governance';
+import { registerProviderIpcHandlers } from './ipc-provider';
+import { registerProviderUpdateIpcHandlers } from './ipc-provider-update';
+import { registerPtyIpcHandlers } from './ipc-pty';
+import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
+import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { createAppMenu } from './menu';
 import { getProvider } from './providers/registry';
-import { isTrackingHealthy } from '../shared/tracking-health';
-import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
-import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { loadState } from './store';
 
 let hookWatcherStarted = false;
@@ -64,6 +65,7 @@ export function registerIpcHandlers(): void {
   } = createInspectorOrchestration();
 
   registerPtyIpcHandlers({
+    assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation),
     isWithinKnownProject,
     ensureHookWatcherStarted: (win) => {
       if (hookWatcherStarted) return;

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 describe('IPC governance contract', () => {
@@ -11,6 +12,8 @@ describe('IPC governance contract', () => {
 
   it('guards Calder-controlled project writes through governance enforcement', () => {
     expect(source).toContain('registerCalderIpcHandlers({');
+    expect(source).toContain('registerPtyIpcHandlers({');
+    expect(source).toContain('assertProjectGovernanceAllows: (projectPath, operation) => assertProjectGovernanceAllows(projectPath, operation)');
     expect(calderIpcSource).toContain('ops.assertProjectGovernanceAllows');
     expect(calderIpcSource).toContain("label: 'Create context starter files'");
     expect(calderIpcSource).toContain("label: 'Create shared context rule'");

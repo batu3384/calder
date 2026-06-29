@@ -1,8 +1,9 @@
 import { BrowserWindow, ipcMain } from 'electron';
+
 import type { ProviderId } from '../shared/types/provider';
+import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
 import { getAllProviderMetas, getProvider, getProviderMeta } from './providers/registry';
 import { buildHandoffPrompt } from './providers/resume-handoff';
-import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
 
 interface ProviderIpcOps {
   requireKnownProjectPath?: (projectPath: string, contextLabel: string) => string;
@@ -27,9 +28,26 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
   ipcMain.on('config:watchProject', (_event, providerId: ProviderId, projectPath: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Watch provider config');
+    let validatedProjectPath: string;
+    try {
+      validatedProjectPath = requireKnownProjectPath(projectPath, 'Watch provider config');
+    } catch (error) {
+      console.warn('Skipped config:watchProject for unknown project path:', {
+        providerId,
+        projectPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
     const provider = getProvider(providerId);
     provider.startConfigWatcher?.(win, validatedProjectPath);
+
+    // Ensure old watchers are cleaned up when the window closes
+    // to prevent fs.watch/fs.watchFile resource leaks.
+    const cleanup = (): void => {
+      provider.stopConfigWatcher?.();
+    };
+    win.once('closed', cleanup);
   });
 
   ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {

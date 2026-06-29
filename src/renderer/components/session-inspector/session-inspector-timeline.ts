@@ -1,20 +1,20 @@
-import { getEvents, getCostDeltas } from '../surface-services/session-inspector-state.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
+import { getCostDeltas,getEvents } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
-  emptyMessage,
-  formatRelativeTime,
-  formatDuration,
+  agentLabel,
   badgeClass,
   badgeLabel,
-  agentLabel,
-  isAgentEvent,
-  findAgentDuration,
-  makeExpandable,
-  createToolDetailEl,
   createAgentDetailEl,
-  parseMcpToolName,
+  createToolDetailEl,
+  emptyMessage,
+  findAgentDuration,
+  formatDuration,
+  formatRelativeTime,
+  isAgentEvent,
   isMcpToolEvent,
+  makeExpandable,
+  parseMcpToolName,
   renderInspectorEmpty,
 } from './session-inspector-utils.js';
 

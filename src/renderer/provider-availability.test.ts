@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { CliProviderMeta } from '../shared/types/provider.js';
 
 const providers: CliProviderMeta[] = [
@@ -33,9 +34,9 @@ const providers: CliProviderMeta[] = [
     },
   },
   {
-    id: 'gemini',
-    displayName: 'Gemini CLI',
-    binaryName: 'gemini',
+    id: 'antigravity',
+    displayName: 'Antigravity CLI',
+    binaryName: 'agy',
     defaultContextWindowSize: 1_000_000,
     capabilities: {
       sessionResume: false,
@@ -89,12 +90,12 @@ describe('provider-availability', () => {
     expect(module.getCachedProviderMetas()).toEqual(providers);
     expect(module.getProviderCapabilities('codex')).toEqual(providers[1].capabilities);
     expect(module.getProviderCapabilities('qwen')).toBeNull();
-    expect(module.getProviderDisplayName('gemini')).toBe('Gemini CLI');
+    expect(module.getProviderDisplayName('antigravity')).toBe('Antigravity CLI');
     expect(module.getProviderDisplayName('qwen')).toBe('Qwen Code');
   });
 
   it('builds an availability snapshot and resolves inline selector visibility', async () => {
-    const { module, checkBinary } = await loadModule({ claude: true, codex: true, gemini: false });
+    const { module, checkBinary } = await loadModule({ claude: true, codex: true, antigravity: false });
 
     await module.loadProviderAvailability();
 
@@ -104,20 +105,20 @@ describe('provider-availability', () => {
     const snapshot = module.getProviderAvailabilitySnapshot();
     expect(snapshot?.providers).toEqual(providers);
     expect(snapshot?.availability.get('claude')).toBe(true);
-    expect(snapshot?.availability.get('gemini')).toBe(false);
+    expect(snapshot?.availability.get('antigravity')).toBe(false);
     expect(module.shouldRenderInlineProviderSelector(snapshot)).toBe(true);
     expect(module.shouldRenderInlineProviderSelector({
       providers,
       availability: new Map([
         ['claude', true],
         ['codex', false],
-        ['gemini', false],
+        ['antigravity', false],
       ]),
     })).toBe(false);
   });
 
   it('resolves preferred launch and check providers from availability state', async () => {
-    const { module } = await loadModule({ claude: false, codex: true, gemini: false });
+    const { module } = await loadModule({ claude: false, codex: true, antigravity: false });
     await module.loadProviderAvailability();
     const snapshot = module.getProviderAvailabilitySnapshot();
 
@@ -127,9 +128,9 @@ describe('provider-availability', () => {
     expect(module.resolvePreferredProviderForLaunch(undefined, null)).toBe('claude');
 
     expect(module.resolveProviderForCheck('codex', ['claude', 'codex'], snapshot)).toBe('codex');
-    expect(module.resolveProviderForCheck('claude', ['claude', 'gemini'], snapshot)).toBe('claude');
-    expect(module.resolveProviderForCheck(undefined, ['gemini', 'claude'], snapshot)).toBe('gemini');
-    expect(module.resolveProviderForCheck(undefined, ['gemini', 'claude'], null)).toBe('gemini');
+    expect(module.resolveProviderForCheck('claude', ['claude', 'antigravity'], snapshot)).toBe('claude');
+    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], snapshot)).toBe('antigravity');
+    expect(module.resolveProviderForCheck(undefined, ['antigravity', 'claude'], null)).toBe('antigravity');
     expect(module.resolveProviderForCheck(undefined, undefined, snapshot)).toBe('codex');
   });
 });

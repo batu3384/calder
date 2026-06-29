@@ -6,7 +6,6 @@ export interface HandoffPromptInput {
 
 /** Strip control chars, collapse whitespace, cap length. Session names are user-controlled. */
 function sanitizeSessionName(name: string): string {
-  // eslint-disable-next-line no-control-regex
   return name.replace(/[\x00-\x1f\x7f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 200);
 }
 

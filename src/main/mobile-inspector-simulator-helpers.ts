@@ -1,10 +1,10 @@
+import type { SimctlDeviceRecord } from './mobile-inspector-helpers';
 import {
   parseSimctlDevices,
   runCommand,
   sleep,
   waitForIosDeviceToSettle as waitForIosDeviceToSettleHelper,
 } from './mobile-inspector-helpers';
-import type { SimctlDeviceRecord } from './mobile-inspector-helpers';
 
 async function getIosDeviceByUdid(udid: string): Promise<SimctlDeviceRecord | null> {
   const listResult = await runCommand('xcrun', ['simctl', 'list', 'devices', '--json']);

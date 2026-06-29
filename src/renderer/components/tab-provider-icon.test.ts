@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { buildProviderIconMarkup } from './tab-provider-icon.js';
 
 describe('buildProviderIconMarkup', () => {
@@ -23,5 +24,10 @@ describe('buildProviderIconMarkup', () => {
 
   it('returns an empty string when provider icons are disabled', () => {
     expect(buildProviderIconMarkup('qwen', false)).toBe('');
+  });
+
+  it('returns empty markup for unknown provider ids', () => {
+    expect(buildProviderIconMarkup('evil' as never, true)).toBe('');
+    expect(buildProviderIconMarkup('qwen<script>' as never, true)).toBe('');
   });
 });

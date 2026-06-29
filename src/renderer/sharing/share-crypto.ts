@@ -62,14 +62,15 @@ export function validateSharePassphrase(passphrase: string): string | null {
 export function validateJoinPassphrase(passphrase: string): string | null {
   const trimmed = passphrase.trim();
   if (!trimmed) {
-    return `Enter the 8-digit PIN or passphrase from the host`;
+    return `Enter the passphrase from the host`;
   }
-  if (/^\d{8}$/.test(trimmed)) {
-    return null;
+  // Reject numeric-only PINs — only alphanumeric passphrases are allowed
+  if (/^\d+$/.test(trimmed)) {
+    return `PIN not supported. Enter the alphanumeric passphrase from the host`;
   }
   const shareError = validateSharePassphrase(trimmed);
   if (shareError) {
-    return `Enter the 8-digit PIN or passphrase from the host. ${shareError}`;
+    return `Enter the passphrase from the host. ${shareError}`;
   }
   return null;
 }

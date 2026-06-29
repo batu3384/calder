@@ -1,5 +1,5 @@
-import { appState } from './state.js';
 import { onChange as onStatusChange } from './session-activity.js';
+import { appState } from './state.js';
 import type { GitWorktree } from './types.js';
 
 export interface GitStatus {

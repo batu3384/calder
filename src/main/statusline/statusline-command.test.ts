@@ -1,5 +1,5 @@
-import * as path from 'path';
 import { homedir } from 'os';
+import * as path from 'path';
 import { describe, expect, it } from 'vitest';
 
 import { isManagedStatusLineCommand } from './statusline-command';

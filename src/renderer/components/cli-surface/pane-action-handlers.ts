@@ -1,22 +1,22 @@
-import {
-  setComposerPosition as setComposerPositionBehavior,
-} from './composer-position.js';
-import { openInspect } from './inspect-mode.js';
-import { selectionFromViewport } from './inspect-geometry.js';
 import type { CliSurfacePromptContextMode } from '../../../shared/types/project-core.js';
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import {
-  sendCliSelectionToCustomSession,
-  sendCliSelectionToNewSession,
-  sendCliSelectionToSelectedSession,
-} from './session-integration.js';
-import { createCliTargetMenuController, type CliTargetMenuController } from './target-menu.js';
+  setComposerPosition as setComposerPositionBehavior,
+} from './composer-position.js';
+import { selectionFromViewport } from './inspect-geometry.js';
+import { openInspect } from './inspect-mode.js';
 import {
   bindInspectActionHandlers as bindInspectActionHandlersModule,
   bindInspectPointerHandlers as bindInspectPointerHandlersModule,
   bindRuntimeActionHandlers as bindRuntimeActionHandlersModule,
 } from './pane-bindings.js';
 import type { CliSurfaceLayoutElements } from './pane-elements.js';
+import {
+  sendCliSelectionToCustomSession,
+  sendCliSelectionToNewSession,
+  sendCliSelectionToSelectedSession,
+} from './session-integration.js';
+import { type CliTargetMenuController,createCliTargetMenuController } from './target-menu.js';
 
 type CliSurfaceApi = {
   start(projectId: string, profile: unknown): Promise<void>;

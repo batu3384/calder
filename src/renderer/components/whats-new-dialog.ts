@@ -1,5 +1,5 @@
-import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { appState } from '../state.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
 interface ReleaseNotes {
   date: string;

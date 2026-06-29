@@ -1,4 +1,5 @@
 import type { IpcRenderer } from 'electron';
+
 import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult, ProjectGovernanceState } from '../shared/types/governance';
 import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument, ProjectBackgroundTaskState } from '../shared/types/project-background-task';
 import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument, ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint';

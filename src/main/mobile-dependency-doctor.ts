@@ -1,23 +1,24 @@
 import { execFile } from 'child_process';
-import { getFullPath } from './pty-manager';
+
+import type {
+  MobileDependencyReport,
+} from '../shared/types/mobile';
 import {
-  runMobileDependencyChecks,
-  summarizeMobileDependencyChecks,
   type MobileDoctorCommandResult,
   type MobileDoctorCommandRunner,
+  runMobileDependencyChecks,
+  summarizeMobileDependencyChecks,
 } from './mobile-dependency-doctor-checks';
+import {
+  type InstallDependencyOptions,
+  installMobileDependency as installMobileDependencyInternal,
+} from './mobile-dependency-doctor-install';
 import {
   parseInstalledDriverFromJson,
   parseInstalledDriverVersion,
   parseJavaMajor,
 } from './mobile-dependency-doctor-utils';
-import {
-  installMobileDependency as installMobileDependencyInternal,
-  type InstallDependencyOptions,
-} from './mobile-dependency-doctor-install';
-import type {
-  MobileDependencyReport,
-} from '../shared/types/mobile';
+import { getFullPath } from './pty-manager';
 
 const CHECK_TIMEOUT_MS = 20_000;
 

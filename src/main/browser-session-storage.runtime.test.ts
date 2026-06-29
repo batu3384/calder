@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { BROWSER_SESSION_PARTITION, prepareBrowserSessionStorage } from './browser-session-storage';
 
 const { mockAccess, mockMkdir, mockRename, mockWriteFile } = vi.hoisted(() => ({

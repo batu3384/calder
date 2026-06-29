@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+
 import { decodeConnectionCode } from '../renderer/sharing/webrtc-utils';
 import {
   _internal,

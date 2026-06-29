@@ -1,7 +1,10 @@
 import { appState } from '../state.js';
-import { onChange as onGitStatusChange, getGitStatus, getActiveGitPath, getWorktrees, setActiveWorktree, onWorktreeChange } from './surface-services/git-status.js';
-import { onChange as onStatusChange } from './surface-services/session-activity.js';
 import type { GitFileEntry } from '../types.js';
+import {
+  hideGitContextMenu,
+  renderGitFilesList,
+} from './git-panel-file-actions-helpers.js';
+import type { SectionPresentation } from './git-panel-presentation-helpers.js';
 import {
   ensureGitSection,
   esc,
@@ -10,11 +13,8 @@ import {
   renderGitBodyState,
   renderWorktreeSelector,
 } from './git-panel-presentation-helpers.js';
-import type { SectionPresentation } from './git-panel-presentation-helpers.js';
-import {
-  hideGitContextMenu,
-  renderGitFilesList,
-} from './git-panel-file-actions-helpers.js';
+import { getActiveGitPath, getGitStatus, getWorktrees, onChange as onGitStatusChange, onWorktreeChange,setActiveWorktree } from './surface-services/git-status.js';
+import { onChange as onStatusChange } from './surface-services/session-activity.js';
 
 /*
  * Source contract markers kept in this orchestrator after helper extraction:

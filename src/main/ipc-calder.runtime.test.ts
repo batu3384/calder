@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ProjectGovernanceState } from '../shared/types/governance';
 import type { CalderIpcOps } from './ipc-calder';
 

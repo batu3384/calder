@@ -1745,7 +1745,7 @@ body.sidebar-resizing .browser-webview {
   cursor: pointer;
   font-size: 11px;
   color: var(--text-secondary);
-  transition: background 0.1s, border-color 0.1s;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
 }
 
 .inspect-selector-option::before {
@@ -1756,7 +1756,7 @@ body.sidebar-resizing .browser-webview {
   border: 1.5px solid var(--text-muted);
   background: transparent;
   flex-shrink: 0;
-  transition: border-color 0.1s, background 0.1s;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
 }
 
 .inspect-selector-option:hover {

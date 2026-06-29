@@ -1,28 +1,28 @@
+import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
 import { appState } from '../../state.js';
 import { shortcutManager } from '../surface-services/shortcuts.js';
-import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
+import { positionDrawPopover } from './draw-mode.js';
+import { showFlowPicker } from './flow-picker.js';
+import { sendGuestMessage } from './guest-messaging.js';
+import { showElementInfo } from './inspect-mode.js';
 import { getPreloadPath } from './instance.js';
 import {
+  type BrowserPageState,
   clearPendingNavigation,
   isLocalBrowserUrl,
   isStaleNavigationRevert,
   normalizeUrl,
   resolveBrowserPageState,
-  type BrowserPageState,
 } from './navigation.js';
-import { showElementInfo } from './inspect-mode.js';
-import { positionDrawPopover } from './draw-mode.js';
-import { showFlowPicker } from './flow-picker.js';
-import { sendGuestMessage } from './guest-messaging.js';
+import type { BrowserPaneCaptureArtifacts } from './pane-artifacts.js';
 import { handleBrowserGuestOpenRequest } from './popup-routing.js';
 import {
-  VIEWPORT_PRESETS,
   type BrowserTabInstance,
   type ElementInfo,
   type FlowPickerMetadata,
+  VIEWPORT_PRESETS,
   type WebviewElement,
 } from './types.js';
-import type { BrowserPaneCaptureArtifacts } from './pane-artifacts.js';
 
 export interface BrowserNewTabStateBindings {
   resetNewTabCopy(): void;
@@ -312,7 +312,7 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
       // Keep the failed URL visible in the address bar while stopping the
       // guest view, instead of bouncing through about:blank and emitting
       // another noisy Electron load failure.
-      try { webview.stop(); } catch {}
+      try { webview.stop(); } catch { /* webview may already be stopped */ }
     }
     clearPendingNavigation(instance);
   }) as EventListener);

@@ -1,6 +1,7 @@
+import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
+import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { appState } from '../../state.js';
 import { closeModal } from '../modal.js';
-import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 
 interface PreferencesDraft {
   soundOnSessionWaiting: boolean;
@@ -10,6 +11,7 @@ interface PreferencesDraft {
   autoTitleEnabled: boolean;
   defaultProvider: ProviderId;
   language: UiLanguage;
+  appearanceTheme: AppearanceTheme;
   debugMode: boolean;
   sidebarViews: {
     configSections: boolean;
@@ -26,6 +28,8 @@ interface BindPreferencesModalActionsArgs {
   cleanupRecorder: () => void;
   isRecorderActive: () => boolean;
   savePreferences: () => void;
+  /** Tema gibi canlı önizlemeleri iptal/escape ile geri alır. */
+  revertPreview?: () => void;
   registerModalCleanup: (cleanup: () => void) => void;
 }
 
@@ -47,6 +51,8 @@ export function savePreferenceDraft(
   });
   appState.setPreference('keybindings', { ...shortcutOverridesDraft });
   appState.setPreference('language', preferenceDraft.language);
+  appState.setPreference('appearanceTheme', preferenceDraft.appearanceTheme);
+  applyAppearanceTheme(preferenceDraft.appearanceTheme);
   if (preferenceDraft.debugMode !== appState.preferences.debugMode) {
     appState.setPreference('debugMode', preferenceDraft.debugMode);
     window.calder.menu.rebuild(preferenceDraft.debugMode);
@@ -60,6 +66,7 @@ export function bindPreferencesModalActions({
   cleanupRecorder,
   isRecorderActive,
   savePreferences,
+  revertPreview,
   registerModalCleanup,
 }: BindPreferencesModalActionsArgs): void {
   const handleConfirm = () => {
@@ -72,6 +79,7 @@ export function bindPreferencesModalActions({
 
   const handleCancel = () => {
     cleanupRecorder();
+    revertPreview?.();
     closeModal();
     modalElement.classList.remove('modal-wide');
     confirmButton.textContent = 'Create';

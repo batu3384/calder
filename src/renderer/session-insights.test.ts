@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { captureInitialContext, markFreshSession, onAlert, dismissInsight, _resetForTesting } from './session-insights.js';
-import { appState, _resetForTesting as resetState } from './state.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { _resetForTesting,captureInitialContext, dismissInsight, markFreshSession, onAlert } from './session-insights.js';
+import { _resetForTesting as resetState,appState } from './state.js';
 
 // Mock the window.calder API
 vi.stubGlobal('window', {

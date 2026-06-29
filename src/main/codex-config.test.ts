@@ -12,6 +12,7 @@ vi.mock('os', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import { getCodexConfig } from './codex-config';
 
 const n = (p: string) => p.replace(/\\/g, '/');

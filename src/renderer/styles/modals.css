@@ -88,7 +88,7 @@
   color: var(--text-primary);
   font-size: var(--type-md);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -134,7 +134,7 @@
   border-top: 4px solid var(--text-muted);
   flex-shrink: 0;
   margin-left: 8px;
-  transition: transform 0.15s;
+  transition: transform var(--motion-fast);
 }
 
 .custom-select-trigger.open::after {
@@ -183,7 +183,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 12px;
-  transition: background 0.14s ease, color 0.14s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .custom-select-item:hover:not(.disabled),
@@ -314,7 +314,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 12px;
-  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 
 .path-autocomplete-item:hover,
@@ -586,7 +586,7 @@
 
 .config-section-toggle {
   font-size: 10px;
-  transition: transform 0.15s;
+  transition: transform var(--motion-fast);
 }
 
 .config-section-toggle.collapsed {

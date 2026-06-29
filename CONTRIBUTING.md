@@ -1,43 +1,145 @@
-# Contributing to Calder
+# Calder Development Guide
 
-Thanks for your interest in contributing! Here's how to get started.
+## Setup
 
-Canonical local workflow commands live in:
+```bash
+npm install
+npm run build
+npm start
+```
 
-- [docs/development-workflow.md](docs/development-workflow.md)
+## Scripts
 
-## Development Setup
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Build all targets (main, preload, renderer) |
+| `npm run build:main` | Build main process only (fast) |
+| `npm run build:preload` | Build preload scripts |
+| `npm start` | Build and run Electron app |
+| `npm test` | Run all tests |
+| `npm run lint` | Run ESLint |
+| `npm run format` | Format code with Prettier |
 
-1. **Node v24** is required — see `.nvmrc`. Use `nvm use` to switch.
-2. Follow the setup and run steps in `docs/development-workflow.md`.
+### Verifying Installed CLI provider version(s)
+
+After setup, verify providers are installed:
+```bash
+claude --version   # Claude Code
+codex --version    # Codex CLI
+copilot --version   # GitHub Copilot
+agy --version      # Antigravity CLI
+qwen --version     # Qwen Code
+```
+
+## Debugging
+
+### VSCode Debug Configs
+
+1. **Electron: Main Process** — Launch main process with debugger attached
+2. **Run Tests** — Run vitest in debug mode
+3. **Lint** — Run ESLint
+
+Keybindings:
+- `F5` — Start debugging
+- `Cmd+Shift+P` → "Tasks: Run Task" → `build:main` for fast rebuilds
+
+### Heap Snapshot (Memory Leak Detection)
+
+```bash
+# In the Electron DevTools console:
+const v8 = require('v8');
+const snapshot = v8.writeHeapSnapshot('/tmp/calder-heap.heapsnapshot');
+console.log('Snapshot written to:', snapshot);
+```
+
+Then open the `.heapsnapshot` file in Chrome DevTools > Memory tab.
+
+## Architecture
+
+### Process Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Main Process (Node.js / Electron)                       │
+│  ├── PTY Manager — native terminal sessions              │
+│  ├── Provider Registry — 5 CLI providers                │
+│  ├── IPC Handlers — 15+ namespaces                      │
+│  ├── Calder Features — context, governance, workflow, etc. │
+│  └── Hook System — event file monitoring                 │
+├─────────────────────────────────────────────────────────┤
+│ Preload (contextBridge)                                 │
+│  └── CalderApi — 20 namespaces exposed to renderer         │
+├─────────────────────────────────────────────────────────┤
+│ Renderer (Vanilla TypeScript SPA)                       │
+│  ├── AppState — singleton state with event system        │
+│  ├── Components — sidebar, tabbar, terminal panes        │
+│  └── Services — git polling, update center, etc.          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Key Directories
+
+- `src/main/` — Electron main process
+- `src/preload/` — Context bridge API
+- `src/renderer/` — UI components and state
+- `src/shared/` — Shared types
+- `src/main/security/` — Security utilities (sanitizers, audit)
+- `src/main/validation/` — Zod schemas for runtime validation
+- `src/main/calder-governance/` — Governance engine and enforcement
+- `src/main/providers/` — CLI provider implementations
+
+### Security Model
+
+- `contextIsolation: true` + `sandbox: true` enforced
+- Shell injection protection via `src/main/security/sanitize.ts`
+- IPC input validation via `src/main/validation/schemas.ts`
+- Preload API surface audited in `src/main/security/context-isolation-audit.md`
+- Secrets audit tool: `src/main/security/secrets-audit.ts`
+
+### State Management
+
+- Renderer state: `src/renderer/state.ts` (AppState singleton)
+- Main state: `src/main/store.ts` → `~/.calder/state.json`
+- State hydration happens after component init (intentional order)
 
 ## Testing
 
-Run the testing and validation commands from `docs/development-workflow.md`.
+```bash
+# Run all tests
+npm test
 
-Tests use [Vitest](https://vitest.dev/) and are co-located with source files as `*.test.ts`.
+# Run with coverage
+npm run test:coverage
 
-## Code Style
+# Run specific test file
+npx vitest run src/main/security/sanitize.test.ts
 
-No lint tooling is configured yet (planned). For now:
+# Run in watch mode
+npx vitest
+```
 
-- Use 2-space indentation
-- Follow existing patterns in the codebase
+### Adding Tests
 
-## Pull Request Workflow
+1. Unit tests: alongside source files as `*.test.ts`
+2. Contract tests: `src/shared/*.contract.test.ts`
+3. Mock utilities: `tests/mocks/` (create as needed)
 
-1. Fork the repository
-2. Create a feature branch from `main`
-3. Make your changes and add tests where appropriate
-4. Run `npm run build` and `npm test` to verify nothing is broken
-5. Open a PR against `main`
+## TypeScript
 
-## Reporting Issues
+Strict mode enabled. No `any` in production code.
 
-When filing a bug report, please include:
+Runtime validation via Zod schemas in `src/main/validation/schemas.ts`.
 
-- **OS version** (e.g., macOS 15.3)
-- **Calder version** (from the app's title bar or `package.json`)
-- **Installed CLI provider version(s)** (for example `claude --version`, `codex --version`, or `gemini --version`)
-- **Steps to reproduce**
-- **Expected vs actual behavior**
+## Adding a New Provider
+
+1. Create `src/main/providers/{provider}-provider.ts`
+2. Implement `CliProvider` interface (or extend `BaseCliProvider`)
+3. Register in `src/main/providers/registry.ts`
+4. Add config watcher paths in `src/main/config-watcher.ts`
+
+## Adding a New IPC Handler
+
+1. Create `src/main/ipc-{domain}.ts`
+2. Export `register{Domain}IpcHandlers` function
+3. Import and call in `src/main/ipc-handlers.ts`
+4. Add tests in `src/main/ipc-{domain}.test.ts`

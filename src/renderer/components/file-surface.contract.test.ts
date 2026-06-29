@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const fileViewerSource = readFileSync(new URL('./file-viewer.ts', import.meta.url), 'utf-8');
 const fileReaderSource = readFileSync(new URL('./file-reader.ts', import.meta.url), 'utf-8');

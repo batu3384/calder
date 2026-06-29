@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { CliProviderMeta, ProviderId, SettingsValidationResult } from './types.js';
+
 import { isTrackingHealthy, needsManagedStatusLine } from './tracking-health.js';
+import type { CliProviderMeta, ProviderId, SettingsValidationResult } from './types.js';
 
 function createProvider(
   id: ProviderId,

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildDiagnosticsSummaryModel } from './diagnostics-summary.js';
-import type { ProjectRecord, SessionRecord } from '../state.js';
+
 import type { AutoApprovalMode } from '../../shared/types/governance.js';
+import type { ProjectRecord, SessionRecord } from '../state.js';
+import { buildDiagnosticsSummaryModel } from './diagnostics-summary.js';
 
 function makeProject(session: SessionRecord, effectiveMode: AutoApprovalMode = 'off'): ProjectRecord {
   return {

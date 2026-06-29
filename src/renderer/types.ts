@@ -1,112 +1,112 @@
 export type {
-  McpServer,
-  Agent,
-  Skill,
-  Command,
-  ProviderConfig,
-  ClaudeConfig,
-  ProviderId,
-  UiLanguage,
-  CliProviderMeta,
-  CliProviderCapabilities,
-  ProviderUpdateResult,
-  ProviderUpdateSummary,
-  ProviderUpdateProgressEvent,
-  ProviderUpdateCancelResult,
-  SettingsWarningData,
-  SettingsValidationResult,
-  StatusLineConflictData,
-} from '../shared/types/provider.js';
-export type {
-  CostData,
-  StatsCache,
-  ToolFailureData,
-  InspectorEvent,
-} from '../shared/types/session.js';
-export type {
-  MobileDependencyId,
-  MobileDependencyCheck,
-  MobileDependencyReport,
-  MobileDependencyInstallResult,
-  MobileDependencyInstallProgressEvent,
-  MobileInspectPlatform,
-  MobileInspectLaunchResult,
-  MobileInspectScreenshotResult,
-  MobileInspectPointInspectionResult,
-  MobileInspectInteractionResult,
-  MobileControlPairingResult,
-  MobileControlAnswerResult,
-} from '../shared/types/mobile.js';
-export type {
   AutoApprovalMode,
   AutoApprovalPolicySource,
   ProjectGovernanceAutoApprovalState,
-  ProjectGovernanceState,
   ProjectGovernanceStarterPolicyResult,
+  ProjectGovernanceState,
 } from '../shared/types/governance.js';
 export type {
+  MobileControlAnswerResult,
+  MobileControlPairingResult,
+  MobileDependencyCheck,
+  MobileDependencyId,
+  MobileDependencyInstallProgressEvent,
+  MobileDependencyInstallResult,
+  MobileDependencyReport,
+  MobileInspectInteractionResult,
+  MobileInspectLaunchResult,
+  MobileInspectPlatform,
+  MobileInspectPointInspectionResult,
+  MobileInspectScreenshotResult,
+} from '../shared/types/mobile.js';
+export type {
+  ProjectBackgroundTaskCreateResult,
+  ProjectBackgroundTaskDocument,
+  ProjectBackgroundTaskState,
+} from '../shared/types/project-background-task.js';
+export type {
+  ProjectCheckpointCreateResult,
+  ProjectCheckpointDocument,
+  ProjectCheckpointSnapshotInput,
+  ProjectCheckpointState,
+} from '../shared/types/project-checkpoint.js';
+export type {
+  ProjectContextCreateRuleResult,
+  ProjectContextDeleteRuleResult,
+  ProjectContextRenameRuleResult,
+  ProjectContextStarterFilesResult,
+  ProjectContextState,
+} from '../shared/types/project-context.js';
+export type {
+  BrowserCredentialFillData,
+  BrowserCredentialSaveInput,
+  BrowserCredentialSummary,
+  EmbeddedBrowserOpenPayload,
+  GitFileEntry,
+  GitWorktree,
+  McpResult,
+  ShareConnectionDescription,
+  ShareRtcConfig,
+} from '../shared/types/project-core.js';
+export type {
+  ProjectReviewCreateResult,
+  ProjectReviewDocument,
+  ProjectReviewState,
+} from '../shared/types/project-review.js';
+export type {
+  CliSurfaceDiscoveryResult,
   CliSurfaceProfile,
   CliSurfaceRuntimeState,
   CliSurfaceStartupTiming,
-  CliSurfaceDiscoveryResult,
 } from '../shared/types/project-surface.js';
 export type {
-  ProjectContextState,
-  ProjectContextStarterFilesResult,
-  ProjectContextCreateRuleResult,
-  ProjectContextRenameRuleResult,
-  ProjectContextDeleteRuleResult,
-} from '../shared/types/project-context.js';
-export type {
-  ProjectWorkflowState,
-  ProjectWorkflowStarterFilesResult,
-  ProjectWorkflowCreateResult,
-  ProjectWorkflowDocument,
-} from '../shared/types/project-workflow.js';
-export type {
-  ProjectTeamContextState,
-  ProjectTeamContextStarterFilesResult,
   ProjectTeamContextCreateSpaceResult,
+  ProjectTeamContextStarterFilesResult,
+  ProjectTeamContextState,
 } from '../shared/types/project-team-context.js';
 export type {
-  ProjectReviewState,
-  ProjectReviewCreateResult,
-  ProjectReviewDocument,
-} from '../shared/types/project-review.js';
+  ProjectWorkflowCreateResult,
+  ProjectWorkflowDocument,
+  ProjectWorkflowStarterFilesResult,
+  ProjectWorkflowState,
+} from '../shared/types/project-workflow.js';
 export type {
-  ProjectBackgroundTaskState,
-  ProjectBackgroundTaskCreateResult,
-  ProjectBackgroundTaskDocument,
-} from '../shared/types/project-background-task.js';
+  Agent,
+  ClaudeConfig,
+  CliProviderCapabilities,
+  CliProviderMeta,
+  Command,
+  McpServer,
+  ProviderConfig,
+  ProviderId,
+  ProviderUpdateCancelResult,
+  ProviderUpdateProgressEvent,
+  ProviderUpdateResult,
+  ProviderUpdateSummary,
+  SettingsValidationResult,
+  SettingsWarningData,
+  Skill,
+  StatusLineConflictData,
+  UiLanguage,
+} from '../shared/types/provider.js';
 export type {
-  ProjectCheckpointState,
-  ProjectCheckpointSnapshotInput,
-  ProjectCheckpointCreateResult,
-  ProjectCheckpointDocument,
-} from '../shared/types/project-checkpoint.js';
-export type {
-  GitWorktree,
-  GitFileEntry,
-  McpResult,
-  EmbeddedBrowserOpenPayload,
-  ShareRtcConfig,
-  ShareConnectionDescription,
-  BrowserCredentialSummary,
-  BrowserCredentialFillData,
-  BrowserCredentialSaveInput,
-} from '../shared/types/project-core.js';
-import type { ProviderConfig, ProviderId, UiLanguage, CliProviderMeta, ProviderUpdateSummary, ProviderUpdateProgressEvent, ProviderUpdateCancelResult, SettingsWarningData, SettingsValidationResult, StatusLineConflictData } from '../shared/types/provider.js';
-import type { CostData, StatsCache, ToolFailureData, InspectorEvent } from '../shared/types/session.js';
-import type { MobileDependencyId, MobileDependencyReport, MobileDependencyInstallResult, MobileDependencyInstallProgressEvent, MobileInspectPlatform, MobileInspectLaunchResult, MobileInspectScreenshotResult, MobileInspectPointInspectionResult, MobileInspectInteractionResult, MobileControlPairingResult, MobileControlAnswerResult } from '../shared/types/mobile.js';
-import type { AutoApprovalMode, ProjectGovernanceState, ProjectGovernanceStarterPolicyResult } from '../shared/types/governance.js';
-import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceDiscoveryResult } from '../shared/types/project-surface.js';
-import type { ProjectContextState, ProjectContextStarterFilesResult, ProjectContextCreateRuleResult, ProjectContextRenameRuleResult, ProjectContextDeleteRuleResult } from '../shared/types/project-context.js';
-import type { ProjectWorkflowState, ProjectWorkflowStarterFilesResult, ProjectWorkflowCreateResult, ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
-import type { ProjectTeamContextState, ProjectTeamContextStarterFilesResult, ProjectTeamContextCreateSpaceResult } from '../shared/types/project-team-context.js';
-import type { ProjectReviewState, ProjectReviewCreateResult, ProjectReviewDocument } from '../shared/types/project-review.js';
-import type { ProjectBackgroundTaskState, ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument } from '../shared/types/project-background-task.js';
-import type { ProjectCheckpointState, ProjectCheckpointSnapshotInput, ProjectCheckpointCreateResult, ProjectCheckpointDocument } from '../shared/types/project-checkpoint.js';
-import type { GitWorktree, GitFileEntry, McpResult, EmbeddedBrowserOpenPayload, ShareRtcConfig, ShareConnectionDescription, BrowserCredentialSummary, BrowserCredentialFillData, BrowserCredentialSaveInput } from '../shared/types/project-core.js';
+  CostData,
+  InspectorEvent,
+  StatsCache,
+  ToolFailureData,
+} from '../shared/types/session.js';
+import type { AutoApprovalMode, ProjectGovernanceStarterPolicyResult,ProjectGovernanceState } from '../shared/types/governance.js';
+import type { MobileControlAnswerResult,MobileControlPairingResult, MobileDependencyId, MobileDependencyInstallProgressEvent, MobileDependencyInstallResult, MobileDependencyReport, MobileInspectInteractionResult, MobileInspectLaunchResult, MobileInspectPlatform, MobileInspectPointInspectionResult, MobileInspectScreenshotResult } from '../shared/types/mobile.js';
+import type { ProjectBackgroundTaskCreateResult, ProjectBackgroundTaskDocument,ProjectBackgroundTaskState } from '../shared/types/project-background-task.js';
+import type { ProjectCheckpointCreateResult, ProjectCheckpointDocument,ProjectCheckpointSnapshotInput, ProjectCheckpointState } from '../shared/types/project-checkpoint.js';
+import type { ProjectContextCreateRuleResult, ProjectContextDeleteRuleResult,ProjectContextRenameRuleResult, ProjectContextStarterFilesResult, ProjectContextState } from '../shared/types/project-context.js';
+import type { BrowserCredentialFillData, BrowserCredentialSaveInput,BrowserCredentialSummary, EmbeddedBrowserOpenPayload, GitFileEntry, GitWorktree, McpResult, ShareConnectionDescription, ShareRtcConfig } from '../shared/types/project-core.js';
+import type { ProjectReviewCreateResult, ProjectReviewDocument,ProjectReviewState } from '../shared/types/project-review.js';
+import type { CliSurfaceDiscoveryResult,CliSurfaceProfile, CliSurfaceRuntimeState } from '../shared/types/project-surface.js';
+import type { ProjectTeamContextCreateSpaceResult,ProjectTeamContextStarterFilesResult, ProjectTeamContextState } from '../shared/types/project-team-context.js';
+import type { ProjectWorkflowCreateResult, ProjectWorkflowDocument,ProjectWorkflowStarterFilesResult, ProjectWorkflowState } from '../shared/types/project-workflow.js';
+import type { CliProviderMeta, ProviderConfig, ProviderId, ProviderUpdateCancelResult, ProviderUpdateProgressEvent, ProviderUpdateSummary, SettingsValidationResult, SettingsWarningData, StatusLineConflictData,UiLanguage } from '../shared/types/provider.js';
+import type { CostData, InspectorEvent,StatsCache, ToolFailureData } from '../shared/types/session.js';
 
 export interface CalderApi {
   pty: {
@@ -135,7 +135,7 @@ export interface CalderApi {
     listDirs(dirPath: string, prefix?: string): Promise<string[]>;
     browseDirectory(): Promise<string | null>;
     listFiles(cwd: string, query: string): Promise<string[]>;
-    readFile(filePath: string): Promise<string>;
+    readFile(filePath: string): Promise<import('../../shared/types/fs-read').FsReadFileResult>;
     watchFile(filePath: string): void;
     unwatchFile(filePath: string): void;
     onFileChanged(callback: (filePath: string) => void): () => void;

@@ -1,9 +1,9 @@
-import { appState, type ProjectRecord, type SessionRecord } from '../state.js';
 import { describeProviderRoute } from '../../shared/provider-route.js';
 import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import type { ProviderId, UiLanguage } from '../../shared/types/provider.js';
-import { getProviderDisplayName } from './surface-services/provider-availability.js';
+import { appState, type ProjectRecord, type SessionRecord } from '../state.js';
 import { getGitStatus, type GitStatus } from './surface-services/git-status.js';
+import { getProviderDisplayName } from './surface-services/provider-availability.js';
 
 type DiagnosticsTone = 'default' | 'active' | 'warning';
 

@@ -32,6 +32,12 @@ vi.mock('./claude-cli', () => ({
   HOOK_MARKER: '# calder-hook',
   installHooksOnly: vi.fn(),
   installStatusLine: vi.fn(),
+  cleanupClaudeHooksOnly: vi.fn(),
+}));
+
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
 }));
 
 vi.mock('./fs-utils', () => ({

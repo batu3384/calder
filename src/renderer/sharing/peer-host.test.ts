@@ -64,6 +64,7 @@ vi.mock('../components/browser-tab/types.js', () => ({
   ],
 }));
 
+import { _resetForTesting as resetAppState,appState } from '../state.js';
 import {
   broadcastData,
   broadcastResize,
@@ -73,7 +74,6 @@ import {
   startShare,
   stopShare,
 } from './peer-host.js';
-import { appState, _resetForTesting as resetAppState } from '../state.js';
 
 class FakeDataChannel {
   readyState = 'open';
@@ -303,6 +303,49 @@ describe('peer-host', () => {
     expect(snapshot?.connectedAtMs).toBeTypeOf('number');
     expect(snapshot?.verifiedAtMs).toBeTypeOf('number');
     expect(isConnected(sessionB.id)).toBe(true);
+
+    handle.stop();
+  });
+
+  it('blocks session-switch to another session while sharing in readonly mode', async () => {
+    const project = appState.addProject('Readonly Switch', '/tmp/readonly-switch');
+    const sessionA = appState.addSession(project.id, 'Session A', undefined, 'claude')!;
+    const sessionB = appState.addSession(project.id, 'Session B', undefined, 'claude')!;
+    appState.setActiveSession(project.id, sessionA.id);
+
+    mockGetTerminalInstance.mockImplementation((id: string) => {
+      if (id === sessionA.id || id === sessionB.id) {
+        return {
+          sessionId: id === sessionA.id ? 'Session A' : 'Session B',
+          terminal: {
+            cols: 80,
+            rows: 24,
+            loadAddon: vi.fn(),
+          },
+        };
+      }
+      return undefined;
+    });
+
+    const handle = startShare(sessionA.id, 'readonly', 'secret-1234');
+    const dc = FakePeerConnection.instances[0]!.dc;
+
+    dc.onopen?.();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'auth-response', response: 'expected-response' }) } as MessageEvent);
+    await Promise.resolve();
+
+    mockSendMessage.mockClear();
+    dc.onmessage?.({ data: JSON.stringify({ type: 'session-switch', sessionId: sessionB.id }) } as MessageEvent);
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      dc,
+      expect.objectContaining({
+        type: 'session-switch-result',
+        ok: false,
+        reason: 'Session switching is not available in readonly mode.',
+      }),
+    );
+    expect(getShareConnectionSnapshot(sessionA.id)?.activeSessionId).toBe(sessionA.id);
 
     handle.stop();
   });

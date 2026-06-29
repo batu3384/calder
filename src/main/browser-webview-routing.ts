@@ -1,13 +1,15 @@
 import { shell } from 'electron';
-import type { WebContents } from 'electron';
+
 import { isAllowedExternalUrl } from './browser-open-policy';
+import { isAllowedGuestWebviewUrl } from './guest-webview-origin';
 
 type WindowOpenHandler = (details: { url: string }) => { action: 'allow' | 'deny' };
-type EventHandler = (...args: any[]) => void;
+type NavigateEvent = { preventDefault(): void };
 
 interface WebContentsLike {
   setWindowOpenHandler(handler: WindowOpenHandler): void;
-  on(event: string, listener: EventHandler): this;
+  on(event: 'will-navigate', listener: (event: NavigateEvent, url: string) => void): this;
+  on(event: 'did-attach-webview', listener: (event: unknown, guestContents: WebContentsLike) => void): this;
   loadURL?(url: string): Promise<void> | void;
 }
 
@@ -31,6 +33,18 @@ function createExternalRouteDispatcher(openExternal: (url: string) => void): (ur
     lastAt = now;
     openExternal(url);
   };
+}
+
+function attachGuestNavigationGuards(guestContents: WebContentsLike): void {
+  guestContents.on('will-navigate', (event, url) => {
+    if (url.startsWith('file://')) {
+      event.preventDefault();
+      return;
+    }
+    if (isHttpUrl(url) && !isAllowedGuestWebviewUrl(url)) {
+      event.preventDefault();
+    }
+  });
 }
 
 function redirectGuestWindowToCurrentView(
@@ -60,7 +74,7 @@ export function attachBrowserWebviewRouting(
     return { action: 'deny' };
   });
 
-  mainWindow.webContents.on('will-navigate', (event: { preventDefault(): void }, url: string) => {
+  mainWindow.webContents.on('will-navigate', (event, url) => {
     if (url.startsWith('file://')) return;
     event.preventDefault();
     if (isHttpUrl(url)) {
@@ -68,7 +82,8 @@ export function attachBrowserWebviewRouting(
     }
   });
 
-  mainWindow.webContents.on('did-attach-webview', (_event: unknown, guestContents: WebContents) => {
+  mainWindow.webContents.on('did-attach-webview', (_event, guestContents) => {
+    attachGuestNavigationGuards(guestContents);
     redirectGuestWindowToCurrentView(guestContents, routeExternal);
   });
 }

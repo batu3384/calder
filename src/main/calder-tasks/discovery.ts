@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+
 import type { ProjectBackgroundTaskSource, ProjectBackgroundTaskState, ProjectBackgroundTaskStatus } from '../../shared/types/project-background-task.js';
 
 interface RawTaskDocument {

@@ -1,5 +1,6 @@
-import { vi } from 'vitest';
 import * as path from 'path';
+import { vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
@@ -21,8 +22,8 @@ vi.mock('../full-path', () => ({
   getFullPath: vi.fn(() => isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin'),
 }));
 
-vi.mock('../gemini-config', () => ({
-  getGeminiConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
+vi.mock('../antigravity-config', () => ({
+  getAntigravityConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
 }));
 
 vi.mock('../config-watcher', () => ({
@@ -30,47 +31,48 @@ vi.mock('../config-watcher', () => ({
   stopConfigWatcher: vi.fn(),
 }));
 
-vi.mock('../gemini-hooks', () => ({
-  installGeminiHooks: vi.fn(),
-  validateGeminiHooks: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
-  cleanupGeminiHooks: vi.fn(),
+vi.mock('../antigravity-hooks', () => ({
+  installAntigravityHooks: vi.fn(),
+  validateAntigravityHooks: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
+  cleanupAntigravityHooks: vi.fn(),
   SESSION_ID_VAR: 'CALDER_SESSION_ID',
 }));
 
-import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { GeminiProvider, _resetCachedPath } from './gemini-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
-import { getGeminiConfig } from '../gemini-config';
+import * as fs from 'fs';
+
+import { getAntigravityConfig } from '../antigravity-config';
+import { cleanupAntigravityHooks,installAntigravityHooks, validateAntigravityHooks } from '../antigravity-hooks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks } from '../gemini-hooks';
+import { _resetCachedPath,AntigravityProvider } from './antigravity-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockStatSync = vi.mocked(fs.statSync);
 const mockExecSync = vi.mocked(execSync);
-const mockGetGeminiConfig = vi.mocked(getGeminiConfig);
+const mockGetAntigravityConfig = vi.mocked(getAntigravityConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
 const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
-const mockInstallGeminiHooks = vi.mocked(installGeminiHooks);
-const mockValidateGeminiHooks = vi.mocked(validateGeminiHooks);
-const mockCleanupGeminiHooks = vi.mocked(cleanupGeminiHooks);
+const mockInstallAntigravityHooks = vi.mocked(installAntigravityHooks);
+const mockValidateAntigravityHooks = vi.mocked(validateAntigravityHooks);
+const mockCleanupAntigravityHooks = vi.mocked(cleanupAntigravityHooks);
 
-let provider: GeminiProvider;
+let provider: AntigravityProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
   _resetCachedPath();
   _resetPrereqCheckCache();
-  provider = new GeminiProvider();
+  provider = new AntigravityProvider();
 });
 
 describe('meta', () => {
   it('has correct id, displayName, and binaryName', () => {
-    expect(provider.meta.id).toBe('gemini');
-    expect(provider.meta.displayName).toBe('Gemini CLI');
-    expect(provider.meta.binaryName).toBe('gemini');
+    expect(provider.meta.id).toBe('antigravity');
+    expect(provider.meta.displayName).toBe('Antigravity CLI');
+    expect(provider.meta.binaryName).toBe('agy');
   });
 
   it('has sessionResume, hookStatus, and configReading capabilities enabled', () => {
@@ -82,7 +84,7 @@ describe('meta', () => {
     expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(false);
     expect(caps.pendingPromptTrigger).toBe('startup-arg');
-    expect(caps.planModeArg).toBe('--approval-mode=plan');
+    expect(caps.planModeArg).toBeUndefined();
   });
 
   it('has defaultContextWindowSize of 1,000,000', () => {
@@ -92,24 +94,24 @@ describe('meta', () => {
 
 describe('resolveBinaryPath', () => {
   const firstCandidate = isWin
-    ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'gemini.cmd')
-    : '/usr/local/bin/gemini';
+    ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'agy.cmd')
+    : '/usr/local/bin/agy';
 
   it('returns candidate path when existsSync returns true', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
     expect(provider.resolveBinaryPath()).toBe(firstCandidate);
   });
 
-  it(`falls back to ${isWin ? 'where' : 'which'} gemini when no candidate exists`, () => {
+  it(`falls back to ${isWin ? 'where' : 'which'} agy when no candidate exists`, () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockReturnValue('/some/other/path/gemini\n' as any);
-    expect(provider.resolveBinaryPath()).toBe('/some/other/path/gemini');
+    mockExecSync.mockReturnValue('/some/other/path/agy\n' as any);
+    expect(provider.resolveBinaryPath()).toBe('/some/other/path/agy');
   });
 
-  it('falls back to bare "gemini" when both candidate and which fail', () => {
+  it('falls back to bare "antigravity" when both candidate and which fail', () => {
     mockExistsSync.mockReturnValue(false);
     mockExecSync.mockImplementation(() => { throw new Error('not found'); });
-    expect(provider.resolveBinaryPath()).toBe('gemini');
+    expect(provider.resolveBinaryPath()).toBe('antigravity');
   });
 
   it('caches result on subsequent calls', () => {
@@ -122,8 +124,8 @@ describe('resolveBinaryPath', () => {
 
 describe('validatePrerequisites', () => {
   const validateCandidate = isWin
-    ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'gemini.cmd')
-    : '/opt/homebrew/bin/gemini';
+    ? path.join('/mock/home', 'AppData', 'Roaming', 'npm', 'agy.cmd')
+    : '/opt/homebrew/bin/agy';
 
   it('returns ok when binary found via existsSync', () => {
     mockExistsSync.mockImplementation((p) => p === validateCandidate);
@@ -132,7 +134,7 @@ describe('validatePrerequisites', () => {
 
   it('returns ok when binary found via which', () => {
     mockExistsSync.mockReturnValue(false);
-    mockExecSync.mockReturnValue('/resolved/gemini\n' as any);
+    mockExecSync.mockReturnValue('/resolved/agy\n' as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });
 
@@ -141,8 +143,8 @@ describe('validatePrerequisites', () => {
     mockExecSync.mockImplementation(() => { throw new Error('not found'); });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
-    expect(result.message).toContain('Gemini CLI not found');
-    expect(result.message).toContain('@google/gemini-cli');
+    expect(result.message).toContain('Antigravity CLI not found');
+    expect(result.message).toContain('brew install --cask antigravity-cli');
   });
 });
 
@@ -155,19 +157,20 @@ describe('buildEnv', () => {
   it('sets CALDER_SESSION_ID to the session ID', () => {
     const env = provider.buildEnv('sess-123', {});
     expect(env.CALDER_SESSION_ID).toBe('sess-123');
+    expect(env.CALDER_RUNTIME).toBe('1');
   });
 
   it('preserves existing env vars', () => {
-    const env = provider.buildEnv('sess-123', { GEMINI_API_KEY: 'key123', OTHER: 'val' });
-    expect(env.GEMINI_API_KEY).toBe('key123');
+    const env = provider.buildEnv('sess-123', { ANTIGRAVITY_API_KEY: 'key123', OTHER: 'val' });
+    expect(env.ANTIGRAVITY_API_KEY).toBe('key123');
     expect(env.OTHER).toBe('val');
   });
 });
 
 describe('buildArgs', () => {
-  it('returns ["-r", id] when isResume=true with cliSessionId', () => {
+  it('returns ["--conversation", id] when isResume=true with cliSessionId', () => {
     const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '' });
-    expect(args).toEqual(['-r', 'sid-1']);
+    expect(args).toEqual(['--conversation', 'sid-1']);
   });
 
   it('returns [] when isResume=false with cliSessionId', () => {
@@ -187,7 +190,7 @@ describe('buildArgs', () => {
 
   it('combines resume args and extra args', () => {
     const args = provider.buildArgs({ cliSessionId: 'sid-1', isResume: true, extraArgs: '--model gemini-2.5-flash' });
-    expect(args).toEqual(['-r', 'sid-1', '--model', 'gemini-2.5-flash']);
+    expect(args).toEqual(['--conversation', 'sid-1', '--model', 'gemini-2.5-flash']);
   });
 
   it('appends -i flag when initialPrompt is provided', () => {
@@ -208,48 +211,49 @@ describe('getShiftEnterSequence', () => {
 });
 
 describe('hooks integration', () => {
-  it('installHooks delegates to installGeminiHooks', async () => {
+  it('installHooks delegates to installAntigravityHooks', async () => {
     await provider.installHooks();
-    expect(mockInstallGeminiHooks).toHaveBeenCalled();
+    expect(mockInstallAntigravityHooks).toHaveBeenCalled();
   });
 
-  it('validateSettings delegates to validateGeminiHooks', () => {
+  it('validateSettings delegates to validateAntigravityHooks', () => {
     const result = provider.validateSettings();
-    expect(mockValidateGeminiHooks).toHaveBeenCalled();
+    expect(mockValidateAntigravityHooks).toHaveBeenCalled();
     expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
   });
 
   it('cleanup keeps hooks in place and only stops config watching', () => {
     provider.cleanup();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
-    expect(mockCleanupGeminiHooks).not.toHaveBeenCalled();
+    expect(mockCleanupAntigravityHooks).not.toHaveBeenCalled();
   });
 
-  it('reinstallSettings delegates to installGeminiHooks', () => {
+  it('reinstallSettings cleans up external hooks when injection is disabled', () => {
     provider.reinstallSettings();
-    expect(mockInstallGeminiHooks).toHaveBeenCalled();
+    expect(mockCleanupAntigravityHooks).toHaveBeenCalled();
+    expect(mockInstallAntigravityHooks).not.toHaveBeenCalled();
   });
 });
 
 describe('other methods', () => {
-  it('getConfig delegates to gemini config reader', async () => {
+  it('getConfig delegates to antigravity config reader', async () => {
     const config = { mcpServers: [{ name: 'a', url: 'b', status: 'configured', scope: 'user' as const, filePath: '/x' }], agents: [], skills: [], commands: [] };
-    mockGetGeminiConfig.mockResolvedValueOnce(config);
+    mockGetAntigravityConfig.mockResolvedValueOnce(config);
     await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
-    expect(mockGetGeminiConfig).toHaveBeenCalledWith('/some/path');
+    expect(mockGetAntigravityConfig).toHaveBeenCalledWith('/some/path');
   });
 
   it('installStatusScripts does not throw', () => {
     expect(() => provider.installStatusScripts()).not.toThrow();
   });
 
-  it('starts a gemini config watcher', () => {
+  it('starts an antigravity config watcher', () => {
     const win = { id: 1 } as any;
     provider.startConfigWatcher(win, '/project');
-    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'gemini');
+    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'antigravity');
   });
 
-  it('stops gemini config watcher', () => {
+  it('stops an antigravity config watcher', () => {
     provider.stopConfigWatcher();
     expect(mockStopConfigWatcher).toHaveBeenCalled();
   });
@@ -261,7 +265,7 @@ describe('getTranscriptPath', () => {
   const projectB = path.join(tmpRoot, 'project-b');
   const chatsDir = path.join(projectB, 'chats');
 
-  it('returns null when gemini tmp root does not exist', () => {
+  it('returns null when antigravity tmp root does not exist', () => {
     mockExistsSync.mockReturnValue(false);
     expect(provider.getTranscriptPath('12345678abcdef', '/target/project')).toBeNull();
   });

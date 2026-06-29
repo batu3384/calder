@@ -1,5 +1,5 @@
+import type { PersistedState, Preferences, ProjectRecord } from '../shared/types/project-state.js';
 import type { ProviderId } from '../shared/types/provider.js';
-import type { Preferences, PersistedState, ProjectRecord } from '../shared/types/project-state.js';
 import { restoreContext } from './session-context.js';
 import { restoreCost } from './session-cost.js';
 import { normalizeProjectLayout, normalizeProjectSurface } from './state-normalizers.js';

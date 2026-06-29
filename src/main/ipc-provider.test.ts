@@ -93,7 +93,7 @@ describe('ipc provider handlers', () => {
       validatePrerequisites: vi.fn(() => ({ ok: true })),
       meta: { displayName: 'Codex' },
     };
-    const win = { id: 1 };
+    const win = { id: 1, once: vi.fn() };
     mockGetProvider.mockReturnValue(provider);
     mockGetAllWindows.mockReturnValue([win]);
 
@@ -102,6 +102,7 @@ describe('ipc provider handlers', () => {
     const watchHandler = getOnHandler('config:watchProject');
     watchHandler({}, 'codex', '/repo');
     expect(startConfigWatcher).toHaveBeenCalledWith(win, '/repo');
+    expect(win.once).toHaveBeenCalledWith('closed', expect.any(Function));
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Watch provider config');
 
     startConfigWatcher.mockClear();
@@ -110,6 +111,38 @@ describe('ipc provider handlers', () => {
     watchHandler({}, 'codex', '/repo');
     expect(startConfigWatcher).not.toHaveBeenCalled();
     expect(ops.requireKnownProjectPath).not.toHaveBeenCalled();
+  });
+
+  it('does not throw when watchProject receives an unknown project path', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const ops = {
+      requireKnownProjectPath: vi.fn(() => {
+        throw new Error('Watch provider config requires a known project path');
+      }),
+    };
+    const startConfigWatcher = vi.fn();
+    const provider = {
+      startConfigWatcher,
+      getConfig: vi.fn(),
+      validatePrerequisites: vi.fn(() => ({ ok: true })),
+      meta: { displayName: 'Codex' },
+    };
+    mockGetProvider.mockReturnValue(provider);
+    mockGetAllWindows.mockReturnValue([{ id: 1 }]);
+
+    registerProviderIpcHandlers(ops);
+
+    expect(() => getOnHandler('config:watchProject')({}, 'codex', '/outside')).not.toThrow();
+    expect(startConfigWatcher).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Skipped config:watchProject for unknown project path:',
+      expect.objectContaining({
+        providerId: 'codex',
+        projectPath: '/outside',
+      }),
+    );
+
+    warnSpy.mockRestore();
   });
 
   it('builds resume handoff prompt with transcript path when available', async () => {

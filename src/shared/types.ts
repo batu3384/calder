@@ -1,10 +1,10 @@
 // Shared type definitions used across main, preload, and renderer processes.
 
-export type * from './types-provider';
-export type * from './types-mobile';
 export type * from './types-governance';
-export type * from './types-session';
+export type * from './types-mobile';
 export type * from './types-project';
+export type * from './types-provider';
+export type * from './types-session';
 
 /*
 Legacy contract anchors for source-string tests.

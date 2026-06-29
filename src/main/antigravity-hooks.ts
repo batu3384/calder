@@ -1,16 +1,18 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR } from './hooks/hook-status';
-import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hooks/hook-commands';
-import { readJsonSafe } from './fs-utils';
+import * as path from 'path';
+
 import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
+import { readJsonSafe } from './fs-utils';
+import { captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import { STATUS_DIR } from './hooks/hook-status';
 
-export const GEMINI_HOOK_MARKER = '# calder-hook';
+export const ANTIGRAVITY_HOOK_MARKER = '# calder-hook';
 
-const GEMINI_DIR = path.join(homedir(), '.gemini');
-const SETTINGS_PATH = path.join(GEMINI_DIR, 'settings.json');
+const PROVIDER_HOME_DIR = path.join(homedir(), '.gemini');
+const SETTINGS_PATH = path.join(PROVIDER_HOME_DIR, 'settings.json');
 
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
 
@@ -30,7 +32,7 @@ interface HookMatcherEntry {
 type HooksConfig = Record<string, HookMatcherEntry[]>;
 
 function isIdeHook(h: HookHandler): boolean {
-  return h.command?.includes(GEMINI_HOOK_MARKER) || false;
+  return h.command?.includes(ANTIGRAVITY_HOOK_MARKER) || false;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,8 +55,10 @@ function cleanHooks(existing: HooksConfig): HooksConfig {
   return cleaned;
 }
 
-export function installGeminiHooks(): void {
-  fs.mkdirSync(GEMINI_DIR, { recursive: true });
+export function installAntigravityHooks(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
+
+  fs.mkdirSync(PROVIDER_HOME_DIR, { recursive: true });
 
   const settings = readJsonSafe(SETTINGS_PATH) ?? {};
   const existingHooks: HooksConfig = (settings.hooks ?? {}) as HooksConfig;
@@ -63,8 +67,8 @@ export function installGeminiHooks(): void {
   installHookScripts();
 
   const statusCmd = (event: string, status: string) =>
-    mkStatusCmd(event, status, SESSION_ID_VAR, GEMINI_HOOK_MARKER);
-  const rtkBeforeToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook gemini ${GEMINI_HOOK_MARKER}`;
+    mkStatusCmd(event, status, SESSION_ID_VAR, ANTIGRAVITY_HOOK_MARKER);
+  const rtkBeforeToolCmd = `[ "\${CALDER_RUNTIME:-}" = "1" ] && [ -n "\${CALDER_SESSION_ID:-}" ] && CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook antigravity ${ANTIGRAVITY_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: string) => {
     const pyCode = `import sys,json,os,time
@@ -99,12 +103,12 @@ status_dir=r'${STATUS_DIR}'
 with open(os.path.join(status_dir,sid+".events"),"a") as f:
  f.write(json.dumps(e)+"\\n")
 `;
-    const scriptName = `gemini_event_${hookEvent}.py`;
+    const scriptName = `antigravity_event_${hookEvent}.py`;
     installEventScript(scriptName, pyCode);
-    return wrapPythonHookCmd(scriptName, pyCode, GEMINI_HOOK_MARKER);
+    return wrapPythonHookCmd(scriptName, pyCode, ANTIGRAVITY_HOOK_MARKER);
   };
 
-  const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, GEMINI_HOOK_MARKER);
+  const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, ANTIGRAVITY_HOOK_MARKER);
 
   // Status-changing events
   const ideEvents: Record<string, string> = {
@@ -119,7 +123,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
 
   const eventTypeMap: Record<string, InspectorEventType> = {
     SessionStart: 'session_start',
-    BeforeAgent: 'user_prompt',
+    BeforeAgent: 'subagent_start',
     BeforeTool: 'pre_tool_use',
     AfterTool: 'tool_use',
     AfterAgent: 'stop',
@@ -151,7 +155,7 @@ with open(os.path.join(status_dir,sid+".events"),"a") as f:
 // Validation
 // ---------------------------------------------------------------------------
 
-export function validateGeminiHooks(): SettingsValidationResult {
+export function validateAntigravityHooks(): SettingsValidationResult {
   const settings = readJsonSafe(SETTINGS_PATH);
   const existingHooks: HooksConfig = (settings?.hooks ?? {}) as HooksConfig;
   const hookDetails: Record<string, boolean> = Object.fromEntries(EXPECTED_HOOK_EVENTS.map(e => [e, false]));
@@ -178,7 +182,7 @@ export function validateGeminiHooks(): SettingsValidationResult {
 // Cleanup
 // ---------------------------------------------------------------------------
 
-export function cleanupGeminiHooks(): void {
+export function cleanupAntigravityHooks(): void {
   const settings = readJsonSafe(SETTINGS_PATH);
   if (!settings) return;
 

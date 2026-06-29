@@ -35,8 +35,8 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import { _resetProjectGovernanceSyncForTesting, initProjectGovernanceSync } from './project-governance-sync.js';
+import { _resetForTesting,appState } from './state.js';
 
 function flushTasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));

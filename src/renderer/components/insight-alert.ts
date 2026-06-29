@@ -1,8 +1,8 @@
-import { onAlert, dismissInsight } from './surface-services/session-insights.js';
-import { appState } from '../state.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
 import type { InsightResult } from '../insights/types.js';
-import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
+import { appState } from '../state.js';
+import { removeAlertBanner,showAlertBanner } from './alert-banner.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
+import { dismissInsight,onAlert } from './surface-services/session-insights.js';
 import { setPendingPrompt } from './terminal-pane.js';
 
 export function initInsightAlert(): void {

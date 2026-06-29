@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readdirSync,readFileSync } from 'fs';
 import { join } from 'path';
+
 import type { CliSurfaceDiscoveryCandidate, CliSurfaceDiscoveryConfidence, CliSurfaceDiscoveryResult } from '../shared/types/project-surface';
 
 const NODE_SCRIPT_ORDER = ['dev:tui', 'dev:cli', 'tui', 'cli', 'dev', 'start'] as const;

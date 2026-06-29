@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
+import { type ProviderUpdaterRunner, type ProviderUpdaterTarget,updateProviders } from '../main/provider-updater';
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
-import { updateProviders, type ProviderUpdaterRunner, type ProviderUpdaterTarget } from '../main/provider-updater';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {
   return {
@@ -83,37 +84,35 @@ describe('provider update fallbacks', () => {
     ]);
   });
 
-  it('falls back from Gemini Homebrew formula updates to npm when brew fails', async () => {
+  it('falls back from Antigravity Homebrew cask updates to self update when brew fails', async () => {
     const runner = new FakeRunner();
-    const geminiBinary = '/opt/homebrew/Cellar/gemini-cli/0.38.0/bin/gemini';
+    const geminiBinary = '/opt/homebrew/Caskroom/antigravity-cli/0.38.0/agy';
     runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.0' });
-    runner.enqueue('brew', ['outdated', '--json=v2', '--formula', 'gemini-cli'], {
+    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'antigravity-cli'], {
       code: 1,
-      stdout: JSON.stringify({ formulae: [{ name: 'gemini-cli', current_version: '0.38.1' }] }),
+      stdout: JSON.stringify({ formulae: [], casks: [{ name: 'antigravity-cli', current_version: '0.38.1' }] }),
     });
-    runner.enqueue('brew', ['upgrade', 'gemini-cli'], { code: 1, stderr: 'brew route failed' });
-    runner.enqueue('npm', ['view', '@google/gemini-cli', 'version', '--silent'], { code: 0, stdout: '0.38.1' });
-    runner.enqueue('npm', ['install', '-g', '@google/gemini-cli@latest'], { code: 0, stdout: 'updated' });
-    runner.enqueue('gemini', ['--version'], { code: 0, stdout: '0.38.1' });
+    runner.enqueue('brew', ['upgrade', '--cask', 'antigravity-cli'], { code: 1, stderr: 'brew route failed' });
+    runner.enqueue(geminiBinary, ['update'], { code: 0, stdout: 'updated' });
+    runner.enqueue(geminiBinary, ['--version'], { code: 0, stdout: '0.38.1' });
 
-    const summary = await updateProviders([createTarget('gemini', 'Gemini CLI', geminiBinary)], {
+    const summary = await updateProviders([createTarget('antigravity', 'Antigravity CLI', geminiBinary)], {
       runner,
       now: (() => 1_250) as () => number,
     });
 
     expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('gemini');
-    expect(summary.results[0].source).toBe('npm');
+    expect(summary.results[0].providerId).toBe('antigravity');
+    expect(summary.results[0].source).toBe('self');
     expect(summary.results[0].status).toBe('updated');
     expect(summary.results[0].updateAttempted).toBe(true);
-    expect(summary.results[0].updateCommand).toBe('npm install -g @google/gemini-cli@latest');
+    expect(summary.results[0].updateCommand).toBe(`${geminiBinary} update`);
     expect(runner.calls.map((call) => `${call.command} ${call.args.join(' ')}`)).toEqual([
       `${geminiBinary} --version`,
-      'brew outdated --json=v2 --formula gemini-cli',
-      'brew upgrade gemini-cli',
-      'npm view @google/gemini-cli version --silent',
-      'npm install -g @google/gemini-cli@latest',
-      'gemini --version',
+      'brew outdated --json=v2 --cask antigravity-cli',
+      'brew upgrade --cask antigravity-cli',
+      `${geminiBinary} update`,
+      `${geminiBinary} --version`,
     ]);
   });
 });

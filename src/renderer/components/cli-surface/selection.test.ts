@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildViewportText, buildSelectionText, createSelectionPayload } from './selection.js';
+
+import { buildSelectionText, buildViewportText, createSelectionPayload } from './selection.js';
 
 const lines = [
   '╭ Settings ───────────────╮',

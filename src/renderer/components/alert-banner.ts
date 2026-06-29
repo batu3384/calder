@@ -12,26 +12,46 @@ export interface AlertBannerConfig {
 let currentBanner: HTMLElement | null = null;
 let bannerSessionId: string | null = null;
 let sessionChangeCleanupAttached = false;
+let sessionChangeUnsubscribe: (() => void) | null = null;
 
 function attachSessionChangeCleanup(): void {
   if (sessionChangeCleanupAttached) return;
   sessionChangeCleanupAttached = true;
-  appState.on('session-changed', () => {
+  sessionChangeUnsubscribe = appState.on('session-changed', () => {
     if (bannerSessionId && appState.activeSession?.id !== bannerSessionId) {
       removeAlertBanner();
     }
   });
 }
 
-export function showAlertBanner(config: AlertBannerConfig): void {
+export function destroyAlertBanner(): void {
   removeAlertBanner();
-  attachSessionChangeCleanup();
+  if (sessionChangeUnsubscribe) {
+    sessionChangeUnsubscribe();
+    sessionChangeUnsubscribe = null;
+  }
+  sessionChangeCleanupAttached = false;
+}
 
+export function showAlertBanner(config: AlertBannerConfig): void {
   const targetSessionId = config.sessionId ?? appState.activeSession?.id;
-  if (!targetSessionId) return;
+
+  // If we can't display the banner, don't attach cleanup listeners either.
+  // Guard: attachSessionChangeCleanup must only be called when banner is actually shown.
+  if (!targetSessionId) {
+    return;
+  }
 
   const pane = document.querySelector(`.terminal-pane[data-session-id="${targetSessionId}"]`);
-  if (!pane) return;
+  if (!pane) {
+    return;
+  }
+
+  // Only attach cleanup after confirming the banner will be rendered.
+  // Prevents session-changed listener accumulation when showAlertBanner returns early.
+  attachSessionChangeCleanup();
+  removeAlertBanner();
+
   bannerSessionId = targetSessionId;
 
   const banner = document.createElement('div');

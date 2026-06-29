@@ -34,7 +34,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "main": "./dist/main/main/main.js",
   "scripts": {
@@ -42,6 +42,8 @@
     "build:app-preload": "esbuild src/preload/preload.ts --bundle --outfile=dist/preload/preload/preload.js --platform=node --format=cjs --target=node20 --external:electron --sourcemap",
     "build:webview-preload": "esbuild src/preload/browser-tab-preload.ts --bundle --outfile=dist/preload/preload/browser-tab-preload.js --platform=browser --format=cjs --target=chrome120 --external:electron --sourcemap",
     "build:renderer": "esbuild src/renderer/index.ts --bundle --outfile=dist/renderer/index.js --platform=browser --format=iife --target=es2022 --sourcemap --loader:.ts=ts",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json && npm run build:app-preload && npm run build:webview-preload",
     "copy-assets": "node scripts/copy-assets.js",
     "start": "npm run build && node scripts/run-electron.js",
     "dev": "npm run build && node scripts/run-electron.js",
@@ -56,8 +58,13 @@
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "audit:graph": "node scripts/graph-gap-audit.mjs",
     "audit:structure": "node scripts/structure-audit.mjs",
+    "audit:deep": "node scripts/deep-system-audit.mjs",
+    "checksums:generate": "node scripts/generate-release-checksums.mjs",
     "audit:knip": "npx --yes --package=knip@6.6.0 knip --config knip.jsonc --reporter compact",
-    "audit:deep": "node scripts/deep-system-audit.mjs"
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "build": {
     "appId": "com.batuhanyuksel.calder",
@@ -113,10 +120,16 @@
   },
   "devDependencies": {
     "@types/picomatch": "^4.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^4.1.4",
     "electron": "^41.2.0",
     "electron-builder": "^26.8.1",
     "esbuild": "^0.27.7",
+    "eslint": "^9.0.0",
+    "eslint-plugin-simple-import-sort": "^12.0.0",
+    "globals": "^17.6.0",
+    "prettier": "^3.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.4"
   },
@@ -134,7 +147,8 @@
     "marked": "^17.0.5",
     "node-pty": "^1.1.0",
     "picomatch": "^4.0.4",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "zod": "^3.24.0"
   },
   "overrides": {
     "hono": "^4.12.14"

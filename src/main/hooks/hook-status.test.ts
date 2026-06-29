@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 const STATUS_DIR = path.join('/mock/home', '.calder', 'runtime');
@@ -31,16 +32,17 @@ vi.mock('electron', () => ({
 }));
 
 import * as fs from 'fs';
+
 import {
+  cleanupAll,
+  cleanupSessionStatus,
   installStatusLineScript,
+  registerSession,
+  restartAndResync,
+  resyncAllSessions,
+  setInspectorEventsMiddleware,
   startWatching,
   stopWatching,
-  resyncAllSessions,
-  restartAndResync,
-  cleanupSessionStatus,
-  cleanupAll,
-  registerSession,
-  setInspectorEventsMiddleware,
 } from './hook-status';
 
 let watchCallback: ((eventType: string, filename: string | null) => void) | null = null;
@@ -526,7 +528,7 @@ describe('hook-status', () => {
     it('.events derives gemini usageMetadata snapshots into session:costData updates', () => {
       const win = createMockWin();
       startWatching(win);
-      registerSession('abc123', 'gemini');
+      registerSession('abc123', 'antigravity');
       const payload = '{"type":"tool_use","model":"gemini-2.5-pro","usage_metadata":{"promptTokenCount":120,"cachedContentTokenCount":30,"candidatesTokenCount":40,"totalTokenCount":160}}\n';
       const payloadSize = Buffer.byteLength(payload);
 

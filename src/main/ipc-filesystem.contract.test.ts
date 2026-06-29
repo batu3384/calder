@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { describe, expect, it } from 'vitest';
 
 const ipcSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-handlers.ts'), 'utf8');
 const ipcFsStoreSource = readFileSync(path.join(process.cwd(), 'src/main/ipc-fs-store.ts'), 'utf8');

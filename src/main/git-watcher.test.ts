@@ -8,8 +8,9 @@ vi.mock('child_process', () => ({
   execFile: vi.fn(),
 }));
 
-import * as fs from 'fs';
 import { execFile } from 'child_process';
+import * as fs from 'fs';
+
 import { notifyGitChanged, startGitWatcher, stopGitWatcher } from './git-watcher';
 
 const mockSend = vi.fn();

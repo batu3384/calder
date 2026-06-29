@@ -1,6 +1,6 @@
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
-import { buildSelectionText } from './selection.js';
 import type { CalderProtocolMessage } from './protocol.js';
+import { buildSelectionText } from './selection.js';
 
 export interface CliHoverRegion {
   kind: 'semantic' | 'inferred';

@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
@@ -202,7 +203,11 @@ describe('ipc fs/store runtime branches', () => {
     mockReadFileSync.mockImplementation(() => {
       throw new Error('read failed');
     });
-    expect(readFile({}, '/repo/file.txt')).toBe('');
+    expect(readFile({}, '/repo/file.txt')).toEqual({
+      ok: false,
+      reason: 'read-error',
+      message: 'read failed',
+    });
 
     mockIpcOn.mockClear();
     const watchPolicy = createPolicy({ isAllowedReadPath: vi.fn(() => false) });

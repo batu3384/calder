@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
@@ -25,9 +25,9 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting, MAX_SESSION_NAME_LENGTH } from './state';
-import { getCost, restoreCost } from './session-cost.js';
 import { restoreContext } from './session-context.js';
+import { getCost, restoreCost } from './session-cost.js';
+import { _resetForTesting, appState, MAX_SESSION_NAME_LENGTH } from './state';
 
 const mockGetCost = vi.mocked(getCost);
 const mockRestoreCost = vi.mocked(restoreCost);
@@ -498,8 +498,8 @@ describe('persist()', () => {
     await Promise.resolve();
 
     expect(warnSpy).toHaveBeenCalledWith('Failed to persist renderer state:', expect.any(Error));
-    expect(mockSave).toHaveBeenCalledTimes(2);
-    expect(mockSave.mock.calls[1][0].sidebarWidth).toBe(42);
+    expect(mockSave).toHaveBeenCalledTimes(3);
+    expect(mockSave.mock.calls[2][0].sidebarWidth).toBe(42);
 
     warnSpy.mockRestore();
   });
@@ -672,21 +672,21 @@ describe('addSession()', () => {
 
   it('uses the persisted default provider when no explicit provider is passed', () => {
     const project = addProject();
-    appState.setPreference('defaultProvider', 'gemini');
+    appState.setPreference('defaultProvider', 'antigravity');
     const session = appState.addSession(project.id, 'S1')!;
-    expect(session.providerId).toBe('gemini');
+    expect(session.providerId).toBe('antigravity');
   });
 
   it('keeps an explicit provider instead of the persisted default provider', () => {
     const project = addProject();
-    appState.setPreference('defaultProvider', 'gemini');
+    appState.setPreference('defaultProvider', 'antigravity');
     const session = appState.addSession(project.id, 'S1', undefined, 'codex')!;
     expect(session.providerId).toBe('codex');
   });
 
   it('lets plan sessions use an explicit provider override instead of the active session provider', () => {
     const project = addProject();
-    appState.setPreference('defaultProvider', 'gemini');
+    appState.setPreference('defaultProvider', 'antigravity');
     appState.addSession(project.id, 'Existing', undefined, 'codex');
 
     const session = (appState as any).addPlanSession(project.id, 'Fix auth modal', 'claude')!;

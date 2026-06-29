@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { isAllowedGuestMessagePayload } from './ipc-app-browser';
 
 describe('ipc app/browser guest payload guard', () => {

@@ -1,14 +1,14 @@
-import { getEvents, getToolStats, getContextHistory, getCostDeltas } from '../surface-services/session-inspector-state.js';
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
+import { getContextHistory, getCostDeltas,getEvents, getToolStats } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
-  emptyMessage,
-  formatTokenCount,
   badgeLabel,
+  emptyMessage,
   escapeHtml,
-  renderUnsupportedGuard,
-  renderInspectorEmpty,
+  formatTokenCount,
   getInspectedProviderId,
+  renderInspectorEmpty,
+  renderUnsupportedGuard,
 } from './session-inspector-utils.js';
 
 // --- Costs View ---

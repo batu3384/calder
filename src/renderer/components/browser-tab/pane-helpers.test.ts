@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { buildBrowserSessionPartition } from '../../../shared/constants.js';
 
 const mockAppState = {

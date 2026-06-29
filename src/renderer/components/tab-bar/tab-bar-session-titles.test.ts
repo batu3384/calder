@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import type { SessionRecord } from '../../../shared/types/session.js';
 import { buildSessionTabTitle, buildSessionTooltip } from './tab-bar-session-titles.js';
 

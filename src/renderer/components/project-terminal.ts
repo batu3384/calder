@@ -1,11 +1,12 @@
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { WebglAddon } from '@xterm/addon-webgl';
 import { SearchAddon } from '@xterm/addon-search';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { Terminal } from '@xterm/xterm';
+
 import { appState } from '../state.js';
-import { fitAllVisible } from './terminal-pane.js';
 import { destroySearchBar, hideSearchBar } from './search-bar.js';
 import { registerShellTerminalInstance, unregisterShellTerminalInstance } from './shell-terminal-registry.js';
+import { fitAllVisible } from './terminal-pane.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 interface ShellTerminalInstance {

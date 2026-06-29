@@ -1,10 +1,11 @@
 import * as http from 'node:http';
+
 import { getMobileCopy, getRequestLanguage } from './copy';
 import { sendText } from './http';
 import { handleBridgeGetRequest } from './routes-get';
-import { dispatchPairingPostRequest } from './routes-post-dispatch';
-import { createPairingPostHandlers } from './routes-post';
 import type { PairingPostHandlersConfig } from './routes-post';
+import { createPairingPostHandlers } from './routes-post';
+import { dispatchPairingPostRequest } from './routes-post-dispatch';
 
 interface BridgeRouteConfig extends PairingPostHandlersConfig {
   cleanupBridgeRecords: () => void;

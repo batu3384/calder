@@ -1,15 +1,15 @@
-import { appState } from '../../state.js';
 import {
   appendAppliedContextToPrompt,
   buildAppliedContextSummary,
   formatAppliedContextTrace,
 } from '../../project-context-prompt.js';
-import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
-import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
-import type { BrowserTabInstance } from './types.js';
+import { appState } from '../../state.js';
 import type { ProviderId } from '../../types.js';
-import { buildPrompt, dismissInspect } from './inspect-mode.js';
+import { deliverSurfacePrompt, queueSurfacePromptInCustomSession, queueSurfacePromptInNewSession } from '../surface-routing.js';
+import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from '../surface-services/provider-availability.js';
 import { buildFlowPrompt, dismissFlow } from './flow-recording.js';
+import { buildPrompt, dismissInspect } from './inspect-mode.js';
+import type { BrowserTabInstance } from './types.js';
 
 function hideSendError(errorEl: { textContent: string; style: { display: string } }): void {
   errorEl.textContent = '';

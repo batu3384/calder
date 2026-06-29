@@ -170,7 +170,7 @@
   width: 3px;
   border-radius: 999px;
   background: transparent;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  transition: background var(--motion-fast) ease, opacity var(--motion-fast) ease;
   opacity: 0;
 }
 
@@ -1416,7 +1416,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   color: var(--accent);
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform var(--motion-fast) ease, border-color var(--motion-fast) ease, background var(--motion-fast) ease;
 }
 
 .about-link:hover {

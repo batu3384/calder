@@ -22,7 +22,6 @@ const mockDeleteBrowserCredentialById = vi.hoisted(() => vi.fn());
 const mockGetBrowserCredentialForFill = vi.hoisted(() => vi.fn());
 const mockGetBrowserAutoFillCredentialForUrl = vi.hoisted(() => vi.fn());
 const mockOpenUrlWithBrowserPolicy = vi.hoisted(() => vi.fn());
-const mockGetPtyCwd = vi.hoisted(() => vi.fn());
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -72,10 +71,6 @@ vi.mock('./browser-credential-vault', () => ({
 
 vi.mock('./browser-open-policy', () => ({
   openUrlWithBrowserPolicy: mockOpenUrlWithBrowserPolicy,
-}));
-
-vi.mock('./pty-manager', () => ({
-  getPtyCwd: mockGetPtyCwd,
 }));
 
 import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
@@ -143,18 +138,29 @@ describe('ipc app/browser runtime handlers', () => {
     mockWebContentsFromId.mockReturnValueOnce({
       isDestroyed: () => false,
       getType: () => 'window',
+      getURL: vi.fn(() => 'https://example.com'),
       send: vi.fn(),
     });
     expect(handler({}, 1, 'enter-inspect-mode')).toBe(false);
 
     const send = vi.fn();
+    const getUrl = vi.fn(() => 'https://localhost:8080/page');
     mockWebContentsFromId.mockReturnValueOnce({
       isDestroyed: () => false,
       getType: () => 'webview',
+      getURL: getUrl,
       send,
     });
     expect(handler({}, 1, 'auth-fill-credentials', { username: 'u', password: 'p' })).toBe(true);
     expect(send).toHaveBeenCalledWith('auth-fill-credentials', { username: 'u', password: 'p' });
+
+    mockWebContentsFromId.mockReturnValueOnce({
+      isDestroyed: () => false,
+      getType: () => 'webview',
+      getURL: vi.fn(() => 'https://localhost.evil.com/page'),
+      send: vi.fn(),
+    });
+    expect(handler({}, 1, 'enter-inspect-mode')).toBe(false);
   });
 
   it('validates app:openExternal protocol and governance checks', async () => {
@@ -204,10 +210,8 @@ describe('ipc app/browser runtime handlers', () => {
     const listTargets = getHandleHandler('browser:listLocalTargets');
     const getVersion = getHandleHandler('app:getVersion');
     const getBrowserPreloadPath = getHandleHandler('app:getBrowserPreloadPath');
-    const getPtyCwd = getHandleHandler('pty:getCwd');
 
     mockDiscoverLocalBrowserTargets.mockResolvedValue([{ url: 'http://localhost:3000' }]);
-    mockGetPtyCwd.mockReturnValue('/repo');
     mockReaddir.mockResolvedValueOnce(['stale.png', 'broken.png']);
     mockStat
       .mockResolvedValueOnce({ mtimeMs: 0 })
@@ -227,7 +231,6 @@ describe('ipc app/browser runtime handlers', () => {
     expect(await listTargets({})).toEqual([{ url: 'http://localhost:3000' }]);
     expect(getVersion({})).toBe('1.2.3');
     expect(getBrowserPreloadPath({})).toContain('/preload/preload/browser-tab-preload.js');
-    expect(getPtyCwd({}, 'session-1')).toBe('/repo');
 
     warnSpy.mockRestore();
     nowSpy.mockRestore();

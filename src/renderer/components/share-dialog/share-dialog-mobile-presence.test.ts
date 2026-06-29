@@ -11,15 +11,15 @@ vi.mock('../../state.js', () => ({
 }));
 
 import {
-  buildShareDialogMobilePresence,
-  formatShareConnectionDuration,
-  getShareDialogMobilePresenceCopy,
-} from './share-dialog-mobile-presence.js';
-import {
   getShareConnectionSnapshot,
   isConnected,
   isSharing,
 } from '../../sharing/peer-host.js';
+import {
+  buildShareDialogMobilePresence,
+  formatShareConnectionDuration,
+  getShareDialogMobilePresenceCopy,
+} from './share-dialog-mobile-presence.js';
 
 const mockGetShareConnectionSnapshot = vi.mocked(getShareConnectionSnapshot);
 const mockIsConnected = vi.mocked(isConnected);

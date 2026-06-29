@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoadState = vi.hoisted(() => vi.fn());
@@ -55,6 +56,7 @@ describe('ipc path policy helpers', () => {
     expect(isAllowedReadPath('/repo/main/README.md')).toBe(true);
     expect(isAllowedReadPath('/home/test/.claude/settings.json')).toBe(true);
     expect(isAllowedReadPath('/home/test/.codex/config.toml')).toBe(true);
+    expect(isAllowedReadPath('/home/test/.gemini/settings.json')).toBe(true);
     expect(isAllowedReadPath('/home/test/.mcp.json')).toBe(true);
     expect(isAllowedReadPath('/etc/claude-code/settings.json')).toBe(true);
     expect(isAllowedReadPath('/home/test/.claude.json.bak')).toBe(false);

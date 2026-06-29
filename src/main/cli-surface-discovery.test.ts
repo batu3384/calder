@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
+import { mkdirSync,mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { afterEach, describe, expect, it } from 'vitest';
+
 import { discoverCliSurface } from './cli-surface-discovery';
 
 function makeProject(name: string): string {

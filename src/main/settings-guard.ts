@@ -1,12 +1,14 @@
+import { BrowserWindow,ipcMain } from 'electron';
 import { homedir } from 'os';
 import * as path from 'path';
-import { ipcMain, BrowserWindow } from 'electron';
-import { getStatusLineScriptPath } from './hooks/hook-status';
-import { HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
+
+import type { SettingsValidationResult } from '../shared/types/provider';
+import { cleanupClaudeHooksOnly, HOOK_MARKER, installHooksOnly, installStatusLine } from './claude-cli';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import { readJsonSafe } from './fs-utils';
+import { getStatusLineScriptPath } from './hooks/hook-status';
 import { isManagedStatusLineCommand } from './statusline/statusline-command';
 import { loadState, saveState } from './store';
-import type { SettingsValidationResult } from '../shared/types/provider';
 
 const EXPECTED_HOOK_EVENTS = [
   'SessionStart', 'UserPromptSubmit', 'PostToolUse',
@@ -19,6 +21,7 @@ function warnSettingsInstallFailure(step: 'hooks' | 'statusLine', error: unknown
 }
 
 function tryInstallHooksOnly(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
   try {
     installHooksOnly();
   } catch (error) {
@@ -27,6 +30,7 @@ function tryInstallHooksOnly(): void {
 }
 
 function tryInstallStatusLine(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
   try {
     installStatusLine();
   } catch (error) {
@@ -86,6 +90,11 @@ export function validateSettings(): SettingsValidationResult {
  * is detected and the user hasn't previously granted/declined consent.
  */
 export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+    cleanupClaudeHooksOnly();
+    return;
+  }
+
   const validation = validateSettings();
 
   // Always install hooks (additive, non-destructive)
@@ -146,6 +155,11 @@ export async function guardedInstall(win: BrowserWindow | null): Promise<void> {
  * Resets consent to granted since this is an explicit user action.
  */
 export function reinstallSettings(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+    cleanupClaudeHooksOnly();
+    return;
+  }
+
   tryInstallHooksOnly();
   tryInstallStatusLine();
 

@@ -1,4 +1,4 @@
-import { renderSchemaForm, type JsonSchema } from './mcp-schema-form.js';
+import { type JsonSchema,renderSchemaForm } from './mcp-schema-form.js';
 
 type NavTab = 'tools' | 'resources' | 'prompts';
 

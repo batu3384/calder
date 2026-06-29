@@ -1,16 +1,18 @@
 import type { BrowserWindow } from 'electron';
-import type { CliProvider } from './provider';
+
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { getFullPath } from '../full-path';
-import { resolveBinary, validateBinaryExists } from './resolve-binary';
-import { getCopilotConfig } from '../copilot-config';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
+import { getFullPath } from '../full-path';
+import { sanitizeExtraArgsQuiet } from '../security/sanitize';
+import { BaseCliProvider } from './base-cli-provider';
+import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
 const INERT_SETTINGS: SettingsValidationResult = { statusLine: 'missing', hooks: 'missing', hookDetails: {} };
 
-export class CopilotProvider implements CliProvider {
+export class CopilotProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
     id: 'copilot',
     displayName: 'GitHub Copilot',
@@ -26,6 +28,10 @@ export class CopilotProvider implements CliProvider {
     },
     defaultContextWindowSize: 200_000,
   };
+
+  protected readonly binaryName = 'copilot';
+  protected readonly installCommand = 'npm install -g @github/copilot';
+  protected readonly binaryCache = binaryCache;
 
   resolveBinaryPath(): string {
     return resolveBinary('copilot', binaryCache);
@@ -45,7 +51,7 @@ export class CopilotProvider implements CliProvider {
       args.push('--resume', opts.cliSessionId);
     }
     if (opts.extraArgs) {
-      args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
+      args.push(...sanitizeExtraArgsQuiet(opts.extraArgs));
     }
     if (!opts.isResume && opts.initialPrompt) {
       args.push('-i', opts.initialPrompt);

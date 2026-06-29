@@ -1,15 +1,6 @@
 import * as fs from 'fs';
+
 import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../shared/types/provider';
-import type { ProviderUpdateSpec, ProviderUpdaterRunner } from './provider-updater-types';
-import {
-  hasDifferentVersion,
-  parseVersion,
-} from './provider-updater-version';
-import {
-  buildCancelledResult,
-  buildMissingUpdateCommandResult,
-  buildUnknownSourceResult,
-} from './provider-updater/update-result-helpers';
 import {
   resolveNoUpdateResult,
   resolveProviderUpdateCheck,
@@ -18,6 +9,16 @@ import {
   applyUpdateCommandAndVerify,
   resolveUpdateCommand,
 } from './provider-updater/update-command-helpers';
+import {
+  buildCancelledResult,
+  buildMissingUpdateCommandResult,
+  buildUnknownSourceResult,
+} from './provider-updater/update-result-helpers';
+import type { ProviderUpdaterRunner,ProviderUpdateSpec } from './provider-updater-types';
+import {
+  hasDifferentVersion,
+  parseVersion,
+} from './provider-updater-version';
 
 const CHECK_TIMEOUT_MS = 20_000;
 
@@ -67,9 +68,6 @@ export function detectUpdateSource(
     return { source: 'npm' };
   }
   if (providerId === 'codex' && normalized.includes('/node_modules/@openai/codex/')) {
-    return { source: 'npm' };
-  }
-  if (providerId === 'gemini' && normalized.includes('/node_modules/@google/gemini-cli/')) {
     return { source: 'npm' };
   }
   if (providerId === 'qwen' && normalized.includes('/node_modules/@qwen-code/qwen-code/')) {

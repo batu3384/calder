@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync,rmSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('browser session storage prep', () => {
   it('moves legacy default-session service worker data out of the main Calder profile', async () => {

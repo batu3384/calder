@@ -97,6 +97,10 @@ vi.mock('./components/quick-open.js', () => ({
   showQuickOpen: vi.fn(),
 }));
 
+vi.mock('./components/command-palette.js', () => ({
+  showCommandPalette: vi.fn(),
+}));
+
 vi.mock('./shortcuts.js', () => ({
   shortcutManager: {
     registerHandler: vi.fn(),

@@ -1,11 +1,11 @@
 import type { ProjectBackgroundTaskDocument, ProjectBackgroundTaskSource, ProjectBackgroundTaskState } from '../../../shared/types/project-background-task.js';
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
-import { appState } from '../../state.js';
-import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import {
   resumeProjectBackgroundTaskInNewSession,
   sendProjectBackgroundTaskToSelectedSession,
 } from '../../project-background-task-actions.js';
+import { toProjectRelativeContextPath } from '../../project-context-utils.js';
+import { appState } from '../../state.js';
 import { setModalError, showModal } from '../modal.js';
 
 export interface RenderProjectBackgroundTaskSectionArgs {

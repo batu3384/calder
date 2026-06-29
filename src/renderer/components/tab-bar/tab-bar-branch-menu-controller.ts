@@ -1,6 +1,6 @@
 import { appState } from '../../state.js';
-import { getActiveGitPath, getGitStatus } from '../surface-services/git-status.js';
 import { closeModal, setModalError, showModal } from '../modal.js';
+import { getActiveGitPath, getGitStatus } from '../surface-services/git-status.js';
 
 interface CreateTabBarBranchMenuControllerOptions {
   gitStatusEl: HTMLElement;

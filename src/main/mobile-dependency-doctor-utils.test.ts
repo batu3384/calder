@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   normalizeInstallFailureMessage,
   parseBytePairFromLine,
+  parseInstalledDriverFromJson,
   parseJavaMajor,
   parsePercentFromLine,
-  parseInstalledDriverFromJson,
 } from './mobile-dependency-doctor-utils';
 
 describe('mobile dependency doctor utils', () => {

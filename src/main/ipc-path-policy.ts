@@ -1,7 +1,8 @@
 import * as os from 'os';
 import * as path from 'path';
-import { loadState } from './store';
+
 import { isMac, isWin } from './platform';
+import { loadState } from './store';
 
 /**
  * Check if a resolved path is within one of the known project directories.
@@ -53,6 +54,7 @@ export function isAllowedReadPath(resolvedPath: string): boolean {
     { value: path.join(home, '.codex'), kind: 'dir' },
     { value: path.join(home, '.copilot'), kind: 'dir' },
     { value: path.join(home, '.qwen'), kind: 'dir' },
+    { value: path.join(home, '.gemini'), kind: 'dir' },
   ];
 
   if (isMac) {

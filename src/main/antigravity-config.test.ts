@@ -10,9 +10,11 @@ vi.mock('os', () => ({
   homedir: () => '/mock/home',
 }));
 
-import * as fs from 'fs';
 import path from 'node:path';
-import { getGeminiConfig } from './gemini-config';
+
+import * as fs from 'fs';
+
+import { getAntigravityConfig } from './antigravity-config';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
@@ -39,11 +41,11 @@ beforeEach(() => {
   });
 });
 
-describe('getGeminiConfig', () => {
+describe('getAntigravityConfig', () => {
   it('returns empty config when no settings files exist', async () => {
     mockFiles({});
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config).toEqual({ mcpServers: [], agents: [], skills: [], commands: [] });
   });
 
@@ -56,7 +58,7 @@ describe('getGeminiConfig', () => {
       }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(1);
     expect(config.mcpServers[0].name).toBe('github');
     expect(config.mcpServers[0].url).toBe('docker');
@@ -72,7 +74,7 @@ describe('getGeminiConfig', () => {
       }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(1);
     expect(config.mcpServers[0].name).toBe('slack');
     expect(config.mcpServers[0].url).toBe('http://localhost:3000/mcp');
@@ -93,7 +95,7 @@ describe('getGeminiConfig', () => {
       }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(1);
     expect(config.mcpServers[0].url).toBe('docker-project');
     expect(config.mcpServers[0].scope).toBe('project');
@@ -104,7 +106,7 @@ describe('getGeminiConfig', () => {
       '/mock/home/.gemini/settings.json': 'not-json',
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(0);
   });
 
@@ -113,7 +115,7 @@ describe('getGeminiConfig', () => {
       '/mock/home/.gemini/settings.json': JSON.stringify({ theme: 'dark' }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(0);
   });
 
@@ -126,7 +128,7 @@ describe('getGeminiConfig', () => {
       }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.mcpServers).toHaveLength(0);
   });
 
@@ -139,7 +141,7 @@ describe('getGeminiConfig', () => {
       }),
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.agents).toEqual([]);
     expect(config.commands).toEqual([]);
   });
@@ -169,7 +171,7 @@ describe('getGeminiConfig', () => {
       throw new Error('ENOENT');
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.skills).toEqual([
       {
         name: 'SharedSkill',
@@ -213,7 +215,7 @@ describe('getGeminiConfig', () => {
       throw new Error('ENOENT');
     });
 
-    const config = await getGeminiConfig('/project');
+    const config = await getAntigravityConfig('/project');
     expect(config.skills).toEqual([
       {
         name: 'nofm',

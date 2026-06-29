@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const inspectorViewsSource = readFileSync(new URL('./session-inspector/session-inspector-views.ts', import.meta.url), 'utf-8');
 const inspectorUtilsSource = readFileSync(new URL('./session-inspector/session-inspector-utils.ts', import.meta.url), 'utf-8');

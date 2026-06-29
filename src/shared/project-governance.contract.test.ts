@@ -1,6 +1,8 @@
-import { describe, expect, expectTypeOf, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+
+import { describe, expect, expectTypeOf, it } from 'vitest';
+
 import type { ProjectGovernanceAutoApprovalDecisionRecord, ProjectGovernanceAutoApprovalState } from './types';
 import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalOperationClass, AutoApprovalPolicySource, InspectorEvent } from './types';
 

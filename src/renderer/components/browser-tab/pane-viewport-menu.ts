@@ -1,6 +1,6 @@
-import { VIEWPORT_PRESETS, type BrowserTabInstance } from './types.js';
-import { applyViewport, closeViewportDropdown, openViewportDropdown } from './viewport.js';
 import type { ViewportMenuFocusMode } from './pane-interactions.js';
+import { type BrowserTabInstance,VIEWPORT_PRESETS } from './types.js';
+import { applyViewport, closeViewportDropdown, openViewportDropdown } from './viewport.js';
 
 interface BrowserViewportMenuControllerOptions {
   instance: BrowserTabInstance;

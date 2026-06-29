@@ -19,6 +19,7 @@
   --text-secondary: #ced8d8;
   --text-muted: #91a1a6;
   --text-dim: #667982;
+  --text-inverse: #05070c;
   --accent-warm: #c8a866;
   --accent-cool: #74c7ff;
   --accent-aurora: #5ed6c3;
@@ -155,6 +156,112 @@ html, body {
   text-rendering: optimizeLegibility;
 }
 
+/* Light theme */
+:root[data-theme='light'] {
+  --surface-canvas: #ffffff;
+  --surface-panel: #f7f8f9;
+  --surface-panel-alt: #eef0f2;
+  --surface-elevated: #ffffff;
+  --surface-shell: #f2f4f6;
+  --surface-rail: #eaecee;
+  --surface-live: #f9fafb;
+  --surface-deck: #f4f5f7;
+  --surface-ops: #f5f6f8;
+  --surface-workspace: #fafbfc;
+  --surface-raised: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.88);
+  --surface-overlay: rgba(240, 242, 245, 0.86);
+  --surface-hover: #eef0f2;
+  --surface-muted: #e5e7e9;
+  --surface-contrast: #d1d5db;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --text-dim: #6b7280;
+  --text-inverse: #f9fafb;
+  --accent-warm: #b8860b;
+  --accent-cool: #2563eb;
+  --accent-aurora: #0d9488;
+  --accent-violet: #5b7bb4;
+  --accent-rose: #be6e5a;
+  --accent-emerald: #059669;
+  --accent: var(--accent-aurora);
+  --accent-dim: #0d9488;
+  --accent-soft: rgba(13, 148, 136, 0.13);
+  --accent-ghost: rgba(13, 148, 136, 0.075);
+  --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
+  --accent-positive: #10b981;
+  --accent-warning: #d97706;
+  --warning-strong: #b45309;
+  --accent-info: #3b82f6;
+  --accent-danger: #dc2626;
+  --border-hairline: rgba(0, 0, 0, 0.06);
+  --border-muted: #e5e7eb;
+  --border-subtle: #d1d5db;
+  --border: #9ca3af;
+  --border-strong: #6b7280;
+  --border-focus: rgba(13, 148, 136, 0.44);
+  --tab-active: #ffffff;
+  --tab-inactive: #f3f4f6;
+  --pane-focus: #0d9488;
+  --pane-unfocus: #d1d5db;
+  --bookmark: #6366f1;
+  --success: #059669;
+  --warning: #d97706;
+  --info: #2563eb;
+  --danger: #dc2626;
+  --status-success-bg: color-mix(in srgb, var(--success) 14%, transparent);
+  --status-success-border: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
+  --status-success-text: color-mix(in srgb, var(--success) 76%, #000);
+  --status-warning-bg: color-mix(in srgb, var(--warning) 16%, transparent);
+  --status-warning-border: color-mix(in srgb, var(--warning) 34%, var(--border-subtle));
+  --status-warning-text: color-mix(in srgb, var(--warning) 82%, #000);
+  --status-info-bg: color-mix(in srgb, var(--accent-cool) 16%, transparent);
+  --status-info-border: color-mix(in srgb, var(--accent-cool) 32%, var(--border-subtle));
+  --status-info-text: color-mix(in srgb, var(--accent-cool) 74%, #000);
+  --status-danger-bg: color-mix(in srgb, var(--danger) 16%, transparent);
+  --status-danger-border: color-mix(in srgb, var(--danger) 30%, var(--border-subtle));
+  --status-danger-text: color-mix(in srgb, var(--danger) 76%, #000);
+  --status-accent-bg: color-mix(in srgb, var(--accent) 16%, transparent);
+  --status-accent-border: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  --status-accent-text: color-mix(in srgb, var(--accent) 82%, #000);
+  --status-neutral-bg: color-mix(in srgb, var(--surface-contrast) 52%, transparent);
+  --status-neutral-border: color-mix(in srgb, var(--border) 68%, transparent);
+  --status-neutral-text: color-mix(in srgb, var(--text-muted) 88%, #000);
+  --git-added: #16a34a;
+  --git-modified: #d97706;
+  --git-renamed: #6b7280;
+  --git-conflicted: #ea580c;
+  --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.08);
+  --shadow-elevated: 0 30px 76px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.06);
+  --shadow-card-strong: 0 18px 44px rgba(0, 0, 0, 0.10);
+  --shadow-lift: 0 14px 30px rgba(0, 0, 0, 0.08);
+  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  color-scheme: light;
+  background:
+    radial-gradient(circle at 14% -6%, rgba(13, 148, 136, 0.08), transparent 30%),
+    radial-gradient(circle at 84% 0%, rgba(184, 134, 11, 0.05), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, var(--surface-canvas) 48%, #f1f5f9 100%);
+}
+
+/* Theme transition */
+html, body, #app {
+  transition: background-color var(--motion-normal) var(--ease-standard),
+              color var(--motion-normal) var(--ease-standard);
+}
+
+/* Respect system preference by default */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    /* Auto light mode — commented out to preserve dark default
+       Uncomment to make system preference the default:
+       @import './theme-auto.css';
+    */
+  }
+}
+
 #app {
   display: flex;
   height: 100vh;
@@ -203,6 +310,30 @@ html, body {
   pointer-events: auto;
 }
 
+/* Ekran okuyucu için görünmez metin */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 :focus-visible {
   outline: 1px solid var(--border-focus);
   outline-offset: 2px;
@@ -239,7 +370,7 @@ body.debug-panel-open #app {
   --provider-accent-soft: rgba(124, 140, 255, 0.22);
 }
 
-[data-provider='gemini'] {
+[data-provider='antigravity'] {
   --provider-accent: #6bb5ff;
   --provider-accent-soft: rgba(107, 181, 255, 0.2);
 }

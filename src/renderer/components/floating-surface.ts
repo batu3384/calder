@@ -3,9 +3,9 @@ import {
   computePosition,
   flip,
   offset,
+  type Placement,
   shift,
   size,
-  type Placement,
 } from '@floating-ui/dom';
 
 export type FloatingPlacement = Extract<

@@ -4,18 +4,18 @@ import type {
   MobileInspectPlatform,
 } from '../../../shared/types/mobile.js';
 import {
-  applyInstallProgressEvent,
-  createInstallId,
-  isInstallRunning,
-  pushInstallLog,
-  renderInstallProgress,
-  type MobileSurfaceInstallState,
-} from './install-progress.js';
-import {
   getMobileInspectCapabilities,
   getStatusLabel,
   isInstallable,
 } from './dependency-scoping.js';
+import {
+  applyInstallProgressEvent,
+  createInstallId,
+  isInstallRunning,
+  type MobileSurfaceInstallState,
+  pushInstallLog,
+  renderInstallProgress,
+} from './install-progress.js';
 
 type StatusTone = 'default' | 'success' | 'error';
 

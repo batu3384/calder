@@ -1,11 +1,13 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR } from './hooks/hook-status';
-import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hooks/hook-commands';
-import { readFileSafe, readJsonSafe } from './fs-utils';
+import * as path from 'path';
+
 import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
+import { readFileSafe, readJsonSafe } from './fs-utils';
+import { captureSessionIdCmd as mkCaptureSessionIdCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import { STATUS_DIR } from './hooks/hook-status';
 
 export const CODEX_HOOK_MARKER = '# calder-hook';
 
@@ -118,6 +120,8 @@ function cleanHooks(existing: HooksConfig): HooksConfig {
 }
 
 export function installCodexHooks(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
+
   ensureCodexHooksFeatureFlag();
 
   const raw = readJsonSafe(HOOKS_JSON_PATH) ?? {};
@@ -130,7 +134,7 @@ export function installCodexHooks(): void {
     mkStatusCmd(event, status, SESSION_ID_VAR, CODEX_HOOK_MARKER);
 
   const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, CODEX_HOOK_MARKER);
-  const rtkPreToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook claude ${CODEX_HOOK_MARKER}`;
+  const rtkPreToolCmd = `[ "\${CALDER_RUNTIME:-}" = "1" ] && [ -n "\${CALDER_SESSION_ID:-}" ] && CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook codex ${CODEX_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: string) => {
     const pyCode = `import sys,json,os,time

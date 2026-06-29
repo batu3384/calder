@@ -30,7 +30,6 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import {
   describePreviewRuntimeHealth,
   focusCliPreviewSurface,
@@ -38,6 +37,7 @@ import {
   openWorkspaceShellLogs,
   restartPreviewRuntime,
 } from './project-preview-actions.js';
+import { _resetForTesting,appState } from './state.js';
 
 describe('project preview actions', () => {
   beforeEach(() => {

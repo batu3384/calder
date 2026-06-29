@@ -1,7 +1,7 @@
+import type { CliProviderCapabilities,ProviderId } from '../../../shared/types/provider.js';
+import type { InspectorEvent } from '../../../shared/types/session.js';
 import { appState, type SessionRecord } from '../../state.js';
 import { getProviderCapabilities, getProviderDisplayName } from '../surface-services/provider-availability.js';
-import type { ProviderId, CliProviderCapabilities } from '../../../shared/types/provider.js';
-import type { InspectorEvent } from '../../../shared/types/session.js';
 import { getTerminalInstance } from '../terminal-pane.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 

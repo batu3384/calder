@@ -1,6 +1,7 @@
-import { vi } from 'vitest';
-import type { ExecFileException } from 'child_process';
 import path from 'node:path';
+
+import type { ExecFileException } from 'child_process';
+import { vi } from 'vitest';
 
 // Mock child_process and fs before importing the module
 vi.mock('child_process', () => ({
@@ -16,18 +17,19 @@ vi.mock('fs', () => ({
 
 import { execFile } from 'child_process';
 import * as fs from 'fs';
+
 import {
-  getGitStatus,
-  getGitFiles,
-  getGitDiff,
-  getGitWorktrees,
-  listGitBranches,
   checkoutGitBranch,
   createGitBranch,
+  getGitDiff,
+  getGitFiles,
+  getGitRemoteUrl,
+  getGitStatus,
+  getGitWorktrees,
+  gitDiscardFile,
   gitStageFile,
   gitUnstageFile,
-  gitDiscardFile,
-  getGitRemoteUrl,
+  listGitBranches,
 } from './git-status';
 
 const mockExecFile = vi.mocked(execFile);

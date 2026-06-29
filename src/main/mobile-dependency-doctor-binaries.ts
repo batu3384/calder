@@ -1,7 +1,8 @@
 import * as os from 'os';
 import * as path from 'path';
-import { whichCmd } from './platform';
+
 import { firstNonEmptyLine } from './mobile-dependency-doctor-utils';
+import { whichCmd } from './platform';
 
 interface BinaryProbeResult {
   code: number;

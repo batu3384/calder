@@ -1,9 +1,10 @@
 import { appState, ProjectRecord } from '../state.js';
-import { showModal, setModalError, closeModal } from './modal.js';
+import { closeModal,setModalError, showModal } from './modal.js';
 import { showPreferencesModal } from './preferences/preferences-modal.js';
-import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
 import { getStatus, onChange as onSessionStatusChange } from './surface-services/session-activity.js';
+import { hasUnreadInProject, isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
+import { enableTooltip } from './tooltip.js';
 
 const projectListEl = document.getElementById('project-list')!;
 let activeProjectContextMenu: HTMLElement | null = null;
@@ -38,12 +39,23 @@ function applySidebarCollapsed(): void {
   resizeHandle.style.display = collapsed ? 'none' : '';
 }
 
+let unsubscribers: Array<() => void> = [];
+let renderRAF: number | null = null;
+let tooltipCleanups: Array<() => void> = [];
+let finishDragCleanup: () => void = () => {};
+
 export function initSidebar(): void {
   btnAddProject.addEventListener('click', promptNewProject);
   btnPreferences.addEventListener('click', showPreferencesModal);
   btnToggleSidebar.addEventListener('click', toggleSidebar);
   initResizeHandle();
-  appState.on('state-loaded', () => {
+
+  // Enable tooltips for sidebar buttons
+  tooltipCleanups.push(enableTooltip(btnAddProject, { content: 'New Project (Ctrl+Shift+P)', placement: 'bottom' }));
+  tooltipCleanups.push(enableTooltip(btnPreferences, { content: 'Preferences', placement: 'bottom' }));
+  tooltipCleanups.push(enableTooltip(btnToggleSidebar, { content: 'Toggle Sidebar (Cmd+B)', placement: 'bottom' }));
+
+  const onStateLoaded = () => {
     const preferredWidth = appState.sidebarWidth || SIDEBAR_DEFAULT;
     const normalizedWidth = preferredWidth === LEGACY_SIDEBAR_DEFAULT
       ? SIDEBAR_DEFAULT
@@ -52,25 +64,53 @@ export function initSidebar(): void {
     sidebarEl.style.width = clampedWidth + 'px';
     applySidebarCollapsed();
     render();
-  });
-  appState.on('sidebar-toggled', applySidebarCollapsed);
-  appState.on('project-added', render);
-  appState.on('project-removed', render);
-  appState.on('project-changed', render);
-  appState.on('session-added', render);
-  appState.on('session-removed', render);
+  };
 
-  onUnreadChange(render);
-  onSessionStatusChange(() => render());
-  appState.on('preferences-changed', () => applyCostFooterVisibility());
+  const onSidebarToggled = () => applySidebarCollapsed();
+  const onPreferencesChanged = () => applyCostFooterVisibility();
+
+  unsubscribers.push(appState.on('state-loaded', onStateLoaded));
+  unsubscribers.push(appState.on('sidebar-toggled', onSidebarToggled));
+  unsubscribers.push(appState.on('project-added', render));
+  unsubscribers.push(appState.on('project-removed', render));
+  unsubscribers.push(appState.on('project-changed', render));
+  unsubscribers.push(appState.on('session-added', render));
+  unsubscribers.push(appState.on('session-removed', render));
+  unsubscribers.push(appState.on('preferences-changed', onPreferencesChanged));
+
+  const unsubUnread = onUnreadChange(render);
+  unsubscribers.push(unsubUnread);
+
+  const unsubStatus = onSessionStatusChange(() => render());
+  unsubscribers.push(unsubStatus);
 
   document.addEventListener('click', hideProjectContextMenu);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideProjectContextMenu(); });
+}
 
-  render();
+export function destroySidebar(): void {
+  unsubscribers.forEach((fn) => fn());
+  unsubscribers = [];
+  if (renderRAF !== null) {
+    cancelAnimationFrame(renderRAF);
+    renderRAF = null;
+  }
+  tooltipCleanups.forEach((fn) => fn());
+  tooltipCleanups = [];
+  document.removeEventListener('click', hideProjectContextMenu);
+  document.removeEventListener('keydown', (e) => { if (e.key === 'Escape') hideProjectContextMenu(); });
+  finishDragCleanup();
 }
 
 function render(): void {
+  if (renderRAF !== null) return;
+  renderRAF = requestAnimationFrame(() => {
+    renderRAF = null;
+    doRender();
+  });
+}
+
+function doRender(): void {
   hideProjectContextMenu();
   projectListEl.innerHTML = '';
   projectListEl.setAttribute('role', 'list');
@@ -354,6 +394,16 @@ function initResizeHandle(): void {
     }
   };
 
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging) return;
+    const width = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, e.clientX));
+    sidebarEl.style.width = width + 'px';
+  };
+
+  const onVisibilityChange = () => {
+    if (document.visibilityState !== 'visible') finishDrag();
+  };
+
   resizeHandle.addEventListener('mousedown', (e) => {
     e.preventDefault();
     dragging = true;
@@ -363,17 +413,19 @@ function initResizeHandle(): void {
     document.body.style.cursor = 'col-resize';
   });
 
-  document.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    const width = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, e.clientX));
-    sidebarEl.style.width = width + 'px';
-  });
-
+  document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', finishDrag);
   window.addEventListener('blur', finishDrag);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') finishDrag();
-  });
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  // Provide a cleanup function to remove drag listeners.
+  finishDragCleanup = () => {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', finishDrag);
+    window.removeEventListener('blur', finishDrag);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    finishDragCleanup = () => {};
+  };
 }
 
 function applyCostFooterVisibility(): void {

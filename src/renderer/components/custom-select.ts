@@ -1,5 +1,5 @@
-import { anchorFloatingSurface, type FloatingSurfaceOptions } from './floating-surface.js';
 import { logDebugEvent } from './debug-panel.js';
+import { anchorFloatingSurface, type FloatingSurfaceOptions } from './floating-surface.js';
 
 export interface SelectOption {
   value: string;

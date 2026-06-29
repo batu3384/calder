@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import path, { dirname, join } from 'node:path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import path, { dirname, join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
 import { readProjectReviewFile } from './read.js';
 
 function makeProject(name: string): string {

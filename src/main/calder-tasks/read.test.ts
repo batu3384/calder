@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockReadFile } = vi.hoisted(() => ({
   mockReadFile: vi.fn(),

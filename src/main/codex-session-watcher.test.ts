@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   statSync: vi.fn(),
@@ -28,14 +28,14 @@ vi.mock('./hooks/hook-status', () => ({
   STATUS_DIR: MOCK_STATUS_DIR,
 }));
 
+import * as fs from 'fs';
 import * as path from 'path';
 
-import * as fs from 'fs';
 import {
   registerPendingCodexSession,
-  unregisterCodexSession,
   startCodexSessionWatcher,
   stopCodexSessionWatcher,
+  unregisterCodexSession,
 } from './codex-session-watcher';
 
 const mockStatSync = vi.mocked(fs.statSync);

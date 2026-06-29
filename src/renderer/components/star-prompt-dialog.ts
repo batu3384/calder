@@ -1,5 +1,5 @@
-import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { appState } from '../state.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
 const STAR_THRESHOLD = 10;
 const REPO_URL = 'https://github.com/batuhanyuksel/calder';

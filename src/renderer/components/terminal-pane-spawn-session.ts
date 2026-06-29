@@ -1,6 +1,6 @@
+import type { ProviderId } from '../types.js';
 import { initSession } from './surface-services/session-activity.js';
 import { markFreshSession } from './surface-services/session-insights.js';
-import type { ProviderId } from '../types.js';
 import { consumeStartupPrompt } from './terminal-pane-prompt-delivery.js';
 
 interface SpawnSessionState {

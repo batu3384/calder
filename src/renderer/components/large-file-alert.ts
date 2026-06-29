@@ -1,8 +1,8 @@
-import { onLargeFileAlert, type LargeFileAlert } from '../tools/large-file-detector.js';
-import { dismissInsight } from './surface-services/session-insights.js';
 import { appState } from '../state.js';
+import { type LargeFileAlert,onLargeFileAlert } from '../tools/large-file-detector.js';
+import { removeAlertBanner,showAlertBanner } from './alert-banner.js';
 import { getProviderAvailabilitySnapshot, resolvePreferredProviderForLaunch } from './surface-services/provider-availability.js';
-import { showAlertBanner, removeAlertBanner } from './alert-banner.js';
+import { dismissInsight } from './surface-services/session-insights.js';
 import { setPendingPrompt } from './terminal-pane.js';
 
 export function initLargeFileAlert(): void {

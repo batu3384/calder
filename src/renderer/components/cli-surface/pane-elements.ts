@@ -1,7 +1,8 @@
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { Terminal } from '@xterm/xterm';
+
 import {
   extractUrlFromEventTarget,
   findInlineUrlAtPointer,
@@ -377,7 +378,7 @@ export function createCliSurfaceLayout(projectId: string): CliSurfaceLayoutEleme
 }
 
 function clearTerminalDomSelection(terminal: Terminal): void {
-  try { terminal.clearSelection(); } catch {}
+  try { terminal.clearSelection(); } catch { /* xterm may not support selection */ }
   window.getSelection?.()?.removeAllRanges?.();
 }
 

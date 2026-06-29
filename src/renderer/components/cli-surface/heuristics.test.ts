@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { inferCliRegions } from './heuristics.js';
 
 describe('cli surface heuristics', () => {

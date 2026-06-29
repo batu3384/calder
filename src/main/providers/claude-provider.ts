@@ -1,19 +1,21 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import type { BrowserWindow } from 'electron';
-import type { CliProvider } from './provider';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { getFullPath } from '../full-path';
-import { installStatusLineScript, cleanupAll as cleanupHookStatus } from '../hooks/hook-status';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 import { getClaudeConfig } from '../claude-cli';
-import { guardedInstall, validateSettings, reinstallSettings } from '../settings-guard';
+import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { getFullPath } from '../full-path';
+import { cleanupAll as cleanupHookStatus,installStatusLineScript } from '../hooks/hook-status';
+import { sanitizeExtraArgs } from '../security/sanitize';
+import { guardedInstall, reinstallSettings,validateSettings } from '../settings-guard';
+import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
 
-export class ClaudeProvider implements CliProvider {
+export class ClaudeProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
     id: 'claude',
     displayName: 'Claude Code',
@@ -31,6 +33,10 @@ export class ClaudeProvider implements CliProvider {
     defaultContextWindowSize: 200_000,
   };
 
+  protected readonly binaryName = 'claude';
+  protected readonly installCommand = 'npm install -g @anthropic-ai/claude-code';
+  protected readonly binaryCache = binaryCache;
+
   resolveBinaryPath(): string {
     return resolveBinary('claude', binaryCache);
   }
@@ -40,10 +46,11 @@ export class ClaudeProvider implements CliProvider {
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    const env = { ...baseEnv };
-    delete env.CLAUDE_CODE; // avoid subprocess detection conflicts
+    const env: Record<string, string> = { ...baseEnv };
+    delete env.CLAUDE_CODE;
     env.CLAUDE_IDE_SESSION_ID = sessionId;
     env.PATH = getFullPath();
+    env.CALDER_RUNTIME = '1';
     return env;
   }
 
@@ -60,7 +67,7 @@ export class ClaudeProvider implements CliProvider {
       args.push(opts.initialPrompt);
     }
     if (opts.extraArgs) {
-      args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
+      args.push(...sanitizeExtraArgs(opts.extraArgs));
     }
     return args;
   }
@@ -104,7 +111,6 @@ export class ClaudeProvider implements CliProvider {
   }
 
   getTranscriptPath(cliSessionId: string, projectPath: string): string | null {
-    // Claude encodes the project path by replacing any non-alphanumeric char with '-'
     const slug = projectPath.replace(/[^a-zA-Z0-9]/g, '-');
     const filePath = path.join(os.homedir(), '.claude', 'projects', slug, `${cliSessionId}.jsonl`);
     return fs.existsSync(filePath) ? filePath : null;

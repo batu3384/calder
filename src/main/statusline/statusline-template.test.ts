@@ -1,13 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { execFile, execFileSync } from 'child_process';
 import { chmodSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from 'fs';
+import { createServer } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { execFile, execFileSync } from 'child_process';
-import { createServer } from 'http';
 import { promisify } from 'util';
-import { buildStatusLinePython, buildStatusLineWrapper } from './statusline-template';
-import { getProviderQuotaCacheFile } from './statusline-format';
+import { describe, expect, it } from 'vitest';
+
 import { pythonBin } from '../platform';
+import { getProviderQuotaCacheFile } from './statusline-format';
+import { buildStatusLinePython, buildStatusLineWrapper } from './statusline-template';
 
 const execFileAsync = promisify(execFile);
 
@@ -65,6 +66,12 @@ describe('quota cache refresh scaffolding', () => {
     expect(py).toContain('/v1/api/openplatform/coding_plan/remains');
     expect(py).toContain('subprocess.Popen');
     expect(py).toContain('os.replace(temp_path, target_path)');
+  });
+
+  it('defaults Z.ai quota checks to the global Z.ai endpoint only', () => {
+    const py = buildStatusLinePython('/tmp/calder');
+    expect(py).toContain("return 'https://api.z.ai/api/anthropic'");
+    expect(py).not.toContain('open.bigmodel.cn');
   });
 });
 

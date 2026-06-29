@@ -51,7 +51,7 @@ export function resolveBrowserPageState(url: string, isLoading: boolean, offline
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
       return 'remote';
     }
-  } catch {}
+  } catch { /* ignore navigation errors */ }
 
   return 'ready';
 }

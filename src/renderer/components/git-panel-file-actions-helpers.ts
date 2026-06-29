@@ -1,8 +1,8 @@
+import type { GitFileEntry } from '../types.js';
 import { showFileViewer } from './file-viewer.js';
+import { esc } from './git-panel-presentation-helpers.js';
 import { areaLabel } from './surface-services/dom-utils.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
-import { esc } from './git-panel-presentation-helpers.js';
-import type { GitFileEntry } from '../types.js';
 
 let activeContextMenu: HTMLElement | null = null;
 

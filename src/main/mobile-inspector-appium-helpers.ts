@@ -1,11 +1,12 @@
 import { spawn } from 'child_process';
-import { getFullPath } from './pty-manager';
-import { whichCmd } from './platform';
+
 import {
   firstNonEmptyLine,
   runCommand,
   sleep,
 } from './mobile-inspector-helpers';
+import { whichCmd } from './platform';
+import { getFullPath } from './pty-manager';
 
 const APPIUM_BASE_URL = 'http://127.0.0.1:4723';
 const APPIUM_STARTUP_TIMEOUT_MS = 20_000;

@@ -4,9 +4,10 @@
  * and sends element metadata back to the host renderer via ipcRenderer.sendToHost().
  */
 import { ipcRenderer } from 'electron';
+
 import { getElementMetadata } from './browser-tab-element-metadata';
 import { replayFlowClick } from './browser-tab-flow-replay';
-import { fillCredentialsAcrossDocuments, type AuthFillPayload } from './browser-tab-preload-auth-fill';
+import { type AuthFillPayload,fillCredentialsAcrossDocuments } from './browser-tab-preload-auth-fill';
 // Contract marker for preload source-based tests:
 // escapeCssIdentifier, escapeCssAttributeValue are now resolved in browser-tab-element-metadata.ts.
 

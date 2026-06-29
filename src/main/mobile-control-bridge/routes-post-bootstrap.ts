@@ -1,15 +1,16 @@
-import * as http from 'node:http';
 import { randomBytes } from 'node:crypto';
+import * as http from 'node:http';
+
 import { getMobileCopy } from './copy';
 import { sendJson, sendText } from './http';
 import type { PairingRecord } from './model';
 import { verifyPairingToken } from './rate-limit';
+import type { PairingPostHandlersConfig } from './routes-post-shared';
 import {
   failExpiredPairing,
   failRateLimited,
   parsePairingBody,
 } from './routes-post-shared';
-import type { PairingPostHandlersConfig } from './routes-post-shared';
 
 export function createBootstrapPostHandler(config: PairingPostHandlersConfig): (
   record: PairingRecord,

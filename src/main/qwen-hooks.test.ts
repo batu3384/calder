@@ -12,6 +12,11 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
+}));
+
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
@@ -28,11 +33,12 @@ vi.mock('./hooks/hook-status', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+
 import {
-  installQwenHooks,
-  validateQwenHooks,
   cleanupQwenHooks,
+  installQwenHooks,
   QWEN_HOOK_MARKER,
+  validateQwenHooks,
 } from './qwen-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
@@ -119,9 +125,10 @@ describe('installQwenHooks', () => {
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
     const preToolHooks = hooks.PreToolUse?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook claude'));
+    const rtkHook = preToolHooks.find((hook: any) => String(hook.command).includes('rtk hook qwen'));
 
     expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
     expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
   });
 });

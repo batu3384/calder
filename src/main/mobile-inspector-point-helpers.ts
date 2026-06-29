@@ -1,17 +1,17 @@
-import { ensureLocalAppiumServerReady } from './mobile-inspector-appium-helpers';
-import { inspectAndroidPoint } from './mobile-inspector-inspect-helpers';
-import {
-  cleanupIosTapSession,
-  createIosTapSession,
-  runIosTapAction,
-} from './mobile-inspector-interaction-helpers';
-import { runCommand } from './mobile-inspector-helpers';
 import type {
   MobileInspectInteractionResult,
   MobileInspectLaunchResult,
   MobileInspectPlatform,
   MobileInspectPointInspectionResult,
 } from '../shared/types/mobile';
+import { ensureLocalAppiumServerReady } from './mobile-inspector-appium-helpers';
+import { runCommand } from './mobile-inspector-helpers';
+import { inspectAndroidPoint } from './mobile-inspector-inspect-helpers';
+import {
+  cleanupIosTapSession,
+  createIosTapSession,
+  runIosTapAction,
+} from './mobile-inspector-interaction-helpers';
 
 interface AndroidCommandSet {
   adbBinary: string;

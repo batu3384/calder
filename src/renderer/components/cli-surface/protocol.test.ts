@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { encodeCalderOsc, extractCalderOscMessages, parseCalderOsc } from './protocol.js';
 
 describe('calder cli surface protocol', () => {

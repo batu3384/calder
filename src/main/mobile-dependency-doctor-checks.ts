@@ -1,6 +1,7 @@
-import {
-  MOBILE_DOCTOR_DOCS as DOCS,
-} from './mobile-dependency-doctor-config';
+import type {
+  MobileDependencyCheck,
+  MobileDependencyReport,
+} from '../shared/types/mobile';
 import {
   getAndroidBinaryCandidates,
 } from './mobile-dependency-doctor-binaries';
@@ -13,17 +14,16 @@ import {
   checkXcode,
 } from './mobile-dependency-doctor-check-items';
 import type {
-  MobileDependencyCheck,
-  MobileDependencyReport,
-} from '../shared/types/mobile';
-import type {
   MobileDoctorCheckContext,
 } from './mobile-dependency-doctor-check-types';
+import {
+  MOBILE_DOCTOR_DOCS as DOCS,
+} from './mobile-dependency-doctor-config';
 
 export type {
+  MobileDoctorCheckContext,
   MobileDoctorCommandResult,
   MobileDoctorCommandRunner,
-  MobileDoctorCheckContext,
 } from './mobile-dependency-doctor-check-types';
 
 export async function runMobileDependencyChecks(context: MobileDoctorCheckContext): Promise<MobileDependencyCheck[]> {

@@ -263,8 +263,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   font-size: 14px;
   line-height: 1;
@@ -272,9 +272,9 @@
   cursor: pointer;
   color: var(--text-muted);
   transition:
-    opacity 0.14s ease,
-    background 0.14s ease,
-    color 0.14s ease;
+    opacity var(--motion-fast) ease,
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease;
 }
 
 .tab-item:hover .tab-close {
@@ -563,7 +563,7 @@
   height: 100%;
   border-radius: inherit;
   background: color-mix(in srgb, var(--accent) 78%, #ffffff);
-  transition: width 0.2s ease;
+  transition: width var(--motion-normal) ease;
 }
 
 .cli-update-panel-progress-fill.is-running {
@@ -907,37 +907,61 @@
   vertical-align: middle;
 }
 
-.command-deck-provider-select .custom-select-item[data-value='claude']::before,
+.command-deck-provider-select .custom-select-item[data-value='claude']::before {
+  --provider-accent: var(--provider-accent, #ff9b4a);
+  --provider-accent-soft: rgba(255, 155, 74, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='codex']::before {
+  --provider-accent: var(--provider-accent, #32d3a2);
+  --provider-accent-soft: rgba(50, 211, 162, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='copilot']::before {
+  --provider-accent: var(--provider-accent, #7c8cff);
+  --provider-accent-soft: rgba(124, 140, 255, 0.22);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='antigravity']::before {
+  --provider-accent: var(--provider-accent, #6bb5ff);
+  --provider-accent-soft: rgba(107, 181, 255, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='qwen']::before {
+  --provider-accent: var(--provider-accent, #3ddbd9);
+  --provider-accent-soft: rgba(61, 219, 217, 0.2);
+}
+
+.command-deck-provider-select .custom-select-item[data-value='minimax']::before {
+  --provider-accent: var(--provider-accent, #ff7a59);
+  --provider-accent-soft: rgba(255, 122, 89, 0.2);
+}
+
 .command-deck-provider-select[data-provider='claude'] .custom-select-trigger {
   --provider-accent: #ff9b4a;
   --provider-accent-soft: rgba(255, 155, 74, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='codex']::before,
 .command-deck-provider-select[data-provider='codex'] .custom-select-trigger {
   --provider-accent: #32d3a2;
   --provider-accent-soft: rgba(50, 211, 162, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='copilot']::before,
 .command-deck-provider-select[data-provider='copilot'] .custom-select-trigger {
   --provider-accent: #7c8cff;
   --provider-accent-soft: rgba(124, 140, 255, 0.22);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='gemini']::before,
-.command-deck-provider-select[data-provider='gemini'] .custom-select-trigger {
+.command-deck-provider-select[data-provider='antigravity'] .custom-select-trigger {
   --provider-accent: #6bb5ff;
   --provider-accent-soft: rgba(107, 181, 255, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='qwen']::before,
 .command-deck-provider-select[data-provider='qwen'] .custom-select-trigger {
   --provider-accent: #3ddbd9;
   --provider-accent-soft: rgba(61, 219, 217, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='minimax']::before,
 .command-deck-provider-select[data-provider='minimax'] .custom-select-trigger {
   --provider-accent: #ff7a59;
   --provider-accent-soft: rgba(255, 122, 89, 0.2);
@@ -1109,9 +1133,9 @@
 }
 
 .mobile-control-presence[data-connection-state='waiting'] {
-  border-color: color-mix(in srgb, #f59e0b 64%, var(--border-subtle));
-  color: color-mix(in srgb, #fbbf24 88%, var(--text-primary));
-  background: color-mix(in srgb, #f59e0b 12%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--warning) 64%, var(--border-subtle));
+  color: color-mix(in srgb, var(--warning-strong) 88%, var(--text-primary));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-panel));
 }
 
 .mobile-control-presence[data-connection-state='connected'] {
@@ -1129,11 +1153,11 @@
 }
 
 .tab-action-handoff[data-connection-state='waiting'] {
-  border-color: color-mix(in srgb, #f59e0b 72%, var(--border-subtle));
-  color: color-mix(in srgb, #fbbf24 88%, var(--text-primary));
+  border-color: color-mix(in srgb, var(--warning) 72%, var(--border-subtle));
+  color: color-mix(in srgb, var(--warning-strong) 88%, var(--text-primary));
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, #f59e0b 35%, transparent),
-    0 0 0 2px color-mix(in srgb, #f59e0b 14%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--warning) 35%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--warning) 14%, transparent);
 }
 
 .tab-action-handoff[data-connection-state='waiting']::after,
@@ -1148,8 +1172,8 @@
 }
 
 .tab-action-handoff[data-connection-state='waiting']::after {
-  background: #f59e0b;
-  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 24%, transparent);
+  background: var(--warning);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warning) 24%, transparent);
 }
 
 .tab-action-handoff.is-connected {
@@ -1344,7 +1368,7 @@
   color: var(--text-primary);
   cursor: pointer;
   border-radius: 12px;
-  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
 
 .tab-context-menu-item:hover:not(.disabled):not(.active) {
@@ -1461,7 +1485,7 @@
   font-size: 7px;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: #f7f2ea;
+  color: var(--text-primary);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
   background: linear-gradient(135deg, rgba(100, 116, 139, 0.92), rgba(51, 65, 85, 0.92));
 }

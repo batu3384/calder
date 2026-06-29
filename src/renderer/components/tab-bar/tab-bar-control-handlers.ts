@@ -1,10 +1,10 @@
 import type { ProjectRecord, SessionRecord } from '../../state.js';
-import { getProjectSurface, updateProjectSurface } from './tab-bar-surface-state.js';
+import { showShareDialog } from '../share-dialog/share-dialog.js';
 import {
   getPreferredCliSession,
   syncMobileControlButton,
 } from './tab-bar-mobile-control.js';
-import { showShareDialog } from '../share-dialog/share-dialog.js';
+import { getProjectSurface, updateProjectSurface } from './tab-bar-surface-state.js';
 
 interface HandleMobileControlClickOptions {
   project: ProjectRecord | null;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { createPatternTranslations } from './i18n-pattern-translations.js';
 
 function getEntry(

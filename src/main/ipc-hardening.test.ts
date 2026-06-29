@@ -1,8 +1,10 @@
 import path from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
+
+import type { PersistedState } from '../shared/types/project-state';
 import { isAllowedGuestMessagePayload } from './ipc-app-browser';
 import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
-import type { PersistedState } from '../shared/types/project-state';
 
 function makeBaseState(): PersistedState {
   const createdAt = new Date('2026-01-01T00:00:00.000Z').toISOString();

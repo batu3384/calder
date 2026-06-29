@@ -1,5 +1,5 @@
-import type { ProviderId } from '../../shared/types/provider.js';
 import type { ProjectRecord } from '../../shared/types/project-state.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import type { EventType } from './state-contracts.js';
 
 export type BuildResumePrompt = (

@@ -1,16 +1,19 @@
 import type { BrowserWindow } from 'electron';
-import type { CliProvider } from './provider';
+
 import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { getFullPath } from '../full-path';
-import { resolveBinary, validateBinaryExists } from './resolve-binary';
-import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
-import { installQwenHooks, validateQwenHooks, SESSION_ID_VAR } from '../qwen-hooks';
-import { installStatusLineScript } from '../hooks/hook-status';
 import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
+import { getFullPath } from '../full-path';
+import { installStatusLineScript } from '../hooks/hook-status';
+import { findQwenTranscriptPath,getQwenConfig } from '../qwen-config';
+import { cleanupQwenHooks, installQwenHooks, SESSION_ID_VAR,validateQwenHooks } from '../qwen-hooks';
+import { sanitizeExtraArgs } from '../security/sanitize';
+import { BaseCliProvider } from './base-cli-provider';
+import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
 
-export class QwenProvider implements CliProvider {
+export class QwenProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
     id: 'qwen',
     displayName: 'Qwen Code',
@@ -28,6 +31,10 @@ export class QwenProvider implements CliProvider {
     defaultContextWindowSize: 1_000_000,
   };
 
+  protected readonly binaryName = 'qwen';
+  protected readonly installCommand = 'npm install -g @qwen-code/qwen-code';
+  protected readonly binaryCache = binaryCache;
+
   resolveBinaryPath(): string {
     return resolveBinary('qwen', binaryCache);
   }
@@ -41,6 +48,7 @@ export class QwenProvider implements CliProvider {
       ...baseEnv,
       [SESSION_ID_VAR]: _sessionId,
       CLAUDE_IDE_SESSION_ID: _sessionId,
+      CALDER_RUNTIME: '1',
       PATH: getFullPath(),
     };
   }
@@ -51,7 +59,7 @@ export class QwenProvider implements CliProvider {
       args.push('-r', opts.cliSessionId);
     }
     if (opts.extraArgs) {
-      args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
+      args.push(...sanitizeExtraArgs(opts.extraArgs));
     }
     if (!opts.isResume && opts.initialPrompt) {
       args.push('-i', opts.initialPrompt);
@@ -92,6 +100,10 @@ export class QwenProvider implements CliProvider {
   }
 
   reinstallSettings(): void {
+    if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+      cleanupQwenHooks();
+      return;
+    }
     installQwenHooks();
     installStatusLineScript();
   }

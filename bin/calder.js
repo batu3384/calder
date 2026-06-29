@@ -3,6 +3,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execSync, spawn } = require('child_process');
 const os = require('os');
 
@@ -16,6 +17,7 @@ const APP_PATH = isWin
   : path.join(APP_DIR, 'Calder.app');
 const REPO = 'batuhanyuksel/calder';
 const RELEASES_URL = `https://github.com/${REPO}/releases`;
+const RELEASE_CHECKSUMS_PATH = path.join(__dirname, 'release-checksums.json');
 
 function getAssetName() {
   if (isWin) {
@@ -36,6 +38,50 @@ function getInstalledVersion() {
   } catch {
     return null;
   }
+}
+
+function loadReleaseChecksums() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(RELEASE_CHECKSUMS_PATH, 'utf8'));
+    return typeof parsed === 'object' && parsed ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function sha256File(filePath) {
+  const hash = crypto.createHash('sha256');
+  hash.update(fs.readFileSync(filePath));
+  return hash.digest('hex');
+}
+
+function assertDownloadChecksum(assetName, filePath) {
+  const checksums = loadReleaseChecksums();
+  const versionEntry = checksums[version];
+  const expected = versionEntry && typeof versionEntry === 'object'
+    ? versionEntry[assetName]
+    : undefined;
+
+  const actual = sha256File(filePath);
+  if (typeof expected === 'string' && expected.length > 0) {
+    if (actual !== expected) {
+      throw new Error(
+        `Download checksum mismatch for ${assetName}. Expected ${expected}, got ${actual}.`,
+      );
+    }
+    return actual;
+  }
+
+  if (process.env.CALDER_REQUIRE_CHECKSUM === '1') {
+    throw new Error(
+      `No pinned checksum for ${assetName} in release-checksums.json. Refusing download.`,
+    );
+  }
+
+  console.warn(
+    `Warning: no pinned checksum for ${assetName}. Stored SHA-256: ${actual}`,
+  );
+  return actual;
 }
 
 function followRedirects(url, maxRedirects = 10) {
@@ -78,6 +124,7 @@ async function download(assetName) {
   return new Promise((resolve, reject) => {
     let receivedBytes = 0;
     const file = fs.createWriteStream(tmpFile);
+    const digest = crypto.createHash('sha256');
 
     file.on('error', (err) => {
       res.destroy();
@@ -87,6 +134,7 @@ async function download(assetName) {
 
     res.on('data', (chunk) => {
       receivedBytes += chunk.length;
+      digest.update(chunk);
       if (totalBytes) {
         const pct = Math.round((receivedBytes / totalBytes) * 100);
         const receivedMB = (receivedBytes / 1048576).toFixed(1);
@@ -104,12 +152,12 @@ async function download(assetName) {
 
     file.on('finish', () => {
       console.log('\n');
-      resolve(tmpFile);
+      resolve({ tmpFile, sha256: digest.digest('hex') });
     });
   });
 }
 
-function extract(zipPath) {
+function extract(zipPath, sha256) {
   console.log('Extracting...');
 
   fs.rmSync(APP_PATH, { recursive: true, force: true });
@@ -130,7 +178,7 @@ function extract(zipPath) {
     }
   }
 
-  fs.writeFileSync(VERSION_FILE, JSON.stringify({ version }));
+  fs.writeFileSync(VERSION_FILE, JSON.stringify({ version, sha256, assetSha256: sha256 }));
   console.log('Done.');
 }
 
@@ -187,8 +235,13 @@ Any other arguments are forwarded to the Calder app.`);
   const needsDownload = forceUpdate || installedVersion !== version || !fs.existsSync(APP_PATH);
 
   if (needsDownload) {
-    const zipPath = await download(assetName);
-    extract(zipPath);
+    const { tmpFile: zipPath, sha256: streamedSha256 } = await download(assetName);
+    const verifiedSha256 = assertDownloadChecksum(assetName, zipPath);
+    if (verifiedSha256 !== streamedSha256) {
+      fs.rmSync(zipPath, { force: true });
+      throw new Error('Download integrity check failed before extraction.');
+    }
+    extract(zipPath, verifiedSha256);
   }
 
   launch(passthroughArgs);

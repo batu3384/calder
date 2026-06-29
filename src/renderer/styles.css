@@ -1,6 +1,7 @@
 @import url('./styles/base.css');
 @import url('./styles/cockpit.css');
 @import url('./styles/primitives.css');
+@import url('./styles/ui-components.css');
 @import url('./styles/sidebar.css');
 @import url('./styles/context-inspector.css');
 @import url('./styles/tabs.css');

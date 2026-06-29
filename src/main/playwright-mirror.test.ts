@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+
 import type { InspectorEvent } from '../shared/types/session';
 import {
   extractPlaywrightNavigateCwd,
-  extractPlaywrightNavigateUrlsFromTerminalChunk,
   extractPlaywrightNavigateUrl,
+  extractPlaywrightNavigateUrlsFromTerminalChunk,
   shouldMirrorPlaywrightNavigate,
 } from './ipc-playwright-mirror';
 

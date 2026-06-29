@@ -1,59 +1,31 @@
-import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../../state.js';
 import type { CliSurfaceProfile } from '../../../shared/types/project-surface.js';
-import type { SessionStatus } from '../surface-services/session-activity.js';
-import { getGitStatus, refreshGitStatus } from '../surface-services/git-status.js';
-import { openCliSurfaceWithSetup } from '../cli-surface/setup.js';
-import { showCliSurfaceQuickSetup } from '../cli-surface/quick-setup.js';
+import { appState, MAX_SESSION_NAME_LENGTH, type ProjectRecord, type SessionRecord } from '../../state.js';
 import {
   createDiscoveredCliSurfaceProfile,
   getCliSurfaceProfileLabel,
 } from '../cli-surface/profile.js';
-import {
-  getProjectSurface,
-  persistAndLaunchCliSurfaceProfile,
-  selectCliSurfaceProfile,
-  upsertCliSurfaceProfile,
-} from './tab-bar-surface-state.js';
-import {
-  syncMobileControlButton,
-} from './tab-bar-mobile-control.js';
-import {
-  buildSessionTooltip,
-} from './tab-bar-session-titles.js';
-import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
-import { startInlineTabRename } from './tab-bar-rename-controller.js';
-import { promptTabBarCliSurfaceProfile } from './tab-bar-cli-profile-modal.js';
-import { showSessionTabContextMenu } from './tab-bar-session-context-menu.js';
-import { renderTabList } from './tab-bar-tab-list-renderer.js';
-import {
-  createTabBarSurfaceControlsController,
-  type TabBarSurfaceControlsController,
-} from './tab-bar-surface-controls.js';
+import { showCliSurfaceQuickSetup } from '../cli-surface/quick-setup.js';
+import { openCliSurfaceWithSetup } from '../cli-surface/setup.js';
+import { getGitStatus, refreshGitStatus } from '../surface-services/git-status.js';
+import type { SessionStatus } from '../surface-services/session-activity.js';
 import {
   cancelCliProviderUpdates,
+  type CliUpdateCenterState,
   getUpdateCenterState,
+  initUpdateCenter,
   onUpdateCenterChange,
   runCliProviderUpdate,
   runCliProviderUpdates,
-  initUpdateCenter,
-  type CliUpdateCenterState,
 } from '../surface-services/update-center.js';
-import {
-  createTabBarCliUpdatePanel,
-  type TabBarCliUpdatePanelController,
-} from './tab-bar-cli-update-panel.js';
-import {
-  createTabBarProviderSelectorController,
-  type TabBarProviderSelectorController,
-} from './tab-bar-provider-selector-controller.js';
 import {
   createTabBarBranchMenuController,
   type TabBarBranchMenuController,
 } from './tab-bar-branch-menu-controller.js';
+import { promptTabBarCliSurfaceProfile } from './tab-bar-cli-profile-modal.js';
 import {
-  createTabBarSessionMenuController,
-  type TabBarSessionMenuController,
-} from './tab-bar-session-menu-controller.js';
+  createTabBarCliUpdatePanel,
+  type TabBarCliUpdatePanelController,
+} from './tab-bar-cli-update-panel.js';
 import { createTabBarContextMenuWiring } from './tab-bar-context-menu-wiring.js';
 import {
   activateLiveViewSurface as activateLiveViewSurfaceHandler,
@@ -61,17 +33,45 @@ import {
   handleMobileControlClick,
 } from './tab-bar-control-handlers.js';
 import {
-  buildActiveTabRailKey,
-  buildTabBarRenderSurfaceState,
-  renderGitStatusBlock,
-  shouldSkipTabListRender,
-} from './tab-bar-render-blocks.js';
-import {
   bootstrapTabBarProviderAvailability,
   wireTabBarActionHandlers,
   wireTabBarDismissHandlers,
   wireTabBarStateSubscriptions,
 } from './tab-bar-event-wiring.js';
+import {
+  syncMobileControlButton,
+} from './tab-bar-mobile-control.js';
+import {
+  createTabBarProviderSelectorController,
+  type TabBarProviderSelectorController,
+} from './tab-bar-provider-selector-controller.js';
+import { startInlineTabRename } from './tab-bar-rename-controller.js';
+import {
+  buildActiveTabRailKey,
+  buildTabBarRenderSurfaceState,
+  renderGitStatusBlock,
+  shouldSkipTabListRender,
+} from './tab-bar-render-blocks.js';
+import { showSessionTabContextMenu } from './tab-bar-session-context-menu.js';
+import {
+  createTabBarSessionMenuController,
+  type TabBarSessionMenuController,
+} from './tab-bar-session-menu-controller.js';
+import {
+  buildSessionTooltip,
+} from './tab-bar-session-titles.js';
+import {
+  createTabBarSurfaceControlsController,
+  type TabBarSurfaceControlsController,
+} from './tab-bar-surface-controls.js';
+import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
+import {
+  getProjectSurface,
+  persistAndLaunchCliSurfaceProfile,
+  selectCliSurfaceProfile,
+  upsertCliSurfaceProfile,
+} from './tab-bar-surface-state.js';
+import { renderTabList } from './tab-bar-tab-list-renderer.js';
 
 /*
  * Source contract markers:
@@ -105,6 +105,7 @@ let branchMenuController: TabBarBranchMenuController | null = null;
 let sessionMenuController: TabBarSessionMenuController | null = null;
 let surfaceControlsController: TabBarSurfaceControlsController | null = null;
 let unsubscribeUpdateCenter: (() => void) | null = null;
+let unsubscribeTabBarStateSubscriptions: (() => void) | null = null;
 type LauncherSelectKey = 'profile' | 'provider';
 const launcherSelectOpenState: Record<LauncherSelectKey, boolean> = {
   profile: false,
@@ -223,7 +224,8 @@ export function initTabBar(): void {
     syncSessionProviderSelector,
     render,
   });
-  wireTabBarStateSubscriptions({
+  unsubscribeTabBarStateSubscriptions?.();
+  const subResult = wireTabBarStateSubscriptions({
     prevStatus,
     tabListEl,
     buildSessionTooltip,
@@ -231,6 +233,7 @@ export function initTabBar(): void {
     renderGitStatus,
     syncSessionProviderSelector,
   });
+  unsubscribeTabBarStateSubscriptions = subResult.unsubscribe;
 
   wireTabBarDismissHandlers({
     updateCliToolsButtonEl: btnUpdateCliTools,

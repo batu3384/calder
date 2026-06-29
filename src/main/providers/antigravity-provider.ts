@@ -1,22 +1,26 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import type { CliProvider } from './provider';
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { getFullPath } from '../full-path';
-import { resolveBinary, validateBinaryExists } from './resolve-binary';
-import { getGeminiConfig } from '../gemini-config';
-import { installGeminiHooks, validateGeminiHooks, SESSION_ID_VAR } from '../gemini-hooks';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
 import type { BrowserWindow } from 'electron';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import { getAntigravityConfig } from '../antigravity-config';
+import { cleanupAntigravityHooks, installAntigravityHooks, SESSION_ID_VAR,validateAntigravityHooks } from '../antigravity-hooks';
+import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
+import { getFullPath } from '../full-path';
+import { sanitizeExtraArgs } from '../security/sanitize';
+import { BaseCliProvider } from './base-cli-provider';
+import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
+const legacyBinaryCache = { path: null as string | null };
 
-export class GeminiProvider implements CliProvider {
+export class AntigravityProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
-    id: 'gemini',
-    displayName: 'Gemini CLI',
-    binaryName: 'gemini',
+    id: 'antigravity',
+    displayName: 'Antigravity CLI',
+    binaryName: 'agy',
     capabilities: {
       sessionResume: true,
       costTracking: true,
@@ -25,33 +29,42 @@ export class GeminiProvider implements CliProvider {
       configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
-      planModeArg: '--approval-mode=plan',
     },
     defaultContextWindowSize: 1_000_000,
   };
 
+  protected readonly binaryName = 'agy';
+  protected readonly installCommand = 'brew install --cask antigravity-cli';
+  protected readonly binaryCache = binaryCache;
+
   resolveBinaryPath(): string {
-    return resolveBinary('gemini', binaryCache);
+    const primary = resolveBinary('agy', binaryCache);
+    if (primary !== 'agy') return primary;
+    return resolveBinary('antigravity', legacyBinaryCache);
   }
 
   validatePrerequisites(): { ok: boolean; message: string } {
-    return validateBinaryExists('gemini', 'Gemini CLI', 'npm install -g @google/gemini-cli');
+    const agyCheck = validateBinaryExists('agy', 'Antigravity CLI', 'brew install --cask antigravity-cli');
+    if (agyCheck.ok) return agyCheck;
+    return validateBinaryExists('antigravity', 'Antigravity CLI', 'brew install --cask antigravity-cli');
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    const env = { ...baseEnv };
+    const env: Record<string, string> = { ...baseEnv };
+    delete env.CLAUDE_CODE;
     env[SESSION_ID_VAR] = sessionId;
     env.PATH = getFullPath();
+    env.CALDER_RUNTIME = '1';
     return env;
   }
 
   buildArgs(opts: { cliSessionId: string | null; isResume: boolean; extraArgs: string; initialPrompt?: string }): string[] {
     const args: string[] = [];
     if (opts.isResume && opts.cliSessionId) {
-      args.push('-r', opts.cliSessionId);
+      args.push('--conversation', opts.cliSessionId);
     }
     if (opts.extraArgs) {
-      args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
+      args.push(...sanitizeExtraArgs(opts.extraArgs));
     }
     if (opts.initialPrompt) {
       args.push('-i', opts.initialPrompt);
@@ -60,7 +73,7 @@ export class GeminiProvider implements CliProvider {
   }
 
   async installHooks(): Promise<void> {
-    installGeminiHooks();
+    installAntigravityHooks();
   }
 
   installStatusScripts(): void {}
@@ -70,7 +83,7 @@ export class GeminiProvider implements CliProvider {
   }
 
   startConfigWatcher(win: BrowserWindow, projectPath: string): void {
-    startConfigWatch(win, projectPath, 'gemini');
+    startConfigWatch(win, projectPath, 'antigravity');
   }
 
   stopConfigWatcher(): void {
@@ -78,7 +91,7 @@ export class GeminiProvider implements CliProvider {
   }
 
   async getConfig(projectPath: string): Promise<ProviderConfig> {
-    return getGeminiConfig(projectPath);
+    return getAntigravityConfig(projectPath);
   }
 
   getShiftEnterSequence(): string | null {
@@ -86,11 +99,15 @@ export class GeminiProvider implements CliProvider {
   }
 
   validateSettings(): SettingsValidationResult {
-    return validateGeminiHooks();
+    return validateAntigravityHooks();
   }
 
   reinstallSettings(): void {
-    installGeminiHooks();
+    if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+      cleanupAntigravityHooks();
+      return;
+    }
+    installAntigravityHooks();
   }
 
   getTranscriptPath(cliSessionId: string, projectPath: string): string | null {
@@ -98,7 +115,6 @@ export class GeminiProvider implements CliProvider {
       const tmpRoot = path.join(os.homedir(), '.gemini', 'tmp');
       if (!fs.existsSync(tmpRoot)) return null;
 
-      // Find the project key dir whose .project_root matches our projectPath
       let chatsDir: string | null = null;
       for (const entry of fs.readdirSync(tmpRoot)) {
         const projectRootFile = path.join(tmpRoot, entry, '.project_root');
@@ -114,9 +130,6 @@ export class GeminiProvider implements CliProvider {
       }
       if (!chatsDir || !fs.existsSync(chatsDir)) return null;
 
-      // Filenames only encode the first 8 chars of the id (session-<ts>-<shortId>.json),
-      // so an 8-char prefix can collide. Prefer matching the full sessionId recorded
-      // inside the file; fall back to newest-mtime if we can't read any JSON.
       const shortId = cliSessionId.slice(0, 8);
       const suffix = `-${shortId}.json`;
       const candidates = fs.readdirSync(chatsDir)
@@ -124,7 +137,7 @@ export class GeminiProvider implements CliProvider {
         .map((f) => {
           const full = path.join(chatsDir!, f);
           let mtime = 0;
-          try { mtime = fs.statSync(full).mtimeMs; } catch {}
+          try { mtime = fs.statSync(full).mtimeMs; } catch { /* ignore missing file */ }
           return { full, mtime };
         })
         .sort((a, b) => b.mtime - a.mtime);
@@ -132,8 +145,6 @@ export class GeminiProvider implements CliProvider {
       for (const c of candidates) {
         try {
           const raw = fs.readFileSync(c.full, 'utf-8');
-          // Gemini transcripts are JSON; session id typically appears near the top.
-          // Cheap substring check avoids a full parse.
           if (raw.includes(cliSessionId)) return c.full;
         } catch {
           // unreadable — skip
@@ -149,4 +160,5 @@ export class GeminiProvider implements CliProvider {
 /** @internal Test-only: reset cached binary path */
 export function _resetCachedPath(): void {
   binaryCache.path = null;
+  legacyBinaryCache.path = null;
 }

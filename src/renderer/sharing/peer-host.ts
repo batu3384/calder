@@ -1,19 +1,20 @@
 // Host-side WebRTC logic for P2P session sharing.
 // Uses native RTCPeerConnection (available in Electron's Chromium).
 
-import type { ShareMode, ShareMessage } from '../../shared/sharing-types.js';
+import { SerializeAddon } from '@xterm/addon-serialize';
+
+import type { ShareMessage,ShareMode } from '../../shared/sharing-types.js';
 import type { ShareRtcConfig } from '../../shared/types/project-core.js';
 import { getTerminalInstance } from '../components/terminal-pane.js';
-import { SerializeAddon } from '@xterm/addon-serialize';
-import { buildRtcConfiguration, sendMessage, waitForIceGathering, encodeConnectionCode, decodeConnectionCode } from './webrtc-utils.js';
-import { generateChallenge, computeChallengeResponse, bytesToHex } from './share-crypto.js';
+import { appState } from '../state.js';
+import { handleBrowserControlMessage, handleBrowserInspectSubmitMessage, sendBrowserState } from './peer-host-browser.js';
 import {
   buildSessionCatalog,
   findProjectForShare,
   getSessionSnapshot,
 } from './peer-host-session-catalog.js';
-import { handleBrowserControlMessage, handleBrowserInspectSubmitMessage, sendBrowserState } from './peer-host-browser.js';
-import { appState } from '../state.js';
+import { bytesToHex,computeChallengeResponse, generateChallenge } from './share-crypto.js';
+import { buildRtcConfiguration, decodeConnectionCode,encodeConnectionCode, sendMessage, waitForIceGathering } from './webrtc-utils.js';
 
 interface HostPeer {
   ownerSessionId: string;
@@ -212,7 +213,16 @@ async function verifyAuthResponse(
   stopShare(ownerSessionId);
 }
 
-function handleSessionSwitchMessage(hostPeer: HostPeer, requestedSessionId: string): void {
+function handleSessionSwitchMessage(hostPeer: HostPeer, mode: ShareMode, requestedSessionId: string): void {
+  if (mode === 'readonly' && requestedSessionId !== hostPeer.ownerSessionId) {
+    sendMessage(hostPeer.dc, {
+      type: 'session-switch-result',
+      ok: false,
+      reason: 'Session switching is not available in readonly mode.',
+    });
+    return;
+  }
+
   const catalog = buildSessionCatalog(hostPeer);
   const exists = catalog.sessions.some((session) => session.id === requestedSessionId);
   if (!exists) {
@@ -247,7 +257,7 @@ function handleSessionSwitchMessage(hostPeer: HostPeer, requestedSessionId: stri
 
 function handleVerifiedMessage(hostPeer: HostPeer, mode: ShareMode, msg: ShareMessage): void {
   if (msg.type === 'session-switch') {
-    handleSessionSwitchMessage(hostPeer, msg.sessionId);
+    handleSessionSwitchMessage(hostPeer, mode, msg.sessionId);
     return;
   }
 

@@ -1,10 +1,13 @@
+import type { MobileDependencyId } from '../../../shared/types/mobile.js';
+import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
+import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { appState } from '../../state.js';
+import type { CustomSelectInstance } from '../custom-select.js';
 import {
   extendModalCleanup,
   prepareModalSurface,
   runModalCleanup,
 } from '../modal.js';
-import type { CustomSelectInstance } from '../custom-select.js';
 import {
   appendOverviewGrid as appendOverviewGridLayout,
   appendSectionCard as appendSectionCardLayout,
@@ -12,19 +15,9 @@ import {
   appendSectionIntro as appendSectionIntroLayout,
 } from './preferences-layout.js';
 import {
-  resolveSetupBadgeHasIssue,
-} from './preferences-provider-setup.js';
-import {
   bindPreferencesModalActions,
   savePreferenceDraft,
 } from './preferences-modal-actions.js';
-import {
-  renderAboutPreferencesSection,
-  renderGeneralPreferencesSection,
-  renderLayoutPreferencesSection,
-} from './preferences-modal-sections.js';
-import { createPreferencesModalShell } from './preferences-modal-shell.js';
-import { formatRelativeTimestamp } from './preferences-time.js';
 import {
   bindPreferencesMenuNavigation,
   renderAutomationPreferencesContent,
@@ -32,8 +25,16 @@ import {
   renderShortcutPreferencesContent,
   renderToolsPreferencesContent,
 } from './preferences-modal-renderers.js';
-import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
-import type { MobileDependencyId } from '../../../shared/types/mobile.js';
+import {
+  renderAboutPreferencesSection,
+  renderGeneralPreferencesSection,
+  renderLayoutPreferencesSection,
+} from './preferences-modal-sections.js';
+import { createPreferencesModalShell } from './preferences-modal-shell.js';
+import {
+  resolveSetupBadgeHasIssue,
+} from './preferences-provider-setup.js';
+import { formatRelativeTimestamp } from './preferences-time.js';
 
 
 const overlay = document.getElementById('modal-overlay')!;
@@ -63,6 +64,7 @@ type PreferenceDraft = {
   autoTitleEnabled: boolean;
   defaultProvider: ProviderId;
   language: UiLanguage;
+  appearanceTheme: AppearanceTheme;
   debugMode: boolean;
   sidebarViews: {
     configSections: boolean;
@@ -81,6 +83,7 @@ function createPreferenceDraft(): PreferenceDraft {
     autoTitleEnabled: appState.preferences.autoTitleEnabled,
     defaultProvider: appState.preferences.defaultProvider ?? 'claude',
     language: appState.preferences.language ?? 'en',
+    appearanceTheme: appState.preferences.appearanceTheme ?? 'system',
     debugMode: appState.preferences.debugMode,
     sidebarViews: {
       configSections: appState.preferences.sidebarViews?.configSections ?? true,
@@ -316,6 +319,7 @@ function renderPreferencesModalContent(): void {
 
   const state = createPreferencesModalState();
   const preferenceDraft: PreferenceDraft = createPreferenceDraft();
+  const savedAppearanceTheme = appState.preferences.appearanceTheme ?? 'system';
   const shortcutOverridesDraft: Record<string, string> = { ...(appState.preferences.keybindings ?? {}) };
 
   async function fixAndRerender(providerId?: ProviderId) {
@@ -381,6 +385,7 @@ function renderPreferencesModalContent(): void {
     cleanupRecorder: () => cleanupRecorder(state),
     isRecorderActive: () => Boolean(state.activeRecorder),
     savePreferences: () => savePreferenceDraft(preferenceDraft, shortcutOverridesDraft),
+    revertPreview: () => applyAppearanceTheme(savedAppearanceTheme),
     registerModalCleanup: extendModalCleanup,
   });
 

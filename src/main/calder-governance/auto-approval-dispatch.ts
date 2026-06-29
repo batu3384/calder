@@ -3,8 +3,9 @@ import type { ProviderId } from '../../shared/types/provider.js';
 const AUTO_APPROVAL_INPUT_BY_PROVIDER: Partial<Record<ProviderId, string>> = {
   claude: '1\n',
   codex: 'y\n',
-  gemini: 'y\n',
+  antigravity: 'y\n',
   qwen: 'y\n',
+  copilot: 'y\n',
 };
 
 export function supportsAutoApprovalDispatch(providerId: ProviderId | null | undefined): providerId is ProviderId {

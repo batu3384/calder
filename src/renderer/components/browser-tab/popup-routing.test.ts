@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import { handleBrowserGuestOpenRequest } from './popup-routing';
 
 describe('handleBrowserGuestOpenRequest', () => {

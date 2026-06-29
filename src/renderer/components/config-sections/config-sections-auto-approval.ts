@@ -1,9 +1,15 @@
-import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import type {
   ProjectGovernanceAutoApprovalState,
   ProjectGovernanceState,
   ProviderId,
 } from '../../types.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
+import {
+  appendAutoApprovalControls,
+  type AutoApprovalScopeSummary,
+  createModeGuide,
+  createModeSelect,
+} from './config-sections-auto-approval-controls-helpers.js';
 import {
   autoApprovalModeBehavior,
   autoApprovalModeLabel,
@@ -13,12 +19,6 @@ import {
   projectInheritLabel,
   sessionInheritLabel,
 } from './config-sections-auto-approval-i18n.js';
-import {
-  appendAutoApprovalControls,
-  createModeGuide,
-  createModeSelect,
-  type AutoApprovalScopeSummary,
-} from './config-sections-auto-approval-controls-helpers.js';
 
 /*
  * Source contract markers kept in this orchestrator after helper extraction:

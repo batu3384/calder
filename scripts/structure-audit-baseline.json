@@ -1,6 +1,9 @@
 {
-  "src/main/mobile-inspector.runtime.test.ts": 1762,
+  "src/main/mobile-inspector.runtime.test.ts": 1763,
+  "src/main/provider-updater.test.ts": 1002,
   "src/renderer/components/cli-surface/pane.test.ts": 1713,
-  "src/renderer/sharing/peer-host.test.ts": 1463,
+  "src/renderer/components/file-reader.ts": 503,
+  "src/renderer/components/sidebar.ts": 511,
+  "src/renderer/sharing/peer-host.test.ts": 1506,
   "src/renderer/state.test.ts": 2701
 }

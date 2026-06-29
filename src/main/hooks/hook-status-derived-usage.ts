@@ -18,7 +18,7 @@ const PROVIDER_CONTEXT_WINDOW_DEFAULT: Record<ProviderId, number> = {
   claude: 200_000,
   codex: 200_000,
   copilot: 200_000,
-  gemini: 1_000_000,
+  antigravity: 1_000_000,
   qwen: 1_000_000,
 };
 
@@ -80,7 +80,7 @@ function parseCodexUsage(event: InspectorEvent): {
   };
 }
 
-function parseGeminiUsage(event: InspectorEvent): {
+function parseAntigravityUsage(event: InspectorEvent): {
   totalInputTokens: number;
   nonCachedInputTokens: number;
   cacheReadTokens: number;
@@ -150,7 +150,7 @@ export function resetDerivedUsageState(): void {
 
 export function deriveCostDataFromEvents(sessionId: string, events: InspectorEvent[]): CostData | null {
   const providerId = sessionProviders.get(sessionId);
-  if (providerId !== 'codex' && providerId !== 'gemini') {
+  if (providerId !== 'codex' && providerId !== 'antigravity') {
     return null;
   }
 
@@ -165,7 +165,7 @@ export function deriveCostDataFromEvents(sessionId: string, events: InspectorEve
       changed = true;
     }
 
-    const parsedUsage = providerId === 'codex' ? parseCodexUsage(event) : parseGeminiUsage(event);
+    const parsedUsage = providerId === 'codex' ? parseCodexUsage(event) : parseAntigravityUsage(event);
     if (parsedUsage) {
       usage.totalInputTokens += parsedUsage.totalInputTokens;
       usage.totalOutputTokens += parsedUsage.totalOutputTokens;

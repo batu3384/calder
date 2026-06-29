@@ -1,34 +1,28 @@
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
-import { appState } from '../../state.js';
 import { buildAppliedContextSummary } from '../../project-context-prompt.js';
+import { appState } from '../../state.js';
 import {
   getProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';
+import { detectCliAdapter } from './adapters/registry.js';
 import {
   enableComposerDragging as enableComposerDraggingBehavior,
   positionComposerNearPointer as positionComposerNearPointerBehavior,
 } from './composer-position.js';
 import {
-  openInspect,
-} from './inspect-mode.js';
-import { createSelectionPayload } from './selection.js';
-import { inferCliRegions } from './heuristics.js';
-import { renderCliHoverOverlay } from './hover-overlay.js';
-import {
   getContextModeForSelection as getContextModeForSelectionBehavior,
 } from './context-controls.js';
-import {
-  buildSemanticMeta as buildSemanticMetaBehavior,
-  getFocusedSemanticNodeId as getFocusedSemanticNodeIdBehavior,
-  getSemanticNodeForSelection as getSemanticNodeForSelectionBehavior,
-} from './semantic-state.js';
-import { detectCliAdapter } from './adapters/registry.js';
 import type { InferredCliRegion } from './heuristics.js';
+import { inferCliRegions } from './heuristics.js';
+import { renderCliHoverOverlay } from './hover-overlay.js';
 import {
   pointerToCell,
   selectionFromTerminal,
 } from './inspect-geometry.js';
+import {
+  openInspect,
+} from './inspect-mode.js';
 import {
   deriveSemanticRegions,
   findContainingInferredRegion,
@@ -39,31 +33,23 @@ import {
   type SelectableCliRegion,
 } from './inspect-selection.js';
 import {
-  type CliSurfaceLayoutElements,
-} from './pane-elements.js';
-import { type CliSurfaceInstance } from './pane-instance.js';
-import { formatCliSurfaceTiming, renderCliSurfaceRuntimeMeta } from './pane-meta.js';
-import { createCliSurfaceInspectStateHelpers } from './pane-inspect-state.js';
-import { createCliSurfaceFrameHelpers } from './pane-frame-helpers.js';
-import {
   bindCliSurfaceInspectActionHandlers,
   bindCliSurfaceInspectPointerHandlers,
   bindCliSurfaceRuntimeActionHandlers,
   createCliSurfaceTargetMenuControllerWithHandlers,
 } from './pane-action-handlers.js';
 import {
-  getCliSurfaceProject,
-  getCliSurfaceRuntimeState,
-  resolveCliSurfaceSelectedProfile,
-  updateCliSurfaceRuntimeState,
-} from './pane-project-state.js';
-import {
   createCliSurfaceComposerHelpers,
   setInspectPayloadFromPointer,
   showComposerError,
 } from './pane-composer-helpers.js';
-import { createCliSurfacePaneStore } from './pane-store.js';
+import {
+  type CliSurfaceLayoutElements,
+} from './pane-elements.js';
 import { attachCliSurfacePaneBindings } from './pane-event-orchestration.js';
+import { createCliSurfaceFrameHelpers } from './pane-frame-helpers.js';
+import { createCliSurfaceInspectStateHelpers } from './pane-inspect-state.js';
+import { type CliSurfaceInstance } from './pane-instance.js';
 import {
   attachCliSurfacePaneToContainer,
   destroyCliSurfacePaneInstance,
@@ -72,6 +58,20 @@ import {
   hideAllCliSurfacePaneElements,
   showCliSurfacePaneByProject,
 } from './pane-lifecycle-orchestration.js';
+import { renderCliSurfaceRuntimeMeta } from './pane-meta.js';
+import {
+  getCliSurfaceProject,
+  getCliSurfaceRuntimeState,
+  resolveCliSurfaceSelectedProfile,
+  updateCliSurfaceRuntimeState,
+} from './pane-project-state.js';
+import { createCliSurfacePaneStore } from './pane-store.js';
+import { createSelectionPayload } from './selection.js';
+import {
+  buildSemanticMeta as buildSemanticMetaBehavior,
+  getFocusedSemanticNodeId as getFocusedSemanticNodeIdBehavior,
+  getSemanticNodeForSelection as getSemanticNodeForSelectionBehavior,
+} from './semantic-state.js';
 
 export { formatCliSurfaceTiming } from './pane-meta.js';
 
@@ -242,7 +242,7 @@ const frameHelpers = createCliSurfaceFrameHelpers({
     getCliSurfaceApi()?.resize(projectId, cols, rows);
   },
 });
-const { scheduleViewportRefresh, scheduleTerminalDataFlush, fitSurface } = frameHelpers;
+const { scheduleTerminalDataFlush, fitSurface } = frameHelpers;
 
 export function attachPaneBindings(): void {
   attachCliSurfacePaneBindings({

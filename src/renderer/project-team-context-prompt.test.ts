@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { appendProjectTeamContextToPrompt, buildProjectTeamContextPromptBlock } from './project-team-context-prompt.js';
 
 describe('project team context prompt', () => {

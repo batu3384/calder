@@ -1,14 +1,12 @@
 export const CLAUDE_EVENT_HOOK_TEMPLATE = `import sys,json,os,time
 from pathlib import Path
+if os.environ.get("CALDER_RUNTIME","")!="1":
+ sys.exit(0)
 try:
  d=json.load(sys.stdin)
 except:
  sys.exit(0)
 sid=os.environ.get("CLAUDE_IDE_SESSION_ID","")
-if not sid:
- raw_sid=d.get("session_id","")
- if isinstance(raw_sid,str):
-  sid=raw_sid
 if not sid:
  sys.exit(0)
 status_dir=r'__CALDER_STATUS_DIR__'

@@ -1,6 +1,6 @@
 export {
+  type CalderProtocolMessage,
   encodeCalderOsc,
   extractCalderOscMessages,
   parseCalderOsc,
-  type CalderProtocolMessage,
 } from '../../../shared/cli-surface-protocol.js';

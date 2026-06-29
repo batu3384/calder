@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { encryptPayload } from './share-crypto.js';
 import {
   buildRtcConfiguration,
-  decodeConnectionEnvelope,
   decodeConnectionCode,
+  decodeConnectionEnvelope,
   encodeConnectionCode,
   sendMessage,
   waitForIceGathering,

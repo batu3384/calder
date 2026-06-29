@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { InspectorEvent } from '../../shared/types/session.js';
+
 import type { AutoApprovalMode, AutoApprovalPolicySource } from '../../shared/types/governance.js';
+import type { InspectorEvent } from '../../shared/types/session.js';
 import { createAutoApprovalOrchestrator } from './auto-approval-orchestrator.js';
 
 function permissionRequestEvent(input: {

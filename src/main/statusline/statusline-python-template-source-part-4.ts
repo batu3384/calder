@@ -2,11 +2,11 @@ export const STATUSLINE_PYTHON_TEMPLATE_PART_4 = `        value = os.environ.get
         if not value:
             continue
         if env_key == 'ANTHROPIC_BASE_URL' and (
-            'api.z.ai' not in value and 'open.bigmodel.cn' not in value and 'dev.bigmodel.cn' not in value
+            'api.z.ai' not in value
         ):
             continue
         return value
-    return 'https://open.bigmodel.cn/api/anthropic'
+    return 'https://api.z.ai/api/anthropic'
 
 def zai_quota_url():
     override = os.environ.get('CALDER_ZAI_QUOTA_LIMIT_URL', '').strip()

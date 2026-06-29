@@ -1,13 +1,14 @@
+import { randomBytes } from 'crypto';
 import * as fs from 'fs';
 import * as http from 'http';
+import type { AddressInfo } from 'net';
 import * as os from 'os';
 import * as path from 'path';
-import { randomBytes } from 'crypto';
-import type { AddressInfo } from 'net';
+
 import type { EmbeddedBrowserOpenPayload } from '../shared/types/project-core';
-import { isMac, isWin } from './platform';
-import { handleBrowserBridgeRequest } from './browser-bridge/request';
 import { buildBrowserBridgeEnvFromState } from './browser-bridge/env';
+import { handleBrowserBridgeRequest } from './browser-bridge/request';
+import { isMac, isWin } from './platform';
 
 interface BrowserBridgeState {
   launcherPath: string;

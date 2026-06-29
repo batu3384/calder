@@ -1,16 +1,16 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR, getStatusLineScriptPath, installStatusLineScript } from './hooks/hook-status';
-import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hooks/hook-commands';
-import { buildClaudeEventHookPython } from './claude-event-hook-template';
-import { getClaudeConfig } from './claude-config-discovery';
-import { addMcpServer, removeMcpServer } from './claude-mcp-config';
-import type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types/provider';
-import type { InspectorEventType } from '../shared/types/session';
-export type { McpServerConfig } from './claude-mcp-config';
+import * as path from 'path';
 
-export type { McpServer, Agent, Skill, Command, ClaudeConfig } from '../shared/types/provider';
+import type { InspectorEventType } from '../shared/types/session';
+import { getClaudeConfig } from './claude-config-discovery';
+import { buildClaudeEventHookPython } from './claude-event-hook-template';
+import { addMcpServer, removeMcpServer } from './claude-mcp-config';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
+import { captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import { getStatusLineScriptPath, installStatusLineScript,STATUS_DIR } from './hooks/hook-status';
+export type { Agent, ClaudeConfig,Command, McpServer, Skill } from '../shared/types/provider';
+export type { McpServerConfig } from './claude-mcp-config';
 
 export const HOOK_MARKER = '# calder-hook';
 
@@ -92,6 +92,8 @@ function writeSettings(settings: Record<string, unknown>): void {
  * Install only the hooks portion of Claude Code settings (additive, non-destructive).
  */
 export function installHooksOnly(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
+
   const { settings, cleaned } = prepareSettings();
 
   installHookScripts();
@@ -196,6 +198,8 @@ export function installHooksOnly(): void {
  * Install only the statusLine setting (exclusive — overwrites any existing value).
  */
 export function installStatusLine(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
+
   installStatusLineScript();
 
   const settingsPath = path.join(homedir(), '.claude', 'settings.json');
@@ -216,5 +220,17 @@ export function installHooks(): void {
   installHooksOnly();
   installStatusLine();
 }
+
+/** Remove Calder-managed hooks from ~/.claude/settings.json without touching other hooks. */
+export function cleanupClaudeHooksOnly(): void {
+  const { settings, cleaned } = prepareSettings();
+  if (Object.keys(cleaned).length === 0) {
+    delete settings.hooks;
+  } else {
+    settings.hooks = cleaned;
+  }
+  writeSettings(settings);
+}
+
 export { getClaudeConfig };
 export { addMcpServer, removeMcpServer };

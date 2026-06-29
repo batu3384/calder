@@ -1,8 +1,8 @@
-import { anchorFloatingSurface } from '../floating-surface.js';
-import { sendGuestMessage } from './guest-messaging.js';
-import type { BrowserAuthPanelElements } from './auth-panel.js';
-import type { BrowserTabInstance } from './types.js';
 import type { BrowserCredentialFillData, BrowserCredentialSaveInput, BrowserCredentialSummary } from '../../../shared/types/project-core.js';
+import { anchorFloatingSurface } from '../floating-surface.js';
+import type { BrowserAuthPanelElements } from './auth-panel.js';
+import { sendGuestMessage } from './guest-messaging.js';
+import type { BrowserTabInstance } from './types.js';
 
 type AuthStatusTone = 'neutral' | 'success' | 'error';
 

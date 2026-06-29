@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+
+import { describe, expect, it } from 'vitest';
 
 const mainSource = readFileSync(
   new URL('./main.ts', import.meta.url),

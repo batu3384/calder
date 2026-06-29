@@ -1,10 +1,10 @@
+import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalPolicySource } from '../../shared/types/governance.js';
 import type { ProviderId } from '../../shared/types/provider.js';
 import type { InspectorEvent } from '../../shared/types/session.js';
-import type { AutoApprovalDecision, AutoApprovalMode, AutoApprovalPolicySource } from '../../shared/types/governance.js';
 import {
+  type AutoApprovalOperationInput,
   classifyAutoApprovalOperation,
   decideAutoApprovalAction,
-  type AutoApprovalOperationInput,
 } from './auto-approval-classifier.js';
 import { supportsAutoApprovalDispatch } from './auto-approval-dispatch.js';
 import { discoverProjectGovernance } from './discovery.js';

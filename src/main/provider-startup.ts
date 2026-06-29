@@ -1,6 +1,8 @@
+import type { BrowserWindow } from 'electron';
+
 import type { PersistedState } from '../shared/types/project-state';
 import type { ProviderId } from '../shared/types/provider';
-import type { BrowserWindow } from 'electron';
+import { cleanupAllExternalProviderHooks, EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
 import type { CliProvider } from './providers/provider';
 
 type ProviderPrereq = ReturnType<CliProvider['validatePrerequisites']>;
@@ -68,6 +70,11 @@ export async function installProviderStartupArtifacts(
   providers: CliProvider[],
   win?: BrowserWindow | null,
 ): Promise<void> {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+    cleanupAllExternalProviderHooks();
+    return;
+  }
+
   for (const provider of providers) {
     if (!provider.validatePrerequisites().ok) continue;
     try {

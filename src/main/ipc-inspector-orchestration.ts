@@ -1,26 +1,27 @@
 import { BrowserWindow, shell } from 'electron';
-import { setInspectorEventsMiddleware } from './hooks/hook-status';
-import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
+
+import type { ProjectGovernanceState } from '../shared/types/governance';
+import type { InspectorEvent } from '../shared/types/session';
+import { openUrlWithBrowserPolicy } from './browser-open-policy';
 import { resolveAutoApprovalInput } from './calder-governance/auto-approval-dispatch';
-import { applySessionOverrideToGovernanceState } from './ipc-auto-approval-governance';
+import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import { discoverProjectGovernance } from './calder-governance/discovery';
-import { writePty } from './pty-manager';
+import { setInspectorEventsMiddleware } from './hooks/hook-status';
+import { applySessionOverrideToGovernanceState } from './ipc-auto-approval-governance';
 import {
-  PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS,
   appendAutoApprovalAudit,
   extractPlaywrightNavigateUrlsFromTerminalChunk,
+  PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS,
+  type PlaywrightMirrorState,
   shouldMirrorPlaywrightNavigate,
   shouldMirrorPlaywrightNavigateUrl,
-  type PlaywrightMirrorState,
 } from './ipc-playwright-mirror';
-import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import type { InspectorEvent } from '../shared/types/session';
-import type { ProjectGovernanceState } from '../shared/types/governance';
 import {
   buildMiniMaxToolCallRecoveryPrompt,
-  shouldTriggerMiniMaxToolCallRecovery,
   type MiniMaxToolCallRecoveryState,
+  shouldTriggerMiniMaxToolCallRecovery,
 } from './minimax-toolcall-recovery';
+import { writePty } from './pty-manager';
 
 const MINIMAX_TOOLCALL_RECOVERY_COOLDOWN_MS = 45_000;
 const miniMaxToolCallRecoveryBySession = new Map<string, MiniMaxToolCallRecoveryState>();

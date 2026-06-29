@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
+
 import type { ProjectContextState } from '../../shared/types/project-context.js';
+import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
 import { normalizeProjectLayout } from '../state-normalizers.js';
-import { defaultPreferences } from './state-contracts.js';
 import { createAppStateRuntimeBridge, setProjectDomainForState, updateProjectSurfaceForState } from './state-appstate-orchestration-helpers.js';
+import { defaultPreferences } from './state-contracts.js';
 
 function makeProject(id = 'project-1'): ProjectRecord {
   return {

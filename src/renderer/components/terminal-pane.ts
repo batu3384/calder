@@ -1,16 +1,11 @@
-import { Terminal } from '@xterm/xterm';
 import { SearchAddon } from '@xterm/addon-search';
-import { removeSession } from './surface-services/session-activity.js';
-import { removeSession as removeCostSession, type CostInfo } from '../session-cost.js';
-import { removeSession as removeContextSession, type ContextWindowInfo } from '../session-context.js';
+import { Terminal } from '@xterm/xterm';
+
+import { type ContextWindowInfo,removeSession as removeContextSession } from '../session-context.js';
+import { type CostInfo,removeSession as removeCostSession } from '../session-cost.js';
 import type { ProviderId } from '../types.js';
 import { getProviderCapabilities, getProviderDisplayName } from './surface-services/provider-availability.js';
-import {
-  activateOscLink,
-  activateWebLink,
-  bindTerminalLinkPointerHandlers,
-  clearTerminalLinkDispatch,
-} from './terminal-pane-links.js';
+import { removeSession } from './surface-services/session-activity.js';
 import {
   attachTerminalInstanceToContainer,
   clearFocusedTerminalInstances,
@@ -19,19 +14,26 @@ import {
   setFocusedTerminalInstance,
   showTerminalInstance,
 } from './terminal-pane-instance-dom.js';
-import { clearPendingPromptTimer, deliverPrompt } from './terminal-pane-prompt-delivery.js';
 import {
-  clearSpawnFailureOverlay,
-  formatSpawnFailureMessage,
-  showSpawnFailureOverlay,
-} from './terminal-pane-spawn-overlay.js';
+  activateOscLink,
+  activateWebLink,
+  bindTerminalLinkPointerHandlers,
+  clearTerminalLinkDispatch,
+} from './terminal-pane-links.js';
+import { clearPendingPromptTimer, deliverPrompt } from './terminal-pane-prompt-delivery.js';
 import {
   bindTerminalInputAndFocusHandlers,
   createTerminalCore,
   registerTerminalLinkProviders,
 } from './terminal-pane-runtime.js';
+import {
+  clearSpawnFailureOverlay,
+  formatSpawnFailureMessage,
+  showSpawnFailureOverlay,
+} from './terminal-pane-spawn-overlay.js';
 import { spawnPtySession } from './terminal-pane-spawn-session.js';
 import { renderContextDisplay, renderCostDisplay, revealSessionStatusBar } from './terminal-pane-status.js';
+import { showErrorToast } from './toast.js';
 
 interface TerminalInstance {
   terminal: Terminal;
@@ -238,6 +240,7 @@ export async function spawnTerminal(sessionId: string): Promise<void> {
       details: formatSpawnFailureMessage(error),
       onRetry: spawnTerminal,
     });
+    showErrorToast(`Failed to spawn terminal session: ${error instanceof Error ? error.message : String(error)}`);
     console.error(`[terminal-pane] Failed to spawn terminal session ${sessionId}`, error);
   }
 }

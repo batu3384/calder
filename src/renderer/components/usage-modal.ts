@@ -1,5 +1,5 @@
-import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import type { StatsCache } from '../types.js';
+import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
 const overlay = document.getElementById('modal-overlay')!;
 const modal = document.getElementById('modal')!;

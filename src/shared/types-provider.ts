@@ -2,9 +2,10 @@
 
 // --- Provider ---
 
-export type ProviderId = 'claude' | 'codex' | 'copilot' | 'gemini' | 'qwen';
+export type ProviderId = 'claude' | 'codex' | 'copilot' | 'antigravity' | 'qwen';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 export type UiLanguage = 'en' | 'tr';
+export type AppearanceTheme = 'system' | 'light' | 'dark';
 export type GatewayBackendId = 'anthropic' | 'zai' | 'minimax' | 'qwen';
 export type ProviderRouteKind = 'native-cli' | 'gateway';
 export type ProviderRouteConfidence = 'verified' | 'estimated' | 'unavailable';

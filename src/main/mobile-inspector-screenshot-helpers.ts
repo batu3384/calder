@@ -1,9 +1,9 @@
+import type { MobileInspectScreenshotResult } from '../shared/types/mobile';
 import {
   normalizeAndroidScreencap,
   readPngSize,
   runBinaryCommand,
 } from './mobile-inspector-helpers';
-import type { MobileInspectScreenshotResult } from '../shared/types/mobile';
 
 interface AndroidScreenshotInput {
   adbBinary: string;

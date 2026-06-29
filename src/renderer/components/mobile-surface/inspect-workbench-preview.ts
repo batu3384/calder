@@ -1,5 +1,5 @@
-import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 import { formatCaptureMeta } from './dependency-scoping.js';
+import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 
 export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchOptions): HTMLDivElement {
   const { instance, platformLabels, handlers } = options;
@@ -61,14 +61,17 @@ export function renderInspectPreviewPanel(options: RenderMobileInspectWorkbenchO
             handlers.setInspectStatus(instance, result.message, 'default');
           }
         } catch (error) {
-          if (inspect.pointInspectToken !== inspectToken) return;
+          if (inspect.pointInspectToken !== inspectToken) {
+            return;
+          }
           const message = error instanceof Error ? error.message : 'Point inspection failed.';
           inspect.selectedElement = null;
           handlers.setInspectStatus(instance, message, 'error');
         } finally {
-          if (inspect.pointInspectToken !== inspectToken) return;
-          inspect.inspectingPoint = false;
-          handlers.rerenderFromState(instance);
+          if (inspect.pointInspectToken === inspectToken) {
+            inspect.inspectingPoint = false;
+            handlers.rerenderFromState(instance);
+          }
         }
       })();
     });

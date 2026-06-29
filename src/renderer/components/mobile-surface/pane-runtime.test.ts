@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { MobileSurfaceInspectState, MobileSurfacePaneInstance } from './types.js';
 
 const mockResolveSurfaceTargetSession = vi.fn();

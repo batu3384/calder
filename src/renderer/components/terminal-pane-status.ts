@@ -1,5 +1,5 @@
-import { isDerivedCost, isEstimatedCost, type CostInfo } from '../session-cost.js';
 import type { ContextWindowInfo } from '../session-context.js';
+import { type CostInfo,isDerivedCost, isEstimatedCost } from '../session-cost.js';
 
 function formatTokens(n: number): string {
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';

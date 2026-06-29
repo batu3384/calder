@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const projectTerminalSource = readFileSync(new URL('./project-terminal.ts', import.meta.url), 'utf-8');
 const remoteTerminalSource = readFileSync(new URL('./remote-terminal-pane.ts', import.meta.url), 'utf-8');

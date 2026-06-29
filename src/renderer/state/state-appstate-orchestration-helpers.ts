@@ -1,8 +1,8 @@
 import type { PersistedState, ProjectRecord } from '../../shared/types/project-state.js';
-import type { EventType } from './state-contracts.js';
-import { setProjectDomainState } from '../state-project-domain-updater.js';
 import type { ProjectDomainStateKey } from '../state-project-domain-updater.js';
+import { setProjectDomainState } from '../state-project-domain-updater.js';
 import type { AppStateRuntimeBridge } from './state-appstate-runtime-bridge.js';
+import type { EventType } from './state-contracts.js';
 
 interface RuntimeBridgeFactoryArgs {
   state: PersistedState;

@@ -1,9 +1,8 @@
-import type { ProviderId } from '../shared/types/provider.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
+import type { ProviderId } from '../shared/types/provider.js';
 import type { ContextWindowInfo, CostInfo, InitialContextSnapshot, SessionRecord } from '../shared/types/session.js';
-import { setActiveProjectSession } from './state-surface-updater.js';
 import {
   addInsightSnapshotForProject,
   addStandardProjectSession,
@@ -13,9 +12,9 @@ import {
   isInsightDismissedForProjectId,
   openUrlInProjectBrowserSurface,
   passivateBrowserTabSessionById,
-  reorderSessionForProject,
   removeProjectSession,
   renameProjectSession,
+  reorderSessionForProject,
   resolvePlanSessionConfig,
   restoreProjectCheckpointForState,
   resumeHistorySessionForProject,
@@ -27,6 +26,7 @@ import {
   updateProjectSessionCliId,
   upsertBrowserTabProjectSession,
 } from './state-appstate-core.js';
+import { setActiveProjectSession } from './state-surface-updater.js';
 
 function findProjectById(projects: ProjectRecord[], projectId: string): ProjectRecord | undefined {
   return projects.find((project) => project.id === projectId);

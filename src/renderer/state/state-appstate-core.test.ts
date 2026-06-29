@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import type { ProjectRecord } from '../../shared/types/project-state.js';
 import type { ArchivedSession, SessionRecord } from '../../shared/types/session.js';
-import { normalizeProjectLayout } from '../state-normalizers.js';
 import { resumeHistorySessionForProject } from '../state-appstate-core.js';
+import { normalizeProjectLayout } from '../state-normalizers.js';
 
 function makeProject(overrides: Partial<ProjectRecord> = {}): ProjectRecord {
   return {

@@ -1,14 +1,14 @@
 // Share dialog — host-side UI for sharing a session via P2P.
 
+import { isConnected,isSharing } from '../../sharing/peer-host.js';
 import { endShare } from '../../sharing/share-manager.js';
-import { isSharing, isConnected } from '../../sharing/peer-host.js';
 import { appState } from '../../state.js';
-import type { ShareDialogFlowController } from './share-dialog-flow-controller.js';
 import type { MobileControlApi, SharingConfigApi } from './share-dialog-api.js';
 import {
   getShareDialogCopy,
   resolveShareDialogLanguage,
 } from './share-dialog-copy.js';
+import type { ShareDialogFlowController } from './share-dialog-flow-controller.js';
 import { buildShareDialogMobilePresence } from './share-dialog-mobile-presence.js';
 import {
   buildShareDialogSections,
@@ -16,12 +16,12 @@ import {
 } from './share-dialog-render-helpers.js';
 
 export type { ShareDialogCopy } from './share-dialog-copy.js';
+export type { ShareDialogMobilePresenceCopy, ShareDialogMobilePresenceView } from './share-dialog-mobile-presence.js';
 export {
   buildShareDialogMobilePresence,
   formatShareConnectionDuration,
   getShareDialogMobilePresenceCopy,
 } from './share-dialog-mobile-presence.js';
-export type { ShareDialogMobilePresenceCopy, ShareDialogMobilePresenceView } from './share-dialog-mobile-presence.js';
 
 let activeOverlay: HTMLElement | null = null;
 let pendingShareSessionId: string | null = null;

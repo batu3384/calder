@@ -1,4 +1,5 @@
 import { execFile } from 'child_process';
+
 import { isWin } from './platform';
 
 const HTTP_PROBE_TIMEOUT_MS = 450;

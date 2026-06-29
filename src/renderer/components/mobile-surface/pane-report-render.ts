@@ -5,12 +5,12 @@ import {
   getScopedSummary,
   hasBlockingChecks,
 } from './dependency-scoping.js';
+import type { MobileSurfacePaneInstance } from './types.js';
 import {
   appendMobileDependencyChecklistSection,
   buildMobileDependencyCheckRow,
   renderMobileScopedSummaryPanel,
 } from './workbench-sections.js';
-import type { MobileSurfacePaneInstance } from './types.js';
 
 type StatusTone = 'default' | 'success' | 'error';
 

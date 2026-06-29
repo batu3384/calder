@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
 
 const mockExecFile = vi.hoisted(() => vi.fn());
@@ -18,9 +19,9 @@ vi.mock('./pty-manager', () => ({
 }));
 
 import {
+  type ProviderUpdaterTarget,
   updateAllProviders,
   updateProviders,
-  type ProviderUpdaterTarget,
 } from './provider-updater';
 
 function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {

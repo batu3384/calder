@@ -1,16 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import {
-  validateSharePassphrase,
-  validateJoinPassphrase,
-  normalizePassphrase,
-  generatePassphrase,
-  encryptPayload,
-  decryptPayload,
-  DecryptionError,
-  generateChallenge,
-  computeChallengeResponse,
   bytesToHex,
+  computeChallengeResponse,
+  DecryptionError,
+  decryptPayload,
+  encryptPayload,
+  generateChallenge,
+  generatePassphrase,
   hexToBytes,
+  normalizePassphrase,
+  validateJoinPassphrase,
+  validateSharePassphrase,
 } from './share-crypto.js';
 
 describe('passphrase validation', () => {
@@ -26,16 +27,16 @@ describe('passphrase validation', () => {
     expect(validateSharePassphrase('bad!phrase!!')).toMatch(/letters, numbers/i);
   });
 
-  it('accepts legacy 8-digit join PINs for backwards compatibility', () => {
-    expect(validateJoinPassphrase('12345678')).toBeNull();
+  it('rejects numeric-only join secrets regardless of length', () => {
+    expect(validateJoinPassphrase('12345678')).toMatch(/PIN not supported/i);
   });
 
   it('accepts strong join passphrases', () => {
     expect(validateJoinPassphrase('calder secure 2026')).toBeNull();
   });
 
-  it('rejects short join secrets that are not legacy PINs', () => {
-    expect(validateJoinPassphrase('1234567')).toMatch(/8-digit PIN or passphrase/i);
+  it('rejects short numeric join secrets', () => {
+    expect(validateJoinPassphrase('1234567')).toMatch(/PIN not supported/i);
   });
 
   it('normalizes case, spaces, and hyphens before crypto use', () => {

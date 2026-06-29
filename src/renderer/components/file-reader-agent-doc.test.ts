@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
+
 import {
   buildAgentDocModel,
   isAgentDocumentPath,

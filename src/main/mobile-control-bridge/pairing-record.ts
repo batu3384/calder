@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+
 import { resolveShareRtcConfigFromEnv } from '../share-rtc-config';
 import type { MobileUiLanguage } from './copy';
 import { normalizeMobileLanguage } from './copy';

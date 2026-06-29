@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import { getFullPath } from '../full-path';
 import { isWin, whichCmd } from '../platform';
-
 const COMMON_BIN_DIRS = isWin
   ? [
       path.join(os.homedir(), 'AppData', 'Roaming', 'npm'),
@@ -26,12 +26,26 @@ const PREREQ_CACHE_TTL_MS = 10_000;
 
 type PrereqCheckCacheEntry = {
   checkedAtMs: number;
+  ok: boolean;
 };
 
 const prereqCheckCache = new Map<string, PrereqCheckCacheEntry>();
 
+/** Allowlist pattern for valid binary names — alphanumeric, dots, dashes, underscores only. */
+const SAFE_BINARY_NAME_PATTERN = /^[a-zA-Z0-9_./-]+$/;
+
 function logBinaryProbeWarning(context: string, error: unknown): void {
   console.warn(`[resolve-binary] ${context}`, error);
+}
+
+/**
+ * Validates a binary name before it is used in shell commands.
+ * Rejects names with shell metacharacters that could enable command injection.
+ */
+function validateBinaryName(binaryName: string): void {
+  if (!SAFE_BINARY_NAME_PATTERN.test(binaryName)) {
+    throw new Error(`[resolve-binary] unsafe binary name rejected: ${binaryName.slice(0, 80)}`);
+  }
 }
 
 function expandHomePath(input: string): string {
@@ -42,6 +56,8 @@ function expandHomePath(input: string): string {
 
 function findAliasLauncher(binaryName: string, timeoutMs = DEFAULT_BINARY_PROBE_TIMEOUT_MS): string | null {
   if (isWin) return null;
+
+  validateBinaryName(binaryName);
 
   const shell = process.env.SHELL || '/bin/zsh';
 
@@ -87,6 +103,7 @@ function findBinaryInDir(dir: string, binaryName: string): string | null {
 }
 
 function whichBinary(binaryName: string, envPath: string): string | null {
+  validateBinaryName(binaryName);
   try {
     const resolved = execSync(`${whichCmd} "${binaryName}"`, {
       env: { ...process.env, PATH: envPath },
@@ -139,16 +156,8 @@ export function validateBinaryExists(
   const nowMs = Date.now();
   const cached = prereqCheckCache.get(cacheKey);
 
-  if (cached && (nowMs - cached.checkedAtMs) < PREREQ_CACHE_TTL_MS) {
-    return {
-      ok: false,
-      message:
-        `${displayName} not found.\n\n` +
-        `Calder can launch sessions with ${displayName} after it is installed.\n\n` +
-        `Install it with:\n` +
-        `  ${installCommand}\n\n` +
-        `After installing, restart Calder.`,
-    };
+  if (cached && cached.ok && (nowMs - cached.checkedAtMs) < PREREQ_CACHE_TTL_MS) {
+    return { ok: true, message: '' };
   }
 
   let ok = false;
@@ -170,11 +179,11 @@ export function validateBinaryExists(
   }
 
   if (ok) {
-    prereqCheckCache.delete(cacheKey);
+    prereqCheckCache.set(cacheKey, { checkedAtMs: nowMs, ok: true });
     return { ok: true, message: '' };
   }
 
-  prereqCheckCache.set(cacheKey, { checkedAtMs: nowMs });
+  prereqCheckCache.set(cacheKey, { checkedAtMs: nowMs, ok: false });
 
   return {
     ok: false,

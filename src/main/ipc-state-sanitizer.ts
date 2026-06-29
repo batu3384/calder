@@ -1,6 +1,7 @@
 import * as path from 'path';
-import type { ProviderId } from '../shared/types/provider';
+
 import type { PersistedState } from '../shared/types/project-state';
+import type { ProviderId } from '../shared/types/provider';
 import { isWin } from './platform';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,7 +24,7 @@ const VALID_PROVIDER_IDS: ProviderId[] = [
   'claude',
   'codex',
   'copilot',
-  'gemini',
+  'antigravity',
   'qwen',
 ];
 
@@ -45,6 +46,11 @@ const MAX_SESSION_STRING_LENGTH = 16_384;
 
 function isProviderId(value: unknown): value is ProviderId {
   return typeof value === 'string' && VALID_PROVIDER_IDS.includes(value as ProviderId);
+}
+
+function normalizeLegacyProviderId(value: unknown): ProviderId | null {
+  if (value === 'gemini') return 'antigravity';
+  return isProviderId(value) ? value : null;
 }
 
 function hasNulByte(value: string): boolean {
@@ -83,7 +89,11 @@ function validateSessionRecordForSave(session: PersistedState['projects'][number
     throw new Error(`Invalid state payload: unsupported session.type "${session.type}"`);
   }
   if (session.providerId !== undefined && !isProviderId(session.providerId)) {
-    throw new Error(`Invalid state payload: unsupported session.providerId "${session.providerId}"`);
+    const normalized = normalizeLegacyProviderId(session.providerId);
+    if (!normalized) {
+      throw new Error(`Invalid state payload: unsupported session.providerId "${session.providerId}"`);
+    }
+    (session as { providerId?: ProviderId }).providerId = normalized;
   }
   if (session.args !== undefined) {
     assertStringField(session.args, 'session.args', MAX_SESSION_STRING_LENGTH, { allowEmpty: true });
@@ -156,7 +166,11 @@ function validatePersistedStateReferences(state: PersistedState): void {
   }
 
   if (state.preferences.defaultProvider !== undefined && !isProviderId(state.preferences.defaultProvider)) {
-    throw new Error(`Invalid state payload: unsupported preferences.defaultProvider "${state.preferences.defaultProvider}"`);
+    const normalized = normalizeLegacyProviderId(state.preferences.defaultProvider);
+    if (!normalized) {
+      throw new Error(`Invalid state payload: unsupported preferences.defaultProvider "${state.preferences.defaultProvider}"`);
+    }
+    state.preferences.defaultProvider = normalized;
   }
 }
 

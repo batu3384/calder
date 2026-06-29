@@ -1,8 +1,8 @@
 // Join dialog — guest-side UI for joining a shared P2P session.
 
+import { DecryptionError, validateJoinPassphrase } from '../sharing/share-crypto.js';
 import { joinRemoteSession } from '../sharing/share-manager.js';
 import { appState } from '../state.js';
-import { DecryptionError, validateJoinPassphrase } from '../sharing/share-crypto.js';
 import { createPassphraseInput } from './surface-services/dom-utils.js';
 
 let activeOverlay: HTMLElement | null = null;

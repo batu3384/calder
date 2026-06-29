@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { afterEach, describe, expect, it } from 'vitest';
+
 import {
   startProjectContextWatcher,
   stopProjectContextWatcher,

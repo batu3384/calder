@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import { discoverProjectGovernance } from './discovery.js';
 

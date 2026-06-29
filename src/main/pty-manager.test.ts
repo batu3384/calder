@@ -1,6 +1,21 @@
-import { vi } from 'vitest';
 import * as path from 'path';
+import { vi } from 'vitest';
+
 import { isWin } from './platform';
+
+const {
+  mockSanitizeSpawnArgs,
+  mockSanitizeInitialPrompt,
+  mockSanitizeSessionId,
+  mockValidateCwd,
+  mockSanitizeExtraArgs,
+} = vi.hoisted(() => ({
+  mockSanitizeSpawnArgs: vi.fn((args: string[]) => args),
+  mockSanitizeInitialPrompt: vi.fn((prompt: string) => ({ ok: true, value: prompt })),
+  mockSanitizeSessionId: vi.fn((id: string) => ({ ok: true, value: id })),
+  mockValidateCwd: vi.fn((cwd: string) => ({ ok: true, value: cwd })),
+  mockSanitizeExtraArgs: vi.fn((args: string) => (args ? args.split(/\s+/) : [])),
+}));
 
 const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync } = vi.hoisted(() => ({
   mockSpawn: vi.fn(),
@@ -49,20 +64,30 @@ vi.mock('./browser-bridge', () => ({
   buildBrowserBridgeEnv: mockBuildBrowserBridgeEnv,
 }));
 
+vi.mock('./security/sanitize', () => ({
+  sanitizeArgs: mockSanitizeSpawnArgs,
+  sanitizeSpawnArgs: mockSanitizeSpawnArgs,
+  sanitizeInitialPrompt: mockSanitizeInitialPrompt,
+  sanitizeSessionId: mockSanitizeSessionId,
+  validateCwd: mockValidateCwd,
+  sanitizeExtraArgs: mockSanitizeExtraArgs,
+}));
+
 import * as fs from 'fs';
+
+import { _resetLoginShellEnvCache } from './provider-env';
+import { initProviders } from './providers/registry';
 import {
-  spawnPty,
+  getPtyCwd,
+  isSilencedExit,
+  killAllPtys,
+  killPty,
+  resizePty,
   spawnCommandPty,
+  spawnPty,
   spawnShellPty,
   writePty,
-  resizePty,
-  killPty,
-  killAllPtys,
-  isSilencedExit,
-  getPtyCwd,
 } from './pty-manager';
-import { initProviders } from './providers/registry';
-import { _resetLoginShellEnvCache } from './provider-env';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 
@@ -266,6 +291,8 @@ describe('spawnPty', () => {
   it('hydrates missing Claude auth env from the login shell', () => {
     if (isWin) return;
 
+    delete process.env.ANTHROPIC_BASE_URL;
+    delete process.env.ANTHROPIC_AUTH_TOKEN;
     mockExecFileSync.mockReturnValue(
       [
         'ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic',

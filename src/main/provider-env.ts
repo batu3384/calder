@@ -1,5 +1,6 @@
 import { execFileSync } from 'child_process';
 import { homedir } from 'os';
+
 import type { ProviderId } from '../shared/types/provider';
 import { isWin } from './platform';
 
@@ -17,7 +18,8 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'OPENAI_PROJECT_ID',
   ],
   copilot: [],
-  gemini: [
+  antigravity: [
+    'ANTIGRAVITY_API_KEY',
     'GEMINI_API_KEY',
     'GOOGLE_API_KEY',
     'GOOGLE_GENERATIVE_AI_API_KEY',

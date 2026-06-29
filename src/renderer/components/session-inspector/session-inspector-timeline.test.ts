@@ -15,15 +15,15 @@ vi.mock('./session-inspector-state-ui.js', () => ({
   },
 }));
 
-import { getEvents } from '../surface-services/session-inspector-state.js';
-import {
-  renderTimeline,
-  buildAgentModel,
-  describeTimelineEvent,
-  buildApprovalDecisionMetaText,
-} from './session-inspector-timeline.js';
-import { inspectorState } from './session-inspector-state-ui.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
+import { getEvents } from '../surface-services/session-inspector-state.js';
+import { inspectorState } from './session-inspector-state-ui.js';
+import {
+  buildAgentModel,
+  buildApprovalDecisionMetaText,
+  describeTimelineEvent,
+  renderTimeline,
+} from './session-inspector-timeline.js';
 
 class FakeClassList {
   private values = new Set<string>();

@@ -1,28 +1,46 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import { attachBrowserWebviewRouting } from './browser-webview-routing';
 
-type Handler = (...args: any[]) => void;
 type WindowOpenHandler = (details: { url: string }) => { action: 'allow' | 'deny' };
+type NavigateEvent = { preventDefault(): void };
+type WillNavigateHandler = (event: NavigateEvent, url: string) => void;
+type AttachWebviewHandler = (event: unknown, guestContents: FakeWebContents) => void;
 
 class FakeWebContents {
   windowOpenHandler: WindowOpenHandler | null = null;
-  listeners = new Map<string, Handler[]>();
+  willNavigateHandlers: WillNavigateHandler[] = [];
+  attachWebviewHandlers: AttachWebviewHandler[] = [];
   loadURL = vi.fn();
 
   setWindowOpenHandler(handler: WindowOpenHandler): void {
     this.windowOpenHandler = handler;
   }
 
-  on(event: string, listener: Handler): this {
-    const existing = this.listeners.get(event) ?? [];
-    existing.push(listener);
-    this.listeners.set(event, existing);
+  on(event: 'will-navigate', listener: WillNavigateHandler): this;
+  on(event: 'did-attach-webview', listener: AttachWebviewHandler): this;
+  on(event: 'will-navigate' | 'did-attach-webview', listener: WillNavigateHandler | AttachWebviewHandler): this {
+    if (event === 'will-navigate') {
+      this.willNavigateHandlers.push(listener as WillNavigateHandler);
+    } else {
+      this.attachWebviewHandlers.push(listener as AttachWebviewHandler);
+    }
     return this;
   }
 
-  emit(event: string, ...args: any[]): void {
-    for (const listener of this.listeners.get(event) ?? []) {
-      listener(...args);
+  emit(event: 'will-navigate', eventArg: NavigateEvent, url: string): void;
+  emit(event: 'did-attach-webview', eventArg: unknown, guest: FakeWebContents): void;
+  emit(event: 'will-navigate' | 'did-attach-webview', ...args: unknown[]): void {
+    if (event === 'will-navigate') {
+      const [eventArg, url] = args as [NavigateEvent, string];
+      for (const listener of this.willNavigateHandlers) {
+        listener(eventArg, url);
+      }
+      return;
+    }
+    const [eventArg, guest] = args as [unknown, FakeWebContents];
+    for (const listener of this.attachWebviewHandlers) {
+      listener(eventArg, guest);
     }
   }
 }
@@ -112,6 +130,20 @@ describe('attachBrowserWebviewRouting', () => {
     openExternal.mockClear();
     host.emit('will-navigate', { preventDefault }, 'file:///Applications/Calder.app');
     expect(preventDefault).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it('blocks guest navigations outside the localhost allowlist', () => {
+    const host = new FakeWebContents();
+    const guest = new FakeWebContents();
+    const openExternal = vi.fn();
+    const preventDefault = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+    host.emit('did-attach-webview', {}, guest);
+    guest.emit('will-navigate', { preventDefault }, 'https://localhost.evil.com/page');
+
+    expect(preventDefault).toHaveBeenCalledTimes(1);
     expect(openExternal).not.toHaveBeenCalled();
   });
 

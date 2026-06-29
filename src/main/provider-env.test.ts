@@ -16,7 +16,7 @@ vi.mock('./platform', () => ({
   isWin: false,
 }));
 
-import { buildProviderBaseEnv, _resetLoginShellEnvCache } from './provider-env';
+import { _resetLoginShellEnvCache,buildProviderBaseEnv } from './provider-env';
 
 beforeEach(() => {
   vi.clearAllMocks();

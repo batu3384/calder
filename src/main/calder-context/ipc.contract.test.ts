@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+
+import { describe, expect, it } from 'vitest';
 
 const ipcHandlersSource = readFileSync(
   new URL('../ipc-handlers.ts', import.meta.url),

@@ -1,6 +1,6 @@
-import type { ProviderId } from '../../shared/types/provider.js';
 import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../../shared/types/project-checkpoint.js';
 import type { ProjectWorkflowDocument } from '../../shared/types/project-workflow.js';
+import type { ProviderId } from '../../shared/types/provider.js';
 import type { SessionRecord } from '../../shared/types/session.js';
 import {
   addMcpInspectorProjectSession,
@@ -15,9 +15,9 @@ import {
   launchWorkflowSessionInAppState,
   openUrlInBrowserSurfaceInAppState,
   removeSessionInAppState,
+  restoreProjectCheckpointInAppState,
   resumeFromHistoryInAppState,
   resumeWithProviderInAppState,
-  restoreProjectCheckpointInAppState,
   setActiveSessionInAppState,
   setSurfaceTargetSessionInAppState,
 } from '../state-appstate-runtime.js';

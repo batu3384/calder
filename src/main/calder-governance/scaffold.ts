@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import type { ProjectGovernanceStarterPolicyResult } from '../../shared/types/governance.js';
 import { discoverProjectGovernance, POLICY_RELATIVE_PATH } from './discovery.js';
 

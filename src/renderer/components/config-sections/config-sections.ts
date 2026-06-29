@@ -1,25 +1,25 @@
+import { isTrackingHealthy } from '../../../shared/tracking-health.js';
+import type { UiLanguage } from '../../../shared/types/provider.js';
 import { appState } from '../../state.js';
-import { getProviderDisplayName } from '../surface-services/provider-availability.js';
-import { showMcpAddModal } from '../mcp-add-modal.js';
-import { localizeConfigMetadataSummary, type ConfigMetadataKind } from '../config-metadata-localization.js';
+import type {
+  Agent,
+  CliProviderMeta,
+  Command,
+  McpServer,
+  ProviderConfig,
+  ProviderId,
+  SettingsValidationResult,
+  Skill,
+} from '../../types.js';
+import { type ConfigMetadataKind,localizeConfigMetadataSummary } from '../config-metadata-localization.js';
 import { getVisibleToolchainSections, sectionSummaryText, type ToolchainSummarySection } from '../config-toolchain-summary.js';
-import { createConfigSectionsRefreshController } from './config-sections-refresh-controller.js';
+import { showMcpAddModal } from '../mcp-add-modal.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import {
   describeAutoApprovalScopes as describeAutoApprovalScopesCore,
   renderAutoApprovalSection as renderAutoApprovalSectionCore,
 } from './config-sections-auto-approval.js';
-import { isTrackingHealthy } from '../../../shared/tracking-health.js';
-import type { UiLanguage } from '../../../shared/types/provider.js';
-import type {
-  ProviderConfig,
-  ProviderId,
-  McpServer,
-  Agent,
-  Skill,
-  Command,
-  CliProviderMeta,
-  SettingsValidationResult,
-} from '../../types.js';
+import { createConfigSectionsRefreshController } from './config-sections-refresh-controller.js';
 
 const collapsed: Record<string, boolean> = {};
 

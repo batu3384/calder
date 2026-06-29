@@ -1,6 +1,7 @@
 import { SerializeAddon } from '@xterm/addon-serialize';
-import { getTerminalInstance } from '../components/terminal-pane.js';
+
 import { getBrowserTabInstance } from '../components/browser-tab/instance.js';
+import { getTerminalInstance } from '../components/terminal-pane.js';
 import { appState } from '../state.js';
 
 interface HostPeerCatalogState {

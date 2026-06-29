@@ -1,5 +1,5 @@
-import { getProviderCapabilities } from './surface-services/provider-availability.js';
 import type { ProviderId } from '../types.js';
+import { getProviderCapabilities } from './surface-services/provider-availability.js';
 
 interface StartupPromptState {
   pendingPrompt: string | null;

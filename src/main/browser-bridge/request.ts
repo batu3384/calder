@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+
 import type { EmbeddedBrowserOpenPayload } from '../../shared/types/project-core';
 import { isAllowedExternalUrl } from '../browser-open-policy';
 

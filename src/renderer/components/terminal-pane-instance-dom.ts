@@ -1,5 +1,5 @@
-import { WebglAddon } from '@xterm/addon-webgl';
 import type { FitAddon } from '@xterm/addon-fit';
+import { WebglAddon } from '@xterm/addon-webgl';
 import type { Terminal } from '@xterm/xterm';
 
 interface TerminalDomInstance {

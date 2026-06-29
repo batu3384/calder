@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   buildMiniMaxToolCallRecoveryPrompt,
   isMiniMaxToolCallMarkupMessage,
-  shouldTriggerMiniMaxToolCallRecovery,
   type MiniMaxToolCallRecoveryState,
+  shouldTriggerMiniMaxToolCallRecovery,
 } from './minimax-toolcall-recovery';
 
 describe('isMiniMaxToolCallMarkupMessage', () => {

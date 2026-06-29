@@ -5,6 +5,7 @@ vi.mock('fs', () => ({
 }));
 
 import * as fs from 'fs';
+
 import { setFileWatcherWindow, unwatchFile, watchFile } from './file-watcher';
 
 const mockSend = vi.fn();

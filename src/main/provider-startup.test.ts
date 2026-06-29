@@ -1,13 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
+
 import type { PersistedState } from '../shared/types/project-state';
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
-import type { CliProvider } from './providers/provider';
 import {
   analyzeProviderStartup,
-  formatProviderStartupWarning,
   formatMissingProviderDialog,
+  formatProviderStartupWarning,
   installProviderStartupArtifacts,
 } from './provider-startup';
+import type { CliProvider } from './providers/provider';
+
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
+}));
 
 function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
   return {
@@ -72,7 +78,7 @@ describe('analyzeProviderStartup', () => {
     const state = makeState();
     const analysis = analyzeProviderStartup([
       makeProvider('codex', true),
-      makeProvider('gemini', false, 'Gemini CLI not found'),
+      makeProvider('antigravity', false, 'Antigravity CLI not found'),
     ], state);
 
     expect(analysis.blocking).toBe(false);
@@ -88,17 +94,17 @@ describe('analyzeProviderStartup', () => {
         sessionHistoryEnabled: true,
         insightsEnabled: true,
         autoTitleEnabled: true,
-        defaultProvider: 'gemini',
+        defaultProvider: 'antigravity',
       },
     });
 
     const analysis = analyzeProviderStartup([
       makeProvider('codex', true),
-      makeProvider('gemini', false, 'Gemini CLI not found'),
+      makeProvider('antigravity', false, 'Antigravity CLI not found'),
     ], state);
 
     expect(analysis.blocking).toBe(false);
-    expect(analysis.relevantUnavailable.map(result => result.provider.meta.id)).toEqual(['gemini']);
+    expect(analysis.relevantUnavailable.map(result => result.provider.meta.id)).toEqual(['antigravity']);
     expect(analysis.relevantUnavailable[0]?.reasons).toEqual(['default-provider']);
   });
 
@@ -143,7 +149,7 @@ describe('analyzeProviderStartup', () => {
 describe('formatters', () => {
   it('describes why an unavailable provider still matters', () => {
     const [result] = analyzeProviderStartup([
-      makeProvider('gemini', false, 'Gemini CLI not found'),
+      makeProvider('antigravity', false, 'Antigravity CLI not found'),
     ], makeState({
       preferences: {
         soundOnSessionWaiting: true,
@@ -152,12 +158,12 @@ describe('formatters', () => {
         sessionHistoryEnabled: true,
         insightsEnabled: true,
         autoTitleEnabled: true,
-        defaultProvider: 'gemini',
+        defaultProvider: 'antigravity',
       },
     })).relevantUnavailable;
 
     expect(formatProviderStartupWarning(result!)).toContain('your default provider');
-    expect(formatProviderStartupWarning(result!)).toContain('Gemini CLI not found');
+    expect(formatProviderStartupWarning(result!)).toContain('Antigravity CLI not found');
   });
 
   it('formats the blocking dialog details for all unavailable providers', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { resolveNavigableHttpUrl, shouldDispatchLinkOpen } from './link-routing.js';
 
 describe('resolveNavigableHttpUrl', () => {

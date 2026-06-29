@@ -1,11 +1,12 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { BrowserWindow } from 'electron';
-import { isWin } from '../platform';
-import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from '../statusline/statusline-template';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import type { ProviderId } from '../../shared/types/provider';
 import type { InspectorEvent } from '../../shared/types/session';
+import { isWin } from '../platform';
+import { buildStatusLinePython, buildStatusLineWrapper, STATUSLINE_PYTHON_HELPER } from '../statusline/statusline-template';
 import {
   clearDerivedUsageSession,
   deriveCostDataFromEvents,

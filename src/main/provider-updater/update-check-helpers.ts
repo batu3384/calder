@@ -1,5 +1,5 @@
 import type { ProviderId, ProviderUpdateResult, ProviderUpdateSource } from '../../shared/types/provider';
-import type { ProviderUpdateSpec, ProviderUpdaterRunner } from '../provider-updater-types';
+import type { ProviderUpdaterRunner,ProviderUpdateSpec } from '../provider-updater-types';
 import {
   brewEntryMatchesToken,
   parseVersion,

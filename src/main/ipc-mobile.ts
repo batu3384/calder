@@ -1,19 +1,20 @@
 import { ipcMain } from 'electron';
+
 import type { MobileDependencyId, MobileDependencyInstallProgressEvent, MobileInspectPlatform } from '../shared/types/mobile';
 import type { ShareConnectionDescription } from '../shared/types/project-core';
-import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
-import {
-  captureMobileInspectScreenshot,
-  interactMobileInspectPoint,
-  inspectMobilePoint,
-  launchMobileInspectSurface,
-} from './mobile-inspector';
-import { resolveShareRtcConfigFromEnv } from './share-rtc-config';
 import {
   consumeMobileControlPairingAnswer,
   createMobileControlPairing,
   revokeMobileControlPairing,
 } from './mobile-control-bridge';
+import { checkMobileDependencies, installMobileDependency } from './mobile-dependency-doctor';
+import {
+  captureMobileInspectScreenshot,
+  inspectMobilePoint,
+  interactMobileInspectPoint,
+  launchMobileInspectSurface,
+} from './mobile-inspector';
+import { resolveShareRtcConfigFromEnv } from './share-rtc-config';
 
 function resolvePlatform(platform: MobileInspectPlatform): MobileInspectPlatform {
   return platform === 'android' ? 'android' : 'ios';

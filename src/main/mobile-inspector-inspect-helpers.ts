@@ -1,9 +1,9 @@
+import type { MobileInspectPointInspectionResult } from '../shared/types/mobile';
 import {
   parseAndroidHierarchyNodes,
   resolveAndroidNodeAtPoint,
   runCommand,
 } from './mobile-inspector-helpers';
-import type { MobileInspectPointInspectionResult } from '../shared/types/mobile';
 
 interface AndroidInspectInput {
   adbBinary: string;

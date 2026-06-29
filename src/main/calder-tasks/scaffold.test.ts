@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createProjectBackgroundTaskFile } from './scaffold.js';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
 import { readProjectBackgroundTaskFile } from './read.js';
+import { createProjectBackgroundTaskFile } from './scaffold.js';
 
 const roots: string[] = [];
 

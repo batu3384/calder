@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRenderGeneralPreferencesSectionContent = vi.hoisted(() => vi.fn());
 const mockRenderLayoutPreferencesSectionContent = vi.hoisted(() => vi.fn());

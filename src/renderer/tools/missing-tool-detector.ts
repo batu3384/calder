@@ -1,7 +1,7 @@
 import type { ToolFailureData } from '../../shared/types/session.js';
+import { appState } from '../state.js';
 import type { ToolInfo } from './tool-catalog.js';
 import { findTool } from './tool-catalog.js';
-import { appState } from '../state.js';
 
 export type FailureReason = 'not-found' | 'permission-denied' | 'auth-required' | 'other';
 

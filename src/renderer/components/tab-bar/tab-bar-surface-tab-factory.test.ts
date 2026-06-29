@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
 const surfaceFactorySource = readFileSync(new URL('./tab-bar-surface-tab-factory.ts', import.meta.url), 'utf-8');

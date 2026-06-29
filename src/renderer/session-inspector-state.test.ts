@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { InspectorEvent } from '../shared/types/session';
 import {
   addEvents,

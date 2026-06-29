@@ -1,19 +1,20 @@
 import * as http from 'node:http';
+
 import { getMobileCopy } from './copy';
 import { sendText } from './http';
 import type { PairingRecord } from './model';
 import { safeCompareToken, verifyPairingToken } from './rate-limit';
-import {
-  decodeShareConnectionCode,
-  encodeShareConnectionDescription,
-  normalizeShareConnectionDescription,
-} from './security';
+import type { PairingPostHandlersConfig } from './routes-post-shared';
 import {
   failExpiredPairing,
   failRateLimited,
   parsePairingBody,
 } from './routes-post-shared';
-import type { PairingPostHandlersConfig } from './routes-post-shared';
+import {
+  decodeShareConnectionCode,
+  encodeShareConnectionDescription,
+  normalizeShareConnectionDescription,
+} from './security';
 
 export function createAnswerPostHandler(config: PairingPostHandlersConfig): (
   record: PairingRecord,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { _internal } from './mobile-inspector';
 
 function createPngBuffer(width: number, height: number): Buffer {

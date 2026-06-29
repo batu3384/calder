@@ -1,13 +1,13 @@
 import { appState } from '../../state.js';
 import {
-  onChange as onInspectorChange,
   clearSession,
+  onChange as onInspectorChange,
 } from '../surface-services/session-inspector-state.js';
 import { fitAllVisible } from '../terminal-pane.js';
 import { inspectorState } from './session-inspector-state-ui.js';
-import { resetUIState, canInspectSession } from './session-inspector-utils.js';
 import { renderTimeline } from './session-inspector-timeline.js';
-import { renderCosts, renderTools, renderContext } from './session-inspector-views.js';
+import { canInspectSession,resetUIState } from './session-inspector-utils.js';
+import { renderContext,renderCosts, renderTools } from './session-inspector-views.js';
 
 let onInspectorLayoutChanged: (() => void) | null = null;
 

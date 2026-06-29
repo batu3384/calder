@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 const mockLoad = vi.fn();
 const mockSave = vi.fn();
@@ -23,8 +23,8 @@ vi.mock('./session-context.js', () => ({
   restoreContext: vi.fn(),
 }));
 
-import { appState, _resetForTesting as resetAppState } from './state';
-import { parseTitle, clearSession, _resetForTesting } from './session-title';
+import { _resetForTesting,clearSession, parseTitle } from './session-title';
+import { _resetForTesting as resetAppState,appState } from './state';
 
 beforeEach(() => {
   _resetForTesting();

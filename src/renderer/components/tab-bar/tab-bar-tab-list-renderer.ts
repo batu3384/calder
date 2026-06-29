@@ -1,6 +1,6 @@
 import type { ProjectRecord, SessionRecord } from '../../state.js';
-import { getProjectSurface, updateProjectSurface } from './tab-bar-surface-state.js';
 import { createSessionTab } from './tab-bar-session-tab-factory.js';
+import { getProjectSurface, updateProjectSurface } from './tab-bar-surface-state.js';
 import { createSurfaceModeTab } from './tab-bar-surface-tab-factory.js';
 
 interface RenderTabListOptions {

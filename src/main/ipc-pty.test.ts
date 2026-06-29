@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
@@ -9,6 +10,7 @@ const mockSpawnShellPty = vi.hoisted(() => vi.fn());
 const mockWritePty = vi.hoisted(() => vi.fn());
 const mockResizePty = vi.hoisted(() => vi.fn());
 const mockKillPty = vi.hoisted(() => vi.fn());
+const mockHasPtySession = vi.hoisted(() => vi.fn(() => true));
 const mockIsSilencedExit = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock('electron', () => ({
@@ -25,6 +27,7 @@ vi.mock('./pty-manager', () => ({
   spawnPty: mockSpawnPty,
   spawnShellPty: mockSpawnShellPty,
   writePty: mockWritePty,
+  hasPtySession: mockHasPtySession,
   resizePty: mockResizePty,
   killPty: mockKillPty,
   isSilencedExit: mockIsSilencedExit,
@@ -50,6 +53,7 @@ function getOnHandler(channel: string): (...args: any[]) => any {
 
 function createOps(overrides?: Partial<Parameters<typeof registerPtyIpcHandlers>[0]>): Parameters<typeof registerPtyIpcHandlers>[0] {
   return {
+    assertProjectGovernanceAllows: vi.fn(async () => {}),
     isWithinKnownProject: vi.fn(() => true),
     ensureHookWatcherStarted: vi.fn(),
     registerAutoApprovalSession: vi.fn(),
@@ -67,19 +71,19 @@ describe('ipc pty handlers', () => {
     vi.clearAllMocks();
   });
 
-  it('rejects pty:create when cwd is outside known projects', () => {
+  it('rejects pty:create when cwd is outside known projects', async () => {
     const ops = createOps({ isWithinKnownProject: vi.fn(() => false) });
     mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send: vi.fn() } }]);
     registerPtyIpcHandlers(ops);
 
     const createHandler = getHandleHandler('pty:create');
-    expect(() => createHandler({}, 's1', '/unknown', null, false, '', 'claude')).toThrow(
+    await expect(createHandler({}, 's1', '/unknown', null, false, '', 'claude')).rejects.toThrow(
       'PTY create requires a known project path',
     );
     expect(mockSpawnPty).not.toHaveBeenCalled();
   });
 
-  it('wires pty:create lifecycle hooks and forwards data/exit events', () => {
+  it('wires pty:create lifecycle hooks and forwards data/exit events', async () => {
     const send = vi.fn();
     const win = { isDestroyed: () => false, webContents: { send } };
     mockGetAllWindows.mockReturnValue([win]);
@@ -102,7 +106,7 @@ describe('ipc pty handlers', () => {
     registerPtyIpcHandlers(ops);
 
     const createHandler = getHandleHandler('pty:create');
-    createHandler({}, 's2', '/repo', 'cli-s2', false, '--dangerously-skip-permissions', 'codex', 'hello');
+    await createHandler({}, 's2', '/repo', 'cli-s2', false, '--dangerously-skip-permissions', 'codex', 'hello');
 
     const resolved = path.resolve('/repo');
     expect(ops.ensureHookWatcherStarted).toHaveBeenCalledWith(win);
@@ -115,7 +119,7 @@ describe('ipc pty handlers', () => {
     expect(send).toHaveBeenCalledWith('pty:exit', 's2', 0, 15);
   });
 
-  it('suppresses pty:exit when the PTY exit is marked as silenced', () => {
+  it('suppresses pty:exit when the PTY exit is marked as silenced', async () => {
     const send = vi.fn();
     mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send } }]);
     mockIsSilencedExit.mockReturnValue(true);
@@ -136,13 +140,13 @@ describe('ipc pty handlers', () => {
     registerPtyIpcHandlers(ops);
 
     const createHandler = getHandleHandler('pty:create');
-    createHandler({}, 's3', '/repo', null, false, '', 'claude');
+    await createHandler({}, 's3', '/repo', null, false, '', 'claude');
 
     expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s3');
     expect(send).not.toHaveBeenCalledWith('pty:exit', 's3', 0, undefined);
   });
 
-  it('guards and forwards pty:createShell output/exit', () => {
+  it('guards and forwards pty:createShell output/exit', async () => {
     const send = vi.fn();
     const win = { isDestroyed: () => false, webContents: { send } };
     mockGetAllWindows.mockReturnValue([win]);
@@ -152,7 +156,7 @@ describe('ipc pty handlers', () => {
     const createShellHandler = getHandleHandler('pty:createShell');
 
     (ops.isWithinKnownProject as ReturnType<typeof vi.fn>).mockReturnValue(false);
-    expect(() => createShellHandler({}, 'shell-1', '/outside')).toThrow(
+    await expect(createShellHandler({}, 'shell-1', '/outside')).rejects.toThrow(
       'PTY shell requires a known project path',
     );
 
@@ -166,7 +170,7 @@ describe('ipc pty handlers', () => {
       onData('shell-data');
       onExit(3, 9);
     });
-    createShellHandler({}, 'shell-2', '/repo');
+    await createShellHandler({}, 'shell-2', '/repo');
 
     expect(mockSpawnShellPty).toHaveBeenCalled();
     expect(send).toHaveBeenCalledWith('pty:data', 'shell-2', 'shell-data');

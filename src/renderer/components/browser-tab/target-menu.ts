@@ -1,7 +1,8 @@
-import { appState } from '../../state.js';
-import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import type { ProviderId } from '../../../shared/types/provider.js';
-import type { BrowserTabInstance } from './types.js';
+import { appState } from '../../state.js';
+import { logDebugEvent } from '../debug-panel.js';
+import { anchorFloatingSurface } from '../floating-surface.js';
+import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import { sendDrawToCustomSession, sendDrawToNewSession } from './draw-mode.js';
 import {
   sendFlowToCustomSession,
@@ -9,8 +10,7 @@ import {
   sendToCustomSession,
   sendToNewSession,
 } from './session-integration.js';
-import { anchorFloatingSurface } from '../floating-surface.js';
-import { logDebugEvent } from '../debug-panel.js';
+import type { BrowserTabInstance } from './types.js';
 
 function browserTargetButtonLabel(instance: BrowserTabInstance): string {
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);

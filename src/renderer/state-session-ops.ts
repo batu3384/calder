@@ -1,5 +1,7 @@
 import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { SessionRecord } from '../shared/types/session.js';
+import { normalizeProjectSurface } from './state-normalizers.js';
+import { findActiveCliSession, findProjectSession, isCliSessionRecord } from './state-project-surface.js';
 import {
   createBrowserTabSessionRecord,
   createDiffViewerSessionRecord,
@@ -7,8 +9,6 @@ import {
   createMcpInspectorSessionRecord,
   createRemoteSessionRecord,
 } from './state-session-factory.js';
-import { normalizeProjectSurface } from './state-normalizers.js';
-import { findActiveCliSession, findProjectSession, isCliSessionRecord } from './state-project-surface.js';
 
 type PushNav = (sessionId: string) => void;
 

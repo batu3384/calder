@@ -1,14 +1,29 @@
 import { execFile } from 'child_process';
-import { getFullPath } from './pty-manager';
+
+import type {
+  MobileDependencyId,
+  MobileDependencyInstallProgressEvent,
+  MobileDependencyInstallResult,
+} from '../shared/types/mobile';
 import {
-  MOBILE_DOCTOR_INSTALL_SPECS as INSTALL_SPECS,
-  type DoctorInstallSpec as InstallSpec,
-  type DoctorInstallStep as InstallStep,
-} from './mobile-dependency-doctor-config';
+  buildProgressEvent,
+  computeOverallPercent,
+  flushInstallRemainder,
+  pushChunkLines,
+} from './mobile-dependency-doctor/install-helpers';
 import {
   getAndroidBinaryCandidates,
   resolveBinary,
 } from './mobile-dependency-doctor-binaries';
+import {
+  type DoctorInstallSpec as InstallSpec,
+  type DoctorInstallStep as InstallStep,
+  MOBILE_DOCTOR_INSTALL_SPECS as INSTALL_SPECS,
+} from './mobile-dependency-doctor-config';
+import {
+  createInstallId,
+  runCommandStreaming,
+} from './mobile-dependency-doctor-install-runner';
 import {
   firstNonEmptyLine,
   getAppiumDriverInstallTarget,
@@ -19,21 +34,7 @@ import {
   sanitizeCommandResult,
   stripAnsi,
 } from './mobile-dependency-doctor-utils';
-import {
-  createInstallId,
-  runCommandStreaming,
-} from './mobile-dependency-doctor-install-runner';
-import {
-  buildProgressEvent,
-  computeOverallPercent,
-  flushInstallRemainder,
-  pushChunkLines,
-} from './mobile-dependency-doctor/install-helpers';
-import type {
-  MobileDependencyId,
-  MobileDependencyInstallProgressEvent,
-  MobileDependencyInstallResult,
-} from '../shared/types/mobile';
+import { getFullPath } from './pty-manager';
 
 const CHECK_TIMEOUT_MS = 20_000;
 const INSTALL_TIMEOUT_MS = 12 * 60_000;

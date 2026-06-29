@@ -36,7 +36,7 @@ Calder currently supports these provider IDs in the codebase:
 - `claude` (Claude Code)
 - `codex` (OpenAI Codex CLI)
 - `copilot` (GitHub Copilot CLI)
-- `gemini` (Gemini CLI)
+- `antigravity` (Antigravity CLI)
 - `qwen` (Qwen Code)
 
 You can set defaults per project and run mixed-provider sessions side-by-side.

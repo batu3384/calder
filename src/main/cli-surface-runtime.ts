@@ -1,20 +1,20 @@
 import type { CliSurfaceProfile, CliSurfaceRuntimeState, CliSurfaceStartupTiming } from '../shared/types/project-surface';
+import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 import {
   appendStartupReadyOutput,
   buildRuntimeState,
+  type CliSurfaceRuntimeEmit,
+  type CliSurfaceRuntimeLaunchState,
   collectReservedPorts,
   compileStartupReadyPattern,
   createInitialRuntimeLaunchState,
   createResolvedRuntimeLaunchState,
   getCliSurfaceRuntimeId,
-  recordStartupFirstOutput,
   markStartupSpawned,
   markStartupStopped,
+  recordStartupFirstOutput,
   resolveRuntimeLaunch,
-  type CliSurfaceRuntimeEmit,
-  type CliSurfaceRuntimeLaunchState,
 } from './cli-surface-runtime-helpers';
-import { resolveCliSurfaceLaunch } from './cli-surface-port-orchestrator';
 import { killPty, resizePty, spawnCommandPty, writePty } from './pty-manager';
 
 const MAX_STARTUP_READY_BUFFER = 8192;

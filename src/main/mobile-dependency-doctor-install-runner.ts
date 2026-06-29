@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+
 import { getFullPath } from './pty-manager';
 
 interface StreamingCommandResult {

@@ -14,6 +14,11 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
+}));
+
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
@@ -26,8 +31,9 @@ vi.mock('./hooks/hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as hookCommands from './hooks/hook-commands';
+
 import { getClaudeConfig, installHooks, installHooksOnly, removeMcpServer } from './claude-cli';
+import * as hookCommands from './hooks/hook-commands';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);

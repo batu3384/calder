@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const indexSource = readFileSync(new URL('../index.ts', import.meta.url), 'utf-8');
 const orchestratorSource = readFileSync(new URL('./renderer-session-orchestrator.ts', import.meta.url), 'utf-8');

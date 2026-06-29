@@ -1,9 +1,9 @@
-import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import { isSharing } from '../../sharing/peer-host.js';
+import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
+import { hasMultipleAvailableProviders } from '../surface-services/provider-availability.js';
 import { getStatus } from '../surface-services/session-activity.js';
 import { isUnread } from '../surface-services/session-unread.js';
-import { isSharing } from '../../sharing/peer-host.js';
-import { hasMultipleAvailableProviders } from '../surface-services/provider-availability.js';
 import { buildProviderIconMarkup } from '../tab-provider-icon.js';
 import { buildSessionTabTitle } from './tab-bar-session-titles.js';
 

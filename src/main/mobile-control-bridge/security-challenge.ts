@@ -1,4 +1,5 @@
 import { createHmac, pbkdf2Sync } from 'node:crypto';
+
 import {
   normalizeSharePassphrase,
   SHARE_AES_KEY_BYTES,

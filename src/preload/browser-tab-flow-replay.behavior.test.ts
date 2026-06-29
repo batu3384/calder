@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { replayFlowClick } from './browser-tab-flow-replay';
 
 class FakeMouseEvent {

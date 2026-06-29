@@ -1,9 +1,17 @@
-import {
-  MOBILE_DOCTOR_DOCS as DOCS,
-} from './mobile-dependency-doctor-config';
+import type {
+  MobileDependencyCheck,
+} from '../shared/types/mobile';
 import {
   resolveBinary,
 } from './mobile-dependency-doctor-binaries';
+import {
+  buildCheck,
+  type CheckBinaryInput,
+  type MobileDoctorCommandRunner,
+} from './mobile-dependency-doctor-check-types';
+import {
+  MOBILE_DOCTOR_DOCS as DOCS,
+} from './mobile-dependency-doctor-config';
 import {
   firstNonEmptyLine,
   isMissingJavaRuntimeOutput,
@@ -12,14 +20,6 @@ import {
   parseInstalledDriverVersion,
   parseJavaMajor,
 } from './mobile-dependency-doctor-utils';
-import {
-  buildCheck,
-  type CheckBinaryInput,
-  type MobileDoctorCommandRunner,
-} from './mobile-dependency-doctor-check-types';
-import type {
-  MobileDependencyCheck,
-} from '../shared/types/mobile';
 
 export async function checkXcode(
   runner: MobileDoctorCommandRunner,

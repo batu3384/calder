@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const tabBarSource = readFileSync(new URL('./tab-bar/tab-bar.ts', import.meta.url), 'utf-8');
 const menuSemanticsSource = readFileSync(new URL('./tab-bar/tab-bar-menu-semantics.ts', import.meta.url), 'utf-8');

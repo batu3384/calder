@@ -1,6 +1,7 @@
-import * as http from 'node:http';
 import { randomInt } from 'node:crypto';
+import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
+
 import type {
   MobileBridgeState,
   MobileControlAnswerResult,
@@ -21,15 +22,15 @@ import {
   resolvePairingTtlMs,
 } from './mobile-control-bridge/pairing-record';
 import { createLocalPairingUrls } from './mobile-control-bridge/pairing-url-local';
-import { createBridgeRequestHandler } from './mobile-control-bridge/routes';
 import {
-  clearAllRateLimits,
   cleanupExpiredRateLimitEntries,
+  clearAllRateLimits,
   clearRateLimitEntriesForPairing,
 } from './mobile-control-bridge/rate-limit';
+import { createBridgeRequestHandler } from './mobile-control-bridge/routes';
 import {
-  clearPairingStore,
   cleanupExpiredPairings,
+  clearPairingStore,
   consumePairingAnswer,
   deletePairingRecord,
   setPairingRecord,

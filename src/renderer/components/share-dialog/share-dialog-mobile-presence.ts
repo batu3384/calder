@@ -2,10 +2,10 @@ import type { UiLanguage } from '../../../shared/types/provider.js';
 import { getShareConnectionSnapshot, isConnected, isSharing } from '../../sharing/peer-host.js';
 import { appState } from '../../state.js';
 import {
-  type ShareDialogCopy,
-  type ShareDialogLanguage,
   getShareDialogCopy,
   resolveShareDialogLanguage,
+  type ShareDialogCopy,
+  type ShareDialogLanguage,
 } from './share-dialog-copy.js';
 
 export type ShareDialogMobilePresenceCopy = Pick<

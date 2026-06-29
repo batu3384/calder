@@ -1,6 +1,6 @@
 import type { InitialContextSnapshot } from '../../shared/types/session.js';
-import type { InsightAnalyzer, InsightResult } from './types.js';
 import { bigInitialContext } from './big-initial-context.js';
+import type { InsightAnalyzer, InsightResult } from './types.js';
 
 const BUILT_IN_ANALYZERS: InsightAnalyzer[] = [bigInitialContext];
 const analyzers: InsightAnalyzer[] = [...BUILT_IN_ANALYZERS];

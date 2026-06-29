@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { toProjectRelativeContextPath } from './project-context-utils.js';
 
 describe('toProjectRelativeContextPath', () => {

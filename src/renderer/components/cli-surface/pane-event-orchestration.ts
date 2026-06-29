@@ -1,13 +1,13 @@
 import type { CliSurfaceRuntimeState, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
-import { attachCliSurfaceRuntimeBindings, attachCliSurfaceStateBindings } from './runtime-bindings.js';
-import { extractCalderOscMessages } from './protocol.js';
+import type { CliSurfaceInstance } from './pane-instance.js';
+import type { CliSurfacePaneStore } from './pane-store.js';
 import type { CalderProtocolMessage } from './protocol.js';
+import { extractCalderOscMessages } from './protocol.js';
+import { attachCliSurfaceRuntimeBindings, attachCliSurfaceStateBindings } from './runtime-bindings.js';
 import {
   getSemanticBucket as getSemanticBucketBehavior,
   normalizeSemanticAdapterHint as normalizeSemanticAdapterHintBehavior,
 } from './semantic-state.js';
-import type { CliSurfaceInstance } from './pane-instance.js';
-import type { CliSurfacePaneStore } from './pane-store.js';
 
 type CliSurfaceApi = {
   onData: (handler: (projectId: string, data: string) => void) => void;

@@ -1,7 +1,7 @@
 import type { ShareMode } from '../../../shared/sharing-types.js';
-import type { UiLanguage } from '../../../shared/types/provider.js';
 import type { MobileControlPairingResult } from '../../../shared/types/mobile.js';
 import type { ShareConnectionDescription, ShareRtcConfig } from '../../../shared/types/project-core.js';
+import type { UiLanguage } from '../../../shared/types/provider.js';
 
 export interface MobileControlAnswerResult {
   answer: string | null;

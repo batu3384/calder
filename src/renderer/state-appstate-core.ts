@@ -1,12 +1,14 @@
-import type { ProviderId } from '../shared/types/provider.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
 import type { PersistedState, ProjectRecord } from '../shared/types/project-state.js';
 import type { ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
-import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
+import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord } from '../shared/types/session.js';
-import { getProviderCapabilities, getProviderAvailabilitySnapshot } from './provider-availability.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
+import { getProviderAvailabilitySnapshot,getProviderCapabilities } from './provider-availability.js';
 import { getCost } from './session-cost.js';
+import { findProjectById } from './state/state-appstate-core-project-access.js';
+import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
 import {
   archiveSessionToHistory,
   clearProjectHistory,
@@ -14,7 +16,6 @@ import {
   resumeSessionFromHistory,
   toggleProjectHistoryBookmark,
 } from './state-history.js';
-import { restoreProjectCheckpointState } from './state-checkpoint-restore.js';
 import { buildWorkflowLaunchPrompt, normalizeProjectLayout } from './state-normalizers.js';
 import { repairProjectSurface } from './state-project-surface.js';
 import { resumeProjectWithProvider } from './state-resume-with-provider.js';
@@ -28,18 +29,17 @@ import {
   upsertDiffViewerSession,
   upsertFileReaderSession,
 } from './state-session-ops.js';
-import { findProjectById } from './state/state-appstate-core-project-access.js';
 
-export {
-  findProjectBySessionId,
-  findSessionById,
-} from './state/state-appstate-core-project-access.js';
 export {
   addInsightSnapshotForProject,
   dismissInsightForProjectId,
   isInsightDismissedForProjectId,
   reorderSessionForProject,
 } from './state/state-appstate-core-insights-ordering.js';
+export {
+  findProjectBySessionId,
+  findSessionById,
+} from './state/state-appstate-core-project-access.js';
 export {
   listSurfaceTargetSessionsForProject,
   passivateBrowserTabSessionById,

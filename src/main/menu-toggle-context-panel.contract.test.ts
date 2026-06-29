@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const mainMenuSource = readFileSync(new URL('./menu.ts', import.meta.url), 'utf-8');
 const preloadSource = readFileSync(new URL('../preload/preload.ts', import.meta.url), 'utf-8');

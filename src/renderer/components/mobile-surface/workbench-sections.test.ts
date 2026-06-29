@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { MobileDependencyCheck } from '../../../shared/types/mobile.js';
 import {
   appendMobileDependencyGroup,

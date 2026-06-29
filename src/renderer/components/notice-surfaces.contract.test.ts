@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const alertSource = readFileSync(new URL('./alert-banner.ts', import.meta.url), 'utf-8');
 const updateSource = readFileSync(new URL('./update-banner.ts', import.meta.url), 'utf-8');

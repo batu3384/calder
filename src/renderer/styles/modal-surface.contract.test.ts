@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const modalCss = readFileSync(new URL('./modals.css', import.meta.url), 'utf-8');
 const baseCss = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');

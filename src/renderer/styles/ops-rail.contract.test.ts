@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const inspectorCss = readFileSync(new URL('./context-inspector.css', import.meta.url), 'utf-8');
 

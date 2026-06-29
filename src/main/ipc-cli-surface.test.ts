@@ -15,8 +15,8 @@ vi.mock('./cli-surface-discovery', () => ({
   discoverCliSurface: mockDiscoverCliSurface,
 }));
 
-import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import type { CliSurfaceIpcPolicy } from './ipc-cli-surface';
+import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 
 const baseProfile = {
   id: 'dev',

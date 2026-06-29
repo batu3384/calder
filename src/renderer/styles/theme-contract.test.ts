@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const baseCss = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');
 const imports = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8');

@@ -33,8 +33,8 @@ vi.mock('./components/terminal-pane.js', () => ({
   deliverPromptToTerminalSession: mockDeliverPromptToTerminalSession,
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import { buildProjectReviewFixPrompt, sendProjectReviewToSelectedSession } from './project-review-actions.js';
+import { _resetForTesting,appState } from './state.js';
 
 describe('project review actions', () => {
   beforeEach(() => {

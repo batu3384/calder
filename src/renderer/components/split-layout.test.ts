@@ -409,7 +409,7 @@ describe('split-layout mosaic behavior', () => {
     const project = appState.addProject('Audit', '/audit');
     const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
     const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
-    const third = appState.addSession(project.id, 'Session 3', undefined, 'gemini')!;
+    const third = appState.addSession(project.id, 'Session 3', undefined, 'antigravity')!;
     appState.addBrowserTabSession(project.id, 'http://localhost:3000');
     project.layout.mosaicRatios = { 'focus-left-main': 0.62, 'focus-left-stack': 0.35 };
 

@@ -1,16 +1,16 @@
-import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import type { ProviderId } from '../../../shared/types/provider.js';
-import { showShareDialog } from '../share-dialog/share-dialog.js';
 import { isSharing } from '../../sharing/peer-host.js';
 import { endShare } from '../../sharing/share-manager.js';
+import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
+import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 import {
   closeInspector,
   getInspectedSessionId,
   isInspectorOpen,
   openInspector,
 } from '../session-inspector/session-inspector.js';
+import { showShareDialog } from '../share-dialog/share-dialog.js';
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
-import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 
 export interface SessionTabContextMenuOptions {
   x: number;

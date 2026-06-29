@@ -1,6 +1,7 @@
 import picomatch from 'picomatch';
-import type { ToolFailureData } from '../../shared/types/session.js';
+
 import { DEFAULT_SCAN_IGNORE, EXCLUDED_DIRECTORIES, EXTRA_ALERT_IGNORE } from '../../shared/constants.js';
+import type { ToolFailureData } from '../../shared/types/session.js';
 import { appState } from '../state.js';
 
 export interface LargeFileAlert {
@@ -39,9 +40,13 @@ const ignoreMatcherCache = new Map<string, IgnoreMatchers | null>();
 async function matchesCalderignore(projectPath: string, relative: string): Promise<boolean> {
   if (!ignoreMatcherCache.has(projectPath)) {
     try {
-      const content = await window.calder.fs.readFile(projectPath + '/.calderignore');
+      const result = await window.calder.fs.readFile(projectPath + '/.calderignore');
+      if (!result.ok) {
+        ignoreMatcherCache.set(projectPath, null);
+        return false;
+      }
       const patterns: string[] = [];
-      for (const raw of content.split('\n')) {
+      for (const raw of result.content.split('\n')) {
         const line = raw.trim();
         if (line && !line.startsWith('#')) patterns.push(line);
       }

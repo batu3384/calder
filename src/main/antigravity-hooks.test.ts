@@ -12,6 +12,11 @@ vi.mock('os', () => ({
   tmpdir: () => '/tmp',
 }));
 
+vi.mock('./external-hook-policy', () => ({
+  EXTERNAL_HOOK_INJECTION_ENABLED: true,
+  cleanupAllExternalProviderHooks: vi.fn(),
+}));
+
 vi.mock('./hooks/hook-commands', () => ({
   installHookScripts: vi.fn(),
   installEventScript: vi.fn(),
@@ -24,8 +29,9 @@ vi.mock('./hooks/hook-commands', () => ({
 
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { ANTIGRAVITY_HOOK_MARKER,cleanupAntigravityHooks, installAntigravityHooks, validateAntigravityHooks } from './antigravity-hooks';
 import * as hookCommands from './hooks/hook-commands';
-import { installGeminiHooks, validateGeminiHooks, cleanupGeminiHooks, GEMINI_HOOK_MARKER } from './gemini-hooks';
 
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockWriteFileSync = vi.mocked(fs.writeFileSync);
@@ -49,10 +55,10 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('installGeminiHooks', () => {
+describe('installAntigravityHooks', () => {
   it('creates settings.json with hooks on fresh install', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     expect(call).toBeDefined();
@@ -70,7 +76,7 @@ describe('installGeminiHooks', () => {
 
   it('all hook commands contain the calder marker', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
@@ -78,7 +84,7 @@ describe('installGeminiHooks', () => {
     for (const [, matchers] of Object.entries(hooks) as [string, any[]][]) {
       for (const matcher of matchers) {
         for (const h of matcher.hooks) {
-          expect(h.command).toContain(GEMINI_HOOK_MARKER);
+          expect(h.command).toContain(ANTIGRAVITY_HOOK_MARKER);
         }
       }
     }
@@ -86,7 +92,7 @@ describe('installGeminiHooks', () => {
 
   it('all hook commands reference $CALDER_SESSION_ID', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
@@ -100,16 +106,17 @@ describe('installGeminiHooks', () => {
     }
   });
 
-  it('installs RTK pre-tool hook for Gemini BeforeTool events', () => {
+  it('installs RTK pre-tool hook for Antigravity BeforeTool events', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
     const beforeToolHooks = hooks.BeforeTool?.flatMap((matcher: any) => matcher.hooks ?? []) ?? [];
-    const rtkHook = beforeToolHooks.find((hook: any) => String(hook.command).includes('rtk hook gemini'));
+    const rtkHook = beforeToolHooks.find((hook: any) => String(hook.command).includes('rtk hook antigravity'));
 
     expect(rtkHook).toBeDefined();
+    expect(String(rtkHook.command)).toContain('CALDER_RUNTIME');
     expect(String(rtkHook.command)).toContain('CALDER_SESSION_ID');
   });
 
@@ -117,7 +124,7 @@ describe('installGeminiHooks', () => {
     mockFiles({
       [SETTINGS_PATH]: JSON.stringify({ theme: 'dark', mcpServers: { test: { command: 'test' } } }),
     });
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
@@ -136,7 +143,7 @@ describe('installGeminiHooks', () => {
     };
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
@@ -147,21 +154,21 @@ describe('installGeminiHooks', () => {
     expect(userMatcher).toBeDefined();
 
     const calderMatcher = hooks.SessionStart.find(
-      (m: any) => m.hooks.some((h: any) => h.command.includes(GEMINI_HOOK_MARKER))
+      (m: any) => m.hooks.some((h: any) => h.command.includes(ANTIGRAVITY_HOOK_MARKER))
     );
     expect(calderMatcher).toBeDefined();
   });
 
   it('is idempotent — no duplicate hooks on second run', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
     const firstCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const firstOutput = String(firstCall![1]);
 
     mockFiles({ [SETTINGS_PATH]: firstOutput });
     mockWriteFileSync.mockClear();
 
-    installGeminiHooks();
+    installAntigravityHooks();
     const secondCall = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const secondOutput = JSON.parse(String(secondCall![1]));
     const firstParsed = JSON.parse(firstOutput);
@@ -173,7 +180,7 @@ describe('installGeminiHooks', () => {
 
   it('writes correct status values for each event', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
@@ -193,7 +200,7 @@ describe('installGeminiHooks', () => {
 
   it('includes session ID capture on SessionStart and BeforeAgent only', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const hooks = JSON.parse(String(call![1])).hooks;
@@ -214,9 +221,9 @@ describe('installGeminiHooks', () => {
 
   it('captures usageMetadata payloads in generated event scripts for token accounting', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
-    const afterToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'gemini_event_AfterTool.py');
+    const afterToolScript = mockInstallEventScript.mock.calls.find(([name]) => name === 'antigravity_event_AfterTool.py');
     expect(afterToolScript).toBeDefined();
     const py = String(afterToolScript![1]);
 
@@ -226,16 +233,16 @@ describe('installGeminiHooks', () => {
   });
 });
 
-describe('validateGeminiHooks', () => {
+describe('validateAntigravityHooks', () => {
   it('returns complete when all hooks are installed', () => {
     mockFiles({});
-    installGeminiHooks();
+    installAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const content = String(call![1]);
     mockFiles({ [SETTINGS_PATH]: content });
 
-    const result = validateGeminiHooks();
+    const result = validateAntigravityHooks();
     expect(result.statusLine).toBe('calder');
     expect(result.hooks).toBe('complete');
     expect(result.hookDetails.SessionStart).toBe(true);
@@ -250,28 +257,28 @@ describe('validateGeminiHooks', () => {
   it('returns missing when settings.json does not exist', () => {
     mockFiles({});
 
-    const result = validateGeminiHooks();
+    const result = validateAntigravityHooks();
     expect(result.hooks).toBe('missing');
   });
 
   it('returns missing when no hooks key in settings', () => {
     mockFiles({ [SETTINGS_PATH]: JSON.stringify({ theme: 'dark' }) });
 
-    const result = validateGeminiHooks();
+    const result = validateAntigravityHooks();
     expect(result.hooks).toBe('missing');
   });
 
   it('returns partial when some hooks are missing', () => {
     const partial = {
       hooks: {
-        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${GEMINI_HOOK_MARKER}` }] }],
-        BeforeAgent: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${GEMINI_HOOK_MARKER}` }] }],
+        SessionStart: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }] }],
+        BeforeAgent: [{ matcher: '', hooks: [{ type: 'command', command: `echo test ${ANTIGRAVITY_HOOK_MARKER}` }] }],
       },
     };
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(partial) });
 
-    const result = validateGeminiHooks();
+    const result = validateAntigravityHooks();
     expect(result.hooks).toBe('partial');
     expect(result.hookDetails.SessionStart).toBe(true);
     expect(result.hookDetails.BeforeAgent).toBe(true);
@@ -296,7 +303,7 @@ describe('validateGeminiHooks', () => {
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(legacyOnly) });
 
-    const result = validateGeminiHooks();
+    const result = validateAntigravityHooks();
     expect(result.hooks).toBe('missing');
     expect(result.hookDetails.SessionStart).toBe(false);
     expect(result.hookDetails.BeforeAgent).toBe(false);
@@ -308,19 +315,19 @@ describe('validateGeminiHooks', () => {
   });
 });
 
-describe('cleanupGeminiHooks', () => {
+describe('cleanupAntigravityHooks', () => {
   it('removes calder hooks and preserves user hooks', () => {
     const existing = {
       hooks: {
         SessionStart: [
           { matcher: 'startup', hooks: [{ type: 'command', command: 'echo user-hook' }] },
-          { matcher: '', hooks: [{ type: 'command', command: `echo status ${GEMINI_HOOK_MARKER}` }] },
+          { matcher: '', hooks: [{ type: 'command', command: `echo status ${ANTIGRAVITY_HOOK_MARKER}` }] },
         ],
       },
     };
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
-    cleanupGeminiHooks();
+    cleanupAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
@@ -334,13 +341,13 @@ describe('cleanupGeminiHooks', () => {
       theme: 'dark',
       hooks: {
         SessionStart: [
-          { matcher: '', hooks: [{ type: 'command', command: `echo ${GEMINI_HOOK_MARKER}` }] },
+          { matcher: '', hooks: [{ type: 'command', command: `echo ${ANTIGRAVITY_HOOK_MARKER}` }] },
         ],
       },
     };
 
     mockFiles({ [SETTINGS_PATH]: JSON.stringify(existing) });
-    cleanupGeminiHooks();
+    cleanupAntigravityHooks();
 
     const call = mockWriteFileSync.mock.calls.find(c => String(c[0]) === SETTINGS_PATH);
     const written = JSON.parse(String(call![1]));
@@ -350,7 +357,7 @@ describe('cleanupGeminiHooks', () => {
 
   it('handles missing settings.json gracefully', () => {
     mockFiles({});
-    expect(() => cleanupGeminiHooks()).not.toThrow();
+    expect(() => cleanupAntigravityHooks()).not.toThrow();
     expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
 });

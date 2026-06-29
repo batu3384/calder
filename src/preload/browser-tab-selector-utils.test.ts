@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { escapeCssAttributeValue, escapeCssIdentifier } from './browser-tab-selector-utils';
 
 describe('browser tab selector utils', () => {

@@ -1,10 +1,10 @@
-import {
-  clampPercent,
-} from '../mobile-dependency-doctor-utils';
 import type {
   MobileDependencyId,
   MobileDependencyInstallProgressEvent,
 } from '../../shared/types/mobile';
+import {
+  clampPercent,
+} from '../mobile-dependency-doctor-utils';
 
 interface BuildProgressEventInput {
   installId: string;

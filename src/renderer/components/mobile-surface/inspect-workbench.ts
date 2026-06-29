@@ -1,12 +1,12 @@
 import { getBlockingChecks, getInspectInteractionHint } from './dependency-scoping.js';
+import { appendInspectActionControls, appendInspectSendControls, renderInspectWorkbenchHeader } from './inspect-workbench-controls.js';
+import { renderInspectPreviewPanel } from './inspect-workbench-preview.js';
+import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 import {
   buildMobileDependencyCheckRow,
   buildMobileInspectBlockingPanel,
   renderInspectCapabilityPanel,
 } from './workbench-sections.js';
-import { appendInspectActionControls, appendInspectSendControls, renderInspectWorkbenchHeader } from './inspect-workbench-controls.js';
-import { renderInspectPreviewPanel } from './inspect-workbench-preview.js';
-import type { RenderMobileInspectWorkbenchOptions } from './inspect-workbench-types.js';
 
 export function renderMobileInspectWorkbench(options: RenderMobileInspectWorkbenchOptions): HTMLElement {
   const { instance, report, platformLabels, handlers } = options;

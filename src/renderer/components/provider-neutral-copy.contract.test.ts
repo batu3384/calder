@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const preferencesModalSource = readFileSync(new URL('./preferences/preferences-modal.ts', import.meta.url), 'utf-8');
 const preferencesSectionsSource = readFileSync(new URL('./preferences/preferences-modal-sections.ts', import.meta.url), 'utf-8');

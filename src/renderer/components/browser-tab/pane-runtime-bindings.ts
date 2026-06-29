@@ -1,16 +1,18 @@
-import {
-  navigateTo,
-  type BrowserPageState,
-} from './navigation.js';
-import { VIEWPORT_PRESETS, type BrowserTabInstance, type WebviewElement } from './types.js';
-import { applyViewport } from './viewport.js';
-import { addFlowStep } from './flow-recording.js';
 import { createBrowserAuthController } from './auth-controller.js';
+import { addFlowStep } from './flow-recording.js';
 import { populateLocalTargets } from './local-targets.js';
+import {
+  type BrowserPageState,
+  navigateTo,
+} from './navigation.js';
 import {
   syncAddressBarState as syncBrowserAddressBarState,
   syncNavigationControls as syncBrowserNavigationControls,
 } from './navigation-chrome.js';
+import type {
+  BrowserAuthPanelArtifacts,
+  BrowserPaneCaptureArtifacts,
+} from './pane-artifacts.js';
 import { resolveCredentialOrigin } from './pane-helpers.js';
 import {
   attachBrowserCaptureInteractions,
@@ -20,14 +22,12 @@ import {
   bindBrowserToolbarState,
   type BrowserCaptureToolbarCluster,
 } from './pane-interactions.js';
-import type {
-  BrowserAuthPanelArtifacts,
-  BrowserPaneCaptureArtifacts,
-} from './pane-artifacts.js';
 import {
   attachBrowserWebviewBindings,
   type BrowserNewTabStateBindings,
 } from './pane-runtime.js';
+import { type BrowserTabInstance, VIEWPORT_PRESETS, type WebviewElement } from './types.js';
+import { applyViewport } from './viewport.js';
 
 type ViewportMenuFocusMode = 'selected' | 'first' | 'last' | 'none';
 

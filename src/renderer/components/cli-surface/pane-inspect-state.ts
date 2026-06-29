@@ -1,15 +1,15 @@
 import type { SurfacePromptPayload, SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 import type { InferredCliRegion } from './heuristics.js';
-import { setInspectPayload } from './inspect-mode.js';
 import { selectionsMatchBounds } from './inspect-geometry.js';
+import { setInspectPayload } from './inspect-mode.js';
 import type { SelectableCliRegion } from './inspect-selection.js';
-import type { CliSurfaceInstance } from './pane-instance.js';
 import {
   clearComposerError,
   showElement,
   syncComposerContextControl,
   syncComposerContextTrace,
 } from './pane-composer-helpers.js';
+import type { CliSurfaceInstance } from './pane-instance.js';
 
 interface CliSurfaceInspectStateDeps {
   buildInspectPayload: (instance: CliSurfaceInstance, selection: SurfaceSelectionRange) => SurfacePromptPayload;

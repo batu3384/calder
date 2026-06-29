@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as path from 'path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
@@ -12,6 +12,7 @@ vi.mock('os', () => ({
 }));
 
 import * as fs from 'fs';
+
 import { getCopilotConfig } from './copilot-config';
 
 const n = (p: string) => p.replace(/\\/g, '/');

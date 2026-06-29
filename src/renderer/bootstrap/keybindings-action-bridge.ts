@@ -1,20 +1,21 @@
-import { appState } from '../state.js';
-import { promptNewProject, toggleSidebar } from '../components/sidebar.js';
-import { quickNewSession } from '../components/tab-bar/tab-bar.js';
-import { toggleProjectTerminal, getActiveShellSessionId } from '../components/project-terminal.js';
+import { showCommandPalette } from '../components/command-palette.js';
+import { toggleContextInspector } from '../components/context-inspector.js';
 import { toggleDebugPanel } from '../components/debug-panel.js';
-import { showHelpDialog } from '../components/help-dialog.js';
-import { getFocusedSessionId } from '../components/terminal-pane.js';
-import { showSearchBar, TerminalSearchBackend, ShellTerminalSearchBackend } from '../components/search-bar.js';
-import { toggleGitPanel } from '../components/git-panel.js';
-import { showQuickOpen } from '../components/quick-open.js';
+import { DomSearchBackend } from '../components/dom-search-backend.js';
 import { getFileReaderInstance, getFileReaderTextSelector, showGoToLineBar } from '../components/file-reader.js';
 import { getFileViewerInstance } from '../components/file-viewer.js';
-import { DomSearchBackend } from '../components/dom-search-backend.js';
-import { toggleInspector } from '../components/session-inspector/session-inspector.js';
-import { toggleContextInspector } from '../components/context-inspector.js';
-import { showPreferencesModal } from '../components/preferences/preferences-modal.js';
+import { toggleGitPanel } from '../components/git-panel.js';
+import { showHelpDialog } from '../components/help-dialog.js';
 import { closeModal, showModal } from '../components/modal.js';
+import { showPreferencesModal } from '../components/preferences/preferences-modal.js';
+import { getActiveShellSessionId,toggleProjectTerminal } from '../components/project-terminal.js';
+import { showQuickOpen } from '../components/quick-open.js';
+import { ShellTerminalSearchBackend,showSearchBar, TerminalSearchBackend } from '../components/search-bar.js';
+import { toggleInspector } from '../components/session-inspector/session-inspector.js';
+import { promptNewProject, toggleSidebar } from '../components/sidebar.js';
+import { quickNewSession } from '../components/tab-bar/tab-bar.js';
+import { getFocusedSessionId } from '../components/terminal-pane.js';
+import { appState } from '../state.js';
 
 export interface KeybindingActionBridge {
   showPreferences: () => void;
@@ -37,6 +38,7 @@ export interface KeybindingActionBridge {
   toggleSidebar: () => void;
   toggleGitPanel: () => void;
   quickOpen: () => void;
+  commandPalette: () => void;
   findInTerminal: () => void;
   gotoLine: () => void;
   help: () => void;
@@ -68,6 +70,7 @@ export function createKeybindingActionBridge(): KeybindingActionBridge {
     toggleSidebar: () => toggleSidebar(),
     toggleGitPanel: () => toggleGitPanel(),
     quickOpen: () => showQuickOpen(),
+    commandPalette: () => showCommandPalette(),
     findInTerminal: () => findInTerminal(),
     gotoLine: () => gotoLine(),
     help: () => showHelpDialog(),

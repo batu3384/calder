@@ -1,6 +1,6 @@
-import type { BrowserTabInstance, ViewportPreset } from './types.js';
-import { anchorFloatingSurface } from '../floating-surface.js';
 import { logDebugEvent } from '../debug-panel.js';
+import { anchorFloatingSurface } from '../floating-surface.js';
+import type { BrowserTabInstance, ViewportPreset } from './types.js';
 
 export function applyViewport(instance: BrowserTabInstance, preset: ViewportPreset): void {
   instance.currentViewport = preset;

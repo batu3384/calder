@@ -1,6 +1,6 @@
 import { appState } from '../state.js';
-import { areaLabel } from './surface-services/dom-utils.js';
 import { destroySearchBar } from './search-bar.js';
+import { areaLabel } from './surface-services/dom-utils.js';
 
 interface FileViewerInstance {
   element: HTMLElement;

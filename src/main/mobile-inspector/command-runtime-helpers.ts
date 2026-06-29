@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'child_process';
+
 import { getFullPath } from '../pty-manager';
 
 const COMMAND_TIMEOUT_MS = 20_000;

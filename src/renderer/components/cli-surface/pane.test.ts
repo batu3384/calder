@@ -1004,7 +1004,7 @@ describe('cli surface pane', () => {
     const container = new FakeElement('div') as unknown as HTMLElement;
     const { appState } = await import('../../state.js');
     const project = appState.addProject('Security', '/tmp/security');
-    const targetSession = appState.addSession(project.id, 'Gemini Fix', undefined, 'gemini')!;
+    const targetSession = appState.addSession(project.id, 'Gemini Fix', undefined, 'antigravity')!;
     appState.setProjectSurface(project.id, {
       ...project.surface!,
       kind: 'cli',
@@ -1157,7 +1157,7 @@ describe('cli surface pane', () => {
     const { appState } = await import('../../state.js');
     const project = appState.addProject('Security', '/tmp/security');
     const activeSession = appState.addSession(project.id, 'Codex Main', undefined, 'codex')!;
-    appState.addSession(project.id, 'Gemini Fix', undefined, 'gemini');
+    appState.addSession(project.id, 'Gemini Fix', undefined, 'antigravity');
     appState.setActiveSession(project.id, activeSession.id);
     appState.setProjectSurface(project.id, {
       ...project.surface!,
@@ -1203,14 +1203,14 @@ describe('cli surface pane', () => {
     const badges = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
       .map((entry) => entry.textContent);
     expect(badges).toContain('Codex CLI');
-    expect(badges).toContain('Gemini CLI');
+    expect(badges).toContain('Antigravity CLI');
     expect(badges).toContain('Active');
 
     const providerBadgeTokens = instance.targetMenuListEl.querySelectorAll('.cli-surface-target-session-badge')
       .map((entry) => entry.dataset.provider)
       .filter(Boolean);
     expect(providerBadgeTokens).toContain('codex');
-    expect(providerBadgeTokens).toContain('gemini');
+    expect(providerBadgeTokens).toContain('antigravity');
 
     expect(instance.selectedButton.dataset.provider).toBe('codex');
     expect(instance.newButton.dataset.provider).toBe('codex');
@@ -1223,7 +1223,7 @@ describe('cli surface pane', () => {
     const { initSession, setHookStatus } = await import('../surface-services/session-activity.js');
     const project = appState.addProject('Security', '/tmp/security');
     const sessionA = appState.addSession(project.id, 'Codex Main', undefined, 'codex')!;
-    const sessionB = appState.addSession(project.id, 'Gemini Fix', undefined, 'gemini')!;
+    const sessionB = appState.addSession(project.id, 'Gemini Fix', undefined, 'antigravity')!;
     initSession(sessionA.id);
     initSession(sessionB.id);
     setHookStatus(sessionA.id, 'working');

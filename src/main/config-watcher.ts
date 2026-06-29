@@ -1,7 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import type { BrowserWindow } from 'electron';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 import type { ProviderId } from '../shared/types/provider';
 
 const DEBOUNCE_MS = 500;
@@ -138,18 +139,28 @@ function setupCodexWatchers(context: WatcherContext): void {
   for (const d of dirs) watchDir(context, d);
 }
 
-function setupGeminiWatchers(context: WatcherContext): void {
+function setupAntigravityWatchers(context: WatcherContext): void {
   const home = os.homedir();
+  const userCompatDir = path.join(home, '.gemini');
+  const userCliDir = path.join(userCompatDir, 'antigravity-cli');
+  const projectCompatDir = path.join(context.projectPath, '.gemini');
+  const projectAgentsDir = path.join(context.projectPath, '.agents');
 
   const files = [
-    path.join(home, '.gemini', 'settings.json'),
-    path.join(context.projectPath, '.gemini', 'settings.json'),
+    path.join(userCompatDir, 'settings.json'),
+    path.join(userCliDir, 'settings.json'),
+    path.join(userCliDir, 'mcp_config.json'),
+    path.join(projectCompatDir, 'settings.json'),
+    path.join(projectAgentsDir, 'settings.json'),
+    path.join(projectAgentsDir, 'mcp_config.json'),
   ];
   for (const f of files) watchFile(context, f);
 
   const dirs = [
-    path.join(home, '.gemini', 'skills'),
-    path.join(context.projectPath, '.gemini', 'skills'),
+    path.join(userCompatDir, 'skills'),
+    path.join(userCliDir, 'skills'),
+    path.join(projectCompatDir, 'skills'),
+    path.join(projectAgentsDir, 'skills'),
   ];
   for (const d of dirs) watchDir(context, d);
 }
@@ -208,8 +219,8 @@ export function startConfigWatcher(win: BrowserWindow, projectPath: string, prov
     setupCodexWatchers(activeContext);
   } else if (activeContext.providerId === 'copilot') {
     setupCopilotWatchers(activeContext);
-  } else if (activeContext.providerId === 'gemini') {
-    setupGeminiWatchers(activeContext);
+  } else if (activeContext.providerId === 'antigravity') {
+    setupAntigravityWatchers(activeContext);
   } else if (activeContext.providerId === 'qwen') {
     setupQwenWatchers(activeContext);
   } else {

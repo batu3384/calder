@@ -1,5 +1,6 @@
-import { vi } from 'vitest';
 import * as path from 'path';
+import { vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
@@ -39,14 +40,15 @@ vi.mock('../hooks/hook-status', () => ({
   installStatusLineScript: vi.fn(),
 }));
 
-import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { QwenProvider, _resetCachedPath } from './qwen-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
-import { getQwenConfig, findQwenTranscriptPath } from '../qwen-config';
-import { installQwenHooks, validateQwenHooks, cleanupQwenHooks } from '../qwen-hooks';
+import * as fs from 'fs';
+
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { installStatusLineScript } from '../hooks/hook-status';
+import { findQwenTranscriptPath,getQwenConfig } from '../qwen-config';
+import { cleanupQwenHooks,installQwenHooks, validateQwenHooks } from '../qwen-hooks';
+import { _resetCachedPath,QwenProvider } from './qwen-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
@@ -138,6 +140,7 @@ describe('buildEnv', () => {
     const env = provider.buildEnv('sess-123', { OTHER: 'val' });
     expect(env.PATH).toBe(isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin');
     expect(env.CALDER_SESSION_ID).toBe('sess-123');
+    expect(env.CALDER_RUNTIME).toBe('1');
     expect(env.OTHER).toBe('val');
   });
 });
@@ -181,10 +184,11 @@ describe('hooks and config integration', () => {
     expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
   });
 
-  it('reinstalls hooks and statusline assets together', () => {
+  it('cleans up external hooks when injection is disabled', () => {
     provider.reinstallSettings();
-    expect(mockInstallQwenHooks).toHaveBeenCalled();
-    expect(mockInstallStatusLineScript).toHaveBeenCalled();
+    expect(mockCleanupQwenHooks).toHaveBeenCalled();
+    expect(mockInstallQwenHooks).not.toHaveBeenCalled();
+    expect(mockInstallStatusLineScript).not.toHaveBeenCalled();
   });
 
   it('cleanup keeps hooks in place and only stops config watching', () => {

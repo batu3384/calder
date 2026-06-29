@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type ExecPlan = {
@@ -35,8 +36,8 @@ vi.mock('./pty-manager', () => ({
   getFullPath: mockGetFullPath,
 }));
 
-import { whichCmd } from './platform';
 import { installMobileDependency } from './mobile-dependency-doctor';
+import { whichCmd } from './platform';
 
 const execPlans: ExecPlan[] = [];
 const spawnPlans: SpawnPlan[] = [];

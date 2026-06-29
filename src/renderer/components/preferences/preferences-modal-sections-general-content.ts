@@ -1,11 +1,12 @@
+import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
+import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { createCustomSelect } from '../custom-select.js';
-import { loadProviderAvailability, getProviderAvailabilitySnapshot } from '../surface-services/provider-availability.js';
+import { getProviderAvailabilitySnapshot,loadProviderAvailability } from '../surface-services/provider-availability.js';
 import {
   appendPreferencesToggleField,
   buildProviderNote,
   buildProviderOptions,
 } from './preferences-modal-general-helpers.js';
-import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { RenderGeneralSectionArgs } from './preferences-modal-sections-types.js';
 
 export interface GeneralProviderCopy {
@@ -36,6 +37,16 @@ function appendGeneralSectionOverview(
       label: 'Language',
       value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
       note: 'Applies to the full Calder interface.',
+    },
+    {
+      label: 'Appearance',
+      value:
+        preferenceDraft.appearanceTheme === 'light'
+          ? 'Light'
+          : preferenceDraft.appearanceTheme === 'dark'
+            ? 'Dark'
+            : 'System',
+      note: 'Matches macOS/Windows light mode when set to System.',
     },
     {
       label: 'Default tool',
@@ -157,6 +168,42 @@ function appendDefaultProviderField({
   content.appendChild(providerNote);
 }
 
+function appendAppearanceThemeField({
+  content,
+  preferenceDraft,
+}: Pick<RenderGeneralSectionArgs, 'content' | 'preferenceDraft'> & {
+  preferenceDraft: { appearanceTheme: AppearanceTheme };
+}): void {
+  const themeRow = document.createElement('div');
+  themeRow.className = 'modal-toggle-field';
+
+  const themeLabel = document.createElement('label');
+  themeLabel.textContent = 'Appearance';
+
+  const themeSelect = createCustomSelect(
+    'pref-appearance-theme',
+    [
+      { value: 'system', label: 'System' },
+      { value: 'light', label: 'Light' },
+      { value: 'dark', label: 'Dark' },
+    ],
+    preferenceDraft.appearanceTheme,
+  );
+
+  const themeNote = document.createElement('div');
+  themeNote.className = 'preferences-control-note';
+  themeNote.textContent = 'Light theme uses workspace tokens from base.css.';
+
+  themeRow.appendChild(themeLabel);
+  themeRow.appendChild(themeSelect.element);
+  content.appendChild(themeRow);
+  content.appendChild(themeNote);
+  themeSelect.element.addEventListener('change', () => {
+    preferenceDraft.appearanceTheme = themeSelect.getValue() as AppearanceTheme;
+    applyAppearanceTheme(preferenceDraft.appearanceTheme);
+  });
+}
+
 function appendLanguageField({
   content,
   preferenceDraft,
@@ -262,6 +309,7 @@ export function renderGeneralPreferencesSectionContent({
     replaceDefaultProviderSelect,
     providerCopy,
   });
+  appendAppearanceThemeField({ content, preferenceDraft });
   appendLanguageField({
     content,
     preferenceDraft,

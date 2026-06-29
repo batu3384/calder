@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const paneSource = readFileSync(new URL('./browser-tab/pane.ts', import.meta.url), 'utf-8');
 const paneRuntimeSource = readFileSync(new URL('./browser-tab/pane-runtime.ts', import.meta.url), 'utf-8');

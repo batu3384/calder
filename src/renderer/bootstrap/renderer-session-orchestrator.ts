@@ -1,47 +1,51 @@
-import { appState } from '../state.js';
-import { initSidebar, promptNewProject } from '../components/sidebar.js';
-import { initTabBar } from '../components/tab-bar/tab-bar.js';
-import { initSplitLayout } from '../components/split-layout.js';
-import { handlePtyData, destroyTerminal, updateCostDisplay, updateContextDisplay } from '../components/terminal-pane.js';
-import { setHookStatus, notifyInterrupt } from '../session-activity.js';
-import { parseCost, setCostData, onChange as onCostChange, type CostInfo } from '../session-cost.js';
-import { parseTitle, clearSession as clearTitleSession } from '../session-title.js';
-import { setContextData, onChange as onContextChange, getContext, type ContextWindowInfo } from '../session-context.js';
+import type { CostData, InspectorEvent } from '../../shared/types/session.js';
+import { applyAppearanceTheme, bindAppearanceThemeListener } from '../appearance-theme.js';
+import { destroyAlertBanner } from '../components/alert-banner.js';
 import { initConfigSections } from '../components/config-sections/config-sections.js';
-import { initNotificationSound } from '../notification-sound.js';
-import { initNotificationDesktop } from '../notification-desktop.js';
-import { init as initSessionUnread } from '../session-unread.js';
-import { initProjectTerminal, handleShellPtyData, handleShellPtyExit, isShellSessionId } from '../components/project-terminal.js';
-import { startPolling as startGitPolling } from '../git-status.js';
+import { initContextInspector } from '../components/context-inspector.js';
 import { initDebugPanel, logDebugEvent } from '../components/debug-panel.js';
 import { initGitPanel } from '../components/git-panel.js';
-import { initUpdateBanner } from '../components/update-banner.js';
-import { initSessionHistory } from '../components/session-history.js';
-import { showUsageModal } from '../components/usage-modal.js';
-import { captureInitialContext } from '../session-insights.js';
 import { initInsightAlert } from '../components/insight-alert.js';
-import { initToolDetector } from '../tools/missing-tool-detector.js';
-import { initToolAlert } from '../components/tool-alert.js';
-import { initLargeFileDetector } from '../tools/large-file-detector.js';
 import { initLargeFileAlert } from '../components/large-file-alert.js';
-import { initSettingsGuard } from '../components/settings-guard-ui.js';
-import { checkWhatsNew } from '../components/whats-new-dialog.js';
-import { initShareManager, forwardPtyData, endShare, cleanupAllShares } from '../sharing/share-manager.js';
-import { isSharing } from '../sharing/peer-host.js';
-import { checkStarPrompt } from '../components/star-prompt-dialog.js';
-import { addEvents as addInspectorEvents } from '../session-inspector-state.js';
-import type { CostData, InspectorEvent } from '../../shared/types/session.js';
+import { shouldShowOnboarding, showOnboardingDialog } from '../components/onboarding-dialog.js';
+import { handleShellPtyData, handleShellPtyExit, initProjectTerminal, isShellSessionId } from '../components/project-terminal.js';
+import { initSessionHistory } from '../components/session-history.js';
 import { initSessionInspector } from '../components/session-inspector/session-inspector.js';
-import { loadProviderMetas } from '../provider-availability.js';
-import { initContextInspector } from '../components/context-inspector.js';
-import { initProjectContextSync } from '../project-context-sync.js';
-import { initProjectWorkflowSync } from '../project-workflow-sync.js';
-import { initProjectTeamContextSync } from '../project-team-context-sync.js';
-import { initProjectReviewSync } from '../project-review-sync.js';
-import { initProjectGovernanceSync } from '../project-governance-sync.js';
+import { initSettingsGuard } from '../components/settings-guard-ui.js';
+import { destroySidebar, initSidebar, promptNewProject } from '../components/sidebar.js';
+import { initSplitLayout } from '../components/split-layout.js';
+import { checkStarPrompt } from '../components/star-prompt-dialog.js';
+import { initTabBar } from '../components/tab-bar/tab-bar.js';
+import { destroyTerminal, handlePtyData, updateContextDisplay,updateCostDisplay } from '../components/terminal-pane.js';
+import { dismissAllToasts } from '../components/toast.js';
+import { initToolAlert } from '../components/tool-alert.js';
+import { initUpdateBanner } from '../components/update-banner.js';
+import { showUsageModal } from '../components/usage-modal.js';
+import { checkWhatsNew } from '../components/whats-new-dialog.js';
+import { startPolling as startGitPolling } from '../git-status.js';
+import { initLocalization } from '../i18n.js';
+import { initNotificationDesktop } from '../notification-desktop.js';
+import { initNotificationSound } from '../notification-sound.js';
 import { initProjectBackgroundTaskSync } from '../project-background-task-sync.js';
 import { initProjectCheckpointSync } from '../project-checkpoint-sync.js';
-import { initLocalization } from '../i18n.js';
+import { initProjectContextSync } from '../project-context-sync.js';
+import { initProjectGovernanceSync } from '../project-governance-sync.js';
+import { initProjectReviewSync } from '../project-review-sync.js';
+import { initProjectTeamContextSync } from '../project-team-context-sync.js';
+import { initProjectWorkflowSync } from '../project-workflow-sync.js';
+import { loadProviderMetas } from '../provider-availability.js';
+import { notifyInterrupt,setHookStatus } from '../session-activity.js';
+import { type ContextWindowInfo,getContext, onChange as onContextChange, setContextData } from '../session-context.js';
+import { type CostInfo,onChange as onCostChange, parseCost, setCostData } from '../session-cost.js';
+import { captureInitialContext } from '../session-insights.js';
+import { addEvents as addInspectorEvents } from '../session-inspector-state.js';
+import { clearSession as clearTitleSession,parseTitle } from '../session-title.js';
+import { init as initSessionUnread } from '../session-unread.js';
+import { isSharing } from '../sharing/peer-host.js';
+import { cleanupAllShares,endShare, forwardPtyData, initShareManager } from '../sharing/share-manager.js';
+import { appState } from '../state.js';
+import { initLargeFileDetector } from '../tools/large-file-detector.js';
+import { initToolDetector } from '../tools/missing-tool-detector.js';
 import { initUpdateCenter } from '../update-center.js';
 
 export interface RendererSessionOrchestrator {
@@ -65,6 +69,9 @@ interface CreateRendererSessionOrchestratorOptions {
 
 export function cleanupRendererSessionResourcesOnQuit(): void {
   cleanupAllShares();
+  destroySidebar();
+  destroyAlertBanner();
+  dismissAllToasts();
 }
 
 export function createRendererSessionOrchestrator(
@@ -232,6 +239,12 @@ export function createRendererSessionOrchestrator(
 
     // Load persisted state
     await appState.load();
+    applyAppearanceTheme(appState.preferences.appearanceTheme);
+    bindAppearanceThemeListener(() => {
+      if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
+        applyAppearanceTheme('system');
+      }
+    });
     initLocalization();
     initProjectContextSync();
     initProjectWorkflowSync();
@@ -241,8 +254,9 @@ export function createRendererSessionOrchestrator(
     initProjectBackgroundTaskSync();
     initProjectCheckpointSync();
 
-    // Auto-open new project modal when no projects exist
-    if (appState.projects.length === 0) {
+    if (shouldShowOnboarding()) {
+      showOnboardingDialog();
+    } else if (appState.projects.length === 0) {
       promptNewProject();
     }
 

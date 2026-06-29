@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getVisibleToolchainSections, sectionSummaryText } from './config-toolchain-summary.js';
 
 describe('config-toolchain-summary', () => {

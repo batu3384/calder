@@ -1,4 +1,4 @@
-import { shortcutManager, displayKeys, eventToAccelerator } from '../surface-services/shortcuts.js';
+import { displayKeys, eventToAccelerator,shortcutManager } from '../surface-services/shortcuts.js';
 
 export interface RenderShortcutsSectionArgs {
   container: HTMLElement;

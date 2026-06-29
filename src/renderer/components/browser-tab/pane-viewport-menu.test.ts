@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { VIEWPORT_PRESETS } from './types.js';
 
 const mockApplyViewport = vi.fn();

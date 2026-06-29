@@ -1,4 +1,5 @@
 import type { IpcRenderer } from 'electron';
+
 import type {
   CliProviderMeta,
   ProviderConfig,

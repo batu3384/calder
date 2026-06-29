@@ -1,5 +1,6 @@
-import { vi } from 'vitest';
 import * as path from 'path';
+import { vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
@@ -40,14 +41,15 @@ vi.mock('../settings-guard', () => ({
   reinstallSettings: vi.fn(),
 }));
 
-import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { ClaudeProvider, _resetCachedPath } from './claude-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
-import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
+import * as fs from 'fs';
+
 import { getClaudeConfig } from '../claude-cli';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
 import { guardedInstall, validateSettings as validateGuardedSettings } from '../settings-guard';
+import { _resetCachedPath,ClaudeProvider } from './claude-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
@@ -168,6 +170,7 @@ describe('buildEnv', () => {
   it('sets CLAUDE_IDE_SESSION_ID to the session ID', () => {
     const env = provider.buildEnv('sess-123', {});
     expect(env.CLAUDE_IDE_SESSION_ID).toBe('sess-123');
+    expect(env.CALDER_RUNTIME).toBe('1');
   });
 
   it('sets PATH to the augmented PATH', () => {

@@ -1,9 +1,9 @@
 import type { ProjectReviewDocument } from '../shared/types/project-review.js';
-import { appState } from './state.js';
+import { deliverPromptToTerminalSession } from './components/terminal-pane.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
-import { deliverPromptToTerminalSession } from './components/terminal-pane.js';
+import { appState } from './state.js';
 
 function resolveActivePreviewUrl(projectId: string): string | undefined {
   const project = appState.projects.find((entry) => entry.id === projectId);

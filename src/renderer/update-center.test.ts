@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ProviderId, ProviderUpdateProgressEvent, ProviderUpdateResult, ProviderUpdateSummary } from '../shared/types/provider';
 import {
   _resetUpdateCenterForTesting,
@@ -6,8 +7,8 @@ import {
   checkForAppUpdates,
   getUpdateCenterState,
   initUpdateCenter,
-  runCliProviderUpdates,
   runCliProviderUpdate,
+  runCliProviderUpdates,
 } from './update-center';
 
 type UpdateCallback<T> = (payload: T) => void;
@@ -293,9 +294,9 @@ describe('update center cli updates', () => {
     });
     initUpdateCenter(mockApi as any);
 
-    const updatePromise = runCliProviderUpdate('gemini');
+    const updatePromise = runCliProviderUpdate('antigravity');
     expect(getUpdateCenterState().cli.phase).toBe('running');
-    expect(mockApi.updateProvider).toHaveBeenCalledWith('gemini');
+    expect(mockApi.updateProvider).toHaveBeenCalledWith('antigravity');
     expect(mockApi.updateAll).not.toHaveBeenCalled();
 
     mockApi.emitProviderProgress({
@@ -304,7 +305,7 @@ describe('update center cli updates', () => {
       totalProviders: 1,
       completedProviders: 0,
       providers: [
-        { providerId: 'gemini', providerName: 'Gemini CLI' },
+        { providerId: 'antigravity', providerName: 'Antigravity CLI' },
       ],
     });
     mockApi.emitProviderProgress({
@@ -312,26 +313,26 @@ describe('update center cli updates', () => {
       startedAt: '2026-04-16T09:00:00.000Z',
       totalProviders: 1,
       completedProviders: 0,
-      providerId: 'gemini',
-      providerName: 'Gemini CLI',
+      providerId: 'antigravity',
+      providerName: 'Antigravity CLI',
       providerMessage: 'Applying update command…',
       providerProgressPercent: 75,
     });
 
     const cli = getUpdateCenterState().cli;
     expect(cli.totalProviders).toBe(1);
-    expect(cli.providers[0].providerId).toBe('gemini');
+    expect(cli.providers[0].providerId).toBe('antigravity');
     expect(cli.providers[0].progressPercent).toBe(75);
 
     requireValue<SummaryResolver>(resolveSummary, 'Expected summary resolver to be registered')(buildSummary([
       {
-        providerId: 'gemini',
-        providerName: 'Gemini CLI',
+        providerId: 'antigravity',
+        providerName: 'Antigravity CLI',
         source: 'brew-formula',
         status: 'up_to_date',
         checked: true,
         updateAttempted: false,
-        message: 'Gemini CLI is already up to date.',
+        message: 'Antigravity CLI is already up to date.',
         durationMs: 50,
       },
     ]));

@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { handleToolFailure, onLargeFileAlert, _resetForTesting, type LargeFileAlert } from './large-file-detector.js';
-import { appState, _resetForTesting as resetState } from '../state.js';
-import type { ToolFailureData } from '../../shared/types/session.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockReadFile = vi.fn().mockResolvedValue('');
+import type { ToolFailureData } from '../../shared/types/session.js';
+import { _resetForTesting as resetState,appState } from '../state.js';
+import { _resetForTesting, handleToolFailure, type LargeFileAlert,onLargeFileAlert } from './large-file-detector.js';
+
+const mockReadFile = vi.fn().mockResolvedValue({ ok: true, content: '' });
 
 vi.stubGlobal('window', {
   calder: {
@@ -16,7 +17,7 @@ vi.stubGlobal('window', {
 beforeEach(() => {
   _resetForTesting();
   resetState();
-  mockReadFile.mockResolvedValue('');
+  mockReadFile.mockResolvedValue({ ok: true, content: '' });
 });
 
 function setupProject(): string {
@@ -321,7 +322,7 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    mockReadFile.mockResolvedValue('# Large generated files\nsrc/generated/**\n');
+    mockReadFile.mockResolvedValue({ ok: true, content: '# Large generated files\nsrc/generated/**\n' });
 
     await handleToolFailure(session.id, makeReadFailure('/tmp/test/src/generated/schema.ts'));
     expect(alerts).toHaveLength(0);
@@ -333,7 +334,7 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    mockReadFile.mockResolvedValue('src/generated/**\n');
+    mockReadFile.mockResolvedValue({ ok: true, content: 'src/generated/**\n' });
 
     await handleToolFailure(session.id, makeReadFailure('/tmp/test/src/app/main.ts'));
     expect(alerts).toHaveLength(1);
@@ -345,7 +346,7 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    mockReadFile.mockRejectedValue(new Error('ENOENT'));
+    mockReadFile.mockResolvedValue({ ok: false, reason: 'not-found' });
 
     await handleToolFailure(session.id, makeReadFailure('/tmp/test/src/app.ts'));
     expect(alerts).toHaveLength(1);
@@ -357,7 +358,7 @@ describe('handleToolFailure', () => {
     const alerts: LargeFileAlert[] = [];
     onLargeFileAlert((alert) => alerts.push(alert));
 
-    mockReadFile.mockResolvedValue('*.test.ts\n');
+    mockReadFile.mockResolvedValue({ ok: true, content: '*.test.ts\n' });
     mockReadFile.mockClear();
 
     await handleToolFailure(session.id, makeReadFailure('/tmp/test/src/app.ts'));

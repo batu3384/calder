@@ -1,8 +1,6 @@
-import { appState } from '../../state.js';
-import type { CliProviderMeta, ProviderId, SettingsValidationResult } from '../../../shared/types/provider.js';
-import type { MobileDependencyCheck, MobileDependencyId, MobileDependencyReport } from '../../../shared/types/mobile.js';
 import { isTrackingHealthy } from '../../../shared/tracking-health.js';
-
+import type { MobileDependencyCheck, MobileDependencyId, MobileDependencyReport } from '../../../shared/types/mobile.js';
+import type { CliProviderMeta, ProviderId, SettingsValidationResult } from '../../../shared/types/provider.js';
 interface ProviderStatus {
   meta: CliProviderMeta;
   validation: SettingsValidationResult;

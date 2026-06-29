@@ -1,5 +1,6 @@
-import { vi } from 'vitest';
 import * as path from 'path';
+import { vi } from 'vitest';
+
 import { isWin } from '../platform';
 
 vi.mock('fs', () => ({
@@ -39,15 +40,16 @@ vi.mock('../codex-session-watcher', () => ({
   stopCodexSessionWatcher: vi.fn(),
 }));
 
-import * as fs from 'fs';
 import { execSync } from 'child_process';
-import { CodexProvider, _resetCachedPath } from './codex-provider';
-import { _resetPrereqCheckCache } from './resolve-binary';
-import { getCodexConfig } from '../codex-config';
-import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { installCodexHooks, validateCodexHooks, cleanupCodexHooks } from '../codex-hooks';
-import { stopCodexSessionWatcher } from '../codex-session-watcher';
+import * as fs from 'fs';
+
 import type { ProviderConfig } from '../../shared/types/provider';
+import { getCodexConfig } from '../codex-config';
+import { cleanupCodexHooks,installCodexHooks, validateCodexHooks } from '../codex-hooks';
+import { stopCodexSessionWatcher } from '../codex-session-watcher';
+import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
+import { _resetCachedPath,CodexProvider } from './codex-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
@@ -157,6 +159,7 @@ describe('buildEnv', () => {
   it('sets CALDER_SESSION_ID to the session ID', () => {
     const env = provider.buildEnv('sess-123', {});
     expect(env.CALDER_SESSION_ID).toBe('sess-123');
+    expect(env.CALDER_RUNTIME).toBe('1');
   });
 
   it('preserves existing env vars', () => {
@@ -228,9 +231,10 @@ describe('hooks integration', () => {
     expect(mockCleanupCodexHooks).not.toHaveBeenCalled();
   });
 
-  it('reinstallSettings delegates to installCodexHooks', () => {
+  it('reinstallSettings cleans up external hooks when injection is disabled', () => {
     provider.reinstallSettings();
-    expect(mockInstallCodexHooks).toHaveBeenCalled();
+    expect(mockCleanupCodexHooks).toHaveBeenCalled();
+    expect(mockInstallCodexHooks).not.toHaveBeenCalled();
   });
 });
 

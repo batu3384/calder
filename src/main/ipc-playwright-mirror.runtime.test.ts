@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { InspectorEvent } from '../shared/types/session';
 
 const mockMkdirSync = vi.hoisted(() => vi.fn());

@@ -1,19 +1,8 @@
 import { appState, ProjectRecord } from '../state.js';
-import { isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
-import {
-  attachToContainer,
-  showPane,
-  fitAllVisible,
-  setFocused,
-  clearFocused,
-  spawnTerminal,
-  getTerminalInstance,
-} from './terminal-pane.js';
-import { isInspectorOpen } from './session-inspector/session-inspector.js';
-import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
-import { quickNewSession } from './tab-bar/tab-bar.js';
-import { promptNewProject } from './sidebar.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
+import { isInspectorOpen } from './session-inspector/session-inspector.js';
+import { promptNewProject } from './sidebar.js';
+import { removeEmptyState, showEmptyState } from './split-layout-empty-state.js';
 import {
   bindMosaicDivider,
   createMosaicDivider,
@@ -22,13 +11,11 @@ import {
   renderSwarmMosaicPreset,
 } from './split-layout-mosaic.js';
 import {
-  bindSwarmReorderInteractions,
-  clearSwarmReorderDecorations,
-  decorateSwarmReorderHandles,
-  getVisibleSwarmSessions,
-} from './split-layout-swarm-reorder.js';
-import { getLayoutRenderSignature } from './split-layout-signature.js';
-import { removeEmptyState, showEmptyState } from './split-layout-empty-state.js';
+  clearMosaicResizeBindings,
+  getSurfaceResizeBounds,
+  getSwarmBrowserSession,
+  registerMosaicResizeCleanup,
+} from './split-layout-mosaic-state.js';
 import {
   attachSplitLayoutNonCliPane,
   ensureSplitLayoutSessionInstances,
@@ -38,12 +25,25 @@ import {
   removeSplitLayoutMosaicArtifacts,
   showSplitLayoutPanes,
 } from './split-layout-pane-orchestration.js';
+import { getLayoutRenderSignature } from './split-layout-signature.js';
 import {
-  clearMosaicResizeBindings,
-  getSurfaceResizeBounds,
-  getSwarmBrowserSession,
-  registerMosaicResizeCleanup,
-} from './split-layout-mosaic-state.js';
+  bindSwarmReorderInteractions,
+  clearSwarmReorderDecorations,
+  decorateSwarmReorderHandles,
+  getVisibleSwarmSessions,
+} from './split-layout-swarm-reorder.js';
+import { hasPinnedSurfaceFocus, renderSurfaceHost } from './surface-host.js';
+import { isUnread, onChange as onUnreadChange } from './surface-services/session-unread.js';
+import { quickNewSession } from './tab-bar/tab-bar.js';
+import {
+  attachToContainer,
+  clearFocused,
+  fitAllVisible,
+  getTerminalInstance,
+  setFocused,
+  showPane,
+  spawnTerminal,
+} from './terminal-pane.js';
 
 const container = document.getElementById('terminal-container')!;
 const MOSAIC_DIVIDER_TRACK = '10px';

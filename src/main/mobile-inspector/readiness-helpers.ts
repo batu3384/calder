@@ -1,9 +1,13 @@
 import { spawn } from 'child_process';
-import { getFullPath } from '../pty-manager';
+
+import type {
+  MobileInspectLaunchResult,
+} from '../../shared/types/mobile';
 import {
   choosePreferredIosDevice,
   isIosDeviceTransitionalState,
   isLikelyCommandMissing,
+  isRecoverableIosBootFailure,
   parseAdbDevices,
   parseSimctlDevices,
   resolveRunningAndroidEmulator,
@@ -11,19 +15,16 @@ import {
   sleep,
   summarizeIosFailure,
   waitForAndroidBootCompleted,
-  isRecoverableIosBootFailure,
 } from '../mobile-inspector-helpers';
 import {
   runIosBootRecoverySequence,
   waitForIosDeviceToSettle,
 } from '../mobile-inspector-simulator-helpers';
+import { getFullPath } from '../pty-manager';
 import {
-  resolveAndroidCommandSet,
   type AndroidCommandSet,
+  resolveAndroidCommandSet,
 } from './android-command-helpers';
-import type {
-  MobileInspectLaunchResult,
-} from '../../shared/types/mobile';
 
 const IOS_BOOT_TIMEOUT_MS = 120_000;
 const IOS_BOOTED_READY_TIMEOUT_MS = 45_000;

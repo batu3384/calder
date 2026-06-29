@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf-8').replace(/\r\n/g, '\n');
 const base = readFileSync(new URL('./base.css', import.meta.url), 'utf-8');

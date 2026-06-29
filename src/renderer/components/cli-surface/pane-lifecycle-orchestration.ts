@@ -1,9 +1,9 @@
 import {
+  type CliSurfaceLayoutElements,
   createCliSurfaceLayout,
   createCliSurfaceTerminal,
-  type CliSurfaceLayoutElements,
 } from './pane-elements.js';
-import { createCliSurfaceInstance, type CliSurfaceInstance } from './pane-instance.js';
+import { type CliSurfaceInstance,createCliSurfaceInstance } from './pane-instance.js';
 import type { CliSurfacePaneStore } from './pane-store.js';
 
 interface EnsureCliSurfaceInstanceOptions {

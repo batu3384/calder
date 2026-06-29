@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+
 import { discoverProjectGovernance, POLICY_RELATIVE_PATH } from './discovery.js';
+import { GovernanceEngine, type GovernancePolicyFile } from './governance-engine.js';
 
 export type ProjectGovernanceOperationKind = 'write' | 'mcp' | 'network' | 'budget';
 export type ProjectGovernanceDecisionStatus = 'allow' | 'advisory' | 'ask' | 'block';
@@ -22,14 +24,36 @@ interface RawGovernancePolicy {
   mcpAllowlist?: unknown;
 }
 
-async function readRawPolicy(projectPath: string): Promise<RawGovernancePolicy> {
+async function readRawPolicy(projectPath: string): Promise<RawGovernancePolicy & Partial<GovernancePolicyFile>> {
   try {
     const policyPath = path.join(projectPath, POLICY_RELATIVE_PATH);
     const parsed = JSON.parse(await readFile(policyPath, 'utf8'));
-    return typeof parsed === 'object' && parsed ? parsed as RawGovernancePolicy : {};
+    return typeof parsed === 'object' && parsed
+      ? parsed as RawGovernancePolicy & Partial<GovernancePolicyFile>
+      : {};
   } catch {
     return {};
   }
+}
+
+async function readGovernancePolicyFile(projectPath: string): Promise<GovernancePolicyFile | null> {
+  const rawPolicy = await readRawPolicy(projectPath);
+  if (!Array.isArray(rawPolicy.rules) || typeof rawPolicy.mode !== 'string') {
+    return null;
+  }
+  return rawPolicy as GovernancePolicyFile;
+}
+
+async function buildGovernanceEngine(
+  projectPath: string,
+  mode: 'advisory' | 'enforced',
+  budgetLimitUsd: number | undefined,
+): Promise<GovernanceEngine> {
+  const policyFile = await readGovernancePolicyFile(projectPath);
+  if (policyFile) {
+    return GovernanceEngine.fromPolicyFile(policyFile);
+  }
+  return new GovernanceEngine(undefined, mode, budgetLimitUsd);
 }
 
 function normalizeAllowlist(value: unknown): string[] {
@@ -96,7 +120,7 @@ export async function evaluateProjectGovernanceOperation(
 
   if (operation.kind === 'mcp') {
     const rawPolicy = await readRawPolicy(projectPath);
-    const allowlist = normalizeAllowlist(rawPolicy.mcpAllowlist);
+    const allowlist = normalizeAllowlist(rawPolicy.allowedMcpServers ?? rawPolicy.mcpAllowlist);
     if (allowlist.length > 0 && operation.target && !allowlist.includes(operation.target)) {
       return decision('block', `${operation.target} is not in the project MCP allowlist.`);
     }
@@ -138,7 +162,18 @@ export async function evaluateProjectGovernanceOperation(
     if (budgetDecision) {
       return budgetDecision;
     }
-    return decision('allow');
+    const engine = await buildGovernanceEngine(projectPath, policy.mode, policy.budgetLimitUsd);
+    const result = engine.evaluate(operation);
+    if (result.action === 'allow') {
+      return decision('allow');
+    }
+    if (result.action === 'block') {
+      return decision('block', result.reason);
+    }
+    if (result.action === 'warn') {
+      return decision('advisory', result.reason);
+    }
+    return decision('ask', result.reason);
   }
 
   return decision('allow');

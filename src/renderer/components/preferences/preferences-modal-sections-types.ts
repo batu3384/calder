@@ -1,6 +1,6 @@
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
-import type { ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { ProjectCheckpointDocument } from '../../../shared/types/project-checkpoint.js';
+import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { CustomSelectInstance } from '../custom-select.js';
 
 export type AppendSectionIntro = (
@@ -46,6 +46,7 @@ export interface GeneralDraft {
   autoTitleEnabled: boolean;
   defaultProvider: ProviderId;
   language: UiLanguage;
+  appearanceTheme: AppearanceTheme;
 }
 
 export interface RenderLayoutSectionArgs {

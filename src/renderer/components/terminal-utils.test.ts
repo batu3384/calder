@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 const mockClipboardWrite = vi.fn();

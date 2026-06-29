@@ -1,12 +1,14 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { homedir } from 'os';
-import { STATUS_DIR, getStatusLineScriptPath } from './hooks/hook-status';
-import { statusCmd as mkStatusCmd, captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, wrapPythonHookCmd, installHookScripts } from './hooks/hook-commands';
-import { readJsonSafe } from './fs-utils';
-import { isManagedStatusLineCommand } from './statusline/statusline-command';
+import * as path from 'path';
+
 import type { SettingsValidationResult } from '../shared/types/provider';
 import type { InspectorEventType } from '../shared/types/session';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from './external-hook-policy';
+import { readJsonSafe } from './fs-utils';
+import { captureSessionIdCmd as mkCaptureSessionIdCmd, captureToolFailureCmd as mkCaptureToolFailureCmd, installEventScript, installHookScripts,statusCmd as mkStatusCmd, wrapPythonHookCmd } from './hooks/hook-commands';
+import { getStatusLineScriptPath,STATUS_DIR } from './hooks/hook-status';
+import { isManagedStatusLineCommand } from './statusline/statusline-command';
 
 export const QWEN_HOOK_MARKER = '# calder-hook';
 export const SESSION_ID_VAR = 'CALDER_SESSION_ID';
@@ -70,6 +72,8 @@ function writeSettings(settings: Record<string, unknown>): void {
 }
 
 export function installQwenHooks(): void {
+  if (!EXTERNAL_HOOK_INJECTION_ENABLED) return;
+
   const settings = readJsonSafe(SETTINGS_PATH) ?? {};
   const existingHooks: HooksConfig = (settings.hooks ?? {}) as HooksConfig;
   const cleaned = cleanHooks(existingHooks);
@@ -80,7 +84,7 @@ export function installQwenHooks(): void {
     mkStatusCmd(event, status, SESSION_ID_VAR, QWEN_HOOK_MARKER);
   const captureSessionIdCmd = mkCaptureSessionIdCmd(SESSION_ID_VAR, QWEN_HOOK_MARKER);
   const captureToolFailureCmd = mkCaptureToolFailureCmd(SESSION_ID_VAR, QWEN_HOOK_MARKER);
-  const rtkPreToolCmd = `CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook claude ${QWEN_HOOK_MARKER}`;
+  const rtkPreToolCmd = `[ "\${CALDER_RUNTIME:-}" = "1" ] && [ -n "\${CALDER_SESSION_ID:-}" ] && CALDER_SESSION_ID="$CALDER_SESSION_ID" rtk hook qwen ${QWEN_HOOK_MARKER}`;
 
   const captureEventCmd = (hookEvent: string, eventType: InspectorEventType) => {
     const pyCode = `import sys,json,os,time

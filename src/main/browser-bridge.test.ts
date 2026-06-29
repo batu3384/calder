@@ -1,10 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import * as http from 'node:http';
+import { execFile } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as http from 'node:http';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   buildBrowserBridgeEnv,
   startBrowserBridge,

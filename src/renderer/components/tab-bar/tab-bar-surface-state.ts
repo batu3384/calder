@@ -1,5 +1,5 @@
-import { appState, type ProjectRecord } from '../../state.js';
 import type { CliSurfaceProfile, ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import { appState, type ProjectRecord } from '../../state.js';
 
 export function createDefaultProjectSurface(): ProjectSurfaceRecord {
   return {

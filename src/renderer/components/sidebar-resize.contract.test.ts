@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const sidebarSource = readFileSync(new URL('./sidebar.ts', import.meta.url), 'utf-8');
 const sidebarCss = readFileSync(new URL('../styles/sidebar.css', import.meta.url), 'utf-8');

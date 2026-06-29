@@ -1,4 +1,4 @@
-import type { ProviderId, CliProviderMeta, CliProviderCapabilities } from '../shared/types/provider.js';
+import type { CliProviderCapabilities,CliProviderMeta, ProviderId } from '../shared/types/provider.js';
 
 export interface ProviderAvailabilitySnapshot {
   providers: CliProviderMeta[];
@@ -9,7 +9,7 @@ const DEFAULT_PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   claude: 'Claude Code',
   codex: 'Codex CLI',
   copilot: 'GitHub Copilot',
-  gemini: 'Gemini CLI',
+  antigravity: 'Antigravity CLI',
   qwen: 'Qwen Code',
 };
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   watchFile: vi.fn(),
@@ -15,6 +15,7 @@ vi.mock('electron', () => ({
 }));
 
 import * as fs from 'fs';
+
 import { startConfigWatcher, stopConfigWatcher } from './config-watcher';
 
 const n = (p: string) => p.replace(/\\/g, '/');
@@ -318,18 +319,24 @@ describe('config-watcher', () => {
     expect(watchDirCallbacks.has('/projects/test/.github/skills')).toBe(true);
   });
 
-  it('watches gemini settings and skills for a project', () => {
+  it('watches antigravity settings, MCP config, and skills for a project', () => {
     const win = createMockWin();
     vi.mocked(fs.watchFile).mockClear();
     vi.mocked(fs.watch).mockClear();
-    startConfigWatcher(win, '/projects/test', 'gemini');
+    startConfigWatcher(win, '/projects/test', 'antigravity');
 
-    expect(fs.watchFile).toHaveBeenCalledTimes(2);
+    expect(fs.watchFile).toHaveBeenCalledTimes(6);
     expect(watchFileCallbacks.has('/home/testuser/.gemini/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/home/testuser/.gemini/antigravity-cli/mcp_config.json')).toBe(true);
     expect(watchFileCallbacks.has('/projects/test/.gemini/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.agents/settings.json')).toBe(true);
+    expect(watchFileCallbacks.has('/projects/test/.agents/mcp_config.json')).toBe(true);
 
-    expect(fs.watch).toHaveBeenCalledTimes(2);
+    expect(fs.watch).toHaveBeenCalledTimes(4);
     expect(watchDirCallbacks.has('/home/testuser/.gemini/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/home/testuser/.gemini/antigravity-cli/skills')).toBe(true);
     expect(watchDirCallbacks.has('/projects/test/.gemini/skills')).toBe(true);
+    expect(watchDirCallbacks.has('/projects/test/.agents/skills')).toBe(true);
   });
 });

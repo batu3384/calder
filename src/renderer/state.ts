@@ -1,43 +1,48 @@
-import type { CalderApi } from './types.js';
-import type { ProviderId } from '../shared/types/provider.js';
-import type { SessionRecord, ArchivedSession, CostInfo, ContextWindowInfo, InitialContextSnapshot } from '../shared/types/session.js';
 import type { ProjectGovernanceState } from '../shared/types/governance.js';
-import type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state.js';
-import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
-import type { ProjectContextState } from '../shared/types/project-context.js';
-import type { ProjectWorkflowState, ProjectWorkflowDocument } from '../shared/types/project-workflow.js';
-import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
-import type { ProjectReviewState } from '../shared/types/project-review.js';
 import type { ProjectBackgroundTaskState } from '../shared/types/project-background-task.js';
-import type { ProjectCheckpointState, ProjectCheckpointDocument, ProjectCheckpointRestoreMode } from '../shared/types/project-checkpoint.js';
-import { RendererPersistQueue } from './state-persistence.js';
-import { RendererStateNavigation } from './state-navigation.js';
-import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
-import { migrateLoadedRendererState } from './state-load-migration.js';
-import { defaultPreferences, type EventCallback, type EventType, NAV_HISTORY_MAX, type SessionRemovalScope } from './state/state-contracts.js';
-import { applyProjectSurface, closeCliProjectSurface, closeMobileProjectSurface, focusCliProjectSurface, focusMobileProjectSurface } from './state-surface-updater.js';
-import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
-import { normalizeProjectBackgroundTaskState, normalizeProjectCheckpointState, normalizeProjectContextState, normalizeProjectGovernanceState, normalizeProjectReviewState, normalizeProjectTeamContextState, normalizeProjectWorkflowState } from './state-normalizers.js';
-import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
+import type { ProjectCheckpointDocument, ProjectCheckpointRestoreMode,ProjectCheckpointState } from '../shared/types/project-checkpoint.js';
+import type { ProjectContextState } from '../shared/types/project-context.js';
+import type { ProjectReviewState } from '../shared/types/project-review.js';
+import type { PersistedState,Preferences, ProjectRecord } from '../shared/types/project-state.js';
+import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
+import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
+import type { ProjectWorkflowDocument,ProjectWorkflowState } from '../shared/types/project-workflow.js';
+import type { ProviderId } from '../shared/types/provider.js';
+import type { ArchivedSession, ContextWindowInfo, CostInfo, InitialContextSnapshot,SessionRecord } from '../shared/types/session.js';
+import { showErrorToast } from './components/toast.js';
+import { BatchedEventEmitter } from './state/batched-event-emitter.js';
 import { createAppStateRuntimeBridge, setProjectDomainForState, updateProjectSurfaceForState } from './state/state-appstate-orchestration-helpers.js';
-import { clearHistoryForProject, findProjectBySessionId, findSessionById, isInsightDismissedInAppState, listSurfaceTargetSessionsForProject, removeHistoryEntryForProject, resolveSurfaceTargetSessionForProject, toggleHistoryBookmarkForProject } from './state-appstate-extracts.js';
-import { addProjectToState, collectProjectSessionIdsForScope, consumePendingInitialPromptFromState, cycleActiveProjectSession, gotoProjectSession, removeProjectFromState } from './state/state-project-session-helpers.js';
 import type { AppStateRuntimeBridge } from './state/state-appstate-runtime-bridge.js';
-import { addBrowserTabSessionWithBridge, addDiffViewerSessionWithBridge, addInsightSnapshotWithBridge, addFileReaderSessionWithBridge, addMcpInspectorSessionWithBridge, addPlanSessionWithBridge, addRemoteSessionWithBridge, addSessionWithBridge, dismissInsightWithBridge, launchWorkflowSessionWithBridge, openUrlInBrowserSurfaceWithBridge, passivateBrowserTabSessionWithBridge, removeSessionWithBridge, renameSessionWithBridge, reorderSessionWithBridge, resumeFromHistoryWithBridge, resumeWithProviderWithBridge, restoreProjectCheckpointWithBridge, setActiveSessionWithBridge, setBrowserWidthRatioWithBridge, setMosaicRatioWithBridge, setSurfaceTargetSessionWithBridge, updateSessionBrowserTabUrlWithBridge, updateSessionCliIdWithBridge, updateSessionContextWithBridge, updateSessionCostWithBridge } from './state/state-appstate-runtime-bridge.js';
+import { addBrowserTabSessionWithBridge, addDiffViewerSessionWithBridge, addFileReaderSessionWithBridge, addInsightSnapshotWithBridge, addMcpInspectorSessionWithBridge, addPlanSessionWithBridge, addRemoteSessionWithBridge, addSessionWithBridge, dismissInsightWithBridge, launchWorkflowSessionWithBridge, openUrlInBrowserSurfaceWithBridge, passivateBrowserTabSessionWithBridge, removeSessionWithBridge, renameSessionWithBridge, reorderSessionWithBridge, restoreProjectCheckpointWithBridge, resumeFromHistoryWithBridge, resumeWithProviderWithBridge, setActiveSessionWithBridge, setBrowserWidthRatioWithBridge, setMosaicRatioWithBridge, setSurfaceTargetSessionWithBridge, updateSessionBrowserTabUrlWithBridge, updateSessionCliIdWithBridge, updateSessionContextWithBridge, updateSessionCostWithBridge } from './state/state-appstate-runtime-bridge.js';
+import { defaultPreferences, type EventCallback, type EventType, NAV_HISTORY_MAX, type SessionRemovalScope } from './state/state-contracts.js';
+import { addProjectToState, collectProjectSessionIdsForScope, consumePendingInitialPromptFromState, cycleActiveProjectSession, gotoProjectSession, removeProjectFromState } from './state/state-project-session-helpers.js';
+import { clearHistoryForProject, findProjectBySessionId, findSessionById, isInsightDismissedInAppState, listSurfaceTargetSessionsForProject, removeHistoryEntryForProject, resolveSurfaceTargetSessionForProject, toggleHistoryBookmarkForProject } from './state-appstate-extracts.js';
+import { migrateLoadedRendererState } from './state-load-migration.js';
+import { RendererStateNavigation } from './state-navigation.js';
+import { normalizeProjectBackgroundTaskState, normalizeProjectCheckpointState, normalizeProjectContextState, normalizeProjectGovernanceState, normalizeProjectReviewState, normalizeProjectTeamContextState, normalizeProjectWorkflowState } from './state-normalizers.js';
+import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
+import { RendererPersistQueue } from './state-persistence.js';
+import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
+import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
+import { applyProjectSurface, closeCliProjectSurface, closeMobileProjectSurface, focusCliProjectSurface, focusMobileProjectSurface } from './state-surface-updater.js';
+import type { CalderApi } from './types.js';
 
-export type { SessionRecord, ArchivedSession } from '../shared/types/session.js';
-export type { ProjectRecord, Preferences, PersistedState } from '../shared/types/project-state.js';
+export type { PersistedState,Preferences, ProjectRecord } from '../shared/types/project-state.js';
+export type { ArchivedSession,SessionRecord } from '../shared/types/session.js';
 export const MAX_SESSION_NAME_LENGTH = 60;
 
 declare global { interface Window { calder: CalderApi; } }
 
 class AppState {
   private state: PersistedState = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
-  private listeners = new Map<EventType, Set<EventCallback>>();
+  private eventBus = new BatchedEventEmitter();
   private navigation = new RendererStateNavigation(NAV_HISTORY_MAX);
   private persistQueue = new RendererPersistQueue(
     (snapshot) => window.calder.store.save(snapshot),
-    (error) => { console.warn('Failed to persist renderer state:', error); },
+    (error) => {
+      showErrorToast('Failed to save project state');
+      console.warn('Failed to persist renderer state:', error);
+    },
   );
 
   private pushNav(sessionId: string | null | undefined): void { this.navigation.push(sessionId); }
@@ -66,13 +71,11 @@ class AppState {
   }
 
   on(event: EventType, cb: EventCallback): () => void {
-    if (!this.listeners.has(event)) this.listeners.set(event, new Set());
-    this.listeners.get(event)!.add(cb);
-    return () => this.listeners.get(event)?.delete(cb);
+    return this.eventBus.on(event, cb);
   }
 
   private emit(event: EventType, data?: unknown): void {
-    this.listeners.get(event)?.forEach((cb) => cb(data));
+    this.eventBus.emit(event, data);
   }
 
   async load(): Promise<void> {
@@ -360,7 +363,7 @@ class AppState {
   /** @internal Test-only: reset all state containers */
   resetForTesting(): void {
     this.state = { version: 1, projects: [], activeProjectId: null, preferences: { ...defaultPreferences } };
-    this.listeners = new Map();
+    this.eventBus.destroy();
     this.navigation.resetForTesting();
     this.persistQueue.resetForTesting();
   }

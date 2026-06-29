@@ -1,10 +1,9 @@
-import { ipcMain, BrowserWindow, app, shell, webContents } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, webContents } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
 import type { BrowserCredentialSaveInput } from '../shared/types/project-core';
-import type { ProjectGovernanceOperation } from './calder-governance/enforcement';
-import { discoverLocalBrowserTargets } from './local-dev-targets';
 import {
   deleteBrowserCredentialById,
   getBrowserAutoFillCredentialForUrl,
@@ -13,7 +12,9 @@ import {
   saveBrowserCredentialForUrl,
 } from './browser-credential-vault';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
-import { getPtyCwd } from './pty-manager';
+import type { ProjectGovernanceOperation } from './calder-governance/enforcement';
+import { isAllowedGuestWebviewUrl } from './guest-webview-origin';
+import { discoverLocalBrowserTargets } from './local-dev-targets';
 
 const ALLOWED_GUEST_MESSAGE_CHANNELS = new Set([
   'enter-inspect-mode',
@@ -35,6 +36,8 @@ const GUEST_CHANNELS_WITHOUT_ARGS = new Set([
   'exit-draw-mode',
   'draw-clear',
 ]);
+
+export { isAllowedGuestWebviewUrl } from './guest-webview-origin';
 const MAX_GUEST_MESSAGE_BYTES = 1 * 1024 * 1024;
 const MAX_GUEST_CREDENTIAL_FIELD_BYTES = 8 * 1024;
 const MAX_SCREENSHOT_BYTES = 50 * 1024 * 1024;
@@ -155,6 +158,12 @@ export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
       console.warn(`app:sendToGuestWebContents blocked non-webview target: ${guest.getType()}`);
       return false;
     }
+    const guestUrl = guest.getURL();
+    if (!guestUrl) return false;
+    if (!isAllowedGuestWebviewUrl(guestUrl)) {
+      console.warn(`app:sendToGuestWebContents blocked unknown origin: ${guestUrl}`);
+      return false;
+    }
     guest.send(channel, ...args);
     return true;
   });
@@ -210,6 +219,4 @@ export function registerAppBrowserIpcHandlers(ops: AppBrowserIpcOps): void {
     const win = BrowserWindow.getAllWindows()[0];
     return openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win, (target) => shell.openExternal(target));
   });
-
-  ipcMain.handle('pty:getCwd', (_event, sessionId: string) => getPtyCwd(sessionId));
 }

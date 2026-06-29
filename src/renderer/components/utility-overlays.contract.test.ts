@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const quickOpenSource = readFileSync(new URL('./quick-open.ts', import.meta.url), 'utf-8');
 const searchSource = readFileSync(new URL('./search-bar.ts', import.meta.url), 'utf-8');

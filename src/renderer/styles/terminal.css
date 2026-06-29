@@ -79,7 +79,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 12px 24px rgba(0, 0, 0, 0.12);
-  transition: background 0.14s ease, box-shadow 0.14s ease;
+  transition: background var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 
 .mosaic-divider:hover::before,
@@ -137,7 +137,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: border-color var(--motion-fast) ease, color var(--motion-fast) ease;
 }
 
 .swarm-empty-add-btn:hover {
@@ -157,7 +157,7 @@
   background: rgba(255, 255, 255, 0.25);
   pointer-events: none;
   z-index: 10;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--motion-fast) ease;
 }
 
 .browser-tab-pane.swarm-dimmed {

@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
+
 import { isWin, pathSep } from './platform';
 
 /**

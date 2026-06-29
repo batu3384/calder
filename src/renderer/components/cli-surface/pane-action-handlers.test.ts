@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { SurfaceSelectionRange } from '../../../shared/types/project-surface.js';
 
 const {

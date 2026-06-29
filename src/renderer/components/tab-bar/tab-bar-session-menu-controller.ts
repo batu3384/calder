@@ -1,7 +1,7 @@
-import { appState, type SessionRecord } from '../../state.js';
 import type { ProviderId } from '../../../shared/types/provider.js';
-import { closeModal, showModal, type FieldDef } from '../modal.js';
+import { appState, type SessionRecord } from '../../state.js';
 import { showJoinDialog } from '../join-dialog.js';
+import { closeModal, type FieldDef,showModal } from '../modal.js';
 import {
   getProviderAvailabilitySnapshot,
   loadProviderAvailability,

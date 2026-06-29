@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
+import { mkdirSync,mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { afterEach, describe, expect, it } from 'vitest';
+
 import { discoverProjectContext } from './discovery.js';
 
 function makeProject(name: string): string {
@@ -93,7 +94,7 @@ describe('discoverProjectContext', () => {
           summary: 'Codex instructions',
         }),
         expect.objectContaining({
-          provider: 'gemini',
+          provider: 'antigravity',
           kind: 'instructions',
           displayName: 'GEMINI.md',
           summary: 'Gemini instructions',

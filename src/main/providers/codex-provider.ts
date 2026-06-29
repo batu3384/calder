@@ -1,19 +1,22 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import type { CliProvider } from './provider';
-import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
-import { getFullPath } from '../full-path';
-import { resolveBinary, validateBinaryExists } from './resolve-binary';
-import { getCodexConfig } from '../codex-config';
-import { installCodexHooks, validateCodexHooks, SESSION_ID_VAR } from '../codex-hooks';
-import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
-import { stopCodexSessionWatcher } from '../codex-session-watcher';
 import type { BrowserWindow } from 'electron';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+import type { CliProviderMeta, ProviderConfig, SettingsValidationResult } from '../../shared/types/provider';
+import { getCodexConfig } from '../codex-config';
+import { cleanupCodexHooks, installCodexHooks, SESSION_ID_VAR,validateCodexHooks } from '../codex-hooks';
+import { stopCodexSessionWatcher } from '../codex-session-watcher';
+import { startConfigWatcher as startConfigWatch, stopConfigWatcher as stopConfigWatch } from '../config-watcher';
+import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
+import { getFullPath } from '../full-path';
+import { sanitizeExtraArgs } from '../security/sanitize';
+import { BaseCliProvider } from './base-cli-provider';
+import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
 const binaryCache = { path: null as string | null };
 
-export class CodexProvider implements CliProvider {
+export class CodexProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
     id: 'codex',
     displayName: 'Codex CLI',
@@ -30,6 +33,10 @@ export class CodexProvider implements CliProvider {
     defaultContextWindowSize: 200_000,
   };
 
+  protected readonly binaryName = 'codex';
+  protected readonly installCommand = 'npm install -g @openai/codex';
+  protected readonly binaryCache = binaryCache;
+
   resolveBinaryPath(): string {
     return resolveBinary('codex', binaryCache);
   }
@@ -39,9 +46,11 @@ export class CodexProvider implements CliProvider {
   }
 
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    const env = { ...baseEnv };
+    const env: Record<string, string> = { ...baseEnv };
+    delete env.CLAUDE_CODE;
     env[SESSION_ID_VAR] = sessionId;
     env.PATH = getFullPath();
+    env.CALDER_RUNTIME = '1';
     return env;
   }
 
@@ -53,7 +62,7 @@ export class CodexProvider implements CliProvider {
       args.push(opts.initialPrompt);
     }
     if (opts.extraArgs) {
-      args.push(...opts.extraArgs.split(/\s+/).filter(Boolean));
+      args.push(...sanitizeExtraArgs(opts.extraArgs));
     }
     return args;
   }
@@ -90,6 +99,10 @@ export class CodexProvider implements CliProvider {
   }
 
   reinstallSettings(): void {
+    if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
+      cleanupCodexHooks();
+      return;
+    }
     installCodexHooks();
   }
 
@@ -97,8 +110,6 @@ export class CodexProvider implements CliProvider {
     try {
       const root = path.join(os.homedir(), '.codex', 'sessions');
       const suffix = `-${cliSessionId}.jsonl`;
-      // sessions are partitioned as YYYY/MM/DD/rollout-<ts>-<id>.jsonl.
-      // Walk newest-first and return on first match.
       for (const year of descSortedReaddir(root)) {
         const yearDir = path.join(root, year);
         for (const month of descSortedReaddir(yearDir)) {

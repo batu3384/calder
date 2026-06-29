@@ -13,8 +13,9 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { STATUS_DIR } from './hook-status';
+
 import { isWin, pythonBin as PY } from '../platform';
+import { STATUS_DIR } from './hook-status';
 
 // Python helper scripts live in Calder's persistent runtime directory.
 // Shared scripts are installed once per process, but we also verify the files
@@ -40,6 +41,8 @@ export function installHookScripts(): void {
 
   // status_writer.py — writes event:status to .status file
   installEventScript('status_writer.py', `import sys,os
+if os.environ.get("CALDER_RUNTIME","")!="1":
+    sys.exit(0)
 event=sys.argv[1]
 status=sys.argv[2]
 sid=os.environ.get(sys.argv[3],'')
@@ -51,6 +54,8 @@ if sid:
 
   // session_id_capture.py — captures session_id from JSON stdin
   installEventScript('session_id_capture.py', `import sys,json,os
+if os.environ.get("CALDER_RUNTIME","")!="1":
+    sys.exit(0)
 try:
     d=json.load(sys.stdin)
 except:
@@ -65,6 +70,8 @@ if sid_env and claude_sid:
 
   // tool_failure_capture.py — captures tool failure details
   installEventScript('tool_failure_capture.py', `import sys,json,os,random,string
+if os.environ.get("CALDER_RUNTIME","")!="1":
+    sys.exit(0)
 try:
     d=json.load(sys.stdin)
 except:
@@ -99,7 +106,7 @@ export function statusCmd(
   }
   // Guard against empty/missing session IDs to avoid creating `${STATUS_DIR}/.status`.
   const sidExpr = `\${${sessionIdVar}:-}`;
-  return `sh -c 'sid="${sidExpr}"; if [ -n "$sid" ]; then mkdir -p ${STATUS_DIR} && echo ${event}:${status} > ${STATUS_DIR}/$sid.status; fi ${hookMarker}'`;
+  return `sh -c 'if [ "\${CALDER_RUNTIME:-}" != "1" ]; then exit 0; fi; sid="${sidExpr}"; if [ -n "$sid" ]; then mkdir -p ${STATUS_DIR} && echo ${event}:${status} > ${STATUS_DIR}/$sid.status; fi ${hookMarker}'`;
 }
 
 /**

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import { findTool } from './tool-catalog.js';
 
 describe('tool-catalog', () => {

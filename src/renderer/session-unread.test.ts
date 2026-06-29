@@ -19,12 +19,12 @@ vi.mock('./session-activity', () => ({
 vi.mock('./state', () => ({ appState: mockAppState }));
 
 import {
+  _resetForTesting,
+  hasUnreadInProject,
   init,
   isUnread,
-  hasUnreadInProject,
-  removeSession,
   onChange,
-  _resetForTesting,
+  removeSession,
 } from './session-unread';
 
 function makeSession(id: string, name: string) {

@@ -1,8 +1,8 @@
-import type { BrowserTabInstance, ElementInfo } from './types.js';
-import { buildSelectorOptions } from './selector-ui.js';
-import { positionPopover } from './popover.js';
-import { getViewportContext } from './viewport.js';
 import { sendGuestMessage } from './guest-messaging.js';
+import { positionPopover } from './popover.js';
+import { buildSelectorOptions } from './selector-ui.js';
+import type { BrowserTabInstance, ElementInfo } from './types.js';
+import { getViewportContext } from './viewport.js';
 
 export function toggleInspectMode(instance: BrowserTabInstance): void {
   instance.inspectMode = !instance.inspectMode;

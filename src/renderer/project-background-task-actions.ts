@@ -1,10 +1,10 @@
-import type { ProviderId } from '../shared/types/provider.js';
 import type { ProjectBackgroundTaskDocument } from '../shared/types/project-background-task.js';
-import { appState } from './state.js';
+import type { ProviderId } from '../shared/types/provider.js';
+import { deliverPromptToTerminalSession, setPendingPrompt } from './components/terminal-pane.js';
 import { appendAppliedContextToPrompt, buildAppliedContextSummary } from './project-context-prompt.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
-import { deliverPromptToTerminalSession, setPendingPrompt } from './components/terminal-pane.js';
+import { appState } from './state.js';
 
 export function buildProjectBackgroundTaskPrompt(task: ProjectBackgroundTaskDocument): string {
   return [

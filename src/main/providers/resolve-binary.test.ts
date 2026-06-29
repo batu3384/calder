@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
 
 async function loadResolveBinaryModule(isWindows: boolean) {
   vi.resetModules();
@@ -72,12 +73,12 @@ describe('resolve-binary', () => {
 
     mockExistsSync.mockImplementation((candidate: unknown) => String(candidate) === homebrewPath);
     mockExecSync.mockImplementation((command: unknown) => {
-      if (String(command).includes('command -v "gemini"')) return `${shellPath}\n` as any;
-      if (String(command).startsWith('which "gemini"')) return `${shellPath}\n` as any;
+      if (String(command).includes('command -v "antigravity"')) return `${shellPath}\n` as any;
+      if (String(command).startsWith('which "antigravity"')) return `${shellPath}\n` as any;
       throw new Error(`unexpected command: ${String(command)}`);
     });
 
-    expect(resolveBinary('gemini', { path: null })).toBe(shellPath);
+    expect(resolveBinary('antigravity', { path: null })).toBe(shellPath);
   });
 
   it('handles Windows extension probing and keeps first where() result line', async () => {
@@ -126,5 +127,30 @@ describe('resolve-binary', () => {
         '  npm install -g @openai/codex\n\n' +
         'After installing, restart Calder.',
     });
+  });
+
+  it('re-checks binary detection when cached result is stale and binary becomes available', async () => {
+    const { validateBinaryExists, _resetPrereqCheckCache, mockExecSync, mockExistsSync } = await loadResolveBinaryModule(false);
+
+    _resetPrereqCheckCache();
+    mockExistsSync.mockReturnValue(false);
+    mockExecSync.mockImplementation(() => {
+      throw new Error('not found');
+    });
+    const first = validateBinaryExists('claude', 'Claude Code CLI', 'npm install -g @anthropic-ai/claude-code');
+    expect(first.ok).toBe(false);
+
+    // Simulate installation finishing immediately after first check.
+    mockExistsSync.mockImplementation((candidate: unknown) => String(candidate).includes('/usr/local/bin/claude'));
+    mockExecSync.mockImplementation((command: unknown) => {
+      if (String(command).includes('command -v "claude"')) return '/usr/local/bin/claude\n';
+      if (String(command).includes('which "claude"')) return '/usr/local/bin/claude\n';
+      throw new Error('unexpected command');
+    });
+
+    const second = validateBinaryExists('claude', 'Claude Code CLI', 'npm install -g @anthropic-ai/claude-code');
+    expect(second.ok).toBe(true);
+    expect(second.message).toBe('');
+    expect(mockExecSync).toHaveBeenCalled();
   });
 });

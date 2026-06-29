@@ -1,7 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import { execFile } from 'child_process';
 import type { BrowserWindow } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const DEBOUNCE_MS = 300;
 const IGNORE_SEGMENTS = new Set(['.git', 'node_modules', 'dist', 'build', '.next', '.cache', 'coverage', '__pycache__']);

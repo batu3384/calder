@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
+import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(new URL('./custom-select.ts', import.meta.url), 'utf-8');
 

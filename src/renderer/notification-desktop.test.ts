@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 const mockAppState = vi.hoisted(() => {
   const state = {
@@ -30,8 +30,8 @@ vi.mock('./state.js', () => ({
   appState: mockAppState,
 }));
 
-import { _resetForTesting as resetActivity, setHookStatus, initSession } from './session-activity.js';
 import { _resetForTesting as resetDesktopNotif, initNotificationDesktop } from './notification-desktop.js';
+import { _resetForTesting as resetActivity, initSession,setHookStatus } from './session-activity.js';
 
 
 // Track Notification constructor calls

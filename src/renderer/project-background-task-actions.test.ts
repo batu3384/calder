@@ -36,8 +36,8 @@ vi.mock('./components/terminal-pane.js', () => ({
   setPendingPrompt: mockSetPendingPrompt,
 }));
 
-import { appState, _resetForTesting } from './state.js';
 import { buildProjectBackgroundTaskPrompt, resumeProjectBackgroundTaskInNewSession, sendProjectBackgroundTaskToSelectedSession } from './project-background-task-actions.js';
+import { _resetForTesting,appState } from './state.js';
 
 describe('project background task actions', () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { buildMobileInspectPrompt, resolveMobileInspectPromptError } from './inspect-prompt.js';
 import type { MobileSurfaceInspectState } from './types.js';
 

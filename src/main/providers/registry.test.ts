@@ -1,14 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import type { CliProvider } from './provider';
+import { beforeEach,describe, expect, it } from 'vitest';
+
 import type { CliProviderMeta } from '../../shared/types/provider';
+import type { CliProvider } from './provider';
 import {
+  getAllProviderMetas,
+  getAllProviders,
+  getAvailableProviderIds,
+  getProvider,
+  getProviderMeta,
   initProviders,
   registerProvider,
-  getProvider,
-  getAllProviders,
-  getProviderMeta,
-  getAllProviderMetas,
-  getAvailableProviderIds,
 } from './registry';
 
 const fakeMeta: CliProviderMeta = {
@@ -71,9 +72,9 @@ describe('initProviders', () => {
 
 describe('getProvider', () => {
   it('registers the Gemini provider', () => {
-    const provider = getProvider('gemini');
+    const provider = getProvider('antigravity');
     expect(provider).toBeDefined();
-    expect(provider.meta.id).toBe('gemini');
+    expect(provider.meta.id).toBe('antigravity');
   });
 
   it('registers the Qwen provider', () => {
@@ -104,7 +105,7 @@ describe('getAllProviders', () => {
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
     expect(ids).toContain('copilot');
-    expect(ids).toContain('gemini');
+    expect(ids).toContain('antigravity');
     expect(ids).toContain('qwen');
   });
 });
@@ -124,7 +125,7 @@ describe('getAllProviderMetas', () => {
     expect(metas.length).toBe(5);
     expect(metas.map(m => m.id)).toContain('codex');
     expect(metas.map(m => m.id)).toContain('copilot');
-    expect(metas.map(m => m.id)).toContain('gemini');
+    expect(metas.map(m => m.id)).toContain('antigravity');
     expect(metas.map(m => m.id)).toContain('qwen');
   });
 });
@@ -138,7 +139,7 @@ describe('getAvailableProviderIds', () => {
     }, true);
     const unavailable = makeFakeProvider({
       ...fakeMeta,
-      id: 'gemini',
+      id: 'antigravity',
       displayName: 'Gemini Missing',
     }, false);
 
@@ -147,7 +148,7 @@ describe('getAvailableProviderIds', () => {
 
     const ids = getAvailableProviderIds();
     expect(ids).toContain('copilot');
-    expect(ids).not.toContain('gemini');
+    expect(ids).not.toContain('antigravity');
   });
 
   it('skips providers whose prerequisite check throws unexpectedly', () => {
