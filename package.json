@@ -68,7 +68,7 @@
     "audit:secrets": "node scripts/scan-tracked-secrets.mjs",
     "audit:deep": "node scripts/deep-system-audit.mjs",
     "checksums:generate": "node scripts/generate-release-checksums.mjs",
-    "ci:install-electron": "node node_modules/electron/install.js",
+    "ci:install-electron": "node scripts/install-electron-binary.mjs",
     "audit:knip": "npx --yes --package=knip@6.6.0 knip --config knip.jsonc --reporter compact",
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
