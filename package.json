@@ -36,6 +36,13 @@
   "engines": {
     "node": ">=24"
   },
+  "allowScripts": {
+    "electron": true,
+    "electron-winstaller": true,
+    "esbuild": true,
+    "fsevents": true,
+    "node-pty": true
+  },
   "main": "./dist/main/main/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.main.json && tsc -p tsconfig.preload.json && npm run build:app-preload && npm run build:webview-preload && npm run build:renderer && npm run copy-assets",
@@ -61,6 +68,7 @@
     "audit:secrets": "node scripts/scan-tracked-secrets.mjs",
     "audit:deep": "node scripts/deep-system-audit.mjs",
     "checksums:generate": "node scripts/generate-release-checksums.mjs",
+    "ci:install-electron": "node node_modules/electron/install.js",
     "audit:knip": "npx --yes --package=knip@6.6.0 knip --config knip.jsonc --reporter compact",
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",

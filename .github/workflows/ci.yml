@@ -26,6 +26,9 @@ jobs:
         env:
           CALDER_SKIP_APP_DEPS: '1'
 
+      - name: Install Electron binary
+        run: npm run ci:install-electron
+
       - name: Build
         run: npm run build
 
@@ -59,6 +62,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Electron binary
+        run: npm run ci:install-electron
 
       - name: Deep system audit
         run: npm run audit:deep
