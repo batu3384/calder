@@ -42,6 +42,9 @@ function makeProvider(
   return {
     meta: makeMeta(id, `${id.toUpperCase()} CLI`),
     resolveBinaryPath: () => id,
+    getInstallCommand: () => `install-${id}`,
+    clearBinaryCache: () => {},
+    checkBinaryInstalled: () => ({ ok, message: ok ? '' : message }),
     validatePrerequisites: () => ({ ok, message: ok ? '' : message }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],

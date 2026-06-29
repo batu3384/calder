@@ -2,6 +2,7 @@
 .insight-alert {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 10px 12px 0;
   padding: 11px 13px;

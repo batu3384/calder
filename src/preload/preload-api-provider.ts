@@ -18,6 +18,7 @@ export interface PreloadProviderApi {
   checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
   updateAll(): Promise<ProviderUpdateSummary>;
   updateProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
+  installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
   cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
   onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
   watchProject(providerId: ProviderId, projectPath: string): void;
@@ -36,6 +37,7 @@ export function createPreloadProviderApi(
     checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
     updateAll: () => ipcRenderer.invoke('provider:updateAll'),
     updateProvider: (providerId) => ipcRenderer.invoke('provider:updateProvider', providerId),
+    installProvider: (providerId) => ipcRenderer.invoke('provider:installProvider', providerId),
     cancelUpdateAll: () => ipcRenderer.invoke('provider:cancelUpdateAll'),
     onUpdateProgress: (callback) =>
       onChannel('provider:update-progress', (event) =>

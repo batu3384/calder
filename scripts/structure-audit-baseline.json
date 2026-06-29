@@ -1,15 +1,16 @@
 {
   "src/main/mobile-inspector.runtime.test.ts": 1961,
-  "src/main/provider-updater.test.ts": 1126,
-  "src/preload/preload.ts": 558,
+  "src/main/provider-updater.test.ts": 1212,
+  "src/main/provider-updater.ts": 714,
+  "src/preload/preload.ts": 559,
   "src/renderer/components/browser-tab/pane-interactions.ts": 514,
   "src/renderer/components/cli-surface/pane-elements.ts": 507,
   "src/renderer/components/cli-surface/pane.test.ts": 1944,
   "src/renderer/components/file-reader.ts": 553,
   "src/renderer/components/mcp-inspector.ts": 532,
   "src/renderer/components/sidebar.ts": 545,
-  "src/renderer/components/tab-bar/tab-bar-cli-update-panel.ts": 532,
-  "src/renderer/i18n-pattern-translations.ts": 513,
+  "src/renderer/components/tab-bar/tab-bar-cli-update-panel.ts": 555,
+  "src/renderer/i18n-pattern-translations.ts": 577,
   "src/renderer/i18n-translations-core-part-1.ts": 582,
   "src/renderer/i18n-translations-core-part-2.ts": 593,
   "src/renderer/i18n-translations-core-part-3.ts": 616,
@@ -17,5 +18,5 @@
   "src/renderer/sharing/peer-host.ts": 511,
   "src/renderer/state.test.ts": 2893,
   "src/renderer/state.ts": 699,
-  "src/renderer/update-center.ts": 532
+  "src/renderer/update-center.ts": 586
 }

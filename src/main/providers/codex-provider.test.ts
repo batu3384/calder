@@ -14,6 +14,7 @@ vi.mock('os', () => ({
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawnSync: vi.fn(),
 }));
 
 vi.mock('../full-path', () => ({
@@ -40,7 +41,7 @@ vi.mock('../codex-session-watcher', () => ({
   stopCodexSessionWatcher: vi.fn(),
 }));
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import type { ProviderConfig } from '../../shared/types/provider';
@@ -55,6 +56,7 @@ import { _resetPrereqCheckCache } from './resolve-binary';
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockExecSync = vi.mocked(execSync);
+const mockSpawnSync = vi.mocked(spawnSync);
 const mockGetCodexConfig = vi.mocked(getCodexConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
 const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
@@ -67,7 +69,7 @@ let provider: CodexProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync, mockSpawnSync);
   mockReaddirSync.mockReturnValue([]);
   _resetCachedPath();
   _resetPrereqCheckCache();
@@ -108,7 +110,7 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} codex when no candidate exists`, () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/codex');
     mockExecSync.mockReturnValue('/some/other/path/codex\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/codex');
   });
@@ -121,11 +123,17 @@ describe('resolveBinaryPath', () => {
     expect(provider.resolveBinaryPath()).toBe('codex');
   });
 
-  it('caches result on subsequent calls', () => {
+  it('caches launchable binary across subsequent calls', () => {
+    mockExistsSync.mockImplementation((p) => p === firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+  });
+
+  it('invalidates cache when cached binary disappears', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
     provider.resolveBinaryPath();
     mockExistsSync.mockReturnValue(false);
-    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe('codex');
   });
 });
 
@@ -140,7 +148,7 @@ describe('validatePrerequisites', () => {
   });
 
   it('returns ok when binary found via which', () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/codex');
     mockExecSync.mockReturnValue('/resolved/codex\n' as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });

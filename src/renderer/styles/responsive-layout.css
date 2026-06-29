@@ -1,0 +1,222 @@
+/* Dar pencere / küçük viewport: metin taşması ve kırık flex düzeni önleme */
+
+#modal-overlay,
+.modal-overlay {
+  padding: clamp(12px, 3vw, 24px);
+}
+
+#modal,
+.modal-box {
+  min-width: 0;
+  width: min(620px, calc(100vw - 24px));
+  max-width: min(620px, calc(100vw - 24px));
+}
+
+#modal.modal-wide,
+#modal.preferences-modal.modal-wide {
+  width: min(960px, calc(100vw - 24px));
+  max-width: min(960px, calc(100vw - 24px));
+}
+
+#modal-body,
+.modal-body,
+.preferences-content,
+.preferences-section-intro,
+.preferences-overview-card,
+.preferences-section-card,
+.preferences-subsection,
+.about-section,
+.about-update-info,
+.about-update-status,
+.about-update-meta,
+.about-update-activity,
+.about-lead,
+.about-community,
+.about-link-grid,
+.cli-update-panel-actions,
+.cli-update-panel-status,
+.cli-update-panel-meta,
+.cli-update-panel-progress-label,
+.cli-update-panel-timestamp,
+.cli-update-provider-detail,
+.insight-alert-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.preferences-overview-value,
+.preferences-menu-item-label,
+.preferences-menu-item-caption,
+.preferences-section-title,
+.preferences-section-description,
+.preferences-card-copy,
+.preferences-card-note {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.about-update-row {
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.about-update-btn,
+.orchestration-overview-action-btn,
+.context-discovery-action-btn,
+.governance-discovery-action-btn,
+.preview-discovery-action-btn,
+.workflow-discovery-action-btn,
+.team-context-discovery-action-btn,
+.review-discovery-action-btn,
+.task-discovery-action-btn,
+.checkpoint-discovery-action-btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  hyphens: auto;
+}
+
+#cli-update-panel {
+  width: min(390px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
+}
+
+.cli-update-panel-header {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: 8px;
+}
+
+.cli-update-panel-title {
+  flex: 1 1 140px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.cli-update-panel-header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
+.cli-update-panel-update-all,
+.cli-update-panel-cancel {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
+  height: auto;
+  min-height: 24px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.cli-update-provider-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: 6px;
+}
+
+.cli-update-provider-name,
+.cli-update-provider-status {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.cli-update-provider-status {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: right;
+}
+
+.cli-update-provider-action {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.cli-update-panel-stats {
+  align-items: flex-start;
+}
+
+.insight-alert {
+  flex-wrap: wrap;
+}
+
+.insight-alert-copy {
+  flex: 1 1 180px;
+}
+
+.insight-alert-actions {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.mcp-add-box,
+.statusline-conflict-box {
+  min-width: 0;
+  width: min(500px, calc(100vw - 32px));
+  max-width: min(500px, calc(100vw - 32px));
+}
+
+@media (max-width: 640px) {
+  .about-update-row {
+    flex-direction: column;
+  }
+
+  .about-update-btn {
+    width: 100%;
+  }
+
+  .about-link-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .preferences-content {
+    padding: 16px;
+  }
+
+  .preferences-overview-grid,
+  .orchestration-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  #modal,
+  .modal-box,
+  #modal.modal-wide,
+  #modal.preferences-modal.modal-wide {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .cli-update-provider-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name action'
+      'status action';
+    gap: 4px 8px;
+  }
+
+  .cli-update-provider-name {
+    grid-area: name;
+  }
+
+  .cli-update-provider-status {
+    grid-area: status;
+    text-align: left;
+  }
+
+  .cli-update-provider-action {
+    grid-area: action;
+    align-self: center;
+  }
+}

@@ -1,6 +1,7 @@
 import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
+import { localizeSubtree } from '../../i18n.js';
 import { appState } from '../../state.js';
 import type { CustomSelectInstance } from '../custom-select.js';
 import { extendModalCleanup, prepareModalSurface, runModalCleanup } from '../modal.js';
@@ -361,6 +362,7 @@ function renderPreferencesModalContent(): void {
       onInstallMobileDependency: installMobileDependencyAndRerender,
       applySetupBadge,
     });
+    localizeSubtree(content);
   }
 
   async function updateSetupBadge() {
@@ -375,6 +377,7 @@ function renderPreferencesModalContent(): void {
 
   btnConfirm.textContent = 'Done';
   overlay.classList.remove('hidden');
+  localizeSubtree(bodyEl);
 
   // Clean up previous listeners
   runModalCleanup();

@@ -6,9 +6,12 @@ const proc = require('child_process');
 const electron = require('electron');
 
 const appPath = path.resolve(__dirname, '..');
+const env = { ...process.env };
+delete env.ELECTRON_RUN_AS_NODE;
 const child = proc.spawn(electron, [appPath], {
   stdio: 'inherit',
   windowsHide: false,
+  env,
 });
 
 let childClosed = false;

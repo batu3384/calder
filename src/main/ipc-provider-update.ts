@@ -6,7 +6,7 @@ import type {
   ProviderUpdateProgressEvent,
   ProviderUpdateSummary,
 } from '../shared/types/provider';
-import { updateAllProviders, updateProviderById } from './provider-updater';
+import { updateAllProviders, installProviderById, updateProviderById } from './provider-updater';
 
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
@@ -64,6 +64,13 @@ export function registerProviderUpdateIpcHandlers(): void {
     assertProviderId(providerId);
     return startProviderUpdateRun(event, (signal, onProgress) =>
       updateProviderById(providerId, { signal, onProgress }),
+    );
+  });
+
+  ipcMain.handle('provider:installProvider', async (event, providerId: unknown) => {
+    assertProviderId(providerId);
+    return startProviderUpdateRun(event, (signal, onProgress) =>
+      installProviderById(providerId, { signal, onProgress }),
     );
   });
 

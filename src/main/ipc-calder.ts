@@ -339,7 +339,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('workflow:readFile', async (_event, projectPath: string, workflowPath: string) => {
-    return readProjectWorkflowFile(projectPath, workflowPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read workflow file');
+    return readProjectWorkflowFile(validatedProjectPath, workflowPath);
   });
 
   ipcMain.handle('teamContext:getProjectState', async (_event, projectPath: string) => {
@@ -384,7 +385,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('review:readFile', async (_event, projectPath: string, reviewPath: string) => {
-    return readProjectReviewFile(projectPath, reviewPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read review file');
+    return readProjectReviewFile(validatedProjectPath, reviewPath);
   });
 
   ipcMain.handle(

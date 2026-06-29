@@ -52,6 +52,7 @@ const SURFACE_RATIO_MIN = 0.25;
 const SURFACE_RATIO_MAX = 0.7;
 const SURFACE_RATIO_FALLBACK = 0.38;
 let lastLayoutRenderSignature: string | null = null;
+let resizeFitTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isMosaicMode(project: ProjectRecord | undefined): boolean {
   return !!project && project.layout.mode === 'mosaic';
@@ -91,9 +92,15 @@ export function initSplitLayout(): void {
     if (project && isMosaicMode(project)) updateSwarmPaneStyles(project);
   });
 
-  // Refit on window resize
+  // Refit on window resize (debounced to avoid PTY resize storms)
   window.addEventListener('resize', () => {
-    requestAnimationFrame(fitAllVisible);
+    if (resizeFitTimer !== null) {
+      clearTimeout(resizeFitTimer);
+    }
+    resizeFitTimer = setTimeout(() => {
+      resizeFitTimer = null;
+      requestAnimationFrame(fitAllVisible);
+    }, 64);
   });
 
   bindSwarmReorderInteractions({

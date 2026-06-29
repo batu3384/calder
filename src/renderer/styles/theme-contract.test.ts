@@ -34,7 +34,8 @@ describe('precision cockpit theme contract', () => {
   });
 
   it('loads the command studio premium theme after feature styles', () => {
-    expect(imports.trim().endsWith("@import url('./styles/theme-command-studio.css');")).toBe(true);
+    expect(imports.trim().endsWith("@import url('./styles/responsive-layout.css');")).toBe(true);
+    expect(imports).toContain("@import url('./styles/theme-command-studio.css');");
     expect(baseCss).toContain('--accent-aurora');
     expect(baseCss).not.toContain('--surface-canvas: #090705;');
     expect(auroraCss).toContain('--aurora-panel-gradient');

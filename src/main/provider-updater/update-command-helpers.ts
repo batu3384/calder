@@ -184,10 +184,9 @@ function buildRollbackCommand(
   source?: ProviderUpdateSource,
 ): string | null {
   if (source === 'npm' && updateCommandInput.command === 'npm' && beforeVersion) {
-    // Reconstruct package@version from the args, replacing @latest with @<beforeVersion>.
-    const pkgArg = updateCommandInput.args.find((a) => a.startsWith('@') || !a.startsWith('-'));
+    const pkgArg = [...updateCommandInput.args].reverse().find((arg) => !arg.startsWith('-'));
     if (pkgArg) {
-      const pkg = pkgArg.replace(/@\w+$/, ''); // strip any existing version
+      const pkg = stripNpmPackageVersion(pkgArg);
       const version = beforeVersion.replace(/^[\^~]|latest$/, '');
       if (version && version !== 'latest') {
         return `npm install -g ${pkg}@${version}`;
@@ -195,6 +194,17 @@ function buildRollbackCommand(
     }
   }
   return null;
+}
+
+function stripNpmPackageVersion(packageArg: string): string {
+  if (packageArg.endsWith('@latest')) {
+    return packageArg.slice(0, -'@latest'.length);
+  }
+  const scopedMatch = packageArg.match(/^(@[^/]+\/[^@]+)@.+$/);
+  if (scopedMatch) return scopedMatch[1];
+  const unscopedMatch = packageArg.match(/^([^@]+)@.+$/);
+  if (unscopedMatch) return unscopedMatch[1];
+  return packageArg;
 }
 
 function parseRollbackCommand(cmd: string): [string, string[]] {

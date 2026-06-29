@@ -1,8 +1,10 @@
 import type { ProviderId, ProviderUpdateSummary } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import type {
   CliProviderProgressState,
   CliUpdateCenterState,
 } from '../surface-services/update-center.js';
+import { reloadCliProviderCatalog } from '../surface-services/update-center.js';
 
 interface CliUpdateStatusCounters {
   updated: number;
@@ -18,6 +20,7 @@ interface CreateTabBarCliUpdatePanelOptions {
   updateButtonEl: HTMLButtonElement;
   onCancelUpdate: () => Promise<unknown>;
   onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>;
+  onRunProviderInstall: (providerId: ProviderId) => Promise<unknown>;
   onRunAllUpdates: () => Promise<unknown>;
 }
 
@@ -57,15 +60,15 @@ function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): CliUpdateSt
 }
 
 function formatRelativeTimestamp(timestamp?: string): string {
-  if (!timestamp) return 'No updates yet';
+  if (!timestamp) return t('No updates yet');
   const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return 'No updates yet';
+  if (Number.isNaN(date.getTime())) return t('No updates yet');
   const diffMs = Date.now() - date.getTime();
-  if (diffMs < 60_000) return 'just now';
+  if (diffMs < 60_000) return t('just now');
   const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return t(`${diffMin}m ago`);
   const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffHour < 24) return t(`${diffHour}h ago`);
   return date.toLocaleString([], {
     month: 'short',
     day: 'numeric',
@@ -75,10 +78,17 @@ function formatRelativeTimestamp(timestamp?: string): string {
 }
 
 function getCliProviderStatusLabel(status: CliProviderProgressState['status']): string {
-  if (status === 'up_to_date') return 'up to date';
-  if (status === 'sync_pending') return 'sync pending';
-  if (status === 'cancelled') return 'cancelled';
-  return status.replace(/_/g, ' ');
+  if (status === 'not_installed') return t('not installed');
+  if (status === 'ready') return t('ready');
+  if (status === 'up_to_date') return t('up to date');
+  if (status === 'sync_pending') return t('sync pending');
+  if (status === 'cancelled') return t('cancelled');
+  if (status === 'updated') return t('updated');
+  if (status === 'error') return t('error');
+  if (status === 'running') return t('running');
+  if (status === 'skipped') return t('skipped');
+  if (status === 'queued') return t('queued');
+  return t(status.replace(/_/g, ' '));
 }
 
 type CliUpdateProviderState = CliUpdateCenterState['providers'][number];
@@ -108,8 +118,8 @@ function renderCliUpdateButton(
       cliState.totalProviders > 0
         ? `${cliState.completedProviders}/${cliState.totalProviders}`
         : 'running';
-    updateButtonEl.title = `Updating CLI tools... (${progressLabel})`;
-    updateButtonEl.setAttribute('aria-label', 'Updating CLI tools');
+    updateButtonEl.title = t(`Updating CLI tools... (${progressLabel})`);
+    updateButtonEl.setAttribute('aria-label', t('Updating CLI tools'));
     return;
   }
 
@@ -119,16 +129,16 @@ function renderCliUpdateButton(
   if (cliState.phase === 'error') {
     updateButtonEl.classList.add('is-warning');
     updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-    updateButtonEl.title = 'CLI update failed.';
-    updateButtonEl.setAttribute('aria-label', 'CLI update failed');
+    updateButtonEl.title = t('CLI update failed.');
+    updateButtonEl.setAttribute('aria-label', t('CLI update failed'));
     return;
   }
 
   if (cliState.phase === 'cancelled') {
     updateButtonEl.classList.add('is-cancelled');
     updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.cancelled;
-    updateButtonEl.title = 'CLI update cancelled.';
-    updateButtonEl.setAttribute('aria-label', 'CLI update cancelled');
+    updateButtonEl.title = t('CLI update cancelled.');
+    updateButtonEl.setAttribute('aria-label', t('CLI update cancelled'));
     return;
   }
 
@@ -137,31 +147,31 @@ function renderCliUpdateButton(
     if (counters.error > 0) {
       updateButtonEl.classList.add('is-warning');
       updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-      updateButtonEl.title = 'CLI update completed with errors';
-      updateButtonEl.setAttribute('aria-label', 'CLI update completed with errors');
+      updateButtonEl.title = t('CLI update completed with errors');
+      updateButtonEl.setAttribute('aria-label', t('CLI update completed with errors'));
     } else if (counters.syncPending > 0) {
       updateButtonEl.classList.add('is-warning');
       updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
-      updateButtonEl.title = 'CLI updates waiting for package sync';
-      updateButtonEl.setAttribute('aria-label', 'CLI updates waiting for package sync');
+      updateButtonEl.title = t('CLI updates waiting for package sync');
+      updateButtonEl.setAttribute('aria-label', t('CLI updates waiting for package sync'));
     } else if (counters.updated > 0) {
       updateButtonEl.classList.add('is-success');
       updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.updated;
-      updateButtonEl.title = 'CLI tools updated';
-      updateButtonEl.setAttribute('aria-label', 'CLI tools updated');
+      updateButtonEl.title = t('CLI tools updated');
+      updateButtonEl.setAttribute('aria-label', t('CLI tools updated'));
     } else {
       updateButtonEl.classList.add('is-idle');
       updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.upToDate;
-      updateButtonEl.title = 'CLI tools are already up to date.';
-      updateButtonEl.setAttribute('aria-label', 'CLI tools are already up to date');
+      updateButtonEl.title = t('CLI tools are already up to date.');
+      updateButtonEl.setAttribute('aria-label', t('CLI tools are already up to date'));
     }
     return;
   }
 
   updateButtonEl.classList.add('is-idle');
   updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
-  updateButtonEl.title = 'Update CLI Tools';
-  updateButtonEl.setAttribute('aria-label', 'Update CLI tools');
+  updateButtonEl.title = t('Update CLI Tools');
+  updateButtonEl.setAttribute('aria-label', t('Update CLI tools'));
 }
 
 function renderCliUpdatePanelCancelButton(
@@ -172,7 +182,7 @@ function renderCliUpdatePanelCancelButton(
   const running = cliState.phase === 'running';
   cancelBtnEl.classList.toggle('hidden', !running);
   cancelBtnEl.disabled = !running || cliState.cancelRequested;
-  cancelBtnEl.textContent = cliState.cancelRequested ? 'Cancelling...' : 'Cancel';
+  cancelBtnEl.textContent = cliState.cancelRequested ? t('Cancelling...') : t('Cancel');
 }
 
 function getCliUpdateProgress(cliState: CliUpdateCenterState): {
@@ -202,15 +212,15 @@ function renderCliUpdatePanelTimestamp(
 ): void {
   if (cliState.phase === 'running') {
     timestampEl.textContent = cliState.startedAt
-      ? `Started: ${formatRelativeTimestamp(cliState.startedAt)}`
-      : 'Started: just now';
+      ? t(`Started: ${formatRelativeTimestamp(cliState.startedAt)}`)
+      : t('Started: just now');
     return;
   }
 
   const reference = cliState.finishedAt ?? cliState.startedAt;
   timestampEl.textContent = reference
-    ? `Last run: ${formatRelativeTimestamp(reference)}`
-    : 'Last run: No updates yet';
+    ? t(`Last run: ${formatRelativeTimestamp(reference)}`)
+    : t('Last run: No updates yet');
 }
 
 function renderCliUpdatePanelStatusAndMeta(
@@ -225,16 +235,18 @@ function renderCliUpdatePanelStatusAndMeta(
       (provider) => provider.providerId === cliState.activeProviderId,
     );
     const activeLabel = cliState.cancelRequested
-      ? 'Cancellation requested. Waiting for the active command to stop...'
+      ? t('Cancellation requested. Waiting for the active command to stop...')
       : activeProvider
         ? activeProvider.message
-          ? `${activeProvider.providerName}: ${activeProvider.message}`
-          : `${activeProvider.providerName} in progress.`
-        : 'Waiting for provider progress...';
+          ? t(`${activeProvider.providerName}: ${activeProvider.message}`)
+          : t(`${activeProvider.providerName} in progress.`)
+        : t('Waiting for provider progress...');
     statusEl.textContent =
       total > 0
-        ? `${cliState.cancelRequested ? 'Cancelling CLI update' : 'Updating CLI tools'} (${completed}/${total})`
-        : 'Updating CLI tools...';
+        ? t(
+            `${cliState.cancelRequested ? 'Cancelling CLI update' : 'Updating CLI tools'} (${completed}/${total})`,
+          )
+        : t('Updating CLI tools...');
     metaEl.textContent = activeLabel;
     return;
   }
@@ -242,79 +254,76 @@ function renderCliUpdatePanelStatusAndMeta(
   if (cliState.phase === 'cancelled') {
     const processedLabel =
       total > 0
-        ? `${completed}/${total} providers finished before cancellation.`
-        : `${completed} provider${completed === 1 ? '' : 's'} finished before cancellation.`;
-    statusEl.textContent = 'CLI update cancelled.';
-    metaEl.textContent = `Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`;
+        ? t(`${completed}/${total} providers finished before cancellation.`)
+        : t(`${completed} provider${completed === 1 ? '' : 's'} finished before cancellation.`);
+    statusEl.textContent = t('CLI update cancelled.');
+    metaEl.textContent = t(`Cancelled ${formatRelativeTimestamp(cliState.finishedAt)}. ${processedLabel}`);
     return;
   }
 
   if (cliState.phase === 'completed' && cliState.lastSummary) {
     const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
     if (counters.error > 0) {
-      statusEl.textContent = `Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`;
+      statusEl.textContent = t(`Completed with ${counters.error} issue${counters.error === 1 ? '' : 's'}.`);
     } else if (counters.syncPending > 0) {
-      statusEl.textContent = `${counters.syncPending} provider${counters.syncPending === 1 ? '' : 's'} waiting for package sync.`;
+      statusEl.textContent = t(
+        `${counters.syncPending} provider${counters.syncPending === 1 ? '' : 's'} waiting for package sync.`,
+      );
     } else if (counters.updated > 0) {
-      statusEl.textContent = `${counters.updated} provider${counters.updated === 1 ? '' : 's'} updated.`;
+      statusEl.textContent = t(
+        `${counters.updated} provider${counters.updated === 1 ? '' : 's'} updated.`,
+      );
     } else {
-      statusEl.textContent = 'All providers are already up to date.';
+      statusEl.textContent = t('All providers are already up to date.');
     }
-    const summaryParts = [
-      `Updated ${counters.updated}`,
-      `Up to date ${counters.upToDate}`,
-      `Sync pending ${counters.syncPending}`,
-      `Skipped ${counters.skipped}`,
-      `Cancelled ${counters.cancelled}`,
-    ];
-    if (counters.error > 0) summaryParts.push(`Errors ${counters.error}`);
-    metaEl.textContent = `Finished ${formatRelativeTimestamp(cliState.finishedAt)}. ${summaryParts.join(' · ')}`;
+    metaEl.textContent = t(`Finished ${formatRelativeTimestamp(cliState.finishedAt)}.`);
     return;
   }
 
   if (cliState.phase === 'error') {
-    statusEl.textContent = 'CLI update failed.';
-    metaEl.textContent = cliState.errorMessage ?? 'An unknown error occurred.';
+    statusEl.textContent = t('CLI update failed.');
+    metaEl.textContent = t(cliState.errorMessage ?? 'An unknown error occurred.');
     return;
   }
 
-  statusEl.textContent = 'No update run yet.';
-  metaEl.textContent = 'Press the update button to start a provider refresh.';
+  statusEl.textContent = t('No update run yet.');
+  metaEl.textContent = t('Install or update individual CLIs below.');
 }
 
 function getCliUpdateProviderDetail(provider: CliUpdateProviderState): string {
   const versionParts = [provider.beforeVersion, provider.afterVersion].filter(Boolean);
   if (provider.status === 'running' && provider.message) {
     return typeof provider.progressPercent === 'number'
-      ? `${provider.message} (${Math.round(provider.progressPercent)}%)`
-      : provider.message;
+      ? t(`${provider.message} (${Math.round(provider.progressPercent)}%)`)
+      : t(provider.message);
   }
   if (provider.status === 'sync_pending' && provider.message) {
-    return provider.message;
+    return t(provider.message);
   }
   if (versionParts.length === 2) {
     return `${versionParts[0]} → ${versionParts[1]}`;
   }
   if (provider.latestVersion) {
-    return `Latest: ${provider.latestVersion}`;
+    return t(`Latest: ${provider.latestVersion}`);
   }
   if (provider.message) {
-    return provider.message;
+    return t(provider.message);
   }
-  return provider.status === 'running' ? 'Running...' : 'Waiting...';
+  return provider.status === 'running' ? t('Running...') : t('Waiting...');
 }
 
 function renderCliUpdatePanelList(
   listEl: HTMLElement,
   cliState: CliUpdateCenterState,
   onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>,
+  onRunProviderInstall: (providerId: ProviderId) => Promise<unknown>,
 ): void {
   listEl.innerHTML = '';
   const providers = cliState.providers;
   if (providers.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'cli-update-panel-empty';
-    empty.textContent = 'Provider status will appear here as checks complete.';
+    empty.textContent = t('Provider status will appear here as checks complete.');
     listEl.appendChild(empty);
     return;
   }
@@ -342,16 +351,23 @@ function renderCliUpdatePanelList(
     action.type = 'button';
     action.className = 'cli-update-provider-action';
     action.setAttribute('data-provider-id', provider.providerId);
+    const needsInstall = provider.status === 'not_installed';
+    const actionHandler = needsInstall ? onRunProviderInstall : onRunProviderUpdate;
     action.disabled = cliState.phase === 'running';
     action.textContent =
       provider.status === 'running' && typeof provider.progressPercent === 'number'
         ? `${Math.round(provider.progressPercent)}%`
-        : 'Update';
-    action.setAttribute('aria-label', `Update ${provider.providerName}`);
+        : needsInstall
+          ? t('Install')
+          : t('Update');
+    action.setAttribute(
+      'aria-label',
+      needsInstall ? t(`Install ${provider.providerName}`) : t(`Update ${provider.providerName}`),
+    );
     action.addEventListener('click', () => {
       if (action.disabled) return;
-      void onRunProviderUpdate(provider.providerId).catch((error) => {
-        console.error('[tab-bar] Failed to update selected CLI provider', error);
+      void actionHandler(provider.providerId).catch((error) => {
+        console.error('[tab-bar] Failed to run CLI provider action', error);
       });
     });
 
@@ -373,6 +389,7 @@ function renderCliUpdatePanelContent(
   context: CliUpdatePanelRenderContext,
   cliState: CliUpdateCenterState,
   onRunProviderUpdate: (providerId: ProviderId) => Promise<unknown>,
+  onRunProviderInstall: (providerId: ProviderId) => Promise<unknown>,
 ): void {
   const {
     statusEl,
@@ -388,22 +405,22 @@ function renderCliUpdatePanelContent(
   renderCliUpdatePanelCancelButton(cancelBtnEl, cliState);
   if (updateAllBtnEl) {
     updateAllBtnEl.disabled = cliState.phase === 'running';
-    updateAllBtnEl.textContent = cliState.phase === 'running' ? 'Updating...' : 'Update all';
+    updateAllBtnEl.textContent = cliState.phase === 'running' ? t('Updating...') : t('Update all');
   }
   const { total, completed, progressPercent, progressLabel } = getCliUpdateProgress(cliState);
-  progressLabelEl.textContent = `Progress: ${progressLabel} (${progressPercent}%)`;
+  progressLabelEl.textContent = t(`Progress: ${progressLabel} (${progressPercent}%)`);
   renderCliUpdatePanelTimestamp(timestampEl, cliState);
   renderCliUpdatePanelStatusAndMeta(statusEl, metaEl, cliState, total, completed);
 
   progressFillEl.style.width = `${Math.max(progressPercent, cliState.phase === 'running' ? 8 : 0)}%`;
   progressFillEl.classList.toggle('is-running', cliState.phase === 'running');
-  renderCliUpdatePanelList(listEl, cliState, onRunProviderUpdate);
+  renderCliUpdatePanelList(listEl, cliState, onRunProviderUpdate, onRunProviderInstall);
 }
 
 export function createTabBarCliUpdatePanel(
   options: CreateTabBarCliUpdatePanelOptions,
 ): TabBarCliUpdatePanelController {
-  const { tabActionsEl, updateButtonEl, onCancelUpdate, onRunProviderUpdate, onRunAllUpdates } =
+  const { tabActionsEl, updateButtonEl, onCancelUpdate, onRunProviderUpdate, onRunProviderInstall, onRunAllUpdates } =
     options;
   let cliUpdatePanelEl: HTMLElement | null = null;
   let cliUpdatePanelVisible = false;
@@ -423,23 +440,23 @@ export function createTabBarCliUpdatePanel(
     panel.className = 'cli-update-panel hidden';
     panel.innerHTML = `
     <div class="cli-update-panel-header">
-      <div class="cli-update-panel-title">CLI Update Center</div>
+      <div class="cli-update-panel-title">${t('CLI Update Center')}</div>
       <div class="cli-update-panel-header-actions">
-        <button type="button" class="cli-update-panel-update-all" aria-label="Update all CLI tools">Update all</button>
-        <button type="button" class="cli-update-panel-cancel hidden" aria-label="Cancel CLI update">Cancel</button>
-        <button type="button" class="cli-update-panel-close" aria-label="Close update panel">&times;</button>
+        <button type="button" class="cli-update-panel-update-all" aria-label="${t('Update all CLI tools')}">${t('Update all')}</button>
+        <button type="button" class="cli-update-panel-cancel hidden" aria-label="${t('Cancel CLI update')}">${t('Cancel')}</button>
+        <button type="button" class="cli-update-panel-close" aria-label="${t('Close update panel')}">&times;</button>
       </div>
     </div>
-    <div class="cli-update-panel-actions">Choose one CLI below, or run Update all for the full toolkit.</div>
-    <div class="cli-update-panel-status">No update run yet.</div>
+    <div class="cli-update-panel-actions">${t('Install missing tools or update installed CLIs.')}</div>
+    <div class="cli-update-panel-status">${t('No update run yet.')}</div>
     <div class="cli-update-panel-progress-track">
       <div class="cli-update-panel-progress-fill" style="width: 0%"></div>
     </div>
     <div class="cli-update-panel-stats">
-      <span class="cli-update-panel-progress-label">Progress: 0/0 (0%)</span>
-      <span class="cli-update-panel-timestamp">Last run: No updates yet</span>
+      <span class="cli-update-panel-progress-label">${t('Progress: 0/0 (0%)')}</span>
+      <span class="cli-update-panel-timestamp">${t('Last run: No updates yet')}</span>
     </div>
-    <div class="cli-update-panel-meta">Press the update button to start a provider refresh.</div>
+    <div class="cli-update-panel-meta">${t('Install or update individual CLIs below.')}</div>
     <div class="cli-update-panel-list"></div>
   `;
     panel.addEventListener('click', (event) => event.stopPropagation());
@@ -487,6 +504,11 @@ export function createTabBarCliUpdatePanel(
     cliUpdatePanelVisible = visible;
     cliUpdatePanelEl.classList.toggle('hidden', !visible);
     updateButtonEl.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    if (visible) {
+      void reloadCliProviderCatalog().catch((error) => {
+        console.warn('[tab-bar] Failed to refresh CLI provider catalog', error);
+      });
+    }
   }
 
   function renderButton(cliState: CliUpdateCenterState): void {
@@ -518,6 +540,7 @@ export function createTabBarCliUpdatePanel(
       },
       cliState,
       onRunProviderUpdate,
+      onRunProviderInstall,
     );
   }
 

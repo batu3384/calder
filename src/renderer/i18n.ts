@@ -202,6 +202,19 @@ function applyLanguage(language: UiLanguage): void {
   stopObserver();
 }
 
+export function t(value: string): string {
+  return translate(value);
+}
+
+export function localizeSubtree(root: ParentNode): void {
+  if (activeLanguage !== 'tr') return;
+  withSuppressedObserver(() => {
+    for (const child of root.childNodes) {
+      localizeNode(child);
+    }
+  });
+}
+
 export function initLocalization(): void {
   applyLanguage(normalizeLanguage(appState.preferences.language));
   appState.on('preferences-changed', () => {

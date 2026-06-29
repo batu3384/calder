@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import {
   checkForAppUpdates,
   getUpdateCenterState,
@@ -21,7 +22,6 @@ interface AboutUpdateRendererArgs {
   updateBtn: HTMLButtonElement;
   updateStatus: HTMLElement;
   updateMeta: HTMLElement;
-  updateActivity: HTMLElement;
   updateProgress: HTMLElement;
   updateProgressFill: HTMLElement;
 }
@@ -32,72 +32,65 @@ function renderAboutUpdateState({
   updateBtn,
   updateStatus,
   updateMeta,
-  updateActivity,
   updateProgress,
   updateProgressFill,
 }: AboutUpdateRendererArgs): void {
   if (appUpdateState.phase === 'checking') {
     updateBtn.disabled = true;
-    updateBtn.textContent = 'Checking...';
-    updateStatus.textContent = 'Checking for updates...';
-    updateMeta.textContent = 'Contacting update server.';
-    updateActivity.textContent = 'Status: request sent to release channel.';
+    updateBtn.textContent = t('Checking...');
+    updateStatus.textContent = t('Checking for updates...');
+    updateMeta.textContent = t('Contacting update server.');
     updateProgress.classList.add('hidden');
     return;
   }
   if (appUpdateState.phase === 'downloading') {
     updateBtn.disabled = true;
-    updateBtn.textContent = 'Downloading...';
+    updateBtn.textContent = t('Downloading...');
     const versionLabel = appUpdateState.targetVersion
       ? `v${appUpdateState.targetVersion}`
-      : 'new version';
+      : t('new version');
     const percent =
       typeof appUpdateState.downloadPercent === 'number' ? appUpdateState.downloadPercent : 0;
-    updateStatus.textContent = `Downloading ${versionLabel}...`;
-    updateMeta.textContent = `${percent}% completed`;
-    updateActivity.textContent = 'Status: package download is in progress.';
+    updateStatus.textContent = t(`Downloading ${versionLabel}...`);
+    updateMeta.textContent = t(`${percent}% completed`);
     updateProgress.classList.remove('hidden');
     updateProgressFill.style.width = `${Math.max(0, Math.min(100, percent))}%`;
     return;
   }
   if (appUpdateState.phase === 'ready_to_restart') {
     updateBtn.disabled = false;
-    updateBtn.textContent = 'Restart to Apply';
+    updateBtn.textContent = t('Restart to Apply');
     const versionLabel = appUpdateState.targetVersion
       ? `v${appUpdateState.targetVersion}`
-      : 'new update';
-    updateStatus.textContent = `${versionLabel} is ready. Restart to apply.`;
-    updateMeta.textContent = 'The update is downloaded.';
-    updateActivity.textContent = 'Status: restart is required to finish update.';
+      : t('new update');
+    updateStatus.textContent = t(`${versionLabel} is ready. Restart to apply.`);
+    updateMeta.textContent = t('The update is downloaded.');
     updateProgress.classList.remove('hidden');
     updateProgressFill.style.width = '100%';
     return;
   }
   if (appUpdateState.phase === 'up_to_date') {
     updateBtn.disabled = false;
-    updateBtn.textContent = 'Check for Updates';
-    updateStatus.textContent = 'You’re up to date.';
+    updateBtn.textContent = t('Check for Updates');
+    updateStatus.textContent = t("You're up to date.");
     updateMeta.textContent = appUpdateState.lastCheckedAt
-      ? `Checked ${formatRelativeTimestamp(appUpdateState.lastCheckedAt)}`
-      : 'No recent check.';
-    updateActivity.textContent = 'Status: no newer build found.';
+      ? t(`Checked ${formatRelativeTimestamp(appUpdateState.lastCheckedAt)}`)
+      : t('No recent check.');
     updateProgress.classList.add('hidden');
     return;
   }
   if (appUpdateState.phase === 'error') {
     updateBtn.disabled = false;
-    updateBtn.textContent = 'Retry Check';
-    updateStatus.textContent = 'Update check failed.';
-    updateMeta.textContent = appUpdateState.errorMessage ?? 'Try again in a moment.';
-    updateActivity.textContent = 'Status: check failed, retry is available.';
+    updateBtn.textContent = t('Retry Check');
+    updateStatus.textContent = t('Update check failed.');
+    updateMeta.textContent = t(appUpdateState.errorMessage ?? 'Try again in a moment.');
     updateProgress.classList.add('hidden');
     return;
   }
   updateBtn.disabled = false;
-  updateBtn.textContent = 'Check for Updates';
-  updateStatus.textContent = 'No check yet.';
-  updateMeta.textContent = 'Use this to check for a newer Calder build.';
-  updateActivity.textContent = 'Status: update check has not run in this session.';
+  updateBtn.textContent = t('Check for Updates');
+  updateStatus.textContent = t('No check yet.');
+  updateMeta.textContent = t('Use this to check for a newer Calder build.');
   updateProgress.classList.add('hidden');
 }
 
@@ -111,12 +104,13 @@ function createAboutHero(): AboutHeroElements {
 
   const versionLine = document.createElement('div');
   versionLine.className = 'about-version';
-  versionLine.textContent = 'Version: loading...';
+  versionLine.textContent = t('Version: loading...');
 
   const aboutLead = document.createElement('div');
   aboutLead.className = 'about-lead';
-  aboutLead.textContent =
-    'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.';
+  aboutLead.textContent = t(
+    'A focused desktop workspace for browser context, CLI surfaces, and AI session flow.',
+  );
 
   aboutHero.appendChild(appName);
   aboutHero.appendChild(versionLine);
@@ -132,7 +126,7 @@ function createAboutUpdateRow(
 
   const updateBtn = document.createElement('button');
   updateBtn.className = 'about-update-btn';
-  updateBtn.textContent = 'Check for Updates';
+  updateBtn.textContent = t('Check for Updates');
 
   const updateInfo = document.createElement('div');
   updateInfo.className = 'about-update-info';
@@ -142,9 +136,6 @@ function createAboutUpdateRow(
 
   const updateMeta = document.createElement('div');
   updateMeta.className = 'about-update-meta';
-
-  const updateActivity = document.createElement('div');
-  updateActivity.className = 'about-update-activity';
 
   const updateProgress = document.createElement('div');
   updateProgress.className = 'about-update-progress hidden';
@@ -164,7 +155,6 @@ function createAboutUpdateRow(
 
   updateInfo.appendChild(updateStatus);
   updateInfo.appendChild(updateMeta);
-  updateInfo.appendChild(updateActivity);
   updateInfo.appendChild(updateProgress);
   updateRow.appendChild(updateBtn);
   updateRow.appendChild(updateInfo);
@@ -176,7 +166,6 @@ function createAboutUpdateRow(
       updateBtn,
       updateStatus,
       updateMeta,
-      updateActivity,
       updateProgress,
       updateProgressFill,
     });
@@ -205,10 +194,10 @@ function createAboutLinks(): HTMLElement {
   const linksDiv = document.createElement('div');
   linksDiv.className = 'about-links about-link-grid';
   linksDiv.appendChild(
-    createExternalAboutLink('GitHub', 'https://github.com/batuhanyuksel/calder'),
+    createExternalAboutLink(t('GitHub'), 'https://github.com/batuhanyuksel/calder'),
   );
   linksDiv.appendChild(
-    createExternalAboutLink('Report a Bug', 'https://github.com/batuhanyuksel/calder/issues'),
+    createExternalAboutLink(t('Report a Bug'), 'https://github.com/batuhanyuksel/calder/issues'),
   );
   return linksDiv;
 }
@@ -217,9 +206,9 @@ function createAboutCommunity(): HTMLElement {
   const communityDiv = document.createElement('div');
   communityDiv.className = 'about-community';
   communityDiv.append(
-    'Calder is open source. ',
-    createExternalAboutLink('Contribute on GitHub', 'https://github.com/batuhanyuksel/calder'),
-    ' — and if you find it useful, give it a star!',
+    t('Calder is open source. '),
+    createExternalAboutLink(t('Contribute on GitHub'), 'https://github.com/batuhanyuksel/calder'),
+    t(' — and if you find it useful, give it a star!'),
   );
   return communityDiv;
 }
@@ -230,7 +219,7 @@ function createDebugModeRow(preferenceDraft: AboutDraft): HTMLElement {
 
   const debugLabel = document.createElement('label');
   debugLabel.htmlFor = 'pref-debug-mode';
-  debugLabel.textContent = 'Debug Mode';
+  debugLabel.textContent = t('Debug Mode');
 
   const debugModeCheckbox = document.createElement('input');
   debugModeCheckbox.type = 'checkbox';
@@ -254,26 +243,26 @@ export function renderAboutPreferencesSection({
 }: RenderAboutSectionArgs): () => void {
   appendSectionIntro(
     content,
-    'Project',
-    'Calder',
-    'Version details, update checks, and source links for the current build.',
+    t('Project'),
+    t('Calder'),
+    t('Version details, update checks, and source links for the current build.'),
   );
 
   appendOverviewGrid(content, [
     {
-      label: 'Channel',
-      value: 'Desktop app',
-      note: 'This workspace is tuned for side-by-side surface and session work.',
+      label: t('Channel'),
+      value: t('Desktop app'),
+      note: t('This workspace is tuned for side-by-side surface and session work.'),
     },
     {
-      label: 'Source',
-      value: 'Open source',
-      note: 'The repo and issue tracker stay one click away.',
+      label: t('Source'),
+      value: t('Open source'),
+      note: t('The repo and issue tracker stay one click away.'),
     },
     {
-      label: 'Updates',
-      value: 'Manual check',
-      note: 'Run a direct check whenever you want to confirm a newer build.',
+      label: t('Updates'),
+      value: t('Manual check'),
+      note: t('Run a direct check whenever you want to confirm a newer build.'),
     },
   ]);
 
@@ -294,7 +283,7 @@ export function renderAboutPreferencesSection({
   content.appendChild(aboutDiv);
 
   void window.calder.app.getVersion().then((ver) => {
-    versionLine.textContent = `Version: ${ver}`;
+    versionLine.textContent = t(`Version: ${ver}`);
   });
 
   return updateCleanup;

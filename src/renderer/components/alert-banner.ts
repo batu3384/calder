@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 
 export interface AlertBannerConfig {
@@ -89,7 +90,7 @@ export function showAlertBanner(config: AlertBannerConfig): void {
     const onDismiss = config.onDismiss;
     const dismissBtn = document.createElement('button');
     dismissBtn.className = 'insight-alert-dismiss';
-    dismissBtn.textContent = 'Don\u2019t show again';
+    dismissBtn.textContent = t("Don't show again");
     dismissBtn.addEventListener('click', () => {
       onDismiss();
       removeAlertBanner();

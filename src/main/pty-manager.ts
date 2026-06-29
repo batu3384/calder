@@ -71,6 +71,37 @@ export function spawnPty(
   }
 
   const provider = getProvider(providerId);
+  if (providerId === 'copilot') {
+    const rawEnv = buildProviderBaseEnv('copilot', { ...process.env } as Record<string, string>);
+    const env = { ...rawEnv };
+    for (const key of [
+      'ANTHROPIC_BASE_URL',
+      'OPENAI_BASE_URL',
+      'COPILOT_PROVIDER_BASE_URL',
+      'COPILOT_PROVIDER_TYPE',
+      'COPILOT_MODEL',
+      'COPILOT_PROVIDER_MODEL_ID',
+    ]) {
+      delete env[key];
+    }
+    const byokActive = Boolean(env.COPILOT_PROVIDER_BASE_URL?.trim());
+    const hasModel = Boolean(
+      env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim(),
+    );
+    if (byokActive && !hasModel) {
+      const message =
+        '\r\nGitHub Copilot BYOK is configured but no model is set.\r\n\r\n' +
+        'Add a model to your shell profile, for example:\r\n' +
+        '  export COPILOT_MODEL=claude-sonnet-4\r\n\r\n' +
+        'Then restart Calder.\r\n';
+      queueMicrotask(() => {
+        onData(message);
+        onExit(1);
+      });
+      return;
+    }
+  }
+
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
   const env = buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv));
   const shell = provider.resolveBinaryPath();

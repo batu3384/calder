@@ -9,6 +9,23 @@ interface ProviderIpcOps {
   requireKnownProjectPath?: (projectPath: string, contextLabel: string) => string;
 }
 
+type ConfigWatchBinding = {
+  providerId: ProviderId;
+  projectPath: string;
+  win: BrowserWindow;
+  onWindowClosed: () => void;
+};
+
+const configWatchBindings = new Map<number, ConfigWatchBinding>();
+
+function removeWindowClosedListener(win: BrowserWindow, listener: () => void): void {
+  if (typeof win.off === 'function') {
+    win.off('closed', listener);
+    return;
+  }
+  win.removeListener('closed', listener);
+}
+
 export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
   const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
 
@@ -28,8 +45,8 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
     return provider.getConfig(validatedProjectPath);
   });
 
-  ipcMain.on('config:watchProject', (_event, providerId: ProviderId, projectPath: string) => {
-    const win = BrowserWindow.getAllWindows()[0];
+  ipcMain.on('config:watchProject', (event, providerId: ProviderId, projectPath: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender) ?? BrowserWindow.getAllWindows()[0];
     if (!win) return;
     let validatedProjectPath: string;
     try {
@@ -42,15 +59,35 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
       });
       return;
     }
+
+    const windowId = win.id;
+    const watchKey = `${providerId}::${validatedProjectPath}`;
+    const existing = configWatchBindings.get(windowId);
+    if (existing && `${existing.providerId}::${existing.projectPath}` === watchKey) {
+      return;
+    }
+    if (existing) {
+      removeWindowClosedListener(existing.win, existing.onWindowClosed);
+      getProvider(existing.providerId).stopConfigWatcher?.();
+      configWatchBindings.delete(windowId);
+    }
+
     const provider = getProvider(providerId);
     provider.startConfigWatcher?.(win, validatedProjectPath);
 
-    // Ensure old watchers are cleaned up when the window closes
-    // to prevent fs.watch/fs.watchFile resource leaks.
-    const cleanup = (): void => {
+    const onWindowClosed = () => {
+      const current = configWatchBindings.get(windowId);
+      if (!current || current.onWindowClosed !== onWindowClosed) return;
       provider.stopConfigWatcher?.();
+      configWatchBindings.delete(windowId);
     };
-    win.once('closed', cleanup);
+    configWatchBindings.set(windowId, {
+      providerId,
+      projectPath: validatedProjectPath,
+      win,
+      onWindowClosed,
+    });
+    win.once('closed', onWindowClosed);
   });
 
   ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {
@@ -93,6 +130,11 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
 
   ipcMain.handle('provider:checkBinary', (_event, providerId: ProviderId = 'claude') => {
     const provider = getProvider(providerId);
-    return provider.validatePrerequisites();
+    return provider.checkBinaryInstalled();
   });
+}
+
+/** @internal Test-only: reset config watch bindings */
+export function _resetConfigWatchBindingsForTests(): void {
+  configWatchBindings.clear();
 }

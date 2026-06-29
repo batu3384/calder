@@ -56,7 +56,11 @@ function redirectGuestWindowToCurrentView(
 ): void {
   guestContents.setWindowOpenHandler(({ url }) => {
     if (isHttpUrl(url)) {
-      void guestContents.loadURL?.(url);
+      if (isAllowedGuestWebviewUrl(url)) {
+        void guestContents.loadURL?.(url);
+      } else {
+        routeExternal(url);
+      }
     } else if (isAllowedExternalUrl(url)) {
       routeExternal(url);
     }

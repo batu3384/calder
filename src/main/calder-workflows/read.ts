@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ProjectWorkflowDocument } from '../../shared/types/project-workflow.js';
+import { readUtf8FileWithSizeLimit } from '../fs-read-limits.js';
 
 function normalizeWorkflowRelativePath(projectPath: string, workflowPath: string): string {
   const resolvedProjectPath = path.resolve(projectPath);
@@ -40,7 +40,7 @@ export async function readProjectWorkflowFile(
 ): Promise<ProjectWorkflowDocument> {
   const relativePath = normalizeWorkflowRelativePath(projectPath, workflowPath);
   const fullPath = path.join(projectPath, relativePath);
-  const contents = await readFile(fullPath, 'utf8');
+  const contents = await readUtf8FileWithSizeLimit(fullPath);
 
   return {
     path: fullPath,

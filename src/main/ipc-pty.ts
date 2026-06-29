@@ -18,11 +18,28 @@ import {
   validatePtyResizePayload,
   validatePtyWritePayload,
 } from './validation/ipc-validation';
+import { sanitizeSessionId } from './security/sanitize';
 
-/** Simple in-memory rate limiter for pty:create per sessionId */
+/** Simple in-memory rate limiter for pty:create / pty:createShell per sessionId */
 const ptyCreateRateLimit = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 1_000;
 const RATE_LIMIT_MAX_CREATES = 10;
+
+function assertPtyCreateRateLimit(sessionId: string): void {
+  const now = Date.now();
+  const entry = ptyCreateRateLimit.get(sessionId);
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= RATE_LIMIT_MAX_CREATES) {
+      throw new Error('PTY create rate limit exceeded');
+    }
+    entry.count++;
+    return;
+  }
+  ptyCreateRateLimit.set(sessionId, {
+    count: 1,
+    resetAt: now + RATE_LIMIT_WINDOW_MS,
+  });
+}
 
 export interface PtyIpcOps {
   assertProjectGovernanceAllows: (
@@ -77,19 +94,7 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
         initialPrompt,
       );
 
-      const now = Date.now();
-      const entry = ptyCreateRateLimit.get(payload.sessionId);
-      if (entry && now < entry.resetAt) {
-        if (entry.count >= RATE_LIMIT_MAX_CREATES) {
-          throw new Error('PTY create rate limit exceeded');
-        }
-        entry.count++;
-      } else {
-        ptyCreateRateLimit.set(payload.sessionId, {
-          count: 1,
-          resetAt: now + RATE_LIMIT_WINDOW_MS,
-        });
-      }
+      assertPtyCreateRateLimit(payload.sessionId);
 
       const resolvedCwd = path.resolve(payload.cwd);
       if (!ops.isWithinKnownProject(resolvedCwd)) {
@@ -144,6 +149,17 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
     if (!win) {
       throw new Error('PTY shell requires an application window');
     }
+
+    const sessionIdResult = sanitizeSessionId(sessionId);
+    if (!sessionIdResult.ok) {
+      throw new Error(`Invalid session ID: ${sessionIdResult.error}`);
+    }
+    const shellSessionId = sessionIdResult.value;
+    if (!shellSessionId) {
+      throw new Error('Invalid session ID: value missing after validation');
+    }
+    assertPtyCreateRateLimit(shellSessionId);
+
     const resolvedCwd = path.resolve(cwd);
     if (!ops.isWithinKnownProject(resolvedCwd)) {
       throw new Error('PTY shell requires a known project path');
@@ -155,18 +171,18 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
     });
 
     spawnShellPty(
-      sessionId,
+      shellSessionId,
       resolvedCwd,
       (data) => {
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:data', sessionId, data);
+          w.webContents.send('pty:data', shellSessionId, data);
         }
       },
       (exitCode, signal) => {
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:exit', sessionId, exitCode, signal);
+          w.webContents.send('pty:exit', shellSessionId, exitCode, signal);
         }
       },
     );

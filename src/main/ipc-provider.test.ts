@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockIpcOn = vi.hoisted(() => vi.fn());
 const mockGetAllWindows = vi.hoisted(() => vi.fn());
+const mockFromWebContents = vi.hoisted(() => vi.fn(() => null));
 const mockGetProvider = vi.hoisted(() => vi.fn());
 const mockGetProviderMeta = vi.hoisted(() => vi.fn());
 const mockGetAllProviderMetas = vi.hoisted(() => vi.fn());
@@ -15,6 +16,7 @@ vi.mock('electron', () => ({
   },
   BrowserWindow: {
     getAllWindows: mockGetAllWindows,
+    fromWebContents: mockFromWebContents,
   },
 }));
 
@@ -102,8 +104,13 @@ describe('ipc provider handlers', () => {
     const watchHandler = getOnHandler('config:watchProject');
     watchHandler({}, 'codex', '/repo');
     expect(startConfigWatcher).toHaveBeenCalledWith(win, '/repo');
+    expect(win.once).toHaveBeenCalledTimes(1);
     expect(win.once).toHaveBeenCalledWith('closed', expect.any(Function));
     expect(ops.requireKnownProjectPath).toHaveBeenCalledWith('/repo', 'Watch provider config');
+
+    watchHandler({}, 'codex', '/repo');
+    expect(startConfigWatcher).toHaveBeenCalledTimes(1);
+    expect(win.once).toHaveBeenCalledTimes(1);
 
     startConfigWatcher.mockClear();
     ops.requireKnownProjectPath.mockClear();
@@ -204,7 +211,7 @@ describe('ipc provider handlers', () => {
   it('returns provider meta/list and defaults binary checks to claude', async () => {
     const ops = createOps();
     const provider = {
-      validatePrerequisites: vi.fn(() => ({ ok: true })),
+      checkBinaryInstalled: vi.fn(() => ({ ok: true, message: '' })),
       getConfig: vi.fn(),
       meta: { displayName: 'Claude' },
     };
@@ -225,10 +232,10 @@ describe('ipc provider handlers', () => {
     expect(mockGetProviderMeta).toHaveBeenCalledWith('claude');
     expect(mockGetAllProviderMetas).toHaveBeenCalled();
     expect(mockGetProvider).toHaveBeenCalledWith('claude');
-    expect(provider.validatePrerequisites).toHaveBeenCalled();
+    expect(provider.checkBinaryInstalled).toHaveBeenCalled();
     expect(meta).toEqual({ id: 'claude', displayName: 'Claude' });
     expect(list).toEqual([{ id: 'claude', displayName: 'Claude' }]);
-    expect(check).toEqual({ ok: true });
+    expect(check).toEqual({ ok: true, message: '' });
   });
 
   it('rejects project-path channels when project path is unknown', async () => {

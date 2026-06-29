@@ -20,6 +20,12 @@ export const runCliProviderUpdates: UpdateCenterModule['runCliProviderUpdates'] 
 export const runCliProviderUpdate: UpdateCenterModule['runCliProviderUpdate'] = (...args) =>
   updateCenter.runCliProviderUpdate(...args);
 
+export const runCliProviderInstall: UpdateCenterModule['runCliProviderInstall'] = (...args) =>
+  updateCenter.runCliProviderInstall(...args);
+
+export const reloadCliProviderCatalog: UpdateCenterModule['reloadCliProviderCatalog'] = (...args) =>
+  updateCenter.reloadCliProviderCatalog(...args);
+
 export const initUpdateCenter: UpdateCenterModule['initUpdateCenter'] = (...args) =>
   updateCenter.initUpdateCenter(...args);
 

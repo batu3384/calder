@@ -29,7 +29,12 @@ export interface AppUpdateCenterState {
   errorMessage?: string;
 }
 
-export type CliProviderStatus = 'queued' | 'running' | ProviderUpdateResult['status'];
+export type CliProviderStatus =
+  | 'not_installed'
+  | 'ready'
+  | 'queued'
+  | 'running'
+  | ProviderUpdateResult['status'];
 
 export interface CliProviderProgressState {
   providerId: ProviderId;
@@ -184,19 +189,55 @@ function deriveProvidersFromMetas(metas: CliProviderMeta[]): CliProviderProgress
     providerId: meta.id,
     providerName: meta.displayName,
     status: 'queued',
-    message: 'Ready to update individually.',
+    message: 'Ready to update.',
   }));
 }
 
-async function refreshCliProviderCatalog(currentBridge: UpdateCenterBridge): Promise<void> {
+async function deriveProvidersFromCatalog(
+  metas: CliProviderMeta[],
+  currentBridge: UpdateCenterBridge,
+): Promise<CliProviderProgressState[]> {
+  const checkBinary = currentBridge.provider.checkBinary;
+  if (typeof checkBinary !== 'function') {
+    return deriveProvidersFromMetas(metas);
+  }
+
+  const entries = await Promise.all(
+    metas.map(async (meta) => {
+      try {
+        const check = await checkBinary.call(currentBridge.provider, meta.id);
+        return {
+          providerId: meta.id,
+          providerName: meta.displayName,
+          status: check.ok ? ('ready' as const) : ('not_installed' as const),
+          message: check.ok ? 'Ready to update.' : check.message,
+        };
+      } catch {
+        return {
+          providerId: meta.id,
+          providerName: meta.displayName,
+          status: 'not_installed' as const,
+          message: 'Could not verify installation.',
+        };
+      }
+    }),
+  );
+  return entries;
+}
+
+async function refreshCliProviderCatalog(
+  currentBridge: UpdateCenterBridge,
+  force = false,
+): Promise<void> {
   if (state.cli.phase === 'running') return;
-  if (state.cli.providers.length > 0) return;
+  if (!force && state.cli.providers.length > 0) return;
   const listProviders = currentBridge.provider.listProviders;
   if (typeof listProviders !== 'function') return;
   try {
     const metas = await listProviders.call(currentBridge.provider);
-    if (state.cli.phase === 'running' || state.cli.providers.length > 0) return;
-    setCliState({ providers: deriveProvidersFromMetas(metas) });
+    if (state.cli.phase === 'running') return;
+    const providers = await deriveProvidersFromCatalog(metas, currentBridge);
+    setCliState({ providers });
   } catch (error) {
     console.warn('[update-center] Failed to load provider catalog', error);
   }
@@ -370,6 +411,10 @@ export function getUpdateCenterState(): UpdateCenterState {
   return cloneState(state);
 }
 
+export async function reloadCliProviderCatalog(): Promise<void> {
+  return refreshCliProviderCatalog(requireBridge(), true);
+}
+
 export function onUpdateCenterChange(listener: UpdateCenterListener): () => void {
   listeners.push(listener);
   listener(getUpdateCenterState());
@@ -492,6 +537,15 @@ export function runCliProviderUpdate(providerId: ProviderId): Promise<ProviderUp
     () => currentBridge.provider.updateProvider(providerId),
     providerId,
   );
+}
+
+export function runCliProviderInstall(providerId: ProviderId): Promise<ProviderUpdateSummary> {
+  const currentBridge = requireBridge();
+  const installProvider = currentBridge.provider.installProvider;
+  if (typeof installProvider !== 'function') {
+    return Promise.reject(new Error('Provider install is not available.'));
+  }
+  return runCliProviderUpdateRequest(() => installProvider.call(currentBridge.provider, providerId), providerId);
 }
 
 export async function cancelCliProviderUpdates(): Promise<ProviderUpdateCancelResult> {

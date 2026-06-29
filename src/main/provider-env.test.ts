@@ -83,13 +83,23 @@ describe('buildProviderBaseEnv', () => {
     expect(mockExecFileSync).toHaveBeenCalledTimes(1);
   });
 
-  it('does not spawn a login shell for providers with no env hydration keys', () => {
-    mockExecFileSync.mockReturnValue('ANTHROPIC_AUTH_TOKEN=test-token');
+  it('hydrates Copilot BYOK env from the login shell', () => {
+    mockExecFileSync.mockReturnValue(
+      [
+        'COPILOT_PROVIDER_BASE_URL=http://127.0.0.1:8787',
+        'COPILOT_PROVIDER_TYPE=anthropic',
+        'COPILOT_MODEL=claude-sonnet-4',
+        'GITHUB_TOKEN=gh-token',
+      ].join('\n'),
+    );
 
     const env = buildProviderBaseEnv('copilot', { PATH: '/usr/bin' });
 
-    expect(env).toEqual({ PATH: '/usr/bin' });
-    expect(mockExecFileSync).not.toHaveBeenCalled();
+    expect(env.COPILOT_PROVIDER_BASE_URL).toBe('http://127.0.0.1:8787');
+    expect(env.COPILOT_PROVIDER_TYPE).toBe('anthropic');
+    expect(env.COPILOT_MODEL).toBe('claude-sonnet-4');
+    expect(env.GITHUB_TOKEN).toBe('gh-token');
+    expect(mockExecFileSync).toHaveBeenCalledTimes(1);
   });
 
   it('fails safe when login shell probing errors', () => {

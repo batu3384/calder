@@ -19,6 +19,7 @@ import {
   getUpdateCenterState,
   initUpdateCenter,
   onUpdateCenterChange,
+  runCliProviderInstall,
   runCliProviderUpdate,
   runCliProviderUpdates,
 } from '../surface-services/update-center.js';
@@ -134,6 +135,7 @@ function getCliUpdatePanelController(): TabBarCliUpdatePanelController {
       updateButtonEl: btnUpdateCliTools,
       onCancelUpdate: cancelCliProviderUpdates,
       onRunProviderUpdate: runCliProviderUpdate,
+      onRunProviderInstall: runCliProviderInstall,
       onRunAllUpdates: runCliProviderUpdates,
     });
   return cliUpdatePanelController;

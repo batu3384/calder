@@ -158,6 +158,54 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
       replace: (match) => `CLI araçları güncelleniyor (${match[1]}/${match[2]})`,
     },
     {
+      pattern: /^Updating CLI tools\.\.\. \((.+)\)$/u,
+      replace: (match) => `CLI araçları güncelleniyor... (${match[1]})`,
+    },
+    {
+      pattern: /^Cancelled (.+)\. (.+)$/u,
+      replace: (match) => `İptal: ${translate(match[1])}. ${match[2]}`,
+    },
+    {
+      pattern: /^Finished (.+)\. (.+)$/u,
+      replace: (match) => `Bitiş: ${translate(match[1])}. ${match[2]}`,
+    },
+    {
+      pattern: /^Updated (\d+)$/u,
+      replace: (match) => `Güncellendi ${match[1]}`,
+    },
+    {
+      pattern: /^Up to date (\d+)$/u,
+      replace: (match) => `Güncel ${match[1]}`,
+    },
+    {
+      pattern: /^Sync pending (\d+)$/u,
+      replace: (match) => `Senkron bekliyor ${match[1]}`,
+    },
+    {
+      pattern: /^Skipped (\d+)$/u,
+      replace: (match) => `Atlandı ${match[1]}`,
+    },
+    {
+      pattern: /^Cancelled (\d+)$/u,
+      replace: (match) => `İptal ${match[1]}`,
+    },
+    {
+      pattern: /^Errors (\d+)$/u,
+      replace: (match) => `Hata ${match[1]}`,
+    },
+    {
+      pattern: /^Update (.+)$/u,
+      replace: (match) => `${match[1]} güncelle`,
+    },
+    {
+      pattern: /^(.+): (.+)$/u,
+      replace: (match) => `${match[1]}: ${translate(match[2])}`,
+    },
+    {
+      pattern: /^(.+) \((\d+)%\)$/u,
+      replace: (match) => `${translate(match[1])} (%${match[2]})`,
+    },
+    {
       pattern: /^Cancelling CLI update \((\d+)\/(\d+)\)$/u,
       replace: (match) => `CLI güncellemesi iptal ediliyor (${match[1]}/${match[2]})`,
     },
@@ -310,6 +358,22 @@ function createRelativeTimePatterns(): PatternTranslation[] {
     { pattern: /^Updated just now$/u, replace: () => 'Az önce güncellendi' },
     { pattern: /^(\d+)m ago$/u, replace: (match) => `${match[1]} dk önce` },
     { pattern: /^(\d+)h ago$/u, replace: (match) => `${match[1]} sa önce` },
+    {
+      pattern: /^Checked (.+)$/u,
+      replace: (match) => `Kontrol: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^(\d+)% completed$/u,
+      replace: (match) => `%${match[1]} tamamlandı`,
+    },
+    {
+      pattern: /^(.+) is ready\. Restart to apply\.$/u,
+      replace: (match) => `${match[1]} hazır. Uygulamak için yeniden başlatın.`,
+    },
+    {
+      pattern: /^(.+) is already up to date\.$/u,
+      replace: (match) => `${match[1]} zaten güncel.`,
+    },
   ];
 }
 

@@ -12,6 +12,7 @@ import {
 import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
 import { getFullPath } from '../full-path';
+import { buildProviderBaseEnv } from '../provider-env';
 import { sanitizeExtraArgsQuiet } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
@@ -22,6 +23,26 @@ const INERT_SETTINGS: SettingsValidationResult = {
   hooks: 'missing',
   hookDetails: {},
 };
+
+const HEADROOM_PROXY_ENV_KEYS = [
+  'ANTHROPIC_BASE_URL',
+  'OPENAI_BASE_URL',
+  'COPILOT_PROVIDER_BASE_URL',
+  'COPILOT_PROVIDER_TYPE',
+  'COPILOT_PROVIDER_API_KEY',
+  'COPILOT_PROVIDER_BEARER_TOKEN',
+  'COPILOT_PROVIDER_MODEL_ID',
+  'COPILOT_PROVIDER_WIRE_MODEL',
+  'COPILOT_MODEL',
+] as const;
+
+function withoutHeadroomProxyEnv(env: Record<string, string>): Record<string, string> {
+  const next = { ...env };
+  for (const key of HEADROOM_PROXY_ENV_KEYS) {
+    delete next[key];
+  }
+  return next;
+}
 
 export class CopilotProvider extends BaseCliProvider {
   readonly meta: CliProviderMeta = {
@@ -49,11 +70,36 @@ export class CopilotProvider extends BaseCliProvider {
   }
 
   validatePrerequisites(): { ok: boolean; message: string } {
-    return validateBinaryExists('copilot', 'GitHub Copilot', 'npm install -g @github/copilot');
+    const binaryCheck = validateBinaryExists(
+      'copilot',
+      'GitHub Copilot',
+      'npm install -g @github/copilot',
+    );
+    if (!binaryCheck.ok) return binaryCheck;
+
+    const env = withoutHeadroomProxyEnv(
+      buildProviderBaseEnv('copilot', { ...process.env } as Record<string, string>),
+    );
+    const byokActive = Boolean(env.COPILOT_PROVIDER_BASE_URL?.trim());
+    const hasModel = Boolean(
+      env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim(),
+    );
+    if (byokActive && !hasModel) {
+      return {
+        ok: false,
+        message:
+          'GitHub Copilot BYOK is configured but no model is set.\n\n' +
+          'Add a model to your shell profile, for example:\n' +
+          '  export COPILOT_MODEL=claude-sonnet-4\n\n' +
+          'Then restart Calder.',
+      };
+    }
+
+    return { ok: true, message: '' };
   }
 
   buildEnv(_sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    return { ...baseEnv, PATH: getFullPath() };
+    return { ...withoutHeadroomProxyEnv(baseEnv), PATH: getFullPath() };
   }
 
   buildArgs(opts: {

@@ -13,6 +13,7 @@ vi.mock('os', () => ({
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawnSync: vi.fn(),
 }));
 
 vi.mock('../full-path', () => ({
@@ -40,7 +41,7 @@ vi.mock('../hooks/hook-status', () => ({
   installStatusLineScript: vi.fn(),
 }));
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
@@ -53,6 +54,7 @@ import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockSpawnSync = vi.mocked(spawnSync);
 const mockGetQwenConfig = vi.mocked(getQwenConfig);
 const mockFindQwenTranscriptPath = vi.mocked(findQwenTranscriptPath);
 const mockInstallQwenHooks = vi.mocked(installQwenHooks);
@@ -66,7 +68,7 @@ let provider: QwenProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync, mockSpawnSync);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new QwenProvider();
@@ -108,7 +110,7 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} qwen when no candidate exists`, () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/qwen');
     mockExecSync.mockReturnValue('/some/other/path/qwen\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/qwen');
   });
@@ -124,7 +126,7 @@ describe('resolveBinaryPath', () => {
 
 describe('validatePrerequisites', () => {
   it('returns ok when binary found via which', () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/qwen');
     mockExecSync.mockReturnValue('/resolved/qwen\n' as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });

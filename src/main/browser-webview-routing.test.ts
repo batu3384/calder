@@ -73,6 +73,21 @@ describe('attachBrowserWebviewRouting', () => {
     expect(openExternal).not.toHaveBeenCalled();
   });
 
+  it('routes disallowed guest popup http links externally instead of loading in guest', () => {
+    const host = new FakeWebContents();
+    const guest = new FakeWebContents();
+    const openExternal = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+    host.emit('did-attach-webview', {}, guest);
+
+    const result = guest.windowOpenHandler?.({ url: 'https://evil.example.com/phish' });
+
+    expect(result).toEqual({ action: 'deny' });
+    expect(guest.loadURL).not.toHaveBeenCalled();
+    expect(openExternal).toHaveBeenCalledWith('https://evil.example.com/phish');
+  });
+
   it('keeps webview popup links inside the same guest contents', () => {
     const host = new FakeWebContents();
     const guest = new FakeWebContents();
@@ -81,10 +96,10 @@ describe('attachBrowserWebviewRouting', () => {
     attachBrowserWebviewRouting({ webContents: host }, openExternal);
     host.emit('did-attach-webview', {}, guest);
 
-    const result = guest.windowOpenHandler?.({ url: 'http://localhost:3000/docs' });
+    const result = guest.windowOpenHandler?.({ url: 'https://localhost:3000/docs' });
 
     expect(result).toEqual({ action: 'deny' });
-    expect(guest.loadURL).toHaveBeenCalledWith('http://localhost:3000/docs');
+    expect(guest.loadURL).toHaveBeenCalledWith('https://localhost:3000/docs');
     expect(openExternal).not.toHaveBeenCalled();
   });
 

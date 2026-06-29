@@ -403,7 +403,7 @@ export const CORE_TRANSLATION_ENTRIES_PART_1: ReadonlyArray<readonly [string, st
   ['Ready to capture', 'Yakalamaya hazır'],
   ['Offline', 'Çevrimdışı'],
   ['Runtime', 'Çalışma Zamanı'],
-  ['Capture', 'Yakalama'],
+  ['Capture', 'Yakala'],
   ['Manual checkpoint', 'Manuel kontrol noktası'],
   ['New Checkpoint', 'Yeni Kontrol Noktası'],
   ['Checkpoint label', 'Kontrol noktası etiketi'],

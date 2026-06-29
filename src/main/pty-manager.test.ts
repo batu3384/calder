@@ -17,7 +17,7 @@ const {
   mockSanitizeExtraArgs: vi.fn((args: string) => (args ? args.split(/\s+/) : [])),
 }));
 
-const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync } =
+const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSync, mockExecSync, mockSpawnSync } =
   vi.hoisted(() => ({
     mockSpawn: vi.fn(),
     mockWrite: vi.fn(),
@@ -28,6 +28,7 @@ const { mockSpawn, mockWrite, mockResize, mockKill, mockExecFile, mockExecFileSy
     mockExecSync: vi.fn(() => {
       throw new Error('not found');
     }),
+    mockSpawnSync: vi.fn(() => ({ status: 0 })),
   }));
 
 const { mockBuildBrowserBridgeEnv } = vi.hoisted(() => ({
@@ -48,6 +49,7 @@ vi.mock('child_process', () => ({
   execSync: mockExecSync,
   execFile: mockExecFile,
   execFileSync: mockExecFileSync,
+  spawnSync: mockSpawnSync,
 }));
 
 vi.mock('os', () => ({

@@ -13,6 +13,7 @@ vi.mock('os', () => ({
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawnSync: vi.fn(),
 }));
 
 vi.mock('../full-path', () => ({
@@ -41,7 +42,7 @@ vi.mock('../settings-guard', () => ({
   reinstallSettings: vi.fn(),
 }));
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
@@ -54,6 +55,7 @@ import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockSpawnSync = vi.mocked(spawnSync);
 const mockCleanupAll = vi.mocked(cleanupAll);
 const mockGetClaudeConfig = vi.mocked(getClaudeConfig);
 const mockInstallStatusLineScript = vi.mocked(installStatusLineScript);
@@ -66,7 +68,7 @@ let provider: ClaudeProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync, mockSpawnSync);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new ClaudeProvider();
@@ -116,7 +118,7 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} claude when no candidate exists`, () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/claude');
     mockExecSync.mockReturnValue('/some/other/path/claude\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/claude');
   });
@@ -129,12 +131,17 @@ describe('resolveBinaryPath', () => {
     expect(provider.resolveBinaryPath()).toBe('claude');
   });
 
-  it('caches result on subsequent calls', () => {
+  it('caches launchable binary across subsequent calls', () => {
+    mockExistsSync.mockImplementation((p) => p === firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+  });
+
+  it('invalidates cache when cached binary disappears', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
     provider.resolveBinaryPath();
-    mockExistsSync.mockReturnValue(false); // change behavior
-    // Should still return cached value
-    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    mockExistsSync.mockReturnValue(false);
+    expect(provider.resolveBinaryPath()).toBe('claude');
   });
 });
 
@@ -156,7 +163,7 @@ describe('validatePrerequisites', () => {
   });
 
   it('returns ok when binary found via which', () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/claude');
     mockExecSync.mockReturnValue('/resolved/claude\n' as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });

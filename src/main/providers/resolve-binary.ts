@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -23,6 +23,7 @@ const WIN_EXTENSIONS = ['.cmd', '.exe', '.ps1', ''];
 const DEFAULT_BINARY_PROBE_TIMEOUT_MS = 3000;
 const PREREQ_ALIAS_PROBE_TIMEOUT_MS = 250;
 const PREREQ_CACHE_TTL_MS = 10_000;
+const LAUNCH_PROBE_TIMEOUT_MS = 2500;
 
 type PrereqCheckCacheEntry = {
   checkedAtMs: number;
@@ -114,35 +115,89 @@ function whichBinary(binaryName: string, envPath: string): string | null {
       timeout: DEFAULT_BINARY_PROBE_TIMEOUT_MS,
     }).trim();
     // 'where' on Windows may return multiple lines — take the first
-    const firstLine = resolved.split(/\r?\n/)[0];
+    const firstLine = resolved.split(/\r?\n/)[0]?.trim();
     return firstLine || null;
   } catch {
     return null;
   }
 }
 
-export function resolveBinary(binaryName: string, cache: { path: string | null }): string {
-  if (cache.path) return cache.path;
+function isAbsoluteBinaryPath(binaryPath: string): boolean {
+  return path.isAbsolute(binaryPath) || path.win32.isAbsolute(binaryPath);
+}
 
-  const aliasLauncher = findAliasLauncher(binaryName);
-  if (aliasLauncher) {
-    cache.path = aliasLauncher;
-    return aliasLauncher;
+function probeBinaryLaunchable(binaryPath: string): boolean {
+  if (!binaryPath || !isAbsoluteBinaryPath(binaryPath)) return false;
+  try {
+    if (!fs.existsSync(binaryPath)) return false;
+  } catch (error) {
+    logBinaryProbeWarning(`Failed to probe candidate path: ${binaryPath}`, error);
+    return false;
   }
 
-  const fullPath = getFullPath();
-  const resolved = whichBinary(binaryName, fullPath);
-  if (resolved) {
-    cache.path = resolved;
-    return resolved;
+  try {
+    const result = spawnSync(binaryPath, ['--help'], {
+      env: { ...process.env, PATH: getFullPath() },
+      timeout: LAUNCH_PROBE_TIMEOUT_MS,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    return result.status === 0;
+  } catch (error) {
+    logBinaryProbeWarning(`Launch probe failed for ${binaryPath}`, error);
+    return false;
   }
+}
 
+function listBinaryCandidates(binaryName: string): string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const push = (value: string | null | undefined) => {
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    candidates.push(value);
+  };
+
+  push(findAliasLauncher(binaryName));
+  push(whichBinary(binaryName, getFullPath()));
   for (const dir of COMMON_BIN_DIRS) {
-    const found = findBinaryInDir(dir, binaryName);
-    if (found) {
-      cache.path = found;
-      return found;
+    push(findBinaryInDir(dir, binaryName));
+  }
+  return candidates;
+}
+
+function findLaunchableBinary(binaryName: string): string | null {
+  for (const candidate of listBinaryCandidates(binaryName)) {
+    if (probeBinaryLaunchable(candidate)) return candidate;
+  }
+  return null;
+}
+
+function findExistingBinary(binaryName: string): string | null {
+  for (const candidate of listBinaryCandidates(binaryName)) {
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch (error) {
+      logBinaryProbeWarning(`Failed to probe candidate path: ${candidate}`, error);
     }
+  }
+  return null;
+}
+
+function findInstalledBinary(binaryName: string): string | null {
+  return findLaunchableBinary(binaryName) ?? findExistingBinary(binaryName);
+}
+
+export function resolveBinary(binaryName: string, cache: { path: string | null }): string {
+  if (cache.path) {
+    if (probeBinaryLaunchable(cache.path)) return cache.path;
+    cache.path = null;
+  }
+
+  const launchable = findLaunchableBinary(binaryName);
+  if (launchable) {
+    cache.path = launchable;
+    return launchable;
   }
 
   cache.path = binaryName;
@@ -163,25 +218,8 @@ export function validateBinaryExists(
     return { ok: true, message: '' };
   }
 
-  let ok = false;
-  for (const dir of COMMON_BIN_DIRS) {
-    if (findBinaryInDir(dir, binaryName)) {
-      ok = true;
-      break;
-    }
-  }
-
-  if (!ok && whichBinary(binaryName, envPath)) {
-    ok = true;
-  }
-
-  // Alias probing is intentionally last and short-lived, since login shells
-  // can be slow and this check runs for multiple providers during startup.
-  if (!ok && findAliasLauncher(binaryName, PREREQ_ALIAS_PROBE_TIMEOUT_MS)) {
-    ok = true;
-  }
-
-  if (ok) {
+  const installed = findInstalledBinary(binaryName);
+  if (installed) {
     prereqCheckCache.set(cacheKey, { checkedAtMs: nowMs, ok: true });
     return { ok: true, message: '' };
   }

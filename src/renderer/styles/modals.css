@@ -35,8 +35,9 @@
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 20px;
-  min-width: 420px;
-  max-width: 620px;
+  min-width: 0;
+  width: min(420px, calc(100vw - 32px));
+  max-width: min(620px, calc(100vw - 32px));
   box-shadow: var(--shadow-elevated);
   max-height: min(86vh, 900px);
   overflow: hidden;

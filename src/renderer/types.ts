@@ -244,6 +244,7 @@ export interface CalderApi {
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
     updateAll(): Promise<ProviderUpdateSummary>;
     updateProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
+    installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
     cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
     onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
     watchProject(providerId: ProviderId, projectPath: string): void;

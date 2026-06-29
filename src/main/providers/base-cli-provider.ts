@@ -55,6 +55,18 @@ export abstract class BaseCliProvider implements CliProvider {
     return this.binaryCache.path;
   }
 
+  getInstallCommand(): string {
+    return this.installCommand;
+  }
+
+  clearBinaryCache(): void {
+    this.binaryCache.path = null;
+  }
+
+  checkBinaryInstalled(): { ok: boolean; message: string } {
+    return validateBinaryExists(this.binaryName, this.meta.displayName, this.installCommand);
+  }
+
   validatePrerequisites(): { ok: boolean; message: string } {
     return validateBinaryExists(this.binaryName, this.meta.displayName, this.installCommand);
   }

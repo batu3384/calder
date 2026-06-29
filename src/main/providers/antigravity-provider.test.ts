@@ -16,6 +16,7 @@ vi.mock('os', () => ({
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawnSync: vi.fn(),
 }));
 
 vi.mock('../full-path', () => ({
@@ -47,7 +48,7 @@ vi.mock('../antigravity-hooks', () => ({
   SESSION_ID_VAR: 'CALDER_SESSION_ID',
 }));
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
@@ -66,6 +67,7 @@ const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockStatSync = vi.mocked(fs.statSync);
 const mockExecSync = vi.mocked(execSync);
+const mockSpawnSync = vi.mocked(spawnSync);
 const mockGetAntigravityConfig = vi.mocked(getAntigravityConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
 const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
@@ -77,7 +79,7 @@ let provider: AntigravityProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync, mockSpawnSync);
   mockReaddirSync.mockReturnValue([]);
   _resetCachedPath();
   _resetPrereqCheckCache();
@@ -119,7 +121,7 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} agy when no candidate exists`, () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/agy');
     mockExecSync.mockReturnValue('/some/other/path/agy\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/agy');
   });
@@ -132,11 +134,17 @@ describe('resolveBinaryPath', () => {
     expect(provider.resolveBinaryPath()).toBe('antigravity');
   });
 
-  it('caches result on subsequent calls', () => {
+  it('caches launchable binary across subsequent calls', () => {
+    mockExistsSync.mockImplementation((p) => p === firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+  });
+
+  it('invalidates cache when cached binary disappears', () => {
     mockExistsSync.mockImplementation((p) => p === firstCandidate);
     provider.resolveBinaryPath();
     mockExistsSync.mockReturnValue(false);
-    expect(provider.resolveBinaryPath()).toBe(firstCandidate);
+    expect(provider.resolveBinaryPath()).toBe('antigravity');
   });
 });
 
@@ -151,7 +159,7 @@ describe('validatePrerequisites', () => {
   });
 
   it('returns ok when binary found via which', () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/agy');
     mockExecSync.mockReturnValue('/resolved/agy\n' as any);
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });

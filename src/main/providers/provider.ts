@@ -9,6 +9,9 @@ import type {
 export interface CliProvider {
   readonly meta: CliProviderMeta;
   resolveBinaryPath(): string;
+  getInstallCommand(): string;
+  clearBinaryCache(): void;
+  checkBinaryInstalled(): { ok: boolean; message: string };
   validatePrerequisites(): { ok: boolean; message: string };
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string>;
   buildArgs(opts: {

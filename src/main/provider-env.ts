@@ -12,7 +12,7 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'ANTHROPIC_CUSTOM_HEADERS',
   ],
   codex: ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_ORG_ID', 'OPENAI_PROJECT_ID'],
-  copilot: [],
+  copilot: ['GH_TOKEN', 'GITHUB_TOKEN'],
   antigravity: [
     'ANTIGRAVITY_API_KEY',
     'GEMINI_API_KEY',
@@ -21,6 +21,35 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
   ],
   qwen: ['DASHSCOPE_API_KEY', 'QWEN_API_KEY'],
 };
+
+const COPILOT_LOGIN_ENV_PREFIX = 'COPILOT_';
+
+function mergeLoginShellKeys(
+  mergedEnv: Record<string, string>,
+  loginShellEnv: Record<string, string>,
+  keys: string[],
+): void {
+  for (const key of keys) {
+    const existingValue = mergedEnv[key]?.trim();
+    if (existingValue) continue;
+    const loginValue = loginShellEnv[key]?.trim();
+    if (loginValue) {
+      mergedEnv[key] = loginShellEnv[key];
+    }
+  }
+}
+
+function mergeLoginShellPrefix(
+  mergedEnv: Record<string, string>,
+  loginShellEnv: Record<string, string>,
+  prefix: string,
+): void {
+  for (const [key, value] of Object.entries(loginShellEnv)) {
+    if (!key.startsWith(prefix)) continue;
+    if (mergedEnv[key]?.trim()) continue;
+    if (value?.trim()) mergedEnv[key] = value;
+  }
+}
 
 let cachedLoginShellEnv: Record<string, string> | null = null;
 
@@ -63,17 +92,14 @@ export function buildProviderBaseEnv(
   baseEnv: Record<string, string>,
 ): Record<string, string> {
   const keys = PROVIDER_LOGIN_ENV_KEYS[providerId] ?? [];
-  if (keys.length === 0) return { ...baseEnv };
+  const needsLoginShell = keys.length > 0 || providerId === 'copilot';
+  if (!needsLoginShell) return { ...baseEnv };
 
   const loginShellEnv = getLoginShellEnv();
   const mergedEnv = { ...baseEnv };
-  for (const key of keys) {
-    const existingValue = mergedEnv[key]?.trim();
-    if (existingValue) continue;
-    const loginValue = loginShellEnv[key]?.trim();
-    if (loginValue) {
-      mergedEnv[key] = loginShellEnv[key];
-    }
+  mergeLoginShellKeys(mergedEnv, loginShellEnv, keys);
+  if (providerId === 'copilot') {
+    mergeLoginShellPrefix(mergedEnv, loginShellEnv, COPILOT_LOGIN_ENV_PREFIX);
   }
   return mergedEnv;
 }

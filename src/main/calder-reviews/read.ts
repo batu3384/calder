@@ -1,7 +1,7 @@
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ProjectReviewDocument } from '../../shared/types/project-review.js';
+import { readUtf8FileWithSizeLimit } from '../fs-read-limits.js';
 
 const REVIEWS_DIR_PREFIX = `.calder${path.posix.sep}reviews${path.posix.sep}`;
 
@@ -34,7 +34,7 @@ export async function readProjectReviewFile(
 ): Promise<ProjectReviewDocument> {
   const relativePath = normalizeReviewRelativePath(reviewPath);
   const fullPath = path.join(projectPath, relativePath);
-  const contents = await readFile(fullPath, 'utf8');
+  const contents = await readUtf8FileWithSizeLimit(fullPath);
   return {
     path: fullPath,
     relativePath,

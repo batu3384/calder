@@ -13,6 +13,7 @@ vi.mock('os', () => ({
 
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawnSync: vi.fn(),
 }));
 
 vi.mock('../full-path', () => ({
@@ -32,28 +33,35 @@ vi.mock('../copilot-session-watcher', () => ({
   stopCopilotSessionWatcher: vi.fn(),
 }));
 
-import { execSync } from 'child_process';
+vi.mock('../provider-env', () => ({
+  buildProviderBaseEnv: vi.fn((_providerId: string, baseEnv: Record<string, string>) => ({ ...baseEnv })),
+}));
+
+import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
 import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { getCopilotConfig } from '../copilot-config';
 import { stopCopilotSessionWatcher } from '../copilot-session-watcher';
+import { buildProviderBaseEnv } from '../provider-env';
 import { _resetCachedPath, CopilotProvider } from './copilot-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
+const mockSpawnSync = vi.mocked(spawnSync);
 const mockGetCopilotConfig = vi.mocked(getCopilotConfig);
 const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
 const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
 const mockStopCopilotSessionWatcher = vi.mocked(stopCopilotSessionWatcher);
+const mockBuildProviderBaseEnv = vi.mocked(buildProviderBaseEnv);
 
 let provider: CopilotProvider;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  resetBinaryProbeMocks(mockExistsSync, mockExecSync);
+  resetBinaryProbeMocks(mockExistsSync, mockExecSync, mockSpawnSync);
   _resetCachedPath();
   _resetPrereqCheckCache();
   provider = new CopilotProvider();
@@ -90,7 +98,7 @@ describe('resolveBinaryPath', () => {
   });
 
   it(`falls back to ${isWin ? 'where' : 'which'} copilot when no candidate exists`, () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/some/other/path/copilot');
     mockExecSync.mockReturnValue('/some/other/path/copilot\n' as any);
     expect(provider.resolveBinaryPath()).toBe('/some/other/path/copilot');
   });
@@ -98,8 +106,9 @@ describe('resolveBinaryPath', () => {
 
 describe('validatePrerequisites', () => {
   it('returns ok when binary found via which', () => {
-    mockExistsSync.mockReturnValue(false);
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/copilot');
     mockExecSync.mockReturnValue('/resolved/copilot\n' as any);
+    mockBuildProviderBaseEnv.mockReturnValue({ PATH: '/usr/bin' });
     expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
   });
 
@@ -108,10 +117,34 @@ describe('validatePrerequisites', () => {
     mockExecSync.mockImplementation(() => {
       throw new Error('not found');
     });
+    mockBuildProviderBaseEnv.mockReturnValue({ PATH: '/usr/bin' });
     const result = provider.validatePrerequisites();
     expect(result.ok).toBe(false);
     expect(result.message).toContain('GitHub Copilot not found');
     expect(result.message).toContain('@github/copilot');
+  });
+
+  it('ignores Headroom/BYOK shell env when validating prerequisites', () => {
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/copilot');
+    mockExecSync.mockReturnValue('/resolved/copilot\n' as any);
+    mockBuildProviderBaseEnv.mockReturnValue({
+      COPILOT_PROVIDER_BASE_URL: 'http://127.0.0.1:8787',
+      COPILOT_PROVIDER_TYPE: 'anthropic',
+    });
+    expect(provider.validatePrerequisites()).toEqual({ ok: true, message: '' });
+  });
+});
+
+describe('checkBinaryInstalled', () => {
+  it('reports installed when binary exists even if Headroom BYOK env is present', () => {
+    mockExistsSync.mockImplementation((candidate) => String(candidate) === '/resolved/copilot');
+    mockExecSync.mockReturnValue('/resolved/copilot\n' as any);
+    mockBuildProviderBaseEnv.mockReturnValue({
+      COPILOT_PROVIDER_BASE_URL: 'http://127.0.0.1:8787',
+      COPILOT_PROVIDER_TYPE: 'anthropic',
+    });
+    expect(provider.checkBinaryInstalled()).toEqual({ ok: true, message: '' });
+    expect(provider.validatePrerequisites().ok).toBe(true);
   });
 });
 
@@ -119,6 +152,19 @@ describe('buildEnv', () => {
   it('sets PATH to the augmented PATH and preserves existing env vars', () => {
     const env = provider.buildEnv('sess-123', { OTHER: 'val' });
     expect(env.PATH).toBe(isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin');
+    expect(env.OTHER).toBe('val');
+  });
+
+  it('strips headroom BYOK proxy vars so Copilot uses GitHub subscription', () => {
+    const env = provider.buildEnv('sess-123', {
+      OTHER: 'val',
+      ANTHROPIC_BASE_URL: 'http://127.0.0.1:8787',
+      COPILOT_PROVIDER_BASE_URL: 'http://127.0.0.1:8787',
+      COPILOT_PROVIDER_TYPE: 'anthropic',
+    });
+    expect(env.ANTHROPIC_BASE_URL).toBeUndefined();
+    expect(env.COPILOT_PROVIDER_BASE_URL).toBeUndefined();
+    expect(env.COPILOT_PROVIDER_TYPE).toBeUndefined();
     expect(env.OTHER).toBe('val');
   });
 });

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockUpdateAllProviders = vi.hoisted(() => vi.fn());
 const mockUpdateProviderById = vi.hoisted(() => vi.fn());
+const mockInstallProviderById = vi.hoisted(() => vi.fn());
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -13,6 +14,7 @@ vi.mock('electron', () => ({
 vi.mock('./provider-updater', () => ({
   updateAllProviders: mockUpdateAllProviders,
   updateProviderById: mockUpdateProviderById,
+  installProviderById: mockInstallProviderById,
 }));
 
 function getHandleHandler(channel: string): (...args: any[]) => any {
@@ -143,5 +145,25 @@ describe('ipc provider-update handlers', () => {
     expect(
       requireValue<AbortSignal>(capturedSignal, 'Expected abort signal to be captured').aborted,
     ).toBe(false);
+  });
+
+  it('routes installProvider through installProviderById', async () => {
+    mockInstallProviderById.mockResolvedValue({ results: [{ providerId: 'codex' }] });
+    const { registerProviderUpdateIpcHandlers } = await import('./ipc-provider-update');
+    registerProviderUpdateIpcHandlers();
+
+    const installProviderHandler = getHandleHandler('provider:installProvider');
+    const sender = { isDestroyed: () => false, send: vi.fn() };
+
+    await expect(installProviderHandler({ sender }, 'codex')).resolves.toEqual({
+      results: [{ providerId: 'codex' }],
+    });
+    expect(mockInstallProviderById).toHaveBeenCalledWith(
+      'codex',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+        onProgress: expect.any(Function),
+      }),
+    );
   });
 });

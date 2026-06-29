@@ -1,5 +1,4 @@
 import { BrowserWindow, ipcMain, shell } from 'electron';
-import * as path from 'path';
 
 import type { GitFileEntry } from '../shared/types/project-core';
 import {
@@ -17,6 +16,7 @@ import {
 } from './git-status';
 import { notifyGitChanged, startGitWatcher } from './git-watcher';
 import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
+import { resolvePathWithinProject } from './project-path-security';
 
 interface GitGovernanceOps {
   requireKnownProjectPath?: (projectPath: string, contextLabel: string) => string;
@@ -29,17 +29,30 @@ interface GitGovernanceOps {
 export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
   const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
 
-  ipcMain.handle('git:getStatus', (_event, projectPath: string) => getGitStatus(projectPath));
+  ipcMain.handle('git:getStatus', (_event, projectPath: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git status');
+    return getGitStatus(validatedProjectPath);
+  });
 
-  ipcMain.handle('git:getRemoteUrl', (_event, projectPath: string) => getGitRemoteUrl(projectPath));
+  ipcMain.handle('git:getRemoteUrl', (_event, projectPath: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git remote URL');
+    return getGitRemoteUrl(validatedProjectPath);
+  });
 
-  ipcMain.handle('git:getFiles', (_event, projectPath: string) => getGitFiles(projectPath));
+  ipcMain.handle('git:getFiles', (_event, projectPath: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git files');
+    return getGitFiles(validatedProjectPath);
+  });
 
-  ipcMain.handle('git:getDiff', (_event, projectPath: string, filePath: string, area: string) =>
-    getGitDiff(projectPath, filePath, area),
-  );
+  ipcMain.handle('git:getDiff', (_event, projectPath: string, filePath: string, area: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git diff');
+    return getGitDiff(validatedProjectPath, filePath, area);
+  });
 
-  ipcMain.handle('git:getWorktrees', (_event, projectPath: string) => getGitWorktrees(projectPath));
+  ipcMain.handle('git:getWorktrees', (_event, projectPath: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git worktrees');
+    return getGitWorktrees(validatedProjectPath);
+  });
 
   ipcMain.handle('git:stageFile', async (_event, projectPath: string, filePath: string) => {
     const validatedProjectPath = requireKnownProjectPath(projectPath, 'Stage git file');
@@ -80,7 +93,10 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
     startGitWatcher(win, projectPath);
   });
 
-  ipcMain.handle('git:listBranches', (_event, projectPath: string) => listGitBranches(projectPath));
+  ipcMain.handle('git:listBranches', (_event, projectPath: string) => {
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'List git branches');
+    return listGitBranches(validatedProjectPath);
+  });
 
   ipcMain.handle('git:checkoutBranch', async (_event, projectPath: string, branch: string) => {
     const validatedProjectPath = requireKnownProjectPath(projectPath, 'Checkout git branch');
@@ -103,7 +119,8 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
   });
 
   ipcMain.handle('git:openInEditor', (_event, projectPath: string, filePath: string) => {
-    const fullPath = path.join(projectPath, filePath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Open file in editor');
+    const fullPath = resolvePathWithinProject(validatedProjectPath, filePath);
     return shell.openPath(fullPath);
   });
 }

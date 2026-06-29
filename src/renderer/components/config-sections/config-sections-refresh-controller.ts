@@ -34,6 +34,13 @@ export function createConfigSectionsRefreshController(
   const queueFrame = options.queueFrame ?? defaultQueueFrame;
   let refreshGeneration = 0;
   let refreshQueued = false;
+  let lastWatchKey: string | null = null;
+
+  const buildWatchKey = (): string | null => {
+    const projectPath = options.getActiveProjectPath();
+    if (!projectPath) return null;
+    return `${options.getProviderId()}::${projectPath}`;
+  };
 
   const scheduleRefresh = (): void => {
     if (refreshQueued) {
@@ -47,10 +54,13 @@ export function createConfigSectionsRefreshController(
   };
 
   const watchActiveProject = (): void => {
-    const projectPath = options.getActiveProjectPath();
-    if (!projectPath) {
+    const watchKey = buildWatchKey();
+    if (!watchKey || watchKey === lastWatchKey) {
       return;
     }
+    lastWatchKey = watchKey;
+    const projectPath = options.getActiveProjectPath();
+    if (!projectPath) return;
     options.watchProject(options.getProviderId(), projectPath);
   };
 
@@ -64,7 +74,14 @@ export function createConfigSectionsRefreshController(
       scheduleRefresh();
     });
     options.onAppStateEvent('session-changed', () => {
-      watchActiveProject();
+      const watchKey = buildWatchKey();
+      if (watchKey && watchKey !== lastWatchKey) {
+        lastWatchKey = watchKey;
+        const projectPath = options.getActiveProjectPath();
+        if (projectPath) {
+          options.watchProject(options.getProviderId(), projectPath);
+        }
+      }
       scheduleRefresh();
     });
     options.onAppStateEvent('preferences-changed', () => {

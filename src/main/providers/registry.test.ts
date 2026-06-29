@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { CliProviderMeta } from '../../shared/types/provider';
+import { _resetCachedPath as resetAntigravityCache } from './antigravity-provider';
+import { _resetCachedPath as resetClaudeCache } from './claude-provider';
+import { _resetCachedPath as resetCodexCache } from './codex-provider';
+import { _resetCachedPath as resetCopilotCache } from './copilot-provider';
 import type { CliProvider } from './provider';
+import { _resetCachedPath as resetQwenCache } from './qwen-provider';
+import { _resetPrereqCheckCache } from './resolve-binary';
 import {
   getAllProviderMetas,
   getAllProviders,
@@ -10,6 +16,8 @@ import {
   getProviderMeta,
   initProviders,
   registerProvider,
+  SUPPORTED_PROVIDER_IDS,
+  unregisterProvider,
 } from './registry';
 
 const fakeMeta: CliProviderMeta = {
@@ -32,6 +40,12 @@ function makeFakeProvider(meta: CliProviderMeta, prerequisitesOk = true): CliPro
   return {
     meta,
     resolveBinaryPath: () => '/usr/bin/fake',
+    getInstallCommand: () => 'fake-install',
+    clearBinaryCache: () => {},
+    checkBinaryInstalled: () => ({
+      ok: prerequisitesOk,
+      message: prerequisitesOk ? '' : 'missing',
+    }),
     validatePrerequisites: () => ({
       ok: prerequisitesOk,
       message: prerequisitesOk ? '' : 'missing',
@@ -49,6 +63,12 @@ function makeFakeProvider(meta: CliProviderMeta, prerequisitesOk = true): CliPro
 }
 
 beforeEach(() => {
+  resetClaudeCache();
+  resetCodexCache();
+  resetCopilotCache();
+  resetAntigravityCache();
+  resetQwenCache();
+  _resetPrereqCheckCache();
   // Re-init to reset registry to only the Claude provider
   initProviders();
 });
@@ -137,6 +157,10 @@ describe('getAllProviderMetas', () => {
 
 describe('getAvailableProviderIds', () => {
   it('returns only providers whose prerequisites validate successfully', () => {
+    for (const id of SUPPORTED_PROVIDER_IDS) {
+      unregisterProvider(id);
+    }
+
     const available = makeFakeProvider(
       {
         ...fakeMeta,
@@ -163,6 +187,10 @@ describe('getAvailableProviderIds', () => {
   });
 
   it('skips providers whose prerequisite check throws unexpectedly', () => {
+    for (const id of SUPPORTED_PROVIDER_IDS) {
+      unregisterProvider(id);
+    }
+
     const unstable = makeFakeProvider(
       {
         ...fakeMeta,
