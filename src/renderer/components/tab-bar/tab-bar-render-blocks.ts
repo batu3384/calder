@@ -5,7 +5,6 @@ import { getProjectSurface } from './tab-bar-surface-state.js';
 
 export interface TabBarRenderSurfaceState {
   cliSurfaceTabActive: boolean;
-  mobileSurfaceTabActive: boolean;
 }
 
 export function shouldSkipTabListRender(tabListEl: HTMLElement): boolean {
@@ -17,8 +16,6 @@ export function buildTabBarRenderSurfaceState(project: ProjectRecord): TabBarRen
   return {
     cliSurfaceTabActive:
       surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli',
-    mobileSurfaceTabActive:
-      surfaceState.active && surfaceState.kind === 'mobile' && surfaceState.tabFocus === 'mobile',
   };
 }
 

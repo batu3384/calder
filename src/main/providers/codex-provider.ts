@@ -1,31 +1,15 @@
-import type { BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type {
-  CliProviderMeta,
-  ProviderConfig,
-  SettingsValidationResult,
-} from '../../shared/types/provider';
-import { getCodexConfig } from '../codex-config';
-import {
-  cleanupCodexHooks,
-  installCodexHooks,
-  SESSION_ID_VAR,
-  validateCodexHooks,
-} from '../codex-hooks';
+import type { CliProviderMeta } from '../../shared/types/provider';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
-import {
-  startConfigWatcher as startConfigWatch,
-  stopConfigWatcher as stopConfigWatch,
-} from '../config-watcher';
-import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
 import { getFullPath } from '../full-path';
 import { sanitizeExtraArgs } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
+const CALDER_SESSION_ID = 'CALDER_SESSION_ID';
 const binaryCache = { path: null as string | null };
 
 export class CodexProvider extends BaseCliProvider {
@@ -38,7 +22,6 @@ export class CodexProvider extends BaseCliProvider {
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
     },
@@ -60,7 +43,7 @@ export class CodexProvider extends BaseCliProvider {
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
     const env: Record<string, string> = { ...baseEnv };
     delete env.CLAUDE_CODE;
-    env[SESSION_ID_VAR] = sessionId;
+    env[CALDER_SESSION_ID] = sessionId;
     env.PATH = getFullPath();
     env.CALDER_RUNTIME = '1';
     return env;
@@ -84,43 +67,8 @@ export class CodexProvider extends BaseCliProvider {
     return args;
   }
 
-  async installHooks(): Promise<void> {
-    installCodexHooks();
-  }
-
-  installStatusScripts(): void {}
-
   cleanup(): void {
-    stopConfigWatch();
     stopCodexSessionWatcher();
-  }
-
-  startConfigWatcher(win: BrowserWindow, projectPath: string): void {
-    startConfigWatch(win, projectPath, 'codex');
-  }
-
-  stopConfigWatcher(): void {
-    stopConfigWatch();
-  }
-
-  async getConfig(projectPath: string): Promise<ProviderConfig> {
-    return getCodexConfig(projectPath);
-  }
-
-  getShiftEnterSequence(): string | null {
-    return null;
-  }
-
-  validateSettings(): SettingsValidationResult {
-    return validateCodexHooks();
-  }
-
-  reinstallSettings(): void {
-    if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
-      cleanupCodexHooks();
-      return;
-    }
-    installCodexHooks();
   }
 
   getTranscriptPath(cliSessionId: string, _projectPath: string): string | null {

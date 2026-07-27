@@ -10,6 +10,8 @@ vi.mock('child_process', () => ({
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn(),
+  lstatSync: vi.fn(() => ({ isSymbolicLink: () => false })),
+  realpathSync: vi.fn((p: string) => p),
   promises: {
     unlink: vi.fn(),
   },

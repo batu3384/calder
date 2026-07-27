@@ -54,9 +54,8 @@ export function isAllowedReadPath(resolvedPath: string): boolean {
     { value: path.join(home, '.mcp.json'), kind: 'file' },
     { value: path.join(home, '.claude'), kind: 'dir' },
     { value: path.join(home, '.codex'), kind: 'dir' },
-    { value: path.join(home, '.copilot'), kind: 'dir' },
-    { value: path.join(home, '.qwen'), kind: 'dir' },
     { value: path.join(home, '.gemini'), kind: 'dir' },
+    { value: path.join(home, '.cursor'), kind: 'dir' },
   ];
 
   if (isMac) {

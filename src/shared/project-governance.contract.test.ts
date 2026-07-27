@@ -26,7 +26,7 @@ describe('project governance contracts', () => {
     expect(source).toContain("networkPolicy: 'allow' | 'ask' | 'block'");
     expect(source).toContain('providerProfileCount: number');
     expect(source).toContain(
-      "export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';",
+      "export type AutoApprovalMode = 'ask' | 'project_edits' | 'session_safe';",
     );
     expect(source).toContain(
       "export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';",

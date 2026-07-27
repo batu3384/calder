@@ -26,14 +26,15 @@
 
 ### VULN-003: Weak P2P Share Secret Policy (Numeric PIN Entropy)
 
-- Severity: Medium
-- Confidence: 70/100
+- Severity: Medium (historical)
+- Status: **REMEDIATED_BY_REMOVAL** (2026-07-27)
+- Confidence: 70/100 (at time of finding)
 - CWE: CWE-521
 - OWASP: A07:2021 Identification and Authentication Failures
-- File: `src/renderer/sharing/share-crypto.ts`
-- Reachability: Indirect
-- Why valid: 4–8 digit numeric-only policy significantly reduces entropy for offline brute-force scenarios.
-- Fix direction: migrate to stronger passphrase/token model and increase minimum secret strength.
+- File (removed): `src/renderer/sharing/share-crypto.ts`
+- Reachability: None — P2P share + mobile remote deleted
+- Why valid historically: 4–8 digit numeric-only policy significantly reduced entropy for offline brute-force scenarios.
+- Fix applied: entire sharing/mobile remote surface removed from product.
 
 ### VULN-004: Release Workflow Shell Input Risk
 

@@ -19,7 +19,7 @@ import { appendAutoApprovalAudit } from './ipc-playwright-mirror';
 
 function makeApprovalDecisionEvent(
   timestamp: number,
-  decision: 'allow' | 'block',
+  decision: 'allow' | 'ask',
   reason?: string,
 ): InspectorEvent {
   return {
@@ -28,7 +28,7 @@ function makeApprovalDecisionEvent(
     hookEvent: 'ApprovalDecision',
     auto_approval: {
       policy_source: 'project',
-      effective_mode: 'edit_only',
+      effective_mode: 'project_edits',
       operation_class: 'edit',
       decision,
       reason,

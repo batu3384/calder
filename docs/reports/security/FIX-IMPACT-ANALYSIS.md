@@ -9,14 +9,14 @@ Direct answer:
 
 - `VULN-001` and `VULN-002` are low-risk product changes when implemented with minimal, DOM-safe refactors.
 - `VULN-004` does not impact runtime behavior; it only affects release workflow input handling.
-- `VULN-003` is the most sensitive change due to UX and backward-compatibility tradeoffs in the sharing flow.
+- `VULN-003` was the most sensitive change due to UX/backward-compat in sharing; **resolved 2026-07-27 by removing P2P share + mobile remote entirely** (`REMEDIATED_BY_REMOVAL`).
 
 Recommended rollout order:
 
 1. `VULN-001` browser target DOM hardening
 2. `VULN-002` quick-setup DOM hardening
 3. `VULN-004` release workflow validation hardening
-4. `VULN-003` share-secret policy strengthening (after compatibility decision)
+4. `VULN-003` — closed by product removal (no share-secret policy hardening required)
 
 ## Baseline Verification
 
@@ -26,10 +26,10 @@ Baseline tests were run and passed:
 npm test -- --run \
   src/renderer/components/browser-tab-pane.test.ts \
   src/renderer/components/browser-stage.contract.test.ts \
-  src/renderer/components/cli-surface/quick-setup.test.ts \
-  src/renderer/components/share-dialog.test.ts \
-  src/renderer/sharing/share-crypto.test.ts
+  src/renderer/components/cli-surface/quick-setup.test.ts
 ```
+
+Note: `share-dialog` / `share-crypto` suites removed with P2P surface (2026-07-27).
 
 Result: all selected suites passed.
 

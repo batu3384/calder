@@ -16,10 +16,9 @@ describe('tab bar surface tab factory extraction', () => {
   it('keeps surface drag reorder behavior in helper module', () => {
     expect(surfaceFactorySource).toContain("tab.className = 'tab-item tab-surface-item'");
     expect(surfaceFactorySource).toContain(
-      "event.dataTransfer!.setData('text/plain', `__surface:${options.kind}`)",
+      "event.dataTransfer!.setData('text/plain', '__surface:cli')",
     );
     expect(surfaceFactorySource).toContain("if (draggedId.startsWith('__surface:'))");
-    expect(surfaceFactorySource).toContain('tabOrder: filtered');
     expect(surfaceFactorySource).toContain('tabPlacement: desiredPlacement');
   });
 });

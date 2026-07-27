@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Calder Safe Debt Closure Plan (2026-04-21)
 
 > Execution mode: safety-first, behavior-preserving, small reversible slices.

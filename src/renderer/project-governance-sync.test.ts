@@ -128,10 +128,10 @@ describe('project governance sync', () => {
       includeSessionOverride
         ? {
             autoApproval: {
-              globalMode: 'off',
-              projectMode: 'edit_only',
-              sessionMode: 'full_auto',
-              effectiveMode: 'full_auto',
+              globalMode: 'ask',
+              projectMode: 'project_edits',
+              sessionMode: 'session_safe',
+              effectiveMode: 'session_safe',
               policySource: 'session',
               safeToolProfile: 'default-read-only',
               recentDecisions: [],
@@ -139,8 +139,8 @@ describe('project governance sync', () => {
           }
         : {
             autoApproval: {
-              globalMode: 'off',
-              effectiveMode: 'off',
+              globalMode: 'ask',
+              effectiveMode: 'ask',
               policySource: 'fallback',
               safeToolProfile: 'default-read-only',
               recentDecisions: [],
@@ -157,9 +157,9 @@ describe('project governance sync', () => {
     includeSessionOverride = true;
     onChangedHandler?.('/proj', {
       autoApproval: {
-        globalMode: 'off',
-        projectMode: 'edit_only',
-        effectiveMode: 'edit_only',
+        globalMode: 'ask',
+        projectMode: 'project_edits',
+        effectiveMode: 'project_edits',
         policySource: 'project',
         safeToolProfile: 'default-read-only',
         recentDecisions: [],
@@ -171,8 +171,8 @@ describe('project governance sync', () => {
     expect(
       appState.projects.find((entry) => entry.id === project.id)?.projectGovernance?.autoApproval,
     ).toMatchObject({
-      sessionMode: 'full_auto',
-      effectiveMode: 'full_auto',
+      sessionMode: 'session_safe',
+      effectiveMode: 'session_safe',
       policySource: 'session',
     });
   });

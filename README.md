@@ -22,7 +22,7 @@
   <img src="docs/images/screenshots/workspace-mosaic.png" alt="Calder Command Studio — multi-session workspace with browser live view and session inspector" width="920" />
 </p>
 <p align="center">
-  <sub><strong>Command Studio</strong> — run Claude, Codex, Copilot, Antigravity, and Qwen side-by-side with browser live view and workspace inspector.</sub>
+  <sub><strong>Command Studio</strong> — run Claude, Codex, Antigravity, and Cursor side-by-side with browser live view and workspace inspector.</sub>
 </p>
 
 <p align="center">
@@ -50,7 +50,6 @@ Instead of juggling many terminal tabs and losing thread context, Calder gives y
 - Provider-aware launch and resume flows
 - Real-time session telemetry (status, usage, inspector events)
 - Browser + terminal surfaces that can hand off focused prompts to active sessions
-- Collaboration features such as encrypted P2P session sharing
 
 ## Supported AI Coding CLIs
 
@@ -58,9 +57,8 @@ Calder currently supports these provider IDs in the codebase:
 
 - `claude` (Claude Code)
 - `codex` (OpenAI Codex CLI)
-- `copilot` (GitHub Copilot CLI)
 - `antigravity` (Antigravity CLI)
-- `qwen` (Qwen Code)
+- `cursor` (Cursor CLI)
 
 You can set defaults per project and run mixed-provider sessions side-by-side.
 
@@ -93,12 +91,6 @@ You can set defaults per project and run mixed-provider sessions side-by-side.
 - Shared/team context integration paths
 - Auto-approval governance with global, project, and session-level precedence
 - Provider-aware approval dispatch where supported
-
-### 5) Collaboration
-
-- Encrypted WebRTC-based P2P session sharing
-- Read-only / read-write collaboration modes
-- Session catalog + active-session synchronization over data channels
 
 ## System Requirements
 
@@ -149,8 +141,6 @@ src/
   preload/      Secure bridge APIs exposed to renderer
   renderer/     UI, panels, browser/live-view, session components
   shared/       Shared runtime types and contracts
-apps/
-  calder-mobile/  Companion mobile workspace (React Native)
 ```
 
 ## Keyboard-First Workflow

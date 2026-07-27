@@ -4,6 +4,7 @@ dist/
 
 *.tsbuildinfo
 coverage/
+.codebase-memory/
 
 # Environment files and credentials
 .env

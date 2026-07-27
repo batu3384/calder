@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Architecture Debt Baseline Refresh (2026-04-22)
 
 ## Scope
@@ -66,7 +68,6 @@ Executed in order after the fix:
 - `showShareDialog` (`src/renderer/components/share-dialog.ts`): `754` lines
 - `ensureInstance` (`src/renderer/components/cli-surface/pane.ts`): `526` lines
 - `renderInspectWorkbench` (`src/renderer/components/mobile-surface/pane.ts`): `410` lines
-- `buildStatusLinePython` (`src/main/statusline-template.ts`): `777` lines
 
 ## Coupling and Cycle Signal
 

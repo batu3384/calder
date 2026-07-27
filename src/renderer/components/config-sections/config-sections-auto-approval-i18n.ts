@@ -2,27 +2,21 @@ import { appState } from '../../state.js';
 import type { AutoApprovalMode, AutoApprovalPolicySource } from '../../types.js';
 
 const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, string> = {
-  off: 'Off',
-  edit_only: 'Edit Only',
-  edit_plus_safe_tools: 'Edit + Safe Tools',
-  full_auto: 'Full Auto',
-  full_auto_unsafe: 'Full Auto (Unsafe)',
+  ask: 'Ask every time',
+  project_edits: 'Auto-approve project edits',
+  session_safe: 'Auto-approve this session',
 };
 
 const AUTO_APPROVAL_MODE_LABELS_TR: Record<AutoApprovalMode, string> = {
-  off: 'Kapalı',
-  edit_only: 'Sadece Düzenleme',
-  edit_plus_safe_tools: 'Düzenleme + Güvenli Komutlar',
-  full_auto: 'Tam Otomatik',
-  full_auto_unsafe: 'Tam Otomatik (Tehlikeli)',
+  ask: 'Her seferinde sor',
+  project_edits: 'Proje düzenlemelerini otomatik onayla',
+  session_safe: 'Bu oturumu otomatik onayla',
 };
 
 export const AUTO_APPROVAL_MODE_OPTIONS: Array<{ value: AutoApprovalMode; label: string }> = [
-  { value: 'off', label: AUTO_APPROVAL_MODE_LABELS.off },
-  { value: 'edit_only', label: AUTO_APPROVAL_MODE_LABELS.edit_only },
-  { value: 'edit_plus_safe_tools', label: AUTO_APPROVAL_MODE_LABELS.edit_plus_safe_tools },
-  { value: 'full_auto', label: AUTO_APPROVAL_MODE_LABELS.full_auto },
-  { value: 'full_auto_unsafe', label: AUTO_APPROVAL_MODE_LABELS.full_auto_unsafe },
+  { value: 'ask', label: AUTO_APPROVAL_MODE_LABELS.ask },
+  { value: 'project_edits', label: AUTO_APPROVAL_MODE_LABELS.project_edits },
+  { value: 'session_safe', label: AUTO_APPROVAL_MODE_LABELS.session_safe },
 ];
 
 export type AutoApprovalModePlainLanguageDetails = {
@@ -57,8 +51,8 @@ export function autoApprovalScopeHelp(): { global: string; project: string; sess
     global: localizedText('Default policy for this Mac.', 'Bu Mac için varsayılan politika.'),
     project: localizedText('Repository-level policy.', 'Depo düzeyinde politika.'),
     session: localizedText(
-      'Temporary policy for the active session.',
-      'Aktif oturum için geçici politika.',
+      'Temporary policy for the active session (not saved).',
+      'Aktif oturum için geçici politika (kaydedilmez).',
     ),
   };
 }
@@ -80,36 +74,26 @@ export function autoApprovalSourceLabel(source: AutoApprovalPolicySource): strin
 
 export function autoApprovalModeBehavior(mode: AutoApprovalMode): string {
   const tr = isTurkishUiLanguage();
-  if (mode === 'off') {
+  if (mode === 'ask') {
     return tr
-      ? 'Hiçbir şeyi otomatik çalıştırmaz; her işlemde onay ister.'
-      : 'Auto-runs nothing; asks before every action.';
+      ? 'Her izin isteğinde sorar. Calder dış CLI ayarlarını asla değiştirmez.'
+      : 'Asks on every permission request. Calder never changes other CLI settings.';
   }
-  if (mode === 'edit_only') {
+  if (mode === 'project_edits') {
     return tr
-      ? 'Dosya düzenlemelerini otomatik çalıştırır; komutlar ve araçlar için sorar.'
-      : 'Auto-runs file edits; asks before commands and tools.';
-  }
-  if (mode === 'edit_plus_safe_tools') {
-    return tr
-      ? 'Dosya düzenlemelerini ve güvenli salt-okunur komutları otomatik çalıştırır.'
-      : 'Auto-runs file edits and safe read-only commands.';
-  }
-  if (mode === 'full_auto') {
-    return tr
-      ? 'Yıkıcı olmayan işlemleri otomatik çalıştırır; yıkıcı işlemler için sorar.'
-      : 'Auto-runs non-destructive operations; asks before destructive actions.';
+      ? 'Yalnız bu projedeki dosya düzenlemelerini otomatik onaylar; komutlar ve dış yollar için sorar.'
+      : 'Auto-approves in-project file edits only; asks for commands and outside paths.';
   }
   return tr
-    ? 'Yıkıcı işlemler dahil her şeyi otomatik çalıştırır.'
-    : 'Auto-runs every operation, including destructive actions.';
+    ? 'Bu oturumda proje düzenlemeleri ve salt-okunur komutlar otomatik; yıkıcı/bilinmeyen için sorar.'
+    : 'This session: auto-approve project edits and read-only tools; asks for destructive/unknown.';
 }
 
 export function autoApprovalModePlainLanguageDetails(
   mode: AutoApprovalMode,
 ): AutoApprovalModePlainLanguageDetails {
   const tr = isTurkishUiLanguage();
-  if (mode === 'off') {
+  if (mode === 'ask') {
     return {
       autoRuns: tr ? 'Hiçbir şey.' : 'Nothing.',
       stillAsks: tr
@@ -117,33 +101,21 @@ export function autoApprovalModePlainLanguageDetails(
         : 'Every edit, command, and tool run.',
     };
   }
-  if (mode === 'edit_only') {
+  if (mode === 'project_edits') {
     return {
-      autoRuns: tr ? 'Dosya düzenlemeleri.' : 'File edits.',
+      autoRuns: tr ? 'Proje içi dosya düzenlemeleri.' : 'In-project file edits.',
       stillAsks: tr
-        ? 'Komutlar, araçlar ve yıkıcı işlemler.'
-        : 'Commands, tools, and destructive actions.',
-    };
-  }
-  if (mode === 'edit_plus_safe_tools') {
-    return {
-      autoRuns: tr
-        ? 'Dosya düzenlemeleri ve güvenli salt-okunur komutlar.'
-        : 'File edits and safe read-only commands.',
-      stillAsks: tr
-        ? 'Yazma yapan, riskli veya yıkıcı komutlar.'
-        : 'Write, risky, or destructive commands.',
-    };
-  }
-  if (mode === 'full_auto') {
-    return {
-      autoRuns: tr ? 'Yıkıcı olmayan işlemler.' : 'Non-destructive operations.',
-      stillAsks: tr ? 'Yıkıcı işlemler.' : 'Destructive actions.',
+        ? 'Komutlar, dış yollar, home/global, yıkıcı işlemler.'
+        : 'Commands, outside paths, home/global, destructive actions.',
     };
   }
   return {
-    autoRuns: tr ? 'Yıkıcı işlemler dahil her şey.' : 'Everything, including destructive actions.',
-    stillAsks: tr ? 'Politika gereği hiçbir şey.' : 'Nothing by policy.',
+    autoRuns: tr
+      ? 'Proje düzenlemeleri ve güvenli salt-okunur komutlar (yalnız bu oturum).'
+      : 'Project edits and safe read-only commands (this session only).',
+    stillAsks: tr
+      ? 'Yazma/riskli/yıkıcı komutlar ve proje dışı yollar.'
+      : 'Write, risky, destructive commands and outside-project paths.',
   };
 }
 

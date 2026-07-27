@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import { discoverProjectGovernance } from './discovery.js';
 
-let mockedGlobalMode: AutoApprovalMode = 'off';
+let mockedGlobalMode: AutoApprovalMode = 'ask';
 let mockedGlobalIsExplicit = false;
 
 vi.mock('./auto-approval-policy.js', async (importOriginal) => {
@@ -36,7 +36,7 @@ function writeFiles(root: string, files: Record<string, string>): void {
 const roots: string[] = [];
 
 afterEach(() => {
-  mockedGlobalMode = 'off';
+  mockedGlobalMode = 'ask';
   mockedGlobalIsExplicit = false;
   while (roots.length > 0) {
     rmSync(roots.pop()!, { recursive: true, force: true });
@@ -63,7 +63,7 @@ describe('discoverProjectGovernance', () => {
           },
           budgetLimitUsd: 8,
           autoApproval: {
-            mode: 'edit_only',
+            mode: 'project_edits',
             safeToolProfile: 'default-read-only',
           },
         },
@@ -87,9 +87,9 @@ describe('discoverProjectGovernance', () => {
       }),
     );
     expect(result.autoApproval).toEqual({
-      globalMode: 'off',
-      projectMode: 'edit_only',
-      effectiveMode: 'edit_only',
+      globalMode: 'ask',
+      projectMode: 'project_edits',
+      effectiveMode: 'project_edits',
       policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
@@ -105,8 +105,8 @@ describe('discoverProjectGovernance', () => {
 
     expect(result.policy).toBeUndefined();
     expect(result.autoApproval).toEqual({
-      globalMode: 'off',
-      effectiveMode: 'off',
+      globalMode: 'ask',
+      effectiveMode: 'ask',
       policySource: 'fallback',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
@@ -117,7 +117,7 @@ describe('discoverProjectGovernance', () => {
   it('keeps projectMode undefined for legacy policies without auto approval', async () => {
     const root = makeProject('governance-legacy');
     roots.push(root);
-    mockedGlobalMode = 'edit_plus_safe_tools';
+    mockedGlobalMode = 'session_safe';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
       '.calder/governance/policy.json': JSON.stringify(
@@ -137,19 +137,19 @@ describe('discoverProjectGovernance', () => {
     const result = await discoverProjectGovernance(root);
 
     expect(result.autoApproval).toEqual({
-      globalMode: 'edit_plus_safe_tools',
+      globalMode: 'session_safe',
       projectMode: undefined,
-      effectiveMode: 'edit_plus_safe_tools',
+      effectiveMode: 'session_safe',
       policySource: 'global',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
   });
 
-  it('uses explicit project off as the effective source', async () => {
+  it('maps explicit legacy project off to ask', async () => {
     const root = makeProject('governance-project-off');
     roots.push(root);
-    mockedGlobalMode = 'edit_plus_safe_tools';
+    mockedGlobalMode = 'session_safe';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
       '.calder/governance/policy.json': JSON.stringify(
@@ -173,19 +173,19 @@ describe('discoverProjectGovernance', () => {
     const result = await discoverProjectGovernance(root);
 
     expect(result.autoApproval).toEqual({
-      globalMode: 'edit_plus_safe_tools',
-      projectMode: 'off',
-      effectiveMode: 'off',
+      globalMode: 'session_safe',
+      projectMode: 'ask',
+      effectiveMode: 'ask',
       policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
   });
 
-  it('parses full_auto project override from policy', async () => {
+  it('maps full_auto project override to ask', async () => {
     const root = makeProject('governance-project-full-auto');
     roots.push(root);
-    mockedGlobalMode = 'off';
+    mockedGlobalMode = 'ask';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
       '.calder/governance/policy.json': JSON.stringify(
@@ -209,19 +209,19 @@ describe('discoverProjectGovernance', () => {
     const result = await discoverProjectGovernance(root);
 
     expect(result.autoApproval).toEqual({
-      globalMode: 'off',
-      projectMode: 'full_auto',
-      effectiveMode: 'full_auto',
+      globalMode: 'ask',
+      projectMode: 'ask',
+      effectiveMode: 'ask',
       policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
   });
 
-  it('parses full_auto_unsafe project override from policy', async () => {
+  it('maps full_auto_unsafe project override to ask', async () => {
     const root = makeProject('governance-project-full-auto-unsafe');
     roots.push(root);
-    mockedGlobalMode = 'off';
+    mockedGlobalMode = 'ask';
     mockedGlobalIsExplicit = true;
     writeFiles(root, {
       '.calder/governance/policy.json': JSON.stringify(
@@ -245,9 +245,9 @@ describe('discoverProjectGovernance', () => {
     const result = await discoverProjectGovernance(root);
 
     expect(result.autoApproval).toEqual({
-      globalMode: 'off',
-      projectMode: 'full_auto_unsafe',
-      effectiveMode: 'full_auto_unsafe',
+      globalMode: 'ask',
+      projectMode: 'ask',
+      effectiveMode: 'ask',
       policySource: 'project',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],

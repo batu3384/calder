@@ -46,6 +46,7 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
 
   ipcMain.handle('git:getDiff', (_event, projectPath: string, filePath: string, area: string) => {
     const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read git diff');
+    resolvePathWithinProject(validatedProjectPath, filePath);
     return getGitDiff(validatedProjectPath, filePath, area);
   });
 
@@ -56,6 +57,7 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
 
   ipcMain.handle('git:stageFile', async (_event, projectPath: string, filePath: string) => {
     const validatedProjectPath = requireKnownProjectPath(projectPath, 'Stage git file');
+    resolvePathWithinProject(validatedProjectPath, filePath);
     await ops.assertProjectGovernanceAllows(validatedProjectPath, {
       kind: 'write',
       label: 'Stage git file',
@@ -66,6 +68,7 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
 
   ipcMain.handle('git:unstageFile', async (_event, projectPath: string, filePath: string) => {
     const validatedProjectPath = requireKnownProjectPath(projectPath, 'Unstage git file');
+    resolvePathWithinProject(validatedProjectPath, filePath);
     await ops.assertProjectGovernanceAllows(validatedProjectPath, {
       kind: 'write',
       label: 'Unstage git file',
@@ -78,6 +81,7 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
     'git:discardFile',
     async (_event, projectPath: string, filePath: string, area: string) => {
       const validatedProjectPath = requireKnownProjectPath(projectPath, 'Discard git file changes');
+      resolvePathWithinProject(validatedProjectPath, filePath);
       await ops.assertProjectGovernanceAllows(validatedProjectPath, {
         kind: 'write',
         label: 'Discard git file changes',
@@ -90,7 +94,8 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
   ipcMain.on('git:watchProject', (_event, projectPath: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    startGitWatcher(win, projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Watch git project');
+    startGitWatcher(win, validatedProjectPath);
   });
 
   ipcMain.handle('git:listBranches', (_event, projectPath: string) => {

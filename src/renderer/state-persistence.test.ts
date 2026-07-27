@@ -9,9 +9,9 @@ describe('RendererPersistQueue', () => {
     const onError = vi.fn();
     const queue = new RendererPersistQueue(save, onError);
 
-    queue.enqueue({ version: 1, projects: [], activeProjectId: null, preferences: {} } as never);
+    queue.enqueue({ version: 2, projects: [], activeProjectId: null, preferences: {} } as never);
     queue.enqueue({
-      version: 1,
+      version: 2,
       projects: [{ id: 'p1' }],
       activeProjectId: 'p1',
       preferences: {},

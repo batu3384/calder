@@ -31,7 +31,6 @@ import {
 } from './state-session-factory.js';
 import {
   addMcpInspectorSession as addMcpInspectorSessionToProject,
-  addRemoteSession as addRemoteSessionToProject,
   addSessionToProject,
   openUrlInExistingBrowserSession,
   upsertBrowserTabSession,
@@ -162,24 +161,6 @@ export function upsertDiffViewerProjectSession(options: {
   return upsertDiffViewerSession(
     options.project,
     { filePath: options.filePath, area: options.area, worktreePath: options.worktreePath },
-    options.pushNav,
-  );
-}
-
-export function addRemoteProjectSession(options: {
-  project: ProjectRecord;
-  sessionId: string;
-  hostSessionName: string;
-  shareMode: 'readonly' | 'readwrite';
-  pushNav: (sessionId: string) => void;
-}): SessionRecord {
-  return addRemoteSessionToProject(
-    options.project,
-    {
-      sessionId: options.sessionId,
-      hostSessionName: options.hostSessionName,
-      shareMode: options.shareMode,
-    },
     options.pushNav,
   );
 }

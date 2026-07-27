@@ -1,7 +1,6 @@
 // Shared type definitions used across main, preload, and renderer processes.
 
 export type * from './types-governance';
-export type * from './types-mobile';
 export type * from './types-project';
 export type * from './types-provider';
 export type * from './types-session';
@@ -77,7 +76,7 @@ toolPolicy: 'allow' | 'ask' | 'block'
 writePolicy: 'allow' | 'ask' | 'block'
 networkPolicy: 'allow' | 'ask' | 'block'
 providerProfileCount: number
-export type AutoApprovalMode = 'off' | 'edit_only' | 'edit_plus_safe_tools' | 'full_auto' | 'full_auto_unsafe';
+export type AutoApprovalMode = 'ask' | 'project_edits' | 'session_safe';
 export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
 export type AutoApprovalOperationClass = 'edit' | 'safe_tool' | 'risky_tool' | 'unknown' | 'destructive';
 export type AutoApprovalDecision = 'allow' | 'ask' | 'block';
@@ -101,5 +100,5 @@ decision: AutoApprovalDecision
 reason?: string
 
 tabPlacement?: 'start' | 'end';
-tabOrder?: Array<'cli' | 'mobile'>;
+tabOrder?: Array<'cli'>;
 */

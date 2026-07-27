@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ProjectGovernanceStarterPolicyResult } from '../../shared/types/governance.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectGovernance, POLICY_RELATIVE_PATH } from './discovery.js';
 
 function buildStarterPolicy(): string {
@@ -14,7 +15,7 @@ function buildStarterPolicy(): string {
       writePolicy: 'ask',
       networkPolicy: 'ask',
       autoApproval: {
-        mode: 'off',
+        mode: 'ask',
         safeToolProfile: 'default-read-only',
       },
       mcpAllowlist: [],
@@ -33,7 +34,7 @@ function buildStarterPolicy(): string {
 export async function createProjectGovernanceStarterPolicy(
   projectPath: string,
 ): Promise<ProjectGovernanceStarterPolicyResult> {
-  const fullPath = path.join(projectPath, POLICY_RELATIVE_PATH);
+  const fullPath = projectWritePath(projectPath, POLICY_RELATIVE_PATH);
   let created = false;
 
   try {

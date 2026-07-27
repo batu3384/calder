@@ -22,11 +22,7 @@ vi.mock('../../state.js', () => ({
   appState: mockState,
 }));
 
-vi.mock('../mcp-add-modal.js', () => ({
-  showMcpAddModal: vi.fn(),
-}));
-
-describe('getConfigProviderId', () => {
+describe('getActiveCliProviderId', () => {
   beforeEach(() => {
     vi.resetModules();
     mockState.activeProject.sessions = [];
@@ -36,8 +32,8 @@ describe('getConfigProviderId', () => {
 
   it('uses the active CLI session provider', async () => {
     mockState.activeSession = { id: 's1', providerId: 'codex' };
-    const { getConfigProviderId } = await import('./config-sections.js');
-    expect(getConfigProviderId()).toBe('codex');
+    const { getActiveCliProviderId } = await import('./config-sections.js');
+    expect(getActiveCliProviderId()).toBe('codex');
   });
 
   it('falls back to the most recent CLI session provider when active session is not CLI', async () => {
@@ -47,40 +43,30 @@ describe('getConfigProviderId', () => {
       { id: 's2', type: 'diff-viewer' },
       { id: 's3', providerId: 'codex' },
     ];
-    const { getConfigProviderId } = await import('./config-sections.js');
-    expect(getConfigProviderId()).toBe('codex');
+    const { getActiveCliProviderId } = await import('./config-sections.js');
+    expect(getActiveCliProviderId()).toBe('codex');
   });
 
   it('defaults to claude when there is no CLI session', async () => {
     mockState.activeProject.sessions = [{ id: 's1', type: 'diff-viewer' }];
-    const { getConfigProviderId } = await import('./config-sections.js');
-    expect(getConfigProviderId()).toBe('claude');
+    const { getActiveCliProviderId } = await import('./config-sections.js');
+    expect(getActiveCliProviderId()).toBe('claude');
   });
 
-  it('renders scope badges as cockpit control chips', async () => {
-    const mod = await import('./config-sections.js');
-    expect(typeof mod.scopeBadge).toBe('function');
-    expect(mod.scopeBadge('project')).toContain('control-chip');
-    expect(mod.scopeBadge('user')).toContain('scope-badge');
-  });
-
-  it('describes integrations as MCP servers instead of a vague integrations bucket', async () => {
+  it('no longer renders the MCP/agents/skills/commands toolchain list', async () => {
     const source = await import('node:fs/promises').then((fs) =>
       fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
     );
 
-    expect(source).toContain("'MCP Servers'");
-    expect(source).toContain('Model Context Protocol');
+    expect(source).not.toContain("'MCP Servers'");
     expect(source).not.toContain("'Integrations'");
-  });
-
-  it('renders toolchain rows with the shared Calder list-row primitive', async () => {
-    const source = await import('node:fs/promises').then((fs) =>
-      fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-    );
-
-    expect(source).toContain("el.className = 'config-item calder-list-row'");
-    expect(source).toContain('createConfigOpenButton');
+    expect(source).not.toContain('mcpItem');
+    expect(source).not.toContain('agentItem');
+    expect(source).not.toContain('skillItem');
+    expect(source).not.toContain('commandItem');
+    expect(source).not.toContain('provider.getConfig');
+    expect(source).not.toContain('watchProject');
+    expect(source).not.toContain('onConfigChanged');
   });
 
   it('includes an auto-approval control block wired to governance APIs', async () => {
@@ -127,145 +113,101 @@ describe('getConfigProviderId', () => {
   it('derives human-readable auto-approval scope state', async () => {
     const { describeAutoApprovalScopes } = await import('./config-sections.js');
     const summary = describeAutoApprovalScopes({
-      globalMode: 'edit_only',
+      globalMode: 'project_edits',
       projectMode: undefined,
       sessionMode: undefined,
-      effectiveMode: 'edit_only',
+      effectiveMode: 'project_edits',
       policySource: 'global',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Edit Only');
+    expect(summary.global).toBe('Auto-approve project edits');
     expect(summary.project).toBe('Use Global Default');
     expect(summary.session).toBe('Use Project / Global Default');
     expect(summary.effectiveSource).toBe('Global default');
     expect(summary.effectiveExplanation).toBe(
       'Project and Session follow higher scope, so Global setting applies.',
     );
-    expect(summary.effectiveBehavior).toBe('Auto-runs file edits; asks before commands and tools.');
-    expect(summary.effectiveAutoRuns).toBe('File edits.');
-    expect(summary.effectiveStillAsks).toBe('Commands, tools, and destructive actions.');
+    expect(summary.effectiveBehavior).toBe(
+      'Auto-approves in-project file edits only; asks for commands and outside paths.',
+    );
+    expect(summary.effectiveAutoRuns).toBe('In-project file edits.');
+    expect(summary.effectiveStillAsks).toBe(
+      'Commands, outside paths, home/global, destructive actions.',
+    );
   });
 
   it('describes effective scope when session override is active', async () => {
     const { describeAutoApprovalScopes } = await import('./config-sections.js');
     const summary = describeAutoApprovalScopes({
-      globalMode: 'edit_only',
-      projectMode: 'off',
-      sessionMode: 'edit_plus_safe_tools',
-      effectiveMode: 'edit_plus_safe_tools',
+      globalMode: 'project_edits',
+      projectMode: 'ask',
+      sessionMode: 'session_safe',
+      effectiveMode: 'session_safe',
       policySource: 'session',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Edit Only');
-    expect(summary.project).toBe('Off');
-    expect(summary.session).toBe('Edit + Safe Tools');
+    expect(summary.global).toBe('Auto-approve project edits');
+    expect(summary.project).toBe('Ask every time');
+    expect(summary.session).toBe('Auto-approve this session');
     expect(summary.effectiveSource).toBe('Session override');
     expect(summary.effectiveExplanation).toBe(
       'Session override is active, so Session setting applies.',
     );
-    expect(summary.effectiveBehavior).toBe('Auto-runs file edits and safe read-only commands.');
-    expect(summary.effectiveAutoRuns).toBe('File edits and safe read-only commands.');
-    expect(summary.effectiveStillAsks).toBe('Write, risky, or destructive commands.');
+    expect(summary.effectiveBehavior).toBe(
+      'This session: auto-approve project edits and read-only tools; asks for destructive/unknown.',
+    );
+    expect(summary.effectiveAutoRuns).toBe(
+      'Project edits and safe read-only commands (this session only).',
+    );
+    expect(summary.effectiveStillAsks).toBe(
+      'Write, risky, destructive commands and outside-project paths.',
+    );
   });
 
   it('shows fallback explanation when nothing is explicitly configured', async () => {
     const { describeAutoApprovalScopes } = await import('./config-sections.js');
     const summary = describeAutoApprovalScopes({
-      globalMode: 'off',
+      globalMode: 'ask',
       projectMode: undefined,
       sessionMode: undefined,
-      effectiveMode: 'off',
+      effectiveMode: 'ask',
       policySource: 'fallback',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
 
     expect(summary.effectiveSource).toBe('Fallback default');
-    expect(summary.effectiveExplanation).toBe('No explicit setting found; fallback Off applies.');
-    expect(summary.effectiveBehavior).toBe('Auto-runs nothing; asks before every action.');
+    expect(summary.effectiveExplanation).toBe(
+      'No explicit setting found; fallback Ask every time applies.',
+    );
+    expect(summary.effectiveBehavior).toBe(
+      'Asks on every permission request. Calder never changes other CLI settings.',
+    );
     expect(summary.effectiveAutoRuns).toBe('Nothing.');
     expect(summary.effectiveStillAsks).toBe('Every edit, command, and tool run.');
   });
 
-  it('describes full_auto behavior clearly', async () => {
+  it('describes ask behavior clearly', async () => {
     const { describeAutoApprovalScopes } = await import('./config-sections.js');
     const summary = describeAutoApprovalScopes({
-      globalMode: 'full_auto',
+      globalMode: 'ask',
       projectMode: undefined,
       sessionMode: undefined,
-      effectiveMode: 'full_auto',
+      effectiveMode: 'ask',
       policySource: 'global',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Full Auto');
+    expect(summary.global).toBe('Ask every time');
     expect(summary.effectiveBehavior).toBe(
-      'Auto-runs non-destructive operations; asks before destructive actions.',
+      'Asks on every permission request. Calder never changes other CLI settings.',
     );
-    expect(summary.effectiveAutoRuns).toBe('Non-destructive operations.');
-    expect(summary.effectiveStillAsks).toBe('Destructive actions.');
-  });
-
-  it('describes full_auto_unsafe behavior clearly', async () => {
-    const { describeAutoApprovalScopes } = await import('./config-sections.js');
-    const summary = describeAutoApprovalScopes({
-      globalMode: 'full_auto_unsafe',
-      projectMode: undefined,
-      sessionMode: undefined,
-      effectiveMode: 'full_auto_unsafe',
-      policySource: 'global',
-      safeToolProfile: 'default-read-only',
-      recentDecisions: [],
-    });
-
-    expect(summary.global).toBe('Full Auto (Unsafe)');
-    expect(summary.effectiveBehavior).toBe(
-      'Auto-runs every operation, including destructive actions.',
-    );
-    expect(summary.effectiveAutoRuns).toBe('Everything, including destructive actions.');
-    expect(summary.effectiveStillAsks).toBe('Nothing by policy.');
-  });
-
-  it('renders concise Turkish metadata summaries for right-rail skills and commands', async () => {
-    mockState.preferences.language = 'tr';
-    const { localizeConfigMetadataDetail } = await import('./config-sections.js');
-
-    expect(
-      localizeConfigMetadataDetail(
-        'skill',
-        'using-superpowers',
-        'Use when starting any conversation - establishes how to find and use skills, requiring Skill tool invocation before ANY response including clarifying questions',
-      ),
-    ).toBe('Konuşma başında doğru beceri ve süper güç akışını başlatır.');
-
-    expect(
-      localizeConfigMetadataDetail(
-        'command',
-        'commit',
-        'Create well-formatted commits with conventional commit messages',
-      ),
-    ).toBe('Düzenli commit mesajlarıyla temiz commit oluşturur.');
-
-    expect(localizeConfigMetadataDetail('skill', 'unknown-skill', 'Keep original detail')).toBe(
-      'Keep original detail',
-    );
-  });
-
-  it('adds accessible labels and keyboard focus affordance for MCP remove buttons', async () => {
-    const source = await import('node:fs/promises').then((fs) =>
-      fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-    );
-    const modalCss = await import('node:fs/promises').then((fs) =>
-      fs.readFile(new URL('../../styles/modals.css', import.meta.url), 'utf-8'),
-    );
-
-    expect(source).toContain("removeBtn.setAttribute('aria-label', removeLabel);");
-    expect(modalCss).toContain('.config-item-remove-btn:focus-visible');
-    expect(modalCss).toContain('.config-item:focus-within .config-item-remove-btn');
+    expect(summary.effectiveAutoRuns).toBe('Nothing.');
+    expect(summary.effectiveStillAsks).toBe('Every edit, command, and tool run.');
   });
 });

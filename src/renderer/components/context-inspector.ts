@@ -49,8 +49,7 @@ function syncRailSignal(): void {
     gitStatus?.isGitRepo && gitStatus.staged + gitStatus.modified + gitStatus.untracked > 0,
   );
   const hasGitConflicts = Boolean(gitStatus?.conflicted);
-  const hasRiskyApproval =
-    autoApprovalMode === 'full_auto' || autoApprovalMode === 'full_auto_unsafe';
+  const hasRiskyApproval = autoApprovalMode === 'session_safe';
   const nextSignal: RailSignal =
     hasGitConflicts || hasRiskyApproval ? 'warning' : hasDirtyGit ? 'active' : 'default';
   if (inspectorEl.dataset.railSignal !== nextSignal) {

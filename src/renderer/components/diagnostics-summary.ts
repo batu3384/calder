@@ -33,15 +33,12 @@ const PROVIDER_BACKEND_LABELS: Record<string, string> = {
   anthropic: 'Anthropic',
   zai: 'Z.ai',
   minimax: 'MiniMax',
-  qwen: 'Qwen',
 };
 
 const AUTO_APPROVAL_MODE_LABELS: Record<AutoApprovalMode, { en: string; tr: string }> = {
-  off: { en: 'Manual', tr: 'Manuel' },
-  edit_only: { en: 'Edits only', tr: 'Sadece düzenleme' },
-  edit_plus_safe_tools: { en: 'Edits + safe tools', tr: 'Düzenleme + güvenli araçlar' },
-  full_auto: { en: 'Autonomous', tr: 'Otonom' },
-  full_auto_unsafe: { en: 'Unsafe autonomous', tr: 'Tehlikeli otonom' },
+  ask: { en: 'Ask every time', tr: 'Her seferinde sor' },
+  project_edits: { en: 'Project edits', tr: 'Proje düzenlemeleri' },
+  session_safe: { en: 'Session safe', tr: 'Oturum güvenli' },
 };
 
 function localized(language: UiLanguage, english: string, turkish: string): string {
@@ -233,23 +230,27 @@ function summarizeAutoApproval(
     };
   }
   const label = AUTO_APPROVAL_MODE_LABELS[mode][language];
-  if (mode === 'full_auto_unsafe') {
+  if (mode === 'session_safe') {
     return {
       label: localized(language, 'Approval', 'Onay'),
       value: label,
       detail: localized(
         language,
-        'Destructive actions can be auto-approved.',
-        'Yıkıcı işlemler otomatik onaylanabilir.',
+        'In-project edits and read-only tools can be auto-approved.',
+        'Proje içi düzenlemeler ve salt-okunur araçlar otomatik onaylanabilir.',
       ),
-      tone: 'warning',
+      tone: 'active',
     };
   }
-  if (mode === 'full_auto') {
+  if (mode === 'project_edits') {
     return {
       label: localized(language, 'Approval', 'Onay'),
       value: label,
-      detail: localized(language, 'Destructive actions still ask.', 'Yıkıcı işlemler yine sorar.'),
+      detail: localized(
+        language,
+        'Only in-project edits can be auto-approved.',
+        'Yalnız proje içi düzenlemeler otomatik onaylanabilir.',
+      ),
       tone: 'active',
     };
   }

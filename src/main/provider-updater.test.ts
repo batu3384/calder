@@ -20,7 +20,6 @@ function createProviderMeta(id: ProviderId, displayName: string): CliProviderMet
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
     },
@@ -37,6 +36,7 @@ function createTarget(
   return {
     meta: createProviderMeta(id, displayName),
     resolveBinaryPath: () => binaryPath,
+    clearBinaryCache: () => undefined,
     validatePrerequisites: () =>
       installed ? { ok: true, message: '' } : { ok: false, message: `${displayName} missing` },
   };
@@ -144,20 +144,6 @@ describe('updateProviders', () => {
       'npm install -g @anthropic-ai/claude-code@latest',
       'claude --version',
     ]);
-  });
-
-  it('skips providers that are not installed', async () => {
-    const runner = new FakeRunner();
-    const summary = await updateProviders(
-      [createTarget('qwen', 'Qwen Code', '/usr/local/bin/qwen', false)],
-      { runner, now: (() => 2_000) as () => number },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('qwen');
-    expect(summary.results[0].status).toBe('skipped');
-    expect(summary.results[0].message).toBe('Qwen Code missing');
-    expect(runner.calls).toHaveLength(0);
   });
 
   it('marks brew cask providers as up to date when brew reports no outdated version', async () => {
@@ -296,29 +282,6 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateCommand).toBe(
       'npm install -g @anthropic-ai/claude-code@latest',
     );
-  });
-
-  it('uses npm-based checks for Copilot instead of self-update commands', async () => {
-    const runner = new FakeRunner();
-    const copilotBinary = '/Users/test/.npm-global/lib/node_modules/@github/copilot/bin/copilot.js';
-    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
-    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], {
-      code: 0,
-      stdout: '1.0.30',
-    });
-
-    const summary = await updateProviders(
-      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
-      { runner, now: (() => 4_500) as () => number },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('copilot');
-    expect(summary.results[0].source).toBe('npm');
-    expect(summary.results[0].status).toBe('up_to_date');
-    expect(summary.results[0].updateAttempted).toBe(false);
-    expect(summary.results[0].checkCommand).toBe('npm view @github/copilot version --silent');
-    expect(summary.results[0].updateCommand).toBeUndefined();
   });
 
   it('uses brew outdated checks for cask-installed providers', async () => {
@@ -475,32 +438,6 @@ describe('updateProviders', () => {
     expect(runner.calls.some((call) => call.command === 'brew' && call.args[0] === 'info')).toBe(
       false,
     );
-  });
-
-  it('detects Copilot installed from Homebrew cask and applies cask update strategy', async () => {
-    const runner = new FakeRunner();
-    const copilotBinary = '/opt/homebrew/Caskroom/copilot-cli/1.0.30/copilot';
-    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
-    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
-      code: 0,
-      stdout: JSON.stringify({ formulae: [], casks: [] }),
-    });
-    runner.enqueue('npm', ['view', '@github/copilot', 'version', '--silent'], {
-      code: 0,
-      stdout: '1.0.30',
-    });
-
-    const summary = await updateProviders(
-      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
-      { runner, now: (() => 4_590) as () => number },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('copilot');
-    expect(summary.results[0].source).toBe('brew-cask');
-    expect(summary.results[0].status).toBe('up_to_date');
-    expect(summary.results[0].updateAttempted).toBe(false);
-    expect(summary.results[0].checkCommand).toBe('brew outdated --json=v2 --cask copilot-cli');
   });
 
   it('falls back to npm checks when installation source cannot be determined but npm package is configured', async () => {
@@ -740,31 +677,6 @@ describe('updateProviders', () => {
     expect(summary.results[0].updateCommand).toBe('brew upgrade --cask codex');
   });
 
-  it('matches brew outdated entries that report names as arrays', async () => {
-    const runner = new FakeRunner();
-    const copilotBinary = '/opt/homebrew/Caskroom/copilot-cli/1.0.30/copilot';
-    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.30.' });
-    runner.enqueue('brew', ['outdated', '--json=v2', '--cask', 'copilot-cli'], {
-      code: 1,
-      stdout: JSON.stringify({
-        casks: [{ name: ['copilot', 'copilot-cli'], current_version: '1.0.31' }],
-      }),
-    });
-    runner.enqueue('brew', ['upgrade', '--cask', 'copilot-cli'], { code: 0, stdout: 'upgraded' });
-    runner.enqueue(copilotBinary, ['--version'], { code: 0, stdout: 'GitHub Copilot CLI 1.0.31.' });
-
-    const summary = await updateProviders(
-      [createTarget('copilot', 'GitHub Copilot', copilotBinary)],
-      { runner, now: (() => 4_950) as () => number },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(summary.results[0].providerId).toBe('copilot');
-    expect(summary.results[0].source).toBe('brew-cask');
-    expect(summary.results[0].status).toBe('updated');
-    expect(summary.results[0].latestVersion).toBe('1.0.31');
-  });
-
   it('returns error results when update command execution fails', async () => {
     const runner = new FakeRunner();
     const codexBinary = '/Users/test/.npm-global/lib/node_modules/@openai/codex/bin/codex.js';
@@ -872,30 +784,6 @@ describe('updateProviders', () => {
     expect(summary.results).toHaveLength(1);
     expect(summary.results[0].status).toBe('cancelled');
     expect(summary.results[0].message).toContain('before version verification completed');
-  });
-
-  it('emits provider update progress events from start to finish', async () => {
-    const runner = new FakeRunner();
-    const progressEvents: string[] = [];
-
-    const summary = await updateProviders(
-      [createTarget('qwen', 'Qwen Code', '/usr/local/bin/qwen', false)],
-      {
-        runner,
-        now: (() => 5_000) as () => number,
-        onProgress: (event) => {
-          progressEvents.push(event.phase);
-        },
-      },
-    );
-
-    expect(summary.results).toHaveLength(1);
-    expect(progressEvents).toEqual([
-      'started',
-      'provider_started',
-      'provider_finished',
-      'finished',
-    ]);
   });
 
   it('updates a single selected provider without running every provider', async () => {

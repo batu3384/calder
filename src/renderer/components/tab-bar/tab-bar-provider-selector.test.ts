@@ -18,7 +18,6 @@ function createProvider(id: ProviderId, displayName: string): CliProviderMeta {
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: true,
       pendingPromptTrigger: 'session-start',
     },

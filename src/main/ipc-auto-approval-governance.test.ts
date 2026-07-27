@@ -21,11 +21,10 @@ afterEach(() => {
 
 describe('ipc auto-approval governance helpers', () => {
   it('validates known auto-approval modes', () => {
-    expect(isAutoApprovalMode('off')).toBe(true);
-    expect(isAutoApprovalMode('edit_only')).toBe(true);
-    expect(isAutoApprovalMode('edit_plus_safe_tools')).toBe(true);
-    expect(isAutoApprovalMode('full_auto')).toBe(true);
-    expect(isAutoApprovalMode('full_auto_unsafe')).toBe(true);
+    expect(isAutoApprovalMode('ask')).toBe(true);
+    expect(isAutoApprovalMode('project_edits')).toBe(true);
+    expect(isAutoApprovalMode('session_safe')).toBe(true);
+    expect(isAutoApprovalMode('full_auto')).toBe(false);
     expect(isAutoApprovalMode('invalid-mode')).toBe(false);
     expect(isAutoApprovalMode(undefined)).toBe(false);
   });
@@ -34,30 +33,30 @@ describe('ipc auto-approval governance helpers', () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), 'calder-policy-'));
     tempDirs.push(projectDir);
 
-    updateAutoApprovalMode(projectDir, 'project', 'full_auto');
+    updateAutoApprovalMode(projectDir, 'project', 'project_edits');
 
     const policyPath = path.join(projectDir, '.calder', 'governance', 'policy.json');
     const parsed = JSON.parse(fs.readFileSync(policyPath, 'utf8')) as {
       autoApproval?: { mode?: string };
     };
-    expect(parsed.autoApproval?.mode).toBe('full_auto');
+    expect(parsed.autoApproval?.mode).toBe('project_edits');
   });
 
   it('applies session override to derived governance auto-approval state', async () => {
     const state: ProjectGovernanceState = {
       autoApproval: {
-        globalMode: 'off',
-        projectMode: 'edit_only',
-        effectiveMode: 'edit_only',
+        globalMode: 'ask',
+        projectMode: 'project_edits',
+        effectiveMode: 'project_edits',
         policySource: 'project',
         safeToolProfile: 'default-read-only',
         recentDecisions: [],
       },
     };
 
-    const result = await applySessionOverrideToGovernanceState(state, 'full_auto');
-    expect(result.autoApproval?.sessionMode).toBe('full_auto');
-    expect(result.autoApproval?.effectiveMode).toBe('full_auto');
+    const result = await applySessionOverrideToGovernanceState(state, 'session_safe');
+    expect(result.autoApproval?.sessionMode).toBe('session_safe');
+    expect(result.autoApproval?.effectiveMode).toBe('session_safe');
     expect(result.autoApproval?.policySource).toBe('session');
   });
 });

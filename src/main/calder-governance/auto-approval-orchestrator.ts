@@ -82,7 +82,10 @@ function buildApprovalFingerprint(event: InspectorEvent): string {
   return `${toolName}:${toolInput}`;
 }
 
-function extractOperationInput(event: InspectorEvent): AutoApprovalOperationInput {
+function extractOperationInput(
+  event: InspectorEvent,
+  projectPath: string | null,
+): AutoApprovalOperationInput {
   const rawInput = isRecord(event.tool_input) ? event.tool_input : undefined;
   return {
     tool: asString(event.tool_name),
@@ -90,6 +93,14 @@ function extractOperationInput(event: InspectorEvent): AutoApprovalOperationInpu
     args: rawInput ? asStringArray(rawInput.args) : undefined,
     text: rawInput ? asString(rawInput.text) : undefined,
     label: rawInput ? asString(rawInput.label) : undefined,
+    filePath:
+      rawInput != null
+        ? asString(rawInput.file_path) ||
+          asString(rawInput.path) ||
+          asString(rawInput.filePath) ||
+          undefined
+        : undefined,
+    projectPath: projectPath ?? asString(event.cwd) ?? undefined,
   };
 }
 
@@ -104,13 +115,13 @@ async function resolveAutoApprovalStateFromProject(
   projectPath: string | null,
 ): Promise<ResolvedAutoApprovalState> {
   if (!projectPath) {
-    return { effectiveMode: 'off', policySource: 'fallback' };
+    return { effectiveMode: 'ask', policySource: 'fallback' };
   }
 
   const governanceState = await discoverProjectGovernance(projectPath);
   const autoApproval = governanceState.autoApproval;
   if (!autoApproval) {
-    return { effectiveMode: 'off', policySource: 'fallback' };
+    return { effectiveMode: 'ask', policySource: 'fallback' };
   }
 
   return {
@@ -164,11 +175,7 @@ export function createAutoApprovalOrchestrator(
 
         const session = sessions.get(sessionId);
         if (!session) continue;
-        const latestCwd = asString(event.cwd);
-        if (latestCwd && latestCwd !== session.projectPath) {
-          session.projectPath = latestCwd;
-          sessions.set(sessionId, session);
-        }
+        // Never trust event.cwd to rewrite the session project boundary.
         const providerId = session?.providerId;
         const providerSupported = supportsAutoApprovalDispatch(providerId);
         let approvalState: ResolvedAutoApprovalState;
@@ -176,13 +183,15 @@ export function createAutoApprovalOrchestrator(
         try {
           approvalState = await resolveAutoApprovalState(session?.projectPath ?? null);
         } catch (error) {
-          approvalState = { effectiveMode: 'off', policySource: 'fallback' };
+          approvalState = { effectiveMode: 'ask', policySource: 'fallback' };
           policyResolutionFailure = asErrorMessage(error);
         }
         const sessionMode = sessionOverrides.get(sessionId);
         const effectiveMode = sessionMode ?? approvalState.effectiveMode;
         const policySource = sessionMode ? 'session' : approvalState.policySource;
-        const operationClass = classifyAutoApprovalOperation(extractOperationInput(event));
+        const operationClass = classifyAutoApprovalOperation(
+          extractOperationInput(event, session?.projectPath ?? null),
+        );
         const initialDecision = decideAutoApprovalAction(effectiveMode, operationClass);
 
         let finalDecision: AutoApprovalDecision = initialDecision.decision;
@@ -195,7 +204,7 @@ export function createAutoApprovalOrchestrator(
         }
 
         if (policyResolutionFailure) {
-          finalReason = `${finalReason} Policy resolution failed (${policyResolutionFailure}); auto-approval fell back to off mode.`;
+          finalReason = `${finalReason} Policy resolution failed (${policyResolutionFailure}); auto-approval fell back to manual approval.`;
         }
 
         if (finalDecision === 'allow') {
@@ -206,9 +215,19 @@ export function createAutoApprovalOrchestrator(
             lastApproval !== undefined &&
             requestTimestamp - lastApproval.timestamp < rateLimitMs &&
             lastApproval.fingerprint === operationFingerprint;
-          if (isRapidDuplicate) {
-            finalReason = `Duplicate permission request detected within ${rateLimitMs}ms; reused prior auto-approval.`;
+          const isInFlight =
+            lastApproval !== undefined && lastApproval.fingerprint === '__inflight__';
+          if (isRapidDuplicate || isInFlight) {
+            finalDecision = 'ask';
+            finalReason = isInFlight
+              ? 'Auto-approval already in flight for this session; skipped concurrent dispatch.'
+              : `Duplicate permission request detected within ${rateLimitMs}ms; reused prior auto-approval.`;
           } else {
+            // Claim the slot synchronously before await to defeat concurrent dispatch races.
+            lastAutoApproval.set(sessionId, {
+              timestamp: requestTimestamp,
+              fingerprint: '__inflight__',
+            });
             try {
               await options.sendApproval(sessionId, providerId as ProviderId);
               lastAutoApproval.set(sessionId, {
@@ -216,6 +235,7 @@ export function createAutoApprovalOrchestrator(
                 fingerprint: operationFingerprint,
               });
             } catch {
+              lastAutoApproval.delete(sessionId);
               finalDecision = 'ask';
               finalReason = 'Auto-approval dispatch failed; manual approval required.';
             }

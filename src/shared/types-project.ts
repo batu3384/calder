@@ -36,8 +36,6 @@ export type {
   GitFileEntry,
   GitWorktree,
   McpResult,
-  ShareConnectionDescription,
-  ShareRtcConfig,
   SurfaceKind,
   SurfaceSelectionMode,
   WebSurfaceState,

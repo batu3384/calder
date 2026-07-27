@@ -21,14 +21,13 @@ export const PREFERENCES_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, st
   ['Automation', 'Otomasyon'],
   ['Safety', 'Güvenlik'],
   ['Keys', 'Kısayollar'],
-  ['Integrations', 'Entegrasyonlar'],
   ['About', 'Hakkında'],
   ['Startup, language, and session memory', 'Başlangıç, dil ve oturum belleği'],
   [
     'Shell layout, rails, and live view behavior',
     'Kabuk düzeni, paneller ve Canlı Görünüm davranışı',
   ],
-  ['CLI providers and mobile dependency health', 'CLI sağlayıcıları ve mobil bağımlılık sağlığı'],
+  ['CLI providers and dependency health', 'CLI sağlayıcıları ve bağımlılık sağlığı'],
   [
     'Project workflows, previews, and background tasks',
     'Proje iş akışları, önizlemeler ve arka plan görevleri',
@@ -52,8 +51,8 @@ export const PREFERENCES_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, st
   ['Orchestration phases', 'Orkestrasyon fazları'],
   ['Tracking & fixes', 'İzleme ve düzeltmeler'],
   [
-    'Installed tools, defaults, and repair actions.',
-    'Yüklü araçlar, varsayılanlar ve onarım eylemleri.',
+    'Installed tools, defaults, and binary checks.',
+    'Yüklü araçlar, varsayılanlar ve binary kontrolleri.',
   ],
   ['Project flow', 'Proje akışı'],
   ['Diagnostics', 'Tanılama'],
@@ -62,8 +61,8 @@ export const PREFERENCES_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, st
     'Bağlam, önizlemeler, incelemeler, kontrol noktaları ve iş akışı sağlığını daha sakin gruplarda gösterir.',
   ],
   [
-    'Validation, install health, and direct repair actions.',
-    'Doğrulama, kurulum sağlığı ve doğrudan onarım eylemleri.',
+    'Binary install health for each CLI provider.',
+    'Her CLI sağlayıcısı için binary kurulum sağlığı.',
   ],
   ['Launch defaults', 'Başlangıç varsayılanları'],
   [

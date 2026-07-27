@@ -48,7 +48,6 @@ vi.mock('./preferences-preview-discovery.js', () => ({
 
 vi.mock('./preferences-provider-setup.js', () => ({
   renderSetupSection: vi.fn(),
-  renderMobileSetupSection: vi.fn(),
 }));
 
 vi.mock('./preferences-review-discovery.js', () => ({
@@ -138,7 +137,8 @@ describe('preferences modal contract', () => {
     expect(source).toContain("modal.classList.remove('preferences-modal');");
     expect(source).toContain('content.scrollTop = 0;');
     expect(source).toContain('Provider');
-    expect(source).toContain('CLI health and mobile readiness');
+    expect(source).toContain('CLI health');
+    expect(source).not.toContain('mobile readiness');
     expect(source).toContain('Project workflow system');
     expect(source).toContain('Memory, policy, and recovery');
     expect(source).toContain('preferences-overview-grid');
@@ -214,20 +214,12 @@ describe('preferences modal contract', () => {
     expect(styles).toContain('.preferences-subsection-grid');
   });
 
-  it('shows mobile readiness setup group and install actions in tools', () => {
-    expect(source).toContain('Mobile automation readiness');
-    expect(source).toContain(
-      'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
-    );
-    expect(source).toContain('renderMobileSetupSection');
-    expect(providerSetupSource).toContain('Mobile Dependency Doctor');
-    expect(providerSetupSource).toContain('iOS simulator inspect');
-    expect(providerSetupSource).toContain('Android emulator inspect');
-    expect(providerSetupSource).toContain('Optional tools');
-    expect(providerSetupSource).toContain("opts.actionLabel ? 'Installing");
-    expect(providerSetupSource).toContain(
-      "actionLabel: check.autoFixAvailable && !isReady ? 'Install' : undefined",
-    );
+  it('does not expose mobile automation setup in tools', () => {
+    expect(source).not.toContain('Mobile automation readiness');
+    expect(source).not.toContain('renderMobileSetupSection');
+    expect(providerSetupSource).not.toContain('Mobile Dependency Doctor');
+    expect(providerSetupSource).not.toContain('iOS simulator inspect');
+    expect(providerSetupSource).not.toContain('Android emulator inspect');
   });
 
   it('stages shortcut overrides until Done and applies modal cleanup extensions safely', () => {

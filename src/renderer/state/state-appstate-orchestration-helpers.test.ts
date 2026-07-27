@@ -42,7 +42,7 @@ function makeContext(id: string): ProjectContextState {
 
 function makeState(projects: ProjectRecord[]): PersistedState {
   return {
-    version: 1,
+    version: 2,
     projects,
     activeProjectId: projects[0]?.id ?? null,
     preferences: {

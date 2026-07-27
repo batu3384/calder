@@ -42,7 +42,7 @@ describe('tab-bar-surface-state', () => {
       active: false,
       tabFocus: 'session',
       tabPlacement: 'end',
-      tabOrder: ['cli', 'mobile'],
+      tabOrder: ['cli'],
       web: { history: [] },
       cli: { profiles: [], runtime: { status: 'idle' } },
     });

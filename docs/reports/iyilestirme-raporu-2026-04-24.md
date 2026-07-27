@@ -409,7 +409,7 @@
 **İlgili dosyalar:**
 
 - `src/main/providers/provider.ts` (capability tipleri)
-- `src/main/providers/{claude,codex,copilot,gemini,qwen}-provider.ts`
+- `src/main/providers/{claude,codex,antigravity,cursor}-provider.ts`
 - `src/main/pty-manager.ts:20`
 - `src/renderer/session-cost.ts`
 - `src/renderer/components/tab-bar/tab-bar-provider-selector-controller.ts`
@@ -532,9 +532,8 @@
 
 ### 4.4 Silent Error Catches — 🟢 Low
 
-**Şu an:** 6 adet `.catch(() => {})` patterni:
+**Şu an:** birkaç `.catch(() => {})` patterni (paylaşım dialogu 2026-07-27’de silindi):
 
-- `src/renderer/components/share-dialog/share-dialog-flow-controller.ts`
 - `src/renderer/components/split-layout.ts`
 - `src/main/auto-updater.ts:15`
 

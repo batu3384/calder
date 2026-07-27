@@ -17,11 +17,9 @@
 @import url('./styles/file-viewer.css');
 @import url('./styles/session-history.css');
 @import url('./styles/alerts.css');
-@import url('./styles/p2p-sharing.css');
 @import url('./styles/session-inspector.css');
 @import url('./styles/browser-tab.css');
 @import url('./styles/cli-surface.css');
-@import url('./styles/mobile-surface.css');
 @import url('./styles/theme-aurora.css');
 @import url('./styles/theme-command-studio.css');
 @import url('./styles/responsive-layout.css');

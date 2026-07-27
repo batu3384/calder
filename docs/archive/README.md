@@ -1,9 +1,7 @@
-# Archive Folder
+# UI archive (historical)
 
-This directory stores non-runtime historical artifacts that are intentionally kept out of the active source tree.
+Frozen UI/CSS/HTML snapshots from **2026-04-19** (`premium-pass` backup).
 
-## Rules
+**Not part of the live app.** References to mobile control, P2P share, remote terminal, and other removed surfaces are expected here.
 
-1. Never import files from `docs/archive` into runtime or test code.
-2. Keep each archive payload under a dated folder.
-3. Treat archived files as reference material only.
+**Live styles:** `src/renderer/styles/` and `src/renderer/index.html`.

@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Calder Structure Remediation Progress
 
 Date: 2026-04-22  
@@ -42,12 +44,7 @@ Scope: Sequential execution progress for project structure/foldering debt.
      - `src/renderer/components/session-inspector/`
    - Updated all runtime/test imports (`split-layout`, `tab-bar-session-context-menu`, `index`, `keybindings`, contract tests).
 
-6. **Main statusline domain regrouping (P1)**
-   - Moved all `statusline*` files from:
-     - `src/main/`
-   - To:
-     - `src/main/statusline/`
-   - Updated imports in `hook-status`, `qwen-hooks`, `settings-guard`, and moved-statusline tests.
+6. **Main statusline domain regrouping (P1)** — superseded; `src/main/statusline/` removed during provider isolation refactor (2026-07).
 
 7. **Main hooks domain regrouping (P1)**
    - Moved `hook-status*` and `hook-commands*` files from:

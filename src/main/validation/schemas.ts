@@ -9,14 +9,13 @@ import { z } from 'zod';
 // Provider Types
 // ============================================================
 
-export const ProviderIdSchema = z.enum(['claude', 'codex', 'copilot', 'antigravity', 'qwen']);
+export const ProviderIdSchema = z.enum(['claude', 'codex', 'antigravity', 'cursor']);
 
 export const CliProviderCapabilitySchema = z.object({
   sessionResume: z.boolean(),
   costTracking: z.boolean(),
   contextWindow: z.boolean(),
   hookStatus: z.boolean(),
-  configReading: z.boolean(),
   shiftEnterNewline: z.boolean(),
   pendingPromptTrigger: z.union([
     z.literal('startup-arg'),
@@ -93,13 +92,7 @@ export const PersistedStateSchema = z.object({
 // Governance Types
 // ============================================================
 
-export const AutoApprovalModeSchema = z.enum([
-  'off',
-  'edit_only',
-  'edit_plus_safe_tools',
-  'full_auto',
-  'full_auto_unsafe',
-]);
+export const AutoApprovalModeSchema = z.enum(['ask', 'project_edits', 'session_safe']);
 
 // ============================================================
 // IPC Payload Validation

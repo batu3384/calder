@@ -11,13 +11,7 @@ import { installProviderById, updateAllProviders, updateProviderById } from './p
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
 
-const VALID_PROVIDER_IDS = new Set<ProviderId>([
-  'claude',
-  'codex',
-  'copilot',
-  'antigravity',
-  'qwen',
-]);
+const VALID_PROVIDER_IDS = new Set<ProviderId>(['claude', 'codex', 'antigravity', 'cursor']);
 
 function assertProviderId(providerId: unknown): asserts providerId is ProviderId {
   if (typeof providerId !== 'string' || !VALID_PROVIDER_IDS.has(providerId as ProviderId)) {

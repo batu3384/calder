@@ -284,14 +284,6 @@ vi.mock('./file-reader.js', () => ({
   setFileReaderLine: vi.fn(),
 }));
 
-vi.mock('./remote-terminal-pane.js', () => ({
-  getRemoteTerminalInstance: vi.fn(() => undefined),
-  destroyRemoteTerminal: vi.fn(),
-  attachRemoteToContainer: vi.fn(),
-  showRemotePane: vi.fn(),
-  hideAllRemotePanes: vi.fn(),
-}));
-
 vi.mock('./browser-tab-pane.js', () => ({
   createBrowserTabPane: vi.fn((sessionId: string) => {
     browserPanes.set(sessionId, makePane('browser-tab-pane', sessionId));
@@ -308,12 +300,6 @@ vi.mock('./cli-surface/pane.js', () => ({
   showCliSurfacePane: vi.fn(),
   hideAllCliSurfacePanes: vi.fn(),
   getCliSurfacePaneInstance: vi.fn((projectId: string) => cliSurfacePanes.get(projectId)),
-}));
-
-vi.mock('./mobile-surface/pane.js', () => ({
-  hideAllMobileSurfacePanes: vi.fn(),
-  attachMobileSurfacePane: vi.fn(),
-  showMobileSurfacePane: vi.fn(),
 }));
 
 vi.mock('./tab-bar/tab-bar.js', () => ({
@@ -684,36 +670,6 @@ describe('split-layout mosaic behavior', () => {
 
     renderLayout();
     appState.closeCliSurface(project.id);
-    renderLayout();
-
-    const container = document.getElementById('terminal-container') as unknown as FakeElement;
-    const browserColumn = container.querySelector('.mosaic-browser-column') as FakeElement | null;
-    const canvas = container.querySelector('.mosaic-session-canvas') as FakeElement;
-
-    expect(browserColumn).toBeNull();
-    expect(canvas).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe('1fr');
-  });
-
-  it('does not pin an empty surface column when mobile surface focus returns to session tabs', async () => {
-    const { appState, _resetForTesting } = await import('../state.js');
-    _resetForTesting();
-    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
-    const { renderLayout } = await import('./split-layout.js');
-    vi.mocked(isInspectorOpen).mockReturnValue(false);
-
-    const project = appState.addProject('Audit', '/audit');
-    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
-    appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'mobile',
-      web: { history: [] },
-      cli: { profiles: [], runtime: { status: 'idle' } },
-    });
-
-    appState.setActiveSession(project.id, first.id);
     renderLayout();
 
     const container = document.getElementById('terminal-container') as unknown as FakeElement;

@@ -314,22 +314,6 @@
   border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
 }
 
-#context-inspector .toolchain-summary {
-  padding: 0 0 10px;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  box-shadow: none;
-}
-
-#context-inspector .toolchain-summary-tools-focus {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-bottom: 12px;
-}
-
 #context-inspector .context-inspector-section[data-section='capabilities'] {
   padding: 12px 12px 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
@@ -379,128 +363,6 @@
   .context-inspector-section[data-section='activity']
   .context-inspector-block-title {
   color: color-mix(in srgb, var(--bookmark) 65%, var(--text-primary));
-}
-
-#context-inspector .toolchain-provider {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-
-#context-inspector .toolchain-provider-kicker {
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
-#context-inspector .toolchain-provider-value {
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-}
-
-#context-inspector .toolchain-summary-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 9px;
-}
-
-#context-inspector
-  .context-inspector-section[data-section='capabilities']
-  .toolchain-summary-chips {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-#context-inspector .toolchain-summary-status {
-  display: inline-flex;
-  align-items: center;
-  width: auto;
-  max-width: 100%;
-  min-height: 22px;
-  padding: 0 9px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#context-inspector .toolchain-summary-status.is-healthy {
-  color: color-mix(in srgb, var(--accent-positive) 72%, white);
-  background: color-mix(in srgb, var(--accent-positive) 12%, transparent);
-}
-
-#context-inspector .toolchain-summary-status.is-warning {
-  color: color-mix(in srgb, var(--accent-warning) 76%, white);
-  background: color-mix(in srgb, var(--accent-warning) 13%, transparent);
-}
-
-#context-inspector .toolchain-summary-chip {
-  appearance: none;
-  display: inline-flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 3px;
-  min-height: 42px;
-  padding: 7px 8px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 58%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  cursor: pointer;
-}
-
-#context-inspector .toolchain-summary-chip-label {
-  color: var(--text-secondary);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-#context-inspector .toolchain-summary-chip-value {
-  color: var(--text-primary);
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.45;
-  text-align: left;
-}
-
-#context-inspector .toolchain-summary-empty {
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.55;
-  padding: 9px 10px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-panel) 76%, transparent),
-    color-mix(in srgb, var(--surface-muted) 62%, transparent)
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-#context-inspector .toolchain-summary-chip:hover {
-  color: var(--text-primary);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-hover) 54%, transparent);
 }
 
 #context-inspector .config-section,
@@ -1099,7 +961,6 @@
   display: none;
 }
 
-#context-inspector .config-item-remove-btn,
 #context-inspector .config-item-open-btn,
 #context-inspector .history-remove-btn,
 #context-inspector .history-bookmark-btn,
@@ -1114,22 +975,6 @@
   opacity: 0.84;
   font-size: 12px;
   line-height: 1;
-}
-
-#context-inspector .config-item-remove-btn {
-  opacity: 0;
-  transform: translateY(1px);
-}
-
-#context-inspector .config-item:not(.auto-approval-item):hover .config-item-remove-btn,
-#context-inspector .config-item:not(.auto-approval-item):focus-within .config-item-remove-btn {
-  opacity: 0.95;
-  transform: translateY(0);
-}
-
-#context-inspector .config-item-remove-btn:hover {
-  border-color: color-mix(in srgb, var(--danger) 34%, var(--border-subtle));
-  color: var(--danger);
 }
 
 #context-inspector .config-empty,
@@ -1193,7 +1038,6 @@
   font-weight: 680;
 }
 
-#context-inspector .context-inspector-section[data-section='capabilities'] .toolchain-summary,
 #context-inspector .context-inspector-section[data-section='activity'] .history-body {
   padding-bottom: 12px;
 }
@@ -1252,12 +1096,6 @@
 
   #context-inspector .context-inspector-section[data-section='capabilities'] {
     padding: 10px 10px 9px;
-  }
-
-  #context-inspector
-    .context-inspector-section[data-section='capabilities']
-    .toolchain-summary-chips {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   #context-inspector .auto-approval-meta-inline {
@@ -1415,41 +1253,6 @@
   padding: 0 0 8px;
   margin-bottom: 2px;
   border-bottom: 1px solid var(--ops-rail-line);
-}
-
-#context-inspector .toolchain-summary-tools-focus {
-  gap: 9px;
-}
-
-#context-inspector .toolchain-summary-chip {
-  min-height: 42px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  border-color: var(--ops-rail-line);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-muted) 56%, transparent);
-  max-width: 100%;
-}
-
-#context-inspector .toolchain-summary-chip:hover {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 11%, rgba(255, 255, 255, 0.018)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-hover) 58%, transparent);
-}
-
-#context-inspector .toolchain-summary-empty {
-  border-radius: 14px;
-  border-color: var(--ops-rail-line);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-panel) 88%, transparent),
-    color-mix(in srgb, var(--surface-muted) 68%, transparent)
-  );
 }
 
 #context-inspector .config-section-header {
@@ -1755,30 +1558,6 @@
   opacity: 0.86;
 }
 
-:where(#context-inspector) .toolchain-summary-chip {
-  min-height: 40px;
-  border-radius: 10px;
-  padding: 7px 8px;
-  border-color: var(--ops-rail-line-soft);
-  box-shadow: none;
-}
-
-:where(#context-inspector) .toolchain-summary-chip-label {
-  font-size: 8.5px;
-}
-
-:where(#context-inspector) .toolchain-summary-chip-value {
-  font-size: 10px;
-  line-height: 1.3;
-}
-
-:where(#context-inspector) .toolchain-summary-empty {
-  border-radius: 10px;
-  border-color: var(--ops-rail-line-soft);
-  font-size: 10px;
-}
-
-:where(#context-inspector) .config-item-remove-btn,
 :where(#context-inspector) .config-item-open-btn,
 :where(#context-inspector) .history-remove-btn,
 :where(#context-inspector) .history-bookmark-btn,
@@ -1910,24 +1689,6 @@
   line-height: 1.34;
 }
 
-:where(#context-inspector) .toolchain-summary {
-  padding-bottom: 8px;
-  border-bottom-color: var(--ops-rail-line-soft);
-}
-
-:where(#context-inspector) .toolchain-summary-chips {
-  gap: 6px;
-}
-
-:where(#context-inspector) .toolchain-summary-chip {
-  min-height: 38px;
-  border-radius: 11px;
-  padding: 7px 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 42%, transparent);
-}
-
 :where(#context-inspector) .config-section-header {
   min-height: 28px;
   border-radius: 9px;
@@ -2031,7 +1792,6 @@
   justify-self: end;
 }
 
-:where(#context-inspector) .toolchain-summary-chip,
 :where(#context-inspector) .auto-approval-current-card,
 :where(#context-inspector) .auto-approval-meta-card,
 :where(#context-inspector) .auto-approval-policy-stack,

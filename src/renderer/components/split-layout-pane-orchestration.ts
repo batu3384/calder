@@ -36,14 +36,6 @@ import {
   hideAllInspectorPanes,
   showInspectorPane,
 } from './mcp-inspector.js';
-import { hideAllMobileSurfacePanes } from './mobile-surface/pane.js';
-import {
-  attachRemoteToContainer,
-  destroyRemoteTerminal,
-  getRemoteTerminalInstance,
-  hideAllRemotePanes,
-  showRemotePane,
-} from './remote-terminal-pane.js';
 import {
   attachToContainer,
   createTerminalPane,
@@ -63,10 +55,8 @@ export function hideAllSplitLayoutPanes(): void {
   hideAllInspectorPanes();
   hideAllFileViewerPanes();
   hideAllFileReaderPanes();
-  hideAllRemotePanes();
   hideAllBrowserTabPanes();
   hideAllCliSurfacePanes();
-  hideAllMobileSurfacePanes();
 }
 
 export function removeSplitLayoutMosaicArtifacts(container: HTMLElement): void {
@@ -97,8 +87,6 @@ export function ensureSplitLayoutSessionInstances(project: ProjectRecord): void 
       if (!getInspectorInstance(session.id)) {
         createInspectorPane(session.id);
       }
-    } else if (session.type === 'remote-terminal') {
-      // Remote terminal instances are created by share-manager, skip here
     } else if (session.type === 'browser-tab') {
       if (!getBrowserTabInstance(session.id)) {
         createBrowserTabPane(session.id, session.browserTabUrl);
@@ -147,11 +135,6 @@ export function handleSplitLayoutSessionAdded(data: unknown, renderLayout: Rende
     renderLayout();
     return;
   }
-  if (session.type === 'remote-terminal') {
-    // Remote terminal pane is created by share-manager before session-added fires
-    renderLayout();
-    return;
-  }
   if (session.type === 'browser-tab') {
     createBrowserTabPane(session.id, session.browserTabUrl);
     renderLayout();
@@ -195,8 +178,6 @@ export function handleSplitLayoutSessionRemoved(data: unknown, renderLayout: Ren
   } else if (getInspectorInstance(sessionId)) {
     disconnectInspector(sessionId);
     destroyInspectorPane(sessionId);
-  } else if (getRemoteTerminalInstance(sessionId)) {
-    destroyRemoteTerminal(sessionId);
   } else if (getBrowserTabInstance(sessionId)) {
     destroyBrowserTabPane(sessionId);
   } else {
@@ -224,9 +205,6 @@ export function attachSplitLayoutNonCliPane(
   } else if (session.type === 'mcp-inspector') {
     attachInspectorToContainer(session.id, target);
     showInspectorPane(session.id, inSplit);
-  } else if (session.type === 'remote-terminal') {
-    attachRemoteToContainer(session.id, target);
-    showRemotePane(session.id, inSplit);
   } else if (session.type === 'browser-tab') {
     attachBrowserTabToContainer(session.id, target);
     showBrowserTabPane(session.id, inSplit);

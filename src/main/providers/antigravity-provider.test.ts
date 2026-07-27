@@ -23,42 +23,10 @@ vi.mock('../full-path', () => ({
   getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
-vi.mock('../antigravity-config', () => ({
-  getAntigravityConfig: vi.fn(async () => ({
-    mcpServers: [],
-    agents: [],
-    skills: [],
-    commands: [],
-  })),
-}));
-
-vi.mock('../config-watcher', () => ({
-  startConfigWatcher: vi.fn(),
-  stopConfigWatcher: vi.fn(),
-}));
-
-vi.mock('../antigravity-hooks', () => ({
-  installAntigravityHooks: vi.fn(),
-  validateAntigravityHooks: vi.fn(() => ({
-    statusLine: 'calder',
-    hooks: 'complete',
-    hookDetails: {},
-  })),
-  cleanupAntigravityHooks: vi.fn(),
-  SESSION_ID_VAR: 'CALDER_SESSION_ID',
-}));
-
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
-import { getAntigravityConfig } from '../antigravity-config';
-import {
-  cleanupAntigravityHooks,
-  installAntigravityHooks,
-  validateAntigravityHooks,
-} from '../antigravity-hooks';
-import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { _resetCachedPath, AntigravityProvider } from './antigravity-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
@@ -68,12 +36,6 @@ const mockReadFileSync = vi.mocked(fs.readFileSync);
 const mockStatSync = vi.mocked(fs.statSync);
 const mockExecSync = vi.mocked(execSync);
 const mockSpawnSync = vi.mocked(spawnSync);
-const mockGetAntigravityConfig = vi.mocked(getAntigravityConfig);
-const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
-const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
-const mockInstallAntigravityHooks = vi.mocked(installAntigravityHooks);
-const mockValidateAntigravityHooks = vi.mocked(validateAntigravityHooks);
-const mockCleanupAntigravityHooks = vi.mocked(cleanupAntigravityHooks);
 
 let provider: AntigravityProvider;
 
@@ -93,13 +55,12 @@ describe('meta', () => {
     expect(provider.meta.binaryName).toBe('agy');
   });
 
-  it('has sessionResume, hookStatus, and configReading capabilities enabled', () => {
+  it('has sessionResume and hookStatus capabilities enabled', () => {
     const caps = provider.meta.capabilities;
     expect(caps.sessionResume).toBe(true);
     expect(caps.costTracking).toBe(true);
     expect(caps.contextWindow).toBe(true);
     expect(caps.hookStatus).toBe(true);
-    expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(false);
     expect(caps.pendingPromptTrigger).toBe('startup-arg');
     expect(caps.planModeArg).toBeUndefined();
@@ -248,62 +209,6 @@ describe('buildArgs', () => {
 describe('getShiftEnterSequence', () => {
   it('returns null', () => {
     expect(provider.getShiftEnterSequence()).toBeNull();
-  });
-});
-
-describe('hooks integration', () => {
-  it('installHooks delegates to installAntigravityHooks', async () => {
-    await provider.installHooks();
-    expect(mockInstallAntigravityHooks).toHaveBeenCalled();
-  });
-
-  it('validateSettings delegates to validateAntigravityHooks', () => {
-    const result = provider.validateSettings();
-    expect(mockValidateAntigravityHooks).toHaveBeenCalled();
-    expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
-  });
-
-  it('cleanup keeps hooks in place and only stops config watching', () => {
-    provider.cleanup();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
-    expect(mockCleanupAntigravityHooks).not.toHaveBeenCalled();
-  });
-
-  it('reinstallSettings cleans up external hooks when injection is disabled', () => {
-    provider.reinstallSettings();
-    expect(mockCleanupAntigravityHooks).toHaveBeenCalled();
-    expect(mockInstallAntigravityHooks).not.toHaveBeenCalled();
-  });
-});
-
-describe('other methods', () => {
-  it('getConfig delegates to antigravity config reader', async () => {
-    const config = {
-      mcpServers: [
-        { name: 'a', url: 'b', status: 'configured', scope: 'user' as const, filePath: '/x' },
-      ],
-      agents: [],
-      skills: [],
-      commands: [],
-    };
-    mockGetAntigravityConfig.mockResolvedValueOnce(config);
-    await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
-    expect(mockGetAntigravityConfig).toHaveBeenCalledWith('/some/path');
-  });
-
-  it('installStatusScripts does not throw', () => {
-    expect(() => provider.installStatusScripts()).not.toThrow();
-  });
-
-  it('starts an antigravity config watcher', () => {
-    const win = { id: 1 } as any;
-    provider.startConfigWatcher(win, '/project');
-    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'antigravity');
-  });
-
-  it('stops an antigravity config watcher', () => {
-    provider.stopConfigWatcher();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
   });
 });
 

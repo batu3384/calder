@@ -23,7 +23,7 @@ describe('tab bar surface controls extraction', () => {
     expect(surfaceControlsSource).toContain('surface-mode-button');
     expect(surfaceControlsSource).toContain("label: 'Live View'");
     expect(surfaceControlsSource).toContain("label: 'CLI Surface'");
-    expect(surfaceControlsSource).toContain("label: 'Mobile'");
+    expect(surfaceControlsSource).not.toContain("label: 'Mobile'");
     expect(surfaceControlsSource).toContain('command-deck-cli-profile');
     expect(surfaceControlsSource).toContain('command-deck-cli-profile-select');
     expect(surfaceControlsSource).toContain('surface-profile-group');

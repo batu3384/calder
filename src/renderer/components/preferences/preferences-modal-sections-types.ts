@@ -1,4 +1,3 @@
-import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 import type { ProjectCheckpointDocument } from '../../../shared/types/project-checkpoint.js';
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import type { CustomSelectInstance } from '../custom-select.js';
@@ -87,8 +86,6 @@ export interface RenderToolsSectionArgs {
   appendSectionCard: AppendSectionCard;
   isToolsSectionActive: () => boolean;
   onApplySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
 }
 
 export interface RenderAutomationSectionArgs {

@@ -26,32 +26,38 @@ export const GLOBAL_AUTO_APPROVAL_POLICY_PATH = path.join(
   'default-policy.json',
 );
 
+const LEGACY_MODE_MAP: Record<string, AutoApprovalMode> = {
+  off: 'ask',
+  edit_only: 'project_edits',
+  edit_plus_safe_tools: 'session_safe',
+  full_auto: 'ask',
+  full_auto_unsafe: 'ask',
+  ask: 'ask',
+  project_edits: 'project_edits',
+  session_safe: 'session_safe',
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
-  return value === 'off' ||
-    value === 'edit_only' ||
-    value === 'edit_plus_safe_tools' ||
-    value === 'full_auto' ||
-    value === 'full_auto_unsafe'
-    ? value
-    : undefined;
+export function normalizeAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
+  if (typeof value !== 'string') return undefined;
+  return LEGACY_MODE_MAP[value];
 }
 
 function readAutoApprovalPolicyMode(filePath: string): AutoApprovalPolicyModeReadResult {
   try {
     const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8')) as RawAutoApprovalPolicy;
-    const explicitMode = asAutoApprovalMode(parsed?.autoApproval?.mode);
+    const explicitMode = normalizeAutoApprovalMode(parsed?.autoApproval?.mode);
     if (explicitMode !== undefined) {
       return { mode: explicitMode, isExplicit: true };
     }
   } catch {
-    return { mode: 'off', isExplicit: false };
+    return { mode: 'ask', isExplicit: false };
   }
 
-  return { mode: 'off', isExplicit: false };
+  return { mode: 'ask', isExplicit: false };
 }
 
 export function readAutoApprovalModeFromPolicyFile(filePath: string): AutoApprovalMode {
@@ -112,18 +118,18 @@ export function resolveEffectiveAutoApprovalMode(input: {
 }): Pick<ProjectGovernanceAutoApprovalState, 'effectiveMode' | 'policySource'> {
   const hasSessionMode = input.hasSessionMode ?? input.sessionMode !== undefined;
   if (hasSessionMode) {
-    return { effectiveMode: input.sessionMode ?? 'off', policySource: 'session' };
+    return { effectiveMode: input.sessionMode ?? 'ask', policySource: 'session' };
   }
 
   const hasProjectMode = input.hasProjectMode ?? input.projectMode !== undefined;
   if (hasProjectMode) {
-    return { effectiveMode: input.projectMode ?? 'off', policySource: 'project' };
+    return { effectiveMode: input.projectMode ?? 'ask', policySource: 'project' };
   }
 
   const hasGlobalMode = input.hasGlobalMode ?? input.globalMode !== undefined;
   if (hasGlobalMode) {
-    return { effectiveMode: input.globalMode ?? 'off', policySource: 'global' };
+    return { effectiveMode: input.globalMode ?? 'ask', policySource: 'global' };
   }
 
-  return { effectiveMode: 'off', policySource: 'fallback' satisfies AutoApprovalPolicySource };
+  return { effectiveMode: 'ask', policySource: 'fallback' satisfies AutoApprovalPolicySource };
 }

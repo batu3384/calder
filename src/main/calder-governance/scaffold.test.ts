@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,13 +8,7 @@ import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import { createProjectGovernanceStarterPolicy } from './scaffold.js';
 
 const roots: string[] = [];
-const AUTO_APPROVAL_MODES = new Set<AutoApprovalMode>([
-  'off',
-  'edit_only',
-  'edit_plus_safe_tools',
-  'full_auto',
-  'full_auto_unsafe',
-]);
+const AUTO_APPROVAL_MODES = new Set<AutoApprovalMode>(['ask', 'project_edits', 'session_safe']);
 
 function makeProject(name: string): string {
   return mkdtempSync(join(tmpdir(), `${name}-`));
@@ -39,14 +33,14 @@ describe('project governance scaffold', () => {
     expect(readFileSync(policyPath, 'utf8')).toContain('"mode": "advisory"');
     expect(readFileSync(policyPath, 'utf8')).toContain('"toolPolicy": "ask"');
     expect(readFileSync(policyPath, 'utf8')).toContain('"autoApproval": {');
-    expect(readFileSync(policyPath, 'utf8')).toContain('"mode": "off"');
+    expect(readFileSync(policyPath, 'utf8')).toContain('"mode": "ask"');
     expect(readFileSync(policyPath, 'utf8')).toContain('"safeToolProfile": "default-read-only"');
     expect(readFileSync(policyPath, 'utf8')).toContain('"providerProfiles": {}');
     expect(result.state.policy?.writePolicy).toBe('ask');
     expect(result.state.autoApproval).toEqual(
       expect.objectContaining({
-        projectMode: 'off',
-        effectiveMode: 'off',
+        projectMode: 'ask',
+        effectiveMode: 'ask',
         policySource: 'project',
         safeToolProfile: 'default-read-only',
         recentDecisions: [],
@@ -58,5 +52,20 @@ describe('project governance scaffold', () => {
     const second = await createProjectGovernanceStarterPolicy(root);
     expect(second.created).toBe(false);
     expect(readFileSync(policyPath, 'utf8')).toContain('"mode": "advisory"');
+  });
+
+  it('rejects starter policy writes when .calder escapes the project root', async () => {
+    const root = makeProject('governance-symlink');
+    const outside = makeProject('governance-outside');
+    roots.push(root, outside);
+    const calderLink = join(root, '.calder');
+    if (existsSync(calderLink)) {
+      rmSync(calderLink, { recursive: true, force: true });
+    }
+    symlinkSync(outside, calderLink);
+
+    await expect(createProjectGovernanceStarterPolicy(root)).rejects.toThrow(
+      'Path escapes project root',
+    );
   });
 });

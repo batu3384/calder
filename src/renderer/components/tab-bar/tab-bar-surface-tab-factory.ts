@@ -2,7 +2,6 @@ import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface
 import type { ProjectRecord } from '../../state.js';
 
 interface CreateSurfaceModeTabOptions {
-  kind: 'cli' | 'mobile';
   project: ProjectRecord;
   tabListEl: HTMLElement;
   active: boolean;
@@ -18,7 +17,7 @@ interface CreateSurfaceModeTabOptions {
 export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTMLElement {
   const tab = document.createElement('div');
   tab.className = 'tab-item tab-surface-item' + (options.active ? ' active' : '');
-  tab.dataset.surfaceTab = options.kind;
+  tab.dataset.surfaceTab = 'cli';
   tab.title = options.title;
   const reorderHandle =
     options.project.sessions.length > 0
@@ -54,7 +53,7 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
     reorderHandleEl.draggable = true;
     reorderHandleEl.addEventListener('dragstart', (event) => {
       event.dataTransfer!.effectAllowed = 'move';
-      event.dataTransfer!.setData('text/plain', `__surface:${options.kind}`);
+      event.dataTransfer!.setData('text/plain', '__surface:cli');
       tab.classList.add('dragging');
     });
 
@@ -86,23 +85,6 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
       const currentSurface = options.getProjectSurface(options.project);
 
       if (draggedId.startsWith('__surface:')) {
-        const draggedKind = draggedId.replace('__surface:', '') as 'cli' | 'mobile';
-        if (draggedKind === options.kind) return;
-        const baseOrder: Array<'cli' | 'mobile'> =
-          Array.isArray(currentSurface.tabOrder) &&
-          currentSurface.tabOrder.length === 2 &&
-          currentSurface.tabOrder.includes('cli') &&
-          currentSurface.tabOrder.includes('mobile')
-            ? [...currentSurface.tabOrder]
-            : ['cli', 'mobile'];
-        const filtered = baseOrder.filter((entry) => entry !== draggedKind);
-        const targetIndex = filtered.indexOf(options.kind);
-        const insertIndex = event.clientX < midX ? targetIndex : targetIndex + 1;
-        filtered.splice(Math.max(0, insertIndex), 0, draggedKind);
-        options.updateProjectSurface(options.project, {
-          ...currentSurface,
-          tabOrder: filtered,
-        });
         return;
       }
 

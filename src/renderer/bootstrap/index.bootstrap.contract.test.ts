@@ -33,7 +33,7 @@ describe('index session bootstrap contract', () => {
     expect(orchestratorSource).toContain('initTabBar();');
     expect(orchestratorSource).toContain('initSplitLayout();');
     expect(orchestratorSource).toContain('options.initKeybindings();');
-    expect(orchestratorSource).toContain('initShareManager();');
+    expect(orchestratorSource).not.toContain('initShareManager();');
     expect(orchestratorSource).toContain('startGitPolling();');
     expect(orchestratorSource).toContain('await appState.load();');
     expect(orchestratorSource).toContain('promptNewProject();');

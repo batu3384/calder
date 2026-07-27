@@ -7,11 +7,12 @@ import type {
   ProjectContextRenameRuleResult,
   ProjectContextStarterFilesResult,
 } from '../../shared/types/project-context.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
   {
-    relativePath: 'CALDER.shared.md',
+    relativePath: '.calder/shared.md',
     contents: `# Calder shared rules
 
 - Keep session work grounded in the current repository state.
@@ -54,7 +55,7 @@ async function writeStarterFile(
   relativePath: string,
   contents: string,
 ): Promise<'created' | 'skipped'> {
-  const fullPath = path.join(rootPath, relativePath);
+  const fullPath = projectWritePath(rootPath, relativePath);
 
   try {
     await readFile(fullPath, 'utf8');
@@ -147,7 +148,7 @@ export async function createProjectContextRuleFile(
   }
 
   const relativePath = buildRuleRelativePath(trimmedTitle, priority);
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
 
   let created = false;
   try {
@@ -179,8 +180,8 @@ export async function renameProjectContextRuleFile(
   }
 
   const nextRelativePath = buildRuleRelativePath(trimmedTitle, priority);
-  const currentFullPath = path.join(projectPath, normalizedCurrent);
-  const nextFullPath = path.join(projectPath, nextRelativePath);
+  const currentFullPath = projectWritePath(projectPath, normalizedCurrent);
+  const nextFullPath = projectWritePath(projectPath, nextRelativePath);
   const currentContents = await readFile(currentFullPath, 'utf8');
   const nextContents = replaceRuleHeading(currentContents, trimmedTitle);
 
@@ -211,7 +212,7 @@ export async function deleteProjectContextRuleFile(
   relativePath: string,
 ): Promise<ProjectContextDeleteRuleResult> {
   const normalizedRelativePath = normalizeRuleRelativePath(relativePath);
-  const fullPath = path.join(projectPath, normalizedRelativePath);
+  const fullPath = projectWritePath(projectPath, normalizedRelativePath);
 
   let deleted = true;
   try {

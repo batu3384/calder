@@ -298,7 +298,6 @@ body {
 .browser-tab-pane,
 .file-viewer-pane,
 .file-reader-pane,
-.remote-terminal-pane,
 .mcp-inspector-pane {
   border-color: color-mix(in srgb, var(--pane-unfocus) 72%, var(--aurora-border));
   background:
@@ -315,7 +314,6 @@ body {
 .browser-tab-pane.focused,
 .file-viewer-pane.focused,
 .file-reader-pane.focused,
-.remote-terminal-pane.focused,
 .mcp-inspector-pane.focused {
   border-color: color-mix(in srgb, var(--aurora-cyan) 56%, var(--pane-focus));
   box-shadow:
@@ -644,24 +642,6 @@ textarea:focus,
 
 #context-inspector .context-inspector-block-header {
   border-bottom: 1px solid var(--rail-line-soft);
-}
-
-#context-inspector .toolchain-summary {
-  border-bottom: 1px solid var(--rail-line-soft);
-}
-
-#context-inspector .toolchain-summary-chip {
-  border-color: var(--rail-line-soft);
-  background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.036), rgba(226, 242, 255, 0)),
-    color-mix(in srgb, var(--rail-surface-strong) 82%, transparent);
-}
-
-#context-inspector .toolchain-summary-chip:hover {
-  border-color: color-mix(in srgb, var(--aurora-cyan) 24%, var(--rail-line));
-  background:
-    radial-gradient(circle at top right, rgba(139, 233, 255, 0.11), transparent 46%),
-    color-mix(in srgb, var(--surface-hover) 86%, var(--rail-surface-strong));
 }
 
 #context-inspector .config-item,
@@ -1075,7 +1055,6 @@ body {
   text-transform: uppercase;
 }
 
-#context-inspector .toolchain-summary-chip,
 #context-inspector .auto-approval-current-card,
 #context-inspector .auto-approval-meta-card,
 #context-inspector .auto-approval-policy-stack,

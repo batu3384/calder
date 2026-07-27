@@ -7,6 +7,7 @@ import type {
   ProjectCheckpointSnapshotInput,
 } from '../../shared/types/project-checkpoint.js';
 import { getGitFiles, getGitStatus } from '../git-status.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectCheckpoints } from './discovery.js';
 
 function slugifyLabel(label: string): string {
@@ -51,7 +52,7 @@ export async function createProjectCheckpointFile(
   const createdAt = snapshot.createdAt ?? new Date().toISOString();
   const label = snapshot.label.trim() || 'Manual checkpoint';
   const relativePath = buildCheckpointRelativePath(createdAt, label);
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
   const gitStatus = await getGitStatus(projectPath);
   const gitFiles = await getGitFiles(projectPath);
 
@@ -97,6 +98,6 @@ export async function readProjectCheckpointFile(
   checkpointPath: string,
 ): Promise<ProjectCheckpointDocument> {
   const relativePath = normalizeCheckpointRelativePath(projectPath, checkpointPath);
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
   return JSON.parse(await readFile(fullPath, 'utf8')) as ProjectCheckpointDocument;
 }

@@ -232,11 +232,16 @@ export function validateBinaryExists(
       `Calder can launch sessions with ${displayName} after it is installed.\n\n` +
       `Install it with:\n` +
       `  ${installCommand}\n\n` +
-      `After installing, restart Calder.`,
+      `After installing, open Workspace Center → Tools to refresh provider health.`,
   };
 }
 
-/** @internal Test-only helper for clearing prerequisite-result memoization. */
-export function _resetPrereqCheckCache(): void {
+/** Clear prerequisite-result memoization so the next check re-probes the filesystem. */
+export function clearPrereqCheckCache(): void {
   prereqCheckCache.clear();
+}
+
+/** @internal Test-only alias. */
+export function _resetPrereqCheckCache(): void {
+  clearPrereqCheckCache();
 }

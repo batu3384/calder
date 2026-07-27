@@ -27,9 +27,8 @@ After setup, verify providers are installed:
 ```bash
 claude --version   # Claude Code
 codex --version    # Codex CLI
-copilot --version   # GitHub Copilot
 agy --version      # Antigravity CLI
-qwen --version     # Qwen Code
+agent --version    # Cursor CLI
 ```
 
 ## Debugging

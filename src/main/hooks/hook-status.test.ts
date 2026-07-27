@@ -36,7 +36,6 @@ import * as fs from 'fs';
 import {
   cleanupAll,
   cleanupSessionStatus,
-  installStatusLineScript,
   registerSession,
   restartAndResync,
   resyncAllSessions,
@@ -97,24 +96,6 @@ afterEach(() => {
 });
 
 describe('hook-status', () => {
-  describe('installStatusLineScript', () => {
-    it('writes the python helper and then the stable wrapper script', () => {
-      installStatusLineScript();
-
-      expect(fs.mkdirSync).toHaveBeenCalledWith(STATUS_DIR, { recursive: true, mode: 0o700 });
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        path.join(STATUS_DIR, 'statusline.py'),
-        expect.stringContaining('def render_statusline'),
-        { mode: 0o755 },
-      );
-      expect(fs.writeFileSync).toHaveBeenCalledWith(
-        STATUSLINE_SCRIPT,
-        expect.stringContaining('statusline.py'),
-        { mode: 0o755 },
-      );
-    });
-  });
-
   describe('startWatching', () => {
     it('creates dir and calls fs.watch', () => {
       const win = createMockWin();
@@ -376,7 +357,7 @@ describe('hook-status', () => {
             hookEvent: 'AutoApproval',
             auto_approval: {
               policy_source: 'project',
-              effective_mode: 'edit_only',
+              effective_mode: 'project_edits',
               operation_class: 'edit',
               decision: 'allow',
               reason: `session:${sessionId}`,
@@ -401,7 +382,7 @@ describe('hook-status', () => {
           hookEvent: 'AutoApproval',
           auto_approval: {
             policy_source: 'project',
-            effective_mode: 'edit_only',
+            effective_mode: 'project_edits',
             operation_class: 'edit',
             decision: 'allow',
             reason: 'session:abc123',

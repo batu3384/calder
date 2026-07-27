@@ -1,5 +1,3 @@
-import type { MobileDependencyId } from '../../../shared/types/mobile.js';
-import type { ProviderId } from '../../../shared/types/provider.js';
 import { closeModal } from '../modal.js';
 import { shortcutManager } from '../surface-services/shortcuts.js';
 import { buildCheckpointRestoreConfirm } from './preferences-checkpoint-confirm.js';
@@ -98,8 +96,6 @@ export function renderToolsPreferencesContent(args: {
   content: HTMLElement;
   currentSection: () => PreferencesSection;
   applySetupBadge: (hasIssue: boolean) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
   appendSectionIntro: (
     container: HTMLElement,
     eyebrow: string,
@@ -119,8 +115,6 @@ export function renderToolsPreferencesContent(args: {
     appendSectionCard: args.appendSectionCard,
     isToolsSectionActive: () => args.currentSection() === 'tools',
     onApplySetupBadge: args.applySetupBadge,
-    onFixProvider: args.onFixProvider,
-    onInstallMobileDependency: args.onInstallMobileDependency,
   });
 }
 

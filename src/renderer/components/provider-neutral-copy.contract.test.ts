@@ -10,14 +10,6 @@ const preferencesSectionsSource = readFileSync(
   'utf-8',
 );
 const preferencesSource = [preferencesModalSource, preferencesSectionsSource].join('\n');
-const settingsGuardSource = readFileSync(
-  new URL('./settings-guard-ui.ts', import.meta.url),
-  'utf-8',
-);
-const conflictModalSource = readFileSync(
-  new URL('./statusline-conflict-modal.ts', import.meta.url),
-  'utf-8',
-);
 const browserStagePaneSource = readFileSync(
   new URL('./browser-tab/pane.ts', import.meta.url),
   'utf-8',
@@ -51,13 +43,6 @@ describe('provider-neutral copy contract', () => {
     expect(preferencesSource).toContain('Providers');
     expect(preferencesSource).not.toContain('Context inspector: Toolchain');
     expect(preferencesSource).not.toContain('Context inspector: AI Setup');
-  });
-
-  it('uses provider-neutral language in settings warnings and conflict prompts', () => {
-    expect(settingsGuardSource).toContain('Tracking is off for this coding tool');
-    expect(conflictModalSource).toContain('Use Calder status line?');
-    expect(settingsGuardSource).not.toContain('Claude Code');
-    expect(conflictModalSource).not.toContain('Claude Code');
   });
 
   it('uses session-oriented language in the browser workspace', () => {

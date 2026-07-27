@@ -13,7 +13,6 @@ const providers: CliProviderMeta[] = [
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: true,
       pendingPromptTrigger: 'session-start',
     },
@@ -28,7 +27,6 @@ const providers: CliProviderMeta[] = [
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: true,
       pendingPromptTrigger: 'session-start',
     },
@@ -43,9 +41,22 @@ const providers: CliProviderMeta[] = [
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: false,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'first-output',
+    },
+  },
+  {
+    id: 'cursor',
+    displayName: 'Cursor CLI',
+    binaryName: 'agent',
+    defaultContextWindowSize: 200_000,
+    capabilities: {
+      sessionResume: true,
+      costTracking: false,
+      contextWindow: false,
+      hookStatus: false,
+      shiftEnterNewline: false,
+      pendingPromptTrigger: 'startup-arg',
     },
   },
 ];
@@ -79,7 +90,7 @@ describe('provider-availability', () => {
     const { module } = await loadModule();
 
     expect(module.getProviderDisplayName('claude')).toBe('Claude Code');
-    expect(module.getProviderDisplayName('qwen')).toBe('Qwen Code');
+    expect(module.getProviderDisplayName('cursor')).toBe('Cursor CLI');
   });
 
   it('loads provider metadata once and exposes cached display details', async () => {
@@ -91,9 +102,9 @@ describe('provider-availability', () => {
     expect(listProviders).toHaveBeenCalledTimes(1);
     expect(module.getCachedProviderMetas()).toEqual(providers);
     expect(module.getProviderCapabilities('codex')).toEqual(providers[1].capabilities);
-    expect(module.getProviderCapabilities('qwen')).toBeNull();
+    expect(module.getProviderCapabilities('cursor')).toEqual(providers[3].capabilities);
     expect(module.getProviderDisplayName('antigravity')).toBe('Antigravity CLI');
-    expect(module.getProviderDisplayName('qwen')).toBe('Qwen Code');
+    expect(module.getProviderDisplayName('cursor')).toBe('Cursor CLI');
   });
 
   it('builds an availability snapshot and resolves inline selector visibility', async () => {
@@ -101,11 +112,12 @@ describe('provider-availability', () => {
       claude: true,
       codex: true,
       antigravity: false,
+      cursor: false,
     });
 
     await module.loadProviderAvailability();
 
-    expect(checkBinary).toHaveBeenCalledTimes(3);
+    expect(checkBinary).toHaveBeenCalledTimes(4);
     expect(module.hasMultipleAvailableProviders()).toBe(true);
 
     const snapshot = module.getProviderAvailabilitySnapshot();
@@ -120,13 +132,19 @@ describe('provider-availability', () => {
           ['claude', true],
           ['codex', false],
           ['antigravity', false],
+          ['cursor', false],
         ]),
       }),
     ).toBe(false);
   });
 
   it('resolves preferred launch and check providers from availability state', async () => {
-    const { module } = await loadModule({ claude: false, codex: true, antigravity: false });
+    const { module } = await loadModule({
+      claude: false,
+      codex: true,
+      antigravity: false,
+      cursor: false,
+    });
     await module.loadProviderAvailability();
     const snapshot = module.getProviderAvailabilitySnapshot();
 

@@ -108,7 +108,7 @@ describe('state normalizers', () => {
       surface: {
         kind: 'cli',
         active: true,
-        tabOrder: ['mobile', 'cli'],
+        tabOrder: ['cli'],
         cli: {
           profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
           selectedProfileId: 'profile-1',
@@ -126,7 +126,7 @@ describe('state normalizers', () => {
       active: true,
       tabFocus: 'cli',
       tabPlacement: 'end',
-      tabOrder: ['mobile', 'cli'],
+      tabOrder: ['cli'],
       targetSessionId: undefined,
       web: {
         sessionId: 'browser-1',
@@ -179,7 +179,7 @@ describe('state normalizers', () => {
       active: true,
       tabFocus: 'session',
       tabPlacement: 'end',
-      tabOrder: ['cli', 'mobile'],
+      tabOrder: ['cli'],
       targetSessionId: 'cli-1',
       web: {
         sessionId: 'browser-1',

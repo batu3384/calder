@@ -7,7 +7,7 @@ import globals from 'globals';
 export default [
   js.configs.recommended,
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs', 'apps/calder-mobile/'],
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.js', '*.cjs'],
   },
   {
     files: ['**/*.ts'],

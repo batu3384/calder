@@ -1,5 +1,3 @@
-import type { ShareIceServer } from '../sharing-types.js';
-
 export interface GitWorktree {
   path: string;
   head: string;
@@ -40,7 +38,7 @@ export interface BrowserCredentialSaveInput {
   id?: string;
 }
 
-export type SurfaceKind = 'web' | 'cli' | 'mobile';
+export type SurfaceKind = 'web' | 'cli';
 export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
 export type CliSurfacePromptContextMode =
   | 'selection-only'
@@ -58,18 +56,6 @@ export interface EmbeddedBrowserOpenPayload {
   cwd?: string;
   sessionId?: string;
   preferEmbedded?: boolean;
-}
-
-export interface ShareRtcConfig {
-  iceServers: ShareIceServer[];
-  iceTransportPolicy?: 'all' | 'relay';
-  source?: 'default' | 'env';
-  issues?: string[];
-}
-
-export interface ShareConnectionDescription {
-  type: 'offer' | 'answer';
-  sdp: string;
 }
 
 export interface BrowserGuestOpenPayload {

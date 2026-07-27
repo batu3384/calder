@@ -10,14 +10,12 @@ import { stopGitWatcher } from './git-watcher';
 import { restartAndResync } from './hooks/hook-status';
 import { registerIpcHandlers, resetHookWatcher } from './ipc-handlers';
 import { createAppMenu } from './menu';
-import { stopMobileControlBridge } from './mobile-control-bridge';
 import { isMac } from './platform';
 import { checkPythonAvailable } from './prerequisites';
 import {
   analyzeProviderStartup,
   formatMissingProviderDialog,
   formatProviderStartupWarning,
-  installProviderStartupArtifacts,
 } from './provider-startup';
 import { getAllProviders, initProviders } from './providers/registry';
 import { killAllPtys } from './pty-manager';
@@ -126,11 +124,6 @@ app.whenReady().then(async () => {
     });
   }
 
-  // Install hooks and status scripts after first paint without blocking app startup.
-  void installProviderStartupArtifacts(getAllProviders(), mainWindow).catch((error) => {
-    console.warn('Failed to complete provider startup artifact installation:', error);
-  });
-
   initAutoUpdater();
 
   app.on('activate', () => {
@@ -161,7 +154,6 @@ app.on('before-quit', () => {
   killAllPtys();
   stopGitWatcher();
   void stopBrowserBridge();
-  void stopMobileControlBridge();
   // Cleanup all providers
   for (const provider of getAllProviders()) {
     provider.cleanup();

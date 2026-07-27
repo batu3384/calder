@@ -14,10 +14,6 @@ describe('IPC governance contract', () => {
     path.join(process.cwd(), 'src/main/ipc-inspector-orchestration.ts'),
     'utf8',
   );
-  const mcpGovernanceSource = readFileSync(
-    path.join(process.cwd(), 'src/main/ipc-mcp-governance.ts'),
-    'utf8',
-  );
 
   it('guards Calder-controlled project writes through governance enforcement', () => {
     expect(source).toContain('registerCalderIpcHandlers({');
@@ -31,15 +27,6 @@ describe('IPC governance contract', () => {
     expect(calderIpcSource).toContain("label: 'Create review findings file'");
     expect(calderIpcSource).toContain("label: 'Create checkpoint'");
     expect(calderIpcSource).toContain("label: 'Create governance starter policy'");
-  });
-
-  it('guards project MCP server additions and removals with governance enforcement', () => {
-    expect(source).toContain('registerMcpGovernanceIpcHandlers({');
-    expect(mcpGovernanceSource).toContain("kind: 'mcp'");
-    expect(mcpGovernanceSource).toContain("label: 'Add project MCP server'");
-    expect(mcpGovernanceSource).toContain("label: 'Remove project MCP server'");
-    expect(mcpGovernanceSource).toContain('target: name');
-    expect(mcpGovernanceSource).toContain('projectPath is required for project MCP scope');
   });
 
   it('guards renderer-triggered external URL opens with network governance', () => {

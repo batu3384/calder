@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ProjectBackgroundTaskCreateResult } from '../../shared/types/project-background-task.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectBackgroundTasks } from './discovery.js';
 
 function slugifyTaskTitle(title: string): string {
@@ -50,7 +51,7 @@ export async function createProjectBackgroundTaskFile(
     'tasks',
     `${slugifyTaskTitle(trimmedTitle)}.json`,
   );
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
 
   let created = false;
   try {

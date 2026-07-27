@@ -233,7 +233,7 @@ describe('update center cli updates', () => {
       completedProviders: 0,
       providers: [
         { providerId: 'claude', providerName: 'Claude Code' },
-        { providerId: 'qwen', providerName: 'Qwen Code' },
+        { providerId: 'cursor', providerName: 'Cursor CLI' },
       ],
     });
     expect(getUpdateCenterState().cli.providers).toHaveLength(2);
@@ -486,13 +486,13 @@ describe('update center cli updates', () => {
     ]);
     const secondRunSummary = buildSummary([
       {
-        providerId: 'qwen',
-        providerName: 'Qwen Code',
+        providerId: 'cursor',
+        providerName: 'Cursor CLI',
         source: 'self',
         status: 'updated',
         checked: true,
         updateAttempted: true,
-        message: 'Qwen Code was updated successfully.',
+        message: 'Cursor CLI was updated successfully.',
         durationMs: 95,
       },
     ]);
@@ -513,7 +513,7 @@ describe('update center cli updates', () => {
     // Second run intentionally emits no provider progress events; final state should be derived from summary only.
     await runCliProviderUpdates();
     const secondState = getUpdateCenterState().cli;
-    expect(secondState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
+    expect(secondState.providers.map((provider) => provider.providerId)).toEqual(['cursor']);
     expect(secondState.totalProviders).toBe(1);
     expect(secondState.completedProviders).toBe(1);
   });
@@ -665,7 +665,7 @@ describe('update center cli updates', () => {
       startedAt: '2026-04-16T09:10:00.000Z',
       totalProviders: 1,
       completedProviders: 0,
-      providers: [{ providerId: 'qwen', providerName: 'Qwen Code' }],
+      providers: [{ providerId: 'cursor', providerName: 'Cursor CLI' }],
     });
 
     // Simulate a delayed progress event from run one. This must not pollute run two state.
@@ -689,7 +689,7 @@ describe('update center cli updates', () => {
     });
 
     const midState = getUpdateCenterState().cli;
-    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['qwen']);
+    expect(midState.providers.map((provider) => provider.providerId)).toEqual(['cursor']);
     expect(midState.activeProviderId).toBeUndefined();
 
     requireValue(
@@ -698,13 +698,13 @@ describe('update center cli updates', () => {
     )(
       buildSummary([
         {
-          providerId: 'qwen',
-          providerName: 'Qwen Code',
+          providerId: 'cursor',
+          providerName: 'Cursor CLI',
           source: 'self',
           status: 'updated',
           checked: true,
           updateAttempted: true,
-          message: 'Qwen Code was updated successfully.',
+          message: 'Cursor CLI was updated successfully.',
           durationMs: 60,
         },
       ]),
@@ -780,13 +780,13 @@ describe('update center cli updates', () => {
     )(
       buildSummary([
         {
-          providerId: 'qwen',
-          providerName: 'Qwen Code',
+          providerId: 'cursor',
+          providerName: 'Cursor CLI',
           source: 'self',
           status: 'updated',
           checked: true,
           updateAttempted: true,
-          message: 'Qwen Code was updated successfully.',
+          message: 'Cursor CLI was updated successfully.',
           durationMs: 60,
         },
       ]),

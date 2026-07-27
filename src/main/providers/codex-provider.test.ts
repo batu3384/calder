@@ -21,22 +21,6 @@ vi.mock('../full-path', () => ({
   getFullPath: vi.fn(() => (isWin ? '/usr/local/bin;/usr/bin' : '/usr/local/bin:/usr/bin')),
 }));
 
-vi.mock('../codex-config', () => ({
-  getCodexConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
-}));
-
-vi.mock('../config-watcher', () => ({
-  startConfigWatcher: vi.fn(),
-  stopConfigWatcher: vi.fn(),
-}));
-
-vi.mock('../codex-hooks', () => ({
-  installCodexHooks: vi.fn(),
-  validateCodexHooks: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
-  cleanupCodexHooks: vi.fn(),
-  SESSION_ID_VAR: 'CALDER_SESSION_ID',
-}));
-
 vi.mock('../codex-session-watcher', () => ({
   stopCodexSessionWatcher: vi.fn(),
 }));
@@ -44,12 +28,8 @@ vi.mock('../codex-session-watcher', () => ({
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
-import type { ProviderConfig } from '../../shared/types/provider';
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
-import { getCodexConfig } from '../codex-config';
-import { cleanupCodexHooks, installCodexHooks, validateCodexHooks } from '../codex-hooks';
 import { stopCodexSessionWatcher } from '../codex-session-watcher';
-import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
 import { _resetCachedPath, CodexProvider } from './codex-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
@@ -57,12 +37,6 @@ const mockExistsSync = vi.mocked(fs.existsSync);
 const mockReaddirSync = vi.mocked(fs.readdirSync);
 const mockExecSync = vi.mocked(execSync);
 const mockSpawnSync = vi.mocked(spawnSync);
-const mockGetCodexConfig = vi.mocked(getCodexConfig);
-const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
-const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
-const mockInstallCodexHooks = vi.mocked(installCodexHooks);
-const mockValidateCodexHooks = vi.mocked(validateCodexHooks);
-const mockCleanupCodexHooks = vi.mocked(cleanupCodexHooks);
 const mockStopCodexSessionWatcher = vi.mocked(stopCodexSessionWatcher);
 
 let provider: CodexProvider;
@@ -89,7 +63,6 @@ describe('meta', () => {
     expect(caps.costTracking).toBe(true);
     expect(caps.contextWindow).toBe(true);
     expect(caps.hookStatus).toBe(true);
-    expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(false);
     expect(caps.pendingPromptTrigger).toBe('startup-arg');
   });
@@ -247,58 +220,10 @@ describe('getShiftEnterSequence', () => {
   });
 });
 
-describe('hooks integration', () => {
-  it('installHooks delegates to installCodexHooks', async () => {
-    await provider.installHooks();
-    expect(mockInstallCodexHooks).toHaveBeenCalled();
-  });
-
-  it('validateSettings delegates to validateCodexHooks', () => {
-    const result = provider.validateSettings();
-    expect(mockValidateCodexHooks).toHaveBeenCalled();
-    expect(result).toEqual({ statusLine: 'calder', hooks: 'complete', hookDetails: {} });
-  });
-
-  it('cleanup keeps hooks in place and only stops watchers', () => {
+describe('cleanup', () => {
+  it('cleanup stops codex session watcher', () => {
     provider.cleanup();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
     expect(mockStopCodexSessionWatcher).toHaveBeenCalled();
-    expect(mockCleanupCodexHooks).not.toHaveBeenCalled();
-  });
-
-  it('reinstallSettings cleans up external hooks when injection is disabled', () => {
-    provider.reinstallSettings();
-    expect(mockCleanupCodexHooks).toHaveBeenCalled();
-    expect(mockInstallCodexHooks).not.toHaveBeenCalled();
-  });
-});
-
-describe('other methods', () => {
-  it('getConfig delegates to codex config reader', async () => {
-    const config: ProviderConfig = {
-      mcpServers: [{ name: 'a', url: 'b', status: 'configured', scope: 'user', filePath: '/x' }],
-      agents: [],
-      skills: [],
-      commands: [],
-    };
-    mockGetCodexConfig.mockResolvedValueOnce(config);
-    await expect(provider.getConfig('/some/path')).resolves.toEqual(config);
-    expect(mockGetCodexConfig).toHaveBeenCalledWith('/some/path');
-  });
-
-  it('installStatusScripts does not throw', () => {
-    expect(() => provider.installStatusScripts()).not.toThrow();
-  });
-
-  it('starts a codex config watcher', () => {
-    const win = { id: 1 } as any;
-    provider.startConfigWatcher(win, '/project');
-    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'codex');
-  });
-
-  it('stops codex config watcher', () => {
-    provider.stopConfigWatcher();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
   });
 });
 

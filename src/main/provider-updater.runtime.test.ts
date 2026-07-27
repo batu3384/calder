@@ -34,7 +34,6 @@ function createProviderMeta(id: ProviderId, displayName: string): CliProviderMet
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
     },
@@ -50,6 +49,7 @@ function createTarget(
   return {
     meta: createProviderMeta(id, displayName),
     resolveBinaryPath: () => binaryPath,
+    clearBinaryCache: () => undefined,
     validatePrerequisites: () => ({ ok: true, message: '' }),
   };
 }
@@ -210,6 +210,7 @@ describe('provider updater default runner runtime', () => {
     const target: ProviderUpdaterTarget = {
       meta: createProviderMeta('codex', 'Codex CLI'),
       resolveBinaryPath: () => codexBinary,
+      clearBinaryCache: () => undefined,
       validatePrerequisites: () => {
         abortController.abort();
         return { ok: true, message: '' };

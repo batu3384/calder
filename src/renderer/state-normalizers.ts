@@ -158,6 +158,27 @@ function resolveBrowserSurfaceSession(
   return [...project.sessions].reverse().find((session) => session.type === 'browser-tab');
 }
 
+export function normalizeProjectSessions(project: ProjectRecord): boolean {
+  let changed = false;
+  if (project.activeSessionId) {
+    const activeStillExists = project.sessions.some(
+      (session) => session.id === project.activeSessionId,
+    );
+    if (!activeStillExists) {
+      project.activeSessionId = project.sessions[0]?.id ?? null;
+      changed = true;
+    }
+  }
+  const splitBefore = project.layout.splitPanes.length;
+  project.layout.splitPanes = project.layout.splitPanes.filter((sessionId) =>
+    project.sessions.some((session) => session.id === sessionId),
+  );
+  if (project.layout.splitPanes.length !== splitBefore) {
+    changed = true;
+  }
+  return changed;
+}
+
 export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
   const existing = project.surface;
   const browserSession = resolveBrowserSurfaceSession(project, existing?.web?.sessionId);
@@ -168,25 +189,14 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
       : browserSession?.browserTabUrl
         ? [browserSession.browserTabUrl]
         : [];
-  const kind = existing?.kind ?? (browserSession ? 'web' : 'cli');
+  const rawKind = existing?.kind ?? (browserSession ? 'web' : 'cli');
+  const kind = rawKind === 'web' || rawKind === 'cli' ? rawKind : 'web';
   const active =
     kind === 'web' && !browserSession ? false : (existing?.active ?? Boolean(browserSession));
   const tabFocus =
-    kind === 'cli'
-      ? (existing?.tabFocus ?? (active ? 'cli' : 'session'))
-      : kind === 'mobile'
-        ? (existing?.tabFocus ?? (active ? 'mobile' : 'session'))
-        : 'session';
+    kind === 'cli' ? (existing?.tabFocus ?? (active ? 'cli' : 'session')) : 'session';
   const tabPlacement = existing?.tabPlacement === 'start' ? 'start' : 'end';
-  const tabOrder = Array.isArray(existing?.tabOrder)
-    ? existing.tabOrder.filter(
-        (entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile',
-      )
-    : [];
-  const normalizedTabOrder: Array<'cli' | 'mobile'> =
-    tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile')
-      ? tabOrder
-      : ['cli', 'mobile'];
+  const tabOrder: Array<'cli'> = ['cli'];
   const storedTarget = existing?.targetSessionId
     ? project.sessions.find((session) => session.id === existing.targetSessionId)
     : undefined;
@@ -209,7 +219,7 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
     active,
     tabFocus,
     tabPlacement,
-    tabOrder: normalizedTabOrder,
+    tabOrder,
     targetSessionId,
     web: {
       sessionId: browserSession?.id,

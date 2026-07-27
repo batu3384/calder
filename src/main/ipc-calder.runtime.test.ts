@@ -215,22 +215,16 @@ function createWindow(id: number, supportsOff = true): any {
 function isAutoApprovalMode(
   value: unknown,
 ): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
-  return (
-    value === 'off' ||
-    value === 'edit_only' ||
-    value === 'edit_plus_safe_tools' ||
-    value === 'full_auto' ||
-    value === 'full_auto_unsafe'
-  );
+  return value === 'ask' || value === 'project_edits' || value === 'session_safe';
 }
 
 function createOps() {
   const governanceState: ProjectGovernanceState = {
     autoApproval: {
-      globalMode: 'off',
+      globalMode: 'ask',
       projectMode: undefined,
       sessionMode: undefined,
-      effectiveMode: 'off',
+      effectiveMode: 'ask',
       policySource: 'global',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
@@ -348,11 +342,11 @@ describe('ipc calder runtime handlers', () => {
       {},
       '/repo',
       'global',
-      'off',
+      'ask',
       'session-2',
     );
     await expect(
-      getHandleHandler('governance:setSessionAutoApprovalOverride')({}, 'session-3', 'off'),
+      getHandleHandler('governance:setSessionAutoApprovalOverride')({}, 'session-3', 'ask'),
     ).resolves.toEqual({ ok: true });
 
     await expect(getHandleHandler('task:getProjectState')({}, '/repo')).resolves.toEqual({
@@ -383,8 +377,8 @@ describe('ipc calder runtime handlers', () => {
       kind: 'write',
       label: 'Create workflow file',
     });
-    expect(ops.updateAutoApprovalMode).toHaveBeenCalledWith('/repo', 'global', 'off');
-    expect(ops.setSessionAutoApprovalOverride).toHaveBeenCalledWith('session-3', 'off');
+    expect(ops.updateAutoApprovalMode).toHaveBeenCalledWith('/repo', 'global', 'ask');
+    expect(ops.setSessionAutoApprovalOverride).toHaveBeenCalledWith('session-3', 'ask');
   });
 
   it('rejects mutating handlers when project path is unknown', async () => {

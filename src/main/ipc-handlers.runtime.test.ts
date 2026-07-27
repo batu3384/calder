@@ -16,18 +16,12 @@ const mocks = vi.hoisted(() => {
     registerPendingCodexSession: vi.fn(),
     unregisterCodexSession: vi.fn(),
     stopCodexSessionWatcher: vi.fn(),
-    startCopilotSessionWatcher: vi.fn(),
-    registerPendingCopilotSession: vi.fn(),
-    unregisterCopilotSession: vi.fn(),
-    stopCopilotSessionWatcher: vi.fn(),
     registerMcpHandlers: vi.fn(),
     registerFsStoreIpcHandlers: vi.fn(),
     registerMaintenanceIpcHandlers: vi.fn(),
-    registerMcpGovernanceIpcHandlers: vi.fn(),
     registerGitIpcHandlers: vi.fn(),
     registerProviderIpcHandlers: vi.fn(),
     registerProviderUpdateIpcHandlers: vi.fn(),
-    registerMobileIpcHandlers: vi.fn(),
     registerCalderIpcHandlers: vi.fn(),
     resetCalderProjectWatchers: vi.fn(),
     registerAppBrowserIpcHandlers: vi.fn(),
@@ -50,7 +44,6 @@ const mocks = vi.hoisted(() => {
     updateAutoApprovalMode: vi.fn(),
     createAppMenu: vi.fn(),
     getProvider: vi.fn(),
-    isTrackingHealthy: vi.fn(() => true),
     createCliSurfaceRuntimeManager: vi.fn(() => ({ id: 'runtime' })),
     assertProjectGovernanceAllows: vi.fn(),
     loadState: vi.fn(() => ({
@@ -81,20 +74,10 @@ vi.mock('./codex-session-watcher', () => ({
   stopCodexSessionWatcher: mocks.stopCodexSessionWatcher,
 }));
 
-vi.mock('./copilot-session-watcher', () => ({
-  startCopilotSessionWatcher: mocks.startCopilotSessionWatcher,
-  registerPendingCopilotSession: mocks.registerPendingCopilotSession,
-  unregisterCopilotSession: mocks.unregisterCopilotSession,
-  stopCopilotSessionWatcher: mocks.stopCopilotSessionWatcher,
-}));
-
 vi.mock('./mcp-ipc-handlers', () => ({ registerMcpHandlers: mocks.registerMcpHandlers }));
 vi.mock('./ipc-fs-store', () => ({ registerFsStoreIpcHandlers: mocks.registerFsStoreIpcHandlers }));
 vi.mock('./ipc-maintenance', () => ({
   registerMaintenanceIpcHandlers: mocks.registerMaintenanceIpcHandlers,
-}));
-vi.mock('./ipc-mcp-governance', () => ({
-  registerMcpGovernanceIpcHandlers: mocks.registerMcpGovernanceIpcHandlers,
 }));
 vi.mock('./ipc-git', () => ({ registerGitIpcHandlers: mocks.registerGitIpcHandlers }));
 vi.mock('./ipc-provider', () => ({
@@ -103,7 +86,6 @@ vi.mock('./ipc-provider', () => ({
 vi.mock('./ipc-provider-update', () => ({
   registerProviderUpdateIpcHandlers: mocks.registerProviderUpdateIpcHandlers,
 }));
-vi.mock('./ipc-mobile', () => ({ registerMobileIpcHandlers: mocks.registerMobileIpcHandlers }));
 vi.mock('./ipc-calder', () => ({
   registerCalderIpcHandlers: mocks.registerCalderIpcHandlers,
   resetCalderProjectWatchers: mocks.resetCalderProjectWatchers,
@@ -136,7 +118,6 @@ vi.mock('./ipc-auto-approval-governance', () => ({
 }));
 vi.mock('./menu', () => ({ createAppMenu: mocks.createAppMenu }));
 vi.mock('./providers/registry', () => ({ getProvider: mocks.getProvider }));
-vi.mock('../shared/tracking-health', () => ({ isTrackingHealthy: mocks.isTrackingHealthy }));
 vi.mock('./cli-surface-runtime', () => ({
   createCliSurfaceRuntimeManager: mocks.createCliSurfaceRuntimeManager,
 }));
@@ -164,7 +145,6 @@ describe('ipc-handlers runtime', () => {
 
     expect(mocks.stopHookWatching).toHaveBeenCalled();
     expect(mocks.stopCodexSessionWatcher).toHaveBeenCalled();
-    expect(mocks.stopCopilotSessionWatcher).toHaveBeenCalled();
     expect(mocks.resetCalderProjectWatchers).toHaveBeenCalled();
     expect(mocks.resetInspectorOrchestrationCaches).toHaveBeenCalled();
   });
@@ -195,22 +175,13 @@ describe('ipc-handlers runtime', () => {
     expect(mocks.startCodexSessionWatcher).toHaveBeenCalledWith(win);
     expect(mocks.registerPendingCodexSession).toHaveBeenCalledWith('s1', { cwd: '/repo/project' });
 
-    ptyOps.registerPendingProviderSessionWatchers('copilot', null, 's2', '/repo/project', win);
-    expect(mocks.startCopilotSessionWatcher).toHaveBeenCalledWith(win);
-    expect(mocks.registerPendingCopilotSession).toHaveBeenCalledWith('s2', {
-      cwd: '/repo/project',
-    });
-
     ptyOps.registerPendingProviderSessionWatchers('codex', 'cli-1', 's1', '/repo/project', win);
-    ptyOps.registerPendingProviderSessionWatchers('copilot', 'cli-2', 's2', '/repo/project', win);
     ptyOps.registerPendingProviderSessionWatchers('claude', null, 's1', '/repo/project', win);
     expect(mocks.startCodexSessionWatcher).toHaveBeenCalledTimes(1);
-    expect(mocks.startCopilotSessionWatcher).toHaveBeenCalledTimes(1);
 
     ptyOps.handlePtySessionExit('session-17');
     expect(mocks.cleanupSessionStatus).toHaveBeenCalledWith('session-17');
     expect(mocks.unregisterCodexSession).toHaveBeenCalledWith('session-17');
-    expect(mocks.unregisterCopilotSession).toHaveBeenCalledWith('session-17');
     expect(mocks.orchestrator.unregisterSession).toHaveBeenCalledWith('session-17');
     expect(mocks.clearInspectorOrchestrationSession).toHaveBeenCalledWith('session-17');
 
@@ -230,7 +201,7 @@ describe('ipc-handlers runtime', () => {
     );
   });
 
-  it('validateProviderTrackingAndWarn skips Claude auto-heal when consent is declined for foreign statusline', () => {
+  it('validateProviderTrackingAndWarn is a no-op when external hook injection is disabled', () => {
     registerIpcHandlers();
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
       validateProviderTrackingAndWarn(
@@ -240,67 +211,11 @@ describe('ipc-handlers runtime', () => {
       ): void;
     };
 
-    const provider = {
-      meta: { capabilities: { hookStatus: true } },
-      validateSettings: vi.fn(() => ({ statusLine: 'foreign', hooks: 'partial' })),
-      reinstallSettings: vi.fn(),
-    };
-    mocks.getProvider.mockReturnValue(provider);
-    mocks.loadState.mockReturnValue({
-      version: 1,
-      projects: [],
-      activeProjectId: null,
-      preferences: { statusLineConsent: 'declined' },
-    });
-    mocks.isTrackingHealthy.mockReturnValue(false);
-
     const send = vi.fn();
     ptyOps.validateProviderTrackingAndWarn({ webContents: { send } }, 'sess-1', 'claude');
 
-    expect(provider.reinstallSettings).not.toHaveBeenCalled();
-    expect(provider.validateSettings).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith('settings:warning', {
-      sessionId: 'sess-1',
-      providerId: 'claude',
-      statusLine: 'foreign',
-      hooks: 'partial',
-    });
-  });
-
-  it('validateProviderTrackingAndWarn auto-heals then warns when still unhealthy', () => {
-    registerIpcHandlers();
-    const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
-      validateProviderTrackingAndWarn(
-        win: { webContents: { send: (channel: string, payload: unknown) => void } },
-        sessionId: string,
-        providerId: string,
-      ): void;
-    };
-
-    const provider = {
-      meta: { capabilities: { hookStatus: true } },
-      validateSettings: vi.fn(() => ({ statusLine: 'foreign', hooks: 'partial' })),
-      reinstallSettings: vi.fn(),
-    };
-    mocks.getProvider.mockReturnValue(provider);
-    mocks.loadState.mockReturnValue({
-      version: 1,
-      projects: [],
-      activeProjectId: null,
-      preferences: { statusLineConsent: 'granted' },
-    });
-    mocks.isTrackingHealthy.mockReturnValueOnce(false).mockReturnValueOnce(false);
-
-    const send = vi.fn();
-    ptyOps.validateProviderTrackingAndWarn({ webContents: { send } }, 'sess-1', 'claude');
-
-    expect(provider.reinstallSettings).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith('settings:warning', {
-      sessionId: 'sess-1',
-      providerId: 'claude',
-      statusLine: 'foreign',
-      hooks: 'partial',
-    });
+    expect(mocks.getProvider).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('setSessionAutoApprovalOverride delegates to inspector orchestrator override API', () => {
@@ -309,8 +224,8 @@ describe('ipc-handlers runtime', () => {
     const calderOps = mocks.registerCalderIpcHandlers.mock.calls[0]?.[0] as {
       setSessionAutoApprovalOverride(sessionId: string, mode: string | null): void;
     };
-    calderOps.setSessionAutoApprovalOverride('s55', 'full_auto');
+    calderOps.setSessionAutoApprovalOverride('s55', 'session_safe');
 
-    expect(mocks.orchestrator.setSessionOverride).toHaveBeenCalledWith('s55', 'full_auto');
+    expect(mocks.orchestrator.setSessionOverride).toHaveBeenCalledWith('s55', 'session_safe');
   });
 });

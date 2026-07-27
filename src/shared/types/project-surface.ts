@@ -80,9 +80,9 @@ export interface CliSurfaceState {
 export interface ProjectSurfaceRecord {
   kind: SurfaceKind;
   active: boolean;
-  tabFocus?: 'session' | 'cli' | 'mobile';
+  tabFocus?: 'session' | 'cli';
   tabPlacement?: 'start' | 'end';
-  tabOrder?: Array<'cli' | 'mobile'>;
+  tabOrder?: Array<'cli'>;
   targetSessionId?: string;
   web?: WebSurfaceState;
   cli?: CliSurfaceState;

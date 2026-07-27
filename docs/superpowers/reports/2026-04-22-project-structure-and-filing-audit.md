@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Calder Project Structure and Filing Audit
 
 Date: 2026-04-22  

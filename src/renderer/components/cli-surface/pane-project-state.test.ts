@@ -26,11 +26,11 @@ function createState() {
             selectedProfileId: 'profile-2',
             profiles: [
               { id: 'profile-1', name: 'Codex Main', command: 'codex' },
-              { id: 'profile-2', name: 'Qwen', command: 'qwen' },
+              { id: 'profile-2', name: 'Cursor', command: 'agent' },
             ],
             runtime: {
               status: 'running',
-              command: 'qwen',
+              command: 'agent',
               selectedProfileId: 'profile-2',
             },
           },

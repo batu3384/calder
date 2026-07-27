@@ -5,7 +5,7 @@ import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 
 function makeState(): PersistedState {
   return {
-    version: 1,
+    version: 2,
     activeProjectId: 'project-1',
     preferences: {
       soundOnSessionWaiting: true,

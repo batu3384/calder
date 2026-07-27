@@ -33,13 +33,7 @@ export interface ContextWindowInfo {
 export interface SessionRecord {
   id: string;
   name: string;
-  type?:
-    | 'claude'
-    | 'mcp-inspector'
-    | 'diff-viewer'
-    | 'file-reader'
-    | 'remote-terminal'
-    | 'browser-tab';
+  type?: 'claude' | 'mcp-inspector' | 'diff-viewer' | 'file-reader' | 'browser-tab';
   providerId?: ProviderId;
   args?: string;
   cliSessionId: string | null;
@@ -55,8 +49,6 @@ export interface SessionRecord {
   userRenamed?: boolean;
   cost?: CostInfo;
   contextWindow?: ContextWindowInfo;
-  remoteHostName?: string;
-  shareMode?: 'readonly' | 'readwrite';
   browserTabUrl?: string;
   browserTargetSessionId?: string;
   /** Transient: initial prompt to inject on first spawn. Not persisted. */

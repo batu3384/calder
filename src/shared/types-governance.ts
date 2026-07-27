@@ -2,12 +2,7 @@
 
 export type ProjectGovernanceMode = 'advisory' | 'enforced';
 export type ProjectGovernanceDecisionPolicy = 'allow' | 'ask' | 'block';
-export type AutoApprovalMode =
-  | 'off'
-  | 'edit_only'
-  | 'edit_plus_safe_tools'
-  | 'full_auto'
-  | 'full_auto_unsafe';
+export type AutoApprovalMode = 'ask' | 'project_edits' | 'session_safe';
 export type AutoApprovalPolicySource = 'global' | 'project' | 'session' | 'fallback';
 export type AutoApprovalOperationClass =
   | 'edit'

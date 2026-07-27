@@ -15,7 +15,6 @@ describe('tab bar session tab factory extraction', () => {
 
   it('keeps session tab badges, activation, context menu, and reorder behavior in helper module', () => {
     expect(sessionTabFactorySource).toContain("session.type === 'mcp-inspector'");
-    expect(sessionTabFactorySource).toContain("session.type === 'remote-terminal'");
     expect(sessionTabFactorySource).toContain(
       'buildProviderIconMarkup(providerId, hasMultipleAvailableProviders())',
     );

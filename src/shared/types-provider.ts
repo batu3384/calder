@@ -2,11 +2,11 @@
 
 // --- Provider ---
 
-export type ProviderId = 'claude' | 'codex' | 'copilot' | 'antigravity' | 'qwen';
+export type ProviderId = 'claude' | 'codex' | 'antigravity' | 'cursor';
 export type PendingPromptTrigger = 'session-start' | 'first-output' | 'startup-arg';
 export type UiLanguage = 'en' | 'tr';
 export type AppearanceTheme = 'system' | 'light' | 'dark';
-export type GatewayBackendId = 'anthropic' | 'zai' | 'minimax' | 'qwen';
+export type GatewayBackendId = 'anthropic' | 'zai' | 'minimax';
 export type ProviderRouteKind = 'native-cli' | 'gateway';
 export type ProviderRouteConfidence = 'verified' | 'estimated' | 'unavailable';
 export type QuotaConfidence = 'verified' | 'estimated' | 'stale' | 'unavailable';
@@ -24,7 +24,6 @@ export interface CliProviderCapabilities {
   costTracking: boolean;
   contextWindow: boolean;
   hookStatus: boolean;
-  configReading: boolean;
   shiftEnterNewline: boolean;
   pendingPromptTrigger: PendingPromptTrigger;
   planModeArg?: string;
@@ -98,59 +97,4 @@ export interface ProviderUpdateProgressEvent {
   providerProgressPercent?: number;
   providers?: ProviderUpdateProgressTarget[];
   result?: ProviderUpdateResult;
-}
-// --- Provider Config ---
-
-export interface McpServer {
-  name: string;
-  url: string;
-  status: string;
-  scope: 'user' | 'project';
-  filePath: string;
-}
-export interface Agent {
-  name: string;
-  model: string;
-  category: 'plugin' | 'built-in';
-  scope: 'user' | 'project';
-  filePath: string;
-}
-export interface Skill {
-  name: string;
-  description: string;
-  scope: 'user' | 'project';
-  filePath: string;
-}
-export interface Command {
-  name: string;
-  description: string;
-  scope: 'user' | 'project';
-  filePath: string;
-}
-export interface ProviderConfig {
-  mcpServers: McpServer[];
-  agents: Agent[];
-  skills: Skill[];
-  commands: Command[];
-}
-export type ClaudeConfig = ProviderConfig;
-
-// --- Settings Validation ---
-
-export interface SettingsValidationResult {
-  statusLine: 'missing' | 'calder' | 'foreign';
-  hooks: 'missing' | 'complete' | 'partial';
-  foreignStatusLineCommand?: string;
-  hookDetails: Record<string, boolean>;
-}
-
-export interface SettingsWarningData {
-  sessionId: string;
-  providerId: ProviderId;
-  statusLine: SettingsValidationResult['statusLine'];
-  hooks: SettingsValidationResult['hooks'];
-}
-
-export interface StatusLineConflictData {
-  foreignCommand: string;
 }

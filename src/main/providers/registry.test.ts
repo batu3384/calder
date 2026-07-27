@@ -4,9 +4,8 @@ import type { CliProviderMeta } from '../../shared/types/provider';
 import { _resetCachedPath as resetAntigravityCache } from './antigravity-provider';
 import { _resetCachedPath as resetClaudeCache } from './claude-provider';
 import { _resetCachedPath as resetCodexCache } from './codex-provider';
-import { _resetCachedPath as resetCopilotCache } from './copilot-provider';
+import { _resetCachedPath as resetCursorCache } from './cursor-provider';
 import type { CliProvider } from './provider';
-import { _resetCachedPath as resetQwenCache } from './qwen-provider';
 import {
   getAllProviderMetas,
   getAllProviders,
@@ -21,15 +20,14 @@ import {
 import { _resetPrereqCheckCache } from './resolve-binary';
 
 const fakeMeta: CliProviderMeta = {
-  id: 'copilot',
-  displayName: 'Copilot CLI',
-  binaryName: 'copilot',
+  id: 'cursor',
+  displayName: 'Cursor CLI',
+  binaryName: 'agent',
   capabilities: {
     sessionResume: false,
     costTracking: false,
     contextWindow: false,
     hookStatus: false,
-    configReading: false,
     shiftEnterNewline: false,
     pendingPromptTrigger: 'session-start',
   },
@@ -52,22 +50,16 @@ function makeFakeProvider(meta: CliProviderMeta, prerequisitesOk = true): CliPro
     }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],
-    installHooks: async () => {},
-    installStatusScripts: () => {},
     cleanup: () => {},
-    getConfig: async () => ({ mcpServers: [], agents: [], skills: [], commands: [] }),
     getShiftEnterSequence: () => null,
-    validateSettings: () => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} }),
-    reinstallSettings: () => {},
   };
 }
 
 beforeEach(() => {
   resetClaudeCache();
   resetCodexCache();
-  resetCopilotCache();
+  resetCursorCache();
   resetAntigravityCache();
-  resetQwenCache();
   _resetPrereqCheckCache();
   // Re-init to reset registry to only the Claude provider
   initProviders();
@@ -86,10 +78,10 @@ describe('initProviders', () => {
     expect(provider.meta.id).toBe('codex');
   });
 
-  it('registers the Copilot provider', () => {
-    const provider = getProvider('copilot');
+  it('registers the Cursor provider', () => {
+    const provider = getProvider('cursor');
     expect(provider).toBeDefined();
-    expect(provider.meta.id).toBe('copilot');
+    expect(provider.meta.id).toBe('cursor');
   });
 });
 
@@ -100,10 +92,10 @@ describe('getProvider', () => {
     expect(provider.meta.id).toBe('antigravity');
   });
 
-  it('registers the Qwen provider', () => {
-    const provider = getProvider('qwen');
+  it('registers the Cursor provider', () => {
+    const provider = getProvider('cursor');
     expect(provider).toBeDefined();
-    expect(provider.meta.id).toBe('qwen');
+    expect(provider.meta.id).toBe('cursor');
   });
 
   it('throws for unknown provider ID', () => {
@@ -117,7 +109,7 @@ describe('registerProvider', () => {
   it('makes a custom provider retrievable', () => {
     const fake = makeFakeProvider(fakeMeta);
     registerProvider(fake);
-    expect(getProvider('copilot')).toBe(fake);
+    expect(getProvider('cursor')).toBe(fake);
   });
 });
 
@@ -125,13 +117,12 @@ describe('getAllProviders', () => {
   it('returns all registered providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const all = getAllProviders();
-    expect(all.length).toBe(5);
+    expect(all.length).toBe(4);
     const ids = all.map((p) => p.meta.id);
     expect(ids).toContain('claude');
     expect(ids).toContain('codex');
-    expect(ids).toContain('copilot');
     expect(ids).toContain('antigravity');
-    expect(ids).toContain('qwen');
+    expect(ids).toContain('cursor');
   });
 });
 
@@ -147,11 +138,10 @@ describe('getAllProviderMetas', () => {
   it('returns meta array for all providers', () => {
     registerProvider(makeFakeProvider(fakeMeta));
     const metas = getAllProviderMetas();
-    expect(metas.length).toBe(5);
+    expect(metas.length).toBe(4);
     expect(metas.map((m) => m.id)).toContain('codex');
-    expect(metas.map((m) => m.id)).toContain('copilot');
     expect(metas.map((m) => m.id)).toContain('antigravity');
-    expect(metas.map((m) => m.id)).toContain('qwen');
+    expect(metas.map((m) => m.id)).toContain('cursor');
   });
 });
 
@@ -164,8 +154,8 @@ describe('getAvailableProviderIds', () => {
     const available = makeFakeProvider(
       {
         ...fakeMeta,
-        id: 'copilot',
-        displayName: 'Copilot Available',
+        id: 'cursor',
+        displayName: 'Cursor Available',
       },
       true,
     );
@@ -182,7 +172,7 @@ describe('getAvailableProviderIds', () => {
     registerProvider(unavailable);
 
     const ids = getAvailableProviderIds();
-    expect(ids).toContain('copilot');
+    expect(ids).toContain('cursor');
     expect(ids).not.toContain('antigravity');
   });
 
@@ -194,8 +184,8 @@ describe('getAvailableProviderIds', () => {
     const unstable = makeFakeProvider(
       {
         ...fakeMeta,
-        id: 'qwen',
-        displayName: 'Qwen Unstable',
+        id: 'cursor',
+        displayName: 'Cursor Unstable',
       },
       true,
     );
@@ -206,8 +196,8 @@ describe('getAvailableProviderIds', () => {
     const available = makeFakeProvider(
       {
         ...fakeMeta,
-        id: 'copilot',
-        displayName: 'Copilot Available',
+        id: 'codex',
+        displayName: 'Codex Available',
       },
       true,
     );
@@ -219,7 +209,7 @@ describe('getAvailableProviderIds', () => {
     expect(() => {
       ids = getAvailableProviderIds();
     }).not.toThrow();
-    expect(ids).toContain('copilot');
-    expect(ids).not.toContain('qwen');
+    expect(ids).toContain('codex');
+    expect(ids).not.toContain('cursor');
   });
 });

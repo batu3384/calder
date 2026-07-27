@@ -1,22 +1,11 @@
-import type { BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type {
-  CliProviderMeta,
-  ProviderConfig,
-  SettingsValidationResult,
-} from '../../shared/types/provider';
-import { getClaudeConfig } from '../claude-cli';
-import {
-  startConfigWatcher as startConfigWatch,
-  stopConfigWatcher as stopConfigWatch,
-} from '../config-watcher';
+import type { CliProviderMeta } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
-import { cleanupAll as cleanupHookStatus, installStatusLineScript } from '../hooks/hook-status';
+import { cleanupAll as cleanupHookStatus } from '../hooks/hook-status';
 import { sanitizeExtraArgs } from '../security/sanitize';
-import { guardedInstall, reinstallSettings, validateSettings } from '../settings-guard';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
@@ -32,7 +21,6 @@ export class ClaudeProvider extends BaseCliProvider {
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: true,
       pendingPromptTrigger: 'startup-arg',
       planModeArg: '--permission-mode plan',
@@ -88,38 +76,8 @@ export class ClaudeProvider extends BaseCliProvider {
     return args;
   }
 
-  async installHooks(win?: BrowserWindow | null): Promise<void> {
-    await guardedInstall(win ?? null);
-  }
-
-  installStatusScripts(): void {
-    installStatusLineScript();
-  }
-
   cleanup(): void {
-    stopConfigWatch();
     cleanupHookStatus();
-  }
-
-  startConfigWatcher(win: BrowserWindow, projectPath: string): void {
-    startConfigWatch(win, projectPath, 'claude');
-  }
-
-  stopConfigWatcher(): void {
-    stopConfigWatch();
-  }
-
-  async getConfig(projectPath: string): Promise<ProviderConfig> {
-    return getClaudeConfig(projectPath);
-  }
-
-  validateSettings(): SettingsValidationResult {
-    return validateSettings();
-  }
-
-  reinstallSettings(): void {
-    reinstallSettings();
-    installStatusLineScript();
   }
 
   getShiftEnterSequence(): string | null {

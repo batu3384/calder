@@ -2,13 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type {
-  AutoApprovalMode,
   ProjectGovernanceDecisionPolicy,
   ProjectGovernanceMode,
   ProjectGovernancePolicySource,
   ProjectGovernanceState,
 } from '../../shared/types/governance.js';
 import {
+  normalizeAutoApprovalMode,
   readGlobalAutoApprovalPolicy,
   resolveEffectiveAutoApprovalMode,
 } from './auto-approval-policy.js';
@@ -63,14 +63,8 @@ function countProviderProfiles(value: unknown): number {
   ).length;
 }
 
-function asAutoApprovalMode(value: unknown): AutoApprovalMode | undefined {
-  return value === 'off' ||
-    value === 'edit_only' ||
-    value === 'edit_plus_safe_tools' ||
-    value === 'full_auto' ||
-    value === 'full_auto_unsafe'
-    ? value
-    : undefined;
+function asAutoApprovalMode(value: unknown) {
+  return normalizeAutoApprovalMode(value);
 }
 
 function readPolicy(filePath: string): RawGovernancePolicy {

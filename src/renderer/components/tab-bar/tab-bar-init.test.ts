@@ -6,7 +6,6 @@ const wireTabBarStateSubscriptions = vi.hoisted(() => vi.fn());
 const bootstrapTabBarProviderAvailability = vi.hoisted(() => vi.fn());
 
 const renderGitStatusBlock = vi.hoisted(() => vi.fn());
-const syncMobileControlButton = vi.hoisted(() => vi.fn());
 
 const cliUpdatePanelController = vi.hoisted(() => ({
   setup: vi.fn(),
@@ -49,8 +48,6 @@ const appStateMock = vi.hoisted(() => ({
   setPreference: vi.fn(),
   focusCliSurfaceTab: vi.fn(),
   closeCliSurface: vi.fn(),
-  focusMobileSurfaceTab: vi.fn(),
-  closeMobileSurface: vi.fn(),
 }));
 
 class FakeClassList {
@@ -140,10 +137,6 @@ vi.mock('./tab-bar-surface-state.js', () => ({
   upsertCliSurfaceProfile: vi.fn(() => []),
 }));
 
-vi.mock('./tab-bar-mobile-control.js', () => ({
-  syncMobileControlButton,
-}));
-
 vi.mock('./tab-bar-session-titles.js', () => ({
   buildSessionTooltip: vi.fn(() => 'tooltip'),
 }));
@@ -209,15 +202,12 @@ vi.mock('./tab-bar-context-menu-wiring.js', () => ({
 
 vi.mock('./tab-bar-control-handlers.js', () => ({
   activateLiveViewSurface: vi.fn(),
-  activateMobileSurface: vi.fn(),
-  handleMobileControlClick: vi.fn(),
 }));
 
 vi.mock('./tab-bar-render-blocks.js', () => ({
   buildActiveTabRailKey: vi.fn(() => 'active-key'),
   buildTabBarRenderSurfaceState: vi.fn(() => ({
     cliSurfaceTabActive: false,
-    mobileSurfaceTabActive: false,
   })),
   renderGitStatusBlock,
   shouldSkipTabListRender: vi.fn(() => true),
@@ -241,8 +231,6 @@ describe('tab-bar init orchestration', () => {
     documentMock.register('git-status');
     documentMock.register('btn-add-session');
     documentMock.register('btn-update-cli-tools');
-    documentMock.register('btn-mobile-control');
-    documentMock.register('mobile-control-presence');
     documentMock.register('tab-actions');
     documentMock.register('surface-mode-slot');
     documentMock.register('surface-profile-slot');
@@ -264,7 +252,6 @@ describe('tab-bar init orchestration', () => {
     expect(cliUpdatePanelController.setup).toHaveBeenCalledTimes(1);
     expect(providerSelectorController.syncSessionProviderSelector).toHaveBeenCalledWith('claude');
     expect(renderGitStatusBlock).toHaveBeenCalledTimes(1);
-    expect(syncMobileControlButton).toHaveBeenCalledTimes(1);
     expect(
       document.getElementById('btn-add-session')?.classList.contains('tab-action-primary'),
     ).toBe(true);

@@ -33,13 +33,13 @@ describe('createProjectContextStarterFiles', () => {
     const result = await createProjectContextStarterFiles(root);
 
     expect(result.created).toEqual([
-      'CALDER.shared.md',
+      '.calder/shared.md',
       '.calder/rules/testing.hard.md',
       '.calder/rules/boundaries.soft.md',
       '.calder/rules/handoff.soft.md',
     ]);
     expect(result.skipped).toEqual([]);
-    expect(existsSync(join(root, 'CALDER.shared.md'))).toBe(true);
+    expect(existsSync(join(root, '.calder/shared.md'))).toBe(true);
     expect(existsSync(join(root, '.calder/rules/testing.hard.md'))).toBe(true);
     expect(result.state.sharedRuleCount).toBe(4);
   });
@@ -48,7 +48,7 @@ describe('createProjectContextStarterFiles', () => {
     const root = makeProject('context-scaffold-existing');
     await mkdir(dirname(join(root, '.calder/rules/testing.hard.md')), { recursive: true });
     await writeFile(
-      join(root, 'CALDER.shared.md'),
+      join(root, '.calder/shared.md'),
       '# Existing shared rules\nKeep this file.\n',
       'utf8',
     );
@@ -64,8 +64,10 @@ describe('createProjectContextStarterFiles', () => {
       '.calder/rules/boundaries.soft.md',
       '.calder/rules/handoff.soft.md',
     ]);
-    expect(result.skipped).toEqual(['CALDER.shared.md', '.calder/rules/testing.hard.md']);
-    expect(readFileSync(join(root, 'CALDER.shared.md'), 'utf8')).toContain('Existing shared rules');
+    expect(result.skipped).toEqual(['.calder/shared.md', '.calder/rules/testing.hard.md']);
+    expect(readFileSync(join(root, '.calder/shared.md'), 'utf8')).toContain(
+      'Existing shared rules',
+    );
     expect(readFileSync(join(root, '.calder/rules/testing.hard.md'), 'utf8')).toContain(
       'Do not overwrite',
     );

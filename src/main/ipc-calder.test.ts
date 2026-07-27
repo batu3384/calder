@@ -69,10 +69,10 @@ import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-cal
 function createGovernanceState(): ProjectGovernanceState {
   return {
     autoApproval: {
-      globalMode: 'off',
+      globalMode: 'ask',
       projectMode: undefined,
       sessionMode: undefined,
-      effectiveMode: 'off',
+      effectiveMode: 'ask',
       policySource: 'global',
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
@@ -83,13 +83,7 @@ function createGovernanceState(): ProjectGovernanceState {
 function isAutoApprovalMode(
   value: unknown,
 ): value is NonNullable<ProjectGovernanceState['autoApproval']>['effectiveMode'] {
-  return (
-    value === 'off' ||
-    value === 'edit_only' ||
-    value === 'edit_plus_safe_tools' ||
-    value === 'full_auto' ||
-    value === 'full_auto_unsafe'
-  );
+  return value === 'ask' || value === 'project_edits' || value === 'session_safe';
 }
 
 describe('ipc calder lifecycle + governance handlers', () => {

@@ -26,7 +26,6 @@ interface PtyInstance {
 }
 
 const ptys = new Map<string, PtyInstance>();
-const silencedExits = new Set<string>();
 const RESUME_SESSION_MISSING_PATTERN =
   /no\s+conversation\s+found\s+with\s+session\s+id|session(?:\s+id)?[\s\S]{0,160}?not\s+found/i;
 
@@ -52,8 +51,6 @@ export function spawnPty(
   }
 
   if (ptys.has(sessionId)) {
-    // Silence the old PTY's exit event so it doesn't remove the new session
-    silencedExits.add(sessionId);
     killPty(sessionId);
   }
 
@@ -71,35 +68,6 @@ export function spawnPty(
   }
 
   const provider = getProvider(providerId);
-  if (providerId === 'copilot') {
-    const rawEnv = buildProviderBaseEnv('copilot', { ...process.env } as Record<string, string>);
-    const env = { ...rawEnv };
-    for (const key of [
-      'ANTHROPIC_BASE_URL',
-      'OPENAI_BASE_URL',
-      'COPILOT_PROVIDER_BASE_URL',
-      'COPILOT_PROVIDER_TYPE',
-      'COPILOT_MODEL',
-      'COPILOT_PROVIDER_MODEL_ID',
-    ]) {
-      delete env[key];
-    }
-    const byokActive = Boolean(env.COPILOT_PROVIDER_BASE_URL?.trim());
-    const hasModel = Boolean(env.COPILOT_MODEL?.trim() || env.COPILOT_PROVIDER_MODEL_ID?.trim());
-    if (byokActive && !hasModel) {
-      const message =
-        '\r\nGitHub Copilot BYOK is configured but no model is set.\r\n\r\n' +
-        'Add a model to your shell profile, for example:\r\n' +
-        '  export COPILOT_MODEL=claude-sonnet-4\r\n\r\n' +
-        'Then restart Calder.\r\n';
-      queueMicrotask(() => {
-        onData(message);
-        onExit(1);
-      });
-      return;
-    }
-  }
-
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
   const env = buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv));
   const shell = provider.resolveBinaryPath();
@@ -121,37 +89,45 @@ export function spawnPty(
       env,
     });
     let shouldRetryWithoutResume = false;
+    // Keep a short rolling window so resume-missing detection survives chunk splits.
+    let recentOutput = '';
+    const RECENT_OUTPUT_LIMIT = 512;
+
+    const isActivePty = (): boolean => ptys.get(sessionId)?.process === ptyProcess;
+
+    ptys.set(sessionId, { process: ptyProcess, sessionId });
 
     ptyProcess.onData((data) => {
+      if (!isActivePty()) return;
       onData(data);
-      if (
-        !attemptedResumeFallback &&
-        attemptIsResume &&
-        !!attemptCliSessionId &&
-        RESUME_SESSION_MISSING_PATTERN.test(data)
-      ) {
-        attemptedResumeFallback = true;
-        shouldRetryWithoutResume = true;
-        onData(
-          '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
-        );
-        ptyProcess.kill();
+      if (!attemptedResumeFallback && attemptIsResume && !!attemptCliSessionId) {
+        recentOutput = (recentOutput + data).slice(-RECENT_OUTPUT_LIMIT);
+        if (RESUME_SESSION_MISSING_PATTERN.test(recentOutput)) {
+          attemptedResumeFallback = true;
+          shouldRetryWithoutResume = true;
+          onData(
+            '\r\n[Calder] Previous session could not be resumed. Starting a fresh session...\r\n',
+          );
+          ptyProcess.kill();
+        }
       }
     });
     ptyProcess.onExit(({ exitCode, signal }) => {
       // Only remove from map if this PTY is still the active one for this session
-      const current = ptys.get(sessionId);
-      if (current?.process === ptyProcess) {
+      const isActiveProcess = isActivePty();
+      if (isActiveProcess) {
         ptys.delete(sessionId);
       }
       if (shouldRetryWithoutResume) {
+        // Another spawn already replaced us — do not invent a third process.
+        if (!isActiveProcess) return;
         spawnAttempt(null, false);
         return;
       }
+      // Replaced PTY: do not notify IPC/renderer — that would wipe the new session.
+      if (!isActiveProcess) return;
       onExit(exitCode, signal);
     });
-
-    ptys.set(sessionId, { process: ptyProcess, sessionId });
   };
 
   spawnAttempt(cliSessionId, isResume);
@@ -176,7 +152,6 @@ export function spawnCommandPty(
   }
 
   if (ptys.has(sessionId)) {
-    silencedExits.add(sessionId);
     killPty(sessionId);
   }
 
@@ -199,16 +174,21 @@ export function spawnCommandPty(
     env,
   });
 
-  ptyProcess.onData((data) => onData(data));
+  ptys.set(sessionId, { process: ptyProcess, sessionId });
+
+  ptyProcess.onData((data) => {
+    if (ptys.get(sessionId)?.process !== ptyProcess) return;
+    onData(data);
+  });
   ptyProcess.onExit(({ exitCode, signal }) => {
     const current = ptys.get(sessionId);
-    if (current?.process === ptyProcess) {
+    const isActiveProcess = current?.process === ptyProcess;
+    if (isActiveProcess) {
       ptys.delete(sessionId);
     }
+    if (!isActiveProcess) return;
     onExit(exitCode, signal);
   });
-
-  ptys.set(sessionId, { process: ptyProcess, sessionId });
 }
 
 export function writePty(sessionId: string, data: string): boolean {
@@ -248,11 +228,6 @@ export function killPty(sessionId: string): void {
       console.warn(`[pty-manager] kill(${sessionId}) process.kill threw:`, err);
     }
     ptys.delete(sessionId);
-    // Note: silencedExits.delete(sessionId) is intentionally NOT called here.
-    // silencedExits tracks whether the exit event for THIS PTY should be silenced.
-    // That decision is made at spawn time, not at kill time.
-    // The exit handler itself removes the sessionId from silencedExits when it fires.
-    // Adding delete here would break the silencing of old PTY exits during session respawn.
   }
 }
 
@@ -337,21 +312,22 @@ export function spawnShellPty(
     env: shellEnv,
   });
 
-  ptyProcess.onData((data) => onData(data));
+  ptys.set(sessionId, { process: ptyProcess, sessionId });
+
+  ptyProcess.onData((data) => {
+    if (ptys.get(sessionId)?.process !== ptyProcess) return;
+    onData(data);
+  });
   ptyProcess.onExit(({ exitCode, signal }) => {
-    ptys.delete(sessionId);
+    const current = ptys.get(sessionId);
+    const isActiveProcess = current?.process === ptyProcess;
+    if (isActiveProcess) {
+      ptys.delete(sessionId);
+    }
+    if (!isActiveProcess) return;
     onExit(exitCode, signal);
   });
-
-  ptys.set(sessionId, { process: ptyProcess, sessionId });
 }
-
-export function consumeSilencedExitFlag(sessionId: string): boolean {
-  return silencedExits.delete(sessionId);
-}
-
-/** @deprecated Use consumeSilencedExitFlag — name reflects delete side-effect. */
-export const isSilencedExit = consumeSilencedExitFlag;
 
 export function killAllPtys(): void {
   for (const [id] of ptys) {

@@ -6,7 +6,7 @@ import { buildDiagnosticsSummaryModel } from './diagnostics-summary.js';
 
 function makeProject(
   session: SessionRecord,
-  effectiveMode: AutoApprovalMode = 'off',
+  effectiveMode: AutoApprovalMode = 'ask',
 ): ProjectRecord {
   return {
     id: 'p1',
@@ -98,10 +98,10 @@ describe('diagnostics summary model', () => {
     });
   });
 
-  it('promotes unsafe auto approval and git conflicts to warning tone', () => {
+  it('promotes session-safe auto approval and git conflicts to warning tone', () => {
     const session = makeSession();
     const model = buildDiagnosticsSummaryModel({
-      project: makeProject(session, 'full_auto_unsafe'),
+      project: makeProject(session, 'session_safe'),
       activeSession: session,
       gitStatus: {
         isGitRepo: true,
@@ -121,8 +121,8 @@ describe('diagnostics summary model', () => {
     expect(model.tone).toBe('warning');
     expect(model.cards[2]).toMatchObject({
       label: 'Onay',
-      value: 'Tehlikeli otonom',
-      tone: 'warning',
+      value: 'Oturum güvenli',
+      tone: 'active',
     });
     expect(model.cards[3]).toMatchObject({
       label: 'Git',

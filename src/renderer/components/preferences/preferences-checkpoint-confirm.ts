@@ -64,9 +64,6 @@ export function buildCheckpointRestoreConfirm(
     sessionKinds.get('diff-viewer')
       ? formatCountLabel(sessionKinds.get('diff-viewer')!, 'diff view', 'diff views')
       : null,
-    sessionKinds.get('remote-terminal')
-      ? formatCountLabel(sessionKinds.get('remote-terminal')!, 'remote session', 'remote sessions')
-      : null,
     sessionKinds.get('mcp-inspector')
       ? formatCountLabel(sessionKinds.get('mcp-inspector')!, 'inspector', 'inspectors')
       : null,

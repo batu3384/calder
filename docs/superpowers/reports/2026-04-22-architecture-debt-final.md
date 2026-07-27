@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Architecture Debt Closure Report (2026-04-22)
 
 ## Execution Summary
@@ -31,7 +33,6 @@ Implemented orchestrator-entry wrappers so public entrypoints are now thin and b
 - `ensureInstance`: `526 -> 3` lines
 - `ensureCliSurfaceInstance`: `526 -> 82` lines (`<=250` target achieved)
 - `renderInspectWorkbench`: `410 -> 3` lines
-- `buildStatusLinePython`: `777 -> 3` lines
 - `createShareDialogFlowController`: moved to dedicated module (`src/renderer/components/share-dialog-flow-controller.ts`) and reduced from in-file monolith responsibility
 - `renderShareDialog`: `253 -> 194` lines
 
@@ -63,8 +64,6 @@ Performed repository-wide domain migration from umbrella imports to domain barre
 - `src/renderer/components/share-dialog-phase-two.ts`: `273` (new extraction module)
 - `src/renderer/components/mobile-surface/pane.ts`: `1186`
 - `src/shared/types.ts`: `1072`
-- `src/main/statusline-template.ts`: `15`
-- `src/main/statusline-python-template.ts`: `25` (wrapper/orchestrator)
 - `src/main/statusline-python-template-source.ts`: `766` (new extraction module)
 - `src/main/claude-cli.ts`: `612`
 

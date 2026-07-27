@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { PersistedState } from '../shared/types/project-state';
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
@@ -6,14 +6,8 @@ import {
   analyzeProviderStartup,
   formatMissingProviderDialog,
   formatProviderStartupWarning,
-  installProviderStartupArtifacts,
 } from './provider-startup';
 import type { CliProvider } from './providers/provider';
-
-vi.mock('./external-hook-policy', () => ({
-  EXTERNAL_HOOK_INJECTION_ENABLED: true,
-  cleanupAllExternalProviderHooks: vi.fn(),
-}));
 
 function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
   return {
@@ -25,7 +19,6 @@ function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
       costTracking: false,
       contextWindow: false,
       hookStatus: false,
-      configReading: false,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'session-start',
     },
@@ -33,12 +26,7 @@ function makeMeta(id: ProviderId, displayName: string): CliProviderMeta {
   };
 }
 
-function makeProvider(
-  id: ProviderId,
-  ok: boolean,
-  message = `${id} missing`,
-  overrides?: Partial<Pick<CliProvider, 'installHooks' | 'installStatusScripts'>>,
-): CliProvider {
+function makeProvider(id: ProviderId, ok: boolean, message = `${id} missing`): CliProvider {
   return {
     meta: makeMeta(id, `${id.toUpperCase()} CLI`),
     resolveBinaryPath: () => id,
@@ -48,19 +36,14 @@ function makeProvider(
     validatePrerequisites: () => ({ ok, message: ok ? '' : message }),
     buildEnv: (_sid, env) => env,
     buildArgs: () => [],
-    installHooks: overrides?.installHooks ?? (async () => {}),
-    installStatusScripts: overrides?.installStatusScripts ?? (() => {}),
     cleanup: () => {},
-    getConfig: async () => ({ mcpServers: [], agents: [], skills: [], commands: [] }),
     getShiftEnterSequence: () => null,
-    validateSettings: () => ({ statusLine: 'missing', hooks: 'missing', hookDetails: {} }),
-    reinstallSettings: () => {},
   };
 }
 
 function makeState(overrides?: Partial<PersistedState>): PersistedState {
   return {
-    version: 1,
+    version: 2,
     activeProjectId: null,
     projects: [],
     preferences: {
@@ -131,8 +114,8 @@ describe('analyzeProviderStartup', () => {
           sessions: [
             {
               id: 'session-1',
-              name: 'Qwen',
-              providerId: 'qwen',
+              name: 'Cursor',
+              providerId: 'cursor',
               cliSessionId: null,
               createdAt: '2026-04-12T10:00:00.000Z',
             },
@@ -142,11 +125,13 @@ describe('analyzeProviderStartup', () => {
     });
 
     const analysis = analyzeProviderStartup(
-      [makeProvider('codex', true), makeProvider('qwen', false, 'Qwen Code not found')],
+      [makeProvider('codex', true), makeProvider('cursor', false, 'Cursor CLI not found')],
       state,
     );
 
-    expect(analysis.relevantUnavailable.map((result) => result.provider.meta.id)).toEqual(['qwen']);
+    expect(analysis.relevantUnavailable.map((result) => result.provider.meta.id)).toEqual([
+      'cursor',
+    ]);
     expect(analysis.relevantUnavailable[0]?.reasons).toEqual(['saved-session']);
   });
 
@@ -197,77 +182,5 @@ describe('formatters', () => {
     const details = formatMissingProviderDialog(unavailable);
     expect(details).toContain('CLAUDE CLI');
     expect(details).toContain('CODEX CLI');
-  });
-});
-
-describe('installProviderStartupArtifacts', () => {
-  it('continues to install startup artifacts when one provider hook install fails', async () => {
-    const failHooks = vi.fn(async () => {
-      throw new Error('hook install failed');
-    });
-    const failStatus = vi.fn();
-    const nextHooks = vi.fn(async () => {});
-    const nextStatus = vi.fn();
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    try {
-      await expect(
-        installProviderStartupArtifacts([
-          makeProvider('codex', true, '', {
-            installHooks: failHooks,
-            installStatusScripts: failStatus,
-          }),
-          makeProvider('claude', true, '', {
-            installHooks: nextHooks,
-            installStatusScripts: nextStatus,
-          }),
-        ]),
-      ).resolves.toBeUndefined();
-
-      expect(failHooks).toHaveBeenCalledTimes(1);
-      expect(failStatus).not.toHaveBeenCalled();
-      expect(nextHooks).toHaveBeenCalledTimes(1);
-      expect(nextStatus).toHaveBeenCalledTimes(1);
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('CODEX CLI');
-      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('codex');
-    } finally {
-      warnSpy.mockRestore();
-    }
-  });
-
-  it('continues to install startup artifacts when one provider status script install fails', async () => {
-    const failHooks = vi.fn(async () => {});
-    const failStatus = vi.fn(() => {
-      throw new Error('status script install failed');
-    });
-    const nextHooks = vi.fn(async () => {});
-    const nextStatus = vi.fn();
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-    try {
-      await expect(
-        installProviderStartupArtifacts([
-          makeProvider('qwen', true, '', {
-            installHooks: failHooks,
-            installStatusScripts: failStatus,
-          }),
-          makeProvider('claude', true, '', {
-            installHooks: nextHooks,
-            installStatusScripts: nextStatus,
-          }),
-        ]),
-      ).resolves.toBeUndefined();
-
-      expect(failHooks).toHaveBeenCalledTimes(1);
-      expect(failStatus).toHaveBeenCalledTimes(1);
-      expect(nextHooks).toHaveBeenCalledTimes(1);
-      expect(nextStatus).toHaveBeenCalledTimes(1);
-      expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('QWEN CLI');
-      expect(String(warnSpy.mock.calls[0]?.[0])).toContain('qwen');
-    } finally {
-      warnSpy.mockRestore();
-    }
   });
 });

@@ -1,11 +1,5 @@
-import type { BrowserWindow } from 'electron';
-
 import type { PersistedState } from '../shared/types/project-state';
 import type { ProviderId } from '../shared/types/provider';
-import {
-  cleanupAllExternalProviderHooks,
-  EXTERNAL_HOOK_INJECTION_ENABLED,
-} from './external-hook-policy';
 import type { CliProvider } from './providers/provider';
 
 type ProviderPrereq = ReturnType<CliProvider['validatePrerequisites']>;
@@ -21,10 +15,6 @@ export interface ProviderStartupAnalysis {
   unavailable: ProviderStartupStatus[];
   relevantUnavailable: ProviderStartupStatus[];
   blocking: boolean;
-}
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function collectReferencedProviders(
@@ -76,28 +66,6 @@ export function analyzeProviderStartup(
         : unavailable.filter((result) => result.reasons.length > 0),
     blocking: available.length === 0,
   };
-}
-
-export async function installProviderStartupArtifacts(
-  providers: CliProvider[],
-  win?: BrowserWindow | null,
-): Promise<void> {
-  if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
-    cleanupAllExternalProviderHooks();
-    return;
-  }
-
-  for (const provider of providers) {
-    if (!provider.validatePrerequisites().ok) continue;
-    try {
-      await provider.installHooks(win);
-      provider.installStatusScripts();
-    } catch (error) {
-      console.warn(
-        `Failed to install startup artifacts for provider ${provider.meta.displayName} (${provider.meta.id}): ${getErrorMessage(error)}`,
-      );
-    }
-  }
 }
 
 function formatReason(reason: 'default-provider' | 'saved-session'): string {

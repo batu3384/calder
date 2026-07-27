@@ -21,35 +21,14 @@ vi.mock('../full-path', () => ({
 }));
 
 vi.mock('../hooks/hook-status', () => ({
-  getStatusLineScriptPath: vi.fn(() => '/mock/home/.calder/runtime/statusline.sh'),
-  installStatusLineScript: vi.fn(),
   cleanupAll: vi.fn(),
-}));
-
-vi.mock('../config-watcher', () => ({
-  startConfigWatcher: vi.fn(),
-  stopConfigWatcher: vi.fn(),
-}));
-
-vi.mock('../claude-cli', () => ({
-  installHooks: vi.fn(),
-  getClaudeConfig: vi.fn(async () => ({ mcpServers: [], agents: [], skills: [], commands: [] })),
-}));
-
-vi.mock('../settings-guard', () => ({
-  guardedInstall: vi.fn(),
-  validateSettings: vi.fn(() => ({ statusLine: 'calder', hooks: 'complete', hookDetails: {} })),
-  reinstallSettings: vi.fn(),
 }));
 
 import { execSync, spawnSync } from 'child_process';
 import * as fs from 'fs';
 
 import { resetBinaryProbeMocks } from '../../test-support/reset-binary-probe-mocks';
-import { getClaudeConfig } from '../claude-cli';
-import { startConfigWatcher, stopConfigWatcher } from '../config-watcher';
-import { cleanupAll, installStatusLineScript } from '../hooks/hook-status';
-import { guardedInstall, validateSettings as validateGuardedSettings } from '../settings-guard';
+import { cleanupAll } from '../hooks/hook-status';
 import { _resetCachedPath, ClaudeProvider } from './claude-provider';
 import { _resetPrereqCheckCache } from './resolve-binary';
 
@@ -57,12 +36,6 @@ const mockExistsSync = vi.mocked(fs.existsSync);
 const mockExecSync = vi.mocked(execSync);
 const mockSpawnSync = vi.mocked(spawnSync);
 const mockCleanupAll = vi.mocked(cleanupAll);
-const mockGetClaudeConfig = vi.mocked(getClaudeConfig);
-const mockInstallStatusLineScript = vi.mocked(installStatusLineScript);
-const mockStartConfigWatcher = vi.mocked(startConfigWatcher);
-const mockStopConfigWatcher = vi.mocked(stopConfigWatcher);
-const mockGuardedInstall = vi.mocked(guardedInstall);
-const mockValidateGuardedSettings = vi.mocked(validateGuardedSettings);
 
 let provider: ClaudeProvider;
 
@@ -87,7 +60,6 @@ describe('meta', () => {
     expect(caps.costTracking).toBe(true);
     expect(caps.contextWindow).toBe(true);
     expect(caps.hookStatus).toBe(true);
-    expect(caps.configReading).toBe(true);
     expect(caps.shiftEnterNewline).toBe(true);
     expect(caps.pendingPromptTrigger).toBe('startup-arg');
     expect(caps.planModeArg).toBe('--permission-mode plan');
@@ -302,60 +274,9 @@ describe('parseCostFromOutput', () => {
   });
 });
 
-describe('statusline installation hooks', () => {
-  it('installStatusScripts delegates to the managed runtime installer', () => {
-    provider.installStatusScripts();
-    expect(mockInstallStatusLineScript).toHaveBeenCalled();
-  });
-
-  it('reinstallSettings refreshes the managed runtime assets', () => {
-    provider.reinstallSettings();
-    expect(mockInstallStatusLineScript).toHaveBeenCalled();
-  });
-});
-
-describe('hooks, settings, and config integration', () => {
-  it('installHooks delegates to guardedInstall with null window when omitted', async () => {
-    await provider.installHooks();
-    expect(mockGuardedInstall).toHaveBeenCalledWith(null);
-  });
-
-  it('installHooks delegates to guardedInstall with provided window', async () => {
-    const win = { id: 123 } as any;
-    await provider.installHooks(win);
-    expect(mockGuardedInstall).toHaveBeenCalledWith(win);
-  });
-
-  it('cleanup stops watcher and hook runtime cleanup', () => {
+describe('cleanup', () => {
+  it('cleanup runs hook runtime cleanup', () => {
     provider.cleanup();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
     expect(mockCleanupAll).toHaveBeenCalled();
-  });
-
-  it('starts a claude config watcher for project scope', () => {
-    const win = { id: 1 } as any;
-    provider.startConfigWatcher(win, '/project');
-    expect(mockStartConfigWatcher).toHaveBeenCalledWith(win, '/project', 'claude');
-  });
-
-  it('stops claude config watcher explicitly', () => {
-    provider.stopConfigWatcher();
-    expect(mockStopConfigWatcher).toHaveBeenCalled();
-  });
-
-  it('getConfig delegates to claude config loader', async () => {
-    const config = { mcpServers: [], agents: [], skills: [], commands: [] };
-    mockGetClaudeConfig.mockResolvedValueOnce(config);
-    await expect(provider.getConfig('/tmp/project')).resolves.toEqual(config);
-    expect(mockGetClaudeConfig).toHaveBeenCalledWith('/tmp/project');
-  });
-
-  it('validateSettings delegates to settings guard', () => {
-    expect(provider.validateSettings()).toEqual({
-      statusLine: 'calder',
-      hooks: 'complete',
-      hookDetails: {},
-    });
-    expect(mockValidateGuardedSettings).toHaveBeenCalled();
   });
 });

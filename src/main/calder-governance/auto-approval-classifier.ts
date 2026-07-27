@@ -3,6 +3,7 @@ import type {
   AutoApprovalMode,
   AutoApprovalOperationClass,
 } from '../../shared/types/governance.js';
+import { pathEscapesProject } from '../project-path-security.js';
 
 export interface AutoApprovalOperationInput {
   tool?: string | null;
@@ -10,6 +11,8 @@ export interface AutoApprovalOperationInput {
   args?: readonly string[] | null;
   text?: string | null;
   label?: string | null;
+  filePath?: string | null;
+  projectPath?: string | null;
 }
 
 export interface AutoApprovalDecisionResult {
@@ -45,6 +48,20 @@ const SAFE_PIPE_SEGMENT_PATTERNS: RegExp[] = [
   /^basename(?:\s|$)/i,
   /^dirname(?:\s|$)/i,
 ];
+
+const EXTERNAL_CONFIG_PATTERNS: RegExp[] = [
+  /(?:^|[\s"'`])(?:~|\$HOME|%USERPROFILE%)?[/\\]\.(?:claude|codex|gemini|cursor|npm|config)(?:[/\\]|$)/i,
+  /\b--global\b/i,
+  /\bgit\s+config\s+--global\b/i,
+  /\bnpm\s+config\s+set\b/i,
+];
+
+function touchesExternalConfig(input: AutoApprovalOperationInput): boolean {
+  const haystack = [input.command, input.text, input.label, input.filePath]
+    .filter(Boolean)
+    .join(' ');
+  return EXTERNAL_CONFIG_PATTERNS.some((pattern) => pattern.test(haystack));
+}
 
 function normalize(value: string | null | undefined): string {
   return (value ?? '').trim();
@@ -366,8 +383,15 @@ export function classifyAutoApprovalOperation(
     return 'unknown';
   }
 
+  if (touchesExternalConfig(input)) {
+    return 'destructive';
+  }
+
   const tool = normalize(input.tool).toLowerCase();
   if (EDIT_TOOLS.has(tool)) {
+    if (pathEscapesProject(input.filePath, input.projectPath)) {
+      return 'destructive';
+    }
     return 'edit';
   }
 
@@ -403,31 +427,18 @@ export function decideAutoApprovalAction(
   mode: AutoApprovalMode,
   operationClass: AutoApprovalOperationClass,
 ): AutoApprovalDecisionResult {
-  if (mode === 'full_auto_unsafe') {
-    return {
-      decision: 'allow',
-      reason: `All operations are auto-approved in full_auto_unsafe mode (${operationClass}).`,
-    };
-  }
-
+  // Hard deny: never silent-allow destructive / external mutations in any mode.
   if (operationClass === 'destructive') {
     return {
-      decision: 'block',
-      reason: 'Destructive operations are not auto-approved in this mode.',
+      decision: 'ask',
+      reason: 'Destructive or outside-project operations always require approval.',
     };
   }
 
-  if (mode === 'full_auto') {
-    return {
-      decision: 'allow',
-      reason: `Non-destructive operations are auto-approved in full_auto mode (${operationClass}).`,
-    };
-  }
-
-  if (mode === 'off') {
+  if (mode === 'ask') {
     return {
       decision: 'ask',
-      reason: 'Auto-approval is off.',
+      reason: 'Auto-approval is set to ask every time.',
     };
   }
 
@@ -438,32 +449,24 @@ export function decideAutoApprovalAction(
     };
   }
 
-  if (mode === 'edit_only') {
+  if (mode === 'project_edits') {
     if (operationClass === 'edit') {
       return {
         decision: 'allow',
-        reason: 'Edit operations are allowed in edit_only mode.',
+        reason: 'In-project edit operations are auto-approved.',
       };
     }
-
     return {
       decision: 'ask',
-      reason: 'Safe tools still require approval in edit_only mode.',
+      reason: 'Only in-project edits are auto-approved in project_edits mode.',
     };
   }
 
-  if (mode === 'edit_plus_safe_tools') {
-    if (operationClass === 'edit') {
+  if (mode === 'session_safe') {
+    if (operationClass === 'edit' || operationClass === 'safe_tool') {
       return {
         decision: 'allow',
-        reason: 'Edit operations are allowed in edit_plus_safe_tools mode.',
-      };
-    }
-
-    if (operationClass === 'safe_tool') {
-      return {
-        decision: 'allow',
-        reason: 'Safe tools are allowed in edit_plus_safe_tools mode.',
+        reason: 'Session-safe mode allows in-project edits and read-only tools.',
       };
     }
   }

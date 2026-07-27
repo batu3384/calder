@@ -1110,7 +1110,6 @@ body {
     linear-gradient(90deg, rgba(102, 231, 223, 0.07), transparent 76%), rgba(255, 255, 255, 0.018);
 }
 
-#context-inspector .toolchain-summary-chip,
 #context-inspector .ops-rail-note,
 #context-inspector .auto-approval-scope-card,
 #context-inspector .auto-approval-current-card,
@@ -1635,7 +1634,6 @@ body {
   border-radius: 13px;
 }
 
-#context-inspector .toolchain-summary-chip,
 #context-inspector .auto-approval-scope-card,
 #context-inspector .auto-approval-current-card,
 #context-inspector .auto-approval-policy-stack,

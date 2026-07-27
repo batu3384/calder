@@ -37,7 +37,6 @@ function buildRestoreSummary(contents: RawCheckpointFile): string {
   const browserCount = sessions.filter((session) => session.type === 'browser-tab').length;
   const fileReaderCount = sessions.filter((session) => session.type === 'file-reader').length;
   const diffCount = sessions.filter((session) => session.type === 'diff-viewer').length;
-  const remoteCount = sessions.filter((session) => session.type === 'remote-terminal').length;
   const inspectorCount = sessions.filter((session) => session.type === 'mcp-inspector').length;
 
   const parts = [
@@ -45,7 +44,6 @@ function buildRestoreSummary(contents: RawCheckpointFile): string {
     formatSummaryPart(browserCount, 'browser surface', 'browser surfaces'),
     formatSummaryPart(fileReaderCount, 'file view', 'file views'),
     formatSummaryPart(diffCount, 'diff view', 'diff views'),
-    formatSummaryPart(remoteCount, 'remote session', 'remote sessions'),
     formatSummaryPart(inspectorCount, 'inspector', 'inspectors'),
   ].filter((part): part is string => Boolean(part));
 

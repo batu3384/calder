@@ -421,22 +421,6 @@ function createCliSurfaceSummaryPatterns(translate: Translate): PatternTranslati
       replace: (match) => `Durum: ${translate(match[1])}`,
     },
     {
-      pattern: /^(\d+) MCP server(s?) connected$/u,
-      replace: (match) => `${match[1]} MCP sunucusu bağlı`,
-    },
-    {
-      pattern: /^(\d+) agent(s?) available$/u,
-      replace: (match) => `${match[1]} ajan kullanılabilir`,
-    },
-    {
-      pattern: /^(\d+) skill(s?) ready$/u,
-      replace: (match) => `${match[1]} beceri hazır`,
-    },
-    {
-      pattern: /^(\d+) custom command(s?) available$/u,
-      replace: (match) => `${match[1]} özel komut kullanılabilir`,
-    },
-    {
       pattern: /^(.+)\s+·\s+(live|starting|stopped|error|idle)$/u,
       replace: (match) => `${match[1]} · ${translate(match[2])}`,
     },

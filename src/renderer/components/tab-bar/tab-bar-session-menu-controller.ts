@@ -1,6 +1,5 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState, type SessionRecord } from '../../state.js';
-import { showJoinDialog } from '../join-dialog.js';
 import { closeModal, type FieldDef, showModal } from '../modal.js';
 import {
   getProviderAvailabilitySnapshot,
@@ -150,18 +149,6 @@ export function createTabBarSessionMenuController(
       void promptNewSession();
     });
 
-    const joinSeparator = document.createElement('div');
-    joinSeparator.className = 'tab-context-menu-separator';
-
-    const joinItem = document.createElement('div');
-    joinItem.className = 'tab-context-menu-item';
-    joinItem.textContent = 'Join Remote Session\u2026';
-    joinItem.addEventListener('click', (event) => {
-      event.stopPropagation();
-      hideTabContextMenu();
-      showJoinDialog();
-    });
-
     const browserItem = document.createElement('div');
     browserItem.className = 'tab-context-menu-item';
     browserItem.textContent = 'New Browser Tab';
@@ -175,8 +162,6 @@ export function createTabBarSessionMenuController(
     menu.appendChild(quickItem);
     menu.appendChild(customItem);
     menu.appendChild(browserItem);
-    menu.appendChild(joinSeparator);
-    menu.appendChild(joinItem);
     document.body.appendChild(menu);
     setActiveContextMenu(menu);
 

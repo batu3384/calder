@@ -12,9 +12,8 @@ export interface ProviderAvailabilitySnapshot {
 const DEFAULT_PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   claude: 'Claude Code',
   codex: 'Codex CLI',
-  copilot: 'GitHub Copilot',
   antigravity: 'Antigravity CLI',
-  qwen: 'Qwen Code',
+  cursor: 'Cursor CLI',
 };
 
 let cachedProviders: CliProviderMeta[] | null = null;

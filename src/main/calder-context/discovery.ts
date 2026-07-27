@@ -26,26 +26,6 @@ function listMarkdownFiles(dirPath: string): string[] {
   }
 }
 
-function listFilesRecursive(dirPath: string, predicate: (entryName: string) => boolean): string[] {
-  try {
-    const entries = fs
-      .readdirSync(dirPath, { withFileTypes: true })
-      .sort((left, right) => left.name.localeCompare(right.name));
-    const results: string[] = [];
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        results.push(...listFilesRecursive(fullPath, predicate));
-      } else if (entry.isFile() && predicate(entry.name)) {
-        results.push(fullPath);
-      }
-    }
-    return results;
-  } catch {
-    return [];
-  }
-}
-
 function readSummary(filePath: string): string {
   try {
     const contents = fs.readFileSync(filePath, 'utf8');
@@ -105,12 +85,6 @@ const PROJECT_PROVIDER_CONTEXT_FILES: Array<{
   { relativePath: path.join('.claude', 'CLAUDE.md'), provider: 'claude', kind: 'memory' },
   { relativePath: 'AGENTS.md', provider: 'codex', kind: 'instructions' },
   { relativePath: 'GEMINI.md', provider: 'antigravity', kind: 'instructions' },
-  { relativePath: 'QWEN.md', provider: 'qwen', kind: 'instructions' },
-  {
-    relativePath: path.join('.github', 'copilot-instructions.md'),
-    provider: 'copilot',
-    kind: 'instructions',
-  },
 ];
 
 export async function discoverProjectContext(projectPath: string): Promise<ProjectContextState> {
@@ -137,40 +111,25 @@ export async function discoverProjectContext(projectPath: string): Promise<Proje
     }
   }
 
-  try {
-    const copilotInstructionDir = path.join(projectPath, '.github', 'instructions');
-    for (const filePath of listFilesRecursive(copilotInstructionDir, (entryName) =>
-      entryName.endsWith('.instructions.md'),
-    )) {
-      try {
+  const sharedCandidates = [
+    path.join(projectPath, '.calder', 'shared.md'),
+    path.join(projectPath, 'CALDER.shared.md'), // legacy read-only discovery
+  ];
+  for (const sharedPath of sharedCandidates) {
+    try {
+      if (isFile(sharedPath)) {
         sources.push(
-          buildSource(filePath, {
-            provider: 'copilot',
-            scope: 'project',
-            kind: 'instructions',
-          }),
+          buildSource(
+            sharedPath,
+            { provider: 'shared', scope: 'project', kind: 'rules' },
+            { priority: 'soft' },
+          ),
         );
-      } catch (err) {
-        console.warn(`[discovery] buildSource(${filePath}) failed:`, err);
+        break;
       }
+    } catch (err) {
+      console.warn(`[discovery] sharedPath check/buildSource failed:`, err);
     }
-  } catch (err) {
-    console.warn(`[discovery] listFilesRecursive(.github/instructions) failed:`, err);
-  }
-
-  const sharedPath = path.join(projectPath, 'CALDER.shared.md');
-  try {
-    if (isFile(sharedPath)) {
-      sources.push(
-        buildSource(
-          sharedPath,
-          { provider: 'shared', scope: 'project', kind: 'rules' },
-          { priority: 'soft' },
-        ),
-      );
-    }
-  } catch (err) {
-    console.warn(`[discovery] sharedPath check/buildSource failed:`, err);
   }
 
   const rulesDir = path.join(projectPath, '.calder', 'rules');

@@ -96,7 +96,6 @@ import { _resetLoginShellEnvCache } from './provider-env';
 import { initProviders } from './providers/registry';
 import {
   getPtyCwd,
-  isSilencedExit,
   killAllPtys,
   killPty,
   resizePty,
@@ -507,17 +506,135 @@ describe('spawnShellPty', () => {
 });
 
 describe('session replacement and cleanup', () => {
-  it('silences the old exit when respawning the same session id', () => {
+  it('does not notify onExit when a replaced PTY exits late', () => {
     const first = createMockPtyProcess();
     const second = createMockPtyProcess();
     mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const onExitOld = vi.fn();
+    const onExitNew = vi.fn();
 
-    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
-    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), vi.fn());
+    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), onExitOld);
+    spawnPty('replace-me', '/project', null, false, '', 'claude', undefined, vi.fn(), onExitNew);
 
     expect(mockKill).toHaveBeenCalledTimes(1);
-    expect(isSilencedExit('replace-me')).toBe(true);
-    expect(isSilencedExit('replace-me')).toBe(false);
+
+    first._emitExit(1, 0);
+    expect(onExitOld).not.toHaveBeenCalled();
+    expect(onExitNew).not.toHaveBeenCalled();
+
+    second._emitExit(0, 0);
+    expect(onExitNew).toHaveBeenCalledWith(0, 0);
+    expect(onExitOld).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late exit after the replacement PTY already exited', () => {
+    const first = createMockPtyProcess();
+    const second = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const onExitOld = vi.fn();
+    const onExitNew = vi.fn();
+
+    spawnPty('race-me', '/project', null, false, '', 'claude', undefined, vi.fn(), onExitOld);
+    spawnPty('race-me', '/project', null, false, '', 'claude', undefined, vi.fn(), onExitNew);
+
+    second._emitExit(0, 0);
+    expect(onExitNew).toHaveBeenCalledWith(0, 0);
+
+    first._emitExit(1, 0);
+    expect(onExitOld).not.toHaveBeenCalled();
+    expect(onExitNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not resume-fallback-spawn after a newer PTY replaced the failed resume', () => {
+    const resumeProc = createMockPtyProcess();
+    const replacementProc = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(resumeProc).mockReturnValueOnce(replacementProc);
+    const onExitResume = vi.fn();
+    const onExitReplacement = vi.fn();
+
+    spawnPty(
+      'resume-race',
+      '/project',
+      'missing-id',
+      true,
+      '',
+      'claude',
+      undefined,
+      vi.fn(),
+      onExitResume,
+    );
+    resumeProc._emitData('Error: no conversation found with session ID: missing-id');
+    expect(mockKill).toHaveBeenCalledTimes(1);
+
+    // User/app respawns before the failed resume PTY exits.
+    spawnPty(
+      'resume-race',
+      '/project',
+      null,
+      false,
+      '',
+      'claude',
+      undefined,
+      vi.fn(),
+      onExitReplacement,
+    );
+    expect(mockSpawn).toHaveBeenCalledTimes(2);
+
+    resumeProc._emitExit(1, 0);
+    // Must NOT spawn a third "fresh" PTY over the replacement.
+    expect(mockSpawn).toHaveBeenCalledTimes(2);
+    expect(onExitResume).not.toHaveBeenCalled();
+    expect(onExitReplacement).not.toHaveBeenCalled();
+
+    replacementProc._emitExit(0, 0);
+    expect(onExitReplacement).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('drops stale onData from a replaced PTY', () => {
+    const first = createMockPtyProcess();
+    const second = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const onDataOld = vi.fn();
+    const onDataNew = vi.fn();
+
+    spawnPty('data-race', '/project', null, false, '', 'claude', undefined, onDataOld, vi.fn());
+    spawnPty('data-race', '/project', null, false, '', 'claude', undefined, onDataNew, vi.fn());
+
+    first._emitData('stale-chunk');
+    second._emitData('fresh-chunk');
+
+    expect(onDataOld).not.toHaveBeenCalled();
+    expect(onDataNew).toHaveBeenCalledWith('fresh-chunk');
+    expect(onDataNew).toHaveBeenCalledTimes(1);
+  });
+
+  it('detects missing conversation when the error is split across onData chunks', () => {
+    const firstProc = createMockPtyProcess();
+    const secondProc = createMockPtyProcess();
+    mockSpawn.mockReturnValueOnce(firstProc).mockReturnValueOnce(secondProc);
+    const onData = vi.fn();
+    const onExit = vi.fn();
+
+    spawnPty(
+      'chunk-split',
+      '/project',
+      'missing-conversation',
+      true,
+      '',
+      'claude',
+      undefined,
+      onData,
+      onExit,
+    );
+
+    firstProc._emitData('Error: no conversation found');
+    expect(mockKill).not.toHaveBeenCalled();
+    firstProc._emitData(' with session ID: missing-conversation');
+    expect(mockKill).toHaveBeenCalledTimes(1);
+
+    firstProc._emitExit(1, 0);
+    expect(onExit).not.toHaveBeenCalled();
+    expect(mockSpawn).toHaveBeenNthCalledWith(2, 'claude', [], expect.any(Object));
   });
 
   it('kills every tracked pty with killAllPtys', () => {

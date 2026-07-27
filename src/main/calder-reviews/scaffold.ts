@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { ProjectReviewCreateResult } from '../../shared/types/project-review.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectReviews } from './discovery.js';
 
 function slugifyReviewTitle(title: string): string {
@@ -38,7 +39,7 @@ export async function createProjectReviewFile(
     'reviews',
     `${slugifyReviewTitle(trimmedTitle)}.md`,
   );
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
 
   let created = false;
   try {

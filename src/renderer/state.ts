@@ -8,6 +8,7 @@ import type {
 import type { ProjectContextState } from '../shared/types/project-context.js';
 import type { ProjectReviewState } from '../shared/types/project-review.js';
 import type { PersistedState, Preferences, ProjectRecord } from '../shared/types/project-state.js';
+import { CURRENT_PERSISTED_STATE_VERSION } from '../shared/types/project-state.js';
 import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
 import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
 import type {
@@ -37,7 +38,6 @@ import {
   addInsightSnapshotWithBridge,
   addMcpInspectorSessionWithBridge,
   addPlanSessionWithBridge,
-  addRemoteSessionWithBridge,
   addSessionWithBridge,
   dismissInsightWithBridge,
   launchWorkflowSessionWithBridge,
@@ -101,9 +101,7 @@ import { findProjectForPath as findProjectRecordForPath } from './state-project-
 import {
   applyProjectSurface,
   closeCliProjectSurface,
-  closeMobileProjectSurface,
   focusCliProjectSurface,
-  focusMobileProjectSurface,
 } from './state-surface-updater.js';
 import type { CalderApi } from './types.js';
 
@@ -119,7 +117,7 @@ declare global {
 
 class AppState {
   private state: PersistedState = {
-    version: 1,
+    version: CURRENT_PERSISTED_STATE_VERSION,
     projects: [],
     activeProjectId: null,
     preferences: { ...defaultPreferences },
@@ -178,7 +176,7 @@ class AppState {
   async load(): Promise<void> {
     const loaded = (await window.calder.store.load()) as PersistedState | null;
     let didMigrateState = false;
-    if (loaded && loaded.version === 1) {
+    if (loaded && (loaded.version === 1 || loaded.version === CURRENT_PERSISTED_STATE_VERSION)) {
       const migration = migrateLoadedRendererState(loaded, defaultPreferences);
       this.state = migration.state;
       didMigrateState = migration.didMigrateState;
@@ -440,20 +438,6 @@ class AppState {
       worktreePath,
     );
   }
-  addRemoteSession(
-    projectId: string,
-    sessionId: string,
-    hostSessionName: string,
-    shareMode: 'readonly' | 'readwrite',
-  ): SessionRecord | undefined {
-    return addRemoteSessionWithBridge(
-      this.runtimeBridge(),
-      projectId,
-      sessionId,
-      hostSessionName,
-      shareMode,
-    );
-  }
   addBrowserTabSession(
     projectId: string,
     url?: string,
@@ -558,12 +542,6 @@ class AppState {
   }
   closeCliSurface(projectId: string): void {
     this.updateProjectSurface(projectId, closeCliProjectSurface);
-  }
-  focusMobileSurfaceTab(projectId: string): void {
-    this.updateProjectSurface(projectId, focusMobileProjectSurface);
-  }
-  closeMobileSurface(projectId: string): void {
-    this.updateProjectSurface(projectId, closeMobileProjectSurface);
   }
 
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {
@@ -680,7 +658,7 @@ class AppState {
   /** @internal Test-only: reset all state containers */
   resetForTesting(): void {
     this.state = {
-      version: 1,
+      version: CURRENT_PERSISTED_STATE_VERSION,
       projects: [],
       activeProjectId: null,
       preferences: { ...defaultPreferences },

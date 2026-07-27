@@ -91,7 +91,7 @@ describe('_resetForTesting()', () => {
 describe('load()', () => {
   it('loads persisted state from store', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
@@ -114,14 +114,27 @@ describe('load()', () => {
 
   it('normalizes legacy swarm layouts into mosaic layouts on load', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
           name: 'Proj',
           path: '/proj',
-          sessions: [],
-          activeSessionId: null,
+          sessions: [
+            {
+              id: 's1',
+              name: 'One',
+              cliSessionId: null,
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              id: 's2',
+              name: 'Two',
+              cliSessionId: null,
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+          activeSessionId: 's1',
           layout: {
             mode: 'swarm' as const,
             splitPanes: ['s1', 's2'],
@@ -147,14 +160,27 @@ describe('load()', () => {
 
   it('normalizes legacy split layouts into mosaic layouts on load', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
           name: 'Proj',
           path: '/proj',
-          sessions: [],
-          activeSessionId: null,
+          sessions: [
+            {
+              id: 's1',
+              name: 'One',
+              cliSessionId: null,
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              id: 's2',
+              name: 'Two',
+              cliSessionId: null,
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+          activeSessionId: 's1',
           layout: {
             mode: 'split' as const,
             splitPanes: ['s1', 's2'],
@@ -187,7 +213,7 @@ describe('load()', () => {
 
   it('merges defaults for forward compatibility', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [],
       activeProjectId: null,
       preferences: { soundOnSessionWaiting: true },
@@ -218,7 +244,7 @@ describe('load()', () => {
       totalApiDurationMs: 800,
     };
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
@@ -250,7 +276,7 @@ describe('load()', () => {
   it('restores persisted context window data into session-context module', async () => {
     const contextData = { totalTokens: 5000, contextWindowSize: 200000, usedPercentage: 2.5 };
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
@@ -280,7 +306,7 @@ describe('load()', () => {
 
   it('deduplicates history entry IDs on load', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
@@ -338,7 +364,7 @@ describe('load()', () => {
 
   it('does not call restoreCost for sessions without cost', async () => {
     const persisted = {
-      version: 1,
+      version: 2,
       projects: [
         {
           id: 'p1',
@@ -359,7 +385,7 @@ describe('load()', () => {
 
   it('hydrates a web surface from an existing browser session record', async () => {
     mockLoad.mockResolvedValue({
-      version: 1,
+      version: 2,
       activeProjectId: 'project-1',
       preferences: {},
       projects: [
@@ -414,7 +440,7 @@ describe('load()', () => {
 
   it('repairs stale persisted surface refs and persists the migrated state', async () => {
     mockLoad.mockResolvedValue({
-      version: 1,
+      version: 2,
       activeProjectId: 'project-1',
       starPromptDismissed: true,
       preferences: {},
@@ -826,23 +852,6 @@ describe('addMcpInspectorSession()', () => {
   });
 });
 
-describe('addRemoteSession()', () => {
-  it('creates a remote terminal session and makes it active', () => {
-    const project = addProject();
-    const remote = appState.addRemoteSession(
-      project.id,
-      'remote-session-1',
-      'Host Session',
-      'readwrite',
-    )!;
-    expect(remote.id).toBe('remote-session-1');
-    expect(remote.type).toBe('remote-terminal');
-    expect(remote.remoteHostName).toBe('Host Session');
-    expect(remote.shareMode).toBe('readwrite');
-    expect(appState.activeProject?.activeSessionId).toBe(remote.id);
-  });
-});
-
 describe('browser target sessions', () => {
   it('seeds a new browser tab with the previously active cli session as its target', () => {
     const project = addProject();
@@ -1194,77 +1203,6 @@ describe('setActiveSession()', () => {
     expect(appState.activeProject!.surface?.tabFocus).toBe('session');
     expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
   });
-
-  it('returns mobile surface tab focus back to session tabs when a session is selected', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'mobile',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-
-    appState.setActiveSession(project.id, sessions[1].id);
-
-    expect(appState.activeProject!.surface?.tabFocus).toBe('session');
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
-  });
-
-  it('keeps mobile surface active when selecting a browser session tab', () => {
-    const project = addProject();
-    appState.addSession(project.id, 'CLI A');
-    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'mobile',
-      web: { history: [] },
-      cli: { profiles: [], runtime: { status: 'idle' } },
-    });
-
-    appState.setActiveSession(project.id, browser.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'mobile',
-        active: true,
-        tabFocus: 'session',
-      }),
-    );
-    expect(appState.activeProject!.surface?.web).toMatchObject({
-      sessionId: browser.id,
-      url: 'http://localhost:3000',
-    });
-    expect(appState.activeProject!.surface?.web?.history).toContain('http://localhost:3000');
-  });
-
-  it('returns mobile tab focus to session when re-selecting the already-active browser tab', () => {
-    const project = addProject();
-    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
-
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'mobile',
-      web: { sessionId: browser.id, url: browser.browserTabUrl, history: [browser.browserTabUrl!] },
-      cli: { profiles: [], runtime: { status: 'idle' } },
-    });
-
-    appState.setActiveSession(project.id, browser.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'mobile',
-        active: true,
-        tabFocus: 'session',
-      }),
-    );
-  });
 });
 
 describe('cli surface tab state', () => {
@@ -1313,60 +1251,6 @@ describe('cli surface tab state', () => {
     expect(appState.activeProject!.surface).toEqual(
       expect.objectContaining({
         kind: 'cli',
-        active: false,
-        tabFocus: 'session',
-      }),
-    );
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
-  });
-});
-
-describe('mobile surface tab state', () => {
-  it('focusMobileSurfaceTab marks the mobile surface as the active top tab without changing the active session', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'session',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-    appState.setActiveSession(project.id, sessions[0].id);
-
-    appState.focusMobileSurfaceTab(project.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'mobile',
-        active: true,
-        tabFocus: 'mobile',
-      }),
-    );
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
-  });
-
-  it('closeMobileSurface hides the mobile surface and restores session tab focus', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'mobile',
-      active: true,
-      tabFocus: 'mobile',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-    appState.setActiveSession(project.id, sessions[0].id);
-
-    appState.closeMobileSurface(project.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'web',
         active: false,
         tabFocus: 'session',
       }),

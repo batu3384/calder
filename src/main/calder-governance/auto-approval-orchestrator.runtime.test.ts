@@ -27,7 +27,7 @@ describe('auto approval orchestrator runtime branches', () => {
     vi.clearAllMocks();
   });
 
-  it('uses fallback off mode when project path is missing in default resolver', async () => {
+  it('uses fallback ask mode when project path is missing in default resolver', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const orchestrator = createAutoApprovalOrchestrator({
@@ -45,7 +45,7 @@ describe('auto approval orchestrator runtime branches', () => {
     const emitted = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emitted.auto_approval).toMatchObject({
       policy_source: 'fallback',
-      effective_mode: 'off',
+      effective_mode: 'ask',
       decision: 'ask',
     });
   });
@@ -53,7 +53,7 @@ describe('auto approval orchestrator runtime branches', () => {
   it('resolves policy from discovered governance and allows updates when auto approval is enabled', async () => {
     mockDiscoverProjectGovernance.mockResolvedValue({
       autoApproval: {
-        effectiveMode: 'full_auto',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       },
     });
@@ -72,7 +72,7 @@ describe('auto approval orchestrator runtime branches', () => {
     const emitted = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emitted.auto_approval).toMatchObject({
       policy_source: 'project',
-      effective_mode: 'full_auto',
+      effective_mode: 'project_edits',
       decision: 'allow',
     });
   });
@@ -93,7 +93,7 @@ describe('auto approval orchestrator runtime branches', () => {
     const emitted = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emitted.auto_approval).toMatchObject({
       policy_source: 'fallback',
-      effective_mode: 'off',
+      effective_mode: 'ask',
       decision: 'ask',
     });
   });
@@ -126,14 +126,14 @@ describe('auto approval orchestrator runtime branches', () => {
       emitInspectorEvents,
       now: () => nowValues.shift() ?? 2_000,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'full_auto_unsafe',
+        effectiveMode: 'session_safe',
         policySource: 'project',
       }),
     });
 
     orchestrator.registerSession('session-5', 'codex', '/tmp/project');
-    orchestrator.setSessionOverride('session-5', 'full_auto_unsafe');
-    expect(orchestrator.getSessionOverride('session-5')).toBe('full_auto_unsafe');
+    orchestrator.setSessionOverride('session-5', 'session_safe');
+    expect(orchestrator.getSessionOverride('session-5')).toBe('session_safe');
     orchestrator.setSessionOverride('session-5', null);
     expect(orchestrator.getSessionOverride('session-5')).toBeUndefined();
 
@@ -147,7 +147,7 @@ describe('auto approval orchestrator runtime branches', () => {
       }),
     ]);
 
-    expect(sendApproval).toHaveBeenCalledTimes(1);
+    expect(sendApproval).not.toHaveBeenCalled();
     orchestrator.unregisterSession('session-5');
     await orchestrator.handleInspectorEvents('session-5', [
       permissionRequestEvent({ tool_name: 'Edit' }),

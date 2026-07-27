@@ -1,4 +1,3 @@
-import type { MobileDependencyId } from '../../../shared/types/mobile.js';
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
 import { localizeSubtree } from '../../i18n.js';
@@ -40,7 +39,7 @@ type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'sh
 const PREFERENCE_SECTIONS: Array<{ id: Section; label: string; caption: string }> = [
   { id: 'general', label: 'Session', caption: 'Startup, language, and session memory' },
   { id: 'interface', label: 'Interface', caption: 'Shell layout, rails, and live view behavior' },
-  { id: 'tools', label: 'Tools', caption: 'CLI providers and mobile dependency health' },
+  { id: 'tools', label: 'Tools', caption: 'CLI provider health' },
   {
     id: 'automation',
     label: 'Automation',
@@ -183,8 +182,6 @@ function renderPreferencesSectionById(args: {
   preferenceDraft: PreferenceDraft;
   shortcutOverridesDraft: Record<string, string>;
   rerenderSection: (section: Section) => void;
-  onFixProvider: (providerId?: ProviderId) => Promise<void>;
-  onInstallMobileDependency: (dependencyId: MobileDependencyId) => Promise<void>;
   applySetupBadge: (hasIssue: boolean) => void;
 }): void {
   cleanupRecorder(args.state);
@@ -231,8 +228,6 @@ function renderPreferencesSectionById(args: {
       content: args.content,
       currentSection: () => args.state.currentSection,
       applySetupBadge: args.applySetupBadge,
-      onFixProvider: args.onFixProvider,
-      onInstallMobileDependency: args.onInstallMobileDependency,
       appendSectionIntro,
       appendOverviewGrid,
       appendSectionCard,
@@ -327,28 +322,6 @@ function renderPreferencesModalContent(): void {
     ...(appState.preferences.keybindings ?? {}),
   };
 
-  async function fixAndRerender(providerId?: ProviderId) {
-    await window.calder.settings.reinstall(providerId);
-    renderSection('tools');
-  }
-
-  async function installMobileDependencyAndRerender(
-    dependencyId: MobileDependencyId,
-  ): Promise<void> {
-    const result = await window.calder.mobileSetup.installDependency(dependencyId);
-    if (!result.success) {
-      throw new Error(result.message || 'Install command failed.');
-    }
-    renderSection('tools');
-  }
-
-  function applySetupBadge(hasIssue: boolean) {
-    const setupItem = menuItems.get('tools');
-    if (setupItem) {
-      setupItem.classList.toggle('has-badge', hasIssue);
-    }
-  }
-
   function renderSection(section: Section): void {
     renderPreferencesSectionById({
       section,
@@ -358,11 +331,16 @@ function renderPreferencesModalContent(): void {
       preferenceDraft,
       shortcutOverridesDraft,
       rerenderSection: renderSection,
-      onFixProvider: fixAndRerender,
-      onInstallMobileDependency: installMobileDependencyAndRerender,
       applySetupBadge,
     });
     localizeSubtree(content);
+  }
+
+  function applySetupBadge(hasIssue: boolean) {
+    const setupItem = menuItems.get('tools');
+    if (setupItem) {
+      setupItem.classList.toggle('has-badge', hasIssue);
+    }
   }
 
   async function updateSetupBadge() {

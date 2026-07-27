@@ -17,9 +17,8 @@ interface DerivedUsageAccumulator {
 const PROVIDER_CONTEXT_WINDOW_DEFAULT: Record<ProviderId, number> = {
   claude: 200_000,
   codex: 200_000,
-  copilot: 200_000,
   antigravity: 1_000_000,
-  qwen: 1_000_000,
+  cursor: 200_000,
 };
 
 const sessionProviders = new Map<string, ProviderId>();

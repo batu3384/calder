@@ -2,16 +2,16 @@ import { ipcMain } from 'electron';
 
 import { assertProjectGovernanceAllows as assertProjectGovernanceAllowsFromEnforcement } from './calder-governance/enforcement';
 import {
-  buildMcpGovernanceFailure,
-  buildMcpGovernanceFailureFromError,
-  MCP_GOVERNANCE_ERROR_CODES,
-  type McpGovernanceOperation,
-} from './ipc-mcp-governance';
-import {
   getActiveProjectPath as getActiveProjectPathFromPolicy,
   requireKnownProjectPath as requireKnownProjectPathFromPolicy,
 } from './ipc-path-policy';
 import * as mcpClient from './mcp-client';
+import {
+  buildMcpGovernanceFailure,
+  buildMcpGovernanceFailureFromError,
+  MCP_GOVERNANCE_ERROR_CODES,
+  type McpGovernanceOperation,
+} from './mcp-governance-errors';
 
 interface McpRuntimeGovernanceOps {
   getActiveProjectPath: () => string | undefined;

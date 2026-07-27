@@ -9,13 +9,7 @@ import {
 import { POLICY_RELATIVE_PATH } from './calder-governance/discovery';
 
 export function isAutoApprovalMode(value: unknown): value is AutoApprovalMode {
-  return (
-    value === 'off' ||
-    value === 'edit_only' ||
-    value === 'edit_plus_safe_tools' ||
-    value === 'full_auto' ||
-    value === 'full_auto_unsafe'
-  );
+  return value === 'ask' || value === 'project_edits' || value === 'session_safe';
 }
 
 export function updateAutoApprovalMode(

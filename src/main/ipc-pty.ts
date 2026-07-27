@@ -6,7 +6,6 @@ import type { ProjectGovernanceOperation } from './calder-governance/enforcement
 import {
   getPtyCwd,
   hasPtySession,
-  isSilencedExit,
   killPty,
   resizePty,
   spawnPty,
@@ -134,7 +133,6 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
         },
         (exitCode, signal) => {
           ops.handlePtySessionExit(payload.sessionId);
-          if (isSilencedExit(payload.sessionId)) return; // old PTY killed for re-spawn
           const w = BrowserWindow.getAllWindows()[0];
           if (w && !w.isDestroyed()) {
             w.webContents.send('pty:exit', payload.sessionId, exitCode, signal);

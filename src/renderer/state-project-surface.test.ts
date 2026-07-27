@@ -155,7 +155,7 @@ describe('state project surface helpers', () => {
       active: false,
       tabFocus: 'session',
       tabPlacement: 'end',
-      tabOrder: ['cli', 'mobile'],
+      tabOrder: ['cli'],
       web: {
         sessionId: undefined,
         url: undefined,

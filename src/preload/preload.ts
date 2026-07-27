@@ -6,19 +6,6 @@ import type {
   ProjectGovernanceState,
 } from '../shared/types/governance';
 import type {
-  MobileControlAnswerResult,
-  MobileControlPairingResult,
-  MobileDependencyId,
-  MobileDependencyInstallProgressEvent,
-  MobileDependencyInstallResult,
-  MobileDependencyReport,
-  MobileInspectInteractionResult,
-  MobileInspectLaunchResult,
-  MobileInspectPlatform,
-  MobileInspectPointInspectionResult,
-  MobileInspectScreenshotResult,
-} from '../shared/types/mobile';
-import type {
   ProjectBackgroundTaskCreateResult,
   ProjectBackgroundTaskDocument,
   ProjectBackgroundTaskState,
@@ -41,8 +28,6 @@ import type {
   BrowserCredentialSaveInput,
   BrowserCredentialSummary,
   EmbeddedBrowserOpenPayload,
-  ShareConnectionDescription,
-  ShareRtcConfig,
 } from '../shared/types/project-core';
 import type {
   ProjectReviewCreateResult,
@@ -67,15 +52,10 @@ import type {
 } from '../shared/types/project-workflow';
 import type {
   CliProviderMeta,
-  ProviderConfig,
   ProviderId,
   ProviderUpdateCancelResult,
   ProviderUpdateProgressEvent,
   ProviderUpdateSummary,
-  SettingsValidationResult,
-  SettingsWarningData,
-  StatusLineConflictData,
-  UiLanguage,
 } from '../shared/types/provider';
 import type {
   CostData,
@@ -86,11 +66,6 @@ import type {
 import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
 import { createPreloadGitApi } from './preload-api-git.js';
 import { createPreloadMcpApi } from './preload-api-mcp.js';
-import {
-  createPreloadMobileApi,
-  createPreloadMobileInspectApi,
-  createPreloadMobileSetupApi,
-} from './preload-api-mobile.js';
 import { createPreloadProjectDomainApi } from './preload-api-project-domains.js';
 import { createPreloadProviderApi } from './preload-api-provider.js';
 import { createPreloadPtyApi } from './preload-api-pty.js';
@@ -153,7 +128,6 @@ export interface CalderApi {
     save(state: unknown): Promise<void>;
   };
   provider: {
-    getConfig(providerId: ProviderId, projectPath: string): Promise<ProviderConfig>;
     getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
     listProviders(): Promise<CliProviderMeta[]>;
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
@@ -162,8 +136,6 @@ export interface CalderApi {
     installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
     cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
     onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
-    watchProject(providerId: ProviderId, projectPath: string): void;
-    onConfigChanged(callback: () => void): () => void;
   };
   context: {
     getProjectState(projectPath: string): Promise<ProjectContextState>;
@@ -247,10 +219,6 @@ export interface CalderApi {
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectCheckpointState) => void): () => void;
   };
-  /** @deprecated Use provider namespace instead */
-  claude: {
-    getConfig(projectPath: string): Promise<ProviderConfig>;
-  };
   git: {
     getStatus(path: string): Promise<unknown>;
     getFiles(path: string): Promise<unknown>;
@@ -299,43 +267,6 @@ export interface CalderApi {
     getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
     getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
   };
-  sharing: {
-    getRtcConfig(): Promise<ShareRtcConfig>;
-  };
-  mobile: {
-    createControlPairing(
-      sessionId: string,
-      offer: string,
-      passphrase: string,
-      mode: 'readonly' | 'readwrite',
-      language?: UiLanguage,
-      offerDescription?: ShareConnectionDescription,
-    ): Promise<MobileControlPairingResult>;
-    consumeControlAnswer(pairingId: string): Promise<MobileControlAnswerResult>;
-    revokeControlPairing(pairingId: string): Promise<{ ok: boolean }>;
-  };
-  mobileSetup: {
-    checkDependencies(): Promise<MobileDependencyReport>;
-    installDependency(
-      dependencyId: MobileDependencyId,
-      installId?: string,
-    ): Promise<MobileDependencyInstallResult>;
-    onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void): () => void;
-  };
-  mobileInspect: {
-    launch(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult>;
-    captureScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult>;
-    inspectPoint(
-      platform: MobileInspectPlatform,
-      x: number,
-      y: number,
-    ): Promise<MobileInspectPointInspectionResult>;
-    interact(
-      platform: MobileInspectPlatform,
-      x: number,
-      y: number,
-    ): Promise<MobileInspectInteractionResult>;
-  };
   cliSurface: {
     discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
     start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
@@ -368,28 +299,9 @@ export interface CalderApi {
       name: string,
       args: Record<string, string>,
     ): Promise<{ success: boolean; data?: unknown; error?: string }>;
-    addServer(
-      name: string,
-      config: unknown,
-      scope: 'user' | 'project',
-      projectPath?: string,
-    ): Promise<{ success: boolean; error?: string }>;
-    removeServer(
-      name: string,
-      filePath: string,
-      scope: 'user' | 'project',
-      projectPath?: string,
-    ): Promise<{ success: boolean; error?: string }>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;
-  };
-  settings: {
-    onWarning(callback: (data: SettingsWarningData) => void): () => void;
-    onConflictDialog(callback: (data: StatusLineConflictData) => void): () => void;
-    respondConflictDialog(choice: 'replace' | 'keep'): void;
-    reinstall(providerId?: ProviderId): Promise<{ success: boolean }>;
-    validate(providerId?: ProviderId): Promise<SettingsValidationResult>;
   };
   menu: {
     onPreferences(callback: () => void): () => void;
@@ -471,9 +383,6 @@ const api: CalderApi = {
   },
   provider: createPreloadProviderApi(ipcRenderer, onChannel),
   ...createPreloadProjectDomainApi(ipcRenderer, onChannel),
-  claude: {
-    getConfig: (projectPath) => ipcRenderer.invoke('claude:getConfig', projectPath),
-  },
   store: {
     load: () => ipcRenderer.invoke('store:load'),
     save: (state) => ipcRenderer.invoke('store:save', state),
@@ -518,24 +427,10 @@ const api: CalderApi = {
     getAutoFillForUrl: (url: string) =>
       ipcRenderer.invoke('browserCredential:getAutoFillForUrl', url),
   },
-  sharing: {
-    getRtcConfig: () => ipcRenderer.invoke('sharing:getRtcConfig'),
-  },
-  mobile: createPreloadMobileApi(ipcRenderer),
-  mobileSetup: createPreloadMobileSetupApi(ipcRenderer, onChannel),
-  mobileInspect: createPreloadMobileInspectApi(ipcRenderer),
   cliSurface: createPreloadCliSurfaceApi(ipcRenderer, onChannel),
   mcp: createPreloadMcpApi(ipcRenderer),
   stats: {
     getCache: () => ipcRenderer.invoke('stats:getCache'),
-  },
-  settings: {
-    onWarning: (cb) => onChannel('settings:warning', (data) => cb(data as SettingsWarningData)),
-    onConflictDialog: (cb) =>
-      onChannel('settings:showConflictDialog', (data) => cb(data as StatusLineConflictData)),
-    respondConflictDialog: (choice) => ipcRenderer.send('settings:conflictDialogResponse', choice),
-    reinstall: (providerId) => ipcRenderer.invoke('settings:reinstall', providerId || 'claude'),
-    validate: (providerId) => ipcRenderer.invoke('settings:validate', providerId || 'claude'),
   },
   menu: {
     onPreferences: (cb) => onChannel('menu:preferences', cb),

@@ -5,12 +5,6 @@ import * as path from 'path';
 
 import type { ProviderId } from '../../shared/types/provider';
 import type { InspectorEvent } from '../../shared/types/session';
-import { isWin } from '../platform';
-import {
-  buildStatusLinePython,
-  buildStatusLineWrapper,
-  STATUSLINE_PYTHON_HELPER,
-} from '../statusline/statusline-template';
 import {
   clearDerivedUsageSession,
   deriveCostDataFromEvents,
@@ -20,8 +14,6 @@ import {
 } from './hook-status-derived-usage';
 
 export const STATUS_DIR = path.join(os.homedir(), '.calder', 'runtime');
-const STATUSLINE_SCRIPT = path.join(STATUS_DIR, isWin ? 'statusline.cmd' : 'statusline.sh');
-const STATUSLINE_PYTHON_PATH = path.join(STATUS_DIR, STATUSLINE_PYTHON_HELPER);
 
 const KNOWN_EXTENSIONS = ['.status', '.sessionid', '.cost', '.toolfailure', '.events'];
 const CLEANUP_SUFFIXES = [...KNOWN_EXTENSIONS, '.provider_sync.json'];
@@ -63,20 +55,6 @@ function isStatuslineArtifact(filename: string): boolean {
 
 function isProviderSyncArtifact(filename: string): boolean {
   return filename.endsWith('.provider_sync.json');
-}
-
-export function getStatusLineScriptPath(): string {
-  return STATUSLINE_SCRIPT;
-}
-
-export function installStatusLineScript(): void {
-  fs.mkdirSync(STATUS_DIR, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(STATUSLINE_PYTHON_PATH, buildStatusLinePython(STATUS_DIR), { mode: 0o755 });
-  fs.writeFileSync(
-    STATUSLINE_SCRIPT,
-    buildStatusLineWrapper(STATUSLINE_PYTHON_PATH, path.join(STATUS_DIR, 'statusline.log')),
-    { mode: 0o755 },
-  );
 }
 
 function extractSessionId(filename: string): string {

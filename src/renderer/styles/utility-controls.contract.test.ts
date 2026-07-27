@@ -10,8 +10,8 @@ describe('utility control language contract', () => {
   it('keeps modal config controls in the same compact glass family', () => {
     expect(modalCss).toContain('.config-section-add-btn');
     expect(modalCss).toContain('width: 24px;');
-    expect(modalCss).toContain('.config-item-remove-btn');
-    expect(modalCss).toContain('color: var(--danger);');
+    expect(modalCss).toContain('.config-item-open-btn');
+    expect(modalCss).toContain('color: var(--text-secondary);');
   });
 
   it('styles session history utility controls as desktop chips and icon buttons', () => {

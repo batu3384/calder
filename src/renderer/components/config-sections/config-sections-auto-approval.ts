@@ -40,7 +40,7 @@ export { createModeGuide, createModeSelect };
 export function describeAutoApprovalScopes(
   autoApproval: ProjectGovernanceAutoApprovalState,
 ): AutoApprovalScopeSummary {
-  let effectiveExplanation = 'No explicit setting found; fallback Off applies.';
+  let effectiveExplanation = 'No explicit setting found; fallback Ask every time applies.';
   if (autoApproval.policySource === 'session') {
     effectiveExplanation = localizedText(
       'Session override is active, so Session setting applies.',
@@ -59,8 +59,8 @@ export function describeAutoApprovalScopes(
   }
   if (autoApproval.policySource === 'fallback') {
     effectiveExplanation = localizedText(
-      'No explicit setting found; fallback Off applies.',
-      'Açık bir ayar bulunamadı; yedek Kapalı modu uygulanır.',
+      'No explicit setting found; fallback Ask every time applies.',
+      'Açık bir ayar bulunamadı; yedek Her seferinde sor modu uygulanır.',
     );
   }
 
@@ -124,6 +124,22 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const summary = document.createElement('div');
   summary.className = 'auto-approval-summary';
   const scopeSummary = describeAutoApprovalScopes(autoApproval);
+  if (!supportsPermissionHooks) {
+    scopeSummary.effectiveBehavior = localizedText(
+      'Manual approval only — this provider has no permission-hook auto-approval path.',
+      'Yalnızca manuel onay — bu sağlayıcıda izin-hook otomatik onay yolu yok.',
+    );
+    scopeSummary.effectiveAutoRuns = localizedText(
+      'None (provider unsupported)',
+      'Yok (sağlayıcı desteklemiyor)',
+    );
+    scopeSummary.effectiveStillAsks = localizedText('Everything', 'Her şey');
+    scopeSummary.effectiveExplanation = localizedText(
+      'Policy may say otherwise, but this provider cannot auto-approve; Calder always asks.',
+      'Politika farklı dese de bu sağlayıcı otomatik onaylayamaz; Calder her zaman sorar.',
+    );
+  }
+  const displayEffectiveMode = supportsPermissionHooks ? autoApproval.effectiveMode : 'ask';
   const providerName = getProviderDisplayName(providerId);
   const priorityRule = localizedText(
     'Priority: Session > Project > Global.',
@@ -140,14 +156,6 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const projectPolicyLabel = localizedText('Project Policy', 'Proje Politikası');
   const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
   const effectiveShortLabel = localizedText('Effective', 'Etkin');
-  const fullAutoWarning = localizedText(
-    'Note: Full Auto still requires manual approval for destructive operations.',
-    'Not: Tam Otomatik modda yıkıcı işlemler için manuel onay gerekir.',
-  );
-  const fullAutoUnsafeWarning = localizedText(
-    'Warning: Full Auto (Unsafe) auto-approves destructive operations.',
-    'Uyarı: Tam Otomatik (Tehlikeli) modu yıkıcı işlemleri otomatik onaylar.',
-  );
   const priorityMapLabel = localizedText(
     'Applied order: Global -> Project -> Session -> Effective.',
     'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
@@ -158,17 +166,12 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   );
   const hidePolicyDetailsLabel = localizedText('Hide policy details', 'Politika detaylarını gizle');
   const quickSummaryLabel = localizedText('Quick summary', 'Hızlı özet');
-  const modeRiskNote =
-    autoApproval.effectiveMode === 'full_auto_unsafe'
-      ? fullAutoUnsafeWarning
-      : autoApproval.effectiveMode === 'full_auto'
-        ? fullAutoWarning
-        : null;
+  const modeRiskNote = null;
 
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
       <span class="config-item-name">${esc(effectiveModeLabel)}</span>
-      <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
+      <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
     </div>
     <div class="auto-approval-priority-note ops-rail-note" data-tone="default">
       ${esc(priorityRule)}
@@ -231,7 +234,7 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
       </div>
       <div class="auto-approval-policy-row is-effective">
         <span class="auto-approval-policy-name">${esc(effectiveShortLabel)}</span>
-        <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(autoApproval.effectiveMode))}</span>
+        <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
       </div>
     </div>
     ${modeRiskNote ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>` : ''}

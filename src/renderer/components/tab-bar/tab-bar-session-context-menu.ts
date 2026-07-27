@@ -1,6 +1,4 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
-import { isSharing } from '../../sharing/peer-host.js';
-import { endShare } from '../../sharing/share-manager.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 import {
@@ -9,7 +7,6 @@ import {
   isInspectorOpen,
   openInspector,
 } from '../session-inspector/session-inspector.js';
-import { showShareDialog } from '../share-dialog/share-dialog.js';
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
 
 export interface SessionTabContextMenuOptions {
@@ -96,33 +93,19 @@ function appendDebugMenuItems(
   );
 }
 
-interface SessionContextMenuSections {
-  isCliSession: boolean;
-  isRemote: boolean;
-  canInspect: boolean;
-  currentlySharing: boolean;
-  inspectItem: HTMLElement;
-  shareSeparator: HTMLElement;
-  shareItem: HTMLElement;
-  mobileShareItem: HTMLElement;
-  stopShareItem: HTMLElement;
-}
-
-function buildSessionContextMenuSections(
+function buildInspectMenuItem(
   session: SessionRecord,
   hideTabContextMenu: () => void,
-): SessionContextMenuSections {
+): HTMLElement | null {
   const isCliSession = !session.type || session.type === 'claude';
-  const isRemote = session.type === 'remote-terminal';
   const providerCapabilities = getProviderCapabilities(session.providerId || 'claude');
   const canInspect = isCliSession && providerCapabilities?.hookStatus !== false;
-  const currentlySharing = isSharing(session.id);
+  if (!canInspect) return null;
 
-  const inspectItem = createContextMenuItem(
+  return createContextMenuItem(
     isInspectorOpen() && getInspectedSessionId() === session.id ? 'Close Inspector' : 'Inspect',
     hideTabContextMenu,
     {
-      disabled: !canInspect,
       onSelect: () => {
         if (isInspectorOpen() && getInspectedSessionId() === session.id) {
           closeInspector();
@@ -132,58 +115,6 @@ function buildSessionContextMenuSections(
       },
     },
   );
-
-  const shareSeparator = createMenuSeparator();
-
-  const shareItem = createContextMenuItem('', hideTabContextMenu, {
-    disabled: !isCliSession,
-    onSelect: () => showShareDialog(session.id),
-  });
-  shareItem.textContent = currentlySharing ? 'Manage Sharing…' : 'Share Session…';
-
-  const mobileShareItem = createContextMenuItem('', hideTabContextMenu, {
-    disabled: !isCliSession,
-    onSelect: () => showShareDialog(session.id),
-  });
-  mobileShareItem.textContent = 'Mobile Control…';
-
-  const stopShareItem = createContextMenuItem('Stop Sharing', hideTabContextMenu, {
-    disabled: !currentlySharing,
-    onSelect: () => endShare(session.id),
-  });
-
-  return {
-    isCliSession,
-    isRemote,
-    canInspect,
-    currentlySharing,
-    inspectItem,
-    shareSeparator,
-    shareItem,
-    mobileShareItem,
-    stopShareItem,
-  };
-}
-
-function appendShareAndInspectMenuSections(
-  menu: HTMLElement,
-  sections: SessionContextMenuSections,
-): void {
-  menu.appendChild(createMenuSeparator());
-  if (sections.isCliSession || sections.isRemote) {
-    menu.appendChild(sections.shareSeparator);
-    if (!sections.currentlySharing) {
-      menu.appendChild(sections.shareItem);
-      menu.appendChild(sections.mobileShareItem);
-    }
-    if (sections.currentlySharing) {
-      menu.appendChild(sections.stopShareItem);
-    }
-  }
-  if (sections.canInspect) {
-    menu.appendChild(createMenuSeparator());
-    menu.appendChild(sections.inspectItem);
-  }
 }
 
 function appendResumeWithProviderMenuItems(
@@ -254,14 +185,17 @@ export function showSessionTabContextMenu(options: SessionTabContextMenuOptions)
     disabled: sessionIdx >= totalSessions - 1,
     onSelect: () => appState.reorderSession(project.id, session.id, sessionIdx + 1),
   });
-  const sections = buildSessionContextMenuSections(session, hideTabContextMenu);
+  const inspectItem = buildInspectMenuItem(session, hideTabContextMenu);
 
   menu.appendChild(renameItem);
   menu.appendChild(moveLeftItem);
   menu.appendChild(moveRightItem);
 
   appendDebugMenuItems(menu, session, hideTabContextMenu);
-  appendShareAndInspectMenuSections(menu, sections);
+  if (inspectItem) {
+    menu.appendChild(createMenuSeparator());
+    menu.appendChild(inspectItem);
+  }
   appendResumeWithProviderMenuItems(menu, session, project, hideTabContextMenu);
 
   menu.appendChild(closeItem);

@@ -1,30 +1,14 @@
-import type { BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type {
-  CliProviderMeta,
-  ProviderConfig,
-  SettingsValidationResult,
-} from '../../shared/types/provider';
-import { getAntigravityConfig } from '../antigravity-config';
-import {
-  cleanupAntigravityHooks,
-  installAntigravityHooks,
-  SESSION_ID_VAR,
-  validateAntigravityHooks,
-} from '../antigravity-hooks';
-import {
-  startConfigWatcher as startConfigWatch,
-  stopConfigWatcher as stopConfigWatch,
-} from '../config-watcher';
-import { EXTERNAL_HOOK_INJECTION_ENABLED } from '../external-hook-policy';
+import type { CliProviderMeta } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
 import { sanitizeExtraArgs } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
+const CALDER_SESSION_ID = 'CALDER_SESSION_ID';
 const binaryCache = { path: null as string | null };
 const legacyBinaryCache = { path: null as string | null };
 
@@ -38,7 +22,6 @@ export class AntigravityProvider extends BaseCliProvider {
       costTracking: true,
       contextWindow: true,
       hookStatus: true,
-      configReading: true,
       shiftEnterNewline: false,
       pendingPromptTrigger: 'startup-arg',
     },
@@ -48,6 +31,11 @@ export class AntigravityProvider extends BaseCliProvider {
   protected readonly binaryName = 'agy';
   protected readonly installCommand = 'brew install --cask antigravity-cli';
   protected readonly binaryCache = binaryCache;
+
+  clearBinaryCache(): void {
+    this.binaryCache.path = null;
+    legacyBinaryCache.path = null;
+  }
 
   resolveBinaryPath(): string {
     const primary = resolveBinary('agy', binaryCache);
@@ -72,7 +60,7 @@ export class AntigravityProvider extends BaseCliProvider {
   buildEnv(sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
     const env: Record<string, string> = { ...baseEnv };
     delete env.CLAUDE_CODE;
-    env[SESSION_ID_VAR] = sessionId;
+    env[CALDER_SESSION_ID] = sessionId;
     env.PATH = getFullPath();
     env.CALDER_RUNTIME = '1';
     return env;
@@ -95,44 +83,6 @@ export class AntigravityProvider extends BaseCliProvider {
       args.push('-i', opts.initialPrompt);
     }
     return args;
-  }
-
-  async installHooks(): Promise<void> {
-    installAntigravityHooks();
-  }
-
-  installStatusScripts(): void {}
-
-  cleanup(): void {
-    stopConfigWatch();
-  }
-
-  startConfigWatcher(win: BrowserWindow, projectPath: string): void {
-    startConfigWatch(win, projectPath, 'antigravity');
-  }
-
-  stopConfigWatcher(): void {
-    stopConfigWatch();
-  }
-
-  async getConfig(projectPath: string): Promise<ProviderConfig> {
-    return getAntigravityConfig(projectPath);
-  }
-
-  getShiftEnterSequence(): string | null {
-    return null;
-  }
-
-  validateSettings(): SettingsValidationResult {
-    return validateAntigravityHooks();
-  }
-
-  reinstallSettings(): void {
-    if (!EXTERNAL_HOOK_INJECTION_ENABLED) {
-      cleanupAntigravityHooks();
-      return;
-    }
-    installAntigravityHooks();
   }
 
   getTranscriptPath(cliSessionId: string, projectPath: string): string | null {

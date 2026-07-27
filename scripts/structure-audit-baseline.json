@@ -1,5 +1,4 @@
 {
-  "src/main/mobile-inspector.runtime.test.ts": 1961,
   "src/main/provider-updater.test.ts": 1212,
   "src/main/provider-updater.ts": 726,
   "src/preload/preload.ts": 559,
@@ -14,8 +13,6 @@
   "src/renderer/i18n-translations-core-part-1.ts": 582,
   "src/renderer/i18n-translations-core-part-2.ts": 593,
   "src/renderer/i18n-translations-core-part-3.ts": 616,
-  "src/renderer/sharing/peer-host.test.ts": 1577,
-  "src/renderer/sharing/peer-host.ts": 511,
   "src/renderer/state.test.ts": 2893,
   "src/renderer/state.ts": 699,
   "src/renderer/update-center.ts": 589

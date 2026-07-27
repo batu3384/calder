@@ -113,11 +113,11 @@ describe('resolve-binary', () => {
   it('skips broken wrappers and prefers the next launchable candidate', async () => {
     const { resolveBinary, mockExistsSync, mockExecSync, mockSpawnSync } =
       await loadResolveBinaryModule(false);
-    const brokenPath = path.join('/mock/home', '.local', 'bin', 'copilot');
-    const goodPath = path.join('/mock/home', '.npm-global', 'bin', 'copilot');
+    const brokenPath = path.join('/mock/home', '.local', 'bin', 'agent');
+    const goodPath = path.join('/mock/home', '.npm-global', 'bin', 'agent');
 
     mockExecSync.mockImplementation((command: unknown) => {
-      if (String(command).startsWith('which "copilot"')) return `${brokenPath}\n` as any;
+      if (String(command).startsWith('which "agent"')) return `${brokenPath}\n` as any;
       throw new Error(`unexpected command: ${String(command)}`);
     });
     mockExistsSync.mockImplementation((candidate: unknown) => {
@@ -129,22 +129,22 @@ describe('resolve-binary', () => {
       return { status: 1 };
     });
 
-    expect(resolveBinary('copilot', { path: null })).toBe(goodPath);
+    expect(resolveBinary('agent', { path: null })).toBe(goodPath);
   });
 
   it('handles Windows extension probing and keeps first where() result line', async () => {
     const { resolveBinary, mockExistsSync, mockExecSync, mockSpawnSync } =
       await loadResolveBinaryModule(true);
-    const resolvedPath = 'C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd';
+    const resolvedPath = 'C:\\Users\\me\\AppData\\Roaming\\npm\\agent.cmd';
 
     mockExistsSync.mockImplementation((candidate) => String(candidate) === resolvedPath);
-    mockExecSync.mockReturnValue(`${resolvedPath}\r\nC:\\alt\\qwen.cmd\r\n` as any);
+    mockExecSync.mockReturnValue(`${resolvedPath}\r\nC:\\alt\\agent.cmd\r\n` as any);
     wireLaunchProbes(mockExistsSync, mockSpawnSync);
 
-    const resolved = resolveBinary('qwen', { path: null });
-    expect(resolved).toBe('C:\\Users\\me\\AppData\\Roaming\\npm\\qwen.cmd');
+    const resolved = resolveBinary('agent', { path: null });
+    expect(resolved).toBe('C:\\Users\\me\\AppData\\Roaming\\npm\\agent.cmd');
     expect(mockExecSync).toHaveBeenCalledWith(
-      'where "qwen"',
+      'where "agent"',
       expect.objectContaining({
         env: expect.objectContaining({ PATH: 'C:\\Tools;C:\\Bin' }),
         encoding: 'utf-8',
@@ -161,7 +161,7 @@ describe('resolve-binary', () => {
       throw new Error('not found');
     });
 
-    expect(resolveBinary('qwen', { path: null })).toBe('qwen');
+    expect(resolveBinary('agent', { path: null })).toBe('agent');
   });
 
   it('validateBinaryExists returns guidance when executable cannot be found', async () => {
@@ -181,7 +181,7 @@ describe('resolve-binary', () => {
         'Calder can launch sessions with Codex CLI after it is installed.\n\n' +
         'Install it with:\n' +
         '  npm install -g @openai/codex\n\n' +
-        'After installing, restart Calder.',
+        'After installing, open Workspace Center → Tools to refresh provider health.',
     });
   });
 

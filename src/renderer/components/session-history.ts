@@ -60,9 +60,8 @@ const MAX_VISIBLE = 50;
 const PROVIDER_LABELS: Record<string, string> = {
   claude: 'Claude Code',
   codex: 'Codex CLI',
-  copilot: 'GitHub Copilot',
   antigravity: 'Antigravity CLI',
-  qwen: 'Qwen Code',
+  cursor: 'Cursor CLI',
 };
 
 let container: HTMLElement;

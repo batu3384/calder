@@ -14,7 +14,7 @@ import type {
 } from './preferences-modal-sections-types.js';
 import { renderOrchestrationOverviewSection } from './preferences-orchestration-overview.js';
 import { renderProjectPreviewCenterSection } from './preferences-preview-discovery.js';
-import { renderMobileSetupSection, renderSetupSection } from './preferences-provider-setup.js';
+import { renderSetupSection } from './preferences-provider-setup.js';
 import { renderProjectReviewSection } from './preferences-review-discovery.js';
 import { renderProjectTeamContextSection } from './preferences-team-context-discovery.js';
 import { renderProjectWorkflowSection } from './preferences-workflow-discovery.js';
@@ -90,54 +90,36 @@ export function renderToolsPreferencesSection({
   appendSectionCard,
   isToolsSectionActive,
   onApplySetupBadge,
-  onFixProvider,
-  onInstallMobileDependency,
 }: RenderToolsSectionArgs): void {
   appendSectionIntro(
     content,
     'Tools',
-    'CLI health and mobile readiness',
-    'Keep providers, local binaries, and mobile automation dependencies healthy without mixing them with project workflow settings.',
+    'CLI health',
+    'Keep providers and local binaries healthy without mixing them with project workflow settings.',
   );
   appendOverviewGrid(content, [
     {
       label: 'Providers',
       value: 'Live',
-      note: 'Installed tools, defaults, and repair actions refresh from the local machine.',
-    },
-    {
-      label: 'Mobile',
-      value: 'Doctor',
-      note: 'Simulator dependencies stay visible without crowding the main workspace.',
+      note: 'Installed tools and defaults refresh from the local machine.',
     },
     {
       label: 'Scope',
       value: 'All CLIs',
-      note: 'Claude, Codex, Antigravity, Qwen, Minimax, and the rest share one health view.',
+      note: 'Claude, Codex, Antigravity, and Cursor share one health view.',
     },
   ]);
 
   const providerHealthGroup = appendSectionCard(
     content,
     'Provider health',
-    'Installed tools, defaults, and repair actions.',
-  );
-  const mobileHealthGroup = appendSectionCard(
-    content,
-    'Mobile automation readiness',
-    'Checks iOS/Android simulator requirements and provides guided installs for missing dependencies.',
+    'Installed tools, defaults, and binary checks.',
   );
 
   void renderSetupSection({
     container: providerHealthGroup,
     isProvidersSectionActive: isToolsSectionActive,
     onApplySetupBadge,
-    onFixProvider,
-  });
-  void renderMobileSetupSection({
-    container: mobileHealthGroup,
-    isProvidersSectionActive: isToolsSectionActive,
-    onInstallMobileDependency,
   });
 }
 

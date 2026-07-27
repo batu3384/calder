@@ -162,10 +162,10 @@ describe('session-inspector timeline MCP badges', () => {
         hookEvent: 'AutoApprovalOrchestrator',
         auto_approval: {
           policy_source: 'project',
-          effective_mode: 'full_auto',
+          effective_mode: 'session_safe',
           operation_class: 'destructive',
-          decision: 'block',
-          reason: 'Destructive operations are not auto-approved in this mode.',
+          decision: 'ask',
+          reason: 'Destructive or outside-project operations always require approval.',
         },
       },
     ]);
@@ -180,9 +180,9 @@ describe('session-inspector timeline MCP badges', () => {
     const meta = (container as unknown as FakeElement).querySelector('.inspector-meta-text');
 
     expect(badges).toContain('Approval');
-    expect(desc?.textContent).toContain('Auto-approval block: destructive');
+    expect(desc?.textContent).toContain('Auto-approval ask: destructive');
     expect(meta?.textContent).toContain(
-      'Reason: Destructive operations are not auto-approved in this mode.',
+      'Reason: Destructive or outside-project operations always require approval.',
     );
   });
 });
@@ -331,14 +331,14 @@ describe('session-inspector timeline helper exports', () => {
     const approvalEvent = ev('approval_decision', 1000, {
       auto_approval: {
         policy_source: 'project',
-        effective_mode: 'full_auto',
+        effective_mode: 'session_safe',
         operation_class: 'safe_tool',
         decision: 'allow',
         reason: 'Safe operation class',
       },
     });
     const meta = buildApprovalDecisionMetaText(approvalEvent);
-    expect(meta).toContain('Mode: full_auto');
+    expect(meta).toContain('Mode: session_safe');
     expect(meta).toContain('Source: project');
     expect(meta).toContain('Reason: Safe operation class');
 

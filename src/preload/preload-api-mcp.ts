@@ -20,18 +20,6 @@ export interface PreloadMcpApi {
     name: string,
     args: Record<string, string>,
   ): Promise<{ success: boolean; data?: unknown; error?: string }>;
-  addServer(
-    name: string,
-    config: unknown,
-    scope: 'user' | 'project',
-    projectPath?: string,
-  ): Promise<{ success: boolean; error?: string }>;
-  removeServer(
-    name: string,
-    filePath: string,
-    scope: 'user' | 'project',
-    projectPath?: string,
-  ): Promise<{ success: boolean; error?: string }>;
 }
 
 export function createPreloadMcpApi(ipcRenderer: IpcRenderer): PreloadMcpApi {
@@ -46,13 +34,5 @@ export function createPreloadMcpApi(ipcRenderer: IpcRenderer): PreloadMcpApi {
     readResource: (id: string, uri: string) => ipcRenderer.invoke('mcp:readResource', id, uri),
     getPrompt: (id: string, name: string, args: Record<string, string>) =>
       ipcRenderer.invoke('mcp:getPrompt', id, name, args),
-    addServer: (name: string, config: unknown, scope: 'user' | 'project', projectPath?: string) =>
-      ipcRenderer.invoke('mcp:addServer', name, config, scope, projectPath),
-    removeServer: (
-      name: string,
-      filePath: string,
-      scope: 'user' | 'project',
-      projectPath?: string,
-    ) => ipcRenderer.invoke('mcp:removeServer', name, filePath, scope, projectPath),
   };
 }

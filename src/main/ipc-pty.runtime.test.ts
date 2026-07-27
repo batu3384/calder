@@ -9,7 +9,6 @@ const mockWritePty = vi.hoisted(() => vi.fn());
 const mockHasPtySession = vi.hoisted(() => vi.fn());
 const mockKillPty = vi.hoisted(() => vi.fn());
 const mockResizePty = vi.hoisted(() => vi.fn());
-const mockIsSilencedExit = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -28,7 +27,6 @@ vi.mock('./pty-manager', () => ({
   hasPtySession: mockHasPtySession,
   killPty: mockKillPty,
   resizePty: mockResizePty,
-  isSilencedExit: mockIsSilencedExit,
 }));
 
 import { registerPtyIpcHandlers } from './ipc-pty';

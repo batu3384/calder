@@ -1,8 +1,6 @@
 import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord } from '../shared/types/session.js';
 
-type ShareMode = 'readonly' | 'readwrite';
-
 function nowIsoTimestamp(): string {
   return new Date().toISOString();
 }
@@ -64,22 +62,6 @@ export function createDiffViewerSessionRecord(params: {
     diffFilePath: params.filePath,
     diffArea: params.area,
     ...(params.worktreePath ? { worktreePath: params.worktreePath } : {}),
-    cliSessionId: null,
-    createdAt: nowIsoTimestamp(),
-  };
-}
-
-export function createRemoteSessionRecord(params: {
-  sessionId: string;
-  hostSessionName: string;
-  shareMode: ShareMode;
-}): SessionRecord {
-  return {
-    id: params.sessionId,
-    name: `Remote: ${params.hostSessionName}`,
-    type: 'remote-terminal',
-    remoteHostName: params.hostSessionName,
-    shareMode: params.shareMode,
     cliSessionId: null,
     createdAt: nowIsoTimestamp(),
   };

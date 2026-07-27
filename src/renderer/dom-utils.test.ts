@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { areaLabel, createPassphraseInput, esc } from './dom-utils';
+import { areaLabel, esc } from './dom-utils';
 
 function escapeHtml(value: string): string {
   return value
@@ -21,29 +21,6 @@ function makeSpan() {
     },
   });
   return node;
-}
-
-function makeInput() {
-  const listeners: Record<string, Array<() => void>> = {};
-  const element: Record<string, unknown> = {
-    type: '',
-    inputMode: '',
-    className: '',
-    placeholder: '',
-    value: '',
-    minLength: 0,
-    maxLength: 0,
-    autocomplete: '',
-    spellcheck: true,
-    addEventListener: (event: string, handler: () => void) => {
-      listeners[event] ??= [];
-      listeners[event].push(handler);
-    },
-    emit: (event: string) => {
-      for (const handler of listeners[event] ?? []) handler();
-    },
-  };
-  return element;
 }
 
 afterEach(() => {
@@ -67,38 +44,5 @@ describe('dom-utils', () => {
     expect(areaLabel('untracked')).toBe('Untracked');
     expect(areaLabel('conflicted')).toBe('Conflicted');
     expect(areaLabel('renamed')).toBe('renamed');
-  });
-
-  it('createPassphraseInput configures defaults and sanitizes user input', () => {
-    const input = makeInput();
-    vi.stubGlobal('document', {
-      createElement: vi.fn((tag: string) => {
-        expect(tag).toBe('input');
-        return input;
-      }),
-    });
-
-    const created = createPassphraseInput();
-    expect(created.placeholder).toBe('Passphrase');
-    expect(created.minLength).toBe(12);
-    expect(created.maxLength).toBe(64);
-    expect(created.autocomplete).toBe('off');
-    expect(created.spellcheck).toBe(false);
-    expect(created.className).toBe('share-pin-input');
-
-    created.value = 'ab-c 12_?!xy';
-    (created as any).emit('input');
-    expect(created.value).toBe('AB-C 12XY');
-  });
-
-  it('createPassphraseInput respects explicit placeholder and value', () => {
-    const input = makeInput();
-    vi.stubGlobal('document', {
-      createElement: vi.fn(() => input),
-    });
-
-    const created = createPassphraseInput({ placeholder: 'Pairing Key', value: 'abc def' });
-    expect(created.placeholder).toBe('Pairing Key');
-    expect(created.value).toBe('abc def');
   });
 });

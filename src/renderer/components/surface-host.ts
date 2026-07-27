@@ -1,7 +1,6 @@
 import type { ProjectRecord } from '../state.js';
 import { attachBrowserTabToContainer, showBrowserTabPane } from './browser-tab-pane.js';
 import { attachCliSurfacePane, showCliSurfacePane } from './cli-surface/pane.js';
-import { attachMobileSurfacePane, showMobileSurfacePane } from './mobile-surface/pane.js';
 
 function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefined {
   const surfaceSessionId = project.surface?.web?.sessionId;
@@ -20,28 +19,14 @@ function isCliSurfaceFocused(project: ProjectRecord): boolean {
   );
 }
 
-function isMobileSurfaceFocused(project: ProjectRecord): boolean {
-  return Boolean(
-    project.surface?.active &&
-    project.surface.kind === 'mobile' &&
-    project.surface.tabFocus === 'mobile',
-  );
-}
-
 export function hasPinnedSurfaceFocus(project: ProjectRecord): boolean {
-  return isCliSurfaceFocused(project) || isMobileSurfaceFocused(project);
+  return isCliSurfaceFocused(project);
 }
 
 export function renderSurfaceHost(project: ProjectRecord, container: HTMLElement): void {
   if (isCliSurfaceFocused(project)) {
     attachCliSurfacePane(project.id, container);
     showCliSurfacePane(project.id);
-    return;
-  }
-
-  if (isMobileSurfaceFocused(project)) {
-    attachMobileSurfacePane(project.id, container);
-    showMobileSurfacePane(project.id);
     return;
   }
 

@@ -72,9 +72,6 @@ export function detectUpdateSource(
   if (providerId === 'codex' && normalized.includes('/node_modules/@openai/codex/')) {
     return { source: 'npm' };
   }
-  if (providerId === 'qwen' && normalized.includes('/node_modules/@qwen-code/qwen-code/')) {
-    return { source: 'npm' };
-  }
   if (spec.selfUpdateArgs) {
     return { source: 'self' };
   }

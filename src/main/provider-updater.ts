@@ -32,6 +32,7 @@ export interface ProviderUpdaterTarget {
   meta: Pick<CliProvider['meta'], 'id' | 'displayName' | 'binaryName'>;
   resolveBinaryPath(): string;
   validatePrerequisites(): { ok: boolean; message: string };
+  clearBinaryCache(): void;
 }
 
 interface ProviderUpdaterOptions {
@@ -81,7 +82,7 @@ function getProviderStageProgress(message: string): number {
   return 50;
 }
 
-const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
+const PROVIDER_UPDATE_SPECS: Partial<Record<ProviderId, ProviderUpdateSpec>> = {
   claude: {
     npmPackage: '@anthropic-ai/claude-code',
     brewCask: ['claude-code', 'claude-code@latest'],
@@ -91,17 +92,9 @@ const PROVIDER_UPDATE_SPECS: Record<ProviderId, ProviderUpdateSpec> = {
     npmPackage: '@openai/codex',
     brewCask: 'codex',
   },
-  copilot: {
-    npmPackage: '@github/copilot',
-    brewCask: 'copilot-cli',
-  },
   antigravity: {
     brewCask: 'antigravity-cli',
     selfUpdateArgs: ['update'],
-  },
-  qwen: {
-    npmPackage: '@qwen-code/qwen-code',
-    brewFormula: 'qwen-code',
   },
 };
 
@@ -188,6 +181,10 @@ function parseShellCommand(commandLine: string): { command: string; args: string
   const trimmed = commandLine.trim();
   if (!trimmed) {
     throw new Error('Install command is empty.');
+  }
+  // Piped / shell-metachar installs (e.g. curl | bash) need a shell.
+  if (/[|<>;&]/.test(trimmed)) {
+    return { command: 'bash', args: ['-lc', trimmed] };
   }
   const parts = trimmed.split(/\s+/);
   return { command: parts[0], args: parts.slice(1) };
@@ -511,6 +508,9 @@ export async function updateProviders(
       signal,
       emitProviderMessage: emitProviderStageMessage,
     });
+    if (result.status === 'updated') {
+      provider.clearBinaryCache();
+    }
     results.push(result);
     progress.finished(result);
 

@@ -142,11 +142,11 @@ describe('project context watcher', () => {
     expect(seen).toEqual([]);
   });
 
-  it('tracks nested copilot instruction folders and safely handles duplicate unsubscribe calls', async () => {
+  it('tracks nested instruction folders and safely handles duplicate unsubscribe calls', async () => {
     const root = makeProject('context-nested-instructions');
     roots.push(root);
     writeFiles(root, {
-      '.github/instructions/team/copilot.md': '# Team guidance\nFollow local instructions.\n',
+      '.github/instructions/team/guidance.md': '# Team guidance\nFollow local instructions.\n',
     });
 
     const seen: string[] = [];
@@ -159,7 +159,7 @@ describe('project context watcher', () => {
     unsubscribe();
 
     writeFileSync(
-      join(root, '.github', 'instructions', 'team', 'copilot.md'),
+      join(root, '.github', 'instructions', 'team', 'guidance.md'),
       '# Updated guidance\nFollow local instructions.\n',
       'utf8',
     );

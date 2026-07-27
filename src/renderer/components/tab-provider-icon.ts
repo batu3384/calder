@@ -9,18 +9,11 @@ const PROVIDER_ICON_ASSETS: Partial<Record<ProviderId, string>> = {
 const PROVIDER_FALLBACK_LABELS: Record<ProviderId, string> = {
   claude: 'CL',
   codex: 'OX',
-  copilot: 'CP',
   antigravity: 'AG',
-  qwen: 'QW',
+  cursor: 'CR',
 };
 
-const VALID_PROVIDER_IDS = new Set<ProviderId>([
-  'claude',
-  'codex',
-  'copilot',
-  'antigravity',
-  'qwen',
-]);
+const VALID_PROVIDER_IDS = new Set<ProviderId>(['claude', 'codex', 'antigravity', 'cursor']);
 
 function escapeAttr(value: string): string {
   return value.replace(/"/g, '&quot;');

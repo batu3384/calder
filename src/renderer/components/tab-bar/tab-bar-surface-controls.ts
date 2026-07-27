@@ -20,7 +20,6 @@ interface CreateTabBarSurfaceControlsControllerOptions {
   ) => void;
   activateLiveViewSurface: (project: ProjectRecord) => void;
   activateCliSurface: (project: ProjectRecord) => void | Promise<void>;
-  activateMobileSurface: (project: ProjectRecord) => void;
   promptCliSurfaceProfile: (
     project: ProjectRecord,
     existing?: CliSurfaceProfile,
@@ -47,7 +46,6 @@ export function createTabBarSurfaceControlsController(
     selectCliSurfaceProfile,
     activateLiveViewSurface,
     activateCliSurface,
-    activateMobileSurface,
     promptCliSurfaceProfile,
     onProfileSelectOpenChange,
   } = options;
@@ -81,8 +79,7 @@ export function createTabBarSurfaceControlsController(
     button.classList.toggle('active', activeKind === kind && getProjectSurface(project).active);
     button.addEventListener('click', () => {
       if (kind === 'web') activateLiveViewSurface(project);
-      else if (kind === 'cli') void activateCliSurface(project);
-      else activateMobileSurface(project);
+      else void activateCliSurface(project);
     });
     return button;
   }
@@ -113,7 +110,6 @@ export function createTabBarSurfaceControlsController(
     [
       { kind: 'web' as const, label: 'Live View' },
       { kind: 'cli' as const, label: 'CLI Surface' },
-      { kind: 'mobile' as const, label: 'Mobile' },
     ].forEach(({ kind, label }) => {
       switcher.appendChild(createModeButton(project, surface.kind, kind, label));
     });

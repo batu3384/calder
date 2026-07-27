@@ -50,7 +50,7 @@ describe('menu surface contract', () => {
     expect(branchMenuSource).toContain("applyContextMenuSemantics(menu, 'Branch actions', false)");
     expect(sessionMenuSource).toContain('tab-context-menu calder-floating-list');
     expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
-    expect(sessionMenuSource).toContain('Join Remote Session');
+    expect(sessionMenuSource).not.toContain('Join Remote Session');
     expect(providerSelectorSource).toContain('floating: {');
     expect(surfaceControlsSource).toContain('floating: {');
     expect(providerSelectorSource).not.toContain('floating: false');

@@ -33,91 +33,64 @@ afterEach(() => {
 describe('resolveEffectiveAutoApprovalMode', () => {
   it('uses session override first', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'off',
-      projectMode: 'edit_only',
-      sessionMode: 'edit_plus_safe_tools',
+      globalMode: 'ask',
+      projectMode: 'project_edits',
+      sessionMode: 'session_safe',
     });
 
-    expect(result.effectiveMode).toBe('edit_plus_safe_tools');
+    expect(result.effectiveMode).toBe('session_safe');
     expect(result.policySource).toBe('session');
-  });
-
-  it('supports full_auto as an explicit override mode', () => {
-    const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'off',
-      projectMode: 'full_auto',
-    });
-
-    expect(result.effectiveMode).toBe('full_auto');
-    expect(result.policySource).toBe('project');
-  });
-
-  it('supports full_auto_unsafe as an explicit override mode', () => {
-    const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'off',
-      projectMode: 'full_auto_unsafe',
-    });
-
-    expect(result.effectiveMode).toBe('full_auto_unsafe');
-    expect(result.policySource).toBe('project');
   });
 
   it('uses project mode over global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'off',
-      projectMode: 'edit_only',
+      globalMode: 'ask',
+      projectMode: 'project_edits',
     });
 
-    expect(result.effectiveMode).toBe('edit_only');
+    expect(result.effectiveMode).toBe('project_edits');
     expect(result.policySource).toBe('project');
   });
 
   it('uses global mode when no project or session override exists', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'edit_plus_safe_tools',
+      globalMode: 'session_safe',
     });
 
-    expect(result.effectiveMode).toBe('edit_plus_safe_tools');
+    expect(result.effectiveMode).toBe('session_safe');
     expect(result.policySource).toBe('global');
   });
 
-  it('treats explicit project off as an override over global mode', () => {
+  it('treats explicit project ask as an override over global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'edit_plus_safe_tools',
-      projectMode: 'off',
+      globalMode: 'session_safe',
+      projectMode: 'ask',
     });
 
-    expect(result.effectiveMode).toBe('off');
+    expect(result.effectiveMode).toBe('ask');
     expect(result.policySource).toBe('project');
   });
 
-  it('treats explicit session off as an override over project and global mode', () => {
+  it('treats explicit session ask as an override over project and global mode', () => {
     const result = resolveEffectiveAutoApprovalMode({
-      globalMode: 'edit_plus_safe_tools',
-      projectMode: 'edit_only',
-      sessionMode: 'off',
+      globalMode: 'session_safe',
+      projectMode: 'project_edits',
+      sessionMode: 'ask',
     });
 
-    expect(result.effectiveMode).toBe('off');
+    expect(result.effectiveMode).toBe('ask');
     expect(result.policySource).toBe('session');
   });
 
-  it('falls back to off when all layers resolve to off', () => {
+  it('falls back to ask when no layer is set', () => {
     const result = resolveEffectiveAutoApprovalMode({});
 
-    expect(result.effectiveMode).toBe('off');
+    expect(result.effectiveMode).toBe('ask');
     expect(result.policySource).toBe('fallback');
   });
 
   it('honors precedence across global, project, and session mode combinations', () => {
-    const modeOptions = [
-      undefined,
-      'off',
-      'edit_only',
-      'edit_plus_safe_tools',
-      'full_auto',
-      'full_auto_unsafe',
-    ] as const;
+    const modeOptions = [undefined, 'ask', 'project_edits', 'session_safe'] as const;
 
     for (const globalMode of modeOptions) {
       for (const projectMode of modeOptions) {
@@ -128,7 +101,7 @@ describe('resolveEffectiveAutoApprovalMode', () => {
             ...(sessionMode !== undefined ? { sessionMode } : {}),
           });
 
-          const expectedMode = sessionMode ?? projectMode ?? globalMode ?? 'off';
+          const expectedMode = sessionMode ?? projectMode ?? globalMode ?? 'ask';
           const expectedSource =
             sessionMode !== undefined
               ? 'session'
@@ -152,31 +125,31 @@ describe('readAutoApprovalModeFromPolicyFile', () => {
     roots.push(root);
     const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
       autoApproval: {
-        mode: 'edit_plus_safe_tools',
+        mode: 'session_safe',
       },
     });
 
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('edit_plus_safe_tools');
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('session_safe');
   });
 
-  it('returns off for a missing policy file', () => {
+  it('returns ask for a missing policy file', () => {
     const root = makeTempDir('auto-approval-missing');
     roots.push(root);
 
-    expect(readAutoApprovalModeFromPolicyFile(join(root, 'missing.json'))).toBe('off');
+    expect(readAutoApprovalModeFromPolicyFile(join(root, 'missing.json'))).toBe('ask');
   });
 
-  it('returns off for malformed policy content', () => {
+  it('returns ask for malformed policy content', () => {
     const root = makeTempDir('auto-approval-malformed');
     roots.push(root);
     const filePath = join(root, '.calder/governance/default-policy.json');
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, '{not-json', 'utf8');
 
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('off');
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('ask');
   });
 
-  it('returns off for unsupported policy modes', () => {
+  it('returns ask for unsupported policy modes', () => {
     const root = makeTempDir('auto-approval-unsupported');
     roots.push(root);
     const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
@@ -185,31 +158,25 @@ describe('readAutoApprovalModeFromPolicyFile', () => {
       },
     });
 
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('off');
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('ask');
   });
 
-  it('reads full_auto mode from policy files', () => {
-    const root = makeTempDir('auto-approval-full-auto');
+  it.each([
+    ['off', 'ask'],
+    ['edit_only', 'project_edits'],
+    ['edit_plus_safe_tools', 'session_safe'],
+    ['full_auto', 'ask'],
+    ['full_auto_unsafe', 'ask'],
+  ] as const)('maps legacy %s policy modes to %s', (legacyMode, expectedMode) => {
+    const root = makeTempDir(`auto-approval-${legacyMode}`);
     roots.push(root);
     const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
       autoApproval: {
-        mode: 'full_auto',
+        mode: legacyMode,
       },
     });
 
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('full_auto');
-  });
-
-  it('reads full_auto_unsafe mode from policy files', () => {
-    const root = makeTempDir('auto-approval-full-auto-unsafe');
-    roots.push(root);
-    const filePath = writePolicy(root, '.calder/governance/default-policy.json', {
-      autoApproval: {
-        mode: 'full_auto_unsafe',
-      },
-    });
-
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('full_auto_unsafe');
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe(expectedMode);
   });
 
   it('exposes the default global policy path', () => {
@@ -225,9 +192,9 @@ describe('setAutoApprovalModeInPolicyFile', () => {
     roots.push(root);
     const filePath = join(root, '.calder/governance/policy.json');
 
-    setAutoApprovalModeInPolicyFile(filePath, 'edit_plus_safe_tools');
+    setAutoApprovalModeInPolicyFile(filePath, 'session_safe');
 
-    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('edit_plus_safe_tools');
+    expect(readAutoApprovalModeFromPolicyFile(filePath)).toBe('session_safe');
   });
 
   it('removes project auto approval override while preserving other policy fields', () => {
@@ -238,7 +205,7 @@ describe('setAutoApprovalModeInPolicyFile', () => {
       profileName: 'Project guardrails',
       toolPolicy: 'ask',
       autoApproval: {
-        mode: 'edit_only',
+        mode: 'project_edits',
         safeToolProfile: 'default-read-only',
       },
     });

@@ -16,7 +16,6 @@ import {
 } from '../components/project-terminal.js';
 import { initSessionHistory } from '../components/session-history.js';
 import { initSessionInspector } from '../components/session-inspector/session-inspector.js';
-import { initSettingsGuard } from '../components/settings-guard-ui.js';
 import { destroySidebar, initSidebar, promptNewProject } from '../components/sidebar.js';
 import { initSplitLayout } from '../components/split-layout.js';
 import { checkStarPrompt } from '../components/star-prompt-dialog.js';
@@ -61,13 +60,6 @@ import { captureInitialContext } from '../session-insights.js';
 import { addEvents as addInspectorEvents } from '../session-inspector-state.js';
 import { clearSession as clearTitleSession, parseTitle } from '../session-title.js';
 import { init as initSessionUnread } from '../session-unread.js';
-import { isSharing } from '../sharing/peer-host.js';
-import {
-  cleanupAllShares,
-  endShare,
-  forwardPtyData,
-  initShareManager,
-} from '../sharing/share-manager.js';
 import { appState } from '../state.js';
 import { initLargeFileDetector } from '../tools/large-file-detector.js';
 import { initToolDetector } from '../tools/missing-tool-detector.js';
@@ -93,7 +85,6 @@ interface CreateRendererSessionOrchestratorOptions {
 }
 
 export function cleanupRendererSessionResourcesOnQuit(): void {
-  cleanupAllShares();
   destroySidebar();
   destroyAlertBanner();
   dismissAllToasts();
@@ -119,10 +110,6 @@ export function createRendererSessionOrchestrator(
       parseTitle(sessionId, data);
       if (data.includes('Interrupted')) {
         notifyInterrupt(sessionId);
-      }
-      // Forward to P2P share if active
-      if (isSharing(sessionId)) {
-        forwardPtyData(sessionId, data);
       }
     }
   }
@@ -190,10 +177,6 @@ export function createRendererSessionOrchestrator(
     if (isShellSessionId(sessionId)) {
       handleShellPtyExit(sessionId, exitCode);
     } else if (!isMcpSession(sessionId) && !options.isQuitting()) {
-      // End any active P2P share for this session
-      if (isSharing(sessionId)) {
-        endShare(sessionId);
-      }
       // Auto-close the session when CLI exits (skip during app quit to preserve session state)
       const project = appState.projects.find((entry) =>
         entry.sessions.some((session) => session.id === sessionId),
@@ -265,8 +248,6 @@ export function createRendererSessionOrchestrator(
     initToolAlert();
     initLargeFileDetector();
     initLargeFileAlert();
-    initSettingsGuard();
-    initShareManager();
     initSessionInspector();
     startGitPolling();
 

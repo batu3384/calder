@@ -13,13 +13,9 @@ describe('tab bar session context menu extraction', () => {
     expect(tabBarSource).toContain('showSessionTabContextMenu({');
   });
 
-  it('keeps session actions and sharing entries in dedicated context menu helper', () => {
+  it('keeps session actions in dedicated context menu helper', () => {
     expect(sessionContextMenuSource).toContain(
       "menu.className = 'tab-context-menu calder-floating-list'",
-    );
-    expect(sessionContextMenuSource).toContain("mobileShareItem.textContent = 'Mobile Control…'");
-    expect(sessionContextMenuSource).toContain(
-      "shareItem.textContent = currentlySharing ? 'Manage Sharing…' : 'Share Session…'",
     );
     expect(sessionContextMenuSource).toContain('buildResumeWithProviderItems(');
     expect(sessionContextMenuSource).toContain(

@@ -4,7 +4,6 @@ export {
   addFileReaderSessionWithBridge,
   addMcpInspectorSessionWithBridge,
   addPlanSessionWithBridge,
-  addRemoteSessionWithBridge,
   addSessionWithBridge,
   launchWorkflowSessionWithBridge,
   openUrlInBrowserSurfaceWithBridge,

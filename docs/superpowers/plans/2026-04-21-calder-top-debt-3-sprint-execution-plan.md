@@ -1,3 +1,5 @@
+> **Historical (frozen 2026-07-27).** Describes Calder before mobile/P2P removal. Paths may no longer exist. See `docs/reports/security/isolation-status.md`.
+
 # Calder Top Debt 3-Sprint Execution Plan (2026-04-21)
 
 > Execution mode: behavior-preserving, test-gated, small reversible slices.
@@ -20,17 +22,15 @@
    - `showPreferencesModal`: ~`3566` lines
 2. `src/renderer/components/browser-tab/pane.ts`
    - `createBrowserTabPane`: ~`1838` lines
-3. `src/main/statusline-template.ts`
-   - `buildStatusLinePython`: ~`777` lines
-4. `src/renderer/components/share-dialog.ts`
+3. `src/renderer/components/share-dialog.ts`
    - `showShareDialog`: ~`754` lines
-5. `apps/calder-mobile/App.tsx`
+4. `apps/calder-mobile/App.tsx`
    - `App`: ~`597` lines
-6. `src/renderer/components/cli-surface/pane.ts`
+5. `src/renderer/components/cli-surface/pane.ts`
    - `ensureInstance`: ~`466` lines
-7. `src/renderer/components/mobile-surface/pane.ts`
+6. `src/renderer/components/mobile-surface/pane.ts`
    - `renderInspectWorkbench`: ~`408` lines
-8. `src/renderer/components/config-sections-auto-approval.ts`
+7. `src/renderer/components/config-sections-auto-approval.ts`
    - `renderAutoApprovalSection`: ~`343` lines
 
 ### Test-gap signal on active changeset
@@ -106,25 +106,20 @@ Reduce main-process and surface-runtime maintenance risk without changing behavi
 
 ### Scope
 
-1. `statusline-template.ts` hardening
-   - Move large embedded Python template into dedicated template asset/module.
-   - Keep generated output byte-compatible (or behavior-compatible with snapshot tests).
-2. `cli-surface/pane.ts` and `mobile-surface/pane.ts` split
+1. `cli-surface/pane.ts` and `mobile-surface/pane.ts` split
    - Extract instance lifecycle, inspect workbench, and UI action routing helpers.
    - Keep existing event channel contracts and DOM selectors stable.
-3. `share-dialog.ts` split
+2. `share-dialog.ts` split
    - Separate render scaffolding, action wiring, and model/clipboard helpers.
 
 ### Target files
 
-- `src/main/statusline-template.ts`
 - `src/renderer/components/cli-surface/pane.ts`
 - `src/renderer/components/mobile-surface/pane.ts`
 - `src/renderer/components/share-dialog.ts`
 
 ### Exit criteria
 
-- No giant inline template body in `statusline-template.ts`.
 - Surface pane files become orchestration-first, helpers modularized.
 - Existing dialog and surface tests remain green.
 
@@ -179,7 +174,7 @@ Consolidate policy UI debt and close remaining high-friction maintenance hotspot
 - Workstream A (Renderer UI monoliths):
   - `preferences-modal.ts`, `browser-tab/pane.ts`
 - Workstream B (Main/runtime/template):
-  - `statusline-template.ts`, `share-dialog.ts`
+  - `share-dialog.ts`
 - Workstream C (Surface/runtime + policy):
   - `cli-surface`, `mobile-surface`, auto-approval section, context-inspector CSS
 - Workstream D (Quality lane):

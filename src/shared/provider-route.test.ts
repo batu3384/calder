@@ -12,7 +12,7 @@ describe('inferGatewayBackendForModel', () => {
     expect(inferGatewayBackendForModel('Claude Sonnet 4.6')).toBe('anthropic');
     expect(inferGatewayBackendForModel('glm-5.1')).toBe('zai');
     expect(inferGatewayBackendForModel('MiniMax-M2.7')).toBe('minimax');
-    expect(inferGatewayBackendForModel('qwen3-coder')).toBe('qwen');
+    expect(inferGatewayBackendForModel('unknown-model-v2')).toBe('anthropic');
   });
 });
 

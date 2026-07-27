@@ -40,19 +40,19 @@ waiting
 
 ## How It Works End-to-End
 
-1. **Hook installation** (`claude-cli.ts`) — Each hook is a shell command that writes a `.status` file to `~/.calder/runtime/{sessionId}.status`
+1. **External hook setup** — User configures CLI hooks in their own provider config (`~/.claude/settings.json`, etc.). Calder does not write or inject these.
 2. **File watching** (`hook-status.ts`) — Main process watches `~/.calder/runtime/` via `fs.watch()` + 2s polling fallback
 3. **IPC broadcast** — Main sends `session:hookStatus` to renderer
 4. **State update** (`session-activity.ts`) — Renderer applies the transition rules above
 
 ## Additional Data Captured by Hooks
 
-| File Extension | Source                                                 | Data                         |
-| -------------- | ------------------------------------------------------ | ---------------------------- |
-| `.status`      | Hook commands                                          | Session status string        |
-| `.sessionid`   | `SessionStart` + `UserPromptSubmit` hooks              | CLI session ID for resume    |
-| `.cost`        | `statusline.sh` (Python script via statusLine setting) | Cost, tokens, context window |
-| `.toolfailure` | `PostToolUseFailure` + `PostToolUse` (error results)   | tool_name, tool_input, error |
+| File Extension | Source                                               | Data                         |
+| -------------- | ---------------------------------------------------- | ---------------------------- |
+| `.status`      | Hook commands                                        | Session status string        |
+| `.sessionid`   | `SessionStart` + `UserPromptSubmit` hooks            | CLI session ID for resume    |
+| `.cost`        | External statusline / hook output                    | Cost, tokens, context window |
+| `.toolfailure` | `PostToolUseFailure` + `PostToolUse` (error results) | tool_name, tool_input, error |
 
 ## Inspector-Only Hook Events (19 additional)
 
@@ -80,6 +80,4 @@ These hooks write only to the `.events` inspector log — they do NOT change ses
 | `InstructionsLoaded` | `instructions_loaded` | CLAUDE.md / instructions loaded             |
 | `TeammateIdle`       | `teammate_idle`       | Teammate agent became idle                  |
 
-## Validation (`settings-guard.ts`)
-
-On each PTY creation, the app validates the 7 core hooks are installed and the statusLine is configured. Returns `'missing'`, `'partial'`, or `'complete'` — shows a warning banner if incomplete. Inspector-only hooks are not validated.
+Calder reads hook output from `~/.calder/runtime/` only. It does not install hooks, statusLine scripts, or validate provider settings on startup.

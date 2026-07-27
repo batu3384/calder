@@ -20,8 +20,6 @@
   - Evidence: `node-pty`, `@xterm/*`, `src/main/pty-manager.ts`, `src/renderer/components/terminal-pane.ts`
 - MCP client integration
   - Evidence: `@modelcontextprotocol/sdk`, `src/main/mcp-client.ts`
-- P2P sharing (WebRTC)
-  - Evidence: `src/renderer/sharing/peer-host.ts`, `src/renderer/sharing/peer-guest.ts`, `src/renderer/sharing/share-crypto.ts`
 
 ### Data Storage
 
@@ -80,18 +78,16 @@ This app relies on Electron IPC (not a traditional HTTP backend). Operational ch
 - `browser:saveScreenshot`, `browser:listLocalTargets`
 - Guardrail: `app:openExternal` enforces `http/https` only (`src/main/ipc-handlers.ts`)
 
-#### `[NO AUTH]` Providers / Readiness / Stats / Settings
+#### `[NO AUTH]` Providers / Readiness / Stats
 
-- `provider:getConfig`, `provider:getMeta`, `provider:listProviders`, `provider:checkBinary`
+- `provider:getMeta`, `provider:listProviders`, `provider:checkBinary`
 - `session:buildResumeWithPrompt`, `readiness:analyze`, `stats:getCache`
-- `settings:reinstall`, `settings:validate`
 
 #### `[NO AUTH]` MCP Client Surface
 
 - `mcp:connect`, `mcp:disconnect`
 - `mcp:listTools`, `mcp:listResources`, `mcp:listPrompts`
 - `mcp:callTool`, `mcp:readResource`, `mcp:getPrompt`
-- `mcp:addServer`, `mcp:removeServer`
 
 Approximate visible IPC handler count: ~65
 
@@ -109,12 +105,6 @@ Approximate visible IPC handler count: ~65
 - `draw-stroke-end`
 - Source: `src/preload/browser-tab-preload.ts`
 
-### P2P / WebRTC Entry Surface
-
-- Host path: `src/renderer/sharing/peer-host.ts`
-- Guest path: `src/renderer/sharing/peer-guest.ts`
-- Channel message types: `init`, `data`, `resize`, `input`, `ping`, `pong`, `auth-challenge`, `auth-response`, `auth-result`, `end`
-
 ### Scheduled / Watcher Surfaces
 
 - Auto-updater periodic checks: `src/main/auto-updater.ts`
@@ -127,7 +117,7 @@ Approximate visible IPC handler count: ~65
 
 ### Sources
 
-- Renderer user input (paths, URLs, MCP endpoints, share codes, PINs, project roots, profile configuration)
+- Renderer user input (paths, URLs, MCP endpoints, project roots, profile configuration)
 - Webview DOM event payloads (selectors, text snippets, page URLs)
 - Local bridge requests (`POST /open` with `url`, `cwd`, `preferEmbedded`)
 - Remote network endpoints (MCP servers, updater endpoints, localhost probing)
@@ -138,9 +128,8 @@ Approximate visible IPC handler count: ~65
 - Path resolution and allowlist checks (`isWithinKnownProject()`, `isAllowedReadPath()`)
 - URL normalization and protocol checks (`openUrlWithBrowserPolicy()`, `app:openExternal`)
 - Browser inspection metadata generation (`browser-tab-preload.ts`)
-- P2P crypto (PBKDF2 + AES-GCM + HMAC challenge-response in `share-crypto.ts`)
 - Markdown/rich content sanitization (DOMPurify in `src/renderer/components/file-reader.ts`)
-- Provider health/readiness processing (`src/main/ipc-handlers.ts`, `src/shared/tracking-health.ts`)
+- Provider health/readiness processing (`src/main/ipc-handlers.ts`)
 
 ### Sinks
 
@@ -174,16 +163,10 @@ Approximate visible IPC handler count: ~65
 - `127.0.0.1` bridge endpoint with token-based access
 - Risk: local process abuse if token handling is weak
 
-### 5. Remote Peer <-> P2P Share Session
-
-- Offer/answer + passphrase flows for shared terminal session state
-- Risk: unauthorized access and session data leakage under weak secrets
-
 ## Authentication and Authorization Notes
 
 - No traditional account/session auth model in application runtime
 - Security model primarily assumes trusted local desktop context
-- P2P sharing has dedicated auth flow (passphrase + challenge-response)
 - Sensitive app configuration/state lives under `~/.calder/`
 
 ## Existing Security Controls
@@ -210,4 +193,4 @@ Approximate visible IPC handler count: ~65
 - `webviewTag: true` with `sandbox: false` requires ongoing scrutiny
 - Terminal/PTY command execution flows need strict input review
 - Embedded browser routing and external-open policy should be regression-tested
-- P2P sharing and MCP connectivity remain high-impact data and trust boundaries
+- MCP connectivity remains a high-impact data and trust boundary

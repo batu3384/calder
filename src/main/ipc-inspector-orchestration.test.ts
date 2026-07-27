@@ -97,9 +97,9 @@ describe('ipc inspector orchestration runtime', () => {
     mockApplySessionOverrideToGovernanceState.mockImplementation((state: unknown) => state);
     mockDiscoverProjectGovernance.mockResolvedValue({
       autoApproval: {
-        globalMode: 'off',
+        globalMode: 'ask',
         projectMode: null,
-        effectiveMode: 'off',
+        effectiveMode: 'ask',
         policySource: 'global',
         safeToolProfile: 'default-read-only',
         recentDecisions: [],
@@ -205,14 +205,14 @@ describe('ipc inspector orchestration runtime', () => {
   it('derives governance state from project discovery and session override', async () => {
     const orchestrator = {
       handleInspectorEvents: vi.fn(async () => {}),
-      getSessionOverride: vi.fn(() => 'edit_only'),
+      getSessionOverride: vi.fn(() => 'project_edits'),
     };
     mockCreateAutoApprovalOrchestrator.mockReturnValue(orchestrator);
     const discovered = {
       autoApproval: {
-        globalMode: 'off',
+        globalMode: 'ask',
         projectMode: null,
-        effectiveMode: 'off',
+        effectiveMode: 'ask',
         policySource: 'global',
         safeToolProfile: 'default-read-only',
         recentDecisions: [],
@@ -221,7 +221,7 @@ describe('ipc inspector orchestration runtime', () => {
     const merged = {
       autoApproval: {
         ...discovered.autoApproval,
-        effectiveMode: 'edit_only',
+        effectiveMode: 'project_edits',
       },
     };
     mockDiscoverProjectGovernance.mockResolvedValue(discovered);
@@ -234,7 +234,10 @@ describe('ipc inspector orchestration runtime', () => {
 
     expect(mockDiscoverProjectGovernance).toHaveBeenCalledWith('/repo');
     expect(orchestrator.getSessionOverride).toHaveBeenCalledWith('session-4');
-    expect(mockApplySessionOverrideToGovernanceState).toHaveBeenCalledWith(discovered, 'edit_only');
+    expect(mockApplySessionOverrideToGovernanceState).toHaveBeenCalledWith(
+      discovered,
+      'project_edits',
+    );
     expect(result).toEqual(merged);
   });
 

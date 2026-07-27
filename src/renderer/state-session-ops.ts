@@ -11,7 +11,6 @@ import {
   createDiffViewerSessionRecord,
   createFileReaderSessionRecord,
   createMcpInspectorSessionRecord,
-  createRemoteSessionRecord,
 } from './state-session-factory.js';
 
 type PushNav = (sessionId: string) => void;
@@ -103,16 +102,6 @@ export function upsertFileReaderSession(
   const session = createFileReaderSessionRecord(payload);
   addSessionToProject(project, session, pushNav);
   return { session, created: true };
-}
-
-export function addRemoteSession(
-  project: ProjectRecord,
-  payload: { sessionId: string; hostSessionName: string; shareMode: 'readonly' | 'readwrite' },
-  pushNav: PushNav,
-): SessionRecord {
-  const session = createRemoteSessionRecord(payload);
-  addSessionToProject(project, session, pushNav);
-  return session;
 }
 
 export function addMcpInspectorSession(

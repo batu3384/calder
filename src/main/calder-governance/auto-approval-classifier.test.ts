@@ -7,10 +7,19 @@ import {
 
 describe('classifyAutoApprovalOperation', () => {
   it.each([
-    [{ tool: 'Write' }, 'edit'],
-    [{ tool: 'Edit' }, 'edit'],
-    [{ tool: 'MultiEdit' }, 'edit'],
+    [{ tool: 'Write', filePath: 'README.md', projectPath: '/tmp/project' }, 'edit'],
+    [{ tool: 'Edit', filePath: 'README.md', projectPath: '/tmp/project' }, 'edit'],
+    [{ tool: 'MultiEdit', filePath: 'README.md', projectPath: '/tmp/project' }, 'edit'],
   ] as const)('classifies edit tools as edit: %j', (input, expected) => {
+    expect(classifyAutoApprovalOperation(input)).toBe(expected);
+  });
+
+  it.each([
+    [{ tool: 'Edit' }, 'destructive'],
+    [{ tool: 'Edit', filePath: 'README.md' }, 'destructive'],
+    [{ tool: 'Edit', projectPath: '/tmp/project' }, 'destructive'],
+    [{ tool: 'Edit', filePath: '../outside.md', projectPath: '/tmp/project' }, 'destructive'],
+  ] as const)('classifies edit tools outside the project as destructive: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
   });
 
@@ -35,7 +44,7 @@ describe('classifyAutoApprovalOperation', () => {
     ],
     [
       { tool: 'Bash', command: 'find ~/.claude/projects -type f -name "*.md" | head -20' },
-      'safe_tool',
+      'destructive',
     ],
   ] as const)('classifies read-only bash commands as safe_tool: %j', (input, expected) => {
     expect(classifyAutoApprovalOperation(input)).toBe(expected);
@@ -102,91 +111,56 @@ describe('classifyAutoApprovalOperation', () => {
 });
 
 describe('decideAutoApprovalAction', () => {
-  it('hard-blocks destructive operations outside full_auto_unsafe mode', () => {
-    expect(decideAutoApprovalAction('off', 'destructive')).toEqual({
-      decision: 'block',
-      reason: 'Destructive operations are not auto-approved in this mode.',
-    });
-    expect(decideAutoApprovalAction('edit_only', 'destructive')).toEqual({
-      decision: 'block',
-      reason: 'Destructive operations are not auto-approved in this mode.',
-    });
-    expect(decideAutoApprovalAction('edit_plus_safe_tools', 'destructive')).toEqual({
-      decision: 'block',
-      reason: 'Destructive operations are not auto-approved in this mode.',
-    });
-  });
+  it.each(['ask', 'project_edits', 'session_safe'] as const)(
+    'asks for destructive operations in %s mode',
+    (mode) => {
+      expect(decideAutoApprovalAction(mode, 'destructive')).toEqual({
+        decision: 'ask',
+        reason: 'Destructive or outside-project operations always require approval.',
+      });
+    },
+  );
 
-  it('allows non-destructive operations in full_auto mode', () => {
-    expect(decideAutoApprovalAction('full_auto', 'edit')).toEqual({
-      decision: 'allow',
-      reason: 'Non-destructive operations are auto-approved in full_auto mode (edit).',
-    });
-    expect(decideAutoApprovalAction('full_auto', 'safe_tool')).toEqual({
-      decision: 'allow',
-      reason: 'Non-destructive operations are auto-approved in full_auto mode (safe_tool).',
-    });
-    expect(decideAutoApprovalAction('full_auto', 'risky_tool')).toEqual({
-      decision: 'allow',
-      reason: 'Non-destructive operations are auto-approved in full_auto mode (risky_tool).',
-    });
-    expect(decideAutoApprovalAction('full_auto', 'unknown')).toEqual({
-      decision: 'allow',
-      reason: 'Non-destructive operations are auto-approved in full_auto mode (unknown).',
-    });
-  });
+  it.each(['edit', 'safe_tool', 'risky_tool', 'unknown'] as const)(
+    'asks for %s operations in ask mode',
+    (operationClass) => {
+      expect(decideAutoApprovalAction('ask', operationClass)).toEqual({
+        decision: 'ask',
+        reason: 'Auto-approval is set to ask every time.',
+      });
+    },
+  );
 
-  it('still blocks destructive operations in full_auto mode', () => {
-    expect(decideAutoApprovalAction('full_auto', 'destructive')).toEqual({
-      decision: 'block',
-      reason: 'Destructive operations are not auto-approved in this mode.',
-    });
-  });
-
-  it('allows destructive operations in full_auto_unsafe mode', () => {
-    expect(decideAutoApprovalAction('full_auto_unsafe', 'destructive')).toEqual({
+  it('allows only in-project edits in project_edits mode', () => {
+    expect(decideAutoApprovalAction('project_edits', 'edit')).toEqual({
       decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto_unsafe mode (destructive).',
+      reason: 'In-project edit operations are auto-approved.',
     });
-    expect(decideAutoApprovalAction('full_auto_unsafe', 'risky_tool')).toEqual({
-      decision: 'allow',
-      reason: 'All operations are auto-approved in full_auto_unsafe mode (risky_tool).',
-    });
-  });
-
-  it('asks for safe tools in edit_only mode', () => {
-    expect(decideAutoApprovalAction('edit_only', 'safe_tool')).toEqual({
+    expect(decideAutoApprovalAction('project_edits', 'safe_tool')).toEqual({
       decision: 'ask',
-      reason: 'Safe tools still require approval in edit_only mode.',
+      reason: 'Only in-project edits are auto-approved in project_edits mode.',
     });
   });
 
-  it('allows edit and safe_tool in edit_plus_safe_tools mode', () => {
-    expect(decideAutoApprovalAction('edit_plus_safe_tools', 'edit')).toEqual({
+  it('allows edits and safe tools in session_safe mode', () => {
+    expect(decideAutoApprovalAction('session_safe', 'edit')).toEqual({
       decision: 'allow',
-      reason: 'Edit operations are allowed in edit_plus_safe_tools mode.',
+      reason: 'Session-safe mode allows in-project edits and read-only tools.',
     });
-    expect(decideAutoApprovalAction('edit_plus_safe_tools', 'safe_tool')).toEqual({
+    expect(decideAutoApprovalAction('session_safe', 'safe_tool')).toEqual({
       decision: 'allow',
-      reason: 'Safe tools are allowed in edit_plus_safe_tools mode.',
+      reason: 'Session-safe mode allows in-project edits and read-only tools.',
     });
   });
 
   it('asks for risky and unknown operations', () => {
-    expect(decideAutoApprovalAction('edit_plus_safe_tools', 'risky_tool')).toEqual({
+    expect(decideAutoApprovalAction('session_safe', 'risky_tool')).toEqual({
       decision: 'ask',
       reason: 'risky_tool operations require approval.',
     });
-    expect(decideAutoApprovalAction('edit_plus_safe_tools', 'unknown')).toEqual({
+    expect(decideAutoApprovalAction('session_safe', 'unknown')).toEqual({
       decision: 'ask',
       reason: 'unknown operations require approval.',
-    });
-  });
-
-  it('asks for every operation when mode is off', () => {
-    expect(decideAutoApprovalAction('off', 'edit')).toEqual({
-      decision: 'ask',
-      reason: 'Auto-approval is off.',
     });
   });
 });

@@ -6,20 +6,6 @@ export type {
   ProjectGovernanceState,
 } from '../shared/types/governance.js';
 export type {
-  MobileControlAnswerResult,
-  MobileControlPairingResult,
-  MobileDependencyCheck,
-  MobileDependencyId,
-  MobileDependencyInstallProgressEvent,
-  MobileDependencyInstallResult,
-  MobileDependencyReport,
-  MobileInspectInteractionResult,
-  MobileInspectLaunchResult,
-  MobileInspectPlatform,
-  MobileInspectPointInspectionResult,
-  MobileInspectScreenshotResult,
-} from '../shared/types/mobile.js';
-export type {
   ProjectBackgroundTaskCreateResult,
   ProjectBackgroundTaskDocument,
   ProjectBackgroundTaskState,
@@ -45,8 +31,6 @@ export type {
   GitFileEntry,
   GitWorktree,
   McpResult,
-  ShareConnectionDescription,
-  ShareRtcConfig,
 } from '../shared/types/project-core.js';
 export type {
   ProjectReviewCreateResult,
@@ -71,22 +55,13 @@ export type {
   ProjectWorkflowState,
 } from '../shared/types/project-workflow.js';
 export type {
-  Agent,
-  ClaudeConfig,
   CliProviderCapabilities,
   CliProviderMeta,
-  Command,
-  McpServer,
-  ProviderConfig,
   ProviderId,
   ProviderUpdateCancelResult,
   ProviderUpdateProgressEvent,
   ProviderUpdateResult,
   ProviderUpdateSummary,
-  SettingsValidationResult,
-  SettingsWarningData,
-  Skill,
-  StatusLineConflictData,
   UiLanguage,
 } from '../shared/types/provider.js';
 export type {
@@ -100,19 +75,6 @@ import type {
   ProjectGovernanceStarterPolicyResult,
   ProjectGovernanceState,
 } from '../shared/types/governance.js';
-import type {
-  MobileControlAnswerResult,
-  MobileControlPairingResult,
-  MobileDependencyId,
-  MobileDependencyInstallProgressEvent,
-  MobileDependencyInstallResult,
-  MobileDependencyReport,
-  MobileInspectInteractionResult,
-  MobileInspectLaunchResult,
-  MobileInspectPlatform,
-  MobileInspectPointInspectionResult,
-  MobileInspectScreenshotResult,
-} from '../shared/types/mobile.js';
 import type {
   ProjectBackgroundTaskCreateResult,
   ProjectBackgroundTaskDocument,
@@ -139,8 +101,6 @@ import type {
   GitFileEntry,
   GitWorktree,
   McpResult,
-  ShareConnectionDescription,
-  ShareRtcConfig,
 } from '../shared/types/project-core.js';
 import type {
   ProjectReviewCreateResult,
@@ -165,15 +125,10 @@ import type {
 } from '../shared/types/project-workflow.js';
 import type {
   CliProviderMeta,
-  ProviderConfig,
   ProviderId,
   ProviderUpdateCancelResult,
   ProviderUpdateProgressEvent,
   ProviderUpdateSummary,
-  SettingsValidationResult,
-  SettingsWarningData,
-  StatusLineConflictData,
-  UiLanguage,
 } from '../shared/types/provider.js';
 import type {
   CostData,
@@ -238,7 +193,6 @@ export interface CalderApi {
     save(state: unknown): Promise<void>;
   };
   provider: {
-    getConfig(providerId: ProviderId, projectPath: string): Promise<ProviderConfig>;
     getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
     listProviders(): Promise<CliProviderMeta[]>;
     checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
@@ -247,8 +201,6 @@ export interface CalderApi {
     installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
     cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
     onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
-    watchProject(providerId: ProviderId, projectPath: string): void;
-    onConfigChanged(callback: () => void): () => void;
   };
   context: {
     getProjectState(projectPath: string): Promise<ProjectContextState>;
@@ -332,10 +284,6 @@ export interface CalderApi {
     watchProject(projectPath: string): void;
     onChanged(callback: (projectPath: string, state: ProjectCheckpointState) => void): () => void;
   };
-  /** @deprecated Use provider namespace */
-  claude: {
-    getConfig(projectPath: string): Promise<ProviderConfig>;
-  };
   git: {
     getStatus(path: string): Promise<unknown>;
     getFiles(path: string): Promise<GitFileEntry[]>;
@@ -384,43 +332,6 @@ export interface CalderApi {
     getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
     getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
   };
-  sharing: {
-    getRtcConfig(): Promise<ShareRtcConfig>;
-  };
-  mobile: {
-    createControlPairing(
-      sessionId: string,
-      offer: string,
-      passphrase: string,
-      mode: 'readonly' | 'readwrite',
-      language?: UiLanguage,
-      offerDescription?: ShareConnectionDescription,
-    ): Promise<MobileControlPairingResult>;
-    consumeControlAnswer(pairingId: string): Promise<MobileControlAnswerResult>;
-    revokeControlPairing(pairingId: string): Promise<{ ok: boolean }>;
-  };
-  mobileSetup: {
-    checkDependencies(): Promise<MobileDependencyReport>;
-    installDependency(
-      dependencyId: MobileDependencyId,
-      installId?: string,
-    ): Promise<MobileDependencyInstallResult>;
-    onInstallProgress(callback: (event: MobileDependencyInstallProgressEvent) => void): () => void;
-  };
-  mobileInspect: {
-    launch(platform: MobileInspectPlatform): Promise<MobileInspectLaunchResult>;
-    captureScreenshot(platform: MobileInspectPlatform): Promise<MobileInspectScreenshotResult>;
-    inspectPoint(
-      platform: MobileInspectPlatform,
-      x: number,
-      y: number,
-    ): Promise<MobileInspectPointInspectionResult>;
-    interact(
-      platform: MobileInspectPlatform,
-      x: number,
-      y: number,
-    ): Promise<MobileInspectInteractionResult>;
-  };
   cliSurface: {
     discover(projectPath: string): Promise<CliSurfaceDiscoveryResult>;
     start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
@@ -442,28 +353,9 @@ export interface CalderApi {
     callTool(id: string, name: string, args: Record<string, unknown>): Promise<McpResult>;
     readResource(id: string, uri: string): Promise<McpResult>;
     getPrompt(id: string, name: string, args: Record<string, string>): Promise<McpResult>;
-    addServer(
-      name: string,
-      config: unknown,
-      scope: 'user' | 'project',
-      projectPath?: string,
-    ): Promise<McpResult>;
-    removeServer(
-      name: string,
-      filePath: string,
-      scope: 'user' | 'project',
-      projectPath?: string,
-    ): Promise<McpResult>;
   };
   stats: {
     getCache(): Promise<StatsCache | null>;
-  };
-  settings: {
-    onWarning(callback: (data: SettingsWarningData) => void): () => void;
-    onConflictDialog(callback: (data: StatusLineConflictData) => void): () => void;
-    respondConflictDialog(choice: 'replace' | 'keep'): void;
-    reinstall(providerId?: ProviderId): Promise<{ success: boolean }>;
-    validate(providerId?: ProviderId): Promise<SettingsValidationResult>;
   };
   menu: {
     onPreferences(callback: () => void): () => void;

@@ -14,7 +14,6 @@ const source = [
   readFileSync(new URL('./i18n-translations-core-part-3.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-tab-terminal.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-preferences.ts', import.meta.url), 'utf-8'),
-  readFileSync(new URL('./i18n-translations-mobile.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-errors.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-pattern-translations.ts', import.meta.url), 'utf-8'),
 ].join('\n');
@@ -37,7 +36,6 @@ describe('i18n contract', () => {
     );
     expectTranslation(source, 'Hybrid context', 'Hibrit bağlam');
     expectTranslation(source, 'Agent command desk', 'Ajan komut masası');
-    expectTranslation(source, 'Add MCP Server', 'MCP sunucusu ekle');
     expectTranslation(source, 'Run Log', 'Çalışma günlüğü');
     expectTranslation(source, 'Workflows & checkpoints', 'İş akışları ve kontrol noktaları');
     expectTranslation(source, 'Review & preview loop', 'İnceleme ve önizleme döngüsü');
@@ -67,16 +65,16 @@ describe('i18n contract', () => {
     );
     expectTranslation(
       source,
-      'CLI providers and mobile dependency health',
-      'CLI sağlayıcıları ve mobil bağımlılık sağlığı',
+      'CLI providers and dependency health',
+      'CLI sağlayıcıları ve bağımlılık sağlığı',
     );
     expectTranslation(source, 'Provider health', 'Sağlayıcı durumu');
     expectTranslation(source, 'Orchestration phases', 'Orkestrasyon fazları');
     expectTranslation(source, 'Tracking & fixes', 'İzleme ve düzeltmeler');
     expectTranslation(
       source,
-      'Installed tools, defaults, and repair actions.',
-      'Yüklü araçlar, varsayılanlar ve onarım eylemleri.',
+      'Installed tools, defaults, and binary checks.',
+      'Yüklü araçlar, varsayılanlar ve binary kontrolleri.',
     );
   });
 
@@ -185,10 +183,6 @@ describe('i18n contract', () => {
     );
     expect(source).toContain('pattern: /^CLI Surface\\s+Profile:\\s*(.+)$/u');
     expect(source).toContain('pattern: /^Configured for (.+)$/u');
-    expect(source).toContain('pattern: /^(\\d+) MCP server(s?) connected$/u');
-    expect(source).toContain('pattern: /^(\\d+) agent(s?) available$/u');
-    expect(source).toContain('pattern: /^(\\d+) skill(s?) ready$/u');
-    expect(source).toContain('pattern: /^(\\d+) custom command(s?) available$/u');
     expect(source).toContain('pattern: /^(.+)\\s+·\\s+(live|starting|stopped|error|idle)$/u');
     expect(source).toContain('pattern: /^Profile:\\s*(.+)$/u');
     expect(source).toContain('pattern: /^Session:\\s*(.+)$/u');
@@ -200,7 +194,6 @@ describe('i18n contract', () => {
   it('keeps terminal localization exclusions narrow enough for shell chrome labels', () => {
     expect(source).not.toContain("'.terminal-pane',");
     expect(source).not.toContain("'.project-terminal-container',");
-    expect(source).not.toContain("'.remote-terminal-pane',");
     expect(source).toContain("'.xterm',");
     expect(source).toContain("'.ansi-buffer',");
   });
@@ -247,20 +240,5 @@ describe('i18n contract', () => {
       'Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.',
       'Bu kodlama aracı için izleme kapalı. Calder henüz maliyet, bağlam kullanımı veya oturum etkinliğini gösteremez.',
     );
-  });
-
-  it('covers mobile dependency doctor copy and dynamic status translation patterns', () => {
-    expectTranslation(source, 'Mobile automation readiness', 'Mobil otomasyon hazırlığı');
-    expectTranslation(source, 'Mobile Dependency Doctor', 'Mobil Bağımlılık Doktoru');
-    expectTranslation(source, 'iOS simulator inspect', 'iOS simülatör inceleme');
-    expectTranslation(source, 'Android emulator inspect', 'Android emülatör inceleme');
-    expectTranslation(source, 'Optional tools', 'İsteğe bağlı araçlar');
-    expectTranslation(source, 'Install', 'Kur');
-    expectTranslation(source, 'Installing…', 'Kuruluyor…');
-    expect(source).toContain(
-      'pattern: /^Ready:\\s*(\\d+)\\s+·\\s+Warnings:\\s*(\\d+)\\s+·\\s+Required missing:\\s*(\\d+)$/u',
-    );
-    expect(source).toContain('pattern: /^Command:\\s*(.+)$/u');
-    expect(source).toContain('pattern: /^(.+) was not found on PATH\\.$/u');
   });
 });

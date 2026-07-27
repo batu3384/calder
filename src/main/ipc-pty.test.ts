@@ -11,7 +11,6 @@ const mockWritePty = vi.hoisted(() => vi.fn());
 const mockResizePty = vi.hoisted(() => vi.fn());
 const mockKillPty = vi.hoisted(() => vi.fn());
 const mockHasPtySession = vi.hoisted(() => vi.fn(() => true));
-const mockIsSilencedExit = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -30,7 +29,6 @@ vi.mock('./pty-manager', () => ({
   hasPtySession: mockHasPtySession,
   resizePty: mockResizePty,
   killPty: mockKillPty,
-  isSilencedExit: mockIsSilencedExit,
 }));
 
 import { registerPtyIpcHandlers } from './ipc-pty';
@@ -91,7 +89,6 @@ describe('ipc pty handlers', () => {
     const send = vi.fn();
     const win = { isDestroyed: () => false, webContents: { send } };
     mockGetAllWindows.mockReturnValue([win]);
-    mockIsSilencedExit.mockReturnValue(false);
     mockSpawnPty.mockImplementation(
       (
         _sessionId: string,
@@ -140,10 +137,9 @@ describe('ipc pty handlers', () => {
     expect(send).toHaveBeenCalledWith('pty:exit', 's2', 0, 15);
   });
 
-  it('suppresses pty:exit when the PTY exit is marked as silenced', async () => {
+  it('forwards pty:exit and session cleanup when the PTY exits', async () => {
     const send = vi.fn();
     mockGetAllWindows.mockReturnValue([{ isDestroyed: () => false, webContents: { send } }]);
-    mockIsSilencedExit.mockReturnValue(true);
     mockSpawnPty.mockImplementation(
       (
         _sessionId: string,
@@ -166,7 +162,7 @@ describe('ipc pty handlers', () => {
     await createHandler({}, 's3', '/repo', null, false, '', 'claude');
 
     expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s3');
-    expect(send).not.toHaveBeenCalledWith('pty:exit', 's3', 0, undefined);
+    expect(send).toHaveBeenCalledWith('pty:exit', 's3', 0, undefined);
   });
 
   it('guards and forwards pty:createShell output/exit', async () => {

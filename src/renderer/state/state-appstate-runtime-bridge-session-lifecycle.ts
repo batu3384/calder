@@ -7,7 +7,6 @@ import type { ProviderId } from '../../shared/types/provider.js';
 import type { SessionRecord } from '../../shared/types/session.js';
 import {
   addMcpInspectorProjectSession,
-  addRemoteProjectSession,
   upsertBrowserTabProjectSession,
   upsertDiffViewerProjectSession,
   upsertFileReaderProjectSession,
@@ -127,25 +126,6 @@ export function addDiffViewerSessionWithBridge(
       pushNav: bridge.pushNav,
     }),
   );
-}
-
-export function addRemoteSessionWithBridge(
-  bridge: AppStateRuntimeBridge,
-  projectId: string,
-  sessionId: string,
-  hostSessionName: string,
-  shareMode: 'readonly' | 'readwrite',
-): SessionRecord | undefined {
-  return addOrUpdateSessionWithBridge(bridge, projectId, (project) => ({
-    session: addRemoteProjectSession({
-      project,
-      sessionId,
-      hostSessionName,
-      shareMode,
-      pushNav: bridge.pushNav,
-    }),
-    created: true,
-  }));
 }
 
 export function addBrowserTabSessionWithBridge(

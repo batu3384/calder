@@ -111,18 +111,14 @@ Recommended fix (already aligned in workflow):
 
 ### VULN-003: Low-Entropy Numeric PIN for P2P Share
 
-- Severity: Medium
-- Confidence: 70/100
+- Severity: Medium (historical)
+- Status: **REMEDIATED_BY_REMOVAL** (2026-07-27)
+- Confidence: 70/100 (at time of finding)
 - CWE: CWE-521
 - OWASP: A07:2021 Identification and Authentication Failures
-- File: `src/renderer/sharing/share-crypto.ts`
+- File (removed): `src/renderer/sharing/share-crypto.ts`
 
-PIN-only constraints reduce entropy and increase offline brute-force feasibility if offer/answer material leaks.
-
-Recommended fix:
-
-- Prefer high-entropy one-time tokens or stronger passphrases.
-- Increase minimum secret length and move away from numeric-only PIN mode.
+P2P share / mobile remote control surface was fully deleted from Calder. PIN entropy issue no longer reachable.
 
 ## Clean / Lower-Risk Areas
 
@@ -140,7 +136,6 @@ Recommended fix:
 ### Phase 2 (Short-term, 1-2 weeks)
 
 - Enforce release workflow validation hardening and regression checks.
-- Improve P2P secret policy (VULN-003).
 
 ### Phase 3 (Medium-term, 1-2 months)
 

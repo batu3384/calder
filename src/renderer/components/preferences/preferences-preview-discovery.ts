@@ -71,12 +71,7 @@ function createPreviewDiscoveryActions(
 
 function createPreviewSummary(project: ProjectRecord): HTMLDivElement {
   const surface = project.surface;
-  const activeSurfaceLabel =
-    surface?.kind === 'cli'
-      ? 'CLI Surface'
-      : surface?.kind === 'mobile'
-        ? 'Mobile Surface'
-        : 'Live View';
+  const activeSurfaceLabel = surface?.kind === 'cli' ? 'CLI Surface' : 'Live View';
   const runtimeHealth = describePreviewRuntimeHealth(project.id);
 
   const summary = document.createElement('div');

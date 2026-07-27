@@ -43,16 +43,10 @@ describe('context language contract', () => {
     expect(html).toContain(
       'class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"',
     );
-    expect(configSectionsSource).toContain("'MCP Servers'");
     expect(configSectionsSource).toContain("'Auto Approval'");
-    expect(configSectionsSource).toContain('Model Context Protocol');
-    expect(configSectionsSource).toContain("'Skills'");
-    expect(configSectionsSource).toContain("'Commands'");
-    expect(configSectionsSource).toContain('localizedSectionTitle');
-    expect(configSectionsSource).toContain('localizedAddLabel');
-    expect(configSectionsSource).toContain("'MCP sunucusu ekle'");
+    expect(configSectionsSource).not.toContain("'MCP Servers'");
+    expect(configSectionsSource).not.toContain('showMcpAddModal');
     expect(configSectionsSource).not.toContain("'Integrations'");
-    expect(configSectionsSource).toContain('Toolkit');
     expect(gitPanelSource).toContain('Git');
     expect(gitPanelSource).toContain('Git is clean');
     expect(historySource).toContain('Run Log');
@@ -116,11 +110,10 @@ describe('context language contract', () => {
   });
 
   it('keeps the ops rail flatter than a stacked dashboard card column', () => {
-    expect(inspectorCss).toContain('#context-inspector .toolchain-summary');
     expect(inspectorCss).toContain('background: transparent;');
     expect(inspectorCss).toContain('border-bottom: 1px solid');
+    expect(inspectorCss).toContain('#context-inspector .config-section');
     expect(inspectorCss).toContain('#context-inspector .config-item');
-    expect(inspectorCss).toContain('background: transparent;');
     expect(inspectorCss).toContain(
       'border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);',
     );

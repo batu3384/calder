@@ -33,18 +33,13 @@ import {
   type TabBarCliUpdatePanelController,
 } from './tab-bar-cli-update-panel.js';
 import { createTabBarContextMenuWiring } from './tab-bar-context-menu-wiring.js';
-import {
-  activateLiveViewSurface as activateLiveViewSurfaceHandler,
-  activateMobileSurface as activateMobileSurfaceHandler,
-  handleMobileControlClick,
-} from './tab-bar-control-handlers.js';
+import { activateLiveViewSurface as activateLiveViewSurfaceHandler } from './tab-bar-control-handlers.js';
 import {
   bootstrapTabBarProviderAvailability,
   wireTabBarActionHandlers,
   wireTabBarDismissHandlers,
   wireTabBarStateSubscriptions,
 } from './tab-bar-event-wiring.js';
-import { syncMobileControlButton } from './tab-bar-mobile-control.js';
 import {
   createTabBarProviderSelectorController,
   type TabBarProviderSelectorController,
@@ -82,19 +77,13 @@ import { renderTabList } from './tab-bar-tab-list-renderer.js';
  * createSessionTab({
  * createSurfaceModeTab({
  * tab-cli-surface-badge
- * showShareDialog(targetCliSession.id);
  * void promptNewSession((session) => {
- * showShareDialog(session.id);
  */
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
 const btnAddSession = document.getElementById('btn-add-session')!;
 const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
-const btnMobileControl = document.getElementById('btn-mobile-control') as HTMLButtonElement | null;
-const mobileControlPresenceEl = document.getElementById(
-  'mobile-control-presence',
-) as HTMLSpanElement | null;
 const tabActionsEl = document.getElementById('tab-actions')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
 const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
@@ -187,7 +176,6 @@ function getSurfaceControlsController(): TabBarSurfaceControlsController {
       selectCliSurfaceProfile,
       activateLiveViewSurface,
       activateCliSurface,
-      activateMobileSurface,
       promptCliSurfaceProfile,
       onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
     });
@@ -198,7 +186,6 @@ export function initTabBar(): void {
   initUpdateCenter();
   btnAddSession.classList.add('tab-action-primary');
   btnUpdateCliTools.classList.add('tab-action-primary');
-  btnMobileControl?.classList.add('tab-action-primary');
   setupCliUpdatePanel();
   unsubscribeUpdateCenter?.();
   let lastCliPhase: CliUpdateCenterState['phase'] = getUpdateCenterState().cli.phase;
@@ -218,20 +205,11 @@ export function initTabBar(): void {
   wireTabBarActionHandlers({
     addSessionButtonEl: btnAddSession,
     updateCliToolsButtonEl: btnUpdateCliTools,
-    mobileControlButtonEl: btnMobileControl,
     gitStatusEl,
     onOpenUpdatePanel: () => {
       toggleCliUpdatePanel(!isCliUpdatePanelVisible());
     },
     onQuickNewSession: quickNewSession,
-    onMobileControlClick: () => {
-      handleMobileControlClick({
-        project: appState.activeProject,
-        btnMobileControl,
-        mobileControlPresenceEl,
-        promptNewSession,
-      });
-    },
     onShowAddSessionContextMenu: showAddSessionContextMenu,
     onShowBranchContextMenu: (event) => {
       void showBranchContextMenu(event);
@@ -264,7 +242,6 @@ export function initTabBar(): void {
   render();
   renderGitStatus();
   syncSessionProviderSelector();
-  syncMobileControlButton(btnMobileControl, mobileControlPresenceEl);
   renderCliUpdateButton(getUpdateCenterState().cli);
 }
 
@@ -286,10 +263,6 @@ function activateLiveViewSurface(project: ProjectRecord): void {
   activateLiveViewSurfaceHandler(project, (projectId) => {
     appState.addBrowserTabSession(projectId);
   });
-}
-
-function activateMobileSurface(project: ProjectRecord): void {
-  activateMobileSurfaceHandler(project);
 }
 
 async function activateCliSurface(project: ProjectRecord): Promise<void> {
@@ -408,29 +381,24 @@ function render(): void {
   renderSurfaceControls();
   const project = appState.activeProject;
   if (!project) {
-    syncMobileControlButton(btnMobileControl, mobileControlPresenceEl);
     renderGitStatus();
     return;
   }
-  const { cliSurfaceTabActive, mobileSurfaceTabActive } = buildTabBarRenderSurfaceState(project);
+  const { cliSurfaceTabActive } = buildTabBarRenderSurfaceState(project);
   renderTabList({
     project,
     tabListEl,
     cliSurfaceTabActive,
-    mobileSurfaceTabActive,
     escapeHtml: esc,
     startRename,
     showTabContextMenu,
     buildCliSurfaceTabTitle,
     focusCliSurfaceTab: (projectId) => appState.focusCliSurfaceTab(projectId),
     closeCliSurface: (projectId) => appState.closeCliSurface(projectId),
-    focusMobileSurfaceTab: (projectId) => appState.focusMobileSurfaceTab(projectId),
-    closeMobileSurface: (projectId) => appState.closeMobileSurface(projectId),
   });
 
   ensureActiveTabVisible(buildActiveTabRailKey(appState.activeProjectId, project));
 
-  syncMobileControlButton(btnMobileControl, mobileControlPresenceEl);
   renderGitStatus();
 }
 

@@ -1,6 +1,7 @@
 import * as path from 'path';
 
 import type { PersistedState } from '../shared/types/project-state';
+import { CURRENT_PERSISTED_STATE_VERSION } from '../shared/types/project-state';
 import type { ProviderId } from '../shared/types/provider';
 import { isWin } from './platform';
 
@@ -20,14 +21,13 @@ function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string';
 }
 
-const VALID_PROVIDER_IDS: ProviderId[] = ['claude', 'codex', 'copilot', 'antigravity', 'qwen'];
+const VALID_PROVIDER_IDS: ProviderId[] = ['claude', 'codex', 'antigravity', 'cursor'];
 
 const VALID_SESSION_TYPES = new Set([
   'claude',
   'mcp-inspector',
   'diff-viewer',
   'file-reader',
-  'remote-terminal',
   'browser-tab',
 ]);
 
@@ -232,7 +232,7 @@ export function sanitizePersistedStateForSave(state: unknown): PersistedState {
   if (!isRecord(state)) {
     throw new Error('Invalid state payload: expected object');
   }
-  if (state.version !== 1) {
+  if (state.version !== 1 && state.version !== CURRENT_PERSISTED_STATE_VERSION) {
     throw new Error('Invalid state payload: unsupported version');
   }
   if (!Array.isArray(state.projects)) {

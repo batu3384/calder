@@ -20,9 +20,7 @@ describe('tab bar cli surface contract', () => {
     expect(tabBarSource).toContain('createTabBarSurfaceControlsController({');
     expect(tabBarSource).toContain('renderSurfaceControls');
     expect(tabBarSource).toContain('focusCliSurfaceTab');
-    expect(tabBarSource).toContain('focusMobileSurfaceTab');
     expect(tabBarSource).toContain('closeCliSurface');
-    expect(tabBarSource).toContain('closeMobileSurface');
     expect(tabBarSource).toContain('surface-mode-slot');
     expect(tabBarSource).toContain('surface-profile-slot');
     expect(tabBarSource).toContain('promptCliSurfaceProfile');
@@ -30,7 +28,7 @@ describe('tab bar cli surface contract', () => {
     expect(tabBarSource).toContain('showCliSurfaceQuickSetup');
     expect(surfaceControlsSource).toContain("label: 'Live View'");
     expect(surfaceControlsSource).toContain("label: 'CLI Surface'");
-    expect(surfaceControlsSource).toContain("label: 'Mobile'");
+    expect(surfaceControlsSource).not.toContain("label: 'Mobile'");
     expect(surfaceControlsSource).toContain('command-deck-cli-profile');
     expect(surfaceControlsSource).toContain('surface-profile-group');
     expect(tabBarSource).toContain('tab-cli-surface-badge');

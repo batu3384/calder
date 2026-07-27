@@ -377,7 +377,7 @@ body.debug-panel-open #app {
   --provider-accent-soft: rgba(50, 211, 162, 0.2);
 }
 
-[data-provider='copilot'] {
+[data-provider='cursor'] {
   --provider-accent: #7c8cff;
   --provider-accent-soft: rgba(124, 140, 255, 0.22);
 }
@@ -385,11 +385,6 @@ body.debug-panel-open #app {
 [data-provider='antigravity'] {
   --provider-accent: #6bb5ff;
   --provider-accent-soft: rgba(107, 181, 255, 0.2);
-}
-
-[data-provider='qwen'] {
-  --provider-accent: #3ddbd9;
-  --provider-accent-soft: rgba(61, 219, 217, 0.2);
 }
 
 [data-provider='minimax'] {

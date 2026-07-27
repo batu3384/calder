@@ -12,17 +12,14 @@ const PROVIDER_LOGIN_ENV_KEYS: Record<ProviderId, string[]> = {
     'ANTHROPIC_CUSTOM_HEADERS',
   ],
   codex: ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_ORG_ID', 'OPENAI_PROJECT_ID'],
-  copilot: ['GH_TOKEN', 'GITHUB_TOKEN'],
+  cursor: [],
   antigravity: [
     'ANTIGRAVITY_API_KEY',
     'GEMINI_API_KEY',
     'GOOGLE_API_KEY',
     'GOOGLE_GENERATIVE_AI_API_KEY',
   ],
-  qwen: ['DASHSCOPE_API_KEY', 'QWEN_API_KEY'],
 };
-
-const COPILOT_LOGIN_ENV_PREFIX = 'COPILOT_';
 
 function mergeLoginShellKeys(
   mergedEnv: Record<string, string>,
@@ -36,18 +33,6 @@ function mergeLoginShellKeys(
     if (loginValue) {
       mergedEnv[key] = loginShellEnv[key];
     }
-  }
-}
-
-function mergeLoginShellPrefix(
-  mergedEnv: Record<string, string>,
-  loginShellEnv: Record<string, string>,
-  prefix: string,
-): void {
-  for (const [key, value] of Object.entries(loginShellEnv)) {
-    if (!key.startsWith(prefix)) continue;
-    if (mergedEnv[key]?.trim()) continue;
-    if (value?.trim()) mergedEnv[key] = value;
   }
 }
 
@@ -92,15 +77,11 @@ export function buildProviderBaseEnv(
   baseEnv: Record<string, string>,
 ): Record<string, string> {
   const keys = PROVIDER_LOGIN_ENV_KEYS[providerId] ?? [];
-  const needsLoginShell = keys.length > 0 || providerId === 'copilot';
-  if (!needsLoginShell) return { ...baseEnv };
+  if (keys.length === 0) return { ...baseEnv };
 
   const loginShellEnv = getLoginShellEnv();
   const mergedEnv = { ...baseEnv };
   mergeLoginShellKeys(mergedEnv, loginShellEnv, keys);
-  if (providerId === 'copilot') {
-    mergeLoginShellPrefix(mergedEnv, loginShellEnv, COPILOT_LOGIN_ENV_PREFIX);
-  }
   return mergedEnv;
 }
 

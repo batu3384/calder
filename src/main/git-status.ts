@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import type { GitFileEntry, GitWorktree } from '../shared/types/project-core';
+import { resolvePathWithinProject } from './project-path-security';
 
 export type { GitFileEntry, GitWorktree } from '../shared/types/project-core';
 
@@ -90,13 +91,26 @@ export function getGitStatus(cwd: string): Promise<GitStatus> {
 
 export function getGitDiff(cwd: string, filePath: string, area: string): Promise<string> {
   return new Promise((resolve) => {
+    let safeRelativePath: string;
+    try {
+      const resolved = resolvePathWithinProject(cwd, filePath);
+      safeRelativePath = path.relative(path.resolve(cwd), resolved) || path.basename(resolved);
+    } catch {
+      resolve('(unable to read file)');
+      return;
+    }
+
     if (area === 'untracked') {
       // Read file content and format as "all added" diff
-      const fullPath = path.join(cwd, filePath);
+      const fullPath = path.join(cwd, safeRelativePath);
       try {
+        if (fs.lstatSync(fullPath).isSymbolicLink()) {
+          resolve('(unable to read file)');
+          return;
+        }
         const content = fs.readFileSync(fullPath, 'utf-8');
         const lines = content.split('\n');
-        const header = `--- /dev/null\n+++ b/${filePath}\n@@ -0,0 +1,${lines.length} @@\n`;
+        const header = `--- /dev/null\n+++ b/${safeRelativePath}\n@@ -0,0 +1,${lines.length} @@\n`;
         const body = lines.map((l) => `+${l}`).join('\n');
         resolve(header + body);
       } catch {
@@ -106,7 +120,9 @@ export function getGitDiff(cwd: string, filePath: string, area: string): Promise
     }
 
     const args =
-      area === 'staged' ? ['diff', '--cached', '--', filePath] : ['diff', '--', filePath];
+      area === 'staged'
+        ? ['diff', '--cached', '--', safeRelativePath]
+        : ['diff', '--', safeRelativePath];
 
     execFile('git', args, { cwd, timeout: 10000, maxBuffer: 1024 * 1024 }, (err, stdout) => {
       if (err && !stdout) {
@@ -231,12 +247,29 @@ export async function createGitBranch(cwd: string, branch: string): Promise<void
   await execGit(cwd, ['checkout', '-b', branch]);
 }
 
+function assertGitRelativePath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/').trim();
+  if (
+    !normalized ||
+    normalized.startsWith('/') ||
+    normalized.startsWith('../') ||
+    normalized.includes('/../') ||
+    normalized === '..' ||
+    /^[A-Za-z]:/.test(normalized)
+  ) {
+    throw new Error('Git file path escapes project root');
+  }
+  return normalized;
+}
+
 export function gitStageFile(cwd: string, filePath: string): Promise<void> {
-  return execGit(cwd, ['add', '--', filePath]);
+  const safePath = assertGitRelativePath(filePath);
+  return execGit(cwd, ['add', '--', safePath]);
 }
 
 export function gitUnstageFile(cwd: string, filePath: string): Promise<void> {
-  return execGit(cwd, ['reset', 'HEAD', '--', filePath]);
+  const safePath = assertGitRelativePath(filePath);
+  return execGit(cwd, ['reset', 'HEAD', '--', safePath]);
 }
 
 export function gitDiscardFile(
@@ -244,11 +277,12 @@ export function gitDiscardFile(
   filePath: string,
   area: GitFileEntry['area'],
 ): Promise<void> {
+  const safePath = assertGitRelativePath(filePath);
   if (area === 'untracked') {
-    const fullPath = path.join(cwd, filePath);
+    const fullPath = resolvePathWithinProject(cwd, safePath);
     return fs.promises.unlink(fullPath);
   }
-  return execGit(cwd, ['checkout', '--', filePath]);
+  return execGit(cwd, ['checkout', '--', safePath]);
 }
 
 export function getGitWorktrees(cwd: string): Promise<GitWorktree[]> {

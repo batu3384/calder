@@ -1,4 +1,3 @@
-import { onShareChange } from '../../sharing/share-manager.js';
 import { appState } from '../../state.js';
 import { onChange as onGitStatusChange } from '../surface-services/git-status.js';
 import {
@@ -14,11 +13,9 @@ import { onChange as onUnreadChange } from '../surface-services/session-unread.j
 interface TabBarActionHandlerArgs {
   addSessionButtonEl: HTMLElement;
   updateCliToolsButtonEl: HTMLButtonElement;
-  mobileControlButtonEl: HTMLButtonElement | null;
   gitStatusEl: HTMLElement;
   onOpenUpdatePanel: () => void;
   onQuickNewSession: () => void;
-  onMobileControlClick: () => void;
   onShowAddSessionContextMenu: (x: number, y: number) => void;
   onShowBranchContextMenu: (event: MouseEvent) => void;
 }
@@ -28,9 +25,6 @@ export function wireTabBarActionHandlers(args: TabBarActionHandlerArgs): void {
     args.onOpenUpdatePanel();
   });
   args.addSessionButtonEl.addEventListener('click', () => args.onQuickNewSession());
-  args.mobileControlButtonEl?.addEventListener('click', () => {
-    args.onMobileControlClick();
-  });
   args.addSessionButtonEl.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -106,8 +100,6 @@ export function wireTabBarStateSubscriptions(
   sub(appState.on('session-changed', args.render));
   sub(appState.on('layout-changed', args.render));
   sub(appState.on('preferences-changed', args.syncSessionProviderSelector));
-  const unsubShare = onShareChange(args.render);
-  sub(unsubShare);
 
   const unsubStatus = onStatusChange((sessionId, status) => {
     args.prevStatus.set(sessionId, status);

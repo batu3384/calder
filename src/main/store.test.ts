@@ -16,6 +16,7 @@ vi.mock('os', () => ({
 import * as fs from 'fs';
 import path from 'path';
 
+import { CURRENT_PERSISTED_STATE_VERSION } from '../shared/types/project-state';
 import type { PersistedState } from './store';
 import {
   __resetStoreCacheForTests,
@@ -33,7 +34,7 @@ const mockRenameSync = vi.mocked(fs.renameSync);
 const mockMkdirSync = vi.mocked(fs.mkdirSync);
 
 const DEFAULT_STATE: PersistedState = {
-  version: 1,
+  version: CURRENT_PERSISTED_STATE_VERSION,
   projects: [],
   activeProjectId: null,
   preferences: {
@@ -102,7 +103,10 @@ describe('loadState', () => {
     };
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(JSON.stringify(state));
-    expect(loadState()).toEqual(state);
+    expect(loadState()).toEqual({
+      ...state,
+      version: CURRENT_PERSISTED_STATE_VERSION,
+    });
   });
 
   it('returns default state on invalid JSON', () => {
@@ -226,10 +230,10 @@ describe('flushState', () => {
   });
 });
 
-describe('migrateSessionIds', () => {
-  function makeState(sessions: Record<string, unknown>[]): string {
+describe('migratePersistedState', () => {
+  function makeState(sessions: Record<string, unknown>[], version: 1 | 2 = 1): string {
     const state: PersistedState = {
-      version: 1,
+      version,
       projects: [
         {
           id: 'p1',
@@ -300,6 +304,37 @@ describe('migrateSessionIds', () => {
     expect(loaded.projects[0].sessions[0]).toBeDefined();
   });
 
+  it('clears cli session ids when migrating unsupported providers', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(
+      makeState([
+        {
+          id: 's1',
+          name: 'S1',
+          providerId: 'legacy-vendor',
+          cliSessionId: 'legacy-session-1',
+          createdAt: '2025-01-01',
+        },
+        {
+          id: 's2',
+          name: 'S2',
+          providerId: 'retired-cli',
+          cliSessionId: 'retired-session-1',
+          createdAt: '2025-01-01',
+        },
+      ]),
+    );
+
+    const loaded = loadState();
+    const sessions = loaded.projects[0].sessions as any[];
+    expect(sessions[0].providerId).toBe('claude');
+    expect(sessions[0].cliSessionId).toBeUndefined();
+    expect(sessions[0].name).toBe('S1 (migrated from legacy-vendor)');
+    expect(sessions[1].providerId).toBe('claude');
+    expect(sessions[1].cliSessionId).toBeUndefined();
+    expect(sessions[1].name).toBe('S2 (migrated from retired-cli)');
+  });
+
   it('normalizes removed provider ids to claude for legacy sessions', () => {
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue(
@@ -313,72 +348,11 @@ describe('migrateSessionIds', () => {
     const loaded = loadState();
     const sessions = loaded.projects[0].sessions as any[];
     expect(sessions[0].providerId).toBe('claude');
+    expect(sessions[0].name).toBe('S1 (migrated from minimax)');
     expect(sessions[1].providerId).toBe('claude');
+    expect(sessions[1].name).toBe('S2 (migrated from blackbox)');
     expect(sessions[2].providerId).toBe('codex');
-  });
-
-  it('backfills missing Copilot cliSessionId from matching session-state metadata', () => {
-    const stateFile = '/mock/home/.calder/state.json';
-    const sessionStateDir = '/mock/home/.copilot/session-state';
-    const workspaceFile = path.join(sessionStateDir, 'copilot-id-1', 'workspace.yaml');
-    const state: PersistedState = {
-      version: 1,
-      projects: [
-        {
-          id: 'p1',
-          name: 'Test',
-          path: '/repo/project',
-          sessions: [
-            {
-              id: 's1',
-              name: 'Copilot Session',
-              cliSessionId: null,
-              createdAt: '2026-04-21T10:00:00.000Z',
-              providerId: 'copilot',
-            } as any,
-          ],
-          activeSessionId: null,
-          layout: { mode: 'tabs', splitPanes: [], splitDirection: 'horizontal' },
-        },
-      ],
-      activeProjectId: 'p1',
-      preferences: {
-        soundOnSessionWaiting: true,
-        notificationsDesktop: true,
-        debugMode: false,
-        sessionHistoryEnabled: true,
-        insightsEnabled: true,
-        autoTitleEnabled: true,
-      },
-    };
-
-    mockExistsSync.mockImplementation(
-      (file) =>
-        String(file) === stateFile ||
-        String(file) === sessionStateDir ||
-        String(file) === workspaceFile,
-    );
-    mockReaddirSync.mockImplementation((file) => {
-      if (String(file) === sessionStateDir) {
-        return [{ name: 'copilot-id-1', isDirectory: () => true }] as any;
-      }
-      return [] as any;
-    });
-    mockReadFileSync.mockImplementation((file) => {
-      if (String(file) === stateFile) return JSON.stringify(state);
-      if (String(file) === workspaceFile) {
-        return [
-          'id: copilot-id-1',
-          'cwd: /repo/project',
-          'created_at: 2026-04-21T10:00:01.000Z',
-          '',
-        ].join('\n');
-      }
-      throw new Error(`Unexpected read: ${String(file)}`);
-    });
-
-    const loaded = loadState();
-    expect(loaded.projects[0].sessions[0].cliSessionId).toBe('copilot-id-1');
+    expect(sessions[2].name).toBe('S3');
   });
 
   it('normalizes unsupported defaultProvider to claude', () => {
@@ -419,5 +393,57 @@ describe('migrateSessionIds', () => {
 
     const loaded = loadState();
     expect(loaded.preferences.defaultProvider).toBe('claude');
+  });
+
+  it('strips legacy mobile sessions and normalizes mobile surface focus to session tabs', () => {
+    const state: PersistedState = {
+      version: 1,
+      projects: [
+        {
+          id: 'p1',
+          name: 'Test',
+          path: '/test',
+          sessions: [
+            {
+              id: 'cli-1',
+              name: 'CLI',
+              cliSessionId: null,
+              createdAt: '2025-01-01',
+            } as any,
+            {
+              id: 'mobile-1',
+              name: 'Mobile',
+              type: 'mobile',
+              cliSessionId: null,
+              createdAt: '2025-01-01',
+            } as any,
+          ],
+          activeSessionId: 'mobile-1',
+          layout: { mode: 'tabs', splitPanes: ['mobile-1'], splitDirection: 'horizontal' },
+          surface: {
+            kind: 'mobile',
+            active: true,
+            tabFocus: 'mobile',
+            tabOrder: ['cli', 'mobile'],
+          } as any,
+        },
+      ],
+      activeProjectId: 'p1',
+      preferences: DEFAULT_STATE.preferences,
+    };
+
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify(state));
+
+    const loaded = loadState();
+    const project = loaded.projects[0] as any;
+    expect(project.sessions).toHaveLength(1);
+    expect(project.sessions[0].id).toBe('cli-1');
+    expect(project.activeSessionId).toBe('cli-1');
+    expect(project.layout.splitPanes).toEqual([]);
+    expect(project.surface.kind).toBe('web');
+    expect(project.surface.tabFocus).toBe('session');
+    expect(project.surface.tabOrder).toEqual(['cli']);
+    expect(loaded.version).toBe(CURRENT_PERSISTED_STATE_VERSION);
   });
 });

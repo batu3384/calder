@@ -11,15 +11,6 @@ const providerCaps = new Map([
     },
   ],
   [
-    'copilot',
-    {
-      sessionResume: true,
-      costTracking: false,
-      contextWindow: false,
-      pendingPromptTrigger: 'startup-arg',
-    },
-  ],
-  [
     'antigravity',
     {
       sessionResume: true,
@@ -38,21 +29,20 @@ const providerCaps = new Map([
     },
   ],
   [
-    'qwen',
+    'cursor',
     {
       sessionResume: true,
-      costTracking: true,
-      contextWindow: true,
+      costTracking: false,
+      contextWindow: false,
       pendingPromptTrigger: 'startup-arg',
     },
   ],
 ]);
 const providerNames = new Map([
   ['claude', 'Claude Code'],
-  ['copilot', 'GitHub Copilot'],
   ['antigravity', 'Antigravity CLI'],
   ['codex', 'Codex CLI'],
-  ['qwen', 'Qwen Code'],
+  ['cursor', 'Cursor CLI'],
 ]);
 
 const mockPtyWrite = vi.fn();
@@ -364,43 +354,22 @@ describe('terminal pending prompt injection', () => {
     expect(mockPtyWrite).not.toHaveBeenCalled();
   });
 
-  it('passes pending prompt as initialPrompt to pty.create for copilot', async () => {
+  it('passes pending prompt as initialPrompt to pty.create for cursor', async () => {
     const { createTerminalPane, setPendingPrompt, spawnTerminal } =
       await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
-    createTerminalPane('copilot-1', '/project', null, false, '', 'copilot');
-    setPendingPrompt('copilot-1', 'fix the bug');
-    await spawnTerminal('copilot-1');
+    createTerminalPane('cursor-1', '/project', null, false, '', 'cursor');
+    setPendingPrompt('cursor-1', 'fix the bug');
+    await spawnTerminal('cursor-1');
 
     expect(mockPtyCreate).toHaveBeenCalledWith(
-      'copilot-1',
+      'cursor-1',
       '/project',
       null,
       false,
       '',
-      'copilot',
-      'fix the bug',
-    );
-    expect(mockPtyWrite).not.toHaveBeenCalled();
-  });
-
-  it('passes pending prompt as initialPrompt to pty.create for qwen', async () => {
-    const { createTerminalPane, setPendingPrompt, spawnTerminal } =
-      await import('./terminal-pane.js');
-    const mockPtyCreate = (window as any).calder.pty.create;
-
-    createTerminalPane('qwen-1', '/project', null, false, '', 'qwen');
-    setPendingPrompt('qwen-1', 'fix the bug');
-    await spawnTerminal('qwen-1');
-
-    expect(mockPtyCreate).toHaveBeenCalledWith(
-      'qwen-1',
-      '/project',
-      null,
-      false,
-      '',
-      'qwen',
+      'cursor',
       'fix the bug',
     );
     expect(mockPtyWrite).not.toHaveBeenCalled();
@@ -424,20 +393,20 @@ describe('terminal pending prompt injection', () => {
     );
   });
 
-  it('launches restored Copilot sessions in native resume mode once a cliSessionId exists', async () => {
+  it('launches restored Cursor sessions in native resume mode once a cliSessionId exists', async () => {
     const { createTerminalPane, spawnTerminal } = await import('./terminal-pane.js');
     const mockPtyCreate = (window as any).calder.pty.create;
 
-    createTerminalPane('copilot-restored', '/project', 'copilot-old-id', true, '', 'copilot');
-    await spawnTerminal('copilot-restored');
+    createTerminalPane('cursor-restored', '/project', 'cursor-old-id', true, '', 'cursor');
+    await spawnTerminal('cursor-restored');
 
     expect(mockPtyCreate).toHaveBeenCalledWith(
-      'copilot-restored',
+      'cursor-restored',
       '/project',
-      'copilot-old-id',
+      'cursor-old-id',
       true,
       '',
-      'copilot',
+      'cursor',
       undefined,
     );
   });

@@ -2,18 +2,16 @@ import type { CliProviderMeta, ProviderId } from '../../shared/types/provider';
 import { AntigravityProvider } from './antigravity-provider';
 import { ClaudeProvider } from './claude-provider';
 import { CodexProvider } from './codex-provider';
-import { CopilotProvider } from './copilot-provider';
+import { CursorProvider } from './cursor-provider';
 import type { CliProvider } from './provider';
-import { QwenProvider } from './qwen-provider';
 
 const providers = new Map<ProviderId, CliProvider>();
 
 export function initProviders(): void {
   registerProvider(new ClaudeProvider());
   registerProvider(new CodexProvider());
-  registerProvider(new CopilotProvider());
+  registerProvider(new CursorProvider());
   registerProvider(new AntigravityProvider());
-  registerProvider(new QwenProvider());
 }
 
 export function registerProvider(provider: CliProvider): void {
@@ -67,7 +65,6 @@ export function getAvailableProviderIds(): ProviderId[] {
 export const SUPPORTED_PROVIDER_IDS: readonly ProviderId[] = [
   'claude',
   'codex',
-  'copilot',
   'antigravity',
-  'qwen',
+  'cursor',
 ] as const;

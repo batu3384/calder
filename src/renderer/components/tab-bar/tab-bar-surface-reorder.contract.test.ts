@@ -17,14 +17,14 @@ describe('tab bar surface placement contract', () => {
     expect(source).toContain("from './tab-bar-surface-tab-factory.js'");
     expect(source).toContain('createSurfaceModeTab({');
     expect(surfaceFactorySource).toContain(
-      "event.dataTransfer!.setData('text/plain', `__surface:${options.kind}`)",
+      "event.dataTransfer!.setData('text/plain', '__surface:cli')",
     );
     expect(surfaceFactorySource).toContain("if (draggedId.startsWith('__surface:'))");
   });
 
   it('persists surface tab placement and ordering metadata', () => {
     expect(sharedTypesSource).toContain("tabPlacement?: 'start' | 'end';");
-    expect(sharedTypesSource).toContain("tabOrder?: Array<'cli' | 'mobile'>;");
+    expect(sharedTypesSource).toContain("tabOrder?: Array<'cli'>;");
     expect(stateSource).toContain('tabPlacement');
     expect(stateSource).toContain('tabOrder');
   });

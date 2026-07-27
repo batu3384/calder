@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { DIRECT_TRANSLATION_ENTRIES, DIRECT_TRANSLATIONS } from './i18n-translations.js';
 import { ERROR_TRANSLATION_ENTRIES } from './i18n-translations-errors.js';
-import { MOBILE_TRANSLATION_ENTRIES } from './i18n-translations-mobile.js';
 import { PREFERENCES_TRANSLATION_ENTRIES } from './i18n-translations-preferences.js';
 import { TAB_AND_TERMINAL_TRANSLATION_ENTRIES } from './i18n-translations-tab-terminal.js';
 
@@ -17,7 +16,6 @@ describe('i18n translations module', () => {
     expect(DIRECT_TRANSLATIONS.get('Workflows & checkpoints')).toBe(
       'İş akışları ve kontrol noktaları',
     );
-    expect(DIRECT_TRANSLATIONS.get('Mobile Dependency Doctor')).toBe('Mobil Bağımlılık Doktoru');
   });
 
   it('does not contain conflicting duplicate source keys', () => {
@@ -47,13 +45,6 @@ describe('i18n translations module', () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(DIRECT_TRANSLATIONS.get('Provider health')).toBe('Sağlayıcı durumu');
     expect(DIRECT_TRANSLATIONS.get('Tracking & fixes')).toBe('İzleme ve düzeltmeler');
-  });
-
-  it('keeps mobile namespace keys unique and wired into the direct map', () => {
-    const keys = MOBILE_TRANSLATION_ENTRIES.map(([source]) => source);
-    expect(new Set(keys).size).toBe(keys.length);
-    expect(DIRECT_TRANSLATIONS.get('Mobile Dependency Doctor')).toBe('Mobil Bağımlılık Doktoru');
-    expect(DIRECT_TRANSLATIONS.get('Installing…')).toBe('Kuruluyor…');
   });
 
   it('keeps error namespace keys unique and wired into the direct map', () => {

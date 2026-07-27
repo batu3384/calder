@@ -9,7 +9,7 @@ import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
 function makeBaseState(): PersistedState {
   const createdAt = new Date('2026-01-01T00:00:00.000Z').toISOString();
   return {
-    version: 1,
+    version: 2,
     activeProjectId: 'project-1',
     preferences: {
       soundOnSessionWaiting: true,
@@ -185,7 +185,7 @@ describe('ipc hardening helpers', () => {
     expect(() => sanitizePersistedStateForSave(null)).toThrow(/expected object/i);
 
     const badVersion = makeBaseState() as unknown as Record<string, unknown>;
-    badVersion.version = 2;
+    badVersion.version = 3;
     expect(() => sanitizePersistedStateForSave(badVersion)).toThrow(/unsupported version/i);
 
     const badProjects = makeBaseState() as unknown as Record<string, unknown>;

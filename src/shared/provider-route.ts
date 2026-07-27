@@ -32,13 +32,11 @@ export function inferGatewayBackendForModel(modelDisplayName: string): GatewayBa
   const normalized = modelDisplayName.trim().toLowerCase();
   if (normalized.startsWith('glm-')) return 'zai';
   if (normalized.startsWith('minimax-')) return 'minimax';
-  if (normalized.startsWith('qwen')) return 'qwen';
   return 'anthropic';
 }
 
 export function getNativeCliDefaultBackend(providerId: ProviderId): GatewayBackendId | null {
   if (providerId === 'claude') return 'anthropic';
-  if (providerId === 'qwen') return 'qwen';
   return null;
 }
 

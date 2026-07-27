@@ -26,8 +26,7 @@ const PROJECT_CONTEXT_FILES = [
   path.join('.claude', 'CLAUDE.md'),
   'AGENTS.md',
   'GEMINI.md',
-  'QWEN.md',
-  path.join('.github', 'copilot-instructions.md'),
+  path.join('.calder', 'shared.md'),
   'CALDER.shared.md',
   '.mcp.json',
 ] as const;
@@ -62,24 +61,6 @@ function watchDir(projectPath: string, state: ContextWatchState, dirPath: string
     state.dirWatchers.push(watcher);
   } catch {
     // Directory may not exist yet; that is fine for v1.
-  }
-}
-
-function listSubdirectoriesRecursive(dirPath: string): string[] {
-  try {
-    const entries = fs
-      .readdirSync(dirPath, { withFileTypes: true })
-      .sort((left, right) => left.name.localeCompare(right.name));
-    const directories: string[] = [];
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const fullPath = path.join(dirPath, entry.name);
-      directories.push(fullPath);
-      directories.push(...listSubdirectoriesRecursive(fullPath));
-    }
-    return directories;
-  } catch {
-    return [];
   }
 }
 
@@ -121,11 +102,6 @@ function ensureProjectWatchState(projectPath: string): ContextWatchState {
   watchDir(projectPath, state, path.join(projectPath, '.calder', 'rules'));
   watchDir(projectPath, state, path.join(projectPath, '.claude'));
   watchDir(projectPath, state, path.join(projectPath, '.github'));
-  const copilotInstructionsPath = path.join(projectPath, '.github', 'instructions');
-  watchDir(projectPath, state, copilotInstructionsPath);
-  for (const childDirPath of listSubdirectoriesRecursive(copilotInstructionsPath)) {
-    watchDir(projectPath, state, childDirPath);
-  }
   return state;
 }
 

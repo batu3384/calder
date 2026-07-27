@@ -2,7 +2,6 @@ import type { IpcRenderer } from 'electron';
 
 import type {
   CliProviderMeta,
-  ProviderConfig,
   ProviderId,
   ProviderUpdateCancelResult,
   ProviderUpdateProgressEvent,
@@ -12,7 +11,6 @@ import type {
 type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => () => void;
 
 export interface PreloadProviderApi {
-  getConfig(providerId: ProviderId, projectPath: string): Promise<ProviderConfig>;
   getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
   listProviders(): Promise<CliProviderMeta[]>;
   checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
@@ -21,8 +19,6 @@ export interface PreloadProviderApi {
   installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
   cancelUpdateAll(): Promise<ProviderUpdateCancelResult>;
   onUpdateProgress(callback: (event: ProviderUpdateProgressEvent) => void): () => void;
-  watchProject(providerId: ProviderId, projectPath: string): void;
-  onConfigChanged(callback: () => void): () => void;
 }
 
 export function createPreloadProviderApi(
@@ -30,8 +26,6 @@ export function createPreloadProviderApi(
   onChannel: OnChannel,
 ): PreloadProviderApi {
   return {
-    getConfig: (providerId, projectPath) =>
-      ipcRenderer.invoke('provider:getConfig', providerId, projectPath),
     getMeta: (providerId) => ipcRenderer.invoke('provider:getMeta', providerId),
     listProviders: () => ipcRenderer.invoke('provider:listProviders'),
     checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
@@ -43,8 +37,5 @@ export function createPreloadProviderApi(
       onChannel('provider:update-progress', (event) =>
         callback(event as ProviderUpdateProgressEvent),
       ),
-    watchProject: (providerId, projectPath) =>
-      ipcRenderer.send('config:watchProject', providerId, projectPath),
-    onConfigChanged: (callback) => onChannel('config:changed', callback),
   };
 }

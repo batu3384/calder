@@ -5,6 +5,7 @@ import type {
   ProjectWorkflowCreateResult,
   ProjectWorkflowStarterFilesResult,
 } from '../../shared/types/project-workflow.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectWorkflows } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
@@ -48,7 +49,7 @@ async function writeStarterFile(
   relativePath: string,
   contents: string,
 ): Promise<'created' | 'skipped'> {
-  const fullPath = path.join(rootPath, relativePath);
+  const fullPath = projectWritePath(rootPath, relativePath);
 
   try {
     await readFile(fullPath, 'utf8');
@@ -113,7 +114,7 @@ export async function createProjectWorkflowFile(
     'workflows',
     `${slugifyWorkflowTitle(trimmedTitle)}.md`,
   );
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
 
   let created = false;
   try {

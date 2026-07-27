@@ -1,13 +1,8 @@
 export type {
-  Agent,
-  ClaudeConfig,
   CliProviderCapabilities,
   CliProviderMeta,
-  Command,
   GatewayBackendId,
-  McpServer,
   PendingPromptTrigger,
-  ProviderConfig,
   ProviderGatewayRoute,
   ProviderId,
   ProviderRouteConfidence,
@@ -21,9 +16,5 @@ export type {
   ProviderUpdateStatus,
   ProviderUpdateSummary,
   QuotaConfidence,
-  SettingsValidationResult,
-  SettingsWarningData,
-  Skill,
-  StatusLineConflictData,
   UiLanguage,
 } from '../types.js';

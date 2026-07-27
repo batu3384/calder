@@ -16,7 +16,11 @@ function permissionRequestEvent(input: {
     timestamp: 1000,
     hookEvent: input.hookEvent ?? 'PermissionRequest',
     tool_name: input.toolName,
-    tool_input: input.toolInput,
+    tool_input:
+      input.toolInput ??
+      (['Write', 'Edit', 'MultiEdit'].includes(input.toolName)
+        ? { file_path: 'README.md' }
+        : undefined),
     cwd: input.cwd,
   };
 }
@@ -29,7 +33,7 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'full_auto',
+        effectiveMode: 'session_safe',
         policySource: 'project',
       }),
     });
@@ -49,7 +53,7 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -66,7 +70,7 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(emittedEvent.type).toBe('approval_decision');
     expect(emittedEvent.auto_approval).toMatchObject({
       policy_source: 'project',
-      effective_mode: 'edit_plus_safe_tools',
+      effective_mode: 'project_edits',
       operation_class: 'edit',
       decision: 'allow',
     });
@@ -79,7 +83,7 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -103,14 +107,14 @@ describe('createAutoApprovalOrchestrator', () => {
     });
   });
 
-  it('blocks destructive requests and does not send approvals', async () => {
+  it('asks for destructive requests and does not send approvals', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const orchestrator = createAutoApprovalOrchestrator({
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'session_safe',
         policySource: 'project',
       }),
     });
@@ -128,18 +132,18 @@ describe('createAutoApprovalOrchestrator', () => {
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
       operation_class: 'destructive',
-      decision: 'block',
+      decision: 'ask',
     });
   });
 
-  it('blocks destructive requests even in full_auto mode', async () => {
+  it('asks for destructive requests in session_safe mode', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const orchestrator = createAutoApprovalOrchestrator({
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'full_auto',
+        effectiveMode: 'session_safe',
         policySource: 'project',
       }),
     });
@@ -155,38 +159,9 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(sendApproval).not.toHaveBeenCalled();
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
-      effective_mode: 'full_auto',
+      effective_mode: 'session_safe',
       operation_class: 'destructive',
-      decision: 'block',
-    });
-  });
-
-  it('allows destructive requests in full_auto_unsafe mode', async () => {
-    const sendApproval = vi.fn();
-    const emitInspectorEvents = vi.fn();
-    const orchestrator = createAutoApprovalOrchestrator({
-      sendApproval,
-      emitInspectorEvents,
-      resolveAutoApprovalState: async () => ({
-        effectiveMode: 'full_auto_unsafe',
-        policySource: 'project',
-      }),
-    });
-
-    orchestrator.registerSession('session-1', 'codex', '/tmp/project');
-    await orchestrator.handleInspectorEvents('session-1', [
-      permissionRequestEvent({
-        toolName: 'Bash',
-        toolInput: { command: 'rm -rf dist' },
-      }),
-    ]);
-
-    expect(sendApproval).toHaveBeenCalledTimes(1);
-    const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
-    expect(emittedEvent.auto_approval).toMatchObject({
-      effective_mode: 'full_auto_unsafe',
-      operation_class: 'destructive',
-      decision: 'allow',
+      decision: 'ask',
     });
   });
 
@@ -197,7 +172,7 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -216,7 +191,7 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(emittedEvent.auto_approval?.reason).toContain('unsupported');
   });
 
-  it('dedupes rapid duplicate approvals without switching to ask', async () => {
+  it('asks on rapid duplicate approvals instead of re-allowing silently', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const nowValues = [1000, 1000, 1200, 1200];
@@ -226,7 +201,7 @@ describe('createAutoApprovalOrchestrator', () => {
       now: () => nowValues.shift() ?? 1200,
       rateLimitMs: 1500,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -243,7 +218,7 @@ describe('createAutoApprovalOrchestrator', () => {
     expect(emitInspectorEvents).toHaveBeenCalledTimes(2);
     const secondEvent = emitInspectorEvents.mock.calls[1][1][0] as InspectorEvent;
     expect(secondEvent.auto_approval).toMatchObject({
-      decision: 'allow',
+      decision: 'ask',
     });
     expect(secondEvent.auto_approval?.reason).toContain('Duplicate permission request');
   });
@@ -258,7 +233,7 @@ describe('createAutoApprovalOrchestrator', () => {
       now: () => nowValues.shift() ?? 1100,
       rateLimitMs: 1500,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -286,13 +261,13 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
 
     orchestrator.registerSession('session-1', 'claude', '/tmp/project');
-    orchestrator.setSessionOverride('session-1', 'off');
+    orchestrator.setSessionOverride('session-1', 'ask');
     await orchestrator.handleInspectorEvents('session-1', [
       permissionRequestEvent({ toolName: 'Edit' }),
     ]);
@@ -301,12 +276,12 @@ describe('createAutoApprovalOrchestrator', () => {
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
       policy_source: 'session',
-      effective_mode: 'off',
+      effective_mode: 'ask',
       decision: 'ask',
     });
   });
 
-  it('falls back to safe off mode when policy resolution throws', async () => {
+  it('falls back to ask mode when policy resolution throws', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const orchestrator = createAutoApprovalOrchestrator({
@@ -326,13 +301,13 @@ describe('createAutoApprovalOrchestrator', () => {
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
       policy_source: 'fallback',
-      effective_mode: 'off',
+      effective_mode: 'ask',
       decision: 'ask',
     });
     expect(emittedEvent.auto_approval?.reason).toContain('Policy resolution failed');
   });
 
-  it('re-resolves policy from latest cwd reported by permission events', async () => {
+  it('ignores event.cwd so approval stays bound to registered session project', async () => {
     const sendApproval = vi.fn();
     const emitInspectorEvents = vi.fn();
     const resolveAutoApprovalState = vi.fn<
@@ -341,14 +316,14 @@ describe('createAutoApprovalOrchestrator', () => {
         policySource: AutoApprovalPolicySource;
       }>
     >(async (projectPath: string | null) => {
-      if (projectPath === '/workspace/next') {
+      if (projectPath === '/workspace/original') {
         return {
-          effectiveMode: 'full_auto',
+          effectiveMode: 'project_edits',
           policySource: 'project' as const,
         };
       }
       return {
-        effectiveMode: 'off',
+        effectiveMode: 'ask',
         policySource: 'fallback' as const,
       };
     });
@@ -362,16 +337,16 @@ describe('createAutoApprovalOrchestrator', () => {
     await orchestrator.handleInspectorEvents('session-1', [
       permissionRequestEvent({
         toolName: 'Edit',
-        cwd: '/workspace/next',
+        cwd: '/workspace/evil-outside',
       }),
     ]);
 
-    expect(resolveAutoApprovalState).toHaveBeenCalledWith('/workspace/next');
+    expect(resolveAutoApprovalState).toHaveBeenCalledWith('/workspace/original');
     expect(sendApproval).toHaveBeenCalledWith('session-1', 'codex');
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
       policy_source: 'project',
-      effective_mode: 'full_auto',
+      effective_mode: 'project_edits',
       decision: 'allow',
     });
   });
@@ -385,7 +360,7 @@ describe('createAutoApprovalOrchestrator', () => {
       sendApproval,
       emitInspectorEvents,
       resolveAutoApprovalState: async () => ({
-        effectiveMode: 'edit_plus_safe_tools',
+        effectiveMode: 'project_edits',
         policySource: 'project',
       }),
     });
@@ -401,7 +376,7 @@ describe('createAutoApprovalOrchestrator', () => {
     const emittedEvent = emitInspectorEvents.mock.calls[0][1][0] as InspectorEvent;
     expect(emittedEvent.auto_approval).toMatchObject({
       decision: 'ask',
-      effective_mode: 'edit_plus_safe_tools',
+      effective_mode: 'project_edits',
       policy_source: 'project',
     });
     expect(emittedEvent.auto_approval?.reason).toContain('dispatch failed');

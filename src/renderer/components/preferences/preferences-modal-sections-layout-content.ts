@@ -49,7 +49,7 @@ export function renderLayoutPreferencesSectionContent({
 
   const toggles: Array<{ key: keyof LayoutSidebarViews; label: string; group: 'ops' | 'session' }> =
     [
-      { key: 'configSections', label: 'Toolkit', group: 'ops' },
+      { key: 'configSections', label: 'Auto-approval', group: 'ops' },
       { key: 'gitPanel', label: 'Git', group: 'ops' },
       { key: 'sessionHistory', label: 'Run log', group: 'ops' },
       { key: 'costFooter', label: 'Spend chip', group: 'session' },

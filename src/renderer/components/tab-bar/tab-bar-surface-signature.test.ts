@@ -15,7 +15,7 @@ function makeProject(): ProjectRecord {
       active: true,
       tabFocus: 'cli',
       tabPlacement: 'end',
-      tabOrder: ['cli', 'mobile'],
+      tabOrder: ['cli'],
       web: { history: [] },
       cli: {
         selectedProfileId: 'profile-1',

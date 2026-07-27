@@ -11,7 +11,7 @@ export interface PtyCreatePayload {
   cliSessionId: string | null;
   isResume: boolean;
   extraArgs: string;
-  providerId: 'claude' | 'codex' | 'copilot' | 'antigravity' | 'qwen';
+  providerId: 'claude' | 'codex' | 'antigravity' | 'cursor';
   initialPrompt?: string;
 }
 

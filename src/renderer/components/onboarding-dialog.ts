@@ -34,7 +34,7 @@ export function showOnboardingDialog(): void {
 
   const list = document.createElement('ul');
   list.className = 'onboarding-provider-list';
-  ['Claude Code', 'Codex', 'Copilot', 'Antigravity', 'Qwen'].forEach((provider) => {
+  ['Claude Code', 'Codex', 'Cursor', 'Antigravity'].forEach((provider) => {
     const item = document.createElement('li');
     item.textContent = provider;
     list.appendChild(item);

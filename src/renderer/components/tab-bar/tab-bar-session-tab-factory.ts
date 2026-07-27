@@ -1,5 +1,4 @@
 import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
-import { isSharing } from '../../sharing/peer-host.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { hasMultipleAvailableProviders } from '../surface-services/provider-availability.js';
 import { getStatus } from '../surface-services/session-activity.js';
@@ -12,7 +11,6 @@ interface CreateSessionTabOptions {
   session: SessionRecord;
   tabListEl: HTMLElement;
   cliSurfaceTabActive: boolean;
-  mobileSurfaceTabActive: boolean;
   escapeHtml: (value: string) => string;
   startRename: (tab: HTMLElement, project: ProjectRecord, session: SessionRecord) => void;
   showTabContextMenu: (
@@ -27,24 +25,16 @@ interface CreateSessionTabOptions {
 }
 
 export function createSessionTab(options: CreateSessionTabOptions): HTMLElement {
-  const { project, session, cliSurfaceTabActive, mobileSurfaceTabActive } = options;
+  const { project, session, cliSurfaceTabActive } = options;
   const tab = document.createElement('div');
-  const isActive =
-    !cliSurfaceTabActive && !mobileSurfaceTabActive && session.id === project.activeSessionId;
+  const isActive = !cliSurfaceTabActive && session.id === project.activeSessionId;
   const unread = !isActive && isUnread(session.id);
   const isMcp = session.type === 'mcp-inspector';
   const isDiff = session.type === 'diff-viewer';
   const isFileReader = session.type === 'file-reader';
-  const isRemoteTab = session.type === 'remote-terminal';
   const isBrowserTab = session.type === 'browser-tab';
-  const isSpecial = isMcp || isDiff || isFileReader || isRemoteTab || isBrowserTab;
-  const sharing = isSharing(session.id);
-  tab.className =
-    'tab-item' +
-    (isActive ? ' active' : '') +
-    (unread ? ' unread' : '') +
-    (sharing ? ' tab-sharing' : '') +
-    (isRemoteTab ? ' tab-remote' : '');
+  const isSpecial = isMcp || isDiff || isFileReader || isBrowserTab;
+  tab.className = 'tab-item' + (isActive ? ' active' : '') + (unread ? ' unread' : '');
   tab.dataset.sessionId = session.id;
   tab.title = buildSessionTabTitle(session, getStatus(session.id));
   const providerId = session.providerId || 'claude';
@@ -55,16 +45,11 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
       ? '<span class="tab-mcp-badge">MCP</span> '
       : isFileReader
         ? '<span class="tab-file-badge">FILE</span> '
-        : isRemoteTab
-          ? '<span class="tab-remote-badge">P2P</span> '
-          : isBrowserTab
-            ? '<span class="tab-browser-badge">WEB</span> '
-            : !isSpecial
-              ? providerIcon
-              : '';
-  const shareIndicator = sharing
-    ? '<span class="tab-share-indicator calder-status-pill" title="Sharing">Live</span>'
-    : '';
+        : isBrowserTab
+          ? '<span class="tab-browser-badge">WEB</span> '
+          : !isSpecial
+            ? providerIcon
+            : '';
   const statusDot = isSpecial ? '' : `<span class="tab-status ${getStatus(session.id)}"></span>`;
   const reorderHandle =
     project.sessions.length > 1
@@ -78,7 +63,6 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
     ${reorderHandle}
     ${statusDot}
     <span class="tab-name">${nameContent}</span>
-    ${shareIndicator}
     <span class="tab-close" title="Close session">&times;</span>
   `;
 
@@ -88,8 +72,8 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
     const shouldReturnSurfaceFocusToSession =
       session.id === project.activeSessionId &&
       Boolean(project.surface?.active) &&
-      ((project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') ||
-        (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile'));
+      project.surface?.kind === 'cli' &&
+      project.surface.tabFocus === 'cli';
     if (session.id !== project.activeSessionId || shouldReturnSurfaceFocusToSession) {
       appState.setActiveSession(project.id, session.id);
     }

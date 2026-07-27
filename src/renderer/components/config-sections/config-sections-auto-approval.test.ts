@@ -139,18 +139,16 @@ describe('config-sections-auto-approval helpers', () => {
   });
 
   it('createModeSelect builds expected options and selects the current mode', () => {
-    const select = createModeSelect('edit_only', 'Scope help', async () => {});
+    const select = createModeSelect('project_edits', 'Scope help', async () => {});
 
     expect(select.className).toBe('auto-approval-select');
     expect(select.title).toBe('Scope help');
-    expect(select.children).toHaveLength(5);
-    expect(select.value).toBe('edit_only');
+    expect(select.children).toHaveLength(3);
+    expect(select.value).toBe('project_edits');
     expect(select.children.map((child) => child.value)).toEqual([
-      'off',
-      'edit_only',
-      'edit_plus_safe_tools',
-      'full_auto',
-      'full_auto_unsafe',
+      'ask',
+      'project_edits',
+      'session_safe',
     ]);
   });
 
@@ -163,12 +161,12 @@ describe('config-sections-auto-approval helpers', () => {
       await wait;
     });
 
-    const select = createModeSelect('off', 'Scope help', onChange);
-    select.value = 'full_auto';
+    const select = createModeSelect('ask', 'Scope help', onChange);
+    select.value = 'session_safe';
     const changePromise = select.dispatch('change');
 
     await Promise.resolve();
-    expect(onChange).toHaveBeenCalledWith('full_auto');
+    expect(onChange).toHaveBeenCalledWith('session_safe');
     expect(select.disabled).toBe(true);
 
     release?.();
@@ -187,15 +185,19 @@ describe('config-sections-auto-approval helpers', () => {
     expect(toggle.textContent).toBe('Mode Guide');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(body.classList.contains('hidden')).toBe(true);
-    expect(body.children).toHaveLength(5);
+    expect(body.children).toHaveLength(3);
     expect(body.children[0].innerHTML).toContain('Auto-runs: Nothing.');
     expect(body.children[0].innerHTML).toContain('Still asks: Every edit, command, and tool run.');
-    expect(body.children[3].innerHTML).toContain('Auto-runs: Non-destructive operations.');
-    expect(body.children[3].innerHTML).toContain('Still asks: Destructive actions.');
-    expect(body.children[4].innerHTML).toContain(
-      'Auto-runs: Everything, including destructive actions.',
+    expect(body.children[1].innerHTML).toContain('Auto-runs: In-project file edits.');
+    expect(body.children[1].innerHTML).toContain(
+      'Still asks: Commands, outside paths, home/global, destructive actions.',
     );
-    expect(body.children[4].innerHTML).toContain('Still asks: Nothing by policy.');
+    expect(body.children[2].innerHTML).toContain(
+      'Auto-runs: Project edits and safe read-only commands (this session only).',
+    );
+    expect(body.children[2].innerHTML).toContain(
+      'Still asks: Write, risky, destructive commands and outside-project paths.',
+    );
 
     await toggle.dispatch('click');
     expect(toggle.getAttribute('aria-expanded')).toBe('true');

@@ -46,7 +46,6 @@ export function getLayoutRenderSignature(project: ProjectRecord | undefined): st
       worktreePath: session.worktreePath ?? null,
       fileReaderPath: session.fileReaderPath ?? null,
       fileReaderLine: session.fileReaderLine ?? null,
-      remoteHostName: session.remoteHostName ?? null,
     })),
   });
 }

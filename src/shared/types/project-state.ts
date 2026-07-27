@@ -46,7 +46,6 @@ export interface Preferences {
   language?: UiLanguage;
   appearanceTheme?: AppearanceTheme;
   defaultProvider?: ProviderId;
-  statusLineConsent?: 'granted' | 'declined' | null;
   keybindings?: Record<string, string>;
   sidebarViews?: {
     configSections: boolean;
@@ -56,8 +55,10 @@ export interface Preferences {
   };
 }
 
+export const CURRENT_PERSISTED_STATE_VERSION = 2 as const;
+
 export interface PersistedState {
-  version: 1;
+  version: typeof CURRENT_PERSISTED_STATE_VERSION | 1;
   projects: ProjectRecord[];
   activeProjectId: string | null;
   preferences: Preferences;

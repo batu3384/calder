@@ -5,6 +5,7 @@ import type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextStarterFilesResult,
 } from '../../shared/types/project-team-context.js';
+import { projectWritePath } from '../project-path-security.js';
 import { discoverProjectTeamContext } from './discovery.js';
 
 const STARTER_FILES: Array<{ relativePath: string; contents: string }> = [
@@ -48,7 +49,7 @@ async function writeStarterFile(
   relativePath: string,
   contents: string,
 ): Promise<'created' | 'skipped'> {
-  const fullPath = path.join(rootPath, relativePath);
+  const fullPath = projectWritePath(rootPath, relativePath);
 
   try {
     await readFile(fullPath, 'utf8');
@@ -114,7 +115,7 @@ export async function createProjectTeamContextSpaceFile(
     'spaces',
     `${slugifySpaceTitle(trimmedTitle)}.md`,
   );
-  const fullPath = path.join(projectPath, relativePath);
+  const fullPath = projectWritePath(projectPath, relativePath);
 
   let created = false;
   try {

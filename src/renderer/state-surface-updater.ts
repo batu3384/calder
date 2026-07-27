@@ -15,10 +15,7 @@ export function setActiveProjectSession(
   const activeSession = project.sessions.find((session) => session.id === sessionId);
   let surfaceChanged = false;
 
-  if (
-    (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') ||
-    (project.surface?.kind === 'mobile' && project.surface.tabFocus === 'mobile')
-  ) {
+  if (project.surface?.kind === 'cli' && project.surface.tabFocus === 'cli') {
     project.surface = normalizeProjectSurface(project);
     project.surface.tabFocus = 'session';
     surfaceChanged = true;
@@ -26,11 +23,8 @@ export function setActiveProjectSession(
 
   if (activeSession?.type === 'browser-tab') {
     project.surface = normalizeProjectSurface(project);
-    const preserveMobileSurface = project.surface.kind === 'mobile' && project.surface.active;
-    if (!preserveMobileSurface) {
-      project.surface.kind = 'web';
-      project.surface.active = true;
-    }
+    project.surface.kind = 'web';
+    project.surface.active = true;
     project.surface.tabFocus = 'session';
     project.surface.web = project.surface.web ?? { history: [] };
     project.surface.web.sessionId = activeSession.id;
@@ -47,28 +41,18 @@ export function setActiveProjectSession(
 }
 
 export function applyProjectSurface(project: ProjectRecord, surface: ProjectSurfaceRecord): void {
+  const kind = surface.kind === 'web' || surface.kind === 'cli' ? surface.kind : 'web';
   const tabFocus =
-    surface.kind === 'cli'
-      ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session'))
-      : surface.kind === 'mobile'
-        ? (surface.tabFocus ?? (surface.active ? 'mobile' : 'session'))
-        : 'session';
+    kind === 'cli' ? (surface.tabFocus ?? (surface.active ? 'cli' : 'session')) : 'session';
   const tabPlacement = surface.tabPlacement === 'start' ? 'start' : 'end';
-  const tabOrder = Array.isArray(surface.tabOrder)
-    ? surface.tabOrder.filter(
-        (entry): entry is 'cli' | 'mobile' => entry === 'cli' || entry === 'mobile',
-      )
-    : [];
-  const normalizedTabOrder: Array<'cli' | 'mobile'> =
-    tabOrder.length === 2 && tabOrder.includes('cli') && tabOrder.includes('mobile')
-      ? tabOrder
-      : ['cli', 'mobile'];
+  const tabOrder: Array<'cli'> = ['cli'];
 
   project.surface = {
     ...surface,
+    kind,
     tabFocus,
     tabPlacement,
-    tabOrder: normalizedTabOrder,
+    tabOrder,
     web: surface.web
       ? {
           ...surface.web,
@@ -99,23 +83,6 @@ export function focusCliProjectSurface(project: ProjectRecord): boolean {
 export function closeCliProjectSurface(project: ProjectRecord): boolean {
   project.surface = normalizeProjectSurface(project);
   if (project.surface.kind !== 'cli') return false;
-  project.surface.active = false;
-  project.surface.tabFocus = 'session';
-  return true;
-}
-
-export function focusMobileProjectSurface(project: ProjectRecord): boolean {
-  project.surface = normalizeProjectSurface(project);
-  if (project.surface.kind !== 'mobile') return false;
-  project.surface.active = true;
-  project.surface.tabFocus = 'mobile';
-  return true;
-}
-
-export function closeMobileProjectSurface(project: ProjectRecord): boolean {
-  project.surface = normalizeProjectSurface(project);
-  if (project.surface.kind !== 'mobile') return false;
-  project.surface.kind = 'web';
   project.surface.active = false;
   project.surface.tabFocus = 'session';
   return true;

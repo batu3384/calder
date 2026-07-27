@@ -1021,7 +1021,7 @@
   --provider-accent-soft: rgba(50, 211, 162, 0.2);
 }
 
-.command-deck-provider-select .custom-select-item[data-value='copilot']::before {
+.command-deck-provider-select .custom-select-item[data-value='cursor']::before {
   --provider-accent: var(--provider-accent, #7c8cff);
   --provider-accent-soft: rgba(124, 140, 255, 0.22);
 }
@@ -1029,11 +1029,6 @@
 .command-deck-provider-select .custom-select-item[data-value='antigravity']::before {
   --provider-accent: var(--provider-accent, #6bb5ff);
   --provider-accent-soft: rgba(107, 181, 255, 0.2);
-}
-
-.command-deck-provider-select .custom-select-item[data-value='qwen']::before {
-  --provider-accent: var(--provider-accent, #3ddbd9);
-  --provider-accent-soft: rgba(61, 219, 217, 0.2);
 }
 
 .command-deck-provider-select .custom-select-item[data-value='minimax']::before {
@@ -1051,7 +1046,7 @@
   --provider-accent-soft: rgba(50, 211, 162, 0.2);
 }
 
-.command-deck-provider-select[data-provider='copilot'] .custom-select-trigger {
+.command-deck-provider-select[data-provider='cursor'] .custom-select-trigger {
   --provider-accent: #7c8cff;
   --provider-accent-soft: rgba(124, 140, 255, 0.22);
 }
@@ -1059,11 +1054,6 @@
 .command-deck-provider-select[data-provider='antigravity'] .custom-select-trigger {
   --provider-accent: #6bb5ff;
   --provider-accent-soft: rgba(107, 181, 255, 0.2);
-}
-
-.command-deck-provider-select[data-provider='qwen'] .custom-select-trigger {
-  --provider-accent: #3ddbd9;
-  --provider-accent-soft: rgba(61, 219, 217, 0.2);
 }
 
 .command-deck-provider-select[data-provider='minimax'] .custom-select-trigger {
@@ -1208,122 +1198,6 @@
     0 8px 18px rgba(2, 8, 18, 0.14);
 }
 
-.tab-action-mcp {
-  width: auto;
-  min-width: var(--control-height-md);
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.tab-action-handoff {
-  width: 34px;
-  min-width: 34px;
-  padding: 0;
-  position: relative;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 34%, rgba(255, 255, 255, 0.02)),
-      transparent
-    ),
-    color-mix(in srgb, var(--surface-panel) 90%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
-}
-
-.tab-action-handoff-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.tab-action-handoff-icon svg {
-  width: 15px;
-  height: 15px;
-}
-
-.mobile-control-presence {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 86%, var(--accent-soft));
-  background: color-mix(in srgb, var(--surface-panel) 90%, rgba(255, 255, 255, 0.02));
-  color: var(--text-tertiary);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.mobile-control-presence[data-connection-state='waiting'] {
-  border-color: color-mix(in srgb, var(--warning) 64%, var(--border-subtle));
-  color: color-mix(in srgb, var(--warning-strong) 88%, var(--text-primary));
-  background: color-mix(in srgb, var(--warning) 12%, var(--surface-panel));
-}
-
-.mobile-control-presence[data-connection-state='connected'] {
-  border-color: color-mix(in srgb, var(--status-success-border) 74%, var(--border-subtle));
-  color: var(--status-success-text);
-  background: color-mix(in srgb, var(--status-success-bg) 24%, var(--surface-panel));
-}
-
-.tab-action-handoff.is-sharing {
-  border-color: color-mix(in srgb, var(--status-success-border) 80%, var(--border-subtle));
-  color: var(--status-success-text);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--status-success-border) 52%, transparent),
-    0 0 0 2px color-mix(in srgb, var(--status-success-border) 18%, transparent);
-}
-
-.tab-action-handoff[data-connection-state='waiting'] {
-  border-color: color-mix(in srgb, var(--warning) 72%, var(--border-subtle));
-  color: color-mix(in srgb, var(--warning-strong) 88%, var(--text-primary));
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--warning) 35%, transparent),
-    0 0 0 2px color-mix(in srgb, var(--warning) 14%, transparent);
-}
-
-.tab-action-handoff[data-connection-state='waiting']::after,
-.tab-action-handoff.is-connected::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.tab-action-handoff[data-connection-state='waiting']::after {
-  background: var(--warning);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warning) 24%, transparent);
-}
-
-.tab-action-handoff.is-connected {
-  border-color: color-mix(in srgb, var(--status-success-border) 85%, var(--border-subtle));
-  color: var(--status-success-text);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--status-success-bg) 35%, rgba(255, 255, 255, 0.02)),
-      transparent
-    ),
-    color-mix(in srgb, var(--surface-panel) 90%, transparent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--status-success-border) 62%, transparent),
-    0 0 0 2px color-mix(in srgb, var(--status-success-border) 20%, transparent);
-}
-
-.tab-action-handoff.is-connected::after {
-  background: var(--status-success-text);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-success-border) 24%, transparent);
-}
-
 @container workspace-stack (max-width: 1180px) {
   #tab-bar {
     gap: 9px;
@@ -1438,16 +1312,6 @@
   .session-launcher-group .icon-btn {
     width: 28px;
     height: 28px;
-  }
-
-  .session-launcher-group .tab-action-handoff {
-    width: 28px;
-    min-width: 28px;
-    padding: 0;
-  }
-
-  .mobile-control-presence {
-    display: none;
   }
 }
 
@@ -1625,11 +1489,7 @@
   background: linear-gradient(135deg, rgba(100, 116, 139, 0.92), rgba(51, 65, 85, 0.92));
 }
 
-.tab-provider-fallback-qwen {
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.96), rgba(15, 118, 110, 0.96));
-}
-
-.tab-provider-fallback-copilot {
+.tab-provider-fallback-cursor {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.96), rgba(37, 99, 235, 0.96));
 }
 

@@ -10,22 +10,21 @@ describe('resolveAutoApprovalInput', () => {
     expect(resolveAutoApprovalInput('claude')).toBe('1\n');
     expect(resolveAutoApprovalInput('codex')).toBe('y\n');
     expect(resolveAutoApprovalInput('antigravity')).toBe('y\n');
-    expect(resolveAutoApprovalInput('qwen')).toBe('y\n');
-    expect(resolveAutoApprovalInput('copilot')).toBe('y\n');
   });
 
   it('throws for unsupported providers', () => {
     expect(() => resolveAutoApprovalInput('minimax' as any)).toThrow(
       'Unsupported auto-approval provider',
     );
+    // Cursor has no permission-hook surface yet — keep ask-only (do not invent keystrokes).
+    expect(() => resolveAutoApprovalInput('cursor')).toThrow('Unsupported auto-approval provider');
   });
 
   it('exposes provider support checks for orchestrator guards', () => {
     expect(supportsAutoApprovalDispatch('claude')).toBe(true);
     expect(supportsAutoApprovalDispatch('codex')).toBe(true);
     expect(supportsAutoApprovalDispatch('antigravity')).toBe(true);
-    expect(supportsAutoApprovalDispatch('qwen')).toBe(true);
-    expect(supportsAutoApprovalDispatch('copilot')).toBe(true);
+    expect(supportsAutoApprovalDispatch('cursor')).toBe(false);
     expect(supportsAutoApprovalDispatch('minimax' as any)).toBe(false);
     expect(supportsAutoApprovalDispatch(null)).toBe(false);
     expect(supportsAutoApprovalDispatch(undefined)).toBe(false);

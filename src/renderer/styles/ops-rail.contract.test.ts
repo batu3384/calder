@@ -11,16 +11,13 @@ describe('ops rail stylesheet contract', () => {
     expect(inspectorCss).toContain('border-radius: 0;');
   });
 
-  it('renders summary and counts as compact rail metadata', () => {
-    expect(inspectorCss).toContain('#context-inspector .toolchain-summary');
+  it('renders config section counts as compact rail metadata', () => {
     expect(inspectorCss).toContain('border-bottom: 1px solid');
     expect(inspectorCss).toContain('#context-inspector .config-section-count');
     expect(inspectorCss).toContain('min-height: 18px;');
-    expect(inspectorCss).toContain('.toolchain-summary-status');
     expect(inspectorCss).toContain('.ops-rail-note');
     expect(inspectorCss).toContain('padding: 9px 11px;');
     expect(inspectorCss).toContain('border-radius: 12px;');
-    expect(inspectorCss).toContain('min-height: 42px;');
   });
 
   it('slims the right rail again at narrower shell widths instead of holding a wide fixed column', () => {

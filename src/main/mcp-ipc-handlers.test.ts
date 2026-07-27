@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MCP_GOVERNANCE_ERROR_CODES } from './ipc-mcp-governance';
+import { MCP_GOVERNANCE_ERROR_CODES } from './mcp-governance-errors';
 
 const mockIpcHandle = vi.hoisted(() => vi.fn());
 const mockMcpClient = vi.hoisted(() => ({

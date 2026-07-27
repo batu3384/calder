@@ -2,7 +2,11 @@ import type { PersistedState, Preferences, ProjectRecord } from '../shared/types
 import type { ProviderId } from '../shared/types/provider.js';
 import { restoreContext } from './session-context.js';
 import { restoreCost } from './session-cost.js';
-import { normalizeProjectLayout, normalizeProjectSurface } from './state-normalizers.js';
+import {
+  normalizeProjectLayout,
+  normalizeProjectSessions,
+  normalizeProjectSurface,
+} from './state-normalizers.js';
 import { repairProjectSurface } from './state-project-surface.js';
 
 export interface RendererStateMigrationResult {
@@ -38,6 +42,9 @@ export function migrateLoadedRendererState(
       surface: normalizeProjectSurface(project),
     };
     delete (nextProject as ProjectRecord & { readiness?: unknown }).readiness;
+    if (normalizeProjectSessions(nextProject)) {
+      didMigrateState = true;
+    }
     return nextProject;
   });
   if (JSON.stringify(state.projects) !== JSON.stringify(normalizedProjects)) {
