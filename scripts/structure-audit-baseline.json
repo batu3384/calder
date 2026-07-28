@@ -6,7 +6,7 @@
   "src/renderer/components/cli-surface/pane-elements.ts": 507,
   "src/renderer/components/cli-surface/pane.test.ts": 1944,
   "src/renderer/components/file-reader.ts": 554,
-  "src/renderer/components/mcp-inspector.ts": 551,
+  "src/renderer/components/mcp-inspector.ts": 553,
   "src/renderer/components/sidebar.ts": 564,
   "src/renderer/components/tab-bar/tab-bar-cli-update-panel.ts": 577,
   "src/renderer/i18n-pattern-translations.ts": 634,
