@@ -106,7 +106,9 @@ export function createInspectorPane(sessionId: string): void {
   const navTabs = pane.querySelectorAll('.mcp-nav-tab');
   const content = pane.querySelector('.mcp-inspector-content') as HTMLElement;
   setMcpStatus(statusPill, statusDot, statusLabel, 'disconnected', t('Disconnected'));
-  pane.querySelectorAll('.mcp-nav-count').forEach((count) => applyTabularNums(count as HTMLElement));
+  pane
+    .querySelectorAll('.mcp-nav-count')
+    .forEach((count) => applyTabularNums(count as HTMLElement));
   renderMcpEmptyState(
     content,
     t('Connect an MCP server'),

@@ -641,7 +641,12 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 68%, transparent);
   border-radius: 18px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.004) 58%, transparent),
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.028),
+      rgba(255, 255, 255, 0.004) 58%,
+      transparent
+    ),
     color-mix(in srgb, var(--surface-panel) 54%, transparent);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),

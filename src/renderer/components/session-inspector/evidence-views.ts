@@ -143,9 +143,7 @@ export function renderEvidence(container: HTMLElement): void {
       if (summaryResult.summaryStale) {
         const banner = document.createElement('div');
         banner.className = 'inspector-evidence-stale-banner';
-        banner.textContent = t(
-          'Summary may be stale — new events arrived after last rebuild.',
-        );
+        banner.textContent = t('Summary may be stale — new events arrived after last rebuild.');
 
         const rebuildBtn = document.createElement('button');
         rebuildBtn.className = 'inspector-evidence-rebuild-btn';

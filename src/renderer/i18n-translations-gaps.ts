@@ -264,7 +264,10 @@ export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> =
   ['Rate', 'Oran'],
   ['Context Window Usage', 'Bağlam Penceresi Kullanımı'],
   ['No projects yet', 'Henüz proje yok'],
-  ['Create a project to start a Calder workspace.', 'Calder çalışma alanı başlatmak için proje oluşturun.'],
+  [
+    'Create a project to start a Calder workspace.',
+    'Calder çalışma alanı başlatmak için proje oluşturun.',
+  ],
   ['MCP server URL', "MCP sunucu URL'si"],
   ['Search files by name', 'Dosyaları ada göre ara'],
   ['Resources', 'Kaynaklar'],

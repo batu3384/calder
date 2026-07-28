@@ -241,9 +241,7 @@ function render(): void {
   const bookmarkFilter = document.createElement('button');
   const applyFilterState = () => {
     bookmarkFilter.className = `history-bookmark-filter${bookmarkFilterActive ? ' active' : ''}`;
-    bookmarkFilter.textContent = bookmarkFilterActive
-      ? t('★ Bookmarked')
-      : t('☆ Bookmarked');
+    bookmarkFilter.textContent = bookmarkFilterActive ? t('★ Bookmarked') : t('☆ Bookmarked');
   };
   applyFilterState();
   bookmarkFilter.addEventListener('click', () => {
@@ -294,9 +292,7 @@ function renderList(history: ArchivedSession[]): void {
     resultCountEl.textContent = `${Math.min(filtered.length, MAX_VISIBLE)}/${history.length}`;
     applyTabularNums(resultCountEl);
     resultCountEl.title =
-      filtered.length === 1
-        ? t('1 matching run')
-        : t(`${filtered.length} matching runs`);
+      filtered.length === 1 ? t('1 matching run') : t(`${filtered.length} matching runs`);
   }
 
   listEl.innerHTML = '';

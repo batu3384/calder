@@ -23,7 +23,8 @@ const SECRET_PATTERNS: Array<{ type: string; pattern: RegExp }> = [
   { type: 'secret_field', pattern: /\b(?:api[_-]?key|secret)\s*[=:]\s*[^\s&]+/gi },
   {
     type: 'env_assignment',
-    pattern: /^\s*(?:export\s+)?[A-Z_][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*=\s*\S+/gim,
+    pattern:
+      /^\s*(?:export\s+)?[A-Z_][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*=\s*\S+/gim,
   },
   {
     type: 'private_key_pem',

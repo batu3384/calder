@@ -35,9 +35,7 @@ export function showElementInfo(
   instance.inspectTitleEl.textContent = t(`<${info.tagName}> selected`);
   instance.inspectSubtitleEl.textContent = info.textContent
     ? t(`Target text: ${info.textContent}`)
-    : t(
-        `Choose the best selector for this ${info.tagName} element before routing the prompt.`,
-      );
+    : t(`Choose the best selector for this ${info.tagName} element before routing the prompt.`);
   instance.elementInfoEl.innerHTML = '';
 
   const tagLine = document.createElement('div');

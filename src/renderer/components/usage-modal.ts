@@ -228,8 +228,7 @@ function renderEmpty(container: HTMLElement, message?: string): void {
   const copy = document.createElement('div');
   copy.className = 'usage-empty-copy';
   copy.textContent =
-    message ??
-    'Stats appear after supported CLI sessions record activity in this workspace.';
+    message ?? 'Stats appear after supported CLI sessions record activity in this workspace.';
   shell.appendChild(copy);
 
   container.appendChild(shell);
