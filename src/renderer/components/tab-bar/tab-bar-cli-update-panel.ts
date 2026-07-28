@@ -1,12 +1,12 @@
 import type { ProviderId, ProviderUpdateSummary } from '../../../shared/types/provider.js';
 import { t } from '../../i18n.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
 import type {
   CliProviderProgressState,
   CliUpdateCenterState,
 } from '../surface-services/update-center.js';
-import { applyTabularNums } from '../surface-services/dom-utils.js';
-import { showErrorToast } from '../toast.js';
 import { reloadCliProviderCatalog } from '../surface-services/update-center.js';
+import { showErrorToast } from '../toast.js';
 
 interface CliUpdateStatusCounters {
   updated: number;

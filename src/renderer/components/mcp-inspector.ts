@@ -1,5 +1,5 @@
-import { type JsonSchema, renderSchemaForm } from './mcp-schema-form.js';
 import { t } from '../i18n.js';
+import { type JsonSchema, renderSchemaForm } from './mcp-schema-form.js';
 import { applyTabularNums } from './surface-services/dom-utils.js';
 
 type NavTab = 'tools' | 'resources' | 'prompts';

@@ -1,5 +1,5 @@
-import { appState } from '../state.js';
 import { t } from '../i18n.js';
+import { appState } from '../state.js';
 
 let overlay: HTMLElement | null = null;
 let input: HTMLInputElement | null = null;

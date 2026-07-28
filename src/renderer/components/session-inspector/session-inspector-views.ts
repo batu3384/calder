@@ -1,4 +1,5 @@
 import { t } from '../../i18n.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
 import {
   getContextHistory,
@@ -7,7 +8,6 @@ import {
   getToolStats,
 } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
-import { applyTabularNums } from '../surface-services/dom-utils.js';
 import {
   badgeLabel,
   emptyMessage,

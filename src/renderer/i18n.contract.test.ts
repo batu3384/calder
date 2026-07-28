@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
+
 import { GAP_TRANSLATION_ENTRIES } from './i18n-translations-gaps.js';
 
 function expectTranslation(source: string, en: string, tr: string) {

@@ -1,5 +1,5 @@
-import { appState, ProjectRecord } from '../state.js';
 import { t } from '../i18n.js';
+import { appState, ProjectRecord } from '../state.js';
 import { closeModal, setModalError, showModal } from './modal.js';
 import { showPreferencesModal } from './preferences/preferences-modal.js';
 import {
