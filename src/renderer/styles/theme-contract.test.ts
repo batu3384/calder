@@ -11,6 +11,11 @@ const commandStudioCss = readFileSync(
 const cockpitUrl = new URL('./cockpit.css', import.meta.url);
 const cockpitCss = existsSync(cockpitUrl) ? readFileSync(cockpitUrl, 'utf-8') : '';
 
+function extractAppAmbientBlock(css: string): string {
+  const match = css.match(/#app\s*\{[\s\S]*?\n\}/);
+  return match?.[0] ?? '';
+}
+
 describe('precision cockpit theme contract', () => {
   it('defines the shared cockpit design tokens', () => {
     expect(baseCss).toContain('--surface-canvas');
@@ -42,11 +47,13 @@ describe('precision cockpit theme contract', () => {
     expect(auroraCss).toContain('--executive-panel-gradient');
     expect(auroraCss).toContain('grid-auto-rows: max-content;');
     expect(auroraCss).toContain('calder-aurora-drift');
+    expect(auroraCss).toContain('Aurora Lite restraint pass');
     expect(auroraCss).toContain('Premium shell audit v10');
     expect(auroraCss).toContain('--premium-panel-hairline');
     expect(auroraCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
     expect(commandStudioCss).toContain('Calder Command Studio');
     expect(commandStudioCss).toContain('Command studio coherence pass');
+    expect(commandStudioCss).toContain('Aurora Lite restraint pass');
     expect(commandStudioCss).toContain('Calder premium restraint pass');
     expect(commandStudioCss).toContain('--studio-cyan');
     expect(commandStudioCss).toContain('--studio-focus-halo');
@@ -79,6 +86,18 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).not.toContain('backdrop-filter: blur(10px) saturate(1.1);');
     expect(commandStudioCss).toContain('grid-template-areas:');
     expect(commandStudioCss).toContain("'nav primary'");
+  });
+
+  it('keeps shell ambient free of warm brass decorative washes', () => {
+    const auroraAppAmbient = extractAppAmbientBlock(auroraCss);
+    const studioAppAmbient = extractAppAmbientBlock(commandStudioCss);
+
+    expect(auroraAppAmbient).not.toContain('213, 169, 79');
+    expect(auroraAppAmbient).not.toContain('213, 175, 105');
+    expect(auroraAppAmbient).not.toContain('200, 168, 102');
+    expect(studioAppAmbient).not.toContain('213, 169, 79');
+    expect(studioAppAmbient).not.toContain('213, 175, 105');
+    expect(studioAppAmbient).not.toContain('216, 177, 106');
   });
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {

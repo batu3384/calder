@@ -211,12 +211,45 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
   container.appendChild(refreshBtn);
 }
 
-function renderEmpty(container: HTMLElement): void {
-  const empty = document.createElement('div');
-  empty.className = 'usage-empty';
-  empty.textContent =
-    'No usage data found yet. Stats appear after supported CLI sessions record activity.';
-  container.appendChild(empty);
+function renderEmpty(container: HTMLElement, message?: string): void {
+  const shell = document.createElement('div');
+  shell.className = 'usage-empty-shell';
+
+  const icon = document.createElement('div');
+  icon.className = 'usage-empty-icon';
+  icon.textContent = '📊';
+  shell.appendChild(icon);
+
+  const title = document.createElement('div');
+  title.className = 'usage-empty-title';
+  title.textContent = 'No usage data yet';
+  shell.appendChild(title);
+
+  const copy = document.createElement('div');
+  copy.className = 'usage-empty-copy';
+  copy.textContent =
+    message ??
+    'Stats appear after supported CLI sessions record activity in this workspace.';
+  shell.appendChild(copy);
+
+  container.appendChild(shell);
+}
+
+function renderLoading(container: HTMLElement): void {
+  const shell = document.createElement('div');
+  shell.className = 'usage-empty-shell';
+
+  const title = document.createElement('div');
+  title.className = 'usage-empty-title';
+  title.textContent = 'Loading usage stats';
+  shell.appendChild(title);
+
+  const copy = document.createElement('div');
+  copy.className = 'usage-empty-copy';
+  copy.textContent = 'Gathering session and token activity for this workspace.';
+  shell.appendChild(copy);
+
+  container.appendChild(shell);
 }
 
 export async function showUsageModal(): Promise<void> {
@@ -226,8 +259,8 @@ export async function showUsageModal(): Promise<void> {
 
   const content = document.createElement('div');
   content.className = 'usage-content';
-  content.innerHTML = '<div class="usage-empty">Loading...</div>';
   bodyEl.appendChild(content);
+  renderLoading(content);
 
   btnConfirm.textContent = 'Done';
   btnCancel.style.display = 'none';

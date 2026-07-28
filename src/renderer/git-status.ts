@@ -195,10 +195,14 @@ export function startPolling(): void {
     unwatchGitChanged = window.calder.git.onChanged(() => poll());
   }
 
-  // Start watcher for current project
-  if (appState.activeProject) {
-    window.calder.git.watchProject(appState.activeProject.path);
-  }
+  const watchActiveProject = (): void => {
+    const project = appState.activeProject;
+    if (!project?.path) return;
+    window.calder.git.watchProject(project.path);
+  };
+
+  // Start watcher for current project (may be empty before state-loaded)
+  watchActiveProject();
 
   // Pause/resume when window visibility changes
   document.addEventListener('visibilitychange', () => {
@@ -209,13 +213,24 @@ export function startPolling(): void {
     }
   });
 
+  // state-loaded does not emit project-changed — arm watcher/poll after restore
+  appState.on('state-loaded', () => {
+    worktreePollCounter = 0;
+    if (!appState.activeProject) {
+      stopInterval();
+      return;
+    }
+    watchActiveProject();
+    startInterval();
+  });
+
   // Immediate poll on project/session changes; manage interval lifecycle
   appState.on('project-changed', () => {
     worktreePollCounter = 0; // Force worktree refresh on project switch
     if (!appState.activeProject) {
       stopInterval();
     } else {
-      window.calder.git.watchProject(appState.activeProject.path);
+      watchActiveProject();
       startInterval();
     }
   });

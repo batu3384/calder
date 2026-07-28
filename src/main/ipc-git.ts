@@ -94,8 +94,14 @@ export function registerGitIpcHandlers(ops: GitGovernanceOps): void {
   ipcMain.on('git:watchProject', (_event, projectPath: string) => {
     const win = BrowserWindow.getAllWindows()[0];
     if (!win) return;
-    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Watch git project');
-    startGitWatcher(win, validatedProjectPath);
+    if (typeof projectPath !== 'string' || projectPath.trim().length === 0) return;
+    try {
+      const validatedProjectPath = requireKnownProjectPath(projectPath, 'Watch git project');
+      startGitWatcher(win, validatedProjectPath);
+    } catch (error) {
+      // Fire-and-forget channel: never throw into Electron uncaughtException flood.
+      console.warn('git:watchProject ignored:', error);
+    }
   });
 
   ipcMain.handle('git:listBranches', (_event, projectPath: string) => {

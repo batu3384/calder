@@ -1,5 +1,8 @@
+import * as path from 'node:path';
+
 import { BrowserWindow, ipcMain } from 'electron';
 
+import { onPtyExit, startEvidenceRun } from './calder-evidence/coordinator';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
 import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import {
@@ -17,6 +20,7 @@ import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
 import { isAutoApprovalMode, updateAutoApprovalMode } from './ipc-auto-approval-governance';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
 import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
+import { registerEvidenceIpcHandlers } from './ipc-evidence';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerGitIpcHandlers } from './ipc-git';
 import {
@@ -93,7 +97,20 @@ export function registerIpcHandlers(): void {
       }
     },
     mirrorPlaywrightFromPtyData,
-    handlePtySessionExit: (sessionId) => {
+    onPtyCreated: (sessionId, providerId, cwd) => {
+      const resolvedCwd = path.resolve(cwd);
+      const projectId =
+        loadState().projects.find((project) => path.resolve(project.path) === resolvedCwd)?.id ??
+        resolvedCwd;
+      void startEvidenceRun({
+        sessionId,
+        providerId,
+        projectId,
+        projectPath: resolvedCwd,
+      });
+    },
+    handlePtySessionExit: (sessionId, exitCode, signal) => {
+      void onPtyExit(sessionId, exitCode, signal);
       cleanupSessionStatus(sessionId);
       unregisterCodexSession(sessionId);
       autoApprovalOrchestrator.unregisterSession(sessionId);
@@ -142,4 +159,5 @@ export function registerIpcHandlers(): void {
   });
 
   registerMcpHandlers();
+  registerEvidenceIpcHandlers();
 }

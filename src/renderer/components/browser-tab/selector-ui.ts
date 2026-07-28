@@ -10,7 +10,8 @@ export function buildSelectorOptions(
 
   for (let i = 0; i < selectors.length; i++) {
     const sel = selectors[i];
-    const row = document.createElement('div');
+    const row = document.createElement('button');
+    row.type = 'button';
     row.className = 'inspect-selector-option';
     if (sel === activeSelector) row.classList.add('active');
 

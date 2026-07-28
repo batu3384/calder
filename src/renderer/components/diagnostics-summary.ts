@@ -2,6 +2,7 @@ import { describeProviderRoute } from '../../shared/provider-route.js';
 import type { AutoApprovalMode } from '../../shared/types/governance.js';
 import type { ProviderId, UiLanguage } from '../../shared/types/provider.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../state.js';
+import { applyTabularNums } from './surface-services/dom-utils.js';
 import { getGitStatus, type GitStatus } from './surface-services/git-status.js';
 import { getProviderDisplayName } from './surface-services/provider-availability.js';
 
@@ -306,10 +307,12 @@ function createCard(card: DiagnosticsSummaryCard): HTMLDivElement {
 
   const value = document.createElement('strong');
   value.className = 'diagnostics-summary-value';
+  applyTabularNums(value);
   value.textContent = card.value;
 
   const detail = document.createElement('span');
   detail.className = 'diagnostics-summary-detail';
+  applyTabularNums(detail);
   detail.textContent = card.detail;
 
   el.appendChild(label);

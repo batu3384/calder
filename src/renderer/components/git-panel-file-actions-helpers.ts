@@ -22,10 +22,14 @@ export function hideGitContextMenu(): void {
 }
 
 function createMenuItem(label: string, onClick: () => void, disabled = false): HTMLElement {
-  const item = document.createElement('div');
+  const item = document.createElement('button');
+  item.type = 'button';
   item.className = 'tab-context-menu-item' + (disabled ? ' disabled' : '');
   item.textContent = label;
-  if (!disabled) {
+  item.setAttribute('role', 'menuitem');
+  if (disabled) {
+    item.disabled = true;
+  } else {
     item.addEventListener('click', (event) => {
       event.stopPropagation();
       hideGitContextMenu();

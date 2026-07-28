@@ -11,7 +11,6 @@ export const CORE_TRANSLATION_ENTRIES_PART_1: ReadonlyArray<readonly [string, st
   ['New Session (Ctrl+Shift+N)', 'Yeni Oturum (Ctrl+Shift+N)'],
   ['Create new session', 'Yeni oturum oluştur'],
   ['Projects', 'Projeler'],
-  ['Command studio', 'Komut stüdyosu'],
   ['Project Dock', 'Proje Paneli'],
   ['Switch context without losing live work.', 'Canlı işi kaybetmeden bağlam değiştirin.'],
   ['Agent command desk', 'Ajan komut masası'],

@@ -4,6 +4,7 @@ import {
   onChange as onInspectorChange,
 } from '../surface-services/session-inspector-state.js';
 import { fitAllVisible } from '../terminal-pane.js';
+import { renderChanges, renderEvidence, renderReview } from './evidence-views.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { renderTimeline } from './session-inspector-timeline.js';
 import { canInspectSession, resetUIState } from './session-inspector-utils.js';
@@ -198,7 +199,7 @@ function createPanel(): HTMLElement {
 
   const meta = document.createElement('div');
   meta.className = 'inspector-header-meta';
-  meta.textContent = 'Timeline, tools, and context snapshots';
+  meta.textContent = 'Activity, evidence, changes, and review';
   headerCopy.appendChild(meta);
 
   header.appendChild(headerCopy);
@@ -234,8 +235,11 @@ function createPanel(): HTMLElement {
   const tabBar = document.createElement('div');
   tabBar.className = 'inspector-tabs';
   const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
-    { id: 'timeline', label: 'Timeline' },
+    { id: 'timeline', label: 'Activity' },
+    { id: 'evidence', label: 'Evidence' },
+    { id: 'changes', label: 'Changes' },
     { id: 'costs', label: 'Costs' },
+    { id: 'review', label: 'Review' },
     { id: 'tools', label: 'Tools' },
     { id: 'context', label: 'Context' },
   ];
@@ -290,8 +294,17 @@ function renderActiveTab(): void {
     case 'timeline':
       renderTimeline(content);
       break;
+    case 'evidence':
+      renderEvidence(content);
+      break;
+    case 'changes':
+      renderChanges(content);
+      break;
     case 'costs':
       renderCosts(content);
+      break;
+    case 'review':
+      renderReview(content);
       break;
     case 'tools':
       renderTools(content);

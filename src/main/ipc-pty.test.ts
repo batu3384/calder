@@ -132,7 +132,7 @@ describe('ipc pty handlers', () => {
       win,
     );
     expect(ops.mirrorPlaywrightFromPtyData).toHaveBeenCalledWith('s2', resolved, 'stdout-chunk');
-    expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s2');
+    expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s2', 0, 15);
     expect(send).toHaveBeenCalledWith('pty:data', 's2', 'stdout-chunk');
     expect(send).toHaveBeenCalledWith('pty:exit', 's2', 0, 15);
   });
@@ -161,7 +161,7 @@ describe('ipc pty handlers', () => {
     const createHandler = getHandleHandler('pty:create');
     await createHandler({}, 's3', '/repo', null, false, '', 'claude');
 
-    expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s3');
+    expect(ops.handlePtySessionExit).toHaveBeenCalledWith('s3', 0, undefined);
     expect(send).toHaveBeenCalledWith('pty:exit', 's3', 0, undefined);
   });
 

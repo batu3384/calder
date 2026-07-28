@@ -1,4 +1,5 @@
 import { appState } from '../state.js';
+import { t } from '../i18n.js';
 
 let overlay: HTMLElement | null = null;
 let input: HTMLInputElement | null = null;
@@ -30,11 +31,11 @@ function createOverlay(): void {
 
   const title = document.createElement('div');
   title.className = 'quick-open-title';
-  title.textContent = 'Quick Open';
+  title.textContent = t('Quick Open');
 
   const copy = document.createElement('div');
   copy.className = 'quick-open-copy';
-  copy.textContent = 'Search files in the current workspace and jump straight into them.';
+  copy.textContent = t('Search files in the current workspace and jump straight into them.');
 
   hero.appendChild(title);
   hero.appendChild(copy);
@@ -42,7 +43,8 @@ function createOverlay(): void {
   input = document.createElement('input');
   input.className = 'quick-open-input';
   input.type = 'text';
-  input.placeholder = 'Search files by name...';
+  input.placeholder = t('Search files by name...');
+  input.setAttribute('aria-label', t('Search files by name'));
   input.addEventListener('input', onInput);
   input.addEventListener('keydown', onKeydown);
 
@@ -82,13 +84,14 @@ function renderResults(): void {
   if (results.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'quick-open-empty';
-    empty.textContent = input?.value ? 'No matching files' : 'Start typing to search files';
+    empty.textContent = input?.value ? t('No matching files') : t('Start typing to search files');
     resultsList.appendChild(empty);
     return;
   }
 
   for (let i = 0; i < results.length; i++) {
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'quick-open-item';
     if (i === activeIndex) item.classList.add('active');
 

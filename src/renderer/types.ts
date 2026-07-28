@@ -136,6 +136,15 @@ import type {
   StatsCache,
   ToolFailureData,
 } from '../shared/types/session.js';
+import type {
+  EvidenceEvent,
+  EvidenceHealth,
+  EvidenceReview,
+  EvidenceReviewStatus,
+  EvidenceRunMeta,
+  EvidenceSettings,
+  EvidenceSummary,
+} from '../shared/types-evidence.js';
 
 export interface CalderApi {
   pty: {
@@ -356,6 +365,41 @@ export interface CalderApi {
   };
   stats: {
     getCache(): Promise<StatsCache | null>;
+  };
+  evidence: {
+    getSummary(id: string): Promise<{
+      summary: EvidenceSummary | null;
+      summaryStale: boolean;
+      coverage: EvidenceSummary['coverage'];
+      gaps: EvidenceHealth['gaps'];
+      runId: string;
+    } | null>;
+    listEvents(
+      id: string,
+      offset?: number,
+      limit?: number,
+    ): Promise<{ runId: string | null; events: EvidenceEvent[]; total: number }>;
+    getHealth(id: string): Promise<EvidenceHealth | null>;
+    getMeta(id: string): Promise<EvidenceRunMeta | null>;
+    updateReview(
+      runId: string,
+      status: EvidenceReviewStatus,
+      notes?: string,
+    ): Promise<EvidenceReview>;
+    export(
+      runId: string,
+      format: 'json' | 'markdown',
+    ): Promise<{ canceled: true } | { canceled: false; filePath: string }>;
+    deleteRun(runId: string): Promise<{ ok: boolean }>;
+    deleteAll(): Promise<{ canceled: boolean }>;
+    getSettings(): Promise<EvidenceSettings>;
+    setSettings(settings: EvidenceSettings): Promise<EvidenceSettings>;
+    getStorageUsage(): Promise<number>;
+    rebuildSummary(runId: string): Promise<EvidenceSummary | null>;
+    resolveRunId(sessionId: string): Promise<string | null>;
+    subscribe(runId: string): void;
+    unsubscribe(): void;
+    onEvent(callback: (runId: string, events: EvidenceEvent[]) => void): () => void;
   };
   menu: {
     onPreferences(callback: () => void): () => void;

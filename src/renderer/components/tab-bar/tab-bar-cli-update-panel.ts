@@ -4,6 +4,8 @@ import type {
   CliProviderProgressState,
   CliUpdateCenterState,
 } from '../surface-services/update-center.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
+import { showErrorToast } from '../toast.js';
 import { reloadCliProviderCatalog } from '../surface-services/update-center.js';
 
 interface CliUpdateStatusCounters {
@@ -364,14 +366,17 @@ function renderCliUpdatePanelList(
         : needsInstall
           ? t('Install')
           : t('Update');
+    if (provider.status === 'running' && typeof provider.progressPercent === 'number') {
+      applyTabularNums(action);
+    }
     action.setAttribute(
       'aria-label',
       needsInstall ? t(`Install ${provider.providerName}`) : t(`Update ${provider.providerName}`),
     );
     action.addEventListener('click', () => {
       if (action.disabled) return;
-      void actionHandler(provider.providerId).catch((error) => {
-        console.error('[tab-bar] Failed to run CLI provider action', error);
+      void actionHandler(provider.providerId).catch(() => {
+        showErrorToast(t('CLI update failed'));
       });
     });
 
@@ -413,6 +418,7 @@ function renderCliUpdatePanelContent(
   }
   const { total, completed, progressPercent, progressLabel } = getCliUpdateProgress(cliState);
   progressLabelEl.textContent = t(`Progress: ${progressLabel} (${progressPercent}%)`);
+  applyTabularNums(progressLabelEl);
   renderCliUpdatePanelTimestamp(timestampEl, cliState);
   renderCliUpdatePanelStatusAndMeta(statusEl, metaEl, cliState, total, completed);
 
@@ -479,14 +485,14 @@ export function createTabBarCliUpdatePanel(
     closeBtn?.addEventListener('click', () => toggle(false));
     updateAllBtn?.addEventListener('click', () => {
       if (updateAllBtn.disabled) return;
-      void onRunAllUpdates().catch((error) => {
-        console.error('[tab-bar] Failed to update CLI tools', error);
+      void onRunAllUpdates().catch(() => {
+        showErrorToast(t('CLI update failed.'));
       });
     });
     cancelBtn?.addEventListener('click', () => {
       if (cancelBtn.disabled) return;
-      void onCancelUpdate().catch((error) => {
-        console.error('[tab-bar] Failed to cancel CLI update', error);
+      void onCancelUpdate().catch(() => {
+        showErrorToast(t('CLI update failed.'));
       });
     });
 
@@ -498,6 +504,12 @@ export function createTabBarCliUpdatePanel(
     cliUpdatePanelListEl = panel.querySelector('.cli-update-panel-list');
     cliUpdatePanelUpdateAllBtnEl = updateAllBtn;
     cliUpdatePanelCancelBtnEl = cancelBtn;
+    if (cliUpdatePanelProgressLabelEl) {
+      applyTabularNums(cliUpdatePanelProgressLabelEl);
+    }
+    if (cliUpdatePanelTimestampEl) {
+      applyTabularNums(cliUpdatePanelTimestampEl);
+    }
     if (cliUpdatePanelStatusEl) {
       cliUpdatePanelStatusEl.setAttribute('role', 'status');
       cliUpdatePanelStatusEl.setAttribute('aria-live', 'polite');

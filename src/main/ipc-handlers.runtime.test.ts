@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
     registerAppBrowserIpcHandlers: vi.fn(),
     registerCliSurfaceIpcHandlers: vi.fn(),
     registerPtyIpcHandlers: vi.fn(),
+    registerEvidenceIpcHandlers: vi.fn(),
     sanitizePersistedStateForSave: vi.fn((value: unknown) => value),
     clearInspectorOrchestrationSession: vi.fn(),
     resetInspectorOrchestrationCaches: vi.fn(),
@@ -97,6 +98,9 @@ vi.mock('./ipc-cli-surface', () => ({
   registerCliSurfaceIpcHandlers: mocks.registerCliSurfaceIpcHandlers,
 }));
 vi.mock('./ipc-pty', () => ({ registerPtyIpcHandlers: mocks.registerPtyIpcHandlers }));
+vi.mock('./ipc-evidence', () => ({
+  registerEvidenceIpcHandlers: mocks.registerEvidenceIpcHandlers,
+}));
 vi.mock('./ipc-state-sanitizer', () => ({
   sanitizePersistedStateForSave: mocks.sanitizePersistedStateForSave,
 }));

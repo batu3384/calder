@@ -49,13 +49,17 @@ function createSelectItems(
   const items: HTMLElement[] = [];
   for (let i = 0; i < options.length; i++) {
     const opt = options[i];
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'custom-select-item';
     item.textContent = opt.label;
     item.dataset.value = opt.value;
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', String(opt.value === hiddenValue));
-    if (opt.disabled) item.classList.add('disabled');
+    if (opt.disabled) {
+      item.classList.add('disabled');
+      item.disabled = true;
+    }
     if (opt.value === hiddenValue) item.classList.add('selected');
 
     item.addEventListener('mouseenter', () => {

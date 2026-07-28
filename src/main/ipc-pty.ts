@@ -62,7 +62,8 @@ export interface PtyIpcOps {
     win: BrowserWindow,
   ) => void;
   mirrorPlaywrightFromPtyData: (sessionId: string, cwd: string, chunk: string) => void;
-  handlePtySessionExit: (sessionId: string) => void;
+  onPtyCreated?: (sessionId: string, providerId: ProviderId, cwd: string) => void;
+  handlePtySessionExit: (sessionId: string, exitCode?: number, signal?: number | string) => void;
 }
 
 export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
@@ -132,13 +133,14 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
           }
         },
         (exitCode, signal) => {
-          ops.handlePtySessionExit(payload.sessionId);
+          ops.handlePtySessionExit(payload.sessionId, exitCode, signal);
           const w = BrowserWindow.getAllWindows()[0];
           if (w && !w.isDestroyed()) {
             w.webContents.send('pty:exit', payload.sessionId, exitCode, signal);
           }
         },
       );
+      ops.onPtyCreated?.(payload.sessionId, payload.providerId, resolvedCwd);
     },
   );
 

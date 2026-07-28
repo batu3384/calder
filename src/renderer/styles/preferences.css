@@ -15,17 +15,20 @@
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 18px rgba(8, 5, 3, 0.08);
+    0 8px 18px rgba(1, 5, 12, 0.06);
 }
 
 .modal-toggle-field label {
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
+  min-width: 0;
 }
 
 .modal-toggle-field .custom-select {
-  min-width: 220px;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .modal-toggle-field input[type='checkbox'] {
@@ -56,6 +59,7 @@
 #modal-body.preferences-body {
   flex: 1;
   min-height: 0;
+  max-height: none;
   overflow: hidden;
   padding-right: 0;
 }
@@ -110,11 +114,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   background:
-    radial-gradient(
-      circle at top left,
-      color-mix(in srgb, var(--accent-soft) 14%, transparent),
-      transparent 55%
-    ),
+    radial-gradient(circle at top left, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 96%, transparent),
@@ -122,6 +122,7 @@
     );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow-y: auto;
+  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   padding-right: 10px;
 }
@@ -138,7 +139,7 @@
 .preferences-menu-title {
   font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 670;
+  font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.03em;
 }
@@ -204,7 +205,7 @@
   transform: none;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 12px 22px rgba(8, 5, 3, 0.16);
+    0 10px 22px rgba(1, 5, 12, 0.1);
 }
 
 .preferences-menu-item.active::before {
@@ -214,7 +215,7 @@
 
 .preferences-menu-item-label {
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
@@ -234,17 +235,13 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 24px;
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 12%, transparent),
-      transparent 42%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 99%, transparent),
       color-mix(in srgb, var(--surface-panel) 94%, transparent)
     );
-  box-shadow: 0 18px 40px rgba(8, 5, 3, 0.18);
+  box-shadow: 0 12px 28px rgba(1, 5, 12, 0.12);
   overflow: hidden;
 }
 
@@ -255,6 +252,7 @@
   padding: 22px 24px 20px;
   min-width: 0;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
 
@@ -285,7 +283,7 @@
 .preferences-subsection-title {
   font-family: var(--font-display);
   font-size: 18px;
-  font-weight: 640;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -304,7 +302,7 @@
 .preferences-section-title {
   font-family: var(--font-display);
   font-size: 20px;
-  font-weight: 680;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -338,7 +336,7 @@
   gap: 8px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 24px rgba(0, 0, 0, 0.08);
+    0 10px 24px rgba(1, 5, 12, 0.08);
 }
 
 .preferences-overview-label {
@@ -373,14 +371,14 @@
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 18px rgba(0, 0, 0, 0.06);
+    0 8px 18px rgba(1, 5, 12, 0.06);
   padding: 16px 18px 12px;
   margin-bottom: 18px;
 }
 
 .preferences-card-heading {
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -517,13 +515,13 @@
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
   white-space: nowrap;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 10px 22px rgba(0, 0, 0, 0.08);
+    0 10px 22px rgba(1, 5, 12, 0.08);
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -541,7 +539,7 @@
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 28px rgba(0, 0, 0, 0.12);
+    0 14px 28px rgba(1, 5, 12, 0.12);
 }
 
 .orchestration-overview-action-btn[data-role='toggle-details'] {
@@ -685,7 +683,7 @@
 
 .orchestration-overview-item-title {
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -791,7 +789,7 @@
 .task-discovery-stat-value,
 .checkpoint-discovery-stat-value {
   font-size: 16px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -872,7 +870,7 @@
 .task-discovery-item-title,
 .checkpoint-discovery-item-title {
   font-size: 13px;
-  font-weight: 620;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -887,6 +885,8 @@
   font-size: 12px;
   line-height: 1.55;
   color: var(--text-secondary);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .preview-discovery-item-copy {
@@ -904,11 +904,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 16px;
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 12%, transparent),
-      transparent 48%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 98%, transparent),
@@ -937,7 +933,7 @@
 
 .preview-discovery-health-status {
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -985,7 +981,7 @@
 .checkpoint-restore-confirm-title {
   font-family: var(--font-display);
   font-size: 20px;
-  font-weight: 680;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -1027,7 +1023,7 @@
 
 .checkpoint-restore-confirm-stat-value {
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
   line-height: 1.35;
   color: var(--text-primary);
 }
@@ -1164,7 +1160,7 @@
     color-mix(in srgb, var(--surface-panel) 92%, transparent);
   color: var(--text-secondary);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -1192,7 +1188,7 @@
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 10px 20px rgba(0, 0, 0, 0.08);
+    0 10px 20px rgba(1, 5, 12, 0.08);
 }
 
 .context-discovery-item-btn:disabled,
@@ -1219,6 +1215,11 @@
   background: color-mix(in srgb, var(--surface-raised) 42%, transparent);
   color: var(--text-secondary);
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .context-discovery-toggle input[type='checkbox'] {
@@ -1283,13 +1284,13 @@
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   color: var(--text-secondary);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
   white-space: nowrap;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 10px 22px rgba(0, 0, 0, 0.08);
+    0 10px 22px rgba(1, 5, 12, 0.08);
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -1315,7 +1316,7 @@
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 14px 28px rgba(0, 0, 0, 0.12);
+    0 14px 28px rgba(1, 5, 12, 0.12);
 }
 
 .context-discovery-action-btn:disabled,
@@ -1373,11 +1374,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   border-radius: 20px;
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 18%, transparent),
-      transparent 44%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 98%, transparent),
@@ -1385,14 +1382,14 @@ html[lang='tr'] .orchestration-overview-action-btn {
     );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 22px rgba(0, 0, 0, 0.07);
+    0 10px 22px rgba(1, 5, 12, 0.07);
   padding: 18px 18px 16px;
 }
 
 .about-app-name {
   font-family: var(--font-display);
   font-size: 22px;
-  font-weight: 690;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -1535,12 +1532,17 @@ html[lang='tr'] .orchestration-overview-action-btn {
   flex-direction: column;
   gap: 14px;
   padding: 4px 0;
+  min-height: 220px;
 }
 
 .setup-loading {
   font-size: 12px;
   color: var(--text-muted);
   padding: 12px 0;
+}
+
+.preview-discovery-list {
+  min-height: 140px;
 }
 
 .setup-provider-shell {
@@ -1553,7 +1555,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 24px rgba(0, 0, 0, 0.07);
+    0 10px 24px rgba(1, 5, 12, 0.07);
   padding: 14px 16px 12px;
 }
 
@@ -1571,7 +1573,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
 
 .setup-provider-name {
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-primary);
 }
@@ -1689,7 +1691,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 1px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.01em;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition:
@@ -1743,7 +1745,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   position: absolute;
   width: 6px;
   height: 6px;
-  background: #f44336;
+  background: var(--danger);
   border-radius: 50%;
   top: 12px;
   right: 12px;
@@ -1757,14 +1759,18 @@ html[lang='tr'] .orchestration-overview-action-btn {
 
   .preferences-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .preferences-menu {
     width: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 
   .preferences-content {
     padding: 18px;
+    overflow-y: auto;
   }
 
   .preferences-overview-grid,
@@ -1817,7 +1823,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 10px 24px rgba(0, 0, 0, 0.07);
+    0 10px 24px rgba(1, 5, 12, 0.07);
   padding: 14px 16px 8px;
   margin-bottom: 14px;
 }
@@ -1896,7 +1902,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   white-space: nowrap;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 8px 18px rgba(0, 0, 0, 0.12);
+    0 8px 18px rgba(1, 5, 12, 0.12);
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -1932,6 +1938,12 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-key-btn.recording {
+    animation: none;
+  }
+}
+
 .shortcut-reset-btn {
   font-size: 11px;
   min-height: 30px;
@@ -1943,7 +1955,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border-radius: 999px;
   color: var(--text-muted);
   cursor: pointer;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.01em;
   transition:
     background 0.15s ease,
@@ -1961,267 +1973,18 @@ html[lang='tr'] .orchestration-overview-action-btn {
   transform: translateY(-1px);
 }
 
-/* Premium polish overrides */
-#modal.modal-wide {
-  border-radius: 22px;
-}
-
-.preferences-menu {
-  border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background:
-    radial-gradient(
-      circle at top left,
-      color-mix(in srgb, var(--accent-soft) 26%, transparent),
-      transparent 58%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-panel) 95%, transparent),
-      color-mix(in srgb, var(--surface-panel) 84%, transparent)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 16px 30px rgba(2, 4, 10, 0.12);
-}
-
-.preferences-menu-title,
-.preferences-section-title,
-.preferences-subsection-title,
-.preferences-overview-value {
-  letter-spacing: -0.03em;
-}
-
-.preferences-menu-caption,
-.preferences-section-description,
-.preferences-subsection-description,
-.preferences-overview-note,
-.preferences-control-note {
-  color: var(--text-secondary);
-}
-
-.preferences-menu-item {
-  border-color: color-mix(in srgb, var(--border-subtle) 22%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-raised) 24%, transparent);
-}
-
-.preferences-menu-item:hover {
-  border-color: color-mix(in srgb, var(--accent) 12%, var(--border-subtle));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 12%, rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-raised) 46%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 10px 22px rgba(2, 4, 10, 0.08);
-}
-
-.preferences-menu-item-label {
-  color: var(--text-primary);
-}
-
-.preferences-content-shell {
-  border-color: color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 22%, transparent),
-      transparent 44%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-panel) 98%, transparent),
-      color-mix(in srgb, var(--surface-panel) 90%, transparent)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 22px 44px rgba(2, 4, 10, 0.2);
-}
-
-.preferences-subsection,
-.preferences-section-card,
-.setup-provider-shell,
-.shortcut-group-shell,
-.about-hero,
-.about-update-row {
-  border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 12px 28px rgba(2, 8, 16, 0.12);
-}
-
-.preferences-overview-card {
-  border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 18%, transparent),
-      transparent 40%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, transparent);
-}
-
-.modal-toggle-field {
-  border-color: color-mix(in srgb, var(--border-subtle) 86%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 24px rgba(2, 4, 10, 0.08);
-}
-
-.modal-toggle-field .custom-select-trigger {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 84%, black);
-}
-
-.preferences-card-heading {
-  color: var(--text-primary);
-}
-
-.preferences-card-copy,
-.preferences-card-note {
-  color: var(--text-secondary);
-}
-
-.about-link {
-  border-color: color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 88%, transparent);
-}
-
-.about-link:hover {
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
-}
-
-/* Micro polish pass */
-.preferences-layout {
-  gap: 20px;
-}
-
-.preferences-menu {
-  padding: 18px 15px 16px;
-  gap: 12px;
-  border-radius: 22px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    var(--shadow-card);
-}
-
-.preferences-menu-header {
-  padding-bottom: 16px;
-  margin-bottom: 4px;
-}
-
-.preferences-menu-item {
-  min-height: 60px;
-  padding: 11px 15px 11px 17px;
-  border-radius: 16px;
-}
-
-.preferences-menu-item:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    var(--shadow-card);
-}
-
-.preferences-menu-item.active {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    var(--shadow-lift);
-}
-
-.preferences-content-shell {
-  border-radius: 26px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    var(--shadow-card-strong);
-}
-
-.preferences-content {
-  padding: 24px 26px 22px;
-}
-
-.preferences-overview-grid {
-  gap: 14px;
-}
-
-.preferences-overview-card {
-  min-height: 116px;
-  gap: 10px;
-  border-radius: 18px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    var(--shadow-card);
-}
-
-.preferences-subsection,
-.preferences-section-card,
-.setup-provider-shell,
-.shortcut-group-shell,
-.about-hero,
-.about-update-row {
-  border-radius: 20px;
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 14%, transparent),
-      transparent 44%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, transparent);
-}
-
-.modal-toggle-field {
-  padding: 13px 15px;
-  border-radius: 18px;
-}
-
-.preferences-menu-item.has-badge::after {
-  background: color-mix(in srgb, var(--danger) 88%, white);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface-panel) 88%, transparent);
-}
-
-.about-link {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.about-link:hover {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 10px 20px rgba(2, 8, 16, 0.12);
-}
-
-/* Premium refinement pass */
+/* Preferences chrome — final pass (consolidated) */
 .preferences-layout {
   gap: 22px;
 }
 
 .preferences-menu {
+  padding: 18px 15px 16px;
+  gap: 12px;
   border-radius: 24px;
   border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
   background:
-    radial-gradient(
-      circle at top left,
-      color-mix(in srgb, var(--accent-soft) 14%, transparent),
-      transparent 54%
-    ),
+    radial-gradient(circle at top left, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 96%, transparent),
@@ -2229,7 +1992,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
     );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 16px 32px rgba(2, 8, 16, 0.1);
+    0 12px 28px rgba(1, 5, 12, 0.1);
 }
 
 .preferences-menu-title {
@@ -2244,14 +2007,18 @@ html[lang='tr'] .orchestration-overview-action-btn {
 .preferences-menu-item {
   min-height: 62px;
   padding: 11px 15px 11px 18px;
-  border-color: color-mix(in srgb, var(--border-subtle) 18%, transparent);
+  border-radius: 16px;
+  border-color: color-mix(in srgb, var(--border-subtle) 32%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-raised) 20%, transparent);
-  box-shadow: none;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-raised) 22%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.028),
+    0 6px 14px rgba(2, 8, 16, 0.05);
 }
 
 .preferences-menu-item:hover {
+  transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
   background:
     linear-gradient(
@@ -2283,11 +2050,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border-radius: 28px;
   border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 12%, transparent),
-      transparent 46%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 98%, transparent),
@@ -2295,7 +2058,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
     );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 24px 46px rgba(2, 8, 16, 0.14);
+    var(--shadow-card-strong);
 }
 
 .preferences-content {
@@ -2319,11 +2082,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border-radius: 20px;
   border-color: color-mix(in srgb, var(--border-subtle) 76%, transparent);
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 12%, transparent),
-      transparent 42%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 97%, transparent),
@@ -2331,7 +2090,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
     );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 12px 28px rgba(2, 8, 16, 0.09);
+    0 10px 24px rgba(1, 5, 12, 0.09);
 }
 
 .preferences-subsection,
@@ -2343,11 +2102,7 @@ html[lang='tr'] .orchestration-overview-action-btn {
   border-radius: 22px;
   border-color: color-mix(in srgb, var(--border-subtle) 78%, transparent);
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 10%, transparent),
-      transparent 46%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-panel) 95%, transparent),
@@ -2424,4 +2179,231 @@ html[lang='tr'] .orchestration-overview-action-btn {
   .preferences-overview-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* Preserved uniques + box quality */
+#modal.modal-wide {
+  border-radius: 22px;
+}
+
+.preferences-menu-title,
+.preferences-section-title,
+.preferences-subsection-title,
+.preferences-overview-value {
+  letter-spacing: -0.03em;
+}
+
+.preferences-menu-caption,
+.preferences-section-description,
+.preferences-subsection-description,
+.preferences-overview-note,
+.preferences-control-note {
+  color: var(--text-secondary);
+}
+
+.preferences-menu-header {
+  padding-bottom: 16px;
+  margin-bottom: 4px;
+}
+
+.preferences-menu-item-label,
+.preferences-card-heading {
+  color: var(--text-primary);
+}
+
+.preferences-card-copy,
+.preferences-card-note {
+  color: var(--text-secondary);
+}
+
+.preferences-menu-item.has-badge::after {
+  background: color-mix(in srgb, var(--danger) 88%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface-panel) 88%, transparent);
+}
+
+.modal-toggle-field .custom-select-trigger {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel-alt) 84%, black);
+}
+
+/* Discovery items: real cards instead of bare dividers */
+.context-discovery-item,
+.governance-discovery-item,
+.preview-discovery-item,
+.workflow-discovery-item,
+.team-context-discovery-item,
+.review-discovery-item,
+.task-discovery-item,
+.checkpoint-discovery-item {
+  gap: 6px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 93%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 18px rgba(2, 8, 16, 0.07);
+}
+
+.context-discovery-item:last-child,
+.governance-discovery-item:last-child,
+.preview-discovery-item:last-child,
+.workflow-discovery-item:last-child,
+.team-context-discovery-item:last-child,
+.review-discovery-item:last-child,
+.task-discovery-item:last-child,
+.checkpoint-discovery-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Stat cards: elevation consistent with overview cards */
+.context-discovery-stat,
+.governance-discovery-stat,
+.preview-discovery-stat,
+.workflow-discovery-stat,
+.team-context-discovery-stat,
+.review-discovery-stat,
+.task-discovery-stat,
+.checkpoint-discovery-stat {
+  border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  background:
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-panel) 97%, transparent),
+      color-mix(in srgb, var(--surface-panel) 91%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 10px 24px rgba(1, 5, 12, 0.09);
+}
+
+/* About link grid spacing + link cards */
+.about-link-grid {
+  gap: var(--space-10);
+}
+
+.about-link {
+  border-color: color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 88%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.about-link:hover {
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
+      rgba(255, 255, 255, 0)
+    ),
+    color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(2, 8, 16, 0.12);
+}
+
+/* Pills: consistent inner highlight */
+.setup-check-status-pill,
+.orchestration-overview-item-state {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Aurora Lite interaction polish */
+.preferences-overview-value,
+.context-discovery-stat-value,
+.governance-discovery-stat-value,
+.preview-discovery-stat-value,
+.workflow-discovery-stat-value,
+.team-context-discovery-stat-value,
+.review-discovery-stat-value,
+.task-discovery-stat-value,
+.checkpoint-discovery-stat-value,
+.checkpoint-restore-confirm-stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.preferences-menu-item:focus-visible,
+.orchestration-overview-action-btn:focus-visible:not(:disabled),
+.context-discovery-item-btn:focus-visible:not(:disabled),
+.governance-discovery-item-btn:focus-visible:not(:disabled),
+.preview-discovery-item-btn:focus-visible:not(:disabled),
+.workflow-discovery-item-btn:focus-visible:not(:disabled),
+.team-context-discovery-item-btn:focus-visible:not(:disabled),
+.review-discovery-item-btn:focus-visible:not(:disabled),
+.task-discovery-item-btn:focus-visible:not(:disabled),
+.checkpoint-discovery-item-btn:focus-visible:not(:disabled),
+.context-discovery-action-btn:focus-visible:not(:disabled),
+.governance-discovery-action-btn:focus-visible:not(:disabled),
+.preview-discovery-action-btn:focus-visible:not(:disabled),
+.workflow-discovery-action-btn:focus-visible:not(:disabled),
+.team-context-discovery-action-btn:focus-visible:not(:disabled),
+.review-discovery-action-btn:focus-visible:not(:disabled),
+.task-discovery-action-btn:focus-visible:not(:disabled),
+.checkpoint-discovery-action-btn:focus-visible:not(:disabled),
+.about-update-btn:focus-visible:not(:disabled),
+.about-link:focus-visible,
+.setup-fix-btn:focus-visible:not(:disabled),
+.shortcut-key-btn:focus-visible,
+.shortcut-reset-btn:focus-visible,
+.checkpoint-restore-confirm-file-item:focus-visible,
+.context-discovery-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
+}
+
+.preferences-menu-item:active {
+  transform: translateY(1px);
+}
+
+.preferences-menu-item.active:active {
+  transform: translateY(0);
+}
+
+.orchestration-overview-action-btn:active:not(:disabled),
+.context-discovery-item-btn:active:not(:disabled),
+.governance-discovery-item-btn:active:not(:disabled),
+.preview-discovery-item-btn:active:not(:disabled),
+.workflow-discovery-item-btn:active:not(:disabled),
+.team-context-discovery-item-btn:active:not(:disabled),
+.review-discovery-item-btn:active:not(:disabled),
+.task-discovery-item-btn:active:not(:disabled),
+.checkpoint-discovery-item-btn:active:not(:disabled),
+.context-discovery-action-btn:active:not(:disabled),
+.governance-discovery-action-btn:active:not(:disabled),
+.preview-discovery-action-btn:active:not(:disabled),
+.workflow-discovery-action-btn:active:not(:disabled),
+.team-context-discovery-action-btn:active:not(:disabled),
+.review-discovery-action-btn:active:not(:disabled),
+.task-discovery-action-btn:active:not(:disabled),
+.checkpoint-discovery-action-btn:active:not(:disabled),
+.about-update-btn:active:not(:disabled),
+.setup-fix-btn:active:not(:disabled),
+.shortcut-key-btn:active,
+.shortcut-reset-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.about-link:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.checkpoint-restore-confirm-file-item:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.context-discovery-toggle:hover {
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border-subtle));
+  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+  color: var(--text-primary);
+}
+
+.context-discovery-toggle:active {
+  transform: translateY(1px) scale(0.98);
 }

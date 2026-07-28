@@ -19,6 +19,9 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
   tab.className = 'tab-item tab-surface-item' + (options.active ? ' active' : '');
   tab.dataset.surfaceTab = 'cli';
   tab.title = options.title;
+  tab.setAttribute('role', 'tab');
+  tab.setAttribute('aria-selected', String(options.active));
+  tab.tabIndex = 0;
   const reorderHandle =
     options.project.sessions.length > 0
       ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
@@ -29,8 +32,23 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
       <span class="tab-name-prefix">${options.badgeMarkup}</span>
       <span class="tab-name-label">${options.label}</span>
     </span>
-    <span class="tab-close" title="Close ${options.label}">&times;</span>
+    <button type="button" class="tab-close" aria-label="Close ${options.label}" title="Close ${options.label}">&times;</button>
   `;
+
+  tab.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      options.onFocus();
+      return;
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const tabs = [...options.tabListEl.querySelectorAll<HTMLElement>('.tab-item')];
+      const index = tabs.indexOf(tab);
+      const nextIndex = event.key === 'ArrowLeft' ? index - 1 : index + 1;
+      tabs[nextIndex]?.focus();
+    }
+  });
 
   tab.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).classList.contains('tab-close')) return;

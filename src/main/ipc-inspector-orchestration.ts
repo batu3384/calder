@@ -3,6 +3,7 @@ import { BrowserWindow, shell } from 'electron';
 import type { ProjectGovernanceState } from '../shared/types/governance';
 import type { InspectorEvent } from '../shared/types/session';
 import { openUrlWithBrowserPolicy } from './browser-open-policy';
+import { onInspectorEvents } from './calder-evidence/coordinator';
 import { resolveAutoApprovalInput } from './calder-governance/auto-approval-dispatch';
 import { createAutoApprovalOrchestrator } from './calder-governance/auto-approval-orchestrator';
 import { discoverProjectGovernance } from './calder-governance/discovery';
@@ -65,6 +66,9 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
   });
 
   setInspectorEventsMiddleware((sessionId, events) => {
+    void onInspectorEvents(sessionId, events).catch((error) => {
+      console.warn('Evidence ingest failed:', error);
+    });
     void autoApprovalOrchestrator.handleInspectorEvents(sessionId, events).catch((error) => {
       console.warn('Auto-approval orchestrator failed:', error);
     });

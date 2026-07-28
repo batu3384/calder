@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { getProviderCapabilities } from '../surface-services/provider-availability.js';
 import {
   getContextHistory,
@@ -6,6 +7,7 @@ import {
   getToolStats,
 } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
 import {
   badgeLabel,
   emptyMessage,
@@ -19,13 +21,13 @@ import {
 // --- Costs View ---
 
 export function renderCosts(container: HTMLElement): void {
-  if (renderUnsupportedGuard(container, 'costTracking', 'Cost tracking')) return;
+  if (renderUnsupportedGuard(container, 'costTracking', t('Cost tracking'))) return;
 
   const events = getEvents(inspectorState.inspectedSessionId!);
   const costDeltas = getCostDeltas(inspectorState.inspectedSessionId!);
 
   if (events.length === 0) {
-    renderInspectorEmpty(container, emptyMessage('No events yet'));
+    renderInspectorEmpty(container, emptyMessage(t('No events yet')));
     return;
   }
 
@@ -45,18 +47,19 @@ export function renderCosts(container: HTMLElement): void {
 
   const summary = document.createElement('div');
   summary.className = 'inspector-summary';
+  applyTabularNums(summary);
   summary.innerHTML = `
-    <div class="inspector-summary-item"><span class="inspector-summary-label">Total Cost</span><span class="inspector-summary-value">$${totalCost.toFixed(4)}</span></div>
-    <div class="inspector-summary-item"><span class="inspector-summary-label">Total Tokens</span><span class="inspector-summary-value">${formatTokenCount(totalTokens)}</span></div>
-    <div class="inspector-summary-item"><span class="inspector-summary-label">Avg Cost/Step</span><span class="inspector-summary-value">$${stepsWithCost > 0 ? (totalCost / stepsWithCost).toFixed(4) : '0.0000'}</span></div>
+    <div class="inspector-summary-item"><span class="inspector-summary-label">${t('Total Cost')}</span><span class="inspector-summary-value">$${totalCost.toFixed(4)}</span></div>
+    <div class="inspector-summary-item"><span class="inspector-summary-label">${t('Total Tokens')}</span><span class="inspector-summary-value">${formatTokenCount(totalTokens)}</span></div>
+    <div class="inspector-summary-item"><span class="inspector-summary-label">${t('Avg Cost/Step')}</span><span class="inspector-summary-value">$${stepsWithCost > 0 ? (totalCost / stepsWithCost).toFixed(4) : '0.0000'}</span></div>
   `;
   container.appendChild(summary);
 
   // Cost table
   const table = document.createElement('table');
   table.className = 'inspector-table';
-  table.innerHTML =
-    '<thead><tr><th>#</th><th>Event</th><th>Tool</th><th>Cost Delta</th><th>Cumulative</th></tr></thead>';
+  applyTabularNums(table);
+  table.innerHTML = `<thead><tr><th>#</th><th>${t('Event')}</th><th>${t('Tool')}</th><th>${t('Cost Delta')}</th><th>${t('Cumulative')}</th></tr></thead>`;
   const tbody = document.createElement('tbody');
 
   const deltaMap = new Map(costDeltas.map((d) => [d.index, d.delta]));
@@ -100,7 +103,7 @@ export function renderTools(container: HTMLElement): void {
   const stats = getToolStats(inspectorState.inspectedSessionId!);
 
   if (stats.length === 0) {
-    renderInspectorEmpty(container, emptyMessage('No tool calls yet'));
+    renderInspectorEmpty(container, emptyMessage(t('No tool calls yet')));
     return;
   }
 
@@ -109,7 +112,8 @@ export function renderTools(container: HTMLElement): void {
 
   const table = document.createElement('table');
   table.className = 'inspector-table';
-  table.innerHTML = `<thead><tr><th>Tool</th><th>Calls</th><th>Failures</th><th>Rate</th>${showCost ? '<th>Cost</th>' : ''}</tr></thead>`;
+  applyTabularNums(table);
+  table.innerHTML = `<thead><tr><th>${t('Tool')}</th><th>${t('Calls')}</th><th>${t('Failures')}</th><th>${t('Rate')}</th>${showCost ? `<th>${t('Cost')}</th>` : ''}</tr></thead>`;
   const tbody = document.createElement('tbody');
 
   for (const s of stats) {
@@ -132,6 +136,7 @@ export function renderTools(container: HTMLElement): void {
   const maxCalls = stats[0]?.calls ?? 1;
   const chart = document.createElement('div');
   chart.className = 'inspector-bar-chart';
+  applyTabularNums(chart);
 
   for (const s of stats.slice(0, 10)) {
     const bar = document.createElement('div');
@@ -153,12 +158,12 @@ export function renderTools(container: HTMLElement): void {
 // --- Context View ---
 
 export function renderContext(container: HTMLElement): void {
-  if (renderUnsupportedGuard(container, 'contextWindow', 'Context window tracking')) return;
+  if (renderUnsupportedGuard(container, 'contextWindow', t('Context window tracking'))) return;
 
   const history = getContextHistory(inspectorState.inspectedSessionId!);
 
   if (history.length === 0) {
-    renderInspectorEmpty(container, emptyMessage('No context data yet'));
+    renderInspectorEmpty(container, emptyMessage(t('No context data yet')));
     return;
   }
 
@@ -168,14 +173,15 @@ export function renderContext(container: HTMLElement): void {
   const gauge = document.createElement('div');
   gauge.className = 'inspector-context-gauge';
   const pct = latest.usedPercentage;
-  const color = pct >= 90 ? 'var(--accent)' : pct >= 70 ? '#f4b400' : '#34a853';
+  const color = pct >= 90 ? 'var(--accent)' : pct >= 70 ? 'var(--warning)' : 'var(--success)';
   gauge.innerHTML = `
-    <div class="inspector-gauge-label">Context Window Usage</div>
+    <div class="inspector-gauge-label">${t('Context Window Usage')}</div>
     <div class="inspector-gauge-bar">
       <div class="inspector-gauge-fill" style="width: ${pct}%; background: ${color}"></div>
     </div>
     <div class="inspector-gauge-text">${pct.toFixed(1)}% &middot; ${formatTokenCount(latest.totalTokens)} tokens</div>
   `;
+  applyTabularNums(gauge);
   container.appendChild(gauge);
 
   // History SVG chart
@@ -216,11 +222,11 @@ export function renderContext(container: HTMLElement): void {
       <rect x="${padding.left}" y="${padding.top + chartH * 0.05}" width="${chartW}" height="${chartH * 0.15}" fill="rgba(244,180,0,0.08)" />
       <!-- Threshold lines -->
       <line x1="${padding.left}" y1="${padding.top + chartH * 0.05}" x2="${padding.left + chartW}" y2="${padding.top + chartH * 0.05}" stroke="var(--accent)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5" />
-      <line x1="${padding.left}" y1="${padding.top + chartH * 0.2}" x2="${padding.left + chartW}" y2="${padding.top + chartH * 0.2}" stroke="#f4b400" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5" />
+      <line x1="${padding.left}" y1="${padding.top + chartH * 0.2}" x2="${padding.left + chartW}" y2="${padding.top + chartH * 0.2}" stroke="var(--warning)" stroke-width="0.5" stroke-dasharray="3,3" opacity="0.5" />
       <!-- Area fill -->
       <polygon points="${areaPoints}" fill="rgba(66,133,244,0.15)" />
       <!-- Line -->
-      <polyline points="${polylinePoints}" fill="none" stroke="#4285f4" stroke-width="1.5" />
+      <polyline points="${polylinePoints}" fill="none" stroke="var(--accent-cool)" stroke-width="1.5" />
       <!-- Y-axis labels -->
       <text x="${padding.left - 4}" y="${padding.top + 4}" fill="var(--text-muted)" font-size="9" text-anchor="end">100%</text>
       <text x="${padding.left - 4}" y="${padding.top + chartH * 0.2 + 3}" fill="var(--text-muted)" font-size="9" text-anchor="end">80%</text>

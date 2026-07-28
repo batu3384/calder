@@ -50,8 +50,8 @@ describe('context language contract', () => {
     expect(gitPanelSource).toContain('Git');
     expect(gitPanelSource).toContain('Git is clean');
     expect(historySource).toContain('Run Log');
-    expect(historySource).toContain("'Çalışma günlüğü'");
-    expect(historySource).toContain('localizedText');
+    expect(historySource).toContain("t('Run Log')");
+    expect(historySource).toContain("from '../i18n.js'");
     expect(historySource).toContain('recent run');
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
     expect(inspectorSource).toContain('renderDiagnosticsSummary');

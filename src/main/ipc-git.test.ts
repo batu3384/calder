@@ -186,6 +186,21 @@ describe('ipc git handlers', () => {
     expect(mockStartGitWatcher).not.toHaveBeenCalled();
   });
 
+  it('ignores git:watchProject when project path is unknown instead of throwing', () => {
+    const ops = {
+      requireKnownProjectPath: vi.fn(() => {
+        throw new Error('Watch git project requires a known project path');
+      }),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+    };
+    registerGitIpcHandlers(ops);
+
+    const watchProject = getOnHandler('git:watchProject');
+    mockGetAllWindows.mockReturnValue([{ id: 1 }]);
+    expect(() => watchProject({}, '/outside')).not.toThrow();
+    expect(mockStartGitWatcher).not.toHaveBeenCalled();
+  });
+
   it('rejects mutating git operations when project path is unknown', async () => {
     const ops = {
       requireKnownProjectPath: vi.fn(() => {

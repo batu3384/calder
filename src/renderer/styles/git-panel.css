@@ -35,11 +35,11 @@
 
 .git-group-header {
   padding: 8px 14px 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  text-transform: none;
+  letter-spacing: 0.04em;
 }
 
 .git-file-badge.calder-status-pill {
@@ -84,13 +84,14 @@
   transition: opacity 0.12s ease;
 }
 
-.config-item:hover .git-item-actions {
+.config-item:hover .git-item-actions,
+.config-item:focus-within .git-item-actions {
   opacity: 1;
 }
 
 .git-action-btn {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
   border-radius: 10px;
@@ -120,6 +121,10 @@
   transform: translateY(-1px);
 }
 
+.git-action-btn:active {
+  transform: translateY(1px);
+}
+
 /* Premium refinement pass */
 .git-worktree-selector {
   padding: 8px 12px 10px;
@@ -138,9 +143,9 @@
 
 .git-group-header {
   padding: 10px 14px 6px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 

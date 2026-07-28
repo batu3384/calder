@@ -1,4 +1,5 @@
 import { appState, ProjectRecord } from '../state.js';
+import { t } from '../i18n.js';
 import { closeModal, setModalError, showModal } from './modal.js';
 import { showPreferencesModal } from './preferences/preferences-modal.js';
 import {
@@ -131,6 +132,24 @@ function doRender(): void {
   projectListEl.innerHTML = '';
   projectListEl.setAttribute('role', 'list');
   projectListEl.setAttribute('aria-label', 'Projects');
+
+  if (appState.projects.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'config-empty ops-rail-note';
+    empty.dataset.tone = 'muted';
+
+    const title = document.createElement('div');
+    title.className = 'inspector-empty-title';
+    title.textContent = t('No projects yet');
+
+    const copy = document.createElement('div');
+    copy.className = 'inspector-empty-copy';
+    copy.textContent = t('Create a project to start a Calder workspace.');
+
+    empty.append(title, copy);
+    projectListEl.appendChild(empty);
+    return;
+  }
 
   for (const project of appState.projects) {
     const locationLabel = shortProjectPath(project.path);

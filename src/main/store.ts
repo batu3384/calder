@@ -76,6 +76,7 @@ function migratePersistedState(state: PersistedState): void {
   const normalizeProviderId = (value: unknown): string => {
     if (typeof value !== 'string') return 'claude';
     if (value === 'gemini') return 'antigravity';
+    if (value === 'qwen' || value === 'copilot') return 'claude';
     return (SUPPORTED_PROVIDER_IDS as readonly string[]).includes(value) ? value : 'claude';
   };
 

@@ -1,5 +1,6 @@
 // Shared type definitions used across main, preload, and renderer processes.
 
+export type * from './types-evidence';
 export type * from './types-governance';
 export type * from './types-project';
 export type * from './types-provider';

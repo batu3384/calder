@@ -27,7 +27,7 @@ export function validatePtyCreatePayload(
   const parsed = validateOrThrow(PtyCreateSchema, {
     sessionId,
     cwd,
-    cliSessionId,
+    cliSessionId: cliSessionId ?? null,
     isResume,
     extraArgs,
     providerId,

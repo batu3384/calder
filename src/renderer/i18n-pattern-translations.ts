@@ -427,7 +427,7 @@ function createCliSurfaceSummaryPatterns(translate: Translate): PatternTranslati
   ];
 }
 
-function createInspectorAndErrorPatterns(): PatternTranslation[] {
+function createInspectorAndErrorPatterns(translate: Translate): PatternTranslation[] {
   return [
     {
       pattern: /^Browser:\s*(.+)$/u,
@@ -547,6 +547,79 @@ function createInspectorAndErrorPatterns(): PatternTranslation[] {
       pattern: /^Last:\s*(.+)$/u,
       replace: (match) => `Son: ${match[1]}`,
     },
+    {
+      pattern: /^Coverage:\s*(.+)$/u,
+      replace: (match) => `Kapsam: ${match[1]}`,
+    },
+    {
+      pattern: /^Events (\d+) · Tools (\d+) · Policy (\d+)$/u,
+      replace: (match) => `Olaylar ${match[1]} · Araçlar ${match[2]} · Politika ${match[3]}`,
+    },
+    {
+      pattern: /^Showing (\d+) of (\d+) events$/u,
+      replace: (match) => `${match[2]} olaydan ${match[1]} gösteriliyor`,
+    },
+    {
+      pattern: /^Tool:\s*(.+)$/u,
+      replace: (match) => `Araç: ${match[1]}`,
+    },
+    {
+      pattern: /^Policy (.+) \((.+)\)$/u,
+      replace: (match) => `Politika ${match[1]} (${match[2]})`,
+    },
+    {
+      pattern: /^Evidence storage:\s*([0-9.]+) KB$/u,
+      replace: (match) => `Kanıt depolama: ${match[1]} KB`,
+    },
+    {
+      pattern: /^Completion:\s*(.+)$/u,
+      replace: (match) => `Tamamlanma: ${match[1]}`,
+    },
+    {
+      pattern: /^(.+) unavailable$/u,
+      replace: (match) => `${translate(match[1])} kullanılamıyor`,
+    },
+    {
+      pattern: /^This view is not available for (.+) sessions\.$/u,
+      replace: (match) => `Bu görünüm ${match[1]} oturumları için kullanılamıyor.`,
+    },
+    {
+      pattern: /^<(.+)> selected$/u,
+      replace: (match) => `<${match[1]}> seçildi`,
+    },
+    {
+      pattern: /^Target text:\s*(.+)$/u,
+      replace: (match) => `Hedef metin: ${match[1]}`,
+    },
+    {
+      pattern: /^Choose the best selector for this (.+) element before routing the prompt\.$/u,
+      replace: (match) =>
+        `İstemi yönlendirmeden önce bu ${match[1]} öğesi için en iyi seçiciyi belirleyin.`,
+    },
+    {
+      pattern: /^(\d+) recent runs$/u,
+      replace: (match) => `${match[1]} son çalışma`,
+    },
+    {
+      pattern: /^1 matching run$/u,
+      replace: () => '1 eşleşen çalışma',
+    },
+    {
+      pattern: /^(\d+) matching runs$/u,
+      replace: (match) => `${match[1]} eşleşen çalışma`,
+    },
+    {
+      pattern: /^Remove "(.+)" from session history\?$/u,
+      replace: (match) => `"${match[1]}" oturum geçmişinden kaldırılsın mı?`,
+    },
+    {
+      pattern: /^(\d+) more items…$/u,
+      replace: (match) => `${match[1]} öğe daha…`,
+    },
+    {
+      pattern: /^(\d+)d ago$/u,
+      replace: (match) => `${match[1]} gün önce`,
+    },
   ];
 }
 
@@ -556,6 +629,6 @@ export function createPatternTranslations(translate: Translate): PatternTranslat
     ...createPolicyAndRoutingPatterns(translate),
     ...createRelativeTimePatterns(),
     ...createCliSurfaceSummaryPatterns(translate),
-    ...createInspectorAndErrorPatterns(),
+    ...createInspectorAndErrorPatterns(translate),
   ];
 }

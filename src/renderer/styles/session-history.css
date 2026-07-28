@@ -31,7 +31,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.02), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 78%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
@@ -59,7 +59,7 @@
   padding: 0 12px;
   font-size: 11px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.034), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.034), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
   color: var(--text-secondary);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
@@ -78,11 +78,15 @@
 
 .history-clear-btn:hover {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.04), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.04), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
   transform: translateY(-1px);
+}
+
+.history-clear-btn:active {
+  transform: translateY(1px);
 }
 
 .history-list {
@@ -99,19 +103,29 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  cursor: default;
+  cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 92%, transparent);
   box-shadow: var(--shadow-card);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .history-item:hover {
   background: color-mix(in srgb, var(--surface-hover) 94%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border-subtle));
   box-shadow: var(--shadow-lift);
+}
+
+.history-item:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-card);
 }
 
 .history-item-info {
@@ -166,14 +180,14 @@
 
 .history-remove-btn {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   font-size: 12px;
   line-height: 22px;
   text-align: center;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.038), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.038), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 76%, transparent);
   color: var(--text-dim);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
@@ -196,11 +210,15 @@
 
 .history-remove-btn:hover {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.044), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.044), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--danger) 22%, var(--border));
   color: var(--danger);
   transform: translateY(-1px);
+}
+
+.history-remove-btn:active {
+  transform: translateY(1px);
 }
 
 .history-bookmark-btn {
@@ -212,7 +230,7 @@
   line-height: 22px;
   text-align: center;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.038), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.038), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 76%, transparent);
   color: var(--text-dim);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
@@ -244,11 +262,15 @@
 
 .history-bookmark-btn:hover {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.044), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.044), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--bookmark) 32%, var(--border));
   color: var(--bookmark);
   transform: translateY(-1px);
+}
+
+.history-bookmark-btn:active {
+  transform: translateY(1px);
 }
 
 .history-actions {
@@ -302,6 +324,10 @@
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--bookmark) 20%, var(--border));
   transform: translateY(-1px);
+}
+
+.history-bookmark-filter:active {
+  transform: translateY(1px);
 }
 
 .history-bookmark-filter.active {

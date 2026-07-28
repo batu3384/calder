@@ -19,7 +19,7 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--border-subtle);
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, black);
   flex-shrink: 0;
 }
@@ -179,7 +179,7 @@
   gap: 12px;
   padding: 10px 12px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.028), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, black);
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
@@ -259,10 +259,15 @@
 /* Clickable config items in git panel */
 .config-item-clickable {
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .config-item-clickable:hover {
   background: var(--bg-hover);
+}
+
+.config-item-clickable:active {
+  background: color-mix(in srgb, var(--surface-hover) 88%, transparent);
 }
 
 /* Quick Open overlay */
@@ -273,7 +278,7 @@
   right: 0;
   bottom: 0;
   background: rgba(6, 10, 14, 0.62);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   padding-top: 15vh;
@@ -365,11 +370,24 @@
     transform var(--motion-fast) ease;
 }
 
+button.quick-open-item {
+  appearance: none;
+  width: calc(100% - 16px);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+}
+
 .quick-open-item:hover,
 .quick-open-item.active {
   background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--border-subtle) 88%, transparent);
   transform: translateY(-1px);
+}
+
+.quick-open-item:active {
+  transform: translateY(1px);
 }
 
 .quick-open-item.active {
@@ -452,13 +470,7 @@
 
 .agent-doc-header {
   border-color: var(--border-hairline);
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 18%, transparent),
-      transparent 42%
-    ),
-    color-mix(in srgb, var(--surface-panel) 76%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 76%, transparent);
 }
 
 .agent-doc-meta {
@@ -480,17 +492,13 @@
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
   border-radius: 16px;
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 90%, transparent),
-      transparent 40%
-    ),
+    radial-gradient(circle at top right, rgba(127, 212, 255, 0.04), transparent 42%),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--surface-elevated) 88%, transparent),
       color-mix(in srgb, var(--surface-panel) 90%, transparent)
     );
-  box-shadow: 0 18px 44px rgba(2, 8, 16, 0.2);
+  box-shadow: 0 12px 28px rgba(1, 5, 12, 0.14);
 }
 
 .file-reader-agent-title {

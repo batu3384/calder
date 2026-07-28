@@ -1,6 +1,8 @@
 import type { ProviderId } from '../../shared/types/provider.js';
+import { t } from '../i18n.js';
 import { isDerivedCost, isEstimatedCost } from '../session-cost.js';
 import { appState, ArchivedSession } from '../state.js';
+import { applyTabularNums } from './surface-services/dom-utils.js';
 import { buildResumeWithProviderItems } from './resume-with-provider-menu.js';
 import { loadProviderAvailability } from './surface-services/provider-availability.js';
 import { applyTabContextMenuSemantics } from './tab-bar/tab-bar-menu-semantics.js';
@@ -28,7 +30,7 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   if (archived.cliSessionId) {
     const resumeItem = document.createElement('div');
     resumeItem.className = 'tab-context-menu-item';
-    resumeItem.textContent = 'Resume';
+    resumeItem.textContent = t('Resume');
     resumeItem.addEventListener('click', (e) => {
       e.stopPropagation();
       hideHistoryContextMenu();
@@ -53,7 +55,7 @@ function showHistoryContextMenu(x: number, y: number, archived: ArchivedSession)
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight)
     menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-  applyTabContextMenuSemantics(menu, 'History actions', hideHistoryContextMenu);
+  applyTabContextMenuSemantics(menu, t('History actions'), hideHistoryContextMenu);
 }
 
 const MAX_VISIBLE = 50;
@@ -71,14 +73,6 @@ let resultCountEl: HTMLElement | null = null;
 let collapsed = true;
 let compactExpanded = false;
 let bookmarkFilterActive = false;
-
-function isTurkishUiLanguage(): boolean {
-  return appState.preferences.language === 'tr';
-}
-
-function localizedText(english: string, turkish: string): string {
-  return isTurkishUiLanguage() ? turkish : english;
-}
 
 function getSectionPresentation(): SectionPresentation {
   const wrapper = container?.parentNode as { dataset?: Record<string, string> } | null;
@@ -129,11 +123,13 @@ function onHistoryChanged(): void {
     const countEl = container.querySelector('.config-section-count');
     if (countEl) {
       countEl.textContent = String(history.length);
+      applyTabularNums(countEl as HTMLElement);
     } else if (history.length > 0) {
       const headerMeta = container.querySelector('.config-section-meta');
       if (headerMeta) {
         const span = document.createElement('span');
         span.className = 'config-section-count control-chip';
+        applyTabularNums(span);
         span.textContent = String(history.length);
         headerMeta.appendChild(span);
       }
@@ -172,7 +168,7 @@ function render(): void {
   button.setAttribute('aria-expanded', String(!collapsed));
   button.innerHTML = `
     <span class="config-section-toggle ${collapsed ? 'collapsed' : ''}">&#x25BC;</span>
-    <span class="config-section-title">${localizedText('Run Log', 'Çalışma günlüğü')}</span>
+    <span class="config-section-title">${t('Run Log')}</span>
   `;
   header.appendChild(button);
 
@@ -181,6 +177,7 @@ function render(): void {
   if (history.length > 0) {
     const count = document.createElement('span');
     count.className = 'config-section-count control-chip';
+    applyTabularNums(count);
     count.textContent = String(history.length);
     meta.appendChild(count);
   }
@@ -205,10 +202,10 @@ function render(): void {
     summary.dataset.tone = history.length === 0 ? 'muted' : 'default';
     summary.textContent =
       history.length === 0
-        ? localizedText('No run history yet', 'Henüz çalışma geçmişi yok')
+        ? t('No run history yet')
         : history.length === 1
-          ? localizedText('1 recent run', '1 son çalışma')
-          : localizedText(`${history.length} recent runs`, `${history.length} son çalışma`);
+          ? t('1 recent run')
+          : t(`${history.length} recent runs`);
     body.appendChild(summary);
     container.appendChild(body);
     return;
@@ -218,7 +215,7 @@ function render(): void {
     const empty = document.createElement('div');
     empty.className = 'history-empty ops-rail-note';
     empty.dataset.tone = 'muted';
-    empty.textContent = localizedText('No run history yet', 'Henüz çalışma geçmişi yok');
+    empty.textContent = t('No run history yet');
     body.appendChild(empty);
     container.appendChild(body);
     return;
@@ -234,8 +231,8 @@ function render(): void {
   searchInput = document.createElement('input');
   searchInput.className = 'history-search';
   searchInput.type = 'text';
-  searchInput.placeholder = localizedText('Filter runs…', 'Çalışmaları filtrele…');
-  searchInput.ariaLabel = localizedText('Filter run history', 'Çalışma geçmişini filtrele');
+  searchInput.placeholder = t('Filter runs…');
+  searchInput.ariaLabel = t('Filter run history');
   searchInput.addEventListener('input', () => renderList(history));
   searchShell.appendChild(searchInput);
   toolbar.appendChild(searchShell);
@@ -245,8 +242,8 @@ function render(): void {
   const applyFilterState = () => {
     bookmarkFilter.className = `history-bookmark-filter${bookmarkFilterActive ? ' active' : ''}`;
     bookmarkFilter.textContent = bookmarkFilterActive
-      ? localizedText('★ Bookmarked', '★ İşaretli')
-      : localizedText('☆ Bookmarked', '☆ İşaretli');
+      ? t('★ Bookmarked')
+      : t('☆ Bookmarked');
   };
   applyFilterState();
   bookmarkFilter.addEventListener('click', () => {
@@ -258,19 +255,11 @@ function render(): void {
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button';
   clearBtn.className = 'history-clear-btn';
-  clearBtn.textContent = localizedText('Clear Log', 'Günlüğü temizle');
-  clearBtn.ariaLabel = localizedText('Clear run history', 'Çalışma geçmişini temizle');
+  clearBtn.textContent = t('Clear Log');
+  clearBtn.ariaLabel = t('Clear run history');
   clearBtn.addEventListener('click', () => {
     if (!project) return;
-    if (
-      !confirm(
-        localizedText(
-          'Clear all session history for this project? This cannot be undone.',
-          'Bu projenin tüm oturum geçmişi temizlensin mi? Bu işlem geri alınamaz.',
-        ),
-      )
-    )
-      return;
+    if (!confirm(t('Clear all session history for this project? This cannot be undone.'))) return;
     appState.clearSessionHistory(project.id);
   });
 
@@ -278,6 +267,7 @@ function render(): void {
   actions.className = 'history-actions';
   resultCountEl = document.createElement('span');
   resultCountEl.className = 'history-result-count control-chip';
+  applyTabularNums(resultCountEl);
   resultCountEl.textContent = `${history.length}`;
   actions.appendChild(resultCountEl);
   actions.appendChild(bookmarkFilter);
@@ -302,10 +292,11 @@ function renderList(history: ArchivedSession[]): void {
     .reverse(); // newest first
   if (resultCountEl) {
     resultCountEl.textContent = `${Math.min(filtered.length, MAX_VISIBLE)}/${history.length}`;
+    applyTabularNums(resultCountEl);
     resultCountEl.title =
       filtered.length === 1
-        ? localizedText('1 matching run', '1 eşleşen çalışma')
-        : localizedText(`${filtered.length} matching runs`, `${filtered.length} eşleşen çalışma`);
+        ? t('1 matching run')
+        : t(`${filtered.length} matching runs`);
   }
 
   listEl.innerHTML = '';
@@ -316,11 +307,19 @@ function renderList(history: ArchivedSession[]): void {
     item.className = 'history-item calder-list-row';
 
     if (archived.cliSessionId) {
-      item.style.cursor = 'pointer';
-      item.addEventListener('click', () => {
+      item.setAttribute('role', 'button');
+      item.tabIndex = 0;
+      const onResume = () => {
         const project = appState.activeProject;
         if (project) {
           appState.resumeFromHistory(project.id, archived.id);
+        }
+      };
+      item.addEventListener('click', onResume);
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onResume();
         }
       });
     }
@@ -344,6 +343,7 @@ function renderList(history: ArchivedSession[]): void {
 
     const details = document.createElement('div');
     details.className = 'history-item-details';
+    applyTabularNums(details);
     const parts: string[] = [];
     parts.push(formatDate(archived.closedAt));
     if (archived.cost) {
@@ -379,8 +379,8 @@ function renderList(history: ArchivedSession[]): void {
     bookmarkBtn.type = 'button';
     bookmarkBtn.className = `history-bookmark-btn${archived.bookmarked ? ' bookmarked' : ''}`;
     bookmarkBtn.innerHTML = archived.bookmarked ? '&#9733;' : '&#9734;';
-    bookmarkBtn.title = archived.bookmarked ? 'Remove bookmark' : 'Bookmark session';
-    bookmarkBtn.ariaLabel = archived.bookmarked ? 'Remove bookmark' : 'Bookmark session';
+    bookmarkBtn.title = archived.bookmarked ? t('Remove bookmark') : t('Bookmark session');
+    bookmarkBtn.ariaLabel = archived.bookmarked ? t('Remove bookmark') : t('Bookmark session');
     bookmarkBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const project = appState.activeProject;
@@ -394,12 +394,12 @@ function renderList(history: ArchivedSession[]): void {
     removeBtn.type = 'button';
     removeBtn.className = 'history-remove-btn';
     removeBtn.innerHTML = '&times;';
-    removeBtn.title = 'Remove from history';
-    removeBtn.ariaLabel = 'Remove from history';
+    removeBtn.title = t('Remove from history');
+    removeBtn.ariaLabel = t('Remove from history');
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const project = appState.activeProject;
-      if (!confirm(`Remove "${archived.name}" from session history?`)) return;
+      if (!confirm(t(`Remove "${archived.name}" from session history?`))) return;
       if (project) {
         appState.removeHistoryEntry(project.id, archived.id);
       }
@@ -415,7 +415,8 @@ function renderList(history: ArchivedSession[]): void {
     const more = document.createElement('div');
     more.className = 'history-item-details ops-rail-note';
     more.dataset.tone = 'muted';
-    more.textContent = `${filtered.length - MAX_VISIBLE} more items…`;
+    applyTabularNums(more);
+    more.textContent = t(`${filtered.length - MAX_VISIBLE} more items…`);
     listEl.appendChild(more);
   }
 }
@@ -429,9 +430,9 @@ function formatDate(iso: string): string {
   if (diffDays === 0) {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   } else if (diffDays === 1) {
-    return 'Yesterday';
+    return t('Yesterday');
   } else if (diffDays < 7) {
-    return `${diffDays}d ago`;
+    return t(`${diffDays}d ago`);
   }
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }

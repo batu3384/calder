@@ -44,6 +44,8 @@ function isProviderId(value: unknown): value is ProviderId {
 
 function normalizeLegacyProviderId(value: unknown): ProviderId | null {
   if (value === 'gemini') return 'antigravity';
+  // Removed providers: keep sessions open under Claude rather than blocking state saves.
+  if (value === 'qwen' || value === 'copilot') return 'claude';
   return isProviderId(value) ? value : null;
 }
 
@@ -85,13 +87,18 @@ function validateSessionRecordForSave(
     throw new Error(`Invalid state payload: unsupported session.type "${session.type}"`);
   }
   if (session.providerId !== undefined && !isProviderId(session.providerId)) {
-    const normalized = normalizeLegacyProviderId(session.providerId);
+    const rawProvider = session.providerId;
+    const normalized = normalizeLegacyProviderId(rawProvider);
     if (!normalized) {
       throw new Error(
         `Invalid state payload: unsupported session.providerId "${session.providerId}"`,
       );
     }
     (session as { providerId?: ProviderId }).providerId = normalized;
+    if (normalized !== rawProvider) {
+      delete (session as { cliSessionId?: string | null }).cliSessionId;
+      delete (session as { claudeSessionId?: string | null }).claudeSessionId;
+    }
   }
   if (session.args !== undefined) {
     assertStringField(session.args, 'session.args', MAX_SESSION_STRING_LENGTH, {
@@ -207,6 +214,58 @@ function isValidSessionRecordShape(value: unknown): boolean {
   );
 }
 
+function describeMalformedSession(session: unknown, index: number): string {
+  if (!isRecord(session)) return `sessions[${index}] is not an object`;
+  const problems: string[] = [];
+  if (!isString(session.id)) problems.push('id');
+  if (!isString(session.name)) problems.push('name');
+  if (!isNullableString(session.cliSessionId)) problems.push('cliSessionId');
+  if (!isString(session.createdAt)) problems.push('createdAt');
+  return `sessions[${index}] invalid fields: ${problems.join(',') || 'unknown'}`;
+}
+
+function describeMalformedProject(project: unknown, index: number): string {
+  if (!isRecord(project)) return `projects[${index}] is not an object`;
+  if (!isString(project.id) || !isString(project.name) || !isString(project.path)) {
+    return `projects[${index}] missing id/name/path`;
+  }
+  if (!isNullableString(project.activeSessionId)) {
+    return `projects[${index}] activeSessionId invalid`;
+  }
+  if (!Array.isArray(project.sessions)) {
+    return `projects[${index}] sessions is not an array`;
+  }
+  if (project.sessions.length > 2_000) {
+    return `projects[${index}] too many sessions`;
+  }
+  const sessions = project.sessions as unknown[];
+  for (let i = 0; i < sessions.length; i += 1) {
+    if (!isValidSessionRecordShape(sessions[i])) {
+      return `projects[${index}] ${describeMalformedSession(sessions[i], i)}`;
+    }
+  }
+  return `projects[${index}] unknown malformation`;
+}
+
+function coercePersistedStateShape(state: Record<string, unknown>): void {
+  if (!Array.isArray(state.projects)) return;
+  for (const project of state.projects) {
+    if (!isRecord(project) || !Array.isArray(project.sessions)) continue;
+    const nextSessions = (project.sessions as unknown[]).filter((session) => {
+      if (!isRecord(session)) return false;
+      const sessionType = session.type;
+      return sessionType !== 'remote-terminal' && sessionType !== 'mobile';
+    });
+    for (const session of nextSessions) {
+      if (!isRecord(session)) continue;
+      if (session.cliSessionId === undefined) {
+        session.cliSessionId = null;
+      }
+    }
+    project.sessions = nextSessions;
+  }
+}
+
 function isValidProjectRecordShape(value: unknown): boolean {
   if (!isRecord(value)) return false;
   if (!isString(value.id) || !isString(value.name) || !isString(value.path)) return false;
@@ -241,8 +300,20 @@ export function sanitizePersistedStateForSave(state: unknown): PersistedState {
   if (state.projects.length > 500) {
     throw new Error('Invalid state payload: project count exceeds limit');
   }
+
+  coercePersistedStateShape(state);
+
   if (!state.projects.every(isValidProjectRecordShape)) {
-    throw new Error('Invalid state payload: one or more projects are malformed');
+    const details = state.projects
+      .map((project, index) =>
+        isValidProjectRecordShape(project) ? null : describeMalformedProject(project, index),
+      )
+      .filter((entry): entry is string => entry !== null)
+      .slice(0, 3)
+      .join('; ');
+    throw new Error(
+      `Invalid state payload: one or more projects are malformed (${details || 'unknown'})`,
+    );
   }
   if (!isNullableString(state.activeProjectId)) {
     throw new Error('Invalid state payload: activeProjectId must be string or null');

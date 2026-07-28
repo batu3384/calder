@@ -502,6 +502,7 @@ export function showGoToLineBar(sessionId: string): void {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'search-nav-btn search-close-btn';
   closeBtn.textContent = '\u2715';
+  closeBtn.setAttribute('aria-label', 'Close go to line');
   closeBtn.title = 'Close (Escape)';
 
   bar.appendChild(label);

@@ -30,7 +30,7 @@ describe('command deck stylesheet contract', () => {
   it('treats the launcher cluster like a polished shell instead of a loose icon row', () => {
     expect(tabsCss).toContain('.session-launcher-group');
     expect(tabsCss).toContain('box-shadow:');
-    expect(tabsCss).toContain('0 12px 28px rgba(8, 5, 3, 0.16);');
+    expect(tabsCss).toContain('inset 0 1px 0 rgba(255, 255, 255, 0.03);');
     expect(tabsCss).toContain('.session-launcher-group:hover');
     expect(tabsCss).toContain('color-mix(in srgb, var(--surface-hover) 72%, transparent);');
   });

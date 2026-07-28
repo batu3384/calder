@@ -35,18 +35,18 @@
       color-mix(in srgb, var(--accent-soft) 22%, transparent),
       transparent 30%
     ),
-    linear-gradient(180deg, rgba(255, 248, 236, 0.018), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.018), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-ops) 96%, black);
 }
 
 .control-panel-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.022), rgba(255, 255, 255, 0)), var(--surface-rail);
+    linear-gradient(180deg, rgba(226, 242, 255, 0.022), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .ops-rail-surface {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
+    linear-gradient(180deg, rgba(226, 242, 255, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
 }
 
 #context-inspector.context-inspector-closed {
@@ -67,7 +67,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   border-radius: 12px 0 0 12px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.026), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.026), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, black);
   color: var(--text-secondary);
   font-family: var(--font-sans);
@@ -116,13 +116,13 @@
   border-radius: var(--ops-control-radius);
   font-size: 12px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
 }
 
 #context-inspector .context-inspector-header-actions .icon-btn:hover {
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.04), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.04), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
 }
 
@@ -459,6 +459,10 @@
 #context-inspector .config-item:not(.auto-approval-item):hover {
   background: color-mix(in srgb, var(--surface-hover) 34%, transparent);
   border-color: color-mix(in srgb, var(--border-strong) 42%, transparent);
+}
+
+#context-inspector .config-item:not(.auto-approval-item):active {
+  background: color-mix(in srgb, var(--surface-hover) 48%, transparent);
 }
 
 #context-inspector .config-item-name {
@@ -1606,17 +1610,7 @@
 :where(#context-inspector) {
   --ops-rail-line: color-mix(in srgb, var(--border-subtle) 58%, transparent);
   --ops-rail-line-soft: color-mix(in srgb, var(--border-subtle) 42%, transparent);
-  background:
-    radial-gradient(
-      circle at 100% -4%,
-      color-mix(in srgb, var(--accent-soft) 16%, transparent),
-      transparent 34%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-ops) 98%, black),
-      color-mix(in srgb, #050a10 90%, black)
-    );
+  background: color-mix(in srgb, var(--surface-ops) 98%, black);
 }
 
 :where(#context-inspector) #context-inspector-header {

@@ -1,4 +1,6 @@
 import { type JsonSchema, renderSchemaForm } from './mcp-schema-form.js';
+import { t } from '../i18n.js';
+import { applyTabularNums } from './surface-services/dom-utils.js';
 
 type NavTab = 'tools' | 'resources' | 'prompts';
 
@@ -38,6 +40,9 @@ function renderMcpEmptyState(
     tone === 'error'
       ? 'mcp-empty-content mcp-empty-state mcp-error-state'
       : 'mcp-empty-content mcp-empty-state';
+  if (tone === 'error') {
+    shell.setAttribute('role', 'alert');
+  }
 
   const titleEl = document.createElement('div');
   titleEl.className = 'mcp-empty-title';
@@ -63,18 +68,18 @@ export function createInspectorPane(sessionId: string): void {
 
   pane.innerHTML = `
     <div class="mcp-inspector-header">
-      <input class="mcp-url-input" type="text" placeholder="MCP server URL (e.g. http://localhost:3000/mcp)" />
-      <button class="mcp-connect-btn">Connect</button>
+      <input class="mcp-url-input" type="text" aria-label="${t('MCP server URL')}" placeholder="${t('MCP server URL (e.g. http://localhost:3000/mcp)')}" />
+      <button class="mcp-connect-btn">${t('Connect')}</button>
       <span class="mcp-status-pill disconnected">
         <span class="mcp-status disconnected"></span>
-        <span class="mcp-status-label">Disconnected</span>
+        <span class="mcp-status-label">${t('Disconnected')}</span>
       </span>
     </div>
     <div class="mcp-inspector-body">
       <div class="mcp-inspector-nav">
-        <button class="mcp-nav-tab active" data-tab="tools">Tools <span class="mcp-nav-count">0</span></button>
-        <button class="mcp-nav-tab" data-tab="resources">Resources <span class="mcp-nav-count">0</span></button>
-        <button class="mcp-nav-tab" data-tab="prompts">Prompts <span class="mcp-nav-count">0</span></button>
+        <button class="mcp-nav-tab active" data-tab="tools">${t('Tools')} <span class="mcp-nav-count">0</span></button>
+        <button class="mcp-nav-tab" data-tab="resources">${t('Resources')} <span class="mcp-nav-count">0</span></button>
+        <button class="mcp-nav-tab" data-tab="prompts">${t('Prompts')} <span class="mcp-nav-count">0</span></button>
       </div>
       <div class="mcp-inspector-content">
       </div>
@@ -100,11 +105,12 @@ export function createInspectorPane(sessionId: string): void {
   const statusLabel = pane.querySelector('.mcp-status-label') as HTMLElement;
   const navTabs = pane.querySelectorAll('.mcp-nav-tab');
   const content = pane.querySelector('.mcp-inspector-content') as HTMLElement;
-  setMcpStatus(statusPill, statusDot, statusLabel, 'disconnected', 'Disconnected');
+  setMcpStatus(statusPill, statusDot, statusLabel, 'disconnected', t('Disconnected'));
+  pane.querySelectorAll('.mcp-nav-count').forEach((count) => applyTabularNums(count as HTMLElement));
   renderMcpEmptyState(
     content,
-    'Connect an MCP server',
-    'Inspect tools, resources, and prompts from one place.',
+    t('Connect an MCP server'),
+    t('Inspect tools, resources, and prompts from one place.'),
   );
 
   connectBtn.addEventListener('click', async () => {
@@ -163,21 +169,26 @@ async function doConnect(
   content: HTMLElement,
 ): Promise<void> {
   btn.disabled = true;
-  btn.textContent = 'Connecting...';
-  setMcpStatus(pill, dot, statusLabel, 'connecting', 'Connecting');
+  btn.textContent = t('Connecting...');
+  setMcpStatus(pill, dot, statusLabel, 'connecting', t('Connecting'));
 
   const result = await window.calder.mcp.connect(sessionId, url);
   if (result.success) {
     instance.connected = true;
     instance.url = url;
-    btn.textContent = 'Disconnect';
-    setMcpStatus(pill, dot, statusLabel, 'connected', 'Connected');
+    btn.textContent = t('Disconnect');
+    setMcpStatus(pill, dot, statusLabel, 'connected', t('Connected'));
     urlInput.disabled = true;
     await refreshLists(sessionId, instance, content);
   } else {
-    btn.textContent = 'Connect';
-    setMcpStatus(pill, dot, statusLabel, 'disconnected', 'Disconnected');
-    renderMcpEmptyState(content, 'Connection failed', result.error || 'Unknown error', 'error');
+    btn.textContent = t('Connect');
+    setMcpStatus(pill, dot, statusLabel, 'disconnected', t('Disconnected'));
+    renderMcpEmptyState(
+      content,
+      t('Connection failed'),
+      result.error || t('Unknown error'),
+      'error',
+    );
   }
   btn.disabled = false;
 }
@@ -196,12 +207,16 @@ async function doDisconnect(
   instance.toolsList = [];
   instance.resourcesList = [];
   instance.promptsList = [];
-  btn.textContent = 'Connect';
-  setMcpStatus(pill, dot, statusLabel, 'disconnected', 'Disconnected');
+  btn.textContent = t('Connect');
+  setMcpStatus(pill, dot, statusLabel, 'disconnected', t('Disconnected'));
   const urlInput = instance.element.querySelector('.mcp-url-input') as HTMLInputElement;
   urlInput.disabled = false;
   updateCounts(instance);
-  renderMcpEmptyState(content, 'Disconnected', 'Reconnect to inspect MCP capabilities again.');
+  renderMcpEmptyState(
+    content,
+    t('Disconnected'),
+    t('Reconnect to inspect MCP capabilities again.'),
+  );
 }
 
 async function refreshLists(
@@ -225,6 +240,7 @@ async function refreshLists(
 
 function updateCounts(instance: McpInspectorInstance): void {
   const counts = instance.element.querySelectorAll('.mcp-nav-count');
+  counts.forEach((count) => applyTabularNums(count as HTMLElement));
   counts[0].textContent = String(instance.toolsList.length);
   counts[1].textContent = String(instance.resourcesList.length);
   counts[2].textContent = String(instance.promptsList.length);
@@ -240,8 +256,8 @@ function renderContent(
   if (!instance.connected) {
     renderMcpEmptyState(
       content,
-      'Connect an MCP server',
-      'Inspect tools, resources, and prompts from one place.',
+      t('Connect an MCP server'),
+      t('Inspect tools, resources, and prompts from one place.'),
     );
     return;
   }
@@ -263,8 +279,8 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
   if (tools.length === 0) {
     renderMcpEmptyState(
       container,
-      'No tools available',
-      'This server did not expose any callable tools.',
+      t('No tools available'),
+      t('This server did not expose any callable tools.'),
     );
     return;
   }
@@ -277,7 +293,8 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
     const card = document.createElement('div');
     card.className = 'mcp-card';
 
-    const header = document.createElement('div');
+    const header = document.createElement('button');
+    header.type = 'button';
     header.className = 'mcp-card-header';
     header.innerHTML = `<span class="mcp-card-name">${esc(tool.name)}</span>`;
     if (tool.description) {
@@ -302,16 +319,16 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
 
         const execBtn = document.createElement('button');
         execBtn.className = 'mcp-exec-btn';
-        execBtn.textContent = 'Execute';
+        execBtn.textContent = t('Execute');
 
         const resultPre = document.createElement('pre');
         resultPre.className = 'mcp-result hidden';
 
         execBtn.addEventListener('click', async () => {
           execBtn.disabled = true;
-          execBtn.textContent = 'Executing...';
+          execBtn.textContent = t('Executing...');
           resultPre.classList.remove('hidden');
-          resultPre.textContent = 'Loading...';
+          resultPre.textContent = t('Loading...');
 
           const args = formRef ? formRef.getValues() : {};
           const res = await window.calder.mcp.callTool(sessionId, tool.name, args);
@@ -321,7 +338,7 @@ function renderToolsList(sessionId: string, tools: unknown[], container: HTMLEle
             2,
           );
           execBtn.disabled = false;
-          execBtn.textContent = 'Execute';
+          execBtn.textContent = t('Execute');
         });
 
         body.appendChild(execBtn);
@@ -343,8 +360,8 @@ function renderResourcesList(
   if (resources.length === 0) {
     renderMcpEmptyState(
       container,
-      'No resources available',
-      'This server did not expose any readable resources.',
+      t('No resources available'),
+      t('This server did not expose any readable resources.'),
     );
     return;
   }
@@ -353,7 +370,8 @@ function renderResourcesList(
     const card = document.createElement('div');
     card.className = 'mcp-card';
 
-    const header = document.createElement('div');
+    const header = document.createElement('button');
+    header.type = 'button';
     header.className = 'mcp-card-header';
     header.innerHTML = `<span class="mcp-card-name">${esc(resource.name)}</span><span class="mcp-card-uri">${esc(resource.uri)}</span>`;
     if (resource.description) {
@@ -369,7 +387,7 @@ function renderResourcesList(
       if (!isOpen && body.children.length === 0) {
         const resultPre = document.createElement('pre');
         resultPre.className = 'mcp-result';
-        resultPre.textContent = 'Loading...';
+        resultPre.textContent = t('Loading...');
         body.appendChild(resultPre);
 
         const res = await window.calder.mcp.readResource(sessionId, resource.uri);
@@ -391,8 +409,8 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
   if (prompts.length === 0) {
     renderMcpEmptyState(
       container,
-      'No prompts available',
-      'This server did not expose any prompt templates.',
+      t('No prompts available'),
+      t('This server did not expose any prompt templates.'),
     );
     return;
   }
@@ -405,7 +423,8 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
     const card = document.createElement('div');
     card.className = 'mcp-card';
 
-    const header = document.createElement('div');
+    const header = document.createElement('button');
+    header.type = 'button';
     header.className = 'mcp-card-header';
     header.innerHTML = `<span class="mcp-card-name">${esc(prompt.name)}</span>`;
     if (prompt.description) {
@@ -446,16 +465,16 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
 
         const execBtn = document.createElement('button');
         execBtn.className = 'mcp-exec-btn';
-        execBtn.textContent = 'Run';
+        execBtn.textContent = t('Run');
 
         const resultPre = document.createElement('pre');
         resultPre.className = 'mcp-result hidden';
 
         execBtn.addEventListener('click', async () => {
           execBtn.disabled = true;
-          execBtn.textContent = 'Running...';
+          execBtn.textContent = t('Running...');
           resultPre.classList.remove('hidden');
-          resultPre.textContent = 'Loading...';
+          resultPre.textContent = t('Loading...');
 
           const args: Record<string, string> = {};
           if (argInputs) {
@@ -470,7 +489,7 @@ function renderPromptsList(sessionId: string, prompts: unknown[], container: HTM
             2,
           );
           execBtn.disabled = false;
-          execBtn.textContent = 'Run';
+          execBtn.textContent = t('Run');
         });
 
         body.appendChild(execBtn);

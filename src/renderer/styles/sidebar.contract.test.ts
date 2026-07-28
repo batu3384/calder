@@ -70,9 +70,7 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('height: 64px;');
     expect(sidebarCss).toContain('object-fit: contain;');
     expect(sidebarCss).toContain('image-rendering: auto;');
-    expect(sidebarCss).toContain('animation: sidebar-mascot-float');
-    expect(sidebarCss).toContain('@keyframes sidebar-mascot-float');
-    expect(sidebarCss).toContain('@keyframes sidebar-mascot-aura');
+    expect(sidebarCss).toContain('animation: none;');
     expect(sidebarCss).toContain('.sidebar-mascot-shell::before');
     expect(sidebarCss).toContain('#sidebar.collapsed .sidebar-mascot-shell');
     expect(sidebarCss).toContain('width: 58px;');

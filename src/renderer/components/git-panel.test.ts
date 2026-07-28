@@ -111,6 +111,7 @@ vi.mock('./file-viewer.js', () => ({
 
 vi.mock('./surface-services/dom-utils.js', () => ({
   areaLabel: (value: string) => value,
+  applyTabularNums: vi.fn(),
 }));
 
 class FakeClassList {

@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
+import { GAP_TRANSLATION_ENTRIES } from './i18n-translations-gaps.js';
 
 function expectTranslation(source: string, en: string, tr: string) {
   expect(source).toContain(`'${en}'`);
@@ -16,12 +17,13 @@ const source = [
   readFileSync(new URL('./i18n-translations-preferences.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-errors.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-pattern-translations.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-gaps.ts', import.meta.url), 'utf-8'),
 ].join('\n');
 
 describe('i18n contract', () => {
   it('covers key workspace Turkish translations for rail and settings copy', () => {
     expectTranslation(source, 'Skip to workspace', 'Çalışma alanına atla');
-    expectTranslation(source, 'Command studio', 'Komut stüdyosu');
+    expectTranslation(source, 'Workspace', 'Çalışma Alanı');
     expectTranslation(source, 'Project Dock', 'Proje Paneli');
     expectTranslation(
       source,
@@ -226,6 +228,17 @@ describe('i18n contract', () => {
     expectTranslation(source, 'Recovery checkpoints', 'Kurtarma kontrol noktaları');
     expectTranslation(source, 'Filter run history', 'Çalıştırma geçmişini filtrele');
     expectTranslation(source, 'No events yet', 'Henüz olay yok');
+  });
+
+  it('keeps gap translation entries well-formed EN/TR pairs', () => {
+    expect(GAP_TRANSLATION_ENTRIES.length).toBeGreaterThan(0);
+    for (const entry of GAP_TRANSLATION_ENTRIES) {
+      expect(entry).toHaveLength(2);
+      const [en, tr] = entry;
+      expect(en.trim().length, `empty EN string for pair "${en}"`).toBeGreaterThan(0);
+      expect(tr.trim().length, `empty TR string for pair "${en}"`).toBeGreaterThan(0);
+    }
+    expect(source).toContain('GAP_TRANSLATION_ENTRIES');
   });
 
   it('covers session inspector timeline and guard warnings in Turkish', () => {

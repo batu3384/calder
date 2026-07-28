@@ -1,3 +1,5 @@
+import { applyTabularNums } from './surface-services/dom-utils.js';
+
 export type SectionPresentation = 'compact' | 'expanded' | 'promoted' | 'ultra';
 type GitNoteTone = 'default' | 'healthy' | 'warning' | 'muted';
 
@@ -96,6 +98,7 @@ function updateGitHeader(
   meta.className = 'config-section-meta';
   const count = document.createElement('span');
   count.className = 'config-section-count control-chip';
+  applyTabularNums(count);
   count.textContent = String(total);
   meta.appendChild(count);
   header.appendChild(meta);

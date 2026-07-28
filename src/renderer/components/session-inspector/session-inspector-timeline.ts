@@ -1,4 +1,5 @@
 import type { InspectorEvent } from '../../../shared/types/session.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
 import { getCostDeltas, getEvents } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import {
@@ -447,6 +448,7 @@ export function renderTimeline(container: HTMLElement): void {
 
   const list = document.createElement('div');
   list.className = 'inspector-timeline';
+  applyTabularNums(list);
 
   const startIdx = Math.max(0, events.length - 500);
   appendLoadMoreNotice(list, startIdx);

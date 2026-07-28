@@ -3,6 +3,7 @@ import type {
   CliSurfaceStartupTiming,
 } from '../../../shared/types/project-surface.js';
 import { appState } from '../../state.js';
+import { applyTabularNums } from '../surface-services/dom-utils.js';
 import { detectCliAdapter } from './adapters/registry.js';
 import { getCliSurfaceProfileLabel } from './profile.js';
 import type { CliTargetMenuController } from './target-menu.js';
@@ -86,6 +87,7 @@ export function renderCliSurfaceRuntimeMeta(params: RenderCliSurfaceRuntimeMetaP
   const status = formatRuntimeStatus(runtime?.status);
   const timingLabel = formatCliSurfaceTiming(runtime?.startupTiming);
   instance.metaEl.textContent = `${label} · ${status}${timingLabel ? ` · ${timingLabel}` : ''}`;
+  applyTabularNums(instance.metaEl);
   instance.routeEl.textContent = buildSurfaceRouteCopy(instance.projectId);
 
   const adapter = detectCliAdapter({

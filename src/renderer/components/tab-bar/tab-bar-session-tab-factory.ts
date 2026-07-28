@@ -37,6 +37,9 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
   tab.className = 'tab-item' + (isActive ? ' active' : '') + (unread ? ' unread' : '');
   tab.dataset.sessionId = session.id;
   tab.title = buildSessionTabTitle(session, getStatus(session.id));
+  tab.setAttribute('role', 'tab');
+  tab.setAttribute('aria-selected', String(isActive));
+  tab.tabIndex = 0;
   const providerId = session.providerId || 'claude';
   const providerIcon = buildProviderIconMarkup(providerId, hasMultipleAvailableProviders());
   const namePrefix = isDiff
@@ -63,8 +66,24 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
     ${reorderHandle}
     ${statusDot}
     <span class="tab-name">${nameContent}</span>
-    <span class="tab-close" title="Close session">&times;</span>
+    <button type="button" class="tab-close" aria-label="Close session ${options.escapeHtml(session.name)}" title="Close session">&times;</button>
   `;
+
+  tab.addEventListener('keydown', (event) => {
+    if ((event.target as HTMLElement).tagName === 'INPUT') return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      tab.click();
+      return;
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      const tabs = [...options.tabListEl.querySelectorAll<HTMLElement>('.tab-item')];
+      const index = tabs.indexOf(tab);
+      const nextIndex = event.key === 'ArrowLeft' ? index - 1 : index + 1;
+      tabs[nextIndex]?.focus();
+    }
+  });
 
   tab.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).classList.contains('tab-close')) return;

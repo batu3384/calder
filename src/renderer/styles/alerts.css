@@ -51,13 +51,26 @@
   font-size: 11px;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .insight-alert-dismiss:hover {
   color: var(--text-primary);
   background: color-mix(in srgb, var(--surface-hover) 92%, transparent);
+}
+
+.insight-alert-dismiss:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.insight-alert-dismiss:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
 }
 
 .insight-alert-cta {
@@ -77,13 +90,25 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  font-weight: 500;
+  font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .insight-alert-cta:hover {
-  opacity: 1;
   filter: brightness(1.04);
+}
+
+.insight-alert-cta:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.insight-alert-cta:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
 }
 
 .insight-alert-close {
@@ -95,10 +120,25 @@
   padding: 0 4px;
   line-height: 1;
   flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .insight-alert-close:hover {
   color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 78%, transparent);
+}
+
+.insight-alert-close:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.insight-alert-close:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 2px;
 }
 
 @keyframes insight-fade-in {

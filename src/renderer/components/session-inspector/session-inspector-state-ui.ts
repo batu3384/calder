@@ -1,7 +1,14 @@
 export const inspectorState = {
   inspectorPanel: null as HTMLElement | null,
   inspectedSessionId: null as string | null,
-  activeTab: 'timeline' as 'timeline' | 'costs' | 'tools' | 'context',
+  activeTab: 'timeline' as
+    | 'timeline'
+    | 'evidence'
+    | 'changes'
+    | 'costs'
+    | 'review'
+    | 'tools'
+    | 'context',
   updateTimer: null as ReturnType<typeof setTimeout> | null,
   resizing: false,
   reopenOnNextSession: false,

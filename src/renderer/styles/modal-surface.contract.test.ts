@@ -8,10 +8,10 @@ describe('modal surface stylesheet contract', () => {
   it('renders modals as compact control sheets instead of glossy popups', () => {
     expect(modalCss).toContain('#modal-overlay');
     expect(modalCss).toContain('.modal-overlay');
-    expect(modalCss).toContain('backdrop-filter: blur(14px);');
+    expect(modalCss).toContain('backdrop-filter: blur(6px);');
     expect(modalCss).toContain('#modal');
     expect(modalCss).toContain('.modal-box');
-    expect(modalCss).toContain('border-radius: 16px;');
+    expect(modalCss).toContain('border-radius: var(--radius-lg);');
     expect(modalCss).toContain('padding: 20px;');
   });
 

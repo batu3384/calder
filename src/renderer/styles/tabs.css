@@ -14,10 +14,7 @@
   align-items: center;
   gap: var(--space-10);
   padding: var(--space-8) var(--space-12) var(--space-10);
-  background:
-    radial-gradient(circle at 14% -90%, rgba(127, 212, 255, 0.08), transparent 34%),
-    radial-gradient(circle at 88% -120%, rgba(213, 169, 79, 0.05), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)), var(--surface-deck);
+  background: var(--surface-deck);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
   height: 56px;
   min-height: 56px;
@@ -126,25 +123,26 @@
     0 8px 18px rgba(2, 8, 18, 0.12);
 }
 
+.tab-item:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 4px 10px rgba(2, 8, 18, 0.08);
+}
+
 .tab-item.active {
   background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 20%, transparent),
-      transparent 44%
-    ),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--accent-soft) 18%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)),
       rgba(255, 255, 255, 0)
     ),
     var(--tab-active);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent),
-    0 12px 26px rgba(2, 8, 18, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 3px 0 0 color-mix(in srgb, var(--accent) 72%, transparent);
   transform: none;
 }
 
@@ -157,14 +155,7 @@
 }
 
 .tab-item.active::after {
-  content: '';
-  position: absolute;
-  left: 13px;
-  right: 13px;
-  bottom: 3px;
-  height: 2px;
-  background: color-mix(in srgb, var(--accent) 82%, white);
-  border-radius: 999px;
+  display: none;
 }
 
 .tab-reorder-handle {
@@ -278,6 +269,9 @@
   justify-content: center;
   width: 24px;
   height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
   border-radius: 999px;
   font-size: 14px;
   line-height: 1;
@@ -290,7 +284,9 @@
     color var(--motion-fast) ease;
 }
 
-.tab-item:hover .tab-close {
+.tab-item:hover .tab-close,
+.tab-item:focus-within .tab-close,
+.tab-close:focus-visible {
   opacity: 1;
 }
 
@@ -313,12 +309,16 @@
   min-height: 32px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 68%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    var(--shadow-card);
+  background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+#git-status:active {
+  transform: translateY(1px);
 }
 
 #git-status:empty {
@@ -326,8 +326,8 @@
 }
 
 #git-status[data-state='dirty'] {
-  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 16%, var(--surface-panel));
+  border-color: color-mix(in srgb, var(--warning) 32%, var(--border-subtle));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface-panel));
 }
 
 #git-status[data-state='loading'] {
@@ -390,17 +390,8 @@
   padding: 3px 4px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
   border-radius: 999px;
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 18%, transparent),
-      transparent 52%
-    ),
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 68%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 28px rgba(8, 5, 3, 0.16);
+  background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
@@ -1141,9 +1132,7 @@
 }
 
 .icon-btn {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  background: color-mix(in srgb, var(--surface-panel) 94%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
   color: var(--text-secondary);
   cursor: pointer;
@@ -1153,24 +1142,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .icon-btn:hover {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 14%, rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-hover) 84%, var(--surface-panel));
+  background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 14%, var(--border));
+  box-shadow: none;
+}
+
+.icon-btn:active {
+  transform: translateY(1px);
 }
 
 .icon-btn svg {
@@ -1373,6 +1363,10 @@
 .tab-context-menu-item:hover:not(.disabled):not(.active) {
   background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   transform: translateY(-1px);
+}
+
+.tab-context-menu-item:active:not(.disabled):not(.active) {
+  transform: translateY(1px);
 }
 
 .tab-context-menu-item:focus-visible {
@@ -1589,5 +1583,16 @@
   .surface-profile-group {
     max-width: 100%;
     flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-status.working,
+  .tab-status.input {
+    animation: none;
+  }
+
+  .session-launcher-group #btn-update-cli-tools.is-updating {
+    animation: none;
   }
 }

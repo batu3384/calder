@@ -64,10 +64,17 @@
   font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .mcp-connect-btn:hover {
   background: var(--accent-dim);
+}
+
+.mcp-connect-btn:active {
+  transform: translateY(1px);
 }
 
 .mcp-connect-btn:disabled {
@@ -265,8 +272,17 @@
   padding: 10px 14px;
   cursor: pointer;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.02), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, transparent);
+}
+
+button.mcp-card-header {
+  appearance: none;
+  width: 100%;
+  border: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
 }
 
 .mcp-card-header:hover {
@@ -352,7 +368,7 @@ select.mcp-form-input {
 .mcp-exec-btn {
   padding: 6px 20px;
   background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(226, 242, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 84%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 10px;
@@ -396,6 +412,12 @@ select.mcp-form-input {
 
 .mcp-result.hidden {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcp-status.connecting {
+    animation: none;
+  }
 }
 
 .tab-status.mcp {

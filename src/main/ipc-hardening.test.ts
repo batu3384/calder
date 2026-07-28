@@ -93,6 +93,31 @@ describe('ipc hardening helpers', () => {
     expect(() => sanitizePersistedStateForSave(state)).toThrow(/unsupported session.providerId/i);
   });
 
+  it('migrates removed provider ids (qwen/copilot) instead of blocking save', () => {
+    const state = makeBaseState();
+    state.projects[0].sessions[0].providerId = 'qwen' as never;
+    state.projects[0].sessions[0].cliSessionId = 'legacy-cli';
+    state.projects[0].sessions.push({
+      id: 'session-copilot',
+      name: 'Legacy Copilot',
+      providerId: 'copilot' as never,
+      cliSessionId: 'legacy-copilot',
+      createdAt: state.projects[0].sessions[0].createdAt,
+    });
+
+    const sanitized = sanitizePersistedStateForSave(state);
+    const qwenSession = sanitized.projects[0].sessions.find(
+      (session) => session.id === 'session-1',
+    );
+    const copilotSession = sanitized.projects[0].sessions.find(
+      (session) => session.id === 'session-copilot',
+    );
+    expect(qwenSession?.providerId).toBe('claude');
+    expect(qwenSession?.cliSessionId).toBeUndefined();
+    expect(copilotSession?.providerId).toBe('claude');
+    expect(copilotSession?.cliSessionId).toBeUndefined();
+  });
+
   it('rejects unsupported preferences default providers', () => {
     const state = makeBaseState();
     state.preferences.defaultProvider = 'not-a-provider' as never;

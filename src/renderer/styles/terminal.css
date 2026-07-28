@@ -3,9 +3,7 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(201, 154, 92, 0.08), transparent 24%),
-    radial-gradient(circle at 100% 0%, rgba(103, 81, 58, 0.06), transparent 20%), var(--bg-primary);
+  background: var(--bg-primary);
   padding: var(--space-10);
 }
 
@@ -144,12 +142,18 @@
   justify-content: center;
   transition:
     border-color var(--motion-fast) ease,
-    color var(--motion-fast) ease;
+    color var(--motion-fast) ease,
+    background var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 
 .swarm-empty-add-btn:hover {
   border-color: var(--pane-focus);
   color: var(--text-primary);
+}
+
+.swarm-empty-add-btn:active {
+  transform: translateY(1px);
 }
 
 .terminal-pane.swarm-dimmed::after,
@@ -182,14 +186,13 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(201, 154, 92, 0.07), transparent 26%),
-    radial-gradient(circle at 100% 0%, rgba(103, 81, 58, 0.045), transparent 22%),
-    linear-gradient(180deg, rgba(255, 248, 236, 0.024), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-canvas) 92%, black);
+  background: color-mix(in srgb, var(--surface-canvas) 94%, black);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 22px 48px rgba(8, 5, 3, 0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 20px rgba(2, 8, 18, 0.14);
+  transition:
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease;
 }
 
 .terminal-pane.split {
@@ -197,10 +200,10 @@
 }
 
 .terminal-pane.focused {
-  border-color: color-mix(in srgb, var(--accent-line) 68%, var(--pane-focus));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--pane-focus));
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent-soft) 82%, transparent),
-    0 24px 56px rgba(8, 5, 3, 0.3);
+    0 0 0 1px color-mix(in srgb, var(--accent-soft) 48%, transparent),
+    0 8px 20px rgba(2, 8, 18, 0.16);
 }
 
 .terminal-pane-chrome {
@@ -210,9 +213,7 @@
   min-height: var(--control-height-lg);
   padding: 0 var(--space-12);
   border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 94%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 248, 236, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 96%, black);
+  background: color-mix(in srgb, var(--surface-panel) 96%, black);
   user-select: none;
 }
 
@@ -588,7 +589,7 @@
       color-mix(in srgb, var(--accent-soft) 44%, transparent),
       transparent 26%
     ),
-    radial-gradient(circle at 100% 0%, rgba(101, 79, 57, 0.1), transparent 22%),
+    radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.04), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 96%, black);
 }
@@ -617,7 +618,7 @@
       color-mix(in srgb, var(--accent-soft) 46%, transparent),
       transparent 28%
     ),
-    radial-gradient(circle at 100% 0%, rgba(101, 79, 57, 0.085), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.04), transparent 24%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 94%, black);
   box-shadow:

@@ -242,6 +242,8 @@ function createPanel(): HTMLElement {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'debug-btn debug-close';
   closeBtn.innerHTML = '&times;';
+  closeBtn.setAttribute('aria-label', 'Close debug panel');
+  closeBtn.title = 'Close debug panel';
   closeBtn.addEventListener('click', () => toggleDebugPanel());
   controls.appendChild(closeBtn);
 

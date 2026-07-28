@@ -64,6 +64,8 @@ import type {
   ToolFailureData,
 } from '../shared/types/session';
 import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
+import type { PreloadEvidenceApi } from './preload-api-evidence.js';
+import { createPreloadEvidenceApi } from './preload-api-evidence.js';
 import { createPreloadGitApi } from './preload-api-git.js';
 import { createPreloadMcpApi } from './preload-api-mcp.js';
 import { createPreloadProjectDomainApi } from './preload-api-project-domains.js';
@@ -303,6 +305,7 @@ export interface CalderApi {
   stats: {
     getCache(): Promise<StatsCache | null>;
   };
+  evidence: PreloadEvidenceApi;
   menu: {
     onPreferences(callback: () => void): () => void;
     onNewProject(callback: () => void): () => void;
@@ -432,6 +435,7 @@ const api: CalderApi = {
   stats: {
     getCache: () => ipcRenderer.invoke('stats:getCache'),
   },
+  evidence: createPreloadEvidenceApi(ipcRenderer, onChannel),
   menu: {
     onPreferences: (cb) => onChannel('menu:preferences', cb),
     onNewProject: (cb) => onChannel('menu:new-project', cb),

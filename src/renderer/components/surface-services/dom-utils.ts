@@ -5,3 +5,8 @@ const domUtils = domUtilsModule as DomUtilsModule;
 
 export const esc: DomUtilsModule['esc'] = (...args) => domUtils.esc(...args);
 export const areaLabel: DomUtilsModule['areaLabel'] = (...args) => domUtils.areaLabel(...args);
+
+export function applyTabularNums(element: HTMLElement | null | undefined): void {
+  if (!element?.style) return;
+  element.style.fontVariantNumeric = 'tabular-nums';
+}
