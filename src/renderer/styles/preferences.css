@@ -151,79 +151,52 @@
 }
 
 .preferences-menu-item {
-  min-height: 58px;
-  padding: 10px 14px 10px 16px;
+  min-height: 34px;
+  padding: 6px 10px 6px 12px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   font: inherit;
   color: var(--text-secondary);
   cursor: pointer;
   position: relative;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-raised) 18%, transparent);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
   transition:
     background 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.preferences-menu-item::before {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 11px;
-  bottom: 11px;
-  width: 3px;
-  border-radius: 999px;
-  background: transparent;
-  transition:
-    background var(--motion-fast) ease,
-    opacity var(--motion-fast) ease;
-  opacity: 0;
+    color 0.15s ease;
 }
 
 .preferences-menu-item:hover {
   color: var(--text-primary);
   background: color-mix(in srgb, var(--surface-hover) 74%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .preferences-menu-item.active {
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-soft) 14%, var(--surface-raised)),
-    color-mix(in srgb, var(--accent-soft) 8%, var(--surface-raised))
-  );
-  transform: none;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 10px 22px rgba(1, 5, 12, 0.1);
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
-.preferences-menu-item.active::before {
-  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 62%, white));
-  opacity: 1;
+.preferences-menu-item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.preferences-menu-item.active .preferences-menu-item-icon {
+  color: var(--accent);
 }
 
 .preferences-menu-item-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: -0.01em;
-}
-
-.preferences-menu-item-caption {
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--text-muted);
-  text-align: left;
 }
 
 .preferences-content-shell {
@@ -1334,16 +1307,8 @@
   box-shadow: none;
 }
 
-html[lang='tr'] .preferences-menu-item {
-  min-height: 64px;
-}
-
 html[lang='tr'] .preferences-menu-item-label {
   line-height: 1.3;
-}
-
-html[lang='tr'] .preferences-menu-item-caption {
-  line-height: 1.5;
 }
 
 html[lang='tr'] .context-discovery-action-btn,
@@ -2001,30 +1966,6 @@ html[lang='tr'] .orchestration-overview-action-btn {
   max-width: 18rem;
   line-height: 1.5;
   font-size: 12px;
-}
-
-.preferences-menu-item {
-  min-height: 36px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
-  border-color: color-mix(in srgb, var(--border-subtle) 60%, transparent);
-  background: color-mix(in srgb, var(--surface-raised) 18%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.028);
-}
-
-.preferences-menu-item:hover {
-  transform: none;
-  border-color: color-mix(in srgb, var(--accent) 14%, var(--border-subtle));
-  background: color-mix(in srgb, var(--surface-raised) 34%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.preferences-menu-item.active {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
-  background: color-mix(in srgb, var(--surface-panel) 94%, transparent);
-  box-shadow:
-    inset 2px 0 0 var(--accent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .preferences-content-shell {

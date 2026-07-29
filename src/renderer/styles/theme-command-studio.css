@@ -628,15 +628,8 @@ body {
 .preferences-menu-item:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 0 0 3px color-mix(in srgb, var(--studio-cyan) 20%, transparent);
-}
-
-.preferences-menu-item-caption {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+    inset 2px 0 0 var(--accent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent);
 }
 
 .preferences-content {
@@ -650,10 +643,11 @@ body {
 .preferences-overview-card,
 .preferences-subsection,
 .preferences-section-card {
-  border-color: var(--studio-line-soft);
-  border-radius: 15px;
-  background: rgba(13, 21, 30, 0.58);
+  border-color: var(--studio-line);
+  border-radius: 8px;
+  background: var(--surface-raised);
   box-shadow: none;
+  padding: 12px;
 }
 
 @media (max-width: 860px) {
