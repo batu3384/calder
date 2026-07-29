@@ -6,6 +6,15 @@ const sessionTabFactorySource = readFileSync(
   new URL('./tab-bar-session-tab-factory.ts', import.meta.url),
   'utf-8',
 );
+const eventWiringSource = readFileSync(
+  new URL('./tab-bar-event-wiring.ts', import.meta.url),
+  'utf-8',
+);
+const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
+const statusKeys = readFileSync(
+  new URL('../../i18n-translations-core-part-1.ts', import.meta.url),
+  'utf-8',
+);
 
 describe('tab bar session tab factory extraction', () => {
   it('delegates session tab creation to dedicated helper', () => {
@@ -27,5 +36,27 @@ describe('tab bar session tab factory extraction', () => {
     expect(sessionTabFactorySource).toContain(
       'appState.reorderSession(project.id, draggedId, targetIndex)',
     );
+  });
+
+  it('renders session status as dot plus localized text label', () => {
+    expect(sessionTabFactorySource).toContain('class="tab-status ${status}"');
+    expect(sessionTabFactorySource).toContain('class="tab-status-label"');
+    expect(sessionTabFactorySource).toContain('${t(status)}');
+    expect(eventWiringSource).toContain("dot.querySelector('.tab-status-label')");
+    expect(eventWiringSource).toContain('label.textContent = t(status)');
+    expect(tabsCss).toContain('.tab-status::before');
+    expect(tabsCss).toContain('.tab-status.working::before');
+    expect(tabsCss).toContain('.tab-status.completed::before');
+  });
+
+  it('has locale translations for every session status key', () => {
+    for (const key of ['idle', 'completed', 'input', 'working', 'waiting']) {
+      expect(statusKeys).toContain(`['${key}',`);
+    }
+  });
+
+  it('drops pill styling from tab type badges', () => {
+    expect(tabsCss).not.toContain('.tab-reorder-handle');
+    expect(sessionTabFactorySource).not.toContain('tab-reorder-handle');
   });
 });

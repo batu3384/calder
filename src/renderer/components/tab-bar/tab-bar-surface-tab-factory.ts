@@ -22,12 +22,7 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
   tab.setAttribute('role', 'tab');
   tab.setAttribute('aria-selected', String(options.active));
   tab.tabIndex = 0;
-  const reorderHandle =
-    options.project.sessions.length > 0
-      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
-      : '';
   tab.innerHTML = `
-    ${reorderHandle}
     <span class="tab-name">
       <span class="tab-name-prefix">${options.badgeMarkup}</span>
       <span class="tab-name-label">${options.label}</span>
@@ -66,10 +61,13 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
     options.onClose();
   });
 
-  const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;
-  if (reorderHandleEl) {
-    reorderHandleEl.draggable = true;
-    reorderHandleEl.addEventListener('dragstart', (event) => {
+  if (options.project.sessions.length > 0) {
+    tab.draggable = true;
+    tab.addEventListener('dragstart', (event) => {
+      if ((event.target as HTMLElement).closest('button, input')) {
+        event.preventDefault();
+        return;
+      }
       event.dataTransfer!.effectAllowed = 'move';
       event.dataTransfer!.setData('text/plain', '__surface:cli');
       tab.classList.add('dragging');
@@ -115,7 +113,7 @@ export function createSurfaceModeTab(options: CreateSurfaceModeTabOptions): HTML
       }
     });
 
-    reorderHandleEl.addEventListener('dragend', () => {
+    tab.addEventListener('dragend', () => {
       tab.classList.remove('dragging');
       options.tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach((entry) => {
         entry.classList.remove('drag-over-left', 'drag-over-right');

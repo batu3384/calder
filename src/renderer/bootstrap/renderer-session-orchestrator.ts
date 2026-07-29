@@ -19,6 +19,7 @@ import { initSessionInspector } from '../components/session-inspector/session-in
 import { destroySidebar, initSidebar, promptNewProject } from '../components/sidebar.js';
 import { initSplitLayout } from '../components/split-layout.js';
 import { checkStarPrompt } from '../components/star-prompt-dialog.js';
+import { initStatusBar } from '../components/status-bar.js';
 import { initTabBar } from '../components/tab-bar/tab-bar.js';
 import {
   destroyTerminal,
@@ -233,6 +234,7 @@ export function createRendererSessionOrchestrator(
     initSidebar();
     initContextInspector();
     initTabBar();
+    initStatusBar();
     initSplitLayout();
     options.initKeybindings();
     initConfigSections();

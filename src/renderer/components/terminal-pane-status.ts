@@ -6,11 +6,6 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
-export function revealSessionStatusBar(container: HTMLElement): void {
-  const bar = container.querySelector('.session-status-bar');
-  if (bar) bar.classList.remove('hidden');
-}
-
 export function renderCostDisplay(el: Element, cost: CostInfo): void {
   const derived = isDerivedCost(cost);
   const estimated = isEstimatedCost(cost);

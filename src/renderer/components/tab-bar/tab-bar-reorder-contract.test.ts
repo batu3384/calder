@@ -9,26 +9,20 @@ const sessionTabFactorySource = readFileSync(
 const styles = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar reorder affordance contract', () => {
-  it('renders a visible drag affordance for tabs', () => {
+  it('lets the whole tab act as the drag affordance (IDE convention)', () => {
     expect(source).toContain("from './tab-bar-session-tab-factory.js'");
     expect(source).toContain('createSessionTab({');
-    expect(sessionTabFactorySource).toContain('tab-reorder-handle');
-    expect(sessionTabFactorySource).toContain('Drag to reorder');
+    expect(sessionTabFactorySource).not.toContain('tab-reorder-handle');
+    expect(sessionTabFactorySource).toContain('tab.draggable = true;');
   });
 
-  it('styles the drag affordance as a grab handle', () => {
-    expect(styles).toContain('.tab-reorder-handle');
-    expect(styles).toContain('cursor: grab');
+  it('does not render a dedicated grab handle in tab chrome', () => {
+    expect(styles).not.toContain('.tab-reorder-handle');
   });
 
-  it('limits drag reordering to the dedicated handle instead of the whole tab', () => {
-    expect(sessionTabFactorySource).not.toContain('tab.draggable = true;');
-    expect(sessionTabFactorySource).toContain(
-      "const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;",
-    );
-    expect(sessionTabFactorySource).toContain('if (reorderHandleEl) {');
-    expect(sessionTabFactorySource).toContain('reorderHandleEl.draggable = true;');
-    expect(sessionTabFactorySource).toContain("reorderHandleEl.addEventListener('dragstart'");
-    expect(sessionTabFactorySource).toContain("reorderHandleEl.addEventListener('dragend'");
+  it('keeps dragstart on the tab with interactive children guarded', () => {
+    expect(sessionTabFactorySource).toContain("closest('button, input')");
+    expect(sessionTabFactorySource).toContain("tab.addEventListener('dragstart'");
+    expect(sessionTabFactorySource).toContain("tab.addEventListener('dragend'");
   });
 });

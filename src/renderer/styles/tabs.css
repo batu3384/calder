@@ -158,40 +158,31 @@
   display: none;
 }
 
-.tab-reorder-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 10px;
-  color: color-mix(in srgb, var(--text-muted) 88%, transparent);
-  font-size: var(--type-xs);
-  letter-spacing: -1px;
-  opacity: 0.2;
-  cursor: grab;
-  flex-shrink: 0;
-  transition:
-    opacity 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.tab-item:hover .tab-reorder-handle,
-.tab-item.active .tab-reorder-handle {
-  opacity: 0.68;
-  color: var(--text-muted);
-}
-
-.tab-item.dragging .tab-reorder-handle {
-  opacity: 1;
-  cursor: grabbing;
-}
-
 /* Session status indicator */
 .tab-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.tab-status::before {
+  content: '';
   width: 7px;
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.tab-status-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-muted);
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @keyframes pulse {
@@ -204,25 +195,25 @@
   }
 }
 
-.tab-status.working {
+.tab-status.working::before {
   background: var(--accent);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.tab-status.waiting {
+.tab-status.waiting::before {
   background: var(--warning);
 }
 
-.tab-status.completed {
+.tab-status.completed::before {
   background: var(--success);
 }
 
-.tab-status.input {
+.tab-status.input::before {
   background: var(--warning);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
-.tab-status.idle {
+.tab-status.idle::before {
   background: var(--text-muted);
 }
 
@@ -1507,41 +1498,11 @@
 .tab-cli-surface-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 16px;
-  padding: 0 5px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
   vertical-align: middle;
   margin-right: 4px;
-  background: color-mix(in srgb, var(--surface-panel) 84%, transparent);
-}
-
-.tab-diff-badge {
-  color: color-mix(in srgb, var(--warning) 76%, var(--text-secondary));
-}
-
-.tab-mcp-badge {
-  color: color-mix(in srgb, var(--accent-cool) 76%, var(--text-secondary));
-}
-
-.tab-file-badge {
-  color: color-mix(in srgb, var(--accent) 74%, var(--text-secondary));
-}
-
-.tab-remote-badge {
-  color: color-mix(in srgb, var(--success) 74%, var(--text-secondary));
-}
-
-.tab-browser-badge {
-  color: color-mix(in srgb, var(--success) 72%, var(--text-secondary));
-}
-
-.tab-cli-surface-badge {
-  color: color-mix(in srgb, var(--accent-cool) 74%, var(--text-secondary));
 }
 
 /* Command deck resilience when the browser/session split leaves a narrow top bar. */
@@ -1595,8 +1556,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab-status.working,
-  .tab-status.input {
+  .tab-status.working::before,
+  .tab-status.input::before {
     animation: none;
   }
 

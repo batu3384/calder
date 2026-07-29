@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { onChange as onGitStatusChange } from '../surface-services/git-status.js';
 import {
@@ -114,8 +115,8 @@ export function wireTabBarStateSubscriptions(
     ) as HTMLElement | null;
     if (dot) {
       dot.className = `tab-status ${status}`;
-      dot.setAttribute('role', 'img');
-      dot.setAttribute('aria-label', `Session status: ${status}`);
+      const label = dot.querySelector('.tab-status-label');
+      if (label) label.textContent = t(status);
     }
 
     const tab = args.tabListEl.querySelector(

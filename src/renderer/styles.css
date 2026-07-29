@@ -20,6 +20,7 @@
 @import url('./styles/session-inspector.css');
 @import url('./styles/browser-tab.css');
 @import url('./styles/cli-surface.css');
+@import url('./styles/status-bar.css');
 @import url('./styles/theme-aurora.css');
 @import url('./styles/theme-command-studio.css');
 @import url('./styles/responsive-layout.css');

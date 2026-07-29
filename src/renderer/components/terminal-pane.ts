@@ -38,11 +38,7 @@ import {
   showSpawnFailureOverlay,
 } from './terminal-pane-spawn-overlay.js';
 import { spawnPtySession } from './terminal-pane-spawn-session.js';
-import {
-  renderContextDisplay,
-  renderCostDisplay,
-  revealSessionStatusBar,
-} from './terminal-pane-status.js';
+import { renderContextDisplay, renderCostDisplay } from './terminal-pane-status.js';
 import { showErrorToast } from './toast.js';
 
 interface TerminalInstance {
@@ -128,7 +124,7 @@ function createTerminalShell(params: CreateTerminalShellParams): TerminalShellEl
   element.appendChild(xtermWrap);
 
   const statusBar = document.createElement('div');
-  statusBar.className = 'session-status-bar';
+  statusBar.className = 'session-status-bar hidden';
   const contextIndicator = document.createElement('div');
   contextIndicator.className = 'context-indicator';
   const costDisplay = document.createElement('div');
@@ -355,7 +351,6 @@ export function updateCostDisplay(sessionId: string, cost: CostInfo): void {
   if (!el) return;
 
   renderCostDisplay(el, cost);
-  revealSessionStatusBar(instance.element);
 }
 
 export function updateContextDisplay(sessionId: string, info: ContextWindowInfo): void {
@@ -366,5 +361,4 @@ export function updateContextDisplay(sessionId: string, info: ContextWindowInfo)
   if (!el) return;
 
   renderContextDisplay(el, info);
-  revealSessionStatusBar(instance.element);
 }

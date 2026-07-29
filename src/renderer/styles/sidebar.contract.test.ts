@@ -61,15 +61,12 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('#sidebar.collapsed .project-item-main');
   });
 
-  it('keeps the sidebar mascot visible and non-distorted in both rail modes', () => {
-    expect(sidebarCss).toContain('.sidebar-brand-totem');
-    expect(sidebarCss).toContain('.sidebar-mascot-shell');
-    expect(sidebarCss).toContain('.sidebar-mascot');
+  it('keeps the brand row flat and mascot-free in chrome', () => {
+    expect(sidebarCss).not.toContain('.sidebar-brand-totem');
+    expect(sidebarCss).not.toContain('.sidebar-mascot-shell');
+    expect(sidebarCss).not.toContain('.sidebar-mascot');
     expect(sidebarCss).toContain('.sidebar-brand-meta');
-    expect(sidebarCss).toContain('object-fit: contain;');
-    expect(sidebarCss).toContain('image-rendering: auto;');
-    expect(sidebarCss).toContain('animation: none;');
-    expect(sidebarCss).toContain('#sidebar.collapsed .sidebar-mascot-shell');
+    expect(sidebarCss).toContain('#sidebar-brand-row');
     expect(sidebarCss).toContain('width: var(--sidebar-width-collapsed) !important;');
     expect(sidebarCss).not.toContain('sidebar-stage-sheen');
   });

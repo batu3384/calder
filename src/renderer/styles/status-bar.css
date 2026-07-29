@@ -1,0 +1,60 @@
+.status-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  background: var(--surface-panel, #0b121a);
+  border-top: 1px solid var(--border-subtle, rgba(158, 183, 190, 0.14));
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  user-select: none;
+}
+
+.status-bar-group {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.status-bar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+button.status-bar-item {
+  cursor: pointer;
+}
+
+button.status-bar-item:hover {
+  background: var(--surface-elevated, #101923);
+  color: var(--text-primary);
+}
+
+button.status-bar-item:focus-visible {
+  outline: 1px solid var(--border-focus, var(--accent));
+  outline-offset: -1px;
+}
+
+.status-bar-session {
+  color: var(--text-muted);
+}
+
+#app {
+  padding-bottom: 26px;
+}

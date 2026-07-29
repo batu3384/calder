@@ -263,7 +263,7 @@
 
 .inspector-time {
   color: var(--text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   min-width: 40px;
 }
@@ -400,13 +400,13 @@
 .inspector-duration {
   color: var(--text-muted);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .inspector-cost-delta {
   color: var(--status-success-text);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .inspector-tool-detail {
@@ -427,7 +427,7 @@
   display: flex;
   gap: 8px;
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .inspector-tool-detail-label {
@@ -450,7 +450,7 @@
   border-radius: 3px;
   color: var(--text-secondary);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   white-space: pre-wrap;
   word-break: break-all;
   max-height: 200px;
@@ -467,7 +467,7 @@
   border-radius: 3px;
   border-left: 2px solid color-mix(in srgb, var(--accent) 62%, transparent);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   max-height: 300px;
   overflow-y: auto;
   user-select: text;
@@ -550,7 +550,7 @@
   color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 /* Tables */
@@ -638,7 +638,7 @@
   min-width: 24px;
   color: var(--text-muted);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 /* Context gauge */
@@ -670,7 +670,7 @@
 .inspector-gauge-text {
   color: var(--text-muted);
   font-size: 10px;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 /* Context chart */
@@ -757,7 +757,7 @@
 
 .inspector-evidence-seq {
   color: var(--text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .inspector-evidence-meta,
@@ -780,7 +780,7 @@
 .inspector-pixel-state {
   text-transform: capitalize;
   color: var(--text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .inspector-evidence-review-notes {

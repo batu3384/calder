@@ -1473,30 +1473,10 @@
   align-content: start;
   grid-auto-rows: max-content;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle)) transparent;
 }
 
 :where(#context-inspector) #context-inspector-sections::-webkit-scrollbar {
   width: 9px;
-}
-
-:where(#context-inspector) #context-inspector-sections::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 38%, transparent),
-    color-mix(in srgb, var(--accent) 16%, transparent)
-  );
-}
-
-:where(#context-inspector) #context-inspector-sections::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 52%, transparent),
-    color-mix(in srgb, var(--accent) 22%, transparent)
-  );
 }
 
 :where(#context-inspector) .context-inspector-section {

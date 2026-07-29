@@ -1,4 +1,5 @@
 import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import { t } from '../../i18n.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { hasMultipleAvailableProviders } from '../surface-services/provider-availability.js';
 import { getStatus } from '../surface-services/session-activity.js';
@@ -55,18 +56,13 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
             : '';
   const status = isSpecial ? null : getStatus(session.id);
   const statusDot = status
-    ? `<span class="tab-status ${status}" role="img" aria-label="Session status: ${status}"></span>`
+    ? `<span class="tab-status ${status}"><span class="tab-status-label">${t(status)}</span></span>`
     : '';
-  const reorderHandle =
-    project.sessions.length > 1
-      ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'
-      : '';
   const nameContent = `
     <span class="tab-name-prefix">${namePrefix}</span>
     <span class="tab-name-label">${options.escapeHtml(session.name)}</span>
   `;
   tab.innerHTML = `
-    ${reorderHandle}
     ${statusDot}
     <span class="tab-name">${nameContent}</span>
     <button type="button" class="tab-close" aria-label="Close session ${options.escapeHtml(session.name)}" title="Close session">&times;</button>
@@ -119,11 +115,15 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
     appState.removeSession(project.id, session.id);
   });
 
-  const reorderHandleEl = tab.querySelector('.tab-reorder-handle') as HTMLElement | null;
-  if (reorderHandleEl) {
-    reorderHandleEl.draggable = true;
+  if (project.sessions.length > 1) {
+    tab.draggable = true;
+    tab.title = `${tab.title} · Drag to reorder`;
 
-    reorderHandleEl.addEventListener('dragstart', (event) => {
+    tab.addEventListener('dragstart', (event) => {
+      if ((event.target as HTMLElement).closest('button, input')) {
+        event.preventDefault();
+        return;
+      }
       event.dataTransfer!.effectAllowed = 'move';
       event.dataTransfer!.setData('text/plain', session.id);
       tab.classList.add('dragging');
@@ -174,7 +174,7 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
       appState.reorderSession(project.id, draggedId, targetIndex);
     });
 
-    reorderHandleEl.addEventListener('dragend', () => {
+    tab.addEventListener('dragend', () => {
       tab.classList.remove('dragging');
       options.tabListEl.querySelectorAll('.drag-over-left, .drag-over-right').forEach((entry) => {
         entry.classList.remove('drag-over-left', 'drag-over-right');
