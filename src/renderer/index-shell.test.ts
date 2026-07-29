@@ -7,11 +7,15 @@ const tabsCss = readFileSync(new URL('./styles/tabs.css', import.meta.url), 'utf
 
 describe('index shell contract', () => {
   it('exposes cockpit wrappers for sidebar and top bar chrome', () => {
-    expect(html).toContain('sidebar-header-topline sidebar-brand-stage');
-    expect(html).toContain('sidebar-brand-totem sidebar-mascot-presence');
+    expect(html).toContain('id="sidebar-brand-row"');
+    expect(html).toContain('class="sidebar-brand-mark"');
+    expect(html).toContain('assets/brand/mark.svg');
+    expect(html).toContain('class="sidebar-brand-meta"');
     expect(html).toContain('class="sidebar-header-primary"');
-    expect(html).toContain('class="sidebar-mascot-shell"');
-    expect(html).toContain('src="assets/brand/maskot-ui.png"');
+    expect(html).toContain('class="sidebar-brand-name"');
+    expect(html).not.toContain('id="sidebar-brand-stage"');
+    expect(html).not.toContain('class="sidebar-mascot-shell"');
+    expect(html).not.toContain('maskot-ui.png');
     expect(html).toContain('class="sidebar-title-group"');
     expect(html).toContain('class="sidebar-brand-block"');
     expect(html).toContain('class="tab-bar-main"');
@@ -32,10 +36,10 @@ describe('index shell contract', () => {
   });
 
   it('styles the cockpit wrappers in the sidebar and tab chrome stylesheets', () => {
-    expect(sidebarCss).toContain('.sidebar-header-topline');
-    expect(sidebarCss).toContain('.sidebar-brand-totem');
+    expect(sidebarCss).toContain('#sidebar-brand-row');
+    expect(sidebarCss).toContain('.sidebar-brand-meta');
     expect(sidebarCss).toContain('.sidebar-header-primary');
-    expect(sidebarCss).toContain('.sidebar-mascot-shell');
+    expect(sidebarCss).not.toContain('.sidebar-mascot-shell');
     expect(sidebarCss).toContain('.sidebar-title-group');
     expect(sidebarCss).toContain('.sidebar-brand-block');
     expect(tabsCss).toContain('.tab-bar-main');

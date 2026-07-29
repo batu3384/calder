@@ -17,6 +17,14 @@ export function showEmptyState(
   const card = document.createElement('div');
   card.className = 'empty-state-card';
 
+  const mark = document.createElement('img');
+  mark.className = 'empty-state-mark';
+  mark.src = 'assets/brand/mark.svg';
+  mark.alt = '';
+  mark.width = 56;
+  mark.height = 56;
+  mark.decoding = 'async';
+
   const eyebrow = document.createElement('div');
   eyebrow.className = 'empty-state-eyebrow';
 
@@ -56,6 +64,7 @@ export function showEmptyState(
   }
 
   actions.appendChild(primary);
+  card.appendChild(mark);
   card.appendChild(eyebrow);
   card.appendChild(title);
   card.appendChild(copy);

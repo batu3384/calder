@@ -452,9 +452,9 @@ body.debug-panel-open #app {
   gap: 12px;
 }
 
-.empty-state-mascot {
-  width: 96px;
-  height: auto;
+.empty-state-mark {
+  width: 56px;
+  height: 56px;
   display: block;
   margin: 0 0 var(--space-16, 16px);
 }

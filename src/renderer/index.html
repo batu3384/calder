@@ -16,24 +16,15 @@
     <a class="skip-link" href="#main-area">Skip to workspace</a>
     <div id="app">
       <nav id="sidebar" class="sidebar-surface project-rail command-dock" aria-label="Projects">
-        <div
-          id="sidebar-brand-stage"
-          class="sidebar-header-topline sidebar-brand-stage"
-          aria-label="Calder mascot stage"
-        >
-          <div class="sidebar-brand-totem sidebar-mascot-presence" aria-hidden="true">
-            <div class="sidebar-mascot-shell">
-              <img
-                class="sidebar-mascot"
-                src="assets/brand/maskot-ui.png"
-                alt=""
-                width="515"
-                height="470"
-                decoding="async"
-                draggable="false"
-              />
-            </div>
-          </div>
+        <div id="sidebar-brand-row" class="sidebar-brand-row">
+          <img
+            class="sidebar-brand-mark"
+            src="assets/brand/mark.svg"
+            alt=""
+            width="16"
+            height="16"
+            decoding="async"
+          />
           <div class="sidebar-brand-meta">
             <span class="sidebar-brand-name">Calder</span>
             <span class="sidebar-brand-status">Workspace</span>
@@ -295,6 +286,30 @@
           </button>
         </div>
       </main>
+      <footer
+        id="status-bar"
+        class="status-bar"
+        role="status"
+        aria-live="off"
+        aria-label="Workspace status"
+      >
+        <div class="status-bar-group">
+          <button
+            type="button"
+            id="status-bar-git"
+            class="status-bar-item"
+            title="Branch actions"
+            aria-label="Git branch and working tree status"
+          ></button>
+          <button
+            type="button"
+            id="status-bar-provider"
+            class="status-bar-item"
+            aria-label="Session provider"
+          ></button>
+          <span id="status-bar-session" class="status-bar-item status-bar-session"></span>
+        </div>
+      </footer>
     </div>
 
     <div id="modal-overlay" class="hidden">
