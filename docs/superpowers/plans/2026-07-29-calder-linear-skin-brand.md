@@ -22,20 +22,20 @@
 
 ## File map
 
-| File | Role |
-|---|---|
-| `src/renderer/assets/brand/mark.svg` | Create — geometric monogram |
-| `src/renderer/assets/brand/maskot-ui.png` | Delete or leave unused after UI stop referencing |
-| `build/icon.png`, `build/icon.icns` | Regenerate from mark |
-| `src/renderer/styles/base.css` | Linear tokens + empty-state mark styles |
-| `src/renderer/styles/theme-command-studio.css` | Map cyan→lavender; strip teal literals; prefs overrides |
-| `src/renderer/styles/theme-aurora.css` | De-teal / align surfaces |
-| `src/renderer/styles/preferences.css` | Nav density + remove `::before` indicator |
-| `src/renderer/styles/sidebar.css` | Brand row mark sizing |
-| `src/renderer/index.html` | Sidebar brand mark `<img>`/`<svg>` |
-| `src/renderer/components/split-layout-empty-state.ts` | Mark instead of mascot |
-| `src/renderer/components/preferences/preferences-modal-shell.ts` | Icon + label markup; aria-label from caption |
-| `src/renderer/components/preferences/preferences-modal.ts` | Keep caption data for aria only (or inline map) |
+| File                                                                                                         | Role                                                    |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| `src/renderer/assets/brand/mark.svg`                                                                         | Create — geometric monogram                             |
+| `src/renderer/assets/brand/maskot-ui.png`                                                                    | Delete or leave unused after UI stop referencing        |
+| `build/icon.png`, `build/icon.icns`                                                                          | Regenerate from mark                                    |
+| `src/renderer/styles/base.css`                                                                               | Linear tokens + empty-state mark styles                 |
+| `src/renderer/styles/theme-command-studio.css`                                                               | Map cyan→lavender; strip teal literals; prefs overrides |
+| `src/renderer/styles/theme-aurora.css`                                                                       | De-teal / align surfaces                                |
+| `src/renderer/styles/preferences.css`                                                                        | Nav density + remove `::before` indicator               |
+| `src/renderer/styles/sidebar.css`                                                                            | Brand row mark sizing                                   |
+| `src/renderer/index.html`                                                                                    | Sidebar brand mark `<img>`/`<svg>`                      |
+| `src/renderer/components/split-layout-empty-state.ts`                                                        | Mark instead of mascot                                  |
+| `src/renderer/components/preferences/preferences-modal-shell.ts`                                             | Icon + label markup; aria-label from caption            |
+| `src/renderer/components/preferences/preferences-modal.ts`                                                   | Keep caption data for aria only (or inline map)         |
 | Contract tests under `src/renderer/styles/*.contract.test.ts`, `index-shell.test.ts`, prefs tests if present |
 
 ---
@@ -43,11 +43,13 @@
 ### Task 1: Brand mark SVG + contract test
 
 **Files:**
+
 - Create: `src/renderer/assets/brand/mark.svg`
 - Create: `src/renderer/styles/brand-mark.contract.test.ts`
 - Modify: none yet for empty state (Task 3)
 
 **Interfaces:**
+
 - Produces: `assets/brand/mark.svg` path string used by empty state / sidebar / About as `'assets/brand/mark.svg'`
 - Mark geometry: 32×32 viewBox; two vertical bars + thin horizontal bridge; `fill="#5e6ad2"`
 
@@ -105,12 +107,14 @@ EOF
 ### Task 2: Linear color tokens (base + studio + aurora)
 
 **Files:**
+
 - Modify: `src/renderer/styles/base.css` (`:root` dark tokens)
 - Modify: `src/renderer/styles/theme-command-studio.css` (`--studio-*`, `--accent`, remove `#66e7df` literals)
 - Modify: `src/renderer/styles/theme-aurora.css` (align accents / surfaces)
 - Modify: `src/renderer/styles/theme-contract.test.ts` (expect lavender / not teal)
 
 **Interfaces:**
+
 - Consumes: spec token table
 - Produces: `--accent: #5e6ad2`, `--surface-canvas: #010102`, `--surface-panel: #0f1011`, `--studio-line: #23252a`; `--studio-cyan` either deleted or aliased to `--accent`
 
@@ -185,6 +189,7 @@ EOF
 ### Task 3: Empty state + sidebar brand — mascot out, mark in
 
 **Files:**
+
 - Modify: `src/renderer/components/split-layout-empty-state.ts`
 - Modify: `src/renderer/styles/base.css` (`.empty-state-mascot` → `.empty-state-mark`)
 - Modify: `src/renderer/index.html` (sidebar brand row)
@@ -192,6 +197,7 @@ EOF
 - Modify: `src/renderer/index-shell.test.ts`
 
 **Interfaces:**
+
 - Consumes: `assets/brand/mark.svg`
 - Produces: empty-state first child `<img class="empty-state-mark" src="assets/brand/mark.svg" alt="">`; sidebar `<img class="sidebar-brand-mark" …>` before name
 
@@ -262,6 +268,7 @@ EOF
 ### Task 4: Preferences nav — icons, no captions, no overlapping bar
 
 **Files:**
+
 - Modify: `src/renderer/components/preferences/preferences-modal-shell.ts`
 - Modify: `src/renderer/components/preferences/preferences-modal.ts` (aria source)
 - Modify: `src/renderer/styles/preferences.css`
@@ -269,11 +276,17 @@ EOF
 - Create or modify: `src/renderer/components/preferences/preferences-modal-shell.contract.test.ts` (or existing prefs contract)
 
 **Interfaces:**
+
 - Consumes: `sections: { id, label, caption }[]` — caption used only for `aria-label`, not DOM caption span
 - Produces: button HTML shape:
 
 ```html
-<button class="preferences-menu-item" type="button" data-section="…" aria-label="Session — Startup, language, and session memory">
+<button
+  class="preferences-menu-item"
+  type="button"
+  data-section="…"
+  aria-label="Session — Startup, language, and session memory"
+>
   <span class="preferences-menu-item-icon" aria-hidden="true"><!-- inline SVG 16x16 --></span>
   <span class="preferences-menu-item-label">Session</span>
 </button>
@@ -381,11 +394,13 @@ EOF
 ### Task 5: Dock icon regeneration (`icon.png` + `icon.icns`)
 
 **Files:**
+
 - Modify: `build/icon.png`
 - Modify: `build/icon.icns`
 - Optional create: `scripts/generate-app-icon.mjs` (one-shot helper)
 
 **Interfaces:**
+
 - Consumes: `mark.svg`
 - Produces: 1024×1024 PNG with `#0f1011` rounded-square background + centered lavender mark; `icon.icns` via `iconutil`
 
@@ -427,6 +442,7 @@ EOF
 ### Task 6: About section + leftover mascot cleanup
 
 **Files:**
+
 - Modify: About prefs renderer (`preferences-modal-sections-about.ts` or similar) if it embeds mascot/old icon
 - Delete unused: `src/renderer/assets/brand/maskot-ui.png` if no remaining refs
 - Grep cleanup i18n key `Calder mascot stage` optional (leave string harmless)
@@ -480,18 +496,18 @@ Expected: empty (or documented exceptions only)
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|---|---|
-| Linear color tokens | Task 2 |
-| No teal chrome | Task 2 + 7 |
-| Geometric mark SVG | Task 1 |
-| Empty state / sidebar mark | Task 3 |
-| Dock icon regenerate | Task 5 |
-| Mascot removed | Task 3 + 6 |
-| Prefs icon + single label | Task 4 |
-| Prefs no `::before` overlap | Task 4 |
-| Prefs dense cards | Task 4 |
-| Tests + build + visual | Task 7 |
+| Spec requirement            | Task       |
+| --------------------------- | ---------- |
+| Linear color tokens         | Task 2     |
+| No teal chrome              | Task 2 + 7 |
+| Geometric mark SVG          | Task 1     |
+| Empty state / sidebar mark  | Task 3     |
+| Dock icon regenerate        | Task 5     |
+| Mascot removed              | Task 3 + 6 |
+| Prefs icon + single label   | Task 4     |
+| Prefs no `::before` overlap | Task 4     |
+| Prefs dense cards           | Task 4     |
+| Tests + build + visual      | Task 7     |
 
 ## Placeholder scan
 

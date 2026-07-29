@@ -107,7 +107,7 @@ describe('preferences modal contract', () => {
 
   it('uses shell language for layout controls', () => {
     expect(source).toContain('Workspace Center');
-    expect(source).toContain('Workspace settings');
+    expect(source).toContain('Settings');
     expect(source).toContain('Interface');
     expect(source).toContain('Tools');
     expect(source).toContain('Automation');
@@ -154,10 +154,11 @@ describe('preferences modal contract', () => {
 
   it('styles the control center like a control sheet instead of a pill-heavy settings page', () => {
     expect(styles).toContain('.preferences-menu-item');
-    expect(styles).toContain('.preferences-menu-item::before');
-    expect(styles).toContain('.preferences-menu-item.active::before');
+    expect(styles).not.toContain('.preferences-menu-item::before');
+    expect(styles).toContain('inset 2px 0 0 var(--accent)');
     expect(styles).toContain('grid-template-columns: 228px minmax(0, 1fr);');
     expect(styles).toContain('.preferences-menu-item-label');
+    expect(styles).toContain('.preferences-menu-item-icon');
     expect(styles).toContain('.preferences-overview-grid');
     expect(styles).toContain('.preferences-section-card');
     expect(source).toContain('preferences-content-shell');

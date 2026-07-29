@@ -28,29 +28,29 @@
 
 ## Decisions (user)
 
-| Topic | Choice |
-|---|---|
-| Logo direction | Abstract geometric mark; mascot fully removed |
-| Accent | Linear lavender `#5e6ad2` |
-| Preferences nav | Icon + single-line label; captions removed |
-| Approach | Full Linear skin |
+| Topic           | Choice                                        |
+| --------------- | --------------------------------------------- |
+| Logo direction  | Abstract geometric mark; mascot fully removed |
+| Accent          | Linear lavender `#5e6ad2`                     |
+| Preferences nav | Icon + single-line label; captions removed    |
+| Approach        | Full Linear skin                              |
 
 ---
 
 ## §1 Color system
 
-| Token | Value | Role |
-|---|---|---|
-| `--surface-canvas` | `#010102` | Window ground |
-| `--surface-panel` | `#0f1011` | Sidebar, inspector, prefs shell |
-| `--surface-raised` | `#141516` | Active row, elevated strips |
-| `--studio-line` / `--border-subtle` | `#23252a` | Hairline |
-| `--text-primary` | `#f7f8f8` | Titles / labels |
-| `--text-secondary` | `#d0d6e0` | Body |
-| `--text-muted` | `#8a8f98` | Rare secondary copy |
-| `--accent` | `#5e6ad2` | Focus, active tab, primary CTA, prefs inset |
-| `--accent-soft` | `rgba(94, 106, 210, 0.14)` | Hover/active fill |
-| Success / warning | Linear green / amber | Semantic only |
+| Token                               | Value                      | Role                                        |
+| ----------------------------------- | -------------------------- | ------------------------------------------- |
+| `--surface-canvas`                  | `#010102`                  | Window ground                               |
+| `--surface-panel`                   | `#0f1011`                  | Sidebar, inspector, prefs shell             |
+| `--surface-raised`                  | `#141516`                  | Active row, elevated strips                 |
+| `--studio-line` / `--border-subtle` | `#23252a`                  | Hairline                                    |
+| `--text-primary`                    | `#f7f8f8`                  | Titles / labels                             |
+| `--text-secondary`                  | `#d0d6e0`                  | Body                                        |
+| `--text-muted`                      | `#8a8f98`                  | Rare secondary copy                         |
+| `--accent`                          | `#5e6ad2`                  | Focus, active tab, primary CTA, prefs inset |
+| `--accent-soft`                     | `rgba(94, 106, 210, 0.14)` | Hover/active fill                           |
+| Success / warning                   | Linear green / amber       | Semantic only                               |
 
 **Rules**
 
