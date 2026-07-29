@@ -70,7 +70,8 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('height: 66px;');
     expect(commandStudioCss).toContain('scrollbar-gutter: stable;');
     expect(commandStudioCss).toContain('.project-item-shell + .project-item-shell::before');
-    expect(commandStudioCss).toContain('width: 82px !important;');
+    expect(commandStudioCss).toContain('width: var(--sidebar-width-collapsed) !important;');
+    expect(commandStudioCss).toContain('IDE chrome contract');
     expect(commandStudioCss).toContain('#modal.preferences-modal.modal-wide');
     expect(commandStudioCss).toContain('height: min(760px, calc(100vh - 56px));');
     expect(commandStudioCss).toContain('#context-inspector {');
@@ -78,7 +79,7 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('width: 312px;');
     expect(commandStudioCss).toContain('width: 308px;');
     expect(commandStudioCss).toContain('backdrop-filter: none;');
-    expect(commandStudioCss).toContain('width: 88px !important;');
+    expect(commandStudioCss).not.toContain('width: 88px !important;');
     expect(commandStudioCss).not.toContain('studio-mascot-premium-float 6.2s');
     expect(commandStudioCss).not.toContain('animation: studio-mascot-live-float');
     expect(commandStudioCss).not.toContain('animation: studio-mascot-shell-aura');

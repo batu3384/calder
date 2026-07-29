@@ -50,9 +50,22 @@ class FakeElement {
   innerHTML = '';
   scrollTop = 0;
   scrollHeight = 0;
-  listeners = new Map<string, Array<() => void>>();
+  tabIndex = 0;
+  attrs = new Map<string, string>();
+  listeners = new Map<
+    string,
+    Array<(event?: { key?: string; preventDefault?: () => void }) => void>
+  >();
 
   constructor(public tagName: string) {}
+
+  setAttribute(name: string, value: string): void {
+    this.attrs.set(name, value);
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attrs.get(name) ?? null;
+  }
 
   appendChild(child: FakeElement): FakeElement {
     child.parentElement = this;
@@ -67,7 +80,10 @@ class FakeElement {
     this.parentElement = null;
   }
 
-  addEventListener(event: string, cb: () => void): void {
+  addEventListener(
+    event: string,
+    cb: (event?: { key?: string; preventDefault?: () => void }) => void,
+  ): void {
     const listeners = this.listeners.get(event) ?? [];
     listeners.push(cb);
     this.listeners.set(event, listeners);

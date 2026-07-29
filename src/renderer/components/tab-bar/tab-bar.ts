@@ -413,7 +413,7 @@ function renderGitStatus(): void {
   });
 }
 
-async function showBranchContextMenu(event: MouseEvent): Promise<void> {
+async function showBranchContextMenu(event: Event): Promise<void> {
   await getBranchMenuController().showBranchContextMenu(event);
 }
 

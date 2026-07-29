@@ -47,11 +47,20 @@ class FakeElement {
   placeholder = '';
   title = '';
   spellcheck = true;
+  attrs = new Map<string, string>();
   listeners = new Map<string, Array<(event?: any) => void>>();
   focused = false;
   selected = false;
 
   constructor(public tagName: string) {}
+
+  setAttribute(name: string, value: string): void {
+    this.attrs.set(name, value);
+  }
+
+  getAttribute(name: string): string | null {
+    return this.attrs.get(name) ?? null;
+  }
 
   appendChild(child: FakeElement): FakeElement {
     child.parentElement = this;

@@ -16,10 +16,10 @@ describe('tab strip polish contract', () => {
     expect(tabsCss).toContain('.tab-item.active .tab-name');
   });
 
-  it('gives active and hover tabs a calmer elevated feel instead of a flat strip', () => {
+  it('keeps tabs flat IDE chrome without hover lift theater', () => {
     expect(tabsCss).toContain('.tab-item:hover');
-    expect(tabsCss).toContain('transform: translateY(-1px);');
     expect(tabsCss).toContain('.tab-item.active {');
-    expect(tabsCss).toContain('var(--shadow-lift);');
+    // Press feedback stays; decorative hover lift is not part of IDE dialect.
+    expect(tabsCss).not.toContain('transform: translateY(-1px);');
   });
 });

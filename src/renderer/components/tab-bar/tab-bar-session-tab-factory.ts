@@ -53,7 +53,10 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
           : !isSpecial
             ? providerIcon
             : '';
-  const statusDot = isSpecial ? '' : `<span class="tab-status ${getStatus(session.id)}"></span>`;
+  const status = isSpecial ? null : getStatus(session.id);
+  const statusDot = status
+    ? `<span class="tab-status ${status}" role="img" aria-label="Session status: ${status}"></span>`
+    : '';
   const reorderHandle =
     project.sessions.length > 1
       ? '<span class="tab-reorder-handle" aria-hidden="true" title="Drag to reorder">&#8942;&#8942;</span>'

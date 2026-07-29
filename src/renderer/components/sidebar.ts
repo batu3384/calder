@@ -98,9 +98,11 @@ export function initSidebar(): void {
   unsubscribers.push(unsubStatus);
 
   document.addEventListener('click', hideProjectContextMenu);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hideProjectContextMenu();
-  });
+  document.addEventListener('keydown', onSidebarEscapeKey);
+}
+
+function onSidebarEscapeKey(e: KeyboardEvent): void {
+  if (e.key === 'Escape') hideProjectContextMenu();
 }
 
 export function destroySidebar(): void {
@@ -113,9 +115,7 @@ export function destroySidebar(): void {
   tooltipCleanups.forEach((fn) => fn());
   tooltipCleanups = [];
   document.removeEventListener('click', hideProjectContextMenu);
-  document.removeEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hideProjectContextMenu();
-  });
+  document.removeEventListener('keydown', onSidebarEscapeKey);
   finishDragCleanup();
 }
 

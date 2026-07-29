@@ -14,6 +14,7 @@ function makeElement() {
   return {
     className: '',
     textContent: '',
+    title: '',
     style: { animation: '' },
     classList: {
       add() {},
@@ -25,6 +26,10 @@ function makeElement() {
     appendChild() {},
     addEventListener() {},
     remove() {},
+    setAttribute() {},
+    getAttribute() {
+      return null;
+    },
   };
 }
 

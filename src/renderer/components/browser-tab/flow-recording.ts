@@ -51,6 +51,7 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
     removeBtn.className = 'flow-step-remove';
     removeBtn.textContent = '\u00D7';
     removeBtn.title = 'Remove step';
+    removeBtn.setAttribute('aria-label', 'Remove step');
     removeBtn.addEventListener('click', () => {
       instance.flowSteps.splice(i, 1);
       renderFlowSteps(instance);

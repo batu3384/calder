@@ -271,7 +271,7 @@ button.custom-select-item {
     color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
   color: var(--text-primary);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .modal-field-checkbox {
@@ -347,7 +347,7 @@ button.custom-select-item {
 .path-autocomplete-item:hover,
 .path-autocomplete-item.active {
   background: color-mix(in srgb, var(--surface-hover) 88%, var(--surface-panel));
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .path-autocomplete-dropdown::-webkit-scrollbar {
@@ -396,7 +396,7 @@ button.custom-select-item {
 }
 
 .modal-btn:hover {
-  transform: translateY(-1px);
+  transform: none;
   border-color: color-mix(in srgb, var(--border) 94%, transparent);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0)),
@@ -709,7 +709,7 @@ button.custom-select-item {
     color-mix(in srgb, var(--surface-hover) 86%, var(--surface-panel));
   border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
   color: var(--text-primary);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .config-section-body {

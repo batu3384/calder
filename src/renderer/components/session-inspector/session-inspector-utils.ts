@@ -154,18 +154,29 @@ export function makeExpandable(
   create: () => HTMLElement,
 ): void {
   row.classList.add('inspector-expandable');
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+  row.setAttribute('aria-expanded', String(inspectorState.expandedRows.has(key)));
   if (inspectorState.expandedRows.has(key)) {
     row.appendChild(create());
   }
-  row.addEventListener('click', () => {
+  const toggle = () => {
     const existing = row.querySelector(selector);
     if (existing) {
       existing.remove();
       inspectorState.expandedRows.delete(key);
+      row.setAttribute('aria-expanded', 'false');
       return;
     }
     inspectorState.expandedRows.add(key);
     row.appendChild(create());
+    row.setAttribute('aria-expanded', 'true');
+  };
+  row.addEventListener('click', toggle);
+  row.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    toggle();
   });
 }
 

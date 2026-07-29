@@ -210,6 +210,7 @@ function createPanel(): HTMLElement {
   clearInputBtn.className = 'debug-btn debug-session-clear';
   clearInputBtn.innerHTML = '&times;';
   clearInputBtn.title = 'Clear session filter';
+  clearInputBtn.setAttribute('aria-label', 'Clear session filter');
   clearInputBtn.addEventListener('click', () => {
     sessionInput.value = '';
     filterSessionId = '';

@@ -101,6 +101,8 @@ export function showAlertBanner(config: AlertBannerConfig): void {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'insight-alert-close';
   closeBtn.textContent = '\u00D7';
+  closeBtn.setAttribute('aria-label', 'Dismiss alert');
+  closeBtn.title = 'Dismiss alert';
   closeBtn.addEventListener('click', () => removeAlertBanner());
 
   actions.appendChild(closeBtn);

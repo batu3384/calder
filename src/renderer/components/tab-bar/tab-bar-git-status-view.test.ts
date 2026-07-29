@@ -35,6 +35,7 @@ describe('tab-bar-git-status-view', () => {
       state: 'loading',
       busy: true,
       shouldRefresh: true,
+      title: 'Loading git status',
     });
   });
 

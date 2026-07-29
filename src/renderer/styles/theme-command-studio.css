@@ -372,16 +372,16 @@ body {
 }
 
 .project-item .project-path {
-  color: color-mix(in srgb, var(--text-dim) 86%, var(--studio-cyan));
-  font-size: 9.7px;
-  opacity: 0.78;
-  max-height: 13px;
+  color: color-mix(in srgb, var(--text-secondary) 88%, var(--studio-cyan));
+  font-size: 12px;
+  opacity: 0.88;
+  max-height: none;
   transform: none;
 }
 
 #sidebar.collapsed {
-  width: 82px !important;
-  min-width: 82px;
+  width: var(--sidebar-width-collapsed) !important;
+  min-width: var(--sidebar-width-collapsed);
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-brand-stage {
@@ -676,7 +676,7 @@ body {
 
 .browser-toolbar-presence-text,
 .browser-toolbar-cluster-label {
-  max-width: 78px;
+  max-width: min(140px, 28vw);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1008,7 +1008,7 @@ body {
 }
 
 .project-item .project-path {
-  opacity: 0.78;
+  opacity: 0.88;
 }
 
 .project-status-chip,
@@ -1019,8 +1019,8 @@ body {
 }
 
 #sidebar.collapsed {
-  width: 88px !important;
-  min-width: 88px;
+  width: var(--sidebar-width-collapsed) !important;
+  min-width: var(--sidebar-width-collapsed);
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-brand-stage {
@@ -1522,7 +1522,7 @@ body {
 }
 
 #sidebar.collapsed {
-  width: 88px !important;
+  width: var(--sidebar-width-collapsed) !important;
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-brand-stage {
@@ -2070,4 +2070,260 @@ body {
   box-shadow:
     var(--studio-inner-hi),
     0 10px 26px rgba(1, 5, 12, 0.2);
+}
+
+/*
+ * IDE chrome contract (Cursor/Linear dialect on Calder tokens).
+ * Hairline depth, 4/6/8/12 radii, no lift, no glow theater.
+ */
+:root {
+  --radius-control: var(--radius-sm);
+  --radius-row: var(--radius-md);
+  --radius-panel: var(--radius-lg);
+  --radius-shell: var(--radius-xl);
+  --studio-focus-ring: 0 0 0 2px color-mix(in srgb, var(--studio-cyan) 36%, transparent);
+  --studio-inner-hi: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+#app {
+  background: var(--studio-canvas);
+  background-image: none;
+}
+
+html,
+body {
+  background: var(--studio-canvas);
+}
+
+#sidebar.command-dock,
+#workspace-shell.workspace-shell-surface,
+#context-inspector,
+#tab-bar {
+  background: color-mix(in srgb, var(--studio-panel) 96%, black);
+  box-shadow: none;
+}
+
+#sidebar.command-dock {
+  background-image: none;
+  border-right: 1px solid var(--studio-line);
+}
+
+#sidebar-brand-stage.sidebar-brand-stage {
+  min-height: 48px;
+  margin: 6px 8px;
+  padding: 6px 8px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 8px;
+  border-radius: var(--radius-row);
+  border: 1px solid var(--studio-line);
+  background: transparent;
+  box-shadow: none;
+}
+
+#sidebar-brand-stage.sidebar-brand-stage::before,
+#sidebar-brand-stage.sidebar-brand-stage::after {
+  display: none;
+}
+
+#sidebar-brand-stage .sidebar-brand-totem,
+#sidebar-brand-stage .sidebar-mascot-shell {
+  width: 28px;
+  height: 28px;
+}
+
+#sidebar-brand-stage .sidebar-mascot-shell {
+  animation: none;
+  filter: none;
+}
+
+#sidebar-brand-stage .sidebar-mascot-shell::before,
+#sidebar-brand-stage .sidebar-mascot-shell::after,
+#sidebar-brand-stage .sidebar-brand-totem::before,
+#sidebar-brand-stage .sidebar-brand-totem::after {
+  display: none;
+}
+
+.sidebar-brand-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-brand-status,
+.sidebar-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  opacity: 0.82;
+}
+
+.project-item,
+.tab-item,
+.preferences-menu-item,
+.calder-list-row {
+  border-radius: var(--radius-row);
+  min-height: 36px;
+}
+
+.project-item {
+  padding: 7px 36px 7px 10px;
+  box-shadow: none;
+}
+
+.project-item:hover,
+.project-item.active,
+.tab-item:hover,
+.tab-item.active,
+.preferences-menu-item:hover,
+.preferences-menu-item.active {
+  transform: none;
+}
+
+.tab-item.active {
+  box-shadow:
+    inset 0 2px 0 var(--studio-tab-accent),
+    var(--studio-inner-hi);
+}
+
+.preferences-menu,
+.preferences-content-shell,
+.preferences-subsection,
+.preferences-section-card,
+.preferences-overview-card,
+.setup-provider-shell,
+.shortcut-group-shell,
+.about-hero,
+.about-update-row,
+.modal-toggle-field,
+.context-inspector-section,
+.modal-surface,
+.calder-popover,
+.terminal-pane {
+  border-radius: var(--radius-panel);
+  box-shadow: var(--studio-inner-hi);
+}
+
+.preferences-menu-item {
+  min-height: 36px;
+  padding: 7px 10px;
+  box-shadow: var(--studio-inner-hi);
+}
+
+.preferences-overview-card {
+  min-height: 72px;
+  padding: 12px;
+}
+
+.preferences-menu-item:hover,
+.orchestration-overview-action-btn:hover:not(:disabled),
+.about-link:hover,
+.calder-button:hover,
+.calder-icon-button:hover,
+.icon-btn:hover,
+.modal-btn:hover,
+.tab-context-menu-item:hover {
+  transform: none;
+}
+
+.session-launcher-group,
+.surface-mode-switcher,
+#git-status,
+.command-deck-provider-select .custom-select-trigger,
+.command-deck-surface-select .custom-select-trigger,
+.command-deck-profile-select .custom-select-trigger,
+.calder-button,
+.calder-icon-button,
+.icon-btn,
+.custom-select-trigger,
+.calder-status-pill {
+  border-radius: var(--radius-control);
+}
+
+.command-deck-provider-select .custom-select-trigger,
+.session-provider-select .custom-select-trigger {
+  box-shadow: var(--studio-inner-hi);
+}
+
+.inspector-tab:focus-visible,
+.inspector-close:focus-visible,
+.inspector-autoscroll-toggle:focus-visible,
+.inspector-expandable:focus-visible,
+.search-toggle-btn:focus-visible,
+.search-nav-btn:focus-visible,
+.debug-btn:focus-visible,
+#git-status:focus-visible,
+.calder-button:focus-visible,
+.calder-icon-button:focus-visible,
+.icon-btn:focus-visible,
+.preferences-menu-item:focus-visible,
+.tab-item:focus-visible,
+.project-item:focus-visible {
+  outline: none;
+  box-shadow: var(--studio-focus-ring);
+}
+
+#tab-bar,
+.session-launcher-group {
+  min-height: 40px;
+}
+
+.empty-state {
+  padding: 28px 24px;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Collapsed rail: single token, no mascot theater */
+#sidebar.collapsed {
+  width: var(--sidebar-width-collapsed) !important;
+  min-width: var(--sidebar-width-collapsed);
+  max-width: var(--sidebar-width-collapsed);
+}
+
+#sidebar.collapsed #sidebar-brand-stage.sidebar-brand-stage {
+  min-height: 40px;
+  margin: 6px;
+  padding: 6px;
+  border-radius: var(--radius-row);
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+#sidebar.collapsed #sidebar-brand-stage .sidebar-brand-totem,
+#sidebar.collapsed #sidebar-brand-stage .sidebar-mascot-shell {
+  width: 24px;
+  height: 24px;
+}
+
+#sidebar.collapsed .project-item {
+  width: 40px;
+  min-height: 36px;
+  margin-inline: auto;
+  border-radius: var(--radius-row);
+  padding: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar-brand-stage .sidebar-mascot-shell,
+  .tab-status.working,
+  .tab-status.input {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -7,6 +7,7 @@ export interface GitStatusView {
   state: GitStatusViewState;
   busy: boolean;
   shouldRefresh: boolean;
+  title?: string;
 }
 
 export function buildGitStatusView(
@@ -24,6 +25,7 @@ export function buildGitStatusView(
       state: 'loading',
       busy: true,
       shouldRefresh: true,
+      title: 'Loading git status',
     };
   }
 
@@ -50,10 +52,21 @@ export function buildGitStatusView(
     parts.push(`<span class="git-conflicted">!${status.conflicted}</span>`);
 
   const dirtyCount = status.staged + status.modified + status.untracked + status.conflicted;
+  const summaryParts = [
+    status.branch ? `Branch ${status.branch}` : 'Git repository',
+    status.ahead > 0 ? `${status.ahead} ahead` : null,
+    status.behind > 0 ? `${status.behind} behind` : null,
+    status.staged > 0 ? `${status.staged} staged` : null,
+    status.modified > 0 ? `${status.modified} modified` : null,
+    status.untracked > 0 ? `${status.untracked} untracked` : null,
+    status.conflicted > 0 ? `${status.conflicted} conflicted` : null,
+  ].filter(Boolean);
+
   return {
     html: parts.join(' '),
     state: dirtyCount > 0 ? 'dirty' : 'clean',
     busy: false,
     shouldRefresh: false,
+    title: summaryParts.join(', '),
   };
 }

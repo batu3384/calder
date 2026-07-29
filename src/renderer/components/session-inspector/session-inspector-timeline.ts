@@ -242,6 +242,16 @@ function renderAgentGroup(
 
   row.addEventListener('click', () => {
     toggleAgentGroup(group, groupKey, toggleEl, renderChildren);
+    row.setAttribute('aria-expanded', String(inspectorState.expandedRows.has(groupKey)));
+  });
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+  row.setAttribute('aria-expanded', String(inspectorState.expandedRows.has(groupKey)));
+  row.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    toggleAgentGroup(group, groupKey, toggleEl, renderChildren);
+    row.setAttribute('aria-expanded', String(inspectorState.expandedRows.has(groupKey)));
   });
 
   parent.appendChild(group);

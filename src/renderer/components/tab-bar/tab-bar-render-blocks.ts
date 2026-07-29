@@ -46,6 +46,13 @@ export function renderGitStatusBlock(options: RenderGitStatusBlockOptions): void
   const view = buildGitStatusView(Boolean(project), gitStatus, escapeHtml);
   gitStatusEl.innerHTML = view.html;
   gitStatusEl.dataset.state = view.state;
+  if (view.title) {
+    gitStatusEl.setAttribute('title', view.title);
+    gitStatusEl.setAttribute('aria-label', view.title);
+  } else {
+    gitStatusEl.setAttribute('aria-label', 'Git branch and working tree status');
+    gitStatusEl.removeAttribute('title');
+  }
   if (view.busy) {
     gitStatusEl.setAttribute('aria-busy', 'true');
   } else {

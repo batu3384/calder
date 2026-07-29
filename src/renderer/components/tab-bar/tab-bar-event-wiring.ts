@@ -17,7 +17,7 @@ interface TabBarActionHandlerArgs {
   onOpenUpdatePanel: () => void;
   onQuickNewSession: () => void;
   onShowAddSessionContextMenu: (x: number, y: number) => void;
-  onShowBranchContextMenu: (event: MouseEvent) => void;
+  onShowBranchContextMenu: (event: Event) => void;
 }
 
 export function wireTabBarActionHandlers(args: TabBarActionHandlerArgs): void {
@@ -31,6 +31,11 @@ export function wireTabBarActionHandlers(args: TabBarActionHandlerArgs): void {
     args.onShowAddSessionContextMenu(e.clientX, e.clientY);
   });
   args.gitStatusEl.addEventListener('click', (event) => {
+    args.onShowBranchContextMenu(event);
+  });
+  args.gitStatusEl.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
     args.onShowBranchContextMenu(event);
   });
 }
@@ -109,6 +114,8 @@ export function wireTabBarStateSubscriptions(
     ) as HTMLElement | null;
     if (dot) {
       dot.className = `tab-status ${status}`;
+      dot.setAttribute('role', 'img');
+      dot.setAttribute('aria-label', `Session status: ${status}`);
     }
 
     const tab = args.tabListEl.querySelector(

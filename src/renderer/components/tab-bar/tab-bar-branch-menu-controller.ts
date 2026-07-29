@@ -21,7 +21,7 @@ interface ShowBranchContextMenuOptions {
 }
 
 export interface TabBarBranchMenuController {
-  showBranchContextMenu: (event: MouseEvent) => Promise<void>;
+  showBranchContextMenu: (event: Event) => Promise<void>;
 }
 
 function constrainMenuToViewport(menu: HTMLElement): void {
@@ -113,7 +113,7 @@ function createShowBranchContextMenuHandler(
     refreshGitStatus,
   } = options;
 
-  return async function showBranchContextMenu(event: MouseEvent): Promise<void> {
+  return async function showBranchContextMenu(event: Event): Promise<void> {
     event.stopPropagation();
     hideTabContextMenu();
 

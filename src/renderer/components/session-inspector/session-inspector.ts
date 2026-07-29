@@ -224,6 +224,8 @@ function createPanel(): HTMLElement {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'inspector-close';
   closeBtn.textContent = '\u00d7';
+  closeBtn.setAttribute('aria-label', 'Close session inspector');
+  closeBtn.title = 'Close session inspector';
   closeBtn.addEventListener('click', closeInspector);
   actions.appendChild(closeBtn);
 
@@ -234,6 +236,8 @@ function createPanel(): HTMLElement {
   // Tabs
   const tabBar = document.createElement('div');
   tabBar.className = 'inspector-tabs';
+  tabBar.setAttribute('role', 'tablist');
+  tabBar.setAttribute('aria-label', 'Session inspector sections');
   const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
     { id: 'timeline', label: 'Activity' },
     { id: 'evidence', label: 'Evidence' },
@@ -245,14 +249,36 @@ function createPanel(): HTMLElement {
   ];
   for (const tab of tabs) {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'inspector-tab' + (tab.id === inspectorState.activeTab ? ' active' : '');
     btn.textContent = tab.label;
     btn.dataset.tab = tab.id;
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', String(tab.id === inspectorState.activeTab));
+    btn.tabIndex = tab.id === inspectorState.activeTab ? 0 : -1;
     btn.addEventListener('click', () => {
       inspectorState.activeTab = tab.id;
-      tabBar.querySelectorAll('.inspector-tab').forEach((t) => t.classList.remove('active'));
+      tabBar.querySelectorAll('.inspector-tab').forEach((t) => {
+        const el = t as HTMLButtonElement;
+        el.classList.remove('active');
+        el.setAttribute('aria-selected', 'false');
+        el.tabIndex = -1;
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      btn.tabIndex = 0;
       renderActiveTab();
+    });
+    btn.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      const buttons = [...tabBar.querySelectorAll<HTMLButtonElement>('.inspector-tab')];
+      const index = buttons.indexOf(btn);
+      const next =
+        buttons[event.key === 'ArrowLeft' ? index - 1 : index + 1] ??
+        buttons[event.key === 'ArrowLeft' ? buttons.length - 1 : 0];
+      next?.focus();
+      next?.click();
     });
     tabBar.appendChild(btn);
   }

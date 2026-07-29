@@ -903,7 +903,7 @@ body {
 }
 
 #sidebar.collapsed {
-  width: 82px !important;
+  width: var(--sidebar-width-collapsed) !important;
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-header-topline {
@@ -1362,22 +1362,15 @@ textarea:focus,
 }
 
 .project-item .project-path {
-  min-height: 13px;
+  min-height: 0;
   max-height: none;
-  opacity: 0.78;
-  transform: none;
-}
-
-.project-item:hover .project-path,
-.project-item.active .project-path,
-.project-item:focus-visible .project-path {
-  max-height: none;
-  opacity: 0.86;
+  font-size: 12px;
+  opacity: 0.88;
   transform: none;
 }
 
 #sidebar.collapsed {
-  width: 88px !important;
+  width: var(--sidebar-width-collapsed) !important;
 }
 
 #sidebar.collapsed #sidebar-brand-stage.sidebar-header-topline {
@@ -1489,4 +1482,13 @@ textarea:focus,
     min-width: min(148px, 100%);
     max-width: 100%;
   }
+}
+
+/*
+ * Aurora shell chrome deferred to theme-command-studio IDE contract.
+ * Keep aurora for non-rail accents; rail density/brand owned by studio.
+ */
+#sidebar.collapsed {
+  width: var(--sidebar-width-collapsed) !important;
+  min-width: var(--sidebar-width-collapsed);
 }
