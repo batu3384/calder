@@ -589,7 +589,7 @@
       color-mix(in srgb, var(--accent-soft) 44%, transparent),
       transparent 26%
     ),
-    radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.04), transparent 22%),
+    radial-gradient(circle at 100% 0%, rgba(94, 106, 210, 0.04), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 96%, black);
 }
@@ -618,7 +618,7 @@
       color-mix(in srgb, var(--accent-soft) 46%, transparent),
       transparent 28%
     ),
-    radial-gradient(circle at 100% 0%, rgba(102, 231, 223, 0.04), transparent 24%),
+    radial-gradient(circle at 100% 0%, rgba(94, 106, 210, 0.04), transparent 24%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-canvas) 94%, black);
   box-shadow:

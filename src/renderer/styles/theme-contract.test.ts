@@ -26,7 +26,8 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--surface-ops');
     expect(baseCss).toContain('--control-height-md');
     expect(baseCss).toContain('--accent-soft');
-    expect(baseCss).toContain('--accent-warm');
+    expect(baseCss).not.toContain('--accent-warm');
+    expect(baseCss).toMatch(/--accent:\s*#5e6ad2/);
     expect(baseCss).toContain('--surface-shell');
     expect(baseCss).toContain('--border-hairline');
     expect(baseCss).toContain('--accent-line');
@@ -36,6 +37,12 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain("'IBM Plex Sans'");
     expect(baseCss).toContain("'Inter'");
     expect(baseCss).not.toContain('--accent: #ef6879;');
+  });
+
+  it('keeps command studio free of teal chrome literals', () => {
+    expect(commandStudioCss).not.toContain('#66e7df');
+    expect(commandStudioCss).not.toContain('102, 231, 223');
+    expect(commandStudioCss).toContain('--accent: #5e6ad2');
   });
 
   it('loads the command studio premium theme after feature styles', () => {
@@ -50,7 +57,7 @@ describe('precision cockpit theme contract', () => {
     expect(auroraCss).toContain('Aurora Lite restraint pass');
     expect(auroraCss).toContain('Premium shell audit v10');
     expect(auroraCss).toContain('--premium-panel-hairline');
-    expect(auroraCss).toContain('grid-template-columns: 86px minmax(0, 1fr);');
+    expect(auroraCss).not.toContain('#sidebar-brand-stage');
     expect(commandStudioCss).toContain('Calder Command Studio');
     expect(commandStudioCss).toContain('Command studio coherence pass');
     expect(commandStudioCss).toContain('Aurora Lite restraint pass');
@@ -60,14 +67,6 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('--studio-resonance-glow');
     expect(commandStudioCss).toContain('.context-inspector-tabs');
     expect(commandStudioCss).toContain('context-inspector-panel-enter');
-    expect(commandStudioCss).toContain('grid-template-columns: 76px minmax(0, 1fr);');
-    expect(commandStudioCss).toContain('contain: paint;');
-    expect(commandStudioCss).toContain('animation: none;');
-    expect(commandStudioCss).toContain(
-      '#sidebar-brand-stage.sidebar-brand-stage:hover .sidebar-mascot-shell',
-    );
-    expect(commandStudioCss).toContain('width: 72px;');
-    expect(commandStudioCss).toContain('height: 66px;');
     expect(commandStudioCss).toContain('scrollbar-gutter: stable;');
     expect(commandStudioCss).toContain('.project-item-shell + .project-item-shell::before');
     expect(commandStudioCss).toContain('width: var(--sidebar-width-collapsed) !important;');
@@ -80,6 +79,9 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).toContain('width: 308px;');
     expect(commandStudioCss).toContain('backdrop-filter: none;');
     expect(commandStudioCss).not.toContain('width: 88px !important;');
+    expect(commandStudioCss).not.toContain('#sidebar-brand-stage');
+    expect(commandStudioCss).not.toContain('.sidebar-mascot-shell');
+    expect(commandStudioCss).not.toContain('radial-gradient(');
     expect(commandStudioCss).not.toContain('studio-mascot-premium-float 6.2s');
     expect(commandStudioCss).not.toContain('animation: studio-mascot-live-float');
     expect(commandStudioCss).not.toContain('animation: studio-mascot-shell-aura');

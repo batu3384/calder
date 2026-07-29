@@ -1,55 +1,54 @@
 :root {
-  --surface-canvas: #05070c;
-  --surface-panel: #0a1017;
-  --surface-panel-alt: #101821;
-  --surface-elevated: #151f2a;
-  --surface-shell: #080d14;
-  --surface-rail: #090e15;
-  --surface-live: #060a10;
-  --surface-deck: #0a1119;
-  --surface-ops: #0a1018;
-  --surface-workspace: #05090f;
-  --surface-raised: #172230;
-  --surface-glass: rgba(10, 16, 23, 0.88);
-  --surface-overlay: rgba(3, 6, 12, 0.86);
-  --surface-hover: #131d27;
-  --surface-muted: #0e151e;
-  --surface-contrast: #223243;
-  --text-primary: #f5f7f4;
-  --text-secondary: #ced8d8;
-  --text-muted: #91a1a6;
-  --text-dim: #667982;
-  --text-inverse: #05070c;
-  --accent-warm: #c8a866;
-  --accent-cool: #74c7ff;
-  --accent-aurora: #5ed6c3;
-  --accent-violet: #7aa4d8;
+  --surface-canvas: #010102;
+  --surface-panel: #0f1011;
+  --surface-panel-alt: #141516;
+  --surface-elevated: #141516;
+  --surface-shell: #0f1011;
+  --surface-rail: #0f1011;
+  --surface-live: #010102;
+  --surface-deck: #0f1011;
+  --surface-ops: #0f1011;
+  --surface-workspace: #010102;
+  --surface-raised: #141516;
+  --surface-glass: rgba(15, 16, 17, 0.88);
+  --surface-overlay: rgba(1, 1, 2, 0.86);
+  --surface-hover: #18191a;
+  --surface-muted: #141516;
+  --surface-contrast: #23252a;
+  --text-primary: #f7f8f8;
+  --text-secondary: #d0d6e0;
+  --text-muted: #8a8f98;
+  --text-dim: #62666d;
+  --text-inverse: #010102;
+  --accent-cool: #828fff;
+  --accent-aurora: #5e6ad2;
+  --accent-violet: #5e6ad2;
   --accent-rose: #d29a86;
-  --accent-emerald: #48caa7;
-  --accent: var(--accent-aurora);
-  --accent-dim: #459d94;
-  --accent-soft: rgba(94, 214, 195, 0.13);
-  --accent-ghost: rgba(94, 214, 195, 0.075);
+  --accent-emerald: #27a644;
+  --accent: #5e6ad2;
+  --accent-dim: #4a55b0;
+  --accent-soft: rgba(94, 106, 210, 0.14);
+  --accent-ghost: rgba(94, 106, 210, 0.08);
   --accent-line: color-mix(in srgb, var(--accent) 48%, transparent);
-  --accent-positive: #44c69e;
+  --accent-positive: #27a644;
   --accent-warning: #d5a94f;
   --warning-strong: #efd39a;
-  --accent-info: #7fd4ff;
+  --accent-info: #828fff;
   --accent-danger: #ef8a74;
-  --border-hairline: rgba(227, 236, 247, 0.045);
-  --border-muted: #1a2431;
-  --border-subtle: #233142;
-  --border: #33485d;
-  --border-strong: #49657f;
-  --border-focus: rgba(94, 214, 195, 0.44);
-  --tab-active: #121923;
-  --tab-inactive: #0a0f17;
-  --pane-focus: #5ed6c3;
-  --pane-unfocus: #253444;
+  --border-hairline: rgba(247, 248, 248, 0.045);
+  --border-muted: #191a1b;
+  --border-subtle: #23252a;
+  --border: #34343a;
+  --border-strong: #3e3e44;
+  --border-focus: #5e6ad2;
+  --tab-active: #141516;
+  --tab-inactive: #0f1011;
+  --pane-focus: #5e6ad2;
+  --pane-unfocus: #23252a;
   --bookmark: #aeb7ff;
-  --success: #44c69e;
+  --success: #27a644;
   --warning: #d5a94f;
-  --info: #7fd4ff;
+  --info: #828fff;
   --danger: #ef8a74;
   --status-success-bg: color-mix(in srgb, var(--success) 14%, transparent);
   --status-success-border: color-mix(in srgb, var(--success) 30%, var(--border-subtle));
@@ -78,7 +77,7 @@
   --shadow-card: 0 10px 24px rgba(1, 5, 12, 0.14);
   --shadow-card-strong: 0 18px 44px rgba(1, 5, 12, 0.24);
   --shadow-lift: 0 14px 30px rgba(1, 5, 12, 0.22);
-  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 36%, transparent);
   --glass-highlight: rgba(227, 236, 247, 0.05);
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -152,12 +151,40 @@ body {
   font-size: var(--type-md);
   line-height: var(--line-normal);
   color: var(--text-primary);
-  background:
-    radial-gradient(circle at 14% -6%, rgba(94, 214, 195, 0.06), transparent 30%),
-    linear-gradient(180deg, #081019 0%, var(--surface-canvas) 48%, #03050a 100%);
+  background: var(--surface-canvas);
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Single neutral scrollbar for the whole shell */
+:root {
+  --scrollbar-thumb: color-mix(in srgb, var(--text-muted) 30%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--text-muted) 45%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--scrollbar-thumb) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover) padding-box;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* Light theme */
@@ -183,7 +210,6 @@ body {
   --text-muted: #9ca3af;
   --text-dim: #6b7280;
   --text-inverse: #f9fafb;
-  --accent-warm: #b8860b;
   --accent-cool: #2563eb;
   --accent-aurora: #0d9488;
   --accent-violet: #5b7bb4;
@@ -241,7 +267,7 @@ body {
   --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.06);
   --shadow-card-strong: 0 18px 44px rgba(0, 0, 0, 0.1);
   --shadow-lift: 0 14px 30px rgba(0, 0, 0, 0.08);
-  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+  --shadow-focus-ring: 0 0 0 2px color-mix(in srgb, var(--accent) 36%, transparent);
   --glass-highlight: rgba(255, 255, 255, 0.05);
   color-scheme: light;
   background:
@@ -272,14 +298,7 @@ body,
 #app {
   display: flex;
   height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent 14%),
-    radial-gradient(circle at 22% -8%, rgba(94, 214, 195, 0.04), transparent 34%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-canvas) 94%, black),
-      var(--surface-canvas)
-    );
+  background: var(--surface-canvas);
 }
 
 ::selection {
@@ -433,29 +452,27 @@ body.debug-panel-open #app {
   gap: 12px;
 }
 
+.empty-state-mascot {
+  width: 96px;
+  height: auto;
+  display: block;
+  margin: 0 0 var(--space-16, 16px);
+}
+
 .empty-state-eyebrow {
-  font-size: var(--type-2xs);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--accent) 68%, var(--text-dim));
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .empty-state-title {
   font-family: var(--font-display);
-  color: transparent;
-  max-width: 12ch;
+  color: var(--text-primary);
+  max-width: 16ch;
   font-size: var(--type-display-lg);
-  line-height: 0.98;
-  font-weight: 680;
-  letter-spacing: -0.03em;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--text-primary) 92%, white),
-    color-mix(in srgb, var(--accent) 44%, var(--text-primary))
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
+  line-height: 1.05;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 .empty-state-copy {
