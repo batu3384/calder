@@ -16,7 +16,7 @@ describe('copy-assets script contract', () => {
     expect(copyAssetsSource).toContain("path.join(dist, 'assets', 'providers')");
   });
 
-  it('copies sidebar brand mascot assets into dist', () => {
+  it('copies sidebar brand assets into dist', () => {
     expect(copyAssetsSource).toContain("path.join(root, 'src', 'renderer', 'assets', 'brand')");
     expect(copyAssetsSource).toContain("path.join(dist, 'assets', 'brand')");
   });
