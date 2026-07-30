@@ -110,11 +110,11 @@ body {
   justify-self: stretch;
   width: 100%;
   min-height: 28px;
-  padding: 2px;
-  border-radius: var(--radius-md);
-  border-color: var(--studio-line-soft);
-  background: rgba(255, 255, 255, 0.022);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  padding: 0;
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .sidebar-header-actions .icon-btn {
@@ -172,52 +172,39 @@ body {
   position: relative;
 }
 
+/* Divider / card chrome owned by chrome-rail.css — keep shell hook only */
 .project-item-shell + .project-item-shell::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: 14px;
-  right: 14px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--studio-line-soft), transparent);
-  opacity: 0.72;
-  pointer-events: none;
+  content: none;
+  display: none;
 }
 
 .project-item {
-  min-height: 50px;
+  min-height: 44px;
   padding: 8px 34px 8px 16px;
-  border-radius: 11px;
+  border-radius: 0;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
   transition:
     background-color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard);
+    border-color var(--motion-fast) var(--ease-standard);
 }
 
 .project-item:hover {
-  border-color: var(--studio-line-soft);
+  border-color: transparent;
   background: rgba(111, 154, 166, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: none;
 }
 
 .project-item.active {
-  border-color: color-mix(in srgb, var(--studio-cyan) 18%, var(--studio-line));
+  border-color: transparent;
   background: rgba(111, 154, 166, 0.09);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 7px 18px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 .project-item::before {
-  left: 0;
-  width: 2px;
-  top: 10px;
-  bottom: 10px;
-  z-index: 0;
-  pointer-events: none;
+  content: none;
+  display: none;
 }
 
 .project-item .project-name {
@@ -412,11 +399,12 @@ body {
 
 #context-inspector .context-inspector-section {
   min-width: 0;
-  border-radius: 15px;
-  padding: 11px;
-  border-color: color-mix(in srgb, var(--studio-line-soft) 86%, transparent);
-  background: color-mix(in srgb, var(--studio-panel-raised) 72%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.032);
+  /* Owned by chrome-rail.css — flat ops rail, no studio cards */
+  border-radius: 0;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 #context-inspector .context-inspector-block-header {
@@ -723,12 +711,13 @@ body {
 }
 
 .sidebar-header-actions {
-  border-color: color-mix(in srgb, var(--studio-cyan-line) 34%, var(--studio-line-soft));
-  background: rgba(255, 255, 255, 0.025);
+  /* Owned by chrome-rail.css */
+  border-color: transparent;
+  background: transparent;
 }
 
 #project-list {
-  gap: 5px;
+  gap: 2px;
 }
 
 .project-item-shell + .project-item-shell::before {
@@ -736,24 +725,23 @@ body {
 }
 
 .project-item {
-  min-height: 54px;
-  padding: 9px 36px 9px 14px;
-  border-radius: 15px;
-  border-color: color-mix(in srgb, var(--studio-line-soft) 62%, transparent);
-  background: rgba(255, 255, 255, 0.006);
+  /* Owned by chrome-rail.css — flat 44px rows */
+  min-height: 44px;
+  padding: 8px 34px 8px 16px;
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
 }
 
 .project-item:hover {
-  border-color: color-mix(in srgb, var(--studio-cyan-line) 58%, var(--studio-line));
-  background: rgba(111, 154, 166, 0.07);
+  border-color: transparent;
+  background: rgba(111, 154, 166, 0.05);
 }
 
 .project-item.active {
-  border-color: color-mix(in srgb, var(--studio-cyan) 26%, var(--studio-line));
-  background: rgba(111, 154, 166, 0.1);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: transparent;
+  background: rgba(111, 154, 166, 0.09);
+  box-shadow: none;
 }
 
 .project-item .project-path {
@@ -797,12 +785,11 @@ body {
 }
 
 #context-inspector .context-inspector-section {
-  border: 1px solid color-mix(in srgb, var(--studio-line-soft) 86%, transparent);
-  border-radius: 18px;
-  background: rgba(12, 20, 29, 0.64);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.038),
-    0 12px 24px rgba(0, 0, 0, 0.08);
+  /* Owned by chrome-rail.css */
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 #context-inspector .context-inspector-section[data-section='capabilities'] {
@@ -838,9 +825,10 @@ body {
 #context-inspector .auto-approval-current-card,
 #context-inspector .auto-approval-policy-stack,
 #context-inspector .auto-approval-meta-card {
-  border-color: color-mix(in srgb, var(--studio-cyan-line) 34%, var(--studio-line-soft));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent), rgba(255, 255, 255, 0.012);
+  /* Owned by chrome-rail.css — no studio cyan card fill */
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 #modal.preferences-modal.modal-wide {
@@ -982,43 +970,34 @@ body {
 }
 
 .sidebar-header-actions {
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.006)),
-    rgba(8, 14, 22, 0.74);
+  /* Owned by chrome-rail.css */
+  border-radius: 0;
+  background: transparent;
 }
 
 #project-list {
-  gap: 7px;
+  gap: 2px;
 }
 
 .project-item {
-  min-height: 55px;
-  padding: 9px 36px 9px 13px;
-  border-radius: 15px;
-  border-color: color-mix(in srgb, var(--studio-line-soft) 82%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent), rgba(255, 255, 255, 0.006);
-  overflow: hidden;
+  /* Owned by chrome-rail.css — flat rows, no sheen/glow */
+  min-height: 44px;
+  padding: 8px 34px 8px 16px;
+  border-radius: 0;
+  border-color: transparent;
+  background: transparent;
+  overflow: visible;
 }
 
 .project-item::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, rgba(111, 154, 166, 0.16), transparent);
-  opacity: 0;
-  transition:
-    opacity 0.18s ease,
-    width 0.18s ease;
+  content: none;
+  display: none;
 }
 
 .project-item:hover::after,
 .project-item.active::after {
-  width: 58%;
-  opacity: 1;
+  width: 0;
+  opacity: 0;
 }
 
 .project-item > * {
@@ -1027,20 +1006,15 @@ body {
 }
 
 .project-item:hover {
-  border-color: color-mix(in srgb, var(--studio-cyan) 14%, var(--studio-line));
-  background: var(--studio-card-sheen), rgba(255, 255, 255, 0.018);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 8px 18px rgba(0, 0, 0, 0.1);
+  border-color: transparent;
+  background: rgba(111, 154, 166, 0.05);
+  box-shadow: none;
 }
 
 .project-item.active {
-  border-color: color-mix(in srgb, var(--studio-cyan) 22%, var(--studio-line));
-  background: rgba(111, 154, 166, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    0 10px 22px rgba(0, 0, 0, 0.13),
-    var(--studio-resonance-glow);
+  border-color: transparent;
+  background: rgba(111, 154, 166, 0.09);
+  box-shadow: none;
 }
 
 .project-item .project-name {
@@ -1140,8 +1114,9 @@ body {
 }
 
 #context-inspector .context-inspector-section {
-  border-radius: 20px;
-  background: rgba(12, 20, 30, 0.72);
+  /* Owned by chrome-rail.css */
+  border-radius: 0;
+  background: transparent;
 }
 
 #context-inspector .config-item:not(.auto-approval-item) {
@@ -1152,8 +1127,9 @@ body {
 #context-inspector .auto-approval-current-card,
 #context-inspector .auto-approval-policy-stack,
 #context-inspector .auto-approval-meta-card {
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.038);
+  /* Owned by chrome-rail.css */
+  border-radius: 0;
+  box-shadow: none;
 }
 
 #modal.preferences-modal.modal-wide {

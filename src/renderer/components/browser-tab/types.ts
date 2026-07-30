@@ -1,7 +1,14 @@
 export interface SelectorOption {
-  type: 'qa' | 'attr' | 'id' | 'css';
+  type: 'qa' | 'attr' | 'id' | 'class' | 'aria' | 'role' | 'name' | 'css';
   label: string;
   value: string;
+}
+
+export type SelectorVerificationStatus = 'unique' | 'ambiguous' | 'missing';
+
+export interface SelectorVerification {
+  status: SelectorVerificationStatus;
+  matchCount: number;
 }
 
 export interface RelativeClickPoint {
@@ -18,9 +25,12 @@ export interface ElementInfo {
   textContent: string;
   selectors: SelectorOption[];
   selectorValues?: string[];
+  selectorVerifications?: Record<string, SelectorVerification>;
   shadowHostSelectors?: string[][];
   clickPoint?: RelativeClickPoint;
   isCanvasLike?: boolean;
+  captureTargetId?: string;
+  liftedFromTag?: string;
   activeSelector: ActiveSelector;
   pageUrl: string;
 }
@@ -31,6 +41,7 @@ export interface FlowStep {
   textContent?: string;
   selectors?: SelectorOption[];
   activeSelector?: SelectorOption;
+  selectorVerifications?: Record<string, SelectorVerification>;
   shadowHostSelectors?: string[][];
   clickPoint?: RelativeClickPoint;
   isCanvasLike?: boolean;
@@ -43,6 +54,7 @@ export interface FlowPickerMetadata {
   textContent: string;
   selectors: SelectorOption[];
   selectorValues?: string[];
+  selectorVerifications?: Record<string, SelectorVerification>;
   shadowHostSelectors?: string[][];
   clickPoint?: RelativeClickPoint;
   isCanvasLike?: boolean;
@@ -122,6 +134,7 @@ export interface BrowserTabInstance {
   inspectAttachDimsCheckbox: HTMLInputElement;
   inspectErrorEl: HTMLDivElement;
   inspectContextTraceEl: HTMLDivElement;
+  inspectSelectorStatusEl: HTMLDivElement;
   elementInfoEl: HTMLDivElement;
   inspectMode: boolean;
   selectedElement: ElementInfo | null;
@@ -159,6 +172,7 @@ export interface BrowserTabInstance {
   targetMenuFloatingCleanup: (() => void) | null;
   activeTargetTrigger: HTMLButtonElement | null;
   activeTargetMode: 'inspect' | 'draw' | 'flow' | null;
+  captureTargetChip: HTMLButtonElement;
   syncSurfaceVisibility: (showEmptySurface: boolean) => void;
   syncAddressBarState: () => void;
   syncToolbarState: () => void;

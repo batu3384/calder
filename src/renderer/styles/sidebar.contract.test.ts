@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
 const sidebarCss = readFileSync(new URL('./sidebar.css', import.meta.url), 'utf-8');
+const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
 const cockpitCss = readFileSync(new URL('./cockpit.css', import.meta.url), 'utf-8');
 
 describe('sidebar rail stylesheet contract', () => {
@@ -25,34 +26,50 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('font-family: var(--font-mono);');
   });
 
-  it('treats sidebar actions and project rows like a refined navigation rail', () => {
-    expect(sidebarCss).toContain('.sidebar-header-actions');
-    expect(sidebarCss).toContain(
-      'border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);',
-    );
-    expect(sidebarCss).toContain('.project-item:hover');
-    expect(sidebarCss).toContain('inset 0 1px 0 rgba(255, 255, 255, 0.04)');
-    expect(sidebarCss).toContain('.project-item-main');
-    expect(sidebarCss).toContain('gap: 4px;');
-    expect(sidebarCss).toContain('min-height: 52px;');
-    expect(
-      sidebarCss.includes('font-size: 9px;') || sidebarCss.includes('font-size: var(--type-2xs);'),
-    ).toBe(true);
+  it('locks Linear-dense flat chrome for project rail', () => {
+    expect(chromeRailCss).toContain('--chrome-h: 46px;');
+    expect(chromeRailCss).toContain('border-radius: var(--chrome-radius) !important;');
+    expect(chromeRailCss).toContain('.sidebar-header-actions');
+    expect(chromeRailCss).toContain('box-shadow: none !important;');
+    expect(chromeRailCss).toContain('.sidebar-title');
+    expect(chromeRailCss).toContain('#sidebar:not(.collapsed) .project-collapsed-pill');
+  });
+
+  it('keeps resize handle on chrome background idle', () => {
+    expect(sidebarCss).toContain('background: var(--chrome-bg, #0b0b0c);');
+    expect(sidebarCss).toContain('width: 4px;');
+    expect(chromeRailCss).toContain('#sidebar-resize-handle');
+  });
+
+  it('owns collapsed sidebar toggle layout so the button stays centered', () => {
+    expect(chromeRailCss).toContain("#sidebar.collapsed #sidebar-header .sidebar-header-primary");
+    expect(chromeRailCss).toContain("grid-template-areas: 'toggle' !important;");
+    expect(chromeRailCss).toContain('#sidebar.collapsed .sidebar-toggle-btn');
+    expect(chromeRailCss).toContain('justify-self: center !important;');
+  });
+
+  it('keeps project paths visible in the expanded rail', () => {
+    expect(chromeRailCss).toContain('/* Path always visible');
+    expect(chromeRailCss).toContain('.project-item .project-path');
+    expect(chromeRailCss).toContain('text-overflow: ellipsis !important;');
+  });
+
+  it('uses a single select for auto-approval', () => {
+    expect(chromeRailCss).toContain('.auto-approval-panel');
+    expect(chromeRailCss).toContain('.auto-approval-select');
+  });
+
+  it('uses underline tabs instead of pill tabs on the session shelf', () => {
+    expect(chromeRailCss).toContain('border-bottom: 2px solid transparent !important;');
+    expect(chromeRailCss).toContain('border-bottom-color: var(--accent) !important;');
+    expect(chromeRailCss).toContain('#tab-bar .tab-item.active::after');
+    expect(chromeRailCss).toContain('display: none !important;');
   });
 
   it('prefers anchored emphasis over hover lift in the project rail', () => {
-    expect(sidebarCss).toContain('.project-item:hover');
-    expect(sidebarCss).toContain('transform: none;');
-    expect(sidebarCss).toContain('inset 0 1px 0 rgba(255, 255, 255, 0.04)');
-  });
-
-  it('treats sidebar actions and rows like one authored rail system', () => {
-    expect(sidebarCss).toContain('.sidebar-header-actions');
-    expect(sidebarCss).toContain('.project-item.active');
-    expect(
-      sidebarCss.includes('border-radius: 14px;') ||
-        sidebarCss.includes('border-radius: var(--radius-md);'),
-    ).toBe(true);
+    expect(chromeRailCss).toContain('.project-item:hover');
+    expect(chromeRailCss).toContain('transform: none !important;');
+    expect(chromeRailCss).toContain('box-shadow: none !important;');
   });
 
   it('keeps project switching available in collapsed mode', () => {
@@ -69,6 +86,8 @@ describe('sidebar rail stylesheet contract', () => {
     expect(sidebarCss).toContain('#sidebar-brand-row');
     expect(sidebarCss).toContain('width: var(--sidebar-width-collapsed) !important;');
     expect(sidebarCss).not.toContain('sidebar-stage-sheen');
+    expect(chromeRailCss).toContain('.sidebar-brand-status');
+    expect(chromeRailCss).toContain('display: none !important;');
   });
 
   it('keeps project rows height-stable with tokenized collapsed rail', () => {

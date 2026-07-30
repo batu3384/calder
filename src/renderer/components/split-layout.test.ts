@@ -616,6 +616,42 @@ describe('split-layout mosaic behavior', () => {
     expect(mockAttachBrowserTabToContainer).not.toHaveBeenCalled();
   });
 
+  it('keeps tab mode stable when only the active session changes', async () => {
+    const { appState, _resetForTesting } = await import('../state.js');
+    _resetForTesting();
+    const { renderLayout } = await import('./split-layout.js');
+    const { hideAllBrowserTabPanes } = await import('./browser-tab-pane.js');
+
+    const project = appState.addProject('Audit', '/audit');
+    const first = appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
+    const second = appState.addSession(project.id, 'Session 2', undefined, 'codex')!;
+    const browser = appState.addBrowserTabSession(project.id, 'http://localhost:3000')!;
+
+    project.layout.mode = 'tab';
+    appState.setActiveSession(project.id, first.id);
+    renderLayout();
+
+    const hideBrowserCalls = vi.mocked(hideAllBrowserTabPanes).mock.calls.length;
+    const attachBrowserCalls = mockAttachBrowserTabToContainer.mock.calls.length;
+
+    appState.setActiveSession(project.id, second.id);
+    renderLayout();
+
+    expect(vi.mocked(hideAllBrowserTabPanes).mock.calls.length).toBe(hideBrowserCalls + 1);
+    expect(mockAttachBrowserTabToContainer.mock.calls.length).toBe(attachBrowserCalls);
+
+    appState.setActiveSession(project.id, browser.id);
+    renderLayout();
+
+    expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith(browser.id, expect.anything());
+    const attachCountAfterBrowser = mockAttachBrowserTabToContainer.mock.calls.length;
+
+    appState.setActiveSession(project.id, first.id);
+    renderLayout();
+
+    expect(mockAttachBrowserTabToContainer.mock.calls.length).toBe(attachCountAfterBrowser);
+  });
+
   it('does not rebuild the pinned browser surface when a sibling session only changes metadata', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();

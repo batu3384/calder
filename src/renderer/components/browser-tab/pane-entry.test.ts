@@ -137,7 +137,7 @@ function buildLayout() {
     statusBadge: makeElement(),
     trustZoneBadge: makeElement(),
     toolbarAddressShell: makeElement(),
-    captureCluster: { element: makeElement(), label: makeElement() },
+    captureCluster: { element: makeElement(), label: makeElement(), targetChip: makeElement() },
     backBtn: makeElement(),
     fwdBtn: makeElement(),
     reloadBtn: makeElement(),

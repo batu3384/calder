@@ -6,12 +6,16 @@ import {
 import { appState } from '../../state.js';
 import type { ProviderId } from '../../types.js';
 import {
+  deliverBrowserCapturePrompt,
+  queueSurfacePromptInCustomSession,
+  queueSurfacePromptInNewSession,
+} from '../surface-routing.js';
+import {
   getProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';
-import { promptNewSession } from '../tab-bar/tab-bar.js';
-import { deliverPromptToTerminalSession, setPendingPrompt } from '../terminal-pane.js';
 import { sendGuestMessage } from './guest-messaging.js';
+import { sanitizePromptBody } from './capture-prompt.js';
 import { positionPopover } from './popover.js';
 import type { BrowserTabInstance } from './types.js';
 import { getViewportContext } from './viewport.js';
@@ -88,8 +92,8 @@ async function captureScreenshotPath(instance: BrowserTabInstance): Promise<stri
 }
 
 function buildDrawPrompt(instance: BrowserTabInstance, imagePath: string): string {
-  const instruction = instance.drawInstructionInput.value.trim();
-  const pageUrl = instance.urlInput.value;
+  const instruction = sanitizePromptBody(instance.drawInstructionInput.value.trim());
+  const pageUrl = sanitizePromptBody(instance.urlInput.value, 500);
   const vpCtx = getViewportContext(instance, instance.drawAttachDimsCheckbox.checked);
   return (
     `Regarding the page at ${pageUrl}${vpCtx}:\n` +
@@ -133,14 +137,16 @@ export async function sendDrawToSelectedSession(instance: BrowserTabInstance): P
   const appliedContext = buildDrawAppliedContext(targetSession.providerId);
   const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
   showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
-  const delivered = await deliverPromptToTerminalSession(targetSession.id, prompt);
-  if (!delivered) {
-    showDrawError(instance, 'Failed to deliver prompt to the selected session.');
+  const result = await deliverBrowserCapturePrompt(project.id, instance.sessionId, prompt, {
+    targetSessionId: targetSession.id,
+    strictContract: false,
+  });
+  if (!result.ok) {
+    showDrawError(instance, result.error ?? 'Failed to deliver prompt to the selected session.');
     return;
   }
 
   dismissDraw(instance);
-  appState.setActiveSession(project.id, targetSession.id);
 }
 
 export async function sendDrawToNewSession(instance: BrowserTabInstance): Promise<void> {
@@ -160,14 +166,13 @@ export async function sendDrawToNewSession(instance: BrowserTabInstance): Promis
   const appliedContext = buildDrawAppliedContext(launchProvider);
   const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
   showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
-  const newSession = appState.addPlanSession(
+  queueSurfacePromptInNewSession(
     project.id,
     `Draw: ${instruction.slice(0, 30)}`,
+    prompt,
     launchProvider,
+    { strictContract: false },
   );
-  if (newSession) {
-    setPendingPrompt(newSession.id, prompt);
-  }
   dismissDraw(instance);
 }
 
@@ -185,8 +190,13 @@ export async function sendDrawToCustomSession(instance: BrowserTabInstance): Pro
   const appliedContext = buildDrawAppliedContext();
   const prompt = appendAppliedContextToPrompt(buildDrawPrompt(instance, imagePath), appliedContext);
   showDrawContextTrace(instance, formatAppliedContextTrace(appliedContext));
-  promptNewSession((session) => {
-    setPendingPrompt(session.id, prompt);
-    dismissDraw(instance);
-  });
+  const project = appState.activeProject;
+  queueSurfacePromptInCustomSession(
+    prompt,
+    () => {
+      dismissDraw(instance);
+    },
+    project?.id,
+    { strictContract: false },
+  );
 }

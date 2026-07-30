@@ -556,10 +556,9 @@ textarea:focus,
 #context-inspector .auto-approval-policy-stack,
 #context-inspector .auto-approval-scope-card,
 #context-inspector .auto-approval-details-toggle {
-  background:
-    linear-gradient(180deg, rgba(247, 248, 248, 0.028), rgba(247, 248, 248, 0)),
-    color-mix(in srgb, var(--rail-surface-strong) 84%, transparent);
-  border-color: var(--rail-line-soft);
+  /* Owned by chrome-rail.css */
+  background: transparent;
+  border-color: transparent;
   box-shadow: none;
 }
 
@@ -844,11 +843,10 @@ body {
 #context-inspector .auto-approval-scope-card,
 #context-inspector .history-search-shell,
 #context-inspector .history-actions {
-  border-color: var(--executive-line-soft);
-  border-radius: 10px;
-  background:
-    linear-gradient(180deg, rgba(245, 247, 244, 0.026), rgba(245, 247, 244, 0)),
-    rgba(12, 20, 29, 0.62);
+  /* Owned by chrome-rail.css */
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 

@@ -2152,7 +2152,7 @@ describe('clearSessionHistory()', () => {
     appState.clearSessionHistory('nonexistent');
   });
 
-  it('preserves bookmarked sessions when clearing', () => {
+  it('clears all history including bookmarked sessions', () => {
     const { project, sessions } = addProjectWithSessions(3);
     sessions.forEach((s, i) => appState.updateSessionCliId(project.id, s.id, `cli-bm-clear-${i}`));
     appState.removeAllSessions(project.id);
@@ -2162,10 +2162,24 @@ describe('clearSessionHistory()', () => {
     const entryToBookmark = historyBefore.find((h) => h.name === sessions[1].name)!;
     appState.toggleBookmark(project.id, entryToBookmark.id);
     appState.clearSessionHistory(project.id);
-    const remaining = appState.getSessionHistory(project.id);
-    expect(remaining).toHaveLength(1);
-    expect(remaining[0].name).toBe(sessions[1].name);
-    expect(remaining[0].bookmarked).toBe(true);
+    expect(appState.getSessionHistory(project.id)).toHaveLength(0);
+  });
+
+  it('does not re-archive a cli session after its history entry was removed', () => {
+    const project = addProject();
+    const session = appState.addSession(project.id, 'S1')!;
+    appState.updateSessionCliId(project.id, session.id, 'cli-tombstone-1');
+    appState.removeSession(project.id, session.id);
+    const entry = appState.getSessionHistory(project.id)[0];
+    expect(entry).toBeTruthy();
+
+    appState.removeHistoryEntry(project.id, entry.id);
+    expect(appState.getSessionHistory(project.id)).toHaveLength(0);
+
+    const revived = appState.addSession(project.id, 'S1-again')!;
+    appState.updateSessionCliId(project.id, revived.id, 'cli-tombstone-1');
+    appState.removeSession(project.id, revived.id);
+    expect(appState.getSessionHistory(project.id)).toHaveLength(0);
   });
 });
 

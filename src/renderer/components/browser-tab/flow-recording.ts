@@ -1,4 +1,6 @@
+import { escapePromptLiteral, formatShadowHostStepLine, sanitizePromptBody } from './capture-prompt.js';
 import { sendGuestMessage } from './guest-messaging.js';
+import { pickInitialActiveSelector } from './selector-verification.js';
 import { buildSelectorOptions } from './selector-ui.js';
 import type { BrowserTabInstance, FlowStep } from './types.js';
 
@@ -34,9 +36,14 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
       content.appendChild(header);
 
       if (step.selectors?.length) {
-        const selectorOptions = buildSelectorOptions(step.selectors, step.activeSelector, (sel) => {
-          step.activeSelector = sel;
-        });
+        const selectorOptions = buildSelectorOptions(
+          step.selectors,
+          step.activeSelector,
+          step.selectorVerifications,
+          (sel) => {
+            step.activeSelector = sel;
+          },
+        );
         selectorOptions.className = 'flow-step-selectors';
         content.appendChild(selectorOptions);
       }
@@ -71,7 +78,14 @@ export function renderFlowSteps(instance: BrowserTabInstance): void {
 }
 
 export function addFlowStep(instance: BrowserTabInstance, step: FlowStep): void {
-  instance.flowSteps.push(step);
+  const normalized: FlowStep =
+    step.selectors?.length && !step.activeSelector
+      ? {
+          ...step,
+          activeSelector: pickInitialActiveSelector(step.selectors, step.selectorVerifications),
+        }
+      : step;
+  instance.flowSteps.push(normalized);
   renderFlowSteps(instance);
 }
 
@@ -113,15 +127,18 @@ export function buildFlowPrompt(instance: BrowserTabInstance): string | null {
     const n = i + 1;
     if (step.type === 'click' || step.type === 'expect') {
       const tag = `<${step.tagName}>`;
-      const text = step.textContent ? ` "${step.textContent}"` : '';
+      const text = step.textContent ? ` "${escapePromptLiteral(step.textContent)}"` : '';
       const at = step.pageUrl ? ` at ${step.pageUrl}` : '';
-      const sel = step.activeSelector ? `\n   selector: '${step.activeSelector.value}'` : '';
+      const sel = step.activeSelector
+        ? `\n   selector: '${escapePromptLiteral(step.activeSelector.value)}'`
+        : '';
+      const shadow = formatShadowHostStepLine(step.shadowHostSelectors);
       const clickPoint = step.clickPoint
         ? `\n   point: ${Math.round(step.clickPoint.normalizedX * 100)}% x ${Math.round(step.clickPoint.normalizedY * 100)}%`
         : '';
       const canvasHint = step.isCanvasLike ? '\n   surface: canvas-like element' : '';
       const verb = step.type === 'expect' ? 'Assert/Expect' : 'Click';
-      return `${n}. ${verb}: ${tag}${text}${at}${sel}${clickPoint}${canvasHint}`;
+      return `${n}. ${verb}: ${tag}${text}${at}${sel}${shadow}${clickPoint}${canvasHint}`;
     } else {
       return `${n}. Navigate to: ${step.url}`;
     }
@@ -130,6 +147,6 @@ export function buildFlowPrompt(instance: BrowserTabInstance): string | null {
   return (
     `Recorded browser flow (${instance.flowSteps.length} steps):\n` +
     lines.join('\n') +
-    `\n\nInstructions: ${instruction}`
+    `\n\nInstructions: ${sanitizePromptBody(instruction)}`
   );
 }

@@ -24,7 +24,8 @@ const inspectorCss = readFileSync(
 describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
     expect(html).toContain('Inspector');
-    expect(html).toContain('Workspace Pulse');
+    expect(html).not.toContain('Workspace Pulse');
+    expect(html).not.toContain('context-inspector-eyebrow');
     expect(html).not.toContain('context-inspector-header-note');
     expect(html).toContain('context-inspector-tabs');
     expect(html).toContain('aria-controls="context-inspector-panel-run"');
@@ -100,8 +101,7 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
     expect(inspectorCss).toContain('overflow-wrap: anywhere;');
-    expect(inspectorCss).toContain('.auto-approval-effective-value');
-    expect(inspectorCss).toContain('.auto-approval-control');
+    expect(inspectorCss).toContain('.auto-approval-select');
     expect(inspectorCss).toContain('.diagnostics-summary');
     expect(inspectorCss).toContain('.diagnostics-summary-grid');
   });

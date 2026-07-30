@@ -11,14 +11,17 @@ function getMosaicActiveLayoutKey(project: ProjectRecord): string {
   return `non-cli:${activeSession.id}:${activeType}`;
 }
 
-export function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
+export function getLayoutActiveKey(project: ProjectRecord | undefined): string {
+  if (!project) return 'no-project';
+  return project.layout.mode === 'mosaic'
+    ? getMosaicActiveLayoutKey(project)
+    : `tab:${project.activeSessionId ?? 'none'}`;
+}
+
+export function getLayoutStructuralSignature(project: ProjectRecord | undefined): string {
   if (!project) return 'no-project';
   return JSON.stringify({
     projectId: project.id,
-    activeLayoutKey:
-      project.layout.mode === 'mosaic'
-        ? getMosaicActiveLayoutKey(project)
-        : `tab:${project.activeSessionId ?? 'none'}`,
     layout: {
       mode: project.layout.mode,
       splitPanes: project.layout.splitPanes,
@@ -48,4 +51,9 @@ export function getLayoutRenderSignature(project: ProjectRecord | undefined): st
       fileReaderLine: session.fileReaderLine ?? null,
     })),
   });
+}
+
+export function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
+  if (!project) return 'no-project';
+  return `${getLayoutStructuralSignature(project)}|${getLayoutActiveKey(project)}`;
 }

@@ -25,18 +25,8 @@ describe('i18n contract', () => {
   it('covers key workspace Turkish translations for rail and settings copy', () => {
     expectTranslation(source, 'Skip to workspace', 'Çalışma alanına atla');
     expectTranslation(source, 'Workspace', 'Çalışma Alanı');
-    expectTranslation(source, 'Project Dock', 'Proje Paneli');
-    expectTranslation(
-      source,
-      'Switch context without losing live work.',
-      'Canlı işi kaybetmeden bağlam değiştirin.',
-    );
-    expectTranslation(source, 'Workspace Pulse', 'Çalışma Alanı Nabzı');
-    expectTranslation(
-      source,
-      'Run controls, project state, and tools stay separated so the rail stays readable.',
-      'Çalışma kontrolleri, proje durumu ve araçlar ayrı kalır; panel okunabilirliğini korur.',
-    );
+    expectTranslation(source, 'Projects', 'Projeler');
+    expectTranslation(source, 'Inspector', 'Denetçi');
     expectTranslation(source, 'Hybrid context', 'Hibrit bağlam');
     expectTranslation(source, 'Agent command desk', 'Ajan komut masası');
     expectTranslation(source, 'Run Log', 'Çalışma günlüğü');
@@ -104,7 +94,7 @@ describe('i18n contract', () => {
     );
     expectTranslation(source, 'Tab Status Dot', 'Sekme durum noktası');
     expectTranslation(source, 'Git Status', 'Git durumu');
-    expectTranslation(source, 'Timeline', 'Zaman çizelgesi');
+    expectTranslation(source, 'Timeline', 'Geçmiş');
     expectTranslation(source, 'Costs', 'Maliyetler');
     expectTranslation(source, 'Tools', 'Araçlar');
     expectTranslation(source, 'Total Sessions', 'Toplam Oturum');

@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const mockDeliverBrowserCapturePrompt = vi.fn();
+const mockQueueSurfacePromptInNewSession = vi.fn();
+const mockQueueSurfacePromptInCustomSession = vi.fn();
 const mockResolveBrowserTargetSession = vi.fn();
-const mockSetActiveSession = vi.fn();
-const mockAddPlanSession = vi.fn();
-const mockDeliverPromptToTerminalSession = vi.fn();
-const mockSetPendingPrompt = vi.fn();
 const mockSaveScreenshot = vi.fn();
 const mockGetProviderAvailabilitySnapshot = vi.fn(() => ({}));
 const mockResolvePreferredProviderForLaunch = vi.fn(() => 'claude');
@@ -17,8 +16,6 @@ vi.mock('../../state.js', () => ({
     activeProject: { id: 'project-1' },
     preferences: { defaultProvider: 'claude' },
     resolveBrowserTargetSession: mockResolveBrowserTargetSession,
-    setActiveSession: mockSetActiveSession,
-    addPlanSession: mockAddPlanSession,
   },
 }));
 
@@ -33,13 +30,10 @@ vi.mock('../../project-context-prompt.js', () => ({
   formatAppliedContextTrace: mockFormatAppliedContextTrace,
 }));
 
-vi.mock('../tab-bar/tab-bar.js', () => ({
-  promptNewSession: vi.fn(),
-}));
-
-vi.mock('../terminal-pane.js', () => ({
-  deliverPromptToTerminalSession: mockDeliverPromptToTerminalSession,
-  setPendingPrompt: mockSetPendingPrompt,
+vi.mock('../surface-routing.js', () => ({
+  deliverBrowserCapturePrompt: mockDeliverBrowserCapturePrompt,
+  queueSurfacePromptInNewSession: mockQueueSurfacePromptInNewSession,
+  queueSurfacePromptInCustomSession: mockQueueSurfacePromptInCustomSession,
 }));
 
 vi.mock('./viewport.js', () => ({
@@ -94,7 +88,7 @@ describe('draw mode session delivery', () => {
 
     expect(instance.webview.capturePage).not.toHaveBeenCalled();
     expect(mockSaveScreenshot).not.toHaveBeenCalled();
-    expect(mockDeliverPromptToTerminalSession).not.toHaveBeenCalled();
+    expect(mockDeliverBrowserCapturePrompt).not.toHaveBeenCalled();
     expect(instance.drawErrorEl.textContent).toBe('Select an open session target first.');
   });
 
@@ -103,17 +97,21 @@ describe('draw mode session delivery', () => {
     const instance = makeInstance();
     mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-1', providerId: 'claude' });
     mockSaveScreenshot.mockResolvedValue('/tmp/capture.png');
-    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+    mockDeliverBrowserCapturePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-1' });
 
     await sendDrawToSelectedSession(instance);
 
     expect(instance.webview.capturePage).toHaveBeenCalledTimes(1);
     expect(mockSaveScreenshot).toHaveBeenCalledTimes(1);
-    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
-      'cli-1',
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
+      'project-1',
+      'browser-1',
       expect.stringContaining('See annotated screenshot: /tmp/capture.png'),
+      {
+        targetSessionId: 'cli-1',
+        strictContract: false,
+      },
     );
-    expect(mockSetActiveSession).toHaveBeenCalledWith('project-1', 'cli-1');
   });
 
   it('uses the resolved launch provider when queuing a new draw session', async () => {
@@ -121,20 +119,18 @@ describe('draw mode session delivery', () => {
     const instance = makeInstance();
     mockResolvePreferredProviderForLaunch.mockReturnValue('codex');
     mockSaveScreenshot.mockResolvedValue('/tmp/capture.png');
-    mockAddPlanSession.mockReturnValue({ id: 'plan-1', providerId: 'codex' });
+    mockQueueSurfacePromptInNewSession.mockReturnValue({ id: 'plan-1', providerId: 'codex' });
 
     await sendDrawToNewSession(instance);
 
     expect(mockResolvePreferredProviderForLaunch).toHaveBeenCalled();
     expect(mockBuildAppliedContextSummary).toHaveBeenCalledWith('project-1', 'codex');
-    expect(mockAddPlanSession).toHaveBeenCalledWith(
+    expect(mockQueueSurfacePromptInNewSession).toHaveBeenCalledWith(
       'project-1',
       expect.stringContaining('Draw:'),
-      'codex',
-    );
-    expect(mockSetPendingPrompt).toHaveBeenCalledWith(
-      'plan-1',
       expect.stringContaining('See annotated screenshot: /tmp/capture.png'),
+      'codex',
+      { strictContract: false },
     );
   });
 });

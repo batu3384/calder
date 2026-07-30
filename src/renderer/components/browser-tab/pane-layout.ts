@@ -3,6 +3,7 @@ import { createBrowserToolbarCluster } from './pane-helpers.js';
 interface BrowserCaptureToolbarCluster {
   element: HTMLDivElement;
   label: HTMLSpanElement;
+  targetChip: HTMLButtonElement;
 }
 
 interface BrowserPaneChromeElements {
@@ -309,6 +310,14 @@ function createBrowserToolbar(
   captureCluster.controls.appendChild(actions.recordBtn);
   captureCluster.controls.appendChild(actions.drawBtn);
 
+  const targetChip = document.createElement('button');
+  targetChip.type = 'button';
+  targetChip.className = 'browser-capture-target-chip';
+  targetChip.textContent = '→ Session';
+  targetChip.title = 'Choose which open session receives browser prompts';
+  targetChip.setAttribute('aria-label', 'Choose browser prompt target session');
+  captureCluster.controls.appendChild(targetChip);
+
   toolbarToolsShell.appendChild(viewCluster.element);
   toolbarToolsShell.appendChild(captureCluster.element);
   toolbarTools.appendChild(toolbarToolsShell);
@@ -317,7 +326,11 @@ function createBrowserToolbar(
   toolbar.appendChild(toolbarAddress);
   toolbar.appendChild(toolbarTools);
 
-  return { toolbar, toolbarAddressShell: address.toolbarAddressShell, captureCluster };
+  return {
+    toolbar,
+    toolbarAddressShell: address.toolbarAddressShell,
+    captureCluster: { ...captureCluster, targetChip },
+  };
 }
 
 export function createBrowserTabPaneLayout(

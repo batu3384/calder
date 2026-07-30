@@ -130,7 +130,7 @@ function installDocumentStub(): void {
   });
 }
 
-import { createModeGuide, createModeSelect } from './config-sections-auto-approval.js';
+import { createModeSelect } from './config-sections-auto-approval.js';
 
 describe('config-sections-auto-approval helpers', () => {
   beforeEach(() => {
@@ -172,39 +172,5 @@ describe('config-sections-auto-approval helpers', () => {
     release?.();
     await changePromise;
     expect(select.disabled).toBe(false);
-  });
-
-  it('createModeGuide toggles expanded state and hidden class', async () => {
-    const guide = createModeGuide((input) => input);
-
-    expect(guide.className).toBe('auto-approval-mode-guide');
-    expect(guide.children).toHaveLength(2);
-
-    const toggle = guide.children[0];
-    const body = guide.children[1];
-    expect(toggle.textContent).toBe('Mode Guide');
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(body.classList.contains('hidden')).toBe(true);
-    expect(body.children).toHaveLength(3);
-    expect(body.children[0].innerHTML).toContain('Auto-runs: Nothing.');
-    expect(body.children[0].innerHTML).toContain('Still asks: Every edit, command, and tool run.');
-    expect(body.children[1].innerHTML).toContain('Auto-runs: In-project file edits.');
-    expect(body.children[1].innerHTML).toContain(
-      'Still asks: Commands, outside paths, home/global, destructive actions.',
-    );
-    expect(body.children[2].innerHTML).toContain(
-      'Auto-runs: Project edits and safe read-only commands (this session only).',
-    );
-    expect(body.children[2].innerHTML).toContain(
-      'Still asks: Write, risky, destructive commands and outside-project paths.',
-    );
-
-    await toggle.dispatch('click');
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(body.classList.contains('hidden')).toBe(false);
-
-    await toggle.dispatch('click');
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(body.classList.contains('hidden')).toBe(true);
   });
 });

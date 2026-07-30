@@ -1,10 +1,16 @@
-import { escapeCssAttributeValue, escapeCssIdentifier } from './browser-tab-selector-utils';
+import { liftCaptureTarget } from './browser-tab-capture-target';
+import {
+  buildAllSelectors,
+  buildShadowHostSelectorChain,
+  buildVisibleElementText,
+  pickPreferredSelector,
+  type SelectorOption,
+  type SelectorVerification,
+  selectorValuesFromOptions,
+  verifySelectorResolution,
+} from './browser-tab-selector-engine';
 
-interface SelectorOption {
-  type: 'qa' | 'attr' | 'id' | 'css';
-  label: string;
-  value: string;
-}
+export type { SelectorOption, SelectorVerification } from './browser-tab-selector-engine';
 
 interface RelativeClickPoint {
   normalizedX: number;
@@ -18,103 +24,21 @@ export interface ElementMetadata {
   textContent: string;
   selectors: SelectorOption[];
   selectorValues: string[];
+  selectorVerifications: Record<string, SelectorVerification>;
   shadowHostSelectors: string[][];
   pageUrl: string;
   clickPoint?: RelativeClickPoint;
   isCanvasLike?: boolean;
+  captureTargetId: string;
+  liftedFromTag?: string;
 }
 
-const QA_ATTRS = ['data-testid', 'data-qa', 'data-cy', 'data-test', 'data-automation', 'qaTag'];
+const captureTargetRegistry = new Map<string, Element>();
+let captureTargetSeq = 0;
 
 function clampNumber(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;
   return Math.min(max, Math.max(min, value));
-}
-
-function buildCssPath(el: Element): string {
-  if (el === document.documentElement) return 'html';
-  if (el === document.body) return 'body';
-
-  const parts: string[] = [];
-  let current: Element | null = el;
-  while (current && current !== document.body && current !== document.documentElement) {
-    let selector = current.tagName.toLowerCase();
-    if (current.id) {
-      selector += `#${escapeCssIdentifier(current.id)}`;
-      parts.unshift(selector);
-      break; // ID is unique enough
-    }
-    const parent = current.parentElement;
-    if (parent) {
-      const siblings = Array.from(parent.children).filter((c) => c.tagName === current!.tagName);
-      if (siblings.length > 1) {
-        const index = siblings.indexOf(current) + 1;
-        selector += `:nth-of-type(${index})`;
-      }
-    }
-    parts.unshift(selector);
-    current = current.parentElement;
-  }
-  if (parts.length === 0) return el.tagName.toLowerCase();
-  return parts.join(' > ');
-}
-
-function buildAllSelectors(el: Element): SelectorOption[] {
-  const options: SelectorOption[] = [];
-
-  const qaSet = new Set(QA_ATTRS);
-  for (const attr of QA_ATTRS) {
-    const val = el.getAttribute(attr);
-    if (val) {
-      options.push({
-        type: 'qa',
-        label: attr,
-        value: `[${escapeCssIdentifier(attr)}="${escapeCssAttributeValue(val)}"]`,
-      });
-    }
-  }
-
-  for (const attr of el.getAttributeNames()) {
-    if (attr.startsWith('data-') && !qaSet.has(attr)) {
-      const val = el.getAttribute(attr);
-      if (val) {
-        options.push({
-          type: 'attr',
-          label: attr,
-          value: `[${escapeCssIdentifier(attr)}="${escapeCssAttributeValue(val)}"]`,
-        });
-      }
-    }
-  }
-
-  if (el.id) options.push({ type: 'id', label: 'id', value: `#${escapeCssIdentifier(el.id)}` });
-
-  options.push({ type: 'css', label: 'css', value: buildCssPath(el) });
-
-  return options;
-}
-
-function selectorValuesFromOptions(options: SelectorOption[]): string[] {
-  const values: string[] = [];
-  const seen = new Set<string>();
-  for (const option of options) {
-    const value = option.value.trim();
-    if (!value || seen.has(value)) continue;
-    seen.add(value);
-    values.push(value);
-  }
-  return values;
-}
-
-function buildShadowHostSelectorChain(el: Element): string[][] {
-  const chain: string[][] = [];
-  let root: Node = el.getRootNode();
-  while (root instanceof ShadowRoot) {
-    const hostSelectors = selectorValuesFromOptions(buildAllSelectors(root.host));
-    if (hostSelectors.length > 0) chain.unshift(hostSelectors);
-    root = root.host.getRootNode();
-  }
-  return chain;
 }
 
 function buildRelativeClickPoint(
@@ -133,27 +57,95 @@ function buildRelativeClickPoint(
   };
 }
 
+function registerCaptureTarget(el: Element): string {
+  for (const [id, target] of captureTargetRegistry) {
+    if (!target.isConnected) captureTargetRegistry.delete(id);
+  }
+
+  const id = `cap-${++captureTargetSeq}`;
+  captureTargetRegistry.set(id, el);
+  // ponytail: FIFO cap 64; upgrade to LRU keyed by open inspect panel if power users hit this.
+  while (captureTargetRegistry.size > 64) {
+    const oldest = captureTargetRegistry.keys().next().value;
+    if (!oldest) break;
+    captureTargetRegistry.delete(oldest);
+  }
+  return id;
+}
+
+export function resolveCaptureTarget(captureTargetId: string): Element | undefined {
+  const target = captureTargetRegistry.get(captureTargetId);
+  if (!target || !target.isConnected) {
+    captureTargetRegistry.delete(captureTargetId);
+    return undefined;
+  }
+  return target;
+}
+
+export function verifyCaptureSelector(payload: {
+  captureTargetId: string;
+  selector: string;
+  shadowHostSelectors?: string[][];
+}): SelectorVerification {
+  const target = resolveCaptureTarget(payload.captureTargetId);
+  if (!target) return { status: 'missing', matchCount: 0 };
+  return verifySelectorResolution(
+    payload.selector,
+    payload.shadowHostSelectors ?? [],
+    target,
+  );
+}
+
+function isCanvasLikeElement(el: Element): boolean {
+  const tag = el.tagName.toLowerCase();
+  if (tag === 'canvas') return true;
+  if (tag === 'svg' && el.closest('[role="img"],[role="graphics-document"]')) return true;
+  return false;
+}
+
 export function getElementMetadata(
-  el: Element,
+  rawTarget: Element,
   clickPosition?: { clientX: number; clientY: number },
 ): ElementMetadata {
-  const text = (el.textContent || '').trim();
+  const liftedFromTag =
+    rawTarget.tagName.toLowerCase() !== liftCaptureTarget(rawTarget).tagName.toLowerCase()
+      ? rawTarget.tagName.toLowerCase()
+      : undefined;
+  const el = liftCaptureTarget(rawTarget);
   const selectors = buildAllSelectors(el);
+  const shadowHostSelectors = buildShadowHostSelectorChain(el);
+  const selectorVerifications: Record<string, SelectorVerification> = {};
+  for (const option of selectors) {
+    selectorVerifications[option.value] = verifySelectorResolution(
+      option.value,
+      shadowHostSelectors,
+      el,
+    );
+  }
   const pageUrl = el.ownerDocument.defaultView?.location.href || window.location.href;
   const clickPoint = clickPosition
     ? buildRelativeClickPoint(el, clickPosition.clientX, clickPosition.clientY)
     : undefined;
-  const isCanvasLike = el.tagName.toLowerCase() === 'canvas';
+
   return {
     tagName: el.tagName.toLowerCase(),
     id: el.id || '',
     classes: Array.from(el.classList),
-    textContent: text.length > 150 ? text.slice(0, 150) + '\u2026' : text,
+    textContent: buildVisibleElementText(el),
     selectors,
     selectorValues: selectorValuesFromOptions(selectors),
-    shadowHostSelectors: buildShadowHostSelectorChain(el),
+    selectorVerifications,
+    shadowHostSelectors,
     pageUrl,
     clickPoint,
-    isCanvasLike,
+    isCanvasLike: isCanvasLikeElement(el),
+    captureTargetId: registerCaptureTarget(el),
+    liftedFromTag,
   };
+}
+
+export function getPreferredSelector(metadata: ElementMetadata): SelectorOption {
+  const target = resolveCaptureTarget(metadata.captureTargetId);
+  if (!target) return metadata.selectors[0]!;
+  return pickPreferredSelector(metadata.selectors, metadata.shadowHostSelectors, target);
 }

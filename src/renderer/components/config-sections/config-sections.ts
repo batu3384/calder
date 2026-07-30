@@ -19,7 +19,7 @@ function renderSection(
   const section = document.createElement('div');
   section.className = 'config-section';
 
-  const isCollapsed = collapsed[id] ?? true;
+  const isCollapsed = collapsed[id] ?? false;
 
   const header = document.createElement('div');
   header.className = 'config-section-header';
@@ -40,7 +40,9 @@ function renderSection(
   const countBadge = document.createElement('span');
   countBadge.className = 'config-section-count control-chip';
   countBadge.textContent = String(count);
-  meta.appendChild(countBadge);
+  if (count > 0) {
+    meta.appendChild(countBadge);
+  }
 
   header.appendChild(meta);
 

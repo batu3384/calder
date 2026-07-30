@@ -94,6 +94,7 @@ function initializeBrowserTabPane(sessionId: string, url?: string): void {
     recordBtn,
     drawBtn,
     capture,
+    captureTargetChip: captureCluster.targetChip,
   });
   instances.set(sessionId, instance);
   const viewportMenuController = createBrowserViewportMenuController({
@@ -155,10 +156,13 @@ export function attachBrowserTabToContainer(sessionId: string, container: HTMLEl
 export function showBrowserTabPane(sessionId: string, isSplit: boolean): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
+  const wasHidden = instance.element.classList.contains('hidden');
   instance.element.classList.remove('hidden');
   instance.element.classList.remove('swarm-dimmed', 'swarm-unread');
   instance.element.classList.toggle('split', isSplit);
-  requestAnimationFrame(() => syncBrowserTabToSessionState(instance));
+  if (wasHidden) {
+    requestAnimationFrame(() => syncBrowserTabToSessionState(instance));
+  }
 }
 
 export function hideAllBrowserTabPanes(): void {

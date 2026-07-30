@@ -7,7 +7,7 @@ describe('browser tab flow replay payload normalization', () => {
     const payload = normalizeFlowReplayPayload('  button.primary  ');
     expect(payload.selectors).toEqual(['button.primary']);
     expect(payload.shadowHostSelectors).toEqual([]);
-    expect(payload.timeoutMs).toBe(1200);
+    expect(payload.timeoutMs).toBe(2000);
     expect(payload.retryIntervalMs).toBe(120);
   });
 
@@ -43,7 +43,7 @@ describe('browser tab flow replay payload normalization', () => {
     expect(payload.selectors).toEqual([]);
     expect(payload.shadowHostSelectors).toEqual([]);
     expect(payload.clickPoint).toBeUndefined();
-    expect(payload.timeoutMs).toBe(1200);
+    expect(payload.timeoutMs).toBe(2000);
     expect(payload.retryIntervalMs).toBe(120);
   });
 });

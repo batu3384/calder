@@ -25,7 +25,11 @@ import {
   removeSplitLayoutMosaicArtifacts,
   showSplitLayoutPanes,
 } from './split-layout-pane-orchestration.js';
-import { getLayoutRenderSignature } from './split-layout-signature.js';
+import {
+  getLayoutActiveKey,
+  getLayoutRenderSignature,
+  getLayoutStructuralSignature,
+} from './split-layout-signature.js';
 import {
   bindSwarmReorderInteractions,
   clearSwarmReorderDecorations,
@@ -52,6 +56,7 @@ const SURFACE_RATIO_MIN = 0.25;
 const SURFACE_RATIO_MAX = 0.7;
 const SURFACE_RATIO_FALLBACK = 0.38;
 let lastLayoutRenderSignature: string | null = null;
+let lastLayoutStructuralSignature: string | null = null;
 let resizeFitTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isMosaicMode(project: ProjectRecord | undefined): boolean {
@@ -121,9 +126,50 @@ function onSessionRemoved(data: unknown): void {
   handleSplitLayoutSessionRemoved(data, renderLayout);
 }
 
+function switchTabModeActivePane(project: ProjectRecord): void {
+  removeEmptyState(container);
+  hideAllSplitLayoutPanes();
+  clearSwarmReorderDecorations(container);
+  removeSplitLayoutMosaicArtifacts(container);
+  setContainerClass('');
+  delete container.dataset.mosaicPreset;
+  container.style.gridTemplateColumns = '';
+  container.style.gridTemplateRows = '';
+
+  const activeId = project.activeSessionId;
+  if (!activeId) return;
+
+  const activeSession = project.sessions.find((session) => session.id === activeId);
+  if (activeSession?.type && activeSession.type !== 'claude') {
+    clearFocused();
+    attachSplitLayoutNonCliPane(activeSession, container, false);
+    return;
+  }
+
+  attachToContainer(activeId, container);
+  showPane(activeId, false);
+
+  if (!document.querySelector('#tab-list .tab-name input')) {
+    setFocused(activeId);
+  }
+
+  const instance = getTerminalInstance(activeId);
+  if (instance && !instance.spawned && !instance.exited) {
+    requestAnimationFrame(() => {
+      spawnTerminal(activeId);
+      fitAllVisible();
+    });
+  } else {
+    requestAnimationFrame(fitAllVisible);
+  }
+}
+
 export function renderLayout(): void {
   const project = appState.activeProject;
-  const signature = getLayoutRenderSignature(project);
+  const structuralSignature = getLayoutStructuralSignature(project);
+  const activeKey = getLayoutActiveKey(project);
+  const signature = `${structuralSignature}|${activeKey}`;
+
   if (signature === lastLayoutRenderSignature) {
     if (project && isMosaicMode(project)) {
       updateSwarmPaneStyles(project);
@@ -131,6 +177,20 @@ export function renderLayout(): void {
     }
     return;
   }
+
+  if (structuralSignature === lastLayoutStructuralSignature && project) {
+    if (isMosaicMode(project)) {
+      lastLayoutRenderSignature = signature;
+      updateSwarmPaneStyles(project);
+      focusActivePane(project);
+      return;
+    }
+    switchTabModeActivePane(project);
+    lastLayoutRenderSignature = signature;
+    return;
+  }
+
+  lastLayoutStructuralSignature = structuralSignature;
   lastLayoutRenderSignature = signature;
   clearMosaicResizeBindings();
 

@@ -71,42 +71,36 @@ describe('getActiveCliProviderId', () => {
 
   it('includes an auto-approval control block wired to governance APIs', async () => {
     const source = await import('node:fs/promises').then(async (fs) => {
-      const [configSections, autoApprovalSection] = await Promise.all([
+      const [configSections, autoApprovalSection, autoApprovalHelpers] = await Promise.all([
         fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
         fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
+        fs.readFile(
+          new URL('./config-sections-auto-approval-controls-helpers.ts', import.meta.url),
+          'utf-8',
+        ),
       ]);
-      return `${configSections}\n${autoApprovalSection}`;
+      return `${configSections}\n${autoApprovalSection}\n${autoApprovalHelpers}`;
     });
 
     expect(source).toContain("'Auto Approval'");
     expect(source).toContain('setAutoApprovalMode');
     expect(source).toContain('setSessionAutoApprovalOverride');
-    expect(source).toContain('auto-approval-control');
-    expect(source).toContain('Full Auto (Unsafe)');
+    expect(source).toContain('auto-approval-select');
+    expect(source).toContain('auto-approval-panel');
     expect(source).toContain('host: item');
-    expect(source).toContain('Session safe auto-approves project edits');
   });
 
-  it('shows inherit state for project scope instead of mirroring global mode', async () => {
+  it('keeps inherit markers for governance cascade', async () => {
     const source = await import('node:fs/promises').then(async (fs) => {
-      const [configSections, autoApprovalSection, autoApprovalI18n] = await Promise.all([
-        fs.readFile(new URL('./config-sections.ts', import.meta.url), 'utf-8'),
-        fs.readFile(new URL('./config-sections-auto-approval.ts', import.meta.url), 'utf-8'),
-        fs.readFile(new URL('./config-sections-auto-approval-i18n.ts', import.meta.url), 'utf-8'),
-      ]);
-      return `${configSections}\n${autoApprovalSection}\n${autoApprovalI18n}`;
+      const helpers = await fs.readFile(
+        new URL('./config-sections-auto-approval-controls-helpers.ts', import.meta.url),
+        'utf-8',
+      );
+      return helpers;
     });
 
-    expect(source).toContain('Follow global default');
-    expect(source).toContain('Follow project default');
-    expect(source).toContain("'Global'");
-    expect(source).toContain("'Project'");
-    expect(source).toContain("'Session'");
-    expect(source).toContain('Effective mode');
     expect(source).toContain('PROJECT_INHERIT_VALUE');
     expect(source).toContain('SESSION_INHERIT_VALUE');
-    expect(source).toContain('projectSelect.value === PROJECT_INHERIT_VALUE');
-    expect(source).toContain('sessionSelect.value === SESSION_INHERIT_VALUE');
   });
 
   it('derives human-readable auto-approval scope state', async () => {
@@ -121,7 +115,7 @@ describe('getActiveCliProviderId', () => {
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Auto-approve project edits');
+    expect(summary.global).toBe('Auto-approve file edits');
     expect(summary.project).toBe('Follow global default');
     expect(summary.session).toBe('Follow project default');
     expect(summary.effectiveSource).toBe('Global default');
@@ -149,9 +143,9 @@ describe('getActiveCliProviderId', () => {
       recentDecisions: [],
     });
 
-    expect(summary.global).toBe('Auto-approve project edits');
+    expect(summary.global).toBe('Auto-approve file edits');
     expect(summary.project).toBe('Ask every time');
-    expect(summary.session).toBe('Auto-approve this session');
+    expect(summary.session).toBe('Auto-approve safe actions');
     expect(summary.effectiveSource).toBe('Session override');
     expect(summary.effectiveExplanation).toBe(
       'Session override is active, so Session setting applies.',

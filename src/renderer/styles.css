@@ -23,3 +23,5 @@
 @import url('./styles/theme-aurora.css');
 @import url('./styles/theme-command-studio.css');
 @import url('./styles/responsive-layout.css');
+/* Chrome shell owns left/top/right rails — must load last. */
+@import url('./styles/chrome-rail.css');

@@ -5,8 +5,9 @@
  */
 import { ipcRenderer } from 'electron';
 
-import { getElementMetadata } from './browser-tab-element-metadata';
+import { getElementMetadata, verifyCaptureSelector } from './browser-tab-element-metadata';
 import { replayFlowClick } from './browser-tab-flow-replay';
+import { isCrossOriginFrameElement } from './browser-tab-capture-guards';
 import {
   type AuthFillPayload,
   fillCredentialsAcrossDocuments,
@@ -314,6 +315,10 @@ function onMouseOut(e: MouseEvent): void {
   if (!targetDoc) hideOverlay();
 }
 
+function notifyCrossOriginCaptureBlocked(): void {
+  ipcRenderer.sendToHost('inspect-cross-origin-blocked');
+}
+
 function onClick(e: MouseEvent): void {
   if (!inspectMode) return;
   e.preventDefault();
@@ -321,6 +326,10 @@ function onClick(e: MouseEvent): void {
   e.stopImmediatePropagation();
   const target = resolveEventElementTarget(e);
   if (!target) return;
+  if (isCrossOriginFrameElement(target)) {
+    notifyCrossOriginCaptureBlocked();
+    return;
+  }
   const metadata = getElementMetadata(target, { clientX: e.clientX, clientY: e.clientY });
   ipcRenderer.sendToHost('element-selected', { metadata, x: e.clientX, y: e.clientY });
 }
@@ -357,6 +366,10 @@ function onFlowClick(e: MouseEvent): void {
   }
   const target = resolveEventElementTarget(e);
   if (!target) return;
+  if (isCrossOriginFrameElement(target)) {
+    notifyCrossOriginCaptureBlocked();
+    return;
+  }
   e.preventDefault();
   e.stopPropagation();
   e.stopImmediatePropagation();
@@ -474,6 +487,26 @@ ipcRenderer.on('flow-do-click', (_event, payload: unknown) => {
 ipcRenderer.on('auth-fill-credentials', (_event, payload: AuthFillPayload) => {
   const result = fillCredentialsAcrossFrames(payload);
   ipcRenderer.sendToHost('auth-fill-result', result);
+});
+ipcRenderer.on('verify-capture-selector', (_event, payload: unknown) => {
+  if (!payload || typeof payload !== 'object') return;
+  const record = payload as Record<string, unknown>;
+  const captureTargetId =
+    typeof record.captureTargetId === 'string' ? record.captureTargetId : '';
+  const selector = typeof record.selector === 'string' ? record.selector : '';
+  const shadowHostSelectors = Array.isArray(record.shadowHostSelectors)
+    ? (record.shadowHostSelectors as string[][])
+    : [];
+  const verification = verifyCaptureSelector({
+    captureTargetId,
+    selector,
+    shadowHostSelectors,
+  });
+  ipcRenderer.sendToHost('capture-selector-verified', {
+    captureTargetId,
+    selector,
+    verification,
+  });
 });
 
 document.addEventListener('click', onPopupAnchorClick, true);

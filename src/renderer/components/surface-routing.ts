@@ -8,6 +8,14 @@ import {
 import { promptNewSession } from './tab-bar/tab-bar.js';
 import { deliverPromptToTerminalSession, setPendingPrompt } from './terminal-pane.js';
 
+export interface SurfaceRoutingOptions {
+  strictContract?: boolean;
+}
+
+export interface DeliverBrowserCapturePromptOptions extends SurfaceRoutingOptions {
+  targetSessionId?: string;
+}
+
 function getPreferredLaunchProvider() {
   return resolvePreferredProviderForLaunch(
     appState.preferences.defaultProvider,
@@ -26,16 +34,84 @@ function appendStrictRoutingContract(prompt: string): string {
   ].join('\n');
 }
 
-function applyProjectRoutingContext(projectId: string | undefined, prompt: string): string {
-  const strictPrompt = appendStrictRoutingContract(prompt);
-  if (!projectId) return strictPrompt;
+export function applyProjectRoutingContext(
+  projectId: string | undefined,
+  prompt: string,
+  options?: SurfaceRoutingOptions,
+): string {
+  const useStrictContract = options?.strictContract !== false;
+  const routedPrompt = useStrictContract ? appendStrictRoutingContract(prompt) : prompt;
+  if (!projectId) return routedPrompt;
   const project =
     appState.projects.find((entry) => entry.id === projectId) ??
     (appState.activeProject?.id === projectId ? appState.activeProject : undefined);
   return appendProjectGovernanceToPrompt(
-    appendProjectTeamContextToPrompt(strictPrompt, project?.projectTeamContext),
+    appendProjectTeamContextToPrompt(routedPrompt, project?.projectTeamContext),
     project?.projectGovernance,
   );
+}
+
+function resolveCaptureTargetSession(
+  projectId: string,
+  browserSessionId: string,
+  targetSessionId?: string,
+) {
+  if (targetSessionId) {
+    const listed = appState
+      .listSurfaceTargetSessions(projectId)
+      .find((session) => session.id === targetSessionId);
+    if (listed) return listed;
+  }
+  return appState.resolveBrowserTargetSession(browserSessionId);
+}
+
+function seedExplicitBrowserTarget(
+  projectId: string,
+  browserSessionId: string,
+  targetSessionId: string,
+): void {
+  const explicitTarget = appState.resolveSurfaceTargetSession(projectId, {
+    requireExplicitTarget: true,
+  });
+  if (explicitTarget?.id === targetSessionId) return;
+  appState.setBrowserTargetSession(browserSessionId, targetSessionId);
+}
+
+async function deliverPromptToResolvedTarget(
+  projectId: string,
+  targetSession: { id: string },
+  prompt: string,
+  options?: SurfaceRoutingOptions,
+): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
+  const delivered = await deliverPromptToTerminalSession(
+    targetSession.id,
+    applyProjectRoutingContext(projectId, prompt, options),
+  );
+  if (!delivered) {
+    return { ok: false, error: 'Failed to deliver prompt to the selected session.' };
+  }
+
+  appState.setActiveSession(projectId, targetSession.id);
+  return { ok: true, targetSessionId: targetSession.id };
+}
+
+export async function deliverBrowserCapturePrompt(
+  projectId: string,
+  browserSessionId: string,
+  prompt: string,
+  options?: DeliverBrowserCapturePromptOptions,
+): Promise<{ ok: boolean; targetSessionId?: string; error?: string }> {
+  const targetSession = resolveCaptureTargetSession(
+    projectId,
+    browserSessionId,
+    options?.targetSessionId,
+  );
+  if (!targetSession) {
+    return { ok: false, error: 'Select an open session target first.' };
+  }
+
+  seedExplicitBrowserTarget(projectId, browserSessionId, targetSession.id);
+  return deliverPromptToResolvedTarget(projectId, targetSession, prompt, options);
 }
 
 export async function deliverSurfacePrompt(
@@ -49,16 +125,7 @@ export async function deliverSurfacePrompt(
     return { ok: false, error: 'Select an open session target first.' };
   }
 
-  const delivered = await deliverPromptToTerminalSession(
-    targetSession.id,
-    applyProjectRoutingContext(projectId, prompt),
-  );
-  if (!delivered) {
-    return { ok: false, error: 'Failed to deliver prompt to the selected session.' };
-  }
-
-  appState.setActiveSession(projectId, targetSession.id);
-  return { ok: true, targetSessionId: targetSession.id };
+  return deliverPromptToResolvedTarget(projectId, targetSession, prompt);
 }
 
 export function queueSurfacePromptInNewSession(
@@ -66,6 +133,7 @@ export function queueSurfacePromptInNewSession(
   sessionName: string,
   prompt: string,
   providerOverride?: ReturnType<typeof getPreferredLaunchProvider>,
+  routingOptions?: SurfaceRoutingOptions,
 ) {
   const session = appState.addPlanSession(
     projectId,
@@ -73,7 +141,7 @@ export function queueSurfacePromptInNewSession(
     providerOverride ?? getPreferredLaunchProvider(),
   );
   if (session) {
-    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));
+    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt, routingOptions));
   }
   return session;
 }
@@ -82,9 +150,10 @@ export function queueSurfacePromptInCustomSession(
   prompt: string,
   onReady: () => void,
   projectId?: string,
+  routingOptions?: SurfaceRoutingOptions,
 ): void {
   promptNewSession((session) => {
-    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt));
+    setPendingPrompt(session.id, applyProjectRoutingContext(projectId, prompt, routingOptions));
     onReady();
   });
 }

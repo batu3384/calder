@@ -6,7 +6,7 @@ import {
 import { appState } from '../../state.js';
 import type { ProviderId } from '../../types.js';
 import {
-  deliverSurfacePrompt,
+  deliverBrowserCapturePrompt,
   queueSurfacePromptInCustomSession,
   queueSurfacePromptInNewSession,
 } from '../surface-routing.js';
@@ -66,7 +66,7 @@ async function sendPromptToSelectedSession(
   const routedPrompt = appendAppliedContextToPrompt(prompt, appliedContext);
   showContextTrace(traceEl, formatAppliedContextTrace(appliedContext));
 
-  const result = await deliverSurfacePrompt(project.id, routedPrompt);
+  const result = await deliverBrowserCapturePrompt(project.id, instance.sessionId, routedPrompt);
   if (!result.ok) {
     showSendError(errorEl, result.error ?? 'Failed to deliver prompt.');
     return false;

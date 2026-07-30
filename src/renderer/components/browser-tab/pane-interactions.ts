@@ -10,6 +10,7 @@ import { dismissFlowPicker } from './flow-picker.js';
 import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import { dismissInspect, toggleInspectMode } from './inspect-mode.js';
+import { pickInitialActiveSelector } from './selector-verification.js';
 import { populateLocalTargets } from './local-targets.js';
 import {
   type BrowserPageState,
@@ -88,6 +89,7 @@ export interface BrowserNavigationInteractionBindingParams {
 export interface BrowserCaptureToolbarCluster {
   element: HTMLDivElement;
   label: HTMLSpanElement;
+  targetChip: HTMLButtonElement;
 }
 
 export interface BrowserToolbarStateBindingParams {
@@ -336,7 +338,8 @@ export function attachBrowserCaptureInteractions(
         tagName: metadata.tagName,
         textContent: metadata.textContent,
         selectors: metadata.selectors,
-        activeSelector: metadata.selectors[0],
+        selectorVerifications: metadata.selectorVerifications,
+        activeSelector: pickInitialActiveSelector(metadata.selectors, metadata.selectorVerifications),
         shadowHostSelectors: metadata.shadowHostSelectors,
         clickPoint: metadata.clickPoint,
         isCanvasLike: metadata.isCanvasLike,
@@ -450,10 +453,22 @@ export function bindBrowserToolbarState(params: BrowserToolbarStateBindingParams
           : mode === 'flow'
             ? 'Recording'
             : 'Idle';
-    captureCluster.label.textContent = 'Capture';
     captureCluster.element.dataset.captureMode = mode;
 
     const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
+    const targetLabel = selectedTarget?.name ?? 'Session';
+    const targetChipText =
+      targetLabel.length > 16 ? `→ ${targetLabel.slice(0, 15)}…` : `→ ${targetLabel}`;
+    captureCluster.targetChip.textContent = selectedTarget ? targetChipText : '→ Session';
+    captureCluster.targetChip.dataset.state = selectedTarget ? 'ready' : 'missing';
+    if (selectedTarget?.providerId) {
+      captureCluster.targetChip.dataset.provider = selectedTarget.providerId;
+    } else {
+      delete captureCluster.targetChip.dataset.provider;
+    }
+    captureCluster.targetChip.title = selectedTarget
+      ? `Target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
+      : 'Choose which open session receives browser prompts';
     captureCluster.label.title = selectedTarget
       ? `Mode: ${modeText} · Target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
       : `Mode: ${modeText} · Target: none`;

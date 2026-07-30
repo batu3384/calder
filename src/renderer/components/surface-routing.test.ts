@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockResolveSurfaceTargetSession = vi.fn();
+const mockResolveBrowserTargetSession = vi.fn();
+const mockListSurfaceTargetSessions = vi.fn(() => []);
+const mockSetBrowserTargetSession = vi.fn();
 const mockSetActiveSession = vi.fn();
 const mockAddPlanSession = vi.fn();
 const mockDeliverPromptToTerminalSession = vi.fn();
@@ -13,6 +16,9 @@ vi.mock('../state.js', () => ({
     preferences: {},
     projects: mockProjects,
     resolveSurfaceTargetSession: mockResolveSurfaceTargetSession,
+    resolveBrowserTargetSession: mockResolveBrowserTargetSession,
+    listSurfaceTargetSessions: mockListSurfaceTargetSessions,
+    setBrowserTargetSession: mockSetBrowserTargetSession,
     setActiveSession: mockSetActiveSession,
     addPlanSession: mockAddPlanSession,
   },
@@ -36,6 +42,69 @@ describe('surface routing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProjects.length = 0;
+  });
+
+  it('keeps inspect capture delivery on the strict routing contract path', async () => {
+    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-inspect' });
+    mockResolveSurfaceTargetSession.mockReturnValue(undefined);
+    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+
+    const { deliverBrowserCapturePrompt } = await import('./surface-routing.js');
+    await deliverBrowserCapturePrompt('project-1', 'browser-1', 'fix this button');
+
+    const routedPrompt = mockDeliverPromptToTerminalSession.mock.calls[0]?.[1] as string;
+    expect(routedPrompt).toContain('Routing contract (strict):');
+    expect(routedPrompt).toContain('fix this button');
+  });
+
+  it('delivers browser capture prompts via browser target resolution with active fallback', async () => {
+    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-2' });
+    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+
+    const { deliverBrowserCapturePrompt } = await import('./surface-routing.js');
+    const result = await deliverBrowserCapturePrompt(
+      'project-1',
+      'browser-1',
+      'inspect this footer',
+    );
+
+    expect(result).toEqual({ ok: true, targetSessionId: 'cli-2' });
+    expect(mockResolveBrowserTargetSession).toHaveBeenCalledWith('browser-1');
+    expect(mockDeliverPromptToTerminalSession).toHaveBeenCalledWith(
+      'cli-2',
+      expect.stringContaining('inspect this footer'),
+    );
+    expect(mockSetActiveSession).toHaveBeenCalledWith('project-1', 'cli-2');
+    expect(mockSetBrowserTargetSession).toHaveBeenCalledWith('browser-1', 'cli-2');
+  });
+
+  it('seeds an explicit browser target when only active-session fallback was available', async () => {
+    mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-active' });
+    mockResolveSurfaceTargetSession.mockImplementation((_projectId, options) =>
+      options?.requireExplicitTarget ? undefined : { id: 'cli-active' },
+    );
+    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+
+    const { deliverBrowserCapturePrompt } = await import('./surface-routing.js');
+    await deliverBrowserCapturePrompt('project-1', 'browser-1', 'inspect footer');
+
+    expect(mockSetBrowserTargetSession).toHaveBeenCalledWith('browser-1', 'cli-active');
+  });
+
+  it('can skip the strict routing contract for draw-style capture prompts', async () => {
+    mockListSurfaceTargetSessions.mockReturnValue([{ id: 'cli-1' }]);
+    mockDeliverPromptToTerminalSession.mockResolvedValue(true);
+
+    const { deliverBrowserCapturePrompt } = await import('./surface-routing.js');
+    await deliverBrowserCapturePrompt('project-1', 'browser-1', 'annotate this page', {
+      targetSessionId: 'cli-1',
+      strictContract: false,
+    });
+
+    expect(mockResolveBrowserTargetSession).not.toHaveBeenCalled();
+    const routedPrompt = mockDeliverPromptToTerminalSession.mock.calls[0]?.[1] as string;
+    expect(routedPrompt).toContain('annotate this page');
+    expect(routedPrompt).not.toContain('Routing contract (strict):');
   });
 
   it('delivers prompts to the selected surface target', async () => {

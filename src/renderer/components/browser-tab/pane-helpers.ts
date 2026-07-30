@@ -1,6 +1,7 @@
 import { buildBrowserSessionPartition } from '../../../shared/constants.js';
 import { appState } from '../../state.js';
 import {
+  canonicalizeNavigationUrl,
   clearPendingNavigation,
   isStaleNavigationRevert,
   navigateTo,
@@ -64,17 +65,35 @@ export function syncBrowserTabToSessionState(instance: BrowserTabInstance): void
   );
   if (!session) return;
 
-  const nextUrl = normalizeUrl(session.browserTabUrl ?? 'about:blank');
-  const currentUrl = normalizeUrl(instance.committedUrl || instance.webview.src || 'about:blank');
+  const storedUrl = normalizeUrl(session.browserTabUrl ?? 'about:blank');
+  const liveUrl = instance.webviewReady
+    ? normalizeUrl(
+        instance.committedUrl || instance.webview.getAttribute('src') || instance.webview.src || '',
+      )
+    : '';
+  const nextUrl =
+    liveUrl && liveUrl !== 'about:blank' ? liveUrl : storedUrl;
+  const currentUrl = normalizeUrl(
+    instance.committedUrl ||
+      instance.webview.getAttribute('src') ||
+      instance.webview.src ||
+      storedUrl ||
+      'about:blank',
+  );
+
   if (isStaleNavigationRevert(instance, nextUrl)) {
     return;
   }
 
-  if (currentUrl === nextUrl) {
+  const canonicalNext = canonicalizeNavigationUrl(nextUrl);
+  const canonicalCurrent = canonicalizeNavigationUrl(currentUrl);
+  const isEmptySurface = canonicalNext === '' || canonicalNext === 'about:blank';
+
+  if (canonicalNext === canonicalCurrent) {
     instance.committedUrl = nextUrl;
     instance.urlInput.value = nextUrl;
-    instance.newTabPage.dataset.mode = nextUrl === 'about:blank' ? 'default' : 'hidden';
-    instance.syncSurfaceVisibility(nextUrl === 'about:blank');
+    instance.newTabPage.dataset.mode = isEmptySurface ? 'default' : 'hidden';
+    instance.syncSurfaceVisibility(isEmptySurface);
     instance.syncAddressBarState();
     clearPendingNavigation(instance);
     return;

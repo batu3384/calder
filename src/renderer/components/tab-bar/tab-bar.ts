@@ -54,6 +54,7 @@ import {
 } from './tab-bar-surface-controls.js';
 import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
 import { getProjectSurface } from './tab-bar-surface-state.js';
+import { wireTabBarScrollControls } from './tab-bar-scroll.js';
 import { renderTabList } from './tab-bar-tab-list-renderer.js';
 
 const tabListEl = document.getElementById('tab-list')!;
@@ -141,6 +142,7 @@ function getSurfaceControlsController(): TabBarSurfaceControlsController {
 
 export function initTabBar(): void {
   initUpdateCenter();
+  wireTabBarScrollControls(tabListEl);
   btnAddSession.classList.add('tab-action-primary');
   btnUpdateCliTools.classList.add('tab-action-primary');
   setupCliUpdatePanel();

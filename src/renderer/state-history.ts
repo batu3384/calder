@@ -2,11 +2,37 @@ import type { ProjectRecord } from '../shared/types/project-state.js';
 import type { ProviderId } from '../shared/types/provider.js';
 import type { ArchivedSession, CostInfo, SessionRecord } from '../shared/types/session.js';
 
+function isHistoryCliSuppressed(project: ProjectRecord, cliSessionId: string | undefined): boolean {
+  if (!cliSessionId) return false;
+  return Boolean(project.suppressedHistoryCliSessionIds?.includes(cliSessionId));
+}
+
+export function suppressHistoryCliSessionId(project: ProjectRecord, cliSessionId: string): void {
+  if (!cliSessionId) return;
+  const list = project.suppressedHistoryCliSessionIds ?? [];
+  if (list.includes(cliSessionId)) return;
+  project.suppressedHistoryCliSessionIds = [...list, cliSessionId];
+}
+
+export function unsuppressHistoryCliSessionId(project: ProjectRecord, cliSessionId: string): void {
+  if (!cliSessionId || !project.suppressedHistoryCliSessionIds?.length) return;
+  project.suppressedHistoryCliSessionIds = project.suppressedHistoryCliSessionIds.filter(
+    (id) => id !== cliSessionId,
+  );
+  if (project.suppressedHistoryCliSessionIds.length === 0) {
+    delete project.suppressedHistoryCliSessionIds;
+  }
+}
+
 export function archiveSessionToHistory(
   project: ProjectRecord,
   session: SessionRecord,
   costInfo: CostInfo | null,
 ): void {
+  if (isHistoryCliSuppressed(project, session.cliSessionId)) {
+    return;
+  }
+
   const archived: ArchivedSession = {
     id: crypto.randomUUID(),
     name: session.name,
@@ -58,9 +84,13 @@ export function removeHistoryEntryFromProject(
   archivedSessionId: string,
 ): boolean {
   if (!project.sessionHistory) return false;
+  const removed = project.sessionHistory.find((entry) => entry.id === archivedSessionId);
   const next = project.sessionHistory.filter((entry) => entry.id !== archivedSessionId);
   if (next.length === project.sessionHistory.length) return false;
   project.sessionHistory = next;
+  if (removed?.cliSessionId) {
+    suppressHistoryCliSessionId(project, removed.cliSessionId);
+  }
   return true;
 }
 
@@ -76,10 +106,14 @@ export function toggleProjectHistoryBookmark(
 }
 
 export function clearProjectHistory(project: ProjectRecord): boolean {
-  const next = project.sessionHistory?.filter((entry) => entry.bookmarked) ?? [];
   const previousLength = project.sessionHistory?.length ?? 0;
-  project.sessionHistory = next;
-  return previousLength !== next.length;
+  if (previousLength === 0) return false;
+
+  for (const entry of project.sessionHistory ?? []) {
+    if (entry.cliSessionId) suppressHistoryCliSessionId(project, entry.cliSessionId);
+  }
+  project.sessionHistory = [];
+  return true;
 }
 
 interface ResumeFromHistoryResult {
@@ -94,6 +128,8 @@ export function resumeSessionFromHistory(
 ): ResumeFromHistoryResult {
   const archived = project.sessionHistory?.find((entry) => entry.id === archivedSessionId);
   if (!archived || !archived.cliSessionId) return { created: false };
+
+  unsuppressHistoryCliSessionId(project, archived.cliSessionId);
 
   const existing = project.sessions.find(
     (session) => session.cliSessionId === archived.cliSessionId,

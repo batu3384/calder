@@ -98,8 +98,8 @@ describe('browser tab pane contract', () => {
   it('surfaces active capture mode inside the capture cluster label', () => {
     expect(source).toContain("createBrowserToolbarCluster('Capture')");
     expect(source).toContain('instance.syncToolbarState = () => {');
-    expect(source).toContain("captureCluster.label.textContent = 'Capture';");
     expect(source).toContain('captureCluster.element.dataset.captureMode = mode;');
+    expect(source).toContain('captureCluster.targetChip.textContent');
     expect(source).toContain('captureCluster.label.title = selectedTarget');
     expect(source).toContain(
       "inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';",
@@ -112,9 +112,11 @@ describe('browser tab pane contract', () => {
     expect(source).toContain("drawCustomBtn.addEventListener('click'");
     expect(source).toContain("flowCustomBtn.addEventListener('click'");
     expect(source).toContain("customBtn.addEventListener('click'");
+    expect(source).toContain("captureCluster.targetChip.addEventListener('click'");
     expect(source).toContain("openBrowserTargetMenu(instance, drawCustomBtn, 'draw')");
     expect(source).toContain("openBrowserTargetMenu(instance, flowCustomBtn, 'flow')");
     expect(source).toContain("openBrowserTargetMenu(instance, customBtn, 'inspect')");
+    expect(source).toContain('openBrowserTargetMenu(instance, captureCluster.targetChip, mode)');
   });
 
   it('tracks loading state in the chrome and toggles the primary button behavior', () => {
@@ -214,13 +216,14 @@ describe('browser tab pane contract', () => {
     expect(paneHelpersSource).toContain(
       'function syncBrowserTabToSessionState(instance: BrowserTabInstance): void {',
     );
+    expect(paneHelpersSource).toContain('canonicalizeNavigationUrl(nextUrl)');
+    expect(paneHelpersSource).toContain('instance.webviewReady');
     expect(source).toContain(
       'attachBrowserTabToContainer(sessionId: string, container: HTMLElement): void',
     );
     expect(source).toContain('syncBrowserTabToSessionState(instance);');
-    expect(source).toContain(
-      'requestAnimationFrame(() => syncBrowserTabToSessionState(instance));',
-    );
+    expect(source).toContain('const wasHidden = instance.element.classList.contains(');
+    expect(source).toContain('if (wasHidden) {');
   });
 
   it('ignores benign aborted loads instead of forcing offline fallback', () => {

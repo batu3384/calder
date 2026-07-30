@@ -44,10 +44,8 @@
           <div class="sidebar-header-primary">
             <div class="sidebar-title-group">
               <div class="sidebar-brand-block">
-                <span class="sidebar-eyebrow">Workspace</span>
-                <span class="sidebar-title">Project Dock</span>
+                <span class="sidebar-title">Projects</span>
               </div>
-              <span class="sidebar-header-note">Switch context without losing live work.</span>
             </div>
             <button
               id="btn-toggle-sidebar"
@@ -99,7 +97,31 @@
           <div id="workspace-stack" class="session-deck session-deck-surface">
             <div id="tab-bar" class="tab-bar-surface session-deck-surface">
               <div class="tab-bar-main">
+                <button
+                  type="button"
+                  id="tab-scroll-prev"
+                  class="tab-scroll-btn"
+                  aria-label="Scroll tabs left"
+                  title="Scroll tabs left"
+                  hidden
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 6l-6 6 6 6"></path>
+                  </svg>
+                </button>
                 <div id="tab-list" role="tablist" aria-label="Open sessions"></div>
+                <button
+                  type="button"
+                  id="tab-scroll-next"
+                  class="tab-scroll-btn"
+                  aria-label="Scroll tabs right"
+                  title="Scroll tabs right"
+                  hidden
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 6l6 6-6 6"></path>
+                  </svg>
+                </button>
               </div>
               <div class="tab-bar-meta"></div>
               <div id="tab-actions">
@@ -168,8 +190,7 @@
             <div id="context-inspector-header">
               <div class="context-inspector-header-top">
                 <div class="context-inspector-title-group">
-                  <span class="context-inspector-eyebrow">Inspector</span>
-                  <span class="context-inspector-title">Workspace Pulse</span>
+                  <span class="context-inspector-title">Inspector</span>
                 </div>
                 <div class="context-inspector-header-actions">
                   <button
@@ -235,9 +256,6 @@
                 aria-labelledby="context-inspector-tab-run"
                 data-section="capabilities"
               >
-                <header class="context-inspector-block-header">
-                  <span class="context-inspector-block-title">Controls</span>
-                </header>
                 <div id="diagnostics-summary" class="diagnostics-summary" aria-live="polite"></div>
                 <div id="config-sections" class="context-inspector-block-body"></div>
               </section>

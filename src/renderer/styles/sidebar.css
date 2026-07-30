@@ -28,9 +28,10 @@
 }
 
 #sidebar-resize-handle {
-  width: 6px;
+  width: 4px;
   cursor: col-resize;
-  background: transparent;
+  /* Match chrome rail — transparent showed #app canvas (#010102) as a black seam */
+  background: var(--chrome-bg, #0b0b0c);
   flex-shrink: 0;
 }
 
@@ -38,9 +39,9 @@
 #sidebar-resize-handle.active {
   background: linear-gradient(
     180deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 68%, transparent),
-    transparent
+    var(--chrome-bg, #0b0b0c),
+    color-mix(in srgb, var(--accent) 55%, var(--chrome-bg, #0b0b0c)),
+    var(--chrome-bg, #0b0b0c)
   );
 }
 

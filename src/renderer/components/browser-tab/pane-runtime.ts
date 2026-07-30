@@ -1,11 +1,13 @@
 import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core.js';
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { shortcutManager } from '../surface-services/shortcuts.js';
 import { positionDrawPopover } from './draw-mode.js';
 import { showFlowPicker } from './flow-picker.js';
 import { sendGuestMessage } from './guest-messaging.js';
-import { showElementInfo } from './inspect-mode.js';
+import { applyCaptureSelectorVerification, showElementInfo } from './inspect-mode.js';
 import { getPreloadPath } from './instance.js';
+import { showInfoToast } from '../toast.js';
 import {
   type BrowserPageState,
   clearPendingNavigation,
@@ -20,6 +22,7 @@ import {
   type BrowserTabInstance,
   type ElementInfo,
   type FlowPickerMetadata,
+  type SelectorVerification,
   VIEWPORT_PRESETS,
   type WebviewElement,
 } from './types.js';
@@ -73,6 +76,7 @@ interface BrowserInstanceCreationParams {
   recordBtn: HTMLButtonElement;
   drawBtn: HTMLButtonElement;
   capture: BrowserPaneCaptureArtifacts;
+  captureTargetChip: HTMLButtonElement;
 }
 
 export function createBrowserTabInstance(
@@ -97,6 +101,7 @@ export function createBrowserTabInstance(
     recordBtn,
     drawBtn,
     capture,
+    captureTargetChip,
   } = params;
 
   return {
@@ -125,6 +130,7 @@ export function createBrowserTabInstance(
     inspectAttachDimsCheckbox: capture.inspectAttachDimsCheckbox,
     inspectErrorEl: capture.inspectErrorEl,
     inspectContextTraceEl: capture.inspectContextTraceEl,
+    inspectSelectorStatusEl: document.createElement('div'),
     elementInfoEl: capture.elementInfoEl,
     inspectMode: false,
     selectedElement: null,
@@ -162,6 +168,7 @@ export function createBrowserTabInstance(
     targetMenuFloatingCleanup: null,
     activeTargetTrigger: null,
     activeTargetMode: null,
+    captureTargetChip,
     syncSurfaceVisibility: () => {},
     syncAddressBarState: () => {},
     syncToolbarState: () => {},
@@ -350,15 +357,22 @@ export function attachBrowserWebviewBindings(params: BrowserWebviewBindingParams
         x: number;
         y: number;
       };
-      const info: ElementInfo = {
-        ...metadata,
-        activeSelector: metadata.selectors[0] ?? {
-          type: 'css',
-          label: 'css',
-          value: metadata.tagName,
+      showElementInfo(instance, metadata as ElementInfo, x, y);
+    } else if (e.channel === 'capture-selector-verified') {
+      applyCaptureSelectorVerification(
+        instance,
+        e.args[0] as {
+          captureTargetId: string;
+          selector: string;
+          verification: SelectorVerification;
         },
-      };
-      showElementInfo(instance, info, x, y);
+      );
+    } else if (e.channel === 'inspect-cross-origin-blocked') {
+      showInfoToast(
+        t(
+          'This frame cannot be inspected (cross-origin). Try the parent page or use Draw mode for a screenshot.',
+        ),
+      );
     } else if (e.channel === 'flow-element-picked') {
       const { metadata, x, y } = e.args[0] as {
         metadata: FlowPickerMetadata;

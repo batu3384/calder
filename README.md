@@ -22,7 +22,7 @@
   <img src="docs/images/screenshots/workspace-mosaic.png" alt="Calder workspace with multiple CLI sessions, embedded browser, and ops rail" width="920" />
 </p>
 <p align="center">
-  <sub><strong>Workspace</strong> — Claude Code, Codex, Cursor, and Antigravity sessions side by side with embedded browser and Workspace Pulse inspector.</sub>
+  <sub><strong>Workspace</strong> — Claude Code, Codex, Cursor, and Antigravity sessions side by side with embedded browser and Inspector.</sub>
 </p>
 
 <p align="center">

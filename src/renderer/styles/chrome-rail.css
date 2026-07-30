@@ -1,0 +1,1321 @@
+/**
+ * Calder chrome shell v4 — authoritative left / top / right rails.
+ * Loads LAST (after theme-command-studio + responsive-layout).
+ *
+ * Language: Linear product chrome + Cursor density.
+ * Tabs = underline shelf (not pills). Projects = avatar rows. Inspector = meta list.
+ *
+ * Never size .session-deck-surface / .tab-bar-surface — #workspace-stack shares them.
+ */
+
+:root {
+  --chrome-h: 46px;
+  --chrome-bg: #0b0b0c;
+  --chrome-bg-soft: #111113;
+  --chrome-line: #232326;
+  --chrome-line-strong: #2e2e33;
+  --chrome-text: #ececee;
+  --chrome-muted: #8b8b93;
+  --chrome-dim: #63636b;
+  --chrome-hover: rgba(255, 255, 255, 0.045);
+  --chrome-active: rgba(111, 154, 166, 0.16);
+  --chrome-radius: 6px;
+}
+
+/* ========== LEFT: project rail ========== */
+#sidebar,
+#sidebar.sidebar-surface {
+  background: var(--chrome-bg) !important;
+  border-right: 1px solid var(--chrome-line) !important;
+  box-shadow: none !important;
+}
+
+#sidebar-brand-row,
+#sidebar-brand-row.sidebar-brand-row {
+  height: var(--chrome-h) !important;
+  min-height: var(--chrome-h) !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--chrome-line) !important;
+}
+
+.sidebar-brand-mark {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.sidebar-brand-name {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--chrome-text) !important;
+  line-height: 1 !important;
+}
+
+.sidebar-brand-status,
+.sidebar-eyebrow,
+.sidebar-header-note {
+  display: none !important;
+}
+
+#sidebar-header {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#sidebar-header .sidebar-header-primary {
+  width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  grid-template-areas: 'title toggle actions' !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+
+#sidebar-header .sidebar-title-group {
+  grid-area: title !important;
+}
+
+#sidebar-header .sidebar-toggle-btn {
+  grid-area: toggle !important;
+}
+
+#sidebar-header .sidebar-header-actions {
+  grid-area: actions !important;
+  width: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  display: flex !important;
+  gap: 1px !important;
+}
+
+.sidebar-title {
+  padding-left: 6px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: var(--chrome-dim) !important;
+  line-height: 1 !important;
+}
+
+.sidebar-header-actions .icon-btn,
+.sidebar-toggle-btn {
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  border-radius: var(--chrome-radius) !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--chrome-muted) !important;
+}
+
+.sidebar-header-actions .icon-btn:hover,
+.sidebar-toggle-btn:hover {
+  background: var(--chrome-hover) !important;
+  color: var(--chrome-text) !important;
+}
+
+#sidebar-content {
+  padding: 4px 6px 10px !important;
+}
+
+#project-list {
+  gap: 1px !important;
+  padding: 0 !important;
+}
+
+.project-item-shell {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.project-item-shell + .project-item-shell::before {
+  display: none !important;
+}
+
+.project-item,
+.sidebar-project-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 40px !important;
+  height: auto !important;
+  padding: 7px 28px 7px 8px !important;
+  border: 0 !important;
+  border-radius: var(--chrome-radius) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.project-item::before {
+  display: none !important;
+}
+
+.project-item:hover,
+.project-item:focus-visible {
+  background: var(--chrome-hover) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.project-item.active,
+.sidebar-project-row.active {
+  background: var(--chrome-active) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Avatar always visible (was collapsed-only) */
+#sidebar:not(.collapsed) .project-collapsed-pill {
+  display: flex !important;
+  position: static !important;
+  width: 24px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  border-radius: 6px !important;
+  background: var(--chrome-bg-soft) !important;
+  border: 1px solid var(--chrome-line-strong) !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+}
+
+#sidebar:not(.collapsed) .project-collapsed-initial {
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  color: var(--chrome-text) !important;
+  line-height: 1 !important;
+}
+
+#sidebar:not(.collapsed) .project-collapsed-dot {
+  display: none !important;
+}
+
+.project-item-main {
+  gap: 0 !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+.project-item .project-name {
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--chrome-text) !important;
+  line-height: 1.25 !important;
+}
+
+.project-meta-row {
+  margin-top: 1px !important;
+}
+
+.project-session-meta {
+  font-size: 11px !important;
+  color: var(--chrome-dim) !important;
+}
+
+.project-status-chip {
+  font-size: 10px !important;
+  padding: 0 5px !important;
+  min-height: 16px !important;
+  border-radius: 4px !important;
+}
+
+/* Path always visible (truncated) — empty rows feel unfinished */
+.project-item .project-path {
+  display: block !important;
+  font-size: 11px !important;
+  color: var(--chrome-dim) !important;
+  opacity: 1 !important;
+  margin-top: 2px !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.project-delete {
+  right: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 4px !important;
+  opacity: 0 !important;
+}
+
+.project-item:hover .project-delete,
+.project-item:focus-within .project-delete {
+  opacity: 0.7 !important;
+}
+
+#sidebar.collapsed .project-item {
+  width: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+
+#sidebar-footer {
+  border-top: 1px solid var(--chrome-line) !important;
+  background: transparent !important;
+  padding: 8px 12px !important;
+}
+
+.sidebar-footer-value {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  color: var(--chrome-muted) !important;
+}
+
+/* ========== TOP: session shelf ========== */
+#tab-bar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas: 'main actions' !important;
+  height: var(--chrome-h) !important;
+  min-height: var(--chrome-h) !important;
+  max-height: var(--chrome-h) !important;
+  padding: 0 8px 0 4px !important;
+  gap: 8px !important;
+  align-items: stretch !important;
+  background: var(--chrome-bg) !important;
+  border-bottom: 1px solid var(--chrome-line) !important;
+  box-shadow: none !important;
+}
+
+#tab-bar .tab-bar-main {
+  grid-area: main !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 2px !important;
+}
+
+#tab-bar .tab-bar-meta {
+  display: none !important;
+}
+
+#tab-bar .tab-scroll-btn {
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  width: 24px !important;
+  height: 28px !important;
+  min-width: 24px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--chrome-radius) !important;
+  background: transparent !important;
+  color: var(--chrome-muted) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#tab-bar .tab-scroll-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  fill: none !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+#tab-bar .tab-scroll-btn:hover:not(:disabled) {
+  background: var(--chrome-hover) !important;
+  color: var(--chrome-text) !important;
+}
+
+#tab-bar .tab-scroll-btn:disabled {
+  opacity: 0.28 !important;
+  cursor: default !important;
+}
+
+#tab-bar .tab-scroll-btn[hidden] {
+  display: none !important;
+}
+
+#tab-bar #tab-list {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain !important;
+  scroll-behavior: smooth !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  height: 100% !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--chrome-line-strong) transparent;
+}
+
+#tab-bar #tab-list::-webkit-scrollbar {
+  height: 4px;
+}
+
+#tab-bar #tab-list::-webkit-scrollbar-thumb {
+  background: var(--chrome-line-strong);
+  border-radius: 999px;
+}
+
+#tab-bar #tab-actions {
+  grid-area: actions !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  width: max-content !important;
+  align-self: center !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+#tab-bar .session-launcher-group {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  height: 30px !important;
+  padding: 0 2px !important;
+  border: 1px solid var(--chrome-line-strong) !important;
+  border-radius: var(--chrome-radius) !important;
+  background: var(--chrome-bg-soft) !important;
+  box-shadow: none !important;
+  gap: 2px !important;
+  align-items: center !important;
+}
+
+#tab-bar .command-deck-status,
+#tab-bar #git-status {
+  flex-shrink: 0 !important;
+}
+
+#tab-bar #git-status {
+  max-width: 112px !important;
+  height: 30px !important;
+  border-radius: var(--chrome-radius) !important;
+  border: 1px solid var(--chrome-line) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Underline tabs — not rounded pills */
+#tab-bar .tab-item {
+  align-self: stretch !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 7px !important;
+  color: var(--chrome-muted) !important;
+  transform: none !important;
+}
+
+#tab-bar .tab-item:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--chrome-line-strong) !important;
+  color: var(--chrome-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#tab-bar .tab-item.active {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-bottom-color: var(--accent) !important;
+  color: var(--chrome-text) !important;
+  box-shadow: none !important;
+}
+
+#tab-bar .tab-item.active::after {
+  display: none !important;
+}
+
+#tab-bar .tab-status-label {
+  display: none !important;
+}
+
+#tab-bar .tab-status.idle,
+#tab-bar .tab-status.waiting,
+#tab-bar .tab-status.completed {
+  display: none !important;
+}
+
+#tab-bar .tab-name {
+  max-width: 120px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* Restore drop target cue — base rule zeros box-shadow on all tabs */
+#tab-bar .tab-item.dragging {
+  opacity: 0.42 !important;
+}
+
+#tab-bar .tab-item.drag-over-left {
+  box-shadow: inset 3px 0 0 var(--accent) !important;
+  border-bottom-color: transparent !important;
+}
+
+#tab-bar .tab-item.drag-over-right {
+  box-shadow: inset -3px 0 0 var(--accent) !important;
+  border-bottom-color: transparent !important;
+}
+
+#tab-bar .surface-live-view-btn,
+#tab-bar .command-deck-provider-select,
+#tab-bar .command-deck-cli-profile-select {
+  flex-shrink: 0 !important;
+  max-width: 140px !important;
+  height: 30px !important;
+  border-radius: var(--chrome-radius) !important;
+  box-shadow: none !important;
+}
+
+/* ========== RIGHT: inspector ========== */
+#context-inspector,
+#context-inspector.control-panel-surface,
+#context-inspector.ops-rail-surface {
+  background: var(--chrome-bg) !important;
+  border-left: 1px solid var(--chrome-line) !important;
+  box-shadow: none !important;
+}
+
+#context-inspector-header {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border-bottom: 1px solid var(--chrome-line) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.context-inspector-header-top {
+  height: var(--chrome-h) !important;
+  min-height: var(--chrome-h) !important;
+  padding: 0 8px 0 14px !important;
+  align-items: center !important;
+  box-shadow: none !important;
+}
+
+.context-inspector-eyebrow,
+.context-inspector-header-note,
+.context-inspector-block-copy {
+  display: none !important;
+}
+
+.context-inspector-title {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: var(--chrome-dim) !important;
+  line-height: 1 !important;
+}
+
+#context-inspector .context-inspector-header-actions .icon-btn {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  border: 0 !important;
+  border-radius: var(--chrome-radius) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--chrome-muted) !important;
+}
+
+#context-inspector .context-inspector-header-actions .icon-btn:hover {
+  background: var(--chrome-hover) !important;
+  color: var(--chrome-text) !important;
+}
+
+.context-inspector-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.context-inspector-tab {
+  min-height: 32px !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--chrome-dim) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.context-inspector-tab:hover {
+  color: var(--chrome-muted) !important;
+  background: transparent !important;
+}
+
+.context-inspector-tab.active,
+.context-inspector-tab[aria-selected='true'] {
+  color: var(--chrome-text) !important;
+  border-bottom-color: var(--accent) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#context-inspector-sections {
+  padding: 12px 12px 16px !important;
+  gap: 0 !important;
+  background: transparent !important;
+}
+
+#context-inspector .context-inspector-section::before,
+:where(#context-inspector) .context-inspector-section::before {
+  content: none !important;
+  display: none !important;
+}
+
+#context-inspector .context-inspector-section,
+#context-inspector .context-inspector-section.active,
+#context-inspector .context-inspector-section[data-section='capabilities'],
+:where(#context-inspector) .context-inspector-section {
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 0 14px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--chrome-line) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+#context-inspector .context-inspector-section:last-child,
+#context-inspector .context-inspector-section:last-of-type {
+  border-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+#context-inspector .context-inspector-block-header,
+:where(#context-inspector) .context-inspector-block-header {
+  padding: 0 0 8px !important;
+  border: 0 !important;
+}
+
+#context-inspector .context-inspector-block-title,
+:where(#context-inspector) .context-inspector-block-title {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: var(--chrome-dim) !important;
+}
+
+#context-inspector .config-item:not(.auto-approval-item) {
+  padding-left: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Accordion headers: no hover “card” pill */
+#context-inspector .config-section-header,
+:where(#context-inspector) .config-section-header {
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 8px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--chrome-muted) !important;
+}
+
+#context-inspector .config-section-header:hover,
+#context-inspector .config-section-header:active,
+:where(#context-inspector) .config-section-header:hover,
+:where(#context-inspector) .config-section-header:active {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--chrome-text) !important;
+}
+
+#context-inspector .auto-approval-scope-card,
+#context-inspector .auto-approval-current-card,
+#context-inspector .auto-approval-meta-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.diagnostics-summary {
+  margin: 0 0 12px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.diagnostics-summary-header {
+  display: none !important;
+}
+
+.diagnostics-summary-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  border: 1px solid var(--chrome-line) !important;
+  border-radius: var(--chrome-radius) !important;
+  overflow: hidden !important;
+  background: var(--chrome-bg-soft) !important;
+}
+
+.diagnostics-summary-card {
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  align-items: baseline !important;
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--chrome-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.diagnostics-summary-card:last-child {
+  border-bottom: 0 !important;
+}
+
+.diagnostics-summary-label {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--chrome-dim) !important;
+}
+
+.diagnostics-summary-value {
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+  color: var(--chrome-text) !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.diagnostics-summary-detail {
+  grid-column: 2 !important;
+  font-size: 11px !important;
+  color: var(--chrome-dim) !important;
+}
+
+.context-inspector-reopen {
+  text-transform: none !important;
+  font-weight: 550 !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+  border-radius: 8px 0 0 8px !important;
+  background: var(--chrome-bg) !important;
+  box-shadow: none !important;
+}
+
+/* Resize handle: match chrome so #app canvas never shows as a black seam */
+#sidebar-resize-handle {
+  width: 4px !important;
+  background: var(--chrome-bg) !important;
+}
+
+#sidebar-resize-handle:hover,
+#sidebar-resize-handle.active {
+  background: linear-gradient(
+    180deg,
+    var(--chrome-bg),
+    color-mix(in srgb, var(--accent) 55%, var(--chrome-bg)),
+    var(--chrome-bg)
+  ) !important;
+}
+
+#sidebar.command-dock,
+#sidebar.sidebar-surface,
+#sidebar {
+  min-width: 240px !important;
+  max-width: 360px !important;
+  background: var(--chrome-bg) !important;
+  border-right: 1px solid var(--chrome-line) !important;
+  box-shadow: none !important;
+}
+
+#sidebar-brand-row.sidebar-brand-row,
+#sidebar-brand-row {
+  height: var(--chrome-h) !important;
+  min-height: var(--chrome-h) !important;
+  max-height: var(--chrome-h) !important;
+  padding: 0 14px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  box-shadow: inset 0 -1px 0 var(--chrome-line) !important;
+}
+
+.sidebar-brand-name {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--chrome-text) !important;
+}
+
+#sidebar-header {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 10px !important;
+  box-shadow: inset 0 -1px 0 var(--chrome-line) !important;
+}
+
+#sidebar-header .sidebar-header-primary {
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  grid-template-areas: 'title toggle actions' !important;
+  gap: 4px !important;
+}
+
+.sidebar-title {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--chrome-muted) !important;
+}
+
+#sidebar-header .sidebar-header-actions,
+.sidebar-header-actions {
+  width: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  justify-self: end !important;
+  gap: 2px !important;
+}
+
+#sidebar-header .sidebar-header-actions .icon-btn,
+#sidebar-header .sidebar-toggle-btn {
+  flex: 0 0 auto !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+}
+
+#sidebar-content {
+  padding: 8px 8px 12px !important;
+}
+
+.project-item-shell + .project-item-shell::before {
+  content: none !important;
+  display: none !important;
+}
+
+.project-item,
+.sidebar-project-row {
+  min-height: 44px !important;
+  padding: 8px 30px 8px 10px !important;
+  border-radius: 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 10px !important;
+}
+
+.project-item::before {
+  content: none !important;
+  display: none !important;
+}
+
+.project-item:hover,
+.project-item:focus-visible {
+  background: var(--chrome-hover) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.project-item.active,
+.sidebar-project-row.active {
+  background: var(--chrome-active) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.project-item .project-name {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+  color: var(--chrome-text) !important;
+  line-height: 1.25 !important;
+}
+
+/* Path always visible — empty rows look unfinished */
+.project-item .project-path {
+  display: block !important;
+  margin-top: 2px !important;
+  font-size: 11px !important;
+  line-height: 1.3 !important;
+  color: var(--chrome-dim) !important;
+  opacity: 1 !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.project-session-meta {
+  font-size: 11px !important;
+  color: var(--chrome-dim) !important;
+}
+
+#sidebar:not(.collapsed) .project-collapsed-pill {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  border-radius: 7px !important;
+}
+
+#sidebar:not(.collapsed) .project-collapsed-initial {
+  font-size: 11px !important;
+  font-weight: 650 !important;
+}
+
+/* RIGHT inspector hierarchy */
+#context-inspector,
+#context-inspector.control-panel-surface,
+#context-inspector.ops-rail-surface {
+  width: var(--ops-rail-width-default) !important;
+  flex-basis: var(--ops-rail-width-default) !important;
+  max-width: var(--ops-rail-width-default) !important;
+  background: var(--chrome-bg) !important;
+  border-left: 1px solid var(--chrome-line) !important;
+  box-shadow: none !important;
+}
+
+.context-inspector-title {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+  color: var(--chrome-muted) !important;
+}
+
+.context-inspector-tab {
+  min-height: 34px !important;
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+}
+
+#context-inspector-sections {
+  padding: 14px 14px 18px !important;
+}
+
+#context-inspector .context-inspector-block-title,
+:where(#context-inspector) .context-inspector-block-title {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  color: var(--chrome-muted) !important;
+}
+
+/* Auto-approval: one dropdown */
+#context-inspector .auto-approval-item {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#context-inspector .auto-approval-panel {
+  display: block !important;
+}
+
+#context-inspector .auto-approval-select {
+  width: 100% !important;
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--chrome-line-strong) !important;
+  border-radius: 8px !important;
+  background: var(--chrome-bg) !important;
+  color: var(--chrome-text) !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+}
+
+#context-inspector .auto-approval-select:disabled {
+  opacity: 0.5 !important;
+}
+
+#context-inspector .config-section-count.control-chip {
+  border-radius: 4px !important;
+  background: var(--chrome-bg-soft) !important;
+  border: 1px solid var(--chrome-line) !important;
+  color: var(--chrome-dim) !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  font-size: 10px !important;
+}
+
+.diagnostics-summary-grid {
+  border-radius: 8px !important;
+}
+
+.diagnostics-summary-card {
+  grid-template-columns: 64px minmax(0, 1fr) !important;
+  padding: 10px 12px !important;
+}
+
+.diagnostics-summary-label {
+  font-size: 10.5px !important;
+  letter-spacing: 0.03em !important;
+}
+
+.diagnostics-summary-value {
+  font-size: 13px !important;
+}
+
+/* Kill theme-command-studio bleed on rails */
+#sidebar.command-dock .project-item-shell + .project-item-shell::before,
+#sidebar .project-item-shell + .project-item-shell::before {
+  content: none !important;
+  display: none !important;
+}
+
+#sidebar.command-dock .project-item,
+#sidebar.command-dock .project-item:hover,
+#sidebar.command-dock .project-item.active {
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#sidebar.command-dock .project-item::before {
+  content: none !important;
+  display: none !important;
+}
+
+#sidebar.command-dock .sidebar-header-actions {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#context-inspector .config-section {
+  margin: 0 !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--chrome-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#context-inspector .config-section-body {
+  padding: 8px 0 0 !important;
+  gap: 8px !important;
+}
+
+#context-inspector .config-section-title {
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: var(--chrome-text) !important;
+}
+
+#context-inspector .config-section-toggle {
+  color: var(--chrome-dim) !important;
+}
+
+#context-inspector .auto-approval-summary-source {
+  display: none !important;
+}
+
+#context-inspector .auto-approval-risk-note {
+  margin-top: 4px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+/* Resize handle: match chrome so #app canvas never shows as a black seam */
+#sidebar-resize-handle {
+  width: 4px !important;
+  background: var(--chrome-bg) !important;
+}
+
+#sidebar-resize-handle:hover,
+#sidebar-resize-handle.active {
+  background: linear-gradient(
+    180deg,
+    var(--chrome-bg),
+    color-mix(in srgb, var(--accent) 55%, var(--chrome-bg)),
+    var(--chrome-bg)
+  ) !important;
+}
+
+/* Kill AA / accordion hover “cards” that leak from studio + inspector */
+#context-inspector .auto-approval-scope-card:hover,
+#context-inspector .auto-approval-control:hover,
+#context-inspector .auto-approval-select:hover,
+#context-inspector .config-item.auto-approval-item:hover,
+#context-inspector .config-item.auto-approval-item:hover > *,
+:where(#context-inspector) .auto-approval-scope-card:hover,
+:where(#context-inspector) .auto-approval-control:hover,
+:where(#context-inspector) .auto-approval-select:hover {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#context-inspector .auto-approval-select:hover {
+  background: var(--chrome-bg) !important;
+  border-radius: 6px !important;
+}
+
+#context-inspector .config-item.auto-approval-item,
+#context-inspector .config-item.auto-approval-item:hover {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Studio bleed: expanded rows only — collapsed rules own pill layout below */
+#sidebar:not(.collapsed).command-dock .project-item,
+#sidebar:not(.collapsed).command-dock .project-item:hover,
+#sidebar:not(.collapsed).command-dock .project-item.active,
+#sidebar:not(.collapsed) .project-item,
+#sidebar:not(.collapsed) .project-item:hover,
+#sidebar:not(.collapsed) .project-item.active {
+  min-height: 44px !important;
+  border-radius: 8px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#context-inspector .auto-approval-scope-card,
+#context-inspector .auto-approval-current-card,
+#context-inspector .auto-approval-policy-stack,
+#context-inspector .auto-approval-meta-card,
+#context-inspector .auto-approval-scope-card:hover,
+#context-inspector .auto-approval-current-card:hover,
+#context-inspector .auto-approval-meta-card:hover {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ========== Collapsed sidebar — must beat expanded grid !important ========== */
+#sidebar.collapsed {
+  width: var(--sidebar-width-collapsed) !important;
+  min-width: var(--sidebar-width-collapsed) !important;
+  max-width: var(--sidebar-width-collapsed) !important;
+}
+
+#sidebar.collapsed #sidebar-brand-row,
+#sidebar.collapsed #sidebar-brand-row.sidebar-brand-row {
+  height: var(--chrome-h) !important;
+  min-height: var(--chrome-h) !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+#sidebar.collapsed .sidebar-brand-meta,
+#sidebar.collapsed .sidebar-title-group,
+#sidebar.collapsed .sidebar-header-actions,
+#sidebar.collapsed #sidebar-footer {
+  display: none !important;
+}
+
+#sidebar.collapsed #sidebar-header {
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+#sidebar.collapsed #sidebar-header .sidebar-header-primary {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-areas: 'toggle' !important;
+  justify-items: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+#sidebar.collapsed #sidebar-header .sidebar-toggle-btn,
+#sidebar.collapsed .sidebar-toggle-btn {
+  grid-area: toggle !important;
+  justify-self: center !important;
+  margin: 0 !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+}
+
+#sidebar.collapsed #sidebar-content {
+  padding: 6px 0 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+#sidebar.collapsed #project-list {
+  width: 100% !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+#sidebar.collapsed .project-item-shell {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+#sidebar.collapsed .project-item,
+#sidebar.collapsed .project-item:hover,
+#sidebar.collapsed .project-item.active,
+#sidebar.collapsed.command-dock .project-item,
+#sidebar.collapsed.command-dock .project-item:hover,
+#sidebar.collapsed.command-dock .project-item.active {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  border-radius: 8px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+#sidebar.collapsed .project-item-main,
+#sidebar.collapsed .project-delete {
+  display: none !important;
+}
+
+#sidebar.collapsed .project-collapsed-pill {
+  display: inline-flex !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 7px !important;
+}
+
+/* Expanded project rows — Linear soft row, not studio card */
+#sidebar:not(.collapsed) .project-item,
+#sidebar:not(.collapsed) .sidebar-project-row {
+  min-height: 44px !important;
+  padding: 8px 28px 8px 10px !important;
+  border-radius: 8px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#sidebar:not(.collapsed) .project-item:hover,
+#sidebar:not(.collapsed) .project-item:focus-visible {
+  background: var(--chrome-hover) !important;
+}
+
+#sidebar:not(.collapsed) .project-item.active,
+#sidebar:not(.collapsed) .sidebar-project-row.active {
+  background: var(--chrome-active) !important;
+}
+
+/* Right rail: quieter hierarchy */
+#context-inspector .config-section-header,
+:where(#context-inspector) .config-section-header {
+  min-height: 32px !important;
+  padding: 6px 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#context-inspector .config-section-header:hover,
+#context-inspector .config-section-header:active,
+:where(#context-inspector) .config-section-header:hover,
+:where(#context-inspector) .config-section-header:active {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#context-inspector .config-section-body {
+  padding: 4px 0 12px !important;
+}
+
+#context-inspector .history-actions,
+#context-inspector .history-search-shell {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.diagnostics-summary-grid {
+  border-radius: 8px !important;
+  background: var(--chrome-bg-soft) !important;
+}
+
+.diagnostics-summary-card {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}

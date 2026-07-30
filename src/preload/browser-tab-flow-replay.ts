@@ -1,3 +1,9 @@
+import {
+  collectSameOriginDocuments,
+  findElementInOpenShadowTree,
+  resolveShadowHostChainRoot,
+} from './browser-tab-selector-engine';
+
 export interface ReplayClickPoint {
   normalizedX: number;
   normalizedY: number;
@@ -17,7 +23,7 @@ interface LoggerLike {
   warn: (...args: unknown[]) => void;
 }
 
-const DEFAULT_TIMEOUT_MS = 1200;
+const DEFAULT_TIMEOUT_MS = 2000;
 const DEFAULT_RETRY_MS = 120;
 const MIN_TIMEOUT_MS = 200;
 const MAX_TIMEOUT_MS = 4000;
@@ -52,79 +58,6 @@ function normalizeSelectorList(input: unknown): string[] {
     result.push(trimmed);
   }
   return result;
-}
-
-function safeQuerySelector(root: Document | ShadowRoot, selector: string): Element | null {
-  try {
-    return root.querySelector(selector);
-  } catch {
-    return null;
-  }
-}
-
-function findElementInRoot(root: Document | ShadowRoot, selectors: string[]): HTMLElement | null {
-  for (const selector of selectors) {
-    const found = safeQuerySelector(root, selector);
-    if (found instanceof HTMLElement) return found;
-  }
-  return null;
-}
-
-function findElementInOpenShadowTree(
-  root: Document | ShadowRoot,
-  selectors: string[],
-): HTMLElement | null {
-  const direct = findElementInRoot(root, selectors);
-  if (direct) return direct;
-
-  for (const node of root.querySelectorAll('*')) {
-    if (!(node instanceof HTMLElement)) continue;
-    const shadowRoot = node.shadowRoot;
-    if (!shadowRoot) continue;
-    const nested = findElementInOpenShadowTree(shadowRoot, selectors);
-    if (nested) return nested;
-  }
-
-  return null;
-}
-
-function resolveShadowHostChainRoot(
-  startRoot: Document | ShadowRoot,
-  hostSelectorChain: string[][],
-): Document | ShadowRoot | null {
-  if (hostSelectorChain.length === 0) return startRoot;
-
-  let currentRoot: Document | ShadowRoot = startRoot;
-  for (const hostSelectors of hostSelectorChain) {
-    const host = findElementInOpenShadowTree(currentRoot, hostSelectors);
-    if (!host?.shadowRoot) return null;
-    currentRoot = host.shadowRoot;
-  }
-  return currentRoot;
-}
-
-function collectSameOriginDocuments(rootDocument: Document): Document[] {
-  const docs: Document[] = [];
-  const visited = new Set<Document>();
-
-  const visit = (doc: Document): void => {
-    if (visited.has(doc)) return;
-    visited.add(doc);
-    docs.push(doc);
-
-    for (const frameNode of doc.querySelectorAll('iframe,frame')) {
-      const frame = frameNode as HTMLIFrameElement | HTMLFrameElement;
-      try {
-        const childDoc = frame.contentDocument;
-        if (childDoc) visit(childDoc);
-      } catch {
-        // Cross-origin frames are intentionally skipped.
-      }
-    }
-  };
-
-  visit(rootDocument);
-  return docs;
 }
 
 function findCanvasFallback(

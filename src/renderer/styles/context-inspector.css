@@ -1683,11 +1683,11 @@
 
 :where(#context-inspector) .config-section-header {
   min-height: 28px;
-  border-radius: 9px;
+  border-radius: 0;
 }
 
 :where(#context-inspector) .config-section-header:hover {
-  background: color-mix(in srgb, var(--surface-hover) 34%, transparent);
+  background: transparent;
 }
 
 :where(#context-inspector) .config-item:not(.auto-approval-item),

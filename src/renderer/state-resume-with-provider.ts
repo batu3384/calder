@@ -3,6 +3,7 @@ import type { ProviderId } from '../shared/types/provider.js';
 import type { SessionRecord } from '../shared/types/session.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
+import { unsuppressHistoryCliSessionId } from './state-history.js';
 
 interface ResumeWithProviderSource {
   archivedSessionId?: string;
@@ -29,6 +30,7 @@ function resolveSourceSession(
   if (source.archivedSessionId) {
     const archived = project.sessionHistory?.find((entry) => entry.id === source.archivedSessionId);
     if (!archived || !archived.providerId) return null;
+    if (archived.cliSessionId) unsuppressHistoryCliSessionId(project, archived.cliSessionId);
     return {
       sourceProviderId: archived.providerId,
       sourceCliSessionId: archived.cliSessionId,

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockResolveBrowserTargetSession = vi.fn();
-const mockDeliverSurfacePrompt = vi.fn();
+const mockDeliverBrowserCapturePrompt = vi.fn();
 const mockQueueSurfacePromptInNewSession = vi.fn();
 const mockQueueSurfacePromptInCustomSession = vi.fn();
 const mockDismissInspect = vi.fn();
@@ -63,7 +63,7 @@ vi.mock('../surface-services/provider-availability.js', () => ({
 }));
 
 vi.mock('../surface-routing.js', () => ({
-  deliverSurfacePrompt: mockDeliverSurfacePrompt,
+  deliverBrowserCapturePrompt: mockDeliverBrowserCapturePrompt,
   queueSurfacePromptInNewSession: mockQueueSurfacePromptInNewSession,
   queueSurfacePromptInCustomSession: mockQueueSurfacePromptInCustomSession,
 }));
@@ -107,21 +107,24 @@ describe('browser session integration errors', () => {
   it('delivers inspect prompts to the selected session and focuses that session on success', async () => {
     const { sendToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-1' });
+    mockDeliverBrowserCapturePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-1' });
     mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-1', providerId: 'claude' });
 
     await sendToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
       'project-1',
+      'browser-1',
       expect.stringContaining('inspect prompt'),
     );
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
       'project-1',
+      'browser-1',
       expect.stringContaining('Project context:'),
     );
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
       'project-1',
+      'browser-1',
       expect.stringContaining('Shared rules: testing.hard.md'),
     );
     expect(mockDismissInspect).toHaveBeenCalledTimes(1);
@@ -137,7 +140,7 @@ describe('browser session integration errors', () => {
   it('shows an inspect error when no target session is selected', async () => {
     const { sendToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({
+    mockDeliverBrowserCapturePrompt.mockResolvedValue({
       ok: false,
       error: 'Select an open session target first.',
     });
@@ -152,7 +155,7 @@ describe('browser session integration errors', () => {
   it('shows a flow error when delivery to the selected session fails', async () => {
     const { sendFlowToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({
+    mockDeliverBrowserCapturePrompt.mockResolvedValue({
       ok: false,
       error: 'Failed to deliver prompt to the selected session.',
     });
@@ -169,17 +172,19 @@ describe('browser session integration errors', () => {
   it('delivers flow prompts to the selected session and focuses that session on success', async () => {
     const { sendFlowToSelectedSession } = await import('./session-integration.js');
     const instance = makeInstance();
-    mockDeliverSurfacePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-2' });
+    mockDeliverBrowserCapturePrompt.mockResolvedValue({ ok: true, targetSessionId: 'cli-2' });
     mockResolveBrowserTargetSession.mockReturnValue({ id: 'cli-2', providerId: 'claude' });
 
     await sendFlowToSelectedSession(instance);
 
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
       'project-1',
+      'browser-1',
       expect.stringContaining('flow prompt'),
     );
-    expect(mockDeliverSurfacePrompt).toHaveBeenCalledWith(
+    expect(mockDeliverBrowserCapturePrompt).toHaveBeenCalledWith(
       'project-1',
+      'browser-1',
       expect.stringContaining('Project context:'),
     );
     expect(mockDismissFlow).toHaveBeenCalledTimes(1);

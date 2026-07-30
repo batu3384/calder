@@ -57,8 +57,14 @@ describe('precision cockpit theme contract', () => {
   });
 
   it('loads the command studio premium theme after feature styles', () => {
-    expect(imports.trim().endsWith("@import url('./styles/responsive-layout.css');")).toBe(true);
+    expect(imports.trim().endsWith("@import url('./styles/chrome-rail.css');")).toBe(true);
     expect(imports).toContain("@import url('./styles/theme-command-studio.css');");
+    expect(imports).toContain("@import url('./styles/responsive-layout.css');");
+    expect(imports).toContain("@import url('./styles/chrome-rail.css');");
+    expect(imports.indexOf("theme-command-studio.css")).toBeLessThan(
+      imports.indexOf('responsive-layout.css'),
+    );
+    expect(imports.indexOf('responsive-layout.css')).toBeLessThan(imports.indexOf('chrome-rail.css'));
     expect(baseCss).toContain('--accent-aurora');
     expect(baseCss).not.toContain('--surface-canvas: #090705;');
     expect(auroraCss).toContain('--aurora-panel-gradient');
@@ -130,6 +136,60 @@ describe('precision cockpit theme contract', () => {
     expect(commandStudioCss).not.toContain('rgba(11, 18, 26');
     expect(tabsCss).toContain('.surface-live-view-btn');
     expect(tabsCss).not.toContain('.surface-mode-switcher');
+  });
+
+  it('keeps chrome-rail scoped to #tab-bar so the workspace stack never collapses', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    // Strip comments — SCOPING note names the shared class without selecting it.
+    const rulesOnly = chromeRailCss.replace(/\/\*[\s\S]*?\*\//g, '');
+    // #workspace-stack also carries these classes; sizing them collapses the whole center pane.
+    expect(rulesOnly).not.toMatch(/\.session-deck-surface[\s,{]/);
+    expect(rulesOnly).not.toMatch(/\.tab-bar-surface[\s,{]/);
+    expect(chromeRailCss).toContain('#tab-bar {');
+  });
+
+  it('pins top-bar actions so many sessions never crush Live View / provider controls', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    expect(chromeRailCss).toContain('#tab-bar #tab-actions');
+    expect(chromeRailCss).toContain('min-width: max-content !important;');
+    expect(chromeRailCss).toContain('max-width: none !important;');
+    expect(chromeRailCss).toContain('#tab-bar .tab-status-label');
+    expect(chromeRailCss).toContain('display: none !important;');
+  });
+
+  it('removes inspector section accent bars that overlap titles', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    expect(chromeRailCss).toContain('.context-inspector-section::before');
+    expect(chromeRailCss).toContain('content: none !important;');
+  });
+
+  it('restores tab drag drop indicators under chrome-rail', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    expect(chromeRailCss).toContain('#tab-bar .tab-item.drag-over-left');
+    expect(chromeRailCss).toContain('#tab-bar .tab-item.drag-over-right');
+    expect(chromeRailCss).toContain('inset 3px 0 0 var(--accent)');
+  });
+
+  it('kills accordion hover card pills in the inspector', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    expect(chromeRailCss).toContain('#context-inspector .config-section-header:hover');
+    expect(chromeRailCss).toContain('border-radius: 0 !important;');
+  });
+
+  it('kills auto-approval hover cards under chrome-rail', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    expect(chromeRailCss).toContain('#context-inspector .auto-approval-scope-card:hover');
+    expect(chromeRailCss).toContain('#context-inspector .auto-approval-select:hover');
+    expect(chromeRailCss).toContain('background: transparent !important;');
+  });
+
+  it('matches resize handle idle color to chrome background', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    const sidebarCss = readFileSync(new URL('./sidebar.css', import.meta.url), 'utf-8');
+    expect(sidebarCss).toContain('#sidebar-resize-handle');
+    expect(sidebarCss).toContain('background: var(--chrome-bg, #0b0b0c);');
+    expect(chromeRailCss).toContain('#sidebar-resize-handle');
+    expect(chromeRailCss).toContain('background: var(--chrome-bg) !important;');
   });
 
   it('defines shared cockpit control classes', () => {

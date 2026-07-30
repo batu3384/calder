@@ -475,6 +475,41 @@ html[lang='tr'] .browser-toolbar-cluster-label {
   max-width: 100%;
 }
 
+.browser-capture-target-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 132px;
+  min-height: 24px;
+  margin-left: 2px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.browser-capture-target-chip:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-panel));
+}
+
+.browser-capture-target-chip[data-state='missing'] {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.browser-capture-target-chip[data-provider] {
+  border-color: color-mix(in srgb, var(--provider-accent, var(--accent)) 28%, var(--border-subtle));
+}
+
 .browser-tab-pane.split .browser-tab-toolbar {
   align-items: center;
 }
@@ -876,82 +911,93 @@ body.sidebar-resizing .browser-webview {
     linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)), var(--surface-live);
 }
 
-/* New Tab Page */
+/* New Tab Page — calm empty surface (Linear/Cursor chrome language) */
 .browser-new-tab-page {
   position: absolute;
   inset: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   justify-content: flex-start;
   gap: 28px;
-  padding: 40px 44px;
+  padding: clamp(36px, 8vh, 72px) 28px 40px;
   overflow: auto;
-  background: var(--surface-canvas);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(111, 154, 166, 0.09), transparent 62%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(255, 255, 255, 0.02), transparent 55%),
+    var(--chrome-bg, #0b0b0c);
 }
 
 .browser-ntp-eyebrow {
-  color: var(--text-dim);
-  font-size: var(--type-xs);
-  font-weight: 650;
+  color: var(--chrome-dim, var(--text-dim));
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .browser-ntp-title {
-  max-width: 640px;
-  font-family: var(--font-display);
-  font-size: 28px;
+  max-width: 520px;
+  font-family: var(--font-display, inherit);
+  font-size: clamp(22px, 2.4vw, 28px);
   line-height: 1.15;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--chrome-text, var(--text-primary));
+  text-wrap: balance;
 }
 
 .browser-ntp-subtitle {
-  max-width: 520px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text-muted);
+  max-width: 440px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--chrome-muted, var(--text-muted));
+  text-wrap: pretty;
 }
 
 .browser-ntp-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .browser-ntp-action {
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface-panel));
-  color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 600;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--chrome-line, var(--border-subtle)));
+  background: color-mix(in srgb, var(--accent) 14%, var(--chrome-bg-soft, var(--surface-panel)));
+  color: var(--chrome-text, var(--text-primary));
+  font-size: 12.5px;
+  font-weight: 550;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .browser-ntp-action:hover {
-  background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface-hover));
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent) 22%, var(--chrome-bg-soft, var(--surface-hover)));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--chrome-line-strong, var(--border)));
+}
+
+.browser-ntp-action:active {
+  transform: translateY(1px);
 }
 
 .browser-ntp-action-secondary {
   background: transparent;
-  border-color: var(--border-subtle);
-  color: var(--text-secondary);
+  border-color: var(--chrome-line-strong, var(--border-subtle));
+  color: var(--chrome-muted, var(--text-secondary));
 }
 
 .browser-ntp-action-secondary:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
+  background: var(--chrome-hover, var(--surface-hover));
+  color: var(--chrome-text, var(--text-primary));
 }
 
 @container workspace-stack (max-width: 1120px) {
@@ -1153,8 +1199,9 @@ body.sidebar-resizing .browser-webview {
 
 .browser-ntp-hero {
   display: grid;
-  gap: 10px;
-  width: min(640px, 100%);
+  gap: 12px;
+  width: min(520px, 100%);
+  justify-items: start;
 }
 
 .browser-ntp-hero-top {
@@ -1162,25 +1209,31 @@ body.sidebar-resizing .browser-webview {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+  width: 100%;
 }
 
 .browser-ntp-state {
-  color: var(--text-dim);
-  font-size: var(--type-xs);
-  font-weight: 600;
+  color: var(--chrome-dim, var(--text-dim));
+  font-size: 11px;
+  font-weight: 550;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--chrome-line, var(--border-subtle));
+  background: color-mix(in srgb, var(--chrome-bg-soft, #111113) 88%, transparent);
 }
 
 .browser-ntp-state[data-state='offline'],
 .browser-ntp-state[data-state='unavailable'] {
   color: color-mix(in srgb, var(--danger) 78%, var(--text-primary));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--chrome-line, transparent));
 }
 
 .browser-ntp-layout {
   display: grid;
-  gap: 12px;
-  width: min(640px, 100%);
+  gap: 0;
+  width: min(520px, 100%);
 }
 
 .browser-ntp-section-header {
@@ -1188,55 +1241,65 @@ body.sidebar-resizing .browser-webview {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--chrome-line, var(--border-subtle));
 }
 
 .browser-ntp-targets {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  padding: 18px 0 0;
 }
 
 .browser-ntp-section-title {
-  color: var(--text-secondary);
-  font-size: var(--type-sm);
-  font-weight: 620;
+  color: var(--chrome-muted, var(--text-secondary));
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
 }
 
 .browser-ntp-section-meta {
-  color: var(--text-dim);
-  font-size: var(--type-xs);
-  font-weight: 600;
+  color: var(--chrome-dim, var(--text-dim));
+  font-size: 11px;
+  font-weight: 500;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .browser-ntp-section-copy {
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--chrome-muted, var(--text-muted));
 }
 
 .browser-ntp-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   width: 100%;
+  border: 1px solid var(--chrome-line, var(--border-subtle));
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--chrome-bg-soft, #111113) 70%, transparent);
 }
 
 .browser-ntp-empty {
-  padding: 12px 0;
-  color: var(--text-muted);
+  padding: 18px 14px;
+  color: var(--chrome-muted, var(--text-muted));
   font-size: 13px;
   line-height: 1.5;
-  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  border: 0;
 }
 
 .browser-ntp-link {
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 11px 14px;
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  border: 0;
+  border-bottom: 1px solid var(--chrome-line, var(--border-subtle));
+  border-radius: 0;
+  color: var(--chrome-muted, var(--text-secondary));
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -1245,12 +1308,19 @@ body.sidebar-resizing .browser-webview {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.browser-ntp-link:last-child {
+  border-bottom: 0;
 }
 
 .browser-ntp-link:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+  background: var(--chrome-hover, var(--surface-hover));
+  color: var(--chrome-text, var(--text-primary));
+  border-color: var(--chrome-line, var(--border-subtle));
 }
 
 .browser-ntp-link-label {
@@ -1676,6 +1746,77 @@ button.inspect-selector-option {
   color: #6aa0d8;
 }
 .inspect-selector-option.active .selector-badge-attr {
+  color: #fff;
+}
+
+.inspect-selector-status {
+  margin: 6px 0 4px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-panel) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
+}
+
+.inspect-selector-status[data-status='unique'] {
+  color: #4caf50;
+  border-color: color-mix(in srgb, #4caf50 35%, var(--border-subtle));
+}
+
+.inspect-selector-status[data-status='ambiguous'] {
+  color: #d8a53a;
+  border-color: color-mix(in srgb, #d8a53a 35%, var(--border-subtle));
+}
+
+.inspect-selector-status[data-status='missing'] {
+  color: #ef6b6b;
+  border-color: color-mix(in srgb, #ef6b6b 35%, var(--border-subtle));
+}
+
+.selector-match-status {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--bg-tertiary);
+}
+
+.inspect-selector-option[data-selector-status='unique'] .selector-match-status {
+  color: #fff;
+  background: #4caf50;
+}
+
+.inspect-selector-option[data-selector-status='ambiguous'] .selector-match-status {
+  color: #1a1408;
+  background: #d8a53a;
+}
+
+.inspect-selector-option[data-selector-status='missing'] .selector-match-status {
+  color: #fff;
+  background: #ef6b6b;
+}
+
+.selector-badge-class {
+  color: #9b7bff;
+}
+.inspect-selector-option.active .selector-badge-class {
+  color: #fff;
+}
+
+.selector-badge-aria,
+.selector-badge-role,
+.selector-badge-name {
+  color: #c58cff;
+}
+.inspect-selector-option.active .selector-badge-aria,
+.inspect-selector-option.active .selector-badge-role,
+.inspect-selector-option.active .selector-badge-name {
   color: #fff;
 }
 
@@ -2448,71 +2589,82 @@ button.inspect-selector-option {
   }
 }
 
-/* Calder enterprise new tab: quiet canvas, structured panels. */
+/* NTP finish pass — matches chrome-rail language (last-wins over earlier NTP rules). */
 .browser-new-tab-page {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-elevated) 84%, black),
-    var(--surface-canvas)
-  );
-  padding: 32px 36px;
-  gap: 14px;
+  align-items: center;
+  gap: 28px;
+  padding: clamp(36px, 8vh, 72px) 28px 40px;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(111, 154, 166, 0.09), transparent 62%),
+    radial-gradient(ellipse 50% 40% at 80% 100%, rgba(255, 255, 255, 0.02), transparent 55%),
+    var(--chrome-bg, #0b0b0c);
 }
 
 .browser-ntp-title {
-  max-width: 720px;
-  font-size: 28px;
-  font-weight: 650;
-  letter-spacing: -0.025em;
-  color: var(--text-primary);
+  max-width: 520px;
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--chrome-text, var(--text-primary));
   background: none;
   -webkit-background-clip: initial;
   background-clip: initial;
 }
 
 .browser-ntp-subtitle {
-  max-width: 560px;
-  font-size: 12.5px;
-  color: var(--text-muted);
+  max-width: 440px;
+  font-size: 13.5px;
+  color: var(--chrome-muted, var(--text-muted));
 }
 
 .browser-ntp-eyebrow {
-  border-radius: 8px;
-  border-color: color-mix(in srgb, var(--accent) 26%, var(--border-subtle));
-  background: color-mix(in srgb, var(--accent-soft) 46%, transparent);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
   font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--chrome-dim, var(--text-dim));
 }
 
 .browser-ntp-action {
-  min-height: 32px;
-  border-radius: 8px;
-  font-size: 12px;
-  background: color-mix(in srgb, var(--accent-soft) 52%, var(--surface-panel));
+  min-height: 34px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 550;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--chrome-line, var(--border-subtle)));
+  background: color-mix(in srgb, var(--accent) 14%, var(--chrome-bg-soft, var(--surface-panel)));
 }
 
 .browser-ntp-action-secondary {
-  background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
+  background: transparent;
+  border-color: var(--chrome-line-strong, var(--border-subtle));
+  color: var(--chrome-muted, var(--text-secondary));
 }
 
 .browser-ntp-panel {
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 74%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-panel) 76%, transparent);
+  border: 1px solid var(--chrome-line, var(--border-subtle));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--chrome-bg-soft, #111113) 70%, transparent);
   box-shadow: none;
 }
 
 .browser-ntp-section-title {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--chrome-muted, var(--text-secondary));
 }
 
 .browser-ntp-section-copy {
-  color: var(--text-muted);
-  font-size: 11.5px;
+  color: var(--chrome-muted, var(--text-muted));
+  font-size: 12.5px;
 }
 
 .browser-ntp-flow-step {
-  border-color: color-mix(in srgb, var(--border-subtle) 68%, transparent);
-  background: color-mix(in srgb, var(--surface-panel-alt) 52%, transparent);
+  border-color: var(--chrome-line, var(--border-subtle));
+  background: var(--chrome-bg-soft, var(--surface-panel-alt));
 }
 
 .browser-ntp-flow-index {
@@ -2521,8 +2673,6 @@ button.inspect-selector-option {
 
 .browser-pane-chrome {
   min-height: 34px;
-  border-bottom: 1px solid var(--border-hairline);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 96%, black);
+  border-bottom: 1px solid var(--chrome-line, var(--border-hairline));
+  background: var(--chrome-bg, var(--surface-panel));
 }

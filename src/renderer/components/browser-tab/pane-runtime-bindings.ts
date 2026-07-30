@@ -19,6 +19,7 @@ import {
 import { attachBrowserWebviewBindings, type BrowserNewTabStateBindings } from './pane-runtime.js';
 import { type BrowserTabInstance, VIEWPORT_PRESETS, type WebviewElement } from './types.js';
 import { applyViewport } from './viewport.js';
+import { openBrowserTargetMenu } from './target-menu.js';
 
 type ViewportMenuFocusMode = 'selected' | 'first' | 'last' | 'none';
 
@@ -212,6 +213,16 @@ export function initializeBrowserTabRuntimeBindings(
     inspectBtn,
     drawBtn,
     recordBtn,
+  });
+  captureCluster.targetChip.addEventListener('click', () => {
+    const mode = instance.inspectMode
+      ? 'inspect'
+      : instance.drawMode
+        ? 'draw'
+        : instance.flowMode
+          ? 'flow'
+          : 'inspect';
+    openBrowserTargetMenu(instance, captureCluster.targetChip, mode);
   });
   const authController = createBrowserAuthController({
     instance,

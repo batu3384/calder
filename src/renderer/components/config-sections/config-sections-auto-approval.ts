@@ -6,8 +6,6 @@ import type {
 import {
   appendAutoApprovalControls,
   type AutoApprovalScopeSummary,
-  createModeGuide,
-  createModeSelect,
 } from './config-sections-auto-approval-controls-helpers.js';
 import {
   autoApprovalModeBehavior,
@@ -31,7 +29,7 @@ import {
  * sessionSelect.value === SESSION_INHERIT_VALUE
  */
 
-export { createModeGuide, createModeSelect };
+export { createModeSelect } from './config-sections-auto-approval-controls-helpers.js';
 
 export function describeAutoApprovalScopes(
   autoApproval: ProjectGovernanceAutoApprovalState,
@@ -106,7 +104,6 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     governanceState,
     supportsPermissionHooks,
     sessionId,
-    esc,
     refresh,
     renderSection,
   } = args;
@@ -116,58 +113,8 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const item = document.createElement('div');
   item.className = 'config-item auto-approval-item';
 
-  const scopeSummary = describeAutoApprovalScopes(autoApproval);
-  if (!supportsPermissionHooks) {
-    scopeSummary.effectiveBehavior = localizedText(
-      'Manual approval only — this provider has no permission-hook auto-approval path.',
-      'Yalnızca manuel onay — bu sağlayıcıda izin-hook otomatik onay yolu yok.',
-    );
-    scopeSummary.effectiveAutoRuns = localizedText(
-      'None (provider unsupported)',
-      'Yok (sağlayıcı desteklemiyor)',
-    );
-    scopeSummary.effectiveStillAsks = localizedText('Everything', 'Her şey');
-    scopeSummary.effectiveExplanation = localizedText(
-      'Policy may say otherwise, but this provider cannot auto-approve; Calder always asks.',
-      'Politika farklı dese de bu sağlayıcı otomatik onaylayamaz; Calder her zaman sorar.',
-    );
-  }
-  const displayEffectiveMode = supportsPermissionHooks ? autoApproval.effectiveMode : 'ask';
-  const effectiveModeLabel = localizedText('Effective mode', 'Etkin mod');
-  const globalPolicyLabel = localizedText('Global', 'Global');
-  const projectPolicyLabel = localizedText('Project', 'Proje');
-  const sessionPolicyLabel = localizedText('Session', 'Oturum');
-
-  const summary = document.createElement('div');
-  summary.className = 'auto-approval-summary';
-  const effectiveSourceLabel = localizedText('Source', 'Kaynak');
-  const riskNote =
-    displayEffectiveMode === 'session_safe'
-      ? localizedText(
-          'Session safe auto-approves project edits and read-only tools. Destructive and outside-project actions still ask.',
-          'Oturum güvenli: proje düzenlemeleri ve salt-okunur araçlar otomatik onaylanır. Yıkıcı ve proje-dışı işlemler hâlâ sorar.',
-        )
-      : null;
-  summary.innerHTML = `
-    <div class="auto-approval-summary-header auto-approval-current-card">
-      <span class="config-item-name">${esc(effectiveModeLabel)}</span>
-      <span class="auto-approval-effective-value">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
-    </div>
-    <div class="auto-approval-summary-source">${esc(effectiveSourceLabel)}: ${esc(scopeSummary.effectiveSource)}</div>
-    ${
-      riskNote
-        ? `<div class="auto-approval-risk-note" data-tone="warning">${esc(riskNote)}</div>`
-        : ''
-    }
-  `;
-  item.appendChild(summary);
-
   appendAutoApprovalControls({
     autoApproval,
-    scopeSummary,
-    globalPolicyLabel,
-    projectPolicyLabel,
-    sessionPolicyLabel,
     supportsPermissionHooks,
     sessionId,
     projectId,
@@ -180,7 +127,7 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     'auto-approval',
     localizedText('Auto Approval', 'Otomatik Onay'),
     [item],
-    1,
+    0,
     undefined,
     localizedText('Auto approval unavailable', 'Otomatik onay kullanılamıyor'),
   );

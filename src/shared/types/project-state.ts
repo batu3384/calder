@@ -30,6 +30,8 @@ export interface ProjectRecord {
   projectCheckpoints?: ProjectCheckpointState;
   layout: ProjectLayoutState;
   sessionHistory?: ArchivedSession[];
+  /** cliSessionIds the user removed from history — skip re-archive until resume. */
+  suppressedHistoryCliSessionIds?: string[];
   insights?: ProjectInsightsData;
   defaultArgs?: string;
   terminalPanelOpen?: boolean;
