@@ -97,12 +97,12 @@ describe('getActiveCliProviderId', () => {
       return `${configSections}\n${autoApprovalSection}\n${autoApprovalI18n}`;
     });
 
-    expect(source).toContain('Use Global Default');
-    expect(source).toContain('Use Project / Global Default');
-    expect(source).toContain('Global Default');
-    expect(source).toContain('Project Policy');
-    expect(source).toContain('Session Policy');
-    expect(source).toContain('Effective Mode');
+    expect(source).toContain('Follow global default');
+    expect(source).toContain('Follow project default');
+    expect(source).toContain("'Global'");
+    expect(source).toContain("'Project'");
+    expect(source).toContain("'Session'");
+    expect(source).toContain('Effective mode');
     expect(source).toContain('PROJECT_INHERIT_VALUE');
     expect(source).toContain('SESSION_INHERIT_VALUE');
     expect(source).toContain('projectSelect.value === PROJECT_INHERIT_VALUE');
@@ -122,8 +122,8 @@ describe('getActiveCliProviderId', () => {
     });
 
     expect(summary.global).toBe('Auto-approve project edits');
-    expect(summary.project).toBe('Use Global Default');
-    expect(summary.session).toBe('Use Project / Global Default');
+    expect(summary.project).toBe('Follow global default');
+    expect(summary.session).toBe('Follow project default');
     expect(summary.effectiveSource).toBe('Global default');
     expect(summary.effectiveExplanation).toBe(
       'Project and Session follow higher scope, so Global setting applies.',

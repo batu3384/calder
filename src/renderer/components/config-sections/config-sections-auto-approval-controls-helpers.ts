@@ -42,7 +42,6 @@ function createAutoApprovalScopeCard(
   title: string,
   helperText: string,
   select: HTMLSelectElement,
-  statusLabel: string,
   active: boolean,
 ): HTMLDivElement {
   const card = document.createElement('div');
@@ -50,25 +49,15 @@ function createAutoApprovalScopeCard(
   card.title = helperText;
   card.dataset.active = active ? 'true' : 'false';
 
-  const header = document.createElement('div');
-  header.className = 'auto-approval-scope-header';
-
   const titleElement = document.createElement('div');
   titleElement.className = 'auto-approval-scope-title';
   titleElement.textContent = title;
-
-  const status = document.createElement('span');
-  status.className = 'auto-approval-scope-status control-chip';
-  status.textContent = statusLabel;
-
-  header.appendChild(titleElement);
-  header.appendChild(status);
 
   const control = document.createElement('div');
   control.className = 'auto-approval-scope-control';
   control.appendChild(select);
 
-  card.appendChild(header);
+  card.appendChild(titleElement);
   card.appendChild(control);
   return card;
 }
@@ -174,7 +163,6 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
       globalPolicyLabel,
       scopeHelp.global,
       globalSelect,
-      scopeSummary.global,
       autoApproval.policySource === 'global',
     ),
   );
@@ -225,7 +213,6 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
       projectPolicyLabel,
       scopeHelp.project,
       projectSelect,
-      scopeSummary.project,
       autoApproval.policySource === 'project',
     ),
   );
@@ -287,7 +274,6 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
       sessionPolicyLabel,
       sessionHelper,
       sessionSelect,
-      scopeSummary.session,
       autoApproval.policySource === 'session',
     ),
   );

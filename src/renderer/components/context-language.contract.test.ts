@@ -25,9 +25,7 @@ describe('context language contract', () => {
   it('uses curated section language in the right inspector', () => {
     expect(html).toContain('Inspector');
     expect(html).toContain('Workspace Pulse');
-    expect(html).toContain(
-      'Run controls, project state, and tools stay separated so the rail stays',
-    );
+    expect(html).not.toContain('context-inspector-header-note');
     expect(html).toContain('context-inspector-tabs');
     expect(html).toContain('aria-controls="context-inspector-panel-run"');
     expect(html).toContain('aria-controls="context-inspector-panel-project"');
@@ -37,8 +35,7 @@ describe('context language contract', () => {
     expect(html).toContain('aria-labelledby="context-inspector-tab-project"');
     expect(html).toContain('aria-labelledby="context-inspector-tab-timeline"');
     expect(html).toContain('id="diagnostics-summary"');
-    expect(html).toContain('Worktree status, branches, and safe git actions.');
-    expect(html).toContain('Recent runs, notes, and session timeline.');
+    expect(html).not.toContain('context-inspector-block-copy');
     expect(html).not.toContain('id="context-inspector-overview"');
     expect(html).toContain(
       'class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"',
@@ -66,7 +63,7 @@ describe('context language contract', () => {
     expect(inspectorSource).not.toContain('context-inspector-surface-chip');
     expect(inspectorSource).not.toContain('context-inspector-signal-chip');
     expect(html).not.toContain('Calder Signal');
-    expect(html).toContain('context-inspector-header-note');
+    expect(html).not.toContain('context-inspector-header-note');
     expect(html).not.toContain('Ops Rail');
     expect(html).not.toContain('Support');
     expect(html).not.toContain('AI Setup');
@@ -103,7 +100,7 @@ describe('context language contract', () => {
     expect(inspectorCss).toContain('#context-inspector .config-item');
     expect(inspectorCss).toContain('box-shadow: none');
     expect(inspectorCss).toContain('overflow-wrap: anywhere;');
-    expect(inspectorCss).toContain('.context-inspector-header-note');
+    expect(inspectorCss).toContain('.auto-approval-effective-value');
     expect(inspectorCss).toContain('.auto-approval-control');
     expect(inspectorCss).toContain('.diagnostics-summary');
     expect(inspectorCss).toContain('.diagnostics-summary-grid');

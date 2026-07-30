@@ -39,7 +39,7 @@ type Section = 'general' | 'interface' | 'tools' | 'automation' | 'safety' | 'sh
 const PREFERENCE_SECTIONS: Array<{ id: Section; label: string; caption: string }> = [
   { id: 'general', label: 'Session', caption: 'Startup, language, and session memory' },
   { id: 'interface', label: 'Interface', caption: 'Shell layout, rails, and live view behavior' },
-  { id: 'tools', label: 'Tools', caption: 'CLI provider health' },
+  { id: 'tools', label: 'Tools', caption: 'CLI providers and dependency health' },
   {
     id: 'automation',
     label: 'Automation',

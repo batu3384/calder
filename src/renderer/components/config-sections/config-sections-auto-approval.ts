@@ -133,10 +133,10 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     );
   }
   const displayEffectiveMode = supportsPermissionHooks ? autoApproval.effectiveMode : 'ask';
-  const effectiveModeLabel = localizedText('Effective Mode', 'Etkin Mod');
-  const globalPolicyLabel = localizedText('Global Default', 'Global Varsayılan');
-  const projectPolicyLabel = localizedText('Project Policy', 'Proje Politikası');
-  const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
+  const effectiveModeLabel = localizedText('Effective mode', 'Etkin mod');
+  const globalPolicyLabel = localizedText('Global', 'Global');
+  const projectPolicyLabel = localizedText('Project', 'Proje');
+  const sessionPolicyLabel = localizedText('Session', 'Oturum');
 
   const summary = document.createElement('div');
   summary.className = 'auto-approval-summary';
@@ -151,7 +151,7 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
       <span class="config-item-name">${esc(effectiveModeLabel)}</span>
-      <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
+      <span class="auto-approval-effective-value">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
     </div>
     <div class="auto-approval-summary-source">${esc(effectiveSourceLabel)}: ${esc(scopeSummary.effectiveSource)}</div>
     ${

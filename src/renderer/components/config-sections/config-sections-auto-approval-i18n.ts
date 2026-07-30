@@ -39,11 +39,11 @@ export function autoApprovalModeLabel(mode: AutoApprovalMode): string {
 }
 
 export function projectInheritLabel(): string {
-  return localizedText('Use Global Default', 'Global varsayılanını kullan');
+  return localizedText('Follow global default', 'Global varsayılanı izle');
 }
 
 export function sessionInheritLabel(): string {
-  return localizedText('Use Project / Global Default', 'Proje / Global varsayılanını kullan');
+  return localizedText('Follow project default', 'Proje varsayılanını izle');
 }
 
 export function autoApprovalScopeHelp(): { global: string; project: string; session: string } {

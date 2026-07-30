@@ -193,20 +193,14 @@
 
 .diagnostics-summary {
   display: grid;
-  gap: 10px;
-  margin: 2px 0 10px;
-  padding: 11px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  border-radius: 14px;
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 14%, transparent),
-      transparent 46%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 74%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0 0 12px;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .diagnostics-summary[hidden] {
@@ -214,19 +208,11 @@
 }
 
 .diagnostics-summary[data-tone='active'] {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
+  border-bottom-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
 }
 
 .diagnostics-summary[data-tone='warning'] {
-  border-color: color-mix(in srgb, var(--accent-warning) 30%, var(--border-subtle));
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-warning) 12%, transparent),
-      transparent 46%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 74%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--accent-warning) 30%, var(--border-subtle));
 }
 
 .diagnostics-summary-header {
@@ -250,19 +236,27 @@
 
 .diagnostics-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
   min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .diagnostics-summary-card {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
   padding: 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--surface-panel-alt) 58%, transparent);
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  background: color-mix(in srgb, var(--surface-panel-alt) 42%, transparent);
+}
+
+.diagnostics-summary-card:last-child {
+  border-right: none;
 }
 
 .diagnostics-summary-card[data-tone='active'] {
@@ -308,38 +302,22 @@
 }
 
 #context-inspector .context-inspector-section[data-section='capabilities'] {
-  padding: 12px 12px 10px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
-  border-radius: 16px;
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 18%, transparent),
-      transparent 42%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 80%, black);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 26px rgba(2, 4, 10, 0.12);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 #context-inspector[data-rail-signal='active']
   .context-inspector-section[data-section='capabilities'] {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
+  border-color: transparent;
 }
 
 #context-inspector[data-rail-signal='warning']
   .context-inspector-section[data-section='capabilities'] {
-  border-color: color-mix(in srgb, var(--accent-warning) 30%, var(--border-subtle));
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-warning) 12%, transparent),
-      transparent 40%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 80%, black);
+  border-color: transparent;
+  background: transparent;
 }
 
 #context-inspector
@@ -632,13 +610,26 @@
 
 #context-inspector .auto-approval-summary-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
   flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+#context-inspector .auto-approval-effective-value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 #context-inspector .auto-approval-summary-header .config-item-name {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
   min-width: 0;
   flex: 1 1 120px;
 }
@@ -737,52 +728,39 @@
 
 #context-inspector .auto-approval-scope-card {
   display: grid;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-muted) 68%, black);
+  gap: 5px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
-#context-inspector .auto-approval-scope-card[data-active='true'] {
+#context-inspector .auto-approval-scope-card[data-active='true'] .auto-approval-scope-title {
+  color: var(--text-primary);
+}
+
+#context-inspector .auto-approval-scope-card[data-active='true'] .auto-approval-select {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.012)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-muted) 74%, black);
 }
 
 #context-inspector .auto-approval-scope-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
+  display: none;
 }
 
 #context-inspector .auto-approval-scope-title {
-  color: var(--text-secondary);
-  font-size: 11.5px;
+  color: var(--text-dim);
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
 }
 
 #context-inspector .auto-approval-scope-status {
-  flex: 0 0 auto;
-  max-width: 62%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: none;
 }
 
 #context-inspector .auto-approval-scope-control {
