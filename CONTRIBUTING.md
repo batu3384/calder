@@ -63,7 +63,7 @@ Then open the `.heapsnapshot` file in Chrome DevTools > Memory tab.
 ┌─────────────────────────────────────────────────────────┐
 │ Main Process (Node.js / Electron)                       │
 │  ├── PTY Manager — native terminal sessions              │
-│  ├── Provider Registry — 5 CLI providers                │
+│  ├── Provider Registry — 4 CLI providers                │
 │  ├── IPC Handlers — 15+ namespaces                      │
 │  ├── Calder Features — context, governance, workflow, etc. │
 │  └── Hook System — event file monitoring                 │

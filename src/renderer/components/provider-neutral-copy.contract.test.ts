@@ -53,7 +53,7 @@ describe('provider-neutral copy contract', () => {
 
   it('keeps contributor guidance and package metadata provider-agnostic', () => {
     expect(contributing).toContain('Installed CLI provider version(s)');
-    expect(readme).toContain('across modern AI coding CLIs');
+    expect(readme).toContain('parallel AI coding CLI sessions');
     expect(pkg).toContain('"coding-agents"');
     expect(pkg).not.toContain('"claude"');
     expect(pkg).not.toContain('"claude-code"');

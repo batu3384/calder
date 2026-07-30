@@ -2,7 +2,7 @@
   "name": "calder",
   "productName": "Calder",
   "version": "0.2.25",
-  "description": "A terminal-centric IDE for AI-powered CLI tools, built on Electron",
+  "description": "Terminal-centric Electron workspace for parallel AI coding CLI sessions (Claude Code, Codex, Cursor, Antigravity)",
   "author": {
     "name": "Batuhan Yuksel"
   },

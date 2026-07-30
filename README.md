@@ -12,85 +12,86 @@
 </p>
 
 <p align="center">
-  <strong>Terminal-centric desktop workspace across modern AI coding CLIs.</strong><br/>
-  Run multiple agent sessions in parallel, inspect costs and context, route browser + terminal signals to the right session, and keep project workflows organized.
+  <strong>Terminal-centric Electron workspace for parallel AI coding CLI sessions.</strong><br/>
+  Run multiple agent terminals per project, inspect session telemetry, route browser context into the right session, and keep governance and project workflows in one shell.
 </p>
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/screenshots/workspace-mosaic.png" alt="Calder Command Studio — multi-session workspace with browser live view and session inspector" width="920" />
+  <img src="docs/images/screenshots/workspace-mosaic.png" alt="Calder workspace with multiple CLI sessions, embedded browser, and ops rail" width="920" />
 </p>
 <p align="center">
-  <sub><strong>Command Studio</strong> — run Claude, Codex, Antigravity, and Cursor side-by-side with browser live view and workspace inspector.</sub>
-</p>
-
-<p align="center">
-  <img src="docs/images/screenshots/workspace-settings.png" alt="Calder Workspace Center — session defaults and provider settings" width="720" />
-</p>
-<p align="center">
-  <sub><strong>Workspace Center</strong> — configure launch defaults, CLI providers, governance, shortcuts, and updates in one place.</sub>
+  <sub><strong>Workspace</strong> — Claude Code, Codex, Cursor, and Antigravity sessions side by side with embedded browser and Workspace Pulse inspector.</sub>
 </p>
 
 <p align="center">
-  <img src="docs/images/calder-mascot.png" alt="Calder mascot" width="96" />
-  <br/>
-  <sub>Calder mascot — the little helper inside the workspace UI.</sub>
+  <img src="docs/images/screenshots/workspace-settings.png" alt="Calder Workspace Center preferences" width="720" />
+</p>
+<p align="center">
+  <sub><strong>Workspace Center</strong> — launch defaults, provider health, auto-approval governance, shortcuts, and updates.</sub>
 </p>
 
 ---
 
 ## Overview
 
-Calder is an Electron-based, terminal-centric IDE designed for teams and solo developers who work heavily with AI coding CLIs.
+Calder is an Electron desktop app for developers who work primarily through AI coding CLIs.
 
-Instead of juggling many terminal tabs and losing thread context, Calder gives you:
+Instead of juggling detached terminal windows and losing session context, Calder provides:
 
-- Multi-session orchestration per project
-- Provider-aware launch and resume flows
-- Real-time session telemetry (status, usage, inspector events)
-- Browser + terminal surfaces that can hand off focused prompts to active sessions
+- **Multi-session orchestration** — one PTY-backed terminal per session, per project
+- **Provider-aware launch and resume** — defaults, history, and mixed-provider layouts
+- **Session telemetry** — hook-driven status, cost signals, and inspector timeline events
+- **Browser + terminal in one flow** — inspect pages, capture context, and route prompts to the active CLI session
+- **Project governance** — context scaffolding, workflows, and auto-approval with global, project, and session precedence
+
+The UI is English by default with Turkish localization across shell, settings, and inspector surfaces.
 
 ## Supported AI Coding CLIs
 
-Calder currently supports these provider IDs in the codebase:
+Calder ships first-class adapters for these provider IDs:
 
-- `claude` (Claude Code)
-- `codex` (OpenAI Codex CLI)
-- `antigravity` (Antigravity CLI)
-- `cursor` (Cursor CLI)
+| Provider ID   | CLI              |
+| ------------- | ---------------- |
+| `claude`      | Claude Code      |
+| `codex`       | OpenAI Codex CLI |
+| `cursor`      | Cursor CLI       |
+| `antigravity` | Antigravity CLI  |
 
-You can set defaults per project and run mixed-provider sessions side-by-side.
+Set per-project defaults and run mixed-provider sessions in the same workspace.
+
+Capability depth varies by provider (cost parsing, hook telemetry, plan mode, auto-approval dispatch). Calder surfaces what each adapter exposes instead of pretending every CLI behaves the same.
 
 ## Core Capabilities
 
 ### 1) Multi-Session Workspace
 
 - Multiple sessions per project, each backed by its own PTY
-- Fast tab switching and session history navigation
-- Mosaic and tab-focused layouts
-- Session labels, indicators, unread states, and resume support
+- Tab and mosaic layouts with fast session switching
+- Session labels, status indicators, unread state, and resume support
+- Session history and checkpoint restore where the provider allows it
 
 ### 2) Session Telemetry & Cost Insight
 
 - Hook-based session status (`working`, `waiting`, `input`, `completed`)
-- Usage/cost context pipeline with provider-aware parsing
-- Session Inspector timeline and tool event visibility
-- Smart warnings when tracking is unavailable or context pressure is high
+- Provider-aware usage and cost parsing where available
+- Workspace Pulse timeline with tool and approval events
+- Diagnostics when tracking or context pressure is unavailable
 
-### 3) Live View + CLI Surface
+### 3) Embedded Browser & Prompt Routing
 
-- Open local or remote URLs inside Calder
-- Inspect page context and route targeted instructions to a chosen session
-- Attach local dev commands, inspect terminal output, and forward compact summaries
-- Keep browser findings, CLI output, and coding actions inside one flow
+- Open local dev servers or arbitrary URLs inside Calder
+- Inspect elements, draw annotations, and record simple browser flows
+- Route compact context and targeted instructions to a chosen CLI session
+- Keep browser findings and terminal work in one workspace instead of alt-tabbing
 
-### 4) Context & Governance Layer
+### 4) Context & Governance
 
-- Project-level context discovery and scaffold support
-- Shared/team context integration paths
+- Project-level context discovery and starter scaffolding
+- Shared rules and team-context integration paths
 - Auto-approval governance with global, project, and session-level precedence
-- Provider-aware approval dispatch where supported
+- Provider-aware approval dispatch on supported CLIs
 
 ## System Requirements
 
@@ -120,7 +121,7 @@ npm start
 
 ## Development
 
-Canonical setup/build/test commands are maintained in:
+Canonical setup, build, and validation commands:
 
 - [docs/development-workflow.md](docs/development-workflow.md)
 
@@ -136,16 +137,16 @@ npm run dev
 
 ```text
 src/
-  main/         Electron main process, providers, PTY/session orchestration,
-                governance, hooks, IPC handlers
+  main/         Electron main process — PTY orchestration, providers, governance,
+                hooks, IPC handlers
   preload/      Secure bridge APIs exposed to renderer
-  renderer/     UI, panels, browser/live-view, session components
+  renderer/     UI — sidebar, tabs, terminal panes, browser surfaces, inspector
   shared/       Shared runtime types and contracts
 ```
 
 ## Keyboard-First Workflow
 
-Calder is designed around shortcuts and fast panel/session switching. A dedicated shortcuts system supports defaults plus per-user overrides.
+Calder is built around shortcuts and fast panel switching. Defaults ship with the app; per-user overrides are supported.
 
 Common examples:
 
@@ -159,7 +160,7 @@ Common examples:
 
 - Renderer-to-main communication is explicit through preload IPC surfaces.
 - Session sharing uses encrypted peer-to-peer transport (WebRTC data channels).
-- Security policy and reporting instructions are available in [SECURITY.md](SECURITY.md).
+- Security policy and reporting instructions: [SECURITY.md](SECURITY.md)
 
 ## Contributing
 
@@ -176,5 +177,5 @@ Contributions are welcome.
 ---
 
 <p align="center">
-  <sub>Calder is an independent project and is not affiliated with or endorsed by Anthropic, OpenAI, Google, GitHub, Alibaba, or MiniMax.</sub>
+  <sub>Calder is an independent project and is not affiliated with or endorsed by Anthropic, OpenAI, Cursor, Google, or other CLI vendors listed above.</sub>
 </p>

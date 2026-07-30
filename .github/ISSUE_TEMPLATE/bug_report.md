@@ -9,7 +9,7 @@ labels: bug
 
 - OS: (e.g., macOS 15.3, Ubuntu 24.04)
 - Calder version: (from title bar or package.json)
-- Claude Code CLI version: (`claude --version`)
+- CLI provider + version: (e.g. `claude --version`, `codex --version`, `agent --version`)
 
 **Describe the bug**
 A clear description of what the bug is.
