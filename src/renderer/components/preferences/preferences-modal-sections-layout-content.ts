@@ -29,10 +29,11 @@ export function renderLayoutPreferencesSectionContent({
   );
 
   const views = preferenceDraft.sidebarViews;
+  const moduleCount = Object.values(views).filter(Boolean).length - (views.costFooter ? 1 : 0);
   appendOverviewGrid(content, [
     {
       label: 'Ops rail',
-      value: `${Object.values(views).filter(Boolean).length - (views.costFooter ? 1 : 0)} modules`,
+      value: `${moduleCount} modules`,
       note: 'The right-side support column stays focused when you trim unused tools.',
     },
     {

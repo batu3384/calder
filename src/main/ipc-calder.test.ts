@@ -134,6 +134,48 @@ describe('ipc calder lifecycle + governance handlers', () => {
     await autoApprovalHandler({}, '/repo', 'project', null, 'session-1');
     expect(ops.updateAutoApprovalMode).toHaveBeenCalledWith('/repo', 'project', null);
     expect(ops.getGovernanceState).toHaveBeenCalledWith('/repo', 'session-1');
+
+    await autoApprovalHandler({}, '/repo', 'global', 'ask', 'session-1');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith(
+      '/repo',
+      'Set global auto-approval mode',
+    );
+  });
+
+  it('requires a known project path for governance getProjectState', async () => {
+    const ops = {
+      requireKnownProjectPath: vi.fn((projectPath: string, _contextLabel: string) => projectPath),
+      assertProjectGovernanceAllows: vi.fn(async () => {}),
+      getGovernanceState: vi.fn(async () => createGovernanceState()),
+      isAutoApprovalMode,
+      updateAutoApprovalMode: vi.fn(),
+      setSessionAutoApprovalOverride: vi.fn(),
+    } satisfies CalderIpcOps;
+
+    registerCalderIpcHandlers(ops);
+
+    const getStateHandlerEntry = mockIpcHandle.mock.calls.find(
+      ([channel]) => channel === 'governance:getProjectState',
+    );
+    expect(getStateHandlerEntry).toBeDefined();
+    const getStateHandler = getStateHandlerEntry?.[1] as (
+      event: unknown,
+      projectPath: string,
+      sessionId?: string,
+    ) => Promise<unknown>;
+
+    await getStateHandler({}, '/repo', 'session-1');
+    expect(ops.requireKnownProjectPath).toHaveBeenCalledWith(
+      '/repo',
+      'Get governance project state',
+    );
+    expect(ops.getGovernanceState).toHaveBeenCalledWith('/repo', 'session-1');
+  });
+});
+
+describe('ipc calder session override', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
   it('rejects invalid governance session override modes', async () => {

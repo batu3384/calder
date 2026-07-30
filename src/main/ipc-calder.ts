@@ -245,9 +245,11 @@ export function resetCalderProjectWatchers(): void {
 
 export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
+  const v = (projectPath: string, label: string) => requireKnownProjectPath(projectPath, label);
 
   ipcMain.handle('context:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectContext(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Get context project state');
+    return discoverProjectContext(validatedProjectPath);
   });
 
   ipcMain.handle('context:createStarterFiles', async (_event, projectPath: string) => {
@@ -314,7 +316,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   );
 
   ipcMain.handle('workflow:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectWorkflows(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Get workflow project state');
+    return discoverProjectWorkflows(validatedProjectPath);
   });
 
   ipcMain.handle('workflow:createStarterFiles', async (_event, projectPath: string) => {
@@ -344,7 +347,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('teamContext:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectTeamContext(projectPath);
+    const validatedProjectPath = v(projectPath, 'Get team context project state');
+    return discoverProjectTeamContext(validatedProjectPath);
   });
 
   ipcMain.handle('teamContext:createStarterFiles', async (_event, projectPath: string) => {
@@ -369,7 +373,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('review:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectReviews(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Get review project state');
+    return discoverProjectReviews(validatedProjectPath);
   });
 
   ipcMain.handle('review:createFile', async (_event, projectPath: string, title: string) => {
@@ -392,7 +397,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   ipcMain.handle(
     'governance:getProjectState',
     async (_event, projectPath: string, sessionId?: string) => {
-      return ops.getGovernanceState(projectPath, sessionId);
+      const validatedProjectPath = v(projectPath, 'Get governance project state');
+      return ops.getGovernanceState(validatedProjectPath, sessionId);
     },
   );
 
@@ -423,10 +429,10 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
       if (!validGlobalPayload && !validProjectPayload) {
         throw new Error('Invalid auto-approval update payload.');
       }
-      const validatedProjectPath =
-        scope === 'project'
-          ? requireKnownProjectPath(projectPath, 'Set project auto-approval mode')
-          : projectPath;
+      const validatedProjectPath = v(
+        projectPath,
+        scope === 'project' ? 'Set project auto-approval mode' : 'Set global auto-approval mode',
+      );
       ops.updateAutoApprovalMode(validatedProjectPath, scope, mode);
       return ops.getGovernanceState(validatedProjectPath, sessionId);
     },
@@ -444,7 +450,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   );
 
   ipcMain.handle('task:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectBackgroundTasks(projectPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Get task project state');
+    return discoverProjectBackgroundTasks(validatedProjectPath);
   });
 
   ipcMain.handle(
@@ -460,11 +467,13 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   );
 
   ipcMain.handle('task:read', async (_event, projectPath: string, taskPath: string) => {
-    return readProjectBackgroundTaskFile(projectPath, taskPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read background task');
+    return readProjectBackgroundTaskFile(validatedProjectPath, taskPath);
   });
 
   ipcMain.handle('checkpoint:getProjectState', async (_event, projectPath: string) => {
-    return discoverProjectCheckpoints(projectPath);
+    const validatedProjectPath = v(projectPath, 'Get checkpoint project state');
+    return discoverProjectCheckpoints(validatedProjectPath);
   });
 
   ipcMain.handle('checkpoint:create', async (_event, projectPath: string, snapshot) => {
@@ -477,7 +486,8 @@ export function registerCalderIpcHandlers(ops: CalderIpcOps): void {
   });
 
   ipcMain.handle('checkpoint:read', async (_event, projectPath: string, checkpointPath: string) => {
-    return readProjectCheckpointFile(projectPath, checkpointPath);
+    const validatedProjectPath = requireKnownProjectPath(projectPath, 'Read checkpoint');
+    return readProjectCheckpointFile(validatedProjectPath, checkpointPath);
   });
 
   registerCalderProjectWatchIpcHandlers();

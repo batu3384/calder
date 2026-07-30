@@ -1,20 +1,26 @@
 # Security Diff Report
 
-**Branch:** main  
-**Base:** working tree (post-remediation)  
 **Date:** 2026-07-30  
-**Status:** Remediated after adversarial review
+**Scope:** Uncommitted hardening (governance siblings + PTY exit flush + prior MEDIUM fixes)  
+**Verdict:** PASS
 
-## Remediation Applied
+## Remediated this pass
 
-| ID | Fix |
-|----|-----|
-| DIFF-001 | `markUiReady()` in `initialize()` `finally` + `main().catch` |
-| DIFF-002 | `pointer-events: none` while `html:not([data-ui-ready])` |
-| DIFF-003 | `session_safe` risk note restored in auto-approval summary |
-| DIFF-004 | Removed unused `sessionStorage` language write |
-| DIFF-005 | `startGitPolling()` before `emitStateLoaded()` |
+| ID           | Severity | Fix                                                                         |
+| ------------ | -------- | --------------------------------------------------------------------------- | -------- | ----------- | ------ | ---- | ------------------------------------------------------------------------------------- |
+| DIFF-003/004 | MEDIUM   | `governance:getProjectState` + global `setAutoApprovalMode` path validation |
+| SIBLINGS     | MEDIUM   | `context                                                                    | workflow | teamContext | review | task | checkpoint:getProjectState`+`task:read`/`checkpoint:read`now`requireKnownProjectPath` |
+| PTY-EXIT     | WARNING  | Renderer batcher `flush` before dispose; parseCost flush on exit            |
 
-## Verdict
+## Accepted / remaining notes
 
-**PASS** (post-fix) — High/Medium gate and trust-UX regressions addressed in this follow-up.
+| ID         | Severity | Notes                                                       |
+| ---------- | -------- | ----------------------------------------------------------- |
+| DIFF-001   | LOW      | PTY color env FORCE_COLOR=1 — UX tradeoff                   |
+| COLD-START | WARNING  | First `pty:create` sync login-shell warm — not in this diff |
+| I18N-OBS   | NOTE     | TR MutationObserver body-wide — deferred                    |
+| BUNDLE     | NOTE     | ~2MB renderer monolith — deferred                           |
+
+## XSS / secrets
+
+- No new exposure. Auto-approval uses `esc()` / `textContent`.

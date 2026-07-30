@@ -4,6 +4,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
 
 import { appState } from '../state.js';
+import { createPtyWriteBatcher } from './pty-write-batch.js';
 import { destroySearchBar, hideSearchBar } from './search-bar.js';
 import {
   registerShellTerminalInstance,
@@ -24,6 +25,14 @@ interface ShellTerminalInstance {
 }
 
 const shells = new Map<string, ShellTerminalInstance>();
+const shellWriteBatcher = createPtyWriteBatcher((sessionId, data) => {
+  for (const instance of shells.values()) {
+    if (instance.sessionId === sessionId) {
+      instance.terminal.write(data);
+      return;
+    }
+  }
+});
 
 let panelEl: HTMLElement;
 let containerEl: HTMLElement;
@@ -199,10 +208,9 @@ export function toggleProjectTerminal(): void {
 }
 
 export function handleShellPtyData(sessionId: string, data: string): void {
-  // Find by sessionId prefix
-  for (const [, instance] of shells) {
+  for (const instance of shells.values()) {
     if (instance.sessionId === sessionId) {
-      instance.terminal.write(data);
+      shellWriteBatcher.enqueue(sessionId, data);
       return;
     }
   }
@@ -243,6 +251,7 @@ function isShellSessionId(sessionId: string): boolean {
 function destroyShell(projectId: string): void {
   const instance = shells.get(projectId);
   if (!instance) return;
+  shellWriteBatcher.flush(instance.sessionId);
   destroySearchBar(instance.sessionId);
   unregisterShellTerminalInstance(projectId);
   window.calder.pty.kill(instance.sessionId);

@@ -298,19 +298,19 @@ describe('ipc inspector orchestration runtime', () => {
     );
 
     const runtime = createInspectorOrchestration();
-    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'one');
+    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'one https://example.com');
     runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'two');
     expect(mockOpenUrlWithBrowserPolicy).toHaveBeenCalledTimes(1);
 
     clearInspectorOrchestrationSession('session-a');
-    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'three');
+    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'three https://example.com');
     expect(mockOpenUrlWithBrowserPolicy).toHaveBeenCalledTimes(2);
 
-    runtime.mirrorPlaywrightFromPtyData('session-b', '/repo', 'x');
+    runtime.mirrorPlaywrightFromPtyData('session-b', '/repo', 'x https://example.com');
     expect(mockOpenUrlWithBrowserPolicy).toHaveBeenCalledTimes(3);
     resetInspectorOrchestrationCaches();
-    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'after-reset-a');
-    runtime.mirrorPlaywrightFromPtyData('session-b', '/repo', 'after-reset-b');
+    runtime.mirrorPlaywrightFromPtyData('session-a', '/repo', 'after-reset-a https://example.com');
+    runtime.mirrorPlaywrightFromPtyData('session-b', '/repo', 'after-reset-b https://example.com');
     expect(mockOpenUrlWithBrowserPolicy).toHaveBeenCalledTimes(5);
   });
 });

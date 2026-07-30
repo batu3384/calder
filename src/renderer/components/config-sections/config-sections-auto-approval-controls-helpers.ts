@@ -67,6 +67,7 @@ export function createModeSelect(
   helperText: string,
   onChange: (nextMode: AutoApprovalMode) => Promise<void>,
 ): HTMLSelectElement {
+  let selectedMode = currentMode;
   const select = document.createElement('select');
   select.className = 'auto-approval-select';
   select.title = helperText;
@@ -81,10 +82,15 @@ export function createModeSelect(
   }
 
   select.addEventListener('change', async () => {
+    const previousMode = selectedMode;
     const nextMode = select.value as AutoApprovalMode;
     select.disabled = true;
     try {
       await onChange(nextMode);
+      selectedMode = nextMode;
+    } catch (error) {
+      select.value = previousMode;
+      console.error('[auto-approval] Failed to update mode', error);
     } finally {
       select.disabled = false;
     }
@@ -128,7 +134,6 @@ export function createModeGuide(esc: (input: string) => string): HTMLDivElement 
 export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs): void {
   const {
     autoApproval,
-    scopeSummary,
     globalPolicyLabel,
     projectPolicyLabel,
     sessionPolicyLabel,
@@ -189,6 +194,7 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   }
 
   projectSelect.addEventListener('change', async () => {
+    const previousValue = projectSelect.value;
     const selectedMode =
       projectSelect.value === PROJECT_INHERIT_VALUE
         ? null
@@ -203,6 +209,9 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
       );
       appState.setProjectGovernance(projectId, nextState);
       void refresh();
+    } catch (error) {
+      projectSelect.value = previousValue;
+      console.error('[auto-approval] Failed to update project policy', error);
     } finally {
       projectSelect.disabled = false;
     }
@@ -243,6 +252,7 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   sessionSelect.disabled = !sessionId || !supportsPermissionHooks;
   sessionSelect.addEventListener('change', async () => {
     if (!sessionId) return;
+    const previousValue = sessionSelect.value;
     const selectedMode =
       sessionSelect.value === SESSION_INHERIT_VALUE
         ? null
@@ -253,6 +263,9 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
       const nextState = await window.calder.governance.getProjectState(projectPath, sessionId);
       appState.setProjectGovernance(projectId, nextState);
       void refresh();
+    } catch (error) {
+      sessionSelect.value = previousValue;
+      console.error('[auto-approval] Failed to update session policy', error);
     } finally {
       sessionSelect.disabled = false;
     }

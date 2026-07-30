@@ -172,6 +172,12 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
         : combined;
     playwrightTranscriptBufferBySession.set(sessionId, buffer);
 
+    // Cheap gate: skip full regex extract unless the recent window looks navigational.
+    const recent = buffer.length > 512 ? buffer.slice(-512) : buffer;
+    if (!/https?:\/\/|page\.goto|playwright|chromium|navigate/i.test(recent)) {
+      return;
+    }
+
     const urls = extractPlaywrightNavigateUrlsFromTerminalChunk(buffer);
     if (urls.length === 0) return;
 

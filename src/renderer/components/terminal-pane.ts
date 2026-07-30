@@ -7,6 +7,7 @@ import {
 } from '../session-context.js';
 import { type CostInfo, removeSession as removeCostSession } from '../session-cost.js';
 import type { ProviderId } from '../types.js';
+import { createPtyWriteBatcher } from './pty-write-batch.js';
 import {
   getProviderCapabilities,
   getProviderDisplayName,
@@ -61,6 +62,10 @@ interface TerminalInstance {
 
 const instances = new Map<string, TerminalInstance>();
 let focusedSessionId: string | null = null;
+
+const ptyWriteBatcher = createPtyWriteBatcher((sessionId, data) => {
+  instances.get(sessionId)?.terminal.write(data);
+});
 
 function workspaceLabel(projectPath: string): string {
   const normalized = projectPath.replace(/\\/g, '/');
@@ -323,16 +328,15 @@ export function setFocused(sessionId: string): void {
 }
 
 export function handlePtyData(sessionId: string, data: string): void {
-  const instance = instances.get(sessionId);
-  if (instance) {
-    instance.terminal.write(data);
-  }
+  if (!instances.has(sessionId)) return;
+  ptyWriteBatcher.enqueue(sessionId, data);
 }
 
 export function destroyTerminal(sessionId: string): void {
   const instance = instances.get(sessionId);
   if (!instance) return;
 
+  ptyWriteBatcher.flush(sessionId);
   clearPendingPromptTimer(instance);
   window.calder.pty.kill(sessionId);
   instance.terminal.dispose();

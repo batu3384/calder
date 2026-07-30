@@ -1,3 +1,5 @@
+import { createTimelinePatterns } from './i18n-timeline-patterns.js';
+
 export type PatternTranslation = {
   pattern: RegExp;
   replace: (match: RegExpMatchArray) => string;
@@ -502,10 +504,6 @@ function createInspectorAndErrorPatterns(translate: Translate): PatternTranslati
       replace: (match) => `Ajan başlatıldı: ${match[1]}`,
     },
     {
-      pattern: /^Teammate idle: (.+)$/u,
-      replace: (match) => `Ekip arkadaşı boşta: ${match[1]}`,
-    },
-    {
       pattern:
         /^(.+)\s+is not reachable right now\. Start the local app again, then reload or rescan localhost\.$/u,
       replace: (match) =>
@@ -650,5 +648,6 @@ export function createPatternTranslations(translate: Translate): PatternTranslat
     ...createRelativeTimePatterns(),
     ...createTabSummaryPatterns(translate),
     ...createInspectorAndErrorPatterns(translate),
+    ...createTimelinePatterns(translate),
   ];
 }

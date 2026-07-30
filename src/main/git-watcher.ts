@@ -13,6 +13,13 @@ const IGNORE_SEGMENTS = new Set([
   '.cache',
   'coverage',
   '__pycache__',
+  '.turbo',
+  '.vite',
+  'out',
+  '.nuxt',
+  '.output',
+  'target',
+  '.parcel-cache',
 ]);
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -32,8 +39,7 @@ function notify(): void {
 
 function shouldIgnore(filename: string | null): boolean {
   if (!filename) return false;
-  const first = filename.split(/[\\/]/)[0];
-  return IGNORE_SEGMENTS.has(first);
+  return filename.split(/[\\/]/).some((segment) => IGNORE_SEGMENTS.has(segment));
 }
 
 function watchDir(dirPath: string, shouldSkip?: (filename: string | null) => boolean): void {

@@ -1,4 +1,5 @@
 import type { InspectorEvent } from '../../../shared/types/session.js';
+import { t } from '../../i18n.js';
 import { applyTabularNums } from '../surface-services/dom-utils.js';
 import { getCostDeltas, getEvents } from '../surface-services/session-inspector-state.js';
 import { inspectorState } from './session-inspector-state-ui.js';
@@ -295,43 +296,43 @@ export function describeTimelineEvent(
   toolLabel?: string,
 ): string {
   if (event.tool_name) return toolLabel ?? event.tool_name;
-  if (event.type === 'user_prompt') return 'User prompt submitted';
-  if (event.type === 'stop') return 'Response completed';
-  if (event.type === 'stop_failure') return event.error || 'Response stopped with error';
-  if (event.type === 'session_start') return 'Session started';
-  if (event.type === 'session_end') return 'Session ended';
-  if (event.type === 'permission_request') return 'Waiting for permission';
+  if (event.type === 'user_prompt') return t('User prompt submitted');
+  if (event.type === 'stop') return t('Response completed');
+  if (event.type === 'stop_failure') return event.error || t('Response stopped with error');
+  if (event.type === 'session_start') return t('Session started');
+  if (event.type === 'session_end') return t('Session ended');
+  if (event.type === 'permission_request') return t('Waiting for permission');
   if (event.type === 'approval_decision') {
     const decision = event.auto_approval?.decision ?? 'ask';
     const operationClass = event.auto_approval?.operation_class
       ? event.auto_approval.operation_class.replace(/_/g, ' ')
       : 'unknown operation';
-    return `Auto-approval ${decision}: ${operationClass}`;
+    return t(`Auto-approval ${decision}: ${operationClass}`);
   }
-  if (event.type === 'subagent_start') return `Agent started: ${agentLabel(event)}`;
+  if (event.type === 'subagent_start') return t(`Agent started: ${agentLabel(event)}`);
   if (event.type === 'subagent_stop') {
     const duration = findAgentDuration(events, index);
     return duration
-      ? `Agent stopped: ${agentLabel(event)} (${formatDuration(duration)})`
-      : `Agent stopped: ${agentLabel(event)}`;
+      ? t(`Agent stopped: ${agentLabel(event)} (${formatDuration(duration)})`)
+      : t(`Agent stopped: ${agentLabel(event)}`);
   }
-  if (event.type === 'notification') return event.message || 'Notification';
-  if (event.type === 'pre_compact') return 'Context compaction starting';
-  if (event.type === 'post_compact') return 'Context compaction complete';
+  if (event.type === 'notification') return event.message || t('Notification');
+  if (event.type === 'pre_compact') return t('Context compaction starting');
+  if (event.type === 'post_compact') return t('Context compaction complete');
   if (event.type === 'task_created')
-    return event.task_id ? `Task created: ${event.task_id}` : 'Task created';
+    return event.task_id ? t(`Task created: ${event.task_id}`) : t('Task created');
   if (event.type === 'task_completed')
-    return event.task_id ? `Task completed: ${event.task_id}` : 'Task completed';
-  if (event.type === 'worktree_create') return event.worktree_path || 'Worktree created';
-  if (event.type === 'worktree_remove') return event.worktree_path || 'Worktree removed';
-  if (event.type === 'cwd_changed') return event.cwd || 'Working directory changed';
-  if (event.type === 'file_changed') return event.file_path || 'File changed';
+    return event.task_id ? t(`Task completed: ${event.task_id}`) : t('Task completed');
+  if (event.type === 'worktree_create') return event.worktree_path || t('Worktree created');
+  if (event.type === 'worktree_remove') return event.worktree_path || t('Worktree removed');
+  if (event.type === 'cwd_changed') return event.cwd || t('Working directory changed');
+  if (event.type === 'file_changed') return event.file_path || t('File changed');
   if (event.type === 'config_change')
-    return event.config_key ? `Config: ${event.config_key}` : 'Config changed';
-  if (event.type === 'elicitation') return event.question || 'Elicitation requested';
-  if (event.type === 'elicitation_result') return 'Elicitation answered';
-  if (event.type === 'instructions_loaded') return 'Instructions loaded';
-  if (event.type === 'teammate_idle') return `Teammate idle: ${agentLabel(event)}`;
+    return event.config_key ? t(`Config: ${event.config_key}`) : t('Config changed');
+  if (event.type === 'elicitation') return event.question || t('Elicitation requested');
+  if (event.type === 'elicitation_result') return t('Elicitation answered');
+  if (event.type === 'instructions_loaded') return t('Instructions loaded');
+  if (event.type === 'teammate_idle') return t(`Teammate idle: ${agentLabel(event)}`);
   return '';
 }
 

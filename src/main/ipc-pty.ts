@@ -24,6 +24,41 @@ const ptyCreateRateLimit = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW_MS = 1_000;
 const RATE_LIMIT_MAX_CREATES = 10;
 
+/** Coalesce pty:data IPC sends onto the next event-loop turn per session. */
+const pendingPtyDataBySession = new Map<string, string>();
+let ptyDataFlushScheduled = false;
+
+function sendPtyDataChunk(sessionId: string, data: string): void {
+  if (!data) return;
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win || win.isDestroyed()) return;
+  win.webContents.send('pty:data', sessionId, data);
+}
+
+function flushPendingPtyData(sessionId?: string): void {
+  if (sessionId) {
+    const chunk = pendingPtyDataBySession.get(sessionId);
+    pendingPtyDataBySession.delete(sessionId);
+    if (chunk) sendPtyDataChunk(sessionId, chunk);
+    return;
+  }
+  for (const [id, chunk] of pendingPtyDataBySession) {
+    pendingPtyDataBySession.delete(id);
+    sendPtyDataChunk(id, chunk);
+  }
+}
+
+function enqueuePtyData(sessionId: string, data: string): void {
+  if (!data) return;
+  pendingPtyDataBySession.set(sessionId, (pendingPtyDataBySession.get(sessionId) ?? '') + data);
+  if (ptyDataFlushScheduled) return;
+  ptyDataFlushScheduled = true;
+  setImmediate(() => {
+    ptyDataFlushScheduled = false;
+    flushPendingPtyData();
+  });
+}
+
 function assertPtyCreateRateLimit(sessionId: string): void {
   const now = Date.now();
   const entry = ptyCreateRateLimit.get(sessionId);
@@ -127,12 +162,10 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
         payload.initialPrompt,
         (data) => {
           ops.mirrorPlaywrightFromPtyData(payload.sessionId, resolvedCwd, data);
-          const w = BrowserWindow.getAllWindows()[0];
-          if (w && !w.isDestroyed()) {
-            w.webContents.send('pty:data', payload.sessionId, data);
-          }
+          enqueuePtyData(payload.sessionId, data);
         },
         (exitCode, signal) => {
+          flushPendingPtyData(payload.sessionId);
           ops.handlePtySessionExit(payload.sessionId, exitCode, signal);
           const w = BrowserWindow.getAllWindows()[0];
           if (w && !w.isDestroyed()) {
@@ -174,12 +207,10 @@ export function registerPtyIpcHandlers(ops: PtyIpcOps): void {
       shellSessionId,
       resolvedCwd,
       (data) => {
-        const w = BrowserWindow.getAllWindows()[0];
-        if (w && !w.isDestroyed()) {
-          w.webContents.send('pty:data', shellSessionId, data);
-        }
+        enqueuePtyData(shellSessionId, data);
       },
       (exitCode, signal) => {
+        flushPendingPtyData(shellSessionId);
         const w = BrowserWindow.getAllWindows()[0];
         if (w && !w.isDestroyed()) {
           w.webContents.send('pty:exit', shellSessionId, exitCode, signal);

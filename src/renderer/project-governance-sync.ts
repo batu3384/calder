@@ -39,12 +39,16 @@ async function syncActiveProjectGovernance(): Promise<void> {
 
   const activeCliSessionId = getActiveCliSessionId();
   const requestToken = ++activeRequestToken;
-  const projectGovernance = await window.calder.governance.getProjectState(
-    project.path,
-    activeCliSessionId,
-  );
-  if (requestToken !== activeRequestToken) return;
-  applyProjectGovernance(project.path, projectGovernance);
+  try {
+    const projectGovernance = await window.calder.governance.getProjectState(
+      project.path,
+      activeCliSessionId,
+    );
+    if (requestToken !== activeRequestToken) return;
+    applyProjectGovernance(project.path, projectGovernance);
+  } catch (error) {
+    console.error('[governance-sync] Failed to load project governance state', error);
+  }
 }
 
 async function handleGovernanceChanged(
@@ -59,9 +63,16 @@ async function handleGovernanceChanged(
   }
 
   const requestToken = ++activeRequestToken;
-  const resolved = await window.calder.governance.getProjectState(projectPath, activeCliSessionId);
-  if (requestToken !== activeRequestToken) return;
-  applyProjectGovernance(projectPath, resolved);
+  try {
+    const resolved = await window.calder.governance.getProjectState(
+      projectPath,
+      activeCliSessionId,
+    );
+    if (requestToken !== activeRequestToken) return;
+    applyProjectGovernance(projectPath, resolved);
+  } catch (error) {
+    console.error('[governance-sync] Failed to refresh project governance state', error);
+  }
 }
 
 export function initProjectGovernanceSync(): void {

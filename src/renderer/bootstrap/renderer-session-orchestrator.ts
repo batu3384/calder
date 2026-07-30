@@ -105,14 +105,37 @@ export function createRendererSessionOrchestrator(
   function handlePtyDataEvent(sessionId: string, data: string): void {
     if (isShellSessionId(sessionId)) {
       handleShellPtyData(sessionId, data);
-    } else if (!isMcpSession(sessionId)) {
-      handlePtyData(sessionId, data);
-      parseCost(sessionId, data);
-      parseTitle(sessionId, data);
-      if (data.includes('Interrupted')) {
-        notifyInterrupt(sessionId);
-      }
+      return;
     }
+    if (isMcpSession(sessionId)) return;
+    handlePtyData(sessionId, data);
+    // parseCost/title run on the same coalesced chunks via rAF batcher inside write path
+    // is not enough — batch parsing separately per frame.
+    enqueuePtyParse(sessionId, data);
+  }
+
+  const pendingParse = new Map<string, string>();
+  let parseFrame: number | null = null;
+  const scheduleParse =
+    typeof requestAnimationFrame === 'function'
+      ? (cb: FrameRequestCallback): number => requestAnimationFrame(cb)
+      : (cb: FrameRequestCallback): number =>
+          globalThis.setTimeout(() => cb(Date.now()), 16) as unknown as number;
+
+  function enqueuePtyParse(sessionId: string, data: string): void {
+    pendingParse.set(sessionId, (pendingParse.get(sessionId) ?? '') + data);
+    if (parseFrame !== null) return;
+    parseFrame = scheduleParse(() => {
+      parseFrame = null;
+      for (const [id, chunk] of pendingParse) {
+        pendingParse.delete(id);
+        parseCost(id, chunk);
+        parseTitle(id, chunk);
+        if (chunk.includes('Interrupted')) {
+          notifyInterrupt(id);
+        }
+      }
+    });
   }
 
   function handleCostDataEvent(sessionId: string, costData: CostData): void {
@@ -173,8 +196,35 @@ export function createRendererSessionOrchestrator(
     }
   }
 
+  function flushPendingPtyParse(sessionId?: string): void {
+    if (parseFrame !== null) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(parseFrame);
+      } else {
+        globalThis.clearTimeout(parseFrame);
+      }
+      parseFrame = null;
+    }
+    if (sessionId) {
+      const chunk = pendingParse.get(sessionId);
+      pendingParse.delete(sessionId);
+      if (!chunk) return;
+      parseCost(sessionId, chunk);
+      parseTitle(sessionId, chunk);
+      if (chunk.includes('Interrupted')) notifyInterrupt(sessionId);
+      return;
+    }
+    for (const [id, chunk] of pendingParse) {
+      pendingParse.delete(id);
+      parseCost(id, chunk);
+      parseTitle(id, chunk);
+      if (chunk.includes('Interrupted')) notifyInterrupt(id);
+    }
+  }
+
   function handlePtyExitEvent(sessionId: string, exitCode: number): void {
     logDebugEvent('ptyExit', sessionId, { exitCode });
+    flushPendingPtyParse(sessionId);
     if (isShellSessionId(sessionId)) {
       handleShellPtyExit(sessionId, exitCode);
     } else if (!isMcpSession(sessionId) && !options.isQuitting()) {
