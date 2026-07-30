@@ -13,5 +13,3 @@ export const initSession: SessionActivityModule['initSession'] = (...args) =>
   sessionActivity.initSession(...args);
 export const removeSession: SessionActivityModule['removeSession'] = (...args) =>
   sessionActivity.removeSession(...args);
-export const setHookStatus: SessionActivityModule['setHookStatus'] = (...args) =>
-  sessionActivity.setHookStatus(...args);
