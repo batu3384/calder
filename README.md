@@ -79,12 +79,16 @@ Capability depth varies by provider (cost parsing, hook telemetry, plan mode, au
 - Workspace Pulse timeline with tool and approval events
 - Diagnostics when tracking or context pressure is unavailable
 
-### 3) Embedded Browser & Prompt Routing
+### 3) Embedded Browser & Element→CLI Routing
 
 - Open local dev servers or arbitrary URLs inside Calder
-- Inspect elements, draw annotations, and record simple browser flows
-- Route compact context and targeted instructions to a chosen CLI session
-- Keep browser findings and terminal work in one workspace instead of alt-tabbing
+- **Inspect** — click an element, pick the best selector (`data-testid`, aria, stable class, role), see live match verification (unique / ambiguous / missing), and send a focused prompt to the chosen CLI session
+- **Draw** — annotate a screenshot and route visual context when DOM selectors are weak (canvas, dense UIs)
+- **Flow** — record click/navigate steps with shadow-DOM-aware selectors and replay helpers
+- Unified `deliverBrowserCapturePrompt` routing for inspect, draw, and flow with governance/team context and an explicit session target chip
+- Cross-origin iframe guard with user-facing guidance; SVG/icon clicks resolve to interactive ancestors
+
+Known platform limits (not bugs): cross-origin iframe interiors, closed shadow roots, and canvas surfaces without DOM selectors — use Draw or parent-page context in those cases.
 
 ### 4) Context & Governance
 

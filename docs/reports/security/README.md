@@ -14,7 +14,10 @@ Canonical location for security architecture, audits, and post-change verificati
 | [isolation-architecture.md](./isolation-architecture.md)                     | Turkish isolation boundary + write-path map               |
 | [isolation-verified-findings.md](./isolation-verified-findings.md)           | Isolation refactor verified fixes (VF-\*)                 |
 | [diff-report-2026-07-27-isolation.md](./diff-report-2026-07-27-isolation.md) | Diff-scoped scan for isolation WIP                        |
+| [diff-report-2026-07-30-element-cli.md](./diff-report-2026-07-30-element-cli.md) | Diff-scoped scan for Element→CLI capture hardening        |
 
 **Start here for current posture:** [isolation-status.md](./isolation-status.md)
+
+Local `security-report/` at repo root is gitignored; commit curated summaries here instead.
 
 Historical note: P2P share / mobile remote removed 2026-07-27 — VULN-003 marked `REMEDIATED_BY_REMOVAL`.

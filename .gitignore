@@ -40,3 +40,6 @@ out/
 .tmp-ui/
 .worktrees/
 .codex-ui-backups/
+
+# Local security-scan output (canonical reports live under docs/reports/security/)
+security-report/

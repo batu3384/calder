@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Features
+
+- Element→CLI capture hardening: shared browser prompt routing, selector engine (qa/aria/class/role), live selector verification badges, SVG-to-button lift, and chrome-rail browser UI polish
+- Split-layout and session-history improvements; auto-approval settings i18n consolidation
+
+### Fixes
+
+- Flow step selector UI crash (`buildSelectorOptions` arity) and preferred-selector picking aligned with inspect
+- Browser capture prompt escaping, cross-origin iframe toasts, and draw-mode strict-contract opt-out while keeping governance context
+
 ## [0.2.26] - 2026-04-15
 
 ### Features
