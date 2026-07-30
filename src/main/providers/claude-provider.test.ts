@@ -170,6 +170,19 @@ describe('buildEnv', () => {
     expect(env.CLAUDE_CODE).toBeUndefined();
     expect(env.OTHER).toBe('val');
   });
+  it('sets COLORTERM so CLI brand colors render', () => {
+    const env = provider.buildEnv('sess-123', { NO_COLOR: '1', FORCE_COLOR: '0', TERM: 'dumb' });
+    expect(env.NO_COLOR).toBeUndefined();
+    expect(env.FORCE_COLOR).toBe('1');
+    expect(env.COLORTERM).toBe('truecolor');
+    expect(env.TERM).toBe('xterm-256color');
+  });
+
+  it('preserves an existing COLORTERM value', () => {
+    const env = provider.buildEnv('sess-123', { COLORTERM: '24bit', TERM: 'xterm-direct' });
+    expect(env.COLORTERM).toBe('24bit');
+    expect(env.TERM).toBe('xterm-direct');
+  });
 });
 
 describe('buildArgs', () => {

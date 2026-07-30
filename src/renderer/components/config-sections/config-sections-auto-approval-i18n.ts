@@ -48,7 +48,7 @@ export function sessionInheritLabel(): string {
 
 export function autoApprovalScopeHelp(): { global: string; project: string; session: string } {
   return {
-    global: localizedText('Default policy for this Mac.', 'Bu Mac için varsayılan politika.'),
+    global: localizedText('Default for this Mac.', 'Bu Mac için varsayılan.'),
     project: localizedText('Repository-level policy.', 'Depo düzeyinde politika.'),
     session: localizedText(
       'Temporary policy for the active session (not saved).',

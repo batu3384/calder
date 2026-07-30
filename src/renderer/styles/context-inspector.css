@@ -29,24 +29,15 @@
   overflow: hidden;
   contain: inline-size;
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.025);
-  background:
-    radial-gradient(
-      circle at 100% 0%,
-      color-mix(in srgb, var(--accent-soft) 22%, transparent),
-      transparent 30%
-    ),
-    linear-gradient(180deg, rgba(226, 242, 255, 0.018), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-ops) 96%, black);
+  background: var(--surface-ops);
 }
 
 .control-panel-surface {
-  background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.022), rgba(255, 255, 255, 0)), var(--surface-rail);
+  background: var(--surface-rail);
 }
 
 .ops-rail-surface {
-  background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.016), rgba(255, 255, 255, 0)), var(--surface-ops);
+  background: var(--surface-ops);
 }
 
 #context-inspector.context-inspector-closed {
@@ -67,7 +58,7 @@
   border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
   border-radius: 12px 0 0 12px;
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.026), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.026), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, black);
   color: var(--text-secondary);
   font-family: var(--font-sans);
@@ -116,13 +107,13 @@
   border-radius: var(--ops-control-radius);
   font-size: 12px;
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 90%, transparent);
 }
 
 #context-inspector .context-inspector-header-actions .icon-btn:hover {
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.04), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.04), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-hover) 92%, var(--surface-panel));
 }
 
@@ -259,16 +250,16 @@
 
 .diagnostics-summary-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
   gap: 7px;
   min-width: 0;
 }
 
 .diagnostics-summary-card {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
-  padding: 8px;
+  padding: 8px 9px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
   border-radius: 11px;
   background: color-mix(in srgb, var(--surface-panel-alt) 58%, transparent);
@@ -284,9 +275,9 @@
 
 .diagnostics-summary-label {
   color: var(--text-dim);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 740;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -295,9 +286,9 @@
   color: var(--text-primary);
   font-size: 11px;
   font-weight: 760;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .diagnostics-summary-detail {
@@ -305,7 +296,9 @@
   color: var(--text-muted);
   font-size: 10px;
   line-height: 1.3;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .context-inspector-section + .context-inspector-section {
@@ -743,60 +736,107 @@
 }
 
 #context-inspector .auto-approval-scope-card {
+  display: grid;
+  gap: 8px;
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 12px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-muted) 65%, black);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-muted) 68%, black);
 }
 
-#context-inspector .auto-approval-scope-row {
+#context-inspector .auto-approval-scope-card[data-active='true'] {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border-subtle));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-soft) 30%, rgba(255, 255, 255, 0.012)),
+      rgba(255, 255, 255, 0)
+    ),
+    color-mix(in srgb, var(--surface-muted) 74%, black);
+}
+
+#context-inspector .auto-approval-scope-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 #context-inspector .auto-approval-scope-title {
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
+  letter-spacing: 0.01em;
   min-width: 0;
-  flex: 1 1 110px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-#context-inspector .auto-approval-scope-helper {
-  color: var(--text-dim);
-  font-size: 11px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  margin-top: 6px;
+#context-inspector .auto-approval-scope-status {
+  flex: 0 0 auto;
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #context-inspector .auto-approval-scope-control {
   display: flex;
-  justify-content: stretch;
-  flex: 1 1 168px;
-  min-width: min(168px, 100%);
-  max-width: 100%;
+  min-width: 0;
 }
 
 #context-inspector .auto-approval-select {
-  min-height: 30px;
+  min-height: 32px;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.016), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-muted) 78%, black);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 82%, black);
   color: var(--text-primary);
   font-size: 11px;
-  font-weight: 580;
-  padding: 0 9px;
+  font-weight: 560;
+  padding: 0 8px;
+}
+
+#context-inspector .auto-approval-summary-source {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+#context-inspector .auto-approval-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+#context-inspector .auto-approval-mode-guide,
+#context-inspector .auto-approval-details-toggle,
+#context-inspector .auto-approval-details,
+#context-inspector .auto-approval-controls-intro,
+#context-inspector .auto-approval-controls-hint,
+#context-inspector .auto-approval-meta-inline,
+#context-inspector .auto-approval-policy-stack,
+#context-inspector .auto-approval-priority-map,
+#context-inspector .auto-approval-priority-note,
+#context-inspector .auto-approval-scope-row,
+#context-inspector .auto-approval-scope-helper {
+  display: none !important;
+}
+
+#context-inspector .auto-approval-mode-guide-toggle {
+  display: none;
 }
 
 #context-inspector
@@ -1573,11 +1613,11 @@
 }
 
 :where(#context-inspector) .context-inspector-section[data-section='git'] {
-  border-left: 2px solid color-mix(in srgb, var(--info) 38%, transparent);
+  border-left: 0;
 }
 
 :where(#context-inspector) .context-inspector-section[data-section='activity'] {
-  border-left: 2px solid color-mix(in srgb, var(--bookmark) 34%, transparent);
+  border-left: 0;
 }
 
 @container workspace-shell (max-width: 1240px) {
@@ -1635,11 +1675,11 @@
 }
 
 :where(#context-inspector) .context-inspector-section[data-section='git']::before {
-  background: color-mix(in srgb, var(--info) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
 :where(#context-inspector) .context-inspector-section[data-section='activity']::before {
-  background: color-mix(in srgb, var(--bookmark) 44%, transparent);
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
 :where(#context-inspector) .context-inspector-section + .context-inspector-section {
@@ -1803,4 +1843,46 @@
   :where(#context-inspector) .config-item:not(.auto-approval-item) .config-item-actions {
     justify-self: start;
   }
+}
+
+/* Calder enterprise flatten: single hairline rail, no decorative glow. */
+#context-inspector .context-inspector-section[data-section='capabilities'],
+#context-inspector[data-rail-signal='active']
+  .context-inspector-section[data-section='capabilities'],
+#context-inspector[data-rail-signal='warning']
+  .context-inspector-section[data-section='capabilities'],
+:where(#context-inspector) .context-inspector-section[data-section='capabilities'] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 78%, black);
+  box-shadow: none;
+}
+
+:where(#context-inspector) .context-inspector-section {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
+    color-mix(in srgb, var(--surface-panel) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 68%, transparent);
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 9px 10px 9px 12px;
+}
+
+:where(#context-inspector) .context-inspector-section::before {
+  top: 12px;
+  bottom: 12px;
+  left: 0;
+  width: 2px;
+  background: color-mix(in srgb, var(--accent) 46%, transparent);
+  opacity: 0.62;
+}
+
+#context-inspector-sections {
+  padding: 8px 8px 10px;
+  gap: 8px;
+}
+
+.diagnostics-summary-card {
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface-panel-alt) 64%, transparent);
 }

@@ -38,13 +38,6 @@ export interface BrowserCredentialSaveInput {
   id?: string;
 }
 
-export type SurfaceKind = 'web' | 'cli';
-export type SurfaceSelectionMode = 'line' | 'region' | 'viewport';
-export type CliSurfacePromptContextMode =
-  | 'selection-only'
-  | 'selection-nearby'
-  | 'selection-nearby-viewport';
-
 export interface WebSurfaceState {
   sessionId?: string;
   url?: string;

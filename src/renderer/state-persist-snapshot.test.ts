@@ -27,22 +27,13 @@ function makeState(): PersistedState {
           splitDirection: 'horizontal',
         },
         surface: {
-          kind: 'cli',
+          kind: 'web',
           active: true,
+          targetSessionId: 'session-1',
           web: {
             sessionId: 'browser-1',
             url: 'http://localhost:3000',
             history: ['http://localhost:3000'],
-          },
-          cli: {
-            selectedProfileId: 'profile-1',
-            profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
-            runtime: {
-              status: 'running',
-              runtimeId: 'runtime-1',
-              startupTiming: { startedAtMs: 1 },
-              resolvedUrl: 'http://localhost:3000',
-            },
           },
         },
         sessions: [
@@ -60,13 +51,19 @@ function makeState(): PersistedState {
 }
 
 describe('state persist snapshot', () => {
-  it('strips transient session and cli runtime fields before saving', () => {
+  it('strips transient session fields before saving', () => {
     const snapshot = buildRendererPersistSnapshot(makeState());
 
     expect(snapshot.projects[0].sessions[0]).not.toHaveProperty('pendingInitialPrompt');
-    expect(snapshot.projects[0].surface?.cli?.runtime).toEqual({
-      status: 'running',
-      resolvedUrl: 'http://localhost:3000',
+    expect(snapshot.projects[0].surface).toEqual({
+      kind: 'web',
+      active: true,
+      targetSessionId: 'session-1',
+      web: {
+        sessionId: 'browser-1',
+        url: 'http://localhost:3000',
+        history: ['http://localhost:3000'],
+      },
     });
   });
 
@@ -77,12 +74,6 @@ describe('state persist snapshot', () => {
     expect(snapshot.projects[0].surface?.web?.history).toEqual(['http://localhost:3000']);
     expect(snapshot.projects[0].surface?.web?.history).not.toBe(
       state.projects[0].surface?.web?.history,
-    );
-    expect(snapshot.projects[0].surface?.cli?.profiles).toEqual([
-      { id: 'profile-1', name: 'Dev', command: 'npm' },
-    ]);
-    expect(snapshot.projects[0].surface?.cli?.profiles).not.toBe(
-      state.projects[0].surface?.cli?.profiles,
     );
   });
 });

@@ -46,7 +46,8 @@ describe('provider-neutral copy contract', () => {
   });
 
   it('uses session-oriented language in the browser workspace', () => {
-    expect(browserNewTabUiSource).toContain('Hand off to session');
+    expect(browserNewTabUiSource).toContain('Open a local surface');
+    expect(browserNewTabUiSource).toContain('Paste a URL above');
     expect(browserStageSource).toContain('Send to selected');
   });
 

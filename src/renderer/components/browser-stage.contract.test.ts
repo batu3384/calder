@@ -61,7 +61,7 @@ describe('browser stage contract', () => {
     expect(css).toContain(
       'border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);',
     );
-    expect(css).toContain('color-mix(in srgb, var(--surface-panel) 58%, transparent);');
+    expect(css).toContain('color-mix(in srgb, var(--surface-panel) 82%, transparent);');
   });
 
   it('keeps view/capture controls grouped in a single tools shell', () => {
@@ -100,7 +100,7 @@ describe('browser stage contract', () => {
     expect(newTabUiSource).toContain('browser-ntp-hero');
     expect(newTabUiSource).toContain('browser-ntp-state');
     expect(source).toContain('browser-content-shell');
-    expect(newTabUiSource).toContain("ntpState.textContent = 'Ready to capture'");
+    expect(newTabUiSource).toContain("ntpState.textContent = 'Ready'");
     expect(source).toContain("import { createNewTabStateController } from './new-tab-state.js';");
     expect(newTabStateSource).toContain("ntpState.textContent = 'Offline'");
     expect(css).toContain('.browser-ntp-hero');
@@ -148,7 +148,6 @@ describe('browser stage contract', () => {
     expect(css).toContain('.browser-tab-pane.split .browser-ntp-title');
     expect(css).toContain('.browser-tab-pane.split .browser-ntp-layout');
     expect(css).toContain('padding: 18px 18px 20px;');
-    expect(css).toContain('font-size: 24px;');
-    expect(css).toContain('grid-template-columns: 1fr;');
+    expect(css).toContain('font-size: 22px;');
   });
 });

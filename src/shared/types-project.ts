@@ -31,13 +31,10 @@ export type {
   BrowserCredentialSaveInput,
   BrowserCredentialSummary,
   BrowserGuestOpenPayload,
-  CliSurfacePromptContextMode,
   EmbeddedBrowserOpenPayload,
   GitFileEntry,
   GitWorktree,
   McpResult,
-  SurfaceKind,
-  SurfaceSelectionMode,
   WebSurfaceState,
 } from './types/project-core.js';
 export type {
@@ -47,19 +44,7 @@ export type {
   ProjectReviewState,
 } from './types/project-review.js';
 export type { PersistedState, Preferences, ProjectRecord } from './types/project-state.js';
-export type {
-  CliSurfaceDiscoveryCandidate,
-  CliSurfaceDiscoveryConfidence,
-  CliSurfaceDiscoveryResult,
-  CliSurfacePortMode,
-  CliSurfaceProfile,
-  CliSurfaceRuntimeState,
-  CliSurfaceStartupTiming,
-  CliSurfaceState,
-  ProjectSurfaceRecord,
-  SurfacePromptPayload,
-  SurfaceSelectionRange,
-} from './types/project-surface.js';
+export type { ProjectSurfaceRecord } from './types/project-surface.js';
 export type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextSpaceSource,

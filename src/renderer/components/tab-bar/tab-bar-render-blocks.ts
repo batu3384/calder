@@ -1,22 +1,9 @@
 import type { ProjectRecord } from '../../state.js';
 import type { GitStatus } from '../surface-services/git-status.js';
 import { buildGitStatusView } from './tab-bar-git-status-view.js';
-import { getProjectSurface } from './tab-bar-surface-state.js';
-
-export interface TabBarRenderSurfaceState {
-  cliSurfaceTabActive: boolean;
-}
 
 export function shouldSkipTabListRender(tabListEl: HTMLElement): boolean {
   return Boolean(tabListEl.querySelector('.tab-name input'));
-}
-
-export function buildTabBarRenderSurfaceState(project: ProjectRecord): TabBarRenderSurfaceState {
-  const surfaceState = getProjectSurface(project);
-  return {
-    cliSurfaceTabActive:
-      surfaceState.active && surfaceState.kind === 'cli' && surfaceState.tabFocus === 'cli',
-  };
 }
 
 export function buildActiveTabRailKey(
@@ -29,7 +16,6 @@ export function buildActiveTabRailKey(
     project.sessions.length,
     project.surface?.kind ?? 'none',
     project.surface?.active ? 'surface-open' : 'surface-closed',
-    project.surface?.tabFocus ?? 'session',
   ].join(':');
 }
 

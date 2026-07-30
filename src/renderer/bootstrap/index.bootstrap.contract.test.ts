@@ -35,7 +35,11 @@ describe('index session bootstrap contract', () => {
     expect(orchestratorSource).toContain('options.initKeybindings();');
     expect(orchestratorSource).not.toContain('initShareManager();');
     expect(orchestratorSource).toContain('startGitPolling();');
-    expect(orchestratorSource).toContain('await appState.load();');
+    expect(orchestratorSource).toContain('await appState.load({ emitLoaded: false });');
+    expect(orchestratorSource).toContain('initLocalization();');
+    expect(orchestratorSource).toContain('startGitPolling();');
+    expect(orchestratorSource).toContain('appState.emitStateLoaded();');
+    expect(orchestratorSource).toContain('markUiReady();');
     expect(orchestratorSource).toContain('promptNewProject();');
     expect(orchestratorSource).toContain('checkWhatsNew();');
     expect(orchestratorSource).toContain('checkStarPrompt();');

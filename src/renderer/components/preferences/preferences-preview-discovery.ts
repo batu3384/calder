@@ -1,10 +1,7 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
 import {
-  describePreviewRuntimeHealth,
-  focusCliPreviewSurface,
   openPreviewTargetInLiveView,
   openWorkspaceShellLogs,
-  restartPreviewRuntime,
 } from '../../project-preview-actions.js';
 
 export interface RenderProjectPreviewCenterSectionArgs {
@@ -28,16 +25,6 @@ function createPreviewDiscoveryActions(
   const actions = document.createElement('div');
   actions.className = 'preview-discovery-actions';
 
-  const focusCliBtn = document.createElement('button');
-  focusCliBtn.className = 'preview-discovery-action-btn';
-  focusCliBtn.type = 'button';
-  focusCliBtn.textContent = 'Focus CLI Surface';
-  focusCliBtn.addEventListener('click', () => {
-    focusCliPreviewSurface(projectId);
-    onCloseModalWide();
-  });
-  actions.appendChild(focusCliBtn);
-
   const openShellBtn = document.createElement('button');
   openShellBtn.className = 'preview-discovery-action-btn';
   openShellBtn.type = 'button';
@@ -47,33 +34,10 @@ function createPreviewDiscoveryActions(
     onCloseModalWide();
   });
   actions.appendChild(openShellBtn);
-
-  const restartRuntimeBtn = document.createElement('button');
-  restartRuntimeBtn.className = 'preview-discovery-action-btn';
-  restartRuntimeBtn.type = 'button';
-  restartRuntimeBtn.textContent = 'Restart preview runtime';
-  restartRuntimeBtn.addEventListener('click', async () => {
-    restartRuntimeBtn.disabled = true;
-    restartRuntimeBtn.textContent = 'Restarting…';
-    const result = await restartPreviewRuntime(projectId);
-    if (result.ok) {
-      focusCliPreviewSurface(projectId);
-      openWorkspaceShellLogs(projectId);
-      onCloseModalWide();
-    } else {
-      restartRuntimeBtn.disabled = false;
-      restartRuntimeBtn.textContent = 'Restart failed';
-    }
-  });
-  actions.appendChild(restartRuntimeBtn);
   return actions;
 }
 
 function createPreviewSummary(project: ProjectRecord): HTMLDivElement {
-  const surface = project.surface;
-  const activeSurfaceLabel = surface?.kind === 'cli' ? 'CLI Surface' : 'Live View';
-  const runtimeHealth = describePreviewRuntimeHealth(project.id);
-
   const summary = document.createElement('div');
   summary.className = 'preview-discovery-summary';
   summary.innerHTML = `
@@ -83,64 +47,10 @@ function createPreviewSummary(project: ProjectRecord): HTMLDivElement {
       </div>
       <div class="preview-discovery-stat">
         <span class="preview-discovery-stat-label">Active surface</span>
-        <span class="preview-discovery-stat-value">${activeSurfaceLabel}</span>
-      </div>
-      <div class="preview-discovery-stat">
-        <span class="preview-discovery-stat-label">Runtime health</span>
-        <span class="preview-discovery-stat-value">${runtimeHealth.statusLabel}</span>
+        <span class="preview-discovery-stat-value">Live View</span>
       </div>
     `;
   return summary;
-}
-
-function createPreviewHealth(project: ProjectRecord): HTMLDivElement {
-  const cliRuntime = project.surface?.cli?.runtime;
-  const runtimeHealth = describePreviewRuntimeHealth(project.id);
-  const health = document.createElement('div');
-  health.className = 'preview-discovery-health';
-  health.dataset.tone = runtimeHealth.tone;
-
-  const healthHeader = document.createElement('div');
-  healthHeader.className = 'preview-discovery-health-header';
-
-  const healthStatus = document.createElement('div');
-  healthStatus.className = 'preview-discovery-health-status';
-  healthStatus.textContent = runtimeHealth.statusLabel;
-  healthHeader.appendChild(healthStatus);
-
-  const healthDetail = document.createElement('div');
-  healthDetail.className = 'preview-discovery-health-detail';
-  healthDetail.textContent = runtimeHealth.detail;
-  healthHeader.appendChild(healthDetail);
-
-  health.appendChild(healthHeader);
-
-  if (runtimeHealth.lastExitLabel || runtimeHealth.lastErrorLabel) {
-    const facts = document.createElement('div');
-    facts.className = 'preview-discovery-health-facts';
-
-    if (runtimeHealth.lastExitLabel) {
-      const exit = document.createElement('div');
-      exit.className = 'preview-discovery-health-fact';
-      exit.textContent = `Last exit: ${runtimeHealth.lastExitLabel}`;
-      facts.appendChild(exit);
-    }
-
-    if (runtimeHealth.lastErrorLabel) {
-      const error = document.createElement('div');
-      error.className = 'preview-discovery-health-fact';
-      error.textContent = `Last error: ${runtimeHealth.lastErrorLabel}`;
-      facts.appendChild(error);
-    }
-
-    health.appendChild(facts);
-  } else if (cliRuntime?.cwd) {
-    const cwd = document.createElement('div');
-    cwd.className = 'preview-discovery-health-fact';
-    cwd.textContent = `Runtime cwd: ${cliRuntime.cwd}`;
-    health.appendChild(cwd);
-  }
-  return health;
 }
 
 function createPreviewTargetItem(
@@ -225,7 +135,7 @@ export function renderProjectPreviewCenterSection(
   const card = args.appendSectionCard(
     args.container,
     'Preview center',
-    'Spot local preview targets, open them in Live View, and jump straight to the CLI or workspace shell when you need logs.',
+    'Spot local preview targets, open them in Live View, and jump to the workspace shell when you need logs.',
   );
 
   const shell = document.createElement('div');
@@ -243,7 +153,6 @@ export function renderProjectPreviewCenterSection(
 
   shell.appendChild(createPreviewDiscoveryActions(project.id, args.onCloseModalWide));
   shell.appendChild(createPreviewSummary(project));
-  shell.appendChild(createPreviewHealth(project));
 
   const list = document.createElement('div');
   list.className = 'preview-discovery-list';

@@ -25,48 +25,17 @@ interface RenderGeneralSectionContentArgs extends RenderGeneralSectionArgs {
 
 function appendGeneralSectionOverview(
   content: HTMLElement,
-  preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
+  _preferenceDraft: RenderGeneralSectionArgs['preferenceDraft'],
   appendSectionIntro: RenderGeneralSectionArgs['appendSectionIntro'],
-  appendOverviewGrid: RenderGeneralSectionArgs['appendOverviewGrid'],
+  _appendOverviewGrid: RenderGeneralSectionArgs['appendOverviewGrid'],
 ): void {
+  // ponytail: overview cards duplicated the controls below; intro alone is enough.
   appendSectionIntro(
     content,
     'Session',
     'Launch defaults',
     'Choose how Calder opens new work, how it names sessions, and which signals stay on while you code.',
   );
-  appendOverviewGrid(content, [
-    {
-      label: 'Language',
-      value: preferenceDraft.language === 'tr' ? 'Turkish' : 'English',
-      note: 'Applies to the full Calder interface.',
-    },
-    {
-      label: 'Appearance',
-      value:
-        preferenceDraft.appearanceTheme === 'light'
-          ? 'Light'
-          : preferenceDraft.appearanceTheme === 'dark'
-            ? 'Dark'
-            : 'System',
-      note: 'Matches macOS/Windows light mode when set to System.',
-    },
-    {
-      label: 'Default tool',
-      value: preferenceDraft.defaultProvider,
-      note: 'Used when a new session has no explicit provider.',
-    },
-    {
-      label: 'History',
-      value: preferenceDraft.sessionHistoryEnabled ? 'On' : 'Off',
-      note: 'Closed sessions can stay searchable in the run log.',
-    },
-    {
-      label: 'Alerts',
-      value: preferenceDraft.notificationsDesktop ? 'Desktop' : 'In-app only',
-      note: 'Sound and notification behavior stays local to this workspace.',
-    },
-  ]);
 }
 
 function buildDefaultProviderNote(

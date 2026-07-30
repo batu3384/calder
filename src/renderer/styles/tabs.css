@@ -19,7 +19,6 @@
   height: 56px;
   min-height: 56px;
   user-select: none;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .tab-bar-surface {
@@ -142,7 +141,7 @@
   border-color: color-mix(in srgb, var(--accent) 16%, var(--border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    inset 3px 0 0 color-mix(in srgb, var(--accent) 72%, transparent);
+    inset 0 2px 0 color-mix(in srgb, var(--accent) 72%, transparent);
   transform: none;
 }
 
@@ -388,7 +387,7 @@
   min-height: var(--control-height-md);
   padding: 3px 4px;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 76%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-panel) 82%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition:
@@ -744,7 +743,6 @@
 }
 
 #surface-mode-slot,
-#surface-profile-slot,
 #session-provider-slot {
   display: flex;
   align-items: center;
@@ -752,182 +750,51 @@
 }
 
 #surface-mode-slot[hidden],
-#surface-profile-slot[hidden],
 #session-provider-slot[hidden] {
   display: none;
 }
 
-.surface-mode-switcher {
+.surface-live-view-btn {
+  appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   min-height: var(--control-height-md);
-  padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-raised) 36%, transparent),
-      transparent 100%
-    ),
-    color-mix(in srgb, var(--surface-panel) 74%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.surface-mode-button {
-  appearance: none;
-  min-height: 28px;
-  height: 28px;
-  padding: 0 var(--space-10);
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-panel) 36%, transparent),
-    transparent
-  );
+  height: var(--control-height-md);
+  padding: 0 var(--space-12);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-raised) 70%, transparent);
   color: var(--text-secondary);
   font-family: var(--font-ui);
   font-size: var(--type-xs);
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  cursor: pointer;
-  transition:
-    transform 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    background-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.surface-mode-button:hover,
-.surface-mode-button:focus {
-  transform: none;
-  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
-  border-color: color-mix(in srgb, var(--border-subtle) 68%, transparent);
-  color: var(--text-primary);
-}
-
-.surface-mode-button.active {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 46%, rgba(255, 255, 255, 0.03)),
-      rgba(255, 255, 255, 0)
-    ),
-    var(--tab-active);
-  color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 6px 14px rgba(0, 0, 0, 0.14);
-}
-
-.surface-mode-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 54%, transparent);
-  outline-offset: 2px;
-}
-
-.surface-profile-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--control-height-md);
-  padding: 3px 4px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-raised) 34%, transparent),
-      transparent 100%
-    ),
-    color-mix(in srgb, var(--surface-panel) 72%, transparent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.03),
-    0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.command-deck-cli-profile-select {
-  min-width: 156px;
-}
-
-.command-deck-cli-profile-select .custom-select-trigger {
-  min-height: 34px;
-  height: 34px;
-  padding: 0 30px 0 11px;
-  border-radius: 999px;
-  border-color: color-mix(in srgb, var(--border-subtle) 82%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-raised) 38%, transparent),
-    color-mix(in srgb, var(--surface-panel) 82%, transparent)
-  );
-  color: var(--text-primary);
-  font-size: var(--type-xs);
   font-weight: 650;
   letter-spacing: 0.02em;
-  justify-content: flex-start;
-  white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.command-deck-cli-profile-select .custom-select-trigger:hover,
-.command-deck-cli-profile-select .custom-select-trigger:focus {
-  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--surface-hover) 76%, transparent);
-}
-
-.command-deck-cli-profile-select .custom-select-dropdown {
-  min-width: 100%;
-  transform-origin: top right;
-}
-
-.surface-profile-config {
-  appearance: none;
-  min-height: 34px;
-  height: 34px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
-  border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-raised) 46%, transparent),
-    color-mix(in srgb, var(--surface-panel) 84%, transparent)
-  );
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-size: var(--type-xs);
-  font-weight: 700;
-  letter-spacing: 0.02em;
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition:
-    transform 0.16s ease,
-    border-color 0.16s ease,
-    background-color 0.16s ease,
-    box-shadow 0.16s ease;
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
 }
 
-.surface-profile-config:hover,
-.surface-profile-config:focus {
-  transform: none;
-  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
-  background: color-mix(in srgb, var(--surface-hover) 72%, transparent);
+.surface-live-view-btn:hover,
+.surface-live-view-btn:focus {
+  background: color-mix(in srgb, var(--surface-hover) 78%, transparent);
+  border-color: color-mix(in srgb, var(--border-subtle) 88%, transparent);
   color: var(--text-primary);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
-.surface-profile-config[data-role='setup-profile'] {
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--border-subtle));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-soft) 40%, transparent),
-    color-mix(in srgb, var(--surface-panel) 84%, transparent)
-  );
+.surface-live-view-btn.active,
+.surface-live-view-btn[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent-soft) 52%, var(--surface-raised));
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+}
+
+.surface-live-view-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 54%, transparent);
+  outline-offset: 2px;
 }
 
 .command-deck-provider-select {
@@ -1216,8 +1083,7 @@
     min-height: 30px;
   }
 
-  .command-deck-provider-select,
-  .command-deck-cli-profile-select {
+  .command-deck-provider-select {
     min-width: 156px;
     max-width: 176px;
   }
@@ -1270,31 +1136,19 @@
     padding: 2px 3px;
   }
 
-  .surface-mode-button {
+  .surface-live-view-btn {
     min-height: 24px;
     padding: 0 8px;
     font-size: 10px;
   }
 
-  .command-deck-provider-select,
-  .command-deck-cli-profile-select {
+  .command-deck-provider-select {
     min-width: 148px;
     max-width: 164px;
   }
 
-  .command-deck-provider-select .custom-select-trigger,
-  .command-deck-cli-profile-select .custom-select-trigger {
-    padding: 0 24px 0 8px;
-    font-size: 10px;
-  }
-
   .command-deck-provider-select .custom-select-trigger {
     padding: 0 24px 0 28px;
-  }
-
-  .surface-profile-config {
-    min-height: 28px;
-    padding: 0 8px;
     font-size: 10px;
   }
 
@@ -1322,14 +1176,9 @@
     max-width: 88px;
   }
 
-  .command-deck-provider-select,
-  .command-deck-cli-profile-select {
+  .command-deck-provider-select {
     min-width: 136px;
     max-width: 148px;
-  }
-
-  .surface-profile-config {
-    padding: 0 7px;
   }
 }
 
@@ -1456,11 +1305,11 @@
   width: 14px;
   height: 14px;
   vertical-align: middle;
-  border-radius: 4px;
-  margin-right: 1px;
+  border-radius: 3px;
+  margin-right: 2px;
   position: relative;
   top: -1px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+  object-fit: contain;
 }
 
 .tab-provider-fallback {
@@ -1483,19 +1332,18 @@
 }
 
 .tab-provider-fallback-cursor {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.96), rgba(37, 99, 235, 0.96));
+  background: var(--accent);
 }
 
 .tab-provider-fallback-minimax {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(234, 88, 12, 0.96));
+  background: var(--accent);
 }
 
 .tab-diff-badge,
 .tab-mcp-badge,
 .tab-file-badge,
 .tab-remote-badge,
-.tab-browser-badge,
-.tab-cli-surface-badge {
+.tab-browser-badge {
   display: inline-flex;
   align-items: center;
   font-size: 10px;
@@ -1531,7 +1379,6 @@
   #tab-actions,
   .session-launcher-group,
   #surface-mode-slot,
-  #surface-profile-slot,
   #session-provider-slot {
     min-width: 0;
     max-width: 100%;
@@ -1541,15 +1388,13 @@
     overflow: visible;
   }
 
-  .command-deck-provider-select,
-  .command-deck-cli-profile-select {
+  .command-deck-provider-select {
     flex: 1 1 148px;
     min-width: min(148px, 100%);
     max-width: 100%;
   }
 
-  .surface-mode-switcher,
-  .surface-profile-group {
+  .surface-live-view-btn {
     max-width: 100%;
     flex-wrap: wrap;
   }

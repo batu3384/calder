@@ -99,7 +99,6 @@ import {
   killAllPtys,
   killPty,
   resizePty,
-  spawnCommandPty,
   spawnPty,
   spawnShellPty,
   writePty,
@@ -150,8 +149,15 @@ describe('spawnPty', () => {
         name: 'xterm-256color',
         cols: 120,
         rows: 30,
+        env: expect.objectContaining({
+          FORCE_COLOR: '1',
+          COLORTERM: 'truecolor',
+          TERM: 'xterm-256color',
+        }),
       }),
     );
+    const env = mockSpawn.mock.calls[0][2].env as Record<string, string>;
+    expect(env.NO_COLOR).toBeUndefined();
   });
 
   it('adds -r flag when resuming with cliSessionId', () => {
@@ -378,75 +384,6 @@ describe('spawnPty', () => {
     expect(env.PATH).toContain('/mock-bridge:');
     expect(env.BROWSER).toBe('/mock-bridge/calder-open-url');
     expect(env.CALDER_BROWSER_BRIDGE_CWD).toBe('/project/app');
-  });
-});
-
-describe('spawnCommandPty', () => {
-  it('spawns a generic command PTY with explicit launch settings', () => {
-    const proc = createMockPtyProcess();
-    mockSpawn.mockReturnValue(proc);
-
-    spawnCommandPty(
-      'cli-surface:project-1',
-      {
-        command: 'python',
-        args: ['-m', 'textual', 'run', 'app.py'],
-        cwd: '/project',
-        cols: 132,
-        rows: 40,
-        envPatch: { NODE_ENV: 'development' },
-      },
-      vi.fn(),
-      vi.fn(),
-    );
-
-    expect(mockSpawn).toHaveBeenCalledWith(
-      'python',
-      ['-m', 'textual', 'run', 'app.py'],
-      expect.objectContaining({
-        cwd: '/project',
-        cols: 132,
-        rows: 40,
-        env: expect.objectContaining({
-          NODE_ENV: 'development',
-          BROWSER: '/mock-bridge/calder-open-url',
-        }),
-      }),
-    );
-  });
-
-  it('keeps the replacement command runtime active when the old PTY exits late', () => {
-    const oldProc = createMockPtyProcess();
-    const newProc = createMockPtyProcess();
-    mockSpawn.mockReturnValueOnce(oldProc).mockReturnValueOnce(newProc);
-
-    spawnCommandPty(
-      'cli-surface:project-1',
-      {
-        command: 'python',
-        args: ['-m', 'textual', 'run', 'app.py'],
-        cwd: '/project',
-      },
-      vi.fn(),
-      vi.fn(),
-    );
-    spawnCommandPty(
-      'cli-surface:project-1',
-      {
-        command: 'python',
-        args: ['-m', 'textual', 'run', 'app.py'],
-        cwd: '/project',
-      },
-      vi.fn(),
-      vi.fn(),
-    );
-
-    oldProc._emitExit(1, 0);
-    mockWrite.mockClear();
-    writePty('cli-surface:project-1', 'still-active');
-
-    expect(mockKill).toHaveBeenCalled();
-    expect(mockWrite).toHaveBeenCalledWith('still-active');
   });
 });
 

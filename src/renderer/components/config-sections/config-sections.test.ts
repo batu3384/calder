@@ -83,9 +83,8 @@ describe('getActiveCliProviderId', () => {
     expect(source).toContain('setSessionAutoApprovalOverride');
     expect(source).toContain('auto-approval-control');
     expect(source).toContain('Full Auto (Unsafe)');
-    expect(source).toContain('Session policy is temporary and takes priority');
-    expect(source).toContain('Mode Guide');
-    expect(source).toContain('auto-approval-mode-guide-toggle');
+    expect(source).toContain('host: item');
+    expect(source).toContain('Session safe auto-approves project edits');
   });
 
   it('shows inherit state for project scope instead of mirroring global mode', async () => {

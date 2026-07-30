@@ -3,7 +3,6 @@ import type {
   ProjectGovernanceState,
   ProviderId,
 } from '../../types.js';
-import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import {
   appendAutoApprovalControls,
   type AutoApprovalScopeSummary,
@@ -26,9 +25,6 @@ import {
  * setSessionAutoApprovalOverride
  * auto-approval-control
  * Full Auto (Unsafe)
- * Session policy is temporary and takes priority
- * Mode Guide
- * auto-approval-mode-guide-toggle
  * PROJECT_INHERIT_VALUE
  * SESSION_INHERIT_VALUE
  * projectSelect.value === PROJECT_INHERIT_VALUE
@@ -107,7 +103,6 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const {
     projectId,
     projectPath,
-    providerId,
     governanceState,
     supportsPermissionHooks,
     sessionId,
@@ -121,8 +116,6 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
   const item = document.createElement('div');
   item.className = 'config-item auto-approval-item';
 
-  const summary = document.createElement('div');
-  summary.className = 'auto-approval-summary';
   const scopeSummary = describeAutoApprovalScopes(autoApproval);
   if (!supportsPermissionHooks) {
     scopeSummary.effectiveBehavior = localizedText(
@@ -140,115 +133,34 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     );
   }
   const displayEffectiveMode = supportsPermissionHooks ? autoApproval.effectiveMode : 'ask';
-  const providerName = getProviderDisplayName(providerId);
-  const priorityRule = localizedText(
-    'Priority: Session > Project > Global.',
-    'Öncelik sırası: Oturum > Proje > Global.',
-  );
   const effectiveModeLabel = localizedText('Effective Mode', 'Etkin Mod');
-  const effectiveSourceLabel = localizedText('Effective Source', 'Etkin Kaynak');
-  const currentBehaviorLabel = localizedText('Current Behavior', 'Mevcut Davranış');
-  const autoRunsLabel = localizedText('Auto-runs', 'Otomatik çalışır');
-  const stillAsksLabel = localizedText('Still asks', 'Yine sorar');
-  const providerLabelText = localizedText('Provider', 'Sağlayıcı');
-  const policyStackLabel = localizedText('Policy Stack', 'Politika Katmanı');
   const globalPolicyLabel = localizedText('Global Default', 'Global Varsayılan');
   const projectPolicyLabel = localizedText('Project Policy', 'Proje Politikası');
   const sessionPolicyLabel = localizedText('Session Policy', 'Oturum Politikası');
-  const effectiveShortLabel = localizedText('Effective', 'Etkin');
-  const priorityMapLabel = localizedText(
-    'Applied order: Global -> Project -> Session -> Effective.',
-    'Uygulama sırası: Global -> Proje -> Oturum -> Etkin.',
-  );
-  const showPolicyDetailsLabel = localizedText(
-    'Show policy details',
-    'Politika detaylarını göster',
-  );
-  const hidePolicyDetailsLabel = localizedText('Hide policy details', 'Politika detaylarını gizle');
-  const quickSummaryLabel = localizedText('Quick summary', 'Hızlı özet');
-  const modeRiskNote = null;
 
+  const summary = document.createElement('div');
+  summary.className = 'auto-approval-summary';
+  const effectiveSourceLabel = localizedText('Source', 'Kaynak');
+  const riskNote =
+    displayEffectiveMode === 'session_safe'
+      ? localizedText(
+          'Session safe auto-approves project edits and read-only tools. Destructive and outside-project actions still ask.',
+          'Oturum güvenli: proje düzenlemeleri ve salt-okunur araçlar otomatik onaylanır. Yıkıcı ve proje-dışı işlemler hâlâ sorar.',
+        )
+      : null;
   summary.innerHTML = `
     <div class="auto-approval-summary-header auto-approval-current-card">
       <span class="config-item-name">${esc(effectiveModeLabel)}</span>
       <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
     </div>
-    <div class="auto-approval-priority-note ops-rail-note" data-tone="default">
-      ${esc(priorityRule)}
-    </div>
-    <div class="auto-approval-meta-inline" aria-label="${esc(quickSummaryLabel)}">
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(effectiveSourceLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveSource)}</span>
-      </div>
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(currentBehaviorLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveBehavior)}</span>
-      </div>
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(autoRunsLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveAutoRuns)}</span>
-      </div>
-      <div class="auto-approval-meta-inline-item">
-        <span class="auto-approval-meta-inline-label">${esc(stillAsksLabel)}</span>
-        <span class="auto-approval-meta-inline-value">${esc(scopeSummary.effectiveStillAsks)}</span>
-      </div>
-    </div>
+    <div class="auto-approval-summary-source">${esc(effectiveSourceLabel)}: ${esc(scopeSummary.effectiveSource)}</div>
+    ${
+      riskNote
+        ? `<div class="auto-approval-risk-note" data-tone="warning">${esc(riskNote)}</div>`
+        : ''
+    }
   `;
   item.appendChild(summary);
-
-  const detailsToggle = document.createElement('button');
-  detailsToggle.type = 'button';
-  detailsToggle.className = 'auto-approval-details-toggle';
-  detailsToggle.textContent = showPolicyDetailsLabel;
-  detailsToggle.setAttribute('aria-expanded', 'false');
-
-  const details = document.createElement('div');
-  details.className = 'auto-approval-details hidden';
-  details.id = `auto-approval-details-${projectId}`;
-  detailsToggle.setAttribute('aria-controls', details.id);
-  details.innerHTML = `
-    <div class="auto-approval-priority-map">${esc(priorityMapLabel)}</div>
-    <div class="auto-approval-meta-card">
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(providerLabelText)}</span>
-        <span class="auto-approval-meta-value">${esc(providerName)}</span>
-      </div>
-      <div class="auto-approval-meta-row">
-        <span class="auto-approval-meta-label">${esc(localizedText('Why this applies', 'Neden bu uygulanıyor'))}</span>
-        <span class="auto-approval-meta-value">${esc(scopeSummary.effectiveExplanation)}</span>
-      </div>
-    </div>
-    <div class="auto-approval-policy-stack" aria-label="${esc(policyStackLabel)}">
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(globalPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.global)}</span>
-      </div>
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(projectPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.project)}</span>
-      </div>
-      <div class="auto-approval-policy-row">
-        <span class="auto-approval-policy-name">${esc(sessionPolicyLabel)}</span>
-        <span class="scope-badge control-chip">${esc(scopeSummary.session)}</span>
-      </div>
-      <div class="auto-approval-policy-row is-effective">
-        <span class="auto-approval-policy-name">${esc(effectiveShortLabel)}</span>
-        <span class="scope-badge control-chip">${esc(autoApprovalModeLabel(displayEffectiveMode))}</span>
-      </div>
-    </div>
-    ${modeRiskNote ? `<div class="auto-approval-risk-note">${esc(modeRiskNote)}</div>` : ''}
-  `;
-
-  detailsToggle.addEventListener('click', () => {
-    const expanded = detailsToggle.getAttribute('aria-expanded') === 'true';
-    detailsToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    detailsToggle.textContent = expanded ? showPolicyDetailsLabel : hidePolicyDetailsLabel;
-    details.classList.toggle('hidden', expanded);
-  });
-
-  item.appendChild(detailsToggle);
-  item.appendChild(details);
 
   appendAutoApprovalControls({
     autoApproval,
@@ -261,9 +173,9 @@ export function renderAutoApprovalSection(args: RenderAutoApprovalSectionArgs): 
     projectId,
     projectPath,
     refresh,
-    details,
-    esc,
+    host: item,
   });
+
   return renderSection(
     'auto-approval',
     localizedText('Auto Approval', 'Otomatik Onay'),

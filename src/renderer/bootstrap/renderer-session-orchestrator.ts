@@ -33,7 +33,7 @@ import { initUpdateBanner } from '../components/update-banner.js';
 import { showUsageModal } from '../components/usage-modal.js';
 import { checkWhatsNew } from '../components/whats-new-dialog.js';
 import { startPolling as startGitPolling } from '../git-status.js';
-import { initLocalization } from '../i18n.js';
+import { initLocalization, markUiReady } from '../i18n.js';
 import { initNotificationDesktop } from '../notification-desktop.js';
 import { initNotificationSound } from '../notification-sound.js';
 import { initProjectBackgroundTaskSync } from '../project-background-task-sync.js';
@@ -223,64 +223,71 @@ export function createRendererSessionOrchestrator(
   }
 
   async function initialize(): Promise<void> {
-    registerSessionTelemetryObservers();
+    try {
+      registerSessionTelemetryObservers();
 
-    // Load provider metadata before components so capabilities are available synchronously
-    await loadProviderMetas();
-    initUpdateCenter();
+      // Load provider metadata before components so capabilities are available synchronously
+      await loadProviderMetas();
+      initUpdateCenter();
 
-    // Initialize components
-    initSessionUnread();
-    initSidebar();
-    initContextInspector();
-    initTabBar();
-    initStatusBar();
-    initSplitLayout();
-    options.initKeybindings();
-    initConfigSections();
-    initNotificationSound();
-    initNotificationDesktop();
-    initProjectTerminal();
-    initDebugPanel();
-    initGitPanel();
-    initSessionHistory();
-    initUpdateBanner();
-    initInsightAlert();
-    initToolDetector();
-    initToolAlert();
-    initLargeFileDetector();
-    initLargeFileAlert();
-    initSessionInspector();
-    startGitPolling();
+      // Initialize components
+      initSessionUnread();
+      initSidebar();
+      initContextInspector();
+      initTabBar();
+      initStatusBar();
+      initSplitLayout();
+      options.initKeybindings();
+      initConfigSections();
+      initNotificationSound();
+      initNotificationDesktop();
+      initProjectTerminal();
+      initDebugPanel();
+      initGitPanel();
+      initSessionHistory();
+      initUpdateBanner();
+      initInsightAlert();
+      initToolDetector();
+      initToolAlert();
+      initLargeFileDetector();
+      initLargeFileAlert();
+      initSessionInspector();
 
-    window.calder.menu.onUsageStats(() => showUsageModal());
-    registerStateDebugEvents();
+      window.calder.menu.onUsageStats(() => showUsageModal());
+      registerStateDebugEvents();
 
-    // Load persisted state
-    await appState.load();
-    applyAppearanceTheme(appState.preferences.appearanceTheme);
-    bindAppearanceThemeListener(() => {
-      if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
-        applyAppearanceTheme('system');
+      // Load persisted state before first paint of project/session UI
+      await appState.load({ emitLoaded: false });
+      applyAppearanceTheme(appState.preferences.appearanceTheme);
+      bindAppearanceThemeListener(() => {
+        if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
+          applyAppearanceTheme('system');
+        }
+      });
+      initLocalization();
+      startGitPolling();
+      appState.emitStateLoaded();
+      initProjectContextSync();
+      initProjectWorkflowSync();
+      initProjectTeamContextSync();
+      initProjectReviewSync();
+      initProjectGovernanceSync();
+      initProjectBackgroundTaskSync();
+      initProjectCheckpointSync();
+
+      if (shouldShowOnboarding()) {
+        showOnboardingDialog();
+      } else if (appState.projects.length === 0) {
+        promptNewProject();
       }
-    });
-    initLocalization();
-    initProjectContextSync();
-    initProjectWorkflowSync();
-    initProjectTeamContextSync();
-    initProjectReviewSync();
-    initProjectGovernanceSync();
-    initProjectBackgroundTaskSync();
-    initProjectCheckpointSync();
 
-    if (shouldShowOnboarding()) {
-      showOnboardingDialog();
-    } else if (appState.projects.length === 0) {
-      promptNewProject();
+      window.setTimeout(() => {
+        checkWhatsNew();
+        checkStarPrompt();
+      }, 0);
+    } finally {
+      markUiReady();
     }
-
-    checkWhatsNew();
-    checkStarPrompt();
   }
 
   return {

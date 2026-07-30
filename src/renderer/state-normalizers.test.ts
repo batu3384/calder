@@ -8,7 +8,6 @@ import {
   normalizeProjectContextState,
   normalizeProjectLayout,
   normalizeProjectSurface,
-  stripTransientRuntimeFields,
 } from './state-normalizers.js';
 
 function makeProject(overrides: Partial<ProjectRecord> = {}): ProjectRecord {
@@ -92,9 +91,17 @@ describe('state normalizers', () => {
     });
   });
 
-  it('hydrates browser-backed surfaces and strips transient cli runtime fields', () => {
+  it('hydrates browser-backed web surfaces from project sessions', () => {
     const project = makeProject({
       sessions: [
+        {
+          id: 'cli-1',
+          name: 'Claude',
+          type: 'claude',
+          providerId: 'claude',
+          cliSessionId: 'cli-1',
+          createdAt: '2026-04-21T00:00:00Z',
+        },
         {
           id: 'browser-1',
           name: 'Browser',
@@ -102,41 +109,28 @@ describe('state normalizers', () => {
           browserTabUrl: 'http://localhost:3000',
           browserTargetSessionId: 'cli-1',
           cliSessionId: null,
-          createdAt: '2026-04-21T00:00:00Z',
+          createdAt: '2026-04-21T00:01:00Z',
         },
       ],
       surface: {
-        kind: 'cli',
+        kind: 'web',
         active: true,
-        tabOrder: ['cli'],
-        cli: {
-          profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
-          selectedProfileId: 'profile-1',
-          runtime: {
-            status: 'running',
-            runtimeId: 'runtime-1',
-            startupTiming: { startedAtMs: 1 },
-          },
+        web: {
+          sessionId: 'browser-1',
+          url: 'http://localhost:3000',
+          history: ['http://localhost:3000'],
         },
       },
     });
 
     expect(normalizeProjectSurface(project)).toEqual({
-      kind: 'cli',
+      kind: 'web',
       active: true,
-      tabFocus: 'cli',
-      tabPlacement: 'end',
-      tabOrder: ['cli'],
-      targetSessionId: undefined,
+      targetSessionId: 'cli-1',
       web: {
         sessionId: 'browser-1',
         url: 'http://localhost:3000',
         history: ['http://localhost:3000'],
-      },
-      cli: {
-        selectedProfileId: 'profile-1',
-        profiles: [{ id: 'profile-1', name: 'Dev', command: 'npm' }],
-        runtime: { status: 'running' },
       },
     });
   });
@@ -177,24 +171,16 @@ describe('state normalizers', () => {
     expect(normalizeProjectSurface(project)).toEqual({
       kind: 'web',
       active: true,
-      tabFocus: 'session',
-      tabPlacement: 'end',
-      tabOrder: ['cli'],
       targetSessionId: 'cli-1',
       web: {
         sessionId: 'browser-1',
         url: 'http://localhost:3000',
         history: ['http://stale.local'],
       },
-      cli: {
-        selectedProfileId: undefined,
-        profiles: [],
-        runtime: { status: 'idle' },
-      },
     });
   });
 
-  it('derives browser names, workflow prompts, and persistable runtimes', () => {
+  it('derives browser names and workflow prompts', () => {
     expect(deriveBrowserSessionName('https://example.com/path')).toBe('example.com');
     expect(deriveBrowserSessionName('not a url', 'Fallback')).toBe('Fallback');
     expect(
@@ -212,13 +198,5 @@ describe('state normalizers', () => {
         'Run the failing test first.',
       ].join('\n\n'),
     );
-    expect(
-      stripTransientRuntimeFields({
-        status: 'running',
-        runtimeId: 'runtime-1',
-        startupTiming: { startedAtMs: 1 },
-        resolvedUrl: 'http://localhost:3000',
-      }),
-    ).toEqual({ status: 'running', resolvedUrl: 'http://localhost:3000' });
   });
 });

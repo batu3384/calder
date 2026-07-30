@@ -1,5 +1,8 @@
 export const PREFERENCES_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> = [
   ['Workspace Center', 'Çalışma Alanı Merkezi'],
+  ['Settings', 'Ayarlar'],
+  ['Workspace Safety', 'Çalışma Alanı Güvenliği'],
+  ['Auto Approve', 'Otomatik Onay'],
   ['Calder workspace', 'Calder çalışma alanı'],
   ['Workspace settings', 'Çalışma alanı ayarları'],
   [

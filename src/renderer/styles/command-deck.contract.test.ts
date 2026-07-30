@@ -56,7 +56,6 @@ describe('command deck stylesheet contract', () => {
     expect(tabsCss).toContain('Premium command deck guardrail');
     expect(tabsCss).toContain('@container workspace-stack (max-width: 900px)');
     expect(tabsCss).toContain('#surface-mode-slot');
-    expect(tabsCss).toContain('#surface-profile-slot');
     expect(tabsCss).toContain('#session-provider-slot');
     expect(tabsCss).toContain('overflow: visible;');
     expect(tabsCss).toContain('flex: 1 1 148px;');

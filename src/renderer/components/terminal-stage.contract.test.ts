@@ -26,5 +26,7 @@ describe('terminal stage contract', () => {
     expect(css).toContain('.terminal-pane-session');
     expect(css).toContain('font-family: var(--font-display);');
     expect(css).toContain('.terminal-pane.focused .terminal-pane-chrome');
+    expect(css).toContain('.terminal-pane.swarm-dimmed.focused::after');
+    expect(css).toContain('background: rgba(1, 1, 2, 0.42);');
   });
 });

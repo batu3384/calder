@@ -1,6 +1,5 @@
 import type { ProjectRecord } from '../state.js';
 import { attachBrowserTabToContainer, showBrowserTabPane } from './browser-tab-pane.js';
-import { attachCliSurfacePane, showCliSurfacePane } from './cli-surface/pane.js';
 
 function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefined {
   const surfaceSessionId = project.surface?.web?.sessionId;
@@ -13,23 +12,11 @@ function resolveBrowserSurfaceSessionId(project: ProjectRecord): string | undefi
   return [...project.sessions].reverse().find((session) => session.type === 'browser-tab')?.id;
 }
 
-function isCliSurfaceFocused(project: ProjectRecord): boolean {
-  return Boolean(
-    project.surface?.active && project.surface.kind === 'cli' && project.surface.tabFocus === 'cli',
-  );
-}
-
 export function hasPinnedSurfaceFocus(project: ProjectRecord): boolean {
-  return isCliSurfaceFocused(project);
+  return Boolean(project.surface?.active && project.surface.kind === 'web');
 }
 
 export function renderSurfaceHost(project: ProjectRecord, container: HTMLElement): void {
-  if (isCliSurfaceFocused(project)) {
-    attachCliSurfacePane(project.id, container);
-    showCliSurfacePane(project.id);
-    return;
-  }
-
   const sessionId = resolveBrowserSurfaceSessionId(project);
   if (!sessionId) return;
 

@@ -49,7 +49,6 @@
 - app → focus, external URL open, guest webview send
 - browser → screenshot, local target list
 - browserCredential → credential save/list/fill (uses safeStorage encryption)
-- cliSurface → CLI surface runtime
 - mcp → MCP server connect/call/resource
 - stats → stats cache
 - settings → settings validation/reinstall

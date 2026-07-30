@@ -8,7 +8,7 @@ const preferencesCss = readFileSync(new URL('./preferences.css', import.meta.url
 describe('tab bar responsive command deck contract', () => {
   it('keeps the live view and cli surface controls inline until a narrower shell width', () => {
     expect(tabsCss).toContain('@container workspace-stack (max-width: 980px)');
-    expect(tabsCss).toContain('.surface-mode-button');
+    expect(tabsCss).toContain('.surface-live-view-btn');
     expect(tabsCss).toContain('padding: 0 8px;');
     expect(tabsCss).toContain('#git-status {');
     expect(tabsCss).toContain('padding: 0 8px;');

@@ -87,6 +87,7 @@ function createTerminalShell(params: CreateTerminalShellParams): TerminalShellEl
   const element = document.createElement('div');
   element.className = 'terminal-pane hidden';
   element.dataset.sessionId = sessionId;
+  element.dataset.provider = providerId;
 
   const chrome = document.createElement('div');
   chrome.className = 'terminal-pane-chrome';

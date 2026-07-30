@@ -6,38 +6,23 @@
  */
 
 :root {
-  --aurora-blue: #69bde7;
-  --aurora-cyan: #7fd4ff;
-  --aurora-violet: #5d8ec6;
-  --aurora-indigo: #567aa2;
-  --aurora-rose: #d69584;
-  --aurora-emerald: #44c69e;
-  --aurora-sheen: rgba(227, 236, 247, 0.036);
-  --aurora-frost: rgba(227, 236, 247, 0.055);
-  --aurora-border: rgba(127, 167, 212, 0.16);
-  --aurora-shadow: rgba(2, 8, 18, 0.42);
-  --aurora-glow-blue: rgba(127, 212, 255, 0.1);
-  --aurora-glow-violet: rgba(93, 142, 198, 0.08);
+  --aurora-blue: var(--accent);
+  --aurora-cyan: var(--accent-cool);
+  --aurora-violet: var(--accent);
+  --aurora-indigo: var(--accent-dim);
+  --aurora-rose: var(--danger);
+  --aurora-emerald: var(--success);
+  --aurora-sheen: rgba(247, 248, 248, 0.03);
+  --aurora-frost: rgba(247, 248, 248, 0.045);
+  --aurora-border: color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  --aurora-shadow: rgba(1, 1, 2, 0.42);
+  --aurora-glow-blue: rgba(111, 154, 166, 0.08);
+  --aurora-glow-violet: transparent;
   --aurora-glow-rose: transparent;
-  --aurora-panel-gradient:
-    radial-gradient(circle at 12% -16%, rgba(127, 212, 255, 0.06), transparent 42%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.02), rgba(227, 236, 247, 0)),
-    color-mix(in srgb, var(--surface-panel) 94%, black);
-  --aurora-card-gradient:
-    radial-gradient(circle at 100% 0%, rgba(127, 212, 255, 0.07), transparent 42%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.028), rgba(227, 236, 247, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, black);
-  --aurora-control-gradient:
-    linear-gradient(180deg, rgba(227, 236, 247, 0.042), rgba(227, 236, 247, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 86%, transparent);
-  --aurora-active-gradient:
-    radial-gradient(circle at top right, rgba(127, 212, 255, 0.14), transparent 46%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 28%, rgba(255, 255, 255, 0.024)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--tab-active) 94%, black);
+  --aurora-panel-gradient: var(--surface-panel);
+  --aurora-card-gradient: var(--surface-elevated);
+  --aurora-control-gradient: var(--surface-panel-alt);
+  --aurora-active-gradient: color-mix(in srgb, var(--accent-soft) 40%, var(--surface-raised));
 }
 
 html,
@@ -56,7 +41,7 @@ body {
 }
 
 ::selection {
-  background: rgba(127, 212, 255, 0.22);
+  background: rgba(111, 154, 166, 0.22);
   color: var(--text-primary);
 }
 
@@ -67,7 +52,6 @@ body {
 #tab-bar,
 .control-panel-surface,
 .ops-rail-surface,
-.cli-surface-toolbar,
 .terminal-pane-chrome,
 .browser-pane-chrome,
 .browser-tab-toolbar {
@@ -90,7 +74,7 @@ body {
 #sidebar-footer {
   border-color: color-mix(in srgb, var(--aurora-border) 76%, transparent);
   background:
-    linear-gradient(180deg, rgba(227, 236, 247, 0.032), rgba(227, 236, 247, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.032), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-rail) 90%, transparent);
 }
 
@@ -98,7 +82,6 @@ body {
 .context-inspector-title,
 .terminal-pane-title,
 .browser-pane-label,
-.cli-surface-title,
 .empty-state-title {
   letter-spacing: -0.035em;
 }
@@ -107,7 +90,6 @@ body {
 .context-inspector-eyebrow,
 .context-inspector-section-label,
 .calder-section-heading,
-.cli-surface-action-label,
 .browser-pane-label {
   color: color-mix(in srgb, var(--aurora-cyan) 44%, var(--text-muted));
 }
@@ -116,13 +98,9 @@ body {
 .calder-button,
 .calder-icon-button,
 .calder-status-pill,
-.surface-mode-switcher,
+.surface-live-view-btn,
 .session-launcher-group,
 #git-status,
-.cli-surface-action-group,
-.cli-surface-button,
-.cli-surface-route,
-.cli-surface-adapter-badge,
 .usage-stat-card,
 .usage-section-shell,
 .help-section-shell,
@@ -131,23 +109,22 @@ body {
   border-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
   background: var(--aurora-control-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.045),
+    inset 0 1px 0 rgba(247, 248, 248, 0.045),
     0 10px 22px rgba(2, 8, 18, 0.14);
 }
 
 .sidebar-header-actions {
   border-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(227, 236, 247, 0.034), rgba(227, 236, 247, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.034), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-panel) 68%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.04),
+    inset 0 1px 0 rgba(247, 248, 248, 0.04),
     0 8px 18px rgba(2, 8, 18, 0.15);
 }
 
 .calder-button:hover,
 .calder-icon-button:hover,
-.cli-surface-button:hover,
 .project-item:hover,
 #git-status:hover,
 .session-launcher-group:hover,
@@ -155,24 +132,23 @@ body {
 .context-inspector-reopen:focus {
   border-color: color-mix(in srgb, var(--aurora-cyan) 28%, var(--border-subtle));
   background:
-    radial-gradient(circle at top right, rgba(127, 212, 255, 0.1), transparent 44%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.05), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at top right, rgba(111, 154, 166, 0.1), transparent 44%),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.05), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-hover) 86%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.06),
+    inset 0 1px 0 rgba(247, 248, 248, 0.06),
     0 14px 32px rgba(2, 8, 18, 0.22);
 }
 
 .project-item.active,
 .tab-item.active,
-.cli-surface-button.active,
-.surface-mode-button.active,
+.surface-live-view-btn.active,
 .terminal-pane.focused {
   border-color: color-mix(in srgb, var(--aurora-cyan) 30%, var(--border-subtle));
   background: var(--aurora-active-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.065),
-    0 0 0 1px rgba(127, 212, 255, 0.06),
+    inset 0 1px 0 rgba(247, 248, 248, 0.065),
+    0 0 0 1px rgba(111, 154, 166, 0.06),
     var(--shadow-lift);
 }
 
@@ -183,26 +159,26 @@ body {
     var(--aurora-cyan),
     color-mix(in srgb, var(--aurora-cyan) 54%, white)
   );
-  box-shadow: 0 0 12px rgba(127, 212, 255, 0.16);
+  box-shadow: 0 0 12px rgba(111, 154, 166, 0.16);
 }
 
 #tab-bar {
   height: 54px;
   min-height: 54px;
   box-shadow:
-    inset 0 -1px 0 rgba(227, 236, 247, 0.03),
+    inset 0 -1px 0 rgba(247, 248, 248, 0.03),
     0 8px 22px rgba(2, 8, 18, 0.14);
 }
 
 .tab-item {
   border-color: rgba(148, 184, 255, 0.07);
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.026), rgba(226, 242, 255, 0)), transparent;
+    linear-gradient(180deg, rgba(247, 248, 248, 0.026), rgba(247, 248, 248, 0)), transparent;
 }
 
 .tab-item:hover {
   background:
-    radial-gradient(circle at top, rgba(127, 212, 255, 0.08), transparent 54%),
+    radial-gradient(circle at top, rgba(111, 154, 166, 0.08), transparent 54%),
     color-mix(in srgb, var(--surface-hover) 62%, transparent);
 }
 
@@ -218,7 +194,7 @@ body {
 }
 
 .session-launcher-group,
-.surface-mode-switcher {
+.surface-live-view-btn {
   backdrop-filter: none;
 }
 
@@ -235,7 +211,7 @@ body {
   border-color: color-mix(in srgb, var(--aurora-border) 92%, transparent);
   background: var(--aurora-card-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.05),
+    inset 0 1px 0 rgba(247, 248, 248, 0.05),
     0 16px 40px rgba(2, 8, 18, 0.28);
 }
 
@@ -251,11 +227,11 @@ body {
 .mcp-inspector-pane {
   border-color: color-mix(in srgb, var(--pane-unfocus) 72%, var(--aurora-border));
   background:
-    radial-gradient(circle at 0% 0%, rgba(127, 212, 255, 0.06), transparent 28%),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.024), rgba(227, 236, 247, 0)),
+    radial-gradient(circle at 0% 0%, rgba(111, 154, 166, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.024), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-canvas) 94%, black);
   box-shadow:
-    inset 0 1px 0 rgba(227, 236, 247, 0.045),
+    inset 0 1px 0 rgba(247, 248, 248, 0.045),
     0 20px 48px rgba(2, 8, 18, 0.24);
 }
 
@@ -270,18 +246,6 @@ body {
     0 8px 22px rgba(2, 8, 18, 0.18);
 }
 
-.cli-surface-pane {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.13), transparent 24%),
-    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.1), transparent 24%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-shell) 98%, black),
-      color-mix(in srgb, var(--surface-canvas) 98%, black)
-    );
-}
-
-.cli-surface-button-primary,
 .empty-state-primary-action,
 .update-banner-btn {
   border-color: color-mix(in srgb, var(--aurora-cyan) 42%, var(--border-subtle));
@@ -295,16 +259,15 @@ body {
   color: var(--text-primary);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 14px 30px rgba(127, 212, 255, 0.1);
+    0 14px 30px rgba(111, 154, 166, 0.1);
 }
 
-.cli-surface-button-primary:hover,
 .empty-state-primary-action:hover,
 .update-banner-btn:hover {
   border-color: color-mix(in srgb, var(--aurora-cyan) 58%, var(--border-subtle));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.11),
-    0 18px 36px rgba(127, 212, 255, 0.14);
+    0 18px 36px rgba(111, 154, 166, 0.14);
 }
 
 .usage-activity-bar,
@@ -328,8 +291,6 @@ body {
 
 .calder-status-pill,
 .project-session-count,
-.cli-surface-route,
-.cli-surface-adapter-badge,
 .browser-pane-status {
   color: var(--text-secondary);
 }
@@ -340,7 +301,7 @@ textarea,
 .modal-field input {
   border-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.038), rgba(226, 242, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.038), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 88%, black);
 }
 
@@ -381,7 +342,7 @@ textarea:focus,
   border-color: color-mix(in srgb, var(--aurora-border) 86%, transparent);
   background: var(--aurora-card-gradient);
   box-shadow:
-    inset 0 1px 0 rgba(226, 242, 255, 0.055),
+    inset 0 1px 0 rgba(247, 248, 248, 0.055),
     0 16px 34px rgba(1, 8, 28, 0.18);
 }
 
@@ -399,7 +360,7 @@ textarea:focus,
 .file-viewer-area-badge.calder-status-pill {
   border-color: color-mix(in srgb, var(--aurora-border) 82%, transparent);
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.052), rgba(226, 242, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.052), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 80%, transparent);
 }
 
@@ -431,7 +392,7 @@ textarea:focus,
   background: var(--aurora-active-gradient);
   color: var(--text-primary);
   box-shadow:
-    inset 0 1px 0 rgba(226, 242, 255, 0.075),
+    inset 0 1px 0 rgba(247, 248, 248, 0.075),
     0 0 0 1px rgba(139, 233, 255, 0.08),
     var(--shadow-card);
 }
@@ -443,17 +404,14 @@ textarea:focus,
     var(--aurora-cyan),
     color-mix(in srgb, var(--aurora-cyan) 56%, white)
   );
-  box-shadow: 0 0 12px rgba(127, 212, 255, 0.14);
+  box-shadow: 0 0 12px rgba(111, 154, 166, 0.14);
 }
 
 #file-viewer-overlay,
 .file-viewer-pane,
 .file-reader-pane,
 .mcp-inspector-pane {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.1), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(167, 139, 250, 0.09), transparent 28%),
-    color-mix(in srgb, var(--surface-canvas) 96%, black);
+  background: var(--surface-canvas);
 }
 
 .file-reader-markdown pre,
@@ -462,7 +420,7 @@ textarea:focus,
 .agent-doc-body {
   border-color: color-mix(in srgb, var(--aurora-border) 74%, transparent);
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.04), rgba(226, 242, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.04), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--surface-panel) 84%, black);
 }
 
@@ -474,7 +432,7 @@ textarea:focus,
   );
   color: #03111f;
   font-weight: 750;
-  box-shadow: 0 14px 28px rgba(127, 212, 255, 0.14);
+  box-shadow: 0 14px 28px rgba(111, 154, 166, 0.14);
 }
 
 .mcp-connect-btn:hover {
@@ -492,27 +450,24 @@ textarea:focus,
 .help-hero-title,
 .whats-new-version,
 .usage-hero-title {
-  background: linear-gradient(135deg, #f7fbff, #cfe8f7 72%, #b8e8f4 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: unset;
+  color: var(--text-primary);
 }
 
 /* Right Rail Pro: premium control rail with cleaner hierarchy. */
 #context-inspector {
-  --rail-bg: #0a1018;
-  --rail-surface: #101823;
-  --rail-surface-strong: #131e2b;
-  --rail-line: color-mix(in srgb, var(--aurora-border) 64%, rgba(111, 155, 205, 0.18));
-  --rail-line-soft: color-mix(in srgb, var(--aurora-border) 48%, rgba(111, 155, 205, 0.12));
-  backdrop-filter: blur(15px) saturate(1.06);
-  background:
-    radial-gradient(circle at 100% -8%, rgba(127, 212, 255, 0.08), transparent 42%),
-    linear-gradient(180deg, #0d151f 0%, var(--rail-bg) 56%, #070c13 100%);
-  border-left: 1px solid var(--rail-line);
-  box-shadow:
-    inset 1px 0 0 rgba(227, 236, 247, 0.03),
-    -20px 0 44px rgba(2, 8, 18, 0.24);
+  --rail-bg: var(--surface-rail);
+  --rail-surface: var(--surface-panel);
+  --rail-surface-strong: var(--surface-raised);
+  --rail-line: var(--border-subtle);
+  --rail-line-soft: var(--border-muted);
+  backdrop-filter: none;
+  background: var(--surface-rail);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: inset 1px 0 0 rgba(247, 248, 248, 0.03);
 }
 
 #context-inspector-header {
@@ -522,7 +477,7 @@ textarea:focus,
   border-bottom: 1px solid var(--rail-line);
   background:
     linear-gradient(180deg, rgba(11, 17, 26, 0.98), rgba(11, 17, 26, 0.91)),
-    linear-gradient(180deg, rgba(227, 236, 247, 0.024), rgba(227, 236, 247, 0));
+    linear-gradient(180deg, rgba(247, 248, 248, 0.024), rgba(247, 248, 248, 0));
   backdrop-filter: blur(8px) saturate(1.04);
   padding: 10px 12px 8px;
 }
@@ -542,18 +497,18 @@ textarea:focus,
   border-radius: 12px;
   padding: 10px 10px 11px;
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.016), rgba(226, 242, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.016), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--rail-surface) 88%, transparent);
   box-shadow:
-    inset 0 1px 0 rgba(226, 242, 255, 0.038),
+    inset 0 1px 0 rgba(247, 248, 248, 0.038),
     0 10px 24px rgba(1, 8, 28, 0.12);
 }
 
 #context-inspector .context-inspector-section[data-section='capabilities'] {
   border-color: var(--rail-line);
   background:
-    radial-gradient(circle at top right, rgba(127, 212, 255, 0.12), transparent 48%),
-    linear-gradient(180deg, rgba(226, 242, 255, 0.02), rgba(226, 242, 255, 0)),
+    radial-gradient(circle at top right, rgba(111, 154, 166, 0.12), transparent 48%),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.02), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--rail-surface-strong) 88%, transparent);
 }
 
@@ -602,7 +557,7 @@ textarea:focus,
 #context-inspector .auto-approval-scope-card,
 #context-inspector .auto-approval-details-toggle {
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.028), rgba(226, 242, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.028), rgba(247, 248, 248, 0)),
     color-mix(in srgb, var(--rail-surface-strong) 84%, transparent);
   border-color: var(--rail-line-soft);
   box-shadow: none;
@@ -620,12 +575,12 @@ textarea:focus,
 
 /* Calder Executive Shell: final premium pass for the entire app surface. */
 :root {
-  --executive-ink: #05070c;
-  --executive-graphite: #0a1118;
-  --executive-panel: #0e1720;
-  --executive-panel-soft: rgba(16, 25, 35, 0.82);
-  --executive-line: rgba(148, 171, 177, 0.16);
-  --executive-line-soft: rgba(148, 171, 177, 0.1);
+  --executive-ink: #010102;
+  --executive-graphite: #0f1011;
+  --executive-panel: #0f1011;
+  --executive-panel-soft: rgba(15, 16, 17, 0.82);
+  --executive-line: color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  --executive-line-soft: color-mix(in srgb, var(--border-subtle) 62%, transparent);
   --executive-texture:
     linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
@@ -635,34 +590,22 @@ textarea:focus,
   --executive-control-gradient:
     linear-gradient(180deg, rgba(245, 247, 244, 0.036), rgba(245, 247, 244, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 72%, transparent);
-  --executive-active-gradient:
-    linear-gradient(90deg, rgba(94, 214, 195, 0.14), transparent 70%),
-    linear-gradient(180deg, rgba(245, 247, 244, 0.04), rgba(245, 247, 244, 0)),
-    color-mix(in srgb, var(--surface-elevated) 72%, transparent);
+  --executive-active-gradient: color-mix(in srgb, var(--accent-soft) 55%, var(--surface-elevated));
 }
 
 html,
 body {
-  background:
-    radial-gradient(circle at 12% -8%, rgba(94, 214, 195, 0.055), transparent 31%),
-    linear-gradient(180deg, #081019 0%, #05070c 54%, #020408 100%);
+  background: var(--surface-canvas);
 }
 
 #app {
-  background:
-    var(--executive-texture),
-    radial-gradient(circle at 18% -12%, rgba(94, 214, 195, 0.04), transparent 34%),
-    linear-gradient(180deg, #070d14 0%, var(--executive-ink) 100%);
-  background-size:
-    36px 36px,
-    auto,
-    auto;
+  background: var(--surface-canvas);
 }
 
 #app::before {
-  opacity: 0.28;
-  filter: blur(32px) saturate(1);
-  background: radial-gradient(ellipse at 22% 4%, rgba(94, 214, 195, 0.06), transparent 31%);
+  opacity: 0;
+  filter: none;
+  background: none;
   animation: none;
 }
 
@@ -673,8 +616,7 @@ body {
 .session-deck-surface,
 .browser-pane-chrome,
 .browser-tab-toolbar,
-.terminal-pane-chrome,
-.cli-surface-toolbar {
+.terminal-pane-chrome {
   border-color: var(--executive-line);
   background:
     linear-gradient(180deg, rgba(245, 247, 244, 0.028), rgba(245, 247, 244, 0)),
@@ -752,7 +694,7 @@ body {
 
 .project-item:hover {
   background:
-    linear-gradient(90deg, rgba(94, 214, 195, 0.085), transparent 72%), rgba(245, 247, 244, 0.026);
+    linear-gradient(90deg, rgba(111, 154, 166, 0.085), transparent 72%), rgba(245, 247, 244, 0.026);
   border-color: var(--executive-line-soft);
   box-shadow: inset 0 1px 0 rgba(245, 247, 244, 0.035);
 }
@@ -767,7 +709,7 @@ body {
 
 .project-item::before {
   width: 2px;
-  left: 4px;
+  left: 0;
   background: transparent;
 }
 
@@ -781,8 +723,7 @@ body {
 
 .project-status-chip,
 .project-session-count,
-.calder-status-pill,
-.browser-pane-status {
+.calder-status-pill {
   border-radius: 8px;
   border-color: var(--executive-line-soft);
   background: rgba(245, 247, 244, 0.03);
@@ -819,7 +760,7 @@ body {
 
 .tab-item.active {
   background:
-    linear-gradient(180deg, rgba(94, 214, 195, 0.105), rgba(94, 214, 195, 0.035)),
+    linear-gradient(180deg, rgba(111, 154, 166, 0.105), rgba(111, 154, 166, 0.035)),
     color-mix(in srgb, var(--tab-active) 86%, black);
   border-color: color-mix(in srgb, var(--accent) 25%, var(--executive-line));
   box-shadow: inset 0 1px 0 rgba(245, 247, 244, 0.045);
@@ -835,13 +776,9 @@ body {
 }
 
 #context-inspector {
-  background:
-    radial-gradient(circle at 100% -8%, rgba(94, 214, 195, 0.075), transparent 38%),
-    linear-gradient(180deg, #0a1118 0%, #070c13 100%);
+  background: var(--surface-ops);
   border-left-color: var(--executive-line);
-  box-shadow:
-    inset 1px 0 0 rgba(245, 247, 244, 0.018),
-    -12px 0 30px rgba(1, 5, 12, 0.18);
+  box-shadow: inset 1px 0 0 rgba(247, 248, 248, 0.018);
 }
 
 #context-inspector-header {
@@ -879,7 +816,7 @@ body {
   padding: 11px;
   background:
     linear-gradient(180deg, rgba(245, 247, 244, 0.026), rgba(245, 247, 244, 0)),
-    rgba(14, 23, 32, 0.58);
+    rgba(20, 21, 22, 0.58);
   box-shadow: inset 0 1px 0 rgba(245, 247, 244, 0.032);
 }
 
@@ -933,15 +870,12 @@ body {
 #cli-update-panel,
 .calder-popover,
 .calder-floating-list {
-  border-radius: 16px;
-  border-color: var(--executive-line);
-  background:
-    radial-gradient(circle at 18% -8%, rgba(94, 214, 195, 0.06), transparent 35%),
-    linear-gradient(180deg, rgba(245, 247, 244, 0.038), rgba(245, 247, 244, 0)),
-    color-mix(in srgb, var(--surface-elevated) 92%, black);
+  border-radius: 12px;
+  border-color: var(--border-subtle);
+  background: var(--surface-elevated);
   box-shadow:
-    inset 0 1px 0 rgba(245, 247, 244, 0.055),
-    0 26px 70px rgba(1, 5, 12, 0.46);
+    inset 0 1px 0 rgba(247, 248, 248, 0.04),
+    0 18px 48px rgba(1, 1, 2, 0.42);
 }
 
 #modal.modal-wide {
@@ -1045,7 +979,7 @@ body {
   border-color: var(--executive-line-soft);
   background:
     linear-gradient(180deg, rgba(245, 247, 244, 0.026), rgba(245, 247, 244, 0)),
-    rgba(14, 23, 32, 0.58);
+    rgba(20, 21, 22, 0.58);
   box-shadow: inset 0 1px 0 rgba(245, 247, 244, 0.034);
 }
 
@@ -1098,12 +1032,10 @@ body {
 .browser-toolbar-presence-shell,
 .browser-toolbar-tools-shell,
 .session-launcher-group,
-.surface-mode-switcher,
+.surface-live-view-btn,
 #git-status,
 .calder-button,
-.calder-icon-button,
-.cli-surface-button,
-.cli-surface-action-group {
+.calder-icon-button {
   border-radius: 10px;
   border-color: var(--executive-line-soft);
   background: var(--executive-control-gradient);
@@ -1117,7 +1049,7 @@ textarea:focus,
 .modal-field input:focus {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--executive-line));
   box-shadow:
-    0 0 0 1px rgba(94, 214, 195, 0.18),
+    0 0 0 1px rgba(111, 154, 166, 0.18),
     0 10px 22px rgba(1, 5, 12, 0.14);
 }
 
@@ -1218,13 +1150,12 @@ textarea:focus,
 
 #context-inspector .context-inspector-section,
 #context-inspector .context-inspector-section[data-section='capabilities'] {
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 12px;
   border-color: var(--premium-panel-hairline);
   background:
-    radial-gradient(circle at 100% -8%, var(--premium-panel-glow), transparent 38%),
-    linear-gradient(180deg, rgba(245, 247, 244, 0.03), rgba(245, 247, 244, 0)),
-    rgba(14, 23, 32, 0.62);
+    linear-gradient(180deg, rgba(247, 248, 248, 0.03), rgba(247, 248, 248, 0)),
+    color-mix(in srgb, var(--surface-raised) 88%, transparent);
 }
 
 #context-inspector .context-inspector-section::before {
@@ -1283,7 +1214,6 @@ textarea:focus,
   #tab-actions,
   .session-launcher-group,
   #surface-mode-slot,
-  #surface-profile-slot,
   #session-provider-slot {
     min-width: 0;
     max-width: 100%;
@@ -1293,8 +1223,7 @@ textarea:focus,
     overflow: visible;
   }
 
-  .command-deck-provider-select,
-  .command-deck-cli-profile-select {
+  .command-deck-provider-select {
     flex: 1 1 148px;
     min-width: min(148px, 100%);
     max-width: 100%;

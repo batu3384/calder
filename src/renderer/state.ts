@@ -98,11 +98,7 @@ import { buildRendererPersistSnapshot } from './state-persist-snapshot.js';
 import { RendererPersistQueue } from './state-persistence.js';
 import type { ProjectDomainStateKey } from './state-project-domain-updater.js';
 import { findProjectForPath as findProjectRecordForPath } from './state-project-lookup.js';
-import {
-  applyProjectSurface,
-  closeCliProjectSurface,
-  focusCliProjectSurface,
-} from './state-surface-updater.js';
+import { applyProjectSurface } from './state-surface-updater.js';
 import type { CalderApi } from './types.js';
 
 export type { PersistedState, Preferences, ProjectRecord } from '../shared/types/project-state.js';
@@ -173,7 +169,7 @@ class AppState {
     this.eventBus.emit(event, data);
   }
 
-  async load(): Promise<void> {
+  async load(options: { emitLoaded?: boolean } = {}): Promise<void> {
     const loaded = (await window.calder.store.load()) as PersistedState | null;
     let didMigrateState = false;
     if (loaded && (loaded.version === 1 || loaded.version === CURRENT_PERSISTED_STATE_VERSION)) {
@@ -188,6 +184,12 @@ class AppState {
       this.persist();
     }
 
+    if (options.emitLoaded !== false) {
+      this.emit('state-loaded');
+    }
+  }
+
+  emitStateLoaded(): void {
     this.emit('state-loaded');
   }
 
@@ -536,12 +538,6 @@ class AppState {
       persist: () => this.persist(),
       emit: (event) => this.emit(event),
     });
-  }
-  focusCliSurfaceTab(projectId: string): void {
-    this.updateProjectSurface(projectId, focusCliProjectSurface);
-  }
-  closeCliSurface(projectId: string): void {
-    this.updateProjectSurface(projectId, closeCliProjectSurface);
   }
 
   listSurfaceTargetSessions(projectId: string): SessionRecord[] {

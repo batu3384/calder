@@ -4,6 +4,7 @@ import {
 } from './bootstrap/renderer-session-orchestrator.js';
 import { navigateTo } from './components/browser-tab/navigation.js';
 import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
+import { markUiReady } from './i18n.js';
 import { initKeybindings } from './keybindings.js';
 import { appState } from './state.js';
 
@@ -128,4 +129,7 @@ async function main(): Promise<void> {
   await sessionOrchestrator.initialize();
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  markUiReady();
+});

@@ -4,6 +4,7 @@ import * as path from 'path';
 
 import type { CliProviderMeta } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
+import { normalizePtyColorEnv } from '../pty-color-env';
 import { sanitizeExtraArgs } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
@@ -63,7 +64,7 @@ export class AntigravityProvider extends BaseCliProvider {
     env[CALDER_SESSION_ID] = sessionId;
     env.PATH = getFullPath();
     env.CALDER_RUNTIME = '1';
-    return env;
+    return normalizePtyColorEnv(env);
   }
 
   buildArgs(opts: {

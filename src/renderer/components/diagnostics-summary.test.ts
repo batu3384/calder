@@ -88,13 +88,12 @@ describe('diagnostics summary model', () => {
     expect(model.cards[0]).toMatchObject({
       label: 'Route',
       value: 'Gateway',
-      detail: 'Claude Code -> MiniMax · MiniMax-M2.7',
+      detail: 'Claude Code · MiniMax',
       tone: 'active',
     });
     expect(model.cards[1]).toMatchObject({
-      label: 'Tracking',
-      value: 'Live',
-      detail: 'Cost + context at 25%.',
+      label: 'Approval',
+      value: 'Ask every time',
     });
   });
 
@@ -119,15 +118,15 @@ describe('diagnostics summary model', () => {
 
     expect(model.title).toBe('Çalışma Güveni');
     expect(model.tone).toBe('warning');
-    expect(model.cards[2]).toMatchObject({
+    expect(model.cards[1]).toMatchObject({
       label: 'Onay',
       value: 'Oturum güvenli',
-      tone: 'active',
+      tone: 'warning',
     });
-    expect(model.cards[3]).toMatchObject({
+    expect(model.cards[2]).toMatchObject({
       label: 'Git',
       value: 'Çakışma',
-      detail: '2 çakışmalı dosya.',
+      detail: '2 dosya',
       tone: 'warning',
     });
   });

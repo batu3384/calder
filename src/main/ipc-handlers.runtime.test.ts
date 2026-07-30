@@ -25,7 +25,6 @@ const mocks = vi.hoisted(() => {
     registerCalderIpcHandlers: vi.fn(),
     resetCalderProjectWatchers: vi.fn(),
     registerAppBrowserIpcHandlers: vi.fn(),
-    registerCliSurfaceIpcHandlers: vi.fn(),
     registerPtyIpcHandlers: vi.fn(),
     registerEvidenceIpcHandlers: vi.fn(),
     sanitizePersistedStateForSave: vi.fn((value: unknown) => value),
@@ -45,7 +44,6 @@ const mocks = vi.hoisted(() => {
     updateAutoApprovalMode: vi.fn(),
     createAppMenu: vi.fn(),
     getProvider: vi.fn(),
-    createCliSurfaceRuntimeManager: vi.fn(() => ({ id: 'runtime' })),
     assertProjectGovernanceAllows: vi.fn(),
     loadState: vi.fn(() => ({
       version: 1,
@@ -94,9 +92,6 @@ vi.mock('./ipc-calder', () => ({
 vi.mock('./ipc-app-browser', () => ({
   registerAppBrowserIpcHandlers: mocks.registerAppBrowserIpcHandlers,
 }));
-vi.mock('./ipc-cli-surface', () => ({
-  registerCliSurfaceIpcHandlers: mocks.registerCliSurfaceIpcHandlers,
-}));
 vi.mock('./ipc-pty', () => ({ registerPtyIpcHandlers: mocks.registerPtyIpcHandlers }));
 vi.mock('./ipc-evidence', () => ({
   registerEvidenceIpcHandlers: mocks.registerEvidenceIpcHandlers,
@@ -122,9 +117,6 @@ vi.mock('./ipc-auto-approval-governance', () => ({
 }));
 vi.mock('./menu', () => ({ createAppMenu: mocks.createAppMenu }));
 vi.mock('./providers/registry', () => ({ getProvider: mocks.getProvider }));
-vi.mock('./cli-surface-runtime', () => ({
-  createCliSurfaceRuntimeManager: mocks.createCliSurfaceRuntimeManager,
-}));
 vi.mock('./calder-governance/enforcement', () => ({
   assertProjectGovernanceAllows: mocks.assertProjectGovernanceAllows,
 }));

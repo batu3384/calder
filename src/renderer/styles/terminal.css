@@ -117,14 +117,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background:
-    radial-gradient(
-      circle at top,
-      color-mix(in srgb, var(--accent-soft) 24%, transparent),
-      transparent 52%
-    ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel) 92%, black);
+  background: var(--surface-panel);
 }
 
 .swarm-empty-add-btn {
@@ -165,10 +158,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(1, 1, 2, 0.42);
   pointer-events: none;
   z-index: 10;
   transition: opacity var(--motion-fast) ease;
+}
+
+.terminal-pane.swarm-dimmed.focused::after {
+  opacity: 0;
 }
 
 .browser-tab-pane.swarm-dimmed {
@@ -241,9 +238,7 @@
   height: 8px;
   border-radius: 999px;
   background: var(--provider-accent, var(--accent));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--provider-accent, var(--accent)) 28%, transparent),
-    0 0 16px color-mix(in srgb, var(--provider-accent, var(--accent)) 24%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--provider-accent, var(--accent)) 28%, transparent);
 }
 
 .terminal-pane-header-copy {
@@ -277,30 +272,22 @@
 .terminal-pane-session {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
+  min-height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 84%, black);
-  color: var(--text-secondary);
-  font-size: var(--type-xs);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  background: var(--surface-panel-alt);
+  color: var(--text-muted);
+  font-size: var(--type-2xs);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   flex-shrink: 0;
 }
 
 .terminal-pane.focused .terminal-pane-chrome {
   border-bottom-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--accent-soft) 20%, rgba(255, 255, 255, 0.02)),
-      rgba(255, 255, 255, 0)
-    ),
-    color-mix(in srgb, var(--surface-panel) 96%, black);
+  background: var(--surface-panel);
 }
 
 .swarm-reorder-header {
@@ -416,7 +403,7 @@
 }
 
 .context-indicator.critical {
-  color: var(--accent);
+  color: var(--danger);
 }
 
 .cost-display {
@@ -452,21 +439,9 @@
   text-align: center;
   color: var(--text-secondary);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
-  border-radius: 18px;
-  background:
-    radial-gradient(
-      circle at top right,
-      color-mix(in srgb, var(--accent-soft) 22%, transparent),
-      transparent 40%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface-panel) 96%, transparent),
-      color-mix(in srgb, var(--surface-panel) 90%, transparent)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 22px 42px rgba(2, 4, 10, 0.24);
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   padding: 18px 18px 16px;
 }
 
@@ -490,19 +465,15 @@
   margin-top: 10px;
   min-height: var(--control-height-md);
   padding: 0 16px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white), var(--accent));
-  color: #17120d;
+  background: var(--accent);
+  color: #ffffff;
   font-size: 13px;
   border-color: color-mix(in srgb, var(--accent) 52%, transparent);
 }
 
 .respawn-btn.calder-button:hover {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent-dim) 84%, white),
-    var(--accent-dim)
-  );
-  color: #130f0b;
+  background: var(--accent-cool);
+  color: #ffffff;
 }
 
 /* Project terminal panel */
@@ -583,15 +554,7 @@
 /* Micro polish pass */
 #terminal-container {
   padding: 12px;
-  background:
-    radial-gradient(
-      circle at 0% 0%,
-      color-mix(in srgb, var(--accent-soft) 44%, transparent),
-      transparent 26%
-    ),
-    radial-gradient(circle at 100% 0%, rgba(94, 106, 210, 0.04), transparent 22%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-canvas) 96%, black);
+  background: var(--surface-canvas);
 }
 
 #terminal-container.split-horizontal,
@@ -612,31 +575,17 @@
 
 .terminal-pane {
   border-color: color-mix(in srgb, var(--pane-unfocus) 84%, var(--border-subtle));
-  background:
-    radial-gradient(
-      circle at 0% 0%,
-      color-mix(in srgb, var(--accent-soft) 46%, transparent),
-      transparent 28%
-    ),
-    radial-gradient(circle at 100% 0%, rgba(94, 106, 210, 0.04), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-canvas) 94%, black);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    var(--shadow-card-strong);
+  background: var(--surface-canvas);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .terminal-pane:not(.focused):hover {
   border-color: color-mix(in srgb, var(--accent) 12%, var(--pane-unfocus));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    var(--shadow-lift);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .terminal-pane.focused {
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--accent-soft) 86%, transparent),
-    var(--shadow-elevated);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent);
 }
 
 .terminal-pane-chrome {
@@ -646,9 +595,7 @@
 }
 
 .terminal-pane-session {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0)),
-    color-mix(in srgb, var(--surface-panel-alt) 88%, black);
+  background: var(--surface-panel-alt);
 }
 
 .terminal-pane .xterm {

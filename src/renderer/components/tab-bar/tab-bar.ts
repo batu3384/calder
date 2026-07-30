@@ -1,16 +1,9 @@
-import type { CliSurfaceProfile } from '../../../shared/types/project-surface.js';
 import {
   appState,
   MAX_SESSION_NAME_LENGTH,
   type ProjectRecord,
   type SessionRecord,
 } from '../../state.js';
-import {
-  createDiscoveredCliSurfaceProfile,
-  getCliSurfaceProfileLabel,
-} from '../cli-surface/profile.js';
-import { showCliSurfaceQuickSetup } from '../cli-surface/quick-setup.js';
-import { openCliSurfaceWithSetup } from '../cli-surface/setup.js';
 import { getGitStatus, refreshGitStatus } from '../surface-services/git-status.js';
 import type { SessionStatus } from '../surface-services/session-activity.js';
 import {
@@ -27,7 +20,6 @@ import {
   createTabBarBranchMenuController,
   type TabBarBranchMenuController,
 } from './tab-bar-branch-menu-controller.js';
-import { promptTabBarCliSurfaceProfile } from './tab-bar-cli-profile-modal.js';
 import {
   createTabBarCliUpdatePanel,
   type TabBarCliUpdatePanelController,
@@ -47,7 +39,6 @@ import {
 import { startInlineTabRename } from './tab-bar-rename-controller.js';
 import {
   buildActiveTabRailKey,
-  buildTabBarRenderSurfaceState,
   renderGitStatusBlock,
   shouldSkipTabListRender,
 } from './tab-bar-render-blocks.js';
@@ -62,23 +53,8 @@ import {
   type TabBarSurfaceControlsController,
 } from './tab-bar-surface-controls.js';
 import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
-import {
-  getProjectSurface,
-  persistAndLaunchCliSurfaceProfile,
-  selectCliSurfaceProfile,
-  upsertCliSurfaceProfile,
-} from './tab-bar-surface-state.js';
+import { getProjectSurface } from './tab-bar-surface-state.js';
 import { renderTabList } from './tab-bar-tab-list-renderer.js';
-
-/*
- * Source contract markers:
- * from './tab-bar-session-tab-factory.js'
- * from './tab-bar-surface-tab-factory.js'
- * createSessionTab({
- * createSurfaceModeTab({
- * tab-cli-surface-badge
- * void promptNewSession((session) => {
- */
 
 const tabListEl = document.getElementById('tab-list')!;
 const gitStatusEl = document.getElementById('git-status')!;
@@ -86,7 +62,6 @@ const btnAddSession = document.getElementById('btn-add-session')!;
 const btnUpdateCliTools = document.getElementById('btn-update-cli-tools') as HTMLButtonElement;
 const tabActionsEl = document.getElementById('tab-actions')!;
 const surfaceModeSlotEl = document.getElementById('surface-mode-slot')!;
-const surfaceProfileSlotEl = document.getElementById('surface-profile-slot')!;
 const sessionProviderSlotEl = document.getElementById('session-provider-slot')!;
 const sessionLauncherEl = document.getElementById('session-launcher')!;
 
@@ -99,23 +74,11 @@ let sessionMenuController: TabBarSessionMenuController | null = null;
 let surfaceControlsController: TabBarSurfaceControlsController | null = null;
 let unsubscribeUpdateCenter: (() => void) | null = null;
 let unsubscribeTabBarStateSubscriptions: (() => void) | null = null;
-type LauncherSelectKey = 'profile' | 'provider';
+type LauncherSelectKey = 'provider';
 const launcherSelectOpenState: Record<LauncherSelectKey, boolean> = {
-  profile: false,
   provider: false,
 };
 const contextMenuWiring = createTabBarContextMenuWiring();
-
-function buildCliSurfaceTabTitle(project: ProjectRecord): string {
-  const surface = getProjectSurface(project);
-  const selectedProfile = surface.cli?.profiles.find(
-    (profile) => profile.id === surface.cli?.selectedProfileId,
-  );
-  const profileLabel = selectedProfile
-    ? getCliSurfaceProfileLabel(selectedProfile)
-    : 'No profile selected';
-  return `CLI Surface\nProfile: ${profileLabel}`;
-}
 
 function getCliUpdatePanelController(): TabBarCliUpdatePanelController {
   if (!cliUpdatePanelController)
@@ -168,16 +131,10 @@ function getSurfaceControlsController(): TabBarSurfaceControlsController {
   if (!surfaceControlsController)
     surfaceControlsController = createTabBarSurfaceControlsController({
       surfaceModeSlotEl,
-      surfaceProfileSlotEl,
       getActiveProject: () => appState.activeProject,
       buildSurfaceControlsSignature: buildSurfaceControlsSignatureForProject,
       getProjectSurface,
-      getCliSurfaceProfileLabel,
-      selectCliSurfaceProfile,
       activateLiveViewSurface,
-      activateCliSurface,
-      promptCliSurfaceProfile,
-      onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open),
     });
   return surfaceControlsController;
 }
@@ -247,55 +204,13 @@ export function initTabBar(): void {
 
 function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void {
   launcherSelectOpenState[selectKey] = open;
-  const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;
+  const anyOpen = launcherSelectOpenState.provider;
   sessionLauncherEl.dataset.selectOpen = anyOpen ? 'true' : 'false';
-}
-
-function promptCliSurfaceProfile(
-  project: ProjectRecord,
-  existing?: CliSurfaceProfile,
-  onReady?: (profile: CliSurfaceProfile) => void,
-): void {
-  promptTabBarCliSurfaceProfile(project, existing, onReady);
 }
 
 function activateLiveViewSurface(project: ProjectRecord): void {
   activateLiveViewSurfaceHandler(project, (projectId) => {
     appState.addBrowserTabSession(projectId);
-  });
-}
-
-async function activateCliSurface(project: ProjectRecord): Promise<void> {
-  const cliApi = window.calder?.cliSurface;
-  if (!cliApi) {
-    promptCliSurfaceProfile(project);
-    return;
-  }
-
-  await openCliSurfaceWithSetup(project, {
-    discover: (projectPath) => cliApi.discover(projectPath),
-    start: async (profile) => {
-      const profiles = upsertCliSurfaceProfile(project, profile);
-      selectCliSurfaceProfile(project, profiles, profile.id);
-      await cliApi.start(project.id, profile);
-    },
-    persist: (profile) => {
-      const profiles = upsertCliSurfaceProfile(project, profile);
-      selectCliSurfaceProfile(project, profiles, profile.id);
-    },
-    showQuickSetup: (_activeProject, candidates) => {
-      showCliSurfaceQuickSetup(candidates, {
-        onRun: (candidate) => {
-          const profile = createDiscoveredCliSurfaceProfile(candidate);
-          persistAndLaunchCliSurfaceProfile(project, profile);
-        },
-        onEdit: (candidate) => {
-          promptCliSurfaceProfile(project, createDiscoveredCliSurfaceProfile(candidate));
-        },
-        onManual: () => promptCliSurfaceProfile(project),
-      });
-    },
-    showManualSetup: (activeProject) => promptCliSurfaceProfile(activeProject),
   });
 }
 
@@ -384,17 +299,12 @@ function render(): void {
     renderGitStatus();
     return;
   }
-  const { cliSurfaceTabActive } = buildTabBarRenderSurfaceState(project);
   renderTabList({
     project,
     tabListEl,
-    cliSurfaceTabActive,
     escapeHtml: esc,
     startRename,
     showTabContextMenu,
-    buildCliSurfaceTabTitle,
-    focusCliSurfaceTab: (projectId) => appState.focusCliSurfaceTab(projectId),
-    closeCliSurface: (projectId) => appState.closeCliSurface(projectId),
   });
 
   ensureActiveTabVisible(buildActiveTabRailKey(appState.activeProjectId, project));

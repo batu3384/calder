@@ -62,11 +62,7 @@ function summarizeGitStatus(
     return {
       label: localized(language, 'Git', 'Git'),
       value: localized(language, 'Not detected', 'Algılanmadı'),
-      detail: localized(
-        language,
-        'No worktree signal for this project yet.',
-        'Bu proje için henüz worktree sinyali yok.',
-      ),
+      detail: '',
       tone: 'default',
     };
   }
@@ -74,11 +70,7 @@ function summarizeGitStatus(
     return {
       label: localized(language, 'Git', 'Git'),
       value: localized(language, 'Conflicts', 'Çakışma'),
-      detail: localized(
-        language,
-        `${status.conflicted} conflicted file(s).`,
-        `${status.conflicted} çakışmalı dosya.`,
-      ),
+      detail: localized(language, `${status.conflicted} file(s)`, `${status.conflicted} dosya`),
       tone: 'warning',
     };
   }
@@ -86,23 +78,15 @@ function summarizeGitStatus(
   if (changed > 0) {
     return {
       label: localized(language, 'Git', 'Git'),
-      value: localized(language, 'Changed', 'Değişiklik var'),
-      detail: localized(
-        language,
-        `${changed} file(s) need attention.`,
-        `${changed} dosya dikkat istiyor.`,
-      ),
+      value: localized(language, 'Changed', 'Değişiklik'),
+      detail: localized(language, `${changed} file(s)`, `${changed} dosya`),
       tone: 'active',
     };
   }
   return {
     label: localized(language, 'Git', 'Git'),
     value: localized(language, 'Clean', 'Temiz'),
-    detail: localized(
-      language,
-      status.branch ? `On ${status.branch}.` : 'Worktree is clean.',
-      status.branch ? `${status.branch} dalında.` : 'Worktree temiz.',
-    ),
+    detail: status.branch ?? '',
     tone: 'default',
   };
 }
@@ -116,11 +100,7 @@ function summarizeProviderRoute(
     return {
       label: localized(language, 'Route', 'Rota'),
       value: localized(language, 'No CLI', 'CLI yok'),
-      detail: localized(
-        language,
-        'Open a CLI session to see model routing.',
-        'Model rotasını görmek için bir CLI oturumu aç.',
-      ),
+      detail: '',
       tone: 'default',
     };
   }
@@ -132,7 +112,7 @@ function summarizeProviderRoute(
     return {
       label: localized(language, 'Route', 'Rota'),
       value: displayName,
-      detail: localized(language, 'Waiting for model signal.', 'Model sinyali bekleniyor.'),
+      detail: '',
       tone: 'default',
     };
   }
@@ -148,68 +128,8 @@ function summarizeProviderRoute(
     value: isGateway
       ? localized(language, 'Gateway', 'Gateway')
       : localized(language, 'Native', 'Yerel'),
-    detail: isGateway
-      ? localized(
-          language,
-          `${displayName} -> ${backendLabel} · ${model}`,
-          `${displayName} -> ${backendLabel} · ${model}`,
-        )
-      : localized(language, `${displayName} native · ${model}`, `${displayName} yerel · ${model}`),
+    detail: isGateway ? `${displayName} · ${backendLabel}` : `${displayName} · ${model}`,
     tone: isGateway ? 'active' : 'default',
-  };
-}
-
-function summarizeTracking(
-  session: SessionRecord | undefined,
-  language: UiLanguage,
-): DiagnosticsSummaryCard {
-  if (!session) {
-    return {
-      label: localized(language, 'Tracking', 'İzleme'),
-      value: localized(language, 'Idle', 'Boşta'),
-      detail: localized(
-        language,
-        'No active CLI telemetry yet.',
-        'Henüz aktif CLI telemetrisi yok.',
-      ),
-      tone: 'default',
-    };
-  }
-  const hasCost = Boolean(session.cost);
-  const hasContext = Boolean(session.contextWindow);
-  if (hasCost && hasContext) {
-    return {
-      label: localized(language, 'Tracking', 'İzleme'),
-      value: localized(language, 'Live', 'Canlı'),
-      detail: localized(
-        language,
-        `Cost + context at ${Math.round(session.contextWindow?.usedPercentage ?? 0)}%.`,
-        `Maliyet + bağlam %${Math.round(session.contextWindow?.usedPercentage ?? 0)}.`,
-      ),
-      tone: 'default',
-    };
-  }
-  if (hasCost || hasContext) {
-    return {
-      label: localized(language, 'Tracking', 'İzleme'),
-      value: localized(language, 'Partial', 'Kısmi'),
-      detail: localized(
-        language,
-        hasCost ? 'Cost is visible; context is pending.' : 'Context is visible; cost is pending.',
-        hasCost ? 'Maliyet görünüyor; bağlam bekleniyor.' : 'Bağlam görünüyor; maliyet bekleniyor.',
-      ),
-      tone: 'active',
-    };
-  }
-  return {
-    label: localized(language, 'Tracking', 'İzleme'),
-    value: localized(language, 'Limited', 'Sınırlı'),
-    detail: localized(
-      language,
-      'Waiting for statusline telemetry.',
-      'Statusline telemetrisi bekleniyor.',
-    ),
-    tone: 'active',
   };
 }
 
@@ -222,48 +142,16 @@ function summarizeAutoApproval(
     return {
       label: localized(language, 'Approval', 'Onay'),
       value: localized(language, 'Unset', 'Ayarsız'),
-      detail: localized(
-        language,
-        'Fallback policy will ask before actions.',
-        'Yedek politika işlemlerden önce sorar.',
-      ),
+      detail: '',
       tone: 'default',
     };
   }
   const label = AUTO_APPROVAL_MODE_LABELS[mode][language];
-  if (mode === 'session_safe') {
-    return {
-      label: localized(language, 'Approval', 'Onay'),
-      value: label,
-      detail: localized(
-        language,
-        'In-project edits and read-only tools can be auto-approved.',
-        'Proje içi düzenlemeler ve salt-okunur araçlar otomatik onaylanabilir.',
-      ),
-      tone: 'active',
-    };
-  }
-  if (mode === 'project_edits') {
-    return {
-      label: localized(language, 'Approval', 'Onay'),
-      value: label,
-      detail: localized(
-        language,
-        'Only in-project edits can be auto-approved.',
-        'Yalnız proje içi düzenlemeler otomatik onaylanabilir.',
-      ),
-      tone: 'active',
-    };
-  }
   return {
     label: localized(language, 'Approval', 'Onay'),
     value: label,
-    detail: localized(
-      language,
-      'Risky actions still require confirmation.',
-      'Riskli işlemler hâlâ onay ister.',
-    ),
-    tone: 'default',
+    detail: '',
+    tone: mode === 'session_safe' ? 'warning' : mode === 'ask' ? 'default' : 'active',
   };
 }
 
@@ -280,17 +168,12 @@ export function buildDiagnosticsSummaryModel(
   const cliSession = pickCliSession(project, activeSession);
   const cards = [
     summarizeProviderRoute(cliSession, language, providerLabel),
-    summarizeTracking(cliSession, language),
     summarizeAutoApproval(project, language),
     summarizeGitStatus(gitStatus, language),
   ];
   return {
     title: localized(language, 'Workspace Trust', 'Çalışma Güveni'),
-    subtitle: localized(
-      language,
-      'Route, telemetry, approvals, and git risk at a glance.',
-      'Rota, telemetri, onay ve git riskini tek bakışta gösterir.',
-    ),
+    subtitle: '',
     tone: strongestTone(cards),
     cards,
   };
@@ -309,15 +192,18 @@ function createCard(card: DiagnosticsSummaryCard): HTMLDivElement {
   value.className = 'diagnostics-summary-value';
   applyTabularNums(value);
   value.textContent = card.value;
-
-  const detail = document.createElement('span');
-  detail.className = 'diagnostics-summary-detail';
-  applyTabularNums(detail);
-  detail.textContent = card.detail;
+  value.title = card.value;
 
   el.appendChild(label);
   el.appendChild(value);
-  el.appendChild(detail);
+  if (card.detail) {
+    const detail = document.createElement('span');
+    detail.className = 'diagnostics-summary-detail';
+    applyTabularNums(detail);
+    detail.textContent = card.detail;
+    detail.title = card.detail;
+    el.appendChild(detail);
+  }
   return el;
 }
 
@@ -350,13 +236,7 @@ export function renderDiagnosticsSummary(): void {
   const title = document.createElement('span');
   title.className = 'diagnostics-summary-title';
   title.textContent = model.title;
-
-  const subtitle = document.createElement('span');
-  subtitle.className = 'diagnostics-summary-subtitle';
-  subtitle.textContent = model.subtitle;
-
   header.appendChild(title);
-  header.appendChild(subtitle);
 
   const grid = document.createElement('div');
   grid.className = 'diagnostics-summary-grid';

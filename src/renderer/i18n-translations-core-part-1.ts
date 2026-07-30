@@ -299,7 +299,6 @@ export const CORE_TRANSLATION_ENTRIES_PART_1: ReadonlyArray<readonly [string, st
   ["What's New in v", 'v sürümünde yenilikler'],
   ['Got it', 'Anladım'],
   ['Connecting...', 'Bağlanıyor...'],
-  ['CLI Surface Suggestions', 'CLI Surface Önerileri'],
   ['No launch command detected yet.', 'Henüz bir başlatma komutu algılanmadı.'],
   [
     'Set up your own CLI command manually to continue.',

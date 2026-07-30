@@ -131,6 +131,17 @@ function localizeAttributes(element: Element): void {
   }
 }
 
+function localizeExcludedDescendantAttributes(root: Element): void {
+  if (
+    !root.matches('.xterm, .xterm-viewport, .xterm-screen, .xterm-rows, .xterm-helper-textarea')
+  ) {
+    return;
+  }
+  for (const descendant of root.querySelectorAll('[title],[aria-label],[placeholder]')) {
+    localizeAttributes(descendant);
+  }
+}
+
 function localizeNode(node: Node): void {
   if (activeLanguage !== 'tr') return;
   if (node.nodeType === Node.TEXT_NODE) {
@@ -142,7 +153,10 @@ function localizeNode(node: Node): void {
   const element = node as Element;
   if (shouldSkipAttributeElement(element)) return;
   localizeAttributes(element);
-  if (shouldSkipTextElement(element)) return;
+  if (shouldSkipTextElement(element)) {
+    localizeExcludedDescendantAttributes(element);
+    return;
+  }
   for (const child of element.childNodes) {
     localizeNode(child);
   }
@@ -197,9 +211,14 @@ function applyLanguage(language: UiLanguage): void {
   if (language === 'tr') {
     localizeDocument();
     startObserver();
+    queueMicrotask(localizeDocument);
     return;
   }
   stopObserver();
+}
+
+export function markUiReady(): void {
+  document.documentElement.dataset.uiReady = '1';
 }
 
 export function t(value: string): string {
@@ -217,6 +236,7 @@ export function localizeSubtree(root: ParentNode): void {
 
 export function initLocalization(): void {
   applyLanguage(normalizeLanguage(appState.preferences.language));
+  markUiReady();
   appState.on('preferences-changed', () => {
     const nextLanguage = normalizeLanguage(appState.preferences.language);
     if (nextLanguage === activeLanguage) return;

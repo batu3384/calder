@@ -38,12 +38,6 @@ export type {
   ProjectReviewState,
 } from '../shared/types/project-review.js';
 export type {
-  CliSurfaceDiscoveryResult,
-  CliSurfaceProfile,
-  CliSurfaceRuntimeState,
-  CliSurfaceStartupTiming,
-} from '../shared/types/project-surface.js';
-export type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextStarterFilesResult,
   ProjectTeamContextState,
@@ -107,11 +101,6 @@ import type {
   ProjectReviewDocument,
   ProjectReviewState,
 } from '../shared/types/project-review.js';
-import type {
-  CliSurfaceDiscoveryResult,
-  CliSurfaceProfile,
-  CliSurfaceRuntimeState,
-} from '../shared/types/project-surface.js';
 import type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextStarterFilesResult,
@@ -340,18 +329,6 @@ export interface CalderApi {
     deleteById(id: string): Promise<{ deleted: boolean }>;
     getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
     getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
-  };
-  cliSurface: {
-    discover(projectPath: string): Promise<CliSurfaceDiscoveryResult>;
-    start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
-    stop(projectId: string): Promise<void>;
-    restart(projectId: string): Promise<void>;
-    write(projectId: string, data: string): void;
-    resize(projectId: string, cols: number, rows: number): void;
-    onData(callback: (projectId: string, data: string) => void): () => void;
-    onExit(callback: (projectId: string, exitCode: number, signal?: number) => void): () => void;
-    onStatus(callback: (projectId: string, state: CliSurfaceRuntimeState) => void): () => void;
-    onError(callback: (projectId: string, message: string) => void): () => void;
   };
   mcp: {
     connect(id: string, url: string): Promise<McpResult>;

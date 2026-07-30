@@ -10,6 +10,7 @@ import {
   type SessionStatus,
 } from '../surface-services/session-activity.js';
 import { onChange as onUnreadChange } from '../surface-services/session-unread.js';
+import { buildLocalizedSessionTooltip } from './tab-bar-session-titles.js';
 
 interface TabBarActionHandlerArgs {
   addSessionButtonEl: HTMLElement;
@@ -126,7 +127,10 @@ export function wireTabBarStateSubscriptions(
     const session = appState.activeProject?.sessions.find(
       (candidate) => candidate.id === sessionId,
     );
-    tab.title = args.buildSessionTooltip(status, session?.cliSessionId);
+    tab.title = buildLocalizedSessionTooltip(status, session?.cliSessionId);
+    if (tab.draggable) {
+      tab.title = `${tab.title} · ${t(`Drag to reorder`)}`;
+    }
   });
   sub(unsubStatus);
 

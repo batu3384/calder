@@ -1,17 +1,15 @@
-import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
 import { t } from '../../i18n.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { hasMultipleAvailableProviders } from '../surface-services/provider-availability.js';
 import { getStatus } from '../surface-services/session-activity.js';
 import { isUnread } from '../surface-services/session-unread.js';
 import { buildProviderIconMarkup } from '../tab-provider-icon.js';
-import { buildSessionTabTitle } from './tab-bar-session-titles.js';
+import { buildLocalizedSessionTooltip, buildSessionTabTitle } from './tab-bar-session-titles.js';
 
 interface CreateSessionTabOptions {
   project: ProjectRecord;
   session: SessionRecord;
   tabListEl: HTMLElement;
-  cliSurfaceTabActive: boolean;
   escapeHtml: (value: string) => string;
   startRename: (tab: HTMLElement, project: ProjectRecord, session: SessionRecord) => void;
   showTabContextMenu: (
@@ -21,14 +19,12 @@ interface CreateSessionTabOptions {
     session: SessionRecord,
     tab: HTMLElement,
   ) => void;
-  getProjectSurface: (project: ProjectRecord) => ProjectSurfaceRecord;
-  updateProjectSurface: (project: ProjectRecord, next: ProjectSurfaceRecord) => void;
 }
 
 export function createSessionTab(options: CreateSessionTabOptions): HTMLElement {
-  const { project, session, cliSurfaceTabActive } = options;
+  const { project, session } = options;
   const tab = document.createElement('div');
-  const isActive = !cliSurfaceTabActive && session.id === project.activeSessionId;
+  const isActive = session.id === project.activeSessionId;
   const unread = !isActive && isUnread(session.id);
   const isMcp = session.type === 'mcp-inspector';
   const isDiff = session.type === 'diff-viewer';
@@ -37,7 +33,11 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
   const isSpecial = isMcp || isDiff || isFileReader || isBrowserTab;
   tab.className = 'tab-item' + (isActive ? ' active' : '') + (unread ? ' unread' : '');
   tab.dataset.sessionId = session.id;
-  tab.title = buildSessionTabTitle(session, getStatus(session.id));
+  const sessionStatus = getStatus(session.id);
+  tab.title = t(buildSessionTabTitle(session, sessionStatus));
+  if (!isSpecial) {
+    tab.title = buildLocalizedSessionTooltip(sessionStatus, session.cliSessionId);
+  }
   tab.setAttribute('role', 'tab');
   tab.setAttribute('aria-selected', String(isActive));
   tab.tabIndex = 0;
@@ -87,12 +87,7 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
   tab.addEventListener('click', (event) => {
     if ((event.target as HTMLElement).classList.contains('tab-close')) return;
     if (tab.querySelector('.tab-name input')) return;
-    const shouldReturnSurfaceFocusToSession =
-      session.id === project.activeSessionId &&
-      Boolean(project.surface?.active) &&
-      project.surface?.kind === 'cli' &&
-      project.surface.tabFocus === 'cli';
-    if (session.id !== project.activeSessionId || shouldReturnSurfaceFocusToSession) {
+    if (session.id !== project.activeSessionId) {
       appState.setActiveSession(project.id, session.id);
     }
   });
@@ -117,7 +112,7 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
 
   if (project.sessions.length > 1) {
     tab.draggable = true;
-    tab.title = `${tab.title} · Drag to reorder`;
+    tab.title = `${tab.title} · ${t(`Drag to reorder`)}`;
 
     tab.addEventListener('dragstart', (event) => {
       if ((event.target as HTMLElement).closest('button, input')) {
@@ -154,17 +149,6 @@ export function createSessionTab(options: CreateSessionTabOptions): HTMLElement 
 
       const rect = tab.getBoundingClientRect();
       const midX = rect.left + rect.width / 2;
-      if (draggedId.startsWith('__surface:')) {
-        const desiredPlacement = event.clientX < midX ? 'start' : 'end';
-        const currentSurface = options.getProjectSurface(project);
-        if ((currentSurface.tabPlacement ?? 'end') !== desiredPlacement) {
-          options.updateProjectSurface(project, {
-            ...currentSurface,
-            tabPlacement: desiredPlacement,
-          });
-        }
-        return;
-      }
       let targetIndex = project.sessions.findIndex((candidate) => candidate.id === session.id);
       if (event.clientX >= midX) targetIndex++;
 

@@ -33,7 +33,6 @@ export const CORE_TRANSLATION_ENTRIES_PART_2: ReadonlyArray<readonly [string, st
   ['Auto-scroll: ON', 'Otomatik kaydırma: AÇIK'],
   ['All Events', 'Tüm Olaylar'],
   ['Session Inspector', 'Oturum Denetçisi'],
-  ['CLI Surface', 'CLI Yüzeyi'],
   ['Terminal capture', 'Terminal yakalama'],
   ['Will send: Selection only', 'Gönderilecek: Yalnızca seçim'],
   ['No profile · idle', 'Profil yok · boşta'],
@@ -71,9 +70,32 @@ export const CORE_TRANSLATION_ENTRIES_PART_2: ReadonlyArray<readonly [string, st
   ['Focus address bar', 'Adres çubuğuna odaklan'],
   ['Live View tools', 'Canlı Görünüm araçları'],
   ['Local surfaces', 'Yerel yüzeyler'],
+  ['Localhost', 'Localhost'],
   ['Open a running surface', 'Çalışan bir yüzey açın'],
+  ['Open a local surface', 'Yerel bir yüzey aç'],
   ['Surface offline', 'Yüzey çevrimdışı'],
   ['Rescan localhost', "Localhost'u yeniden tara"],
+  [
+    'Paste a URL above, or pick a running localhost target below.',
+    'Yukarıya URL yapıştır, veya aşağıdaki çalışan localhost hedefini seç.',
+  ],
+  ['Looking for running localhost targets…', 'Çalışan localhost hedefleri aranıyor…'],
+  [
+    'No localhost targets yet. Start a dev server, or paste a URL above.',
+    'Henüz localhost hedefi yok. Dev sunucu başlat, veya yukarıya URL yapıştır.',
+  ],
+  [
+    'Could not detect localhost targets. Paste a URL above to continue.',
+    'Localhost hedefleri algılanamadı. Devam için yukarıya URL yapıştır.',
+  ],
+  [
+    'Only running localhost targets are listed.',
+    'Yalnızca çalışan localhost hedefleri listelenir.',
+  ],
+  [
+    'Pick a target, or paste any URL above.',
+    'Bir hedef seç, veya yukarıya herhangi bir URL yapıştır.',
+  ],
   [
     'No active localhost surfaces found yet. Start a dev server, or paste any URL above.',
     'Henüz etkin localhost yüzeyi bulunamadı. Bir geliştirme sunucusu başlatın veya yukarıya bir URL yapıştırın.',
@@ -300,7 +322,6 @@ export const CORE_TRANSLATION_ENTRIES_PART_2: ReadonlyArray<readonly [string, st
   ['Reusable workflow', 'Yeniden kullanılabilir iş akışı'],
   ['Changed files snapshot', 'Değişen dosyalar anlık görüntüsü'],
   ['Fix in selected session', 'Seçili oturumda düzelt'],
-  ['Focus CLI Surface', 'CLI Yüzeyine Odaklan'],
   ['Checkpoint restore', 'Kontrol noktası geri yükleme'],
   ['New findings file', 'Yeni bulgu dosyası'],
   ['New queued task', 'Yeni kuyruk görevi'],

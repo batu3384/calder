@@ -1,5 +1,9 @@
 export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> = [
   ['Appearance', 'Görünüm'],
+  ['Workspace status', 'Çalışma alanı durumu'],
+  ['Git branch and working tree status', 'Git dalı ve çalışma ağacı durumu'],
+  ['Session provider', 'Oturum sağlayıcısı'],
+  ['Terminal input', 'Terminal girişi'],
   [
     'Light theme uses workspace tokens from base.css.',
     'Açık tema, base.css çalışma alanı belirteçlerini kullanır.',
@@ -60,6 +64,21 @@ export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> =
   ['Focus address bar', 'Adres çubuğuna odaklan'],
   ['Rescan localhost', "Localhost'u yeniden tara"],
   ['Local surfaces', 'Yerel yüzeyler'],
+  ['Localhost', 'Localhost'],
+  ['Open a local surface', 'Yerel bir yüzey aç'],
+  [
+    'Paste a URL above, or pick a running localhost target below.',
+    'Yukarıya URL yapıştır, veya aşağıdaki çalışan localhost hedefini seç.',
+  ],
+  ['Looking for running localhost targets…', 'Çalışan localhost hedefleri aranıyor…'],
+  [
+    'Only running localhost targets are listed.',
+    'Yalnızca çalışan localhost hedefleri listelenir.',
+  ],
+  [
+    'Pick a target, or paste any URL above.',
+    'Bir hedef seç, veya yukarıya herhangi bir URL yapıştır.',
+  ],
   ['Scanning for active localhost targets…', 'Etkin localhost hedefleri taranıyor…'],
   ['How it works', 'Nasıl çalışır'],
   [

@@ -243,6 +243,30 @@ function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslat
 function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslation[] {
   return [
     {
+      pattern: /^(.+) • (\d+) sessions$/u,
+      replace: (match) => `${match[1]} • ${match[2]} oturum`,
+    },
+    {
+      pattern: /^Remove project (.+)$/u,
+      replace: (match) => `${match[1]} projesini kaldır`,
+    },
+    {
+      pattern: /^Remove (.+)$/u,
+      replace: (match) => `${match[1]} kaldır`,
+    },
+    {
+      pattern: /^Close session (.+)$/u,
+      replace: (match) => `${translate(match[1])} oturumunu kapat`,
+    },
+    {
+      pattern: /^Branch (.+)$/u,
+      replace: (match) => `Dal ${match[1]}`,
+    },
+    {
+      pattern: /^Status:\s*(.+?)\s+Drag to reorder\s+·\s+Drag to reorder$/u,
+      replace: (match) => `Durum: ${translate(match[1])} · yeniden sıralamak için sürükle`,
+    },
+    {
       pattern: /^(\d+)\s+session$/u,
       replace: (match) => `${match[1]} oturum`,
     },
@@ -377,7 +401,7 @@ function createRelativeTimePatterns(): PatternTranslation[] {
   ];
 }
 
-function createCliSurfaceSummaryPatterns(translate: Translate): PatternTranslation[] {
+function createTabSummaryPatterns(translate: Translate): PatternTranslation[] {
   return [
     {
       pattern: /^(\d+) session(s?) · (\d+) changed file(s?)$/u,
@@ -387,10 +411,6 @@ function createCliSurfaceSummaryPatterns(translate: Translate): PatternTranslati
       pattern: /^Status:\s*(\S+)\s+Session:\s*(.+)\s+Drag to reorder$/u,
       replace: (match) =>
         `Durum: ${translate(match[1])} · Oturum: ${match[2]} · Yeniden sıralamak için sürükle`,
-    },
-    {
-      pattern: /^CLI Surface\s+Profile:\s*(.+)$/u,
-      replace: (match) => `CLI Yüzeyi · Profil: ${translate(match[1])}`,
     },
     {
       pattern: /^Configured for (.+)$/u,
@@ -628,7 +648,7 @@ export function createPatternTranslations(translate: Translate): PatternTranslat
     ...createWorkflowAndInstallPatterns(translate),
     ...createPolicyAndRoutingPatterns(translate),
     ...createRelativeTimePatterns(),
-    ...createCliSurfaceSummaryPatterns(translate),
+    ...createTabSummaryPatterns(translate),
     ...createInspectorAndErrorPatterns(translate),
   ];
 }

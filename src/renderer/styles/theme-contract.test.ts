@@ -8,6 +8,7 @@ const commandStudioCss = readFileSync(
   new URL('./theme-command-studio.css', import.meta.url),
   'utf-8',
 );
+const tabsCss = readFileSync(new URL('./tabs.css', import.meta.url), 'utf-8');
 const cockpitUrl = new URL('./cockpit.css', import.meta.url);
 const cockpitCss = existsSync(cockpitUrl) ? readFileSync(cockpitUrl, 'utf-8') : '';
 
@@ -27,22 +28,32 @@ describe('precision cockpit theme contract', () => {
     expect(baseCss).toContain('--control-height-md');
     expect(baseCss).toContain('--accent-soft');
     expect(baseCss).not.toContain('--accent-warm');
-    expect(baseCss).toMatch(/--accent:\s*#5e6ad2/);
+    expect(baseCss).toMatch(/--accent:\s*#6f9aa6/);
     expect(baseCss).toContain('--surface-shell');
     expect(baseCss).toContain('--border-hairline');
     expect(baseCss).toContain('--accent-line');
     expect(baseCss).toContain('--motion-fast');
     expect(baseCss).toContain('--motion-panel');
     expect(baseCss).toContain('--font-sans:');
-    expect(baseCss).toContain("'IBM Plex Sans'");
-    expect(baseCss).toContain("'Inter'");
+    expect(baseCss).toContain("'SF Pro Text'");
+    expect(baseCss).toContain("'SF Pro Display'");
+    expect(baseCss).not.toContain("'IBM Plex Sans'");
+    expect(baseCss).not.toContain("'Inter'");
+    expect(baseCss).not.toContain("'Manrope'");
     expect(baseCss).not.toContain('--accent: #ef6879;');
   });
 
-  it('keeps command studio free of teal chrome literals', () => {
+  it('keeps command studio free of teal chrome literals and restores CLI brand accents', () => {
     expect(commandStudioCss).not.toContain('#66e7df');
     expect(commandStudioCss).not.toContain('102, 231, 223');
-    expect(commandStudioCss).toContain('--accent: #5e6ad2');
+    expect(commandStudioCss).toContain('--accent: #6f9aa6');
+    expect(commandStudioCss).not.toContain('#5e6ad2');
+    expect(commandStudioCss).not.toContain('--provider-accent: var(--accent)');
+    expect(baseCss).toContain("[data-provider='claude']");
+    expect(baseCss).toContain('--provider-accent: #ff9b4a');
+    expect(baseCss).toContain('--provider-accent: #32d3a2');
+    expect(tabsCss).toContain('#7c8cff');
+    expect(tabsCss).toContain('#ff9b4a');
   });
 
   it('loads the command studio premium theme after feature styles', () => {
@@ -105,6 +116,20 @@ describe('precision cockpit theme contract', () => {
 
   it('keeps terminal provider badges out of the generic aurora label tint', () => {
     expect(auroraCss).not.toContain('.terminal-pane-provider,');
+  });
+
+  it('keeps chrome surfaces on Linear neutrals with accessible dim text', () => {
+    expect(baseCss).toMatch(/--text-dim:\s*#7a7f87/);
+    expect(baseCss).toContain('--git-added: var(--success)');
+    expect(baseCss).toContain('--git-modified: var(--warning)');
+    expect(auroraCss).toContain('--aurora-border: color-mix(in srgb, var(--border-subtle)');
+    expect(auroraCss).toContain('--executive-graphite: #0f1011');
+    expect(auroraCss).toContain('--executive-panel: #0f1011');
+    expect(commandStudioCss).toContain('background: var(--studio-panel)');
+    expect(commandStudioCss).not.toContain('rgba(7, 12, 18');
+    expect(commandStudioCss).not.toContain('rgba(11, 18, 26');
+    expect(tabsCss).toContain('.surface-live-view-btn');
+    expect(tabsCss).not.toContain('.surface-mode-switcher');
   });
 
   it('defines shared cockpit control classes', () => {

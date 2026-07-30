@@ -35,11 +35,6 @@ import type {
   ProjectReviewState,
 } from '../shared/types/project-review';
 import type {
-  CliSurfaceDiscoveryResult,
-  CliSurfaceProfile,
-  CliSurfaceRuntimeState,
-} from '../shared/types/project-surface';
-import type {
   ProjectTeamContextCreateSpaceResult,
   ProjectTeamContextStarterFilesResult,
   ProjectTeamContextState,
@@ -63,7 +58,6 @@ import type {
   StatsCache,
   ToolFailureData,
 } from '../shared/types/session';
-import { createPreloadCliSurfaceApi } from './preload-api-cli-surface.js';
 import type { PreloadEvidenceApi } from './preload-api-evidence.js';
 import { createPreloadEvidenceApi } from './preload-api-evidence.js';
 import { createPreloadGitApi } from './preload-api-git.js';
@@ -269,18 +263,6 @@ export interface CalderApi {
     getForFill(url: string, id: string): Promise<BrowserCredentialFillData | null>;
     getAutoFillForUrl(url: string): Promise<BrowserCredentialFillData | null>;
   };
-  cliSurface: {
-    discover: (projectPath: string) => Promise<CliSurfaceDiscoveryResult>;
-    start(projectId: string, profile: CliSurfaceProfile): Promise<void>;
-    stop(projectId: string): Promise<void>;
-    restart(projectId: string): Promise<void>;
-    write(projectId: string, data: string): void;
-    resize(projectId: string, cols: number, rows: number): void;
-    onData(callback: (projectId: string, data: string) => void): () => void;
-    onExit(callback: (projectId: string, exitCode: number, signal?: number) => void): () => void;
-    onStatus(callback: (projectId: string, state: CliSurfaceRuntimeState) => void): () => void;
-    onError(callback: (projectId: string, message: string) => void): () => void;
-  };
   mcp: {
     connect(id: string, url: string): Promise<{ success: boolean; data?: unknown; error?: string }>;
     disconnect(id: string): Promise<{ success: boolean; data?: unknown; error?: string }>;
@@ -430,7 +412,6 @@ const api: CalderApi = {
     getAutoFillForUrl: (url: string) =>
       ipcRenderer.invoke('browserCredential:getAutoFillForUrl', url),
   },
-  cliSurface: createPreloadCliSurfaceApi(ipcRenderer, onChannel),
   mcp: createPreloadMcpApi(ipcRenderer),
   stats: {
     getCache: () => ipcRenderer.invoke('stats:getCache'),

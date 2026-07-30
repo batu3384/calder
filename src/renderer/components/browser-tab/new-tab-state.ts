@@ -29,11 +29,10 @@ export function createNewTabStateController(
   function resetNewTabCopy(): void {
     newTabPage.dataset.mode = 'default';
     ntpState.dataset.state = 'default';
-    ntpState.textContent = 'Ready to capture';
-    ntpTitle.textContent = 'Open a running surface';
-    ntpSubtitle.textContent =
-      'Jump into a running app, capture the right context, and route it into the session you choose without leaving Calder.';
-    ntpTargetsText.textContent = 'Scanning for active localhost targets…';
+    ntpState.textContent = 'Ready';
+    ntpTitle.textContent = 'Open a local surface';
+    ntpSubtitle.textContent = 'Paste a URL above, or pick a running localhost target below.';
+    ntpTargetsText.textContent = 'Looking for running localhost targets…';
     ntpTargetsMeta.textContent = 'Scanning…';
   }
 
@@ -44,19 +43,19 @@ export function createNewTabStateController(
     ntpState.textContent = 'Offline';
     ntpTitle.textContent = 'Surface offline';
     ntpSubtitle.textContent = isLocalSurface
-      ? `${failedUrl} is not reachable right now. Start the local app again, then reload or rescan localhost.`
-      : `${failedUrl} could not be opened right now. Try reloading, pasting a different URL, or choosing another local surface.`;
+      ? `${failedUrl} is not reachable. Start the app, then reload or rescan.`
+      : `${failedUrl} could not be opened. Try another URL or localhost target.`;
     ntpTargetsText.textContent = isLocalSurface
-      ? 'Start the local app again, then rescan localhost or paste a different URL above.'
-      : 'Paste a different URL above, or choose another running localhost surface.';
+      ? 'Start the local app again, then rescan or paste a different URL.'
+      : 'Paste a different URL, or choose another localhost target.';
     ntpTargetsMeta.textContent = isLocalSurface ? 'Offline' : 'Unavailable';
     ntpGrid.innerHTML = '';
 
     const offlineCard = document.createElement('div');
     offlineCard.className = 'browser-ntp-empty';
     offlineCard.textContent = isLocalSurface
-      ? 'Start the local app again, then choose another running localhost surface or paste a new URL.'
-      : 'This page could not be opened right now. Choose another running surface or paste a different URL.';
+      ? 'Local app is down. Rescan after it starts, or paste a new URL.'
+      : 'Page could not be opened. Choose another target or paste a different URL.';
     ntpGrid.appendChild(offlineCard);
     newTabPage.dataset.mode = 'offline';
     syncSurfaceVisibility(true);

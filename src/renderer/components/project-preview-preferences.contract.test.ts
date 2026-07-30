@@ -34,14 +34,10 @@ describe('project preview preferences contract', () => {
     expect(previewSource).toContain('window.calder.browser');
     expect(previewSource).toContain('.listLocalTargets()');
     expect(previewSource).toContain('Open in Live View');
-    expect(previewSource).toContain('Focus CLI Surface');
     expect(previewSource).toContain('Open workspace shell');
-    expect(previewSource).toContain('Restart preview runtime');
-    expect(previewSource).toContain('describePreviewRuntimeHealth');
-    expect(previewSource).toContain('Runtime health');
-    expect(previewSource).toContain('Last exit');
-    expect(previewSource).toContain('Last error');
     expect(previewSource).toContain('preview-discovery-shell');
+    expect(previewSource).toContain('openPreviewTargetInLiveView');
+    expect(previewSource).toContain('openWorkspaceShellLogs');
   });
 
   it('styles preview center cards with dedicated rows and actions', () => {

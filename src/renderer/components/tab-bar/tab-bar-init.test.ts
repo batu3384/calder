@@ -46,8 +46,6 @@ const appStateMock = vi.hoisted(() => ({
   addBrowserTabSession: vi.fn(),
   renameSession: vi.fn(),
   setPreference: vi.fn(),
-  focusCliSurfaceTab: vi.fn(),
-  closeCliSurface: vi.fn(),
 }));
 
 class FakeClassList {
@@ -117,24 +115,8 @@ vi.mock('../surface-services/git-status.js', () => ({
   refreshGitStatus: vi.fn(),
 }));
 
-vi.mock('../cli-surface/setup.js', () => ({
-  openCliSurfaceWithSetup: vi.fn(async () => undefined),
-}));
-
-vi.mock('../cli-surface/quick-setup.js', () => ({
-  showCliSurfaceQuickSetup: vi.fn(),
-}));
-
-vi.mock('../cli-surface/profile.js', () => ({
-  createDiscoveredCliSurfaceProfile: vi.fn((candidate) => candidate),
-  getCliSurfaceProfileLabel: vi.fn(() => 'Default'),
-}));
-
 vi.mock('./tab-bar-surface-state.js', () => ({
-  getProjectSurface: vi.fn(() => ({ cli: { profiles: [], selectedProfileId: null } })),
-  persistAndLaunchCliSurfaceProfile: vi.fn(),
-  selectCliSurfaceProfile: vi.fn(),
-  upsertCliSurfaceProfile: vi.fn(() => []),
+  getProjectSurface: vi.fn(() => ({ kind: 'web', active: false, web: { history: [] } })),
 }));
 
 vi.mock('./tab-bar-session-titles.js', () => ({
@@ -147,10 +129,6 @@ vi.mock('./tab-bar-surface-signature.js', () => ({
 
 vi.mock('./tab-bar-rename-controller.js', () => ({
   startInlineTabRename: vi.fn(),
-}));
-
-vi.mock('./tab-bar-cli-profile-modal.js', () => ({
-  promptTabBarCliSurfaceProfile: vi.fn(),
 }));
 
 vi.mock('./tab-bar-session-context-menu.js', () => ({
@@ -206,9 +184,7 @@ vi.mock('./tab-bar-control-handlers.js', () => ({
 
 vi.mock('./tab-bar-render-blocks.js', () => ({
   buildActiveTabRailKey: vi.fn(() => 'active-key'),
-  buildTabBarRenderSurfaceState: vi.fn(() => ({
-    cliSurfaceTabActive: false,
-  })),
+  buildTabBarRenderSurfaceState: vi.fn(() => ({})),
   renderGitStatusBlock,
   shouldSkipTabListRender: vi.fn(() => true),
 }));
@@ -233,7 +209,6 @@ describe('tab-bar init orchestration', () => {
     documentMock.register('btn-update-cli-tools');
     documentMock.register('tab-actions');
     documentMock.register('surface-mode-slot');
-    documentMock.register('surface-profile-slot');
     documentMock.register('session-provider-slot');
     documentMock.register('session-launcher');
 

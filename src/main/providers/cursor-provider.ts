@@ -1,5 +1,6 @@
 import type { CliProviderMeta } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
+import { normalizePtyColorEnv } from '../pty-color-env';
 import { sanitizeExtraArgsQuiet } from '../security/sanitize';
 import { BaseCliProvider } from './base-cli-provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
@@ -39,7 +40,7 @@ export class CursorProvider extends BaseCliProvider {
   }
 
   buildEnv(_sessionId: string, baseEnv: Record<string, string>): Record<string, string> {
-    return { ...baseEnv, PATH: getFullPath() };
+    return normalizePtyColorEnv({ ...baseEnv, PATH: getFullPath() });
   }
 
   buildArgs(opts: {

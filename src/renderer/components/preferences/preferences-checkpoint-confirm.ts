@@ -77,9 +77,7 @@ export function buildCheckpointRestoreConfirm(
     : 'Git metadata unavailable';
 
   const surfaceSummary = checkpointDocument.surface
-    ? checkpointDocument.surface.kind === 'web'
-      ? `Live View${checkpointDocument.surface.webUrl ? ` · ${checkpointDocument.surface.webUrl}` : ''}`
-      : `CLI Surface${checkpointDocument.surface.cliStatus ? ` · ${checkpointDocument.surface.cliStatus}` : ''}`
+    ? `Live View${checkpointDocument.surface.webUrl ? ` · ${checkpointDocument.surface.webUrl}` : ''}`
     : 'No focused surface snapshot';
 
   const contextSummary = checkpointDocument.projectContext

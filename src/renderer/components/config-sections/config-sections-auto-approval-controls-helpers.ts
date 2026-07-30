@@ -35,38 +35,41 @@ type AppendAutoApprovalControlsArgs = {
   projectId: string;
   projectPath: string;
   refresh: () => Promise<void>;
-  details: HTMLElement;
-  esc: (input: string) => string;
+  host: HTMLElement;
 };
 
 function createAutoApprovalScopeCard(
   title: string,
   helperText: string,
   select: HTMLSelectElement,
+  statusLabel: string,
+  active: boolean,
 ): HTMLDivElement {
   const card = document.createElement('div');
   card.className = 'auto-approval-control auto-approval-scope-card';
   card.title = helperText;
+  card.dataset.active = active ? 'true' : 'false';
 
-  const row = document.createElement('div');
-  row.className = 'auto-approval-scope-row';
+  const header = document.createElement('div');
+  header.className = 'auto-approval-scope-header';
 
   const titleElement = document.createElement('div');
   titleElement.className = 'auto-approval-scope-title';
   titleElement.textContent = title;
 
+  const status = document.createElement('span');
+  status.className = 'auto-approval-scope-status control-chip';
+  status.textContent = statusLabel;
+
+  header.appendChild(titleElement);
+  header.appendChild(status);
+
   const control = document.createElement('div');
   control.className = 'auto-approval-scope-control';
   control.appendChild(select);
-  row.appendChild(titleElement);
-  row.appendChild(control);
 
-  const helper = document.createElement('div');
-  helper.className = 'auto-approval-scope-helper';
-  helper.textContent = helperText;
-
-  card.appendChild(row);
-  card.appendChild(helper);
+  card.appendChild(header);
+  card.appendChild(control);
   return card;
 }
 
@@ -145,28 +148,11 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
     projectId,
     projectPath,
     refresh,
-    details,
-    esc,
+    host,
   } = args;
 
   const controls = document.createElement('div');
   controls.className = 'auto-approval-controls';
-
-  const controlsIntro = document.createElement('div');
-  controlsIntro.className = 'auto-approval-controls-intro';
-  controlsIntro.textContent = localizedText(
-    'Session policy is temporary and takes priority (Session > Project > Global).',
-    'Oturum politikası geçicidir ve en yüksek önceliğe sahiptir (Oturum > Proje > Global).',
-  );
-  controls.appendChild(controlsIntro);
-
-  const controlsHint = document.createElement('div');
-  controlsHint.className = 'auto-approval-controls-hint';
-  controlsHint.textContent = localizedText(
-    'Recommended: set Global once, keep Project for repo defaults, then use Session only when needed.',
-    'Öneri: Globali bir kez ayarlayın, Projeyi depo varsayılanı için kullanın, Oturumu yalnızca gerektiğinde açın.',
-  );
-  controls.appendChild(controlsHint);
 
   const scopeHelp = autoApprovalScopeHelp();
   const globalSelect = createModeSelect(
@@ -186,11 +172,10 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   controls.appendChild(
     createAutoApprovalScopeCard(
       globalPolicyLabel,
-      localizedText(
-        `${scopeHelp.global} Current: ${scopeSummary.global}.`,
-        `${scopeHelp.global} Şu an: ${scopeSummary.global}.`,
-      ),
+      scopeHelp.global,
       globalSelect,
+      scopeSummary.global,
+      autoApproval.policySource === 'global',
     ),
   );
 
@@ -238,11 +223,10 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
   controls.appendChild(
     createAutoApprovalScopeCard(
       projectPolicyLabel,
-      localizedText(
-        `${scopeHelp.project} Current: ${scopeSummary.project}.`,
-        `${scopeHelp.project} Şu an: ${scopeSummary.project}.`,
-      ),
+      scopeHelp.project,
       projectSelect,
+      scopeSummary.project,
+      autoApproval.policySource === 'project',
     ),
   );
 
@@ -287,27 +271,26 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
     }
   });
 
+  const sessionHelper = !supportsPermissionHooks
+    ? localizedText(
+        'Active provider does not support permission hooks, so session auto-approval cannot run.',
+        'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
+      )
+    : sessionId
+      ? scopeHelp.session
+      : localizedText(
+          'Open a CLI session to apply a temporary override.',
+          'Geçici politika uygulamak için bir CLI oturumu açın.',
+        );
   controls.appendChild(
     createAutoApprovalScopeCard(
       sessionPolicyLabel,
-      !supportsPermissionHooks
-        ? localizedText(
-            'Active provider does not support permission hooks, so session auto-approval cannot run.',
-            'Aktif sağlayıcı izin hooklarını desteklemediği için oturum otomatik onayı çalışmaz.',
-          )
-        : sessionId
-          ? localizedText(
-              `${scopeHelp.session} Current: ${scopeSummary.session}.`,
-              `${scopeHelp.session} Şu an: ${scopeSummary.session}.`,
-            )
-          : localizedText(
-              'Open a CLI session to apply a temporary session override.',
-              'Geçici oturum politikası uygulamak için bir CLI oturumu açın.',
-            ),
+      sessionHelper,
       sessionSelect,
+      scopeSummary.session,
+      autoApproval.policySource === 'session',
     ),
   );
 
-  controls.appendChild(createModeGuide(esc));
-  details.appendChild(controls);
+  host.appendChild(controls);
 }

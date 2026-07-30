@@ -45,6 +45,18 @@ describe('i18n contract', () => {
     expectTranslation(source, 'Governance layer', 'Yönetişim katmanı');
     expectTranslation(source, 'Background tasks', 'Arka plan görevleri');
     expectTranslation(source, 'Team context', 'Ekip bağlamı');
+    expectTranslation(source, 'Settings', 'Ayarlar');
+    expectTranslation(source, 'Workspace Safety', 'Çalışma Alanı Güvenliği');
+    expectTranslation(source, 'Auto Approve', 'Otomatik Onay');
+    expectTranslation(source, 'Live View', 'Canlı Görünüm');
+    expectTranslation(source, 'Workspace status', 'Çalışma alanı durumu');
+    expectTranslation(
+      source,
+      'Git branch and working tree status',
+      'Git dalı ve çalışma ağacı durumu',
+    );
+    expectTranslation(source, 'Session provider', 'Oturum sağlayıcısı');
+    expectTranslation(source, 'Terminal input', 'Terminal girişi');
   });
 
   it('covers settings shell subgroup copy in Turkish', () => {
@@ -184,12 +196,18 @@ describe('i18n contract', () => {
     expect(source).toContain(
       'pattern: /^Status:\\s*(\\S+)\\s+Session:\\s*(.+)\\s+Drag to reorder$/u',
     );
-    expect(source).toContain('pattern: /^CLI Surface\\s+Profile:\\s*(.+)$/u');
+    expect(source).toContain(
+      'pattern: /^Status:\\s*(.+?)\\s+Drag to reorder\\s+·\\s+Drag to reorder$/u',
+    );
     expect(source).toContain('pattern: /^Configured for (.+)$/u');
     expect(source).toContain('pattern: /^(.+)\\s+·\\s+(live|starting|stopped|error|idle)$/u');
     expect(source).toContain('pattern: /^Profile:\\s*(.+)$/u');
     expect(source).toContain('pattern: /^Session:\\s*(.+)$/u');
     expect(source).toContain('pattern: /^Status:\\s*(.+)$/u');
+    expect(source).toContain('pattern: /^(.+) • (\\d+) sessions$/u');
+    expect(source).toContain('pattern: /^Remove project (.+)$/u');
+    expect(source).toContain('pattern: /^Close session (.+)$/u');
+    expect(source).toContain('pattern: /^Branch (.+)$/u');
     expect(source).toContain('pattern: /^(.+) \\(not installed\\)$/u');
     expect(source).toContain("value.includes('\\n')");
   });
@@ -199,6 +217,16 @@ describe('i18n contract', () => {
     expect(source).not.toContain("'.project-terminal-container',");
     expect(source).toContain("'.xterm',");
     expect(source).toContain("'.ansi-buffer',");
+  });
+
+  it('localizes accessible attributes inside terminal text exclusions', () => {
+    expect(source).toContain('localizeExcludedDescendantAttributes');
+    expect(source).toContain("'.xterm'");
+    expect(source).toContain("querySelectorAll('[title],[aria-label],[placeholder]')");
+  });
+
+  it('reruns localization after bootstrap-created labels settle', () => {
+    expect(source).toContain('queueMicrotask(localizeDocument)');
   });
 
   it('covers live view and capture controls in Turkish', () => {

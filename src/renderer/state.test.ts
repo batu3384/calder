@@ -511,28 +511,6 @@ describe('persist()', () => {
     expect(mockSave).toHaveBeenCalled();
   });
 
-  it('does not persist transient cli runtime process data', () => {
-    const project = addProject();
-
-    appState.setProjectSurface(project.id, {
-      kind: 'cli',
-      active: true,
-      cli: {
-        selectedProfileId: 'tui',
-        profiles: [{ id: 'tui', name: 'TUI', command: 'npm', args: ['run', 'dev:tui'] }],
-        runtime: {
-          status: 'running',
-          runtimeId: 'cli-surface:project-1',
-          command: 'npm',
-          args: ['run', 'dev:tui'],
-        },
-      },
-    });
-
-    const persisted = mockSave.mock.calls.at(-1)?.[0];
-    expect(persisted.projects[0].surface.cli.runtime.runtimeId).toBeUndefined();
-  });
-
   it('serializes saves and coalesces rapid persists to the latest snapshot', async () => {
     const completions: Array<() => void> = [];
     let inFlight = 0;
@@ -886,10 +864,9 @@ describe('browser target sessions', () => {
     const second = appState.addSession(project.id, 'Second')!;
 
     appState.setProjectSurface(project.id, {
-      kind: 'cli',
+      kind: 'web',
       active: true,
       targetSessionId: second.id,
-      cli: { profiles: [], runtime: { status: 'idle' } },
     });
 
     expect(appState.listSurfaceTargetSessions(project.id).map((session) => session.id)).toEqual([
@@ -1183,79 +1160,6 @@ describe('setActiveSession()', () => {
     appState.setActiveSession(project.id, sessions[0].id);
     expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
     expect(mockSave).toHaveBeenCalled();
-  });
-
-  it('returns cli surface tab focus back to session tabs when a session is selected', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'cli',
-      active: true,
-      tabFocus: 'cli',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-
-    appState.setActiveSession(project.id, sessions[1].id);
-
-    expect(appState.activeProject!.surface?.tabFocus).toBe('session');
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[1].id);
-  });
-});
-
-describe('cli surface tab state', () => {
-  it('focusCliSurfaceTab marks the cli surface as the active top tab without changing the active session', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'cli',
-      active: true,
-      tabFocus: 'session',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-    appState.setActiveSession(project.id, sessions[0].id);
-
-    appState.focusCliSurfaceTab(project.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'cli',
-        active: true,
-        tabFocus: 'cli',
-      }),
-    );
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
-  });
-
-  it('closeCliSurface hides the cli surface and restores session tab focus', () => {
-    const { project, sessions } = addProjectWithSessions(2);
-    appState.setProjectSurface(project.id, {
-      kind: 'cli',
-      active: true,
-      tabFocus: 'cli',
-      cli: {
-        selectedProfileId: 'surface-1',
-        profiles: [{ id: 'surface-1', name: 'Surface', command: 'python' }],
-        runtime: { status: 'idle' },
-      },
-    });
-    appState.setActiveSession(project.id, sessions[0].id);
-
-    appState.closeCliSurface(project.id);
-
-    expect(appState.activeProject!.surface).toEqual(
-      expect.objectContaining({
-        kind: 'cli',
-        active: false,
-        tabFocus: 'session',
-      }),
-    );
-    expect(appState.activeProject!.activeSessionId).toBe(sessions[0].id);
   });
 });
 

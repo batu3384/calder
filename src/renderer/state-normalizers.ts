@@ -4,10 +4,7 @@ import type { ProjectCheckpointState } from '../shared/types/project-checkpoint.
 import type { ProjectContextState } from '../shared/types/project-context.js';
 import type { ProjectReviewState } from '../shared/types/project-review.js';
 import type { ProjectRecord } from '../shared/types/project-state.js';
-import type {
-  CliSurfaceRuntimeState,
-  ProjectSurfaceRecord,
-} from '../shared/types/project-surface.js';
+import type { ProjectSurfaceRecord } from '../shared/types/project-surface.js';
 import type { ProjectTeamContextState } from '../shared/types/project-team-context.js';
 import type {
   ProjectWorkflowDocument,
@@ -31,15 +28,6 @@ export function normalizeProjectLayout(layout?: Partial<ProjectLayoutState>): Pr
     mosaicPreset: layout?.mosaicPreset,
     mosaicRatios: layout?.mosaicRatios ? { ...layout.mosaicRatios } : {},
   };
-}
-
-export function stripTransientRuntimeFields(
-  runtime: CliSurfaceRuntimeState,
-): CliSurfaceRuntimeState {
-  const next = { ...runtime };
-  delete next.runtimeId;
-  delete next.startupTiming;
-  return next;
 }
 
 export function normalizeProjectContextState(
@@ -141,7 +129,9 @@ export function buildWorkflowLaunchPrompt(workflow: ProjectWorkflowDocument): st
     .join('\n\n');
 }
 
-function isCliSurfaceTargetSession(session: SessionRecord | undefined): session is SessionRecord {
+function isSurfaceContextTargetSession(
+  session: SessionRecord | undefined,
+): session is SessionRecord {
   return Boolean(session && (!session.type || session.type === 'claude'));
 }
 
@@ -180,7 +170,15 @@ export function normalizeProjectSessions(project: ProjectRecord): boolean {
 }
 
 export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceRecord {
-  const existing = project.surface;
+  const existing = project.surface as
+    | (ProjectSurfaceRecord & {
+        kind?: string;
+        tabFocus?: string;
+        tabPlacement?: string;
+        tabOrder?: unknown;
+        cli?: unknown;
+      })
+    | undefined;
   const browserSession = resolveBrowserSurfaceSession(project, existing?.web?.sessionId);
   const history = Array.isArray(existing?.web?.history)
     ? [...existing.web.history]
@@ -189,23 +187,16 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
       : browserSession?.browserTabUrl
         ? [browserSession.browserTabUrl]
         : [];
-  const rawKind = existing?.kind ?? (browserSession ? 'web' : 'cli');
-  const kind = rawKind === 'web' || rawKind === 'cli' ? rawKind : 'web';
-  const active =
-    kind === 'web' && !browserSession ? false : (existing?.active ?? Boolean(browserSession));
-  const tabFocus =
-    kind === 'cli' ? (existing?.tabFocus ?? (active ? 'cli' : 'session')) : 'session';
-  const tabPlacement = existing?.tabPlacement === 'start' ? 'start' : 'end';
-  const tabOrder: Array<'cli'> = ['cli'];
+  const active = browserSession ? (existing?.active ?? true) : false;
   const storedTarget = existing?.targetSessionId
     ? project.sessions.find((session) => session.id === existing.targetSessionId)
     : undefined;
   const browserTarget = browserSession?.browserTargetSessionId
     ? project.sessions.find((session) => session.id === browserSession.browserTargetSessionId)
     : undefined;
-  const targetSessionId = isCliSurfaceTargetSession(storedTarget)
+  const targetSessionId = isSurfaceContextTargetSession(storedTarget)
     ? storedTarget.id
-    : isCliSurfaceTargetSession(browserTarget)
+    : isSurfaceContextTargetSession(browserTarget)
       ? browserTarget.id
       : undefined;
   const url =
@@ -215,23 +206,13 @@ export function normalizeProjectSurface(project: ProjectRecord): ProjectSurfaceR
       : undefined);
 
   return {
-    kind,
+    kind: 'web',
     active,
-    tabFocus,
-    tabPlacement,
-    tabOrder,
     targetSessionId,
     web: {
       sessionId: browserSession?.id,
       url,
       history: [...history],
-    },
-    cli: {
-      selectedProfileId: existing?.cli?.selectedProfileId,
-      profiles: existing?.cli?.profiles ? [...existing.cli.profiles] : [],
-      runtime: existing?.cli?.runtime
-        ? stripTransientRuntimeFields(existing.cli.runtime)
-        : { status: 'idle' },
     },
   };
 }

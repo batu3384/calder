@@ -1,10 +1,9 @@
 import * as path from 'node:path';
 
-import { BrowserWindow, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 
 import { onPtyExit, startEvidenceRun } from './calder-evidence/coordinator';
 import { assertProjectGovernanceAllows } from './calder-governance/enforcement';
-import { createCliSurfaceRuntimeManager } from './cli-surface-runtime';
 import {
   registerPendingCodexSession,
   startCodexSessionWatcher,
@@ -19,7 +18,6 @@ import {
 import { registerAppBrowserIpcHandlers } from './ipc-app-browser';
 import { isAutoApprovalMode, updateAutoApprovalMode } from './ipc-auto-approval-governance';
 import { registerCalderIpcHandlers, resetCalderProjectWatchers } from './ipc-calder';
-import { registerCliSurfaceIpcHandlers } from './ipc-cli-surface';
 import { registerEvidenceIpcHandlers } from './ipc-evidence';
 import { registerFsStoreIpcHandlers } from './ipc-fs-store';
 import { registerGitIpcHandlers } from './ipc-git';
@@ -45,22 +43,6 @@ import { createAppMenu } from './menu';
 import { loadState } from './store';
 
 let hookWatcherStarted = false;
-
-const cliSurfaceRuntime = createCliSurfaceRuntimeManager({
-  data: (projectId, data) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:data', projectId, data),
-  exit: (projectId, exitCode, signal) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send(
-      'cli-surface:exit',
-      projectId,
-      exitCode,
-      signal,
-    ),
-  status: (projectId, state) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:status', projectId, state),
-  error: (projectId, message) =>
-    BrowserWindow.getAllWindows()[0]?.webContents.send('cli-surface:error', projectId, message),
-});
 
 export function resetHookWatcher(): void {
   hookWatcherStarted = false;
@@ -116,12 +98,6 @@ export function registerIpcHandlers(): void {
       autoApprovalOrchestrator.unregisterSession(sessionId);
       clearInspectorOrchestrationSession(sessionId);
     },
-  });
-
-  registerCliSurfaceIpcHandlers(cliSurfaceRuntime, {
-    resolveProjectPath: (projectId) =>
-      loadState().projects.find((project) => project.id === projectId)?.path,
-    isWithinKnownProject,
   });
 
   registerFsStoreIpcHandlers({

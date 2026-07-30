@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_PNG = ROOT / 'build' / 'icon.png'
 SIZE = 1024
 BG = (15, 16, 17, 255)  # #0f1011
-MARK = (94, 106, 210, 255)  # #5e6ad2
+MARK = (111, 154, 166, 255)  # #6f9aa6
 RADIUS = 224  # ~22% rounded square
 
 
@@ -36,11 +36,11 @@ def main() -> None:
   def sy(y: float) -> float:
     return inset + y * scale
 
-  # Two vertical bars + bridge (matching mark.svg)
+  # Three bars form a geometric C (matching mark.svg)
   bars = [
+    (7, 6, 24, 12),
     (6, 6, 12, 26),
-    (20, 6, 26, 26),
-    (12, 14, 20, 18),
+    (7, 20, 24, 26),
   ]
   for x0, y0, x1, y1 in bars:
     draw.rounded_rectangle(

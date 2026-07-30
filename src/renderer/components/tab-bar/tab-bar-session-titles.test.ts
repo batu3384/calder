@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SessionRecord } from '../../../shared/types/session.js';
-import { buildSessionTabTitle, buildSessionTooltip } from './tab-bar-session-titles.js';
+import {
+  buildLocalizedSessionTooltip,
+  buildSessionTabTitle,
+  buildSessionTooltip,
+} from './tab-bar-session-titles.js';
 
 function makeCliSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
   return {
@@ -24,6 +28,11 @@ describe('tab-bar-session-titles', () => {
     expect(buildSessionTabTitle(session, 'working')).toBe(
       'Status: working\nSession: cli-1\nDrag to reorder',
     );
+  });
+
+  it('builds localized tooltip labels from stable translation keys', () => {
+    expect(buildLocalizedSessionTooltip('waiting', 'cli-123')).toContain('Status: waiting');
+    expect(buildLocalizedSessionTooltip('waiting', 'cli-123')).toContain('Session: cli-123');
   });
 
   it('builds browser titles', () => {

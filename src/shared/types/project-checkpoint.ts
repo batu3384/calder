@@ -1,7 +1,6 @@
 import type { ProviderId } from '../types-provider.js';
 import type { SessionRecord } from '../types-session.js';
-import type { GitFileEntry, SurfaceKind } from './project-core.js';
-import type { CliSurfaceRuntimeState } from './project-surface.js';
+import type { GitFileEntry } from './project-core.js';
 
 export interface ProjectCheckpointSnapshotSession {
   id: string;
@@ -26,13 +25,11 @@ export interface ProjectCheckpointSnapshotInput {
   activeSessionId: string | null;
   sessions: ProjectCheckpointSnapshotSession[];
   surface?: {
-    kind: SurfaceKind;
+    kind: 'web';
     active: boolean;
     targetSessionId?: string;
     webUrl?: string;
     webSessionId?: string;
-    cliSelectedProfileId?: string;
-    cliStatus?: CliSurfaceRuntimeState['status'];
   };
   projectContext?: {
     sharedRuleCount: number;

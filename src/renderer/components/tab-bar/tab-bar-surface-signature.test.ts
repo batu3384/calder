@@ -11,25 +11,13 @@ function makeProject(): ProjectRecord {
     sessions: [],
     activeSessionId: null,
     surface: {
-      kind: 'cli',
+      kind: 'web',
       active: true,
-      tabFocus: 'cli',
-      tabPlacement: 'end',
-      tabOrder: ['cli'],
-      web: { history: [] },
-      cli: {
-        selectedProfileId: 'profile-1',
-        profiles: [
-          {
-            id: 'profile-1',
-            name: 'Textual',
-            command: 'python',
-            args: ['-m', 'textual', 'run', 'app.py'],
-            cwd: '/tmp/project',
-            portMode: 'auto',
-          },
-        ],
-        runtime: { status: 'idle' },
+      targetSessionId: 'session-1',
+      web: {
+        sessionId: 'browser-1',
+        url: 'http://localhost:3000',
+        history: ['http://localhost:3000'],
       },
     },
     layout: {
@@ -41,19 +29,15 @@ function makeProject(): ProjectRecord {
 }
 
 describe('tab-bar-surface-signature', () => {
-  it('builds a stable signature from surface and profiles', () => {
+  it('builds a stable signature from web surface state', () => {
     const project = makeProject();
     const signature = buildSurfaceControlsSignatureForProject(project);
-    expect(signature).toContain('project-1::cli::1::cli::profile-1::');
-    expect(signature).toContain('profile-1:Textual:');
-    expect(signature).toContain('/tmp/project:python');
+    expect(signature).toBe('project-1::web::1');
   });
 
   it('includes default surface when project surface is missing', () => {
     const project = makeProject();
     delete project.surface;
-    expect(buildSurfaceControlsSignatureForProject(project)).toContain(
-      'project-1::web::0::session',
-    );
+    expect(buildSurfaceControlsSignatureForProject(project)).toBe('project-1::web::0');
   });
 });

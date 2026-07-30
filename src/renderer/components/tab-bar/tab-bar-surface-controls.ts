@@ -1,31 +1,12 @@
-import type { SurfaceKind } from '../../../shared/types/project-core.js';
-import type {
-  CliSurfaceProfile,
-  ProjectSurfaceRecord,
-} from '../../../shared/types/project-surface.js';
+import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
 import type { ProjectRecord } from '../../state.js';
-import { createCustomSelect, type CustomSelectInstance } from '../custom-select.js';
 
 interface CreateTabBarSurfaceControlsControllerOptions {
   surfaceModeSlotEl: HTMLElement;
-  surfaceProfileSlotEl: HTMLElement;
   getActiveProject: () => ProjectRecord | null | undefined;
   buildSurfaceControlsSignature: (project: ProjectRecord) => string;
   getProjectSurface: (project: ProjectRecord) => ProjectSurfaceRecord;
-  getCliSurfaceProfileLabel: (profile: CliSurfaceProfile) => string;
-  selectCliSurfaceProfile: (
-    project: ProjectRecord,
-    profiles: CliSurfaceProfile[],
-    selectedProfileId: string,
-  ) => void;
   activateLiveViewSurface: (project: ProjectRecord) => void;
-  activateCliSurface: (project: ProjectRecord) => void | Promise<void>;
-  promptCliSurfaceProfile: (
-    project: ProjectRecord,
-    existing?: CliSurfaceProfile,
-    onReady?: (profile: CliSurfaceProfile) => void,
-  ) => void;
-  onProfileSelectOpenChange: (open: boolean) => void;
 }
 
 export interface TabBarSurfaceControlsController {
@@ -38,60 +19,23 @@ export function createTabBarSurfaceControlsController(
 ): TabBarSurfaceControlsController {
   const {
     surfaceModeSlotEl,
-    surfaceProfileSlotEl,
     getActiveProject,
     buildSurfaceControlsSignature,
     getProjectSurface,
-    getCliSurfaceProfileLabel,
-    selectCliSurfaceProfile,
     activateLiveViewSurface,
-    activateCliSurface,
-    promptCliSurfaceProfile,
-    onProfileSelectOpenChange,
   } = options;
-  let surfaceProfileSelect: CustomSelectInstance | null = null;
   let surfaceControlsSignature = '';
 
   function destroySurfaceProfileSelector(): void {
-    if (surfaceProfileSelect) {
-      surfaceProfileSelect.destroy();
-      surfaceProfileSelect = null;
-    }
-    onProfileSelectOpenChange(false);
     surfaceControlsSignature = '';
     surfaceModeSlotEl.innerHTML = '';
     surfaceModeSlotEl.hidden = true;
-    surfaceProfileSlotEl.innerHTML = '';
-    surfaceProfileSlotEl.hidden = true;
-  }
-
-  function createModeButton(
-    project: ProjectRecord,
-    activeKind: SurfaceKind,
-    kind: SurfaceKind,
-    label: string,
-  ): HTMLButtonElement {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'surface-mode-button';
-    button.dataset.surfaceKind = kind;
-    button.textContent = label;
-    button.classList.toggle('active', activeKind === kind && getProjectSurface(project).active);
-    button.addEventListener('click', () => {
-      if (kind === 'web') activateLiveViewSurface(project);
-      else void activateCliSurface(project);
-    });
-    return button;
   }
 
   function renderSurfaceControls(): void {
     const project = getActiveProject();
     if (!project) {
-      if (
-        surfaceControlsSignature ||
-        surfaceModeSlotEl.childElementCount > 0 ||
-        surfaceProfileSlotEl.childElementCount > 0
-      ) {
+      if (surfaceControlsSignature || surfaceModeSlotEl.childElementCount > 0) {
         destroySurfaceProfileSelector();
       }
       return;
@@ -104,77 +48,17 @@ export function createTabBarSurfaceControlsController(
     surfaceControlsSignature = nextSignature;
 
     const surface = getProjectSurface(project);
-    const switcher = document.createElement('div');
-    switcher.className = 'surface-mode-switcher';
-
-    [
-      { kind: 'web' as const, label: 'Live View' },
-      { kind: 'cli' as const, label: 'CLI Surface' },
-    ].forEach(({ kind, label }) => {
-      switcher.appendChild(createModeButton(project, surface.kind, kind, label));
-    });
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'surface-live-view-btn';
+    button.dataset.surfaceKind = 'web';
+    button.textContent = 'Live View';
+    button.setAttribute('aria-pressed', String(surface.kind === 'web' && surface.active));
+    button.classList.toggle('active', surface.kind === 'web' && surface.active);
+    button.addEventListener('click', () => activateLiveViewSurface(project));
 
     surfaceModeSlotEl.hidden = false;
-    surfaceModeSlotEl.appendChild(switcher);
-
-    if (surface.kind !== 'cli') return;
-
-    const group = document.createElement('div');
-    group.className = 'surface-profile-group';
-    const profiles = surface.cli?.profiles ?? [];
-    const selectedProfile =
-      profiles.find((profile) => profile.id === surface.cli?.selectedProfileId) ?? profiles[0];
-
-    if (profiles.length > 0) {
-      const select = createCustomSelect(
-        'command-deck-cli-profile',
-        [
-          ...profiles.map((profile) => ({
-            value: profile.id,
-            label: getCliSurfaceProfileLabel(profile),
-          })),
-          { value: '__new__', label: '+ New profile\u2026' },
-        ],
-        selectedProfile?.id,
-        {
-          floating: {
-            placement: 'bottom-end',
-            offsetPx: 8,
-            maxWidthPx: 320,
-            maxHeightPx: 320,
-            strategy: 'fixed',
-          },
-          onOpenChange: (open) => onProfileSelectOpenChange(open),
-        },
-      );
-      select.element.classList.add('command-deck-cli-profile-select');
-      const hiddenInput = select.element.querySelector(
-        '#command-deck-cli-profile',
-      ) as HTMLInputElement | null;
-      hiddenInput?.addEventListener('change', () => {
-        const value = hiddenInput.value;
-        if (value === '__new__') {
-          promptCliSurfaceProfile(project);
-          return;
-        }
-        selectCliSurfaceProfile(project, profiles, value);
-      });
-      group.appendChild(select.element);
-      surfaceProfileSelect = select;
-    }
-
-    const configureButton = document.createElement('button');
-    configureButton.type = 'button';
-    configureButton.className = 'surface-profile-config';
-    configureButton.dataset.role = profiles.length > 0 ? 'edit-profile' : 'setup-profile';
-    configureButton.textContent = profiles.length > 0 ? 'Edit' : 'Set up';
-    configureButton.addEventListener('click', () => {
-      promptCliSurfaceProfile(project, selectedProfile);
-    });
-    group.appendChild(configureButton);
-
-    surfaceProfileSlotEl.hidden = false;
-    surfaceProfileSlotEl.appendChild(group);
+    surfaceModeSlotEl.appendChild(button);
   }
 
   return {

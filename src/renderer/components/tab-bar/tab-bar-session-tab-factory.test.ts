@@ -1,7 +1,10 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const tabBarSource = readFileSync(new URL('./tab-bar.ts', import.meta.url), 'utf-8');
+const tabListRendererSource = readFileSync(
+  new URL('./tab-bar-tab-list-renderer.ts', import.meta.url),
+  'utf-8',
+);
 const sessionTabFactorySource = readFileSync(
   new URL('./tab-bar-session-tab-factory.ts', import.meta.url),
   'utf-8',
@@ -18,8 +21,8 @@ const statusKeys = readFileSync(
 
 describe('tab bar session tab factory extraction', () => {
   it('delegates session tab creation to dedicated helper', () => {
-    expect(tabBarSource).toContain("from './tab-bar-session-tab-factory.js'");
-    expect(tabBarSource).toContain('createSessionTab({');
+    expect(tabListRendererSource).toContain("from './tab-bar-session-tab-factory.js'");
+    expect(tabListRendererSource).toContain('createSessionTab({');
   });
 
   it('keeps session tab badges, activation, context menu, and reorder behavior in helper module', () => {
@@ -47,6 +50,12 @@ describe('tab bar session tab factory extraction', () => {
     expect(tabsCss).toContain('.tab-status::before');
     expect(tabsCss).toContain('.tab-status.working::before');
     expect(tabsCss).toContain('.tab-status.completed::before');
+  });
+
+  it('localizes generated tab tooltips instead of relying on post-render mutation', () => {
+    expect(sessionTabFactorySource).toContain('tab.title = t(buildSessionTabTitle(');
+    expect(sessionTabFactorySource).toContain('t(`Drag to reorder`)');
+    expect(eventWiringSource).toContain('tab.title = buildLocalizedSessionTooltip(');
   });
 
   it('has locale translations for every session status key', () => {

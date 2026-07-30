@@ -7,8 +7,11 @@ const tabsCss = readFileSync(new URL('./styles/tabs.css', import.meta.url), 'utf
 
 describe('index shell contract', () => {
   it('exposes cockpit wrappers for sidebar and top bar chrome', () => {
+    expect(html).toContain('data-ui-ready');
+    expect(html).toContain('pointer-events: none');
     expect(html).toContain('id="sidebar-brand-row"');
     expect(html).toContain('class="sidebar-brand-mark"');
+    expect(html).toContain('alt="Calder"');
     expect(html).toContain('assets/brand/mark.svg');
     expect(html).toContain('class="sidebar-brand-meta"');
     expect(html).toContain('class="sidebar-header-primary"');

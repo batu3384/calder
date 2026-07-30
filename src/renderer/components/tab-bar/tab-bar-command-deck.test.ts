@@ -33,22 +33,12 @@ describe('tab bar command deck contract', () => {
   it('pins launcher dropdowns to the right edge and stabilizes the launcher shell while they are open', () => {
     expect(providerSelectorSource).toContain("placement: 'bottom-end'");
     expect(providerSelectorSource).toContain("strategy: 'fixed'");
-    expect(surfaceControlsSource).toContain("placement: 'bottom-end'");
-    expect(surfaceControlsSource).toContain("strategy: 'fixed'");
     expect(source).toContain(
       'function setSessionLauncherSelectOpen(selectKey: LauncherSelectKey, open: boolean): void',
     );
-    expect(source).toContain(
-      'const anyOpen = launcherSelectOpenState.profile || launcherSelectOpenState.provider;',
-    );
+    expect(source).toContain('const anyOpen = launcherSelectOpenState.provider;');
     expect(source).toContain(
       "onOpenChange: (open) => setSessionLauncherSelectOpen('provider', open)",
-    );
-    expect(source).toContain(
-      "onProfileSelectOpenChange: (open) => setSessionLauncherSelectOpen('profile', open)",
-    );
-    expect(surfaceControlsSource).toContain(
-      'onOpenChange: (open) => onProfileSelectOpenChange(open)',
     );
   });
 
@@ -73,6 +63,7 @@ describe('tab bar command deck contract', () => {
     expect(surfaceControlsSource).toContain(
       'if (nextSignature === surfaceControlsSignature) return;',
     );
+    expect(surfaceControlsSource).toContain("button.textContent = 'Live View'");
   });
 
   it('keeps former command deck tools reachable from the app menu', () => {

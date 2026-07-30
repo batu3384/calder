@@ -9,7 +9,7 @@ export async function populateLocalTargets(
   meta: HTMLDivElement,
 ): Promise<void> {
   grid.innerHTML = '';
-  copy.textContent = 'Scanning for active localhost targets…';
+  copy.textContent = 'Looking for running localhost targets…';
   meta.textContent = 'Scanning…';
 
   try {
@@ -19,16 +19,14 @@ export async function populateLocalTargets(
     if (targets.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'browser-ntp-empty';
-      empty.textContent =
-        'No active localhost surfaces found yet. Start a dev server, or paste any URL above.';
+      empty.textContent = 'No localhost targets yet. Start a dev server, or paste a URL above.';
       grid.appendChild(empty);
-      copy.textContent = 'Only running localhost surfaces are listed here.';
+      copy.textContent = 'Only running localhost targets are listed.';
       meta.textContent = '0 running';
       return;
     }
 
-    copy.textContent =
-      'Only running localhost surfaces appear here. Pick one or paste any URL above.';
+    copy.textContent = 'Pick a target, or paste any URL above.';
     meta.textContent = `${targets.length} running`;
     for (const target of targets) {
       const btn = document.createElement('button');
@@ -50,10 +48,9 @@ export async function populateLocalTargets(
     if (!instances.has(instance.sessionId)) return;
     const empty = document.createElement('div');
     empty.className = 'browser-ntp-empty';
-    empty.textContent =
-      'Could not detect localhost surfaces right now. Paste any URL above to keep going.';
+    empty.textContent = 'Could not detect localhost targets. Paste a URL above to continue.';
     grid.appendChild(empty);
-    copy.textContent = 'Only running localhost surfaces are listed here.';
+    copy.textContent = 'Only running localhost targets are listed.';
     meta.textContent = 'Unavailable';
   }
 }

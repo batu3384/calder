@@ -10,6 +10,7 @@ import {
   unregisterShellTerminalInstance,
 } from './shell-terminal-registry.js';
 import { fitAllVisible } from './terminal-pane.js';
+import { bindTerminalColorSchemeSupport } from './terminal-pane-runtime.js';
 import { attachClipboardCopyHandler } from './terminal-utils.js';
 
 interface ShellTerminalInstance {
@@ -47,17 +48,25 @@ function ensureShell(projectId: string, _projectPath: string): ShellTerminalInst
   const terminal = new Terminal({
     theme: {
       background: '#000000',
-      foreground: '#e0e0e0',
+      foreground: '#e6e6e6',
       cursor: '#e94560',
       selectionBackground: '#ff6b85a6',
       black: '#000000',
-      red: '#e94560',
-      green: '#0f9b58',
-      yellow: '#f4b400',
-      blue: '#4285f4',
-      magenta: '#ab47bc',
-      cyan: '#00acc1',
-      white: '#e0e0e0',
+      red: '#cd3131',
+      green: '#0dbc79',
+      yellow: '#e5e510',
+      blue: '#2472c8',
+      magenta: '#bc3fbc',
+      cyan: '#11a8cd',
+      white: '#e5e5e5',
+      brightBlack: '#666666',
+      brightRed: '#f14c4c',
+      brightGreen: '#23d18b',
+      brightYellow: '#f5f543',
+      brightBlue: '#3b8eea',
+      brightMagenta: '#d670d6',
+      brightCyan: '#29b8db',
+      brightWhite: '#e5e5e5',
     },
     fontSize: 14,
     fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace",
@@ -71,6 +80,7 @@ function ensureShell(projectId: string, _projectPath: string): ShellTerminalInst
   const searchAddon = new SearchAddon();
   terminal.loadAddon(searchAddon);
 
+  bindTerminalColorSchemeSupport(terminal);
   attachClipboardCopyHandler(terminal);
 
   const sessionId = shellSessionId(projectId);

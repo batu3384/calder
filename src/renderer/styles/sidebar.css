@@ -9,12 +9,11 @@
   display: flex;
   flex-direction: column;
   user-select: none;
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
 }
 
 .sidebar-surface {
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.018), rgba(255, 255, 255, 0)), var(--surface-rail);
+    linear-gradient(180deg, rgba(247, 248, 248, 0.018), rgba(255, 255, 255, 0)), var(--surface-rail);
 }
 
 .sidebar-project-row.active {
@@ -231,7 +230,7 @@
   position: relative;
   width: 100%;
   min-height: 52px;
-  padding: 10px 44px 10px 14px;
+  padding: 10px 44px 10px 16px;
   cursor: pointer;
   display: flex;
   align-items: flex-start;
@@ -270,13 +269,15 @@
 .project-item::before {
   content: '';
   position: absolute;
-  left: 8px;
+  left: 0;
   top: 10px;
   bottom: 10px;
   width: 2px;
   border-radius: 999px;
   background: transparent;
   opacity: 0;
+  z-index: 0;
+  pointer-events: none;
   transition:
     opacity var(--motion-fast) ease,
     background-color var(--motion-fast) ease;
@@ -491,7 +492,7 @@
   display: inline-grid;
   place-items: center;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: transparent;
   opacity: 0;
   visibility: hidden;

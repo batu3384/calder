@@ -9,7 +9,6 @@ import {
   hideAllBrowserTabPanes,
   showBrowserTabPane,
 } from './browser-tab-pane.js';
-import { hideAllCliSurfacePanes } from './cli-surface/pane.js';
 import {
   attachFileReaderToContainer,
   createFileReaderPane,
@@ -56,7 +55,6 @@ export function hideAllSplitLayoutPanes(): void {
   hideAllFileViewerPanes();
   hideAllFileReaderPanes();
   hideAllBrowserTabPanes();
-  hideAllCliSurfacePanes();
 }
 
 export function removeSplitLayoutMosaicArtifacts(container: HTMLElement): void {

@@ -303,10 +303,12 @@ describe('browser tab pane contract', () => {
     expect(newTabUiSource).toContain('browser-ntp-grid');
     expect(newTabUiSource).toContain('browser-ntp-section-header');
     expect(newTabUiSource).toContain('browser-ntp-section-meta');
+    expect(newTabUiSource).not.toContain('browser-ntp-capabilities');
+    expect(newTabUiSource).not.toContain('browser-ntp-workflow');
     expect(source).toContain("chromeLabel.textContent = 'Live View'");
     expect(source).toContain("chromeHint.textContent = 'Capture context'");
     expect(newTabUiSource).toContain("ntpEyebrow.textContent = 'Live View'");
-    expect(newTabUiSource).toContain("ntpTitle.textContent = 'Open a running surface'");
+    expect(newTabUiSource).toContain("ntpTitle.textContent = 'Open a local surface'");
     expect(newTabUiSource).toContain("ntpTargetsMeta.textContent = 'Scanning…'");
     expect(newTabUiSource).toContain("focusAddressBtn.textContent = 'Focus address bar'");
     expect(newTabUiSource).toContain("refreshTargetsBtn.textContent = 'Rescan localhost'");

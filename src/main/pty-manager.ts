@@ -8,15 +8,14 @@ import { registerSession } from './hooks/hook-status';
 import { isWin } from './platform';
 import { buildProviderBaseEnv } from './provider-env';
 import { getProvider } from './providers/registry';
+import { normalizePtyColorEnv } from './pty-color-env';
 import {
-  sanitizeArgs,
   sanitizeExtraArgs,
   sanitizeInitialPrompt,
   sanitizeSessionId,
   sanitizeSpawnArgs,
   validateCwd,
 } from './security/sanitize';
-import { validateSpawnCommand } from './security/spawn-command';
 
 export { getFullPath } from './full-path';
 
@@ -69,7 +68,9 @@ export function spawnPty(
 
   const provider = getProvider(providerId);
   const baseEnv = buildProviderBaseEnv(providerId, { ...process.env } as Record<string, string>);
-  const env = buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv));
+  const env = normalizePtyColorEnv(
+    buildBrowserBridgeEnv(cwd, provider.buildEnv(sessionId, baseEnv)),
+  );
   const shell = provider.resolveBinaryPath();
   let attemptedResumeFallback = false;
 
@@ -131,64 +132,6 @@ export function spawnPty(
   };
 
   spawnAttempt(cliSessionId, isResume);
-}
-
-export function spawnCommandPty(
-  sessionId: string,
-  launch: {
-    command: string;
-    args?: string[];
-    cwd: string;
-    envPatch?: Record<string, string>;
-    cols?: number;
-    rows?: number;
-  },
-  onData: (data: string) => void,
-  onExit: (exitCode: number, signal?: number) => void,
-): void {
-  const sessionIdResult = sanitizeSessionId(sessionId);
-  if (!sessionIdResult.ok) {
-    throw new Error(`Invalid session ID: ${sessionIdResult.error}`);
-  }
-
-  if (ptys.has(sessionId)) {
-    killPty(sessionId);
-  }
-
-  const commandResult = validateSpawnCommand(launch.command);
-  if (!commandResult.ok) {
-    throw new Error(`Invalid CLI surface command: ${commandResult.error}`);
-  }
-
-  const baseEnv = { ...process.env, PATH: getFullPath(), ...(launch.envPatch ?? {}) } as Record<
-    string,
-    string
-  >;
-  const env = buildBrowserBridgeEnv(launch.cwd, baseEnv);
-  const sanitizedArgs = launch.args ? sanitizeArgs(launch.args) : [];
-  const ptyProcess = pty.spawn(commandResult.command, sanitizedArgs, {
-    name: 'xterm-256color',
-    cols: launch.cols ?? 120,
-    rows: launch.rows ?? 30,
-    cwd: launch.cwd,
-    env,
-  });
-
-  ptys.set(sessionId, { process: ptyProcess, sessionId });
-
-  ptyProcess.onData((data) => {
-    if (ptys.get(sessionId)?.process !== ptyProcess) return;
-    onData(data);
-  });
-  ptyProcess.onExit(({ exitCode, signal }) => {
-    const current = ptys.get(sessionId);
-    const isActiveProcess = current?.process === ptyProcess;
-    if (isActiveProcess) {
-      ptys.delete(sessionId);
-    }
-    if (!isActiveProcess) return;
-    onExit(exitCode, signal);
-  });
 }
 
 export function writePty(sessionId: string, data: string): boolean {
@@ -303,7 +246,9 @@ export function spawnShellPty(
   }
 
   const shell = isWin ? process.env.COMSPEC || 'cmd.exe' : process.env.SHELL || '/bin/zsh';
-  const shellEnv = buildBrowserBridgeEnv(cwd, { ...process.env, PATH: getFullPath() });
+  const shellEnv = normalizePtyColorEnv(
+    buildBrowserBridgeEnv(cwd, { ...process.env, PATH: getFullPath() }),
+  );
   const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-256color',
     cols: 120,

@@ -1,9 +1,18 @@
 import type { SessionRecord } from '../../../shared/types/session.js';
+import { t } from '../../i18n.js';
 import type { SessionStatus } from '../surface-services/session-activity.js';
 
 export function buildSessionTooltip(status: SessionStatus, cliSessionId?: string | null): string {
   const statusLine = `Status: ${status}`;
   return cliSessionId ? `${statusLine}\nSession: ${cliSessionId}` : statusLine;
+}
+
+export function buildLocalizedSessionTooltip(
+  status: SessionStatus,
+  cliSessionId?: string | null,
+): string {
+  const statusLine = `${t('Status')}: ${t(status)}`;
+  return cliSessionId ? `${statusLine}\n${t('Session')}: ${cliSessionId}` : statusLine;
 }
 
 export function buildSessionTabTitle(session: SessionRecord, status: SessionStatus): string {

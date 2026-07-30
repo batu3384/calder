@@ -1,5 +1,6 @@
 import type { CliProviderMeta } from '../../shared/types/provider';
 import { getFullPath } from '../full-path';
+import { normalizePtyColorEnv } from '../pty-color-env';
 import type { CliProvider } from './provider';
 import { resolveBinary, validateBinaryExists } from './resolve-binary';
 
@@ -45,7 +46,7 @@ export abstract class BaseCliProvider implements CliProvider {
     if (envVar) env[envVar] = sessionId;
     env.PATH = getFullPath();
     env.CALDER_RUNTIME = CALDER_RUNTIME_ENV.CALDER_RUNTIME;
-    return env;
+    return normalizePtyColorEnv(env);
   }
 
   buildArgs(opts: {

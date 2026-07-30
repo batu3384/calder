@@ -14,13 +14,13 @@
   --studio-line: #23252a;
   --studio-line-soft: rgba(35, 37, 42, 0.8);
   --studio-cyan: var(--accent);
-  --studio-cyan-soft: rgba(94, 106, 210, 0.14);
+  --studio-cyan-soft: rgba(111, 154, 166, 0.14);
   --studio-brass: var(--accent);
   --studio-brass-soft: var(--studio-cyan-soft);
   --studio-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
   --studio-shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.2);
-  --accent: #5e6ad2;
-  --accent-soft: rgba(94, 106, 210, 0.14);
+  --accent: #6f9aa6;
+  --accent-soft: rgba(111, 154, 166, 0.14);
   --border-subtle: var(--studio-line);
   --surface-canvas: var(--studio-canvas);
   --surface-panel: var(--studio-panel);
@@ -111,7 +111,7 @@ body {
   width: 100%;
   min-height: 28px;
   padding: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   border-color: var(--studio-line-soft);
   background: rgba(255, 255, 255, 0.022);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -129,7 +129,7 @@ body {
   width: 28px;
   min-width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-md);
 }
 
 .sidebar-eyebrow {
@@ -186,7 +186,7 @@ body {
 
 .project-item {
   min-height: 50px;
-  padding: 8px 34px 8px 13px;
+  padding: 8px 34px 8px 16px;
   border-radius: 11px;
   border-color: transparent;
   background: transparent;
@@ -199,23 +199,25 @@ body {
 
 .project-item:hover {
   border-color: var(--studio-line-soft);
-  background: rgba(94, 106, 210, 0.05);
+  background: rgba(111, 154, 166, 0.05);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .project-item.active {
   border-color: color-mix(in srgb, var(--studio-cyan) 18%, var(--studio-line));
-  background: rgba(94, 106, 210, 0.09);
+  background: rgba(111, 154, 166, 0.09);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 7px 18px rgba(0, 0, 0, 0.1);
 }
 
 .project-item::before {
-  left: 4px;
-  width: 3px;
+  left: 0;
+  width: 2px;
   top: 10px;
   bottom: 10px;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .project-item .project-name {
@@ -270,7 +272,7 @@ body {
   height: 54px;
   min-height: 54px;
   padding: 8px 12px;
-  background: rgba(7, 12, 18, 0.94);
+  background: var(--studio-panel);
   border-bottom-color: var(--studio-line);
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.016);
 }
@@ -317,7 +319,7 @@ body {
   max-width: 304px;
   flex-basis: 304px;
   border-left-color: var(--studio-line);
-  background: rgba(7, 13, 20, 0.972);
+  background: var(--studio-panel);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.016),
     -12px 0 34px rgba(0, 0, 0, 0.14);
@@ -348,7 +350,7 @@ body {
   gap: 4px;
   padding: 3px;
   border: 1px solid var(--studio-line-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.022);
 }
 
@@ -356,11 +358,11 @@ body {
   position: relative;
   min-height: 28px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 760;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -389,7 +391,7 @@ body {
 
 .context-inspector-tab.active {
   color: color-mix(in srgb, var(--text-primary) 92%, var(--studio-cyan));
-  background: rgba(94, 106, 210, 0.12);
+  background: rgba(111, 154, 166, 0.12);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 8px 18px rgba(0, 0, 0, 0.12);
@@ -413,7 +415,7 @@ body {
   border-radius: 15px;
   padding: 11px;
   border-color: color-mix(in srgb, var(--studio-line-soft) 86%, transparent);
-  background: rgba(11, 18, 26, 0.58);
+  background: color-mix(in srgb, var(--studio-panel-raised) 72%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.032);
 }
 
@@ -691,8 +693,8 @@ body {
 :root {
   --studio-glass-top: rgba(255, 255, 255, 0.044);
   --studio-glass-mid: rgba(255, 255, 255, 0.022);
-  --studio-cyan-line: rgba(94, 106, 210, 0.22);
-  --studio-brass-line: rgba(94, 106, 210, 0.12);
+  --studio-cyan-line: rgba(111, 154, 166, 0.22);
+  --studio-brass-line: rgba(111, 154, 166, 0.12);
   --studio-focus-halo: var(--studio-focus-ring);
   --studio-rail-glow: 0 16px 40px rgba(0, 0, 0, 0.2);
 }
@@ -743,12 +745,12 @@ body {
 
 .project-item:hover {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 58%, var(--studio-line));
-  background: rgba(94, 106, 210, 0.07);
+  background: rgba(111, 154, 166, 0.07);
 }
 
 .project-item.active {
   border-color: color-mix(in srgb, var(--studio-cyan) 26%, var(--studio-line));
-  background: rgba(94, 106, 210, 0.1);
+  background: rgba(111, 154, 166, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     0 12px 24px rgba(0, 0, 0, 0.15);
@@ -760,7 +762,7 @@ body {
 
 .project-status-chip,
 .project-session-count {
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -828,7 +830,7 @@ body {
 
 #context-inspector .config-item:not(.auto-approval-item):hover {
   border-color: color-mix(in srgb, var(--studio-cyan-line) 44%, var(--studio-line-soft));
-  background: rgba(94, 106, 210, 0.05);
+  background: rgba(111, 154, 166, 0.05);
 }
 
 #context-inspector .ops-rail-note,
@@ -889,7 +891,7 @@ body {
 
 .preferences-menu-item.active {
   border-color: color-mix(in srgb, var(--studio-cyan) 32%, var(--studio-line));
-  background: rgba(94, 106, 210, 0.1);
+  background: rgba(111, 154, 166, 0.1);
 }
 
 .preferences-overview-card,
@@ -942,8 +944,8 @@ body {
 
 /* Calder premium restraint pass — Aurora Lite restraint pass */
 :root {
-  --studio-resonance-line: rgba(94, 106, 210, 0.12);
-  --studio-resonance-glow: 0 0 16px rgba(94, 106, 210, 0.05);
+  --studio-resonance-line: rgba(111, 154, 166, 0.12);
+  --studio-resonance-glow: 0 0 16px rgba(111, 154, 166, 0.05);
   --studio-card-sheen: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.03),
@@ -1006,7 +1008,7 @@ body {
   inset: 0 auto 0 0;
   width: 0;
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(94, 106, 210, 0.16), transparent);
+  background: linear-gradient(90deg, rgba(111, 154, 166, 0.16), transparent);
   opacity: 0;
   transition:
     opacity 0.18s ease,
@@ -1034,7 +1036,7 @@ body {
 
 .project-item.active {
   border-color: color-mix(in srgb, var(--studio-cyan) 22%, var(--studio-line));
-  background: rgba(94, 106, 210, 0.08);
+  background: rgba(111, 154, 166, 0.08);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     0 10px 22px rgba(0, 0, 0, 0.13),
@@ -1053,7 +1055,7 @@ body {
 
 .project-status-chip {
   min-height: 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   font-size: 10px;
 }
 
@@ -1079,12 +1081,12 @@ body {
   border-color: color-mix(in srgb, var(--studio-cyan) 18%, var(--studio-line));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.008)),
-    rgba(10, 18, 28, 0.82);
+    color-mix(in srgb, var(--studio-panel-raised) 82%, transparent);
 }
 
 #tab-bar {
   min-height: 56px;
-  background: rgba(7, 12, 18, 0.965);
+  background: var(--studio-panel);
 }
 
 #tab-actions {
@@ -1107,7 +1109,7 @@ body {
   width: 308px;
   max-width: 308px;
   flex-basis: 308px;
-  background: rgba(7, 13, 20, 0.984);
+  background: var(--studio-panel);
 }
 
 #context-inspector-header {
@@ -1218,13 +1220,13 @@ body {
   --studio-line: #23252a;
   --studio-line-soft: rgba(35, 37, 42, 0.8);
   --studio-cyan: var(--accent);
-  --studio-cyan-soft: rgba(94, 106, 210, 0.14);
-  --studio-brass-line: rgba(94, 106, 210, 0.12);
-  --studio-cyan-line: rgba(94, 106, 210, 0.18);
+  --studio-cyan-soft: rgba(111, 154, 166, 0.14);
+  --studio-brass-line: rgba(111, 154, 166, 0.12);
+  --studio-cyan-line: rgba(111, 154, 166, 0.18);
   --studio-resonance-glow: none;
   --studio-focus-halo: var(--studio-focus-ring);
-  --accent: #5e6ad2;
-  --accent-soft: rgba(94, 106, 210, 0.14);
+  --accent: #6f9aa6;
+  --accent-soft: rgba(111, 154, 166, 0.14);
   --surface-rail: #0f1011;
   --surface-ops: #0f1011;
   --surface-deck: #0f1011;
@@ -1271,7 +1273,7 @@ body {
 .project-item.active {
   border-color: color-mix(in srgb, var(--studio-cyan) 20%, var(--studio-line));
   background: color-mix(in srgb, var(--accent-soft) 58%, transparent);
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--studio-cyan) 68%, transparent);
+  box-shadow: none;
 }
 
 #tab-bar {
@@ -1280,7 +1282,7 @@ body {
 }
 
 .tab-item.active {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--studio-cyan) 68%, transparent);
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--studio-cyan) 72%, transparent);
 }
 
 .session-launcher-group {
@@ -1393,7 +1395,7 @@ body {
 .project-item {
   border-radius: 8px;
   min-height: 48px;
-  padding: 9px 40px 9px 12px;
+  padding: 9px 40px 9px 16px;
 }
 
 .project-item:hover {
@@ -1409,9 +1411,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--studio-panel-raised) 86%, black);
-  box-shadow:
-    inset 2px 0 0 var(--studio-tab-accent),
-    var(--studio-inner-hi);
+  box-shadow: var(--studio-inner-hi);
   color: var(--text-primary);
 }
 
@@ -1661,7 +1661,7 @@ body {
 }
 
 .session-launcher-group,
-.surface-mode-switcher,
+.surface-live-view-btn,
 #git-status,
 .command-deck-provider-select .custom-select-trigger,
 .command-deck-surface-select .custom-select-trigger,
@@ -1741,4 +1741,297 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Linear skin enforcement — flatten leftover Aurora chrome */
+#modal,
+.modal-box,
+.modal-surface,
+#cli-update-panel,
+.calder-popover,
+.calder-floating-list {
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  box-shadow:
+    inset 0 1px 0 rgba(247, 248, 248, 0.04),
+    0 18px 48px rgba(1, 1, 2, 0.42);
+}
+
+.preferences-menu-title,
+.quick-open-title,
+.mcp-empty-title,
+.file-reader-agent-title,
+.help-hero-title,
+.whats-new-version,
+.usage-hero-title {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: unset;
+  color: var(--text-primary);
+}
+
+.preferences-menu,
+.preferences-content-shell {
+  border-radius: var(--radius-lg);
+  background: var(--surface-panel);
+  box-shadow: inset 0 1px 0 rgba(247, 248, 248, 0.035);
+}
+
+.preferences-menu-item {
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
+}
+
+.preferences-menu-item:hover {
+  background: var(--surface-hover);
+}
+
+.preferences-menu-item.active {
+  background: var(--accent-soft);
+  border-color: transparent;
+  box-shadow: inset 2px 0 0 var(--accent);
+  color: var(--text-primary);
+}
+
+.preferences-overview-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.preferences-overview-card {
+  min-height: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+
+.preferences-overview-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
+.preferences-overview-value {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.preferences-section-card,
+.modal-toggle-field {
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+
+.modal-btn {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+.modal-btn.primary {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border-strong));
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.modal-btn.primary:hover {
+  background: var(--accent-cool);
+  color: #ffffff;
+}
+
+#sidebar-header {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#context-inspector {
+  backdrop-filter: none;
+  background: var(--surface-rail);
+  box-shadow: inset 1px 0 0 rgba(247, 248, 248, 0.03);
+}
+
+#context-inspector-header {
+  background: transparent;
+}
+
+.context-inspector-section.active,
+#diagnostics-summary,
+.diagnostics-summary {
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: none;
+}
+
+#terminal-container,
+.terminal-pane,
+.terminal-pane.focused,
+.browser-tab-pane,
+.browser-tab-pane.focused,
+.file-viewer-pane,
+.file-viewer-pane.focused,
+.file-reader-pane,
+.file-reader-pane.focused,
+.mcp-inspector-pane,
+.mcp-inspector-pane.focused {
+  background: var(--surface-canvas);
+  box-shadow: none;
+}
+
+.terminal-pane {
+  border-radius: var(--radius-md);
+  border-color: var(--pane-unfocus);
+}
+
+.terminal-pane.focused,
+.browser-tab-pane.focused,
+.file-viewer-pane.focused,
+.file-reader-pane.focused,
+.mcp-inspector-pane.focused {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--pane-focus));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  background: var(--surface-canvas);
+}
+
+.terminal-pane-chrome {
+  background: var(--surface-panel);
+  box-shadow: none;
+}
+
+.terminal-pane-provider::before {
+  box-shadow: none;
+}
+
+/* Calder polish pass — fewer nested boxes, clearer utility hierarchy */
+.preferences-menu {
+  width: 224px;
+  padding: 10px;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  background: var(--surface-panel);
+}
+
+.preferences-menu-header {
+  gap: 4px;
+  padding: 4px 8px 10px;
+  margin-bottom: 4px;
+}
+
+.preferences-menu-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.preferences-menu-item {
+  min-height: 36px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+}
+
+.preferences-content-shell {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.preferences-content {
+  padding: 20px 24px 24px;
+}
+
+.preferences-section-intro {
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.preferences-subsection {
+  gap: 12px;
+  padding: 0 0 18px;
+  margin-bottom: 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+}
+
+.preferences-section-card {
+  padding: 12px 0;
+  margin-bottom: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-muted);
+  border-radius: 0;
+  background: transparent;
+}
+
+.modal-toggle-field {
+  padding: 10px 0;
+  margin-bottom: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-muted);
+  border-radius: 0;
+  background: transparent;
+}
+
+#context-inspector .context-inspector-section.active {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#diagnostics-summary,
+.diagnostics-summary {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.diagnostics-summary-grid {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.diagnostics-summary-card {
+  border: 0;
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  background: var(--surface-panel);
+}
+
+.diagnostics-summary-card:nth-child(3n) {
+  border-right: 0;
+}
+
+.diagnostics-summary-card:last-child {
+  border-bottom: 0;
+}
+
+/* Calder enterprise chrome: single accent discipline. */
+.tab-item.active {
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--accent) 74%, transparent) !important;
+}
+
+.project-item.active {
+  box-shadow: none !important;
+}
+
+.project-item.active::before {
+  opacity: 1 !important;
+  left: 0 !important;
+  width: 2px !important;
+  background: color-mix(in srgb, var(--accent) 58%, transparent) !important;
 }

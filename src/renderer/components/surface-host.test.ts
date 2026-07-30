@@ -1,25 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockAttachBrowserTabToContainer,
-  mockShowBrowserTabPane,
-  mockAttachCliSurfacePane,
-  mockShowCliSurfacePane,
-} = vi.hoisted(() => ({
+const { mockAttachBrowserTabToContainer, mockShowBrowserTabPane } = vi.hoisted(() => ({
   mockAttachBrowserTabToContainer: vi.fn(),
   mockShowBrowserTabPane: vi.fn(),
-  mockAttachCliSurfacePane: vi.fn(),
-  mockShowCliSurfacePane: vi.fn(),
 }));
 
 vi.mock('./browser-tab-pane.js', () => ({
   attachBrowserTabToContainer: mockAttachBrowserTabToContainer,
   showBrowserTabPane: mockShowBrowserTabPane,
-}));
-
-vi.mock('./cli-surface/pane.js', () => ({
-  attachCliSurfacePane: mockAttachCliSurfacePane,
-  showCliSurfacePane: mockShowCliSurfacePane,
 }));
 
 import { renderSurfaceHost } from './surface-host.js';
@@ -52,7 +40,6 @@ describe('surface host', () => {
           kind: 'web',
           active: true,
           web: { sessionId: 'browser-1', url: 'http://localhost:3000' },
-          cli: { profiles: [], runtime: { status: 'idle' } },
         },
       } as any,
       container,
@@ -60,34 +47,6 @@ describe('surface host', () => {
 
     expect(mockAttachBrowserTabToContainer).toHaveBeenCalledWith('browser-1', container);
     expect(mockShowBrowserTabPane).toHaveBeenCalledWith('browser-1', true);
-  });
-
-  it('renders the cli surface when the active surface is cli', () => {
-    const container = {} as HTMLElement;
-    renderSurfaceHost(
-      {
-        id: 'project-1',
-        name: 'Demo',
-        path: '/tmp/demo',
-        activeSessionId: 'claude-1',
-        sessions: [],
-        layout: { mode: 'mosaic', splitPanes: [], splitDirection: 'horizontal' },
-        surface: {
-          kind: 'cli',
-          active: true,
-          tabFocus: 'cli',
-          cli: {
-            selectedProfileId: 'textual',
-            profiles: [{ id: 'textual', name: 'Textual', command: 'python' }],
-            runtime: { status: 'idle' },
-          },
-        },
-      } as any,
-      container,
-    );
-
-    expect(mockAttachCliSurfacePane).toHaveBeenCalledWith('project-1', container);
-    expect(mockShowCliSurfacePane).toHaveBeenCalledWith('project-1');
   });
 
   it('falls back to the latest browser tab when surface session id is stale', () => {
@@ -121,7 +80,6 @@ describe('surface host', () => {
           kind: 'web',
           active: true,
           web: { sessionId: 'missing-session', url: 'http://localhost:3000' },
-          cli: { profiles: [], runtime: { status: 'idle' } },
         },
       } as any,
       container,

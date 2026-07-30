@@ -14,10 +14,6 @@ const providerSelectorSource = readFileSync(
   new URL('./tab-bar/tab-bar-provider-selector-controller.ts', import.meta.url),
   'utf-8',
 );
-const surfaceControlsSource = readFileSync(
-  new URL('./tab-bar/tab-bar-surface-controls.ts', import.meta.url),
-  'utf-8',
-);
 const branchMenuSource = readFileSync(
   new URL('./tab-bar/tab-bar-branch-menu-controller.ts', import.meta.url),
   'utf-8',
@@ -52,9 +48,7 @@ describe('menu surface contract', () => {
     expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
     expect(sessionMenuSource).not.toContain('Join Remote Session');
     expect(providerSelectorSource).toContain('floating: {');
-    expect(surfaceControlsSource).toContain('floating: {');
     expect(providerSelectorSource).not.toContain('floating: false');
-    expect(surfaceControlsSource).not.toContain('floating: false');
     expect(sidebarSource).toContain('tab-context-menu calder-floating-list');
     expect(sidebarSource).toContain("applyTabContextMenuSemantics(menu, 'Project actions'");
     expect(historySource).toContain('tab-context-menu calder-floating-list');

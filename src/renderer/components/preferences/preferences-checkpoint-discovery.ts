@@ -59,8 +59,6 @@ function buildCheckpointSnapshot(project: ProjectRecord, label: string) {
           targetSessionId: project.surface.targetSessionId,
           webUrl: project.surface.web?.url,
           webSessionId: project.surface.web?.sessionId,
-          cliSelectedProfileId: project.surface.cli?.selectedProfileId,
-          cliStatus: project.surface.cli?.runtime?.status,
         }
       : undefined,
     projectContext: project.projectContext

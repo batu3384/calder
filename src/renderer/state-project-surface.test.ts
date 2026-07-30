@@ -62,7 +62,7 @@ describe('state project surface helpers', () => {
       sessions: [first, second],
       activeSessionId: first.id,
       surface: {
-        kind: 'cli',
+        kind: 'web',
         active: true,
         targetSessionId: second.id,
       },
@@ -98,7 +98,6 @@ describe('state project surface helpers', () => {
           url: 'http://stale.local',
           history: ['http://stale.local'],
         },
-        cli: { profiles: [], runtime: { status: 'idle' } },
       },
     });
 
@@ -153,18 +152,10 @@ describe('state project surface helpers', () => {
     expect(project.surface).toEqual({
       kind: 'web',
       active: false,
-      tabFocus: 'session',
-      tabPlacement: 'end',
-      tabOrder: ['cli'],
       web: {
         sessionId: undefined,
         url: undefined,
         history: ['about:blank'],
-      },
-      cli: {
-        selectedProfileId: undefined,
-        profiles: [],
-        runtime: { status: 'idle' },
       },
     });
   });

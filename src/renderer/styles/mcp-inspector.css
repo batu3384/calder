@@ -272,7 +272,7 @@
   padding: 10px 14px;
   cursor: pointer;
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.02), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.02), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel) 96%, transparent);
 }
 
@@ -368,7 +368,7 @@ select.mcp-form-input {
 .mcp-exec-btn {
   padding: 6px 20px;
   background:
-    linear-gradient(180deg, rgba(226, 242, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(247, 248, 248, 0.03), rgba(255, 255, 255, 0)),
     color-mix(in srgb, var(--surface-panel-alt) 84%, transparent);
   border: 1px solid color-mix(in srgb, var(--border-subtle) 84%, transparent);
   border-radius: 10px;
