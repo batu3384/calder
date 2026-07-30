@@ -42,6 +42,7 @@ import {
   renderGitStatusBlock,
   shouldSkipTabListRender,
 } from './tab-bar-render-blocks.js';
+import { wireTabBarScrollControls } from './tab-bar-scroll.js';
 import { showSessionTabContextMenu } from './tab-bar-session-context-menu.js';
 import {
   createTabBarSessionMenuController,
@@ -54,7 +55,6 @@ import {
 } from './tab-bar-surface-controls.js';
 import { buildSurfaceControlsSignatureForProject } from './tab-bar-surface-signature.js';
 import { getProjectSurface } from './tab-bar-surface-state.js';
-import { wireTabBarScrollControls } from './tab-bar-scroll.js';
 import { renderTabList } from './tab-bar-tab-list-renderer.js';
 
 const tabListEl = document.getElementById('tab-list')!;

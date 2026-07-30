@@ -1,14 +1,6 @@
 import { escapeCssAttributeValue, escapeCssIdentifier } from './browser-tab-selector-utils';
 
-export type SelectorOptionType =
-  | 'qa'
-  | 'attr'
-  | 'id'
-  | 'class'
-  | 'aria'
-  | 'role'
-  | 'name'
-  | 'css';
+export type SelectorOptionType = 'qa' | 'attr' | 'id' | 'class' | 'aria' | 'role' | 'name' | 'css';
 
 export interface SelectorOption {
   type: SelectorOptionType;
@@ -169,7 +161,8 @@ export function buildShadowHostSelectorChain(el: Element): string[][] {
 
 export function buildVisibleElementText(el: Element, maxLength = 150): string {
   const ariaLabel = el.getAttribute('aria-label')?.trim();
-  if (ariaLabel) return ariaLabel.length > maxLength ? `${ariaLabel.slice(0, maxLength - 1)}…` : ariaLabel;
+  if (ariaLabel)
+    return ariaLabel.length > maxLength ? `${ariaLabel.slice(0, maxLength - 1)}…` : ariaLabel;
 
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
     const value = (el.value || el.placeholder || '').trim();
@@ -227,7 +220,10 @@ export function collectSameOriginDocuments(rootDocument: Document): Document[] {
   return docs;
 }
 
-export function findElementInRoot(root: Document | ShadowRoot, selectors: string[]): HTMLElement | null {
+export function findElementInRoot(
+  root: Document | ShadowRoot,
+  selectors: string[],
+): HTMLElement | null {
   for (const selector of selectors) {
     const found = safeQuerySelector(root, selector);
     if (found instanceof HTMLElement) return found;
@@ -278,10 +274,7 @@ function collectMatchesInOpenShadowTree(root: Document | ShadowRoot, selector: s
   return [...matches, ...nested];
 }
 
-export function findSelectorMatches(
-  selector: string,
-  shadowHostSelectors: string[][],
-): Element[] {
+export function findSelectorMatches(selector: string, shadowHostSelectors: string[][]): Element[] {
   const docs = collectSameOriginDocuments(document);
   const matches: Element[] = [];
   const seen = new Set<Element>();

@@ -14,8 +14,8 @@ import {
   getProviderAvailabilitySnapshot,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';
-import { sendGuestMessage } from './guest-messaging.js';
 import { sanitizePromptBody } from './capture-prompt.js';
+import { sendGuestMessage } from './guest-messaging.js';
 import { positionPopover } from './popover.js';
 import type { BrowserTabInstance } from './types.js';
 import { getViewportContext } from './viewport.js';

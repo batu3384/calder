@@ -6,23 +6,23 @@
 
 ## Scan summary
 
-| Area | Result |
-|------|--------|
-| Injection (CSS selector / prompt) | Mitigated — `escapeCssIdentifier`, `escapeCssAttributeValue`, `escapePromptLiteral`, `sanitizePromptBody` |
-| XSS (renderer DOM) | Inspect/flow UI uses `textContent`; no `innerHTML` with user page data |
-| IPC trust boundary (webview → host) | `verify-capture-selector` validates payload types; selector query wrapped in try/catch |
-| Data exposure | `pageUrl`, `aria-label`, `textContent` forwarded to CLI prompts — **pre-existing by design**; user-controlled page content |
-| Secrets | None in changed files |
-| AuthZ | N/A — local Electron guest preload |
+| Area                                | Result                                                                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Injection (CSS selector / prompt)   | Mitigated — `escapeCssIdentifier`, `escapeCssAttributeValue`, `escapePromptLiteral`, `sanitizePromptBody`                  |
+| XSS (renderer DOM)                  | Inspect/flow UI uses `textContent`; no `innerHTML` with user page data                                                     |
+| IPC trust boundary (webview → host) | `verify-capture-selector` validates payload types; selector query wrapped in try/catch                                     |
+| Data exposure                       | `pageUrl`, `aria-label`, `textContent` forwarded to CLI prompts — **pre-existing by design**; user-controlled page content |
+| Secrets                             | None in changed files                                                                                                      |
+| AuthZ                               | N/A — local Electron guest preload                                                                                         |
 
 ## Findings
 
-| ID | Severity | Status | Notes |
-|----|----------|--------|-------|
-| CAP-001 | LOW | Accepted | Prompt carries live page URL + element text; intentional for CLI context. Truncation at 200/4000 chars limits blast radius. |
-| CAP-002 | LOW | Accepted | `querySelector` on attacker-controlled page DOM runs in guest context only; invalid selectors return `[]` via safe wrappers. |
-| CAP-003 | NOTE | Accepted | `captureTargetRegistry` holds Element refs (max 64, disconnect prune) — memory bound, no cross-session leak in single webview. |
-| CAP-004 | NOTE | Fixed (code) | Flow `buildSelectorOptions` arity mismatch caused runtime crash — not security, but availability. |
+| ID      | Severity | Status       | Notes                                                                                                                          |
+| ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| CAP-001 | LOW      | Accepted     | Prompt carries live page URL + element text; intentional for CLI context. Truncation at 200/4000 chars limits blast radius.    |
+| CAP-002 | LOW      | Accepted     | `querySelector` on attacker-controlled page DOM runs in guest context only; invalid selectors return `[]` via safe wrappers.   |
+| CAP-003 | NOTE     | Accepted     | `captureTargetRegistry` holds Element refs (max 64, disconnect prune) — memory bound, no cross-session leak in single webview. |
+| CAP-004 | NOTE     | Fixed (code) | Flow `buildSelectorOptions` arity mismatch caused runtime crash — not security, but availability.                              |
 
 ## Regression fixes applied (this pass)
 

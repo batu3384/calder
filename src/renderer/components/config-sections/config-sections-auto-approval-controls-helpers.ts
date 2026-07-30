@@ -101,10 +101,7 @@ export function appendAutoApprovalControls(args: AppendAutoApprovalControlsArgs)
     void refresh();
   });
   select.disabled = !supportsPermissionHooks;
-  select.setAttribute(
-    'aria-label',
-    localizedText('Auto approval mode', 'Otomatik onay modu'),
-  );
+  select.setAttribute('aria-label', localizedText('Auto approval mode', 'Otomatik onay modu'));
 
   panel.appendChild(select);
   host.appendChild(panel);

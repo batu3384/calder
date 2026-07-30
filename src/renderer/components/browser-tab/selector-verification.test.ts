@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSelectorVerificationMessage, pickInitialActiveSelector } from './selector-verification.js';
+import {
+  formatSelectorVerificationMessage,
+  pickInitialActiveSelector,
+} from './selector-verification.js';
 import type { SelectorOption } from './types.js';
 
 describe('selector verification helpers', () => {
@@ -17,8 +20,8 @@ describe('selector verification helpers', () => {
   });
 
   it('formats ambiguous selector warnings', () => {
-    expect(
-      formatSelectorVerificationMessage({ status: 'ambiguous', matchCount: 4 }),
-    ).toContain('4 elements');
+    expect(formatSelectorVerificationMessage({ status: 'ambiguous', matchCount: 4 })).toContain(
+      '4 elements',
+    );
   });
 });

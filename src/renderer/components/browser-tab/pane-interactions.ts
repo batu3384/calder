@@ -6,11 +6,8 @@ import {
   sendDrawToSelectedSession,
   toggleDrawMode,
 } from './draw-mode.js';
-import { dismissFlowPicker } from './flow-picker.js';
-import { addFlowStep, clearFlow, toggleFlowMode } from './flow-recording.js';
-import { sendGuestMessage } from './guest-messaging.js';
+import { clearFlow, toggleFlowMode } from './flow-recording.js';
 import { dismissInspect, toggleInspectMode } from './inspect-mode.js';
-import { pickInitialActiveSelector } from './selector-verification.js';
 import { populateLocalTargets } from './local-targets.js';
 import {
   type BrowserPageState,
@@ -18,6 +15,7 @@ import {
   normalizeUrl,
   resolveBrowserPageState,
 } from './navigation.js';
+import { bindFlowPickerInteractions } from './pane-flow-picker-bindings.js';
 import { resolveCaptureModeState } from './pane-helpers.js';
 import { enablePopoverDragging } from './popover.js';
 import { sendFlowToSelectedSession, sendToSelectedSession } from './session-integration.js';
@@ -26,12 +24,7 @@ import {
   openBrowserTargetMenu,
   syncBrowserTargetControls,
 } from './target-menu.js';
-import type {
-  BrowserTabInstance,
-  FlowPickerAction,
-  FlowReplayPayload,
-  WebviewElement,
-} from './types.js';
+import type { BrowserTabInstance, WebviewElement } from './types.js';
 
 export type ViewportMenuFocusMode = 'selected' | 'first' | 'last' | 'none';
 
@@ -311,46 +304,7 @@ export function attachBrowserCaptureInteractions(
     openBrowserTargetMenu(instance, flowCustomBtn, 'flow'),
   );
 
-  flowPickerMenu.addEventListener('click', (e: MouseEvent) => {
-    const item = (e.target as HTMLElement).closest<HTMLButtonElement>('.flow-picker-item');
-    if (!item || !instance.flowPickerPending) return;
-    const action = item.dataset['action'] as FlowPickerAction;
-    const metadata = instance.flowPickerPending;
-    dismissFlowPicker(instance);
-    if (action === 'click' || action === 'click-and-record') {
-      const selectorValues = metadata.selectorValues?.length
-        ? metadata.selectorValues
-        : metadata.selectors
-            .map((selector) => selector.value)
-            .filter((value) => value.trim().length > 0);
-      const replayPayload: FlowReplayPayload = {
-        selectors: selectorValues,
-        shadowHostSelectors: metadata.shadowHostSelectors,
-        clickPoint: metadata.clickPoint,
-        isCanvasLike: metadata.isCanvasLike,
-        tagName: metadata.tagName,
-      };
-      void sendGuestMessage(instance.webview, 'flow-do-click', replayPayload);
-    }
-    if (action === 'record' || action === 'click-and-record') {
-      addFlowStep(instance, {
-        type: action === 'record' ? 'expect' : 'click',
-        tagName: metadata.tagName,
-        textContent: metadata.textContent,
-        selectors: metadata.selectors,
-        selectorVerifications: metadata.selectorVerifications,
-        activeSelector: pickInitialActiveSelector(metadata.selectors, metadata.selectorVerifications),
-        shadowHostSelectors: metadata.shadowHostSelectors,
-        clickPoint: metadata.clickPoint,
-        isCanvasLike: metadata.isCanvasLike,
-        pageUrl: metadata.pageUrl,
-      });
-    }
-  });
-
-  flowPickerOverlay.addEventListener('click', (e: MouseEvent) => {
-    if (e.target === flowPickerOverlay) dismissFlowPicker(instance);
-  });
+  bindFlowPickerInteractions(instance, flowPickerMenu, flowPickerOverlay);
 
   submitBtn.addEventListener('click', () => {
     void sendToSelectedSession(instance);

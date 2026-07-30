@@ -1,7 +1,11 @@
-import { escapePromptLiteral, formatShadowHostStepLine, sanitizePromptBody } from './capture-prompt.js';
+import {
+  escapePromptLiteral,
+  formatShadowHostStepLine,
+  sanitizePromptBody,
+} from './capture-prompt.js';
 import { sendGuestMessage } from './guest-messaging.js';
-import { pickInitialActiveSelector } from './selector-verification.js';
 import { buildSelectorOptions } from './selector-ui.js';
+import { pickInitialActiveSelector } from './selector-verification.js';
 import type { BrowserTabInstance, FlowStep } from './types.js';
 
 export function renderFlowSteps(instance: BrowserTabInstance): void {

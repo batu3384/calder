@@ -30,6 +30,31 @@ export const CORE_TRANSLATION_ENTRIES_PART_3: ReadonlyArray<readonly [string, st
   ],
   ['Draw on page', 'Sayfada çizim yap'],
   ['Inspect DOM', "DOM'u incele"],
+  [
+    'This frame cannot be inspected (cross-origin). Try the parent page instead.',
+    'Bu çerçeve incelenemez (cross-origin). Bunun yerine üst sayfayı deneyin.',
+  ],
+  [
+    'This frame cannot be inspected (cross-origin). Try the parent page or use Draw mode for a screenshot.',
+    'Bu çerçeve incelenemez (cross-origin). Üst sayfayı deneyin veya ekran görüntüsü için Çiz modunu kullanın.',
+  ],
+  [
+    'Resolved from <{tag}> to this interactive target.',
+    '<{tag}> öğesinden bu etkileşimli hedefe çözümlendi.',
+  ],
+  [
+    'Selector resolves to this element uniquely.',
+    'Seçici bu öğeye benzersiz şekilde çözümleniyor.',
+  ],
+  [
+    'Selector matches {count} elements. Pick a more specific option or use Draw mode.',
+    'Seçici {count} öğe ile eşleşiyor. Daha özel bir seçenek veya Çiz modu kullanın.',
+  ],
+  [
+    'Selector no longer resolves to this element. The page may have changed.',
+    'Seçici artık bu öğeye çözümlenmiyor. Sayfa değişmiş olabilir.',
+  ],
+  ['Target text: {text}', 'Hedef metin: {text}'],
   ['Annotate visually', 'Görsel olarak işaretle'],
   ['Record flow', 'Akışı kaydet'],
   ['Clear drawing', 'Çizimi temizle'],

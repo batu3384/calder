@@ -1,5 +1,9 @@
 import { t } from '../../i18n.js';
-import { escapePromptLiteral, formatShadowHostClause, sanitizePromptBody } from './capture-prompt.js';
+import {
+  escapePromptLiteral,
+  formatShadowHostClause,
+  sanitizePromptBody,
+} from './capture-prompt.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import { positionPopover } from './popover.js';
 import { buildSelectorOptions } from './selector-ui.js';
@@ -78,12 +82,14 @@ export function showElementInfo(
   const idStr = info.id ? `#${info.id}` : '';
   instance.inspectTitleEl.textContent = t(`<${info.tagName}> selected`);
   if (info.liftedFromTag) {
-    instance.inspectSubtitleEl.textContent = t('Resolved from <{tag}> to this interactive target.').replace(
-      '{tag}',
-      info.liftedFromTag,
-    );
+    instance.inspectSubtitleEl.textContent = t(
+      'Resolved from <{tag}> to this interactive target.',
+    ).replace('{tag}', info.liftedFromTag);
   } else if (info.textContent) {
-    instance.inspectSubtitleEl.textContent = t('Target text: {text}').replace('{text}', info.textContent);
+    instance.inspectSubtitleEl.textContent = t('Target text: {text}').replace(
+      '{text}',
+      info.textContent,
+    );
   } else {
     instance.inspectSubtitleEl.textContent = t(
       `Choose the best selector for this ${info.tagName} element before routing the prompt.`,
@@ -108,13 +114,11 @@ export function showElementInfo(
   selectorLabel.textContent = t('Selector');
   instance.elementInfoEl.appendChild(selectorLabel);
 
-  instance.inspectSelectorStatusEl = instance.inspectSelectorStatusEl ?? document.createElement('div');
+  instance.inspectSelectorStatusEl =
+    instance.inspectSelectorStatusEl ?? document.createElement('div');
   instance.inspectSelectorStatusEl.className = 'inspect-selector-status';
   instance.elementInfoEl.appendChild(instance.inspectSelectorStatusEl);
-  renderSelectorStatus(
-    instance,
-    info.selectorVerifications?.[activeSelector.value],
-  );
+  renderSelectorStatus(instance, info.selectorVerifications?.[activeSelector.value]);
 
   const selectorOptions = buildSelectorOptions(
     info.selectors,
@@ -167,9 +171,7 @@ export function buildPrompt(instance: BrowserTabInstance): string | null {
 
   const pageUrl = escapePromptLiteral(info.pageUrl, 500);
   const selector = escapePromptLiteral(info.activeSelector.value);
-  const textClause = info.textContent
-    ? `, text: '${escapePromptLiteral(info.textContent)}'`
-    : '';
+  const textClause = info.textContent ? `, text: '${escapePromptLiteral(info.textContent)}'` : '';
   const shadowClause = formatShadowHostClause(info.shadowHostSelectors);
   const safeInstruction = sanitizePromptBody(instruction);
   const verification = info.selectorVerifications?.[info.activeSelector.value];

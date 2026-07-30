@@ -42,7 +42,7 @@ describe('sidebar rail stylesheet contract', () => {
   });
 
   it('owns collapsed sidebar toggle layout so the button stays centered', () => {
-    expect(chromeRailCss).toContain("#sidebar.collapsed #sidebar-header .sidebar-header-primary");
+    expect(chromeRailCss).toContain('#sidebar.collapsed #sidebar-header .sidebar-header-primary');
     expect(chromeRailCss).toContain("grid-template-areas: 'toggle' !important;");
     expect(chromeRailCss).toContain('#sidebar.collapsed .sidebar-toggle-btn');
     expect(chromeRailCss).toContain('justify-self: center !important;');

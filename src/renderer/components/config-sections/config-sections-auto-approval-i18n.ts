@@ -76,7 +76,10 @@ export function autoApprovalChooseLabel(): string {
 }
 
 export function autoApprovalAdvancedLabel(): string {
-  return localizedText('Per-scope settings (Global / Project / Session)', 'Kapsam ayarları (Global / Proje / Oturum)');
+  return localizedText(
+    'Per-scope settings (Global / Project / Session)',
+    'Kapsam ayarları (Global / Proje / Oturum)',
+  );
 }
 
 export function autoApprovalPrimaryHint(hasSession: boolean): string {
@@ -85,10 +88,7 @@ export function autoApprovalPrimaryHint(hasSession: boolean): string {
         'Your choice applies to the active CLI session.',
         'Seçimin aktif CLI oturumuna uygulanır.',
       )
-    : localizedText(
-        'Your choice applies to this repository.',
-        'Seçimin bu depoya uygulanır.',
-      );
+    : localizedText('Your choice applies to this repository.', 'Seçimin bu depoya uygulanır.');
 }
 
 export function autoApprovalActiveSourceLine(source: AutoApprovalPolicySource): string {

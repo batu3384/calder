@@ -8,7 +8,7 @@ function makeElementInfo(overrides: Partial<ElementInfo> = {}): ElementInfo {
     tagName: 'button',
     id: 'submit',
     classes: ['primary'],
-    textContent: "Save changes",
+    textContent: 'Save changes',
     selectors: [{ type: 'qa', label: 'data-testid', value: '[data-testid="save"]' }],
     shadowHostSelectors: [['#app'], ['widget-host']],
     pageUrl: 'https://example.com/app',
@@ -30,7 +30,7 @@ describe('inspect-mode buildPrompt', () => {
   it('includes selector, escaped text, and shadow host metadata', () => {
     const prompt = buildPrompt(makeInstance());
 
-    expect(prompt).toContain("selector: '[data-testid=\"save\"]'");
+    expect(prompt).toContain('selector: \'[data-testid="save"]\'');
     expect(prompt).toContain("text: 'Save changes'");
     expect(prompt).toContain("shadow: '#app > widget-host'");
     expect(prompt).toContain('Make this primary');

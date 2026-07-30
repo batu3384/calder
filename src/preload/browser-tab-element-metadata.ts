@@ -5,8 +5,8 @@ import {
   buildVisibleElementText,
   pickPreferredSelector,
   type SelectorOption,
-  type SelectorVerification,
   selectorValuesFromOptions,
+  type SelectorVerification,
   verifySelectorResolution,
 } from './browser-tab-selector-engine';
 
@@ -89,11 +89,7 @@ export function verifyCaptureSelector(payload: {
 }): SelectorVerification {
   const target = resolveCaptureTarget(payload.captureTargetId);
   if (!target) return { status: 'missing', matchCount: 0 };
-  return verifySelectorResolution(
-    payload.selector,
-    payload.shadowHostSelectors ?? [],
-    target,
-  );
+  return verifySelectorResolution(payload.selector, payload.shadowHostSelectors ?? [], target);
 }
 
 function isCanvasLikeElement(el: Element): boolean {

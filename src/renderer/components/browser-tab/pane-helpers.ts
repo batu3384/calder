@@ -71,8 +71,7 @@ export function syncBrowserTabToSessionState(instance: BrowserTabInstance): void
         instance.committedUrl || instance.webview.getAttribute('src') || instance.webview.src || '',
       )
     : '';
-  const nextUrl =
-    liveUrl && liveUrl !== 'about:blank' ? liveUrl : storedUrl;
+  const nextUrl = liveUrl && liveUrl !== 'about:blank' ? liveUrl : storedUrl;
   const currentUrl = normalizeUrl(
     instance.committedUrl ||
       instance.webview.getAttribute('src') ||

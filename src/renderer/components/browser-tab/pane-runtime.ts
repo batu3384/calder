@@ -2,12 +2,12 @@ import type { BrowserGuestOpenPayload } from '../../../shared/types/project-core
 import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { shortcutManager } from '../surface-services/shortcuts.js';
+import { showInfoToast } from '../toast.js';
 import { positionDrawPopover } from './draw-mode.js';
 import { showFlowPicker } from './flow-picker.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import { applyCaptureSelectorVerification, showElementInfo } from './inspect-mode.js';
 import { getPreloadPath } from './instance.js';
-import { showInfoToast } from '../toast.js';
 import {
   type BrowserPageState,
   clearPendingNavigation,

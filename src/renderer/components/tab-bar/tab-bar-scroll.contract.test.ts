@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -10,7 +11,7 @@ describe('tab-bar-scroll', () => {
     const source = readFileSync(join(root, 'tab-bar-scroll.ts'), 'utf8');
     expect(source).toContain('tab-scroll-prev');
     expect(source).toContain('tab-scroll-next');
-    expect(source).toContain("scrollBy({ left: -SCROLL_STEP");
+    expect(source).toContain('scrollBy({ left: -SCROLL_STEP');
     expect(source).toContain('wheel');
   });
 

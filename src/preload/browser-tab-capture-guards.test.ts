@@ -9,9 +9,7 @@ describe('browser capture guards', () => {
   });
 
   it('treats cross-origin iframe src values as blocked', () => {
-    expect(isCrossOriginFrameSrc('https://example.com/embed', 'https://app.local/page')).toBe(
-      true,
-    );
+    expect(isCrossOriginFrameSrc('https://example.com/embed', 'https://app.local/page')).toBe(true);
   });
 
   it('ignores empty iframe src values', () => {

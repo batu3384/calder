@@ -1,8 +1,5 @@
 // ponytail: cross-origin iframe capture needs CDP/frame-tree bridge; upgrade via main-process debugger attach.
-export function isCrossOriginFrameSrc(
-  src: string | null | undefined,
-  parentHref: string,
-): boolean {
+export function isCrossOriginFrameSrc(src: string | null | undefined, parentHref: string): boolean {
   const trimmed = src?.trim();
   if (!trimmed || trimmed === 'about:blank') return false;
 

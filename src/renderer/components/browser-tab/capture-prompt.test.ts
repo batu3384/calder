@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapePromptLiteral, formatShadowHostClause, sanitizePromptBody } from './capture-prompt.js';
+import {
+  escapePromptLiteral,
+  formatShadowHostClause,
+  sanitizePromptBody,
+} from './capture-prompt.js';
 
 describe('capture prompt helpers', () => {
   it('escapes quotes and collapses newlines in prompt literals', () => {
@@ -23,6 +27,6 @@ describe('capture prompt helpers', () => {
   });
 
   it('sanitizes long instruction bodies', () => {
-    expect(sanitizePromptBody("line1\nline2")).toBe('line1 line2');
+    expect(sanitizePromptBody('line1\nline2')).toBe('line1 line2');
   });
 });

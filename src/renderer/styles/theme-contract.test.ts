@@ -61,10 +61,12 @@ describe('precision cockpit theme contract', () => {
     expect(imports).toContain("@import url('./styles/theme-command-studio.css');");
     expect(imports).toContain("@import url('./styles/responsive-layout.css');");
     expect(imports).toContain("@import url('./styles/chrome-rail.css');");
-    expect(imports.indexOf("theme-command-studio.css")).toBeLessThan(
+    expect(imports.indexOf('theme-command-studio.css')).toBeLessThan(
       imports.indexOf('responsive-layout.css'),
     );
-    expect(imports.indexOf('responsive-layout.css')).toBeLessThan(imports.indexOf('chrome-rail.css'));
+    expect(imports.indexOf('responsive-layout.css')).toBeLessThan(
+      imports.indexOf('chrome-rail.css'),
+    );
     expect(baseCss).toContain('--accent-aurora');
     expect(baseCss).not.toContain('--surface-canvas: #090705;');
     expect(auroraCss).toContain('--aurora-panel-gradient');

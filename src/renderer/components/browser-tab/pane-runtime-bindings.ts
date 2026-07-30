@@ -17,9 +17,9 @@ import {
   type BrowserCaptureToolbarCluster,
 } from './pane-interactions.js';
 import { attachBrowserWebviewBindings, type BrowserNewTabStateBindings } from './pane-runtime.js';
+import { openBrowserTargetMenu } from './target-menu.js';
 import { type BrowserTabInstance, VIEWPORT_PRESETS, type WebviewElement } from './types.js';
 import { applyViewport } from './viewport.js';
-import { openBrowserTargetMenu } from './target-menu.js';
 
 type ViewportMenuFocusMode = 'selected' | 'first' | 'last' | 'none';
 

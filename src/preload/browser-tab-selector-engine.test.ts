@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  isStableClassName,
-} from './browser-tab-selector-engine';
+import { isStableClassName } from './browser-tab-selector-engine';
 
 describe('browser tab selector engine', () => {
   it('filters hashed css-module class names', () => {

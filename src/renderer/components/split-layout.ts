@@ -25,11 +25,7 @@ import {
   removeSplitLayoutMosaicArtifacts,
   showSplitLayoutPanes,
 } from './split-layout-pane-orchestration.js';
-import {
-  getLayoutActiveKey,
-  getLayoutRenderSignature,
-  getLayoutStructuralSignature,
-} from './split-layout-signature.js';
+import { getLayoutActiveKey, getLayoutStructuralSignature } from './split-layout-signature.js';
 import {
   bindSwarmReorderInteractions,
   clearSwarmReorderDecorations,

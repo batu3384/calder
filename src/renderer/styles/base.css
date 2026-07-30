@@ -119,10 +119,10 @@
   --line-tight: 1.2;
   --line-normal: 1.45;
   --line-relaxed: 1.6;
---sidebar-width-default: 260px;
---sidebar-width-collapsed: 56px;
---ops-rail-width-default: 340px;
---ops-rail-width-compact: 300px;
+  --sidebar-width-default: 260px;
+  --sidebar-width-collapsed: 56px;
+  --ops-rail-width-default: 340px;
+  --ops-rail-width-compact: 300px;
   --debug-panel-height: 300px;
 
   /* Compatibility aliases for existing renderer styles. */

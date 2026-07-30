@@ -11,12 +11,9 @@ vi.mock('./selector-ui.js', () => ({
   buildSelectorOptions: vi.fn(() => ({ className: '' })),
 }));
 
-vi.stubGlobal(
-  'document',
-  {
-    createElement: vi.fn(() => makeElementStub() as HTMLElement),
-  },
-);
+vi.stubGlobal('document', {
+  createElement: vi.fn(() => makeElementStub() as HTMLElement),
+});
 
 function makeElementStub(): Record<string, unknown> {
   return {
@@ -78,7 +75,7 @@ describe('flow-recording buildFlowPrompt', () => {
       ]),
     );
 
-    expect(prompt).toContain("selector: '[data-testid=\"save\"]'");
+    expect(prompt).toContain('selector: \'[data-testid="save"]\'');
     expect(prompt).toContain("shadow: '#app > widget-host'");
     expect(prompt).toContain('Replay and fix');
   });
