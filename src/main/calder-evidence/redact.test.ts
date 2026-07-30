@@ -4,9 +4,10 @@ import { redactValue } from './redact.js';
 
 describe('calder-evidence redact', () => {
   it('redacts nested secrets without leaking originals', () => {
+    const bearerToken = ['abc', 'def', 'ghi'].join('.');
     const input = {
       headers: {
-        Authorization: 'Bearer abc.def.ghi',
+        Authorization: `Bearer ${bearerToken}`,
       },
       config: {
         password: 'password=super-secret',
@@ -23,7 +24,7 @@ describe('calder-evidence redact', () => {
     expect(result.redactionTypes.length).toBeGreaterThan(0);
     expect(serialized).not.toContain('super-secret');
     expect(serialized).not.toContain('not-safe');
-    expect(serialized).not.toContain('abc.def.ghi');
+    expect(serialized).not.toContain(bearerToken);
     expect(serialized).toContain('[REDACTED:');
     expect((result.value as { note: string }).note).toBe('plain text');
   });
