@@ -18,6 +18,12 @@
   bottom: auto;
 }
 
+#terminal-container.inspector-open.swarm-mode #session-inspector,
+#terminal-container.inspector-open.mosaic-mode #session-inspector {
+  grid-column: -1;
+  grid-row: 1 / -1;
+}
+
 #session-inspector {
   grid-column: 2;
   grid-row: 1 / -1;

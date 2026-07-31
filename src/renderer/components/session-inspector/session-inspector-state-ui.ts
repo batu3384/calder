@@ -1,7 +1,7 @@
 export const inspectorState = {
   inspectorPanel: null as HTMLElement | null,
   inspectedSessionId: null as string | null,
-  activeTab: 'timeline' as
+  activeTab: 'ecosystem' as
     | 'timeline'
     | 'ecosystem'
     | 'evidence'

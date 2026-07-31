@@ -1,6 +1,7 @@
 import type { CliProviderCapabilities, ProviderId } from '../../../shared/types/provider.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
 import { appState, type SessionRecord } from '../../state.js';
+import { isCliSessionRecord } from '../../state-project-surface.js';
 import {
   getProviderCapabilities,
   getProviderDisplayName,
@@ -17,6 +18,13 @@ export function resetUIState(): void {
 export function canInspectSession(session: Pick<SessionRecord, 'type' | 'providerId'>): boolean {
   if (session.type && session.type !== 'claude') return false;
   return getProviderCapabilities(session.providerId || 'claude')?.hookStatus !== false;
+}
+
+/** Any open CLI tab can host the inspector shell (Ecosystem / Studio work PTY-only too). */
+export function canOpenInspectorPanel(
+  session: Pick<SessionRecord, 'type' | 'providerId'>,
+): boolean {
+  return isCliSessionRecord(session as SessionRecord);
 }
 
 export function getInspectedProviderId(): ProviderId {

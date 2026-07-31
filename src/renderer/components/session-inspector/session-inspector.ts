@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import {
   clearSession,
@@ -13,7 +14,7 @@ import {
 } from './evidence-views.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { renderTimeline } from './session-inspector-timeline.js';
-import { canInspectSession, resetUIState } from './session-inspector-utils.js';
+import { canOpenInspectorPanel, resetUIState } from './session-inspector-utils.js';
 import { renderContext, renderCosts, renderTools } from './session-inspector-views.js';
 import { renderStudio } from './studio-views.js';
 
@@ -37,7 +38,7 @@ function notifyInspectorLayoutChanged(): void {
 
 export function openInspector(sessionId: string, options?: { mode?: 'toggle' | 'focus' }): void {
   const session = appState.activeProject?.sessions.find((s) => s.id === sessionId);
-  if (!session || !canInspectSession(session)) return;
+  if (!session || !canOpenInspectorPanel(session)) return;
 
   const mode = options?.mode ?? 'toggle';
   if (inspectorState.inspectorPanel && inspectorState.inspectedSessionId === sessionId) {
@@ -85,14 +86,20 @@ export function closeInspector(): void {
 
 export function toggleInspector(): void {
   const project = appState.activeProject;
-  if (!project?.activeSessionId) return;
-  const session = project.sessions.find((s) => s.id === project.activeSessionId);
-  if (!session || !canInspectSession(session)) return;
+  if (!project) return;
+
+  let session = project.activeSessionId
+    ? project.sessions.find((s) => s.id === project.activeSessionId)
+    : undefined;
+  if (!session || !canOpenInspectorPanel(session)) {
+    session = project.sessions.find((candidate) => canOpenInspectorPanel(candidate));
+  }
+  if (!session) return;
 
   if (isInspectorOpen()) {
     closeInspector();
   } else {
-    openInspector(project.activeSessionId);
+    openInspector(session.id);
   }
 }
 
@@ -109,7 +116,7 @@ export function initSessionInspector(): void {
         inspectorState.reopenOnNextSession &&
         project?.activeSessionId &&
         activeSession &&
-        canInspectSession(activeSession)
+        canOpenInspectorPanel(activeSession)
       ) {
         resetUIState();
         inspectorState.reopenOnNextSession = false;
@@ -119,7 +126,7 @@ export function initSessionInspector(): void {
     }
 
     if (project?.activeSessionId && project.activeSessionId !== inspectorState.inspectedSessionId) {
-      if (activeSession && canInspectSession(activeSession)) {
+      if (activeSession && canOpenInspectorPanel(activeSession)) {
         resetUIState();
         inspectorState.inspectedSessionId = project.activeSessionId;
         renderActiveTab();
@@ -164,7 +171,7 @@ export function initSessionInspector(): void {
     const session = sessionId
       ? appState.activeProject?.sessions.find((s) => s.id === sessionId)
       : undefined;
-    if (session && canInspectSession(session)) {
+    if (session && canOpenInspectorPanel(session)) {
       inspectorState.reopenOnNextSession = false;
       const idToOpen = session.id;
       requestAnimationFrame(() => openInspector(idToOpen));
@@ -214,7 +221,7 @@ function createPanel(): HTMLElement {
 
   const meta = document.createElement('div');
   meta.className = 'inspector-header-meta';
-  meta.textContent = 'Activity, evidence, changes, and review';
+  meta.textContent = t('Pixel agents, evidence, and session activity');
   headerCopy.appendChild(meta);
 
   header.appendChild(headerCopy);
@@ -254,15 +261,15 @@ function createPanel(): HTMLElement {
   tabBar.setAttribute('role', 'tablist');
   tabBar.setAttribute('aria-label', 'Session inspector sections');
   const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
-    { id: 'timeline', label: 'Activity' },
-    { id: 'ecosystem', label: 'Ecosystem' },
-    { id: 'evidence', label: 'Evidence' },
-    { id: 'studio', label: 'Studio' },
-    { id: 'changes', label: 'Changes' },
-    { id: 'costs', label: 'Costs' },
-    { id: 'review', label: 'Review' },
-    { id: 'tools', label: 'Tools' },
-    { id: 'context', label: 'Context' },
+    { id: 'timeline', label: t('Activity') },
+    { id: 'ecosystem', label: t('Ecosystem') },
+    { id: 'evidence', label: t('Evidence') },
+    { id: 'studio', label: t('Studio') },
+    { id: 'changes', label: t('Changes') },
+    { id: 'costs', label: t('Costs') },
+    { id: 'review', label: t('Review') },
+    { id: 'tools', label: t('Tools') },
+    { id: 'context', label: t('Context') },
   ];
   for (const tab of tabs) {
     const btn = document.createElement('button');

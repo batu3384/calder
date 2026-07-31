@@ -7,7 +7,7 @@ import {
   isInspectorOpen,
   openInspector,
 } from '../session-inspector/session-inspector.js';
-import { getProviderCapabilities } from '../surface-services/provider-availability.js';
+import { canOpenInspectorPanel } from '../session-inspector/session-inspector-utils.js';
 
 export interface SessionTabContextMenuOptions {
   x: number;
@@ -98,9 +98,7 @@ function buildInspectMenuItem(
   hideTabContextMenu: () => void,
 ): HTMLElement | null {
   const isCliSession = !session.type || session.type === 'claude';
-  const providerCapabilities = getProviderCapabilities(session.providerId || 'claude');
-  const canInspect = isCliSession && providerCapabilities?.hookStatus !== false;
-  if (!canInspect) return null;
+  if (!isCliSession || !canOpenInspectorPanel(session)) return null;
 
   return createContextMenuItem(
     isInspectorOpen() && getInspectedSessionId() === session.id ? 'Close Inspector' : 'Inspect',

@@ -354,6 +354,8 @@ export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> =
   ['Pixel state: Compacting context', 'Piksel durumu: Bağlam sıkıştırılıyor'],
   ['Pixel state: Editing code', 'Piksel durumu: Kod düzenleniyor'],
   ['Pixel Ecosystem', 'Piksel Ekosistemi'],
+  ['Ecosystem', 'Ekosistem'],
+  ['Pixel agents, evidence, and session activity', 'Piksel ajanlar, kanıt ve oturum aktivitesi'],
   ['Loading ecosystem…', 'Ekosistem yükleniyor…'],
   ['Ecosystem unavailable', 'Ekosistem kullanılamıyor'],
   ['No open CLI sessions', 'Açık CLI oturumu yok'],
