@@ -70,7 +70,7 @@ describe('pixel visual resolver', () => {
       event('operation_blocked', { seq: 1 }),
       event('tool_started', { toolName: 'Read', seq: 2 }),
     ]);
-    expect(state).toBe('reading_project');
+    expect(state).toBe('reading_files');
   });
 
   it('drops stale active tool work after five minutes', () => {

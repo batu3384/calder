@@ -8,6 +8,13 @@ type PixelMotionState =
   | 'preparing'
   | 'unknown_working'
   | 'reading_project'
+  | 'searching_code'
+  | 'reading_files'
+  | 'researching_web'
+  | 'browsing'
+  | 'using_mcp'
+  | 'git_ops'
+  | 'compacting'
   | 'editing_code'
   | 'running_command'
   | 'running_tests'
@@ -29,11 +36,26 @@ const PROVIDER_LABELS: Record<PixelProviderId, string> = {
   unknown: 'Agent',
 };
 
+const PROVIDER_MARKS: Record<PixelProviderId, string> = {
+  claude: 'Cl',
+  codex: 'Cx',
+  cursor: 'Cu',
+  antigravity: 'Ag',
+  unknown: 'Ag',
+};
+
 /** States that warrant active locomotion / bob — not decorative idle loop. */
 const MOTION_ACTIVE_STATES = new Set<string>([
   'preparing',
   'unknown_working',
   'reading_project',
+  'searching_code',
+  'reading_files',
+  'researching_web',
+  'browsing',
+  'using_mcp',
+  'git_ops',
+  'compacting',
   'editing_code',
   'running_command',
   'running_tests',
@@ -55,6 +77,10 @@ export function pixelProviderLabel(providerId: PixelProviderId): string {
   return PROVIDER_LABELS[providerId];
 }
 
+export function pixelProviderMark(providerId: PixelProviderId): string {
+  return PROVIDER_MARKS[providerId];
+}
+
 export function resolvePixelProviderId(
   events: EvidenceEvent[],
   fallback?: string | null,
@@ -66,28 +92,72 @@ export function resolvePixelProviderId(
   return normalizePixelProviderId(fallback);
 }
 
+function metaHasHttpUrl(meta: Record<string, unknown> | undefined): boolean {
+  if (!meta) return false;
+  for (const key of ['url', 'uri', 'href']) {
+    const value = meta[key];
+    if (typeof value === 'string' && /^https?:\/\//i.test(value)) return true;
+  }
+  return false;
+}
+
 /**
  * Map tool names across Claude / Codex / Cursor / Antigravity naming conventions.
  * Unknown tools stay unknown_working — never invent a station claim.
  */
-export function mapToolNameToPixelState(toolName: string): PixelToolVisualState {
+export function mapToolNameToPixelState(
+  toolName: string,
+  sanitizedMeta?: Record<string, unknown>,
+): PixelToolVisualState {
   const tool = toolName.toLowerCase();
 
+  if (tool.startsWith('mcp__')) {
+    if (/browser|playwright|navigate|puppeteer/.test(tool)) return 'browsing';
+    if (/web|search|fetch|http/.test(tool) || metaHasHttpUrl(sanitizedMeta)) {
+      return 'researching_web';
+    }
+    return 'using_mcp';
+  }
+
   if (
-    /test|vitest|jest|pytest|mocha|playwright|cypress|phpunit|rspec|go test|cargo test/.test(tool)
+    /websearch|webfetch|web_search|web_fetch|brave_search|tavily|serp|duckduck/.test(tool) ||
+    metaHasHttpUrl(sanitizedMeta)
   ) {
+    return 'researching_web';
+  }
+
+  if (/browser_|playwright|puppeteer|navigate|snapshot/.test(tool)) {
+    return 'browsing';
+  }
+
+  if (/^git\b|git_status|git_diff|git_log|git_commit|git_push|git_pull/.test(tool)) {
+    return 'git_ops';
+  }
+
+  if (/test|vitest|jest|pytest|mocha|cypress|phpunit|rspec|go test|cargo test/.test(tool)) {
     return 'running_tests';
   }
   if (/build|compile|webpack|vite|tsc|esbuild|rollup|cargo build|mvn|gradle|make\b/.test(tool)) {
     return 'building';
   }
+
   if (
-    /read|grep|glob|search|find|list_dir|list_files|ls\b|cat\b|view_image|semanticsearch|codebase_search|file_search|rg\b/.test(
+    /semanticsearch|codebase_search|file_search|grep|glob|rg\b|find_by_name|list_dir|list_files/.test(
       tool,
     )
   ) {
-    return 'reading_project';
+    return 'searching_code';
   }
+
+  if (/^read\b|read_file|view_image|cat\b|open_file/.test(tool)) {
+    return 'reading_files';
+  }
+
+  // Legacy catch-all for generic "search"/"find" without web signal
+  if (/search|find|ls\b/.test(tool)) {
+    return 'searching_code';
+  }
+
   if (
     /write|edit|strreplace|apply_patch|applypatch|search_replace|create_file|delete_file|notebook|multiedit|edit_notebook/.test(
       tool,

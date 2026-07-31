@@ -78,9 +78,17 @@ export function resolveStudioStation(state: PixelVisualState): PixelStudioStatio
     case 'building':
       return 'test_build';
     case 'reading_project':
+    case 'searching_code':
+    case 'researching_web':
+    case 'browsing':
+    case 'using_mcp':
+    case 'compacting':
       return 'research';
+    case 'reading_files':
     case 'editing_code':
       return 'files';
+    case 'git_ops':
+      return 'git';
     case 'completed':
       return 'completed';
     case 'preparing':

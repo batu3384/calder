@@ -47,9 +47,10 @@ describe('pixel compact strip', () => {
     updatePixelCompactStrip(strip, [
       { ...event('tool_started'), toolName: 'SemanticSearch', providerId: 'cursor' },
     ]);
-    expect(strip.dataset.state).toBe('reading_project');
+    expect(strip.dataset.state).toBe('searching_code');
     expect(strip.dataset.provider).toBe('cursor');
     expect(strip.dataset.motion).toBe('active');
     expect(provider.textContent).toBe('Cursor');
   });
 });
+

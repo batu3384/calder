@@ -6,6 +6,13 @@ export type PixelVisualState =
   | 'preparing'
   | 'unknown_working'
   | 'reading_project'
+  | 'searching_code'
+  | 'reading_files'
+  | 'researching_web'
+  | 'browsing'
+  | 'using_mcp'
+  | 'git_ops'
+  | 'compacting'
   | 'editing_code'
   | 'running_command'
   | 'running_tests'
@@ -29,6 +36,10 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
     case 'operation_blocked':
     case 'permission_denied':
       return 'blocked';
+    case 'policy_decision':
+      return event.outcome === 'block' || event.policyDecision?.decision === 'block'
+        ? 'blocked'
+        : null;
     case 'tool_failed':
     case 'provider_session_failed':
     case 'session_failed':
@@ -37,10 +48,17 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
     case 'session_completed':
     case 'pty_exited':
       return event.outcome === 'completed' ? 'completed' : null;
+    case 'context_compaction_started':
+      return 'compacting';
+    case 'git_change_observed':
+    case 'git_state_captured':
+    case 'file_change_reported':
+      return 'git_ops';
     case 'tool_started':
     case 'tool_requested':
-      return mapToolNameToPixelState(event.toolName ?? '');
+      return mapToolNameToPixelState(event.toolName ?? '', event.sanitizedMeta);
     case 'prompt_submitted':
+    case 'subagent_started':
       return 'unknown_working';
     default:
       return null;
@@ -68,6 +86,14 @@ export function resolvePixelVisualState(
   for (const event of ordered) {
     if (event.type === 'permission_approved') {
       if (state === 'waiting_for_approval') {
+        state = 'unknown_working';
+        stateAt = event.timestamp;
+      }
+      continue;
+    }
+
+    if (event.type === 'context_compaction_completed') {
+      if (state === 'compacting') {
         state = 'unknown_working';
         stateAt = event.timestamp;
       }
@@ -125,6 +151,20 @@ export function pixelStateLabel(state: PixelVisualState): string {
       return 'Pixel state: Waiting for structured activity';
     case 'reading_project':
       return 'Pixel state: Reading project';
+    case 'searching_code':
+      return 'Pixel state: Searching code';
+    case 'reading_files':
+      return 'Pixel state: Reading files';
+    case 'researching_web':
+      return 'Pixel state: Researching the web';
+    case 'browsing':
+      return 'Pixel state: Browsing';
+    case 'using_mcp':
+      return 'Pixel state: Using MCP';
+    case 'git_ops':
+      return 'Pixel state: Git activity';
+    case 'compacting':
+      return 'Pixel state: Compacting context';
     case 'editing_code':
       return 'Pixel state: Editing code';
     case 'running_command':

@@ -32,8 +32,18 @@ describe('provider pixel identity', () => {
     expect(mapToolNameToPixelState('ApplyPatch')).toBe('editing_code');
     expect(mapToolNameToPixelState('shell')).toBe('running_command');
     expect(mapToolNameToPixelState('run_terminal_cmd')).toBe('running_command');
-    expect(mapToolNameToPixelState('SemanticSearch')).toBe('reading_project');
-    expect(mapToolNameToPixelState('view_image')).toBe('reading_project');
+    expect(mapToolNameToPixelState('SemanticSearch')).toBe('searching_code');
+    expect(mapToolNameToPixelState('Read')).toBe('reading_files');
+    expect(mapToolNameToPixelState('view_image')).toBe('reading_files');
+    expect(mapToolNameToPixelState('WebSearch')).toBe('researching_web');
+    expect(mapToolNameToPixelState('browser_navigate')).toBe('browsing');
+    expect(mapToolNameToPixelState('mcp__memory__create_entities')).toBe('using_mcp');
+    expect(
+      mapToolNameToPixelState('WebFetch', { url: 'https://example.com/docs' }),
+    ).toBe('researching_web');
+    expect(mapToolNameToPixelState('Bash', { command: 'curl https://example.com' })).toBe(
+      'running_command',
+    );
     expect(mapToolNameToPixelState('mystery_tool')).toBe('unknown_working');
   });
 
