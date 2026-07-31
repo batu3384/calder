@@ -1,4 +1,3 @@
-import type { EvidenceEvent } from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
 import { applyTabularNums } from '../surface-services/dom-utils.js';
 import {

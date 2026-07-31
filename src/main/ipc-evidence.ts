@@ -16,10 +16,10 @@ import { exportEvidenceRun } from './calder-evidence/export.js';
 import { rebuildSummary } from './calder-evidence/finalization.js';
 import { evaluateEvidenceHealth } from './calder-evidence/health.js';
 import {
+  countEvents,
   deleteAllEvidence,
   deleteRun,
   getStorageUsageBytes,
-  countEvents,
   readEvents,
   readMeta,
   readReview,

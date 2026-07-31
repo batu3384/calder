@@ -2,9 +2,9 @@ import type { EvidenceEvent } from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
 import {
   isPixelMotionActive,
+  type PixelProviderId,
   pixelProviderLabel,
   resolvePixelProviderId,
-  type PixelProviderId,
 } from './provider-pixel.js';
 import { pixelStateLabel, type PixelVisualState, resolvePixelVisualState } from './visual-resolver.js';
 
