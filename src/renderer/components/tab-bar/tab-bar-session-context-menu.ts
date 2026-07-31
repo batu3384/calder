@@ -2,9 +2,6 @@ import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 import {
-  closeInspector,
-  getInspectedSessionId,
-  isInspectorOpen,
   openInspector,
 } from '../session-inspector/session-inspector.js';
 import { canOpenInspectorPanel } from '../session-inspector/session-inspector-utils.js';
@@ -100,19 +97,9 @@ function buildInspectMenuItem(
   const isCliSession = !session.type || session.type === 'claude';
   if (!isCliSession || !canOpenInspectorPanel(session)) return null;
 
-  return createContextMenuItem(
-    isInspectorOpen() && getInspectedSessionId() === session.id ? 'Close Inspector' : 'Inspect',
-    hideTabContextMenu,
-    {
-      onSelect: () => {
-        if (isInspectorOpen() && getInspectedSessionId() === session.id) {
-          closeInspector();
-        } else {
-          openInspector(session.id);
-        }
-      },
-    },
-  );
+  return createContextMenuItem('Show Pixel', hideTabContextMenu, {
+    onSelect: () => openInspector(session.id),
+  });
 }
 
 function appendResumeWithProviderMenuItems(

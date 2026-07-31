@@ -13,7 +13,6 @@ import {
   studioStationLabel,
   studioStationPosition,
 } from './studio-resolver.js';
-import { isInspectedSessionForeground } from './studio-session.js';
 import { pixelStateLabel } from './visual-resolver.js';
 
 const STATIONS: PixelStudioStation[] = [
@@ -83,7 +82,7 @@ export function updatePixelStudio(
   events: EvidenceEvent[],
   options?: PixelStudioUpdateOptions,
 ): PixelStudioPresentation {
-  const paused = options?.paused ?? !isInspectedSessionForeground();
+  const paused = options?.paused ?? false;
   const presentation = resolvePixelStudioPresentation(events);
   const providerId = resolvePixelProviderId(events, options?.providerId);
   const [x, y] = studioStationPosition(presentation.station);

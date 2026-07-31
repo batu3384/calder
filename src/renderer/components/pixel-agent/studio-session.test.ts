@@ -2,18 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../state.js', () => ({
   appState: {
-    activeProject: { activeSessionId: 'session-active' },
+    activeProject: { activeSessionId: 'session-active' } as {
+      activeSessionId: string | null;
+    } | null,
   },
 }));
 
-vi.mock('../session-inspector/session-inspector-state-ui.js', () => ({
-  inspectorState: { inspectedSessionId: 'session-other' },
-}));
-
-import { isInspectedSessionForeground } from './studio-session.js';
+import { appState } from '../../state.js';
+import { isActiveCliSessionForeground, isInspectedSessionForeground } from './studio-session.js';
 
 describe('studio session foreground', () => {
-  it('returns false when inspected session is not active', () => {
+  it('is true only for the active CLI session id', () => {
+    expect(isActiveCliSessionForeground('session-active')).toBe(true);
+    expect(isActiveCliSessionForeground('session-other')).toBe(false);
+  });
+
+  it('is false when there is no active session', () => {
+    (appState as { activeProject: { activeSessionId: string | null } | null }).activeProject = {
+      activeSessionId: null,
+    };
+    expect(isActiveCliSessionForeground('session-active')).toBe(false);
     expect(isInspectedSessionForeground()).toBe(false);
   });
 });

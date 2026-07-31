@@ -2,80 +2,36 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-const evidenceViewsSource = readFileSync(new URL('./evidence-views.ts', import.meta.url), 'utf-8');
-const changesViewsSource = readFileSync(new URL('./changes-views.ts', import.meta.url), 'utf-8');
-const reviewViewsSource = readFileSync(new URL('./review-views.ts', import.meta.url), 'utf-8');
-const evidenceSupportSource = readFileSync(
-  new URL('./evidence-view-support.ts', import.meta.url),
+const pixelPanelSource = readFileSync(
+  new URL('../context-pixel-panel.ts', import.meta.url),
   'utf-8',
 );
-const evidenceUiSource = readFileSync(new URL('./evidence-view-ui.ts', import.meta.url), 'utf-8');
-const inspectorSource = readFileSync(new URL('./session-inspector.ts', import.meta.url), 'utf-8');
+const inspectorShimSource = readFileSync(
+  new URL('./session-inspector.ts', import.meta.url),
+  'utf-8',
+);
+const contextInspectorSource = readFileSync(
+  new URL('../context-inspector.ts', import.meta.url),
+  'utf-8',
+);
+const ecosystemViewsSource = readFileSync(
+  new URL('./ecosystem-views.ts', import.meta.url),
+  'utf-8',
+);
 
-describe('session inspector evidence contract', () => {
-  it('disposes evidence subscriptions before tab rerenders', () => {
-    expect(inspectorSource).toContain('disposeEvidenceView');
-    expect(inspectorSource).toContain("from './evidence-views.js'");
-  });
-
-  it('wires live evidence updates and health panel', () => {
-    expect(evidenceViewsSource).toContain('window.calder.evidence.onEvent');
-    expect(evidenceViewsSource).toContain('renderEvidenceHealthPanel');
-    expect(evidenceViewsSource).toContain('readStoredEvidenceFilter');
-    expect(evidenceViewsSource).toContain('sliceEventsForDom');
-  });
-
-  it('wires changes tab search, pagination, and health', () => {
-    expect(evidenceViewsSource).toContain('renderChanges');
-    expect(changesViewsSource).toContain('createChangesSearchBar');
-    expect(changesViewsSource).toContain('matchesGitChangeQuery');
-    expect(changesViewsSource).toContain('Load more changes');
-  });
-
-  it('wires review summary panel and native delete confirmation', () => {
-    expect(evidenceViewsSource).toContain('renderReview');
-    expect(reviewViewsSource).toContain('renderEvidenceReviewSummary');
-    expect(reviewViewsSource).toContain('deleteRun');
-    expect(evidenceUiSource).toContain('renderReviewHealthIndicators');
-    expect(evidenceSupportSource).toContain('beginEvidenceViewGeneration');
-    expect(evidenceSupportSource).toContain('mergeEvidenceEvents');
-  });
-
-  it('wires bidirectional studio and evidence shortcuts', () => {
-    const studioViewsSource = readFileSync(new URL('./studio-views.ts', import.meta.url), 'utf-8');
-    const tabsSource = readFileSync(
-      new URL('./session-inspector-tabs.ts', import.meta.url),
-      'utf-8',
-    );
-    const ecosystemViewsSource = readFileSync(
-      new URL('./ecosystem-views.ts', import.meta.url),
-      'utf-8',
-    );
-    expect(evidenceViewsSource).toContain('Open Pixel Studio');
-    expect(evidenceViewsSource).toContain("setInspectorTab('studio')");
-    expect(studioViewsSource).toContain('Open evidence timeline');
-    expect(inspectorSource).toContain("id: 'studio'");
-    expect(inspectorSource).toContain("id: 'ecosystem'");
-    expect(inspectorSource).toContain('renderEcosystem');
-    expect(inspectorSource).toContain('renderStudio');
-    expect(ecosystemViewsSource).toContain('syncEvidenceSubscribe');
-    expect(ecosystemViewsSource).toContain('focusInspectorSession');
-    expect(ecosystemViewsSource).toContain("focusSession(sessionId, 'studio')");
-    expect(ecosystemViewsSource).toContain('watchUntilCliSessions');
-    expect(ecosystemViewsSource).toContain("appState.on('state-loaded'");
-    expect(ecosystemViewsSource).toContain(
-      'Open a CLI session in this project to see live Pixel agents.',
-    );
-    expect(ecosystemViewsSource).not.toContain("inspectorState.activeTab !== 'ecosystem'");
-    expect(inspectorSource).toContain("mode?: 'toggle' | 'focus'");
-    expect(inspectorSource).toContain('focusInspectorSession');
-    expect(studioViewsSource).toContain("settings.pixelMode !== 'studio'");
-    expect(studioViewsSource).toContain('isInspectedSessionForeground');
-    expect(tabsSource).toContain('setInspectorTab');
-  });
-
-  it('records governance without re-enforcement copy', () => {
-    expect(evidenceUiSource).toContain('governanceRecordLabel');
-    expect(evidenceUiSource).toContain('does not re-enforce here');
+describe('pixel rail merge contract', () => {
+  it('mounts Pixel Ecosystem + Studio in Context Inspector without SI dock', () => {
+    expect(pixelPanelSource).toContain('mountContextPixel');
+    expect(pixelPanelSource).toContain('renderPixelStudio');
+    expect(pixelPanelSource).toContain('buildEcosystemCardElement');
+    expect(pixelPanelSource).toContain('focusCliSession');
+    expect(pixelPanelSource).not.toContain('focusInspectorSession');
+    expect(pixelPanelSource).not.toContain('setInspectorTab');
+    expect(contextInspectorSource).toContain('mountContextPixel');
+    expect(contextInspectorSource).toContain('focusContextPixelTab');
+    expect(inspectorShimSource).toContain('focusContextPixelTab');
+    expect(inspectorShimSource).not.toContain('createPanel');
+    expect(inspectorShimSource).not.toContain('#session-inspector');
+    expect(ecosystemViewsSource).toContain('mountContextPixel as renderEcosystem');
   });
 });

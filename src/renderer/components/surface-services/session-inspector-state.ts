@@ -11,7 +11,3 @@ export const getContextHistory: SessionInspectorStateModule['getContextHistory']
   sessionInspectorState.getContextHistory(...args);
 export const getCostDeltas: SessionInspectorStateModule['getCostDeltas'] = (...args) =>
   sessionInspectorState.getCostDeltas(...args);
-export const onChange: SessionInspectorStateModule['onChange'] = (...args) =>
-  sessionInspectorState.onChange(...args);
-export const clearSession: SessionInspectorStateModule['clearSession'] = (...args) =>
-  sessionInspectorState.clearSession(...args);

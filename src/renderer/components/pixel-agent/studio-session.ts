@@ -1,11 +1,14 @@
 import { appState } from '../../state.js';
-import { inspectorState } from '../session-inspector/session-inspector-state-ui.js';
 
-export function isInspectedSessionForeground(): boolean {
-  const inspectedId = inspectorState.inspectedSessionId;
-  if (!inspectedId) return false;
+/** True when the given CLI session is the project's active (foreground) session. */
+export function isActiveCliSessionForeground(sessionId: string): boolean {
   const activeId = appState.activeProject?.activeSessionId;
-  // No active session → treat as background (pause animations).
   if (!activeId) return false;
-  return activeId === inspectedId;
+  return activeId === sessionId;
+}
+
+/** @deprecated Use isActiveCliSessionForeground with an explicit session id. */
+export function isInspectedSessionForeground(): boolean {
+  const activeId = appState.activeProject?.activeSessionId;
+  return Boolean(activeId);
 }

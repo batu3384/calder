@@ -1882,6 +1882,26 @@
   margin-bottom: 4px;
 }
 
+.context-pixel-studio-section {
+  margin: 0 0 8px;
+  min-width: 0;
+}
+
+.context-pixel-studio-section--map {
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-panel-alt) 55%, transparent);
+}
+
+.context-pixel-studio-section--map .inspector-pixel-studio--tab {
+  min-height: 148px;
+}
+
+.context-pixel-studio-section--map .inspector-pixel-studio-station-label {
+  font-size: 8px;
+}
+
 .context-pixel-host .inspector-ecosystem-card {
   padding: 4px;
 }

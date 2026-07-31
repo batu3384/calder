@@ -1,6 +1,6 @@
 import { appState } from '../state.js';
+import { mountContextPixel } from './context-pixel-panel.js';
 import { renderDiagnosticsSummary } from './diagnostics-summary.js';
-import { renderEcosystem } from './session-inspector/ecosystem-views.js';
 import { disposeEvidenceSubscriptions } from './session-inspector/evidence-view-support.js';
 import { getGitStatus, onChange as onGitStatusChange } from './surface-services/git-status.js';
 
@@ -70,7 +70,7 @@ function syncInspectorOpenState(): void {
 
 function mountPixelPanel(): void {
   if (!pixelHost || activeInspectorTab !== 'pixel') return;
-  renderEcosystem(pixelHost);
+  mountContextPixel(pixelHost);
   pixelMounted = true;
 }
 
@@ -202,6 +202,12 @@ export function setContextInspectorOpen(next: boolean): void {
 
 export function toggleContextInspector(): void {
   setContextInspectorOpen(!inspectorOpen);
+}
+
+/** Open Denetçi on Pixel tab (replaces Session Inspector toggle). */
+export function focusContextPixelTab(): void {
+  setContextInspectorOpen(true);
+  setInspectorTab('pixel');
 }
 
 export function initContextInspector(): void {

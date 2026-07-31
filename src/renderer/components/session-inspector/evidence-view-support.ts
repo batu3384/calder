@@ -142,10 +142,6 @@ export function matchesEvidenceFilter(
   return haystack.includes(needle);
 }
 
-export function formatEvidenceTimestamp(timestamp: number): string {
-  return new Date(timestamp).toLocaleString();
-}
-
 export function evidenceFilterStorageKey(sessionId: string): string {
   return `calder.evidence.filter.${sessionId}`;
 }

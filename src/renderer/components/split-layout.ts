@@ -1,6 +1,5 @@
 import { appState, ProjectRecord } from '../state.js';
 import { clampRatio, resolveMosaicPreset } from './mosaic-layout-model.js';
-import { isInspectorOpen } from './session-inspector/session-inspector.js';
 import { promptNewProject } from './sidebar.js';
 import { removeEmptyState, showEmptyState } from './split-layout-empty-state.js';
 import {
@@ -59,28 +58,12 @@ function isMosaicMode(project: ProjectRecord | undefined): boolean {
   return !!project && project.layout.mode === 'mosaic';
 }
 
-/** Set the container's layout class while preserving the inspector-open class if active. */
+/** Set the container's layout class. */
 function setContainerClass(cls: string): void {
-  const hasInspector = isInspectorOpen();
   container.className = cls;
-  if (hasInspector) container.classList.add('inspector-open');
-}
-
-function registerInspectorRelayoutBridge(): void {
-  import('./session-inspector/session-inspector.js')
-    .then((inspectorModule) => {
-      inspectorModule.setSessionInspectorRelayoutCallback?.(() => {
-        renderLayout();
-      });
-    })
-    .catch(() => {
-      // Keep layout functional even if the inspector module is mocked in isolated tests.
-    });
 }
 
 export function initSplitLayout(): void {
-  registerInspectorRelayoutBridge();
-
   appState.on('state-loaded', renderLayout);
   appState.on('project-changed', renderLayout);
   appState.on('session-added', onSessionAdded);
@@ -294,7 +277,6 @@ function renderSwarmMode(project: ProjectRecord): void {
   const hasBrowserColumn = Boolean(hasPinnedSurfaceFocus(project) || browserSession);
   const count = visiblePaneIds.length;
   const resolvedPreset = resolveMosaicPreset(count, project.layout.mosaicPreset);
-  const hasInspector = isInspectorOpen();
 
   setContainerClass('swarm-mode mosaic-mode');
   container.dataset.mosaicPreset = resolvedPreset;
@@ -314,7 +296,6 @@ function renderSwarmMode(project: ProjectRecord): void {
           `minmax(0, ${formatInverseRatio(clamped)}fr)`,
         ]
       : ['1fr'];
-    if (hasInspector) colParts.push('var(--inspector-width, 350px)');
     container.style.gridTemplateColumns = colParts.join(' ');
   };
   applySurfaceColumns(surfaceRatio);
@@ -331,7 +312,7 @@ function renderSwarmMode(project: ProjectRecord): void {
     container.appendChild(browserDivider);
     bindMosaicDivider(
       browserDivider,
-      () => getSurfaceResizeBounds(container, hasInspector),
+      () => getSurfaceResizeBounds(container, false),
       {
         onPreview: (ratio) => {
           applySurfaceColumns(ratio);
@@ -363,13 +344,6 @@ function renderSwarmMode(project: ProjectRecord): void {
   });
 
   decorateSwarmReorderHandles(project, container, canvas);
-
-  if (hasInspector) {
-    const inspectorEl = container.querySelector('#session-inspector');
-    if (inspectorEl) {
-      container.appendChild(inspectorEl);
-    }
-  }
 
   updateSwarmPaneStyles(project);
   focusActivePane(project);

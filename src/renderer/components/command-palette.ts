@@ -64,8 +64,8 @@ function getCommandEntries(): CommandPaletteEntry[] {
     },
     {
       id: 'toggle-inspector',
-      label: 'Toggle Session Inspector',
-      keywords: 'timeline tools',
+      label: 'Show Pixel Inspector',
+      keywords: 'pixel ecosystem studio agents',
       run: () => actions.toggleInspector(),
     },
     { id: 'help', label: 'Open Help', keywords: 'docs shortcuts', run: () => actions.help() },

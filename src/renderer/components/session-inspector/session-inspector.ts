@@ -1,398 +1,66 @@
-import { t } from '../../i18n.js';
+/**
+ * Session Inspector dock panel removed — these shims open Context Inspector Pixel.
+ * Evidence capture / session-inspector-state remain for hooks.
+ */
 import { appState } from '../../state.js';
-import {
-  clearSession,
-  onChange as onInspectorChange,
-} from '../surface-services/session-inspector-state.js';
-import { fitAllVisible } from '../terminal-pane.js';
-import { renderEcosystem } from './ecosystem-views.js';
-import {
-  disposeEvidenceView,
-  renderChanges,
-  renderEvidence,
-  renderReview,
-} from './evidence-views.js';
-import { inspectorState } from './session-inspector-state-ui.js';
-import { renderTimeline } from './session-inspector-timeline.js';
-import { canOpenInspectorPanel, resetUIState } from './session-inspector-utils.js';
-import { renderContext, renderCosts, renderTools } from './session-inspector-views.js';
-import { renderStudio } from './studio-views.js';
-
-let onInspectorLayoutChanged: (() => void) | null = null;
+import { isCliSessionRecord } from '../../state-project-surface.js';
+import { focusContextPixelTab, toggleContextInspector } from '../context-inspector.js';
 
 export function isInspectorOpen(): boolean {
-  return inspectorState.inspectorPanel !== null && inspectorState.inspectedSessionId !== null;
+  return false;
 }
 
 export function getInspectedSessionId(): string | null {
-  return inspectorState.inspectedSessionId;
+  return null;
 }
 
-export function setSessionInspectorRelayoutCallback(callback: (() => void) | null): void {
-  onInspectorLayoutChanged = callback;
+export function setSessionInspectorRelayoutCallback(_callback: (() => void) | null): void {
+  // No terminal dock panel to relayout.
 }
 
-function notifyInspectorLayoutChanged(): void {
-  onInspectorLayoutChanged?.();
+function focusPixelForSession(sessionId: string): void {
+  const project = appState.activeProject;
+  if (project?.sessions.some((session) => session.id === sessionId)) {
+    appState.setActiveSession(project.id, sessionId);
+  }
+  focusContextPixelTab();
 }
 
-export function openInspector(sessionId: string, options?: { mode?: 'toggle' | 'focus' }): void {
+export function openInspector(sessionId: string, _options?: { mode?: 'toggle' | 'focus' }): void {
   const session = appState.activeProject?.sessions.find((s) => s.id === sessionId);
-  if (!session || !canOpenInspectorPanel(session)) return;
-
-  const mode = options?.mode ?? 'toggle';
-  if (inspectorState.inspectorPanel && inspectorState.inspectedSessionId === sessionId) {
-    if (mode === 'toggle') {
-      closeInspector();
-    }
-    return;
-  }
-
-  if (inspectorState.inspectedSessionId !== sessionId) resetUIState();
-  inspectorState.inspectedSessionId = sessionId;
-
-  if (!inspectorState.inspectorPanel) {
-    inspectorState.inspectorPanel = createPanel();
-    const container = document.getElementById('terminal-container')!;
-    container.appendChild(inspectorState.inspectorPanel);
-    container.classList.add('inspector-open');
-    notifyInspectorLayoutChanged();
-  }
-
-  renderActiveTab();
+  if (!session || !isCliSessionRecord(session)) return;
+  focusPixelForSession(sessionId);
 }
 
-/** Open or keep inspector on a session without toggle-close (Ecosystem / deep-links). */
 export function focusInspectorSession(sessionId: string): void {
   openInspector(sessionId, { mode: 'focus' });
 }
 
 export function closeInspector(): void {
-  if (!inspectorState.inspectorPanel) return;
-
-  if (inspectorState.updateTimer) {
-    clearTimeout(inspectorState.updateTimer);
-    inspectorState.updateTimer = null;
-  }
-
-  const container = document.getElementById('terminal-container')!;
-  container.classList.remove('inspector-open');
-  inspectorState.inspectorPanel.remove();
-  inspectorState.inspectorPanel = null;
-  inspectorState.inspectedSessionId = null;
-
-  notifyInspectorLayoutChanged();
+  // Pixel lives in Context Inspector; closing the old dock is a no-op.
 }
 
 export function toggleInspector(): void {
   const project = appState.activeProject;
-  if (!project) return;
-
-  let session = project.activeSessionId
+  if (!project) {
+    toggleContextInspector();
+    return;
+  }
+  const session = project.activeSessionId
     ? project.sessions.find((s) => s.id === project.activeSessionId)
     : undefined;
-  if (!session || !canOpenInspectorPanel(session)) {
-    session = project.sessions.find((candidate) => canOpenInspectorPanel(candidate));
+  if (session && isCliSessionRecord(session)) {
+    focusContextPixelTab();
+    return;
   }
-  if (!session) return;
-
-  if (isInspectorOpen()) {
-    closeInspector();
-  } else {
-    openInspector(session.id);
+  const cli = project.sessions.find((candidate) => isCliSessionRecord(candidate));
+  if (cli) {
+    focusPixelForSession(cli.id);
+    return;
   }
+  focusContextPixelTab();
 }
 
 export function initSessionInspector(): void {
-  // Auto-follow active session
-  appState.on('session-changed', () => {
-    const project = appState.activeProject;
-    const activeSession = project?.activeSessionId
-      ? project.sessions.find((s) => s.id === project.activeSessionId)
-      : undefined;
-
-    if (!isInspectorOpen()) {
-      if (
-        inspectorState.reopenOnNextSession &&
-        project?.activeSessionId &&
-        activeSession &&
-        canOpenInspectorPanel(activeSession)
-      ) {
-        resetUIState();
-        inspectorState.reopenOnNextSession = false;
-        requestAnimationFrame(() => openInspector(project.activeSessionId!));
-      }
-      return;
-    }
-
-    if (project?.activeSessionId && project.activeSessionId !== inspectorState.inspectedSessionId) {
-      if (activeSession && canOpenInspectorPanel(activeSession)) {
-        resetUIState();
-        inspectorState.inspectedSessionId = project.activeSessionId;
-        renderActiveTab();
-      } else {
-        inspectorState.reopenOnNextSession = true;
-        closeInspector();
-      }
-    }
-  });
-
-  // Reset reopen flag when switching projects
-  appState.on('project-changed', () => {
-    inspectorState.reopenOnNextSession = false;
-  });
-
-  // Clear inspector events when /clear resets the CLI session
-  appState.on('cli-session-cleared', (data) => {
-    const d = data as { sessionId?: string } | undefined;
-    if (!d?.sessionId) return;
-    clearSession(d.sessionId);
-    if (isInspectorOpen() && d.sessionId === inspectorState.inspectedSessionId) {
-      renderActiveTab();
-    }
-  });
-
-  // Clean up inspector state and close panel when session is removed
-  appState.on('session-removed', (data) => {
-    const d = data as { sessionId?: string } | undefined;
-    if (!d?.sessionId) return;
-    clearSession(d.sessionId);
-    if (isInspectorOpen() && d.sessionId === inspectorState.inspectedSessionId) {
-      inspectorState.reopenOnNextSession = true;
-      closeInspector();
-    }
-  });
-
-  // Re-open inspector when a new session is added after a clear/removal
-  appState.on('session-added', (data) => {
-    if (!inspectorState.reopenOnNextSession) return;
-    const d = data as { session?: { id: string; type?: string } } | undefined;
-    const sessionId = d?.session?.id;
-    const session = sessionId
-      ? appState.activeProject?.sessions.find((s) => s.id === sessionId)
-      : undefined;
-    if (session && canOpenInspectorPanel(session)) {
-      inspectorState.reopenOnNextSession = false;
-      const idToOpen = session.id;
-      requestAnimationFrame(() => openInspector(idToOpen));
-    }
-  });
-
-  // Update inspector on new events (debounced)
-  onInspectorChange((sessionId) => {
-    if (sessionId !== inspectorState.inspectedSessionId) return;
-    if (inspectorState.updateTimer) clearTimeout(inspectorState.updateTimer);
-    inspectorState.updateTimer = setTimeout(() => {
-      const sel = window.getSelection();
-      if (
-        sel &&
-        sel.rangeCount > 0 &&
-        !sel.isCollapsed &&
-        inspectorState.inspectorPanel?.contains(sel.anchorNode)
-      ) {
-        return; // don't destroy DOM while user is selecting text
-      }
-      renderActiveTab();
-    }, 200);
-  });
-}
-
-function createPanel(): HTMLElement {
-  const panel = document.createElement('div');
-  panel.id = 'session-inspector';
-
-  // Resize handle
-  const resizeHandle = document.createElement('div');
-  resizeHandle.className = 'inspector-resize-handle';
-  resizeHandle.addEventListener('mousedown', startResize);
-  panel.appendChild(resizeHandle);
-
-  // Header
-  const header = document.createElement('div');
-  header.className = 'inspector-header';
-
-  const headerCopy = document.createElement('div');
-  headerCopy.className = 'inspector-header-copy';
-
-  const title = document.createElement('div');
-  title.className = 'inspector-title';
-  title.textContent = 'Session Inspector';
-  headerCopy.appendChild(title);
-
-  const meta = document.createElement('div');
-  meta.className = 'inspector-header-meta';
-  meta.textContent = t('Pixel agents, evidence, and session activity');
-  headerCopy.appendChild(meta);
-
-  header.appendChild(headerCopy);
-
-  const actions = document.createElement('div');
-  actions.className = 'inspector-header-actions';
-
-  const scrollToggle = document.createElement('button');
-  scrollToggle.className = 'inspector-autoscroll-toggle active';
-  scrollToggle.textContent = 'Auto-scroll';
-  scrollToggle.title = 'Toggle auto-scroll to bottom';
-  scrollToggle.addEventListener('click', () => {
-    inspectorState.autoScroll = !inspectorState.autoScroll;
-    scrollToggle.classList.toggle('active', inspectorState.autoScroll);
-    if (inspectorState.autoScroll) {
-      const content = panel.querySelector('.inspector-content') as HTMLElement;
-      if (content) content.scrollTop = content.scrollHeight;
-    }
-  });
-  actions.appendChild(scrollToggle);
-
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'inspector-close';
-  closeBtn.textContent = '\u00d7';
-  closeBtn.setAttribute('aria-label', 'Close session inspector');
-  closeBtn.title = 'Close session inspector';
-  closeBtn.addEventListener('click', closeInspector);
-  actions.appendChild(closeBtn);
-
-  header.appendChild(actions);
-
-  panel.appendChild(header);
-
-  // Tabs
-  const tabBar = document.createElement('div');
-  tabBar.className = 'inspector-tabs';
-  tabBar.setAttribute('role', 'tablist');
-  tabBar.setAttribute('aria-label', 'Session inspector sections');
-  const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
-    { id: 'timeline', label: t('Activity') },
-    { id: 'ecosystem', label: t('Ecosystem') },
-    { id: 'evidence', label: t('Evidence') },
-    { id: 'studio', label: t('Studio') },
-    { id: 'changes', label: t('Changes') },
-    { id: 'costs', label: t('Costs') },
-    { id: 'review', label: t('Review') },
-    { id: 'tools', label: t('Tools') },
-    { id: 'context', label: t('Context') },
-  ];
-  for (const tab of tabs) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'inspector-tab' + (tab.id === inspectorState.activeTab ? ' active' : '');
-    btn.textContent = tab.label;
-    btn.dataset.tab = tab.id;
-    btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-selected', String(tab.id === inspectorState.activeTab));
-    btn.tabIndex = tab.id === inspectorState.activeTab ? 0 : -1;
-    btn.addEventListener('click', () => {
-      inspectorState.activeTab = tab.id;
-      tabBar.querySelectorAll('.inspector-tab').forEach((t) => {
-        const el = t as HTMLButtonElement;
-        el.classList.remove('active');
-        el.setAttribute('aria-selected', 'false');
-        el.tabIndex = -1;
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      btn.tabIndex = 0;
-      renderActiveTab();
-    });
-    btn.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-      event.preventDefault();
-      const buttons = [...tabBar.querySelectorAll<HTMLButtonElement>('.inspector-tab')];
-      const index = buttons.indexOf(btn);
-      const next =
-        buttons[event.key === 'ArrowLeft' ? index - 1 : index + 1] ??
-        buttons[event.key === 'ArrowLeft' ? buttons.length - 1 : 0];
-      next?.focus();
-      next?.click();
-    });
-    tabBar.appendChild(btn);
-  }
-  panel.appendChild(tabBar);
-
-  // Content area
-  const content = document.createElement('div');
-  content.className = 'inspector-content';
-
-  content.addEventListener('scroll', () => {
-    if (inspectorState.activeTab !== 'timeline' || inspectorState.programmaticScroll) return;
-    const atBottom = content.scrollHeight - content.scrollTop - content.clientHeight < 30;
-    // Only disable auto-scroll when user scrolls away from bottom;
-    // re-enabling should only happen via the toggle button
-    if (inspectorState.autoScroll && !atBottom) {
-      inspectorState.autoScroll = false;
-      scrollToggle.classList.toggle('active', false);
-    }
-  });
-
-  panel.appendChild(content);
-
-  return panel;
-}
-
-function renderActiveTab(): void {
-  if (!inspectorState.inspectorPanel || !inspectorState.inspectedSessionId) return;
-  const content = inspectorState.inspectorPanel.querySelector('.inspector-content') as HTMLElement;
-  if (!content) return;
-
-  const toggle = inspectorState.inspectorPanel.querySelector(
-    '.inspector-autoscroll-toggle',
-  ) as HTMLElement;
-  if (toggle) toggle.style.display = inspectorState.activeTab === 'timeline' ? '' : 'none';
-
-  disposeEvidenceView();
-  content.innerHTML = '';
-
-  switch (inspectorState.activeTab) {
-    case 'timeline':
-      renderTimeline(content);
-      break;
-    case 'ecosystem':
-      renderEcosystem(content);
-      break;
-    case 'evidence':
-      renderEvidence(content);
-      break;
-    case 'studio':
-      renderStudio(content);
-      break;
-    case 'changes':
-      renderChanges(content);
-      break;
-    case 'costs':
-      renderCosts(content);
-      break;
-    case 'review':
-      renderReview(content);
-      break;
-    case 'tools':
-      renderTools(content);
-      break;
-    case 'context':
-      renderContext(content);
-      break;
-  }
-}
-
-function startResize(e: MouseEvent): void {
-  e.preventDefault();
-  inspectorState.resizing = true;
-  const startX = e.clientX;
-  const container = document.getElementById('terminal-container')!;
-  const startWidth = inspectorState.inspectorPanel?.offsetWidth ?? 350;
-
-  const onMouseMove = (e: MouseEvent) => {
-    if (!inspectorState.resizing) return;
-    const diff = startX - e.clientX;
-    const newWidth = Math.min(Math.max(startWidth + diff, 250), 800);
-    container.style.setProperty('--inspector-width', `${newWidth}px`);
-  };
-
-  const onMouseUp = () => {
-    inspectorState.resizing = false;
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-    requestAnimationFrame(() => fitAllVisible());
-  };
-
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+  // Panel lifecycle removed; Context Inspector owns Pixel.
 }

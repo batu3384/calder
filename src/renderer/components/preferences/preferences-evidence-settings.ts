@@ -12,7 +12,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
   const copy = document.createElement('div');
   copy.className = 'preferences-card-copy';
   copy.textContent =
-    'Record sanitized session activity locally for the Session Inspector. Pixel Compact (default) shows a live status strip; Pixel Studio adds a station map. Switch modes from Evidence or Preferences → Safety.';
+    'Record sanitized session activity locally for Pixel agents in the Inspector. Pixel Compact (default) shows a live status strip; Pixel Studio adds a station map. Switch modes in Preferences → Safety.';
   card.appendChild(copy);
 
   const body = document.createElement('div');

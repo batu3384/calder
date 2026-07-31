@@ -564,13 +564,10 @@ describe('split-layout mosaic behavior', () => {
     expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.52, 4);
   });
 
-  it('uses only the live-surface span when dragging the center divider with the inspector open', async () => {
+  it('does not reserve a Session Inspector column in mosaic layout', async () => {
     const { appState, _resetForTesting } = await import('../state.js');
     _resetForTesting();
-    const { isInspectorOpen } = await import('./session-inspector/session-inspector.js');
     const { initSplitLayout, renderLayout } = await import('./split-layout.js');
-
-    vi.mocked(isInspectorOpen).mockReturnValue(true);
 
     const project = appState.addProject('Audit', '/audit');
     appState.addSession(project.id, 'Session 1', undefined, 'claude')!;
@@ -582,20 +579,9 @@ describe('split-layout mosaic behavior', () => {
     renderLayout();
 
     const container = document.getElementById('terminal-container') as unknown as FakeElement;
-    const divider = container.querySelector('.mosaic-divider-browser') as FakeElement;
 
-    expect(divider).toBeTruthy();
-    expect(container.style.gridTemplateColumns).toBe(
-      'minmax(288px, 0.5fr) 10px minmax(0, 0.5fr) var(--inspector-width, 350px)',
-    );
-
-    const preventDefault = vi.fn();
-    divider.dispatch('pointerdown', { clientX: 325, clientY: 10, preventDefault });
-    emitWindow('pointermove', { clientX: 390, clientY: 10 });
-    emitWindow('pointerup', { clientX: 390, clientY: 10 });
-
-    expect(preventDefault).toHaveBeenCalledTimes(1);
-    expect(appState.activeProject!.layout.browserWidthRatio).toBeCloseTo(0.6, 4);
+    expect(container.style.gridTemplateColumns).toBe('minmax(288px, 0.5fr) 10px minmax(0, 0.5fr)');
+    expect(container.style.gridTemplateColumns).not.toContain('inspector-width');
   });
 
   it('does not rebuild the pinned browser surface when only the browser URL changes', async () => {

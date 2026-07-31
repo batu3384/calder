@@ -9,7 +9,7 @@ vi.mock('../../state.js', () => ({
 }));
 
 import { appState } from '../../state.js';
-import { listOpenCliSessions } from './ecosystem-views.js';
+import { listOpenCliSessions } from '../context-pixel-panel.js';
 
 describe('listOpenCliSessions', () => {
   beforeEach(() => {

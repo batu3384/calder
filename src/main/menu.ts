@@ -102,7 +102,7 @@ export function createAppMenu(debugMode = false): void {
           click: () => sendToRenderer('menu:toggle-context-panel'),
         },
         {
-          label: 'Toggle Session Inspector',
+          label: 'Show Pixel Inspector',
           accelerator: 'CmdOrCtrl+Shift+I',
           click: () => sendToRenderer('menu:toggle-inspector'),
         },
