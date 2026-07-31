@@ -28,14 +28,18 @@ describe('context language contract', () => {
     expect(html).not.toContain('context-inspector-eyebrow');
     expect(html).not.toContain('context-inspector-header-note');
     expect(html).toContain('context-inspector-tabs');
+    expect(html).toContain('aria-controls="context-inspector-panel-pixel"');
     expect(html).toContain('aria-controls="context-inspector-panel-run"');
     expect(html).toContain('aria-controls="context-inspector-panel-project"');
     expect(html).toContain('aria-controls="context-inspector-panel-timeline"');
     expect(html).toContain('role="tabpanel"');
+    expect(html).toContain('aria-labelledby="context-inspector-tab-pixel"');
     expect(html).toContain('aria-labelledby="context-inspector-tab-run"');
     expect(html).toContain('aria-labelledby="context-inspector-tab-project"');
     expect(html).toContain('aria-labelledby="context-inspector-tab-timeline"');
     expect(html).toContain('id="diagnostics-summary"');
+    expect(html).toContain('id="context-pixel-host"');
+    expect(html).toContain('data-inspector-tab="pixel"');
     expect(html).not.toContain('context-inspector-block-copy');
     expect(html).not.toContain('id="context-inspector-overview"');
     expect(html).toContain(
@@ -53,6 +57,8 @@ describe('context language contract', () => {
     expect(historySource).toContain('recent run');
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
     expect(inspectorSource).toContain('renderDiagnosticsSummary');
+    expect(inspectorSource).toContain('renderEcosystem');
+    expect(inspectorSource).toContain("activeInspectorTab: InspectorTab = 'pixel'");
     expect(diagnosticsSource).toContain('Workspace Trust');
     expect(diagnosticsSource).toContain('describeProviderRoute');
     expect(diagnosticsSource).toContain('getGitStatus(project.id)');
@@ -80,6 +86,7 @@ describe('context language contract', () => {
   it('keeps stable right-rail sections after removing the snapshot card', () => {
     expect(inspectorSource).toContain('inspectorEl.dataset.railSignal');
     expect(inspectorSource).not.toContain('Project Snapshot');
+    expect(html).toContain('data-section="pixel"');
     expect(html).toContain('data-section="capabilities"');
     expect(html).toContain('data-section="git"');
     expect(html).not.toContain('data-section="health"');

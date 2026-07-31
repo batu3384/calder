@@ -1864,3 +1864,29 @@
   border-radius: 9px;
   background: color-mix(in srgb, var(--surface-panel-alt) 64%, transparent);
 }
+
+.context-pixel-host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.context-pixel-host .inspector-evidence-title {
+  font-size: 12px;
+  font-weight: 680;
+  letter-spacing: 0.01em;
+}
+
+.context-pixel-host .inspector-ecosystem-hint {
+  margin-bottom: 4px;
+}
+
+.context-pixel-host .inspector-ecosystem-card {
+  padding: 4px;
+}
+
+.context-pixel-host .inspector-ecosystem-select {
+  min-height: 40px;
+  gap: 6px;
+}

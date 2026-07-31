@@ -1,11 +1,14 @@
 import { appState } from '../state.js';
 import { renderDiagnosticsSummary } from './diagnostics-summary.js';
+import { renderEcosystem } from './session-inspector/ecosystem-views.js';
+import { disposeEvidenceSubscriptions } from './session-inspector/evidence-view-support.js';
 import { getGitStatus, onChange as onGitStatusChange } from './surface-services/git-status.js';
 
 const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
 const openBtn = document.getElementById('btn-open-context-inspector') as HTMLButtonElement | null;
+const pixelHost = document.getElementById('context-pixel-host');
 
 function queryInspectorChildren<T extends HTMLElement>(selector: string): T[] {
   if (typeof inspectorEl.querySelectorAll !== 'function') {
@@ -22,13 +25,14 @@ const inspectorSections = queryInspectorChildren<HTMLElement>(
 );
 
 type RailSignal = 'default' | 'active' | 'warning';
-type InspectorTab = 'capabilities' | 'git' | 'activity';
+type InspectorTab = 'pixel' | 'capabilities' | 'git' | 'activity';
 
-const INSPECTOR_TAB_ORDER: InspectorTab[] = ['capabilities', 'git', 'activity'];
+const INSPECTOR_TAB_ORDER: InspectorTab[] = ['pixel', 'capabilities', 'git', 'activity'];
 
 let inspectorOpen = true;
 let renderQueued = false;
-let activeInspectorTab: InspectorTab = 'capabilities';
+let activeInspectorTab: InspectorTab = 'pixel';
+let pixelMounted = false;
 
 const queueFrame =
   typeof requestAnimationFrame === 'function'
@@ -64,6 +68,18 @@ function syncInspectorOpenState(): void {
   openBtn?.setAttribute('aria-hidden', hideOpenButton ? 'true' : 'false');
 }
 
+function mountPixelPanel(): void {
+  if (!pixelHost || activeInspectorTab !== 'pixel') return;
+  renderEcosystem(pixelHost);
+  pixelMounted = true;
+}
+
+function unmountPixelPanel(): void {
+  if (!pixelMounted) return;
+  disposeEvidenceSubscriptions();
+  pixelMounted = false;
+}
+
 function renderInspectorChrome(): void {
   syncRailSignal();
   syncInspectorOpenState();
@@ -72,7 +88,7 @@ function renderInspectorChrome(): void {
 }
 
 function isInspectorTab(value: string | undefined): value is InspectorTab {
-  return value === 'capabilities' || value === 'git' || value === 'activity';
+  return value === 'pixel' || value === 'capabilities' || value === 'git' || value === 'activity';
 }
 
 function syncInspectorTabState(): void {
@@ -100,8 +116,14 @@ function syncInspectorTabState(): void {
 }
 
 function setInspectorTab(tab: InspectorTab): void {
+  if (activeInspectorTab === tab) {
+    if (tab === 'pixel') mountPixelPanel();
+    return;
+  }
+  if (activeInspectorTab === 'pixel') unmountPixelPanel();
   activeInspectorTab = tab;
   syncInspectorTabState();
+  if (tab === 'pixel') mountPixelPanel();
 }
 
 function findTabButton(tab: InspectorTab): HTMLButtonElement | undefined {
@@ -166,6 +188,11 @@ export function setContextInspectorOpen(next: boolean): void {
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
   syncInspectorOpenState();
+  if (next && activeInspectorTab === 'pixel') {
+    mountPixelPanel();
+  } else if (!next) {
+    unmountPixelPanel();
+  }
 }
 
 export function toggleContextInspector(): void {
@@ -200,4 +227,7 @@ export function initContextInspector(): void {
 
   setContextInspectorOpen(true);
   renderInspectorChrome();
+  if (activeInspectorTab === 'pixel') {
+    mountPixelPanel();
+  }
 }

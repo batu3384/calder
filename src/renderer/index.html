@@ -212,12 +212,24 @@
                 aria-label="Workspace inspector sections"
               >
                 <button
-                  id="context-inspector-tab-run"
+                  id="context-inspector-tab-pixel"
                   class="context-inspector-tab active"
                   type="button"
                   role="tab"
                   aria-selected="true"
+                  aria-controls="context-inspector-panel-pixel"
+                  data-inspector-tab="pixel"
+                >
+                  Pixel
+                </button>
+                <button
+                  id="context-inspector-tab-run"
+                  class="context-inspector-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
                   aria-controls="context-inspector-panel-run"
+                  tabindex="-1"
                   data-inspector-tab="capabilities"
                 >
                   Run
@@ -250,10 +262,24 @@
             </div>
             <div id="context-inspector-sections">
               <section
-                id="context-inspector-panel-run"
+                id="context-inspector-panel-pixel"
                 class="context-inspector-section active"
                 role="tabpanel"
+                aria-labelledby="context-inspector-tab-pixel"
+                data-section="pixel"
+              >
+                <div
+                  id="context-pixel-host"
+                  class="context-inspector-block-body context-pixel-host"
+                ></div>
+              </section>
+              <section
+                id="context-inspector-panel-run"
+                class="context-inspector-section"
+                role="tabpanel"
                 aria-labelledby="context-inspector-tab-run"
+                aria-hidden="true"
+                hidden
                 data-section="capabilities"
               >
                 <div id="diagnostics-summary" class="diagnostics-summary" aria-live="polite"></div>
