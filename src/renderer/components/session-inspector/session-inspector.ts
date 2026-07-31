@@ -4,6 +4,7 @@ import {
   onChange as onInspectorChange,
 } from '../surface-services/session-inspector-state.js';
 import { fitAllVisible } from '../terminal-pane.js';
+import { renderEcosystem } from './ecosystem-views.js';
 import {
   disposeEvidenceView,
   renderChanges,
@@ -34,12 +35,15 @@ function notifyInspectorLayoutChanged(): void {
   onInspectorLayoutChanged?.();
 }
 
-export function openInspector(sessionId: string): void {
+export function openInspector(sessionId: string, options?: { mode?: 'toggle' | 'focus' }): void {
   const session = appState.activeProject?.sessions.find((s) => s.id === sessionId);
   if (!session || !canInspectSession(session)) return;
 
+  const mode = options?.mode ?? 'toggle';
   if (inspectorState.inspectorPanel && inspectorState.inspectedSessionId === sessionId) {
-    closeInspector();
+    if (mode === 'toggle') {
+      closeInspector();
+    }
     return;
   }
 
@@ -55,6 +59,11 @@ export function openInspector(sessionId: string): void {
   }
 
   renderActiveTab();
+}
+
+/** Open or keep inspector on a session without toggle-close (Ecosystem / deep-links). */
+export function focusInspectorSession(sessionId: string): void {
+  openInspector(sessionId, { mode: 'focus' });
 }
 
 export function closeInspector(): void {
@@ -246,6 +255,7 @@ function createPanel(): HTMLElement {
   tabBar.setAttribute('aria-label', 'Session inspector sections');
   const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
     { id: 'timeline', label: 'Activity' },
+    { id: 'ecosystem', label: 'Ecosystem' },
     { id: 'evidence', label: 'Evidence' },
     { id: 'studio', label: 'Studio' },
     { id: 'changes', label: 'Changes' },
@@ -327,6 +337,9 @@ function renderActiveTab(): void {
   switch (inspectorState.activeTab) {
     case 'timeline':
       renderTimeline(content);
+      break;
+    case 'ecosystem':
+      renderEcosystem(content);
       break;
     case 'evidence':
       renderEvidence(content);

@@ -1465,3 +1465,197 @@
     animation: none;
   }
 }
+
+/* ============================================
+   Pixel Ecosystem roster
+   ============================================ */
+
+.inspector-ecosystem-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.inspector-ecosystem-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inspector-ecosystem-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--pixel-provider-accent, #4285f4) 28%, transparent);
+  background: color-mix(in srgb, var(--pixel-provider-accent, #4285f4) 10%, transparent);
+  --pixel-provider-accent: #4285f4;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.inspector-ecosystem-select {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inspector-ecosystem-select:focus-visible {
+  outline: 2px solid var(--pixel-provider-accent, #4285f4);
+  outline-offset: 1px;
+}
+
+.inspector-ecosystem-card[data-provider='claude'] {
+  --pixel-provider-accent: #d97706;
+}
+
+.inspector-ecosystem-card[data-provider='codex'] {
+  --pixel-provider-accent: #10a37f;
+}
+
+.inspector-ecosystem-card[data-provider='cursor'] {
+  --pixel-provider-accent: #7c3aed;
+}
+
+.inspector-ecosystem-card[data-provider='antigravity'] {
+  --pixel-provider-accent: #0ea5e9;
+}
+
+.inspector-ecosystem-card.is-active-session {
+  box-shadow: inset 0 0 0 1px var(--pixel-provider-accent, #4285f4);
+}
+
+.inspector-ecosystem-card.is-inspected {
+  border-color: var(--pixel-provider-accent, #4285f4);
+}
+
+.inspector-ecosystem-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.inspector-ecosystem-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--pixel-provider-accent, #4285f4);
+  color: #fff;
+}
+
+.inspector-ecosystem-avatar {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background-image: url('../assets/pixel-agent/studio-sheet.svg');
+  background-repeat: no-repeat;
+  background-size: 128px 16px;
+  background-position: -96px 0;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  animation: none;
+}
+
+.inspector-ecosystem-card[data-motion='active'] .inspector-ecosystem-avatar {
+  animation: inspector-pixel-agent-sprite 0.8s steps(1, end) infinite;
+}
+
+.inspector-ecosystem-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inspector-ecosystem-title {
+  font-weight: 600;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-ecosystem-provider {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--pixel-provider-accent, #4285f4);
+}
+
+.inspector-ecosystem-status {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-ecosystem-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.inspector-ecosystem-chip {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  border: 0;
+}
+
+.inspector-ecosystem-chip-fidelity {
+  background: rgba(255, 193, 7, 0.16);
+  color: var(--text-primary);
+}
+
+.inspector-ecosystem-chip-action {
+  cursor: pointer;
+  min-height: 32px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--pixel-provider-accent, #4285f4) 22%, transparent);
+  color: var(--text-primary);
+}
+
+.inspector-ecosystem-chip-action:focus-visible {
+  outline: 2px solid var(--pixel-provider-accent, #4285f4);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector-ecosystem-avatar {
+    animation: none !important;
+  }
+}

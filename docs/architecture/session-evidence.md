@@ -65,6 +65,15 @@ Performance: timeline renders at most the latest 250 matching DOM rows; older ma
 
 Dedicated **Studio** inspector tab when `pixelMode === 'studio'`.
 
+## Pixel Ecosystem
+
+**Ecosystem** inspector tab (after Activity): one pixel card per open CLI session.
+
+- Live multi-run subscribe (`evidence:subscribe` accepts `runId | runId[]`)
+- Activity taxonomy: searching_code, reading_files, researching_web, browsing, using_mcp, git_ops, compacting
+- Provider marks (Cl/Cx/Cu/Ag) + fidelity chip (`PTY only` when hooks unavailable)
+- Card click → inspect session + Evidence; Studio chip → Studio deep-dive
+
 Six CSS stations: `research` · `files` · `git` · `terminal` · `test_build` · `security`
 
 Scenes: `normal` · `celebration` (completed) · `error` (failed) · `gate` (approval/blocked)

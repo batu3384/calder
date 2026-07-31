@@ -3,6 +3,7 @@ export const inspectorState = {
   inspectedSessionId: null as string | null,
   activeTab: 'timeline' as
     | 'timeline'
+    | 'ecosystem'
     | 'evidence'
     | 'studio'
     | 'changes'

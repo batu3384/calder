@@ -6,11 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- **Pixel Ecosystem** Session Inspector tab: one live pixel card per open CLI, multi-run subscribe, expanded activity states (web/MCP/browse/git), provider marks + PTY-only fidelity
 - Pixel Agent: provider-aware tool mapping + identity accents (Claude/Codex/Cursor/Antigravity); Compact is the default display mode
 - Pixel Studio/Compact: transform-based station moves; sprite/bob only while actively working; Studio empty state can enable Studio in one click
 
 ### Fixes
 
+- Ecosystem: `focusInspectorSession` avoids toggle-close on same-session card clicks; empty subscribe clears; single destroy hook; Studio is a real button; list-level aria-live; cliSessionId on cards
+- Evidence ingest: `subagent_*` and `context_compaction_*` normalize; git fingerprint diffs emit `git_change_observed` on finalize; live `file_change_reported` maps to `git_ops`
 - Pixel Compact/Studio: chronological visual-state resolver clears waiting/blocked/failed after approval, later work, completion, or stale timeout
 - Evidence/Studio/Changes: async generation guard, eventId dedupe on live merge, Studio loads latest event window
 - Evidence deleteRun: native main-process confirmation; export/delete dialogs require a focused window

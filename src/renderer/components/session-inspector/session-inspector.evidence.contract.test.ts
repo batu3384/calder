@@ -47,11 +47,22 @@ describe('session inspector evidence contract', () => {
       new URL('./session-inspector-tabs.ts', import.meta.url),
       'utf-8',
     );
+    const ecosystemViewsSource = readFileSync(
+      new URL('./ecosystem-views.ts', import.meta.url),
+      'utf-8',
+    );
     expect(evidenceViewsSource).toContain('Open Pixel Studio');
     expect(evidenceViewsSource).toContain("setInspectorTab('studio')");
     expect(studioViewsSource).toContain('Open evidence timeline');
     expect(inspectorSource).toContain("id: 'studio'");
+    expect(inspectorSource).toContain("id: 'ecosystem'");
+    expect(inspectorSource).toContain('renderEcosystem');
     expect(inspectorSource).toContain('renderStudio');
+    expect(ecosystemViewsSource).toContain('syncEvidenceSubscribe');
+    expect(ecosystemViewsSource).toContain('focusInspectorSession');
+    expect(ecosystemViewsSource).toContain("focusSession(sessionId, 'studio')");
+    expect(inspectorSource).toContain("mode?: 'toggle' | 'focus'");
+    expect(inspectorSource).toContain('focusInspectorSession');
     expect(studioViewsSource).toContain("settings.pixelMode !== 'studio'");
     expect(studioViewsSource).toContain('isInspectedSessionForeground');
     expect(tabsSource).toContain('setInspectorTab');
