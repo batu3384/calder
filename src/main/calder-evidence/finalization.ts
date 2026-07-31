@@ -36,6 +36,51 @@ function getFinalizationState(runId: string): RunFinalizationState {
   return state;
 }
 
+const MAX_GIT_CHANGE_EVENTS = 40;
+
+async function emitGitChangeEvents(
+  runId: string,
+  meta: EvidenceRunMeta,
+  comparison: ReturnType<typeof compareGitFingerprints>,
+  dataRootOverride?: string,
+): Promise<void> {
+  const existing = readEvents(runId, {}, dataRootOverride);
+  const alreadyEmitted = existing.some((event) => event.type === 'git_change_observed');
+  if (alreadyEmitted) return;
+
+  let seq = meta.eventCount;
+  const now = Date.now();
+  const observations = comparison.observations
+    .filter((observation) => observation.category !== 'unavailable')
+    .slice(0, MAX_GIT_CHANGE_EVENTS);
+
+  for (const observation of observations) {
+    seq += 1;
+    await appendEvent(
+      runId,
+      {
+        schemaVersion: EVIDENCE_SCHEMA_VERSION,
+        eventId: randomUUID(),
+        evidenceRunId: runId,
+        calderSessionId: meta.calderSessionId,
+        providerId: meta.providerId,
+        projectId: meta.projectId,
+        type: 'git_change_observed',
+        timestamp: now,
+        seq,
+        source: 'calder_git',
+        confidence: observation.confidence,
+        sanitizedPaths: [observation.path],
+        sanitizedMeta: {
+          category: observation.category,
+          previousPath: observation.previousPath,
+        },
+      },
+      dataRootOverride,
+    );
+  }
+}
+
 export interface IngestEventResult {
   accepted: boolean;
   orphan: boolean;
@@ -110,6 +155,10 @@ async function finalizeRun(
     if (state.gitBaseline && state.gitFinal) {
       state.gitComparison = compareGitFingerprints(state.gitBaseline, state.gitFinal);
     }
+  }
+
+  if (state.gitComparison?.observations.length) {
+    await emitGitChangeEvents(runId, meta, state.gitComparison, options.dataRootOverride);
   }
 
   const events = readEvents(runId, {}, options.dataRootOverride);

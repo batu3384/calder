@@ -214,6 +214,54 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
         },
       );
 
+    case 'subagent_start':
+      return baseEvent(
+        input,
+        {
+          type: 'subagent_started',
+          source: 'provider_hook',
+          confidence: 'provider_reported',
+        },
+        {
+          sanitizedMeta: {
+            subagentId: event.agent_id,
+            agentType: event.agent_type,
+          },
+        },
+      );
+
+    case 'subagent_stop':
+      return baseEvent(
+        input,
+        {
+          type: 'subagent_completed',
+          source: 'provider_hook',
+          confidence: 'provider_reported',
+          outcome: 'completed',
+        },
+        {
+          sanitizedMeta: {
+            subagentId: event.agent_id,
+            agentType: event.agent_type,
+          },
+        },
+      );
+
+    case 'pre_compact':
+      return baseEvent(input, {
+        type: 'context_compaction_started',
+        source: 'provider_hook',
+        confidence: 'provider_reported',
+      });
+
+    case 'post_compact':
+      return baseEvent(input, {
+        type: 'context_compaction_completed',
+        source: 'provider_hook',
+        confidence: 'provider_reported',
+        outcome: 'completed',
+      });
+
     default:
       return null;
   }

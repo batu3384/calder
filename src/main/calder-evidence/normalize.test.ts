@@ -72,4 +72,29 @@ describe('calder-evidence normalize', () => {
     expect(JSON.stringify(mapped)).not.toContain('leaked-token');
     expect(mapped?.redactedFieldCount).toBeGreaterThan(0);
   });
+
+  it('maps subagent and compaction inspector events', () => {
+    const subagent = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 5,
+      event: baseEvent('subagent_start', { agent_id: 'a1', agent_type: 'explore' }),
+    });
+    expect(subagent).toMatchObject({
+      type: 'subagent_started',
+      sanitizedMeta: { subagentId: 'a1', agentType: 'explore' },
+    });
+
+    const compact = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 6,
+      event: baseEvent('pre_compact'),
+    });
+    expect(compact?.type).toBe('context_compaction_started');
+  });
 });

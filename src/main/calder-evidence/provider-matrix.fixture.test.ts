@@ -144,4 +144,45 @@ describe('calder-evidence provider matrix', () => {
     expect(blocked[0]?.policyDecision?.decision).toBe('block');
     expect(blocked[0]?.source).toBe('calder_governance');
   });
+
+  it('ingests subagent and compaction hooks for pixel ecosystem activity', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-ecosystem-activity';
+    await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+
+    await onInspectorEvents(sessionId, [
+      {
+        type: 'subagent_start',
+        timestamp: Date.now(),
+        hookEvent: 'SubagentStart',
+        agent_id: 'a1',
+        agent_type: 'explore',
+      },
+      {
+        type: 'tool_use',
+        timestamp: Date.now() + 1,
+        hookEvent: 'PreToolUse',
+        tool_name: 'WebSearch',
+        tool_input: { url: 'https://docs.example.com' },
+      },
+      {
+        type: 'pre_compact',
+        timestamp: Date.now() + 2,
+        hookEvent: 'PreCompact',
+      },
+    ]);
+
+    const runId = findRunIdByCalderSessionId(sessionId)!;
+    const events = readEvents(runId);
+    expect(events.some((event) => event.type === 'subagent_started')).toBe(true);
+    expect(
+      events.some((event) => event.type === 'tool_started' && event.toolName === 'WebSearch'),
+    ).toBe(true);
+    expect(events.some((event) => event.type === 'context_compaction_started')).toBe(true);
+  });
 });
