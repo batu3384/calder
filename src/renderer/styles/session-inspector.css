@@ -1422,7 +1422,8 @@
   border-color: rgba(232, 163, 23, 0.45);
 }
 
-.inspector-pixel-studio[data-scene='gate'] .inspector-pixel-studio-station[data-station='security'] {
+.inspector-pixel-studio[data-scene='gate']
+  .inspector-pixel-studio-station[data-station='security'] {
   border-color: rgba(232, 163, 23, 0.55);
   background: rgba(232, 163, 23, 0.14);
 }

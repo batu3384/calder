@@ -6,10 +6,7 @@ import type {
 } from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
 import { applyTabularNums } from '../surface-services/dom-utils.js';
-import {
-  type EvidenceFilterCategory,
-  formatEvidenceTimestamp,
-} from './evidence-view-support.js';
+import { type EvidenceFilterCategory, formatEvidenceTimestamp } from './evidence-view-support.js';
 
 export function renderCoverageBadge(coverage: string): HTMLElement {
   const badge = document.createElement('span');
@@ -105,8 +102,7 @@ export function renderReviewHealthIndicators(health: EvidenceHealth): HTMLElemen
   ];
   for (const [label, ok] of items) {
     const chip = document.createElement('span');
-    chip.className =
-      'inspector-evidence-review-indicator' + (ok ? ' is-ok' : ' is-missing');
+    chip.className = 'inspector-evidence-review-indicator' + (ok ? ' is-ok' : ' is-missing');
     chip.textContent = ok ? `${label} ✓` : label;
     wrap.appendChild(chip);
   }

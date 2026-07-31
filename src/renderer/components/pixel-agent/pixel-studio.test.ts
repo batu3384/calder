@@ -72,9 +72,13 @@ describe('pixel studio', () => {
     expect(status.textContent).toContain('Claude');
     expect(status.textContent).toContain('Security');
 
-    updatePixelStudio(studio, [{ ...event('tool_started'), toolName: 'apply_patch', providerId: 'codex' }], {
-      paused: false,
-    });
+    updatePixelStudio(
+      studio,
+      [{ ...event('tool_started'), toolName: 'apply_patch', providerId: 'codex' }],
+      {
+        paused: false,
+      },
+    );
     expect(studio.dataset.provider).toBe('codex');
     expect(studio.dataset.station).toBe('files');
     expect(studio.dataset.motion).toBe('active');

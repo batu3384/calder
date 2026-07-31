@@ -176,9 +176,7 @@ export async function appendEvent(
  * Sync JSONL line iterator — reads in chunks, yields complete lines only.
  * Incomplete trailing line (no final newline) is dropped to match prior store semantics.
  */
-export function* iterateEvidenceJsonlLines(
-  eventsPath: string,
-): Generator<string, void, undefined> {
+export function* iterateEvidenceJsonlLines(eventsPath: string): Generator<string, void, undefined> {
   if (!fs.existsSync(eventsPath)) return;
 
   const fd = fs.openSync(eventsPath, 'r');

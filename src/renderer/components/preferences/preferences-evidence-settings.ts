@@ -54,8 +54,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
     for (const mode of ['off', 'compact', 'studio'] as const) {
       const option = document.createElement('option');
       option.value = mode;
-      option.textContent =
-        mode === 'off' ? 'Off' : mode === 'compact' ? 'Compact' : 'Studio';
+      option.textContent = mode === 'off' ? 'Off' : mode === 'compact' ? 'Compact' : 'Studio';
       option.selected = settings.pixelMode === mode;
       pixelSelect.appendChild(option);
     }

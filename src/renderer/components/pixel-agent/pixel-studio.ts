@@ -128,8 +128,7 @@ export function renderPixelStudio(
 ): HTMLElement {
   const studio = document.createElement('div');
   studio.className =
-    'inspector-pixel-studio' +
-    (options?.variant === 'tab' ? ' inspector-pixel-studio--tab' : '');
+    'inspector-pixel-studio' + (options?.variant === 'tab' ? ' inspector-pixel-studio--tab' : '');
   studio.setAttribute('role', 'region');
   studio.setAttribute('aria-label', t('Pixel Agent studio'));
 

@@ -49,9 +49,7 @@ export function renderReview(container: HTMLElement): void {
       }
 
       container.replaceChildren();
-      container.appendChild(
-        renderEvidenceReviewSummary(summaryResult?.summary ?? null, health),
-      );
+      container.appendChild(renderEvidenceReviewSummary(summaryResult?.summary ?? null, health));
 
       const form = document.createElement('div');
       form.className = 'inspector-evidence-review-form';
@@ -110,7 +108,9 @@ export function renderReview(container: HTMLElement): void {
 
       const exportNote = document.createElement('div');
       exportNote.className = 'inspector-evidence-export-note';
-      exportNote.textContent = t('Exports are sanitized and only run when you click a button below.');
+      exportNote.textContent = t(
+        'Exports are sanitized and only run when you click a button below.',
+      );
       container.appendChild(exportNote);
 
       const exportRow = document.createElement('div');

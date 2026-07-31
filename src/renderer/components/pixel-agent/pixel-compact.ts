@@ -6,7 +6,11 @@ import {
   pixelProviderLabel,
   resolvePixelProviderId,
 } from './provider-pixel.js';
-import { pixelStateLabel, type PixelVisualState, resolvePixelVisualState } from './visual-resolver.js';
+import {
+  pixelStateLabel,
+  type PixelVisualState,
+  resolvePixelVisualState,
+} from './visual-resolver.js';
 
 export interface PixelCompactUpdateOptions {
   providerId?: string | null;

@@ -1,9 +1,10 @@
-import type { EvidenceEvent, EvidenceHealthGap, EvidenceSettings } from '../../../shared/types-evidence.js';
+import type {
+  EvidenceEvent,
+  EvidenceHealthGap,
+  EvidenceSettings,
+} from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
-import {
-  renderPixelCompactStrip,
-  updatePixelCompactStrip,
-} from '../pixel-agent/pixel-compact.js';
+import { renderPixelCompactStrip, updatePixelCompactStrip } from '../pixel-agent/pixel-compact.js';
 import { applyTabularNums } from '../surface-services/dom-utils.js';
 import {
   beginEvidenceViewGeneration,
@@ -334,7 +335,15 @@ export function renderEvidence(container: HTMLElement): void {
       const storedFilter = readStoredEvidenceFilter(sessionId);
       filterBar = createEvidenceFilterBar((category, query) => {
         writeStoredEvidenceFilter(sessionId, category, query);
-        rebuildEventList(list, truncationHost, events, category, query, selectedEventId, selectEvent);
+        rebuildEventList(
+          list,
+          truncationHost,
+          events,
+          category,
+          query,
+          selectedEventId,
+          selectEvent,
+        );
       }, storedFilter ?? undefined);
       container.insertBefore(filterBar.root, detailHost);
 
@@ -421,8 +430,7 @@ function createPixelModeToggle(settings: EvidenceSettings, container: HTMLElemen
   for (const mode of ['off', 'compact', 'studio'] as const) {
     const btn = document.createElement('button');
     btn.className = 'inspector-evidence-pixel-btn' + (settings.pixelMode === mode ? ' active' : '');
-    btn.textContent =
-      mode === 'off' ? t('Off') : mode === 'compact' ? t('Compact') : t('Studio');
+    btn.textContent = mode === 'off' ? t('Off') : mode === 'compact' ? t('Compact') : t('Studio');
     btn.addEventListener('click', () => {
       void window.calder.evidence.setSettings({ ...settings, pixelMode: mode }).then(() => {
         if (mode === 'studio') {
@@ -437,7 +445,6 @@ function createPixelModeToggle(settings: EvidenceSettings, container: HTMLElemen
 
   return wrap;
 }
-
 
 export { renderChanges } from './changes-views.js';
 export { renderReview } from './review-views.js';

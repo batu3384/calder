@@ -3,10 +3,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const sheetPath = path.join(
-  process.cwd(),
-  'src/renderer/assets/pixel-agent/studio-sheet.svg',
-);
+const sheetPath = path.join(process.cwd(), 'src/renderer/assets/pixel-agent/studio-sheet.svg');
 
 describe('pixel studio sprite sheet', () => {
   it('ships an 8-tile SVG sprite sheet for stations and agent frames', () => {

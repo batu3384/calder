@@ -17,11 +17,7 @@ export type PixelVisualState =
 
 export const STALE_ACTIVE_MS = 5 * 60 * 1000;
 
-const INTERRUPT_STATES = new Set<PixelVisualState>([
-  'waiting_for_approval',
-  'blocked',
-  'failed',
-]);
+const INTERRUPT_STATES = new Set<PixelVisualState>(['waiting_for_approval', 'blocked', 'failed']);
 
 function eventToState(event: EvidenceEvent): PixelVisualState | null {
   switch (event.type) {
@@ -109,7 +105,12 @@ export function resolvePixelVisualState(
   if (INTERRUPT_STATES.has(state) && isStale(stateAt, now)) {
     return 'idle';
   }
-  if (!INTERRUPT_STATES.has(state) && state !== 'completed' && state !== 'idle' && isStale(stateAt, now)) {
+  if (
+    !INTERRUPT_STATES.has(state) &&
+    state !== 'completed' &&
+    state !== 'idle' &&
+    isStale(stateAt, now)
+  ) {
     return 'idle';
   }
 

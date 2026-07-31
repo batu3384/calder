@@ -143,7 +143,7 @@ export function countActiveSubagents(events: EvidenceEvent[], now: number): numb
     if (now - event.timestamp > SUBAGENT_WINDOW_MS) continue;
     const hasExplicitId = Boolean(
       event.subagentId ||
-        (typeof event.sanitizedMeta?.subagentId === 'string' && event.sanitizedMeta.subagentId),
+      (typeof event.sanitizedMeta?.subagentId === 'string' && event.sanitizedMeta.subagentId),
     );
     if (event.type === 'subagent_started') {
       const key = subagentKey(event);

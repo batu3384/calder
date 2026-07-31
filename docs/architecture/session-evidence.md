@@ -38,12 +38,12 @@ Root via `resolveCalderDataRoot()` (Evidence-scoped; store/STATUS_DIR migration 
 
 Session Inspector tabs:
 
-| Tab | Purpose |
-| --- | --- |
-| Evidence | Live timeline, filters, detail panel, health gaps, Pixel Compact |
-| Studio | Full Pixel Studio workspace (when `pixelMode === studio`) |
-| Changes | Path search, load more, health panel, live git/file rows |
-| Review | Summary stats, health indicators, status/notes, sanitized export, delete run/all |
+| Tab      | Purpose                                                                          |
+| -------- | -------------------------------------------------------------------------------- |
+| Evidence | Live timeline, filters, detail panel, health gaps, Pixel Compact                 |
+| Studio   | Full Pixel Studio workspace (when `pixelMode === studio`)                        |
+| Changes  | Path search, load more, health panel, live git/file rows                         |
+| Review   | Summary stats, health indicators, status/notes, sanitized export, delete run/all |
 
 Performance: timeline renders at most the latest 250 matching DOM rows; older matches require a narrower filter. Pagination uses `evidence:listEvents` (`Load more`).
 

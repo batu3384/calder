@@ -2,10 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-const evidenceViewsSource = readFileSync(
-  new URL('./evidence-views.ts', import.meta.url),
-  'utf-8',
-);
+const evidenceViewsSource = readFileSync(new URL('./evidence-views.ts', import.meta.url), 'utf-8');
 const changesViewsSource = readFileSync(new URL('./changes-views.ts', import.meta.url), 'utf-8');
 const reviewViewsSource = readFileSync(new URL('./review-views.ts', import.meta.url), 'utf-8');
 const evidenceSupportSource = readFileSync(
@@ -45,10 +42,7 @@ describe('session inspector evidence contract', () => {
   });
 
   it('wires bidirectional studio and evidence shortcuts', () => {
-    const studioViewsSource = readFileSync(
-      new URL('./studio-views.ts', import.meta.url),
-      'utf-8',
-    );
+    const studioViewsSource = readFileSync(new URL('./studio-views.ts', import.meta.url), 'utf-8');
     const tabsSource = readFileSync(
       new URL('./session-inspector-tabs.ts', import.meta.url),
       'utf-8',

@@ -378,10 +378,7 @@ export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> =
   ['Tracking health · ', 'İzleme sağlığı · '],
   ['No coverage gaps reported for this run.', 'Bu çalışma için kapsam açığı bildirilmedi.'],
   ['Showing latest matching events', 'Son eşleşen olaylar gösteriliyor'],
-  [
-    'earlier matches hidden — narrow the filter',
-    'önceki eşleşme gizli — filtreyi daraltın',
-  ],
+  ['earlier matches hidden — narrow the filter', 'önceki eşleşme gizli — filtreyi daraltın'],
   ['Review unavailable', 'İnceleme kullanılamıyor'],
   ['pending', 'beklemede'],
   ['approved', 'onaylandı'],

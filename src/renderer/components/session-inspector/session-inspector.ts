@@ -4,7 +4,12 @@ import {
   onChange as onInspectorChange,
 } from '../surface-services/session-inspector-state.js';
 import { fitAllVisible } from '../terminal-pane.js';
-import { disposeEvidenceView, renderChanges, renderEvidence, renderReview } from './evidence-views.js';
+import {
+  disposeEvidenceView,
+  renderChanges,
+  renderEvidence,
+  renderReview,
+} from './evidence-views.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { renderTimeline } from './session-inspector-timeline.js';
 import { canInspectSession, resetUIState } from './session-inspector-utils.js';

@@ -22,7 +22,9 @@ describe('copy-assets script contract', () => {
   });
 
   it('copies pixel-agent studio sprite sheet into dist', () => {
-    expect(copyAssetsSource).toContain("path.join(root, 'src', 'renderer', 'assets', 'pixel-agent')");
+    expect(copyAssetsSource).toContain(
+      "path.join(root, 'src', 'renderer', 'assets', 'pixel-agent')",
+    );
     expect(copyAssetsSource).toContain("path.join(dist, 'assets', 'pixel-agent')");
   });
 });

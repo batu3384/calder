@@ -335,7 +335,7 @@ describe('browser tab pane contract', () => {
 
   it('falls back to a helpful offline state when a remembered localhost target is unavailable', () => {
     expect(source).toContain('did-fail-load');
-    expect(source).toContain("createNewTabStateController");
+    expect(source).toContain('createNewTabStateController');
     expect(source).toContain('./new-tab-state.js');
     expect(newTabStateSource).toContain('Surface offline');
     expect(newTabStateSource).toContain('Start the local app again');
