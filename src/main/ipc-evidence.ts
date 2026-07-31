@@ -247,10 +247,4 @@ export function registerEvidenceIpcHandlers(): void {
   });
 }
 
-/** Test helper — inspect subscriber runId set shape. */
-export function __getEvidenceSubscriberRunIdsForTests(senderId: number): string[] {
-  const sub = evidenceSubscribers.get(senderId);
-  return sub ? [...sub.runIds] : [];
-}
-
 export { findRunIdByCalderSessionId, getActiveRunId, resolveEvidenceRunId };

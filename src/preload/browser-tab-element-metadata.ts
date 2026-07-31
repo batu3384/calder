@@ -3,7 +3,6 @@ import {
   buildAllSelectors,
   buildShadowHostSelectorChain,
   buildVisibleElementText,
-  pickPreferredSelector,
   type SelectorOption,
   selectorValuesFromOptions,
   type SelectorVerification,
@@ -138,10 +137,4 @@ export function getElementMetadata(
     captureTargetId: registerCaptureTarget(el),
     liftedFromTag,
   };
-}
-
-export function getPreferredSelector(metadata: ElementMetadata): SelectorOption {
-  const target = resolveCaptureTarget(metadata.captureTargetId);
-  if (!target) return metadata.selectors[0]!;
-  return pickPreferredSelector(metadata.selectors, metadata.shadowHostSelectors, target);
 }

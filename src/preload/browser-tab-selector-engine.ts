@@ -324,15 +324,3 @@ export function verifySelectorResolution(
   }
   return { status: 'ambiguous', matchCount };
 }
-
-export function pickPreferredSelector(
-  selectors: SelectorOption[],
-  shadowHostSelectors: string[][],
-  targetElement: Element,
-): SelectorOption {
-  for (const option of selectors) {
-    const verification = verifySelectorResolution(option.value, shadowHostSelectors, targetElement);
-    if (verification.status === 'unique') return option;
-  }
-  return selectors[0] ?? { type: 'css', label: 'css', value: targetElement.tagName.toLowerCase() };
-}

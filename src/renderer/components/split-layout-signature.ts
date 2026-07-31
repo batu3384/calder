@@ -52,8 +52,3 @@ export function getLayoutStructuralSignature(project: ProjectRecord | undefined)
     })),
   });
 }
-
-export function getLayoutRenderSignature(project: ProjectRecord | undefined): string {
-  if (!project) return 'no-project';
-  return `${getLayoutStructuralSignature(project)}|${getLayoutActiveKey(project)}`;
-}
