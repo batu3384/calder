@@ -171,6 +171,11 @@ function handleInspectorTabKeydown(event: KeyboardEvent): void {
   }
 }
 
+function refreshPixelIfNeeded(): void {
+  if (!inspectorOpen || activeInspectorTab !== 'pixel') return;
+  mountPixelPanel();
+}
+
 function scheduleInspectorRender(): void {
   if (renderQueued) {
     return;
@@ -188,7 +193,7 @@ export function setContextInspectorOpen(next: boolean): void {
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
   syncInspectorOpenState();
-  if (next && activeInspectorTab === 'pixel') {
+  if (next && activeInspectorTab === 'pixel' && appState.activeProject) {
     mountPixelPanel();
   } else if (!next) {
     unmountPixelPanel();
@@ -214,12 +219,25 @@ export function initContextInspector(): void {
   appState.on('project-changed', () => {
     if (!appState.activeProject) setContextInspectorOpen(false);
     scheduleInspectorRender();
+    refreshPixelIfNeeded();
   });
-  appState.on('state-loaded', scheduleInspectorRender);
+  appState.on('state-loaded', () => {
+    scheduleInspectorRender();
+    refreshPixelIfNeeded();
+  });
   appState.on('preferences-changed', scheduleInspectorRender);
-  appState.on('session-changed', scheduleInspectorRender);
-  appState.on('session-added', scheduleInspectorRender);
-  appState.on('session-removed', scheduleInspectorRender);
+  appState.on('session-changed', () => {
+    scheduleInspectorRender();
+    refreshPixelIfNeeded();
+  });
+  appState.on('session-added', () => {
+    scheduleInspectorRender();
+    refreshPixelIfNeeded();
+  });
+  appState.on('session-removed', () => {
+    scheduleInspectorRender();
+    refreshPixelIfNeeded();
+  });
   appState.on('history-changed', scheduleInspectorRender);
   onGitStatusChange((projectId) => {
     if (projectId === appState.activeProject?.id) scheduleInspectorRender();
@@ -227,7 +245,5 @@ export function initContextInspector(): void {
 
   setContextInspectorOpen(true);
   renderInspectorChrome();
-  if (activeInspectorTab === 'pixel') {
-    mountPixelPanel();
-  }
+  // Pixel mounts after state-loaded via refreshPixelIfNeeded; avoid empty pre-load flash.
 }

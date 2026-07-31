@@ -61,6 +61,12 @@ describe('session inspector evidence contract', () => {
     expect(ecosystemViewsSource).toContain('syncEvidenceSubscribe');
     expect(ecosystemViewsSource).toContain('focusInspectorSession');
     expect(ecosystemViewsSource).toContain("focusSession(sessionId, 'studio')");
+    expect(ecosystemViewsSource).toContain('watchUntilCliSessions');
+    expect(ecosystemViewsSource).toContain("appState.on('state-loaded'");
+    expect(ecosystemViewsSource).toContain(
+      'Open a CLI session in this project to see live Pixel agents.',
+    );
+    expect(ecosystemViewsSource).not.toContain("inspectorState.activeTab !== 'ecosystem'");
     expect(inspectorSource).toContain("mode?: 'toggle' | 'focus'");
     expect(inspectorSource).toContain('focusInspectorSession');
     expect(studioViewsSource).toContain("settings.pixelMode !== 'studio'");

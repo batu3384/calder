@@ -17,7 +17,7 @@ import {
 } from './evidence-view-support.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { setInspectorTab } from './session-inspector-tabs.js';
-import { emptyMessage, renderInspectorEmpty } from './session-inspector-utils.js';
+import { renderInspectorEmpty } from './session-inspector-utils.js';
 
 interface SessionTail {
   sessionId: string;
@@ -25,7 +25,7 @@ interface SessionTail {
   events: EvidenceEvent[];
 }
 
-function listOpenCliSessions() {
+export function listOpenCliSessions() {
   const project = appState.activeProject;
   if (!project) return [];
   return project.sessions.filter(isCliSessionRecord);
@@ -55,6 +55,29 @@ function syncEvidenceSubscribe(runIds: string[]): void {
   window.calder.evidence.subscribe(runIds);
 }
 
+function isEcosystemHostActive(container: HTMLElement): boolean {
+  return container.isConnected;
+}
+
+/** Keep watching until CLI sessions appear (Pixel can mount before state-loaded). */
+function watchUntilCliSessions(container: HTMLElement, generation: number): () => void {
+  const refresh = (): void => {
+    if (!isEvidenceViewGenerationCurrent(generation)) return;
+    if (!isEcosystemHostActive(container)) return;
+    if (listOpenCliSessions().length === 0) return;
+    renderEcosystem(container);
+  };
+  const unsubs = [
+    appState.on('state-loaded', refresh),
+    appState.on('project-changed', refresh),
+    appState.on('session-added', refresh),
+    appState.on('session-changed', refresh),
+  ];
+  return () => {
+    for (const unsub of unsubs) unsub();
+  };
+}
+
 export function renderEcosystem(container: HTMLElement): void {
   disposeEvidenceSubscriptions();
   const generation = beginEvidenceViewGeneration();
@@ -74,9 +97,7 @@ export function renderEcosystem(container: HTMLElement): void {
         container.replaceChildren();
         renderInspectorEmpty(
           container,
-          emptyMessage(
-            t('Session evidence capture is disabled. Enable it in Preferences → Safety.'),
-          ),
+          t('Session evidence capture is disabled. Enable it in Preferences → Safety.'),
         );
         return;
       }
@@ -84,7 +105,12 @@ export function renderEcosystem(container: HTMLElement): void {
       const sessions = listOpenCliSessions();
       if (sessions.length === 0) {
         container.replaceChildren();
-        renderInspectorEmpty(container, emptyMessage(t('No open CLI sessions')));
+        renderInspectorEmpty(
+          container,
+          t('No open CLI sessions'),
+          t('Open a CLI session in this project to see live Pixel agents.'),
+        );
+        registerEvidenceSubscription(watchUntilCliSessions(container, generation));
         return;
       }
 
@@ -175,11 +201,15 @@ export function renderEcosystem(container: HTMLElement): void {
         }
       });
 
-      const unsubscribeSession = appState.on('session-changed', () => {
+      const syncSessions = (): void => {
         if (!isEvidenceViewGenerationCurrent(generation)) return;
-        if (inspectorState.activeTab !== 'ecosystem') return;
+        if (!isEcosystemHostActive(container)) return;
         void (async () => {
           const nextSessions = listOpenCliSessions();
+          if (nextSessions.length === 0) {
+            renderEcosystem(container);
+            return;
+          }
           for (const session of nextSessions) {
             if (bySession.has(session.id)) continue;
             const tail = await loadSessionTail(session.id);
@@ -197,11 +227,17 @@ export function renderEcosystem(container: HTMLElement): void {
           syncEvidenceSubscribe(nextRunIds);
           rebuild();
         })();
-      });
+      };
+
+      const unsubscribeSessionChanged = appState.on('session-changed', syncSessions);
+      const unsubscribeSessionAdded = appState.on('session-added', syncSessions);
+      const unsubscribeSessionRemoved = appState.on('session-removed', syncSessions);
 
       registerEvidenceSubscription(() => {
         unsubscribeEvents();
-        unsubscribeSession();
+        unsubscribeSessionChanged();
+        unsubscribeSessionAdded();
+        unsubscribeSessionRemoved();
         window.calder.evidence.unsubscribe();
       });
     } catch {

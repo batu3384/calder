@@ -59,6 +59,8 @@ describe('context language contract', () => {
     expect(inspectorSource).toContain('renderDiagnosticsSummary');
     expect(inspectorSource).toContain('renderEcosystem');
     expect(inspectorSource).toContain("activeInspectorTab: InspectorTab = 'pixel'");
+    expect(inspectorSource).toContain('refreshPixelIfNeeded');
+    expect(inspectorSource).toContain("appState.on('state-loaded'");
     expect(diagnosticsSource).toContain('Workspace Trust');
     expect(diagnosticsSource).toContain('describeProviderRoute');
     expect(diagnosticsSource).toContain('getGitStatus(project.id)');

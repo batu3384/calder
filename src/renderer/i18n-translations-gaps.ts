@@ -361,6 +361,10 @@ export const GAP_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]> =
   ['Ecosystem unavailable', 'Ekosistem kullanılamıyor'],
   ['No open CLI sessions', 'Açık CLI oturumu yok'],
   [
+    'Open a CLI session in this project to see live Pixel agents.',
+    'Canlı Piksel ajanları görmek için bu projede bir CLI oturumu aç.',
+  ],
+  [
     'One pixel per open CLI — live activity from evidence.',
     'Her açık CLI için bir piksel — kanıttan canlı aktivite.',
   ],
