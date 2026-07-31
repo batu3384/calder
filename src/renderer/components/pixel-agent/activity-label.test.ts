@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { EvidenceEvent } from '../../../shared/types-evidence.js';
 import { EVIDENCE_SCHEMA_VERSION } from '../../../shared/types-evidence.js';
-import {
-  extractSafeActivityContext,
-  formatPixelActivityLine,
-} from './activity-label.js';
+import { extractSafeActivityContext, formatPixelActivityLine } from './activity-label.js';
 
 function event(extras: Partial<EvidenceEvent> = {}): EvidenceEvent {
   return {

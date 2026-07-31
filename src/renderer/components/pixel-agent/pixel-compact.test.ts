@@ -53,4 +53,3 @@ describe('pixel compact strip', () => {
     expect(provider.textContent).toBe('Cursor');
   });
 });
-

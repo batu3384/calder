@@ -38,9 +38,9 @@ describe('provider pixel identity', () => {
     expect(mapToolNameToPixelState('WebSearch')).toBe('researching_web');
     expect(mapToolNameToPixelState('browser_navigate')).toBe('browsing');
     expect(mapToolNameToPixelState('mcp__memory__create_entities')).toBe('using_mcp');
-    expect(
-      mapToolNameToPixelState('WebFetch', { url: 'https://example.com/docs' }),
-    ).toBe('researching_web');
+    expect(mapToolNameToPixelState('WebFetch', { url: 'https://example.com/docs' })).toBe(
+      'researching_web',
+    );
     expect(mapToolNameToPixelState('Bash', { command: 'curl https://example.com' })).toBe(
       'running_command',
     );
