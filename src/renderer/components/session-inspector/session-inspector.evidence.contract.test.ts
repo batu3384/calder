@@ -6,10 +6,13 @@ const evidenceViewsSource = readFileSync(
   new URL('./evidence-views.ts', import.meta.url),
   'utf-8',
 );
+const changesViewsSource = readFileSync(new URL('./changes-views.ts', import.meta.url), 'utf-8');
+const reviewViewsSource = readFileSync(new URL('./review-views.ts', import.meta.url), 'utf-8');
 const evidenceSupportSource = readFileSync(
   new URL('./evidence-view-support.ts', import.meta.url),
   'utf-8',
 );
+const evidenceUiSource = readFileSync(new URL('./evidence-view-ui.ts', import.meta.url), 'utf-8');
 const inspectorSource = readFileSync(new URL('./session-inspector.ts', import.meta.url), 'utf-8');
 
 describe('session inspector evidence contract', () => {
@@ -27,15 +30,16 @@ describe('session inspector evidence contract', () => {
 
   it('wires changes tab search, pagination, and health', () => {
     expect(evidenceViewsSource).toContain('renderChanges');
-    expect(evidenceViewsSource).toContain('createChangesSearchBar');
-    expect(evidenceViewsSource).toContain('matchesGitChangeQuery');
-    expect(evidenceViewsSource).toContain('Load more changes');
+    expect(changesViewsSource).toContain('createChangesSearchBar');
+    expect(changesViewsSource).toContain('matchesGitChangeQuery');
+    expect(changesViewsSource).toContain('Load more changes');
   });
 
   it('wires review summary panel and native delete confirmation', () => {
-    expect(evidenceViewsSource).toContain('renderEvidenceReviewSummary');
-    expect(evidenceViewsSource).toContain('deleteRun');
-    expect(evidenceSupportSource).toContain('renderReviewHealthIndicators');
+    expect(evidenceViewsSource).toContain('renderReview');
+    expect(reviewViewsSource).toContain('renderEvidenceReviewSummary');
+    expect(reviewViewsSource).toContain('deleteRun');
+    expect(evidenceUiSource).toContain('renderReviewHealthIndicators');
     expect(evidenceSupportSource).toContain('beginEvidenceViewGeneration');
     expect(evidenceSupportSource).toContain('mergeEvidenceEvents');
   });
@@ -60,7 +64,7 @@ describe('session inspector evidence contract', () => {
   });
 
   it('records governance without re-enforcement copy', () => {
-    expect(evidenceSupportSource).toContain('governanceRecordLabel');
-    expect(evidenceSupportSource).toContain('does not re-enforce here');
+    expect(evidenceUiSource).toContain('governanceRecordLabel');
+    expect(evidenceUiSource).toContain('does not re-enforce here');
   });
 });

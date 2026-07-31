@@ -9,8 +9,8 @@ import {
   isEvidenceViewGenerationCurrent,
   mergeEvidenceEvents,
   registerEvidenceSubscription,
-  renderEvidenceHealthPanel,
 } from './evidence-view-support.js';
+import { renderEvidenceHealthPanel } from './evidence-view-ui.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { setInspectorTab } from './session-inspector-tabs.js';
 import { emptyMessage, renderInspectorEmpty } from './session-inspector-utils.js';
