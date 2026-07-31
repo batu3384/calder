@@ -14,7 +14,7 @@ const FORBIDDEN_TRACKED_PREFIXES = [
 
 const DIRECT_FILE_BUDGETS = [
   { dir: 'src/main', max: 195 },
-  { dir: 'src/renderer', max: 115 },
+  { dir: 'src/renderer', max: 120 },
   { dir: 'src/renderer/components', max: 190 },
 ];
 

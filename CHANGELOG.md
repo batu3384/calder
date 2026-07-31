@@ -6,13 +6,47 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- Pixel Agent: provider-aware tool mapping + identity accents (Claude/Codex/Cursor/Antigravity); Compact is the default display mode
+- Pixel Studio/Compact: transform-based station moves; sprite/bob only while actively working; Studio empty state can enable Studio in one click
+
+### Fixes
+
+- Pixel Compact/Studio: chronological visual-state resolver clears waiting/blocked/failed after approval, later work, completion, or stale timeout
+- Evidence/Studio/Changes: async generation guard, eventId dedupe on live merge, Studio loads latest event window
+- Evidence deleteRun: native main-process confirmation; export/delete dialogs require a focused window
+- Evidence store: streaming JSONL pagination (`offset`/`limit` early-exit) for `listEvents`; totals from `meta.eventCount`
+- Pixel Agent: real SVG sprite sheet for Studio stations + Compact/Studio agent frames (replaces CSS box-shadow blocks)
+
+## [0.2.29] - 2026-07-31
+
+### Features
+
+- **Pixel Studio (Phase 7):** `off` / `compact` / `studio` display modes; dedicated Studio inspector tab with six evidence-driven stations, scene overlays (completed/error/gate), subagent desks, CSS pixel sprites, expand layout, and background-session animation pause
+- **Session Evidence polish (0.2.28 follow-up):** Changes tab search/load-more, Review summary panel, Pixel Compact stale-state handling
+- Bidirectional Evidence ↔ Studio navigation shortcuts; selecting Studio mode jumps to the Studio tab
+
+## [0.2.28] - 2026-07-31
+
+### Features
+
+- Session Evidence inspector polish: live timeline and Changes updates, filter/search with per-session persistence, event detail panel, tracking health panel, DOM row cap, governance record copy, provider matrix fixtures
+- Changes tab: path search, load more, health panel, DOM cap; Pixel Compact stale-state decay and per-state avatar styling
+- Review tab: run summary stats, health indicators (git baseline/final, provider end, PTY exit), export governance note, delete-run confirmation
+
+## [0.2.27] - 2026-07-31
+
+### Features
+
 - Element→CLI capture hardening: shared browser prompt routing, selector engine (qa/aria/class/role), live selector verification badges, SVG-to-button lift, and chrome-rail browser UI polish
 - Split-layout and session-history improvements; auto-approval settings i18n consolidation
+- Renderer typecheck gate for browser-tab modules (`typecheck:browser-tab`)
 
 ### Fixes
 
 - Flow step selector UI crash (`buildSelectorOptions` arity) and preferred-selector picking aligned with inspect
 - Browser capture prompt escaping, cross-origin iframe toasts, and draw-mode strict-contract opt-out while keeping governance context
+- Browser-tab TypeScript contract alignment (`AuthStatusTone`, `NewTabStateController`)
+- Batched state events flush on `pagehide` to avoid dropped UI updates before unload
 
 ## [0.2.26] - 2026-04-15
 

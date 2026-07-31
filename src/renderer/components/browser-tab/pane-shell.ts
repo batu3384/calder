@@ -1,5 +1,5 @@
 import { type BrowserPageState, describeBrowserPageState } from './navigation.js';
-import { createNewTabStateController } from './new-tab-state.js';
+import { createNewTabStateController, type NewTabStateController } from './new-tab-state.js';
 import { createBrowserNewTabUi } from './new-tab-ui.js';
 import { resolveBrowserPartitionForSession } from './pane-helpers.js';
 import { syncBrowserTrustZoneBadge } from './trust-zone.js';
@@ -26,14 +26,7 @@ export interface BrowserTabShellArtifacts {
   ntpTargetsMeta: HTMLDivElement;
   focusAddressBtn: HTMLButtonElement;
   refreshTargetsBtn: HTMLButtonElement;
-  newTabStateController: {
-    hideEmptyState(): void;
-    showDefaultCopy(): void;
-    showOfflineState(value: string): void;
-    resetNewTabCopy(): void;
-    setLocalTargetsSummary(count: number): void;
-    setLocalTargetsMeta(value: string): void;
-  };
+  newTabStateController: NewTabStateController;
   syncSurfaceVisibility(showEmptySurface: boolean): void;
   syncBrowserStatus(state: BrowserPageState, currentUrl?: string): void;
 }

@@ -197,6 +197,11 @@ class AppState {
     this.persistQueue.enqueue(buildRendererPersistSnapshot(this.state));
   }
 
+  /** @internal Flush batched UI events before the renderer unloads. */
+  flushPendingEventsForUnload(): void {
+    this.eventBus.flushPending();
+  }
+
   get projects(): ProjectRecord[] {
     return this.state.projects;
   }
@@ -671,3 +676,9 @@ export function _resetForTesting(): void {
 }
 
 export const appState = new AppState();
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    appState.flushPendingEventsForUnload();
+  });
+}

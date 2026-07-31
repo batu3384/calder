@@ -9,7 +9,7 @@
 3. `git:getDiff` / untracked read containment; `git:watchProject` known-project gate
 4. Auto-approval: event.cwd ile boundary rewrite yok; in-flight race kilidi
 5. External hook injection, settings-guard, MCP governance write, statusline template — kaldırıldı
-6. P2P share + mobile remote control — kaldırıldı (2026-07-27)
+6. P2P share + mobile remote control — kaldırıldı (2026-07-27); `apps/` ve mobile IPC yüzeyi repo dışı — yalnızca `store` migration strip kalır
 
 ## Kapatılan HIGH
 
@@ -23,7 +23,7 @@
 
 ## Açık (P2)
 
-- **HIGH-04** `electron-updater` → `builder-util-runtime` credential advisory (dependency)
+- **HIGH-04** `electron-updater` → `builder-util-runtime` credential advisory — `npm audit --omit=dev` temiz (2026-07-31); yine de major bump öncesi smoke test
 - PTY exit race, binary cache, async kill
 
 ## İstisna

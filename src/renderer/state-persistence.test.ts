@@ -33,4 +33,39 @@ describe('RendererPersistQueue', () => {
     expect(onError).toHaveBeenCalledTimes(1);
     expect(save.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({ activeProjectId: 'p1' }));
   });
+
+  it('coalesces rapid enqueues to the latest snapshot per flush cycle', async () => {
+    vi.useRealTimers();
+    let resolveSave: (() => void) | undefined;
+    const save = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const queue = new RendererPersistQueue(save, vi.fn());
+
+    queue.enqueue({ version: 2, projects: [], activeProjectId: null, preferences: {} } as never);
+    queue.enqueue({
+      version: 2,
+      projects: [{ id: 'p1' }],
+      activeProjectId: 'p1',
+      preferences: {},
+    } as never);
+    queue.enqueue({
+      version: 2,
+      projects: [{ id: 'p2' }],
+      activeProjectId: 'p2',
+      preferences: {},
+    } as never);
+
+    await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    resolveSave?.();
+    await vi.waitFor(() =>
+      expect(save.mock.calls.at(-1)?.[0]).toEqual(
+        expect.objectContaining({ activeProjectId: 'p2' }),
+      ),
+    );
+    expect(save).toHaveBeenCalledTimes(2);
+  });
 });

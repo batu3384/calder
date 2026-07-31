@@ -4,11 +4,12 @@ import {
   onChange as onInspectorChange,
 } from '../surface-services/session-inspector-state.js';
 import { fitAllVisible } from '../terminal-pane.js';
-import { renderChanges, renderEvidence, renderReview } from './evidence-views.js';
+import { disposeEvidenceView, renderChanges, renderEvidence, renderReview } from './evidence-views.js';
 import { inspectorState } from './session-inspector-state-ui.js';
 import { renderTimeline } from './session-inspector-timeline.js';
 import { canInspectSession, resetUIState } from './session-inspector-utils.js';
 import { renderContext, renderCosts, renderTools } from './session-inspector-views.js';
+import { renderStudio } from './studio-views.js';
 
 let onInspectorLayoutChanged: (() => void) | null = null;
 
@@ -241,6 +242,7 @@ function createPanel(): HTMLElement {
   const tabs: { id: typeof inspectorState.activeTab; label: string }[] = [
     { id: 'timeline', label: 'Activity' },
     { id: 'evidence', label: 'Evidence' },
+    { id: 'studio', label: 'Studio' },
     { id: 'changes', label: 'Changes' },
     { id: 'costs', label: 'Costs' },
     { id: 'review', label: 'Review' },
@@ -314,6 +316,7 @@ function renderActiveTab(): void {
   ) as HTMLElement;
   if (toggle) toggle.style.display = inspectorState.activeTab === 'timeline' ? '' : 'none';
 
+  disposeEvidenceView();
   content.innerHTML = '';
 
   switch (inspectorState.activeTab) {
@@ -322,6 +325,9 @@ function renderActiveTab(): void {
       break;
     case 'evidence':
       renderEvidence(content);
+      break;
+    case 'studio':
+      renderStudio(content);
       break;
     case 'changes':
       renderChanges(content);

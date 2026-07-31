@@ -4,6 +4,7 @@ export const inspectorState = {
   activeTab: 'timeline' as
     | 'timeline'
     | 'evidence'
+    | 'studio'
     | 'changes'
     | 'costs'
     | 'review'

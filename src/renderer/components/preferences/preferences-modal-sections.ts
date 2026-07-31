@@ -2,6 +2,7 @@ import { appState } from '../../state.js';
 import { renderProjectBackgroundTaskSection } from './preferences-background-task-discovery.js';
 import { renderProjectCheckpointSection } from './preferences-checkpoint-discovery.js';
 import { renderProjectContextSection } from './preferences-context-discovery.js';
+import { renderEvidenceSettingsSection } from './preferences-evidence-settings.js';
 import { renderProjectGovernanceSection } from './preferences-governance-discovery.js';
 import { renderGeneralPreferencesSectionContent } from './preferences-modal-sections-general-content.js';
 import { renderLayoutPreferencesSectionContent } from './preferences-modal-sections-layout-content.js';
@@ -330,6 +331,7 @@ export function renderSafetyPreferencesSection({
     appendSectionCard,
     onCloseModalWide: closeWideModal,
   });
+  renderEvidenceSettingsSection(policyGroup);
   renderProjectCheckpointSection({
     container: recoveryGroup,
     project: appState.activeProject,

@@ -9,6 +9,7 @@ import { __resetCalderDataRootForTests, __setCalderDataRootForTests } from './pa
 import {
   __resetWriteQueuesForTests,
   appendEvent,
+  countEvents,
   createRun,
   readEvents,
   readMeta,
@@ -125,5 +126,42 @@ describe('calder-evidence store', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('oversized event'));
     expect(readEvents('run-big-1')).toHaveLength(0);
     warn.mockRestore();
+  });
+
+  it('paginates events without requiring a full in-memory slice', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'calder-evidence-page-'));
+    roots.push(root);
+    __setCalderDataRootForTests(root);
+
+    createRun({
+      runId: 'run-page-1',
+      calderSessionId: 'session-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      projectPath: '/tmp/project',
+    });
+
+    for (let seq = 1; seq <= 5; seq += 1) {
+      await appendEvent('run-page-1', {
+        schemaVersion: EVIDENCE_SCHEMA_VERSION,
+        eventId: `event-${seq}`,
+        evidenceRunId: 'run-page-1',
+        calderSessionId: 'session-1',
+        providerId: 'claude',
+        projectId: 'project-1',
+        type: 'tool_started',
+        timestamp: Date.now() + seq,
+        seq,
+        source: 'provider_hook',
+        confidence: 'provider_reported',
+        toolName: `Tool${seq}`,
+      });
+    }
+
+    const page = readEvents('run-page-1', { offset: 2, limit: 2 });
+    expect(page).toHaveLength(2);
+    expect(page.map((event) => event.eventId)).toEqual(['event-3', 'event-4']);
+    expect(countEvents('run-page-1')).toBe(5);
+    expect(readMeta('run-page-1')?.eventCount).toBe(5);
   });
 });

@@ -29,10 +29,12 @@ export { redactHomePaths, redactValue } from './redact.js';
 export { findRunIdByCalderSessionId, resolveEvidenceRunId } from './run-resolve.js';
 export {
   appendEvent,
+  countEvents,
   createRun,
   deleteAllEvidence,
   deleteRun,
   getStorageUsageBytes,
+  iterateEvidenceJsonlLines,
   listRunIds,
   readEvents,
   readMeta,

@@ -1,7 +1,7 @@
 {
   "name": "calder",
   "productName": "Calder",
-  "version": "0.2.25",
+  "version": "0.2.29",
   "description": "Terminal-centric Electron workspace for parallel AI coding CLI sessions (Claude Code, Codex, Cursor, Antigravity)",
   "author": {
     "name": "Batuhan Yuksel"
@@ -61,7 +61,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:full": "CALDER_COVERAGE_PROFILE=full vitest run --coverage",
-    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/tab-bar/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts src/main/ipc-path-policy.test.ts",
+    "test:critical-stability": "vitest run src/renderer/components/custom-select.test.ts src/renderer/components/tab-bar/tab-bar-command-deck.test.ts src/renderer/components/browser-tab-pane.test.ts src/renderer/components/mosaic-resize.test.ts src/renderer/components/surface-routing.test.ts src/renderer/components/browser-tab/capture-pipeline.integration.test.ts src/renderer/components/session-inspector/evidence-view-support.test.ts src/renderer/components/session-inspector/session-inspector.evidence.contract.test.ts src/renderer/components/pixel-agent/studio-resolver.test.ts src/renderer/components/pixel-agent/pixel-studio.test.ts src/renderer/components/pixel-agent/studio-session.test.ts src/main/calder-evidence/lifecycle.fixture.test.ts src/main/calder-evidence/provider-matrix.fixture.test.ts src/main/ipc-path-policy.test.ts",
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "audit:graph": "node scripts/graph-gap-audit.mjs",
     "audit:structure": "node scripts/structure-audit.mjs",
@@ -73,7 +73,9 @@
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.preload.json --noEmit && node scripts/typecheck-browser-tab.mjs",
+    "typecheck:browser-tab": "node scripts/typecheck-browser-tab.mjs"
   },
   "build": {
     "appId": "com.batuhanyuksel.calder",

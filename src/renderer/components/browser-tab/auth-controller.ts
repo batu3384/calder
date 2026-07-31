@@ -8,7 +8,7 @@ import type { BrowserAuthPanelElements } from './auth-panel.js';
 import { sendGuestMessage } from './guest-messaging.js';
 import type { BrowserTabInstance } from './types.js';
 
-type AuthStatusTone = 'neutral' | 'success' | 'error';
+export type AuthStatusTone = 'neutral' | 'success' | 'error';
 
 interface AuthFillResultPayload {
   filledUsername?: boolean;

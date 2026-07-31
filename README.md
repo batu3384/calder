@@ -72,12 +72,17 @@ Capability depth varies by provider (cost parsing, hook telemetry, plan mode, au
 - Session labels, status indicators, unread state, and resume support
 - Session history and checkpoint restore where the provider allows it
 
-### 2) Session Telemetry & Cost Insight
+### 2) Session Telemetry, Evidence & Cost Insight
 
 - Hook-based session status (`working`, `waiting`, `input`, `completed`)
 - Provider-aware usage and cost parsing where available
 - Workspace Pulse timeline with tool and approval events
+- **Session Evidence** — local, redacted JSONL runs per terminal session (tools, governance, Git window observations)
+- **Session Inspector tabs** — Evidence timeline (live updates, filters, detail panel), Changes, Review, export JSON/Markdown
+- **Pixel Agent** — optional evidence-driven visualization: **Compact** strip or **Studio** six-station workspace (`Off` / `Compact` / `Studio` in Preferences → Safety)
 - Diagnostics when tracking or context pressure is unavailable
+
+Evidence is stored under Calder's local data root (`evidence/{runId}/`). Disable capture anytime in **Preferences → Safety**. Provider completion semantics differ (e.g. Cursor may end as `unknown` when hooks do not report session end — not the same as `interrupted`).
 
 ### 3) Embedded Browser & Element→CLI Routing
 

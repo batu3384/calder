@@ -32,9 +32,11 @@ export interface BrowserNewTabStateBindings {
   showOfflineState(failedUrl: string): void;
 }
 
+import type { AuthStatusTone } from './auth-controller.js';
+
 export interface BrowserAuthControllerBindings {
   maybeAutoFillCredentials(): Promise<void>;
-  setStatus(message: string, tone: 'default' | 'success' | 'error'): void;
+  setStatus(message: string, tone?: AuthStatusTone): void;
   refreshProfilesIfPanelOpen(): void;
   syncActionsEnabledState(): void;
   handleFillResult(payload: { filledUsername?: boolean; filledPassword?: boolean }): void;

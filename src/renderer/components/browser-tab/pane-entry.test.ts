@@ -207,12 +207,8 @@ function buildShellArtifacts() {
     focusAddressBtn: makeElement(),
     refreshTargetsBtn: makeElement(),
     newTabStateController: {
-      hideEmptyState: vi.fn(),
-      showDefaultCopy: vi.fn(),
       showOfflineState: vi.fn(),
       resetNewTabCopy: vi.fn(),
-      setLocalTargetsSummary: vi.fn(),
-      setLocalTargetsMeta: vi.fn(),
     },
     syncSurfaceVisibility: vi.fn(),
     syncBrowserStatus: vi.fn(),

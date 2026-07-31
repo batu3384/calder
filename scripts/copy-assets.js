@@ -60,4 +60,9 @@ copyDir(
 
 copyDir(path.join(root, 'src', 'renderer', 'assets', 'brand'), path.join(dist, 'assets', 'brand'));
 
+copyDir(
+  path.join(root, 'src', 'renderer', 'assets', 'pixel-agent'),
+  path.join(dist, 'assets', 'pixel-agent'),
+);
+
 console.log('Assets copied.');

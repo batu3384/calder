@@ -101,7 +101,8 @@ describe('browser stage contract', () => {
     expect(newTabUiSource).toContain('browser-ntp-state');
     expect(source).toContain('browser-content-shell');
     expect(newTabUiSource).toContain("ntpState.textContent = 'Ready'");
-    expect(source).toContain("import { createNewTabStateController } from './new-tab-state.js';");
+    expect(source).toContain('createNewTabStateController');
+    expect(source).toContain('./new-tab-state.js');
     expect(newTabStateSource).toContain("ntpState.textContent = 'Offline'");
     expect(css).toContain('.browser-ntp-hero');
     expect(css).toContain('.browser-ntp-state');

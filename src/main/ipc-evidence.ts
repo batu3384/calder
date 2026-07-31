@@ -19,8 +19,10 @@ import {
   deleteAllEvidence,
   deleteRun,
   getStorageUsageBytes,
+  countEvents,
   readEvents,
   readMeta,
+  readReview,
   readSummary,
   writeReview,
 } from './calder-evidence/index.js';
@@ -74,13 +76,15 @@ export function registerEvidenceIpcHandlers(): void {
   ipcMain.handle('evidence:listEvents', (_event, id: string, offset = 0, limit = 200) => {
     const runId = resolveEvidenceRunId(id);
     if (!runId) return { runId: null, events: [], total: 0 };
-    const all = readEvents(runId);
     const safeOffset = Math.max(0, offset);
     const safeLimit = Math.min(Math.max(1, limit), 500);
+    const events = readEvents(runId, { offset: safeOffset, limit: safeLimit });
+    const meta = readMeta(runId);
+    const total = meta?.eventCount ?? countEvents(runId);
     return {
       runId,
-      events: all.slice(safeOffset, safeOffset + safeLimit),
-      total: all.length,
+      events,
+      total,
     };
   });
 
@@ -97,6 +101,12 @@ export function registerEvidenceIpcHandlers(): void {
     const runId = resolveEvidenceRunId(id);
     if (!runId) return null;
     return readMeta(runId);
+  });
+
+  ipcMain.handle('evidence:getReview', (_event, id: string) => {
+    const runId = resolveEvidenceRunId(id);
+    if (!runId) return null;
+    return readReview(runId);
   });
 
   ipcMain.handle(
@@ -120,8 +130,9 @@ export function registerEvidenceIpcHandlers(): void {
     if (!meta) throw new Error('Evidence run not found');
 
     const win = focusedWindow();
+    if (!win) throw new Error('No window available for export dialog');
     const ext = format === 'json' ? 'json' : 'md';
-    const result = await dialog.showSaveDialog(win!, {
+    const result = await dialog.showSaveDialog(win, {
       title: 'Export session evidence',
       defaultPath: `evidence-${runId.slice(0, 8)}.${ext}`,
       filters: [
@@ -136,7 +147,7 @@ export function registerEvidenceIpcHandlers(): void {
 
     const targetPath = path.resolve(normalizeExportExtension(result.filePath, format));
     if (fs.existsSync(targetPath)) {
-      const overwrite = await dialog.showMessageBox(win!, {
+      const overwrite = await dialog.showMessageBox(win, {
         type: 'question',
         buttons: ['Cancel', 'Overwrite'],
         defaultId: 0,
@@ -153,14 +164,30 @@ export function registerEvidenceIpcHandlers(): void {
     return { canceled: false as const, filePath: targetPath };
   });
 
-  ipcMain.handle('evidence:deleteRun', (_event, runId: string) => {
+  ipcMain.handle('evidence:deleteRun', async (_event, runId: string) => {
+    const meta = readMeta(runId);
+    if (!meta) throw new Error('Evidence run not found');
+    const win = focusedWindow();
+    if (!win) throw new Error('No window available for delete confirmation');
+    const confirm = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Cancel', 'Delete this run'],
+      defaultId: 0,
+      cancelId: 0,
+      message: 'Delete this evidence run?',
+      detail: 'This cannot be undone.',
+    });
+    if (confirm.response !== 1) {
+      return { ok: false as const, canceled: true as const };
+    }
     deleteRun(runId);
-    return { ok: true };
+    return { ok: true as const, canceled: false as const };
   });
 
   ipcMain.handle('evidence:deleteAll', async () => {
     const win = focusedWindow();
-    const confirm = await dialog.showMessageBox(win!, {
+    if (!win) throw new Error('No window available for delete confirmation');
+    const confirm = await dialog.showMessageBox(win, {
       type: 'warning',
       buttons: ['Cancel', 'Delete all evidence'],
       defaultId: 0,

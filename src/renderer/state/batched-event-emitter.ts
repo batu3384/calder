@@ -102,6 +102,15 @@ export class BatchedEventEmitter {
     }
   }
 
+  /**
+   * Flush queued emits immediately. Use before page unload so batched listeners run.
+   */
+  flushPending(): void {
+    if (this.flushScheduled || this.queue.length > 0) {
+      this.flush();
+    }
+  }
+
   removeAll(event: EventType): void {
     this.listeners.delete(event);
     this.pendingAdds.delete(event);

@@ -326,8 +326,6 @@ The Session Evidence MVP should do only the following:
 12. Export sanitized JSON and one human-readable report format on explicit user request.
 13. Provide a compact Pixel Agent Live visualization driven by normalized events, with approximately 8–10 essential states.
 
-The MVP must not require IronSentinel.
-
 ### Recommended MVP visual states
 
 - idle
@@ -367,8 +365,6 @@ The MVP must not implement:
 - opaque AI-generated developer trust/productivity scores,
 - automatic rollback, commit, pull request, or remote sharing,
 - a generic command parser based only on PTY text,
-- automatic IronSentinel execution,
-- a mandatory IronSentinel dependency,
 - full Pixel Studio, themes, character customization, or complex multi-agent scenes in the first MVP.
 
 List useful deferred items separately without allowing them to expand the MVP.
@@ -1573,18 +1569,6 @@ Post-MVP:
 - richer error/completion scenes,
 - optional structured subagent visualization.
 
-### Phase 8 — Optional IronSentinel adapter
-
-Post-MVP only:
-
-- manually initiated scan,
-- separate process/adapter boundary,
-- sanitized scan summary attached to an evidence run,
-- scanner version/timestamp/profile,
-- no repository merge,
-- no mandatory dependency,
-- no automatic scanning by default.
-
 ### Future extraction gate
 
 Define measurable conditions before extracting a standalone Agent Evidence Core, such as:
@@ -1665,7 +1649,6 @@ Conclude with firm, evidence-based answers:
 9. Should tamper-evident chaining be MVP or later?
 10. What conditions justify Pixel Studio?
 11. What conditions justify extracting Agent Evidence Core?
-12. What conditions must be met before IronSentinel integration?
 
 Expected initial direction—challenge only if the repository supports a clearly better choice:
 
@@ -1681,7 +1664,7 @@ Expected initial direction—challenge only if the repository supports a clearly
 - describe Git deltas as session-window observations,
 - keep all evidence local,
 - ship Pixel Compact only after the evidence contract is stable,
-- defer Pixel Studio and IronSentinel integration.
+- defer Pixel Studio integration.
 
 ---
 

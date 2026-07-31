@@ -1,4 +1,5 @@
 import type { EvidenceEvent } from '../../../shared/types-evidence.js';
+import { mapToolNameToPixelState } from './provider-pixel.js';
 
 export type PixelVisualState =
   | 'idle'
@@ -14,20 +15,13 @@ export type PixelVisualState =
   | 'failed'
   | 'completed';
 
-const STATE_PRIORITY: Record<PixelVisualState, number> = {
-  waiting_for_approval: 100,
-  blocked: 95,
-  failed: 90,
-  running_tests: 55,
-  building: 54,
-  running_command: 50,
-  editing_code: 45,
-  reading_project: 40,
-  preparing: 25,
-  unknown_working: 20,
-  completed: 15,
-  idle: 10,
-};
+export const STALE_ACTIVE_MS = 5 * 60 * 1000;
+
+const INTERRUPT_STATES = new Set<PixelVisualState>([
+  'waiting_for_approval',
+  'blocked',
+  'failed',
+]);
 
 function eventToState(event: EvidenceEvent): PixelVisualState | null {
   switch (event.type) {
@@ -48,15 +42,8 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
     case 'pty_exited':
       return event.outcome === 'completed' ? 'completed' : null;
     case 'tool_started':
-    case 'tool_requested': {
-      const tool = (event.toolName ?? '').toLowerCase();
-      if (/test|vitest|jest|pytest/.test(tool)) return 'running_tests';
-      if (/build|compile|webpack|vite|tsc/.test(tool)) return 'building';
-      if (/read|grep|glob|search/.test(tool)) return 'reading_project';
-      if (/write|edit|strreplace|apply_patch/.test(tool)) return 'editing_code';
-      if (/shell|bash|terminal|run/.test(tool)) return 'running_command';
-      return 'unknown_working';
-    }
+    case 'tool_requested':
+      return mapToolNameToPixelState(event.toolName ?? '');
     case 'prompt_submitted':
       return 'unknown_working';
     default:
@@ -64,50 +51,96 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
   }
 }
 
-export function resolvePixelVisualState(events: EvidenceEvent[]): PixelVisualState {
+function isStale(timestamp: number, now: number): boolean {
+  return now - timestamp > STALE_ACTIVE_MS;
+}
+
+/**
+ * Chronological resolver: later clearing events override sticky interrupts.
+ * permission_approved clears waiting; later work/completion clears blocked/failed.
+ */
+export function resolvePixelVisualState(
+  events: EvidenceEvent[],
+  now = Date.now(),
+): PixelVisualState {
   if (events.length === 0) return 'idle';
 
-  let best: PixelVisualState = 'idle';
-  let bestPriority = STATE_PRIORITY.idle;
+  const ordered = [...events].sort((a, b) => a.seq - b.seq || a.timestamp - b.timestamp);
+  let state: PixelVisualState = 'idle';
+  let stateAt = 0;
 
-  for (const event of events) {
-    const state = eventToState(event);
-    if (!state) continue;
-    const priority = STATE_PRIORITY[state];
-    if (priority > bestPriority) {
-      best = state;
-      bestPriority = priority;
+  for (const event of ordered) {
+    if (event.type === 'permission_approved') {
+      if (state === 'waiting_for_approval') {
+        state = 'unknown_working';
+        stateAt = event.timestamp;
+      }
+      continue;
     }
+
+    const next = eventToState(event);
+    if (!next) continue;
+
+    if (next === 'waiting_for_approval') {
+      state = 'waiting_for_approval';
+      stateAt = event.timestamp;
+      continue;
+    }
+
+    if (next === 'blocked' || next === 'failed') {
+      state = next;
+      stateAt = event.timestamp;
+      continue;
+    }
+
+    if (next === 'completed') {
+      state = 'completed';
+      stateAt = event.timestamp;
+      continue;
+    }
+
+    // Active / preparing work cannot interrupt an unresolved approval gate.
+    if (state === 'waiting_for_approval') continue;
+
+    state = next;
+    stateAt = event.timestamp;
   }
 
-  return best;
+  if (INTERRUPT_STATES.has(state) && isStale(stateAt, now)) {
+    return 'idle';
+  }
+  if (!INTERRUPT_STATES.has(state) && state !== 'completed' && state !== 'idle' && isStale(stateAt, now)) {
+    return 'idle';
+  }
+
+  return state;
 }
 
 export function pixelStateLabel(state: PixelVisualState): string {
   switch (state) {
     case 'preparing':
-      return 'Preparing';
+      return 'Pixel state: Preparing';
     case 'unknown_working':
-      return 'Waiting for structured activity';
+      return 'Pixel state: Waiting for structured activity';
     case 'reading_project':
-      return 'Reading project';
+      return 'Pixel state: Reading project';
     case 'editing_code':
-      return 'Editing code';
+      return 'Pixel state: Editing code';
     case 'running_command':
-      return 'Running command';
+      return 'Pixel state: Running command';
     case 'running_tests':
-      return 'Running tests';
+      return 'Pixel state: Running tests';
     case 'building':
-      return 'Building';
+      return 'Pixel state: Building';
     case 'waiting_for_approval':
-      return 'Waiting for approval';
+      return 'Pixel state: Waiting for approval';
     case 'blocked':
-      return 'Blocked';
+      return 'Pixel state: Blocked';
     case 'failed':
-      return 'Failed';
+      return 'Pixel state: Failed';
     case 'completed':
-      return 'Completed';
+      return 'Pixel state: Completed';
     default:
-      return 'Idle';
+      return 'Pixel state: Idle';
   }
 }

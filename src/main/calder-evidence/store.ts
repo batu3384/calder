@@ -172,41 +172,81 @@ export async function appendEvent(
   });
 }
 
+/**
+ * Sync JSONL line iterator — reads in chunks, yields complete lines only.
+ * Incomplete trailing line (no final newline) is dropped to match prior store semantics.
+ */
+export function* iterateEvidenceJsonlLines(
+  eventsPath: string,
+): Generator<string, void, undefined> {
+  if (!fs.existsSync(eventsPath)) return;
+
+  const fd = fs.openSync(eventsPath, 'r');
+  const bufSize = 64 * 1024;
+  const buffer = Buffer.alloc(bufSize);
+  let leftover = '';
+  try {
+    for (;;) {
+      const bytesRead = fs.readSync(fd, buffer, 0, bufSize, null);
+      if (bytesRead === 0) break;
+      leftover += buffer.subarray(0, bytesRead).toString('utf8');
+      let newline = leftover.indexOf('\n');
+      while (newline !== -1) {
+        const line = leftover.slice(0, newline);
+        leftover = leftover.slice(newline + 1);
+        if (line.trim()) yield line;
+        newline = leftover.indexOf('\n');
+      }
+    }
+    // leftover without trailing newline = incomplete write; ignore
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+function parseEventLine(line: string): EvidenceEvent | null {
+  try {
+    return EvidenceEventSchema.parse(JSON.parse(line));
+  } catch {
+    return null;
+  }
+}
+
+export function countEvents(runId: string, dataRootOverride?: string): number {
+  const meta = readMeta(runId, dataRootOverride);
+  if (meta) return meta.eventCount;
+
+  const eventsPath = path.join(resolveEvidenceRunDirectory(runId, dataRootOverride), EVENTS_FILE);
+  let count = 0;
+  for (const line of iterateEvidenceJsonlLines(eventsPath)) {
+    if (parseEventLine(line)) count += 1;
+  }
+  return count;
+}
+
 export function readEvents(
   runId: string,
   options: { offset?: number; limit?: number } = {},
   dataRootOverride?: string,
 ): EvidenceEvent[] {
-  // ponytail: full-file read. Long sessions can grow events.jsonl large;
-  // upgrade path = readline streaming with early exit at offset+limit.
   const eventsPath = path.join(resolveEvidenceRunDirectory(runId, dataRootOverride), EVENTS_FILE);
-  if (!fs.existsSync(eventsPath)) return [];
-
-  const raw = fs.readFileSync(eventsPath, 'utf8');
-  if (!raw) return [];
-
-  let content = raw;
-  if (!content.endsWith('\n')) {
-    const lastNewline = content.lastIndexOf('\n');
-    if (lastNewline === -1) {
-      return [];
-    }
-    content = content.slice(0, lastNewline + 1);
-  }
+  const offset = Math.max(0, options.offset ?? 0);
+  const limit = options.limit;
 
   const events: EvidenceEvent[] = [];
-  for (const line of content.split('\n')) {
-    if (!line.trim()) continue;
-    try {
-      events.push(EvidenceEventSchema.parse(JSON.parse(line)));
-    } catch {
+  let index = 0;
+  for (const line of iterateEvidenceJsonlLines(eventsPath)) {
+    const parsed = parseEventLine(line);
+    if (!parsed) continue;
+    if (index < offset) {
+      index += 1;
       continue;
     }
+    events.push(parsed);
+    index += 1;
+    if (limit !== undefined && events.length >= limit) break;
   }
-
-  const offset = options.offset ?? 0;
-  const limit = options.limit ?? events.length;
-  return events.slice(offset, offset + limit);
+  return events;
 }
 
 export function writeSummary(

@@ -358,6 +358,7 @@ export interface CalderApi {
     ): Promise<{ runId: string | null; events: EvidenceEvent[]; total: number }>;
     getHealth(id: string): Promise<EvidenceHealth | null>;
     getMeta(id: string): Promise<EvidenceRunMeta | null>;
+    getReview(id: string): Promise<EvidenceReview | null>;
     updateReview(
       runId: string,
       status: EvidenceReviewStatus,
@@ -367,7 +368,7 @@ export interface CalderApi {
       runId: string,
       format: 'json' | 'markdown',
     ): Promise<{ canceled: true } | { canceled: false; filePath: string }>;
-    deleteRun(runId: string): Promise<{ ok: boolean }>;
+    deleteRun(runId: string): Promise<{ ok: boolean; canceled?: boolean }>;
     deleteAll(): Promise<{ canceled: boolean }>;
     getSettings(): Promise<EvidenceSettings>;
     setSettings(settings: EvidenceSettings): Promise<EvidenceSettings>;

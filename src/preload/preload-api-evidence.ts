@@ -31,6 +31,7 @@ export interface PreloadEvidenceApi {
   listEvents(id: string, offset?: number, limit?: number): Promise<EvidenceListEventsResult>;
   getHealth(id: string): Promise<EvidenceHealth | null>;
   getMeta(id: string): Promise<EvidenceRunMeta | null>;
+  getReview(id: string): Promise<EvidenceReview | null>;
   updateReview(
     runId: string,
     status: EvidenceReviewStatus,
@@ -40,7 +41,7 @@ export interface PreloadEvidenceApi {
     runId: string,
     format: 'json' | 'markdown',
   ): Promise<{ canceled: true } | { canceled: false; filePath: string }>;
-  deleteRun(runId: string): Promise<{ ok: boolean }>;
+  deleteRun(runId: string): Promise<{ ok: boolean; canceled?: boolean }>;
   deleteAll(): Promise<{ canceled: boolean }>;
   getSettings(): Promise<EvidenceSettings>;
   setSettings(settings: EvidenceSettings): Promise<EvidenceSettings>;
@@ -61,6 +62,7 @@ export function createPreloadEvidenceApi(
     listEvents: (id, offset, limit) => ipcRenderer.invoke('evidence:listEvents', id, offset, limit),
     getHealth: (id) => ipcRenderer.invoke('evidence:getHealth', id),
     getMeta: (id) => ipcRenderer.invoke('evidence:getMeta', id),
+    getReview: (id) => ipcRenderer.invoke('evidence:getReview', id),
     updateReview: (runId, status, notes) =>
       ipcRenderer.invoke('evidence:updateReview', runId, status, notes),
     export: (runId, format) => ipcRenderer.invoke('evidence:export', runId, format),
