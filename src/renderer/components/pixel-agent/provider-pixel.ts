@@ -36,14 +36,6 @@ const PROVIDER_LABELS: Record<PixelProviderId, string> = {
   unknown: 'Agent',
 };
 
-const PROVIDER_MARKS: Record<PixelProviderId, string> = {
-  claude: 'Cl',
-  codex: 'Cx',
-  cursor: 'Cu',
-  antigravity: 'Ag',
-  unknown: 'Ag',
-};
-
 /** States that warrant active locomotion / bob — not decorative idle loop. */
 const MOTION_ACTIVE_STATES = new Set<string>([
   'preparing',
@@ -75,10 +67,6 @@ export function normalizePixelProviderId(raw: string | undefined | null): PixelP
 
 export function pixelProviderLabel(providerId: PixelProviderId): string {
   return PROVIDER_LABELS[providerId];
-}
-
-export function pixelProviderMark(providerId: PixelProviderId): string {
-  return PROVIDER_MARKS[providerId];
 }
 
 export function resolvePixelProviderId(

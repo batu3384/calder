@@ -231,7 +231,7 @@ export interface GitComparisonResult {
 
 export interface EvidenceSettings {
   enabled: boolean;
-  pixelMode: 'off' | 'compact' | 'studio';
+  pixelMode: 'off' | 'office';
 }
 
 export const EvidenceEventTypeSchema = z.enum([
@@ -290,7 +290,11 @@ export const EvidenceSourceSchema = z.enum([
 
 export const EvidenceSettingsSchema = z.object({
   enabled: z.boolean(),
-  pixelMode: z.enum(['off', 'compact', 'studio']),
+  pixelMode: z
+    .enum(['off', 'office', 'compact', 'studio'])
+    .transform((value): 'off' | 'office' =>
+      value === 'compact' || value === 'studio' ? 'office' : value,
+    ),
 });
 
 export const EvidenceRunMetaSchema = z.object({
@@ -408,5 +412,5 @@ export const EvidenceReviewSchema = z.object({
 
 export const DEFAULT_EVIDENCE_SETTINGS: EvidenceSettings = {
   enabled: true,
-  pixelMode: 'compact',
+  pixelMode: 'office',
 };

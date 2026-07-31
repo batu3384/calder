@@ -1,14 +1,15 @@
 # Session Evidence architecture
 
-**Status:** MVP shipped (Phase 0–6)  
-**Plan:** Session Evidence & Pixel Agent Live (`docs/superpowers/specs/2026-07-30-session-evidence-pixel-agent-master-plan.md`)
+**Status:** MVP shipped; Pixel Office replaces Compact/Studio rails  
+**Plan:** Session Evidence & Pixel Agent Live (`docs/superpowers/specs/2026-07-30-session-evidence-pixel-agent-master-plan.md`)  
+**Office:** `docs/superpowers/specs/2026-07-31-pixel-office-design.md`
 
 ## Boundaries
 
 - Main owns ingest, normalize, redact, persist, Git fingerprint, summary, export.
 - Renderer consumes sanitized IPC only; never raw tool inputs or secrets.
 - Governance decisions are **recorded**, never re-decided, by Evidence.
-- Pixel Compact consumes only normalized `EvidenceEvent` visual states.
+- Pixel Office consumes normalized `EvidenceEvent` → `AgentEvent` signals on a Canvas pane beside the terminal.
 
 ## Storage
 
@@ -32,56 +33,40 @@ Root via `resolveCalderDataRoot()` (Evidence-scoped; store/STATUS_DIR migration 
 ## Feature flags
 
 - `evidence.enabled` — Preferences → Safety (default on)
-- `pixel.mode`: `off` | `compact` | `studio` (default `compact`)
+- `pixel.mode`: `off` | `office` (default `office`; legacy `compact`/`studio` migrate to `office`)
 
 ## Renderer surfaces
 
-Session Inspector tabs:
+Session Inspector tabs: Run / Project / Timeline (Evidence timeline lives under inspector surfaces).
 
-| Tab      | Purpose                                                                          |
-| -------- | -------------------------------------------------------------------------------- |
-| Evidence | Live timeline, filters, detail panel, health gaps, Pixel Compact                 |
-| Studio   | Full Pixel Studio workspace (when `pixelMode === studio`)                        |
-| Changes  | Path search, load more, health panel, live git/file rows                         |
-| Review   | Summary stats, health indicators, status/notes, sanitized export, delete run/all |
-
-Performance: timeline renders at most the latest 250 matching DOM rows; older matches require a narrower filter. Pagination uses `evidence:listEvents` (`Load more`).
+Pixel Office (`#pixel-office`): Canvas 2D office beside the terminal. Toggle `Cmd+Shift+O`. Characters map open CLI sessions; Evidence drives TYPE/IDLE, bubbles, context gauge, sub-agent orbit.
 
 ## IPC
 
 `evidence:getSummary`, `listEvents`, `getHealth`, `getMeta`, `getReview`, `updateReview`, `export`, `deleteRun`, `deleteAll`, `getSettings`, `setSettings`, `getStorageUsage`, `rebuildSummary`, `subscribe` + `evidence:event`.
 
+## Claude hook bridge
+
+Inspector hooks normalize into Evidence:
+
+| Hook / inspector type | Evidence type |
+| --- | --- |
+| `pre_tool_use` | `tool_requested` |
+| `tool_use` (non-Post) | `tool_started` |
+| `tool_use` + `PostToolUse` | `tool_completed` |
+| `subagent_start` / `subagent_stop` | `subagent_started` / `subagent_completed` (+ `subagentId`) |
+
+Office maps Evidence → `AgentEvent.kind` (`toolStart` / `toolEnd` / …).
+
 ## Tests
 
 - Unit: `src/main/calder-evidence/*`
 - Fixtures: `lifecycle.fixture.test.ts`, `provider-matrix.fixture.test.ts`
-- UI helpers: `evidence-view-support.test.ts`, `session-inspector.evidence.contract.test.ts`
+- Office: `src/renderer/components/pixel-office/office-core.test.ts`
+- Contracts: `session-inspector.evidence.contract.test.ts`
 
 ## Deferred
 
 - Full virtualized scroll for multi-thousand DOM rows (UI still caps at 250)
-
-## Pixel Studio (Phase 7)
-
-Dedicated **Studio** inspector tab when `pixelMode === 'studio'`.
-
-## Pixel Ecosystem
-
-**Ecosystem** inspector tab (after Activity): one pixel card per open CLI session.
-
-- Live multi-run subscribe (`evidence:subscribe` accepts `runId | runId[]`)
-- Activity taxonomy: searching_code, reading_files, researching_web, browsing, using_mcp, git_ops, compacting
-- Provider marks (Cl/Cx/Cu/Ag) + fidelity chip (`PTY only` when hooks unavailable)
-- Card click → inspect session + Evidence; Studio chip → Studio deep-dive
-
-Six CSS stations: `research` · `files` · `git` · `terminal` · `test_build` · `security`
-
-Scenes: `normal` · `celebration` (completed) · `error` (failed) · `gate` (approval/blocked)
-
-UI: Evidence ↔ Studio shortcuts, expand/collapse layout, SVG sprite sheet (`assets/pixel-agent/studio-sheet.svg`), pause when inspected session ≠ active terminal session.
-
-Resolver: chronological state machine — `permission_approved` clears waiting; later work/completion clears blocked/failed; interrupts stale after 5 minutes.
-
-Provider-aware: tool names mapped across Claude/Codex/Cursor/Antigravity; Compact/Studio show provider accent + label. Agent moves with `transform`; sprite/bob only while `data-motion=active`.
-
-Store: `readEvents({ offset, limit })` streams JSONL with early exit; `listEvents` IPC uses page + `meta.eventCount` for total.
+- Metro City sprite pack after license note in `THIRD_PARTY_NOTICES`
+- Named Claude Agent Teams teammate seating

@@ -1,4 +1,5 @@
 import { appendPreferencesToggleField } from './preferences-modal-general-helpers.js';
+import { openPixelOffice, setPixelOfficeOpen } from '../pixel-office/mount-pixel-office.js';
 
 export function renderEvidenceSettingsSection(container: HTMLElement): void {
   const card = document.createElement('div');
@@ -12,7 +13,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
   const copy = document.createElement('div');
   copy.className = 'preferences-card-copy';
   copy.textContent =
-    'Record sanitized session activity locally for Pixel agents in the Inspector. Pixel Compact (default) shows a live status strip; Pixel Studio adds a station map. Switch modes in Preferences → Safety.';
+    'Record sanitized session activity locally for Pixel Office beside the terminal. Office mode drives live characters from Evidence; Off keeps capture without the office pane.';
   card.appendChild(copy);
 
   const body = document.createElement('div');
@@ -45,23 +46,26 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
 
     const pixelLabel = document.createElement('label');
     pixelLabel.htmlFor = 'pref-evidence-pixel-mode';
-    pixelLabel.textContent = 'Pixel Agent display';
+    pixelLabel.textContent = 'Pixel Office';
     pixelRow.appendChild(pixelLabel);
 
     const pixelSelect = document.createElement('select');
     pixelSelect.id = 'pref-evidence-pixel-mode';
     pixelSelect.className = 'preferences-evidence-pixel-select';
-    for (const mode of ['off', 'compact', 'studio'] as const) {
+    for (const mode of ['off', 'office'] as const) {
       const option = document.createElement('option');
       option.value = mode;
-      option.textContent = mode === 'off' ? 'Off' : mode === 'compact' ? 'Compact' : 'Studio';
+      option.textContent = mode === 'off' ? 'Off' : 'Office';
       option.selected = settings.pixelMode === mode;
       pixelSelect.appendChild(option);
     }
     pixelSelect.addEventListener('change', () => {
-      const pixelMode = pixelSelect.value as 'off' | 'compact' | 'studio';
+      const pixelMode = pixelSelect.value as 'off' | 'office';
       void window.calder.evidence.getSettings().then((current) => {
-        void window.calder.evidence.setSettings({ ...current, pixelMode });
+        void window.calder.evidence.setSettings({ ...current, pixelMode }).then(() => {
+          if (pixelMode === 'office') openPixelOffice();
+          else setPixelOfficeOpen(false);
+        });
       });
     });
     pixelRow.appendChild(pixelSelect);
@@ -70,7 +74,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
     const note = document.createElement('div');
     note.className = 'preferences-control-note';
     note.textContent =
-      'New installs default to Compact so the agent strip is visible. Evidence stays local; disabling capture does not delete existing runs.';
+      'New installs default to Office (Cmd+Shift+O). Evidence stays local; disabling capture does not delete existing runs.';
     body.appendChild(note);
   });
 }

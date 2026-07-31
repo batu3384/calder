@@ -461,7 +461,7 @@ export const CORE_TRANSLATION_ENTRIES_PART_1: ReadonlyArray<readonly [string, st
   ['Toggle Sidebar', 'Kenar Çubuğunu Aç/Kapat'],
   ['Toggle Git Panel', 'Git Panelini Aç/Kapat'],
   ['Toggle Session Inspector', 'Piksel Denetçisini Göster'],
-  ['Show Pixel Inspector', 'Piksel Denetçisini Göster'],
+  ['Toggle Pixel Office', 'Piksel Ofisini Aç/Kapat'],
   ['Show Pixel', 'Pikseli Göster'],
   ['Open Help', 'Yardımı Aç'],
   ['Filter commands', 'Komutları filtrele'],

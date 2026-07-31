@@ -69,6 +69,15 @@ function isStale(timestamp: number, now: number): boolean {
   return now - timestamp > STALE_ACTIVE_MS;
 }
 
+function isPtySessionOpen(events: EvidenceEvent[]): boolean {
+  let open = false;
+  for (const event of events) {
+    if (event.type === 'pty_started') open = true;
+    if (event.type === 'pty_exited') open = false;
+  }
+  return open;
+}
+
 /**
  * Chronological resolver: later clearing events override sticky interrupts.
  * permission_approved clears waiting; later work/completion clears blocked/failed.
@@ -138,6 +147,10 @@ export function resolvePixelVisualState(
     isStale(stateAt, now)
   ) {
     return 'idle';
+  }
+
+  if ((state === 'preparing' || state === 'idle') && isPtySessionOpen(ordered)) {
+    return 'running_command';
   }
 
   return state;

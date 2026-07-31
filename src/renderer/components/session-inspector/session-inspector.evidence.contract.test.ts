@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-const pixelPanelSource = readFileSync(
-  new URL('../context-pixel-panel.ts', import.meta.url),
+const pixelOfficeSource = readFileSync(
+  new URL('../pixel-office/mount-pixel-office.ts', import.meta.url),
   'utf-8',
 );
 const inspectorShimSource = readFileSync(
@@ -14,24 +14,19 @@ const contextInspectorSource = readFileSync(
   new URL('../context-inspector.ts', import.meta.url),
   'utf-8',
 );
-const ecosystemViewsSource = readFileSync(
-  new URL('./ecosystem-views.ts', import.meta.url),
-  'utf-8',
-);
+const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf-8');
 
-describe('pixel rail merge contract', () => {
-  it('mounts Pixel Ecosystem + Studio in Context Inspector without SI dock', () => {
-    expect(pixelPanelSource).toContain('mountContextPixel');
-    expect(pixelPanelSource).toContain('renderPixelStudio');
-    expect(pixelPanelSource).toContain('buildEcosystemCardElement');
-    expect(pixelPanelSource).toContain('focusCliSession');
-    expect(pixelPanelSource).not.toContain('focusInspectorSession');
-    expect(pixelPanelSource).not.toContain('setInspectorTab');
-    expect(contextInspectorSource).toContain('mountContextPixel');
-    expect(contextInspectorSource).toContain('focusContextPixelTab');
-    expect(inspectorShimSource).toContain('focusContextPixelTab');
-    expect(inspectorShimSource).not.toContain('createPanel');
-    expect(inspectorShimSource).not.toContain('#session-inspector');
-    expect(ecosystemViewsSource).toContain('mountContextPixel as renderEcosystem');
+describe('pixel office shell contract', () => {
+  it('hosts Pixel Office beside the terminal and drops Denetçi Pixel tab', () => {
+    expect(html).toContain('id="pixel-office"');
+    expect(html).toContain('id="pixel-office-canvas-host"');
+    expect(html).not.toContain('context-inspector-tab-pixel');
+    expect(html).not.toContain('id="context-pixel-host"');
+    expect(pixelOfficeSource).toContain('togglePixelOffice');
+    expect(pixelOfficeSource).toContain('initPixelOffice');
+    expect(inspectorShimSource).toContain('togglePixelOffice');
+    expect(inspectorShimSource).toContain('openPixelOffice');
+    expect(contextInspectorSource).not.toContain('mountContextPixel');
+    expect(contextInspectorSource).not.toContain("'pixel'");
   });
 });

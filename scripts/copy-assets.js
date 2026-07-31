@@ -60,9 +60,14 @@ copyDir(
 
 copyDir(path.join(root, 'src', 'renderer', 'assets', 'brand'), path.join(dist, 'assets', 'brand'));
 
-copyDir(
-  path.join(root, 'src', 'renderer', 'assets', 'pixel-agent'),
-  path.join(dist, 'assets', 'pixel-agent'),
-);
+const pixelAgentSrc = path.join(root, 'src', 'renderer', 'assets', 'pixel-agent');
+if (fs.existsSync(pixelAgentSrc)) {
+  copyDir(pixelAgentSrc, path.join(dist, 'assets', 'pixel-agent'));
+}
+
+const pixelOfficeSrc = path.join(root, 'src', 'renderer', 'assets', 'pixel-office');
+if (fs.existsSync(pixelOfficeSrc)) {
+  copyDir(pixelOfficeSrc, path.join(dist, 'assets', 'pixel-office'));
+}
 
 console.log('Assets copied.');

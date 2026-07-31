@@ -73,6 +73,23 @@ describe('calder-evidence normalize', () => {
     expect(mapped?.redactedFieldCount).toBeGreaterThan(0);
   });
 
+  it('maps Claude PostToolUse to tool_completed', () => {
+    const mapped = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 7,
+      event: baseEvent('tool_use', {
+        hookEvent: 'PostToolUse',
+        tool_name: 'Read',
+      }),
+    });
+    expect(mapped?.type).toBe('tool_completed');
+    expect(mapped?.toolName).toBe('Read');
+    expect(mapped?.outcome).toBe('completed');
+  });
+
   it('maps subagent and compaction inspector events', () => {
     const subagent = normalizeInspectorEvent({
       sessionId: 'session-1',
@@ -84,6 +101,7 @@ describe('calder-evidence normalize', () => {
     });
     expect(subagent).toMatchObject({
       type: 'subagent_started',
+      subagentId: 'a1',
       sanitizedMeta: { subagentId: 'a1', agentType: 'explore' },
     });
 

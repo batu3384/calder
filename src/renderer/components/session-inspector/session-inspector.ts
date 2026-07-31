@@ -1,10 +1,10 @@
 /**
- * Session Inspector dock panel removed — these shims open Context Inspector Pixel.
+ * Legacy Session Inspector API — now opens Pixel Office.
  * Evidence capture / session-inspector-state remain for hooks.
  */
 import { appState } from '../../state.js';
 import { isCliSessionRecord } from '../../state-project-surface.js';
-import { focusContextPixelTab, toggleContextInspector } from '../context-inspector.js';
+import { openPixelOffice, togglePixelOffice } from '../pixel-office/mount-pixel-office.js';
 
 export function isInspectorOpen(): boolean {
   return false;
@@ -18,18 +18,18 @@ export function setSessionInspectorRelayoutCallback(_callback: (() => void) | nu
   // No terminal dock panel to relayout.
 }
 
-function focusPixelForSession(sessionId: string): void {
+function focusOfficeForSession(sessionId: string): void {
   const project = appState.activeProject;
   if (project?.sessions.some((session) => session.id === sessionId)) {
     appState.setActiveSession(project.id, sessionId);
   }
-  focusContextPixelTab();
+  openPixelOffice();
 }
 
 export function openInspector(sessionId: string, _options?: { mode?: 'toggle' | 'focus' }): void {
   const session = appState.activeProject?.sessions.find((s) => s.id === sessionId);
   if (!session || !isCliSessionRecord(session)) return;
-  focusPixelForSession(sessionId);
+  focusOfficeForSession(sessionId);
 }
 
 export function focusInspectorSession(sessionId: string): void {
@@ -37,30 +37,17 @@ export function focusInspectorSession(sessionId: string): void {
 }
 
 export function closeInspector(): void {
-  // Pixel lives in Context Inspector; closing the old dock is a no-op.
+  // Pixel Office has its own close control.
 }
 
 export function toggleInspector(): void {
-  const project = appState.activeProject;
-  if (!project) {
-    toggleContextInspector();
-    return;
-  }
-  const session = project.activeSessionId
-    ? project.sessions.find((s) => s.id === project.activeSessionId)
-    : undefined;
-  if (session && isCliSessionRecord(session)) {
-    focusContextPixelTab();
-    return;
-  }
-  const cli = project.sessions.find((candidate) => isCliSessionRecord(candidate));
-  if (cli) {
-    focusPixelForSession(cli.id);
-    return;
-  }
-  focusContextPixelTab();
+  togglePixelOffice();
 }
 
 export function initSessionInspector(): void {
-  // Panel lifecycle removed; Context Inspector owns Pixel.
+  // Mount lives in initPixelOffice(); shim retained for callers.
+}
+
+export function focusContextPixelTab(): void {
+  openPixelOffice();
 }

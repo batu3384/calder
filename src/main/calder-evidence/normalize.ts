@@ -88,8 +88,13 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
     case 'pre_tool_use':
       return normalizeToolEvent(input, 'tool_requested');
 
-    case 'tool_use':
+    case 'tool_use': {
+      const hook = String(event.hookEvent || '');
+      if (hook === 'PostToolUse') {
+        return normalizeToolEvent(input, 'tool_completed');
+      }
       return normalizeToolEvent(input, 'tool_started');
+    }
 
     case 'tool_failure': {
       const redacted = redactToolInput(event.tool_input);
@@ -223,6 +228,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           confidence: 'provider_reported',
         },
         {
+          subagentId: event.agent_id,
           sanitizedMeta: {
             subagentId: event.agent_id,
             agentType: event.agent_type,
@@ -240,6 +246,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           outcome: 'completed',
         },
         {
+          subagentId: event.agent_id,
           sanitizedMeta: {
             subagentId: event.agent_id,
             agentType: event.agent_type,
@@ -269,7 +276,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
 
 function normalizeToolEvent(
   input: NormalizeInspectorInput,
-  type: 'tool_requested' | 'tool_started',
+  type: 'tool_requested' | 'tool_started' | 'tool_completed',
 ): EvidenceEvent {
   const { event } = input;
   const redacted = redactToolInput(event.tool_input);
@@ -279,6 +286,7 @@ function normalizeToolEvent(
       type,
       source: 'provider_hook',
       confidence: 'provider_reported',
+      outcome: type === 'tool_completed' ? 'completed' : undefined,
     },
     {
       toolName: event.tool_name,

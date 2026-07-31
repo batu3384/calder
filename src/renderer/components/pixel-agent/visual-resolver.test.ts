@@ -102,4 +102,9 @@ describe('pixel visual resolver', () => {
     expect(pixelStateLabel('preparing')).toBe('Pixel state: Preparing');
     expect(pixelStateLabel('idle')).not.toContain('thinking');
   });
+
+  it('maps open PTY sessions to running_command instead of preparing', () => {
+    const state = resolvePixelVisualState([event('pty_started', { seq: 1 })]);
+    expect(state).toBe('running_command');
+  });
 });

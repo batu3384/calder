@@ -1,14 +1,11 @@
 import { appState } from '../state.js';
-import { mountContextPixel } from './context-pixel-panel.js';
 import { renderDiagnosticsSummary } from './diagnostics-summary.js';
-import { disposeEvidenceSubscriptions } from './session-inspector/evidence-view-support.js';
 import { getGitStatus, onChange as onGitStatusChange } from './surface-services/git-status.js';
 
 const mainAreaEl = document.getElementById('main-area')!;
 const inspectorEl = document.getElementById('context-inspector')!;
 const closeBtn = document.getElementById('btn-close-context-inspector')!;
 const openBtn = document.getElementById('btn-open-context-inspector') as HTMLButtonElement | null;
-const pixelHost = document.getElementById('context-pixel-host');
 
 function queryInspectorChildren<T extends HTMLElement>(selector: string): T[] {
   if (typeof inspectorEl.querySelectorAll !== 'function') {
@@ -25,14 +22,13 @@ const inspectorSections = queryInspectorChildren<HTMLElement>(
 );
 
 type RailSignal = 'default' | 'active' | 'warning';
-type InspectorTab = 'pixel' | 'capabilities' | 'git' | 'activity';
+type InspectorTab = 'capabilities' | 'git' | 'activity';
 
-const INSPECTOR_TAB_ORDER: InspectorTab[] = ['pixel', 'capabilities', 'git', 'activity'];
+const INSPECTOR_TAB_ORDER: InspectorTab[] = ['capabilities', 'git', 'activity'];
 
 let inspectorOpen = true;
 let renderQueued = false;
-let activeInspectorTab: InspectorTab = 'pixel';
-let pixelMounted = false;
+let activeInspectorTab: InspectorTab = 'capabilities';
 
 const queueFrame =
   typeof requestAnimationFrame === 'function'
@@ -68,18 +64,6 @@ function syncInspectorOpenState(): void {
   openBtn?.setAttribute('aria-hidden', hideOpenButton ? 'true' : 'false');
 }
 
-function mountPixelPanel(): void {
-  if (!pixelHost || activeInspectorTab !== 'pixel') return;
-  mountContextPixel(pixelHost);
-  pixelMounted = true;
-}
-
-function unmountPixelPanel(): void {
-  if (!pixelMounted) return;
-  disposeEvidenceSubscriptions();
-  pixelMounted = false;
-}
-
 function renderInspectorChrome(): void {
   syncRailSignal();
   syncInspectorOpenState();
@@ -88,7 +72,7 @@ function renderInspectorChrome(): void {
 }
 
 function isInspectorTab(value: string | undefined): value is InspectorTab {
-  return value === 'pixel' || value === 'capabilities' || value === 'git' || value === 'activity';
+  return value === 'capabilities' || value === 'git' || value === 'activity';
 }
 
 function syncInspectorTabState(): void {
@@ -116,14 +100,9 @@ function syncInspectorTabState(): void {
 }
 
 function setInspectorTab(tab: InspectorTab): void {
-  if (activeInspectorTab === tab) {
-    if (tab === 'pixel') mountPixelPanel();
-    return;
-  }
-  if (activeInspectorTab === 'pixel') unmountPixelPanel();
+  if (activeInspectorTab === tab) return;
   activeInspectorTab = tab;
   syncInspectorTabState();
-  if (tab === 'pixel') mountPixelPanel();
 }
 
 function findTabButton(tab: InspectorTab): HTMLButtonElement | undefined {
@@ -138,7 +117,7 @@ function moveInspectorTab(delta: number): void {
   const activeIndex = INSPECTOR_TAB_ORDER.indexOf(activeInspectorTab);
   const safeIndex = activeIndex >= 0 ? activeIndex : 0;
   const nextIndex = (safeIndex + delta + INSPECTOR_TAB_ORDER.length) % INSPECTOR_TAB_ORDER.length;
-  const nextTab = INSPECTOR_TAB_ORDER[nextIndex];
+  const nextTab = INSPECTOR_TAB_ORDER[nextIndex]!;
   setInspectorTab(nextTab);
   focusInspectorTab(nextTab);
 }
@@ -158,22 +137,17 @@ function handleInspectorTabKeydown(event: KeyboardEvent): void {
 
   if (event.key === 'Home') {
     event.preventDefault();
-    setInspectorTab(INSPECTOR_TAB_ORDER[0]);
-    focusInspectorTab(INSPECTOR_TAB_ORDER[0]);
+    setInspectorTab(INSPECTOR_TAB_ORDER[0]!);
+    focusInspectorTab(INSPECTOR_TAB_ORDER[0]!);
     return;
   }
 
   if (event.key === 'End') {
     event.preventDefault();
-    const lastTab = INSPECTOR_TAB_ORDER[INSPECTOR_TAB_ORDER.length - 1];
+    const lastTab = INSPECTOR_TAB_ORDER[INSPECTOR_TAB_ORDER.length - 1]!;
     setInspectorTab(lastTab);
     focusInspectorTab(lastTab);
   }
-}
-
-function refreshPixelIfNeeded(): void {
-  if (!inspectorOpen || activeInspectorTab !== 'pixel') return;
-  mountPixelPanel();
 }
 
 function scheduleInspectorRender(): void {
@@ -193,21 +167,10 @@ export function setContextInspectorOpen(next: boolean): void {
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
   syncInspectorOpenState();
-  if (next && activeInspectorTab === 'pixel' && appState.activeProject) {
-    mountPixelPanel();
-  } else if (!next) {
-    unmountPixelPanel();
-  }
 }
 
 export function toggleContextInspector(): void {
   setContextInspectorOpen(!inspectorOpen);
-}
-
-/** Open Denetçi on Pixel tab (replaces Session Inspector toggle). */
-export function focusContextPixelTab(): void {
-  setContextInspectorOpen(true);
-  setInspectorTab('pixel');
 }
 
 export function initContextInspector(): void {
@@ -225,25 +188,12 @@ export function initContextInspector(): void {
   appState.on('project-changed', () => {
     if (!appState.activeProject) setContextInspectorOpen(false);
     scheduleInspectorRender();
-    refreshPixelIfNeeded();
   });
-  appState.on('state-loaded', () => {
-    scheduleInspectorRender();
-    refreshPixelIfNeeded();
-  });
+  appState.on('state-loaded', scheduleInspectorRender);
   appState.on('preferences-changed', scheduleInspectorRender);
-  appState.on('session-changed', () => {
-    scheduleInspectorRender();
-    refreshPixelIfNeeded();
-  });
-  appState.on('session-added', () => {
-    scheduleInspectorRender();
-    refreshPixelIfNeeded();
-  });
-  appState.on('session-removed', () => {
-    scheduleInspectorRender();
-    refreshPixelIfNeeded();
-  });
+  appState.on('session-changed', scheduleInspectorRender);
+  appState.on('session-added', scheduleInspectorRender);
+  appState.on('session-removed', scheduleInspectorRender);
   appState.on('history-changed', scheduleInspectorRender);
   onGitStatusChange((projectId) => {
     if (projectId === appState.activeProject?.id) scheduleInspectorRender();
@@ -251,5 +201,4 @@ export function initContextInspector(): void {
 
   setContextInspectorOpen(true);
   renderInspectorChrome();
-  // Pixel mounts after state-loaded via refreshPixelIfNeeded; avoid empty pre-load flash.
 }

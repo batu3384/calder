@@ -39,7 +39,8 @@ describe('auxiliary panel polish contract', () => {
   });
 
   it('uses calmer inspector chrome with shared status shells', () => {
-    expect(sessionInspectorSource).toContain('focusContextPixelTab');
+    expect(sessionInspectorSource).toContain('openPixelOffice');
+    expect(sessionInspectorSource).toContain('togglePixelOffice');
     expect(sessionInspectorSource).not.toContain('inspector-header-copy');
     expect(inspectorCss).toContain('.inspector-header-copy');
     expect(inspectorCss).toContain('.inspector-header-actions');

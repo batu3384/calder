@@ -3,6 +3,7 @@ import { applyAppearanceTheme, bindAppearanceThemeListener } from '../appearance
 import { destroyAlertBanner } from '../components/alert-banner.js';
 import { initConfigSections } from '../components/config-sections/config-sections.js';
 import { initContextInspector } from '../components/context-inspector.js';
+import { initPixelOffice } from '../components/pixel-office/mount-pixel-office.js';
 import { initDebugPanel, logDebugEvent } from '../components/debug-panel.js';
 import { initGitPanel } from '../components/git-panel.js';
 import { initInsightAlert } from '../components/insight-alert.js';
@@ -284,6 +285,7 @@ export function createRendererSessionOrchestrator(
       initSessionUnread();
       initSidebar();
       initContextInspector();
+      initPixelOffice();
       initTabBar();
       initStatusBar();
       initSplitLayout();
