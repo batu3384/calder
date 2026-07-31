@@ -27,8 +27,11 @@ import {
   writeReview,
 } from './calder-evidence/index.js';
 import { findRunIdByCalderSessionId, resolveEvidenceRunId } from './calder-evidence/run-resolve.js';
+import { normalizeEvidenceSubscribeRunIds } from './calder-evidence/subscribe-ids.js';
 
-const evidenceSubscribers = new Map<number, { runId: string; sender: WebContents }>();
+const evidenceSubscribers = new Map<number, { runIds: Set<string>; sender: WebContents }>();
+
+const destroyHookedSenders = new Set<number>();
 
 function focusedWindow(): BrowserWindow | undefined {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
@@ -48,10 +51,11 @@ export function registerEvidenceIpcHandlers(): void {
 
   setEvidenceEventNotifier((runId, events) => {
     for (const [id, sub] of evidenceSubscribers) {
-      if (sub.runId !== runId || sub.sender.isDestroyed()) {
+      if (sub.sender.isDestroyed()) {
         evidenceSubscribers.delete(id);
         continue;
       }
+      if (!sub.runIds.has(runId)) continue;
       sub.sender.send('evidence:event', runId, events);
     }
   });
@@ -221,17 +225,32 @@ export function registerEvidenceIpcHandlers(): void {
     findRunIdByCalderSessionId(sessionId),
   );
 
-  ipcMain.on('evidence:subscribe', (event, runId: string) => {
+  ipcMain.on('evidence:subscribe', (event, runIdOrIds: string | string[]) => {
     const sender = event.sender;
-    evidenceSubscribers.set(sender.id, { runId, sender });
-    sender.once('destroyed', () => {
+    const runIds = new Set(normalizeEvidenceSubscribeRunIds(runIdOrIds));
+    if (runIds.size === 0) {
       evidenceSubscribers.delete(sender.id);
-    });
+      return;
+    }
+    evidenceSubscribers.set(sender.id, { runIds, sender });
+    if (!destroyHookedSenders.has(sender.id)) {
+      destroyHookedSenders.add(sender.id);
+      sender.once('destroyed', () => {
+        evidenceSubscribers.delete(sender.id);
+        destroyHookedSenders.delete(sender.id);
+      });
+    }
   });
 
   ipcMain.on('evidence:unsubscribe', (event) => {
     evidenceSubscribers.delete(event.sender.id);
   });
+}
+
+/** Test helper — inspect subscriber runId set shape. */
+export function __getEvidenceSubscriberRunIdsForTests(senderId: number): string[] {
+  const sub = evidenceSubscribers.get(senderId);
+  return sub ? [...sub.runIds] : [];
 }
 
 export { findRunIdByCalderSessionId, getActiveRunId, resolveEvidenceRunId };

@@ -48,7 +48,8 @@ export interface PreloadEvidenceApi {
   getStorageUsage(): Promise<number>;
   rebuildSummary(runId: string): Promise<EvidenceSummary | null>;
   resolveRunId(sessionId: string): Promise<string | null>;
-  subscribe(runId: string): void;
+  /** One runId or many — Ecosystem tab subscribes to all open CLI runs. */
+  subscribe(runIdOrIds: string | string[]): void;
   unsubscribe(): void;
   onEvent(callback: (runId: string, events: EvidenceEvent[]) => void): () => void;
 }
@@ -73,7 +74,7 @@ export function createPreloadEvidenceApi(
     getStorageUsage: () => ipcRenderer.invoke('evidence:getStorageUsage'),
     rebuildSummary: (runId) => ipcRenderer.invoke('evidence:rebuildSummary', runId),
     resolveRunId: (sessionId) => ipcRenderer.invoke('evidence:resolveRunId', sessionId),
-    subscribe: (runId) => ipcRenderer.send('evidence:subscribe', runId),
+    subscribe: (runIdOrIds) => ipcRenderer.send('evidence:subscribe', runIdOrIds),
     unsubscribe: () => ipcRenderer.send('evidence:unsubscribe'),
     onEvent: (callback) =>
       onChannel('evidence:event', (runId, events) =>
