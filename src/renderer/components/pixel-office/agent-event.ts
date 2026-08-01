@@ -1,7 +1,28 @@
 import type { EvidenceEvent } from '../../../shared/types-evidence.js';
+import { t } from '../../i18n.js';
 import { mapToolNameToPixelState } from '../pixel-agent/provider-pixel.js';
-import { resolvePixelVisualState } from '../pixel-agent/visual-resolver.js';
+import {
+  resolvePixelVisualState,
+  type PixelVisualState,
+} from '../pixel-agent/visual-resolver.js';
 import { SUBAGENT_WINDOW_MS } from './types.js';
+
+/** preparing alone (open PTY) stays inactive — unknown_working covers real think beats. */
+const ACTIVE_VISUAL_STATES = new Set<PixelVisualState>([
+  'unknown_working',
+  'reading_project',
+  'searching_code',
+  'reading_files',
+  'researching_web',
+  'browsing',
+  'using_mcp',
+  'git_ops',
+  'compacting',
+  'editing_code',
+  'running_command',
+  'running_tests',
+  'building',
+]);
 
 /** Canonical office activity kinds (pixel-agents vocabulary). */
 export type AgentEventKind =
@@ -73,6 +94,7 @@ export function evidenceTailToAgentSignals(
   toolName: string | null;
   isReading: boolean;
   bubble: 'none' | 'permission' | 'done';
+  visualState: PixelVisualState;
 } {
   const state = resolvePixelVisualState(events);
   const lastTool = [...events]
@@ -89,29 +111,64 @@ export function evidenceTailToAgentSignals(
     mapped === 'reading_files' ||
     mapped === 'searching_code' ||
     mapped === 'reading_project' ||
-    mapped === 'researching_web';
+    mapped === 'researching_web' ||
+    mapped === 'browsing';
 
   if (state === 'waiting_for_approval') {
-    return { isActive: false, toolName, isReading: false, bubble: 'permission' };
+    return { isActive: false, toolName, isReading: false, bubble: 'permission', visualState: state };
   }
   if (state === 'completed') {
-    return { isActive: false, toolName, isReading: false, bubble: 'done' };
+    return { isActive: false, toolName, isReading: false, bubble: 'done', visualState: state };
   }
   if (state === 'idle' || state === 'failed' || state === 'blocked') {
-    return { isActive: false, toolName, isReading: false, bubble: 'none' };
+    return { isActive: false, toolName, isReading: false, bubble: 'none', visualState: state };
   }
+  const isActive = ACTIVE_VISUAL_STATES.has(state);
   return {
-    isActive: true,
-    toolName,
-    isReading,
+    isActive,
+    toolName: isActive ? toolName : null,
+    isReading: isActive && isReading,
     bubble: 'none',
+    visualState: state,
   };
 }
 
-export function formatActivityLabel(toolName: string | null, isActive: boolean): string {
+const STATE_ACTIVITY_KEYS: Partial<Record<PixelVisualState, string>> = {
+  editing_code: 'Editing code',
+  running_tests: 'Running tests',
+  building: 'Building project',
+  running_command: 'Running command',
+  reading_files: 'Reading files',
+  searching_code: 'Searching codebase',
+  reading_project: 'Reading project',
+  researching_web: 'Researching web',
+  browsing: 'Browsing',
+  using_mcp: 'Using MCP tool',
+  git_ops: 'Git operations',
+  compacting: 'Compacting context',
+  preparing: 'Thinking',
+  unknown_working: 'Thinking',
+};
+
+export function formatActivityLabel(
+  visualState: PixelVisualState,
+  toolName: string | null,
+  isActive: boolean,
+): string {
   if (!isActive) return '';
-  if (!toolName) return 'Working';
-  return toolName.slice(0, 24);
+  const stateLabel = STATE_ACTIVITY_KEYS[visualState];
+  if (stateLabel) return t(stateLabel);
+  if (toolName) return humanizeToolName(toolName);
+  return t('Working');
+}
+
+function humanizeToolName(toolName: string): string {
+  const cleaned = toolName
+    .replace(/^mcp__[^_]+__/, '')
+    .replace(/_/g, ' ')
+    .trim();
+  if (!cleaned) return toolName.slice(0, 20);
+  return cleaned.slice(0, 22);
 }
 
 function subagentKey(event: EvidenceEvent): string {

@@ -16,6 +16,10 @@ export const getProviderDisplayName: ProviderAvailabilityModule['getProviderDisp
   ...args
 ) => providerAvailability.getProviderDisplayName(...args);
 
+export const formatDefaultSessionName: ProviderAvailabilityModule['formatDefaultSessionName'] = (
+  ...args
+) => providerAvailability.formatDefaultSessionName(...args);
+
 export const hasMultipleAvailableProviders: ProviderAvailabilityModule['hasMultipleAvailableProviders'] =
   (...args) => providerAvailability.hasMultipleAvailableProviders(...args);
 

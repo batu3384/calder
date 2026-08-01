@@ -13,7 +13,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
   const copy = document.createElement('div');
   copy.className = 'preferences-card-copy';
   copy.textContent =
-    'Record sanitized session activity locally for Pixel Office beside the terminal. Office mode drives live characters from Evidence; Off keeps capture without the office pane.';
+    'Record sanitized session activity locally for the Pixel Office in the inspector rail. Office mode drives live characters from Evidence; Off keeps capture without the office view.';
   card.appendChild(copy);
 
   const body = document.createElement('div');

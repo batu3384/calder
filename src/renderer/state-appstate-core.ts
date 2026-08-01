@@ -11,6 +11,7 @@ import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.
 import {
   getProviderAvailabilitySnapshot,
   getProviderCapabilities,
+  formatDefaultSessionName,
 } from './provider-availability.js';
 import { getCost } from './session-cost.js';
 import { findProjectById } from './state/state-appstate-core-project-access.js';
@@ -312,7 +313,14 @@ export function updateProjectSessionCliId(options: {
   if (session.cliSessionId && session.cliSessionId !== options.cliSessionId) {
     archiveSessionToHistory(project, session, getCost(session.id));
     options.onHistoryChanged(project.id);
-    session.name = `Session ${project.sessions.length + (project.sessionHistory?.length || 0)}`;
+    session.name = formatDefaultSessionName(
+      session.providerId,
+      project.sessions.length + (project.sessionHistory?.length || 0),
+      [
+        ...project.sessions.map((entry) => entry.name),
+        ...(project.sessionHistory?.map((entry) => entry.name) ?? []),
+      ].filter((name) => name !== session.name),
+    );
     session.userRenamed = false;
     clearedPreviousCliSession = true;
   }

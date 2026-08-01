@@ -1,5 +1,7 @@
+import { formatCharacterChromeLabel } from './character-label.js';
 import { drawCharacterSprite, drawDeskFurniture, providerAccent, CHAR_FRAME_H, CHAR_FRAME_W } from './sprites.js';
-import { type OfficeCharacter, type OfficeLayout, TILE_SIZE } from './types.js';
+import { drawOfficeProps, drawWallTile, floorColors } from './office-props.js';
+import { type OfficeCharacter, type OfficeLayout, TILE_SIZE, type WorkPose } from './types.js';
 
 export interface OfficeRenderOptions {
   selectedSessionId: string | null;
@@ -19,7 +21,7 @@ export function renderOffice(
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.fillStyle = '#0d1520';
+  ctx.fillStyle = '#0a1018';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   const scale = options.zoom;
@@ -33,23 +35,39 @@ export function renderOffice(
       const x = col * TILE_SIZE;
       const y = row * TILE_SIZE;
       if (kind === 'wall') {
-        ctx.fillStyle = '#2a3548';
-        ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-        ctx.fillStyle = '#1c2433';
-        ctx.fillRect(x + 1, y + 1, TILE_SIZE - 2, 3);
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(x + 2, y + TILE_SIZE - 3, TILE_SIZE - 4, 2);
+        drawWallTile(ctx, x, y, row);
       } else {
-        ctx.fillStyle = (col + row) % 2 === 0 ? '#243044' : '#1f2a3d';
+        const { base, accent } = floorColors(col, row, layout);
+        ctx.fillStyle = base;
         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-        ctx.fillStyle = 'rgba(255,255,255,0.03)';
-        ctx.fillRect(x + 1, y + 1, 2, 2);
+        ctx.fillStyle = accent;
+        ctx.fillRect(x + 1, y + 1, TILE_SIZE - 2, 1);
+        ctx.fillRect(x + 1, y + 1, 1, TILE_SIZE - 2);
       }
     }
   }
 
+  drawOfficeProps(ctx, layout);
+
+  const seatOccupant = new Map<string, OfficeCharacter>();
+  for (const ch of characters) {
+    if (ch.isSubagent || !ch.seatId) continue;
+    // Desk monitors follow assigned seat even while agent walks over.
+    seatOccupant.set(ch.seatId, ch);
+  }
+
   for (const seat of layout.seats) {
-    drawDeskFurniture(ctx, seat.seatCol * TILE_SIZE, seat.seatRow * TILE_SIZE, seat.facingDir);
+    const occupant = seatOccupant.get(seat.id);
+    const pose: WorkPose = occupant?.workPose ?? 'rest';
+    const frame = occupant?.frame ?? 0;
+    drawDeskFurniture(
+      ctx,
+      seat.seatCol * TILE_SIZE,
+      seat.seatRow * TILE_SIZE,
+      seat.facingDir,
+      pose,
+      frame,
+    );
   }
 
   const sorted = [...characters].sort((a, b) => a.y - b.y);
@@ -73,7 +91,11 @@ function drawCharacter(
   const y = Math.round(ch.y - CHAR_FRAME_H * scale + 4);
 
   if (flags.selected) {
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = providerAccent(ch.providerId);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 1, y - 1, CHAR_FRAME_W * scale + 2, CHAR_FRAME_H * scale + 2);
+  } else if (flags.hovered) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 1;
     ctx.strokeRect(x - 1, y - 1, CHAR_FRAME_W * scale + 2, CHAR_FRAME_H * scale + 2);
   }
@@ -81,33 +103,36 @@ function drawCharacter(
   drawCharacterSprite(ctx, ch, x, y, scale);
 
   if (ch.bubble === 'permission') {
-    drawBubble(ctx, x + 2, y - 10, '…', '#fbbf24');
+    drawBubble(ctx, x + 2, y - 10, '!', '#fbbf24');
   } else if (ch.bubble === 'done') {
     drawBubble(ctx, x + 2, y - 10, '✓', '#34d399');
+  } else if (ch.bubble === 'think') {
+    drawBubble(ctx, x + 2, y - 10, '…', '#c4b5fd');
   }
 
   if (!ch.isSubagent && ch.contextPct != null) {
     const pct = ch.contextPct / 100;
     const barY = y + CHAR_FRAME_H * scale + 1;
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(x, barY, CHAR_FRAME_W * scale, 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(x, barY, CHAR_FRAME_W * scale, 3);
     ctx.fillStyle = pct > 0.85 ? '#ef4444' : pct > 0.6 ? '#f59e0b' : '#22c55e';
-    ctx.fillRect(x, barY, Math.max(1, Math.round(CHAR_FRAME_W * scale * pct)), 2);
+    ctx.fillRect(x, barY, Math.max(1, Math.round(CHAR_FRAME_W * scale * pct)), 3);
   }
 
   const showLabel =
     flags.hovered || flags.selected || (ch.isActive && Boolean(ch.activityLabel)) || ch.isSubagent;
   if (showLabel) {
-    const text = (ch.activityLabel || ch.name).slice(0, 20);
-    ctx.font = '5px ui-sans-serif, system-ui, sans-serif';
-    const w = Math.min(56, text.length * 3 + 4);
-    ctx.fillStyle = 'rgba(0,0,0,0.62)';
-    ctx.fillRect(x - 2, y - 8, w, 6);
-    ctx.fillStyle = '#e5e7eb';
-    ctx.fillText(text, x, y - 4);
-    if (flags.selected) {
+    const text = formatCharacterChromeLabel(ch);
+    ctx.font = 'bold 5px ui-sans-serif, system-ui, sans-serif';
+    const w = Math.min(72, text.length * 3.2 + 6);
+    const labelY = y - (ch.isActive ? 10 : 8);
+    ctx.fillStyle = 'rgba(8,12,18,0.78)';
+    ctx.fillRect(x - 2, labelY, w, 7);
+    ctx.fillStyle = ch.isActive ? '#f8fafc' : '#cbd5e1';
+    ctx.fillText(text, x, labelY + 5);
+    if (flags.selected || ch.isActive) {
       ctx.fillStyle = providerAccent(ch.providerId);
-      ctx.fillRect(x - 2, y - 8, 2, 6);
+      ctx.fillRect(x - 2, labelY, 2, 7);
     }
   }
 }
@@ -120,8 +145,8 @@ function drawBubble(
   color: string,
 ): void {
   ctx.fillStyle = '#111827';
-  ctx.fillRect(x, y, 12, 8);
+  ctx.fillRect(x, y, 12, 9);
   ctx.fillStyle = color;
-  ctx.font = '7px ui-sans-serif, system-ui, sans-serif';
-  ctx.fillText(text, x + 2, y + 6);
+  ctx.font = 'bold 7px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(text, x + 2, y + 7);
 }

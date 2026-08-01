@@ -132,3 +132,36 @@ export function getProviderDisplayName(providerId: ProviderId): string {
     DEFAULT_PROVIDER_DISPLAY_NAMES[providerId]
   );
 }
+
+const SHORT_PROVIDER_NAMES: Record<ProviderId, string> = {
+  claude: 'Claude',
+  codex: 'Codex',
+  cursor: 'Cursor',
+  antigravity: 'Antigravity',
+};
+
+/** Tab / office default — never "Session N". Skips names already in use. */
+export function formatDefaultSessionName(
+  providerId: string | undefined | null,
+  ordinal: number,
+  takenNames: Iterable<string> = [],
+): string {
+  const id =
+    providerId === 'claude' ||
+    providerId === 'codex' ||
+    providerId === 'cursor' ||
+    providerId === 'antigravity'
+      ? providerId
+      : null;
+  const base = id ? SHORT_PROVIDER_NAMES[id] : 'Agent';
+  const taken = new Set(
+    [...takenNames].map((name) => name.trim().toLowerCase()).filter(Boolean),
+  );
+  let n = Math.max(1, Math.floor(Number.isFinite(ordinal) ? ordinal : 1));
+  let candidate = `${base} ${n}`;
+  while (taken.has(candidate.toLowerCase())) {
+    n += 1;
+    candidate = `${base} ${n}`;
+  }
+  return candidate;
+}

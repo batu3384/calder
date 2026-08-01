@@ -184,81 +184,6 @@
             </div>
           </div>
           <aside
-            id="pixel-office"
-            class="pixel-office"
-            aria-label="Pixel Office"
-            hidden
-          >
-            <div
-              id="pixel-office-resize-handle"
-              class="pixel-office-resize-handle"
-              role="separator"
-              aria-orientation="vertical"
-              aria-label="Resize Pixel Office"
-            ></div>
-            <header class="pixel-office-header">
-              <span class="pixel-office-title">Pixel Office</span>
-              <div class="pixel-office-header-actions">
-                <button
-                  type="button"
-                  id="btn-pixel-office-edit"
-                  class="icon-btn"
-                  title="Edit office layout"
-                  aria-label="Edit office layout"
-                  aria-pressed="false"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z"></path>
-                    <path d="M14.5 7l2.5 2.5 1.8-1.8a1 1 0 0 0 0-1.4L17.7 4.8a1 1 0 0 0-1.4 0L14.5 7z"></path>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  id="btn-pixel-office-sound"
-                  class="icon-btn"
-                  title="Toggle office sound"
-                  aria-label="Toggle office sound"
-                  aria-pressed="true"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 10v4h3l4 3V7L7 10H4z"></path>
-                    <path d="M15 9a4 4 0 0 1 0 6"></path>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  id="btn-close-pixel-office"
-                  class="icon-btn"
-                  title="Close Pixel Office"
-                  aria-label="Close Pixel Office"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 6l12 12"></path>
-                    <path d="M18 6L6 18"></path>
-                  </svg>
-                </button>
-              </div>
-            </header>
-            <div id="pixel-office-editor-toolbar" class="pixel-office-editor-toolbar" hidden>
-              <button type="button" class="pixel-office-tool-btn" data-office-tool="wall" aria-pressed="true">Wall</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-tool="floor" aria-pressed="false">Floor</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-tool="seat" aria-pressed="false">Seat</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-tool="erase-seat" aria-pressed="false">Erase</button>
-              <span class="pixel-office-tool-sep" aria-hidden="true"></span>
-              <button type="button" class="pixel-office-tool-btn" data-office-facing="0" aria-pressed="true" title="Face down">↓</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-facing="1" aria-pressed="false" title="Face left">←</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-facing="2" aria-pressed="false" title="Face right">→</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-facing="3" aria-pressed="false" title="Face up">↑</button>
-              <span class="pixel-office-tool-sep" aria-hidden="true"></span>
-              <button type="button" class="pixel-office-tool-btn" data-office-action="undo">Undo</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-action="redo">Redo</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-action="export">Export</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-action="import">Import</button>
-              <button type="button" class="pixel-office-tool-btn" data-office-action="reset">Reset</button>
-            </div>
-            <div id="pixel-office-canvas-host" class="pixel-office-canvas-host"></div>
-          </aside>
-          <aside
             id="context-inspector"
             class="context-inspector-open control-panel-surface ops-rail ops-rail-surface"
           >
@@ -322,6 +247,82 @@
                   Timeline
                 </button>
               </div>
+            </div>
+            <div
+              id="pixel-office"
+              class="pixel-office-rail"
+              aria-label="Pixel Office"
+              hidden
+            >
+              <header class="pixel-office-rail-head">
+                <span class="pixel-office-title">Pixel Office</span>
+                <div class="pixel-office-header-actions">
+                  <button
+                    type="button"
+                    id="btn-pixel-office-edit"
+                    class="icon-btn"
+                    title="Edit office layout"
+                    aria-label="Edit office layout"
+                    aria-pressed="false"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 17.5V20h2.5L17 9.5 14.5 7 4 17.5z"></path>
+                      <path d="M14.5 7l2.5 2.5 1.8-1.8a1 1 0 0 0 0-1.4L17.7 4.8a1 1 0 0 0-1.4 0L14.5 7z"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-pixel-office-sound"
+                    class="icon-btn"
+                    title="Toggle office sound"
+                    aria-label="Toggle office sound"
+                    aria-pressed="true"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 10v4h3l4 3V7L7 10H4z"></path>
+                      <path d="M15 9a4 4 0 0 1 0 6"></path>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-pixel-office-collapse"
+                    class="icon-btn"
+                    title="Collapse office view"
+                    aria-label="Collapse office view"
+                    aria-expanded="true"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                  </button>
+                </div>
+              </header>
+              <div id="pixel-office-editor-toolbar" class="pixel-office-editor-toolbar" hidden>
+                <button type="button" class="pixel-office-tool-btn" data-office-tool="wall" aria-pressed="true">Wall</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-tool="floor" aria-pressed="false">Floor</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-tool="seat" aria-pressed="false">Seat</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-tool="erase-seat" aria-pressed="false">Erase</button>
+                <span class="pixel-office-tool-sep" aria-hidden="true"></span>
+                <button type="button" class="pixel-office-tool-btn" data-office-facing="0" aria-pressed="true" title="Face down">↓</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-facing="1" aria-pressed="false" title="Face left">←</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-facing="2" aria-pressed="false" title="Face right">→</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-facing="3" aria-pressed="false" title="Face up">↑</button>
+                <span class="pixel-office-tool-sep" aria-hidden="true"></span>
+                <button type="button" class="pixel-office-tool-btn" data-office-action="undo">Undo</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-action="redo">Redo</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-action="export">Export</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-action="import">Import</button>
+                <button type="button" class="pixel-office-tool-btn" data-office-action="reset">Reset</button>
+              </div>
+              <div id="pixel-office-canvas-host" class="pixel-office-canvas-host"></div>
+              <div
+                id="pixel-office-rail-resize"
+                class="pixel-office-rail-resize"
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Resize office view"
+                title="Resize office view"
+              ></div>
             </div>
             <div id="context-inspector-sections">
               <section

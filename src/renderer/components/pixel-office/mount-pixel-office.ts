@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { startGameLoop } from './game-loop.js';
 import { createOfficeEditorChrome, type OfficeEditorChrome } from './office-editor-chrome.js';
@@ -7,14 +8,14 @@ import { ensureCharacterSheetsLoaded } from './sprites.js';
 import { TILE_SIZE } from './types.js';
 
 const OPEN_STORAGE_KEY = 'calder.pixelOffice.open';
-const WIDTH_STORAGE_KEY = 'calder.pixelOffice.width';
-const WIDTH_DEFAULT = 480;
-const WIDTH_MIN = 360;
-const WIDTH_MAX = 720;
+const HEIGHT_STORAGE_KEY = 'calder.pixelOffice.railHeight';
+const HEIGHT_DEFAULT = 200;
+const HEIGHT_MIN = 140;
+const HEIGHT_MAX = 480;
 const EVIDENCE_WINDOW = 120;
 
-function shellEl(): HTMLElement | null {
-  return document.getElementById('workspace-shell');
+function inspectorEl(): HTMLElement | null {
+  return document.getElementById('context-inspector');
 }
 function officeEl(): HTMLElement | null {
   return document.getElementById('pixel-office');
@@ -22,23 +23,25 @@ function officeEl(): HTMLElement | null {
 function hostEl(): HTMLElement | null {
   return document.getElementById('pixel-office-canvas-host');
 }
-function resizeHandleEl(): HTMLElement | null {
-  return document.getElementById('pixel-office-resize-handle');
-}
-function closeBtn(): HTMLElement | null {
-  return document.getElementById('btn-close-pixel-office');
-}
 function soundBtn(): HTMLElement | null {
   return document.getElementById('btn-pixel-office-sound');
 }
 function editBtn(): HTMLElement | null {
   return document.getElementById('btn-pixel-office-edit');
 }
+function collapseBtn(): HTMLElement | null {
+  return document.getElementById('btn-pixel-office-collapse');
+}
 function toolbarEl(): HTMLElement | null {
   return document.getElementById('pixel-office-editor-toolbar');
 }
+function resizeHandleEl(): HTMLElement | null {
+  return document.getElementById('pixel-office-rail-resize');
+}
 
 let officeOpen = false;
+let officeCollapsed = false;
+let pixelModeEnabled = true;
 let canvas: HTMLCanvasElement | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let stopLoop: (() => void) | null = null;
@@ -65,29 +68,48 @@ function writeStoredOpen(open: boolean): void {
   }
 }
 
-function readStoredWidth(): number {
+function readStoredHeight(): number {
   try {
-    const raw = Number(localStorage.getItem(WIDTH_STORAGE_KEY));
-    if (Number.isFinite(raw)) return Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, raw));
+    const raw = Number(localStorage.getItem(HEIGHT_STORAGE_KEY));
+    if (Number.isFinite(raw)) return Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, raw));
   } catch {
     // ignore
   }
-  return WIDTH_DEFAULT;
+  return HEIGHT_DEFAULT;
 }
 
-function writeStoredWidth(width: number): void {
+function writeStoredHeight(height: number): void {
   try {
-    localStorage.setItem(WIDTH_STORAGE_KEY, String(Math.round(width)));
+    localStorage.setItem(HEIGHT_STORAGE_KEY, String(Math.round(height)));
   } catch {
     // ignore
   }
+}
+
+function applyRailHeight(height: number): void {
+  const next = Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, height));
+  inspectorEl()?.style.setProperty('--pixel-office-rail-height', `${next}px`);
+  writeStoredHeight(next);
 }
 
 function syncSoundButton(): void {
   const on = appState.preferences.soundOnSessionWaiting;
   const btn = soundBtn();
   btn?.setAttribute('aria-pressed', on ? 'true' : 'false');
-  btn?.setAttribute('title', on ? 'Mute office sound' : 'Unmute office sound');
+  btn?.setAttribute('title', on ? t('Mute office sound') : t('Unmute office sound'));
+  btn?.setAttribute('aria-label', on ? t('Mute office sound') : t('Unmute office sound'));
+}
+
+function syncCollapseButton(): void {
+  const btn = collapseBtn();
+  const rail = officeEl();
+  btn?.setAttribute('aria-expanded', officeCollapsed ? 'false' : 'true');
+  btn?.setAttribute('title', officeCollapsed ? t('Expand office view') : t('Collapse office view'));
+  btn?.setAttribute(
+    'aria-label',
+    officeCollapsed ? t('Expand office view') : t('Collapse office view'),
+  );
+  rail?.classList.toggle('is-collapsed', officeCollapsed);
 }
 
 function canvasToWorld(event: MouseEvent): { x: number; y: number } | null {
@@ -122,7 +144,7 @@ function ensureCanvas(): HTMLCanvasElement | null {
   canvas = document.createElement('canvas');
   canvas.className = 'pixel-office-canvas';
   canvas.setAttribute('role', 'img');
-  canvas.setAttribute('aria-label', 'Pixel Office map');
+  canvas.setAttribute('aria-label', t('Pixel Office map'));
   host.replaceChildren(canvas);
   canvas.addEventListener('click', onCanvasClick);
   canvas.addEventListener('mousemove', onCanvasMove);
@@ -149,22 +171,28 @@ function syncCanvasSize(): void {
   target.height = Math.floor(cssH * dpr);
   target.style.width = `${cssW}px`;
   target.style.height = `${cssH}px`;
-  const worldW = (runtime?.layout.cols ?? 18) * TILE_SIZE;
-  const worldH = (runtime?.layout.rows ?? 14) * TILE_SIZE;
-  zoom = Math.max(2, Math.min(4, Math.floor(Math.min(cssW / worldW, cssH / worldH))));
+  const worldW = (runtime?.layout.cols ?? 12) * TILE_SIZE;
+  const worldH = (runtime?.layout.rows ?? 10) * TILE_SIZE;
+  // True contain: never clip the map in the rail. No artificial zoom floor.
+  const fit = Math.min(cssW / worldW, cssH / worldH);
+  zoom = Math.max(0.5, Math.min(5, fit * 0.98));
 }
 
-function applyWidth(width: number): void {
-  const next = Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, width));
-  shellEl()?.style.setProperty('--pixel-office-width', `${next}px`);
-  writeStoredWidth(next);
+function ensureInspectorOpen(): void {
+  void import('../context-inspector.js').then(({ setContextInspectorOpen }) => {
+    setContextInspectorOpen(true);
+  });
 }
 
 function syncOpenDom(): void {
-  shellEl()?.classList.toggle('pixel-office-open', officeOpen);
-  officeEl()?.toggleAttribute('hidden', !officeOpen);
-  officeEl()?.setAttribute('aria-hidden', officeOpen ? 'false' : 'true');
-  if (officeOpen) {
+  const inspector = inspectorEl();
+  const office = officeEl();
+  const visible = officeOpen && pixelModeEnabled;
+  inspector?.classList.toggle('pixel-office-rail-visible', visible);
+  office?.toggleAttribute('hidden', !visible);
+  office?.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  if (visible) {
+    ensureInspectorOpen();
     startRuntime();
   } else {
     stopRuntime();
@@ -259,36 +287,6 @@ function stopRuntime(): void {
   window.calder?.evidence?.unsubscribe();
 }
 
-function bindResizeHandle(): void {
-  const handle = resizeHandleEl();
-  if (!handle) return;
-  let dragging = false;
-  let startX = 0;
-  let startWidth = WIDTH_DEFAULT;
-
-  const onMove = (event: PointerEvent): void => {
-    if (!dragging) return;
-    applyWidth(startWidth + (startX - event.clientX));
-  };
-  const onUp = (): void => {
-    if (!dragging) return;
-    dragging = false;
-    window.removeEventListener('pointermove', onMove);
-    window.removeEventListener('pointerup', onUp);
-    syncCanvasSize();
-  };
-
-  handle.addEventListener('pointerdown', (event) => {
-    if (!officeOpen) return;
-    event.preventDefault();
-    dragging = true;
-    startX = event.clientX;
-    startWidth = readStoredWidth();
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  });
-}
-
 function bindAppListeners(): void {
   const refresh = (): void => {
     if (!officeOpen || !runtime) return;
@@ -301,6 +299,9 @@ function bindAppListeners(): void {
     appState.on('session-changed', refresh),
     appState.on('project-changed', refresh),
     appState.on('state-loaded', refresh),
+    appState.on('preferences-changed', () => {
+      syncSoundButton();
+    }),
   );
 
   if (window.calder?.evidence?.onEvent) {
@@ -325,8 +326,63 @@ function bindAppListeners(): void {
   }
 }
 
+async function syncPixelModeFromSettings(): Promise<void> {
+  if (!window.calder?.evidence?.getSettings) {
+    pixelModeEnabled = true;
+    syncOpenDom();
+    return;
+  }
+  try {
+    const settings = await window.calder.evidence.getSettings();
+    pixelModeEnabled = settings.pixelMode === 'office';
+    if (!pixelModeEnabled) officeOpen = false;
+    syncOpenDom();
+  } catch {
+    pixelModeEnabled = true;
+    syncOpenDom();
+  }
+}
+
+function bindRailResize(): void {
+  const handle = resizeHandleEl();
+  if (!handle) return;
+  let dragging = false;
+  let startY = 0;
+  let startHeight = HEIGHT_DEFAULT;
+
+  const onMove = (event: PointerEvent): void => {
+    if (!dragging) return;
+    applyRailHeight(startHeight + (event.clientY - startY));
+    syncCanvasSize();
+  };
+  const onUp = (event: PointerEvent): void => {
+    if (!dragging) return;
+    dragging = false;
+    try {
+      handle.releasePointerCapture(event.pointerId);
+    } catch {
+      // ignore
+    }
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', onUp);
+    handle.removeEventListener('pointercancel', onUp);
+  };
+
+  handle.addEventListener('pointerdown', (event) => {
+    if (officeCollapsed || !officeOpen) return;
+    event.preventDefault();
+    dragging = true;
+    startY = event.clientY;
+    startHeight = readStoredHeight();
+    handle.setPointerCapture(event.pointerId);
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+  });
+}
+
 export function isPixelOfficeOpen(): boolean {
-  return officeOpen;
+  return officeOpen && pixelModeEnabled;
 }
 
 export function setPixelOfficeOpen(next: boolean): void {
@@ -336,25 +392,38 @@ export function setPixelOfficeOpen(next: boolean): void {
 }
 
 export function togglePixelOffice(): void {
+  if (!pixelModeEnabled) {
+    openPixelOffice();
+    return;
+  }
   setPixelOfficeOpen(!officeOpen);
 }
 
 export function openPixelOffice(): void {
+  officeCollapsed = false;
+  syncCollapseButton();
   setPixelOfficeOpen(true);
 }
 
 export function initPixelOffice(): void {
   const office = officeEl();
   const host = hostEl();
-  const shell = shellEl();
-  if (!office || !host || !shell) return;
-  applyWidth(readStoredWidth());
-  closeBtn()?.addEventListener('click', () => setPixelOfficeOpen(false));
+  const inspector = inspectorEl();
+  if (!office || !host || !inspector) return;
+
+  applyRailHeight(readStoredHeight());
+  bindRailResize();
   soundBtn()?.addEventListener('click', () => {
     appState.setPreference('soundOnSessionWaiting', !appState.preferences.soundOnSessionWaiting);
     syncSoundButton();
   });
+  collapseBtn()?.addEventListener('click', () => {
+    officeCollapsed = !officeCollapsed;
+    syncCollapseButton();
+    if (!officeCollapsed) syncCanvasSize();
+  });
   syncSoundButton();
+  syncCollapseButton();
   editorChrome = createOfficeEditorChrome({
     toolbarEl: toolbarEl(),
     editBtn: editBtn(),
@@ -364,11 +433,13 @@ export function initPixelOffice(): void {
       syncCanvasSize();
     },
   });
-  bindResizeHandle();
   bindAppListeners();
   resizeObserver = new ResizeObserver(() => {
-    if (officeOpen) syncCanvasSize();
+    if (officeOpen && pixelModeEnabled && !officeCollapsed) syncCanvasSize();
   });
   resizeObserver.observe(host);
-  setPixelOfficeOpen(readStoredOpen());
+  officeOpen = readStoredOpen();
+  void syncPixelModeFromSettings().then(() => {
+    if (officeOpen && pixelModeEnabled) syncOpenDom();
+  });
 }

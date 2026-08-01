@@ -2,6 +2,8 @@ import { Direction, type OfficeLayout, type Seat, type TileKind } from './types.
 import { createDefaultLayout } from './layout.js';
 
 const LAYOUT_STORAGE_KEY = 'calder.pixelOffice.layout';
+const LAYOUT_VERSION_KEY = 'calder.pixelOffice.layoutVersion';
+const CURRENT_LAYOUT_VERSION = 3;
 
 export function cloneLayout(layout: OfficeLayout): OfficeLayout {
   return {
@@ -53,9 +55,23 @@ export function stringifyOfficeLayout(layout: OfficeLayout): string {
 
 export function loadPersistedLayout(): OfficeLayout {
   try {
+    const version = Number(localStorage.getItem(LAYOUT_VERSION_KEY));
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (!raw) return createDefaultLayout();
-    return parseOfficeLayout(raw) ?? createDefaultLayout();
+    const existing = raw ? parseOfficeLayout(raw) : null;
+
+    if (version !== CURRENT_LAYOUT_VERSION) {
+      // Never wipe a valid custom layout on version bump — only seed default when empty.
+      if (existing) {
+        localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
+        return existing;
+      }
+      const layout = createDefaultLayout();
+      persistLayout(layout);
+      return layout;
+    }
+
+    if (existing) return existing;
+    return createDefaultLayout();
   } catch {
     return createDefaultLayout();
   }
@@ -64,6 +80,7 @@ export function loadPersistedLayout(): OfficeLayout {
 export function persistLayout(layout: OfficeLayout): void {
   try {
     localStorage.setItem(LAYOUT_STORAGE_KEY, stringifyOfficeLayout(layout));
+    localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
   } catch {
     // ignore quota / private mode
   }
@@ -72,6 +89,7 @@ export function persistLayout(layout: OfficeLayout): void {
 export function clearPersistedLayout(): void {
   try {
     localStorage.removeItem(LAYOUT_STORAGE_KEY);
+    localStorage.removeItem(LAYOUT_VERSION_KEY);
   } catch {
     // ignore
   }

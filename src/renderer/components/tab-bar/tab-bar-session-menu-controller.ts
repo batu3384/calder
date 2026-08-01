@@ -3,6 +3,7 @@ import { appState, type SessionRecord } from '../../state.js';
 import { closeModal, type FieldDef, showModal } from '../modal.js';
 import {
   getProviderAvailabilitySnapshot,
+  formatDefaultSessionName,
   loadProviderAvailability,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';
@@ -48,7 +49,13 @@ export function createTabBarSessionMenuController(
         appState.preferences.defaultProvider,
         providerSnapshot,
       );
-      appState.addSession(refreshedProject.id, `Session ${sessionNum}`, undefined, providerId);
+      const taken = refreshedProject.sessions.map((session) => session.name);
+      appState.addSession(
+        refreshedProject.id,
+        formatDefaultSessionName(providerId, sessionNum, taken),
+        undefined,
+        providerId,
+      );
     })();
   }
 
@@ -65,13 +72,22 @@ export function createTabBarSessionMenuController(
     }
     const providers = providerSnapshot?.providers ?? [];
     const availabilityMap = providerSnapshot?.availability ?? new Map();
+    const preferred = resolvePreferredProviderForLaunch(
+      appState.preferences.defaultProvider,
+      providerSnapshot,
+    );
+    const defaultName = formatDefaultSessionName(
+      preferred,
+      sessionNum,
+      project.sessions.map((session) => session.name),
+    );
 
     const fields: FieldDef[] = [
       {
         label: 'Name',
         id: 'session-name',
-        placeholder: `Session ${sessionNum}`,
-        defaultValue: `Session ${sessionNum}`,
+        placeholder: defaultName,
+        defaultValue: defaultName,
       },
       {
         label: 'Arguments',
@@ -88,10 +104,6 @@ export function createTabBarSessionMenuController(
     ];
 
     if (providers.length > 1) {
-      const preferred = resolvePreferredProviderForLaunch(
-        appState.preferences.defaultProvider,
-        providerSnapshot,
-      );
       fields.unshift({
         label: 'Provider',
         id: 'provider',

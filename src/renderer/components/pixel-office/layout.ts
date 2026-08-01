@@ -1,10 +1,13 @@
 import type { OfficeLayout, TileKind } from './types.js';
 import { Direction } from './types.js';
 
-/** Compact default office: walkable floor + desks/chairs as seats. */
+/**
+ * Compact open-plan sized for the inspector rail (~280px wide).
+ * 12×10 tiles @ 16px = 192×160 world — fits at zoom ≥1.4.
+ */
 export function createDefaultLayout(): OfficeLayout {
-  const cols = 18;
-  const rows = 14;
+  const cols = 12;
+  const rows = 10;
   const tiles: TileKind[][] = [];
   for (let row = 0; row < rows; row += 1) {
     const line: TileKind[] = [];
@@ -15,21 +18,21 @@ export function createDefaultLayout(): OfficeLayout {
     tiles.push(line);
   }
 
-  // Interior divider walls for rooms
+  // Meeting nook wall on the right (door at row 4-5)
   for (let row = 1; row < rows - 1; row += 1) {
-    if (row === 6 || row === 7) continue;
-    tiles[row]![9] = 'wall';
+    if (row === 4 || row === 5) continue;
+    tiles[row]![7] = 'wall';
   }
 
   const seats = [
-    { id: 'seat-a', seatCol: 3, seatRow: 3, facingDir: Direction.DOWN },
-    { id: 'seat-b', seatCol: 6, seatRow: 3, facingDir: Direction.DOWN },
-    { id: 'seat-c', seatCol: 3, seatRow: 10, facingDir: Direction.UP },
-    { id: 'seat-d', seatCol: 6, seatRow: 10, facingDir: Direction.UP },
-    { id: 'seat-e', seatCol: 12, seatRow: 3, facingDir: Direction.DOWN },
-    { id: 'seat-f', seatCol: 15, seatRow: 3, facingDir: Direction.DOWN },
-    { id: 'seat-g', seatCol: 12, seatRow: 10, facingDir: Direction.UP },
-    { id: 'seat-h', seatCol: 15, seatRow: 10, facingDir: Direction.UP },
+    { id: 'seat-a', seatCol: 2, seatRow: 2, facingDir: Direction.DOWN },
+    { id: 'seat-b', seatCol: 4, seatRow: 2, facingDir: Direction.DOWN },
+    { id: 'seat-c', seatCol: 2, seatRow: 5, facingDir: Direction.UP },
+    { id: 'seat-d', seatCol: 4, seatRow: 5, facingDir: Direction.UP },
+    { id: 'seat-e', seatCol: 2, seatRow: 7, facingDir: Direction.DOWN },
+    { id: 'seat-f', seatCol: 4, seatRow: 7, facingDir: Direction.DOWN },
+    { id: 'seat-g', seatCol: 9, seatRow: 2, facingDir: Direction.DOWN },
+    { id: 'seat-h', seatCol: 9, seatRow: 6, facingDir: Direction.UP },
   ];
 
   return { cols, rows, tiles, seats };

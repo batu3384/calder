@@ -12,6 +12,7 @@ import { loadPersistedLayout } from './layout-io.js';
 import { listOpenCliSessions } from './sessions.js';
 import { playOfficeChime } from './sound.js';
 import { DONE_BUBBLE_SEC, TILE_SIZE, type OfficeCharacter, type OfficeLayout, type Seat } from './types.js';
+import { workPoseFromVisualState } from './work-pose.js';
 
 export class OfficeRuntime {
   layout: OfficeLayout;
@@ -125,17 +126,29 @@ export class OfficeRuntime {
     character.isActive = signal.isActive;
     character.currentTool = signal.toolName;
     character.isReading = signal.isReading;
-    if (signal.bubble !== previousBubble) {
-      character.bubble = signal.bubble;
+    character.visualState = signal.visualState;
+    character.workPose = workPoseFromVisualState(signal.visualState, signal.isActive);
+    const nextBubble =
+      signal.bubble !== 'none'
+        ? signal.bubble
+        : character.workPose === 'think'
+          ? 'think'
+          : 'none';
+    if (nextBubble !== previousBubble) {
+      character.bubble = nextBubble;
       character.bubbleAge = 0;
       if (
-        (signal.bubble === 'permission' || signal.bubble === 'done') &&
+        (nextBubble === 'permission' || nextBubble === 'done') &&
         appState.preferences.soundOnSessionWaiting
       ) {
-        playOfficeChime(signal.bubble);
+        playOfficeChime(nextBubble);
       }
     }
-    character.activityLabel = formatActivityLabel(signal.toolName, signal.isActive);
+    character.activityLabel = formatActivityLabel(
+      signal.visualState,
+      signal.toolName,
+      signal.isActive,
+    );
     const ctx = getContext(sessionId);
     character.contextPct = ctx ? Math.max(0, Math.min(100, ctx.usedPercentage)) : null;
 
@@ -174,7 +187,10 @@ export class OfficeRuntime {
       sub.tileCol = Math.round(sub.x / TILE_SIZE);
       sub.tileRow = Math.round(sub.y / TILE_SIZE);
       sub.isActive = parent.isActive;
+      sub.activityLabel = parent.isActive ? parent.activityLabel : '';
       sub.providerId = parent.providerId;
+      sub.workPose = parent.workPose;
+      sub.visualState = parent.visualState;
     });
   }
 

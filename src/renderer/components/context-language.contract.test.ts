@@ -38,6 +38,8 @@ describe('context language contract', () => {
     expect(html).toContain('id="diagnostics-summary"');
     expect(html).toContain('id="pixel-office"');
     expect(html).not.toContain('id="context-pixel-host"');
+    expect(html).toContain('class="pixel-office-rail"');
+    expect(html).toContain('id="pixel-office-rail-resize"');
     expect(html).not.toContain('data-inspector-tab="pixel"');
     expect(html).not.toContain('context-inspector-block-copy');
     expect(html).not.toContain('id="context-inspector-overview"');
