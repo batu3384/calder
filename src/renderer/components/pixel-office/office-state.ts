@@ -11,7 +11,7 @@ import { buildWalkability } from './layout.js';
 import { loadPersistedLayout } from './layout-io.js';
 import { listOpenCliSessions } from './sessions.js';
 import { playOfficeChime } from './sound.js';
-import { DONE_BUBBLE_SEC, TILE_SIZE, type OfficeCharacter, type OfficeLayout, type Seat } from './types.js';
+import { DONE_BUBBLE_SEC, type OfficeCharacter, type OfficeLayout, type Seat,TILE_SIZE } from './types.js';
 import { workPoseFromVisualState } from './work-pose.js';
 
 export class OfficeRuntime {

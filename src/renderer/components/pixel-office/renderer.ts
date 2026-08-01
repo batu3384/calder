@@ -1,6 +1,6 @@
 import { formatCharacterChromeLabel } from './character-label.js';
-import { drawCharacterSprite, drawDeskFurniture, providerAccent, CHAR_FRAME_H, CHAR_FRAME_W } from './sprites.js';
 import { drawOfficeProps, drawWallTile, floorColors } from './office-props.js';
+import { CHAR_FRAME_H, CHAR_FRAME_W,drawCharacterSprite, drawDeskFurniture, providerAccent } from './sprites.js';
 import { type OfficeCharacter, type OfficeLayout, TILE_SIZE, type WorkPose } from './types.js';
 
 export interface OfficeRenderOptions {

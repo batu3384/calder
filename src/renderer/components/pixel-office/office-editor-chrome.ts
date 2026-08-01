@@ -1,18 +1,18 @@
-import { Direction } from './types.js';
 import {
-  type EditorTool,
-  type LayoutEditor,
   applyEditorAt,
   clearPersistedLayout,
   createLayoutEditor,
+  type EditorTool,
+  type LayoutEditor,
+  parseOfficeLayout,
   persistLayout,
   redoLayout,
   resetToDefaultLayout,
   stringifyOfficeLayout,
   undoLayout,
-  parseOfficeLayout,
 } from './layout-io.js';
 import type { OfficeLayout } from './types.js';
+import { Direction } from './types.js';
 
 export interface OfficeEditorChrome {
   editor: LayoutEditor;

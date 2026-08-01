@@ -2,8 +2,8 @@ import type { EvidenceEvent } from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
 import { mapToolNameToPixelState } from '../pixel-agent/provider-pixel.js';
 import {
-  resolvePixelVisualState,
   type PixelVisualState,
+  resolvePixelVisualState,
 } from '../pixel-agent/visual-resolver.js';
 import { SUBAGENT_WINDOW_MS } from './types.js';
 

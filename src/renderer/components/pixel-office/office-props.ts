@@ -1,4 +1,4 @@
-import { TILE_SIZE, type OfficeLayout } from './types.js';
+import { type OfficeLayout,TILE_SIZE } from './types.js';
 
 type FloorZone = 'carpet' | 'wood' | 'tile' | 'corridor';
 

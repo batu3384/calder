@@ -2,8 +2,8 @@ import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState, type SessionRecord } from '../../state.js';
 import { closeModal, type FieldDef, showModal } from '../modal.js';
 import {
-  getProviderAvailabilitySnapshot,
   formatDefaultSessionName,
+  getProviderAvailabilitySnapshot,
   loadProviderAvailability,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';

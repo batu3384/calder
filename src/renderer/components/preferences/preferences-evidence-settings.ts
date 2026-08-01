@@ -1,5 +1,5 @@
-import { appendPreferencesToggleField } from './preferences-modal-general-helpers.js';
 import { openPixelOffice, setPixelOfficeOpen } from '../pixel-office/mount-pixel-office.js';
+import { appendPreferencesToggleField } from './preferences-modal-general-helpers.js';
 
 export function renderEvidenceSettingsSection(container: HTMLElement): void {
   const card = document.createElement('div');

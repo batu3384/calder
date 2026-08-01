@@ -9,9 +9,9 @@ import type { SessionRecord } from '../shared/types/session.js';
 import { appendProjectGovernanceToPrompt } from './project-governance-prompt.js';
 import { appendProjectTeamContextToPrompt } from './project-team-context-prompt.js';
 import {
+  formatDefaultSessionName,
   getProviderAvailabilitySnapshot,
   getProviderCapabilities,
-  formatDefaultSessionName,
 } from './provider-availability.js';
 import { getCost } from './session-cost.js';
 import { findProjectById } from './state/state-appstate-core-project-access.js';

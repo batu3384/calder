@@ -5,6 +5,8 @@ import {
   type OfficeCharacter,
   type OfficeLayout,
   type Seat,
+  SEAT_REST_MAX_SEC,
+  SEAT_REST_MIN_SEC,
   TILE_SIZE,
   TYPE_FRAME_DURATION_SEC,
   WALK_FRAME_DURATION_SEC,
@@ -13,8 +15,6 @@ import {
   WANDER_MOVES_BEFORE_REST_MIN,
   WANDER_PAUSE_MAX_SEC,
   WANDER_PAUSE_MIN_SEC,
-  SEAT_REST_MAX_SEC,
-  SEAT_REST_MIN_SEC,
 } from './types.js';
 
 /** Chance to leave desk for a short coffee walk when rest timer expires. */

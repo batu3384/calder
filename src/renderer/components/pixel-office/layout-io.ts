@@ -1,5 +1,5 @@
-import { Direction, type OfficeLayout, type Seat, type TileKind } from './types.js';
 import { createDefaultLayout } from './layout.js';
+import { Direction, type OfficeLayout, type Seat, type TileKind } from './types.js';
 
 const LAYOUT_STORAGE_KEY = 'calder.pixelOffice.layout';
 const LAYOUT_VERSION_KEY = 'calder.pixelOffice.layoutVersion';
