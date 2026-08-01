@@ -154,9 +154,7 @@ export function formatDefaultSessionName(
       ? providerId
       : null;
   const base = id ? SHORT_PROVIDER_NAMES[id] : 'Agent';
-  const taken = new Set(
-    [...takenNames].map((name) => name.trim().toLowerCase()).filter(Boolean),
-  );
+  const taken = new Set([...takenNames].map((name) => name.trim().toLowerCase()).filter(Boolean));
   let n = Math.max(1, Math.floor(Number.isFinite(ordinal) ? ordinal : 1));
   let candidate = `${base} ${n}`;
   while (taken.has(candidate.toLowerCase())) {

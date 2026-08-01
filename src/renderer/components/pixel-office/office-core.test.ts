@@ -129,7 +129,16 @@ describe('pixel office agent signals', () => {
     ch.isActive = false;
     const seats = new Map([[seat.id, seat]]);
     const { walkable, blocked } = buildWalkability(layout);
-    updateOfficeCharacter(ch, 0.05, layout, seats, walkable, blocked, { random: () => 0.99 }, false);
+    updateOfficeCharacter(
+      ch,
+      0.05,
+      layout,
+      seats,
+      walkable,
+      blocked,
+      { random: () => 0.99 },
+      false,
+    );
     expect(ch.state).toBe(CharacterState.DESK);
     expect(ch.seatTimer).toBeGreaterThan(0);
   });

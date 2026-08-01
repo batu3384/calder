@@ -11,7 +11,13 @@ import { buildWalkability } from './layout.js';
 import { loadPersistedLayout } from './layout-io.js';
 import { listOpenCliSessions } from './sessions.js';
 import { playOfficeChime } from './sound.js';
-import { DONE_BUBBLE_SEC, type OfficeCharacter, type OfficeLayout, type Seat,TILE_SIZE } from './types.js';
+import {
+  DONE_BUBBLE_SEC,
+  type OfficeCharacter,
+  type OfficeLayout,
+  type Seat,
+  TILE_SIZE,
+} from './types.js';
 import { workPoseFromVisualState } from './work-pose.js';
 
 export class OfficeRuntime {
@@ -129,11 +135,7 @@ export class OfficeRuntime {
     character.visualState = signal.visualState;
     character.workPose = workPoseFromVisualState(signal.visualState, signal.isActive);
     const nextBubble =
-      signal.bubble !== 'none'
-        ? signal.bubble
-        : character.workPose === 'think'
-          ? 'think'
-          : 'none';
+      signal.bubble !== 'none' ? signal.bubble : character.workPose === 'think' ? 'think' : 'none';
     if (nextBubble !== previousBubble) {
       character.bubble = nextBubble;
       character.bubbleAge = 0;
@@ -161,7 +163,10 @@ export class OfficeRuntime {
     const activeIds = listActiveSubagentIds(events);
     const prefix = `${parentId}::sub::`;
     for (const [id, character] of this.characters) {
-      if (character.parentId === parentId && !activeIds.some((subId) => id === `${prefix}${subId}`)) {
+      if (
+        character.parentId === parentId &&
+        !activeIds.some((subId) => id === `${prefix}${subId}`)
+      ) {
         this.characters.delete(id);
       }
     }

@@ -1,8 +1,5 @@
 import { t } from '../../i18n.js';
-import {
-  normalizePixelProviderId,
-  pixelProviderLabel,
-} from '../pixel-agent/provider-pixel.js';
+import { normalizePixelProviderId, pixelProviderLabel } from '../pixel-agent/provider-pixel.js';
 import type { OfficeCharacter } from './types.js';
 
 const GENERIC_SESSION_NAME = /^(Session|Oturum)\s*\d+$/i;

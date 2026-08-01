@@ -1,4 +1,4 @@
-import { type OfficeLayout,TILE_SIZE } from './types.js';
+import { type OfficeLayout, TILE_SIZE } from './types.js';
 
 type FloorZone = 'carpet' | 'wood' | 'tile' | 'corridor';
 
@@ -42,7 +42,12 @@ export function floorColors(
   }
 }
 
-export function drawWallTile(ctx: CanvasRenderingContext2D, x: number, y: number, row: number): void {
+export function drawWallTile(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  row: number,
+): void {
   const isWindow = row === 0;
   ctx.fillStyle = isWindow ? '#1a2433' : '#2f3b4f';
   ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);

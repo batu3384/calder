@@ -30,7 +30,12 @@ export function isValidOfficeLayout(value: unknown): value is OfficeLayout {
   for (const seat of layout.seats) {
     if (!seat || typeof seat.id !== 'string' || !seat.id) return false;
     if (!Number.isInteger(seat.seatCol) || !Number.isInteger(seat.seatRow)) return false;
-    if (seat.seatCol < 0 || seat.seatRow < 0 || seat.seatCol >= layout.cols || seat.seatRow >= layout.rows) {
+    if (
+      seat.seatCol < 0 ||
+      seat.seatRow < 0 ||
+      seat.seatCol >= layout.cols ||
+      seat.seatRow >= layout.rows
+    ) {
       return false;
     }
     if (![Direction.DOWN, Direction.LEFT, Direction.RIGHT, Direction.UP].includes(seat.facingDir)) {

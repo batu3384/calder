@@ -49,11 +49,11 @@ Pixel Office (`#pixel-office`): Canvas 2D office beside the terminal. Toggle `Cm
 
 Inspector hooks normalize into Evidence:
 
-| Hook / inspector type | Evidence type |
-| --- | --- |
-| `pre_tool_use` | `tool_requested` |
-| `tool_use` (non-Post) | `tool_started` |
-| `tool_use` + `PostToolUse` | `tool_completed` |
+| Hook / inspector type              | Evidence type                                              |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `pre_tool_use`                     | `tool_requested`                                           |
+| `tool_use` (non-Post)              | `tool_started`                                             |
+| `tool_use` + `PostToolUse`         | `tool_completed`                                           |
 | `subagent_start` / `subagent_stop` | `subagent_started` / `subagent_completed` (+ `subagentId`) |
 
 Office maps Evidence → `AgentEvent.kind` (`toolStart` / `toolEnd` / …).

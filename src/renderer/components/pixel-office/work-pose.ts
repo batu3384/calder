@@ -3,10 +3,7 @@ import type { PixelVisualState } from '../pixel-agent/visual-resolver.js';
 /** Desk posture driven by evidence — not the same loop for every task. */
 export type WorkPose = 'rest' | 'type' | 'read' | 'think' | 'browse' | 'build';
 
-export function workPoseFromVisualState(
-  state: PixelVisualState,
-  isActive: boolean,
-): WorkPose {
+export function workPoseFromVisualState(state: PixelVisualState, isActive: boolean): WorkPose {
   // Open PTY / boot: show soft think at desk without marking agent "Working".
   if (state === 'preparing') return 'think';
   if (!isActive) return 'rest';

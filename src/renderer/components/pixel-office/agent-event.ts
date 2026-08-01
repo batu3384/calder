@@ -1,10 +1,7 @@
 import type { EvidenceEvent } from '../../../shared/types-evidence.js';
 import { t } from '../../i18n.js';
 import { mapToolNameToPixelState } from '../pixel-agent/provider-pixel.js';
-import {
-  type PixelVisualState,
-  resolvePixelVisualState,
-} from '../pixel-agent/visual-resolver.js';
+import { type PixelVisualState, resolvePixelVisualState } from '../pixel-agent/visual-resolver.js';
 import { SUBAGENT_WINDOW_MS } from './types.js';
 
 /** preparing alone (open PTY) stays inactive — unknown_working covers real think beats. */
@@ -115,7 +112,13 @@ export function evidenceTailToAgentSignals(
     mapped === 'browsing';
 
   if (state === 'waiting_for_approval') {
-    return { isActive: false, toolName, isReading: false, bubble: 'permission', visualState: state };
+    return {
+      isActive: false,
+      toolName,
+      isReading: false,
+      bubble: 'permission',
+      visualState: state,
+    };
   }
   if (state === 'completed') {
     return { isActive: false, toolName, isReading: false, bubble: 'done', visualState: state };

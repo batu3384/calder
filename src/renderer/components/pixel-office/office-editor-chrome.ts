@@ -18,7 +18,12 @@ export interface OfficeEditorChrome {
   editor: LayoutEditor;
   sync(): void;
   setEnabled(on: boolean): void;
-  paintAt(layout: OfficeLayout, col: number, row: number, opts?: { recordUndo?: boolean }): OfficeLayout | null;
+  paintAt(
+    layout: OfficeLayout,
+    col: number,
+    row: number,
+    opts?: { recordUndo?: boolean },
+  ): OfficeLayout | null;
   undo(layout: OfficeLayout): OfficeLayout | null;
   redo(layout: OfficeLayout): OfficeLayout | null;
   reset(layout: OfficeLayout): OfficeLayout;

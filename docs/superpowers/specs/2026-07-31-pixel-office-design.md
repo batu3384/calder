@@ -6,15 +6,15 @@
 
 ## Decisions
 
-| Topic | Choice |
-| --- | --- |
-| Ambition | Full office parity with [pixel-agents](https://github.com/pixel-agents-hq/pixel-agents) (Canvas 2D office, not CSS boxes) |
-| Placement | New main surface beside terminal/mosaic (`#pixel-office`) |
-| Assets | Metro City character pack + Calder-owned floor/wall/furniture |
-| V1 scope | Full parity target: core + editor + bubbles + gauge + sub-agents + sound |
-| Data | Evidence IPC + provider hook/transcript bridge (Claude first) |
-| Architecture | Calder-native Canvas office (no embed/fork of pixel-agents SPA) |
-| Old system | **Hard delete** — no deprecate path |
+| Topic        | Choice                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Ambition     | Full office parity with [pixel-agents](https://github.com/pixel-agents-hq/pixel-agents) (Canvas 2D office, not CSS boxes) |
+| Placement    | New main surface beside terminal/mosaic (`#pixel-office`)                                                                 |
+| Assets       | Metro City character pack + Calder-owned floor/wall/furniture                                                             |
+| V1 scope     | Full parity target: core + editor + bubbles + gauge + sub-agents + sound                                                  |
+| Data         | Evidence IPC + provider hook/transcript bridge (Claude first)                                                             |
+| Architecture | Calder-native Canvas office (no embed/fork of pixel-agents SPA)                                                           |
+| Old system   | **Hard delete** — no deprecate path                                                                                       |
 
 ## Product goal
 
@@ -59,13 +59,13 @@ src/renderer/components/pixel-office/
 
 Character contract (pixel-agents vocabulary):
 
-| Agent status | Character behavior |
-| --- | --- |
-| Active | Seated TYPE (read vs type by tool taxonomy) |
-| Done | IDLE → wander → seat rest |
-| Waiting for input / permission | Stay seated + speech bubble |
-| Sub-agent (unnamed) | Near parent, no seat |
-| Teammate (named) | Deferred after Claude team bridge |
+| Agent status                   | Character behavior                          |
+| ------------------------------ | ------------------------------------------- |
+| Active                         | Seated TYPE (read vs type by tool taxonomy) |
+| Done                           | IDLE → wander → seat rest                   |
+| Waiting for input / permission | Stay seated + speech bubble                 |
+| Sub-agent (unnamed)            | Near parent, no seat                        |
+| Teammate (named)               | Deferred after Claude team bridge           |
 
 Default layout ships as JSON; editor supports floor/wall paint, furniture place/rotate, undo/redo, import/export. Persist under Calder data / preferences (`pixelOffice.layout`). Zoom integer + pan + follow selected.
 
@@ -98,14 +98,14 @@ Keep: Evidence store/IPC/normalize, Safety capture toggle.
 
 ## Milestones
 
-| ID | Deliverable |
-| --- | --- |
-| M1 | Shell pane + toggle + remove Pixel tab |
-| M2 | Canvas core: tiles, seats, Metro City walk/type, Evidence bridge |
-| M3 | Bubbles, gauge, sound, hover label, sub-agent characters |
-| M4 | Layout editor + persist |
-| M5 | Claude hook richer tool events |
-| M6 | Finish teardown of old pixel-agent; knip/structure green |
+| ID  | Deliverable                                                      |
+| --- | ---------------------------------------------------------------- |
+| M1  | Shell pane + toggle + remove Pixel tab                           |
+| M2  | Canvas core: tiles, seats, Metro City walk/type, Evidence bridge |
+| M3  | Bubbles, gauge, sound, hover label, sub-agent characters         |
+| M4  | Layout editor + persist                                          |
+| M5  | Claude hook richer tool events                                   |
+| M6  | Finish teardown of old pixel-agent; knip/structure green         |
 
 ## Risks
 

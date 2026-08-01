@@ -250,7 +250,14 @@ export function updateOfficeCharacter(
       }
       if (walkable.length > 0) {
         const target = walkable[Math.floor(rng.random() * walkable.length)]!;
-        const path = findPath(ch.tileCol, ch.tileRow, target.col, target.row, layout.tiles, blocked);
+        const path = findPath(
+          ch.tileCol,
+          ch.tileRow,
+          target.col,
+          target.row,
+          layout.tiles,
+          blocked,
+        );
         if (path.length > 0) {
           ch.path = path;
           ch.moveProgress = 0;

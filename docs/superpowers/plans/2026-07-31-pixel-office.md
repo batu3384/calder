@@ -21,15 +21,15 @@
 
 ## File map
 
-| Path | Role |
-| --- | --- |
-| `src/renderer/index.html` | `#pixel-office` host + resize handle; remove Pixel tab |
-| `src/renderer/styles/pixel-office.css` | Pane chrome, canvas sizing |
-| `src/renderer/styles.css` | Import pixel-office.css |
-| `src/renderer/components/pixel-office/*` | Runtime + mount |
-| `src/renderer/components/split-layout*.ts` / chrome CSS | Column for office pane |
-| `src/main/menu.ts`, `command-palette.ts` | Toggle Pixel Office |
-| `src/shared/types-evidence.ts` | `pixelMode: off \| office` |
+| Path                                                              | Role                                                   |
+| ----------------------------------------------------------------- | ------------------------------------------------------ |
+| `src/renderer/index.html`                                         | `#pixel-office` host + resize handle; remove Pixel tab |
+| `src/renderer/styles/pixel-office.css`                            | Pane chrome, canvas sizing                             |
+| `src/renderer/styles.css`                                         | Import pixel-office.css                                |
+| `src/renderer/components/pixel-office/*`                          | Runtime + mount                                        |
+| `src/renderer/components/split-layout*.ts` / chrome CSS           | Column for office pane                                 |
+| `src/main/menu.ts`, `command-palette.ts`                          | Toggle Pixel Office                                    |
+| `src/shared/types-evidence.ts`                                    | `pixelMode: off \| office`                             |
 | Delete `pixel-agent/**`, `context-pixel-panel.ts`, old assets/CSS |
 
 ---
