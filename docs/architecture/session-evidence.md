@@ -1,6 +1,6 @@
 # Session Evidence architecture
 
-**Status:** MVP shipped; Pixel Office replaces Compact/Studio rails  
+**Status:** MVP shipped; Pixel Office is the right Context Inspector rail surface  
 **Plan:** Session Evidence & Pixel Agent Live (`docs/superpowers/specs/2026-07-30-session-evidence-pixel-agent-master-plan.md`)  
 **Office:** `docs/superpowers/specs/2026-07-31-pixel-office-design.md`
 
@@ -9,7 +9,7 @@
 - Main owns ingest, normalize, redact, persist, Git fingerprint, summary, export.
 - Renderer consumes sanitized IPC only; never raw tool inputs or secrets.
 - Governance decisions are **recorded**, never re-decided, by Evidence.
-- Pixel Office consumes normalized `EvidenceEvent` → `AgentEvent` signals on a Canvas pane beside the terminal.
+- Pixel Office consumes normalized `EvidenceEvent` → `AgentEvent` signals on a Canvas pane inside the right Context Inspector rail.
 
 ## Storage
 
@@ -39,7 +39,13 @@ Root via `resolveCalderDataRoot()` (Evidence-scoped; store/STATUS_DIR migration 
 
 Session Inspector tabs: Run / Project / Timeline (Evidence timeline lives under inspector surfaces).
 
-Pixel Office (`#pixel-office`): Canvas 2D office beside the terminal. Toggle `Cmd+Shift+O`. Characters map open CLI sessions; Evidence drives TYPE/IDLE, bubbles, context gauge, sub-agent orbit.
+Pixel Office (`#pixel-office`): Canvas 2D office inside the Context Inspector rail. Toggle `Cmd+Shift+O`. Characters map open CLI sessions; verified Evidence drives task-specific desk poses, bubbles, context gauge, sub-agent orbit, and an accessible DOM status companion.
+
+The rail owns one lifecycle bridge:
+
+- `pixelMode` controls visibility, runtime start, and Evidence subscription together.
+- Collapsing the rail stops the Canvas animation loop while retaining reconciled state.
+- Canvas colors come from shared light/dark CSS tokens through `office-theme.ts`.
 
 ## IPC
 
@@ -54,9 +60,17 @@ Inspector hooks normalize into Evidence:
 | `pre_tool_use`                     | `tool_requested`                                           |
 | `tool_use` (non-Post)              | `tool_started`                                             |
 | `tool_use` + `PostToolUse`         | `tool_completed`                                           |
+| `stop`                             | `session_ended` (turn end; run remains open)               |
+| `task_created` / `task_completed`  | `task_created` / `task_completed`                          |
 | `subagent_start` / `subagent_stop` | `subagent_started` / `subagent_completed` (+ `subagentId`) |
 
 Office maps Evidence → `AgentEvent.kind` (`toolStart` / `toolEnd` / …).
+
+Renderer event delivery is append-only and sequence-aware. Initial tails and live batches merge by
+`evidenceRunId + eventId`, retain the highest `seq`, ignore stale snapshots, and reset only when a
+new run starts. PTY-only `preparing` stays standby; Thinking/Typing/Researching requires a
+verified activity event. `tool_completed` becomes structured unknown work until a turn/session
+end, while `session_ended`, interruption, failure, or task completion clears active poses.
 
 ## Tests
 
@@ -64,6 +78,12 @@ Office maps Evidence → `AgentEvent.kind` (`toolStart` / `toolEnd` / …).
 - Fixtures: `lifecycle.fixture.test.ts`, `provider-matrix.fixture.test.ts`
 - Office: `src/renderer/components/pixel-office/office-core.test.ts`
 - Contracts: `session-inspector.evidence.contract.test.ts`
+- Lifecycle: `normalize.test.ts`, `visual-resolver.test.ts`, `subscribe-ids.test.ts`
+- Release gates: typecheck, lint, format, build, structure/graph audit, dependency audit
+
+Dependency gate is clean after non-breaking patch updates to the Evidence dependency chain and
+the audited `esbuild` development toolchain. Verification uses `npm audit` and
+`npm audit --omit=dev`; no blanket `npm audit fix` is used.
 
 ## Deferred
 

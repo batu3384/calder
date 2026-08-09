@@ -1,3 +1,4 @@
+import { DEFAULT_OFFICE_THEME, type OfficeTheme } from './office-theme.js';
 import { CharacterState, Direction, type OfficeCharacter, type WorkPose } from './types.js';
 
 /** Metro City (JIK-A-4) sheet layout — same as pixel-agents constants. */
@@ -187,21 +188,24 @@ export function drawCharacterSprite(
   ctx.fillRect(x + 9 * s, y + 8 * s, 2 * s, 2 * s);
 }
 
-function monitorPalette(pose: WorkPose): { bezel: string; glow: string; line: string } {
+function monitorPalette(
+  pose: WorkPose,
+  theme: OfficeTheme,
+): { bezel: string; glow: string; line: string } {
   switch (pose) {
     case 'type':
-      return { bezel: '#0f172a', glow: '#22c55e', line: '#86efac' };
+      return { bezel: theme.wall, glow: theme.active, line: theme.text };
     case 'build':
-      return { bezel: '#0f172a', glow: '#f59e0b', line: '#fde68a' };
+      return { bezel: theme.wall, glow: theme.waiting, line: theme.text };
     case 'read':
-      return { bezel: '#0f172a', glow: '#eab308', line: '#fef08a' };
+      return { bezel: theme.wall, glow: theme.waiting, line: theme.text };
     case 'browse':
-      return { bezel: '#0f172a', glow: '#38bdf8', line: '#bae6fd' };
+      return { bezel: theme.wall, glow: theme.info, line: theme.text };
     case 'think':
-      return { bezel: '#0f172a', glow: '#a78bfa', line: '#ddd6fe' };
+      return { bezel: theme.wall, glow: theme.deskAccent, line: theme.text };
     case 'rest':
     default:
-      return { bezel: '#111827', glow: '#1e3a5f', line: '#334155' };
+      return { bezel: theme.wall, glow: theme.floorAccent, line: theme.mutedText };
   }
 }
 
@@ -213,8 +217,9 @@ function drawMonitorScreen(
   sh: number,
   pose: WorkPose,
   tick: number,
+  theme: OfficeTheme,
 ): void {
-  const pal = monitorPalette(pose);
+  const pal = monitorPalette(pose, theme);
   ctx.fillStyle = pal.bezel;
   ctx.fillRect(sx - 1, sy - 1, sw + 2, sh + 2);
   ctx.fillStyle = pal.glow;
@@ -228,7 +233,7 @@ function drawMonitorScreen(
     ctx.fillRect(sx + 1, sy + 1 + i * 2, lw, 1);
   }
   if (pose === 'browse') {
-    ctx.fillStyle = '#0ea5e9';
+    ctx.fillStyle = theme.info;
     ctx.fillRect(sx + sw - 2, sy + 1, 1, sh - 2);
   }
 }
@@ -243,13 +248,14 @@ export function drawDeskFurniture(
   facing: Direction,
   workPose: WorkPose = 'rest',
   animFrame = 0,
+  theme: OfficeTheme = DEFAULT_OFFICE_THEME,
 ): void {
-  const desk = '#6b5344';
-  const deskTop = '#8b6b52';
-  const deskDark = '#3d2f25';
-  const chair = '#374151';
-  const chairBack = '#4b5563';
-  const metal = '#64748b';
+  const desk = theme.desk;
+  const deskTop = theme.deskAccent;
+  const deskDark = theme.wall;
+  const chair = theme.wallAccent;
+  const chairBack = theme.mutedText;
+  const metal = theme.mutedText;
   const tick = animFrame % 2;
 
   if (facing === Direction.DOWN) {
@@ -266,16 +272,25 @@ export function drawDeskFurniture(
     ctx.fillStyle = deskDark;
     ctx.fillRect(x - 4, y + 15, 2, 3);
     ctx.fillRect(x + 18, y + 15, 2, 3);
-    drawMonitorScreen(ctx, x + 1, y + 2, 11, 6, workPose, tick);
-    drawMonitorScreen(ctx, x + 14, y + 3, 7, 5, workPose === 'rest' ? 'rest' : workPose, tick);
+    drawMonitorScreen(ctx, x + 1, y + 2, 11, 6, workPose, tick, theme);
+    drawMonitorScreen(
+      ctx,
+      x + 14,
+      y + 3,
+      7,
+      5,
+      workPose === 'rest' ? 'rest' : workPose,
+      tick,
+      theme,
+    );
     ctx.fillStyle = metal;
     ctx.fillRect(x + 5, y + 8, 2, 2);
     ctx.fillRect(x + 16, y + 8, 2, 2);
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = theme.wall;
     ctx.fillRect(x + 4, y + 11, 10, 2);
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = theme.mutedText;
     ctx.fillRect(x + 16, y + 11, 3, 2);
-    ctx.fillStyle = '#b45309';
+    ctx.fillStyle = theme.waiting;
     ctx.fillRect(x + 20, y + 10, 3, 3);
   } else if (facing === Direction.UP) {
     ctx.fillStyle = desk;
@@ -286,9 +301,18 @@ export function drawDeskFurniture(
     ctx.fillRect(x + 3, y + 5, 10, 8);
     ctx.fillStyle = chairBack;
     ctx.fillRect(x + 2, y + 11, 12, 3);
-    drawMonitorScreen(ctx, x + 1, y - 4, 11, 6, workPose, tick);
-    drawMonitorScreen(ctx, x + 14, y - 3, 7, 5, workPose === 'rest' ? 'rest' : workPose, tick);
-    ctx.fillStyle = '#1e293b';
+    drawMonitorScreen(ctx, x + 1, y - 4, 11, 6, workPose, tick, theme);
+    drawMonitorScreen(
+      ctx,
+      x + 14,
+      y - 3,
+      7,
+      5,
+      workPose === 'rest' ? 'rest' : workPose,
+      tick,
+      theme,
+    );
+    ctx.fillStyle = theme.wall;
     ctx.fillRect(x + 4, y - 1, 10, 2);
   } else if (facing === Direction.LEFT) {
     ctx.fillStyle = desk;
@@ -297,7 +321,7 @@ export function drawDeskFurniture(
     ctx.fillRect(x - 6, y - 3, 2, 22);
     ctx.fillStyle = chair;
     ctx.fillRect(x + 5, y + 3, 9, 10);
-    drawMonitorScreen(ctx, x - 4, y + 2, 5, 10, workPose, tick);
+    drawMonitorScreen(ctx, x - 4, y + 2, 5, 10, workPose, tick, theme);
   } else {
     ctx.fillStyle = desk;
     ctx.fillRect(x + 14, y - 4, 8, 24);
@@ -305,6 +329,6 @@ export function drawDeskFurniture(
     ctx.fillRect(x + 20, y - 3, 2, 22);
     ctx.fillStyle = chair;
     ctx.fillRect(x + 1, y + 3, 9, 10);
-    drawMonitorScreen(ctx, x + 15, y + 2, 5, 10, workPose, tick);
+    drawMonitorScreen(ctx, x + 15, y + 2, 5, 10, workPose, tick, theme);
   }
 }

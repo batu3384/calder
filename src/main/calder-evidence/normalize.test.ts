@@ -90,6 +90,47 @@ describe('calder-evidence normalize', () => {
     expect(mapped?.outcome).toBe('completed');
   });
 
+  it('maps a provider stop event to session_ended', () => {
+    const mapped = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 8,
+      event: baseEvent('stop', { last_assistant_message: 'done' }),
+    });
+
+    expect(mapped).toMatchObject({
+      type: 'session_ended',
+      source: 'provider_hook',
+      confidence: 'provider_reported',
+      outcome: 'completed',
+      seq: 8,
+    });
+  });
+
+  it('keeps task lifecycle events available to the visual resolver', () => {
+    const created = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 9,
+      event: baseEvent('task_created', { task_id: 'task-1' }),
+    });
+    const completed = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 10,
+      event: baseEvent('task_completed', { task_id: 'task-1' }),
+    });
+
+    expect(created?.type).toBe('task_created');
+    expect(completed?.type).toBe('task_completed');
+  });
+
   it('maps subagent and compaction inspector events', () => {
     const subagent = normalizeInspectorEvent({
       sessionId: 'session-1',

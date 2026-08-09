@@ -18,4 +18,10 @@ describe('evidence subscribe runIds', () => {
     expect(normalizeEvidenceSubscribeRunIds([])).toEqual([]);
     expect(normalizeEvidenceSubscribeRunIds('')).toEqual([]);
   });
+
+  it('drops ids that cannot be used as evidence run paths', () => {
+    expect(normalizeEvidenceSubscribeRunIds(['run-safe', '../escape', 'nested/run'])).toEqual([
+      'run-safe',
+    ]);
+  });
 });

@@ -251,6 +251,11 @@
             <div id="pixel-office" class="pixel-office-rail" aria-label="Pixel Office" hidden>
               <header class="pixel-office-rail-head">
                 <span class="pixel-office-title">Pixel Office</span>
+                <div class="pixel-office-live-summary" aria-live="polite" aria-atomic="true">
+                  <span id="pixel-office-live-state" class="pixel-office-live-state"></span>
+                  <span id="pixel-office-live-count" class="pixel-office-live-count"></span>
+                  <time id="pixel-office-live-updated" class="pixel-office-live-updated"></time>
+                </div>
                 <div class="pixel-office-header-actions">
                   <button
                     type="button"
@@ -381,6 +386,12 @@
                   Reset
                 </button>
               </div>
+              <div
+                id="pixel-office-session-status"
+                class="pixel-office-session-status"
+                aria-live="polite"
+                aria-label="Pixel Office session status"
+              ></div>
               <div id="pixel-office-canvas-host" class="pixel-office-canvas-host"></div>
               <div
                 id="pixel-office-rail-resize"
@@ -388,6 +399,10 @@
                 role="separator"
                 aria-orientation="horizontal"
                 aria-label="Resize office view"
+                aria-valuemin="140"
+                aria-valuemax="480"
+                aria-valuenow="200"
+                tabindex="0"
                 title="Resize office view"
               ></div>
             </div>

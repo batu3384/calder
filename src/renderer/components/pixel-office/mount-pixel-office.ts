@@ -1,18 +1,21 @@
 import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
+import { loadEvidenceTails } from './evidence-sync.js';
 import { startGameLoop } from './game-loop.js';
+import { syncLiveStatus, syncOfficeText } from './live-status.js';
 import { createOfficeEditorChrome, type OfficeEditorChrome } from './office-editor-chrome.js';
 import { OfficeRuntime } from './office-state.js';
+import { readOfficeTheme } from './office-theme.js';
 import { renderOffice } from './renderer.js';
 import { ensureCharacterSheetsLoaded } from './sprites.js';
 import { TILE_SIZE } from './types.js';
 
 const OPEN_STORAGE_KEY = 'calder.pixelOffice.open';
+const COLLAPSED_STORAGE_KEY = 'calder.pixelOffice.collapsed';
 const HEIGHT_STORAGE_KEY = 'calder.pixelOffice.railHeight';
 const HEIGHT_DEFAULT = 200;
 const HEIGHT_MIN = 140;
 const HEIGHT_MAX = 480;
-const EVIDENCE_WINDOW = 120;
 
 function inspectorEl(): HTMLElement | null {
   return document.getElementById('context-inspector');
@@ -41,7 +44,7 @@ function resizeHandleEl(): HTMLElement | null {
 
 let officeOpen = false;
 let officeCollapsed = false;
-let pixelModeEnabled = true;
+let pixelModeEnabled = false;
 let canvas: HTMLCanvasElement | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let stopLoop: (() => void) | null = null;
@@ -51,6 +54,9 @@ let zoom = 2;
 let hoveredId: string | null = null;
 let painting = false;
 let unsubs: Array<() => void> = [];
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let evidenceLoadGeneration = 0;
+let officeTheme = readOfficeTheme();
 
 function readStoredOpen(): boolean {
   try {
@@ -63,6 +69,21 @@ function readStoredOpen(): boolean {
 function writeStoredOpen(open: boolean): void {
   try {
     localStorage.setItem(OPEN_STORAGE_KEY, open ? '1' : '0');
+  } catch {
+    // ignore
+  }
+}
+function readStoredCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeStoredCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
   } catch {
     // ignore
   }
@@ -88,7 +109,9 @@ function writeStoredHeight(height: number): void {
 
 function applyRailHeight(height: number): void {
   const next = Math.min(HEIGHT_MAX, Math.max(HEIGHT_MIN, height));
-  inspectorEl()?.style.setProperty('--pixel-office-rail-height', `${next}px`);
+  const inspector = inspectorEl();
+  inspector?.style.setProperty('--pixel-office-rail-height', `${next}px`);
+  resizeHandleEl()?.setAttribute('aria-valuenow', String(Math.round(next)));
   writeStoredHeight(next);
 }
 
@@ -110,6 +133,12 @@ function syncCollapseButton(): void {
     officeCollapsed ? t('Expand office view') : t('Collapse office view'),
   );
   rail?.classList.toggle('is-collapsed', officeCollapsed);
+  syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
+  if (officeCollapsed) {
+    stopGameLoop();
+  } else if (officeOpen && pixelModeEnabled) {
+    startRuntime();
+  }
 }
 
 function canvasToWorld(event: MouseEvent): { x: number; y: number } | null {
@@ -173,7 +202,6 @@ function syncCanvasSize(): void {
   target.style.height = `${cssH}px`;
   const worldW = (runtime?.layout.cols ?? 12) * TILE_SIZE;
   const worldH = (runtime?.layout.rows ?? 10) * TILE_SIZE;
-  // True contain: never clip the map in the rail. No artificial zoom floor.
   const fit = Math.min(cssW / worldW, cssH / worldH);
   zoom = Math.max(0.5, Math.min(5, fit * 0.98));
 }
@@ -191,9 +219,11 @@ function syncOpenDom(): void {
   inspector?.classList.toggle('pixel-office-rail-visible', visible);
   office?.toggleAttribute('hidden', !visible);
   office?.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
   if (visible) {
     ensureInspectorOpen();
-    startRuntime();
+    if (officeCollapsed) stopGameLoop();
+    else startRuntime();
   } else {
     stopRuntime();
   }
@@ -229,42 +259,28 @@ function onCanvasMove(event: MouseEvent): void {
   hoveredId = runtime.hitTest(world.x, world.y)?.id ?? null;
 }
 
-async function loadEvidenceTails(): Promise<void> {
-  if (!runtime || !window.calder?.evidence) return;
-  const sessions = runtime.sessionCharacterIds();
-  const runIds: string[] = [];
-  await Promise.all(
-    sessions.map(async (sessionId) => {
-      try {
-        const meta = await window.calder.evidence.getMeta(sessionId);
-        if (!meta) {
-          runtime?.applyEvidence(sessionId, []);
-          return;
-        }
-        if (meta.runId) runIds.push(meta.runId);
-        const total = meta.eventCount ?? 0;
-        const offset = Math.max(0, total - EVIDENCE_WINDOW);
-        const page = await window.calder.evidence.listEvents(sessionId, offset, EVIDENCE_WINDOW);
-        runtime?.applyEvidence(sessionId, [...page.events]);
-      } catch {
-        runtime?.applyEvidence(sessionId, []);
-      }
-    }),
-  );
-  if (runIds.length > 0) window.calder.evidence.subscribe(runIds);
-  else window.calder.evidence.unsubscribe();
+function beginEvidenceLoad(): void {
+  const activeRuntime = runtime;
+  if (!activeRuntime) return;
+  const generation = ++evidenceLoadGeneration;
+  void loadEvidenceTails({
+    runtime: activeRuntime,
+    isCurrent: () => runtime === activeRuntime && generation === evidenceLoadGeneration,
+    onApplied: () => syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled }),
+  });
 }
 
 function startRuntime(): void {
   if (stopLoop) return;
   runtime = runtime ?? new OfficeRuntime();
   runtime.syncSessionsFromAppState();
+  syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
   syncCanvasSize();
   const target = ensureCanvas();
   if (!target) return;
 
   void ensureCharacterSheetsLoaded();
-  void loadEvidenceTails();
+  beginEvidenceLoad();
 
   stopLoop = startGameLoop(target, {
     update: (dt) => runtime?.update(dt),
@@ -274,14 +290,19 @@ function startRuntime(): void {
         selectedSessionId: runtime.selectedSessionId(),
         hoveredId,
         zoom,
+        theme: officeTheme,
       });
     },
   });
 }
 
 function stopRuntime(): void {
-  stopLoop?.();
-  stopLoop = null;
+  evidenceLoadGeneration += 1;
+  stopGameLoop();
+  if (refreshTimer !== null) {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
   hoveredId = null;
   painting = false;
   window.calder?.evidence?.unsubscribe();
@@ -291,7 +312,11 @@ function bindAppListeners(): void {
   const refresh = (): void => {
     if (!officeOpen || !runtime) return;
     runtime.syncSessionsFromAppState();
-    void loadEvidenceTails();
+    if (refreshTimer !== null) return;
+    refreshTimer = window.setTimeout(() => {
+      refreshTimer = null;
+      if (officeOpen && runtime) beginEvidenceLoad();
+    }, 50);
   };
   unsubs.push(
     appState.on('session-added', refresh),
@@ -300,30 +325,34 @@ function bindAppListeners(): void {
     appState.on('project-changed', refresh),
     appState.on('state-loaded', refresh),
     appState.on('preferences-changed', () => {
+      officeTheme = readOfficeTheme();
       syncSoundButton();
     }),
   );
 
   if (window.calder?.evidence?.onEvent) {
-    const off = window.calder.evidence.onEvent((_runId, incoming) => {
-      if (!runtime || incoming.length === 0) return;
-      const sessionId = incoming[0]?.calderSessionId;
-      if (!sessionId || !runtime.characters.has(sessionId)) return;
-      void (async () => {
-        try {
-          const meta = await window.calder.evidence.getMeta(sessionId);
-          if (!meta) return;
-          const total = meta.eventCount ?? 0;
-          const offset = Math.max(0, total - EVIDENCE_WINDOW);
-          const page = await window.calder.evidence.listEvents(sessionId, offset, EVIDENCE_WINDOW);
-          runtime?.applyEvidence(sessionId, [...page.events]);
-        } catch {
-          // ignore transient IPC errors
-        }
-      })();
+    const off = window.calder.evidence.onEvent((runId, incoming) => {
+      if (!runtime || !officeOpen || !pixelModeEnabled || incoming.length === 0) return;
+      runtime.syncSessionsFromAppState();
+      const bySession = new Map<string, typeof incoming>();
+      for (const event of incoming) {
+        if (event.evidenceRunId !== runId) continue;
+        const events = bySession.get(event.calderSessionId) ?? [];
+        events.push(event);
+        bySession.set(event.calderSessionId, events);
+      }
+      for (const [sessionId, events] of bySession) {
+        runtime.applyEvidence(sessionId, events);
+      }
+      syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
     });
     unsubs.push(off);
   }
+}
+
+function stopGameLoop(): void {
+  stopLoop?.();
+  stopLoop = null;
 }
 
 async function syncPixelModeFromSettings(): Promise<void> {
@@ -334,8 +363,7 @@ async function syncPixelModeFromSettings(): Promise<void> {
   }
   try {
     const settings = await window.calder.evidence.getSettings();
-    pixelModeEnabled = settings.pixelMode === 'office';
-    if (!pixelModeEnabled) officeOpen = false;
+    setPixelOfficeMode(settings.pixelMode === 'office');
     syncOpenDom();
   } catch {
     pixelModeEnabled = true;
@@ -360,9 +388,7 @@ function bindRailResize(): void {
     dragging = false;
     try {
       handle.releasePointerCapture(event.pointerId);
-    } catch {
-      // ignore
-    }
+    } catch {}
     handle.removeEventListener('pointermove', onMove);
     handle.removeEventListener('pointerup', onUp);
     handle.removeEventListener('pointercancel', onUp);
@@ -379,6 +405,23 @@ function bindRailResize(): void {
     handle.addEventListener('pointerup', onUp);
     handle.addEventListener('pointercancel', onUp);
   });
+  handle.addEventListener('keydown', (event) => {
+    const keyboardEvent = event as KeyboardEvent;
+    const current = readStoredHeight();
+    if (keyboardEvent.key === 'ArrowUp' || keyboardEvent.key === 'ArrowLeft') {
+      keyboardEvent.preventDefault();
+      applyRailHeight(current - 20);
+    } else if (keyboardEvent.key === 'ArrowDown' || keyboardEvent.key === 'ArrowRight') {
+      keyboardEvent.preventDefault();
+      applyRailHeight(current + 20);
+    } else if (keyboardEvent.key === 'Home') {
+      keyboardEvent.preventDefault();
+      applyRailHeight(HEIGHT_MIN);
+    } else if (keyboardEvent.key === 'End') {
+      keyboardEvent.preventDefault();
+      applyRailHeight(HEIGHT_MAX);
+    }
+  });
 }
 
 export function isPixelOfficeOpen(): boolean {
@@ -391,16 +434,18 @@ export function setPixelOfficeOpen(next: boolean): void {
   syncOpenDom();
 }
 
+export function setPixelOfficeMode(enabled: boolean): void {
+  pixelModeEnabled = enabled;
+  if (!enabled) officeOpen = false;
+  syncOpenDom();
+}
+
 export function togglePixelOffice(): void {
-  if (!pixelModeEnabled) {
-    openPixelOffice();
-    return;
-  }
+  if (!pixelModeEnabled) return;
   setPixelOfficeOpen(!officeOpen);
 }
 
 export function openPixelOffice(): void {
-  officeCollapsed = false;
   syncCollapseButton();
   setPixelOfficeOpen(true);
 }
@@ -419,10 +464,12 @@ export function initPixelOffice(): void {
   });
   collapseBtn()?.addEventListener('click', () => {
     officeCollapsed = !officeCollapsed;
+    writeStoredCollapsed(officeCollapsed);
     syncCollapseButton();
     if (!officeCollapsed) syncCanvasSize();
   });
   syncSoundButton();
+  syncOfficeText();
   syncCollapseButton();
   editorChrome = createOfficeEditorChrome({
     toolbarEl: toolbarEl(),
@@ -434,11 +481,18 @@ export function initPixelOffice(): void {
     },
   });
   bindAppListeners();
+  const themeObserver = new MutationObserver(() => {
+    officeTheme = readOfficeTheme();
+  });
+  themeObserver.observe(document.documentElement, { attributes: true });
+  if (document.body) themeObserver.observe(document.body, { attributes: true });
   resizeObserver = new ResizeObserver(() => {
     if (officeOpen && pixelModeEnabled && !officeCollapsed) syncCanvasSize();
   });
   resizeObserver.observe(host);
   officeOpen = readStoredOpen();
+  officeCollapsed = readStoredCollapsed();
+  syncCollapseButton();
   void syncPixelModeFromSettings().then(() => {
     if (officeOpen && pixelModeEnabled) syncOpenDom();
   });

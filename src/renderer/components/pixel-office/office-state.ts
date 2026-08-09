@@ -6,7 +6,11 @@ import {
   formatActivityLabel,
   listActiveSubagentIds,
 } from './agent-event.js';
-import { createOfficeCharacter, updateOfficeCharacter } from './characters.js';
+import {
+  createOfficeCharacter,
+  prefersReducedMotion,
+  updateOfficeCharacter,
+} from './characters.js';
 import { buildWalkability } from './layout.js';
 import { loadPersistedLayout } from './layout-io.js';
 import { listOpenCliSessions } from './sessions.js';
@@ -19,6 +23,36 @@ import {
   TILE_SIZE,
 } from './types.js';
 import { workPoseFromVisualState } from './work-pose.js';
+
+const MAX_CACHED_EVIDENCE_EVENTS = 120;
+
+export function mergeEvidenceEvents(
+  current: EvidenceEvent[],
+  incoming: EvidenceEvent[],
+): EvidenceEvent[] {
+  if (incoming.length === 0) return current;
+
+  const currentRunId = current[0]?.evidenceRunId;
+  const incomingRunId = incoming[0]?.evidenceRunId;
+  if (currentRunId && incomingRunId && currentRunId !== incomingRunId) {
+    const currentLatestTimestamp = Math.max(...current.map((event) => event.timestamp));
+    const incomingLatestTimestamp = Math.max(...incoming.map((event) => event.timestamp));
+    if (incomingLatestTimestamp < currentLatestTimestamp) return current;
+    current = [];
+  }
+
+  const byEventId = new Map(current.map((event) => [event.eventId, event]));
+  for (const event of incoming) {
+    const previous = byEventId.get(event.eventId);
+    if (!previous || event.seq >= previous.seq) {
+      byEventId.set(event.eventId, event);
+    }
+  }
+
+  return [...byEventId.values()]
+    .sort((a, b) => a.seq - b.seq || a.timestamp - b.timestamp)
+    .slice(-MAX_CACHED_EVIDENCE_EVENTS);
+}
 
 export class OfficeRuntime {
   layout: OfficeLayout;
@@ -99,6 +133,8 @@ export class OfficeRuntime {
           name: session.name || 'Agent',
         }),
       );
+      const pendingEvidence = this.evidenceBySession.get(session.id);
+      if (pendingEvidence) this.applyEvidence(session.id, pendingEvidence);
     }
   }
 
@@ -123,12 +159,13 @@ export class OfficeRuntime {
   }
 
   applyEvidence(sessionId: string, events: EvidenceEvent[]): void {
-    this.evidenceBySession.set(sessionId, events);
+    const mergedEvents = mergeEvidenceEvents(this.evidenceBySession.get(sessionId) ?? [], events);
+    this.evidenceBySession.set(sessionId, mergedEvents);
     const character = this.characters.get(sessionId);
     if (!character || character.isSubagent) return;
 
     const previousBubble = character.bubble;
-    const signal = evidenceTailToAgentSignals(sessionId, events);
+    const signal = evidenceTailToAgentSignals(sessionId, mergedEvents);
     character.isActive = signal.isActive;
     character.currentTool = signal.toolName;
     character.isReading = signal.isReading;
@@ -154,7 +191,7 @@ export class OfficeRuntime {
     const ctx = getContext(sessionId);
     character.contextPct = ctx ? Math.max(0, Math.min(100, ctx.usedPercentage)) : null;
 
-    this.syncSubagents(sessionId, events);
+    this.syncSubagents(sessionId, mergedEvents);
   }
 
   private syncSubagents(parentId: string, events: EvidenceEvent[]): void {
@@ -200,8 +237,13 @@ export class OfficeRuntime {
   }
 
   update(dt: number): void {
+    const reducedMotion = prefersReducedMotion();
     for (const character of this.characters.values()) {
       if (character.isSubagent) {
+        if (reducedMotion) {
+          character.frame = 0;
+          continue;
+        }
         character.frameTimer += dt;
         if (character.frameTimer > 0.2) {
           character.frameTimer = 0;

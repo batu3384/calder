@@ -25,6 +25,12 @@ export type PixelVisualState =
 export const STALE_ACTIVE_MS = 5 * 60 * 1000;
 
 const INTERRUPT_STATES = new Set<PixelVisualState>(['waiting_for_approval', 'blocked', 'failed']);
+const LIFECYCLE_RESTART_EVENTS = new Set<EvidenceEvent['type']>([
+  'provider_session_started',
+  'pty_started',
+  'prompt_submitted',
+  'task_created',
+]);
 
 function eventToState(event: EvidenceEvent): PixelVisualState | null {
   switch (event.type) {
@@ -46,8 +52,9 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
       return 'failed';
     case 'provider_session_completed':
     case 'session_completed':
-    case 'pty_exited':
       return event.outcome === 'completed' ? 'completed' : null;
+    case 'pty_exited':
+      return event.outcome === 'completed' ? 'completed' : 'idle';
     case 'context_compaction_started':
       return 'compacting';
     case 'git_change_observed':
@@ -57,9 +64,16 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
     case 'tool_started':
     case 'tool_requested':
       return mapToolNameToPixelState(event.toolName ?? '', event.sanitizedMeta);
+    case 'tool_completed':
+      return 'unknown_working';
     case 'prompt_submitted':
     case 'subagent_started':
+    case 'task_created':
       return 'unknown_working';
+    case 'session_ended':
+    case 'session_interrupted':
+    case 'task_completed':
+      return 'idle';
     default:
       return null;
   }
@@ -82,8 +96,16 @@ export function resolvePixelVisualState(
   const ordered = [...events].sort((a, b) => a.seq - b.seq || a.timestamp - b.timestamp);
   let state: PixelVisualState = 'idle';
   let stateAt = 0;
+  let lifecycleBarrier = false;
 
   for (const event of ordered) {
+    if (state === 'completed') continue;
+    if (lifecycleBarrier) {
+      if (LIFECYCLE_RESTART_EVENTS.has(event.type)) lifecycleBarrier = false;
+      else if (eventToState(event) !== 'completed') continue;
+      else lifecycleBarrier = false;
+    }
+
     if (event.type === 'permission_approved') {
       if (state === 'waiting_for_approval') {
         state = 'unknown_working';
@@ -112,12 +134,22 @@ export function resolvePixelVisualState(
     if (next === 'blocked' || next === 'failed') {
       state = next;
       stateAt = event.timestamp;
+      lifecycleBarrier =
+        next === 'failed' &&
+        (event.type === 'provider_session_failed' || event.type === 'session_failed');
       continue;
     }
 
     if (next === 'completed') {
       state = 'completed';
       stateAt = event.timestamp;
+      continue;
+    }
+
+    if (next === 'idle') {
+      state = next;
+      stateAt = event.timestamp;
+      lifecycleBarrier = true;
       continue;
     }
 

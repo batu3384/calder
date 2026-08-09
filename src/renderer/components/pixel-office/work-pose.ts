@@ -4,8 +4,8 @@ import type { PixelVisualState } from '../pixel-agent/visual-resolver.js';
 export type WorkPose = 'rest' | 'type' | 'read' | 'think' | 'browse' | 'build';
 
 export function workPoseFromVisualState(state: PixelVisualState, isActive: boolean): WorkPose {
-  // Open PTY / boot: show soft think at desk without marking agent "Working".
-  if (state === 'preparing') return 'think';
+  // Open PTY alone is standby, not verified thinking.
+  if (state === 'preparing') return 'rest';
   if (!isActive) return 'rest';
   switch (state) {
     case 'editing_code':

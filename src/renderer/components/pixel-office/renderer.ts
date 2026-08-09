@@ -1,5 +1,6 @@
 import { formatCharacterChromeLabel } from './character-label.js';
 import { drawOfficeProps, drawWallTile, floorColors } from './office-props.js';
+import type { OfficeTheme } from './office-theme.js';
 import {
   CHAR_FRAME_H,
   CHAR_FRAME_W,
@@ -13,6 +14,7 @@ export interface OfficeRenderOptions {
   selectedSessionId: string | null;
   hoveredId: string | null;
   zoom: number;
+  theme: OfficeTheme;
 }
 
 export function renderOffice(
@@ -27,7 +29,7 @@ export function renderOffice(
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.fillStyle = '#0a1018';
+  ctx.fillStyle = options.theme.stage;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   const scale = options.zoom;
@@ -41,9 +43,9 @@ export function renderOffice(
       const x = col * TILE_SIZE;
       const y = row * TILE_SIZE;
       if (kind === 'wall') {
-        drawWallTile(ctx, x, y, row);
+        drawWallTile(ctx, x, y, row, options.theme);
       } else {
-        const { base, accent } = floorColors(col, row, layout);
+        const { base, accent } = floorColors(col, row, layout, options.theme);
         ctx.fillStyle = base;
         ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
         ctx.fillStyle = accent;
@@ -53,7 +55,7 @@ export function renderOffice(
     }
   }
 
-  drawOfficeProps(ctx, layout);
+  drawOfficeProps(ctx, layout, options.theme);
 
   const seatOccupant = new Map<string, OfficeCharacter>();
   for (const ch of characters) {
@@ -73,15 +75,21 @@ export function renderOffice(
       seat.facingDir,
       pose,
       frame,
+      options.theme,
     );
   }
 
   const sorted = [...characters].sort((a, b) => a.y - b.y);
   for (const ch of sorted) {
-    drawCharacter(ctx, ch, {
-      selected: ch.sessionId === options.selectedSessionId && !ch.isSubagent,
-      hovered: ch.id === options.hoveredId,
-    });
+    drawCharacter(
+      ctx,
+      ch,
+      {
+        selected: ch.sessionId === options.selectedSessionId && !ch.isSubagent,
+        hovered: ch.id === options.hoveredId,
+      },
+      options.theme,
+    );
   }
 
   ctx.restore();
@@ -91,6 +99,7 @@ function drawCharacter(
   ctx: CanvasRenderingContext2D,
   ch: OfficeCharacter,
   flags: { selected: boolean; hovered: boolean },
+  theme: OfficeTheme,
 ): void {
   const scale = ch.isSubagent ? 0.75 : 1;
   const x = Math.round(ch.x - (CHAR_FRAME_W * scale) / 2);
@@ -101,27 +110,31 @@ function drawCharacter(
     ctx.lineWidth = 1;
     ctx.strokeRect(x - 1, y - 1, CHAR_FRAME_W * scale + 2, CHAR_FRAME_H * scale + 2);
   } else if (flags.hovered) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.strokeStyle = theme.mutedText;
+    ctx.globalAlpha = 0.5;
     ctx.lineWidth = 1;
     ctx.strokeRect(x - 1, y - 1, CHAR_FRAME_W * scale + 2, CHAR_FRAME_H * scale + 2);
+    ctx.globalAlpha = 1;
   }
 
   drawCharacterSprite(ctx, ch, x, y, scale);
 
   if (ch.bubble === 'permission') {
-    drawBubble(ctx, x + 2, y - 10, '!', '#fbbf24');
+    drawBubble(ctx, x + 2, y - 10, '!', theme.waiting, theme);
   } else if (ch.bubble === 'done') {
-    drawBubble(ctx, x + 2, y - 10, '✓', '#34d399');
+    drawBubble(ctx, x + 2, y - 10, '✓', theme.active, theme);
   } else if (ch.bubble === 'think') {
-    drawBubble(ctx, x + 2, y - 10, '…', '#c4b5fd');
+    drawBubble(ctx, x + 2, y - 10, '…', theme.info, theme);
   }
 
   if (!ch.isSubagent && ch.contextPct != null) {
     const pct = ch.contextPct / 100;
     const barY = y + CHAR_FRAME_H * scale + 1;
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillStyle = theme.wall;
+    ctx.globalAlpha = 0.7;
     ctx.fillRect(x, barY, CHAR_FRAME_W * scale, 3);
-    ctx.fillStyle = pct > 0.85 ? '#ef4444' : pct > 0.6 ? '#f59e0b' : '#22c55e';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = pct > 0.85 ? theme.danger : pct > 0.6 ? theme.waiting : theme.active;
     ctx.fillRect(x, barY, Math.max(1, Math.round(CHAR_FRAME_W * scale * pct)), 3);
   }
 
@@ -132,9 +145,11 @@ function drawCharacter(
     ctx.font = 'bold 5px ui-sans-serif, system-ui, sans-serif';
     const w = Math.min(72, text.length * 3.2 + 6);
     const labelY = y - (ch.isActive ? 10 : 8);
-    ctx.fillStyle = 'rgba(8,12,18,0.78)';
+    ctx.fillStyle = theme.stage;
+    ctx.globalAlpha = 0.9;
     ctx.fillRect(x - 2, labelY, w, 7);
-    ctx.fillStyle = ch.isActive ? '#f8fafc' : '#cbd5e1';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = ch.isActive ? theme.text : theme.mutedText;
     ctx.fillText(text, x, labelY + 5);
     if (flags.selected || ch.isActive) {
       ctx.fillStyle = providerAccent(ch.providerId);
@@ -149,8 +164,9 @@ function drawBubble(
   y: number,
   text: string,
   color: string,
+  theme: OfficeTheme,
 ): void {
-  ctx.fillStyle = '#111827';
+  ctx.fillStyle = theme.wall;
   ctx.fillRect(x, y, 12, 9);
   ctx.fillStyle = color;
   ctx.font = 'bold 7px ui-sans-serif, system-ui, sans-serif';

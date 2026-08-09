@@ -56,6 +56,7 @@ describe('provider pixel identity', () => {
 
   it('marks only active work as motion-active', () => {
     expect(isPixelMotionActive('running_tests')).toBe(true);
+    expect(isPixelMotionActive('preparing')).toBe(false);
     expect(isPixelMotionActive('waiting_for_approval')).toBe(false);
     expect(isPixelMotionActive('idle')).toBe(false);
     expect(isPixelMotionActive('completed')).toBe(false);

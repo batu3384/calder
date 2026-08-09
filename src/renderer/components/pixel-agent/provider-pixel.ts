@@ -5,7 +5,6 @@ export type PixelProviderId = ProviderId | 'unknown';
 
 /** Subset used for locomotion — keep in sync with PixelVisualState work states. */
 type PixelMotionState =
-  | 'preparing'
   | 'unknown_working'
   | 'reading_project'
   | 'searching_code'
@@ -38,7 +37,6 @@ const PROVIDER_LABELS: Record<PixelProviderId, string> = {
 
 /** States that warrant active locomotion / bob — not decorative idle loop. */
 const MOTION_ACTIVE_STATES = new Set<string>([
-  'preparing',
   'unknown_working',
   'reading_project',
   'searching_code',

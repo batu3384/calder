@@ -85,6 +85,14 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
         outcome: 'failed',
       });
 
+    case 'stop':
+      return baseEvent(input, {
+        type: 'session_ended',
+        source: 'provider_hook',
+        confidence: 'provider_reported',
+        outcome: 'completed',
+      });
+
     case 'pre_tool_use':
       return normalizeToolEvent(input, 'tool_requested');
 
@@ -252,6 +260,29 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
             agentType: event.agent_type,
           },
         },
+      );
+
+    case 'task_created':
+      return baseEvent(
+        input,
+        {
+          type: 'task_created',
+          source: 'provider_hook',
+          confidence: 'provider_reported',
+        },
+        { sanitizedMeta: { taskId: event.task_id } },
+      );
+
+    case 'task_completed':
+      return baseEvent(
+        input,
+        {
+          type: 'task_completed',
+          source: 'provider_hook',
+          confidence: 'provider_reported',
+          outcome: 'completed',
+        },
+        { sanitizedMeta: { taskId: event.task_id } },
       );
 
     case 'pre_compact':

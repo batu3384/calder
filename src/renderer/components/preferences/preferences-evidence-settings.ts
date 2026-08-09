@@ -1,4 +1,8 @@
-import { openPixelOffice, setPixelOfficeOpen } from '../pixel-office/mount-pixel-office.js';
+import {
+  openPixelOffice,
+  setPixelOfficeMode,
+  setPixelOfficeOpen,
+} from '../pixel-office/mount-pixel-office.js';
 import { appendPreferencesToggleField } from './preferences-modal-general-helpers.js';
 
 export function renderEvidenceSettingsSection(container: HTMLElement): void {
@@ -63,6 +67,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
       const pixelMode = pixelSelect.value as 'off' | 'office';
       void window.calder.evidence.getSettings().then((current) => {
         void window.calder.evidence.setSettings({ ...current, pixelMode }).then(() => {
+          setPixelOfficeMode(pixelMode === 'office');
           if (pixelMode === 'office') openPixelOffice();
           else setPixelOfficeOpen(false);
         });

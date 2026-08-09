@@ -8,7 +8,7 @@ import {
   formatActivityLabel,
   listActiveSubagentIds,
 } from './agent-event.js';
-import { formatCharacterChromeLabel } from './character-label.js';
+import { formatCharacterChromeLabel, formatCharacterStatusLabel } from './character-label.js';
 import { createOfficeCharacter, updateOfficeCharacter } from './characters.js';
 import { buildWalkability, createDefaultLayout } from './layout.js';
 import {
@@ -20,6 +20,8 @@ import {
   stringifyOfficeLayout,
   undoLayout,
 } from './layout-io.js';
+import { mergeEvidenceEvents } from './office-state.js';
+import { officeThemeFromCss } from './office-theme.js';
 import { findPath } from './pathfinding.js';
 import { CharacterState, DONE_BUBBLE_SEC } from './types.js';
 import { workPoseFromVisualState } from './work-pose.js';
@@ -79,7 +81,7 @@ describe('pixel office agent signals', () => {
     expect(workPoseFromVisualState('idle', false)).toBe('rest');
     expect(workPoseFromVisualState('editing_code', true)).toBe('type');
     expect(workPoseFromVisualState('researching_web', true)).toBe('browse');
-    expect(workPoseFromVisualState('preparing', false)).toBe('think');
+    expect(workPoseFromVisualState('preparing', false)).toBe('rest');
     expect(workPoseFromVisualState('building', true)).toBe('build');
     expect(workPoseFromVisualState('reading_files', true)).toBe('read');
   });
@@ -96,6 +98,90 @@ describe('pixel office agent signals', () => {
     expect(workPoseFromVisualState(thinking.visualState, thinking.isActive)).toBe('think');
   });
 
+  it('does not keep completed tool metadata as current work', () => {
+    const signal = evidenceTailToAgentSignals('s1', [
+      event('tool_started', { seq: 1, toolName: 'Read' }),
+      event('tool_completed', { seq: 2, toolName: 'Read' }),
+    ]);
+    expect(signal.isActive).toBe(true);
+    expect(signal.toolName).toBeNull();
+    expect(signal.isReading).toBe(false);
+  });
+
+  it('clears current tool metadata after a stopped turn', () => {
+    const signal = evidenceTailToAgentSignals('s1', [
+      event('tool_started', { seq: 1, toolName: 'Read' }),
+      event('session_ended', { seq: 2 }),
+    ]);
+    expect(signal.isActive).toBe(false);
+    expect(signal.toolName).toBeNull();
+  });
+
+  it('merges live evidence by event identity and sequence', () => {
+    const first = event('pty_started', { eventId: 'a', seq: 1 });
+    const next = event('prompt_submitted', { eventId: 'b', seq: 2 });
+    const merged = mergeEvidenceEvents([first], [next, first]);
+
+    expect(merged.map((item) => item.eventId)).toEqual(['a', 'b']);
+    expect(mergeEvidenceEvents(merged, [])).toEqual(merged);
+  });
+
+  it('rejects stale cross-run snapshots until a new run starts', () => {
+    const current = event('prompt_submitted', { eventId: 'current', seq: 4, timestamp: 2_000 });
+    const staleStart = event('pty_started', {
+      eventId: 'stale-start',
+      evidenceRunId: 'run-old',
+      seq: 1,
+      timestamp: 1_000,
+    });
+    const stale = event('tool_started', {
+      eventId: 'stale',
+      evidenceRunId: 'run-old',
+      seq: 2,
+      timestamp: 1_500,
+    });
+    const fresh = event('pty_started', {
+      eventId: 'fresh',
+      evidenceRunId: 'run-new',
+      seq: 1,
+      timestamp: 3_000,
+    });
+
+    expect(mergeEvidenceEvents([current], [staleStart])).toEqual([current]);
+    expect(mergeEvidenceEvents([current], [stale])).toEqual([current]);
+    expect(mergeEvidenceEvents([current], [fresh])).toEqual([fresh]);
+  });
+
+  it('derives office colors from shared CSS tokens', () => {
+    const theme = officeThemeFromCss((name) => {
+      const values: Record<string, string> = {
+        '--surface-live': '#101820',
+        '--pixel-office-floor': '#202830',
+        '--pixel-office-floor-accent': '#2a3440',
+        '--pixel-office-wall': '#334455',
+        '--pixel-office-wall-accent': '#445566',
+        '--accent-positive': '#27a644',
+        '--accent-warning': '#d5a94f',
+        '--accent-danger': '#ef8a74',
+        '--accent-info': '#8fb8c1',
+        '--text-primary': '#f7f8f8',
+        '--text-secondary': '#d0d6e0',
+      };
+      return values[name] ?? '';
+    });
+    expect(theme).toMatchObject({
+      stage: '#101820',
+      floor: '#202830',
+      floorAccent: '#2a3440',
+      wall: '#334455',
+      wallAccent: '#445566',
+      active: '#27a644',
+      waiting: '#d5a94f',
+      danger: '#ef8a74',
+      info: '#8fb8c1',
+    });
+  });
+
   it('avoids generic Session N chrome labels', () => {
     const ch = createOfficeCharacter({
       id: 's1',
@@ -108,7 +194,26 @@ describe('pixel office agent signals', () => {
     expect(formatCharacterChromeLabel(ch)).not.toMatch(/Session\s*1/i);
     ch.isActive = true;
     ch.activityLabel = 'Kod düzenliyor';
-    expect(formatCharacterChromeLabel(ch)).toBe('Kod düzenliyor');
+    expect(formatCharacterChromeLabel(ch)).toContain('Claude · Kod');
+  });
+
+  it('uses provider and activity in accessible session status', () => {
+    const ch = createOfficeCharacter({
+      id: 's1',
+      sessionId: 's1',
+      providerId: 'claude',
+      seat: createDefaultLayout().seats[0]!,
+      name: 'Session 1',
+    });
+    expect(formatCharacterStatusLabel(ch)).toContain('Claude');
+    expect(formatCharacterStatusLabel(ch)).toContain('Resting');
+    ch.isActive = true;
+    ch.activityLabel = 'Kod düzenliyor';
+    expect(formatCharacterStatusLabel(ch)).toBe('Claude · Kod düzenliyor');
+    ch.isActive = false;
+    ch.activityLabel = '';
+    ch.visualState = 'waiting_for_approval';
+    expect(formatCharacterStatusLabel(ch)).toContain('Waiting for approval');
   });
 
   it('prefers desk rest over wander when rng stays high', () => {
@@ -161,6 +266,46 @@ describe('pixel office agent signals', () => {
     expect(ch.seatTimer).toBeGreaterThan(0);
   });
 
+  it('keeps permission-waiting agents at their desk', () => {
+    const layout = createDefaultLayout();
+    const seat = layout.seats[0]!;
+    const ch = createOfficeCharacter({
+      id: 's1',
+      sessionId: 's1',
+      providerId: 'claude',
+      seat,
+      name: 'Claude 1',
+    });
+    ch.state = CharacterState.WALK;
+    ch.visualState = 'waiting_for_approval';
+    ch.path = [{ col: seat.seatCol + 1, row: seat.seatRow }];
+    const seats = new Map([[seat.id, seat]]);
+    const { walkable, blocked } = buildWalkability(layout);
+    updateOfficeCharacter(ch, 0.05, layout, seats, walkable, blocked, { random: () => 0 });
+    expect(ch.state).toBe(CharacterState.DESK);
+    expect(ch.tileCol).toBe(seat.seatCol);
+    expect(ch.tileRow).toBe(seat.seatRow);
+  });
+
+  it('snaps walking agents to their desk under reduced motion', () => {
+    const layout = createDefaultLayout();
+    const seat = layout.seats[0]!;
+    const ch = createOfficeCharacter({
+      id: 's1',
+      sessionId: 's1',
+      providerId: 'claude',
+      seat,
+      name: 'Claude 1',
+    });
+    ch.state = CharacterState.WALK;
+    ch.path = [{ col: seat.seatCol + 1, row: seat.seatRow }];
+    const seats = new Map([[seat.id, seat]]);
+    const { walkable, blocked } = buildWalkability(layout);
+    updateOfficeCharacter(ch, 0.05, layout, seats, walkable, blocked, { random: () => 0 }, true);
+    expect(ch.state).toBe(CharacterState.DESK);
+    expect(ch.path).toEqual([]);
+  });
+
   it('lists active subagents within window', () => {
     const now = Date.now();
     const ids = listActiveSubagentIds(
@@ -174,9 +319,46 @@ describe('pixel office agent signals', () => {
     expect(ids).toEqual(['sub-b']);
   });
 
+  it('clears subagents when parent session ends', () => {
+    const now = Date.now();
+    const ids = listActiveSubagentIds(
+      [
+        event('subagent_started', { eventId: 'a', subagentId: 'sub-a', timestamp: now - 1000 }),
+        event('session_completed', { eventId: 'b', timestamp: now }),
+      ],
+      now,
+    );
+    expect(ids).toEqual([]);
+  });
+
+  it('clears a stopped turn before processing later subagents', () => {
+    const now = Date.now();
+    const ids = listActiveSubagentIds([
+      event('subagent_started', { eventId: 'a', subagentId: 'sub-a', timestamp: now - 1000 }),
+      event('session_ended', { eventId: 'b', timestamp: now }),
+      event('subagent_started', { eventId: 'c', subagentId: 'sub-b', timestamp: now }),
+    ]);
+    expect(ids).toEqual(['sub-b']);
+  });
+
   it('maps evidence tool_completed to AgentEvent toolEnd', () => {
     const mapped = evidenceEventToAgentEvent(event('tool_completed', { toolName: 'Bash' }));
     expect(mapped).toMatchObject({ kind: 'toolEnd', toolName: 'Bash' });
+  });
+
+  it('maps stopped turns to AgentEvent turnEnd', () => {
+    expect(evidenceEventToAgentEvent(event('session_ended'))).toMatchObject({
+      kind: 'turnEnd',
+    });
+  });
+
+  it('clears late tool names after a stopped turn', () => {
+    const signals = evidenceTailToAgentSignals('s1', [
+      event('session_ended', { seq: 1 }),
+      event('tool_started', { seq: 2, toolName: 'Read' }),
+    ]);
+    expect(signals.visualState).toBe('idle');
+    expect(signals.toolName).toBeNull();
   });
 });
 

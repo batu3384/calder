@@ -59,6 +59,7 @@ export function evidenceEventToAgentEvent(event: EvidenceEvent): AgentEvent | nu
       return { ...base, kind: 'sessionStart' };
     case 'provider_session_completed':
     case 'session_completed':
+    case 'session_interrupted':
     case 'pty_exited':
       return { ...base, kind: 'sessionEnd' };
     case 'tool_requested':
@@ -73,6 +74,8 @@ export function evidenceEventToAgentEvent(event: EvidenceEvent): AgentEvent | nu
     case 'subagent_completed':
       return { ...base, kind: 'subagentEnd' };
     case 'prompt_submitted':
+    case 'session_ended':
+    case 'task_completed':
       return { ...base, kind: 'turnEnd' };
     case 'cost_snapshot':
     case 'context_compaction_started':
@@ -102,7 +105,23 @@ export function evidenceTailToAgentSignals(
         event.type === 'tool_requested' ||
         event.type === 'tool_completed',
     );
-  const toolName = lastTool?.toolName ?? null;
+  const lastToolReset = [...events]
+    .reverse()
+    .find((event) =>
+      [
+        'tool_completed',
+        'tool_failed',
+        'session_completed',
+        'session_failed',
+        'session_interrupted',
+        'session_ended',
+        'task_completed',
+      ].includes(event.type),
+    );
+  const toolName =
+    lastToolReset && (!lastTool || lastToolReset.seq >= lastTool.seq)
+      ? null
+      : (lastTool?.toolName ?? null);
   const mapped = toolName ? mapToolNameToPixelState(toolName, lastTool?.sanitizedMeta) : null;
   const isReading =
     mapped === 'reading_files' ||
@@ -114,17 +133,29 @@ export function evidenceTailToAgentSignals(
   if (state === 'waiting_for_approval') {
     return {
       isActive: false,
-      toolName,
+      toolName: null,
       isReading: false,
       bubble: 'permission',
       visualState: state,
     };
   }
   if (state === 'completed') {
-    return { isActive: false, toolName, isReading: false, bubble: 'done', visualState: state };
+    return {
+      isActive: false,
+      toolName: null,
+      isReading: false,
+      bubble: 'done',
+      visualState: state,
+    };
   }
   if (state === 'idle' || state === 'failed' || state === 'blocked') {
-    return { isActive: false, toolName, isReading: false, bubble: 'none', visualState: state };
+    return {
+      isActive: false,
+      toolName: null,
+      isReading: false,
+      bubble: 'none',
+      visualState: state,
+    };
   }
   const isActive = ACTIVE_VISUAL_STATES.has(state);
   return {
@@ -188,6 +219,18 @@ export function listActiveSubagentIds(events: EvidenceEvent[], now = Date.now())
   const anonymous: string[] = [];
   for (const event of events) {
     if (now - event.timestamp > SUBAGENT_WINDOW_MS) continue;
+    if (
+      event.type === 'session_completed' ||
+      event.type === 'session_failed' ||
+      event.type === 'session_interrupted'
+    ) {
+      return [];
+    }
+    if (event.type === 'session_ended') {
+      open.clear();
+      anonymous.length = 0;
+      continue;
+    }
     const explicit = Boolean(
       event.subagentId ||
       (typeof event.sanitizedMeta?.subagentId === 'string' && event.sanitizedMeta.subagentId),

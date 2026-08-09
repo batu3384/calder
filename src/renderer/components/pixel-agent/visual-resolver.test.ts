@@ -65,6 +65,55 @@ describe('pixel visual resolver', () => {
     expect(state).toBe('completed');
   });
 
+  it('clears a completed tool into structured thinking', () => {
+    const state = resolvePixelVisualState([
+      event('tool_started', { toolName: 'Read', seq: 1 }),
+      event('tool_completed', { toolName: 'Read', seq: 2, outcome: 'completed' }),
+    ]);
+    expect(state).toBe('unknown_working');
+  });
+
+  it('clears a stopped turn to idle', () => {
+    const state = resolvePixelVisualState([
+      event('tool_started', { toolName: 'Read', seq: 1 }),
+      event('session_ended', { seq: 2, outcome: 'completed' }),
+    ]);
+    expect(state).toBe('idle');
+  });
+
+  it('does not let late git observations reopen a completed session', () => {
+    const state = resolvePixelVisualState([
+      event('session_completed', { seq: 1, outcome: 'completed' }),
+      event('git_change_observed', { seq: 2 }),
+    ]);
+    expect(state).toBe('completed');
+  });
+
+  it('does not let late work reopen a stopped turn', () => {
+    const state = resolvePixelVisualState([
+      event('session_ended', { seq: 1, outcome: 'completed' }),
+      event('git_change_observed', { seq: 2 }),
+    ]);
+    expect(state).toBe('idle');
+  });
+
+  it('allows a new prompt to reopen a stopped turn', () => {
+    const state = resolvePixelVisualState([
+      event('session_ended', { seq: 1, outcome: 'completed' }),
+      event('prompt_submitted', { seq: 2 }),
+      event('tool_started', { toolName: 'Read', seq: 3 }),
+    ]);
+    expect(state).toBe('reading_files');
+  });
+
+  it('keeps late work behind a failed session barrier', () => {
+    const state = resolvePixelVisualState([
+      event('session_failed', { seq: 1 }),
+      event('tool_started', { toolName: 'Read', seq: 2 }),
+    ]);
+    expect(state).toBe('failed');
+  });
+
   it('later tool work clears earlier blocked', () => {
     const state = resolvePixelVisualState([
       event('operation_blocked', { seq: 1 }),

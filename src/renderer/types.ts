@@ -375,7 +375,7 @@ export interface CalderApi {
     getStorageUsage(): Promise<number>;
     rebuildSummary(runId: string): Promise<EvidenceSummary | null>;
     resolveRunId(sessionId: string): Promise<string | null>;
-    subscribe(runId: string): void;
+    subscribe(runId: string | string[]): void;
     unsubscribe(): void;
     onEvent(callback: (runId: string, events: EvidenceEvent[]) => void): () => void;
   };

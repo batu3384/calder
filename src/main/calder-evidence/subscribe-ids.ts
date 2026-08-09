@@ -1,3 +1,5 @@
+import { assertSafeRunId } from './paths.js';
+
 /** Normalize evidence:subscribe payload into unique non-empty runIds. */
 export function normalizeEvidenceSubscribeRunIds(raw: unknown): string[] {
   const ids = Array.isArray(raw) ? raw : [raw];
@@ -7,6 +9,11 @@ export function normalizeEvidenceSubscribeRunIds(raw: unknown): string[] {
     if (typeof id !== 'string') continue;
     const trimmed = id.trim();
     if (!trimmed || seen.has(trimmed)) continue;
+    try {
+      assertSafeRunId(trimmed);
+    } catch {
+      continue;
+    }
     seen.add(trimmed);
     runIds.push(trimmed);
   }

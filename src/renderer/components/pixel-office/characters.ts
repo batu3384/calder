@@ -31,6 +31,22 @@ function tileCenter(col: number, row: number): { x: number; y: number } {
   return { x: col * TILE_SIZE + TILE_SIZE / 2, y: row * TILE_SIZE + TILE_SIZE / 2 };
 }
 
+function snapToSeat(ch: OfficeCharacter, seat: Seat, resetPose: boolean): void {
+  const center = tileCenter(seat.seatCol, seat.seatRow);
+  ch.tileCol = seat.seatCol;
+  ch.tileRow = seat.seatRow;
+  ch.x = center.x;
+  ch.y = center.y;
+  ch.dir = seat.facingDir;
+  ch.state = CharacterState.DESK;
+  ch.path = [];
+  ch.moveProgress = 0;
+  ch.frame = 0;
+  ch.frameTimer = 0;
+  ch.seatTimer = SEAT_REST_MIN_SEC;
+  if (resetPose) ch.workPose = 'rest';
+}
+
 function directionBetween(
   fromCol: number,
   fromRow: number,
@@ -146,6 +162,19 @@ export function updateOfficeCharacter(
     ch.bubble = 'none';
   } else if (ch.workPose === 'think' && ch.bubble === 'none') {
     ch.bubble = 'think';
+  }
+
+  if (ch.visualState === 'waiting_for_approval') {
+    const seat = ch.seatId ? seats.get(ch.seatId) : undefined;
+    if (seat) snapToSeat(ch, seat, true);
+    else {
+      ch.state = CharacterState.DESK;
+      ch.path = [];
+      ch.moveProgress = 0;
+      ch.frame = 0;
+      ch.seatTimer = SEAT_REST_MIN_SEC;
+    }
+    return;
   }
 
   switch (ch.state) {
@@ -271,6 +300,13 @@ export function updateOfficeCharacter(
       break;
     }
     case CharacterState.WALK: {
+      if (reducedMotion && ch.seatId) {
+        const seat = seats.get(ch.seatId);
+        if (seat) {
+          snapToSeat(ch, seat, !ch.isActive);
+          break;
+        }
+      }
       if (!reducedMotion && ch.frameTimer >= WALK_FRAME_DURATION_SEC) {
         ch.frameTimer -= WALK_FRAME_DURATION_SEC;
         ch.frame = (ch.frame + 1) % 4;

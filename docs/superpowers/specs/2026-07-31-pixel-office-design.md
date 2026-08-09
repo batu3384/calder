@@ -2,19 +2,19 @@
 
 **Date:** 2026-07-31  
 **Status:** Approved (brainstorming)  
-**Replaces:** DOM Pixel Studio / Compact / Ecosystem rail (`pixel-agent/*`, Context Inspector Pixel tab)
+**Replaces:** DOM Pixel Studio / Compact / Ecosystem rail and the obsolete Context Inspector Pixel tab
 
 ## Decisions
 
 | Topic        | Choice                                                                                                                    |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | Ambition     | Full office parity with [pixel-agents](https://github.com/pixel-agents-hq/pixel-agents) (Canvas 2D office, not CSS boxes) |
-| Placement    | New main surface beside terminal/mosaic (`#pixel-office`)                                                                 |
+| Placement    | Right Context Inspector rail (`#pixel-office`), alongside Run / Project / Timeline context                                |
 | Assets       | Metro City character pack + Calder-owned floor/wall/furniture                                                             |
 | V1 scope     | Full parity target: core + editor + bubbles + gauge + sub-agents + sound                                                  |
 | Data         | Evidence IPC + provider hook/transcript bridge (Claude first)                                                             |
 | Architecture | Calder-native Canvas office (no embed/fork of pixel-agents SPA)                                                           |
-| Old system   | **Hard delete** — no deprecate path                                                                                       |
+| Old system   | Remove old DOM Pixel surfaces; retain sanitized Evidence resolver as the office data adapter                              |
 
 ## Product goal
 
@@ -29,12 +29,13 @@ Each open CLI session appears as an animated pixel character in a shared office.
 
 ## Shell & layout
 
-- `#pixel-office` pane beside `#terminal-container` (inside workspace shell), resize handle, width ~420–560px (min ~360).
+- `#pixel-office` pane inside the right Context Inspector rail, resize handle, height 140–480px.
 - Toggle: menu + command palette `Toggle Pixel Office` (`Cmd+Shift+O`); persist open state.
 - Context Inspector keeps Run / Project / Timeline. **Pixel tab removed**; deep-links open Pixel Office instead.
 - Click character → `appState.setActiveSession` + terminal focus.
-- Hover → activity label + context gauge (when available).
-- Narrow viewport: stack or drawer (responsive contract).
+- Canvas companion DOM → provider, verified activity/status, context gauge, event age, and live connection state.
+- Keyboard resize → Arrow keys adjust height; Home/End select limits. Reduced motion disables wandering and frame animation.
+- Narrow rail: status summary stays readable; canvas uses contain zoom and never clips the map.
 
 ## Runtime (Canvas)
 
@@ -45,7 +46,7 @@ src/renderer/components/pixel-office/
   mount-pixel-office.ts
   game-loop.ts
   renderer.ts
-  characters.ts          # IDLE | WALK | TYPE
+  characters.ts          # IDLE | WALK | DESK (workPose: rest/type/read/browse/build/think)
   office-state.ts
   pathfinding.ts         # BFS
   layout.ts
@@ -59,13 +60,14 @@ src/renderer/components/pixel-office/
 
 Character contract (pixel-agents vocabulary):
 
-| Agent status                   | Character behavior                          |
-| ------------------------------ | ------------------------------------------- |
-| Active                         | Seated TYPE (read vs type by tool taxonomy) |
-| Done                           | IDLE → wander → seat rest                   |
-| Waiting for input / permission | Stay seated + speech bubble                 |
-| Sub-agent (unnamed)            | Near parent, no seat                        |
-| Teammate (named)               | Deferred after Claude team bridge           |
+| Agent status                   | Character behavior                            |
+| ------------------------------ | --------------------------------------------- |
+| Verified active work           | Seated DESK with task-specific workPose       |
+| Standby / PTY-only             | DESK rest; no unsupported Thinking claim      |
+| Done / failed / interrupted    | DESK rest or completion bubble; no stale work |
+| Waiting for input / permission | Stay seated + speech bubble                   |
+| Sub-agent (unnamed)            | Near parent, no seat                          |
+| Teammate (named)               | Deferred after Claude team bridge             |
 
 Default layout ships as JSON; editor supports floor/wall paint, furniture place/rotate, undo/redo, import/export. Persist under Calder data / preferences (`pixelOffice.layout`). Zoom integer + pan + follow selected.
 
@@ -75,9 +77,17 @@ Canonical `AgentEvent.kind`:
 `sessionStart | sessionEnd | toolStart | toolEnd | turnEnd | permissionRequest | subagentStart | subagentEnd | progress`
 
 - Map sanitized `EvidenceEvent` → `AgentEvent`.
+- Provider `stop` normalizes to `session_ended` (turn end); `task_completed` and interruption
+  clear active visual state.
+- Initial event tails and live batches reconcile by run/event identity and monotonic `seq`;
+  stale async snapshots cannot overwrite newer activity.
 - Claude hooks/transcript → same model (main-process provider adapter).
 - PTY-only providers (e.g. Antigravity): weak Bash-like signal + **PTY only** fidelity badge.
 - Evidence Preferences capture remains; `pixelMode` becomes `off | office` (or boolean office enabled).
+- Canvas palette reads shared Calder CSS tokens, so light and dark themes preserve semantic status
+  contrast.
+- Canvas remains decorative; `aria-live` status companion exposes session labels and activity to
+  keyboard and screen-reader users.
 
 ## Assets
 
