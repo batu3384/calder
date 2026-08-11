@@ -26,6 +26,13 @@ interface EventMapping {
   outcome?: string;
 }
 
+const MAX_PROVIDER_TEXT_LENGTH = 256;
+
+function sanitizeProviderText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  return String(redactValue(value).value).slice(0, MAX_PROVIDER_TEXT_LENGTH);
+}
+
 function baseEvent(
   input: NormalizeInspectorInput,
   mapping: EventMapping,
@@ -39,7 +46,7 @@ function baseEvent(
     providerId: input.providerId,
     projectId: input.projectId,
     type: mapping.type,
-    providerEventName: input.event.hookEvent || input.event.type,
+    providerEventName: sanitizeProviderText(input.event.hookEvent) || input.event.type,
     timestamp: input.event.timestamp,
     seq: input.seq,
     source: mapping.source,
@@ -115,7 +122,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           outcome: 'failed',
         },
         {
-          toolName: event.tool_name,
+          toolName: sanitizeProviderText(event.tool_name),
           sanitizedMeta: {
             ...(redacted.meta ?? {}),
             errorCategory: event.error ? 'tool_error' : undefined,
@@ -134,7 +141,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           source: 'provider_hook',
           confidence: 'provider_reported',
         },
-        { toolName: event.tool_name },
+        { toolName: sanitizeProviderText(event.tool_name) },
       );
 
     case 'permission_denied':
@@ -146,7 +153,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           confidence: 'provider_reported',
           outcome: 'denied',
         },
-        { toolName: event.tool_name },
+        { toolName: sanitizeProviderText(event.tool_name) },
       );
 
     case 'approval_decision': {
@@ -162,7 +169,7 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           outcome: event.auto_approval?.decision,
         },
         {
-          toolName: event.tool_name,
+          toolName: sanitizeProviderText(event.tool_name),
           policyDecision: event.auto_approval
             ? {
                 policySource: event.auto_approval.policy_source,
@@ -227,7 +234,9 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
         },
       );
 
-    case 'subagent_start':
+    case 'subagent_start': {
+      const agentId = sanitizeProviderText(event.agent_id);
+      const agentType = sanitizeProviderText(event.agent_type);
       return baseEvent(
         input,
         {
@@ -236,15 +245,18 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           confidence: 'provider_reported',
         },
         {
-          subagentId: event.agent_id,
+          subagentId: agentId,
           sanitizedMeta: {
-            subagentId: event.agent_id,
-            agentType: event.agent_type,
+            subagentId: agentId,
+            agentType,
           },
         },
       );
+    }
 
-    case 'subagent_stop':
+    case 'subagent_stop': {
+      const agentId = sanitizeProviderText(event.agent_id);
+      const agentType = sanitizeProviderText(event.agent_type);
       return baseEvent(
         input,
         {
@@ -254,15 +266,17 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           outcome: 'completed',
         },
         {
-          subagentId: event.agent_id,
+          subagentId: agentId,
           sanitizedMeta: {
-            subagentId: event.agent_id,
-            agentType: event.agent_type,
+            subagentId: agentId,
+            agentType,
           },
         },
       );
+    }
 
-    case 'task_created':
+    case 'task_created': {
+      const taskId = sanitizeProviderText(event.task_id);
       return baseEvent(
         input,
         {
@@ -270,10 +284,12 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           source: 'provider_hook',
           confidence: 'provider_reported',
         },
-        { sanitizedMeta: { taskId: event.task_id } },
+        { sanitizedMeta: { taskId } },
       );
+    }
 
-    case 'task_completed':
+    case 'task_completed': {
+      const taskId = sanitizeProviderText(event.task_id);
       return baseEvent(
         input,
         {
@@ -282,8 +298,9 @@ export function normalizeInspectorEvent(input: NormalizeInspectorInput): Evidenc
           confidence: 'provider_reported',
           outcome: 'completed',
         },
-        { sanitizedMeta: { taskId: event.task_id } },
+        { sanitizedMeta: { taskId } },
       );
+    }
 
     case 'pre_compact':
       return baseEvent(input, {
@@ -320,7 +337,7 @@ function normalizeToolEvent(
       outcome: type === 'tool_completed' ? 'completed' : undefined,
     },
     {
-      toolName: event.tool_name,
+      toolName: sanitizeProviderText(event.tool_name),
       sanitizedMeta: redacted.meta,
       redactedFieldCount: redacted.redactedCount,
       redactionTypes: redacted.redactionTypes,

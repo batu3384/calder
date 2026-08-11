@@ -2,10 +2,12 @@ import * as fs from 'fs';
 import * as os from 'os';
 
 import type { InspectorEvent } from '../shared/types/session';
+import { redactValue } from './calder-evidence/redact';
 
 const PLAYWRIGHT_NAVIGATE_TOOL = 'mcp__plugin_playwright_playwright__browser_navigate';
 const PLAYWRIGHT_MIRROR_COOLDOWN_MS = 1_500;
 const AUTO_APPROVAL_AUDIT_EXTENSION = '.auto_approval.log';
+const MAX_AUDIT_INPUT_BYTES = 64 * 1024;
 
 export const PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS = 8_192;
 
@@ -20,25 +22,42 @@ export interface PlaywrightMirrorTarget {
   sessionId: string;
 }
 
+export function sanitizeInspectorEvents(events: InspectorEvent[]): InspectorEvent[] {
+  return events.map((event) => {
+    const redacted = redactValue(event).value as InspectorEvent;
+    if (!redacted.tool_input) return redacted;
+    if (Buffer.byteLength(JSON.stringify(redacted.tool_input), 'utf8') <= MAX_AUDIT_INPUT_BYTES) {
+      return redacted;
+    }
+    return {
+      ...redacted,
+      tool_input: { redacted: '[REDACTED:oversized_tool_input]' },
+    };
+  });
+}
+
 export function appendAutoApprovalAudit(sessionId: string, events: InspectorEvent[]): void {
   if (!events.length) return;
-  const auditEvents = events.filter(
+  const auditEvents = sanitizeInspectorEvents(events).filter(
     (event) => event.type === 'approval_decision' && event.auto_approval !== undefined,
   );
   if (!auditEvents.length) return;
 
   const runtimeDir = `${os.homedir()}/.calder/runtime`;
-  const auditPath = `${runtimeDir}/${sessionId}${AUTO_APPROVAL_AUDIT_EXTENSION}`;
+  const safeSessionId = sessionId.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 128);
+  const auditPath = `${runtimeDir}/${safeSessionId}${AUTO_APPROVAL_AUDIT_EXTENSION}`;
 
   try {
-    fs.mkdirSync(runtimeDir, { recursive: true });
+    fs.mkdirSync(runtimeDir, { recursive: true, mode: 0o700 });
+    fs.chmodSync(runtimeDir, 0o700);
     const lines = auditEvents.map((event) =>
       JSON.stringify({
         emittedAt: new Date().toISOString(),
         event,
       }),
     );
-    fs.appendFileSync(auditPath, `${lines.join('\n')}\n`, 'utf8');
+    fs.appendFileSync(auditPath, `${lines.join('\n')}\n`, { encoding: 'utf8', mode: 0o600 });
+    fs.chmodSync(auditPath, 0o600);
   } catch (error) {
     console.warn('Failed to append auto-approval audit log:', error);
   }

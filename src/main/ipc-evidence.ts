@@ -12,6 +12,7 @@ import {
   setEvidenceEventNotifier,
   setEvidenceSettings,
 } from './calder-evidence/coordinator.js';
+import { replayEvidenceTail } from './calder-evidence/evidence-replay.js';
 import { exportEvidenceRun } from './calder-evidence/export.js';
 import { rebuildSummary } from './calder-evidence/finalization.js';
 import { evaluateEvidenceHealth } from './calder-evidence/health.js';
@@ -33,8 +34,25 @@ const evidenceSubscribers = new Map<number, { runIds: Set<string>; sender: WebCo
 
 const destroyHookedSenders = new Set<number>();
 
+function replayEvidenceSubscription(sender: WebContents, runIds: Set<string>): void {
+  for (const runId of runIds) {
+    if (sender.isDestroyed()) return;
+    const meta = readMeta(runId);
+    if (!meta) continue;
+    const events = replayEvidenceTail(runId, meta.eventCount, readEvents);
+    if (events.length > 0) sender.send('evidence:event', runId, events);
+  }
+}
+
 function focusedWindow(): BrowserWindow | undefined {
   return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+}
+
+function publicEvidenceMeta(meta: NonNullable<ReturnType<typeof readMeta>>) {
+  return {
+    ...meta,
+    projectPath: path.basename(meta.projectPath) || 'project',
+  };
 }
 
 function normalizeExportExtension(filePath: string, format: 'json' | 'markdown'): string {
@@ -104,7 +122,8 @@ export function registerEvidenceIpcHandlers(): void {
   ipcMain.handle('evidence:getMeta', (_event, id: string) => {
     const runId = resolveEvidenceRunId(id);
     if (!runId) return null;
-    return readMeta(runId);
+    const meta = readMeta(runId);
+    return meta ? publicEvidenceMeta(meta) : null;
   });
 
   ipcMain.handle('evidence:getReview', (_event, id: string) => {
@@ -240,6 +259,7 @@ export function registerEvidenceIpcHandlers(): void {
         destroyHookedSenders.delete(sender.id);
       });
     }
+    replayEvidenceSubscription(sender, runIds);
   });
 
   ipcMain.on('evidence:unsubscribe', (event) => {

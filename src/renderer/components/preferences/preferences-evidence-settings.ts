@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import {
   openPixelOffice,
   setPixelOfficeMode,
@@ -11,13 +12,14 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
 
   const heading = document.createElement('div');
   heading.className = 'preferences-card-heading';
-  heading.textContent = 'Session Evidence';
+  heading.textContent = t('Session Evidence');
   card.appendChild(heading);
 
   const copy = document.createElement('div');
   copy.className = 'preferences-card-copy';
-  copy.textContent =
-    'Record sanitized session activity locally for the Pixel Office in the inspector rail. Office mode drives live characters from Evidence; Off keeps capture without the office view.';
+  copy.textContent = t(
+    'Record sanitized session activity locally for the Pixel Office in the inspector rail. Office mode drives live characters from Evidence; Off keeps capture without the office view.',
+  );
   card.appendChild(copy);
 
   const body = document.createElement('div');
@@ -26,7 +28,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
 
   const loading = document.createElement('div');
   loading.className = 'preferences-control-note';
-  loading.textContent = 'Loading evidence settings…';
+  loading.textContent = t('Loading evidence settings…');
   body.appendChild(loading);
   container.appendChild(card);
 
@@ -36,7 +38,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
     appendPreferencesToggleField(
       body,
       'pref-evidence-enabled',
-      'Record session evidence for new terminal sessions',
+      t('Record session evidence for new terminal sessions'),
       settings.enabled,
       (enabled) => {
         void window.calder.evidence.getSettings().then((current) => {
@@ -50,7 +52,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
 
     const pixelLabel = document.createElement('label');
     pixelLabel.htmlFor = 'pref-evidence-pixel-mode';
-    pixelLabel.textContent = 'Pixel Office';
+    pixelLabel.textContent = t('Pixel Office');
     pixelRow.appendChild(pixelLabel);
 
     const pixelSelect = document.createElement('select');
@@ -59,7 +61,7 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
     for (const mode of ['off', 'office'] as const) {
       const option = document.createElement('option');
       option.value = mode;
-      option.textContent = mode === 'off' ? 'Off' : 'Office';
+      option.textContent = t(mode === 'off' ? 'Off' : 'Office');
       option.selected = settings.pixelMode === mode;
       pixelSelect.appendChild(option);
     }
@@ -78,8 +80,9 @@ export function renderEvidenceSettingsSection(container: HTMLElement): void {
 
     const note = document.createElement('div');
     note.className = 'preferences-control-note';
-    note.textContent =
-      'New installs default to Office (Cmd+Shift+O). Evidence stays local; disabling capture does not delete existing runs.';
+    note.textContent = t(
+      'New installs default to Office (Cmd+Shift+O). Evidence stays local; disabling capture does not delete existing runs.',
+    );
     body.appendChild(note);
   });
 }

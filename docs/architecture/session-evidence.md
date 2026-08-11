@@ -45,7 +45,11 @@ The rail owns one lifecycle bridge:
 
 - `pixelMode` controls visibility, runtime start, and Evidence subscription together.
 - Collapsing the rail stops the Canvas animation loop while retaining reconciled state.
+- Closing the Context Inspector emits a visibility signal; the office loop and subscription stop until
+  the rail reopens.
 - Canvas colors come from shared light/dark CSS tokens through `office-theme.ts`.
+- DOM session rows include provider/activity, event age, and context percentage; keyboard resize
+  updates Canvas sizing together with the persisted rail height.
 
 ## IPC
 
@@ -55,22 +59,35 @@ The rail owns one lifecycle bridge:
 
 Inspector hooks normalize into Evidence:
 
-| Hook / inspector type              | Evidence type                                              |
-| ---------------------------------- | ---------------------------------------------------------- |
-| `pre_tool_use`                     | `tool_requested`                                           |
-| `tool_use` (non-Post)              | `tool_started`                                             |
-| `tool_use` + `PostToolUse`         | `tool_completed`                                           |
-| `stop`                             | `session_ended` (turn end; run remains open)               |
-| `task_created` / `task_completed`  | `task_created` / `task_completed`                          |
-| `subagent_start` / `subagent_stop` | `subagent_started` / `subagent_completed` (+ `subagentId`) |
+| Hook / inspector type              | Evidence type                                                        |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| `pre_tool_use`                     | `tool_requested`                                                     |
+| `tool_use` (non-Post)              | `tool_started`                                                       |
+| `tool_use` + `PostToolUse`         | `tool_completed`                                                     |
+| `stop`                             | `session_ended` (completion intent; run remains open until PTY exit) |
+| `task_created` / `task_completed`  | `task_created` / `task_completed`                                    |
+| `subagent_start` / `subagent_stop` | `subagent_started` / `subagent_completed` (+ `subagentId`)           |
 
 Office maps Evidence → `AgentEvent.kind` (`toolStart` / `toolEnd` / …).
 
-Renderer event delivery is append-only and sequence-aware. Initial tails and live batches merge by
-`evidenceRunId + eventId`, retain the highest `seq`, ignore stale snapshots, and reset only when a
-new run starts. PTY-only `preparing` stays standby; Thinking/Typing/Researching requires a
-verified activity event. `tool_completed` becomes structured unknown work until a turn/session
-end, while `session_ended`, interruption, failure, or task completion clears active poses.
+Renderer event delivery is append-only and sequence-aware. Subscription registration replays the
+current bounded tail before live delivery, so the initial fetch/subscribe gap cannot drop events.
+Initial tails and live batches merge by `evidenceRunId + eventId`, retain the highest `seq`, and
+switch runs by explicit identity rather than wall-clock timestamps; stale snapshots are rejected
+when their run no longer matches current metadata. Provider-controlled hook names, tool names,
+task IDs, and subagent IDs are redacted and length-bounded at the main-process boundary. PTY-only
+`preparing` stays standby; Thinking/Typing/Researching requires a verified activity event.
+The per-session main-process queue serializes inspector batches with PTY exit so `lastSeq` remains
+monotonic. An allowed governance decision records `policy_decision` and derives a sanitized
+`permission_approved` event; rejected events never notify renderer subscribers.
+`tool_completed` becomes structured unknown work until a turn/session end, while
+`session_ended`, interruption, provider/PTY termination, failure, or task completion clears active
+poses and subagents. `pty_exited` always resolves the office pose to idle; successful completion
+comes from provider/stop lifecycle evidence.
+
+Replay and renderer tail loading share `EVIDENCE_TAIL_WINDOW` (120 events). A run mismatch clears
+the cached visual state and refreshes the subscription to the current run; a transient list read
+failure keeps the known run subscribed without applying an unverified snapshot.
 
 ## Tests
 

@@ -77,10 +77,12 @@ Canonical `AgentEvent.kind`:
 `sessionStart | sessionEnd | toolStart | toolEnd | turnEnd | permissionRequest | subagentStart | subagentEnd | progress`
 
 - Map sanitized `EvidenceEvent` → `AgentEvent`.
-- Provider `stop` normalizes to `session_ended` (turn end); `task_completed` and interruption
-  clear active visual state.
+- Provider `stop` normalizes to `session_ended` (completion intent; PTY still owns final sealing);
+  `permission_approved` is derived from an allowed governance decision; `task_completed` and
+  interruption clear active visual state.
 - Initial event tails and live batches reconcile by run/event identity and monotonic `seq`;
-  stale async snapshots cannot overwrite newer activity.
+  stale async snapshots cannot overwrite newer activity. Inspector and PTY work are serialized per
+  session, and rejected events never notify renderer subscribers.
 - Claude hooks/transcript → same model (main-process provider adapter).
 - PTY-only providers (e.g. Antigravity): weak Bash-like signal + **PTY only** fidelity badge.
 - Evidence Preferences capture remains; `pixelMode` becomes `off | office` (or boolean office enabled).

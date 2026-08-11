@@ -14,6 +14,7 @@ import {
   extractPlaywrightNavigateUrlsFromTerminalChunk,
   PLAYWRIGHT_TRANSCRIPT_BUFFER_MAX_CHARS,
   type PlaywrightMirrorState,
+  sanitizeInspectorEvents,
   shouldMirrorPlaywrightNavigate,
   shouldMirrorPlaywrightNavigateUrl,
 } from './ipc-playwright-mirror';
@@ -57,10 +58,14 @@ export function createInspectorOrchestration(): InspectorOrchestrationRuntime {
       }
     },
     emitInspectorEvents: (sessionId, events) => {
-      appendAutoApprovalAudit(sessionId, events);
+      const safeEvents = sanitizeInspectorEvents(events);
+      appendAutoApprovalAudit(sessionId, safeEvents);
+      void onInspectorEvents(sessionId, safeEvents).catch((error) => {
+        console.warn('Auto-approval Evidence ingest failed:', error);
+      });
       const win = BrowserWindow.getAllWindows()[0];
       if (win && !win.isDestroyed()) {
-        win.webContents.send('session:inspectorEvents', sessionId, events);
+        win.webContents.send('session:inspectorEvents', sessionId, safeEvents);
       }
     },
   });

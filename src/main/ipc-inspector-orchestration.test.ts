@@ -9,12 +9,14 @@ const mockApplySessionOverrideToGovernanceState = vi.hoisted(() => vi.fn());
 const mockDiscoverProjectGovernance = vi.hoisted(() => vi.fn());
 const mockWritePty = vi.hoisted(() => vi.fn());
 const mockAppendAutoApprovalAudit = vi.hoisted(() => vi.fn());
+const mockSanitizeInspectorEvents = vi.hoisted(() => vi.fn((events) => events));
 const mockExtractPlaywrightNavigateUrlsFromTerminalChunk = vi.hoisted(() => vi.fn());
 const mockShouldMirrorPlaywrightNavigate = vi.hoisted(() => vi.fn());
 const mockShouldMirrorPlaywrightNavigateUrl = vi.hoisted(() => vi.fn());
 const mockOpenUrlWithBrowserPolicy = vi.hoisted(() => vi.fn());
 const mockBuildMiniMaxToolCallRecoveryPrompt = vi.hoisted(() => vi.fn());
 const mockShouldTriggerMiniMaxToolCallRecovery = vi.hoisted(() => vi.fn());
+const mockOnInspectorEvents = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock('electron', () => ({
   BrowserWindow: {
@@ -27,6 +29,10 @@ vi.mock('electron', () => ({
 
 vi.mock('./hooks/hook-status', () => ({
   setInspectorEventsMiddleware: mockSetInspectorEventsMiddleware,
+}));
+
+vi.mock('./calder-evidence/coordinator', () => ({
+  onInspectorEvents: mockOnInspectorEvents,
 }));
 
 vi.mock('./calder-governance/auto-approval-orchestrator', () => ({
@@ -54,6 +60,7 @@ vi.mock('./ipc-playwright-mirror', () => ({
   appendAutoApprovalAudit: mockAppendAutoApprovalAudit,
   extractPlaywrightNavigateUrlsFromTerminalChunk:
     mockExtractPlaywrightNavigateUrlsFromTerminalChunk,
+  sanitizeInspectorEvents: mockSanitizeInspectorEvents,
   shouldMirrorPlaywrightNavigate: mockShouldMirrorPlaywrightNavigate,
   shouldMirrorPlaywrightNavigateUrl: mockShouldMirrorPlaywrightNavigateUrl,
 }));
@@ -134,6 +141,7 @@ describe('ipc inspector orchestration runtime', () => {
     const events = [{ type: 'status_update', timestamp: Date.now(), message: 'ok' }];
     options.emitInspectorEvents('session-1', events);
     expect(mockAppendAutoApprovalAudit).toHaveBeenCalledWith('session-1', events);
+    expect(mockOnInspectorEvents).toHaveBeenCalledWith('session-1', events);
     expect(win.webContents.send).toHaveBeenCalledWith(
       'session:inspectorEvents',
       'session-1',

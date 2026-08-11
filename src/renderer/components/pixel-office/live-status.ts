@@ -30,6 +30,18 @@ function sessionStatusEl(): HTMLElement | null {
   return document.getElementById('pixel-office-session-status');
 }
 
+export function formatEventAge(timestamp: number | null, now = Date.now()): string {
+  if (timestamp === null) return t('No event');
+  const seconds = Math.max(0, Math.floor((now - timestamp) / 1000));
+  if (seconds < 5) return t('now');
+  if (seconds < 60) return `${seconds}${t('s ago')}`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}${t('m ago')}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}${t('h ago')}`;
+  return `${Math.floor(hours / 24)}${t('d ago')}`;
+}
+
 export function syncOfficeText(): void {
   officeEl()?.setAttribute('aria-label', t('Pixel Office'));
   sessionStatusEl()?.setAttribute('aria-label', t('Pixel Office session status'));
@@ -79,10 +91,14 @@ export function syncLiveStatus(state: {
     : state.officeOpen && !state.officeCollapsed
       ? 'live'
       : 'standby';
-  liveState.dataset.mode = mode;
-  liveState.textContent =
+  const liveStateText =
     mode === 'unavailable' ? t('Unavailable') : mode === 'live' ? t('Live') : t('Standby');
-  count.textContent = `${activeCount} ${t('Active sessions')}`;
+  if (liveState.dataset.mode !== mode || liveState.textContent !== liveStateText) {
+    liveState.dataset.mode = mode;
+    liveState.textContent = liveStateText;
+  }
+  const countText = `${activeCount} ${t('Active sessions')}`;
+  if (count.textContent !== countText) count.textContent = countText;
   updated.textContent = `${t('Last update')} ${new Date().toLocaleTimeString()}`;
 
   list.replaceChildren();
@@ -96,8 +112,16 @@ export function syncLiveStatus(state: {
     item.className = 'pixel-office-session-status-item';
     item.dataset.state = character.isActive ? 'active' : character.visualState;
     const statusLabel = formatCharacterStatusLabel(character);
-    item.textContent = statusLabel;
-    item.setAttribute('aria-label', statusLabel);
+    const eventAge = formatEventAge(
+      state.runtime?.latestEvidenceTimestamp(character.sessionId) ?? null,
+    );
+    const context =
+      character.contextPct === null
+        ? ''
+        : ` · ${t('Context')} ${Math.round(character.contextPct)}%`;
+    const detail = `${statusLabel} · ${eventAge}${context}`;
+    item.textContent = detail;
+    item.setAttribute('aria-label', detail);
     fragment.appendChild(item);
   }
   list.appendChild(fragment);

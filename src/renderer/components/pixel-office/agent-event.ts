@@ -181,7 +181,7 @@ const STATE_ACTIVITY_KEYS: Partial<Record<PixelVisualState, string>> = {
   git_ops: 'Git operations',
   compacting: 'Compacting context',
   preparing: 'Thinking',
-  unknown_working: 'Thinking',
+  unknown_working: 'Working',
 };
 
 export function formatActivityLabel(
@@ -222,7 +222,10 @@ export function listActiveSubagentIds(events: EvidenceEvent[], now = Date.now())
     if (
       event.type === 'session_completed' ||
       event.type === 'session_failed' ||
-      event.type === 'session_interrupted'
+      event.type === 'session_interrupted' ||
+      event.type === 'provider_session_completed' ||
+      event.type === 'provider_session_failed' ||
+      event.type === 'pty_exited'
     ) {
       return [];
     }

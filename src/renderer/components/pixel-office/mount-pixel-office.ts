@@ -6,6 +6,7 @@ import { syncLiveStatus, syncOfficeText } from './live-status.js';
 import { createOfficeEditorChrome, type OfficeEditorChrome } from './office-editor-chrome.js';
 import { OfficeRuntime } from './office-state.js';
 import { readOfficeTheme } from './office-theme.js';
+import { bindRailResize } from './rail-resize.js';
 import { renderOffice } from './renderer.js';
 import { ensureCharacterSheetsLoaded } from './sprites.js';
 import { TILE_SIZE } from './types.js';
@@ -56,6 +57,7 @@ let painting = false;
 let unsubs: Array<() => void> = [];
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let evidenceLoadGeneration = 0;
+let expectedRunBySession = new Map<string, string>();
 let officeTheme = readOfficeTheme();
 
 function readStoredOpen(): boolean {
@@ -267,6 +269,9 @@ function beginEvidenceLoad(): void {
     runtime: activeRuntime,
     isCurrent: () => runtime === activeRuntime && generation === evidenceLoadGeneration,
     onApplied: () => syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled }),
+    onRunsResolved: (runIds) => {
+      expectedRunBySession = new Map(runIds);
+    },
   });
 }
 
@@ -305,7 +310,21 @@ function stopRuntime(): void {
   }
   hoveredId = null;
   painting = false;
+  expectedRunBySession.clear();
   window.calder?.evidence?.unsubscribe();
+}
+
+function bindInspectorLifecycle(): void {
+  const inspector = inspectorEl();
+  if (!inspector) return;
+  const onVisibility = (event: Event): void => {
+    const open = (event as CustomEvent<{ open?: boolean }>).detail?.open === true;
+    if (!open) stopRuntime();
+    else if (officeOpen && pixelModeEnabled && !officeCollapsed) startRuntime();
+    syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
+  };
+  inspector.addEventListener('context-inspector-visibility', onVisibility);
+  unsubs.push(() => inspector.removeEventListener('context-inspector-visibility', onVisibility));
 }
 
 function bindAppListeners(): void {
@@ -333,16 +352,19 @@ function bindAppListeners(): void {
   if (window.calder?.evidence?.onEvent) {
     const off = window.calder.evidence.onEvent((runId, incoming) => {
       if (!runtime || !officeOpen || !pixelModeEnabled || incoming.length === 0) return;
+      if (inspectorEl()?.classList.contains('context-inspector-closed')) return;
       runtime.syncSessionsFromAppState();
       const bySession = new Map<string, typeof incoming>();
       for (const event of incoming) {
         if (event.evidenceRunId !== runId) continue;
+        const expectedRunId = expectedRunBySession.get(event.calderSessionId);
+        if (expectedRunId !== runId) continue;
         const events = bySession.get(event.calderSessionId) ?? [];
         events.push(event);
         bySession.set(event.calderSessionId, events);
       }
       for (const [sessionId, events] of bySession) {
-        runtime.applyEvidence(sessionId, events);
+        runtime.applyEvidence(sessionId, events, runId);
       }
       syncLiveStatus({ runtime, officeOpen, officeCollapsed, pixelModeEnabled });
     });
@@ -369,59 +391,6 @@ async function syncPixelModeFromSettings(): Promise<void> {
     pixelModeEnabled = true;
     syncOpenDom();
   }
-}
-
-function bindRailResize(): void {
-  const handle = resizeHandleEl();
-  if (!handle) return;
-  let dragging = false;
-  let startY = 0;
-  let startHeight = HEIGHT_DEFAULT;
-
-  const onMove = (event: PointerEvent): void => {
-    if (!dragging) return;
-    applyRailHeight(startHeight + (event.clientY - startY));
-    syncCanvasSize();
-  };
-  const onUp = (event: PointerEvent): void => {
-    if (!dragging) return;
-    dragging = false;
-    try {
-      handle.releasePointerCapture(event.pointerId);
-    } catch {}
-    handle.removeEventListener('pointermove', onMove);
-    handle.removeEventListener('pointerup', onUp);
-    handle.removeEventListener('pointercancel', onUp);
-  };
-
-  handle.addEventListener('pointerdown', (event) => {
-    if (officeCollapsed || !officeOpen) return;
-    event.preventDefault();
-    dragging = true;
-    startY = event.clientY;
-    startHeight = readStoredHeight();
-    handle.setPointerCapture(event.pointerId);
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', onUp);
-    handle.addEventListener('pointercancel', onUp);
-  });
-  handle.addEventListener('keydown', (event) => {
-    const keyboardEvent = event as KeyboardEvent;
-    const current = readStoredHeight();
-    if (keyboardEvent.key === 'ArrowUp' || keyboardEvent.key === 'ArrowLeft') {
-      keyboardEvent.preventDefault();
-      applyRailHeight(current - 20);
-    } else if (keyboardEvent.key === 'ArrowDown' || keyboardEvent.key === 'ArrowRight') {
-      keyboardEvent.preventDefault();
-      applyRailHeight(current + 20);
-    } else if (keyboardEvent.key === 'Home') {
-      keyboardEvent.preventDefault();
-      applyRailHeight(HEIGHT_MIN);
-    } else if (keyboardEvent.key === 'End') {
-      keyboardEvent.preventDefault();
-      applyRailHeight(HEIGHT_MAX);
-    }
-  });
 }
 
 export function isPixelOfficeOpen(): boolean {
@@ -457,7 +426,20 @@ export function initPixelOffice(): void {
   if (!office || !host || !inspector) return;
 
   applyRailHeight(readStoredHeight());
-  bindRailResize();
+  const resizeHandle = resizeHandleEl();
+  if (resizeHandle) {
+    unsubs.push(
+      bindRailResize({
+        handle: resizeHandle,
+        isEnabled: () => officeOpen && !officeCollapsed && pixelModeEnabled,
+        readHeight: readStoredHeight,
+        applyHeight: applyRailHeight,
+        syncCanvasSize,
+        minHeight: HEIGHT_MIN,
+        maxHeight: HEIGHT_MAX,
+      }),
+    );
+  }
   soundBtn()?.addEventListener('click', () => {
     appState.setPreference('soundOnSessionWaiting', !appState.preferences.soundOnSessionWaiting);
     syncSoundButton();
@@ -481,6 +463,7 @@ export function initPixelOffice(): void {
     },
   });
   bindAppListeners();
+  bindInspectorLifecycle();
   const themeObserver = new MutationObserver(() => {
     officeTheme = readOfficeTheme();
   });

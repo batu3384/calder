@@ -167,6 +167,9 @@ export function setContextInspectorOpen(next: boolean): void {
   inspectorEl.classList.toggle('context-inspector-open', next);
   inspectorEl.classList.toggle('context-inspector-closed', !next);
   syncInspectorOpenState();
+  inspectorEl.dispatchEvent?.(
+    new CustomEvent('context-inspector-visibility', { detail: { open: next } }),
+  );
 }
 
 export function toggleContextInspector(): void {

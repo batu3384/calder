@@ -3,12 +3,16 @@
 }
 
 #context-inspector .pixel-office-rail {
+  --pixel-office-border: color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  --pixel-office-border-soft: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  --pixel-office-control-bg: color-mix(in srgb, var(--surface-panel) 80%, var(--surface-ops));
+  --pixel-office-surface: var(--surface-panel-alt);
   display: none;
   flex-direction: column;
   flex-shrink: 0;
   min-width: 0;
   margin: 0 8px 6px;
-  border: 1px solid color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  border: 1px solid var(--pixel-office-border);
   border-radius: 8px;
   background:
     linear-gradient(
@@ -16,7 +20,7 @@
       color-mix(in srgb, var(--text-primary) 3%, transparent),
       transparent 32%
     ),
-    var(--surface-panel-alt);
+    var(--pixel-office-surface);
   overflow: hidden;
 }
 
@@ -39,7 +43,7 @@
   gap: 8px;
   min-height: 34px;
   padding: 4px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-bottom: 1px solid var(--pixel-office-border-soft);
 }
 
 .pixel-office-title {
@@ -87,7 +91,7 @@
   max-height: 78px;
   overflow: auto;
   padding: 5px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-bottom: 1px solid var(--pixel-office-border-soft);
   color: var(--text-secondary);
   font-size: 10px;
 }
@@ -135,7 +139,7 @@
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  border-bottom: 1px solid var(--pixel-office-border-soft);
 }
 
 .pixel-office-editor-toolbar[hidden] {
@@ -145,7 +149,7 @@
 .pixel-office-tool-btn {
   appearance: none;
   border: 1px solid color-mix(in srgb, var(--border-subtle) 90%, transparent);
-  background: color-mix(in srgb, var(--surface-panel) 80%, #111827);
+  background: var(--pixel-office-control-bg);
   color: var(--text-secondary);
   border-radius: 4px;
   font-size: 10px;

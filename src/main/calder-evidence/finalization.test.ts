@@ -98,4 +98,40 @@ describe('calder-evidence finalization', () => {
       reason: 'sealed',
     });
   });
+
+  it('does not accept an event that the store refuses to persist', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'calder-evidence-persist-'));
+    roots.push(root);
+    __setCalderDataRootForTests(root);
+
+    createRun({
+      runId: 'run-persist-1',
+      calderSessionId: 'session-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      projectPath: root,
+    });
+
+    const result = await ingestEvent('run-persist-1', {
+      schemaVersion: EVIDENCE_SCHEMA_VERSION,
+      eventId: 'oversized-1',
+      evidenceRunId: 'run-persist-1',
+      calderSessionId: 'session-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      type: 'tool_started',
+      timestamp: Date.now(),
+      seq: 1,
+      source: 'provider_hook',
+      confidence: 'provider_reported',
+      sanitizedMeta: { blob: 'x'.repeat(300 * 1024) },
+    });
+
+    expect(result).toEqual({
+      accepted: false,
+      orphan: false,
+      reason: 'persistence_failed',
+    });
+    expect(readMeta('run-persist-1')?.eventCount).toBe(0);
+  });
 });

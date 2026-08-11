@@ -22,13 +22,30 @@ import { createRun, readMeta, recoverOpenRuns, writeMeta } from './store.js';
 function completionStateForEvent(
   type: EvidenceEvent['type'],
 ): EvidenceRunMeta['completionState'] | null {
-  if (type === 'provider_session_completed') {
+  if (type === 'provider_session_completed' || type === 'session_ended') {
     return 'completed';
   }
   if (type === 'provider_session_failed') {
     return 'failed';
   }
   return null;
+}
+
+function permissionApprovalFromPolicy(event: EvidenceEvent, seq: number): EvidenceEvent | null {
+  if (event.type !== 'policy_decision' || event.policyDecision?.decision !== 'allow') {
+    return null;
+  }
+  return {
+    ...event,
+    eventId: randomUUID(),
+    type: 'permission_approved',
+    providerEventName: 'permission_approved',
+    seq,
+    source: 'calder_governance',
+    confidence: 'verified',
+    outcome: 'approved',
+    policyDecision: undefined,
+  };
 }
 
 const sessionToRun = new Map<string, string>();
@@ -41,6 +58,24 @@ let evidenceEventNotifier: EvidenceEventNotifier | null = null;
 
 export function setEvidenceEventNotifier(notifier: EvidenceEventNotifier | null): void {
   evidenceEventNotifier = notifier;
+}
+
+function enqueueSessionWork(sessionId: string, work: () => Promise<void>): Promise<void> {
+  const previous = sessionChains.get(sessionId) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(work);
+  void next.catch((err) => {
+    console.error(`[calder-evidence] session work failed for ${sessionId}:`, err);
+  });
+  sessionChains.set(sessionId, next);
+  void next.then(
+    () => {
+      if (sessionChains.get(sessionId) === next) sessionChains.delete(sessionId);
+    },
+    () => {
+      if (sessionChains.get(sessionId) === next) sessionChains.delete(sessionId);
+    },
+  );
+  return next;
 }
 
 function notifyEvidenceEvents(runId: string, events: EvidenceEvent[]): void {
@@ -144,7 +179,20 @@ export async function startEvidenceRun(
     seq: 1,
     projectPath: input.projectPath,
   });
-  await ingestEvent(runId, ptyStarted, input.dataRootOverride);
+  let startAccepted = false;
+  try {
+    await enqueueSessionWork(input.sessionId, async () => {
+      const result = await ingestEvent(runId, ptyStarted, input.dataRootOverride);
+      startAccepted = result.accepted;
+    });
+  } catch {
+    sessionToRun.delete(input.sessionId);
+    return null;
+  }
+  if (!startAccepted) {
+    sessionToRun.delete(input.sessionId);
+    return null;
+  }
 
   void captureGitFingerprintBaseline(input.projectPath)
     .then((baseline) => {
@@ -173,23 +221,20 @@ export function onInspectorEvents(
 ): Promise<void> {
   // Serialize per-session ingestion so concurrent hook batches never allocate
   // duplicate seq values from the same lastSeq snapshot.
-  const previous = sessionChains.get(sessionId) ?? Promise.resolve();
-  const next = previous
-    .then(() => ingestInspectorEvents(sessionId, events, dataRootOverride))
-    .catch((err) => {
-      console.error(`[calder-evidence] inspector ingest failed for ${sessionId}:`, err);
-    });
-  sessionChains.set(sessionId, next);
-  return next;
+  const expectedRunId = sessionToRun.get(sessionId);
+  return enqueueSessionWork(sessionId, () =>
+    ingestInspectorEvents(sessionId, events, dataRootOverride, expectedRunId),
+  );
 }
 
 async function ingestInspectorEvents(
   sessionId: string,
   events: InspectorEvent[],
   dataRootOverride?: string,
+  expectedRunId?: string,
 ): Promise<void> {
   const runId = sessionToRun.get(sessionId);
-  if (!runId) return;
+  if (!runId || runId !== expectedRunId) return;
 
   const meta = readMeta(runId, dataRootOverride);
   if (!meta) return;
@@ -207,15 +252,25 @@ async function ingestInspectorEvents(
       seq,
     });
     if (!normalized) continue;
-    await ingestEvent(runId, normalized, dataRootOverride);
-    const nextCompletion = completionStateForEvent(normalized.type);
-    if (nextCompletion) {
-      const current = readMeta(runId, dataRootOverride);
-      if (current) {
+    const result = await ingestEvent(runId, normalized, dataRootOverride);
+    if (!result.accepted) continue;
+    const current = readMeta(runId, dataRootOverride);
+    if (current?.state === 'open' && normalized.type === 'prompt_submitted') {
+      if (current.completionState !== 'unknown') {
+        writeMeta(runId, { ...current, completionState: 'unknown' }, dataRootOverride);
+      }
+    } else {
+      const nextCompletion = completionStateForEvent(normalized.type);
+      if (nextCompletion && current) {
         writeMeta(runId, { ...current, completionState: nextCompletion }, dataRootOverride);
       }
     }
     ingested.push(normalized);
+    const approval = permissionApprovalFromPolicy(normalized, ++seq);
+    if (approval) {
+      const approvalResult = await ingestEvent(runId, approval, dataRootOverride);
+      if (approvalResult.accepted) ingested.push(approval);
+    }
   }
   notifyEvidenceEvents(runId, ingested);
 }
@@ -226,8 +281,21 @@ export async function onPtyExit(
   signal?: number | string,
   dataRootOverride?: string,
 ): Promise<void> {
+  const expectedRunId = sessionToRun.get(sessionId);
+  return enqueueSessionWork(sessionId, () =>
+    ingestPtyExit(sessionId, exitCode, signal, dataRootOverride, expectedRunId),
+  );
+}
+
+async function ingestPtyExit(
+  sessionId: string,
+  exitCode?: number,
+  signal?: number | string,
+  dataRootOverride?: string,
+  expectedRunId?: string,
+): Promise<void> {
   const runId = sessionToRun.get(sessionId);
-  if (!runId) return;
+  if (!runId || runId !== expectedRunId) return;
 
   const meta = readMeta(runId, dataRootOverride);
   if (!meta) return;
@@ -244,7 +312,8 @@ export async function onPtyExit(
     exitCode,
     signal,
   );
-  await ingestEvent(runId, ptyExited, dataRootOverride);
+  const result = await ingestEvent(runId, ptyExited, dataRootOverride);
+  if (!result.accepted) return;
   notifyEvidenceEvents(runId, [ptyExited]);
 
   const providerEnded = meta.completionState === 'completed' || meta.completionState === 'failed';
@@ -254,7 +323,6 @@ export async function onPtyExit(
   });
 
   sessionToRun.delete(sessionId);
-  sessionChains.delete(sessionId);
 }
 
 export function onCrashRecover(dataRootOverride?: string): string[] {

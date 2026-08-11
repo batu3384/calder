@@ -251,10 +251,14 @@
             <div id="pixel-office" class="pixel-office-rail" aria-label="Pixel Office" hidden>
               <header class="pixel-office-rail-head">
                 <span class="pixel-office-title">Pixel Office</span>
-                <div class="pixel-office-live-summary" aria-live="polite" aria-atomic="true">
+                <div class="pixel-office-live-summary" role="status" aria-atomic="true">
                   <span id="pixel-office-live-state" class="pixel-office-live-state"></span>
                   <span id="pixel-office-live-count" class="pixel-office-live-count"></span>
-                  <time id="pixel-office-live-updated" class="pixel-office-live-updated"></time>
+                  <time
+                    id="pixel-office-live-updated"
+                    class="pixel-office-live-updated"
+                    aria-hidden="true"
+                  ></time>
                 </div>
                 <div class="pixel-office-header-actions">
                   <button
@@ -389,7 +393,6 @@
               <div
                 id="pixel-office-session-status"
                 class="pixel-office-session-status"
-                aria-live="polite"
                 aria-label="Pixel Office session status"
               ></div>
               <div id="pixel-office-canvas-host" class="pixel-office-canvas-host"></div>

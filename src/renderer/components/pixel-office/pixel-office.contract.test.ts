@@ -31,12 +31,42 @@ describe('Pixel Office rail contract', () => {
     expect(studioCss).toContain('grid-template-columns: repeat(3');
     expect(railCss).not.toContain('grid-template-columns: repeat(4');
     expect(studioCss).not.toContain('grid-template-columns: repeat(4');
+    expect(pixelCss).not.toMatch(/#[0-9a-f]{3,8}/i);
   });
 
   it('applies live event batches without refetching the full tail', () => {
     const mount = readSource('renderer/components/pixel-office/mount-pixel-office.ts');
 
     expect(mount).toContain('onEvent((runId, incoming)');
-    expect(mount).toContain('runtime.applyEvidence(sessionId, events)');
+    expect(mount).toContain('runtime.applyEvidence(sessionId, events, runId)');
+  });
+
+  it('keeps evidence preferences localized', () => {
+    const preferences = readSource(
+      'renderer/components/preferences/preferences-evidence-settings.ts',
+    );
+
+    expect(preferences).toContain('import { t }');
+    expect(preferences).toContain("t('Session Evidence')");
+    expect(preferences).not.toContain("textContent = 'Session Evidence'");
+    expect(preferences).not.toContain("textContent = 'Pixel Office'");
+    expect(preferences).toContain("t(mode === 'off' ? 'Off' : 'Office')");
+  });
+
+  it('exposes event age and context in the accessible session companion', () => {
+    const liveStatus = readSource('renderer/components/pixel-office/live-status.ts');
+
+    expect(liveStatus).toContain('latestEvidenceTimestamp');
+    expect(liveStatus).toContain('contextPct');
+    expect(liveStatus).toContain('formatEventAge');
+  });
+
+  it('bridges Context Inspector visibility to the Pixel Office loop', () => {
+    const inspector = readSource('renderer/components/context-inspector.ts');
+    const mount = readSource('renderer/components/pixel-office/mount-pixel-office.ts');
+
+    expect(inspector).toContain('context-inspector-visibility');
+    expect(mount).toContain('context-inspector-visibility');
+    expect(mount).toContain('stopRuntime()');
   });
 });

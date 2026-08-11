@@ -12,6 +12,7 @@ import {
   onCrashRecover,
   onInspectorEvents,
   onPtyExit,
+  setEvidenceEventNotifier,
   startEvidenceRun,
 } from './coordinator.js';
 import { __resetFinalizationForTests, ingestEvent } from './finalization.js';
@@ -88,6 +89,24 @@ describe('calder-evidence lifecycle fixtures', () => {
     expect(finalMeta?.state).toBe('sealed');
   });
 
+  it('provider stop marks the run completed before PTY closes', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-stop';
+    const meta = await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+
+    await onInspectorEvents(sessionId, [{ type: 'stop', timestamp: Date.now() }]);
+    await onPtyExit(sessionId, 0);
+    await vi.advanceTimersByTimeAsync(7000);
+    await Promise.resolve();
+
+    expect(readMeta(meta!.runId)?.completionState).toBe('completed');
+  });
+
   it('cursor-like pty exit only stays unknown (not interrupted)', async () => {
     const root = setupRoot();
     const sessionId = 'session-cursor';
@@ -106,6 +125,88 @@ describe('calder-evidence lifecycle fixtures', () => {
     const finalMeta = readMeta(meta!.runId);
     expect(finalMeta?.completionState).toBe('unknown');
     expect(finalMeta?.completionState).not.toBe('interrupted');
+  });
+
+  it('serializes PTY exit with inspector events per session', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-queue';
+    const meta = await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+
+    await Promise.all([
+      onInspectorEvents(sessionId, [{ type: 'session_start', timestamp: Date.now() }]),
+      onPtyExit(sessionId, 0),
+    ]);
+
+    const seqs = readEvents(meta!.runId).map((event) => event.seq);
+    expect(new Set(seqs).size).toBe(seqs.length);
+  });
+
+  it('serializes PTY start with the first inspector event', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-start-race';
+
+    const [meta] = await Promise.all([
+      startEvidenceRun({
+        sessionId,
+        providerId: 'claude',
+        projectId: 'p1',
+        projectPath: root,
+      }),
+      onInspectorEvents(sessionId, [{ type: 'session_start', timestamp: Date.now() }]),
+    ]);
+
+    const seqs = readEvents(meta!.runId).map((event) => event.seq);
+    expect(seqs).toEqual([1, 2]);
+  });
+
+  it('allows a new prompt to reset a provider completion intent', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-resume';
+    const meta = await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+
+    await onInspectorEvents(sessionId, [{ type: 'stop', timestamp: Date.now() }]);
+    expect(readMeta(meta!.runId)?.completionState).toBe('completed');
+
+    await onInspectorEvents(sessionId, [{ type: 'user_prompt', timestamp: Date.now() + 1 }]);
+    expect(readMeta(meta!.runId)?.completionState).toBe('unknown');
+  });
+
+  it('does not route queued events into a replacement run', async () => {
+    const root = setupRoot();
+    createRun({
+      runId: 'run-old',
+      calderSessionId: 'session-replaced',
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+    createRun({
+      runId: 'run-new',
+      calderSessionId: 'session-replaced',
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+    __bindSessionRunForTests('session-replaced', 'run-old');
+
+    const queued = onInspectorEvents('session-replaced', [
+      { type: 'session_start', timestamp: Date.now() },
+    ]);
+    __bindSessionRunForTests('session-replaced', 'run-new');
+    await queued;
+
+    expect(readEvents('run-old')).toHaveLength(0);
+    expect(readEvents('run-new')).toHaveLength(0);
   });
 
   it('crash recovery marks interrupted', () => {
@@ -167,6 +268,29 @@ describe('calder-evidence lifecycle fixtures', () => {
     expect(readMeta('run-late')?.state).toBe('sealed');
   });
 
+  it('does not notify live subscribers for rejected PTY exits', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-rejected-pty';
+    const meta = await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+    const notifier = vi.fn();
+    setEvidenceEventNotifier(notifier);
+
+    await onPtyExit(sessionId, 0);
+    await vi.advanceTimersByTimeAsync(7000);
+    await Promise.resolve();
+    notifier.mockClear();
+    __bindSessionRunForTests(sessionId, meta!.runId);
+
+    await onPtyExit(sessionId, 0);
+
+    expect(notifier).not.toHaveBeenCalled();
+  });
+
   it('policy_decision recorded with allow — Evidence does not re-decide', async () => {
     const root = setupRoot();
     const sessionId = 'session-policy';
@@ -198,5 +322,40 @@ describe('calder-evidence lifecycle fixtures', () => {
     expect(policyEvents).toHaveLength(1);
     expect(policyEvents[0].policyDecision?.decision).toBe('allow');
     expect(policyEvents[0].source).toBe('calder_governance');
+  });
+
+  it('derives permission approval so waiting work can resume', async () => {
+    const root = setupRoot();
+    const sessionId = 'session-approval-clear';
+
+    await startEvidenceRun({
+      sessionId,
+      providerId: 'claude',
+      projectId: 'p1',
+      projectPath: root,
+    });
+
+    await onInspectorEvents(sessionId, [
+      {
+        type: 'permission_request',
+        timestamp: Date.now(),
+        tool_name: 'Bash',
+      },
+      {
+        type: 'approval_decision',
+        timestamp: Date.now() + 1,
+        tool_name: 'Bash',
+        auto_approval: {
+          policy_source: 'project',
+          effective_mode: 'auto',
+          operation_class: 'shell',
+          decision: 'allow',
+          reason: 'trusted project',
+        },
+      },
+    ]);
+
+    const runId = findRunIdByCalderSessionId(sessionId)!;
+    expect(readEvents(runId).map((event) => event.type)).toContain('permission_approved');
   });
 });

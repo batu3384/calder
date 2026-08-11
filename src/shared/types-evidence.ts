@@ -5,6 +5,7 @@ import type { ProviderId } from './types-provider';
 export const EVIDENCE_SCHEMA_VERSION = 1 as const;
 export const CLOSING_GRACE_MS = 2000;
 export const LATE_EVENT_WINDOW_MS = 5000;
+export const EVIDENCE_TAIL_WINDOW = 120;
 export const MAX_FINGERPRINT_PATHS = 200;
 export const MAX_FINGERPRINT_FILE_BYTES = 512_000;
 

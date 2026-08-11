@@ -81,6 +81,14 @@ describe('pixel visual resolver', () => {
     expect(state).toBe('idle');
   });
 
+  it('keeps clean PTY exit in standby instead of completed', () => {
+    const state = resolvePixelVisualState([
+      event('tool_started', { toolName: 'Read', seq: 1 }),
+      event('pty_exited', { seq: 2, outcome: 'completed' }),
+    ]);
+    expect(state).toBe('idle');
+  });
+
   it('does not let late git observations reopen a completed session', () => {
     const state = resolvePixelVisualState([
       event('session_completed', { seq: 1, outcome: 'completed' }),

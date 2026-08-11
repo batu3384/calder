@@ -131,6 +131,24 @@ describe('calder-evidence normalize', () => {
     expect(completed?.type).toBe('task_completed');
   });
 
+  it('redacts provider-controlled identifiers before persistence', () => {
+    const mapped = normalizeInspectorEvent({
+      sessionId: 'session-1',
+      evidenceRunId: 'run-1',
+      providerId: 'claude',
+      projectId: 'project-1',
+      seq: 11,
+      event: baseEvent('task_created', {
+        hookEvent: 'Authorization: Bearer leaked-provider-token',
+        task_id: 'ghp_12345678901234567890',
+      }),
+    });
+
+    expect(JSON.stringify(mapped)).not.toContain('leaked-provider-token');
+    expect(JSON.stringify(mapped)).not.toContain('ghp_12345678901234567890');
+    expect(mapped?.sanitizedMeta?.taskId).toMatch(/\[REDACTED:/);
+  });
+
   it('maps subagent and compaction inspector events', () => {
     const subagent = normalizeInspectorEvent({
       sessionId: 'session-1',

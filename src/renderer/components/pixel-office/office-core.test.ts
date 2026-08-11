@@ -20,7 +20,9 @@ import {
   stringifyOfficeLayout,
   undoLayout,
 } from './layout-io.js';
+import { formatEventAge } from './live-status.js';
 import { mergeEvidenceEvents } from './office-state.js';
+import { OfficeRuntime } from './office-state.js';
 import { officeThemeFromCss } from './office-theme.js';
 import { findPath } from './pathfinding.js';
 import { CharacterState, DONE_BUBBLE_SEC } from './types.js';
@@ -77,6 +79,11 @@ describe('pixel office agent signals', () => {
     expect(formatActivityLabel('idle', null, false)).toBe('');
   });
 
+  it('formats live event age without claiming active work', () => {
+    expect(formatEventAge(1_000, 1_000)).toBe('now');
+    expect(formatEventAge(0, 61_000)).toBe('1m ago');
+  });
+
   it('maps visual states to distinct work poses', () => {
     expect(workPoseFromVisualState('idle', false)).toBe('rest');
     expect(workPoseFromVisualState('editing_code', true)).toBe('type');
@@ -126,30 +133,27 @@ describe('pixel office agent signals', () => {
     expect(mergeEvidenceEvents(merged, [])).toEqual(merged);
   });
 
-  it('rejects stale cross-run snapshots until a new run starts', () => {
+  it('replaces cross-run timelines by run identity', () => {
     const current = event('prompt_submitted', { eventId: 'current', seq: 4, timestamp: 2_000 });
-    const staleStart = event('pty_started', {
-      eventId: 'stale-start',
-      evidenceRunId: 'run-old',
+    const nextRun = event('pty_started', {
+      eventId: 'next',
+      evidenceRunId: 'run-next',
       seq: 1,
       timestamp: 1_000,
     });
-    const stale = event('tool_started', {
-      eventId: 'stale',
-      evidenceRunId: 'run-old',
+
+    expect(mergeEvidenceEvents([current], [nextRun])).toEqual([nextRun]);
+  });
+
+  it('filters mixed live batches to one evidence run', () => {
+    const first = event('prompt_submitted', { eventId: 'same-run', seq: 1 });
+    const foreign = event('tool_started', {
+      eventId: 'foreign-run',
+      evidenceRunId: 'run-other',
       seq: 2,
-      timestamp: 1_500,
-    });
-    const fresh = event('pty_started', {
-      eventId: 'fresh',
-      evidenceRunId: 'run-new',
-      seq: 1,
-      timestamp: 3_000,
     });
 
-    expect(mergeEvidenceEvents([current], [staleStart])).toEqual([current]);
-    expect(mergeEvidenceEvents([current], [stale])).toEqual([current]);
-    expect(mergeEvidenceEvents([current], [fresh])).toEqual([fresh]);
+    expect(mergeEvidenceEvents([], [first, foreign])).toEqual([first]);
   });
 
   it('derives office colors from shared CSS tokens', () => {
@@ -341,6 +345,26 @@ describe('pixel office agent signals', () => {
     expect(ids).toEqual(['sub-b']);
   });
 
+  it('clears subagents for provider and PTY terminal events', () => {
+    const now = Date.now();
+    for (const terminalType of [
+      'provider_session_completed',
+      'provider_session_failed',
+      'pty_exited',
+    ] as const) {
+      expect(
+        listActiveSubagentIds([
+          event('subagent_started', {
+            eventId: `start-${terminalType}`,
+            subagentId: 'sub-a',
+            timestamp: now - 1000,
+          }),
+          event(terminalType, { eventId: terminalType, timestamp: now }),
+        ]),
+      ).toEqual([]);
+    }
+  });
+
   it('maps evidence tool_completed to AgentEvent toolEnd', () => {
     const mapped = evidenceEventToAgentEvent(event('tool_completed', { toolName: 'Bash' }));
     expect(mapped).toMatchObject({ kind: 'toolEnd', toolName: 'Bash' });
@@ -359,6 +383,62 @@ describe('pixel office agent signals', () => {
     ]);
     expect(signals.visualState).toBe('idle');
     expect(signals.toolName).toBeNull();
+  });
+
+  it('clears stale active pose during a runtime tick', () => {
+    vi.useFakeTimers();
+    try {
+      const runtime = new OfficeRuntime(createDefaultLayout());
+      const character = createOfficeCharacter({
+        id: 's1',
+        sessionId: 's1',
+        providerId: 'claude',
+        seat: createDefaultLayout().seats[0]!,
+        name: 'Claude 1',
+      });
+      runtime.characters.set('s1', character);
+      runtime.applyEvidence('s1', [event('tool_started', { toolName: 'Read' })]);
+      expect(character.isActive).toBe(true);
+
+      vi.advanceTimersByTime(6 * 60 * 1000);
+      runtime.update(0);
+
+      expect(character.isActive).toBe(false);
+      expect(character.visualState).toBe('idle');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('clears cached evidence and visual state explicitly', () => {
+    const runtime = new OfficeRuntime(createDefaultLayout());
+    const character = createOfficeCharacter({
+      id: 's1',
+      sessionId: 's1',
+      providerId: 'claude',
+      seat: createDefaultLayout().seats[0]!,
+      name: 'Claude 1',
+    });
+    runtime.characters.set('s1', character);
+    runtime.applyEvidence('s1', [event('tool_started', { toolName: 'Read' })]);
+
+    runtime.clearEvidence('s1');
+
+    expect(character.isActive).toBe(false);
+    expect(character.visualState).toBe('idle');
+    expect(character.currentTool).toBeNull();
+  });
+
+  it('exposes latest evidence timestamp for the live companion', () => {
+    const runtime = new OfficeRuntime(createDefaultLayout());
+
+    runtime.applyEvidence('s1', [
+      event('pty_started', { timestamp: 100, seq: 1 }),
+      event('prompt_submitted', { timestamp: 200, seq: 2 }),
+    ]);
+
+    expect(runtime.latestEvidenceTimestamp('s1')).toBe(200);
+    expect(runtime.latestEvidenceTimestamp('missing')).toBeNull();
   });
 });
 

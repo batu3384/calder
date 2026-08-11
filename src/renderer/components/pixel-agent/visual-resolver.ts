@@ -54,7 +54,7 @@ function eventToState(event: EvidenceEvent): PixelVisualState | null {
     case 'session_completed':
       return event.outcome === 'completed' ? 'completed' : null;
     case 'pty_exited':
-      return event.outcome === 'completed' ? 'completed' : 'idle';
+      return 'idle';
     case 'context_compaction_started':
       return 'compacting';
     case 'git_change_observed':

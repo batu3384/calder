@@ -4,9 +4,11 @@ import type { InspectorEvent } from '../shared/types/session';
 
 const mockMkdirSync = vi.hoisted(() => vi.fn());
 const mockAppendFileSync = vi.hoisted(() => vi.fn());
+const mockChmodSync = vi.hoisted(() => vi.fn());
 const mockHomedir = vi.hoisted(() => vi.fn(() => '/tmp/test-home'));
 
 vi.mock('fs', () => ({
+  chmodSync: mockChmodSync,
   mkdirSync: mockMkdirSync,
   appendFileSync: mockAppendFileSync,
 }));
@@ -15,7 +17,7 @@ vi.mock('os', () => ({
   homedir: mockHomedir,
 }));
 
-import { appendAutoApprovalAudit } from './ipc-playwright-mirror';
+import { appendAutoApprovalAudit, sanitizeInspectorEvents } from './ipc-playwright-mirror';
 
 function makeApprovalDecisionEvent(
   timestamp: number,
@@ -58,15 +60,16 @@ describe('ipc playwright mirror runtime helpers', () => {
 
     expect(mockMkdirSync).toHaveBeenCalledWith('/tmp/test-home/.calder/runtime', {
       recursive: true,
+      mode: 0o700,
     });
     expect(mockAppendFileSync).toHaveBeenCalledTimes(1);
-    const [auditPath, payload, encoding] = mockAppendFileSync.mock.calls[0] as [
+    const [auditPath, payload, options] = mockAppendFileSync.mock.calls[0] as [
       string,
       string,
-      string,
+      { encoding: string; mode: number },
     ];
     expect(auditPath).toBe('/tmp/test-home/.calder/runtime/session-1.auto_approval.log');
-    expect(encoding).toBe('utf8');
+    expect(options).toEqual({ encoding: 'utf8', mode: 0o600 });
     expect(payload).toContain('"type":"approval_decision"');
     expect(payload).toContain('"auto_approval"');
   });
@@ -83,6 +86,18 @@ describe('ipc playwright mirror runtime helpers', () => {
 
     expect(mockMkdirSync).not.toHaveBeenCalled();
     expect(mockAppendFileSync).not.toHaveBeenCalled();
+  });
+
+  it('redacts sensitive tool input before renderer or audit delivery', () => {
+    const [safe] = sanitizeInspectorEvents([
+      {
+        ...makeApprovalDecisionEvent(4, 'allow'),
+        tool_input: { command: 'curl -H "Authorization: Bearer ghp_12345678901234567890"' },
+      },
+    ]);
+
+    expect(safe?.tool_input?.command).toContain('[REDACTED:github_token]');
+    expect(safe?.tool_input?.command).not.toContain('ghp_');
   });
 
   it('swallows filesystem exceptions and emits a warning', () => {

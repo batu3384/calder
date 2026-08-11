@@ -67,13 +67,14 @@ function readJsonFile<T>(filePath: string, schema: { parse: (value: unknown) => 
 function enqueueWrite(runId: string, fn: () => void | Promise<void>): Promise<void> {
   const previous = writeQueues.get(runId) ?? Promise.resolve();
   const next = previous
+    .catch(() => undefined)
     .then(async () => {
       await fn();
-    })
-    .catch((err) => {
-      console.error(`[calder-evidence] write failed for run ${runId}:`, err);
     });
   writeQueues.set(runId, next);
+  void next.catch((err) => {
+    console.error(`[calder-evidence] write failed for run ${runId}:`, err);
+  });
   return next;
 }
 
@@ -133,14 +134,14 @@ export async function appendEvent(
   runId: string,
   event: EvidenceEvent,
   dataRootOverride?: string,
-): Promise<void> {
+): Promise<boolean> {
   const parsed = EvidenceEventSchema.parse(event);
   const line = `${JSON.stringify(parsed)}\n`;
   if (Buffer.byteLength(line, 'utf8') > MAX_EVENT_LINE_BYTES) {
     console.warn(
       `[calder-evidence] dropping oversized event (type=${parsed.type}, seq=${parsed.seq}, run=${runId})`,
     );
-    return;
+    return false;
   }
 
   await enqueueWrite(runId, () => {
@@ -170,6 +171,7 @@ export async function appendEvent(
       );
     }
   });
+  return true;
 }
 
 /**

@@ -248,7 +248,15 @@ export async function ingestEvent(
     }
   }
 
-  await appendEvent(runId, event, dataRootOverride);
+  let persisted: boolean;
+  try {
+    persisted = await appendEvent(runId, event, dataRootOverride);
+  } catch {
+    return { accepted: false, orphan: false, reason: 'persistence_failed' };
+  }
+  if (!persisted) {
+    return { accepted: false, orphan: false, reason: 'persistence_failed' };
+  }
   return { accepted: true, orphan: false };
 }
 
