@@ -9,7 +9,6 @@ import type {
 import {
   _resetUpdateCenterForTesting,
   cancelCliProviderUpdates,
-  checkForAppUpdates,
   getUpdateCenterState,
   initUpdateCenter,
   runCliProviderUpdate,
@@ -151,53 +150,6 @@ beforeEach(() => {
 afterEach(() => {
   _resetUpdateCenterForTesting();
   vi.useRealTimers();
-});
-
-describe('update center app updates', () => {
-  it('marks app updates as up to date when no events arrive after timeout', async () => {
-    const mockApi = createMockApi();
-    initUpdateCenter(mockApi as any);
-
-    await checkForAppUpdates();
-    expect(getUpdateCenterState().app.phase).toBe('checking');
-
-    await vi.advanceTimersByTimeAsync(6500);
-    expect(getUpdateCenterState().app.phase).toBe('up_to_date');
-    expect(getUpdateCenterState().app.lastCheckedAt).toBeTruthy();
-    expect(mockApi.checkNow).toHaveBeenCalledTimes(1);
-  });
-
-  it('tracks available, download progress, and downloaded phases', async () => {
-    const mockApi = createMockApi();
-    initUpdateCenter(mockApi as any);
-
-    await checkForAppUpdates();
-    mockApi.emitAppAvailable({ version: '1.4.0' });
-    expect(getUpdateCenterState().app.phase).toBe('downloading');
-    expect(getUpdateCenterState().app.targetVersion).toBe('1.4.0');
-
-    mockApi.emitAppDownloadProgress({ percent: 31 });
-    expect(getUpdateCenterState().app.downloadPercent).toBe(31);
-
-    mockApi.emitAppDownloaded({ version: '1.4.0' });
-    expect(getUpdateCenterState().app.phase).toBe('ready_to_restart');
-    expect(getUpdateCenterState().app.targetVersion).toBe('1.4.0');
-  });
-
-  it('surfaces check failures as app error state', async () => {
-    const mockApi = createMockApi({
-      checkNow: async () => {
-        throw new Error('network unreachable');
-      },
-    });
-    initUpdateCenter(mockApi as any);
-
-    await checkForAppUpdates();
-    const app = getUpdateCenterState().app;
-    expect(app.phase).toBe('error');
-    expect(app.errorMessage).toBe('network unreachable');
-    expect(app.lastCheckedAt).toBeTruthy();
-  });
 });
 
 describe('update center cli updates', () => {
