@@ -66,6 +66,7 @@
     "audit:graph": "node scripts/graph-gap-audit.mjs",
     "audit:structure": "node scripts/structure-audit.mjs",
     "audit:secrets": "node scripts/scan-tracked-secrets.mjs",
+    "audit:runtime-secrets": "node --experimental-strip-types src/main/security/secrets-audit.ts",
     "audit:deep": "node scripts/deep-system-audit.mjs",
     "checksums:generate": "node scripts/generate-release-checksums.mjs",
     "ci:install-electron": "node scripts/install-electron-binary.mjs",

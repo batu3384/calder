@@ -1,6 +1,7 @@
 /**
- * Secrets audit tool — scans runtime files for accidentally stored sensitive data.
- * Run: npx ts-node src/main/security/secrets-audit.ts
+ * Runtime secrets audit — scans ~/.calder/runtime and ~/.calder/logs.
+ * Repo-tracked secrets: `npm run audit:secrets`.
+ * This scan: `npm run audit:runtime-secrets`.
  */
 
 import * as fs from 'fs';

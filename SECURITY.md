@@ -16,7 +16,7 @@ Security fixes are applied to the latest `main` branch and the most recent relea
 ## Secrets and Environment Files
 
 - Never commit `.env`, API keys, tokens, PEM private keys, or `credentials.json`.
-- Use `.env.example` as a template only; copy to `.env` locally (gitignored).
+- Use `env.example` as a template only; copy to `.env` locally (gitignored).
 - Provider credentials belong in your OS login shell or user-level CLI config (`~/.claude`, `~/.codex`, etc.), not in the repository.
 
 ## Release Integrity
@@ -30,5 +30,6 @@ Security fixes are applied to the latest `main` branch and the most recent relea
 CI and local hooks run:
 
 - `npm run audit:secrets` — scan tracked files for accidental secrets
+- `npm run audit:runtime-secrets` — scan `~/.calder/runtime` and `~/.calder/logs` (not the git tree)
 - `npm audit --omit=dev --audit-level=high` — production dependency advisories
 - ESLint, tests, and structure guardrails

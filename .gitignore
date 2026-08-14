@@ -9,7 +9,6 @@ coverage/
 # Environment files and credentials
 .env
 .env.*
-!.env.example
 *.pem
 *.p12
 *.pfx

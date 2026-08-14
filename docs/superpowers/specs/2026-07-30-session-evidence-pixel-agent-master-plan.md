@@ -83,7 +83,7 @@ Before proposing architecture, inspect the current repository. At minimum inspec
 - `CONTRIBUTING.md`
 - `CHANGELOG.md`
 - `.calderignore`
-- `.env.example`
+- `env.example`
 - `.nvmrc`
 - `package.json`
 - `vitest.config.ts`
