@@ -4,14 +4,22 @@
  */
 import { appState } from '../../state.js';
 import { isCliSessionRecord } from '../../state-project-surface.js';
-import { openPixelOffice, togglePixelOffice } from '../pixel-office/mount-pixel-office.js';
+import {
+  isPixelOfficeOpen,
+  openPixelOffice,
+  setPixelOfficeOpen,
+  togglePixelOffice,
+} from '../pixel-office/mount-pixel-office.js';
 
 export function isInspectorOpen(): boolean {
-  return false;
+  return isPixelOfficeOpen();
 }
 
 export function getInspectedSessionId(): string | null {
-  return null;
+  if (!isPixelOfficeOpen()) return null;
+  const session = appState.activeSession;
+  if (!session || !isCliSessionRecord(session)) return null;
+  return session.id;
 }
 
 export function setSessionInspectorRelayoutCallback(_callback: (() => void) | null): void {
@@ -37,7 +45,7 @@ export function focusInspectorSession(sessionId: string): void {
 }
 
 export function closeInspector(): void {
-  // Pixel Office has its own close control.
+  setPixelOfficeOpen(false);
 }
 
 export function toggleInspector(): void {

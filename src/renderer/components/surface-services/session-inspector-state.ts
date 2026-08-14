@@ -5,9 +5,5 @@ const sessionInspectorState = sessionInspectorStateModule as SessionInspectorSta
 
 export const getEvents: SessionInspectorStateModule['getEvents'] = (...args) =>
   sessionInspectorState.getEvents(...args);
-export const getToolStats: SessionInspectorStateModule['getToolStats'] = (...args) =>
-  sessionInspectorState.getToolStats(...args);
-export const getContextHistory: SessionInspectorStateModule['getContextHistory'] = (...args) =>
-  sessionInspectorState.getContextHistory(...args);
 export const getCostDeltas: SessionInspectorStateModule['getCostDeltas'] = (...args) =>
   sessionInspectorState.getCostDeltas(...args);

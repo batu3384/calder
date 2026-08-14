@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
 
-const inspectorViewsSource = readFileSync(
-  new URL('./session-inspector/session-inspector-views.ts', import.meta.url),
+const inspectorTimelineSource = readFileSync(
+  new URL('./session-inspector/session-inspector-timeline.ts', import.meta.url),
   'utf-8',
 );
 const inspectorUtilsSource = readFileSync(
@@ -23,7 +23,7 @@ const mcpCss = readFileSync(new URL('../styles/mcp-inspector.css', import.meta.u
 describe('auxiliary panel polish contract', () => {
   it('uses a shared inspector empty shell instead of raw empty strings', () => {
     expect(inspectorUtilsSource).toContain('renderInspectorEmpty');
-    expect(inspectorViewsSource).toContain('renderInspectorEmpty(container,');
+    expect(inspectorTimelineSource).toContain('renderInspectorEmpty(container,');
     expect(inspectorCss).toContain('.inspector-empty-shell');
     expect(inspectorCss).toContain('.inspector-empty-title');
     expect(inspectorCss).toContain('.inspector-empty-copy');

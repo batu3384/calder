@@ -31,6 +31,8 @@ describe('pixel office shell contract', () => {
     expect(pixelOfficeSource).toContain('initPixelOffice');
     expect(inspectorShimSource).toContain('togglePixelOffice');
     expect(inspectorShimSource).toContain('openPixelOffice');
+    expect(inspectorShimSource).toContain('isPixelOfficeOpen');
+    expect(inspectorShimSource).toContain('setPixelOfficeOpen');
     expect(contextInspectorSource).not.toContain('mountContextPixel');
     expect(contextInspectorSource).not.toContain("'pixel'");
   });
