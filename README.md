@@ -79,7 +79,7 @@ Capability depth varies by provider (cost parsing, hook telemetry, plan mode, au
 - Workspace Pulse timeline with tool and approval events
 - **Session Evidence** — local, redacted JSONL runs per terminal session (tools, governance, Git window observations)
 - **Session Inspector tabs** — Evidence timeline (live updates, filters, detail panel), Changes, Review, export JSON/Markdown
-- **Pixel Agent** — optional evidence-driven visualization: **Compact** strip or **Studio** six-station workspace (`Off` / `Compact` / `Studio` in Preferences → Safety)
+- **Pixel Office** — optional evidence-driven office in the inspector rail (`Off` / `Office` in Preferences → Safety)
 - Diagnostics when tracking or context pressure is unavailable
 
 Evidence is stored under Calder's local data root (`evidence/{runId}/`). Disable capture anytime in **Preferences → Safety**. Provider completion semantics differ (e.g. Cursor may end as `unknown` when hooks do not report session end — not the same as `interrupted`).
@@ -168,7 +168,7 @@ Common examples:
 ## Security Notes
 
 - Renderer-to-main communication is explicit through preload IPC surfaces.
-- Session sharing uses encrypted peer-to-peer transport (WebRTC data channels).
+- Sessions stay local to this Electron app; there is no peer-to-peer session sharing.
 - Security policy and reporting instructions: [SECURITY.md](SECURITY.md)
 
 ## Contributing

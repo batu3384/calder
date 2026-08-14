@@ -137,7 +137,6 @@ Approximate visible IPC handler count: ~65
 - File reads/writes (`fs:readFile`, `store.save`, screenshot temp writes)
 - External URL opens (`shell.openExternal`)
 - Outbound HTTP connections (MCP connect, updater traffic, localhost probe)
-- WebRTC data channels
 - Renderer DOM updates (`innerHTML`/manual node creation in several components)
 
 ## Trust Boundaries
