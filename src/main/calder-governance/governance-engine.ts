@@ -46,7 +46,8 @@ export interface SerializedRule {
   priority: number;
   operation: string;
   action: GovernanceAction;
-  condition?: string; // serialized JS condition (for trusted policy files, advisory mode only)
+  /** Ignored at load time. Serialized JS is never evaluated. Rules with this field are skipped. */
+  condition?: string;
   reason?: string;
 }
 
@@ -198,32 +199,37 @@ export class GovernanceEngine {
 
   /**
    * Load rules from a serialized policy file.
-   * Note: serialized condition strings are NOT evaluated for security reasons.
-   * Custom rules currently match all operations of their type. This is by design —
-   * condition evaluation would require a safe-eval sandbox and is a future enhancement.
+   * Serialized `condition` strings are never evaluated. Rules that include one are skipped.
+   * Remaining custom rules match all operations of their type.
    */
   static fromPolicyFile(policy: GovernancePolicyFile): GovernanceEngine {
-    const customRules: GovernanceRule[] = policy.rules.map((r) => ({
-      id: r.id,
-      priority: r.priority,
-      operation: r.operation,
-      // Condition strings are intentionally not evaluated — see comment above
-      condition: () => true,
-      action: r.action,
-      reason: r.reason,
-      description: r.reason,
-    }));
-    const engine = new GovernanceEngine(
+    const skipped: string[] = [];
+    const customRules: GovernanceRule[] = [];
+    for (const rule of policy.rules) {
+      if (typeof rule.condition === 'string' && rule.condition.trim().length > 0) {
+        skipped.push(rule.id);
+        continue;
+      }
+      customRules.push({
+        id: rule.id,
+        priority: rule.priority,
+        operation: rule.operation,
+        condition: () => true,
+        action: rule.action,
+        reason: rule.reason,
+        description: rule.reason,
+      });
+    }
+    if (skipped.length > 0) {
+      console.warn(
+        `[governance] skipped ${skipped.length} custom rule(s) with serialized conditions: ${skipped.join(', ')}`,
+      );
+    }
+    return new GovernanceEngine(
       [...DEFAULT_RULES(() => policy.budgetLimitUsd), ...customRules],
       policy.mode,
       policy.budgetLimitUsd,
     );
-    if (policy.mode === 'advisory' && customRules.length > 0) {
-      console.info(
-        `[governance] loaded ${customRules.length} custom rules in advisory mode — condition evaluation skipped for security`,
-      );
-    }
-    return engine;
   }
 }
 
