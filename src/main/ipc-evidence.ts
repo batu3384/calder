@@ -267,4 +267,9 @@ export function registerEvidenceIpcHandlers(): void {
   });
 }
 
+export function _resetEvidenceIpcForTests(): void {
+  evidenceSubscribers.clear();
+  destroyHookedSenders.clear();
+}
+
 export { findRunIdByCalderSessionId, getActiveRunId, resolveEvidenceRunId };
