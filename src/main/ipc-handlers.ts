@@ -40,6 +40,7 @@ import { registerPtyIpcHandlers } from './ipc-pty';
 import { sanitizePersistedStateForSave } from './ipc-state-sanitizer';
 import { registerMcpHandlers } from './mcp-ipc-handlers';
 import { createAppMenu } from './menu';
+import { getProvider } from './providers/registry';
 import { loadState } from './store';
 
 let hookWatcherStarted = false;
@@ -71,7 +72,18 @@ export function registerIpcHandlers(): void {
     unregisterAutoApprovalSession: (sessionId) => {
       autoApprovalOrchestrator.unregisterSession(sessionId);
     },
-    validateProviderTrackingAndWarn: () => {},
+    validateProviderTrackingAndWarn: (win, sessionId, providerId) => {
+      try {
+        const provider = getProvider(providerId);
+        if (provider.meta.capabilities.hookStatus !== false) return;
+        if (typeof win.isDestroyed === 'function' && win.isDestroyed()) return;
+        console.warn(
+          `[pty] ${provider.meta.displayName} session ${sessionId}: activity tracking unavailable (no hooks)`,
+        );
+      } catch {
+        // Unknown provider — spawn path already validated providerId.
+      }
+    },
     registerPendingProviderSessionWatchers: (providerId, cliSessionId, sessionId, cwd, win) => {
       if (providerId === 'codex' && !cliSessionId) {
         startCodexSessionWatcher(win);

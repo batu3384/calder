@@ -197,7 +197,13 @@ describe('ipc-handlers runtime', () => {
     );
   });
 
-  it('validateProviderTrackingAndWarn is a no-op when external hook injection is disabled', () => {
+  it('warns when the provider has no hook status tracking', () => {
+    mocks.getProvider.mockReturnValue({
+      meta: {
+        displayName: 'Cursor CLI',
+        capabilities: { hookStatus: false },
+      },
+    });
     registerIpcHandlers();
     const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
       validateProviderTrackingAndWarn(
@@ -208,10 +214,41 @@ describe('ipc-handlers runtime', () => {
     };
 
     const send = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    ptyOps.validateProviderTrackingAndWarn({ webContents: { send } }, 'sess-1', 'cursor');
+
+    expect(mocks.getProvider).toHaveBeenCalledWith('cursor');
+    expect(send).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      '[pty] Cursor CLI session sess-1: activity tracking unavailable (no hooks)',
+    );
+    warn.mockRestore();
+  });
+
+  it('does not warn when the provider supports hook status', () => {
+    mocks.getProvider.mockReturnValue({
+      meta: {
+        displayName: 'Claude Code',
+        capabilities: { hookStatus: true },
+      },
+    });
+    registerIpcHandlers();
+    const ptyOps = mocks.registerPtyIpcHandlers.mock.calls[0]?.[0] as {
+      validateProviderTrackingAndWarn(
+        win: { webContents: { send: (channel: string, payload: unknown) => void } },
+        sessionId: string,
+        providerId: string,
+      ): void;
+    };
+
+    const send = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     ptyOps.validateProviderTrackingAndWarn({ webContents: { send } }, 'sess-1', 'claude');
 
-    expect(mocks.getProvider).not.toHaveBeenCalled();
+    expect(mocks.getProvider).toHaveBeenCalledWith('claude');
     expect(send).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('setSessionAutoApprovalOverride delegates to inspector orchestrator override API', () => {
