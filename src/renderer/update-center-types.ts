@@ -3,8 +3,8 @@ import type {
   ProviderId,
   ProviderUpdateResult,
   ProviderUpdateSummary,
-} from '../../shared/types/provider.js';
-import type { CalderApi } from '../types.js';
+} from '../shared/types/provider.js';
+import type { CalderApi } from './types.js';
 
 export type UpdateCenterBridge = Pick<CalderApi, 'update' | 'provider'>;
 export type UpdateCenterListener = (state: UpdateCenterState) => void;
