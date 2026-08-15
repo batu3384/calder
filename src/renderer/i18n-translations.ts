@@ -1,5 +1,6 @@
 import { CORE_TRANSLATION_ENTRIES_PART_1 } from './i18n-translations-core-part-1.js';
 import { CORE_TRANSLATION_ENTRIES_PART_2 } from './i18n-translations-core-part-2.js';
+import { CORE_TRANSLATION_ENTRIES_PART_2_B } from './i18n-translations-core-part-2-b.js';
 import { CORE_TRANSLATION_ENTRIES_PART_3 } from './i18n-translations-core-part-3.js';
 import { ERROR_TRANSLATION_ENTRIES } from './i18n-translations-errors.js';
 import { GAP_TRANSLATION_ENTRIES } from './i18n-translations-gaps.js';
@@ -12,6 +13,7 @@ export const DIRECT_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, string]
   ...ERROR_TRANSLATION_ENTRIES,
   ...CORE_TRANSLATION_ENTRIES_PART_1,
   ...CORE_TRANSLATION_ENTRIES_PART_2,
+  ...CORE_TRANSLATION_ENTRIES_PART_2_B,
   ...CORE_TRANSLATION_ENTRIES_PART_3,
   ...GAP_TRANSLATION_ENTRIES,
 ];

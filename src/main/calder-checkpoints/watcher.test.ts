@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWatch = vi.hoisted(() => vi.fn());
@@ -66,10 +64,9 @@ describe('project checkpoint watcher', () => {
     };
     mockDiscoverProjectCheckpoints.mockResolvedValue(nextState);
     const onChange = vi.fn();
-    const checkpointDir = path.join('/repo', '.calder', 'checkpoints');
 
     startProjectCheckpointWatcher('/repo', onChange);
-    expect(mockMkdirSync).toHaveBeenCalledWith(checkpointDir, { recursive: true });
+    expect(mockMkdirSync).not.toHaveBeenCalled();
     expect(watchCallbacks.has('/repo/.calder/checkpoints')).toBe(true);
 
     watchCallbacks.get('/repo/.calder/checkpoints')?.();

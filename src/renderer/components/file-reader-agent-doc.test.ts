@@ -8,6 +8,11 @@ import {
 } from './file-reader-agent-doc.js';
 
 const fileReaderSource = readFileSync(new URL('./file-reader.ts', import.meta.url), 'utf-8');
+const fileReaderRenderSource = readFileSync(
+  new URL('./file-reader-render.ts', import.meta.url),
+  'utf-8',
+);
+const fileReaderCombined = `${fileReaderSource}\n${fileReaderRenderSource}`;
 const styles = readFileSync(new URL('../styles/file-viewer.css', import.meta.url), 'utf-8');
 
 describe('file reader agent document helpers', () => {
@@ -144,10 +149,10 @@ Body text
   });
 
   it('renders config markdown through the dedicated agent document shell hooks', () => {
-    expect(fileReaderSource).toContain('agent-doc-shell');
-    expect(fileReaderSource).toContain('agent-doc-header');
-    expect(fileReaderSource).toContain('agent-doc-body');
-    expect(fileReaderSource).toContain('agent-doc-meta');
+    expect(fileReaderCombined).toContain('agent-doc-shell');
+    expect(fileReaderCombined).toContain('agent-doc-header');
+    expect(fileReaderCombined).toContain('agent-doc-body');
+    expect(fileReaderCombined).toContain('agent-doc-meta');
     expect(styles).toContain('.agent-doc-shell');
     expect(styles).toContain('.agent-doc-body');
   });

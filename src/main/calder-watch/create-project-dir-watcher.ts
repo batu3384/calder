@@ -5,6 +5,7 @@ export interface ProjectDirWatcherOptions<T> {
   watchDirs: (projectPath: string) => string[];
   discover: (projectPath: string) => Promise<T>;
   recursive?: boolean;
+  /** When true, discover failures are logged and subscribers keep the last snapshot. */
   ignoreDiscoverErrors?: boolean;
 }
 
@@ -36,21 +37,20 @@ export function createProjectDirWatcher<T>(options: ProjectDirWatcherOptions<T>)
           callback(nextState);
         }
       };
-      if (options.ignoreDiscoverErrors) {
-        try {
-          await publish();
-        } catch {
-          // Watchers are best-effort; explicit refresh still works through IPC.
-        }
-        return;
+      try {
+        await publish();
+      } catch (error) {
+        if (options.ignoreDiscoverErrors === false) throw error;
+        console.warn(
+          `[calder-watch] discover failed for ${projectPath}:`,
+          error instanceof Error ? error.message : error,
+        );
       }
-      await publish();
     }, debounceMs);
   }
 
   function watchDir(projectPath: string, state: WatchState<T>, dirPath: string): void {
     try {
-      fs.mkdirSync(dirPath, { recursive: true });
       const listener = () => notify(projectPath);
       let watcher: fs.FSWatcher;
       if (options.recursive) {

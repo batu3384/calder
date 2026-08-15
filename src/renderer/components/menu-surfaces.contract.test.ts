@@ -22,7 +22,11 @@ const sessionMenuSource = readFileSync(
   new URL('./tab-bar/tab-bar-session-menu-controller.ts', import.meta.url),
   'utf-8',
 );
-const sidebarSource = readFileSync(new URL('./sidebar.ts', import.meta.url), 'utf-8');
+const _sidebarSource = readFileSync(new URL('./sidebar.ts', import.meta.url), 'utf-8');
+const sidebarProjectListSource = readFileSync(
+  new URL('./sidebar-project-list.ts', import.meta.url),
+  'utf-8',
+);
 const historySource = readFileSync(new URL('./session-history.ts', import.meta.url), 'utf-8');
 const gitSource = readFileSync(new URL('./git-panel.ts', import.meta.url), 'utf-8');
 const selectSource = readFileSync(new URL('./custom-select.ts', import.meta.url), 'utf-8');
@@ -49,13 +53,15 @@ describe('menu surface contract', () => {
     expect(sessionMenuSource).not.toContain('Join Remote Session');
     expect(providerSelectorSource).toContain('floating: {');
     expect(providerSelectorSource).not.toContain('floating: false');
-    expect(sidebarSource).toContain('tab-context-menu calder-floating-list');
-    expect(sidebarSource).toContain("applyTabContextMenuSemantics(menu, 'Project actions'");
+    expect(sidebarProjectListSource).toContain('tab-context-menu calder-floating-list');
+    expect(sidebarProjectListSource).toContain(
+      "applyTabContextMenuSemantics(menu, 'Project actions'",
+    );
     expect(historySource).toContain('tab-context-menu calder-floating-list');
     expect(historySource).toContain("applyTabContextMenuSemantics(menu, t('History actions')");
     expect(gitSource).toContain('tab-context-menu calder-floating-list');
     expect(gitSource).toContain("applyTabContextMenuSemantics(menu, 'Git file actions'");
-    expect(sidebarSource).toContain('path-autocomplete-dropdown calder-floating-list');
+    expect(sidebarProjectListSource).toContain('path-autocomplete-dropdown calder-floating-list');
     expect(selectSource).toContain('custom-select-dropdown calder-floating-list');
   });
 

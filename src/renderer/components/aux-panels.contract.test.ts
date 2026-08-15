@@ -18,6 +18,11 @@ const inspectorCss = readFileSync(
   'utf-8',
 );
 const mcpInspectorSource = readFileSync(new URL('./mcp-inspector.ts', import.meta.url), 'utf-8');
+const mcpInspectorListsSource = readFileSync(
+  new URL('./mcp-inspector-lists.ts', import.meta.url),
+  'utf-8',
+);
+const mcpInspectorCombined = `${mcpInspectorSource}\n${mcpInspectorListsSource}`;
 const mcpCss = readFileSync(new URL('../styles/mcp-inspector.css', import.meta.url), 'utf-8');
 
 describe('auxiliary panel polish contract', () => {
@@ -30,9 +35,9 @@ describe('auxiliary panel polish contract', () => {
   });
 
   it('uses structured MCP empty and error states', () => {
-    expect(mcpInspectorSource).toContain('renderMcpEmptyState');
-    expect(mcpInspectorSource).toContain('mcp-empty-state');
-    expect(mcpInspectorSource).toContain('mcp-error-state');
+    expect(mcpInspectorCombined).toContain('renderMcpEmptyState');
+    expect(mcpInspectorCombined).toContain('mcp-empty-state');
+    expect(mcpInspectorCombined).toContain('mcp-error-state');
     expect(mcpCss).toContain('.mcp-empty-state');
     expect(mcpCss).toContain('.mcp-error-state');
     expect(mcpCss).toContain('.mcp-empty-copy');

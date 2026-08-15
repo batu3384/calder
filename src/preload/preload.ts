@@ -107,6 +107,9 @@ export interface CalderApi {
     onCostData(callback: (sessionId: string, costData: CostData) => void): () => void;
     onToolFailure(callback: (sessionId: string, data: ToolFailureData) => void): () => void;
     onInspectorEvents(callback: (sessionId: string, events: InspectorEvent[]) => void): () => void;
+    onTrackingUnavailable(
+      callback: (sessionId: string, providerId: ProviderId, message: string) => void,
+    ): () => void;
   };
   fs: {
     isDirectory(path: string): Promise<boolean>;
@@ -351,6 +354,10 @@ const api: CalderApi = {
     onInspectorEvents: (callback) =>
       onChannel('session:inspectorEvents', (sessionId, events) =>
         callback(sessionId as string, events as InspectorEvent[]),
+      ),
+    onTrackingUnavailable: (callback) =>
+      onChannel('session:trackingUnavailable', (sessionId, providerId, message) =>
+        callback(sessionId as string, providerId as ProviderId, message as string),
       ),
   },
   fs: {

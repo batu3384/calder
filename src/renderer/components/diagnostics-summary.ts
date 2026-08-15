@@ -4,7 +4,10 @@ import type { ProviderId, UiLanguage } from '../../shared/types/provider.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../state.js';
 import { applyTabularNums } from './surface-services/dom-utils.js';
 import { getGitStatus, type GitStatus } from './surface-services/git-status.js';
-import { getProviderDisplayName } from './surface-services/provider-availability.js';
+import {
+  getProviderCapabilities,
+  getProviderDisplayName,
+} from './surface-services/provider-availability.js';
 
 type DiagnosticsTone = 'default' | 'active' | 'warning';
 
@@ -133,6 +136,26 @@ function summarizeProviderRoute(
   };
 }
 
+function summarizeTracking(
+  session: SessionRecord | undefined,
+  language: UiLanguage,
+): DiagnosticsSummaryCard | null {
+  if (!session || session.type) return null;
+  const providerId = (session.providerId ?? 'claude') as ProviderId;
+  if (getProviderCapabilities(providerId)?.hookStatus !== false) return null;
+  const name = getProviderDisplayName(providerId);
+  return {
+    label: localized(language, 'Tracking', 'İzleme'),
+    value: localized(language, 'Limited', 'Sınırlı'),
+    detail: localized(
+      language,
+      `${name} does not emit hook events`,
+      `${name} kanca olayı göndermiyor`,
+    ),
+    tone: 'warning',
+  };
+}
+
 function summarizeAutoApproval(
   project: ProjectRecord | undefined,
   language: UiLanguage,
@@ -171,6 +194,8 @@ export function buildDiagnosticsSummaryModel(
     summarizeAutoApproval(project, language),
     summarizeGitStatus(gitStatus, language),
   ];
+  const trackingCard = summarizeTracking(cliSession, language);
+  if (trackingCard) cards.splice(1, 0, trackingCard);
   return {
     title: localized(language, 'Workspace Trust', 'Çalışma Güveni'),
     subtitle: '',

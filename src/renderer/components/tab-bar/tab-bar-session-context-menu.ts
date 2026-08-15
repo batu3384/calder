@@ -1,7 +1,7 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
-import { openInspector } from '../session-inspector/session-inspector.js';
+import { openPixelOfficeForSession } from '../session-inspector/session-inspector.js';
 import { canOpenInspectorPanel } from '../session-inspector/session-inspector-utils.js';
 
 export interface SessionTabContextMenuOptions {
@@ -96,7 +96,7 @@ function buildInspectMenuItem(
   if (!isCliSession || !canOpenInspectorPanel(session)) return null;
 
   return createContextMenuItem('Show Pixel', hideTabContextMenu, {
-    onSelect: () => openInspector(session.id),
+    onSelect: () => openPixelOfficeForSession(session.id),
   });
 }
 

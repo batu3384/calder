@@ -1,0 +1,371 @@
+type PatternTranslation = {
+  pattern: RegExp;
+  replace: (match: RegExpMatchArray) => string;
+};
+
+type Translate = (value: string) => string;
+
+export function createWorkflowAndInstallPatterns(translate: Translate): PatternTranslation[] {
+  return [
+    {
+      pattern: /^Session (\d+)$/u,
+      replace: (match) => `Oturum ${match[1]}`,
+    },
+    { pattern: /^Shortcuts:\s*(.+)$/u, replace: (match) => `Kısayollar: ${translate(match[1])}` },
+    {
+      pattern: /^What's New in v(.+)$/u,
+      replace: (match) => `v${match[1]} sürümündeki yenilikler`,
+    },
+    {
+      pattern: /^Version:\s*(.+)$/u,
+      replace: (match) => `Sürüm: ${match[1]}`,
+    },
+    {
+      pattern: /^Released\s+(.+)$/u,
+      replace: (match) => `Yayın tarihi ${match[1]}`,
+    },
+    {
+      pattern: /^Update v(.+) available — downloading\.\.\.$/u,
+      replace: (match) => `v${match[1]} güncellemesi mevcut — indiriliyor...`,
+    },
+    {
+      pattern: /^Downloading (.+)\.\.\.(?: (\d+)%)?$/u,
+      replace: (match) =>
+        match[2]
+          ? `Güncelleme indiriliyor: ${match[1]} (%${match[2]})`
+          : `Güncelleme indiriliyor: ${match[1]}`,
+    },
+    {
+      pattern: /^Update (.+) ready\.$/u,
+      replace: (match) => `Güncelleme hazır: ${match[1]}.`,
+    },
+    {
+      pattern: /^Update failed:\s*(.+)$/u,
+      replace: (match) => `Güncelleme başarısız: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^Progress:\s*(\d+)\/(\d+)\s+\((\d+)%\)$/u,
+      replace: (match) => `İlerleme: ${match[1]}/${match[2]} (%${match[3]})`,
+    },
+    {
+      pattern: /^Ready:\s*(\d+)\s+·\s+Warnings:\s*(\d+)\s+·\s+Required missing:\s*(\d+)$/u,
+      replace: (match) => `Hazır: ${match[1]} · Uyarı: ${match[2]} · Zorunlu eksik: ${match[3]}`,
+    },
+    {
+      pattern: /^(.+)\s+·\s+Install progress$/u,
+      replace: (match) => `${translate(match[1])} · Kurulum ilerlemesi`,
+    },
+    {
+      pattern: /^Progress:\s*(\d+)%$/u,
+      replace: (match) => `İlerleme: %${match[1]}`,
+    },
+    {
+      pattern: /^Step:\s*(\d+)\/(\d+)$/u,
+      replace: (match) => `Adım: ${match[1]}/${match[2]}`,
+    },
+    {
+      pattern: /^Downloaded:\s*([0-9.]+\s*MB)$/u,
+      replace: (match) => `İndirilen: ${match[1]}`,
+    },
+    {
+      pattern: /^Remaining:\s*([0-9.]+\s*MB)$/u,
+      replace: (match) => `Kalan: ${match[1]}`,
+    },
+    {
+      pattern: /^Step progress:\s*(\d+)%$/u,
+      replace: (match) => `Adım ilerlemesi: %${match[1]}`,
+    },
+    {
+      pattern: /^Command:\s*(.+)$/u,
+      replace: (match) => `Komut: ${match[1]}`,
+    },
+    {
+      pattern: /^Install driver with `appium driver install (.+)`\.$/u,
+      replace: (match) => `Sürücüyü \`appium driver install ${match[1]}\` ile kurun.`,
+    },
+    {
+      pattern: /^Detected Java (\d+); Java 17 or newer is required\.$/u,
+      replace: (match) => `Java ${match[1]} algılandı; Java 17 veya üzeri gerekli.`,
+    },
+    {
+      pattern: /^(.+) is not installed\.$/u,
+      replace: (match) => `${match[1]} kurulu değil.`,
+    },
+    {
+      pattern: /^(.+) is installed\.$/u,
+      replace: (match) => `${match[1]} kurulu.`,
+    },
+    {
+      pattern: /^(.+) installed successfully\.$/u,
+      replace: (match) => `${match[1]} başarıyla kuruldu.`,
+    },
+    {
+      pattern: /^(.+) installation started…$/u,
+      replace: (match) => `${match[1]} kurulumu başlatıldı…`,
+    },
+    {
+      pattern: /^(.+) was not found on PATH\.$/u,
+      replace: (match) => `PATH üzerinde ${match[1]} bulunamadı.`,
+    },
+    {
+      pattern: /^Command not found:\s*(.+)\.\s*Install it and ensure PATH is configured\.$/u,
+      replace: (match) =>
+        `Komut bulunamadı: ${match[1]}. Kurun ve PATH'in doğru yapılandırıldığından emin olun.`,
+    },
+    {
+      pattern: /^(.+) was not found on PATH or known Android SDK locations\.$/u,
+      replace: (match) =>
+        `PATH üzerinde veya bilinen Android SDK konumlarında ${match[1]} bulunamadı.`,
+    },
+    {
+      pattern: /^Running step (\d+)\/(\d+)$/u,
+      replace: (match) => `Adım ${match[1]}/${match[2]} çalışıyor`,
+    },
+    {
+      pattern: /^Step (\d+)\/(\d+) completed\.$/u,
+      replace: (match) => `Adım ${match[1]}/${match[2]} tamamlandı.`,
+    },
+    {
+      pattern: /^(.+) exists but version check failed\.$/u,
+      replace: (match) => `${match[1]} mevcut ancak sürüm kontrolü başarısız oldu.`,
+    },
+    {
+      pattern: /^(.+) is available\.$/u,
+      replace: (match) => `${match[1]} kullanılabilir.`,
+    },
+    {
+      pattern: /^Started:\s*(.+)$/u,
+      replace: (match) => `Başlangıç: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^Last run:\s*(.+)$/u,
+      replace: (match) => `Son çalıştırma: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^Default policy for this Mac\.\s+Current:\s+(.+)\.$/u,
+      replace: (match) => `Bu Mac için varsayılan politika. Şu an: ${translate(match[1])}.`,
+    },
+    {
+      pattern: /^Repository-level policy\.\s+Current:\s+(.+)\.$/u,
+      replace: (match) => `Depo düzeyinde politika. Şu an: ${translate(match[1])}.`,
+    },
+    {
+      pattern: /^Temporary policy for the active session\.\s+Current:\s+(.+)\.$/u,
+      replace: (match) => `Aktif oturum için geçici politika. Şu an: ${translate(match[1])}.`,
+    },
+    {
+      pattern: /^Updating CLI tools \((\d+)\/(\d+)\)$/u,
+      replace: (match) => `CLI araçları güncelleniyor (${match[1]}/${match[2]})`,
+    },
+    {
+      pattern: /^Updating CLI tools\.\.\. \((.+)\)$/u,
+      replace: (match) => `CLI araçları güncelleniyor... (${match[1]})`,
+    },
+    {
+      pattern: /^Cancelled (.+)\. (.+)$/u,
+      replace: (match) => `İptal: ${translate(match[1])}. ${match[2]}`,
+    },
+    {
+      pattern: /^Finished (.+)\. (.+)$/u,
+      replace: (match) => `Bitiş: ${translate(match[1])}. ${match[2]}`,
+    },
+    {
+      pattern: /^Updated (\d+)$/u,
+      replace: (match) => `Güncellendi ${match[1]}`,
+    },
+    {
+      pattern: /^Up to date (\d+)$/u,
+      replace: (match) => `Güncel ${match[1]}`,
+    },
+    {
+      pattern: /^Sync pending (\d+)$/u,
+      replace: (match) => `Senkron bekliyor ${match[1]}`,
+    },
+    {
+      pattern: /^Skipped (\d+)$/u,
+      replace: (match) => `Atlandı ${match[1]}`,
+    },
+    {
+      pattern: /^Cancelled (\d+)$/u,
+      replace: (match) => `İptal ${match[1]}`,
+    },
+    {
+      pattern: /^Errors (\d+)$/u,
+      replace: (match) => `Hata ${match[1]}`,
+    },
+    {
+      pattern: /^Update (.+)$/u,
+      replace: (match) => `${match[1]} güncelle`,
+    },
+    {
+      pattern: /^(.+): (.+)$/u,
+      replace: (match) => `${match[1]}: ${translate(match[2])}`,
+    },
+    {
+      pattern: /^(.+) \((\d+)%\)$/u,
+      replace: (match) => `${translate(match[1])} (%${match[2]})`,
+    },
+    {
+      pattern: /^Cancelling CLI update \((\d+)\/(\d+)\)$/u,
+      replace: (match) => `CLI güncellemesi iptal ediliyor (${match[1]}/${match[2]})`,
+    },
+    {
+      pattern: /^Completed with (\d+) issue(s?)\.$/u,
+      replace: (match) => `${match[1]} sorunla tamamlandı.`,
+    },
+    {
+      pattern: /^(\d+) provider(s?) updated\.$/u,
+      replace: (match) => `${match[1]} sağlayıcı güncellendi.`,
+    },
+    {
+      pattern: /^(\d+) provider(s?) waiting for package sync\.$/u,
+      replace: (match) => `${match[1]} sağlayıcı paket senkronunu bekliyor.`,
+    },
+    {
+      pattern: /^(\d+)\/(\d+) providers finished before cancellation\.$/u,
+      replace: (match) => `${match[1]}/${match[2]} sağlayıcı iptalden önce tamamlandı.`,
+    },
+    {
+      pattern: /^(\d+) provider(s?) finished before cancellation\.$/u,
+      replace: (match) => `${match[1]} sağlayıcı iptalden önce tamamlandı.`,
+    },
+    {
+      pattern: /^Finished (.+)\.$/u,
+      replace: (match) => `Bitiş: ${translate(match[1])}.`,
+    },
+    {
+      pattern: /^(.+) in progress\.$/u,
+      replace: (match) => `${match[1]} sürüyor.`,
+    },
+  ];
+}
+
+export function createPolicyAndRoutingPatterns(translate: Translate): PatternTranslation[] {
+  return [
+    {
+      pattern: /^(.+) • (\d+) sessions$/u,
+      replace: (match) => `${match[1]} • ${match[2]} oturum`,
+    },
+    {
+      pattern: /^Remove project (.+)$/u,
+      replace: (match) => `${match[1]} projesini kaldır`,
+    },
+    {
+      pattern: /^Remove (.+)$/u,
+      replace: (match) => `${match[1]} kaldır`,
+    },
+    {
+      pattern: /^Close session (.+)$/u,
+      replace: (match) => `${translate(match[1])} oturumunu kapat`,
+    },
+    {
+      pattern: /^Branch (.+)$/u,
+      replace: (match) => `Dal ${match[1]}`,
+    },
+    {
+      pattern: /^Status:\s*(.+?)\s+Drag to reorder\s+·\s+Drag to reorder$/u,
+      replace: (match) => `Durum: ${translate(match[1])} · yeniden sıralamak için sürükle`,
+    },
+    {
+      pattern: /^(\d+)\s+session$/u,
+      replace: (match) => `${match[1]} oturum`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions$/u,
+      replace: (match) => `${match[1]} oturum`,
+    },
+    {
+      pattern: /^Input\s+(\d+)$/u,
+      replace: (match) => `Girdi ${match[1]}`,
+    },
+    {
+      pattern: /^New\s+(\d+)$/u,
+      replace: (match) => `Yeni ${match[1]}`,
+    },
+    {
+      pattern: /^Live\s+(\d+)$/u,
+      replace: (match) => `Canlı ${match[1]}`,
+    },
+    {
+      pattern: /^Queue\s+(\d+)$/u,
+      replace: (match) => `Kuyruk ${match[1]}`,
+    },
+    {
+      pattern: /^(\d+)\s+session needs input$/u,
+      replace: (match) => `${match[1]} oturum girdi bekliyor`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions need input$/u,
+      replace: (match) => `${match[1]} oturum girdi bekliyor`,
+    },
+    {
+      pattern: /^(\d+)\s+session has new output$/u,
+      replace: (match) => `${match[1]} oturumda yeni çıktı var`,
+    },
+    {
+      pattern: /^(\d+)\s+sessions have new output$/u,
+      replace: (match) => `${match[1]} oturumda yeni çıktı var`,
+    },
+    {
+      pattern: /^(\d+)\s+active run$/u,
+      replace: (match) => `${match[1]} aktif çalışma`,
+    },
+    {
+      pattern: /^(\d+)\s+active runs$/u,
+      replace: (match) => `${match[1]} aktif çalışma`,
+    },
+    {
+      pattern: /^(\d+)\s+queued task$/u,
+      replace: (match) => `${match[1]} kuyruk görevi`,
+    },
+    {
+      pattern: /^(\d+)\s+queued tasks$/u,
+      replace: (match) => `${match[1]} kuyruk görevi`,
+    },
+    {
+      pattern: /^Latest:\s*(.+)$/u,
+      replace: (match) => `Son sürüm: ${match[1]}`,
+    },
+    {
+      pattern: /^Calder found (\d+) runnable option(s?) for this project\.$/u,
+      replace: (match) => `Calder bu proje için çalıştırılabilir ${match[1]} seçenek buldu.`,
+    },
+    {
+      pattern: /^(\d+) commands$/u,
+      replace: (match) => `${match[1]} komut`,
+    },
+    {
+      pattern: /^(\d+) running$/u,
+      replace: (match) => `${match[1]} çalışıyor`,
+    },
+    {
+      pattern: /^Flow \((\d+) steps?\)$/u,
+      replace: (match) => `Akış (${match[1]} adım)`,
+    },
+    {
+      pattern: /^Auto-scroll:\s*(ON|OFF)$/u,
+      replace: (match) => `Otomatik kaydırma: ${match[1] === 'ON' ? 'AÇIK' : 'KAPALI'}`,
+    },
+    {
+      pattern: /^Will send:\s*(.+)$/u,
+      replace: (match) => `Gönderilecek: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^Currently:\s*(.+)$/u,
+      replace: (match) => `Şu an: ${translate(match[1])}`,
+    },
+    {
+      pattern: /^Resolved from:\s*(.+)\s+·\s+Provider:\s*(.+)$/u,
+      replace: (match) => `Çözülen kaynak: ${translate(match[1])} · Sağlayıcı: ${match[2]}`,
+    },
+    {
+      pattern: /^Global:\s*(.+)\s+·\s+Project:\s*(.+)\s+·\s+Session:\s*(.+)$/u,
+      replace: (match) =>
+        `Global: ${translate(match[1])} · Proje: ${translate(match[2])} · Oturum: ${translate(match[3])}`,
+    },
+    {
+      pattern: /^Routing to\s+(.+)$/u,
+      replace: (match) => `${translate(match[1])} oturumuna yönlendiriliyor`,
+    },
+  ];
+}

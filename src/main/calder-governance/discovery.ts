@@ -12,6 +12,7 @@ import {
   readGlobalAutoApprovalPolicy,
   resolveEffectiveAutoApprovalMode,
 } from './auto-approval-policy.js';
+import { type GovernancePolicyFile, listSerializedConditionRuleIds } from './governance-engine.js';
 
 interface RawGovernancePolicy {
   profileName?: unknown;
@@ -76,6 +77,22 @@ function readPolicy(filePath: string): RawGovernancePolicy {
   }
 }
 
+function readIgnoredSerializedConditionRules(filePath: string): string[] {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !Array.isArray((parsed as GovernancePolicyFile).rules)
+    ) {
+      return [];
+    }
+    return listSerializedConditionRuleIds(parsed as GovernancePolicyFile);
+  } catch {
+    return [];
+  }
+}
+
 function buildPolicySource(filePath: string): ProjectGovernancePolicySource {
   const stat = fs.statSync(filePath);
   const raw = readPolicy(filePath);
@@ -130,6 +147,11 @@ export async function discoverProjectGovernance(
 
   const policy = buildPolicySource(policyPath);
   const raw = readPolicy(policyPath);
+  const ignoredSerializedConditionRules = readIgnoredSerializedConditionRules(policyPath);
+  const declaredMode = asMode(raw.mode);
+  const policyModeDowngraded =
+    ignoredSerializedConditionRules.length > 0 && declaredMode === 'enforced';
+  const effectivePolicy = policyModeDowngraded ? { ...policy, mode: 'advisory' as const } : policy;
   const projectMode = asAutoApprovalMode(raw.autoApproval?.mode);
   const resolved = resolveEffectiveAutoApprovalMode({
     globalMode,
@@ -139,7 +161,7 @@ export async function discoverProjectGovernance(
   });
 
   return {
-    policy,
+    policy: effectivePolicy,
     autoApproval: {
       globalMode,
       projectMode,
@@ -148,7 +170,9 @@ export async function discoverProjectGovernance(
       safeToolProfile: 'default-read-only',
       recentDecisions: [],
     },
-    lastUpdated: policy.lastUpdated,
+    lastUpdated: effectivePolicy.lastUpdated,
+    ignoredSerializedConditionRules,
+    ...(policyModeDowngraded ? { policyModeDowngraded: true } : {}),
   };
 }
 

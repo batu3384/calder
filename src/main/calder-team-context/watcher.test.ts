@@ -83,7 +83,7 @@ describe('project team context watcher', () => {
 
     startProjectTeamContextWatcher('/repo', onChange);
 
-    expect(mockMkdirSync).toHaveBeenCalledTimes(3);
+    expect(mockMkdirSync).not.toHaveBeenCalled();
     expect(mockWatch).toHaveBeenCalledTimes(3);
     expect(watchCallbacks.has(n(teamDir))).toBe(true);
     expect(watchCallbacks.has(n(rulesDir))).toBe(true);
@@ -190,17 +190,30 @@ describe('project team context watcher', () => {
     expect(watchCallbacks.has(n(workflowsDir))).toBe(true);
   });
 
-  it('continues when one directory cannot be created for watching', () => {
-    let mkdirCall = 0;
-    mockMkdirSync.mockImplementation(() => {
-      mkdirCall += 1;
-      if (mkdirCall === 1) {
-        throw new Error('mkdir failed');
+  it('continues when one directory cannot be watched', () => {
+    let watchCall = 0;
+    mockWatch.mockImplementation(((
+      dirPath: string,
+      optionsOrListener: { recursive: boolean } | (() => void),
+      maybeListener?: () => void,
+    ) => {
+      const listener = typeof optionsOrListener === 'function' ? optionsOrListener : maybeListener;
+      if (!listener) {
+        throw new Error('listener is required');
       }
-    });
+      watchCall += 1;
+      if (watchCall === 1) {
+        throw new Error(`watch unsupported for ${dirPath}`);
+      }
+      const close = vi.fn();
+      closeFns.push(close);
+      watchCallbacks.set(n(dirPath), listener);
+      return { close } as any;
+    }) as any);
 
     expect(() => startProjectTeamContextWatcher('/repo', vi.fn())).not.toThrow();
-    expect(mockMkdirSync).toHaveBeenCalledTimes(3);
-    expect(mockWatch).toHaveBeenCalledTimes(2);
+    expect(mockMkdirSync).not.toHaveBeenCalled();
+    expect(mockWatch.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(watchCallbacks.size).toBe(3);
   });
 });

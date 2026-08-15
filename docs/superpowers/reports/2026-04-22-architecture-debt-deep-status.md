@@ -33,13 +33,13 @@ Working tree basis: `1b64325` + local uncommitted refactor slice
 
 ### Large-file debt (`>=800` LOC, non-test)
 
-1. [state.ts](/Users/batuhanyuksel/Documents/browser/src/renderer/state.ts) — 1186
-2. [mobile-dependency-doctor.ts](/Users/batuhanyuksel/Documents/browser/src/main/mobile-dependency-doctor.ts) — 1146
-3. [i18n-translations.ts](/Users/batuhanyuksel/Documents/browser/src/renderer/i18n-translations.ts) — 1111
-4. [types.ts](/Users/batuhanyuksel/Documents/browser/src/shared/types.ts) — 1073
-5. [mobile-inspector.ts](/Users/batuhanyuksel/Documents/browser/src/main/mobile-inspector.ts) — 989
+1. `state.ts` — 1186 (removed; split into modules)
+2. `mobile-dependency-doctor.ts` — 1146 (removed)
+3. `i18n-translations.ts` — 1111 (split into shards)
+4. `types.ts` — 1073
+5. `mobile-inspector.ts` — 989 (removed)
 6. [split-layout.ts](/Users/batuhanyuksel/Documents/browser/src/renderer/components/split-layout.ts) — 965
-7. [peer-host.ts](/Users/batuhanyuksel/Documents/browser/src/renderer/sharing/peer-host.ts) — 841
+7. `peer-host.ts` — 841 (removed)
 8. [provider-updater.ts](/Users/batuhanyuksel/Documents/browser/src/main/provider-updater.ts) — 827
 9. [preferences-modal-sections.ts](/Users/batuhanyuksel/Documents/browser/src/renderer/components/preferences/preferences-modal-sections.ts) — 886
 

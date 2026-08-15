@@ -13,11 +13,13 @@ const source = [
   readFileSync(new URL('./i18n-translations.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-core-part-1.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-core-part-2.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-translations-core-part-2-b.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-core-part-3.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-tab-terminal.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-preferences.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-errors.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-pattern-translations.ts', import.meta.url), 'utf-8'),
+  readFileSync(new URL('./i18n-pattern-workflow-policy.ts', import.meta.url), 'utf-8'),
   readFileSync(new URL('./i18n-translations-gaps.ts', import.meta.url), 'utf-8'),
 ].join('\n');
 

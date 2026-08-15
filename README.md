@@ -76,11 +76,10 @@ Capability depth varies by provider (cost parsing, hook telemetry, plan mode, au
 
 - Hook-based session status (`working`, `waiting`, `input`, `completed`)
 - Provider-aware usage and cost parsing where available
-- Workspace Pulse timeline with tool and approval events
-- **Session Evidence** — local, redacted JSONL runs per terminal session (tools, governance, Git window observations)
-- **Session Inspector tabs** — Evidence timeline (live updates, filters, detail panel), Changes, Review, export JSON/Markdown
-- **Pixel Office** — optional evidence-driven office in the inspector rail (`Off` / `Office` in Preferences → Safety)
-- Diagnostics when tracking or context pressure is unavailable
+- **Context Inspector** — three tabs in the right rail: **Run** (workspace trust + auto-approval), **Project** (Git workspace), **Timeline** (hook event stream for the active CLI session plus archived run log)
+- **Session Evidence** — local, redacted JSONL runs per terminal session (tools, governance, Git window observations); export JSON/Markdown from the evidence IPC surface
+- **Pixel Office** — optional evidence-driven office in the inspector rail (`Off` / `Office` in Preferences → Safety); Office mode animates characters from Evidence events
+- Diagnostics summary when hook tracking is unavailable for a provider, or when context pressure signals are missing
 
 Evidence is stored under Calder's local data root (`evidence/{runId}/`). Disable capture anytime in **Preferences → Safety**. Provider completion semantics differ (e.g. Cursor may end as `unknown` when hooks do not report session end — not the same as `interrupted`).
 

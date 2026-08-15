@@ -203,13 +203,12 @@ export class GovernanceEngine {
    * Remaining custom rules match all operations of their type.
    */
   static fromPolicyFile(policy: GovernancePolicyFile): GovernanceEngine {
-    const skipped: string[] = [];
+    const skipped = listSerializedConditionRuleIds(policy);
+    const effectiveMode =
+      skipped.length > 0 && policy.mode === 'enforced' ? 'advisory' : policy.mode;
     const customRules: GovernanceRule[] = [];
     for (const rule of policy.rules) {
-      if (typeof rule.condition === 'string' && rule.condition.trim().length > 0) {
-        skipped.push(rule.id);
-        continue;
-      }
+      if (skipped.includes(rule.id)) continue;
       customRules.push({
         id: rule.id,
         priority: rule.priority,
@@ -221,16 +220,24 @@ export class GovernanceEngine {
       });
     }
     if (skipped.length > 0) {
+      const downgradeNote =
+        policy.mode === 'enforced' ? '; enforced mode downgraded to advisory' : '';
       console.warn(
-        `[governance] skipped ${skipped.length} custom rule(s) with serialized conditions: ${skipped.join(', ')}`,
+        `[governance] skipped ${skipped.length} custom rule(s) with serialized conditions: ${skipped.join(', ')}${downgradeNote}`,
       );
     }
     return new GovernanceEngine(
       [...DEFAULT_RULES(() => policy.budgetLimitUsd), ...customRules],
-      policy.mode,
+      effectiveMode,
       policy.budgetLimitUsd,
     );
   }
+}
+
+export function listSerializedConditionRuleIds(policy: GovernancePolicyFile): string[] {
+  return policy.rules
+    .filter((rule) => typeof rule.condition === 'string' && rule.condition.trim().length > 0)
+    .map((rule) => rule.id);
 }
 
 /**

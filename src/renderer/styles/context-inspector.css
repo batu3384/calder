@@ -1332,12 +1332,27 @@
     color-mix(in srgb, var(--surface-muted) 64%, black);
 }
 
+#context-inspector #session-activity-timeline {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--stroke-secondary, rgba(255, 255, 255, 0.08));
+  margin-bottom: 8px;
+}
+
+#context-inspector #session-activity-timeline:empty,
+#context-inspector #session-activity-timeline[hidden] {
+  display: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
 #context-inspector .context-inspector-block-body,
 #context-inspector .history-body,
 #context-inspector .history-toolbar,
 #context-inspector .config-section-body,
 #context-inspector #git-panel,
 #context-inspector #session-history,
+#context-inspector #session-activity-timeline,
 #context-inspector #config-sections {
   min-width: 0;
   max-width: 100%;

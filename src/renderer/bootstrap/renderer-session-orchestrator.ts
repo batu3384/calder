@@ -15,13 +15,12 @@ import {
   initProjectTerminal,
   isShellSessionId,
 } from '../components/project-terminal.js';
+import { initSessionActivityTimeline } from '../components/session-activity-timeline.js';
 import { initSessionHistory } from '../components/session-history.js';
-import { initSessionInspector } from '../components/session-inspector/session-inspector.js';
 import { destroySidebar, initSidebar, promptNewProject } from '../components/sidebar.js';
 import { initSplitLayout } from '../components/split-layout.js';
 import { checkStarPrompt } from '../components/star-prompt-dialog.js';
 import { initStatusBar } from '../components/status-bar.js';
-import { initTabBar } from '../components/tab-bar/tab-bar.js';
 import {
   destroyTerminal,
   handlePtyData,
@@ -297,14 +296,13 @@ export function createRendererSessionOrchestrator(
       initDebugPanel();
       initGitPanel();
       initSessionHistory();
+      initSessionActivityTimeline();
       initUpdateBanner();
       initInsightAlert();
       initToolDetector();
       initToolAlert();
       initLargeFileDetector();
       initLargeFileAlert();
-      initSessionInspector();
-
       window.calder.menu.onUsageStats(() => showUsageModal());
       registerStateDebugEvents();
 

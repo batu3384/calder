@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "skill": "codebase-audit",
+  "date": "2026-08-15",
+  "root": "/Users/batuhanyuksel/Documents/browser",
+  "verdict": "CONCERNS",
+  "runtime": "static",
+  "findings": [
+    { "id": "CA-001", "severity": "Major", "category": "Docs", "path": "README.md:81" },
+    {
+      "id": "CA-002",
+      "severity": "Major",
+      "category": "Maintainability",
+      "path": "src/renderer/components/session-inspector/session-inspector-timeline.ts:452"
+    },
+    {
+      "id": "CA-003",
+      "severity": "Major",
+      "category": "Architecture",
+      "path": "src/renderer/state.ts:678"
+    },
+    {
+      "id": "CA-004",
+      "severity": "Minor",
+      "category": "Docs",
+      "path": "src/renderer/i18n-translations-gaps.ts:258"
+    },
+    {
+      "id": "CA-005",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/main/ipc-handlers.ts:75"
+    },
+    {
+      "id": "CA-006",
+      "severity": "Minor",
+      "category": "Security architecture",
+      "path": "src/main/calder-governance/governance-engine.ts:209"
+    },
+    {
+      "id": "CA-007",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/main/calder-watch/create-project-dir-watcher.ts:47"
+    },
+    {
+      "id": "CA-008",
+      "severity": "Minor",
+      "category": "Maintainability",
+      "path": "src/main/calder-context/watcher.ts:1"
+    },
+    {
+      "id": "CA-009",
+      "severity": "Minor",
+      "category": "Docs",
+      "path": "docs/superpowers/reports/2026-04-22-architecture-debt-deep-status.md"
+    },
+    { "id": "CA-010", "severity": "Minor", "category": "Docs", "path": "README.md:79" },
+    {
+      "id": "CA-011",
+      "severity": "Info",
+      "category": "Architecture",
+      "path": "import-sample unresolved .js"
+    },
+    { "id": "CA-012", "severity": "Info", "category": "Docs", "path": "inventory docs_count 86" },
+    {
+      "id": "CA-013",
+      "severity": "Info",
+      "category": "Completeness",
+      "path": ".github/workflows/pr-review-run.yml"
+    },
+    {
+      "id": "CA-014",
+      "severity": "Info",
+      "category": "Completeness",
+      "path": "runtime-check static-only"
+    },
+    {
+      "id": "CA-015",
+      "severity": "Info",
+      "category": "Security architecture",
+      "path": "inventory secret_candidates []"
+    },
+    {
+      "id": "CA-016",
+      "severity": "Info",
+      "category": "Maintainability",
+      "path": "inventory orphan_tests"
+    },
+    {
+      "id": "CA-017",
+      "severity": "Info",
+      "category": "Maintainability",
+      "path": "src/main/provider-updater.ts"
+    },
+    {
+      "id": "CA-018",
+      "severity": "Info",
+      "category": "Architecture",
+      "path": "src/renderer/shortcuts.ts"
+    },
+    {
+      "id": "CA-019",
+      "severity": "Info",
+      "category": "Maintainability",
+      "path": "src/renderer/components/session-inspector/session-inspector.ts:1"
+    },
+    {
+      "id": "CA-020",
+      "severity": "Info",
+      "category": "Docs",
+      "path": "src/renderer/components/pixel-office/mount-pixel-office.ts:175"
+    }
+  ]
+}

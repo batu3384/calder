@@ -4,6 +4,7 @@ import {
 } from './bootstrap/renderer-session-orchestrator.js';
 import { navigateTo } from './components/browser-tab/navigation.js';
 import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
+import { showWarningToast } from './components/toast.js';
 import { markUiReady } from './i18n.js';
 import { initKeybindings } from './keybindings.js';
 import { appState } from './state.js';
@@ -116,6 +117,10 @@ async function main(): Promise<void> {
 
   window.calder.session.onInspectorEvents((sessionId, events) => {
     sessionOrchestrator.handleInspectorEvents(sessionId, events);
+  });
+
+  window.calder.session.onTrackingUnavailable((_sessionId, _providerId, message) => {
+    showWarningToast(message);
   });
 
   window.calder.session.onCliSessionId((sessionId, cliSessionId) => {

@@ -33,7 +33,6 @@ export const CORE_TRANSLATION_ENTRIES_PART_1: ReadonlyArray<readonly [string, st
   ['Workspace', 'Çalışma Alanı'],
   ['Overview', 'Genel Bakış'],
   ['Inspector', 'Denetçi'],
-  ['Workspace Pulse', 'Çalışma Alanı Nabzı'],
   [
     'Run controls, project state, and tools stay separated so the rail stays readable.',
     'Çalışma kontrolleri, proje durumu ve araçlar ayrı kalır; panel okunabilirliğini korur.',

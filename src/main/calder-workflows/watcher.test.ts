@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWatch = vi.hoisted(() => vi.fn());
@@ -62,10 +60,9 @@ describe('project workflow watcher', () => {
     };
     mockDiscoverProjectWorkflows.mockResolvedValue(nextState);
     const onChange = vi.fn();
-    const workflowsDir = path.join('/repo', '.calder', 'workflows');
 
     startProjectWorkflowWatcher('/repo', onChange);
-    expect(mockMkdirSync).toHaveBeenCalledWith(workflowsDir, { recursive: true });
+    expect(mockMkdirSync).not.toHaveBeenCalled();
     expect(watchCallbacks.has('/repo/.calder/workflows')).toBe(true);
 
     watchCallbacks.get('/repo/.calder/workflows')?.();

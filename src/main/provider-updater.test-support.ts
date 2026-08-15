@@ -1,5 +1,5 @@
 import type { CliProviderMeta, ProviderId } from '../shared/types/provider';
-import type { ProviderUpdaterRunner, ProviderUpdaterTarget } from './provider-updater';
+import type { ProviderUpdaterRunner, ProviderUpdaterTarget } from './provider-updater-types';
 
 export function createProviderMeta(id: ProviderId, displayName: string): CliProviderMeta {
   return {

@@ -1,11 +1,1 @@
-{
-  "src/main/provider-updater.ts": 726,
-  "src/renderer/components/file-reader.ts": 554,
-  "src/renderer/components/mcp-inspector.ts": 553,
-  "src/renderer/components/sidebar.ts": 564,
-  "src/renderer/components/tab-bar/tab-bar-cli-update-panel.ts": 577,
-  "src/renderer/i18n-pattern-translations.ts": 654,
-  "src/renderer/i18n-translations-core-part-2.ts": 606,
-  "src/renderer/state.ts": 699,
-  "src/renderer/update-center.ts": 589
-}
+{}

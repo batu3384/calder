@@ -77,9 +77,13 @@ export function registerIpcHandlers(): void {
         const provider = getProvider(providerId);
         if (provider.meta.capabilities.hookStatus !== false) return;
         if (typeof win.isDestroyed === 'function' && win.isDestroyed()) return;
+        const message = `${provider.meta.displayName}: activity tracking unavailable (no hooks)`;
         console.warn(
           `[pty] ${provider.meta.displayName} session ${sessionId}: activity tracking unavailable (no hooks)`,
         );
+        if (win.webContents && !win.webContents.isDestroyed?.()) {
+          win.webContents.send('session:trackingUnavailable', sessionId, providerId, message);
+        }
       } catch {
         // Unknown provider — spawn path already validated providerId.
       }

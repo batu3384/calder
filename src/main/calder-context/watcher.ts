@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+/**
+ * File-level context watcher — watches explicit project context files (CLAUDE.md, AGENTS.md, …).
+ * Directory-based Calder modules use `createProjectDirWatcher` instead; keep this separate
+ * because discovery is a fixed file list, not a `.calder/<module>` tree scan.
+ */
 import type { ProjectContextState } from '../../shared/types/project-context.js';
 import { discoverProjectContext } from './discovery.js';
 

@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockWatch = vi.hoisted(() => vi.fn());
@@ -67,12 +65,9 @@ describe('project governance watcher', () => {
     };
     mockDiscoverProjectGovernance.mockResolvedValue(nextState);
     const onChange = vi.fn();
-    const calderDir = path.join('/repo', '.calder');
-    const governanceDir = path.join('/repo', '.calder', 'governance');
 
     startProjectGovernanceWatcher('/repo', onChange);
-    expect(mockMkdirSync).toHaveBeenCalledWith(calderDir, { recursive: true });
-    expect(mockMkdirSync).toHaveBeenCalledWith(governanceDir, { recursive: true });
+    expect(mockMkdirSync).not.toHaveBeenCalled();
     expect(watchCallbacks.has('/repo/.calder')).toBe(true);
     expect(watchCallbacks.has('/repo/.calder/governance')).toBe(true);
 

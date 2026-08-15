@@ -172,6 +172,22 @@ function ensureCanvas(): HTMLCanvasElement | null {
   const host = hostEl();
   if (!host) return null;
   if (canvas && canvas.isConnected) return canvas;
+  host.setAttribute('tabindex', '0');
+  host.setAttribute('role', 'region');
+  host.setAttribute('aria-label', t('Pixel Office map'));
+  if (!host.dataset.keyboardBound) {
+    host.dataset.keyboardBound = '1';
+    host.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        host.blur();
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        editBtn()?.focus();
+      }
+    });
+  }
   canvas = document.createElement('canvas');
   canvas.className = 'pixel-office-canvas';
   canvas.setAttribute('role', 'img');

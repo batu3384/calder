@@ -6,7 +6,11 @@ const cliUpdatePanelSource = readFileSync(
   new URL('./tab-bar-cli-update-panel.ts', import.meta.url),
   'utf-8',
 );
-const updateCenterSource = `${tabBarSource}\n${cliUpdatePanelSource}`;
+const cliUpdatePanelRenderSource = readFileSync(
+  new URL('./tab-bar-cli-update-panel-render.ts', import.meta.url),
+  'utf-8',
+);
+const updateCenterSource = `${tabBarSource}\n${cliUpdatePanelSource}\n${cliUpdatePanelRenderSource}`;
 const tabsCss = readFileSync(new URL('../../styles/tabs.css', import.meta.url), 'utf-8');
 
 describe('tab bar update center contract', () => {

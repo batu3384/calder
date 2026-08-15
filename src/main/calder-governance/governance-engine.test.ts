@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ProjectGovernanceOperation } from './enforcement';
-import { GovernanceEngine, type GovernancePolicyFile } from './governance-engine';
+import {
+  GovernanceEngine,
+  type GovernancePolicyFile,
+  listSerializedConditionRuleIds,
+} from './governance-engine';
 
 describe('GovernanceEngine', () => {
   it('blocks budget operations that exceed the configured limit', () => {
@@ -48,8 +52,60 @@ describe('GovernanceEngine', () => {
     expect(allowed.matchedRuleId).toBe('block-all-writes');
     expect(secret.matchedRuleId).toBe('block-all-writes');
     expect(warn).toHaveBeenCalledWith(
-      '[governance] skipped 1 custom rule(s) with serialized conditions: conditional-write',
+      expect.stringContaining(
+        'skipped 1 custom rule(s) with serialized conditions: conditional-write',
+      ),
     );
+    warn.mockRestore();
+  });
+
+  it('lists serialized condition rule ids without evaluating them', () => {
+    const policy: GovernancePolicyFile = {
+      version: 1,
+      mode: 'enforced',
+      rules: [
+        {
+          id: 'plain',
+          priority: 1,
+          operation: 'write',
+          action: 'block',
+          reason: 'ok',
+        },
+        {
+          id: 'conditional-write',
+          priority: 0,
+          operation: 'write',
+          action: 'block',
+          condition: 'op.target === "/secret"',
+          reason: 'skip me',
+        },
+      ],
+    };
+    expect(listSerializedConditionRuleIds(policy)).toEqual(['conditional-write']);
+  });
+
+  it('downgrades enforced mode when serialized condition rules are skipped', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const policy: GovernancePolicyFile = {
+      version: 1,
+      mode: 'enforced',
+      rules: [
+        {
+          id: 'conditional-write',
+          priority: 0,
+          operation: 'write',
+          action: 'block',
+          condition: 'op.target === "/secret"',
+          reason: 'Must not be evaluated',
+        },
+      ],
+    };
+
+    const engine = GovernanceEngine.fromPolicyFile(policy);
+    const network = engine.evaluate({ kind: 'network', label: 'Fetch docs' });
+
+    expect(network.action).toBe('ask');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('downgraded to advisory'));
     warn.mockRestore();
   });
 });

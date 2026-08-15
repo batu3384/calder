@@ -88,6 +88,17 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
     `;
   shell.appendChild(summary);
 
+  const ignoredRules = project.projectGovernance?.ignoredSerializedConditionRules ?? [];
+  const policyModeDowngraded = project.projectGovernance?.policyModeDowngraded === true;
+  if (ignoredRules.length > 0) {
+    const warning = document.createElement('div');
+    warning.className = 'governance-discovery-warning';
+    warning.textContent = policyModeDowngraded
+      ? `Enforced mode was downgraded to advisory because policy rules with serialized conditions cannot be loaded (${ignoredRules.join(', ')}). Remove the condition field or rewrite the rule without dynamic JS.`
+      : `Policy rules with serialized conditions are not loaded (${ignoredRules.join(', ')}). Remove the condition field or rewrite the rule without dynamic JS.`;
+    shell.appendChild(warning);
+  }
+
   const list = document.createElement('div');
   list.className = 'governance-discovery-list';
 

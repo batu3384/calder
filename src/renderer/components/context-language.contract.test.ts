@@ -36,6 +36,7 @@ describe('context language contract', () => {
     expect(html).toContain('aria-labelledby="context-inspector-tab-project"');
     expect(html).toContain('aria-labelledby="context-inspector-tab-timeline"');
     expect(html).toContain('id="diagnostics-summary"');
+    expect(html).toContain('id="session-activity-timeline"');
     expect(html).toContain('id="pixel-office"');
     expect(html).not.toContain('id="context-pixel-host"');
     expect(html).toContain('class="pixel-office-rail"');

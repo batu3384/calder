@@ -174,6 +174,9 @@ export interface CalderApi {
     onCostData(callback: (sessionId: string, costData: CostData) => void): () => void;
     onToolFailure(callback: (sessionId: string, data: ToolFailureData) => void): () => void;
     onInspectorEvents(callback: (sessionId: string, events: InspectorEvent[]) => void): () => void;
+    onTrackingUnavailable(
+      callback: (sessionId: string, providerId: ProviderId, message: string) => void,
+    ): () => void;
   };
   fs: {
     isDirectory(path: string): Promise<boolean>;

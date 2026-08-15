@@ -48,6 +48,10 @@ export interface ProjectGovernanceState {
   policy?: ProjectGovernancePolicySource;
   autoApproval?: ProjectGovernanceAutoApprovalState;
   lastUpdated?: string;
+  /** Rule ids present in policy.json with serialized `condition` strings — never evaluated at load. */
+  ignoredSerializedConditionRules?: string[];
+  /** True when policy.json declares enforced but skipped condition rules force advisory. */
+  policyModeDowngraded?: boolean;
 }
 
 export interface ProjectGovernanceStarterPolicyResult {

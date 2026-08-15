@@ -218,7 +218,12 @@ describe('ipc-handlers runtime', () => {
     ptyOps.validateProviderTrackingAndWarn({ webContents: { send } }, 'sess-1', 'cursor');
 
     expect(mocks.getProvider).toHaveBeenCalledWith('cursor');
-    expect(send).not.toHaveBeenCalled();
+    expect(send).toHaveBeenCalledWith(
+      'session:trackingUnavailable',
+      'sess-1',
+      'cursor',
+      'Cursor CLI: activity tracking unavailable (no hooks)',
+    );
     expect(warn).toHaveBeenCalledWith(
       '[pty] Cursor CLI session sess-1: activity tracking unavailable (no hooks)',
     );
