@@ -10,16 +10,16 @@
 
 :root {
   --chrome-h: 46px;
-  --chrome-bg: #0b0b0c;
-  --chrome-bg-soft: #111113;
-  --chrome-line: #232326;
-  --chrome-line-strong: #2e2e33;
-  --chrome-text: #ececee;
-  --chrome-muted: #8b8b93;
-  --chrome-dim: #63636b;
-  --chrome-hover: rgba(255, 255, 255, 0.045);
-  --chrome-active: rgba(111, 154, 166, 0.16);
-  --chrome-radius: 6px;
+  --chrome-bg: var(--surface-panel, #0f1011);
+  --chrome-bg-soft: var(--surface-panel-alt, #141516);
+  --chrome-line: var(--border-muted, #232326);
+  --chrome-line-strong: var(--border-subtle, #2e2e33);
+  --chrome-text: var(--text-primary, #ececee);
+  --chrome-muted: var(--text-muted, #8b8b93);
+  --chrome-dim: var(--text-dim, #63636b);
+  --chrome-hover: var(--surface-hover, rgba(255, 255, 255, 0.045));
+  --chrome-active: var(--accent-soft, rgba(111, 154, 166, 0.16));
+  --chrome-radius: var(--radius-md, 6px);
 }
 
 /* ========== LEFT: project rail ========== */

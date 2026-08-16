@@ -16,13 +16,35 @@ interface CliUpdateStatusCounters {
   error: number;
 }
 
-const CLI_UPDATE_BUTTON_GLYPHS = {
-  refresh: '↻',
-  warning: '⚠',
-  cancelled: '✕',
-  updated: '✓',
-  upToDate: '•',
-} as const;
+type CliUpdateButtonIcon = 'refresh' | 'warning' | 'cancelled' | 'updated' | 'upToDate';
+
+const CLI_UPDATE_BUTTON_ICON_PATHS: Record<CliUpdateButtonIcon, string[]> = {
+  refresh: ['M21 12a9 9 0 0 1-15.4 6.4', 'M3 12A9 9 0 0 1 18.4 5.6', 'M18 2v4h4', 'M6 22v-4H2'],
+  warning: [
+    'M12 9v4',
+    'M12 17h.01',
+    'M10.3 4.3 2.7 18.7A2 2 0 0 0 4.5 22h15a2 2 0 0 0 1.8-3.3L13.7 4.3a2 2 0 0 0-3.4 0z',
+  ],
+  cancelled: ['M6 6l12 12', 'M18 6 6 18'],
+  updated: ['M5 12l5 5L20 7'],
+  upToDate: ['M12 6v6l4 2', 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z'],
+};
+
+function setCliUpdateButtonIcon(
+  updateButtonEl: HTMLButtonElement,
+  icon: CliUpdateButtonIcon,
+): void {
+  updateButtonEl.replaceChildren();
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const d of CLI_UPDATE_BUTTON_ICON_PATHS[icon]) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  updateButtonEl.appendChild(svg);
+}
 
 function summarizeCliUpdateStatuses(summary: ProviderUpdateSummary): CliUpdateStatusCounters {
   let updated = 0;
@@ -96,7 +118,7 @@ export function renderCliUpdateButton(
   if (cliState.phase === 'running') {
     updateButtonEl.classList.add('is-updating');
     updateButtonEl.disabled = false;
-    updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
+    setCliUpdateButtonIcon(updateButtonEl, 'refresh');
     const progressLabel =
       cliState.totalProviders > 0
         ? `${cliState.completedProviders}/${cliState.totalProviders}`
@@ -111,7 +133,7 @@ export function renderCliUpdateButton(
 
   if (cliState.phase === 'error') {
     updateButtonEl.classList.add('is-warning');
-    updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
+    setCliUpdateButtonIcon(updateButtonEl, 'warning');
     updateButtonEl.title = t('CLI update failed.');
     updateButtonEl.setAttribute('aria-label', t('CLI update failed'));
     return;
@@ -119,7 +141,7 @@ export function renderCliUpdateButton(
 
   if (cliState.phase === 'cancelled') {
     updateButtonEl.classList.add('is-cancelled');
-    updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.cancelled;
+    setCliUpdateButtonIcon(updateButtonEl, 'cancelled');
     updateButtonEl.title = t('CLI update cancelled.');
     updateButtonEl.setAttribute('aria-label', t('CLI update cancelled'));
     return;
@@ -129,22 +151,22 @@ export function renderCliUpdateButton(
     const counters = summarizeCliUpdateStatuses(cliState.lastSummary);
     if (counters.error > 0) {
       updateButtonEl.classList.add('is-warning');
-      updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
+      setCliUpdateButtonIcon(updateButtonEl, 'warning');
       updateButtonEl.title = t('CLI update completed with errors');
       updateButtonEl.setAttribute('aria-label', t('CLI update completed with errors'));
     } else if (counters.syncPending > 0) {
       updateButtonEl.classList.add('is-warning');
-      updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.warning;
+      setCliUpdateButtonIcon(updateButtonEl, 'warning');
       updateButtonEl.title = t('CLI updates waiting for package sync');
       updateButtonEl.setAttribute('aria-label', t('CLI updates waiting for package sync'));
     } else if (counters.updated > 0) {
       updateButtonEl.classList.add('is-success');
-      updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.updated;
+      setCliUpdateButtonIcon(updateButtonEl, 'updated');
       updateButtonEl.title = t('CLI tools updated');
       updateButtonEl.setAttribute('aria-label', t('CLI tools updated'));
     } else {
       updateButtonEl.classList.add('is-idle');
-      updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.upToDate;
+      setCliUpdateButtonIcon(updateButtonEl, 'upToDate');
       updateButtonEl.title = t('CLI tools are already up to date.');
       updateButtonEl.setAttribute('aria-label', t('CLI tools are already up to date'));
     }
@@ -152,7 +174,7 @@ export function renderCliUpdateButton(
   }
 
   updateButtonEl.classList.add('is-idle');
-  updateButtonEl.textContent = CLI_UPDATE_BUTTON_GLYPHS.refresh;
+  setCliUpdateButtonIcon(updateButtonEl, 'refresh');
   updateButtonEl.title = t('Update CLI Tools');
   updateButtonEl.setAttribute('aria-label', t('Update CLI tools'));
 }
