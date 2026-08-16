@@ -60,7 +60,7 @@ describe('command deck provider selector helpers', () => {
     expect(shouldRenderInlineProviderSelector(snapshot)).toBe(true);
   });
 
-  it('hides the inline selector when only one provider is available', () => {
+  it('shows the inline selector when at least one provider is registered', () => {
     expect(
       shouldRenderInlineProviderSelector({
         ...snapshot,
@@ -70,6 +70,6 @@ describe('command deck provider selector helpers', () => {
           ['antigravity', false],
         ]),
       }),
-    ).toBe(false);
+    ).toBe(true);
   });
 });

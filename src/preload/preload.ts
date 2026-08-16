@@ -129,7 +129,10 @@ export interface CalderApi {
   provider: {
     getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
     listProviders(): Promise<CliProviderMeta[]>;
-    checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
+    checkBinary(
+      providerId?: ProviderId,
+      forceRefresh?: boolean,
+    ): Promise<{ ok: boolean; message: string }>;
     updateAll(): Promise<ProviderUpdateSummary>;
     updateProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
     installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;

@@ -135,7 +135,17 @@ describe('provider-availability', () => {
           ['cursor', false],
         ]),
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it('exposes a metas-only snapshot before binary checks finish', async () => {
+    const { module } = await loadModule();
+    await module.loadProviderMetas();
+
+    const snapshot = module.getProviderAvailabilitySnapshot();
+    expect(snapshot?.providers).toEqual(providers);
+    expect(snapshot?.availability.get('claude')).toBe(false);
+    expect(module.shouldRenderInlineProviderSelector(snapshot)).toBe(true);
   });
 
   it('resolves preferred launch and check providers from availability state', async () => {

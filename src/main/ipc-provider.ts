@@ -51,11 +51,15 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
     },
   );
 
-  ipcMain.handle('provider:checkBinary', (_event, providerId: ProviderId = 'claude') => {
-    const provider = getProvider(providerId);
-    // Health refresh must re-discover binaries after external reinstalls.
-    provider.clearBinaryCache();
-    clearPrereqCheckCache();
-    return provider.checkBinaryInstalled();
-  });
+  ipcMain.handle(
+    'provider:checkBinary',
+    (_event, providerId: ProviderId = 'claude', forceRefresh = false) => {
+      const provider = getProvider(providerId);
+      if (forceRefresh) {
+        provider.clearBinaryCache();
+        clearPrereqCheckCache();
+      }
+      return provider.checkBinaryInstalled();
+    },
+  );
 }

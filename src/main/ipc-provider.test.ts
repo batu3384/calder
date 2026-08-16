@@ -121,10 +121,28 @@ describe('ipc provider handlers', () => {
     expect(mockGetProviderMeta).toHaveBeenCalledWith('claude');
     expect(mockGetAllProviderMetas).toHaveBeenCalled();
     expect(mockGetProvider).toHaveBeenCalledWith('claude');
-    expect(provider.clearBinaryCache).toHaveBeenCalled();
+    expect(provider.clearBinaryCache).not.toHaveBeenCalled();
     expect(provider.checkBinaryInstalled).toHaveBeenCalled();
     expect(meta).toEqual({ id: 'claude', displayName: 'Claude' });
     expect(list).toEqual([{ id: 'claude', displayName: 'Claude' }]);
     expect(check).toEqual({ ok: true, message: '' });
+  });
+
+  it('clears binary caches only when forceRefresh is requested', async () => {
+    const ops = createOps();
+    const provider = {
+      clearBinaryCache: vi.fn(),
+      checkBinaryInstalled: vi.fn(() => ({ ok: true, message: '' })),
+      meta: { displayName: 'Claude' },
+    };
+    mockGetProvider.mockReturnValue(provider);
+
+    registerProviderIpcHandlers(ops);
+    const checkBinaryHandler = getHandleHandler('provider:checkBinary');
+
+    await checkBinaryHandler({}, 'claude', true);
+
+    expect(provider.clearBinaryCache).toHaveBeenCalled();
+    expect(provider.checkBinaryInstalled).toHaveBeenCalled();
   });
 });

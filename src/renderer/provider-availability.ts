@@ -48,25 +48,19 @@ export function hasMultipleAvailableProviders(): boolean {
 }
 
 export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot | null {
-  if (!cachedProviders || !cachedAvailability) return null;
+  if (!cachedProviders || cachedProviders.length === 0) return null;
+  const availability =
+    cachedAvailability ?? new Map(cachedProviders.map((provider) => [provider.id, false] as const));
   return {
     providers: cachedProviders,
-    availability: cachedAvailability,
+    availability,
   };
 }
 
 export function shouldRenderInlineProviderSelector(
   snapshot: ProviderAvailabilitySnapshot | null,
 ): boolean {
-  if (!snapshot) return false;
-  let count = 0;
-  for (const provider of snapshot.providers) {
-    if (snapshot.availability.get(provider.id)) {
-      count++;
-      if (count > 1) return true;
-    }
-  }
-  return false;
+  return (snapshot?.providers.length ?? 0) > 0;
 }
 
 export function resolvePreferredProviderForLaunch(

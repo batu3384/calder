@@ -13,7 +13,10 @@ type OnChannel = (channel: string, callback: (...args: unknown[]) => void) => ()
 export interface PreloadProviderApi {
   getMeta(providerId: ProviderId): Promise<CliProviderMeta>;
   listProviders(): Promise<CliProviderMeta[]>;
-  checkBinary(providerId?: ProviderId): Promise<{ ok: boolean; message: string }>;
+  checkBinary(
+    providerId?: ProviderId,
+    forceRefresh?: boolean,
+  ): Promise<{ ok: boolean; message: string }>;
   updateAll(): Promise<ProviderUpdateSummary>;
   updateProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
   installProvider(providerId: ProviderId): Promise<ProviderUpdateSummary>;
@@ -28,7 +31,8 @@ export function createPreloadProviderApi(
   return {
     getMeta: (providerId) => ipcRenderer.invoke('provider:getMeta', providerId),
     listProviders: () => ipcRenderer.invoke('provider:listProviders'),
-    checkBinary: (providerId) => ipcRenderer.invoke('provider:checkBinary', providerId || 'claude'),
+    checkBinary: (providerId, forceRefresh) =>
+      ipcRenderer.invoke('provider:checkBinary', providerId || 'claude', forceRefresh ?? false),
     updateAll: () => ipcRenderer.invoke('provider:updateAll'),
     updateProvider: (providerId) => ipcRenderer.invoke('provider:updateProvider', providerId),
     installProvider: (providerId) => ipcRenderer.invoke('provider:installProvider', providerId),

@@ -159,7 +159,7 @@ interface TabBarProviderAvailabilityBootstrapArgs {
 export function bootstrapTabBarProviderAvailability(
   args: TabBarProviderAvailabilityBootstrapArgs,
 ): void {
-  // Icons only distinguish providers when multiple are installed.
+  args.syncSessionProviderSelector();
   loadProviderAvailability()
     .then(() => {
       args.syncSessionProviderSelector();

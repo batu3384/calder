@@ -1,4 +1,5 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import { createCustomSelect, type CustomSelectInstance } from '../custom-select.js';
 import {
   getProviderAvailabilitySnapshot,
@@ -32,8 +33,8 @@ export function createTabBarProviderSelectorController(
     const snapshot = getProviderAvailabilitySnapshot();
     const providerLabel =
       snapshot?.providers.find((provider) => provider.id === providerId)?.displayName ?? providerId;
-    addSessionButtonEl.title = `New ${providerLabel} Session (Ctrl+Shift+N)`;
-    addSessionButtonEl.setAttribute('aria-label', `Create new ${providerLabel} session`);
+    addSessionButtonEl.title = t(`New ${providerLabel} Session (Ctrl+Shift+N)`);
+    addSessionButtonEl.setAttribute('aria-label', t(`Create new ${providerLabel} session`));
   }
 
   function buildSessionProviderSelectorSignature(
@@ -84,7 +85,7 @@ export function createTabBarProviderSelectorController(
         const available = snapshot.availability.get(provider.id);
         return {
           value: provider.id,
-          label: available ? provider.displayName : `${provider.displayName} (not installed)`,
+          label: available ? provider.displayName : t(`${provider.displayName} (not installed)`),
           disabled: !available,
         };
       }),

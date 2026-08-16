@@ -79,7 +79,7 @@ async function fetchProviderStatuses(): Promise<ProviderStatus[]> {
   const providers = await window.calder.provider.listProviders();
   return Promise.all(
     providers.map((meta) =>
-      window.calder.provider.checkBinary(meta.id).then((binary) => ({ meta, binary })),
+      window.calder.provider.checkBinary(meta.id, true).then((binary) => ({ meta, binary })),
     ),
   );
 }
