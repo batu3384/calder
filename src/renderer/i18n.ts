@@ -4,6 +4,7 @@ import { DIRECT_TRANSLATIONS } from './i18n-translations.js';
 import { appState } from './state.js';
 
 const DEFAULT_LANGUAGE: UiLanguage = 'en';
+const LOCALIZE_ROOT_SELECTOR = '#app';
 
 const EXCLUDED_SELECTOR = [
   'pre',
@@ -24,6 +25,7 @@ let activeLanguage: UiLanguage = DEFAULT_LANGUAGE;
 let observer: MutationObserver | null = null;
 let suppressObserver = false;
 let pendingReloadTimer: number | null = null;
+let pendingLocalizeRaf: number | null = null;
 let patternTranslations = createPatternTranslations(translate);
 
 function normalizeTranslationKey(value: string): string {
@@ -54,6 +56,10 @@ function withSuppressedObserver(work: () => void): void {
   } finally {
     suppressObserver = false;
   }
+}
+
+function localizeRoot(): ParentNode | null {
+  return document.querySelector(LOCALIZE_ROOT_SELECTOR) ?? document.body;
 }
 
 function shouldSkipTextElement(element: Element | null): boolean {
@@ -164,9 +170,25 @@ function localizeNode(node: Node): void {
 
 function localizeDocument(): void {
   withSuppressedObserver(() => {
-    if (document.body) {
-      localizeNode(document.body);
+    const root = localizeRoot();
+    if (!root) return;
+    for (const child of root.childNodes) {
+      localizeNode(child);
     }
+  });
+}
+
+function scheduleLocalizeSubtree(nodes: Iterable<Node>): void {
+  if (activeLanguage !== 'tr' || suppressObserver) return;
+  if (pendingLocalizeRaf !== null) return;
+  pendingLocalizeRaf = requestAnimationFrame(() => {
+    pendingLocalizeRaf = null;
+    if (activeLanguage !== 'tr' || suppressObserver) return;
+    withSuppressedObserver(() => {
+      for (const node of nodes) {
+        localizeNode(node);
+      }
+    });
   });
 }
 
@@ -175,31 +197,35 @@ function stopObserver(): void {
     observer.disconnect();
     observer = null;
   }
+  if (pendingLocalizeRaf !== null) {
+    cancelAnimationFrame(pendingLocalizeRaf);
+    pendingLocalizeRaf = null;
+  }
 }
 
 function startObserver(): void {
-  if (!document.body || observer) return;
+  const root = localizeRoot();
+  if (!root || observer) return;
   observer = new MutationObserver((mutations) => {
     if (activeLanguage !== 'tr' || suppressObserver) return;
-    withSuppressedObserver(() => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          for (const node of mutation.addedNodes) {
-            localizeNode(node);
-          }
-        } else if (mutation.type === 'characterData') {
-          localizeTextNode(mutation.target as Text);
-        } else if (mutation.type === 'attributes' && mutation.target instanceof Element) {
-          localizeAttributes(mutation.target);
+    const pendingNodes: Node[] = [];
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList') {
+        for (const node of mutation.addedNodes) {
+          pendingNodes.push(node);
         }
+      } else if (mutation.type === 'attributes' && mutation.target instanceof Element) {
+        pendingNodes.push(mutation.target);
       }
-    });
+    }
+    if (pendingNodes.length > 0) {
+      scheduleLocalizeSubtree(pendingNodes);
+    }
   });
 
-  observer.observe(document.body, {
+  observer.observe(root, {
     subtree: true,
     childList: true,
-    characterData: true,
     attributes: true,
     attributeFilter: [...ATTRIBUTES_TO_LOCALIZE, 'value'],
   });
@@ -236,27 +262,17 @@ export function localizeSubtree(root: ParentNode): void {
 
 export function initLocalization(): void {
   applyLanguage(normalizeLanguage(appState.preferences.language));
-  markUiReady();
   appState.on('preferences-changed', () => {
     const nextLanguage = normalizeLanguage(appState.preferences.language);
     if (nextLanguage === activeLanguage) return;
-    if (nextLanguage === 'tr') {
-      if (pendingReloadTimer !== null) {
-        window.clearTimeout(pendingReloadTimer);
-        pendingReloadTimer = null;
-      }
-      applyLanguage('tr');
-      return;
-    }
 
-    // We mutate text nodes while translating to Turkish, so switching back to English
-    // requires a clean renderer reload.
+    // DOM text nodes are mutated in place for Turkish; reload for a clean language switch.
     if (pendingReloadTimer !== null) {
       window.clearTimeout(pendingReloadTimer);
     }
     pendingReloadTimer = window.setTimeout(() => {
       pendingReloadTimer = null;
       window.location.reload();
-    }, 420);
+    }, 120);
   });
 }

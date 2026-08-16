@@ -1,5 +1,6 @@
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
+import { t } from '../../i18n.js';
 import { createCustomSelect } from '../custom-select.js';
 import {
   getProviderAvailabilitySnapshot,
@@ -197,7 +198,7 @@ function appendLanguageField({
   languageRow.className = 'modal-toggle-field';
 
   const languageLabel = document.createElement('label');
-  languageLabel.textContent = 'Interface language';
+  languageLabel.textContent = t('Interface language');
 
   const languageSelect = createCustomSelect(
     'pref-language',
@@ -211,7 +212,9 @@ function appendLanguageField({
 
   const languageNote = document.createElement('div');
   languageNote.className = 'preferences-control-note';
-  languageNote.textContent = 'Language changes apply after the interface refreshes.';
+  languageNote.textContent = t(
+    'Language changes apply when you click Save. The window reloads to apply the interface language.',
+  );
 
   languageRow.appendChild(languageLabel);
   languageRow.appendChild(languageSelect.element);

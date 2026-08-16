@@ -78,7 +78,7 @@ export const PREFERENCES_TRANSLATION_ENTRIES: ReadonlyArray<readonly [string, st
   ['Applies to the full Calder interface.', 'Tüm Calder arayüzüne uygulanır.'],
   ['Interface language', 'Arayüz dili'],
   [
-    'Language changes apply after the interface refreshes.',
-    'Dil değişiklikleri arayüz yenilendikten sonra uygulanır.',
+    'Language changes apply when you click Save. The window reloads to apply the interface language.',
+    'Dil değişiklikleri Kaydet’e bastıktan sonra uygulanır. Arayüz dili için pencere yeniden yüklenir.',
   ],
 ];
