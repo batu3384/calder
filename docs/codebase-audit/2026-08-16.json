@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "skill": "codebase-audit",
+  "date": "2026-08-16",
+  "root": "/Users/batuhanyuksel/Documents/browser",
+  "verdict": "CONCERNS",
+  "runtime": "static",
+  "findings": [
+    {
+      "id": "CA-001",
+      "severity": "Major",
+      "category": "Functional correctness",
+      "path": "src/renderer/provider-availability.ts:58"
+    },
+    {
+      "id": "CA-002",
+      "severity": "Major",
+      "category": "Functional correctness",
+      "path": "src/renderer/i18n.ts:208"
+    },
+    {
+      "id": "CA-003",
+      "severity": "Major",
+      "category": "Maintainability",
+      "path": "src/renderer/i18n.ts:180"
+    },
+    {
+      "id": "CA-004",
+      "severity": "Major",
+      "category": "Functional correctness",
+      "path": "src/renderer/index.html:15"
+    },
+    {
+      "id": "CA-005",
+      "severity": "Major",
+      "category": "Maintainability",
+      "path": "src/renderer/styles/chrome-rail.css:1"
+    },
+    {
+      "id": "CA-006",
+      "severity": "Major",
+      "category": "Architecture",
+      "path": "src/renderer/bootstrap/renderer-session-orchestrator.ts:275"
+    },
+    {
+      "id": "CA-007",
+      "severity": "Minor",
+      "category": "Docs",
+      "path": ".github/workflows/pr-review-run.yml"
+    },
+    {
+      "id": "CA-008",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/renderer/index.html:347"
+    },
+    { "id": "CA-009", "severity": "Info", "category": "Architecture", "path": "import-sample.py" },
+    {
+      "id": "CA-010",
+      "severity": "Info",
+      "category": "Functional correctness",
+      "path": "runtime-check.py"
+    },
+    {
+      "id": "CA-011",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/renderer/components/preferences/preferences-modal-sections-general-content.ts:214"
+    },
+    {
+      "id": "CA-012",
+      "severity": "Info",
+      "category": "Security architecture",
+      "path": "inventory.secret_candidates"
+    },
+    {
+      "id": "CA-013",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/renderer/components/tab-bar/tab-bar-cli-update-panel-render.ts:19"
+    },
+    { "id": "CA-014", "severity": "Info", "category": "Docs", "path": "inventory.orphan_tests" },
+    {
+      "id": "CA-015",
+      "severity": "Info",
+      "category": "Security architecture",
+      "path": "src/preload/preload.ts"
+    },
+    {
+      "id": "CA-016",
+      "severity": "Minor",
+      "category": "Functional correctness",
+      "path": "src/main/ipc-provider.ts:54"
+    }
+  ]
+}
