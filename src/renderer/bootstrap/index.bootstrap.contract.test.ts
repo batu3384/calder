@@ -27,19 +27,23 @@ describe('index session bootstrap contract', () => {
   });
 
   it('keeps initialization ordering and project/session bootstrap in the orchestrator', () => {
+    const loadIndex = orchestratorSource.indexOf('await appState.load({ emitLoaded: false });');
+    const sidebarIndex = orchestratorSource.indexOf('initSidebar();');
+    const markUiReadyIndex = orchestratorSource.indexOf('markUiReady();');
+    expect(loadIndex).toBeGreaterThan(-1);
+    expect(sidebarIndex).toBeGreaterThan(-1);
+    expect(markUiReadyIndex).toBeGreaterThan(-1);
+    expect(loadIndex).toBeLessThan(sidebarIndex);
+    expect(markUiReadyIndex).toBeLessThan(sidebarIndex);
     expect(orchestratorSource).toContain('await loadProviderMetas();');
     expect(orchestratorSource).toContain('initUpdateCenter();');
-    expect(orchestratorSource).toContain('initSidebar();');
     expect(orchestratorSource).toContain('initTabBar();');
     expect(orchestratorSource).toContain('initSplitLayout();');
     expect(orchestratorSource).toContain('options.initKeybindings();');
     expect(orchestratorSource).not.toContain('initShareManager();');
     expect(orchestratorSource).toContain('startGitPolling();');
-    expect(orchestratorSource).toContain('await appState.load({ emitLoaded: false });');
     expect(orchestratorSource).toContain('initLocalization();');
-    expect(orchestratorSource).toContain('startGitPolling();');
     expect(orchestratorSource).toContain('appState.emitStateLoaded();');
-    expect(orchestratorSource).toContain('markUiReady();');
     expect(orchestratorSource).toContain('promptNewProject();');
     expect(orchestratorSource).toContain('checkWhatsNew();');
     expect(orchestratorSource).toContain('checkStarPrompt();');

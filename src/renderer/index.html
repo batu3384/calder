@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="xterm.css" />
     <style>
       html:not([data-ui-ready]) #app {
-        opacity: 0;
+        opacity: 0.35;
         pointer-events: none;
       }
       html[data-ui-ready] #app {
@@ -343,8 +343,12 @@
                   data-office-facing="0"
                   aria-pressed="true"
                   title="Face down"
+                  aria-label="Face down"
                 >
-                  ↓
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14"></path>
+                    <path d="M19 12l-7 7-7-7"></path>
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -352,8 +356,12 @@
                   data-office-facing="1"
                   aria-pressed="false"
                   title="Face left"
+                  aria-label="Face left"
                 >
-                  ←
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19 12H5"></path>
+                    <path d="M12 19l-7-7 7-7"></path>
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -361,8 +369,12 @@
                   data-office-facing="2"
                   aria-pressed="false"
                   title="Face right"
+                  aria-label="Face right"
                 >
-                  →
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
                 </button>
                 <button
                   type="button"
@@ -370,8 +382,12 @@
                   data-office-facing="3"
                   aria-pressed="false"
                   title="Face up"
+                  aria-label="Face up"
                 >
-                  ↑
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 19V5"></path>
+                    <path d="M5 12l7-7 7 7"></path>
+                  </svg>
                 </button>
                 <span class="pixel-office-tool-sep" aria-hidden="true"></span>
                 <button type="button" class="pixel-office-tool-btn" data-office-action="undo">

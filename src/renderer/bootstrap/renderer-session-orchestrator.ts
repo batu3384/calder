@@ -274,13 +274,20 @@ export function createRendererSessionOrchestrator(
 
   async function initialize(): Promise<void> {
     try {
+      markUiReady();
       registerSessionTelemetryObservers();
 
-      // Load provider metadata before components so capabilities are available synchronously
+      await appState.load({ emitLoaded: false });
+      applyAppearanceTheme(appState.preferences.appearanceTheme);
+      bindAppearanceThemeListener(() => {
+        if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
+          applyAppearanceTheme('system');
+        }
+      });
+
       await loadProviderMetas();
       initUpdateCenter();
 
-      // Initialize components
       initSessionUnread();
       initSidebar();
       initContextInspector();
@@ -306,14 +313,6 @@ export function createRendererSessionOrchestrator(
       window.calder.menu.onUsageStats(() => showUsageModal());
       registerStateDebugEvents();
 
-      // Load persisted state before first paint of project/session UI
-      await appState.load({ emitLoaded: false });
-      applyAppearanceTheme(appState.preferences.appearanceTheme);
-      bindAppearanceThemeListener(() => {
-        if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
-          applyAppearanceTheme('system');
-        }
-      });
       initLocalization();
       startGitPolling();
       appState.emitStateLoaded();
