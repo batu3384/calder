@@ -32,7 +32,7 @@ describe('createProjectDirWatcher', () => {
     const changes: Array<{ ok: boolean }> = [];
     watcher.start(projectPath, (state) => changes.push(state));
     fs.writeFileSync(path.join(watchRoot, 'touch.txt'), 'x');
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await vi.waitFor(() => expect(discover).toHaveBeenCalled(), { timeout: 500 });
 
     expect(discover).toHaveBeenCalled();
     expect(changes).toHaveLength(0);
