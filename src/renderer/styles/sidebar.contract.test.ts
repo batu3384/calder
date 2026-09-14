@@ -28,9 +28,9 @@ describe('sidebar rail stylesheet contract', () => {
 
   it('locks Linear-dense flat chrome for project rail', () => {
     expect(chromeRailCss).toContain('--chrome-h: 46px;');
-    expect(chromeRailCss).toContain('border-radius: var(--chrome-radius) !important;');
+    expect(chromeRailCss).toContain('border-radius: var(--chrome-radius);');
     expect(chromeRailCss).toContain('.sidebar-header-actions');
-    expect(chromeRailCss).toContain('box-shadow: none !important;');
+    expect(chromeRailCss).toContain('box-shadow: none;');
     expect(chromeRailCss).toContain('.sidebar-title');
     expect(chromeRailCss).toContain('#sidebar:not(.collapsed) .project-collapsed-pill');
   });
@@ -51,7 +51,7 @@ describe('sidebar rail stylesheet contract', () => {
   it('keeps project paths visible in the expanded rail', () => {
     expect(chromeRailCss).toContain('/* Path always visible');
     expect(chromeRailCss).toContain('.project-item .project-path');
-    expect(chromeRailCss).toContain('text-overflow: ellipsis !important;');
+    expect(chromeRailCss).toContain('text-overflow: ellipsis;');
   });
 
   it('uses a single select for auto-approval', () => {
@@ -60,8 +60,8 @@ describe('sidebar rail stylesheet contract', () => {
   });
 
   it('uses underline tabs instead of pill tabs on the session shelf', () => {
-    expect(chromeRailCss).toContain('border-bottom: 2px solid transparent !important;');
-    expect(chromeRailCss).toContain('border-bottom-color: var(--accent) !important;');
+    expect(chromeRailCss).toContain('border-bottom: 2px solid transparent;');
+    expect(chromeRailCss).toContain('border-bottom-color: var(--accent);');
     expect(chromeRailCss).toContain('#tab-bar .tab-item.active::after');
     expect(chromeRailCss).toContain('display: none !important;');
   });
@@ -69,7 +69,7 @@ describe('sidebar rail stylesheet contract', () => {
   it('prefers anchored emphasis over hover lift in the project rail', () => {
     expect(chromeRailCss).toContain('.project-item:hover');
     expect(chromeRailCss).toContain('transform: none !important;');
-    expect(chromeRailCss).toContain('box-shadow: none !important;');
+    expect(chromeRailCss).toContain('box-shadow: none;');
   });
 
   it('keeps project switching available in collapsed mode', () => {

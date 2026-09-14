@@ -60,6 +60,10 @@ fi
 git add -A
 git commit -m "Sync wiki from ${REPO}@$(git -C "${ROOT}" rev-parse --short HEAD 2>/dev/null || echo 'local')"
 
+if git rev-parse --abbrev-ref @{u} >/dev/null 2>&1 || git ls-remote --exit-code origin master >/dev/null 2>&1; then
+  git pull --rebase origin master || true
+fi
+
 # GitHub Wiki default branch is master
 if git push origin master; then
   echo "Wiki published: https://github.com/${REPO}/wiki"

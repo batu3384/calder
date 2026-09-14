@@ -45,8 +45,8 @@ describe('layout stylesheet contract', () => {
     expect(browserPaneContractSource).toContain(
       "contentShell.className = 'browser-content-shell live-view-surface live-view'",
     );
-    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Launchpad'");
-    expect(splitLayoutSource).toContain("eyebrow.textContent = 'Project ready'");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = t('Launchpad')");
+    expect(splitLayoutSource).toContain("eyebrow.textContent = t('Project ready')");
     expect(splitLayoutSource).not.toContain("eyebrow.textContent = 'Workspace'");
   });
 });

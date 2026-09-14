@@ -140,6 +140,15 @@ describe('precision cockpit theme contract', () => {
     expect(tabsCss).not.toContain('.surface-mode-switcher');
   });
 
+  it('keeps chrome-rail !important for kill-bleed and layout, not paint tokens', () => {
+    const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
+    const importantCount = (chromeRailCss.match(/!important/g) ?? []).length;
+    expect(importantCount).toBeGreaterThan(20);
+    expect(importantCount).toBeLessThanOrEqual(100);
+    expect(chromeRailCss).not.toMatch(/display:\s*flex\s*!important/);
+    expect(chromeRailCss).toContain('background: var(--chrome-bg);');
+    expect(chromeRailCss).not.toContain('--chrome-bg: #0b0b0c;');
+  });
   it('keeps chrome-rail scoped to #tab-bar so the workspace stack never collapses', () => {
     const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
     // Strip comments — SCOPING note names the shared class without selecting it.
@@ -175,14 +184,14 @@ describe('precision cockpit theme contract', () => {
   it('kills accordion hover card pills in the inspector', () => {
     const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
     expect(chromeRailCss).toContain('#context-inspector .config-section-header:hover');
-    expect(chromeRailCss).toContain('border-radius: 0 !important;');
+    expect(chromeRailCss).toContain('border-radius: 0;');
   });
 
   it('kills auto-approval hover cards under chrome-rail', () => {
     const chromeRailCss = readFileSync(new URL('./chrome-rail.css', import.meta.url), 'utf-8');
     expect(chromeRailCss).toContain('#context-inspector .auto-approval-scope-card:hover');
     expect(chromeRailCss).toContain('#context-inspector .auto-approval-select:hover');
-    expect(chromeRailCss).toContain('background: transparent !important;');
+    expect(chromeRailCss).toContain('background: transparent;');
   });
 
   it('matches resize handle idle color to chrome background', () => {
@@ -191,7 +200,7 @@ describe('precision cockpit theme contract', () => {
     expect(sidebarCss).toContain('#sidebar-resize-handle');
     expect(sidebarCss).toContain('background: var(--chrome-bg, #0b0b0c);');
     expect(chromeRailCss).toContain('#sidebar-resize-handle');
-    expect(chromeRailCss).toContain('background: var(--chrome-bg) !important;');
+    expect(chromeRailCss).toContain('background: var(--chrome-bg);');
   });
 
   it('defines shared cockpit control classes', () => {
