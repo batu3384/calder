@@ -7,6 +7,7 @@ import { _resetCachedPath as resetCodexCache } from './codex-provider';
 import { _resetCachedPath as resetCursorCache } from './cursor-provider';
 import type { CliProvider } from './provider';
 import {
+  assertProviderId,
   getAllProviderMetas,
   getAllProviders,
   getAvailableProviderIds,
@@ -211,5 +212,13 @@ describe('getAvailableProviderIds', () => {
     }).not.toThrow();
     expect(ids).toContain('codex');
     expect(ids).not.toContain('cursor');
+  });
+});
+
+describe('assertProviderId', () => {
+  it('accepts known providers and rejects unknown ids', () => {
+    expect(() => assertProviderId('claude')).not.toThrow();
+    expect(() => assertProviderId('not-a-provider')).toThrow('Unknown CLI provider.');
+    expect(() => assertProviderId(12)).toThrow('Unknown CLI provider.');
   });
 });

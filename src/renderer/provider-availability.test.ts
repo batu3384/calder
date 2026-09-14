@@ -139,13 +139,21 @@ describe('provider-availability', () => {
   });
 
   it('exposes a metas-only snapshot before binary checks finish', async () => {
-    const { module } = await loadModule();
+    const { module, checkBinary } = await loadModule();
     await module.loadProviderMetas();
 
     const snapshot = module.getProviderAvailabilitySnapshot();
     expect(snapshot?.providers).toEqual(providers);
     expect(snapshot?.availability.get('claude')).toBe(false);
     expect(module.shouldRenderInlineProviderSelector(snapshot)).toBe(true);
+    expect(module.hasProviderBinaryChecks()).toBe(false);
+
+    await module.ensureProviderAvailabilityLoaded();
+    expect(module.hasProviderBinaryChecks()).toBe(true);
+    expect(checkBinary).toHaveBeenCalledTimes(4);
+
+    await module.ensureProviderAvailabilityLoaded();
+    expect(checkBinary).toHaveBeenCalledTimes(4);
   });
 
   it('resolves preferred launch and check providers from availability state', async () => {

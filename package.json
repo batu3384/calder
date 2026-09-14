@@ -54,6 +54,7 @@
     "copy-assets": "node scripts/copy-assets.js",
     "start": "npm run build && node scripts/run-electron.js",
     "dev": "npm run build && node scripts/run-electron.js",
+    "smoke:electron": "npm run build && node scripts/run-electron.js --smoke",
     "postinstall": "node -e \"if(process.env.CALDER_SKIP_APP_DEPS==='1'){process.exit(0)};try{require('electron-builder/package.json');require('child_process').execSync('electron-builder install-app-deps',{stdio:'inherit'})}catch{}\"",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
@@ -161,6 +162,9 @@
     "zod": "^3.24.0"
   },
   "overrides": {
-    "hono": "^4.12.14"
+    "hono": "^4.13.7",
+    "fast-uri": "^3.1.6",
+    "js-yaml": "^4.3.2",
+    "qs": "^6.16.0"
   }
 }

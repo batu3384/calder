@@ -8,6 +8,9 @@ const electron = require('electron');
 const appPath = path.resolve(__dirname, '..');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
+if (process.argv.includes('--smoke')) {
+  env.CALDER_SMOKE = '1';
+}
 const child = proc.spawn(electron, [appPath], {
   stdio: 'inherit',
   windowsHide: false,

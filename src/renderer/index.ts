@@ -4,8 +4,8 @@ import {
 } from './bootstrap/renderer-session-orchestrator.js';
 import { navigateTo } from './components/browser-tab/navigation.js';
 import { createBrowserTabPane, getBrowserTabInstance } from './components/browser-tab-pane.js';
-import { showWarningToast } from './components/toast.js';
-import { markUiReady } from './i18n.js';
+import { showErrorToast, showWarningToast } from './components/toast.js';
+import { markUiReady, t } from './i18n.js';
 import { initKeybindings } from './keybindings.js';
 import { appState } from './state.js';
 
@@ -137,4 +137,5 @@ async function main(): Promise<void> {
 main().catch((error) => {
   console.error(error);
   markUiReady();
+  showErrorToast(t('Calder failed to finish starting. Some tools may be unavailable.'));
 });

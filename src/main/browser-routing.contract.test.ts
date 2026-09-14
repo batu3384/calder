@@ -20,4 +20,12 @@ describe('Calder browser routing contracts', () => {
       'openUrlWithBrowserPolicy({ url, cwd, preferEmbedded: true }, win',
     );
   });
+
+  it('runs hidden CALDER_SMOKE until ui-ready without blocking missing-provider dialog', () => {
+    expect(mainSource).toContain("process.env.CALDER_SMOKE === '1'");
+    expect(mainSource).toContain('runSmokeAndQuit');
+    expect(mainSource).toContain('dataset.bootstrapReady');
+    expect(mainSource).toContain('dataset.uiReady');
+    expect(mainSource).toContain('providerStartup.blocking && !SMOKE_MODE');
+  });
 });

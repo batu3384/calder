@@ -1,5 +1,8 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
 import { app, BrowserWindow, dialog, nativeImage, powerMonitor, session, shell } from 'electron';
-import * as path from 'path';
 
 import { initAutoUpdater } from './auto-updater';
 import { startBrowserBridge, stopBrowserBridge } from './browser-bridge';
@@ -23,6 +26,14 @@ import { installSessionPermissionPolicy } from './session-permission-policy';
 import { flushState, loadState } from './store';
 
 let mainWindow: BrowserWindow | null = null;
+const SMOKE_MODE = process.env.CALDER_SMOKE === '1';
+if (SMOKE_MODE) {
+  const smokeDir = path.join(os.tmpdir(), `calder-smoke-${process.pid}`);
+  fs.mkdirSync(smokeDir, { recursive: true });
+  app.setPath('userData', smokeDir);
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-gpu');
+}
 
 app.setName('Calder');
 
@@ -46,6 +57,7 @@ function createWindow(): void {
     title: 'Calder',
     icon: path.join(__dirname, '..', '..', '..', 'build', 'icon.png'),
     backgroundColor: '#000000',
+    show: !SMOKE_MODE,
     webPreferences: {
       preload: path.join(__dirname, '..', '..', 'preload', 'preload', 'preload.js'),
       nodeIntegration: false,
@@ -56,6 +68,9 @@ function createWindow(): void {
   });
 
   mainWindow.loadFile(path.join(__dirname, '..', '..', 'renderer', 'index.html'));
+  if (SMOKE_MODE) {
+    void runSmokeAndQuit(mainWindow);
+  }
   attachBrowserWebviewRouting(mainWindow, (url) => {
     void openUrlWithBrowserPolicy({ url, preferEmbedded: true }, mainWindow, (target) =>
       shell.openExternal(target),
@@ -70,6 +85,91 @@ function createWindow(): void {
     resetHookWatcher();
     mainWindow = null;
   });
+}
+
+async function runSmokeAndQuit(win: BrowserWindow): Promise<void> {
+  let rendererError = '';
+  const noteConsole = (level: unknown, message: unknown): void => {
+    const text = String(message ?? '');
+    const numeric = typeof level === 'number' ? level : level === 'error' ? 3 : 0;
+    if (numeric >= 2 && /ReferenceError|TypeError|is not defined/i.test(text)) {
+      rendererError = text;
+    }
+  };
+  win.webContents.on('console-message', (...args: unknown[]) => {
+    const first = args[0] as { level?: unknown; message?: unknown } | undefined;
+    if (args.length >= 3) {
+      noteConsole(args[1], args[2]);
+      return;
+    }
+    noteConsole(first?.level, first?.message);
+  });
+  win.webContents.on('render-process-gone', (_event, details) => {
+    rendererError = `render-process-gone:${details.reason}`;
+  });
+
+  const fail = (reason: string): void => {
+    console.error('[smoke] FAIL', reason);
+    app.exit(1);
+  };
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('load timeout')), 20_000);
+      win.webContents.once('did-finish-load', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      win.webContents.once('did-fail-load', (_e, code, desc, _url, isMainFrame) => {
+        if (!isMainFrame) return;
+        clearTimeout(timer);
+        reject(new Error(`did-fail-load ${code} ${desc}`));
+      });
+    });
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+    return;
+  }
+  if (rendererError) {
+    fail(rendererError);
+    return;
+  }
+
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    if (win.isDestroyed()) {
+      fail('window destroyed before ui-ready');
+      return;
+    }
+    try {
+      const snapshot = (await win.webContents.executeJavaScript(`({
+        uiReady: document.documentElement.dataset.uiReady === '1',
+        bootstrapReady: document.documentElement.dataset.bootstrapReady === '1',
+        tabBar: Boolean(document.getElementById('tab-bar')),
+        addSession: Boolean(document.getElementById('btn-add-session')),
+        chromeBg: getComputedStyle(document.documentElement).getPropertyValue('--chrome-bg').trim()
+      })`)) as {
+        uiReady: boolean;
+        bootstrapReady: boolean;
+        tabBar: boolean;
+        addSession: boolean;
+        chromeBg: string;
+      };
+      if (snapshot.bootstrapReady && snapshot.uiReady && snapshot.tabBar && snapshot.addSession) {
+        if (rendererError) {
+          fail(rendererError);
+          return;
+        }
+        console.info('[smoke] PASS', snapshot.chromeBg);
+        app.exit(0);
+        return;
+      }
+    } catch (error) {
+      rendererError = error instanceof Error ? error.message : String(error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  fail(rendererError || 'timed out waiting for data-bootstrap-ready + tab-bar');
 }
 
 app.whenReady().then(async () => {
@@ -95,7 +195,7 @@ app.whenReady().then(async () => {
   for (const result of providerStartup.relevantUnavailable) {
     console.warn(formatProviderStartupWarning(result));
   }
-  if (providerStartup.blocking) {
+  if (providerStartup.blocking && !SMOKE_MODE) {
     const details = formatMissingProviderDialog(providerStartup.unavailable);
     dialog.showErrorBox(
       'Calder — Missing Prerequisite',
@@ -103,6 +203,9 @@ app.whenReady().then(async () => {
     );
     app.quit();
     return;
+  }
+  if (providerStartup.blocking) {
+    console.warn('[smoke] no CLI providers installed — continuing hidden smoke');
   }
 
   registerIpcHandlers();
@@ -115,7 +218,7 @@ app.whenReady().then(async () => {
 
   // Warn if Python is missing on Windows (hooks depend on it)
   const pythonWarning = checkPythonAvailable();
-  if (pythonWarning) {
+  if (pythonWarning && !SMOKE_MODE) {
     console.warn(pythonWarning);
     dialog.showMessageBox(mainWindow!, {
       type: 'warning',

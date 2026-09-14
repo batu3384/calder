@@ -1,23 +1,12 @@
 import type { IpcMainInvokeEvent } from 'electron';
 import { ipcMain } from 'electron';
 
-import type {
-  ProviderId,
-  ProviderUpdateProgressEvent,
-  ProviderUpdateSummary,
-} from '../shared/types/provider';
+import type { ProviderUpdateProgressEvent, ProviderUpdateSummary } from '../shared/types/provider';
 import { installProviderById, updateAllProviders, updateProviderById } from './provider-updater';
+import { assertProviderId } from './providers/registry';
 
 let providerUpdateAbortController: AbortController | null = null;
 let providerUpdateInFlight: Promise<ProviderUpdateSummary> | null = null;
-
-const VALID_PROVIDER_IDS = new Set<ProviderId>(['claude', 'codex', 'antigravity', 'cursor']);
-
-function assertProviderId(providerId: unknown): asserts providerId is ProviderId {
-  if (typeof providerId !== 'string' || !VALID_PROVIDER_IDS.has(providerId as ProviderId)) {
-    throw new Error('Unknown CLI provider.');
-  }
-}
 
 function startProviderUpdateRun(
   event: IpcMainInvokeEvent,

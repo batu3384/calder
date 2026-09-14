@@ -16,6 +16,11 @@ vi.mock('./providers/registry', () => ({
   getProvider: mockGetProvider,
   getProviderMeta: mockGetProviderMeta,
   getAllProviderMetas: mockGetAllProviderMetas,
+  assertProviderId: (id: unknown): asserts id is string => {
+    if (typeof id !== 'string' || !['claude', 'codex', 'antigravity', 'cursor'].includes(id)) {
+      throw new Error('Unknown CLI provider.');
+    }
+  },
 }));
 
 vi.mock('./providers/resume-handoff', () => ({
@@ -126,6 +131,21 @@ describe('ipc provider handlers', () => {
     expect(meta).toEqual({ id: 'claude', displayName: 'Claude' });
     expect(list).toEqual([{ id: 'claude', displayName: 'Claude' }]);
     expect(check).toEqual({ ok: true, message: '' });
+  });
+
+  it('rejects unknown provider ids on getMeta and checkBinary', async () => {
+    registerProviderIpcHandlers(createOps());
+    const metaHandler = getHandleHandler('provider:getMeta');
+    const checkBinaryHandler = getHandleHandler('provider:checkBinary');
+
+    await expect(async () => metaHandler({}, 'not-a-provider')).rejects.toThrow(
+      'Unknown CLI provider.',
+    );
+    await expect(async () => checkBinaryHandler({}, 'not-a-provider')).rejects.toThrow(
+      'Unknown CLI provider.',
+    );
+    expect(mockGetProviderMeta).not.toHaveBeenCalled();
+    expect(mockGetProvider).not.toHaveBeenCalled();
   });
 
   it('clears binary caches only when forceRefresh is requested', async () => {

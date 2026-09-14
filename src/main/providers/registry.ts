@@ -68,3 +68,9 @@ export const SUPPORTED_PROVIDER_IDS: readonly ProviderId[] = [
   'antigravity',
   'cursor',
 ] as const;
+
+export function assertProviderId(id: unknown): asserts id is ProviderId {
+  if (typeof id !== 'string' || !(SUPPORTED_PROVIDER_IDS as readonly string[]).includes(id)) {
+    throw new Error('Unknown CLI provider.');
+  }
+}

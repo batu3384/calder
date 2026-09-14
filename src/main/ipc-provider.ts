@@ -1,8 +1,12 @@
 import { ipcMain } from 'electron';
 
-import type { ProviderId } from '../shared/types/provider';
 import { requireKnownProjectPath as requireKnownProjectPathFromPolicy } from './ipc-path-policy';
-import { getAllProviderMetas, getProvider, getProviderMeta } from './providers/registry';
+import {
+  assertProviderId,
+  getAllProviderMetas,
+  getProvider,
+  getProviderMeta,
+} from './providers/registry';
 import { clearPrereqCheckCache } from './providers/resolve-binary';
 import { buildHandoffPrompt } from './providers/resume-handoff';
 
@@ -13,7 +17,8 @@ interface ProviderIpcOps {
 export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
   const requireKnownProjectPath = ops.requireKnownProjectPath ?? requireKnownProjectPathFromPolicy;
 
-  ipcMain.handle('provider:getMeta', (_event, providerId: ProviderId) => {
+  ipcMain.handle('provider:getMeta', (_event, providerId: unknown) => {
+    assertProviderId(providerId);
     return getProviderMeta(providerId);
   });
 
@@ -25,11 +30,12 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
     'session:buildResumeWithPrompt',
     async (
       _event,
-      sourceProviderId: ProviderId,
+      sourceProviderId: unknown,
       sourceCliSessionId: string | null,
       projectPath: string,
       sessionName: string,
     ) => {
+      assertProviderId(sourceProviderId);
       const validatedProjectPath = requireKnownProjectPath(
         projectPath,
         'Build session handoff prompt',
@@ -53,7 +59,8 @@ export function registerProviderIpcHandlers(ops: ProviderIpcOps = {}): void {
 
   ipcMain.handle(
     'provider:checkBinary',
-    (_event, providerId: ProviderId = 'claude', forceRefresh = false) => {
+    (_event, providerId: unknown = 'claude', forceRefresh = false) => {
+      assertProviderId(providerId);
       const provider = getProvider(providerId);
       if (forceRefresh) {
         provider.clearBinaryCache();

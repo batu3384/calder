@@ -21,19 +21,20 @@ import { destroySidebar, initSidebar, promptNewProject } from '../components/sid
 import { initSplitLayout } from '../components/split-layout.js';
 import { checkStarPrompt } from '../components/star-prompt-dialog.js';
 import { initStatusBar } from '../components/status-bar.js';
+import { initTabBar } from '../components/tab-bar/tab-bar.js';
 import {
   destroyTerminal,
   handlePtyData,
   updateContextDisplay,
   updateCostDisplay,
 } from '../components/terminal-pane.js';
-import { dismissAllToasts } from '../components/toast.js';
+import { dismissAllToasts, showErrorToast } from '../components/toast.js';
 import { initToolAlert } from '../components/tool-alert.js';
 import { initUpdateBanner } from '../components/update-banner.js';
 import { showUsageModal } from '../components/usage-modal.js';
 import { checkWhatsNew } from '../components/whats-new-dialog.js';
 import { startPolling as startGitPolling } from '../git-status.js';
-import { initLocalization, markUiReady } from '../i18n.js';
+import { initLocalization, markUiReady, t } from '../i18n.js';
 import { initNotificationDesktop } from '../notification-desktop.js';
 import { initNotificationSound } from '../notification-sound.js';
 import { initProjectBackgroundTaskSync } from '../project-background-task-sync.js';
@@ -272,12 +273,39 @@ export function createRendererSessionOrchestrator(
     }
   }
 
+  async function awaitBootstrapStep(work: Promise<unknown>, failureMessage: string): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        work,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error(failureMessage)), 12_000);
+        }),
+      ]);
+    } catch (error) {
+      console.warn('[bootstrap]', error);
+      const timedOut = error instanceof Error && error.message === failureMessage;
+      showErrorToast(
+        t(
+          timedOut
+            ? failureMessage
+            : 'Calder failed to finish starting. Some tools may be unavailable.',
+        ),
+      );
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
+    }
+  }
+
   async function initialize(): Promise<void> {
     try {
       markUiReady();
       registerSessionTelemetryObservers();
 
-      await appState.load({ emitLoaded: false });
+      await awaitBootstrapStep(
+        appState.load({ emitLoaded: false }),
+        'Workspace state is taking too long. Some sessions may be missing.',
+      );
       applyAppearanceTheme(appState.preferences.appearanceTheme);
       bindAppearanceThemeListener(() => {
         if ((appState.preferences.appearanceTheme ?? 'system') === 'system') {
@@ -285,7 +313,10 @@ export function createRendererSessionOrchestrator(
         }
       });
 
-      await loadProviderMetas();
+      await awaitBootstrapStep(
+        loadProviderMetas(),
+        'CLI list is taking too long. Provider tools may be incomplete.',
+      );
       initUpdateCenter();
 
       initSessionUnread();
@@ -334,6 +365,7 @@ export function createRendererSessionOrchestrator(
         checkWhatsNew();
         checkStarPrompt();
       }, 0);
+      document.documentElement.dataset.bootstrapReady = '1';
     } finally {
       markUiReady();
     }

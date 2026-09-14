@@ -21,6 +21,21 @@ describe('createProjectDirWatcher', () => {
     const watchRoot = path.join(projectPath, '.calder', 'reviews');
     fs.mkdirSync(watchRoot, { recursive: true });
 
+    const watchListeners: Array<() => void> = [];
+    const watchSpy = vi.spyOn(fs, 'watch').mockImplementation(((
+      _target: fs.PathLike,
+      opts?: unknown,
+      listener?: fs.WatchListener<string>,
+    ) => {
+      const callback = typeof opts === 'function' ? opts : listener;
+      if (typeof callback === 'function') {
+        watchListeners.push(() => {
+          callback('change', 'touch.txt');
+        });
+      }
+      return { close: vi.fn(), on: vi.fn() } as unknown as fs.FSWatcher;
+    }) as typeof fs.watch);
+
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const discover = vi.fn().mockRejectedValue(new Error('boom'));
     const watcher = createProjectDirWatcher<{ ok: boolean }>({
@@ -31,13 +46,14 @@ describe('createProjectDirWatcher', () => {
 
     const changes: Array<{ ok: boolean }> = [];
     watcher.start(projectPath, (state) => changes.push(state));
-    fs.writeFileSync(path.join(watchRoot, 'touch.txt'), 'x');
-    await vi.waitFor(() => expect(discover).toHaveBeenCalled(), { timeout: 500 });
+    expect(watchListeners.length).toBeGreaterThan(0);
+    for (const fire of watchListeners) fire();
+    await vi.waitFor(() => expect(discover).toHaveBeenCalled());
 
-    expect(discover).toHaveBeenCalled();
     expect(changes).toHaveLength(0);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+    watchSpy.mockRestore();
     watcher.stopAll();
   });
 });

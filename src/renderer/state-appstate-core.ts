@@ -12,6 +12,7 @@ import {
   formatDefaultSessionName,
   getProviderAvailabilitySnapshot,
   getProviderCapabilities,
+  hasProviderBinaryChecks,
 } from './provider-availability.js';
 import { getCost } from './session-cost.js';
 import { findProjectById } from './state/state-appstate-core-project-access.js';
@@ -282,7 +283,7 @@ export async function resumeWithProviderForProject(options: {
   // Defense-in-depth: UI gates this by availability, but bail if the target
   // provider isn't actually installed so we don't create a broken session.
   const snapshot = getProviderAvailabilitySnapshot();
-  if (snapshot && snapshot.availability.get(options.targetProviderId) === false) {
+  if (hasProviderBinaryChecks() && snapshot?.availability.get(options.targetProviderId) === false) {
     return undefined;
   }
 

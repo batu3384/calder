@@ -27,7 +27,7 @@ describe('index session bootstrap contract', () => {
   });
 
   it('keeps initialization ordering and project/session bootstrap in the orchestrator', () => {
-    const loadIndex = orchestratorSource.indexOf('await appState.load({ emitLoaded: false });');
+    const loadIndex = orchestratorSource.indexOf('appState.load({ emitLoaded: false })');
     const sidebarIndex = orchestratorSource.indexOf('initSidebar();');
     const markUiReadyIndex = orchestratorSource.indexOf('markUiReady();');
     expect(loadIndex).toBeGreaterThan(-1);
@@ -35,8 +35,11 @@ describe('index session bootstrap contract', () => {
     expect(markUiReadyIndex).toBeGreaterThan(-1);
     expect(loadIndex).toBeLessThan(sidebarIndex);
     expect(markUiReadyIndex).toBeLessThan(sidebarIndex);
-    expect(orchestratorSource).toContain('await loadProviderMetas();');
+    expect(orchestratorSource).toContain('loadProviderMetas()');
+    expect(orchestratorSource).toContain('awaitBootstrapStep');
+    expect(orchestratorSource).toContain('showErrorToast');
     expect(orchestratorSource).toContain('initUpdateCenter();');
+    expect(orchestratorSource).toContain("from '../components/tab-bar/tab-bar.js'");
     expect(orchestratorSource).toContain('initTabBar();');
     expect(orchestratorSource).toContain('initSplitLayout();');
     expect(orchestratorSource).toContain('options.initKeybindings();');
@@ -47,5 +50,6 @@ describe('index session bootstrap contract', () => {
     expect(orchestratorSource).toContain('promptNewProject();');
     expect(orchestratorSource).toContain('checkWhatsNew();');
     expect(orchestratorSource).toContain('checkStarPrompt();');
+    expect(orchestratorSource).toContain("dataset.bootstrapReady = '1'");
   });
 });

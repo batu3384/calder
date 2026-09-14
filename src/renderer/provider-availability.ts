@@ -47,6 +47,10 @@ export function hasMultipleAvailableProviders(): boolean {
   return false;
 }
 
+export function hasProviderBinaryChecks(): boolean {
+  return cachedAvailability !== null;
+}
+
 export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot | null {
   if (!cachedProviders || cachedProviders.length === 0) return null;
   const availability =
@@ -55,6 +59,26 @@ export function getProviderAvailabilitySnapshot(): ProviderAvailabilitySnapshot 
     providers: cachedProviders,
     availability,
   };
+}
+
+export async function ensureProviderAvailabilityLoaded(): Promise<ProviderAvailabilitySnapshot | null> {
+  if (hasProviderBinaryChecks()) {
+    return getProviderAvailabilitySnapshot();
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      loadProviderAvailability(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Provider binary checks timed out')), 12_000);
+      }),
+    ]);
+  } catch (error) {
+    console.warn('[provider-availability] Failed to load provider binaries', error);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+  return getProviderAvailabilitySnapshot();
 }
 
 export function shouldRenderInlineProviderSelector(

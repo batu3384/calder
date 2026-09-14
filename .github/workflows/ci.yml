@@ -82,3 +82,8 @@ jobs:
 
       - name: Build with node-pty
         run: npm run build
+
+      - name: Electron ui-ready smoke
+        run: node scripts/run-electron.js --smoke
+        env:
+          CALDER_SMOKE: '1'

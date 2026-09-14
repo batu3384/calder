@@ -1,5 +1,8 @@
 name: PR Review Run
 
+# Generated at runtime (not in git): ./pr-context/diff.patch (artifact from PR Review Collect)
+# and ./review-body.md (written by the review step before `gh pr review`).
+
 on:
   workflow_run:
     workflows: ['PR Review Collect']
