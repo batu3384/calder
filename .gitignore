@@ -42,3 +42,6 @@ out/
 
 # Local security-scan output (canonical reports live under docs/reports/security/)
 security-report/
+
+# GitHub Wiki sync clone (scripts/sync-wiki.sh)
+.wiki.git/
