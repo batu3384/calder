@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import { destroySearchBar } from './search-bar.js';
 import { areaLabel } from './surface-services/dom-utils.js';
@@ -172,7 +173,7 @@ export function createFileViewerPane(
 
   const meta = document.createElement('span');
   meta.className = 'file-viewer-meta';
-  meta.textContent = 'Git diff preview';
+  meta.textContent = t('Git diff preview');
 
   headerCopy.appendChild(pathSpan);
   headerCopy.appendChild(meta);

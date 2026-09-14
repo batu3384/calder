@@ -19,7 +19,7 @@ describe('tab bar session context menu extraction', () => {
     );
     expect(sessionContextMenuSource).toContain('buildResumeWithProviderItems(');
     expect(sessionContextMenuSource).toContain(
-      "applyContextMenuSemantics(menu, 'Session actions')",
+      "applyContextMenuSemantics(menu, t('Session actions'))",
     );
   });
 });

@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { sendProjectReviewToSelectedSession } from '../../project-review-actions.js';
 import { appState } from '../../state.js';
@@ -25,7 +26,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
   if (!args.project) {
     const empty = document.createElement('div');
     empty.className = 'review-discovery-empty';
-    empty.textContent = 'Open a project to manage saved PR review notes.';
+    empty.textContent = t('Open a project to manage saved PR review notes.');
     shell.appendChild(empty);
     return;
   }
@@ -37,7 +38,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
   const createBtn = document.createElement('button');
   createBtn.className = 'review-discovery-action-btn';
   createBtn.type = 'button';
-  createBtn.textContent = 'New findings file';
+  createBtn.textContent = t('New findings file');
   createBtn.addEventListener('click', () => {
     showModal(
       'New Review Findings',
@@ -77,7 +78,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
   if (!projectReviews || projectReviews.reviews.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'review-discovery-empty';
-    empty.textContent = 'No saved review findings have been discovered for this repo yet.';
+    empty.textContent = t('No saved review findings have been discovered for this repo yet.');
     shell.appendChild(empty);
     return;
   }
@@ -127,7 +128,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
     const fixBtn = document.createElement('button');
     fixBtn.className = 'review-discovery-item-btn';
     fixBtn.type = 'button';
-    fixBtn.textContent = 'Fix in selected session';
+    fixBtn.textContent = t('Fix in selected session');
     fixBtn.disabled = !selectedFixSession;
     fixBtn.addEventListener('click', async () => {
       fixBtn.disabled = true;
@@ -148,7 +149,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
     const previewBtn = document.createElement('button');
     previewBtn.className = 'review-discovery-item-btn';
     previewBtn.type = 'button';
-    previewBtn.textContent = 'Preview';
+    previewBtn.textContent = t('Preview');
     previewBtn.addEventListener('click', () => {
       appState.addFileReaderSession(project.id, review.path);
       args.onCloseModalWide();
@@ -160,7 +161,7 @@ export function renderProjectReviewSection(args: RenderProjectReviewSectionArgs)
       const openBtn = document.createElement('button');
       openBtn.className = 'review-discovery-item-btn';
       openBtn.type = 'button';
-      openBtn.textContent = 'Open';
+      openBtn.textContent = t('Open');
       openBtn.addEventListener('click', async () => {
         openBtn.disabled = true;
         try {

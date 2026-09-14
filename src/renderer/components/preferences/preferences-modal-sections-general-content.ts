@@ -73,7 +73,7 @@ function appendDefaultProviderField({
   providerRow.className = 'modal-toggle-field';
 
   const providerLabel = document.createElement('label');
-  providerLabel.textContent = 'Default coding tool';
+  providerLabel.textContent = t('Default coding tool');
 
   const providerNote = document.createElement('div');
   providerNote.className = 'preferences-control-note';
@@ -111,7 +111,7 @@ function appendDefaultProviderField({
   } else {
     const loadingSelect = createCustomSelect(
       'pref-default-provider',
-      [{ value: currentDefault, label: 'Loading…' }],
+      [{ value: currentDefault, label: t('Loading…') }],
       currentDefault,
     );
     replaceDefaultProviderSelect(loadingSelect);
@@ -163,21 +163,21 @@ function appendAppearanceThemeField({
   themeRow.className = 'modal-toggle-field';
 
   const themeLabel = document.createElement('label');
-  themeLabel.textContent = 'Appearance';
+  themeLabel.textContent = t('Appearance');
 
   const themeSelect = createCustomSelect(
     'pref-appearance-theme',
     [
-      { value: 'system', label: 'System' },
-      { value: 'light', label: 'Light' },
-      { value: 'dark', label: 'Dark' },
+      { value: 'system', label: t('System') },
+      { value: 'light', label: t('Light') },
+      { value: 'dark', label: t('Dark') },
     ],
     preferenceDraft.appearanceTheme,
   );
 
   const themeNote = document.createElement('div');
   themeNote.className = 'preferences-control-note';
-  themeNote.textContent = 'Light theme uses workspace tokens from base.css.';
+  themeNote.textContent = t('Light theme uses workspace tokens from base.css.');
 
   themeRow.appendChild(themeLabel);
   themeRow.appendChild(themeSelect.element);
@@ -203,8 +203,8 @@ function appendLanguageField({
   const languageSelect = createCustomSelect(
     'pref-language',
     [
-      { value: 'en', label: 'English' },
-      { value: 'tr', label: 'Turkish' },
+      { value: 'en', label: t('English') },
+      { value: 'tr', label: t('Turkish') },
     ],
     preferenceDraft.language,
   );

@@ -1,3 +1,5 @@
+import { t } from '../../i18n.js';
+
 export interface PreferencesOverviewItem {
   label: string;
   value: string;
@@ -15,17 +17,17 @@ export function appendSectionIntro(
 
   const eyebrowEl = document.createElement('div');
   eyebrowEl.className = 'preferences-section-eyebrow shell-kicker';
-  eyebrowEl.textContent = eyebrow;
+  eyebrowEl.textContent = t(eyebrow);
   intro.appendChild(eyebrowEl);
 
   const titleEl = document.createElement('div');
   titleEl.className = 'preferences-section-title';
-  titleEl.textContent = title;
+  titleEl.textContent = t(title);
   intro.appendChild(titleEl);
 
   const descriptionEl = document.createElement('div');
   descriptionEl.className = 'preferences-section-description';
-  descriptionEl.textContent = description;
+  descriptionEl.textContent = t(description);
   intro.appendChild(descriptionEl);
 
   container.appendChild(intro);
@@ -41,13 +43,13 @@ export function appendSectionCard(
 
   const heading = document.createElement('div');
   heading.className = 'preferences-card-heading';
-  heading.textContent = title;
+  heading.textContent = t(title);
   card.appendChild(heading);
 
   if (description) {
     const copy = document.createElement('div');
     copy.className = 'preferences-card-copy';
-    copy.textContent = description;
+    copy.textContent = t(description);
     card.appendChild(copy);
   }
 
@@ -69,17 +71,17 @@ export function appendSectionGroup(
 
   const eyebrowEl = document.createElement('div');
   eyebrowEl.className = 'preferences-subsection-eyebrow shell-kicker';
-  eyebrowEl.textContent = eyebrow;
+  eyebrowEl.textContent = t(eyebrow);
   header.appendChild(eyebrowEl);
 
   const titleEl = document.createElement('div');
   titleEl.className = 'preferences-subsection-title';
-  titleEl.textContent = title;
+  titleEl.textContent = t(title);
   header.appendChild(titleEl);
 
   const descriptionEl = document.createElement('div');
   descriptionEl.className = 'preferences-subsection-description';
-  descriptionEl.textContent = description;
+  descriptionEl.textContent = t(description);
   header.appendChild(descriptionEl);
 
   group.appendChild(header);
@@ -102,18 +104,18 @@ export function appendOverviewGrid(container: HTMLElement, items: PreferencesOve
 
     const labelEl = document.createElement('div');
     labelEl.className = 'preferences-overview-label';
-    labelEl.textContent = item.label;
+    labelEl.textContent = t(item.label);
     card.appendChild(labelEl);
 
     const valueEl = document.createElement('div');
     valueEl.className = 'preferences-overview-value';
-    valueEl.textContent = item.value;
+    valueEl.textContent = t(item.value);
     card.appendChild(valueEl);
 
     if (item.note) {
       const noteEl = document.createElement('div');
       noteEl.className = 'preferences-overview-note';
-      noteEl.textContent = item.note;
+      noteEl.textContent = t(item.note);
       card.appendChild(noteEl);
     }
 

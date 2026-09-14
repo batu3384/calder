@@ -1,4 +1,5 @@
 import type { ProjectCheckpointDocument } from '../../../shared/types/project-checkpoint.js';
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { closeModal } from '../modal.js';
 
@@ -22,11 +23,11 @@ function appendCheckpointRestoreFact(container: HTMLElement, label: string, valu
 
   const labelEl = document.createElement('div');
   labelEl.className = 'checkpoint-restore-confirm-fact-label';
-  labelEl.textContent = label;
+  labelEl.textContent = t(label);
 
   const valueEl = document.createElement('div');
   valueEl.className = 'checkpoint-restore-confirm-fact-value';
-  valueEl.textContent = value;
+  valueEl.textContent = t(value);
 
   row.appendChild(labelEl);
   row.appendChild(valueEl);
@@ -127,7 +128,7 @@ export function buildCheckpointRestoreConfirm(
 
   const eyebrow = document.createElement('div');
   eyebrow.className = 'checkpoint-restore-confirm-kicker shell-kicker';
-  eyebrow.textContent = 'Checkpoint restore';
+  eyebrow.textContent = t('Checkpoint restore');
   intro.appendChild(eyebrow);
 
   const title = document.createElement('div');
@@ -156,11 +157,11 @@ export function buildCheckpointRestoreConfirm(
 
     const statLabel = document.createElement('div');
     statLabel.className = 'checkpoint-restore-confirm-stat-label';
-    statLabel.textContent = stat.label;
+    statLabel.textContent = t(stat.label);
 
     const statValue = document.createElement('div');
     statValue.className = 'checkpoint-restore-confirm-stat-value';
-    statValue.textContent = stat.value;
+    statValue.textContent = t(stat.value);
 
     statCard.appendChild(statLabel);
     statCard.appendChild(statValue);
@@ -194,7 +195,7 @@ export function buildCheckpointRestoreConfirm(
 
     const fileTitle = document.createElement('div');
     fileTitle.className = 'checkpoint-restore-confirm-fact-label';
-    fileTitle.textContent = 'Changed files snapshot';
+    fileTitle.textContent = t('Changed files snapshot');
     fileBlock.appendChild(fileTitle);
 
     const fileList = document.createElement('div');

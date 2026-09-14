@@ -3,6 +3,7 @@ import type {
   BrowserCredentialSaveInput,
   BrowserCredentialSummary,
 } from '../../../shared/types/project-core.js';
+import { t } from '../../i18n.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
 import type { BrowserAuthPanelElements } from './auth-panel.js';
 import { sendGuestMessage } from './guest-messaging.js';
@@ -69,7 +70,7 @@ function currentCredentialOriginLabel(runtime: BrowserAuthControllerRuntime): st
   try {
     return new URL(targetUrl).origin;
   } catch {
-    return 'No HTTP(S) page selected';
+    return t('No HTTP(S) page selected');
   }
 }
 
@@ -79,7 +80,7 @@ function setStatus(
   tone: AuthStatusTone = 'neutral',
 ): void {
   const { authStatusEl } = runtime.options.authElements;
-  authStatusEl.textContent = message;
+  authStatusEl.textContent = t(message);
   authStatusEl.dataset.tone = tone;
 }
 
@@ -143,7 +144,7 @@ async function refreshCredentialProfiles(
   if (!targetUrl) {
     const option = document.createElement('option');
     option.value = '';
-    option.textContent = 'Open an HTTP(S) page first';
+    option.textContent = t('Open an HTTP(S) page first');
     authProfileSelect.appendChild(option);
     applySelectionToInputs(runtime, null);
     return;
@@ -151,7 +152,7 @@ async function refreshCredentialProfiles(
 
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
-  defaultOption.textContent = 'Select a saved profile';
+  defaultOption.textContent = t('Select a saved profile');
   authProfileSelect.appendChild(defaultOption);
 
   runtime.state.authCredentialList = await window.calder.browserCredential.listForUrl(targetUrl);

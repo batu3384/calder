@@ -1,4 +1,5 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { logDebugEvent } from '../debug-panel.js';
 import { anchorFloatingSurface } from '../floating-surface.js';
@@ -14,7 +15,7 @@ import type { BrowserTabInstance } from './types.js';
 
 function browserTargetButtonLabel(instance: BrowserTabInstance): string {
   const selectedTarget = appState.resolveBrowserTargetSession(instance.sessionId);
-  const label = selectedTarget?.name ?? 'Select Session';
+  const label = selectedTarget?.name ?? t('Select Session');
   return label.length > 22 ? `${label.slice(0, 21)}…` : label;
 }
 
@@ -79,13 +80,13 @@ function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
 
   const header = document.createElement('div');
   header.className = 'browser-target-menu-header';
-  header.textContent = 'Open Sessions';
+  header.textContent = t('Open Sessions');
   instance.targetMenuList.appendChild(header);
 
   if (targetSessions.length === 0) {
     const emptyState = document.createElement('div');
     emptyState.className = 'browser-target-menu-empty';
-    emptyState.textContent = 'Open a CLI session to route browser prompts here.';
+    emptyState.textContent = t('Open a CLI session to route browser prompts here.');
     instance.targetMenuList.appendChild(emptyState);
   } else {
     for (const session of targetSessions) {
@@ -106,7 +107,7 @@ function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
       setProviderAccentTarget(meta, providerId);
       const parts = [getProviderDisplayName(providerId)];
       if (appState.activeProject?.activeSessionId === session.id) {
-        parts.unshift('Active');
+        parts.unshift(t('Active'));
       }
       meta.textContent = parts.join(' · ');
 
@@ -126,13 +127,13 @@ function renderBrowserTargetMenu(instance: BrowserTabInstance): void {
 
   const newSessionBtn = document.createElement('button');
   newSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
-  newSessionBtn.textContent = 'Send to New Session';
+  newSessionBtn.textContent = t('Send to New Session');
   newSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'new'));
   instance.targetMenuList.appendChild(newSessionBtn);
 
   const customSessionBtn = document.createElement('button');
   customSessionBtn.className = 'browser-target-menu-item browser-target-menu-action';
-  customSessionBtn.textContent = 'Send to Custom Session…';
+  customSessionBtn.textContent = t('Send to Custom Session…');
   customSessionBtn.addEventListener('click', () => runTargetMenuAction(instance, 'custom'));
   instance.targetMenuList.appendChild(customSessionBtn);
 }
@@ -149,7 +150,7 @@ export function syncBrowserTargetControls(instance: BrowserTabInstance): void {
     setProviderAccentTarget(button, selectedProviderId);
     button.title = hasTarget
       ? `Send to ${selectedTarget.name}`
-      : 'Select an open session target first';
+      : t('Select an open session target first');
   }
 
   const targetButtons = [instance.inspectTargetBtn, instance.drawTargetBtn, instance.flowTargetBtn];
@@ -159,7 +160,7 @@ export function syncBrowserTargetControls(instance: BrowserTabInstance): void {
     button.textContent = label;
     button.title = selectedTarget
       ? `Current target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
-      : 'Choose which open session receives the browser prompt';
+      : t('Choose which open session receives the browser prompt');
   }
 
   if (instance.targetMenu.style.display !== 'none') {

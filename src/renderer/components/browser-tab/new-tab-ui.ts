@@ -1,3 +1,5 @@
+import { t } from '../../i18n.js';
+
 export interface BrowserNewTabUi {
   newTabPage: HTMLDivElement;
   ntpState: HTMLDivElement;
@@ -23,12 +25,12 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
 
   const ntpEyebrow = document.createElement('div');
   ntpEyebrow.className = 'browser-ntp-eyebrow';
-  ntpEyebrow.textContent = 'Live View';
+  ntpEyebrow.textContent = t('Live View');
 
   const ntpState = document.createElement('div');
   ntpState.className = 'browser-ntp-state';
   ntpState.dataset.state = 'default';
-  ntpState.textContent = 'Ready';
+  ntpState.textContent = t('Ready');
 
   ntpHeroTop.appendChild(ntpEyebrow);
   ntpHeroTop.appendChild(ntpState);
@@ -36,12 +38,12 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
 
   const ntpTitle = document.createElement('div');
   ntpTitle.className = 'browser-ntp-title';
-  ntpTitle.textContent = 'Open a local surface';
+  ntpTitle.textContent = t('Open a local surface');
   ntpHero.appendChild(ntpTitle);
 
   const ntpSubtitle = document.createElement('div');
   ntpSubtitle.className = 'browser-ntp-subtitle';
-  ntpSubtitle.textContent = 'Paste a URL above, or pick a running localhost target below.';
+  ntpSubtitle.textContent = t('Paste a URL above, or pick a running localhost target below.');
   ntpHero.appendChild(ntpSubtitle);
 
   const ntpActions = document.createElement('div');
@@ -49,11 +51,11 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
 
   const focusAddressBtn = document.createElement('button');
   focusAddressBtn.className = 'browser-ntp-action';
-  focusAddressBtn.textContent = 'Focus address bar';
+  focusAddressBtn.textContent = t('Focus address bar');
 
   const refreshTargetsBtn = document.createElement('button');
   refreshTargetsBtn.className = 'browser-ntp-action browser-ntp-action-secondary';
-  refreshTargetsBtn.textContent = 'Rescan localhost';
+  refreshTargetsBtn.textContent = t('Rescan localhost');
 
   ntpActions.appendChild(focusAddressBtn);
   ntpActions.appendChild(refreshTargetsBtn);
@@ -71,19 +73,19 @@ export function createBrowserNewTabUi(initialMode: 'default' | 'hidden'): Browse
 
   const ntpTargetsTitle = document.createElement('div');
   ntpTargetsTitle.className = 'browser-ntp-section-title';
-  ntpTargetsTitle.textContent = 'Localhost';
+  ntpTargetsTitle.textContent = t('Localhost');
   ntpTargetsHeader.appendChild(ntpTargetsTitle);
 
   const ntpTargetsMeta = document.createElement('div');
   ntpTargetsMeta.className = 'browser-ntp-section-meta';
-  ntpTargetsMeta.textContent = 'Scanning…';
+  ntpTargetsMeta.textContent = t('Scanning…');
   ntpTargetsHeader.appendChild(ntpTargetsMeta);
 
   ntpTargets.appendChild(ntpTargetsHeader);
 
   const ntpTargetsText = document.createElement('div');
   ntpTargetsText.className = 'browser-ntp-section-copy';
-  ntpTargetsText.textContent = 'Looking for running localhost targets…';
+  ntpTargetsText.textContent = t('Looking for running localhost targets…');
   ntpTargets.appendChild(ntpTargetsText);
 
   const ntpGrid = document.createElement('div');

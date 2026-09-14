@@ -1,3 +1,5 @@
+import { t } from '../../i18n.js';
+
 export type PreferencesSection =
   | 'general'
   | 'interface'
@@ -53,9 +55,10 @@ export function createPreferencesModalShell({
 
   const menuHeader = document.createElement('div');
   menuHeader.className = 'preferences-menu-header';
-  menuHeader.innerHTML = `
-    <div class="preferences-menu-title">Settings</div>
-  `;
+  const menuTitle = document.createElement('div');
+  menuTitle.className = 'preferences-menu-title';
+  menuTitle.textContent = t('Settings');
+  menuHeader.appendChild(menuTitle);
   menu.appendChild(menuHeader);
 
   const menuItems: Map<PreferencesSection, HTMLButtonElement> = new Map();
@@ -64,11 +67,16 @@ export function createPreferencesModalShell({
     item.className = 'preferences-menu-item';
     item.type = 'button';
     item.dataset.section = section.id;
-    item.setAttribute('aria-label', `${section.label} — ${section.caption}`);
-    item.innerHTML = `
-      <span class="preferences-menu-item-icon" aria-hidden="true">${SECTION_ICONS[section.id]}</span>
-      <span class="preferences-menu-item-label">${section.label}</span>
-    `;
+    item.setAttribute('aria-label', `${t(section.label)} — ${t(section.caption)}`);
+    const icon = document.createElement('span');
+    icon.className = 'preferences-menu-item-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = SECTION_ICONS[section.id];
+    const label = document.createElement('span');
+    label.className = 'preferences-menu-item-label';
+    label.textContent = t(section.label);
+    item.appendChild(icon);
+    item.appendChild(label);
     menu.appendChild(item);
     menuItems.set(section.id, item);
   }

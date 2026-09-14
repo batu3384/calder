@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import type { FlowPickerAction } from './types.js';
 
 export interface BrowserInspectPanelElements {
@@ -59,11 +60,11 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
 
   const handleLabel = document.createElement('span');
   handleLabel.className = 'browser-inspect-panel-handle-label';
-  handleLabel.textContent = 'Element capture';
+  handleLabel.textContent = t('Element capture');
 
   const handleGrip = document.createElement('span');
   handleGrip.className = 'browser-inspect-panel-handle-grip';
-  handleGrip.textContent = 'Move';
+  handleGrip.textContent = t('Move');
 
   handle.appendChild(handleLabel);
   handle.appendChild(handleGrip);
@@ -77,16 +78,17 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
 
   const kicker = document.createElement('div');
   kicker.className = 'browser-capture-kicker';
-  kicker.textContent = 'Inspect target';
+  kicker.textContent = t('Inspect target');
 
   const titleEl = document.createElement('div');
   titleEl.className = 'browser-capture-title';
-  titleEl.textContent = 'Select an element';
+  titleEl.textContent = t('Select an element');
 
   const subtitleEl = document.createElement('div');
   subtitleEl.className = 'browser-capture-subtitle';
-  subtitleEl.textContent =
-    'Click a page element to capture its selector and send a focused prompt.';
+  subtitleEl.textContent = t(
+    'Click a page element to capture its selector and send a focused prompt.',
+  );
 
   copy.appendChild(kicker);
   copy.appendChild(titleEl);
@@ -94,7 +96,7 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
 
   const chip = document.createElement('span');
   chip.className = 'browser-capture-chip';
-  chip.textContent = 'Inspect';
+  chip.textContent = t('Inspect');
 
   header.appendChild(copy);
   header.appendChild(chip);
@@ -110,19 +112,19 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
   const instructionInput = document.createElement('textarea');
   instructionInput.className = 'inspect-instruction-input';
   instructionInput.rows = 3;
-  instructionInput.placeholder = 'Describe what you want to do\u2026';
+  instructionInput.placeholder = t('Describe what you want to do…');
 
   const submitGroup = document.createElement('div');
   submitGroup.className = 'inspect-submit-group';
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to selected';
+  submitBtn.textContent = t('Send to selected');
 
   const targetBtn = document.createElement('button');
   targetBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  targetBtn.textContent = 'Select Session \u25BE';
-  targetBtn.title = 'Choose target session';
+  targetBtn.textContent = t('Select Session ▾');
+  targetBtn.title = t('Choose target session');
 
   submitGroup.appendChild(submitBtn);
   submitGroup.appendChild(targetBtn);
@@ -136,7 +138,7 @@ export function createInspectPanelElements(): BrowserInspectPanelElements {
   attachDimsCheckbox.type = 'checkbox';
   attachDimsCheckbox.checked = true;
   const attachDimsText = document.createElement('span');
-  attachDimsText.textContent = 'Attach browser dimensions to the instructions';
+  attachDimsText.textContent = t('Attach browser dimensions to the instructions');
   attachDimsRow.appendChild(attachDimsCheckbox);
   attachDimsRow.appendChild(attachDimsText);
   panel.appendChild(attachDimsRow);
@@ -180,16 +182,17 @@ export function createDrawPanelElements(): BrowserDrawPanelElements {
 
   const kicker = document.createElement('div');
   kicker.className = 'browser-capture-kicker';
-  kicker.textContent = 'Annotated capture';
+  kicker.textContent = t('Annotated capture');
 
   const title = document.createElement('div');
   title.className = 'browser-capture-title';
-  title.textContent = 'Mark the page, then hand it off';
+  title.textContent = t('Mark the page, then hand it off');
 
   const subtitle = document.createElement('div');
   subtitle.className = 'browser-capture-subtitle';
-  subtitle.textContent =
-    'Sketch directly on the surface and send the annotated screenshot with your instructions.';
+  subtitle.textContent = t(
+    'Sketch directly on the surface and send the annotated screenshot with your instructions.',
+  );
 
   copy.appendChild(kicker);
   copy.appendChild(title);
@@ -197,7 +200,7 @@ export function createDrawPanelElements(): BrowserDrawPanelElements {
 
   const chip = document.createElement('span');
   chip.className = 'browser-capture-chip';
-  chip.textContent = 'Draw';
+  chip.textContent = t('Draw');
 
   header.appendChild(copy);
   header.appendChild(chip);
@@ -209,24 +212,24 @@ export function createDrawPanelElements(): BrowserDrawPanelElements {
   const instructionInput = document.createElement('textarea');
   instructionInput.className = 'inspect-instruction-input';
   instructionInput.rows = 3;
-  instructionInput.placeholder = 'Describe what you want to do\u2026';
+  instructionInput.placeholder = t('Describe what you want to do…');
 
   const submitGroup = document.createElement('div');
   submitGroup.className = 'inspect-submit-group';
 
   const clearBtn = document.createElement('button');
   clearBtn.className = 'inspect-clear-btn';
-  clearBtn.textContent = 'Clear';
-  clearBtn.title = 'Clear drawing';
+  clearBtn.textContent = t('Clear');
+  clearBtn.title = t('Clear drawing');
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to selected';
+  submitBtn.textContent = t('Send to selected');
 
   const targetBtn = document.createElement('button');
   targetBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  targetBtn.textContent = 'Select Session \u25BE';
-  targetBtn.title = 'Choose target session';
+  targetBtn.textContent = t('Select Session ▾');
+  targetBtn.title = t('Choose target session');
 
   submitGroup.appendChild(submitBtn);
   submitGroup.appendChild(targetBtn);
@@ -245,7 +248,7 @@ export function createDrawPanelElements(): BrowserDrawPanelElements {
   attachDimsCheckbox.type = 'checkbox';
   attachDimsCheckbox.checked = true;
   const attachDimsText = document.createElement('span');
-  attachDimsText.textContent = 'Attach browser dimensions to the instructions';
+  attachDimsText.textContent = t('Attach browser dimensions to the instructions');
   attachDimsRow.appendChild(attachDimsCheckbox);
   attachDimsRow.appendChild(attachDimsText);
   panel.appendChild(attachDimsRow);
@@ -285,16 +288,17 @@ export function createFlowPanelElements(): BrowserFlowPanelElements {
 
   const kicker = document.createElement('div');
   kicker.className = 'browser-capture-kicker';
-  kicker.textContent = 'Recorded flow';
+  kicker.textContent = t('Recorded flow');
 
   const labelEl = document.createElement('span');
   labelEl.className = 'flow-panel-label';
-  labelEl.textContent = 'Flow (0 steps)';
+  labelEl.textContent = t('Flow (0 steps)');
 
   const subtitle = document.createElement('div');
   subtitle.className = 'browser-capture-subtitle';
-  subtitle.textContent =
-    'Capture a short browser path and route it into an AI session as a reproducible handoff.';
+  subtitle.textContent = t(
+    'Capture a short browser path and route it into an AI session as a reproducible handoff.',
+  );
 
   copy.appendChild(kicker);
   copy.appendChild(labelEl);
@@ -302,11 +306,11 @@ export function createFlowPanelElements(): BrowserFlowPanelElements {
 
   const chip = document.createElement('span');
   chip.className = 'browser-capture-chip';
-  chip.textContent = 'Flow';
+  chip.textContent = t('Flow');
 
   const clearBtn = document.createElement('button');
   clearBtn.className = 'flow-panel-clear-btn';
-  clearBtn.textContent = 'Clear';
+  clearBtn.textContent = t('Clear');
 
   const headerActions = document.createElement('div');
   headerActions.className = 'inspect-draw-actions';
@@ -327,7 +331,7 @@ export function createFlowPanelElements(): BrowserFlowPanelElements {
 
   const instructionInput = document.createElement('textarea');
   instructionInput.className = 'flow-instruction-input';
-  instructionInput.placeholder = 'Describe what to do with this flow\u2026';
+  instructionInput.placeholder = t('Describe what to do with this flow…');
   instructionInput.rows = 2;
 
   const submitGroup = document.createElement('div');
@@ -335,12 +339,12 @@ export function createFlowPanelElements(): BrowserFlowPanelElements {
 
   const submitBtn = document.createElement('button');
   submitBtn.className = 'inspect-submit-btn';
-  submitBtn.textContent = 'Send to selected';
+  submitBtn.textContent = t('Send to selected');
 
   const targetBtn = document.createElement('button');
   targetBtn.className = 'inspect-dropdown-btn browser-target-trigger';
-  targetBtn.textContent = 'Select Session \u25BE';
-  targetBtn.title = 'Choose target session';
+  targetBtn.textContent = t('Select Session ▾');
+  targetBtn.title = t('Choose target session');
 
   submitGroup.appendChild(submitBtn);
   submitGroup.appendChild(targetBtn);

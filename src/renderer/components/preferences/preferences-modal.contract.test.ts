@@ -131,7 +131,7 @@ describe('preferences modal contract', () => {
   });
 
   it('uses native modal and preferences shell hooks', () => {
-    expect(source).toContain("titleEl.textContent = 'Workspace Center'");
+    expect(source).toContain("titleEl.textContent = t('Workspace Center')");
     expect(source).toContain("modal.classList.add('preferences-modal');");
     expect(source).toContain("bodyEl.classList.add('preferences-body');");
     expect(source).toContain("modal.classList.remove('preferences-modal');");

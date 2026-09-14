@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { getProviderDisplayName } from '../surface-services/provider-availability.js';
 import {
@@ -422,26 +423,26 @@ export function bindBrowserToolbarState(params: BrowserToolbarStateBindingParams
     }
     captureCluster.targetChip.title = selectedTarget
       ? `Target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
-      : 'Choose which open session receives browser prompts';
+      : t('Choose which open session receives browser prompts');
     captureCluster.label.title = selectedTarget
       ? `Mode: ${modeText} · Target: ${getProviderDisplayName(selectedTarget.providerId ?? 'claude')} / ${selectedTarget.name}`
       : `Mode: ${modeText} · Target: none`;
 
-    inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';
+    inspectBtn.textContent = instance.inspectMode ? t('Inspecting') : t('Inspect');
     inspectBtn.dataset.state = instance.inspectMode ? 'active' : 'idle';
-    inspectBtn.title = instance.inspectMode ? 'Inspect mode is active' : 'Inspect element';
+    inspectBtn.title = instance.inspectMode ? t('Inspect mode is active') : t('Inspect element');
     inspectBtn.ariaLabel = inspectBtn.title;
 
-    drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';
+    drawBtn.textContent = instance.drawMode ? t('Drawing') : t('Draw');
     drawBtn.dataset.state = instance.drawMode ? 'active' : 'idle';
     drawBtn.title = instance.drawMode
-      ? 'Draw mode is active'
-      : 'Draw on page and send annotated screenshot to AI';
+      ? t('Draw mode is active')
+      : t('Draw on page and send annotated screenshot to AI');
     drawBtn.ariaLabel = drawBtn.title;
 
-    recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';
+    recordBtn.textContent = instance.flowMode ? t('Recording') : t('Record');
     recordBtn.dataset.state = instance.flowMode ? 'active' : 'idle';
-    recordBtn.title = instance.flowMode ? 'Flow recording is active' : 'Record browser flow';
+    recordBtn.title = instance.flowMode ? t('Flow recording is active') : t('Record browser flow');
     recordBtn.ariaLabel = recordBtn.title;
   };
 }

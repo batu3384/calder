@@ -1,4 +1,5 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import { appState, type ProjectRecord, type SessionRecord } from '../../state.js';
 import { buildResumeWithProviderItems } from '../resume-with-provider-menu.js';
 import { openPixelOfficeForSession } from '../session-inspector/session-inspector.js';
@@ -190,5 +191,5 @@ export function showSessionTabContextMenu(options: SessionTabContextMenuOptions)
   document.body.appendChild(menu);
   setActiveContextMenu(menu);
   constrainMenuToViewport(menu);
-  applyContextMenuSemantics(menu, 'Session actions');
+  applyContextMenuSemantics(menu, t('Session actions'));
 }

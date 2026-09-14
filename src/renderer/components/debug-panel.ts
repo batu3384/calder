@@ -1,4 +1,5 @@
 import { stripAnsi } from '../ansi';
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import { fitAllVisible } from './terminal-pane.js';
 
@@ -167,7 +168,7 @@ function createPanel(): HTMLElement {
 
   const title = document.createElement('span');
   title.className = 'debug-title';
-  title.textContent = 'Event Debug';
+  title.textContent = t('Event Debug');
   header.appendChild(title);
 
   const controls = document.createElement('div');
@@ -178,7 +179,7 @@ function createPanel(): HTMLElement {
   select.className = 'debug-filter';
   const allOpt = document.createElement('option');
   allOpt.value = '';
-  allOpt.textContent = 'All Events';
+  allOpt.textContent = t('All Events');
   select.appendChild(allOpt);
   for (const t of Object.keys(TYPE_COLORS)) {
     const opt = document.createElement('option');
@@ -199,7 +200,7 @@ function createPanel(): HTMLElement {
   const sessionInput = document.createElement('input');
   sessionInput.type = 'text';
   sessionInput.className = 'debug-filter debug-session-input';
-  sessionInput.placeholder = 'Filter by session ID';
+  sessionInput.placeholder = t('Filter by session ID');
   sessionInput.addEventListener('input', () => {
     filterSessionId = resolveSessionFilter(sessionInput.value.trim());
     renderAllEvents();
@@ -209,8 +210,8 @@ function createPanel(): HTMLElement {
   const clearInputBtn = document.createElement('button');
   clearInputBtn.className = 'debug-btn debug-session-clear';
   clearInputBtn.innerHTML = '&times;';
-  clearInputBtn.title = 'Clear session filter';
-  clearInputBtn.setAttribute('aria-label', 'Clear session filter');
+  clearInputBtn.title = t('Clear session filter');
+  clearInputBtn.setAttribute('aria-label', t('Clear session filter'));
   clearInputBtn.addEventListener('click', () => {
     sessionInput.value = '';
     filterSessionId = '';
@@ -222,17 +223,17 @@ function createPanel(): HTMLElement {
   // Auto-scroll toggle
   const scrollBtn = document.createElement('button');
   scrollBtn.className = 'debug-btn';
-  scrollBtn.textContent = 'Auto-scroll: ON';
+  scrollBtn.textContent = t('Auto-scroll: ON');
   scrollBtn.addEventListener('click', () => {
     autoScroll = !autoScroll;
-    scrollBtn.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+    scrollBtn.textContent = t(`Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`);
   });
   controls.appendChild(scrollBtn);
 
   // Clear button
   const clearBtn = document.createElement('button');
   clearBtn.className = 'debug-btn';
-  clearBtn.textContent = 'Clear';
+  clearBtn.textContent = t('Clear');
   clearBtn.addEventListener('click', () => {
     events.length = 0;
     if (logEl) logEl.innerHTML = '';
@@ -243,8 +244,8 @@ function createPanel(): HTMLElement {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'debug-btn debug-close';
   closeBtn.innerHTML = '&times;';
-  closeBtn.setAttribute('aria-label', 'Close debug panel');
-  closeBtn.title = 'Close debug panel';
+  closeBtn.setAttribute('aria-label', t('Close debug panel'));
+  closeBtn.title = t('Close debug panel');
   closeBtn.addEventListener('click', () => toggleDebugPanel());
   controls.appendChild(closeBtn);
 

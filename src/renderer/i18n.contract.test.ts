@@ -103,6 +103,8 @@ describe('i18n contract', () => {
     expectTranslation(source, 'Total Messages', 'Toplam Mesaj');
     expectTranslation(source, 'Using Since', 'Kullanım Başlangıcı');
     expectTranslation(source, 'Last Updated', 'Son Güncelleme');
+    expectTranslation(source, 'No usage data yet', 'Henüz kullanım verisi yok');
+    expectTranslation(source, 'Loading usage stats', 'Kullanım istatistikleri yükleniyor');
   });
 
   it('keeps branch and validation copy consistent in Turkish', () => {
@@ -141,6 +143,8 @@ describe('i18n contract', () => {
     expectTranslation(source, 'Session actions', 'Oturum eylemleri');
     expectTranslation(source, 'Branch actions', 'Dal eylemleri');
     expectTranslation(source, 'New session actions', 'Yeni oturum eylemleri');
+    expectTranslation(source, 'Project actions', 'Proje eylemleri');
+    expectTranslation(source, 'Git file actions', 'Git dosya eylemleri');
   });
 
   it('keeps shared-rules translation terminology consistent', () => {
@@ -202,6 +206,10 @@ describe('i18n contract', () => {
     expect(source).toContain('pattern: /^Branch (.+)$/u');
     expect(source).toContain('pattern: /^(.+) \\(not installed\\)$/u');
     expect(source).toContain("value.includes('\\n')");
+    expect(source).toContain(
+      'pattern: /^Remove project "(.+)"\\? No files on disk will be affected\\.$/u',
+    );
+    expect(source).toContain('pattern: /^Failed to switch branch:\\s*(.+)$/u');
   });
 
   it('keeps terminal localization exclusions narrow enough for shell chrome labels', () => {
@@ -209,6 +217,17 @@ describe('i18n contract', () => {
     expect(source).not.toContain("'.project-terminal-container',");
     expect(source).toContain("'.xterm',");
     expect(source).toContain("'.ansi-buffer',");
+  });
+
+  it('observes chrome rails for Turkish DOM updates instead of the whole #app tree', () => {
+    expect(source).toContain('LOCALIZE_OBSERVE_SELECTORS');
+    expect(source).toContain("'#sidebar'");
+    expect(source).toContain("'#tab-bar'");
+    expect(source).toContain("'#context-inspector'");
+    expect(source).toContain("'#status-bar'");
+    expect(source).toContain("'#modal'");
+    expect(source).toContain('for (const selector of LOCALIZE_OBSERVE_SELECTORS)');
+    expect(source).not.toContain('observer.observe(localizeRoot()');
   });
 
   it('localizes accessible attributes inside terminal text exclusions', () => {
@@ -227,6 +246,9 @@ describe('i18n contract', () => {
     expectTranslation(source, 'Go forward', 'İleri git');
     expectTranslation(source, 'Reload current page', 'Geçerli sayfayı yenile');
     expectTranslation(source, 'Describe what you want to do…', 'Ne yapmak istediğinizi açıklayın…');
+    expectTranslation(source, 'Close debug panel', 'Hata ayıklama panelini kapat');
+    expectTranslation(source, 'Create New Branch', 'Yeni Dal Oluştur');
+    expectTranslation(source, 'File not found', 'Dosya bulunamadı');
     expectTranslation(source, 'Inspect mode is active', 'İnceleme modu etkin');
     expectTranslation(source, 'Flow recording is active', 'Akış kaydı etkin');
   });
@@ -274,5 +296,24 @@ describe('i18n contract', () => {
       'Tracking is off for this coding tool. Calder cannot show cost, context usage, or session activity yet.',
       'Bu kodlama aracı için izleme kapalı. Calder henüz maliyet, bağlam kullanımı veya oturum etkinliğini gösteremez.',
     );
+  });
+
+  it('writes chrome copy through t() at shared layout, modal, and overlay sites', () => {
+    const layout = readFileSync(
+      new URL('./components/preferences/preferences-layout.ts', import.meta.url),
+      'utf-8',
+    );
+    const modal = readFileSync(new URL('./components/modal.ts', import.meta.url), 'utf-8');
+    const debugPanel = readFileSync(
+      new URL('./components/debug-panel.ts', import.meta.url),
+      'utf-8',
+    );
+    const searchBar = readFileSync(new URL('./components/search-bar.ts', import.meta.url), 'utf-8');
+    expect(layout).toContain('eyebrowEl.textContent = t(eyebrow)');
+    expect(layout).toContain('titleEl.textContent = t(title)');
+    expect(modal).toContain('titleEl.textContent = t(title)');
+    expect(modal).toContain('label.textContent = t(field.label)');
+    expect(debugPanel).toContain("title.textContent = t('Event Debug')");
+    expect(searchBar).toContain("label.textContent = t('Search')");
   });
 });

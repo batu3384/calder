@@ -27,10 +27,10 @@ describe('browser stage contract', () => {
     expect(source).toContain('browser-pane-label');
     expect(source).toContain('browser-pane-status');
     expect(source).not.toContain('browser-pane-workspace');
-    expect(source).toContain("chromeLabel.textContent = 'Live View'");
-    expect(source).toContain("chromeHint.textContent = 'Capture context'");
-    expect(source).toContain("statusBadge.textContent = 'Ready'");
-    expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
+    expect(source).toContain("chromeLabel.textContent = t('Live View')");
+    expect(source).toContain("chromeHint.textContent = t('Capture context')");
+    expect(source).toContain("statusBadge.textContent = t('Ready')");
+    expect(source).toContain("toolbarTools.setAttribute('aria-label', t('Live View tools'))");
   });
 
   it('styles the browser chrome header and elevated toolbar', () => {
@@ -97,13 +97,14 @@ describe('browser stage contract', () => {
 
   it('treats the new-tab and offline surface like a real hero state', () => {
     expect(source).toContain("import { createBrowserNewTabUi } from './new-tab-ui.js';");
+    expect(newTabUiSource).toContain("from '../../i18n.js'");
     expect(newTabUiSource).toContain('browser-ntp-hero');
     expect(newTabUiSource).toContain('browser-ntp-state');
     expect(source).toContain('browser-content-shell');
-    expect(newTabUiSource).toContain("ntpState.textContent = 'Ready'");
+    expect(newTabUiSource).toContain("ntpState.textContent = t('Ready')");
     expect(source).toContain('createNewTabStateController');
     expect(source).toContain('./new-tab-state.js');
-    expect(newTabStateSource).toContain("ntpState.textContent = 'Offline'");
+    expect(newTabStateSource).toContain("ntpState.textContent = t('Offline')");
     expect(css).toContain('.browser-ntp-hero');
     expect(css).toContain('.browser-ntp-state');
     expect(css).toContain('position: relative;');

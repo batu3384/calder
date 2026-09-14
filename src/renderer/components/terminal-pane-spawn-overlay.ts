@@ -1,3 +1,5 @@
+import { t } from '../i18n.js';
+
 interface ShowSpawnFailureOverlayParams {
   element: HTMLDivElement;
   sessionId: string;
@@ -16,7 +18,9 @@ export function formatSpawnFailureMessage(error: unknown): string {
   if (typeof error === 'string' && error.trim().length > 0) {
     return error.trim();
   }
-  return 'The CLI process could not start. Check provider installation and settings, then retry.';
+  return t(
+    'The CLI process could not start. Check provider installation and settings, then retry.',
+  );
 }
 
 export function clearSpawnFailureOverlay(element: HTMLDivElement): void {
@@ -39,11 +43,11 @@ export function showSpawnFailureOverlay(params: ShowSpawnFailureOverlayParams): 
 
   const kicker = document.createElement('div');
   kicker.className = 'terminal-exit-kicker shell-kicker';
-  kicker.textContent = 'Terminal';
+  kicker.textContent = t('Terminal');
 
   const title = document.createElement('div');
   title.className = 'terminal-exit-title';
-  title.textContent = 'Session failed to start';
+  title.textContent = t('Session failed to start');
 
   const copy = document.createElement('div');
   copy.className = 'terminal-exit-copy';
@@ -51,7 +55,7 @@ export function showSpawnFailureOverlay(params: ShowSpawnFailureOverlayParams): 
 
   const respawnButton = document.createElement('button');
   respawnButton.className = 'respawn-btn calder-button';
-  respawnButton.textContent = 'Retry Session';
+  respawnButton.textContent = t('Retry Session');
   respawnButton.addEventListener('click', () => {
     overlay.remove();
     void onRetry(sessionId);

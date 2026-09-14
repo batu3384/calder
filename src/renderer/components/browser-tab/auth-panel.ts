@@ -1,3 +1,5 @@
+import { t } from '../../i18n.js';
+
 export interface BrowserAuthPanelElements {
   authPanel: HTMLDivElement;
   authOriginEl: HTMLDivElement;
@@ -27,20 +29,21 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
 
   const authKicker = document.createElement('div');
   authKicker.className = 'browser-capture-kicker';
-  authKicker.textContent = 'Saved login';
+  authKicker.textContent = t('Saved login');
 
   const authTitle = document.createElement('div');
   authTitle.className = 'browser-capture-title';
-  authTitle.textContent = 'Credential vault';
+  authTitle.textContent = t('Credential vault');
 
   const authSubtitle = document.createElement('div');
   authSubtitle.className = 'browser-capture-subtitle';
-  authSubtitle.textContent =
-    'Save credentials securely, fill them in one click, and remove them whenever you want.';
+  authSubtitle.textContent = t(
+    'Save credentials securely, fill them in one click, and remove them whenever you want.',
+  );
 
   const authOriginEl = document.createElement('div');
   authOriginEl.className = 'browser-auth-origin';
-  authOriginEl.textContent = 'No page origin';
+  authOriginEl.textContent = t('No page origin');
 
   authCopy.appendChild(authKicker);
   authCopy.appendChild(authTitle);
@@ -49,7 +52,7 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
 
   const authChip = document.createElement('span');
   authChip.className = 'browser-capture-chip';
-  authChip.textContent = 'Login';
+  authChip.textContent = t('Login');
 
   const authHeaderMeta = document.createElement('div');
   authHeaderMeta.className = 'browser-auth-header-meta';
@@ -57,9 +60,9 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   const authCloseBtn = document.createElement('button');
   authCloseBtn.className = 'browser-auth-close-btn';
   authCloseBtn.type = 'button';
-  authCloseBtn.textContent = 'Close';
-  authCloseBtn.title = 'Close login panel';
-  authCloseBtn.ariaLabel = 'Close login panel';
+  authCloseBtn.textContent = t('Close');
+  authCloseBtn.title = t('Close login panel');
+  authCloseBtn.ariaLabel = t('Close login panel');
 
   authHeaderMeta.appendChild(authChip);
   authHeaderMeta.appendChild(authCloseBtn);
@@ -74,7 +77,7 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   authProfileField.className = 'browser-auth-field';
   const authProfileLabel = document.createElement('span');
   authProfileLabel.className = 'browser-auth-field-label';
-  authProfileLabel.textContent = 'Saved profiles';
+  authProfileLabel.textContent = t('Saved profiles');
   const authProfileSelect = document.createElement('select');
   authProfileSelect.className = 'browser-auth-select';
   authProfileField.appendChild(authProfileLabel);
@@ -85,11 +88,11 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   authLabelField.className = 'browser-auth-field';
   const authLabelText = document.createElement('span');
   authLabelText.className = 'browser-auth-field-label';
-  authLabelText.textContent = 'Profile name';
+  authLabelText.textContent = t('Profile name');
   const authLabelInput = document.createElement('input');
   authLabelInput.className = 'browser-auth-input';
   authLabelInput.type = 'text';
-  authLabelInput.placeholder = 'Work account';
+  authLabelInput.placeholder = t('Work account');
   authLabelField.appendChild(authLabelText);
   authLabelField.appendChild(authLabelInput);
   authForm.appendChild(authLabelField);
@@ -98,12 +101,12 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   authUsernameField.className = 'browser-auth-field';
   const authUsernameText = document.createElement('span');
   authUsernameText.className = 'browser-auth-field-label';
-  authUsernameText.textContent = 'Username / email';
+  authUsernameText.textContent = t('Username / email');
   const authUsernameInput = document.createElement('input');
   authUsernameInput.className = 'browser-auth-input';
   authUsernameInput.type = 'text';
   authUsernameInput.autocomplete = 'username';
-  authUsernameInput.placeholder = 'name@example.com';
+  authUsernameInput.placeholder = t('name@example.com');
   authUsernameField.appendChild(authUsernameText);
   authUsernameField.appendChild(authUsernameInput);
   authForm.appendChild(authUsernameField);
@@ -112,7 +115,7 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   authPasswordField.className = 'browser-auth-field';
   const authPasswordText = document.createElement('span');
   authPasswordText.className = 'browser-auth-field-label';
-  authPasswordText.textContent = 'Password';
+  authPasswordText.textContent = t('Password');
   const authPasswordInput = document.createElement('input');
   authPasswordInput.className = 'browser-auth-input';
   authPasswordInput.type = 'password';
@@ -127,7 +130,7 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
   const authAutoFillCheckbox = document.createElement('input');
   authAutoFillCheckbox.type = 'checkbox';
   const authAutoFillText = document.createElement('span');
-  authAutoFillText.textContent = 'Auto-fill this profile on page load';
+  authAutoFillText.textContent = t('Auto-fill this profile on page load');
   authAutoFillRow.appendChild(authAutoFillCheckbox);
   authAutoFillRow.appendChild(authAutoFillText);
   authForm.appendChild(authAutoFillRow);
@@ -143,17 +146,17 @@ export function createBrowserAuthPanel(): BrowserAuthPanelElements {
 
   const authDeleteBtn = document.createElement('button');
   authDeleteBtn.className = 'browser-auth-btn-secondary';
-  authDeleteBtn.textContent = 'Delete';
+  authDeleteBtn.textContent = t('Delete');
   authDeleteBtn.type = 'button';
 
   const authSaveBtn = document.createElement('button');
   authSaveBtn.className = 'browser-auth-btn-secondary';
-  authSaveBtn.textContent = 'Save';
+  authSaveBtn.textContent = t('Save');
   authSaveBtn.type = 'button';
 
   const authFillBtn = document.createElement('button');
   authFillBtn.className = 'browser-auth-btn-primary';
-  authFillBtn.textContent = 'Fill now';
+  authFillBtn.textContent = t('Fill now');
   authFillBtn.type = 'button';
 
   authActions.appendChild(authDeleteBtn);

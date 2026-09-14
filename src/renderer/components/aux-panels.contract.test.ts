@@ -56,4 +56,11 @@ describe('auxiliary panel polish contract', () => {
     expect(mcpCss).toContain('.mcp-status-pill');
     expect(mcpCss).toContain('.mcp-status-label');
   });
+
+  it('exposes accordion expand state on MCP card headers', () => {
+    expect(mcpInspectorListsSource).toContain("header.setAttribute('aria-expanded', 'false')");
+    expect(mcpInspectorListsSource).toContain(
+      "header.setAttribute('aria-expanded', String(opening))",
+    );
+  });
 });

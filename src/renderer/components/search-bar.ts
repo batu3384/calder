@@ -1,6 +1,7 @@
 import { SearchAddon } from '@xterm/addon-search';
 import { Terminal } from '@xterm/xterm';
 
+import { t } from '../i18n.js';
 import { getShellTerminalInstance } from './shell-terminal-registry.js';
 import { getSearchAddon, getTerminalInstance } from './terminal-pane.js';
 
@@ -149,11 +150,11 @@ export function showSearchBar(sessionId: string, backend: SearchBackend): void {
 
   const label = document.createElement('span');
   label.className = 'search-bar-label';
-  label.textContent = 'Search';
+  label.textContent = t('Search');
 
   const input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = 'Search...';
+  input.placeholder = t('Search...');
   input.spellcheck = false;
 
   const resultCount = document.createElement('span');
@@ -162,32 +163,32 @@ export function showSearchBar(sessionId: string, backend: SearchBackend): void {
   const matchCaseBtn = document.createElement('button');
   matchCaseBtn.className = 'search-toggle-btn';
   matchCaseBtn.textContent = 'Aa';
-  matchCaseBtn.title = 'Match Case';
-  matchCaseBtn.setAttribute('aria-label', 'Match case');
+  matchCaseBtn.title = t('Match Case');
+  matchCaseBtn.setAttribute('aria-label', t('Match case'));
 
   const regexBtn = document.createElement('button');
   regexBtn.className = 'search-toggle-btn';
   regexBtn.textContent = '.*';
-  regexBtn.title = 'Use Regular Expression';
-  regexBtn.setAttribute('aria-label', 'Use regular expression');
+  regexBtn.title = t('Use Regular Expression');
+  regexBtn.setAttribute('aria-label', t('Use regular expression'));
 
   const prevBtn = document.createElement('button');
   prevBtn.className = 'search-nav-btn';
   prevBtn.textContent = '\u2191';
-  prevBtn.title = 'Previous Match (Shift+Enter)';
-  prevBtn.setAttribute('aria-label', 'Previous match');
+  prevBtn.title = t('Previous Match (Shift+Enter)');
+  prevBtn.setAttribute('aria-label', t('Previous match'));
 
   const nextBtn = document.createElement('button');
   nextBtn.className = 'search-nav-btn';
   nextBtn.textContent = '\u2193';
-  nextBtn.title = 'Next Match (Enter)';
-  nextBtn.setAttribute('aria-label', 'Next match');
+  nextBtn.title = t('Next Match (Enter)');
+  nextBtn.setAttribute('aria-label', t('Next match'));
 
   const closeBtn = document.createElement('button');
   closeBtn.className = 'search-nav-btn search-close-btn';
   closeBtn.textContent = '\u2715';
-  closeBtn.title = 'Close (Escape)';
-  closeBtn.setAttribute('aria-label', 'Close search');
+  closeBtn.title = t('Close (Escape)');
+  closeBtn.setAttribute('aria-label', t('Close search'));
 
   const actions = document.createElement('div');
   actions.className = 'search-bar-actions';

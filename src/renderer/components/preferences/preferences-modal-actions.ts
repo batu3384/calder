@@ -1,5 +1,6 @@
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { closeModal } from '../modal.js';
 
@@ -74,7 +75,7 @@ export function bindPreferencesModalActions({
     savePreferences();
     closeModal();
     modalElement.classList.remove('modal-wide');
-    confirmButton.textContent = 'Create';
+    confirmButton.textContent = t('Create');
   };
 
   const handleCancel = () => {
@@ -82,7 +83,7 @@ export function bindPreferencesModalActions({
     revertPreview?.();
     closeModal();
     modalElement.classList.remove('modal-wide');
-    confirmButton.textContent = 'Create';
+    confirmButton.textContent = t('Create');
   };
 
   const handleKeydown = (event: KeyboardEvent) => {

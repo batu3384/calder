@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { appState } from '../../state.js';
 import { setModalError, showModal } from '../modal.js';
@@ -25,7 +26,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
   if (!args.project) {
     const empty = document.createElement('div');
     empty.className = 'workflow-discovery-empty';
-    empty.textContent = 'Open a project to inspect and manage reusable workflows for this repo.';
+    empty.textContent = t('Open a project to inspect and manage reusable workflows for this repo.');
     shell.appendChild(empty);
     return;
   }
@@ -37,17 +38,17 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
   const starterBtn = document.createElement('button');
   starterBtn.className = 'workflow-discovery-action-btn';
   starterBtn.type = 'button';
-  starterBtn.textContent = 'Create starter workflows';
+  starterBtn.textContent = t('Create starter workflows');
   starterBtn.addEventListener('click', async () => {
     starterBtn.disabled = true;
-    starterBtn.textContent = 'Creating…';
+    starterBtn.textContent = t('Creating…');
     try {
       const result = await window.calder.workflow.createStarterFiles(project.path);
       appState.setProjectWorkflows(project.id, result.state);
       args.onRefreshProviders();
     } catch {
       starterBtn.disabled = false;
-      starterBtn.textContent = 'Create starter workflows';
+      starterBtn.textContent = t('Create starter workflows');
     }
   });
   actions.appendChild(starterBtn);
@@ -55,7 +56,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
   const createWorkflowBtn = document.createElement('button');
   createWorkflowBtn.className = 'workflow-discovery-action-btn';
   createWorkflowBtn.type = 'button';
-  createWorkflowBtn.textContent = 'New workflow';
+  createWorkflowBtn.textContent = t('New workflow');
   createWorkflowBtn.addEventListener('click', () => {
     showModal(
       'New Workflow',
@@ -88,7 +89,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
   if (!projectWorkflows || projectWorkflows.workflows.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'workflow-discovery-empty';
-    empty.textContent = 'No reusable workflows have been discovered for this repo yet.';
+    empty.textContent = t('No reusable workflows have been discovered for this repo yet.');
     shell.appendChild(empty);
     return;
   }
@@ -127,7 +128,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
 
     const status = document.createElement('div');
     status.className = 'workflow-discovery-item-status';
-    status.textContent = 'Reusable workflow';
+    status.textContent = t('Reusable workflow');
 
     const itemActions = document.createElement('div');
     itemActions.className = 'workflow-discovery-item-actions';
@@ -135,7 +136,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
     const runBtn = document.createElement('button');
     runBtn.className = 'workflow-discovery-item-btn';
     runBtn.type = 'button';
-    runBtn.textContent = 'Run';
+    runBtn.textContent = t('Run');
     runBtn.addEventListener('click', async () => {
       runBtn.disabled = true;
       try {
@@ -151,7 +152,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
     const previewBtn = document.createElement('button');
     previewBtn.className = 'workflow-discovery-item-btn';
     previewBtn.type = 'button';
-    previewBtn.textContent = 'Preview';
+    previewBtn.textContent = t('Preview');
     previewBtn.addEventListener('click', () => {
       appState.addFileReaderSession(project.id, workflow.path);
       args.onCloseModalWide();
@@ -163,7 +164,7 @@ export function renderProjectWorkflowSection(args: RenderProjectWorkflowSectionA
       const openBtn = document.createElement('button');
       openBtn.className = 'workflow-discovery-item-btn';
       openBtn.type = 'button';
-      openBtn.textContent = 'Open';
+      openBtn.textContent = t('Open');
       openBtn.addEventListener('click', async () => {
         openBtn.disabled = true;
         try {

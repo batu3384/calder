@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import type {
   LayoutSidebarViews,
   RenderLayoutSectionArgs,
@@ -78,7 +79,7 @@ export function renderLayoutPreferencesSectionContent({
 
     const label = document.createElement('label');
     label.htmlFor = `pref-sidebar-${toggle.key}`;
-    label.textContent = toggle.label;
+    label.textContent = t(toggle.label);
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
@@ -99,7 +100,8 @@ export function renderLayoutPreferencesSectionContent({
 
   const pinnedNote = document.createElement('div');
   pinnedNote.className = 'preferences-card-note';
-  pinnedNote.textContent =
-    'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.';
+  pinnedNote.textContent = t(
+    'Browser sessions automatically hold the left stage so inspection and handoff stay visible while you work.',
+  );
   liveViewCard.appendChild(pinnedNote);
 }

@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { displayKeys, eventToAccelerator, shortcutManager } from '../surface-services/shortcuts.js';
 
 export interface RenderShortcutsSectionArgs {
@@ -21,11 +22,11 @@ export function renderShortcutsSection(args: RenderShortcutsSectionArgs): void {
 
     const header = document.createElement('div');
     header.className = 'shortcut-category-header';
-    header.textContent = category;
+    header.textContent = t(category);
 
     const count = document.createElement('div');
     count.className = 'shortcut-group-count';
-    count.textContent = `${shortcuts.length} commands`;
+    count.textContent = t(`${shortcuts.length} commands`);
 
     groupHeader.appendChild(header);
     groupHeader.appendChild(count);
@@ -40,7 +41,7 @@ export function renderShortcutsSection(args: RenderShortcutsSectionArgs): void {
 
       const label = document.createElement('div');
       label.className = 'shortcut-row-label';
-      label.textContent = shortcut.label;
+      label.textContent = t(shortcut.label);
 
       copy.appendChild(label);
 
@@ -55,8 +56,8 @@ export function renderShortcutsSection(args: RenderShortcutsSectionArgs): void {
 
       const resetBtn = document.createElement('button');
       resetBtn.className = 'shortcut-reset-btn';
-      resetBtn.textContent = 'Reset';
-      resetBtn.title = 'Reset to default';
+      resetBtn.textContent = t('Reset');
+      resetBtn.title = t('Reset to default');
       if (!hasOverride) {
         resetBtn.style.visibility = 'hidden';
       }
@@ -66,7 +67,7 @@ export function renderShortcutsSection(args: RenderShortcutsSectionArgs): void {
 
       keyBtn.addEventListener('click', () => {
         args.cleanupRecorder();
-        keyBtn.textContent = 'Press keys...';
+        keyBtn.textContent = t('Press keys...');
         keyBtn.classList.add('recording');
 
         const onKeydown = (e: KeyboardEvent) => {

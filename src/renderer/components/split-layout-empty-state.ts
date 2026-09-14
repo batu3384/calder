@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { ProjectRecord } from '../state.js';
 
 export function removeEmptyState(container: ParentNode): void {
@@ -45,21 +46,24 @@ export function showEmptyState(
   primary.className = 'empty-state-primary-action';
 
   if (!project) {
-    eyebrow.textContent = 'Launchpad';
-    title.textContent = 'Open a project or start a live run';
-    copy.textContent =
-      'Pick a coding tool, open Live View, or resume recent sessions from one desk.';
-    detail.textContent =
-      'Browser context stays on the left. Sessions and project signals stack on the right.';
-    primary.textContent = 'Create Project';
+    eyebrow.textContent = t('Launchpad');
+    title.textContent = t('Open a project or start a live run');
+    copy.textContent = t(
+      'Pick a coding tool, open Live View, or resume recent sessions from one desk.',
+    );
+    detail.textContent = t(
+      'Browser context stays on the left. Sessions and project signals stack on the right.',
+    );
+    primary.textContent = t('Create Project');
     primary.addEventListener('click', onCreateProject);
   } else {
-    eyebrow.textContent = 'Project ready';
-    title.textContent = 'Start a run or open Live View';
-    copy.textContent =
-      'Bring up a coding tool, inspect a page, or continue recent work from this project.';
-    detail.textContent = `${project.path} · Live View stays pinned while sessions share the same project context.`;
-    primary.textContent = 'Start First Session';
+    eyebrow.textContent = t('Project ready');
+    title.textContent = t('Start a run or open Live View');
+    copy.textContent = t(
+      'Bring up a coding tool, inspect a page, or continue recent work from this project.',
+    );
+    detail.textContent = `${project.path} · ${t('Live View stays pinned while sessions share the same project context.')}`;
+    primary.textContent = t('Start First Session');
     primary.addEventListener('click', onStartFirstSession);
   }
 

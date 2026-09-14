@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import type { StatsCache } from '../types.js';
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
@@ -41,11 +42,18 @@ function shortDay(dateStr: string): string {
 function renderStats(container: HTMLElement, stats: StatsCache): void {
   const hero = document.createElement('div');
   hero.className = 'usage-hero';
-  hero.innerHTML = `
-    <div class="usage-hero-kicker shell-kicker">Usage</div>
-    <div class="usage-hero-title">Workspace activity snapshot</div>
-    <div class="usage-hero-copy">A compact view of sessions, message volume, model mix, and hourly activity across this workspace.</div>
-  `;
+  const kicker = document.createElement('div');
+  kicker.className = 'usage-hero-kicker shell-kicker';
+  kicker.textContent = t('Usage');
+  const heroTitle = document.createElement('div');
+  heroTitle.className = 'usage-hero-title';
+  heroTitle.textContent = t('Workspace activity snapshot');
+  const heroCopy = document.createElement('div');
+  heroCopy.className = 'usage-hero-copy';
+  heroCopy.textContent = t(
+    'A compact view of sessions, message volume, model mix, and hourly activity across this workspace.',
+  );
+  hero.append(kicker, heroTitle, heroCopy);
   container.appendChild(hero);
 
   // Summary cards
@@ -56,10 +64,10 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
   summary.className = 'usage-summary';
 
   const cards: { value: string; label: string }[] = [
-    { value: formatNumber(stats.totalSessions), label: 'Total Sessions' },
-    { value: formatNumber(stats.totalMessages), label: 'Total Messages' },
-    { value: formatDate(stats.firstSessionDate), label: 'Using Since' },
-    { value: stats.lastComputedDate, label: 'Last Updated' },
+    { value: formatNumber(stats.totalSessions), label: t('Total Sessions') },
+    { value: formatNumber(stats.totalMessages), label: t('Total Messages') },
+    { value: formatDate(stats.firstSessionDate), label: t('Using Since') },
+    { value: stats.lastComputedDate, label: t('Last Updated') },
   ];
 
   for (const card of cards) {
@@ -89,7 +97,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
-    sectionTitle.textContent = 'Last 7 Days';
+    sectionTitle.textContent = t('Last 7 Days');
     sectionShell.appendChild(sectionTitle);
 
     const maxMsg = Math.max(...recent.map((d) => d.messageCount), 1);
@@ -125,7 +133,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
-    sectionTitle.textContent = 'Model Usage';
+    sectionTitle.textContent = t('Model Usage');
     sectionShell.appendChild(sectionTitle);
 
     const list = document.createElement('div');
@@ -162,7 +170,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
 
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'usage-section-title';
-    sectionTitle.textContent = 'Activity by Hour';
+    sectionTitle.textContent = t('Activity by Hour');
     sectionShell.appendChild(sectionTitle);
 
     const maxCount = Math.max(...Object.values(stats.hourCounts), 1);
@@ -191,9 +199,9 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
   // Refresh button
   const refreshBtn = document.createElement('button');
   refreshBtn.className = 'usage-refresh-btn';
-  refreshBtn.textContent = 'Refresh';
+  refreshBtn.textContent = t('Refresh');
   refreshBtn.addEventListener('click', async () => {
-    refreshBtn.textContent = 'Loading...';
+    refreshBtn.textContent = t('Loading...');
     refreshBtn.disabled = true;
     try {
       const fresh = await window.calder.stats.getCache();
@@ -204,7 +212,7 @@ function renderStats(container: HTMLElement, stats: StatsCache): void {
         renderEmpty(container);
       }
     } catch {
-      refreshBtn.textContent = 'Refresh';
+      refreshBtn.textContent = t('Refresh');
       refreshBtn.disabled = false;
     }
   });
@@ -222,13 +230,13 @@ function renderEmpty(container: HTMLElement, message?: string): void {
 
   const title = document.createElement('div');
   title.className = 'usage-empty-title';
-  title.textContent = 'No usage data yet';
+  title.textContent = t('No usage data yet');
   shell.appendChild(title);
 
   const copy = document.createElement('div');
   copy.className = 'usage-empty-copy';
   copy.textContent =
-    message ?? 'Stats appear after supported CLI sessions record activity in this workspace.';
+    message ?? t('Stats appear after supported CLI sessions record activity in this workspace.');
   shell.appendChild(copy);
 
   container.appendChild(shell);
@@ -240,19 +248,19 @@ function renderLoading(container: HTMLElement): void {
 
   const title = document.createElement('div');
   title.className = 'usage-empty-title';
-  title.textContent = 'Loading usage stats';
+  title.textContent = t('Loading usage stats');
   shell.appendChild(title);
 
   const copy = document.createElement('div');
   copy.className = 'usage-empty-copy';
-  copy.textContent = 'Gathering session and token activity for this workspace.';
+  copy.textContent = t('Gathering session and token activity for this workspace.');
   shell.appendChild(copy);
 
   container.appendChild(shell);
 }
 
 export async function showUsageModal(): Promise<void> {
-  titleEl.textContent = 'Usage Stats';
+  titleEl.textContent = t('Usage Stats');
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
 
@@ -261,7 +269,7 @@ export async function showUsageModal(): Promise<void> {
   bodyEl.appendChild(content);
   renderLoading(content);
 
-  btnConfirm.textContent = 'Done';
+  btnConfirm.textContent = t('Done');
   btnCancel.style.display = 'none';
   overlay.classList.remove('hidden');
 
@@ -271,7 +279,7 @@ export async function showUsageModal(): Promise<void> {
   const handleClose = () => {
     closeModal();
     modal.classList.remove('modal-wide');
-    btnConfirm.textContent = 'Create';
+    btnConfirm.textContent = t('Create');
     btnCancel.style.display = '';
   };
 

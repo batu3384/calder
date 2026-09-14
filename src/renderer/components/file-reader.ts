@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import {
   appendFileReaderMessage,
@@ -31,7 +32,7 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
   loadingLine.className = 'file-reader-line';
   const loadingText = document.createElement('span');
   loadingText.className = 'file-reader-line-text';
-  loadingText.textContent = 'Loading...';
+  loadingText.textContent = t('Loading...');
   loadingLine.appendChild(loadingText);
   loading.appendChild(loadingLine);
   body.appendChild(loading);
@@ -42,12 +43,12 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
     if (!result.ok) {
       const reasonText =
         result.reason === 'blocked'
-          ? 'Access to this file is blocked'
+          ? t('Access to this file is blocked')
           : result.reason === 'too-large'
-            ? 'File is too large to preview'
+            ? t('File is too large to preview')
             : result.reason === 'not-found'
-              ? 'File not found'
-              : 'Failed to load file';
+              ? t('File not found')
+              : t('Failed to load file');
       appendFileReaderMessage(body, reasonText);
       return;
     }
@@ -60,7 +61,7 @@ async function loadFile(instance: FileReaderInstance): Promise<void> {
       scrollToLine(instance);
     }
   } catch {
-    appendFileReaderMessage(body, 'Failed to load file');
+    appendFileReaderMessage(body, t('Failed to load file'));
   }
 }
 
@@ -139,13 +140,13 @@ export function createFileReaderPane(
 
     const renderedBtn = document.createElement('button');
     renderedBtn.className = 'search-toggle-btn active';
-    renderedBtn.textContent = isConfigDoc ? 'Document' : 'Rendered';
-    renderedBtn.title = isConfigDoc ? 'Document View' : 'Rendered Markdown';
+    renderedBtn.textContent = isConfigDoc ? t('Document') : t('Rendered');
+    renderedBtn.title = isConfigDoc ? t('Document View') : t('Rendered Markdown');
 
     const rawBtn = document.createElement('button');
     rawBtn.className = 'search-toggle-btn';
-    rawBtn.textContent = 'Raw';
-    rawBtn.title = 'Raw Text';
+    rawBtn.textContent = t('Raw');
+    rawBtn.title = t('Raw Text');
 
     const setMode = (mode: 'raw' | 'rendered') => {
       instance.viewMode = mode;
@@ -277,18 +278,18 @@ export function showGoToLineBar(sessionId: string): void {
 
   const label = document.createElement('span');
   label.className = 'goto-line-label';
-  label.textContent = 'Line';
+  label.textContent = t('Line');
 
   const input = document.createElement('input');
   input.type = 'number';
   input.min = '1';
-  input.placeholder = 'Go to line...';
+  input.placeholder = t('Go to line...');
 
   const closeBtn = document.createElement('button');
   closeBtn.className = 'search-nav-btn search-close-btn';
   closeBtn.textContent = '\u2715';
-  closeBtn.setAttribute('aria-label', 'Close go to line');
-  closeBtn.title = 'Close (Escape)';
+  closeBtn.setAttribute('aria-label', t('Close go to line'));
+  closeBtn.title = t('Close (Escape)');
 
   bar.appendChild(label);
   bar.appendChild(input);

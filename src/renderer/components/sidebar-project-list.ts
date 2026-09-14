@@ -25,7 +25,7 @@ export function renderSidebarProjectList(projectListEl: HTMLElement): void {
   hideSidebarProjectContextMenu();
   projectListEl.innerHTML = '';
   projectListEl.setAttribute('role', 'list');
-  projectListEl.setAttribute('aria-label', 'Projects');
+  projectListEl.setAttribute('aria-label', t('Projects'));
 
   if (appState.projects.length === 0) {
     const empty = document.createElement('div');
@@ -189,8 +189,10 @@ function confirmRemoveProject(project: ProjectRecord): void {
   const historyCount = project.sessionHistory?.length ?? 0;
   const message =
     historyCount > 0
-      ? `Remove project "${project.name}"? This will delete all sessions and history (${historyCount} entries) from Calder. No files on disk will be affected.`
-      : `Remove project "${project.name}"? No files on disk will be affected.`;
+      ? t(
+          `Remove project "${project.name}"? This will delete all sessions and history (${historyCount} entries) from Calder. No files on disk will be affected.`,
+        )
+      : t(`Remove project "${project.name}"? No files on disk will be affected.`);
   if (!confirm(message)) return;
   appState.removeProject(project.id);
 }
@@ -208,7 +210,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
 
   const closeAllItem = document.createElement('div');
   closeAllItem.className = 'tab-context-menu-item' + (!hasSessions ? ' disabled' : '');
-  closeAllItem.textContent = 'Close All Sessions';
+  closeAllItem.textContent = t('Close All Sessions');
   if (hasSessions) {
     closeAllItem.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -222,7 +224,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
 
   const removeItem = document.createElement('div');
   removeItem.className = 'tab-context-menu-item';
-  removeItem.textContent = 'Remove Project';
+  removeItem.textContent = t('Remove Project');
   removeItem.addEventListener('click', (e) => {
     e.stopPropagation();
     hideSidebarProjectContextMenu();
@@ -239,7 +241,7 @@ function showProjectContextMenu(x: number, y: number, project: ProjectRecord): v
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight)
     menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-  applyTabContextMenuSemantics(menu, 'Project actions', hideSidebarProjectContextMenu);
+  applyTabContextMenuSemantics(menu, t('Project actions'), hideSidebarProjectContextMenu);
 }
 
 function esc(s: string): string {

@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 
 type OrchestrationPhaseTone = 'active' | 'partial' | 'empty';
 type OrchestrationHealthTone = 'healthy' | 'watch' | 'risk';
@@ -212,7 +213,7 @@ export function renderOrchestrationOverviewSection(args: RenderOrchestrationOver
   if (!args.project) {
     const empty = document.createElement('div');
     empty.className = 'orchestration-overview-empty';
-    empty.textContent = 'Open a project to inspect orchestration phase status.';
+    empty.textContent = t('Open a project to inspect orchestration phase status.');
     shell.appendChild(empty);
     return;
   }
@@ -239,11 +240,11 @@ export function renderOrchestrationOverviewSection(args: RenderOrchestrationOver
 
   const healthLabel = document.createElement('span');
   healthLabel.className = 'orchestration-overview-health-label';
-  healthLabel.textContent = 'System health';
+  healthLabel.textContent = t('System health');
 
   const healthValue = document.createElement('span');
   healthValue.className = 'orchestration-overview-health-value';
-  healthValue.textContent = healthState.label;
+  healthValue.textContent = t(healthState.label);
 
   health.appendChild(healthLabel);
   health.appendChild(healthValue);
@@ -275,28 +276,30 @@ export function renderOrchestrationOverviewSection(args: RenderOrchestrationOver
   const bootstrapBtn = document.createElement('button');
   bootstrapBtn.className = 'orchestration-overview-action-btn';
   bootstrapBtn.type = 'button';
-  bootstrapBtn.textContent = 'Bootstrap phase starters';
+  bootstrapBtn.textContent = t('Bootstrap phase starters');
   actions.appendChild(bootstrapBtn);
 
   const status = document.createElement('div');
   status.className = 'orchestration-overview-status';
-  status.textContent =
-    'Starter files are optional. Use them to make each phase immediately visible in this repo.';
+  status.textContent = t(
+    'Starter files are optional. Use them to make each phase immediately visible in this repo.',
+  );
   actions.appendChild(status);
   shell.appendChild(actions);
 
   bootstrapBtn.addEventListener('click', async () => {
     bootstrapBtn.disabled = true;
-    bootstrapBtn.textContent = 'Bootstrapping…';
-    status.textContent =
-      'Creating starter files for context, workflows, team spaces, and governance…';
+    bootstrapBtn.textContent = t('Bootstrapping…');
+    status.textContent = t(
+      'Creating starter files for context, workflows, team spaces, and governance…',
+    );
     try {
       status.textContent = await args.onBootstrapStarters(project);
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'Unknown error';
       status.textContent = `Bootstrap failed: ${detail}`;
       bootstrapBtn.disabled = false;
-      bootstrapBtn.textContent = 'Bootstrap phase starters';
+      bootstrapBtn.textContent = t('Bootstrap phase starters');
     }
   });
 

@@ -4,6 +4,7 @@ import type {
   ProjectBackgroundTaskState,
 } from '../../../shared/types/project-background-task.js';
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import {
   resumeProjectBackgroundTaskInNewSession,
   sendProjectBackgroundTaskToSelectedSession,
@@ -43,7 +44,7 @@ interface BackgroundTaskListContext {
 function appendTaskDiscoveryEmptyState(shell: HTMLElement, message: string): void {
   const empty = document.createElement('div');
   empty.className = 'task-discovery-empty';
-  empty.textContent = message;
+  empty.textContent = t(message);
   shell.appendChild(empty);
 }
 
@@ -82,7 +83,7 @@ function createTaskDetailsArtifactList(
 
   const artifactTitle = document.createElement('div');
   artifactTitle.className = 'checkpoint-restore-confirm-fact-label';
-  artifactTitle.textContent = 'Artifacts';
+  artifactTitle.textContent = t('Artifacts');
   artifactBlock.appendChild(artifactTitle);
 
   const artifactList = document.createElement('div');
@@ -125,8 +126,8 @@ function renderBackgroundTaskDetails(
 
   const previousConfirmText = context.confirmButton.textContent;
   const previousCancelText = context.cancelButton.textContent;
-  context.confirmButton.textContent = 'Close';
-  context.cancelButton.textContent = 'Back';
+  context.confirmButton.textContent = t('Close');
+  context.cancelButton.textContent = t('Back');
 
   context.registerModalCleanup(() => {
     context.confirmButton.textContent = previousConfirmText;
@@ -186,7 +187,7 @@ function createNewQueuedTaskButton(
   const createBtn = document.createElement('button');
   createBtn.className = 'task-discovery-action-btn';
   createBtn.type = 'button';
-  createBtn.textContent = 'New queued task';
+  createBtn.textContent = t('New queued task');
   createBtn.addEventListener('click', () => {
     showModal(
       'New Queued Task',
@@ -274,7 +275,7 @@ function createTakeOverButton(
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
-  button.textContent = 'Take over';
+  button.textContent = t('Take over');
   button.disabled = !context.selectedTaskSession;
   button.addEventListener('click', async () => {
     button.disabled = true;
@@ -304,7 +305,7 @@ function createResumeButton(
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
-  button.textContent = 'Resume';
+  button.textContent = t('Resume');
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
@@ -329,7 +330,7 @@ function createPreviewButton(
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
-  button.textContent = 'Preview';
+  button.textContent = t('Preview');
   button.addEventListener('click', () => {
     appState.addFileReaderSession(context.project.id, task.path);
     context.onCloseModalWide();
@@ -344,7 +345,7 @@ function createArtifactsButton(
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
-  button.textContent = 'Artifacts';
+  button.textContent = t('Artifacts');
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
@@ -364,7 +365,7 @@ function createOpenButton(
   const button = document.createElement('button');
   button.className = 'task-discovery-item-btn';
   button.type = 'button';
-  button.textContent = 'Open';
+  button.textContent = t('Open');
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {

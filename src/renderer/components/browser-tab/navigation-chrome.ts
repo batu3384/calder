@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { normalizeUrl } from './navigation.js';
 import type { BrowserTabInstance } from './types.js';
 
@@ -21,15 +22,15 @@ export function syncNavigationControls(options: NavigationControlsOptions): void
   if (!instance.webviewReady) {
     backBtn.disabled = true;
     fwdBtn.disabled = true;
-    backBtn.title = 'Open a page before navigating back';
-    fwdBtn.title = 'Open a page before navigating forward';
+    backBtn.title = t('Open a page before navigating back');
+    fwdBtn.title = t('Open a page before navigating forward');
     return;
   }
 
   backBtn.disabled = !instance.webview.canGoBack();
   fwdBtn.disabled = !instance.webview.canGoForward();
-  backBtn.title = backBtn.disabled ? 'No page behind this one yet' : 'Back';
-  fwdBtn.title = fwdBtn.disabled ? 'No forward page yet' : 'Forward';
+  backBtn.title = backBtn.disabled ? t('No page behind this one yet') : t('Back');
+  fwdBtn.title = fwdBtn.disabled ? t('No forward page yet') : t('Forward');
 }
 
 export function syncAddressBarState(options: AddressBarStateOptions): void {
@@ -42,23 +43,23 @@ export function syncAddressBarState(options: AddressBarStateOptions): void {
 
   if (instance.isLoading) {
     goBtn.dataset.state = 'stop';
-    goBtn.textContent = 'Stop';
-    goBtn.title = 'Stop the current page load';
-    goBtn.ariaLabel = 'Stop page load';
+    goBtn.textContent = t('Stop');
+    goBtn.title = t('Stop the current page load');
+    goBtn.ariaLabel = t('Stop page load');
   } else if (
     !hasUnappliedAddressChange &&
     instance.committedUrl &&
     instance.committedUrl !== 'about:blank'
   ) {
     goBtn.dataset.state = 'reload';
-    goBtn.textContent = 'Reload';
-    goBtn.title = 'Reload current page';
-    goBtn.ariaLabel = 'Reload current page';
+    goBtn.textContent = t('Reload');
+    goBtn.title = t('Reload current page');
+    goBtn.ariaLabel = t('Reload current page');
   } else {
     goBtn.dataset.state = 'open';
-    goBtn.textContent = 'Open';
-    goBtn.title = normalizedDraft ? 'Open typed address' : 'Open address';
-    goBtn.ariaLabel = 'Open address';
+    goBtn.textContent = t('Open');
+    goBtn.title = normalizedDraft ? t('Open typed address') : t('Open address');
+    goBtn.ariaLabel = t('Open address');
   }
 
   reloadBtn.disabled = !instance.webviewReady || instance.isLoading || hasUnappliedAddressChange;
@@ -66,10 +67,10 @@ export function syncAddressBarState(options: AddressBarStateOptions): void {
     reloadBtn.disabled = true;
   }
   reloadBtn.title = instance.isLoading
-    ? 'Wait for the current page to finish loading'
+    ? t('Wait for the current page to finish loading')
     : hasUnappliedAddressChange
-      ? 'Apply the typed address before reloading'
+      ? t('Apply the typed address before reloading')
       : instance.committedUrl === 'about:blank'
-        ? 'Open a page before reloading'
-        : 'Reload';
+        ? t('Open a page before reloading')
+        : t('Reload');
 }

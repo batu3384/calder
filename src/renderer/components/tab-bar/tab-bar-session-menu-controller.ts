@@ -1,10 +1,10 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import { appState, type SessionRecord } from '../../state.js';
 import { closeModal, type FieldDef, showModal } from '../modal.js';
 import {
+  ensureProviderAvailabilityLoaded,
   formatDefaultSessionName,
-  getProviderAvailabilitySnapshot,
-  loadProviderAvailability,
   resolvePreferredProviderForLaunch,
 } from '../surface-services/provider-availability.js';
 
@@ -30,18 +30,7 @@ export function createTabBarSessionMenuController(
     if (!project) return;
     (document.activeElement as HTMLElement)?.blur?.();
     void (async () => {
-      let providerSnapshot = getProviderAvailabilitySnapshot();
-      if (!providerSnapshot) {
-        try {
-          await loadProviderAvailability();
-          providerSnapshot = getProviderAvailabilitySnapshot();
-        } catch (error) {
-          console.warn(
-            '[tab-bar] Failed to refresh provider availability for quick session launch',
-            error,
-          );
-        }
-      }
+      const providerSnapshot = await ensureProviderAvailabilityLoaded();
       const refreshedProject = appState.projects.find((entry) => entry.id === project.id);
       if (!refreshedProject) return;
       const sessionNum = refreshedProject.sessions.length + 1;
@@ -65,11 +54,7 @@ export function createTabBarSessionMenuController(
 
     const sessionNum = project.sessions.length + 1;
 
-    let providerSnapshot = getProviderAvailabilitySnapshot();
-    if (!providerSnapshot) {
-      await loadProviderAvailability();
-      providerSnapshot = getProviderAvailabilitySnapshot();
-    }
+    const providerSnapshot = await ensureProviderAvailabilityLoaded();
     const providers = providerSnapshot?.providers ?? [];
     const availabilityMap = providerSnapshot?.availability ?? new Map();
     const preferred = resolvePreferredProviderForLaunch(
@@ -145,7 +130,7 @@ export function createTabBarSessionMenuController(
 
     const quickItem = document.createElement('div');
     quickItem.className = 'tab-context-menu-item';
-    quickItem.textContent = 'New Session';
+    quickItem.textContent = t('New Session');
     quickItem.addEventListener('click', (event) => {
       event.stopPropagation();
       hideTabContextMenu();
@@ -154,7 +139,7 @@ export function createTabBarSessionMenuController(
 
     const customItem = document.createElement('div');
     customItem.className = 'tab-context-menu-item';
-    customItem.textContent = 'New Custom Session\u2026';
+    customItem.textContent = t('New Custom Session…');
     customItem.addEventListener('click', (event) => {
       event.stopPropagation();
       hideTabContextMenu();
@@ -163,7 +148,7 @@ export function createTabBarSessionMenuController(
 
     const browserItem = document.createElement('div');
     browserItem.className = 'tab-context-menu-item';
-    browserItem.textContent = 'New Browser Tab';
+    browserItem.textContent = t('New Browser Tab');
     browserItem.addEventListener('click', (event) => {
       event.stopPropagation();
       hideTabContextMenu();
@@ -181,7 +166,7 @@ export function createTabBarSessionMenuController(
     if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
     if (rect.bottom > window.innerHeight)
       menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-    applyContextMenuSemantics(menu, 'New session actions');
+    applyContextMenuSemantics(menu, t('New session actions'));
   }
 
   return {

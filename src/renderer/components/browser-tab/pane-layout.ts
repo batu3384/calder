@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { createBrowserToolbarCluster } from './pane-helpers.js';
 
 interface BrowserCaptureToolbarCluster {
@@ -84,25 +85,25 @@ function createBrowserPaneChrome(): BrowserPaneChromeElements {
 
   const chromeLabel = document.createElement('div');
   chromeLabel.className = 'browser-pane-label';
-  chromeLabel.textContent = 'Live View';
+  chromeLabel.textContent = t('Live View');
 
   const chromeHint = document.createElement('div');
   chromeHint.className = 'browser-pane-hint';
-  chromeHint.textContent = 'Capture context';
+  chromeHint.textContent = t('Capture context');
 
   const chromeMeta = document.createElement('div');
   chromeMeta.className = 'browser-pane-meta';
 
   const statusBadge = document.createElement('span');
   statusBadge.className = 'browser-pane-status';
-  statusBadge.textContent = 'Ready';
+  statusBadge.textContent = t('Ready');
 
   const trustZoneBadge = document.createElement('span');
   trustZoneBadge.className = 'browser-trust-zone-badge';
   trustZoneBadge.dataset.zone = 'unknown';
   trustZoneBadge.dataset.access = 'unknown';
-  trustZoneBadge.textContent = 'Unknown';
-  trustZoneBadge.title = 'Unknown browser surface. Runtime permissions are unchanged.';
+  trustZoneBadge.textContent = t('Unknown');
+  trustZoneBadge.title = t('Unknown browser surface. Runtime permissions are unchanged.');
   trustZoneBadge.setAttribute('aria-label', 'Unknown trust zone: unknown');
 
   chromeMeta.appendChild(statusBadge);
@@ -123,26 +124,26 @@ function createBrowserNavControls(): BrowserNavControls {
   const backBtn = document.createElement('button');
   backBtn.className = 'browser-nav-btn';
   backBtn.textContent = '\u25C0';
-  backBtn.title = 'Back';
-  backBtn.ariaLabel = 'Go back';
+  backBtn.title = t('Back');
+  backBtn.ariaLabel = t('Go back');
 
   const fwdBtn = document.createElement('button');
   fwdBtn.className = 'browser-nav-btn';
   fwdBtn.textContent = '\u25B6';
-  fwdBtn.title = 'Forward';
-  fwdBtn.ariaLabel = 'Go forward';
+  fwdBtn.title = t('Forward');
+  fwdBtn.ariaLabel = t('Go forward');
 
   const reloadBtn = document.createElement('button');
   reloadBtn.className = 'browser-nav-btn browser-reload-btn';
   reloadBtn.textContent = '\u21BB';
-  reloadBtn.title = 'Reload';
-  reloadBtn.ariaLabel = 'Reload page';
+  reloadBtn.title = t('Reload');
+  reloadBtn.ariaLabel = t('Reload page');
 
   const homeBtn = document.createElement('button');
   homeBtn.className = 'browser-nav-btn browser-home-btn';
   homeBtn.textContent = '\u2302';
-  homeBtn.title = 'Home';
-  homeBtn.ariaLabel = 'Open Live View home';
+  homeBtn.title = t('Home');
+  homeBtn.ariaLabel = t('Open Live View home');
 
   return { backBtn, fwdBtn, reloadBtn, homeBtn };
 }
@@ -154,14 +155,14 @@ function createBrowserAddressControls(url?: string): BrowserAddressControls {
   const urlInput = document.createElement('input');
   urlInput.className = 'browser-url-input';
   urlInput.type = 'text';
-  urlInput.placeholder = 'Enter URL (e.g. localhost:3000)';
+  urlInput.placeholder = t('Enter URL (e.g. localhost:3000)');
   urlInput.value = url || '';
-  urlInput.ariaLabel = 'Browser address';
+  urlInput.ariaLabel = t('Browser address');
 
   const goBtn = document.createElement('button');
   goBtn.className = 'browser-go-btn';
-  goBtn.textContent = 'Go';
-  goBtn.ariaLabel = 'Open address';
+  goBtn.textContent = t('Go');
+  goBtn.ariaLabel = t('Open address');
 
   toolbarAddressShell.appendChild(urlInput);
   toolbarAddressShell.appendChild(goBtn);
@@ -175,9 +176,9 @@ function createBrowserViewportControls(sessionId: string): BrowserViewportContro
   const viewportBtn = document.createElement('button');
   viewportBtn.type = 'button';
   viewportBtn.className = 'browser-viewport-btn';
-  viewportBtn.textContent = 'Responsive';
-  viewportBtn.title = 'Change viewport size';
-  viewportBtn.ariaLabel = 'Change viewport size';
+  viewportBtn.textContent = t('Responsive');
+  viewportBtn.title = t('Change viewport size');
+  viewportBtn.ariaLabel = t('Change viewport size');
   viewportBtn.setAttribute('aria-haspopup', 'menu');
   viewportBtn.setAttribute('aria-expanded', 'false');
 
@@ -185,14 +186,14 @@ function createBrowserViewportControls(sessionId: string): BrowserViewportContro
   viewportDropdown.className = 'browser-viewport-dropdown';
   viewportDropdown.id = `browser-viewport-menu-${sessionId}`;
   viewportDropdown.setAttribute('role', 'menu');
-  viewportDropdown.setAttribute('aria-label', 'Viewport presets');
+  viewportDropdown.setAttribute('aria-label', t('Viewport presets'));
   viewportBtn.setAttribute('aria-controls', viewportDropdown.id);
 
   const customItem = document.createElement('button');
   customItem.type = 'button';
   customItem.className = 'browser-viewport-item browser-viewport-item-custom';
   customItem.dataset.viewportKey = 'Custom';
-  customItem.textContent = 'Custom\u2026';
+  customItem.textContent = t('Custom…');
   customItem.setAttribute('role', 'menuitemradio');
   customItem.setAttribute('aria-checked', 'false');
   customItem.setAttribute('aria-expanded', 'false');
@@ -201,7 +202,7 @@ function createBrowserViewportControls(sessionId: string): BrowserViewportContro
   const customForm = document.createElement('div');
   customForm.className = 'browser-viewport-custom';
   customForm.setAttribute('role', 'group');
-  customForm.setAttribute('aria-label', 'Custom viewport size');
+  customForm.setAttribute('aria-label', t('Custom viewport size'));
 
   const customWInput = document.createElement('input');
   customWInput.type = 'number';
@@ -222,7 +223,7 @@ function createBrowserViewportControls(sessionId: string): BrowserViewportContro
   const customApplyBtn = document.createElement('button');
   customApplyBtn.type = 'button';
   customApplyBtn.className = 'browser-viewport-custom-apply';
-  customApplyBtn.textContent = 'Apply';
+  customApplyBtn.textContent = t('Apply');
 
   customForm.appendChild(customWInput);
   customForm.appendChild(customSep);
@@ -246,26 +247,26 @@ function createBrowserViewportControls(sessionId: string): BrowserViewportContro
 function createBrowserActionButtons(): BrowserActionButtons {
   const inspectBtn = document.createElement('button');
   inspectBtn.className = 'browser-inspect-btn';
-  inspectBtn.textContent = 'Inspect';
-  inspectBtn.ariaLabel = 'Inspect element';
+  inspectBtn.textContent = t('Inspect');
+  inspectBtn.ariaLabel = t('Inspect element');
 
   const recordBtn = document.createElement('button');
   recordBtn.className = 'browser-record-btn';
-  recordBtn.textContent = 'Record';
-  recordBtn.title = 'Record browser flow';
-  recordBtn.ariaLabel = 'Record browser flow';
+  recordBtn.textContent = t('Record');
+  recordBtn.title = t('Record browser flow');
+  recordBtn.ariaLabel = t('Record browser flow');
 
   const drawBtn = document.createElement('button');
   drawBtn.className = 'browser-draw-btn';
-  drawBtn.textContent = 'Draw';
-  drawBtn.title = 'Draw on page and send annotated screenshot to AI';
-  drawBtn.ariaLabel = 'Draw on page';
+  drawBtn.textContent = t('Draw');
+  drawBtn.title = t('Draw on page and send annotated screenshot to AI');
+  drawBtn.ariaLabel = t('Draw on page');
 
   const authBtn = document.createElement('button');
   authBtn.className = 'browser-auth-btn';
-  authBtn.textContent = 'Login';
-  authBtn.title = 'Manage saved login credentials';
-  authBtn.ariaLabel = 'Manage saved login credentials';
+  authBtn.textContent = t('Login');
+  authBtn.title = t('Manage saved login credentials');
+  authBtn.ariaLabel = t('Manage saved login credentials');
 
   return { inspectBtn, recordBtn, drawBtn, authBtn };
 }
@@ -295,7 +296,7 @@ function createBrowserToolbar(
 
   const toolbarTools = document.createElement('div');
   toolbarTools.className = 'browser-toolbar-tools';
-  toolbarTools.setAttribute('aria-label', 'Live View tools');
+  toolbarTools.setAttribute('aria-label', t('Live View tools'));
   const toolbarToolsShell = document.createElement('div');
   toolbarToolsShell.className = 'browser-toolbar-tools-shell';
 
@@ -313,9 +314,9 @@ function createBrowserToolbar(
   const targetChip = document.createElement('button');
   targetChip.type = 'button';
   targetChip.className = 'browser-capture-target-chip';
-  targetChip.textContent = '→ Session';
-  targetChip.title = 'Choose which open session receives browser prompts';
-  targetChip.setAttribute('aria-label', 'Choose browser prompt target session');
+  targetChip.textContent = t('→ Session');
+  targetChip.title = t('Choose which open session receives browser prompts');
+  targetChip.setAttribute('aria-label', t('Choose browser prompt target session'));
   captureCluster.controls.appendChild(targetChip);
 
   toolbarToolsShell.appendChild(viewCluster.element);

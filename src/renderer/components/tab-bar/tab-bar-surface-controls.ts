@@ -1,4 +1,5 @@
 import type { ProjectSurfaceRecord } from '../../../shared/types/project-surface.js';
+import { t } from '../../i18n.js';
 import type { ProjectRecord } from '../../state.js';
 
 interface CreateTabBarSurfaceControlsControllerOptions {
@@ -52,7 +53,7 @@ export function createTabBarSurfaceControlsController(
     button.type = 'button';
     button.className = 'surface-live-view-btn';
     button.dataset.surfaceKind = 'web';
-    button.textContent = 'Live View';
+    button.textContent = t('Live View');
     button.setAttribute('aria-pressed', String(surface.kind === 'web' && surface.active));
     button.classList.toggle('active', surface.kind === 'web' && surface.active);
     button.addEventListener('click', () => activateLiveViewSurface(project));

@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { closeModal, setModalError, showModal } from '../modal.js';
 import { getActiveGitPath, getGitStatus } from '../surface-services/git-status.js';
@@ -36,7 +37,7 @@ function createBranchMenu(gitStatusEl: HTMLElement): HTMLDivElement {
   menu.className = 'tab-context-menu calder-floating-list';
   menu.addEventListener('click', (clickEvent) => clickEvent.stopPropagation());
   menu.setAttribute('role', 'menu');
-  menu.setAttribute('aria-label', 'Branch actions');
+  menu.setAttribute('aria-label', t('Branch actions'));
 
   const elRect = gitStatusEl.getBoundingClientRect();
   menu.style.left = `${elRect.left}px`;
@@ -44,7 +45,7 @@ function createBranchMenu(gitStatusEl: HTMLElement): HTMLDivElement {
 
   const loadingItem = document.createElement('div');
   loadingItem.className = 'tab-context-menu-item disabled';
-  loadingItem.textContent = 'Loading branches\u2026';
+  loadingItem.textContent = t('Loading branches…');
   menu.appendChild(loadingItem);
 
   return menu;
@@ -61,7 +62,7 @@ async function switchBranch(
     ? freshStatus.staged + freshStatus.modified + freshStatus.conflicted
     : 0;
   if (dirty > 0) {
-    const confirmed = confirm(`You have uncommitted changes. Switch to "${branchName}" anyway?`);
+    const confirmed = confirm(t(`You have uncommitted changes. Switch to "${branchName}" anyway?`));
     if (!confirmed) return;
   }
 
@@ -69,22 +70,22 @@ async function switchBranch(
     await window.calder.git.checkoutBranch(gitPath, branchName);
     refreshGitStatus();
   } catch (err) {
-    alert(`Failed to switch branch: ${err instanceof Error ? err.message : err}`);
+    alert(t(`Failed to switch branch: ${err instanceof Error ? err.message : err}`));
   }
 }
 
 function promptCreateBranch(gitPath: string, refreshGitStatus: () => void): void {
   showModal(
-    'Create New Branch',
-    [{ label: 'Branch name', id: 'branch-name', placeholder: 'feature/my-branch' }],
+    t('Create New Branch'),
+    [{ label: t('Branch name'), id: 'branch-name', placeholder: 'feature/my-branch' }],
     async (values) => {
       const name = values['branch-name']?.trim();
       if (!name) {
-        setModalError('branch-name', 'Branch name is required');
+        setModalError('branch-name', t('Branch name is required'));
         return;
       }
       if (/\s/.test(name)) {
-        setModalError('branch-name', 'Branch name cannot contain spaces');
+        setModalError('branch-name', t('Branch name cannot contain spaces'));
         return;
       }
       try {
@@ -94,7 +95,7 @@ function promptCreateBranch(gitPath: string, refreshGitStatus: () => void): void
       } catch (err) {
         setModalError(
           'branch-name',
-          err instanceof Error ? err.message : 'Failed to create branch',
+          err instanceof Error ? err.message : t('Failed to create branch'),
         );
       }
     },
@@ -138,8 +139,8 @@ function createShowBranchContextMenuHandler(
       const searchInput = document.createElement('input');
       searchInput.className = 'branch-search-input';
       searchInput.type = 'text';
-      searchInput.placeholder = 'Filter branches\u2026';
-      searchInput.setAttribute('aria-label', 'Filter branches');
+      searchInput.placeholder = t('Filter branches…');
+      searchInput.setAttribute('aria-label', t('Filter branches'));
       menu.appendChild(searchInput);
 
       const container = document.createElement('div');
@@ -173,7 +174,7 @@ function createShowBranchContextMenuHandler(
         if (filteredBranches.length === 0) {
           const empty = document.createElement('div');
           empty.className = 'tab-context-menu-item disabled';
-          empty.textContent = 'No matching branches';
+          empty.textContent = t('No matching branches');
           empty.setAttribute('role', 'menuitem');
           empty.setAttribute('aria-disabled', 'true');
           empty.tabIndex = -1;
@@ -252,7 +253,7 @@ function createShowBranchContextMenuHandler(
 
       const createItem = document.createElement('div');
       createItem.className = 'tab-context-menu-item';
-      createItem.textContent = 'Create New Branch\u2026';
+      createItem.textContent = t('Create New Branch…');
       createItem.addEventListener('click', () => {
         hideTabContextMenu();
         promptCreateBranch(gitPath, refreshGitStatus);
@@ -260,16 +261,16 @@ function createShowBranchContextMenuHandler(
       menu.appendChild(createItem);
 
       constrainMenuToViewport(menu);
-      applyContextMenuSemantics(menu, 'Branch actions', false);
+      applyContextMenuSemantics(menu, t('Branch actions'), false);
       searchInput.focus();
     } catch {
       if (getActiveContextMenu() !== menu) return;
       menu.innerHTML = '';
       const errorItem = document.createElement('div');
       errorItem.className = 'tab-context-menu-item disabled';
-      errorItem.textContent = 'Failed to load branches';
+      errorItem.textContent = t('Failed to load branches');
       menu.appendChild(errorItem);
-      applyContextMenuSemantics(menu, 'Branch actions', false);
+      applyContextMenuSemantics(menu, t('Branch actions'), false);
     }
   };
 }

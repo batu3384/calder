@@ -41,7 +41,11 @@ describe('toast', () => {
     vi.resetModules();
     createdElements.length = 0;
     vi.stubGlobal('document', documentStub);
-    vi.stubGlobal('window', { setTimeout: (fn: () => void) => fn() });
+    vi.stubGlobal('window', {
+      setTimeout: (fn: () => void) => fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
   });
 
   it('creates toast container with live region semantics', async () => {

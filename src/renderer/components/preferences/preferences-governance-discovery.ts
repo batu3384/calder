@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { appState } from '../../state.js';
 
@@ -24,7 +25,7 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
   if (!args.project) {
     const empty = document.createElement('div');
     empty.className = 'governance-discovery-empty';
-    empty.textContent = 'Open a project to inspect or create repo-local governance policies.';
+    empty.textContent = t('Open a project to inspect or create repo-local governance policies.');
     shell.appendChild(empty);
     return;
   }
@@ -36,17 +37,17 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
   const starterBtn = document.createElement('button');
   starterBtn.className = 'governance-discovery-action-btn';
   starterBtn.type = 'button';
-  starterBtn.textContent = 'Create starter policy';
+  starterBtn.textContent = t('Create starter policy');
   starterBtn.addEventListener('click', async () => {
     starterBtn.disabled = true;
-    starterBtn.textContent = 'Creating…';
+    starterBtn.textContent = t('Creating…');
     try {
       const result = await window.calder.governance.createStarterPolicy(project.path);
       appState.setProjectGovernance(project.id, result.state);
       args.onRefreshProviders();
     } catch {
       starterBtn.disabled = false;
-      starterBtn.textContent = 'Create starter policy';
+      starterBtn.textContent = t('Create starter policy');
     }
   });
   actions.appendChild(starterBtn);
@@ -56,8 +57,9 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
   if (!policy) {
     const empty = document.createElement('div');
     empty.className = 'governance-discovery-empty';
-    empty.textContent =
-      'No governance policy has been discovered for this repo yet. Start in advisory mode, tune the policy, then enforce when the team is ready.';
+    empty.textContent = t(
+      'No governance policy has been discovered for this repo yet. Start in advisory mode, tune the policy, then enforce when the team is ready.',
+    );
     shell.appendChild(empty);
     return;
   }
@@ -119,7 +121,7 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
   const previewBtn = document.createElement('button');
   previewBtn.className = 'governance-discovery-item-btn';
   previewBtn.type = 'button';
-  previewBtn.textContent = 'Preview';
+  previewBtn.textContent = t('Preview');
   previewBtn.addEventListener('click', () => {
     appState.addFileReaderSession(project.id, policy.path);
     args.onCloseModalWide();
@@ -131,7 +133,7 @@ export function renderProjectGovernanceSection(args: RenderProjectGovernanceSect
     const openBtn = document.createElement('button');
     openBtn.className = 'governance-discovery-item-btn';
     openBtn.type = 'button';
-    openBtn.textContent = 'Open';
+    openBtn.textContent = t('Open');
     openBtn.addEventListener('click', async () => {
       openBtn.disabled = true;
       try {

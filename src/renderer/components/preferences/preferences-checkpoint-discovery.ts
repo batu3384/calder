@@ -1,5 +1,6 @@
 import type { ProjectCheckpointDocument } from '../../../shared/types/project-checkpoint.js';
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { appState } from '../../state.js';
 import { setModalError, showModal } from '../modal.js';
@@ -28,7 +29,7 @@ type ProjectCheckpointEntry = ProjectCheckpointState['checkpoints'][number];
 function appendCheckpointEmpty(shell: HTMLElement, text: string): void {
   const empty = document.createElement('div');
   empty.className = 'checkpoint-discovery-empty';
-  empty.textContent = text;
+  empty.textContent = t(text);
   shell.appendChild(empty);
 }
 
@@ -92,7 +93,7 @@ function createCheckpointActionBar(
   const createBtn = document.createElement('button');
   createBtn.className = 'checkpoint-discovery-action-btn';
   createBtn.type = 'button';
-  createBtn.textContent = 'Create checkpoint';
+  createBtn.textContent = t('Create checkpoint');
   createBtn.addEventListener('click', () => {
     showModal(
       'New Checkpoint',
@@ -147,8 +148,8 @@ function createCheckpointSummary(projectCheckpoints: ProjectCheckpointState): HT
 function registerRestoreModalCleanup(args: RenderProjectCheckpointSectionArgs): void {
   const previousConfirmText = args.confirmButton.textContent;
   const previousCancelText = args.cancelButton.textContent;
-  args.confirmButton.textContent = 'Restore';
-  args.cancelButton.textContent = 'Cancel';
+  args.confirmButton.textContent = t('Restore');
+  args.cancelButton.textContent = t('Cancel');
 
   args.registerModalCleanup(() => {
     args.confirmButton.textContent = previousConfirmText;
@@ -213,7 +214,7 @@ function appendPreviewAction(
   const previewBtn = document.createElement('button');
   previewBtn.className = 'checkpoint-discovery-item-btn';
   previewBtn.type = 'button';
-  previewBtn.textContent = 'Preview';
+  previewBtn.textContent = t('Preview');
   previewBtn.addEventListener('click', () => {
     appState.addFileReaderSession(project.id, checkpoint.path);
     args.onCloseModalWide();
@@ -234,7 +235,7 @@ function appendOpenAction(
   const openBtn = document.createElement('button');
   openBtn.className = 'checkpoint-discovery-item-btn';
   openBtn.type = 'button';
-  openBtn.textContent = 'Open';
+  openBtn.textContent = t('Open');
   openBtn.addEventListener('click', async () => {
     openBtn.disabled = true;
     try {
@@ -255,7 +256,7 @@ function appendRestoreAction(
   const restoreBtn = document.createElement('button');
   restoreBtn.className = 'checkpoint-discovery-item-btn';
   restoreBtn.type = 'button';
-  restoreBtn.textContent = 'Restore';
+  restoreBtn.textContent = t('Restore');
   restoreBtn.addEventListener('click', async () => {
     restoreBtn.disabled = true;
     try {

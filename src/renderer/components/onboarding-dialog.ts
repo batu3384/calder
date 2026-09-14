@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import { closeModal, registerModalCleanup } from './modal.js';
 import { promptNewProject } from './sidebar.js';
@@ -23,13 +24,14 @@ export function showOnboardingDialog(): void {
     return;
   }
 
-  titleEl.textContent = 'Welcome to Calder';
+  titleEl.textContent = t('Welcome to Calder');
   bodyEl.innerHTML = '';
   overlay.classList.remove('hidden');
 
   const intro = document.createElement('p');
-  intro.textContent =
-    'Add a project folder, install a supported coding CLI, then open your first agent session from the sidebar.';
+  intro.textContent = t(
+    'Add a project folder, install a supported coding CLI, then open your first agent session from the sidebar.',
+  );
   bodyEl.appendChild(intro);
 
   const list = document.createElement('ul');
@@ -41,8 +43,8 @@ export function showOnboardingDialog(): void {
   });
   bodyEl.appendChild(list);
 
-  btnCancel.textContent = 'Later';
-  btnConfirm.textContent = 'Add project';
+  btnCancel.textContent = t('Later');
+  btnConfirm.textContent = t('Add project');
 
   const cleanup = (): void => {
     btnCancel.removeEventListener('click', onLater);

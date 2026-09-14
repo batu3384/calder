@@ -1,4 +1,5 @@
 import { buildBrowserSessionPartition } from '../../../shared/constants.js';
+import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import {
   canonicalizeNavigationUrl,
@@ -19,7 +20,7 @@ export function createBrowserToolbarCluster(labelText: string): {
 
   const label = document.createElement('span');
   label.className = 'browser-toolbar-cluster-label';
-  label.textContent = labelText;
+  label.textContent = t(labelText);
   element.appendChild(label);
 
   const controls = document.createElement('div');

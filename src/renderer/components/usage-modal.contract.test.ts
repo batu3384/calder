@@ -11,6 +11,9 @@ describe('usage modal contract', () => {
     expect(source).not.toContain('row.innerHTML = `');
     expect(source).toContain('value.textContent = card.value');
     expect(source).toContain('label.textContent = card.label');
+    expect(source).toContain("from '../i18n.js'");
+    expect(source).toContain("t('Usage Stats')");
+    expect(source).toContain("t('Workspace activity snapshot')");
     expect(source).toContain('name.textContent = prettyModelName(model)');
     expect(source).toContain(
       'tokens.textContent = `${formatTokens(totalTokens)} tokens · ${formatTokens(cacheTokens)} cache`',

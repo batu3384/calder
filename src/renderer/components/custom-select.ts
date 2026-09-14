@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { logDebugEvent } from './debug-panel.js';
 import { anchorFloatingSurface, type FloatingSurfaceOptions } from './floating-surface.js';
 
@@ -52,7 +53,7 @@ function createSelectItems(
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'custom-select-item';
-    item.textContent = opt.label;
+    item.textContent = t(opt.label);
     item.dataset.value = opt.value;
     item.setAttribute('role', 'option');
     item.setAttribute('aria-selected', String(opt.value === hiddenValue));
@@ -347,7 +348,7 @@ export function createCustomSelect(
     hidden.value = opt.value;
     wrapper.dataset.value = hidden.value;
     wrapper.dataset.provider = hidden.value;
-    trigger.textContent = opt.label;
+    trigger.textContent = t(opt.label);
     trigger.dataset.provider = hidden.value;
     items.forEach((el, itemIndex) => {
       el.classList.toggle('selected', itemIndex === index);

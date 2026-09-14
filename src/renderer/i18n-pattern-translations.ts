@@ -277,6 +277,29 @@ function createInspectorAndErrorPatterns(translate: Translate): PatternTranslati
       pattern: /^(\d+)d ago$/u,
       replace: (match) => `${match[1]} gün önce`,
     },
+    {
+      pattern:
+        /^Remove project "(.+)"\? This will delete all sessions and history \((\d+) entries\) from Calder\. No files on disk will be affected\.$/u,
+      replace: (match) =>
+        `"${match[1]}" projesi kaldırılsın mı? Calder içindeki tüm oturumlar ve geçmiş (${match[2]} kayıt) silinir. Diskteki dosyalara dokunulmaz.`,
+    },
+    {
+      pattern: /^Remove project "(.+)"\? No files on disk will be affected\.$/u,
+      replace: (match) => `"${match[1]}" projesi kaldırılsın mı? Diskteki dosyalara dokunulmaz.`,
+    },
+    {
+      pattern: /^You have uncommitted changes\. Switch to "(.+)" anyway\?$/u,
+      replace: (match) =>
+        `Kaydedilmemiş değişikliklerin var. Yine de "${match[1]}" dalına geçilsin mi?`,
+    },
+    {
+      pattern: /^Failed to switch branch:\s*(.+)$/u,
+      replace: (match) => `Dal değiştirilemedi: ${match[1]}`,
+    },
+    {
+      pattern: /^Version ([^\s:]+)$/u,
+      replace: (match) => `Sürüm ${match[1]}`,
+    },
   ];
 }
 

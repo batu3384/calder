@@ -92,7 +92,7 @@ describe('browser tab pane contract', () => {
     expect(paneHelpersSource).toContain('browser-toolbar-cluster-label');
     expect(source).toContain('browser-pane-status');
     expect(source).not.toContain('browser-toolbar-route');
-    expect(source).toContain("toolbarTools.setAttribute('aria-label', 'Live View tools')");
+    expect(source).toContain("toolbarTools.setAttribute('aria-label', t('Live View tools'))");
   });
 
   it('surfaces active capture mode inside the capture cluster label', () => {
@@ -102,10 +102,12 @@ describe('browser tab pane contract', () => {
     expect(source).toContain('captureCluster.targetChip.textContent');
     expect(source).toContain('captureCluster.label.title = selectedTarget');
     expect(source).toContain(
-      "inspectBtn.textContent = instance.inspectMode ? 'Inspecting' : 'Inspect';",
+      "inspectBtn.textContent = instance.inspectMode ? t('Inspecting') : t('Inspect');",
     );
-    expect(source).toContain("drawBtn.textContent = instance.drawMode ? 'Drawing' : 'Draw';");
-    expect(source).toContain("recordBtn.textContent = instance.flowMode ? 'Recording' : 'Record';");
+    expect(source).toContain("drawBtn.textContent = instance.drawMode ? t('Drawing') : t('Draw');");
+    expect(source).toContain(
+      "recordBtn.textContent = instance.flowMode ? t('Recording') : t('Record');",
+    );
   });
 
   it('keeps target session selection inside capture composer controls', () => {
@@ -121,7 +123,7 @@ describe('browser tab pane contract', () => {
 
   it('tracks loading state in the chrome and toggles the primary button behavior', () => {
     expect(source).toContain('statusBadge.dataset.state = state');
-    expect(source).toContain("goBtn.textContent = state === 'loading' ? 'Stop' : 'Go'");
+    expect(source).toContain("goBtn.textContent = state === 'loading' ? t('Stop') : t('Go')");
     expect(source).toContain('if (instance.isLoading) {');
     expect(source).toContain("webview.addEventListener('did-start-loading'");
     expect(source).toContain("webview.addEventListener('did-stop-loading'");
@@ -162,7 +164,7 @@ describe('browser tab pane contract', () => {
 
   it('adds a compact home button beside reload to reopen the localhost start surface', () => {
     expect(source).toContain("homeBtn.className = 'browser-nav-btn browser-home-btn'");
-    expect(source).toContain("homeBtn.title = 'Home'");
+    expect(source).toContain("homeBtn.title = t('Home')");
     expect(source).toContain('toolbarNavShell.appendChild(homeBtn);');
     expect(source).toContain('function openBrowserHome(): void {');
     expect(source).toContain("navigateTo(instance, 'about:blank');");
@@ -308,13 +310,13 @@ describe('browser tab pane contract', () => {
     expect(newTabUiSource).toContain('browser-ntp-section-meta');
     expect(newTabUiSource).not.toContain('browser-ntp-capabilities');
     expect(newTabUiSource).not.toContain('browser-ntp-workflow');
-    expect(source).toContain("chromeLabel.textContent = 'Live View'");
-    expect(source).toContain("chromeHint.textContent = 'Capture context'");
-    expect(newTabUiSource).toContain("ntpEyebrow.textContent = 'Live View'");
-    expect(newTabUiSource).toContain("ntpTitle.textContent = 'Open a local surface'");
-    expect(newTabUiSource).toContain("ntpTargetsMeta.textContent = 'Scanning…'");
-    expect(newTabUiSource).toContain("focusAddressBtn.textContent = 'Focus address bar'");
-    expect(newTabUiSource).toContain("refreshTargetsBtn.textContent = 'Rescan localhost'");
+    expect(source).toContain("chromeLabel.textContent = t('Live View')");
+    expect(source).toContain("chromeHint.textContent = t('Capture context')");
+    expect(newTabUiSource).toContain("ntpEyebrow.textContent = t('Live View')");
+    expect(newTabUiSource).toContain("ntpTitle.textContent = t('Open a local surface')");
+    expect(newTabUiSource).toContain("ntpTargetsMeta.textContent = t('Scanning…')");
+    expect(newTabUiSource).toContain("focusAddressBtn.textContent = t('Focus address bar')");
+    expect(newTabUiSource).toContain("refreshTargetsBtn.textContent = t('Rescan localhost')");
     expect(source).not.toContain("chromeLabel.textContent = 'Browser surface'");
     expect(newTabUiSource).not.toContain("ntpEyebrow.textContent = 'Calder Workspace'");
   });
@@ -387,10 +389,10 @@ describe('browser tab pane contract', () => {
       "authPanel.className = 'browser-capture-panel browser-auth-panel'",
     );
     expect(authPanelSource).toContain("authCloseBtn.className = 'browser-auth-close-btn'");
-    expect(authPanelSource).toContain("authCloseBtn.textContent = 'Close'");
-    expect(authPanelSource).toContain("authFillBtn.textContent = 'Fill now'");
-    expect(authPanelSource).toContain("authSaveBtn.textContent = 'Save'");
-    expect(authPanelSource).toContain("authDeleteBtn.textContent = 'Delete'");
+    expect(authPanelSource).toContain("authCloseBtn.textContent = t('Close')");
+    expect(authPanelSource).toContain("authFillBtn.textContent = t('Fill now')");
+    expect(authPanelSource).toContain("authSaveBtn.textContent = t('Save')");
+    expect(authPanelSource).toContain("authDeleteBtn.textContent = t('Delete')");
     expect(authControllerSource).toContain('let closeAuthPanelAfterFill = false;');
     expect(authControllerSource).toContain('if (filledAnyField && closeAuthPanelAfterFill) {');
     expect(authControllerSource).toContain('closePanel();');

@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
@@ -12,7 +13,7 @@ function showStarPromptDialog(): void {
   const btnCancel = document.getElementById('modal-cancel')!;
   const btnConfirm = document.getElementById('modal-confirm')!;
 
-  titleEl.textContent = 'Enjoying Calder?';
+  titleEl.textContent = t('Enjoying Calder?');
   bodyEl.innerHTML = '';
   modal.classList.remove('modal-wide');
   btnCancel.style.display = 'none';
@@ -28,8 +29,9 @@ function showStarPromptDialog(): void {
 
   const message = document.createElement('div');
   message.className = 'star-prompt-message';
-  message.textContent =
-    'If Calder has been useful to you, consider giving it a star on GitHub. It helps others discover the project!';
+  message.textContent = t(
+    'If Calder has been useful to you, consider giving it a star on GitHub. It helps others discover the project!',
+  );
   container.appendChild(message);
 
   const actions = document.createElement('div');
@@ -37,19 +39,19 @@ function showStarPromptDialog(): void {
 
   const starBtn = document.createElement('button');
   starBtn.className = 'modal-btn primary';
-  starBtn.textContent = 'Star on GitHub';
+  starBtn.textContent = t('Star on GitHub');
   actions.appendChild(starBtn);
 
   const laterBtn = document.createElement('button');
   laterBtn.className = 'modal-btn';
-  laterBtn.textContent = 'Maybe Later';
+  laterBtn.textContent = t('Maybe Later');
   actions.appendChild(laterBtn);
 
   container.appendChild(actions);
 
   const dontAsk = document.createElement('button');
   dontAsk.className = 'star-prompt-dont-ask';
-  dontAsk.textContent = "Don't ask again";
+  dontAsk.textContent = t("Don't ask again");
   container.appendChild(dontAsk);
 
   bodyEl.appendChild(container);

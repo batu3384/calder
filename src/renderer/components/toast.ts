@@ -3,6 +3,7 @@
  * Provides non-blocking notifications with auto-dismiss.
  */
 
+import { t } from '../i18n.js';
 import { announcePolite } from './focus-management.js';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -86,14 +87,14 @@ function createToastEl(options: ToastOptions, instance: ToastInstance): HTMLElem
 
   const msg = document.createElement('span');
   msg.className = 'calder-toast-message';
-  msg.textContent = message;
+  msg.textContent = t(message);
   content.appendChild(msg);
 
   if (action) {
     const actionDiv = document.createElement('div');
     actionDiv.className = 'calder-toast-action';
     const btn = document.createElement('button');
-    btn.textContent = action.label;
+    btn.textContent = t(action.label);
     btn.addEventListener('click', () => {
       action.onClick();
       instance.dismiss();

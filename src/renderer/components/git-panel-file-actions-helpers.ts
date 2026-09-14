@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import type { GitFileEntry } from '../types.js';
 import { showFileViewer } from './file-viewer.js';
 import { esc } from './git-panel-presentation-helpers.js';
@@ -150,7 +151,7 @@ function showGitFileContextMenu(
   if (rect.right > window.innerWidth) menu.style.left = `${window.innerWidth - rect.width - 4}px`;
   if (rect.bottom > window.innerHeight)
     menu.style.top = `${window.innerHeight - rect.height - 4}px`;
-  applyTabContextMenuSemantics(menu, 'Git file actions', hideGitContextMenu);
+  applyTabContextMenuSemantics(menu, t('Git file actions'), hideGitContextMenu);
 }
 
 export function renderGitFilesList(args: RenderGitFilesListArgs): void {

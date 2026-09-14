@@ -37,6 +37,22 @@ function esc(s: string): string {
   return el.innerHTML;
 }
 
+function bindAccordionToggle(
+  header: HTMLButtonElement,
+  body: HTMLElement,
+  onFirstOpen: () => void | Promise<void>,
+): void {
+  header.setAttribute('aria-expanded', 'false');
+  header.addEventListener('click', () => {
+    const opening = body.classList.contains('hidden');
+    body.classList.toggle('hidden', !opening);
+    header.setAttribute('aria-expanded', String(opening));
+    if (opening && body.children.length === 0) {
+      void onFirstOpen();
+    }
+  });
+}
+
 export function renderToolsList(sessionId: string, tools: unknown[], container: HTMLElement): void {
   if (tools.length === 0) {
     renderMcpEmptyState(
@@ -68,44 +84,39 @@ export function renderToolsList(sessionId: string, tools: unknown[], container: 
 
     let formRef: { getValues: () => Record<string, unknown> } | null = null;
 
-    header.addEventListener('click', () => {
-      const isOpen = !body.classList.contains('hidden');
-      body.classList.toggle('hidden');
-      if (!isOpen && body.children.length === 0) {
-        // Build form
-        if (tool.inputSchema && (tool.inputSchema as Record<string, unknown>).properties) {
-          const { element, getValues } = renderSchemaForm(tool.inputSchema as JsonSchema);
-          formRef = { getValues };
-          body.appendChild(element);
-        }
-
-        const execBtn = document.createElement('button');
-        execBtn.className = 'mcp-exec-btn';
-        execBtn.textContent = t('Execute');
-
-        const resultPre = document.createElement('pre');
-        resultPre.className = 'mcp-result hidden';
-
-        execBtn.addEventListener('click', async () => {
-          execBtn.disabled = true;
-          execBtn.textContent = t('Executing...');
-          resultPre.classList.remove('hidden');
-          resultPre.textContent = t('Loading...');
-
-          const args = formRef ? formRef.getValues() : {};
-          const res = await window.calder.mcp.callTool(sessionId, tool.name, args);
-          resultPre.textContent = JSON.stringify(
-            res.success ? res.data : { error: res.error },
-            null,
-            2,
-          );
-          execBtn.disabled = false;
-          execBtn.textContent = t('Execute');
-        });
-
-        body.appendChild(execBtn);
-        body.appendChild(resultPre);
+    bindAccordionToggle(header, body, () => {
+      if (tool.inputSchema && (tool.inputSchema as Record<string, unknown>).properties) {
+        const { element, getValues } = renderSchemaForm(tool.inputSchema as JsonSchema);
+        formRef = { getValues };
+        body.appendChild(element);
       }
+
+      const execBtn = document.createElement('button');
+      execBtn.className = 'mcp-exec-btn';
+      execBtn.textContent = t('Execute');
+
+      const resultPre = document.createElement('pre');
+      resultPre.className = 'mcp-result hidden';
+
+      execBtn.addEventListener('click', async () => {
+        execBtn.disabled = true;
+        execBtn.textContent = t('Executing...');
+        resultPre.classList.remove('hidden');
+        resultPre.textContent = t('Loading...');
+
+        const args = formRef ? formRef.getValues() : {};
+        const res = await window.calder.mcp.callTool(sessionId, tool.name, args);
+        resultPre.textContent = JSON.stringify(
+          res.success ? res.data : { error: res.error },
+          null,
+          2,
+        );
+        execBtn.disabled = false;
+        execBtn.textContent = t('Execute');
+      });
+
+      body.appendChild(execBtn);
+      body.appendChild(resultPre);
     });
 
     card.appendChild(header);
@@ -143,22 +154,18 @@ export function renderResourcesList(
     const body = document.createElement('div');
     body.className = 'mcp-card-body hidden';
 
-    header.addEventListener('click', async () => {
-      const isOpen = !body.classList.contains('hidden');
-      body.classList.toggle('hidden');
-      if (!isOpen && body.children.length === 0) {
-        const resultPre = document.createElement('pre');
-        resultPre.className = 'mcp-result';
-        resultPre.textContent = t('Loading...');
-        body.appendChild(resultPre);
+    bindAccordionToggle(header, body, async () => {
+      const resultPre = document.createElement('pre');
+      resultPre.className = 'mcp-result';
+      resultPre.textContent = t('Loading...');
+      body.appendChild(resultPre);
 
-        const res = await window.calder.mcp.readResource(sessionId, resource.uri);
-        resultPre.textContent = JSON.stringify(
-          res.success ? res.data : { error: res.error },
-          null,
-          2,
-        );
-      }
+      const res = await window.calder.mcp.readResource(sessionId, resource.uri);
+      resultPre.textContent = JSON.stringify(
+        res.success ? res.data : { error: res.error },
+        null,
+        2,
+      );
     });
 
     card.appendChild(header);
@@ -202,65 +209,60 @@ export function renderPromptsList(
 
     let argInputs: Map<string, HTMLInputElement> | null = null;
 
-    header.addEventListener('click', () => {
-      const isOpen = !body.classList.contains('hidden');
-      body.classList.toggle('hidden');
-      if (!isOpen && body.children.length === 0) {
-        // Build argument inputs
-        if (prompt.arguments && prompt.arguments.length > 0) {
-          argInputs = new Map();
-          const form = document.createElement('div');
-          form.className = 'mcp-schema-form';
-          for (const arg of prompt.arguments) {
-            const field = document.createElement('div');
-            field.className = 'mcp-form-field';
-            const label = document.createElement('label');
-            label.textContent = arg.name + (arg.required ? ' *' : '');
-            if (arg.description) label.title = arg.description;
-            field.appendChild(label);
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.className = 'mcp-form-input';
-            if (arg.description) input.placeholder = arg.description;
-            field.appendChild(input);
-            form.appendChild(field);
-            argInputs.set(arg.name, input);
-          }
-          body.appendChild(form);
+    bindAccordionToggle(header, body, () => {
+      if (prompt.arguments && prompt.arguments.length > 0) {
+        argInputs = new Map();
+        const form = document.createElement('div');
+        form.className = 'mcp-schema-form';
+        for (const arg of prompt.arguments) {
+          const field = document.createElement('div');
+          field.className = 'mcp-form-field';
+          const label = document.createElement('label');
+          label.textContent = arg.name + (arg.required ? ' *' : '');
+          if (arg.description) label.title = arg.description;
+          field.appendChild(label);
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'mcp-form-input';
+          if (arg.description) input.placeholder = arg.description;
+          field.appendChild(input);
+          form.appendChild(field);
+          argInputs.set(arg.name, input);
         }
-
-        const execBtn = document.createElement('button');
-        execBtn.className = 'mcp-exec-btn';
-        execBtn.textContent = t('Run');
-
-        const resultPre = document.createElement('pre');
-        resultPre.className = 'mcp-result hidden';
-
-        execBtn.addEventListener('click', async () => {
-          execBtn.disabled = true;
-          execBtn.textContent = t('Running...');
-          resultPre.classList.remove('hidden');
-          resultPre.textContent = t('Loading...');
-
-          const args: Record<string, string> = {};
-          if (argInputs) {
-            for (const [name, input] of argInputs) {
-              if (input.value.trim()) args[name] = input.value.trim();
-            }
-          }
-          const res = await window.calder.mcp.getPrompt(sessionId, prompt.name, args);
-          resultPre.textContent = JSON.stringify(
-            res.success ? res.data : { error: res.error },
-            null,
-            2,
-          );
-          execBtn.disabled = false;
-          execBtn.textContent = t('Run');
-        });
-
-        body.appendChild(execBtn);
-        body.appendChild(resultPre);
+        body.appendChild(form);
       }
+
+      const execBtn = document.createElement('button');
+      execBtn.className = 'mcp-exec-btn';
+      execBtn.textContent = t('Run');
+
+      const resultPre = document.createElement('pre');
+      resultPre.className = 'mcp-result hidden';
+
+      execBtn.addEventListener('click', async () => {
+        execBtn.disabled = true;
+        execBtn.textContent = t('Running...');
+        resultPre.classList.remove('hidden');
+        resultPre.textContent = t('Loading...');
+
+        const args: Record<string, string> = {};
+        if (argInputs) {
+          for (const [name, input] of argInputs) {
+            if (input.value.trim()) args[name] = input.value.trim();
+          }
+        }
+        const res = await window.calder.mcp.getPrompt(sessionId, prompt.name, args);
+        resultPre.textContent = JSON.stringify(
+          res.success ? res.data : { error: res.error },
+          null,
+          2,
+        );
+        execBtn.disabled = false;
+        execBtn.textContent = t('Run');
+      });
+
+      body.appendChild(execBtn);
+      body.appendChild(resultPre);
     });
 
     card.appendChild(header);

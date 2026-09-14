@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { appState } from '../../state.js';
 import { setModalError, showModal } from '../modal.js';
@@ -25,7 +26,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   if (!args.project) {
     const empty = document.createElement('div');
     empty.className = 'team-context-discovery-empty';
-    empty.textContent = 'Open a project to inspect shared team context spaces.';
+    empty.textContent = t('Open a project to inspect shared team context spaces.');
     shell.appendChild(empty);
     return;
   }
@@ -37,7 +38,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   const starterBtn = document.createElement('button');
   starterBtn.className = 'team-context-discovery-action-btn';
   starterBtn.type = 'button';
-  starterBtn.textContent = 'Create starter spaces';
+  starterBtn.textContent = t('Create starter spaces');
   starterBtn.addEventListener('click', async () => {
     starterBtn.disabled = true;
     try {
@@ -53,7 +54,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   const createSpaceBtn = document.createElement('button');
   createSpaceBtn.className = 'team-context-discovery-action-btn';
   createSpaceBtn.type = 'button';
-  createSpaceBtn.textContent = 'New shared space';
+  createSpaceBtn.textContent = t('New shared space');
   createSpaceBtn.addEventListener('click', () => {
     showModal(
       'New Shared Team Space',
@@ -98,7 +99,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   ) {
     const empty = document.createElement('div');
     empty.className = 'team-context-discovery-empty';
-    empty.textContent = 'No shared team context has been discovered for this repo yet.';
+    empty.textContent = t('No shared team context has been discovered for this repo yet.');
     shell.appendChild(empty);
     return;
   }
@@ -124,8 +125,9 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
   if (projectTeamContext.spaces.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'team-context-discovery-empty';
-    empty.textContent =
-      'Shared rules or workflows exist, but no team context spaces have been created yet.';
+    empty.textContent = t(
+      'Shared rules or workflows exist, but no team context spaces have been created yet.',
+    );
     shell.appendChild(empty);
     return;
   }
@@ -154,7 +156,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
     const previewBtn = document.createElement('button');
     previewBtn.className = 'team-context-discovery-item-btn';
     previewBtn.type = 'button';
-    previewBtn.textContent = 'Preview';
+    previewBtn.textContent = t('Preview');
     previewBtn.addEventListener('click', () => {
       appState.addFileReaderSession(project.id, space.path);
       args.onCloseModalWide();
@@ -166,7 +168,7 @@ export function renderProjectTeamContextSection(args: RenderProjectTeamContextSe
       const openBtn = document.createElement('button');
       openBtn.className = 'team-context-discovery-item-btn';
       openBtn.type = 'button';
-      openBtn.textContent = 'Open';
+      openBtn.textContent = t('Open');
       openBtn.addEventListener('click', async () => {
         openBtn.disabled = true;
         try {

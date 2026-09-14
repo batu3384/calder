@@ -1,4 +1,5 @@
 import { createKeybindingActionBridge } from '../bootstrap/keybindings-action-bridge.js';
+import { t } from '../i18n.js';
 import { shortcutManager } from '../shortcuts.js';
 import { registerLifecycle, unregisterLifecycle } from './component-lifecycle.js';
 import { trapFocus } from './focus-management.js';
@@ -28,47 +29,47 @@ function getCommandEntries(): CommandPaletteEntry[] {
   return [
     {
       id: 'new-session',
-      label: 'New Session',
+      label: t('New Session'),
       keywords: 'session tab',
       run: () => actions.newSession(),
     },
     {
       id: 'new-project',
-      label: 'New Project',
+      label: t('New Project'),
       keywords: 'workspace folder',
       run: () => actions.newProject(),
     },
     {
       id: 'preferences',
-      label: 'Open Preferences',
+      label: t('Open Preferences'),
       keywords: 'settings config',
       run: () => actions.showPreferences(),
     },
     {
       id: 'quick-open',
-      label: 'Quick Open File',
+      label: t('Quick Open File'),
       keywords: 'file search',
       run: () => actions.quickOpen(),
     },
     {
       id: 'toggle-sidebar',
-      label: 'Toggle Sidebar',
+      label: t('Toggle Sidebar'),
       keywords: 'panel',
       run: () => actions.toggleSidebar(),
     },
     {
       id: 'toggle-git',
-      label: 'Toggle Git Panel',
+      label: t('Toggle Git Panel'),
       keywords: 'source control',
       run: () => actions.toggleGitPanel(),
     },
     {
       id: 'toggle-inspector',
-      label: 'Toggle Pixel Office',
+      label: t('Toggle Pixel Office'),
       keywords: 'pixel office agents ecosystem studio',
       run: () => actions.toggleInspector(),
     },
-    { id: 'help', label: 'Open Help', keywords: 'docs shortcuts', run: () => actions.help() },
+    { id: 'help', label: t('Open Help'), keywords: 'docs shortcuts', run: () => actions.help() },
   ];
 }
 
@@ -110,7 +111,7 @@ function renderResults(query: string): void {
   if (entries.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'command-palette-empty';
-    empty.textContent = 'No matching commands';
+    empty.textContent = t('No matching commands');
     resultsList.appendChild(empty);
     return;
   }
@@ -165,17 +166,17 @@ export function showCommandPalette(): void {
   container.className = 'command-palette-container';
   container.setAttribute('role', 'dialog');
   container.setAttribute('aria-modal', 'true');
-  container.setAttribute('aria-label', 'Command palette');
+  container.setAttribute('aria-label', t('Command Palette'));
 
   const title = document.createElement('div');
   title.className = 'command-palette-title';
-  title.textContent = 'Command Palette';
+  title.textContent = t('Command Palette');
 
   inputEl = document.createElement('input');
   inputEl.className = 'command-palette-input';
   inputEl.type = 'search';
-  inputEl.placeholder = 'Type a command...';
-  inputEl.setAttribute('aria-label', 'Filter commands');
+  inputEl.placeholder = t('Type a command...');
+  inputEl.setAttribute('aria-label', t('Filter commands'));
   inputEl.setAttribute('aria-autocomplete', 'list');
   inputEl.setAttribute('aria-controls', 'command-palette-results');
   inputEl.addEventListener('input', () => renderResults(inputEl?.value ?? ''));

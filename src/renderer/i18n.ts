@@ -5,6 +5,13 @@ import { appState } from './state.js';
 
 const DEFAULT_LANGUAGE: UiLanguage = 'en';
 const LOCALIZE_ROOT_SELECTOR = '#app';
+const LOCALIZE_OBSERVE_SELECTORS = [
+  '#sidebar',
+  '#tab-bar',
+  '#context-inspector',
+  '#status-bar',
+  '#modal',
+] as const;
 
 const EXCLUDED_SELECTOR = [
   'pre',
@@ -22,7 +29,7 @@ const EXCLUDED_SELECTOR = [
 const ATTRIBUTES_TO_LOCALIZE = ['title', 'aria-label', 'placeholder'] as const;
 
 let activeLanguage: UiLanguage = DEFAULT_LANGUAGE;
-let observer: MutationObserver | null = null;
+let observers: MutationObserver[] = [];
 let suppressObserver = false;
 let pendingReloadTimer: number | null = null;
 let pendingLocalizeRaf: number | null = null;
@@ -193,10 +200,10 @@ function scheduleLocalizeSubtree(nodes: Iterable<Node>): void {
 }
 
 function stopObserver(): void {
-  if (observer) {
+  for (const observer of observers) {
     observer.disconnect();
-    observer = null;
   }
+  observers = [];
   if (pendingLocalizeRaf !== null) {
     cancelAnimationFrame(pendingLocalizeRaf);
     pendingLocalizeRaf = null;
@@ -204,31 +211,36 @@ function stopObserver(): void {
 }
 
 function startObserver(): void {
-  const root = localizeRoot();
-  if (!root || observer) return;
-  observer = new MutationObserver((mutations) => {
-    if (activeLanguage !== 'tr' || suppressObserver) return;
-    const pendingNodes: Node[] = [];
-    for (const mutation of mutations) {
-      if (mutation.type === 'childList') {
-        for (const node of mutation.addedNodes) {
-          pendingNodes.push(node);
-        }
-      } else if (mutation.type === 'attributes' && mutation.target instanceof Element) {
-        pendingNodes.push(mutation.target);
-      }
-    }
-    if (pendingNodes.length > 0) {
-      scheduleLocalizeSubtree(pendingNodes);
-    }
-  });
-
-  observer.observe(root, {
+  if (observers.length > 0) return;
+  const observeOptions: MutationObserverInit = {
     subtree: true,
     childList: true,
     attributes: true,
     attributeFilter: [...ATTRIBUTES_TO_LOCALIZE, 'value'],
-  });
+  };
+
+  for (const selector of LOCALIZE_OBSERVE_SELECTORS) {
+    const root = document.querySelector(selector);
+    if (!root) continue;
+    const observer = new MutationObserver((mutations) => {
+      if (activeLanguage !== 'tr' || suppressObserver) return;
+      const pendingNodes: Node[] = [];
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+          for (const node of mutation.addedNodes) {
+            pendingNodes.push(node);
+          }
+        } else if (mutation.type === 'attributes' && mutation.target instanceof Element) {
+          pendingNodes.push(mutation.target);
+        }
+      }
+      if (pendingNodes.length > 0) {
+        scheduleLocalizeSubtree(pendingNodes);
+      }
+    });
+    observer.observe(root, observeOptions);
+    observers.push(observer);
+  }
 }
 
 function applyLanguage(language: UiLanguage): void {

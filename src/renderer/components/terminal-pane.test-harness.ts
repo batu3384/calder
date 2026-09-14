@@ -282,6 +282,8 @@ export const mockClipboardWrite = vi.fn();
 
 export function makeWindowStub() {
   return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     getSelection: () => ({
       removeAllRanges: mockDomSelectionClear,
     }),

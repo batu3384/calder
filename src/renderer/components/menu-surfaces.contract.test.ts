@@ -41,21 +41,27 @@ describe('menu surface contract', () => {
     expect(sessionContextMenuSource).toContain('tab-context-menu calder-floating-list');
     expect(menuSemanticsSource).toContain("menu.setAttribute('role', 'menu')");
     expect(menuSemanticsSource).toContain("item.setAttribute('role', 'menuitem')");
-    expect(sessionContextMenuSource).toContain("applyContextMenuSemantics(menu, 'Session actions'");
+    expect(sessionContextMenuSource).toContain(
+      "applyContextMenuSemantics(menu, t('Session actions')",
+    );
     expect(tabBarSource).toContain('createTabBarBranchMenuController');
     expect(tabBarSource).toContain('createTabBarSessionMenuController');
     expect(providerSelectorSource).toContain("'command-deck-provider'");
     expect(branchMenuSource).toContain('tab-context-menu calder-floating-list');
     expect(branchMenuSource).toContain('branch-search-input');
-    expect(branchMenuSource).toContain("applyContextMenuSemantics(menu, 'Branch actions', false)");
+    expect(branchMenuSource).toContain(
+      "applyContextMenuSemantics(menu, t('Branch actions'), false)",
+    );
     expect(sessionMenuSource).toContain('tab-context-menu calder-floating-list');
-    expect(sessionMenuSource).toContain("applyContextMenuSemantics(menu, 'New session actions')");
+    expect(sessionMenuSource).toContain(
+      "applyContextMenuSemantics(menu, t('New session actions'))",
+    );
     expect(sessionMenuSource).not.toContain('Join Remote Session');
     expect(providerSelectorSource).toContain('floating: {');
     expect(providerSelectorSource).not.toContain('floating: false');
     expect(sidebarProjectListSource).toContain('tab-context-menu calder-floating-list');
     expect(sidebarProjectListSource).toContain(
-      "applyTabContextMenuSemantics(menu, 'Project actions'",
+      "applyTabContextMenuSemantics(menu, t('Project actions')",
     );
     expect(historySource).toContain('tab-context-menu calder-floating-list');
     expect(historySource).toContain("applyTabContextMenuSemantics(menu, t('History actions')");

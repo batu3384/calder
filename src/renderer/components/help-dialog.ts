@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 import { displayKeys, shortcutManager } from './surface-services/shortcuts.js';
 
@@ -45,7 +46,7 @@ function buildSection(title: string, rows: IndicatorRow[]): HTMLElement {
 
   const header = document.createElement('div');
   header.className = 'help-section-header';
-  header.textContent = title;
+  header.textContent = t(title);
   section.appendChild(header);
 
   for (const row of rows) {
@@ -58,11 +59,11 @@ function buildSection(title: string, rows: IndicatorRow[]): HTMLElement {
 
     const labelEl = document.createElement('div');
     labelEl.className = 'help-label';
-    labelEl.textContent = row.label;
+    labelEl.textContent = t(row.label);
 
     const descEl = document.createElement('div');
     descEl.className = 'help-desc';
-    descEl.textContent = row.description;
+    descEl.textContent = t(row.description);
 
     rowEl.appendChild(visualEl);
     rowEl.appendChild(labelEl);
@@ -111,7 +112,7 @@ function buildShortcutSections(): HTMLElement[] {
 }
 
 export function showHelpDialog(): void {
-  titleEl.textContent = 'Help';
+  titleEl.textContent = t('Help');
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
   btnCancel.style.display = 'none';
@@ -121,11 +122,20 @@ export function showHelpDialog(): void {
 
   const hero = document.createElement('div');
   hero.className = 'help-hero';
-  hero.innerHTML = `
-    <div class="help-hero-kicker shell-kicker">Guide</div>
-    <div class="help-hero-title">Workspace signals and shortcuts</div>
-    <div class="help-hero-copy">A quick reference for session status, tab indicators, git marks, and the keys you use most often.</div>
-  `;
+  const kicker = document.createElement('div');
+  kicker.className = 'help-hero-kicker shell-kicker';
+  kicker.textContent = t('Guide');
+  const heroTitle = document.createElement('div');
+  heroTitle.className = 'help-hero-title';
+  heroTitle.textContent = t('Workspace signals and shortcuts');
+  const heroCopy = document.createElement('div');
+  heroCopy.className = 'help-hero-copy';
+  heroCopy.textContent = t(
+    'A quick reference for session status, tab indicators, git marks, and the keys you use most often.',
+  );
+  hero.appendChild(kicker);
+  hero.appendChild(heroTitle);
+  hero.appendChild(heroCopy);
   container.appendChild(hero);
 
   container.appendChild(
@@ -235,7 +245,7 @@ export function showHelpDialog(): void {
 
   bodyEl.appendChild(container);
 
-  btnConfirm.textContent = 'Done';
+  btnConfirm.textContent = t('Done');
   overlay.classList.remove('hidden');
 
   runModalCleanup();
@@ -244,7 +254,7 @@ export function showHelpDialog(): void {
     closeModal();
     modal.classList.remove('modal-wide');
     btnCancel.style.display = '';
-    btnConfirm.textContent = 'Create';
+    btnConfirm.textContent = t('Create');
   };
 
   const handleKeydown = (e: KeyboardEvent) => {

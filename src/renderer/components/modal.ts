@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { createCustomSelect } from './custom-select.js';
 
 export interface FieldDef {
@@ -119,7 +120,7 @@ export function setModalError(fieldId: string, message: string): void {
   const errEl = document.createElement('div');
   errEl.id = `modal-error-${fieldId}`;
   errEl.className = 'modal-error';
-  errEl.textContent = message;
+  errEl.textContent = t(message);
   input.parentElement!.appendChild(errEl);
 }
 
@@ -141,7 +142,7 @@ export function showModal(
   // Clean up previous listeners before building a new modal body.
   runModalCleanup();
   prepareModalSurface();
-  titleEl.textContent = title;
+  titleEl.textContent = t(title);
   bodyEl.innerHTML = '';
   overlay.dataset.modalView = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
@@ -151,7 +152,7 @@ export function showModal(
 
     const label = document.createElement('label');
     label.setAttribute('for', `modal-${field.id}`);
-    label.textContent = field.label;
+    label.textContent = t(field.label);
 
     const input = document.createElement('input');
     input.id = `modal-${field.id}`;
@@ -171,7 +172,7 @@ export function showModal(
       registerModalSelectCleanup(() => sel.destroy());
     } else {
       input.type = 'text';
-      input.placeholder = field.placeholder ?? '';
+      input.placeholder = field.placeholder ? t(field.placeholder) : '';
       input.value = field.defaultValue ?? '';
       div.appendChild(label);
 
@@ -183,7 +184,7 @@ export function showModal(
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'modal-field-btn';
-        btn.textContent = field.buttonLabel;
+        btn.textContent = t(field.buttonLabel);
         btn.addEventListener('click', () => field.onButtonClick!(input));
         row.appendChild(btn);
         div.appendChild(row);

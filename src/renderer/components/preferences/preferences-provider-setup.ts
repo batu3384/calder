@@ -1,4 +1,5 @@
 import type { CliProviderMeta } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 
 interface ProviderStatus {
   meta: CliProviderMeta;
@@ -26,11 +27,11 @@ function renderCheckItem(parent: HTMLElement, opts: RenderCheckItemOptions): voi
 
   const title = document.createElement('div');
   title.className = 'setup-check-label';
-  title.textContent = opts.label;
+  title.textContent = t(opts.label);
 
   const desc = document.createElement('div');
   desc.className = 'setup-check-desc';
-  desc.textContent = opts.description;
+  desc.textContent = t(opts.description);
 
   info.appendChild(title);
   info.appendChild(desc);
@@ -38,7 +39,7 @@ function renderCheckItem(parent: HTMLElement, opts: RenderCheckItemOptions): voi
   if (!opts.ok && opts.helpText) {
     const help = document.createElement('div');
     help.className = 'setup-check-help';
-    help.textContent = opts.helpText;
+    help.textContent = t(opts.helpText);
     info.appendChild(help);
   }
 
@@ -46,7 +47,7 @@ function renderCheckItem(parent: HTMLElement, opts: RenderCheckItemOptions): voi
   status.className = opts.ok
     ? 'setup-check-status setup-check-status-pill ok'
     : 'setup-check-status setup-check-status-pill error';
-  status.textContent = opts.statusText;
+  status.textContent = t(opts.statusText);
 
   row.appendChild(icon);
   row.appendChild(info);
@@ -105,7 +106,7 @@ export async function renderSetupSection(args: RenderSetupSectionArgs): Promise<
 
   const loading = document.createElement('div');
   loading.className = 'setup-loading';
-  loading.textContent = 'Checking configuration\u2026';
+  loading.textContent = t('Checking configuration…');
   section.appendChild(loading);
   args.container.appendChild(section);
 

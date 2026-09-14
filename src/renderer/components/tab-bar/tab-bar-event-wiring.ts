@@ -1,10 +1,7 @@
 import { t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import { onChange as onGitStatusChange } from '../surface-services/git-status.js';
-import {
-  hasMultipleAvailableProviders,
-  loadProviderAvailability,
-} from '../surface-services/provider-availability.js';
+import { loadProviderAvailability } from '../surface-services/provider-availability.js';
 import {
   onChange as onStatusChange,
   type SessionStatus,
@@ -163,10 +160,11 @@ export function bootstrapTabBarProviderAvailability(
   loadProviderAvailability()
     .then(() => {
       args.syncSessionProviderSelector();
-      if (hasMultipleAvailableProviders()) args.render();
+      args.render();
     })
     .catch((error) => {
       console.warn('[tab-bar] Failed to load provider availability', error);
       args.syncSessionProviderSelector();
+      args.render();
     });
 }

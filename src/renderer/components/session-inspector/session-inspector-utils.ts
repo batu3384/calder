@@ -1,5 +1,6 @@
 import type { CliProviderCapabilities, ProviderId } from '../../../shared/types/provider.js';
 import type { InspectorEvent } from '../../../shared/types/session.js';
+import { t } from '../../i18n.js';
 import { appState, type SessionRecord } from '../../state.js';
 import { isCliSessionRecord } from '../../state-project-surface.js';
 import {
@@ -140,7 +141,7 @@ export function createToolDetailEl(toolInput: unknown, rawToolName?: string): HT
 
     const labelEl = document.createElement('span');
     labelEl.className = 'inspector-tool-detail-label';
-    labelEl.textContent = 'Raw Tool';
+    labelEl.textContent = t('Raw Tool');
 
     const valueEl = document.createElement('span');
     valueEl.className = 'inspector-tool-detail-value';
@@ -213,23 +214,23 @@ export function createAgentDetailEl(ev: InspectorEvent, duration: number | null)
   el.addEventListener('click', (e) => e.stopPropagation());
 
   const entries: [string, string][] = [];
-  if (ev.agent_type) entries.push(['Type', ev.agent_type]);
+  if (ev.agent_type) entries.push([t('Type'), ev.agent_type]);
   if (ev.agent_id) entries.push(['ID', ev.agent_id]);
 
   if (ev.type === 'subagent_stop') {
-    if (duration !== null) entries.push(['Duration', formatDuration(duration)]);
-    if (ev.agent_transcript_path) entries.push(['Transcript', ev.agent_transcript_path]);
+    if (duration !== null) entries.push([t('Duration'), formatDuration(duration)]);
+    if (ev.agent_transcript_path) entries.push([t('Transcript'), ev.agent_transcript_path]);
     if (ev.last_assistant_message) {
       const msg =
         ev.last_assistant_message.length > 500
           ? ev.last_assistant_message.slice(0, 500) + '...'
           : ev.last_assistant_message;
-      entries.push(['Result', msg]);
+      entries.push([t('Result'), msg]);
     }
   }
 
   if (entries.length === 0) {
-    el.textContent = 'No additional details';
+    el.textContent = t('No additional details');
     return el;
   }
 

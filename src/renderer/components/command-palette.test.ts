@@ -19,5 +19,7 @@ describe('command-palette contract', () => {
   it('registers lifecycle cleanup on open', () => {
     expect(source).toContain('registerLifecycle(commandPaletteLifecycle)');
     expect(source).toContain('unregisterLifecycle(commandPaletteLifecycle)');
+    expect(source).toContain("from '../i18n.js'");
+    expect(source).toContain("t('Command Palette')");
   });
 });

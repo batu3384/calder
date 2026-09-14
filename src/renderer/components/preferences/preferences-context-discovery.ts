@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import { toProjectRelativeContextPath } from '../../project-context-utils.js';
 import { appState } from '../../state.js';
 import { setModalError, showModal } from '../modal.js';
@@ -17,7 +18,7 @@ type ProjectContextSource = ProjectContextData['sources'][number];
 function appendContextEmpty(shell: HTMLElement, text: string): void {
   const empty = document.createElement('div');
   empty.className = 'context-discovery-empty';
-  empty.textContent = text;
+  empty.textContent = t(text);
   shell.appendChild(empty);
 }
 
@@ -25,7 +26,7 @@ function createActionButton(label: string, onClick: () => void | Promise<void>):
   const button = document.createElement('button');
   button.className = 'context-discovery-action-btn';
   button.type = 'button';
-  button.textContent = label;
+  button.textContent = t(label);
   button.addEventListener('click', () => {
     void onClick();
   });
@@ -82,14 +83,14 @@ function appendDiscoveryActions(
 
   const starterBtn = createActionButton('Create starter files', async () => {
     starterBtn.disabled = true;
-    starterBtn.textContent = 'Creating…';
+    starterBtn.textContent = t('Creating…');
     try {
       const result = await window.calder.context.createStarterFiles(project.path);
       appState.setProjectContext(project.id, result.state);
       args.onRefreshProviders();
     } catch {
       starterBtn.disabled = false;
-      starterBtn.textContent = 'Create starter files';
+      starterBtn.textContent = t('Create starter files');
     }
   });
   actions.appendChild(starterBtn);
@@ -145,7 +146,7 @@ function createSourcePreviewButton(
   const previewBtn = document.createElement('button');
   previewBtn.className = 'context-discovery-item-btn';
   previewBtn.type = 'button';
-  previewBtn.textContent = 'Preview';
+  previewBtn.textContent = t('Preview');
   previewBtn.addEventListener('click', () => {
     appState.addFileReaderSession(project.id, source.path);
     args.onCloseModalWide();
@@ -157,7 +158,7 @@ function createSourceOpenButton(projectPath: string, relativePath: string): HTML
   const openBtn = document.createElement('button');
   openBtn.className = 'context-discovery-item-btn';
   openBtn.type = 'button';
-  openBtn.textContent = 'Open';
+  openBtn.textContent = t('Open');
   openBtn.addEventListener('click', async () => {
     openBtn.disabled = true;
     try {
@@ -228,7 +229,7 @@ function createRenameRuleButton(
   const renameBtn = document.createElement('button');
   renameBtn.className = 'context-discovery-item-btn';
   renameBtn.type = 'button';
-  renameBtn.textContent = 'Rename';
+  renameBtn.textContent = t('Rename');
   renameBtn.addEventListener('click', () => {
     openRenameSharedRuleModal(project, relativePath, source, args);
   });
@@ -244,7 +245,7 @@ function createDeleteRuleButton(
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'context-discovery-item-btn';
   deleteBtn.type = 'button';
-  deleteBtn.textContent = 'Delete';
+  deleteBtn.textContent = t('Delete');
   deleteBtn.addEventListener('click', async () => {
     if (!confirm(`Delete shared rule "${source.displayName}"?`)) {
       return;
@@ -295,7 +296,7 @@ function createSharedRuleStatus(
 function createProviderMemoryStatus(): HTMLElement {
   const status = document.createElement('div');
   status.className = 'context-discovery-item-status';
-  status.textContent = 'Provider memory';
+  status.textContent = t('Provider memory');
   return status;
 }
 

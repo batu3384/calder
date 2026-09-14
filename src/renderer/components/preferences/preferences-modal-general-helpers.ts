@@ -1,4 +1,5 @@
 import type { ProviderId } from '../../../shared/types/provider.js';
+import { t } from '../../i18n.js';
 import type { ProviderAvailabilitySnapshot } from './preferences-modal-sections-types.js';
 
 export function buildProviderOptions(
@@ -41,7 +42,7 @@ export function appendPreferencesToggleField(
 
   const label = document.createElement('label');
   label.htmlFor = id;
-  label.textContent = labelText;
+  label.textContent = t(labelText);
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';

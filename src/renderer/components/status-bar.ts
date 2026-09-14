@@ -1,13 +1,24 @@
 const OBSERVE_OPTS: MutationObserverInit = {
   childList: true,
   subtree: true,
-  characterData: true,
   attributes: true,
   attributeFilter: ['class'],
 };
 
 function forwardClick(source: HTMLElement | null): void {
   source?.click();
+}
+
+function observeMirror(source: Node, sync: () => void): void {
+  let raf = 0;
+  const schedule = (): void => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      sync();
+    });
+  };
+  new MutationObserver(schedule).observe(source, OBSERVE_OPTS);
 }
 
 export function initStatusBar(): void {
@@ -23,7 +34,7 @@ export function initStatusBar(): void {
       gitMirror.textContent = gitSource.textContent?.trim() ?? '';
     };
     syncGit();
-    new MutationObserver(syncGit).observe(gitSource, OBSERVE_OPTS);
+    observeMirror(gitSource, syncGit);
     gitMirror.addEventListener('click', () => forwardClick(gitSource));
   }
 
@@ -34,7 +45,7 @@ export function initStatusBar(): void {
       providerMirror.textContent = findTrigger()?.textContent?.trim() ?? '';
     };
     syncProvider();
-    new MutationObserver(syncProvider).observe(providerSlot, OBSERVE_OPTS);
+    observeMirror(providerSlot, syncProvider);
     providerMirror.addEventListener('click', () => forwardClick(findTrigger()));
   }
 
@@ -44,6 +55,6 @@ export function initStatusBar(): void {
       sessionMirror.textContent = active?.textContent?.trim() ?? '';
     };
     syncSession();
-    new MutationObserver(syncSession).observe(tabList, OBSERVE_OPTS);
+    observeMirror(tabList, syncSession);
   }
 }

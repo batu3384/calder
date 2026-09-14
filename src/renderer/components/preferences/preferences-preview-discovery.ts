@@ -1,4 +1,5 @@
 import type { ProjectRecord } from '../../../shared/types/project-state.js';
+import { t } from '../../i18n.js';
 import {
   openPreviewTargetInLiveView,
   openWorkspaceShellLogs,
@@ -14,7 +15,7 @@ export interface RenderProjectPreviewCenterSectionArgs {
 function renderPreviewDiscoveryEmpty(shell: HTMLElement, message: string): void {
   const empty = document.createElement('div');
   empty.className = 'preview-discovery-empty';
-  empty.textContent = message;
+  empty.textContent = t(message);
   shell.appendChild(empty);
 }
 
@@ -28,7 +29,7 @@ function createPreviewDiscoveryActions(
   const openShellBtn = document.createElement('button');
   openShellBtn.className = 'preview-discovery-action-btn';
   openShellBtn.type = 'button';
-  openShellBtn.textContent = 'Open workspace shell';
+  openShellBtn.textContent = t('Open workspace shell');
   openShellBtn.addEventListener('click', () => {
     openWorkspaceShellLogs(projectId);
     onCloseModalWide();
@@ -85,7 +86,7 @@ function createPreviewTargetItem(
   const openLiveViewBtn = document.createElement('button');
   openLiveViewBtn.className = 'preview-discovery-item-btn';
   openLiveViewBtn.type = 'button';
-  openLiveViewBtn.textContent = 'Open in Live View';
+  openLiveViewBtn.textContent = t('Open in Live View');
   openLiveViewBtn.addEventListener('click', () => {
     openPreviewTargetInLiveView(projectId, target.url);
     onCloseModalWide();

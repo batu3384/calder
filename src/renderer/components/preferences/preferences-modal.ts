@@ -1,6 +1,6 @@
 import type { AppearanceTheme, ProviderId, UiLanguage } from '../../../shared/types/provider.js';
 import { applyAppearanceTheme } from '../../appearance-theme.js';
-import { localizeSubtree } from '../../i18n.js';
+import { localizeSubtree, t } from '../../i18n.js';
 import { appState } from '../../state.js';
 import type { CustomSelectInstance } from '../custom-select.js';
 import { extendModalCleanup, prepareModalSurface, runModalCleanup } from '../modal.js';
@@ -304,7 +304,7 @@ export function showPreferencesModal(): void {
 
 function renderPreferencesModalContent(): void {
   prepareModalSurface();
-  titleEl.textContent = 'Workspace Center';
+  titleEl.textContent = t('Workspace Center');
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
   modal.classList.add('preferences-modal');
@@ -353,7 +353,7 @@ function renderPreferencesModalContent(): void {
   // Show initial section
   renderSection('general');
 
-  btnConfirm.textContent = 'Done';
+  btnConfirm.textContent = t('Done');
   overlay.classList.remove('hidden');
   localizeSubtree(bodyEl);
 
@@ -363,7 +363,7 @@ function renderPreferencesModalContent(): void {
     bodyEl.classList.remove('preferences-body');
     modal.classList.remove('preferences-modal');
     modal.classList.remove('modal-wide');
-    btnConfirm.textContent = 'Create';
+    btnConfirm.textContent = t('Create');
   });
   bindPreferencesModalActions({
     confirmButton: btnConfirm,

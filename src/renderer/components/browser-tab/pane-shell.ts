@@ -1,3 +1,4 @@
+import { t } from '../../i18n.js';
 import { type BrowserPageState, describeBrowserPageState } from './navigation.js';
 import { createNewTabStateController, type NewTabStateController } from './new-tab-state.js';
 import { createBrowserNewTabUi } from './new-tab-ui.js';
@@ -40,9 +41,9 @@ export function syncBrowserStatusUi(
   currentUrl?: string,
 ): void {
   statusBadge.dataset.state = state;
-  statusBadge.textContent = describeBrowserPageState(state);
+  statusBadge.textContent = t(describeBrowserPageState(state));
   syncBrowserTrustZoneBadge(trustZoneBadge, currentUrl);
-  chromeHint.textContent =
+  chromeHint.textContent = t(
     state === 'loading'
       ? 'Waiting for page'
       : state === 'offline'
@@ -51,10 +52,11 @@ export function syncBrowserStatusUi(
           ? 'Live local surface'
           : state === 'remote'
             ? 'External page'
-            : 'Capture context';
-  goBtn.textContent = state === 'loading' ? 'Stop' : 'Go';
+            : 'Capture context',
+  );
+  goBtn.textContent = state === 'loading' ? t('Stop') : t('Go');
   goBtn.classList.toggle('loading', state === 'loading');
-  goBtn.ariaLabel = state === 'loading' ? 'Stop page load' : 'Open address';
+  goBtn.ariaLabel = state === 'loading' ? t('Stop page load') : t('Open address');
 }
 
 export function syncBrowserSurfaceVisibility(

@@ -1,3 +1,4 @@
+import { t } from '../i18n.js';
 import { appState } from '../state.js';
 import { closeModal, registerModalCleanup, runModalCleanup } from './modal.js';
 
@@ -58,7 +59,7 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
   const btnCancel = document.getElementById('modal-cancel')!;
   const btnConfirm = document.getElementById('modal-confirm')!;
 
-  titleEl.textContent = `What's New in v${version}`;
+  titleEl.textContent = t(`What's New in v${version}`);
   bodyEl.innerHTML = '';
   modal.classList.add('modal-wide');
   btnCancel.style.display = 'none';
@@ -68,31 +69,35 @@ function showWhatsNewDialog(version: string, notes: ReleaseNotes): void {
 
   const hero = document.createElement('div');
   hero.className = 'whats-new-hero';
-  hero.innerHTML = `
-    <div class="whats-new-kicker shell-kicker">Release</div>
-    <div class="whats-new-version">Version ${version}</div>
-  `;
+  const kicker = document.createElement('div');
+  kicker.className = 'whats-new-kicker shell-kicker';
+  kicker.textContent = t('Release');
+  const versionEl = document.createElement('div');
+  versionEl.className = 'whats-new-version';
+  versionEl.textContent = t(`Version ${version}`);
+  hero.appendChild(kicker);
+  hero.appendChild(versionEl);
 
   const dateEl = document.createElement('div');
   dateEl.className = 'whats-new-date';
-  dateEl.textContent = `Released ${notes.date}`;
+  dateEl.textContent = t(`Released ${notes.date}`);
   hero.appendChild(dateEl);
   container.appendChild(hero);
 
   if (notes.features.length > 0) {
-    container.appendChild(buildSection('Features', notes.features));
+    container.appendChild(buildSection(t('Features'), notes.features));
   }
   if (notes.fixes.length > 0) {
-    container.appendChild(buildSection('Fixes', notes.fixes));
+    container.appendChild(buildSection(t('Fixes'), notes.fixes));
   }
   if (notes.changes.length > 0) {
-    container.appendChild(buildSection('Changes', notes.changes));
+    container.appendChild(buildSection(t('Changes'), notes.changes));
   }
 
   bodyEl.appendChild(container);
 
   const prevConfirmText = btnConfirm.textContent;
-  btnConfirm.textContent = 'Got it';
+  btnConfirm.textContent = t('Got it');
   overlay.classList.remove('hidden');
 
   runModalCleanup();

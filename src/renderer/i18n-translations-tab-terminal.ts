@@ -2,6 +2,8 @@ export const TAB_AND_TERMINAL_TRANSLATION_ENTRIES: ReadonlyArray<readonly [strin
   ['Session actions', 'Oturum eylemleri'],
   ['Branch actions', 'Dal eylemleri'],
   ['New session actions', 'Yeni oturum eylemleri'],
+  ['Project actions', 'Proje eylemleri'],
+  ['Git file actions', 'Git dosya eylemleri'],
   ['configured', 'yapılandırıldı'],
   ['inherit', 'devral'],
   ['Drag to reorder', 'Yeniden sıralamak için sürükle'],

@@ -63,7 +63,7 @@ describe('tab bar command deck contract', () => {
     expect(surfaceControlsSource).toContain(
       'if (nextSignature === surfaceControlsSignature) return;',
     );
-    expect(surfaceControlsSource).toContain("button.textContent = 'Live View'");
+    expect(surfaceControlsSource).toContain("button.textContent = t('Live View')");
   });
 
   it('keeps former command deck tools reachable from the app menu', () => {
