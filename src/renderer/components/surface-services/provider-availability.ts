@@ -8,10 +8,6 @@ export type { ProviderAvailabilitySnapshot } from '../../provider-availability.j
 export const getProviderAvailabilitySnapshot: ProviderAvailabilityModule['getProviderAvailabilitySnapshot'] =
   (...args) => providerAvailability.getProviderAvailabilitySnapshot(...args);
 
-export const hasProviderBinaryChecks: ProviderAvailabilityModule['hasProviderBinaryChecks'] = (
-  ...args
-) => providerAvailability.hasProviderBinaryChecks(...args);
-
 export const ensureProviderAvailabilityLoaded: ProviderAvailabilityModule['ensureProviderAvailabilityLoaded'] =
   (...args) => providerAvailability.ensureProviderAvailabilityLoaded(...args);
 
