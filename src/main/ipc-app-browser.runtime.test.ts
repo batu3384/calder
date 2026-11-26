@@ -157,6 +157,14 @@ describe('ipc app/browser runtime handlers', () => {
     mockWebContentsFromId.mockReturnValueOnce({
       isDestroyed: () => false,
       getType: () => 'webview',
+      getURL: vi.fn(() => 'http://localhost:3000/page'),
+      send,
+    });
+    expect(handler({}, 1, 'enter-inspect-mode')).toBe(true);
+
+    mockWebContentsFromId.mockReturnValueOnce({
+      isDestroyed: () => false,
+      getType: () => 'webview',
       getURL: vi.fn(() => 'https://localhost.evil.com/page'),
       send: vi.fn(),
     });

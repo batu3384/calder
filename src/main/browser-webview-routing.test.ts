@@ -151,6 +151,20 @@ describe('attachBrowserWebviewRouting', () => {
     expect(openExternal).not.toHaveBeenCalled();
   });
 
+  it('allows guest navigations to local HTTP development servers', () => {
+    const host = new FakeWebContents();
+    const guest = new FakeWebContents();
+    const openExternal = vi.fn();
+    const preventDefault = vi.fn();
+
+    attachBrowserWebviewRouting({ webContents: host }, openExternal);
+    host.emit('did-attach-webview', {}, guest);
+    guest.emit('will-navigate', { preventDefault }, 'http://localhost:3000/page');
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
   it('blocks guest navigations outside the localhost allowlist', () => {
     const host = new FakeWebContents();
     const guest = new FakeWebContents();
