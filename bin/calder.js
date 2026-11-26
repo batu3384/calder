@@ -4,7 +4,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { execSync, spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const os = require('os');
 
 const { version } = require('../package.json');
@@ -84,14 +84,35 @@ function followRedirects(url, maxRedirects = 10) {
     if (maxRedirects <= 0) {
       return reject(new Error('Too many redirects'));
     }
-    const mod = url.startsWith('https') ? https : require('http');
-    mod
-      .get(url, { headers: { 'User-Agent': 'calder-cli' } }, (res) => {
+
+    let currentUrl;
+    try {
+      currentUrl = new URL(url);
+    } catch {
+      return reject(new Error(`Invalid download URL: ${url}`));
+    }
+    if (currentUrl.protocol !== 'https:') {
+      return reject(new Error(`Refusing non-HTTPS download URL: ${currentUrl.origin}`));
+    }
+
+    https
+      .get(currentUrl, { headers: { 'User-Agent': 'calder-cli' } }, (res) => {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          resolve(followRedirects(res.headers.location, maxRedirects - 1));
-        } else {
-          resolve(res);
+          let redirectUrl;
+          try {
+            redirectUrl = new URL(res.headers.location, currentUrl);
+          } catch {
+            res.resume();
+            return reject(new Error(`Invalid redirect location: ${res.headers.location}`));
+          }
+          if (redirectUrl.protocol !== 'https:') {
+            res.resume();
+            return reject(new Error(`Refusing HTTPS downgrade redirect to: ${redirectUrl.origin}`));
+          }
+          res.resume();
+          return resolve(followRedirects(redirectUrl.href, maxRedirects - 1));
         }
+        resolve(res);
       })
       .on('error', reject);
   });
@@ -154,25 +175,63 @@ async function download(assetName) {
   });
 }
 
+function moveExtractedAppIntoPlace(extractDir) {
+  const extractedAppPath = path.join(extractDir, path.basename(APP_PATH));
+  if (!fs.existsSync(extractedAppPath)) {
+    throw new Error(`Downloaded archive did not contain ${path.basename(APP_PATH)}.`);
+  }
+
+  const backupPath = `${APP_PATH}.backup-${process.pid}`;
+  fs.rmSync(backupPath, { recursive: true, force: true });
+  let backupCreated = false;
+
+  if (fs.existsSync(APP_PATH)) {
+    fs.renameSync(APP_PATH, backupPath);
+    backupCreated = true;
+  }
+
+  try {
+    fs.renameSync(extractedAppPath, APP_PATH);
+  } catch (error) {
+    if (backupCreated && fs.existsSync(backupPath) && !fs.existsSync(APP_PATH)) {
+      fs.renameSync(backupPath, APP_PATH);
+    }
+    throw error;
+  }
+
+  fs.rmSync(backupPath, { recursive: true, force: true });
+}
+
 function extract(zipPath, sha256) {
   console.log('Extracting...');
 
-  fs.rmSync(APP_PATH, { recursive: true, force: true });
+  const extractDir = fs.mkdtempSync(path.join(APP_DIR, '.extract-'));
+  try {
+    if (isWin) {
+      const command =
+        'Expand-Archive -Force -Path $env:CALDER_ZIP_PATH -DestinationPath $env:CALDER_EXTRACT_DIR';
+      const encodedCommand = Buffer.from(command, 'utf16le').toString('base64');
+      execFileSync('powershell', ['-NoProfile', '-EncodedCommand', encodedCommand], {
+        stdio: 'ignore',
+        env: {
+          ...process.env,
+          CALDER_ZIP_PATH: zipPath,
+          CALDER_EXTRACT_DIR: extractDir,
+        },
+      });
+    } else {
+      execFileSync('unzip', ['-oq', zipPath, '-d', extractDir], { stdio: 'ignore' });
+    }
 
-  if (isWin) {
-    const psEscape = (p) => p.replace(/'/g, "''");
-    execSync(
-      `powershell -NoProfile -Command "Expand-Archive -Force -Path '${psEscape(zipPath)}' -DestinationPath '${psEscape(APP_DIR)}'"`,
-      { stdio: 'ignore' },
-    );
-  } else {
-    execSync(`unzip -oq "${zipPath}" -d "${APP_DIR}"`);
+    moveExtractedAppIntoPlace(extractDir);
+  } finally {
+    fs.rmSync(extractDir, { recursive: true, force: true });
   }
   fs.unlinkSync(zipPath);
 
   if (isMac) {
     try {
-      execSync(`xattr -rd com.apple.quarantine "${APP_PATH}"`, { stdio: 'ignore' });
+      execFileSync('xattr', ['-rd', 'com.apple.quarantine', APP_PATH], { stdio: 'ignore' });
     } catch {
       // xattr may fail if no quarantine attribute
     }
@@ -236,7 +295,13 @@ Any other arguments are forwarded to the Calder app.`);
 
   if (needsDownload) {
     const { tmpFile: zipPath, sha256: streamedSha256 } = await download(assetName);
-    const verifiedSha256 = assertDownloadChecksum(assetName, zipPath);
+    let verifiedSha256;
+    try {
+      verifiedSha256 = assertDownloadChecksum(assetName, zipPath);
+    } catch (error) {
+      fs.rmSync(zipPath, { force: true });
+      throw error;
+    }
     if (verifiedSha256 !== streamedSha256) {
       fs.rmSync(zipPath, { force: true });
       throw new Error('Download integrity check failed before extraction.');
