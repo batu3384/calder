@@ -45,6 +45,26 @@ export default [
     },
   },
   {
+    files: ['bin/**/*.js', 'scripts/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ['src/main/**/*.ts', 'src/preload/**/*.ts'],
     languageOptions: {
       globals: {

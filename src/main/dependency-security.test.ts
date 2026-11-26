@@ -23,27 +23,47 @@ function isAtLeast(version: string, minimum: string): boolean {
 }
 
 describe('dependency security lockfile', () => {
-  it('pins dompurify, hono, fast-uri, js-yaml, and qs to non-vulnerable versions in package-lock.json', () => {
+  it('pins known-vulnerable dependency lanes at patched minimum versions', () => {
     const lockfilePath = path.resolve(process.cwd(), 'package-lock.json');
     const lockfile = JSON.parse(readFileSync(lockfilePath, 'utf8')) as {
       packages?: Record<string, { version?: string }>;
     };
 
-    const dompurifyVersion = lockfile.packages?.['node_modules/dompurify']?.version;
-    const honoVersion = lockfile.packages?.['node_modules/hono']?.version;
-    const fastUriVersion = lockfile.packages?.['node_modules/fast-uri']?.version;
-    const jsYamlVersion = lockfile.packages?.['node_modules/js-yaml']?.version;
-    const qsVersion = lockfile.packages?.['node_modules/qs']?.version;
+    const versionsForPackage = (packageName: string): string[] => {
+      const suffix = `node_modules/${packageName}`;
+      return Object.entries(lockfile.packages ?? {})
+        .filter(([key]) => key === suffix || key.endsWith(`/${suffix}`))
+        .map(([, entry]) => entry.version)
+        .filter((version): version is string => typeof version === 'string');
+    };
 
-    expect(dompurifyVersion).toBeDefined();
-    expect(honoVersion).toBeDefined();
-    expect(fastUriVersion).toBeDefined();
-    expect(jsYamlVersion).toBeDefined();
-    expect(qsVersion).toBeDefined();
-    expect(isAtLeast(dompurifyVersion!, '3.4.0')).toBe(true);
-    expect(isAtLeast(honoVersion!, '4.13.5')).toBe(true);
-    expect(isAtLeast(fastUriVersion!, '3.1.6')).toBe(true);
-    expect(isAtLeast(jsYamlVersion!, '4.3.2')).toBe(true);
-    expect(isAtLeast(qsVersion!, '6.16.0')).toBe(true);
+    const minimums: Record<string, string> = {
+      '@hono/node-server': '2.1.9',
+      '@modelcontextprotocol/sdk': '1.32.2',
+      'body-parser': '2.4.0',
+      dompurify: '3.4.18',
+      electron: '42.11.18',
+      'fast-uri': '3.1.9',
+      hono: '4.13.19',
+      'ip-address': '10.7.6',
+      'js-yaml': '4.3.2',
+      'proxy-addr': '2.0.8',
+      qs: '6.16.2',
+      vite: '8.4.0',
+      vitest: '4.1.12',
+      zod: '4.6.7',
+    };
+
+    for (const [packageName, minimum] of Object.entries(minimums)) {
+      const versions = versionsForPackage(packageName);
+      expect(versions.length, `${packageName} is missing from package-lock.json`).toBeGreaterThan(
+        0,
+      );
+      for (const version of versions) {
+        expect(isAtLeast(version, minimum), `${packageName} ${version} must be >= ${minimum}`).toBe(
+          true,
+        );
+      }
+    }
   });
 });

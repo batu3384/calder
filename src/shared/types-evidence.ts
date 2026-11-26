@@ -334,7 +334,7 @@ export const EvidenceEventSchema = z.object({
   source: EvidenceSourceSchema,
   confidence: z.enum(['verified', 'provider_reported', 'inferred', 'unavailable']),
   toolName: z.string().optional(),
-  sanitizedMeta: z.record(z.unknown()).optional(),
+  sanitizedMeta: z.record(z.string(), z.unknown()).optional(),
   sanitizedPaths: z.array(z.string()).optional(),
   policyDecision: z
     .object({
@@ -371,7 +371,7 @@ export const GitObservationSchema = z.object({
   ]),
   confidence: z.enum(['verified', 'provider_reported', 'inferred', 'unavailable']),
   previousPath: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const MAX_SUMMARY_GIT_OBSERVATIONS = 500;
@@ -385,7 +385,7 @@ export const EvidenceSummarySchema = z.object({
   coverage: z.enum(['full', 'partial', 'minimal', 'unavailable']),
   eventCounts: z.object({
     total: z.number().int().nonnegative(),
-    byType: z.record(z.number().int().nonnegative()),
+    byType: z.record(z.string(), z.number().int().nonnegative()),
     toolRequested: z.number().int().nonnegative(),
     toolStarted: z.number().int().nonnegative(),
     toolFailed: z.number().int().nonnegative(),
