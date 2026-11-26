@@ -131,7 +131,7 @@ npm start
 
 Canonical setup, build, and validation commands:
 
-- [docs/development-workflow.md](docs/development-workflow.md)
+- [docs/development/workflow.md](docs/development/workflow.md)
 
 Quick local path:
 

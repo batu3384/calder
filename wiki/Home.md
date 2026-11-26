@@ -31,7 +31,7 @@ Supported provider IDs: `claude`, `codex`, `cursor`, `antigravity`.
 These live in the main tree (not duplicated here in full):
 
 - [README](https://github.com/batu3384/calder/blob/main/README.md) — product overview
-- [docs/development-workflow.md](https://github.com/batu3384/calder/blob/main/docs/development-workflow.md) — setup, test, CI commands
+- [docs/development/workflow.md](https://github.com/batu3384/calder/blob/main/docs/development/workflow.md) — setup, test, CI commands
 - [SECURITY.md](https://github.com/batu3384/calder/blob/main/SECURITY.md) — vulnerability reporting
 - [CONTRIBUTING.md](https://github.com/batu3384/calder/blob/main/CONTRIBUTING.md) — contribution guide
 

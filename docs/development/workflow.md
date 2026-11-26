@@ -68,7 +68,17 @@ npm run audit:structure
   - New oversized files fail immediately.
   - Existing oversized files cannot grow.
 
-Detailed policy: `docs/architecture-guardrails.md`.
+Detailed policy: `docs/architecture/guardrails.md`.
+
+## CI Electron Binary Installs
+
+CI sets `ELECTRON_SKIP_BINARY_DOWNLOAD=1` during `npm ci` so ordinary dependency installation does not fail on transient Electron CDN errors. Jobs that need the real Electron binary install it explicitly with:
+
+```bash
+npm run ci:install-electron
+```
+
+The installer removes incomplete `node_modules/electron/dist` state, retries the download, and verifies that the binary exists.
 
 ## Local Push Gate
 
@@ -79,6 +89,7 @@ It blocks push unless all pass:
 - `npm run audit:structure`
 - `npm run lint`
 - `npm run format:check`
+- `npm run typecheck`
 - `npm run build`
 - `npm test`
 

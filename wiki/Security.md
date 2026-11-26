@@ -15,14 +15,14 @@ Supported fixes land on latest `main` and the most recent release.
 
 ## Threat model (high level)
 
-| Asset                                     | Risk                               | Mitigation                                                           |
-| ----------------------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
-| User source code & prompts                | Local exposure via PTY/browser     | Sessions local; no P2P sharing; Evidence redaction + opt-out         |
-| Provider credentials                      | Leak via repo or Calder storage    | Credentials in CLI vendor dirs only; secret scans in CI              |
-| Renderer compromise                       | Privilege escalation to main       | No Node in renderer; narrow preload IPC surface                      |
-| Malicious web content in embedded browser | Drive-by → shell                   | Electron isolation; routing prompts requires explicit user action    |
-| Supply chain                              | Bad dependency or release artifact | `npm audit`, checksum-pinned releases (`bin/release-checksums.json`) |
-| Auto-approval governance                  | Unintended tool approval           | Global / project / session precedence; user-visible Run tab          |
+| Asset                                     | Risk                               | Mitigation                                                                |
+| ----------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| User source code & prompts                | Local exposure via PTY/browser     | Sessions local; no P2P sharing; Evidence redaction + opt-out              |
+| Provider credentials                      | Leak via repo or Calder storage    | Credentials in CLI vendor dirs only; secret scans in CI                   |
+| Renderer compromise                       | Privilege escalation to main       | No Node in renderer; narrow preload IPC surface                           |
+| Malicious web content in embedded browser | Drive-by → shell                   | Electron isolation; routing prompts requires explicit user action         |
+| Supply chain                              | Bad dependency or release artifact | `npm audit`, release checksum verification (`bin/release-checksums.json`) |
+| Auto-approval governance                  | Unintended tool approval           | Global / project / session precedence; user-visible Run tab               |
 
 Detailed isolation notes: [docs/reports/security/](https://github.com/batu3384/calder/tree/main/docs/reports/security) and [docs/architecture/calder-isolation-boundary.md](https://github.com/batu3384/calder/blob/main/docs/architecture/calder-isolation-boundary.md).
 
@@ -49,7 +49,7 @@ Detailed isolation notes: [docs/reports/security/](https://github.com/batu3384/c
 
 ## Release integrity
 
-- `bin/release-checksums.json` pins SHA-256 for release assets
+- `bin/release-checksums.json` can pin SHA-256 hashes for release assets
 - Regenerate: `npm run checksums:generate -- <assets-dir> <files...>`
 - Set `CALDER_REQUIRE_CHECKSUM=1` to refuse downloads without a pinned hash
 

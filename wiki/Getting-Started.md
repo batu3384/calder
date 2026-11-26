@@ -58,7 +58,7 @@ npm run format:check
 npm run audit:structure
 ```
 
-Full gate (also runs on pre-push after `hooks:install`): see [docs/development-workflow.md](https://github.com/batu3384/calder/blob/main/docs/development-workflow.md).
+Full gate (also runs on pre-push after `hooks:install`): see [docs/development/workflow.md](https://github.com/batu3384/calder/blob/main/docs/development/workflow.md).
 
 ## Next steps
 

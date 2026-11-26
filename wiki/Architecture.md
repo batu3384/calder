@@ -1,6 +1,6 @@
 # Architecture
 
-High-level map of Calder’s Electron layout. For guardrails and file-size policy, see [docs/architecture-guardrails.md](https://github.com/batu3384/calder/blob/main/docs/architecture-guardrails.md) in the repo.
+High-level map of Calder’s Electron layout. For guardrails and file-size policy, see [docs/architecture/guardrails.md](https://github.com/batu3384/calder/blob/main/docs/architecture/guardrails.md) in the repo.
 
 ## Process model
 
@@ -72,4 +72,4 @@ Renderer has no Node integration; all privileged operations go through preload I
 ## Related repo docs
 
 - [docs/architecture/session-evidence.md](https://github.com/batu3384/calder/blob/main/docs/architecture/session-evidence.md)
-- [docs/development-workflow.md](https://github.com/batu3384/calder/blob/main/docs/development-workflow.md)
+- [docs/development/workflow.md](https://github.com/batu3384/calder/blob/main/docs/development/workflow.md)
